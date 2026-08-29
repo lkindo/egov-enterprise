@@ -129,7 +129,6 @@ export default function UnifiedDashboardClient({
     );
   }
 
-  const newTaskCount = taskList.filter((task: DashboardTask) => task.isNew).length;
 
   return (
     <div className="space-y-4">
@@ -164,10 +163,17 @@ export default function UnifiedDashboardClient({
             <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{pendingCount}건</span>
           </Link>
         </li>
+        {/*
+          [2026-08-29] '배정된 업무'·'신규' 두 표현을 걷는다.
+          이 값은 나에게 배정된 것도, 총 건수도 아니다 — BoardDashboardProvider:35 가
+          `getBoardPosts(taskId, PageRequest.of(0, 5))` 로 가져오는 **업무게시판 최신 5건**이고,
+          로그인한 누구에게나 같은 목록이다. '배정' 을 결정할 담당자 컬럼도 술어도 없다.
+          '신규' 는 언제나 0 이다 — dashboard-data.ts:17 이 읽는 `isNew` 를 서버가 만들지 않아
+          `Boolean(undefined || false)` 로 떨어진다(전 저장소 grep: 백엔드에 isNew 0건).
+        */}
         <li className="rounded-md border border-border bg-card px-4 py-3">
-          <span className="text-[length:var(--font-size-body)] text-muted-foreground">배정된 업무</span>
+          <span className="text-[length:var(--font-size-body)] text-muted-foreground">업무게시판 최근 글</span>
           <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{taskList.length}건</span>
-          <span className="text-xs text-muted-foreground">신규 {newTaskCount}건</span>
         </li>
         <li className="rounded-md border border-border bg-card px-4 py-3">
           <span className="text-[length:var(--font-size-body)] text-muted-foreground">최근 공지</span>
@@ -177,11 +183,11 @@ export default function UnifiedDashboardClient({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <HomeListSection
-          title="배정된 업무"
+          title="업무게시판 최근 글"
           items={taskList}
           moreHref="/admin/community/boards"
-          moreLabel="업무 전체 보기"
-          emptyMessage="배정된 업무가 없습니다."
+          moreLabel="업무게시판 전체 보기"
+          emptyMessage="업무게시판에 등록된 글이 없습니다."
         />
         <HomeListSection
           title="최근 공지사항"

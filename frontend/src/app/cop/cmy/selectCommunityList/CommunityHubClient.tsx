@@ -8,7 +8,7 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 ;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RefreshCcw, Calendar, ChevronRight, ShieldCheck } from 'lucide-react';
+import { RefreshCcw, Calendar, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { communityService } from '@/services/business/community/communityService';
 import { CommunityVO } from '@/types/business/community';
@@ -90,14 +90,16 @@ export default function CommunityHubClient({
         </p>
       )
     },
-    {
-      header: '관리자',
-      accessor: (item) => (
-        <div className="inline-flex items-center gap-3 px-5 py-2 bg-muted border border-border rounded-[var(--radius-hub-item)] text-muted-foreground font-bold text-xs tracking-tight">
-          <ShieldCheck size={14} className="text-primary" /> {item.frstRegisterNm}
-        </div>
-      )
-    },
+    /*
+      [2026-08-29] '관리자' 열을 걷는다.
+      읽던 `frstRegisterNm` 은 서버가 **어떤 경로에서도 채우지 않는다** — CommunityDto.from()
+      은 frstRgtrId 만 매핑한다. 그래서 방패 아이콘만 있는 빈 배지가 모든 행에 떴고, 관리자
+      이름이 있어야 할 자리처럼 보였다.
+      같은 필드를 읽던 커뮤니티 상세는 이미 걷었는데(웨이브 A) 계약이 상세 화면만 검사해
+      이 목록이 남아 있었다 — 계약을 같은 DTO 를 읽는 화면 전체로 넓힌다.
+      개설자 식별자(frstRgtrId)는 esntlId 원문이라 사람에게 보여 줄 값이 아니다. 이름을
+      보여 주려면 서버가 사용자 join 으로 내려주는 것이 선행이다.
+    */
     {
       header: '개설일',
       accessor: (item) => (

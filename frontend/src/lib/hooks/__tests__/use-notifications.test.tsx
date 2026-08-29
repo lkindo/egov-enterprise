@@ -231,15 +231,27 @@ describe('useNotifications', () => {
       expect(client.post).not.toHaveBeenCalled();
     });
 
-    it('모두 읽음 성공 시 전부 읽음으로 바꾸고 배지를 비운다', async () => {
+    /**
+     * [2026-08-29] 종전 이름은 '모두 읽음 성공 시 전부 읽음으로 바꾸고 배지를 비운다' 였고
+     * `unreadCount` 가 0 이 되는 것을 **의도된 동작으로 고정**하고 있었다.
+     *
+     * 그런데 이 픽스처가 정확히 결함 시나리오다 — 서버 전체 미읽음은 3건인데(unread-count)
+     * 화면에 불러온 알림은 1건뿐이다. 이 동작은 불러온 1건만 읽음 처리하면서 배지를 0 으로
+     * 덮었다. 즉 **미읽음 2건이 남아 있는데 화면은 0 이라고 말했고**, 배지가 사라지므로
+     * 사용자는 확인할 방법도 없었다.
+     *
+     * 처리한 만큼만 빼는 것이 사실이다. 진짜 일괄 읽음은 서버 신설이 선행된다.
+     */
+    it('불러온 알림만 읽음 처리하고 배지는 처리한 만큼만 뺀다', async () => {
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      await waitFor(() => expect(result.current.unreadCount).toBe(3));
       vi.mocked(client.post).mockResolvedValue(undefined as never);
 
       await act(async () => { await result.current.markAllAsRead(); });
 
       expect(result.current.notifications.every(n => n.readYn === 'Y')).toBe(true);
-      expect(result.current.unreadCount).toBe(0);
+      expect(result.current.unreadCount, '불러오지 않은 미읽음까지 0 으로 덮으면 안 된다').toBe(2);
     });
 
     it('모두 읽음 실패는 알리고 서버 상태로 되맞춘다', async () => {

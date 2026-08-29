@@ -167,7 +167,9 @@ export default function SecurityHubClient({
     queryKey: ['admin-user-authorities', selectedAuthorCode, userSearchKeyword, userPage],
     queryFn: () => userAuthorityAdminService.getUserAuthorityList({
       searchKeyword: userSearchKeyword,
-      searchCondition: '1',
+      // [2026-08-29] '1'(로그인 ID) → '0'(ID 또는 성명). 검색창이 두 축을 약속하는데
+      //   종전에는 ID 만 걸려, 목록에서 가장 크게 보이는 성명으로 검색하면 빈 목록이 나왔다.
+      searchCondition: '0',
       authorCode: selectedAuthorCode,
       page: userPage
     }),

@@ -98,7 +98,21 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
             return null;
         }
 
-        if ("1".equals(searchCondition)) {
+        /*
+         * [2026-08-29] "0" = 통합(로그인 ID 또는 성명).
+         *
+         * 권한 관리의 사용자 검색창은 '사용자 검색(ID, 성명)' 이라고 두 축을 약속하는데
+         * 화면이 보내던 "1" 은 로그인 ID 하나만 걸렀다. 같은 목록의 행은 성명을 굵은 첫 줄로,
+         * ID 를 그 아래 흐린 보조줄로 그리므로 **화면에서 가장 크게 보이는 값이 정확히
+         * 검색되지 않는 값**이었다. "홍길동" 을 치면 오류 없이 빈 목록이 나온다.
+         *
+         * 기존 "1"·"2"·"3" 의미는 그대로 두고 값을 하나 더한다 — 다른 호출자의 거동을
+         * 바꾸지 않기 위해서다.
+         */
+        if ("0".equals(searchCondition)) {
+            return user.userId.contains(searchKeyword)
+                    .or(user.userNm.contains(searchKeyword));
+        } else if ("1".equals(searchCondition)) {
             return user.userId.contains(searchKeyword);
         } else if ("2".equals(searchCondition)) {
             return user.userNm.contains(searchKeyword);

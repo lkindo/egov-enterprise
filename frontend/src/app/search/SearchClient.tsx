@@ -17,6 +17,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
+import { menuService } from '@/services/business/user/MenuService';
+import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
+import type { MenuInfo } from '@/types/foundation/menu';
 
 interface SearchArticle {
     bbsId: string;
@@ -96,14 +99,33 @@ export const SearchResultsContent = ({
                 const users = await userSearchService.searchAssignableUsers(query);
                 if (cancelled) return;
 
-                setResults({
-                    articles: [],
-                    users: users.slice(0, 10),
-                    menus: [
-                        { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
-                        { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
-                    ].filter(m => m.name.includes(String(query || '')))
+                /*
+                  [2026-08-29] '메뉴 바로가기' 를 실제 메뉴에서 만든다.
+
+                  종전에는 하드코딩한 두 항목을 이름 부분일치로 걸렀다. 두 라벨 모두 목적지와
+                  달랐고('공지사항 관리' → 실제로는 시스템 메뉴 관리, '자유 게시판' → 업무게시판),
+                  게다가 /admin/system/menus 는 관리자 전용이라 비관리자는 검색 결과를 눌러도
+                  라우트 게이트에 막혔다. '메뉴' 로 검색하면 0건이 나오는 것도 그래서였다.
+
+                  메뉴 트리는 이미 API 로 있고 Ctrl+K 커맨드 센터가 같은 조합을 쓴다. 목적지는
+                  반드시 resolveMenuInternalRoute 를 거친다 — DB 의 modernRoute/chkURL 원문을
+                  그대로 링크에 넣지 않는다(fail-closed).
+                  메뉴 조회가 실패해도 임직원 결과는 살린다(두 서비스 모두 실패 시 [] 반환).
+                */
+                const head = await menuService.getHeadMenus();
+                const subLists = await Promise.all(head.map(m => menuService.getLeftMenus(m.menuNo)));
+                const keyword = String(query || '');
+                const menus = head.flatMap((m, i) => (
+                    [{ parent: null as MenuInfo | null, node: m },
+                     ...subLists[i].map(l => ({ parent: m as MenuInfo | null, node: l }))]
+                )).flatMap(({ parent, node }) => {
+                    const path = resolveMenuInternalRoute(node);
+                    if (!path || !node.menuNm?.includes(keyword)) return [];
+                    return [{ name: node.menuNm, path, category: parent?.menuNm ?? '메뉴' }];
                 });
+
+                if (cancelled) return;
+                setResults({ articles: [], users: users.slice(0, 10), menus });
             } catch {
                 if (!cancelled) {
                     setSearchError('임직원 검색 결과를 불러오지 못했습니다.');
@@ -142,7 +164,7 @@ export const SearchResultsContent = ({
                         <h1 className="text-3xl md:text-3xl font-bold text-surface-inverse-foreground tracking-tighter ">
                             통합 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">검색</span>
                         </h1>
-                        <p className="text-muted-foreground font-medium text-lg">워크스페이스 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
+                        <p className="text-muted-foreground font-medium text-lg">임직원 성명과 메뉴 이름을 찾습니다. 게시글 본문은 검색하지 않습니다.</p>
                     </div>
                         {/* [2026-08-04] '실시간 인덱스 활성화' 배지 제거.
                             그런 인덱스는 존재하지 않는다 — 임직원 검색은 사용자 목록 API 의 키워드 조회이고,

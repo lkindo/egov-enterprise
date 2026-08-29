@@ -91,6 +91,13 @@ export default function ApprovalHubClient() {
   });
 
   const list = approvalData?.list || EMPTY_APPROVALS;
+  /*
+    [2026-08-29] '총 N건' 이 전체가 아니라 **불러온 한 페이지의 길이**였다.
+    조회는 size: 50 으로 한 페이지만 받으므로, 대기 건이 50 을 넘으면 '총 50건' 에서 멈춘 채
+    더 이상 늘지 않는다 — 결재 대기가 쌓일수록 그 숫자가 실제와 벌어지는데 화면은 '총' 이라고
+    말한다. 서버 응답에는 전체 건수가 이미 들어 있다(PageResponse.total).
+  */
+  const total = approvalData?.total ?? list.length;
   const selectedItem = useMemo(() =>
     list.find(item => sanctionKey(item) === selectedItemId) || (list.length > 0 ? list[0] : null)
   , [list, selectedItemId]);
@@ -222,7 +229,11 @@ export default function ApprovalHubClient() {
         </div>
       )}
       masterTitle={TAB_LABELS[activeTab]}
-      masterDescription={`총 ${list.length}건`}
+      masterDescription={
+        list.length < total
+          ? `전체 ${total.toLocaleString()}건 중 ${list.length.toLocaleString()}건 표시`
+          : `총 ${total.toLocaleString()}건`
+      }
       master={(
         <div className="space-y-3">
           {isLoading ? (

@@ -23,7 +23,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "651ff3eadf9c337707e37eb454d5a07da72e768a464425fe0a0366cba849bd16"
+    "inventoryHash": "2e0e0abdb60101caa15f1f12838f9c957cef36910eb31d0047ce634f935ae8d3"
   },
   "summary": {
     "sourceFileCount": 505,
@@ -17775,7 +17775,7 @@
       }
     },
     {
-      "id": "URL-0A0D94CBAA8AAD",
+      "id": "URL-ED1D7054637E88",
       "surface": "request-telemetry",
       "kind": "request-query-producer",
       "operation": "client.get",
@@ -17786,7 +17786,7 @@
       "targetCandidate": "/[computed]",
       "stateItems": [
         {
-          "name": "size",
+          "name": "orderBy",
           "dataClass": "unverified",
           "recommendation": "deny-until-reviewed",
           "approvalStatus": "unverified",
@@ -17794,9 +17794,9 @@
           "riskSignals": []
         },
         {
-          "name": "sort",
+          "name": "size",
           "dataClass": "unverified",
-          "recommendation": "candidate-allow",
+          "recommendation": "deny-until-reviewed",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
           "riskSignals": []
