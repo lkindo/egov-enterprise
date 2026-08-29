@@ -18,6 +18,7 @@ import nuri.business.security.audit.LoginUserAuditorAware;
 import org.springframework.context.annotation.Import;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -130,6 +131,39 @@ class BoardRepositoryTest {
                 .extracting(BoardSearchResult::getCommentCnt)
                 .as("목록 projection 이 cmnt_cnt 를 빠뜨리면 목록의 댓글 수가 0 이 된다")
                 .isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("정렬 '댓글순'(orderBy=comments)이 실제로 댓글 수 내림차순이다")
+    void searchArticlesSortsByCommentCount() {
+        /*
+         * [2026-08-29] 화면의 정렬 선택지 '댓글순' 은 orderBy=comments 로 서버까지 전달되는데
+         * switch 에 case 가 없어 default(sortOrdr.desc)로 조용히 떨어졌다. 골라도 목록이 그대로라
+         * 사용자는 정렬이 된 줄 알았다 — 아무 일도 하지 않는 선택지였다.
+         */
+        Board few = boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId()).pstTtl("few comments").pstCn("b")
+                .useYn("Y").userId("U1").userNm("T").build());
+        Board many = boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId()).pstTtl("many comments").pstCn("b")
+                .useYn("Y").userId("U2").userNm("T").build());
+        em.flush();
+
+        // sortOrdr 는 기본 정렬 축이다. '댓글순' 이 무시되면 default 로 떨어져 few 가 앞에 온다.
+        boardRepository.syncCmntCntAtomic(few.getPstSn(), 1);
+        boardRepository.syncCmntCntAtomic(many.getPstSn(), 9);
+        em.clear();
+
+        BoardSearchCondition condition = new BoardSearchCondition();
+        condition.setBbsId(testMaster.getBbsId());
+        condition.setOrderBy("comments");
+
+        List<Long> order = boardRepository.searchArticles(condition, PageRequest.of(0, 10))
+                .getContent().stream().map(BoardSearchResult::getPstSn).toList();
+
+        assertThat(order)
+                .as("'댓글순' 이 switch 에서 누락되면 default 정렬로 떨어져 이 순서가 뒤집힌다")
+                .containsSubsequence(many.getPstSn(), few.getPstSn());
     }
 
     @Test

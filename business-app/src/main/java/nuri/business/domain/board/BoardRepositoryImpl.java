@@ -139,6 +139,15 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 case "date":
                                         orderSpecifier = QBoard.board.crtDt.desc();        
                                         break;
+
+                                // [2026-08-29] 화면의 정렬 선택지 '댓글순'(orderBy=comments)이 여기까지
+                                //   전달되면서도 case 가 없어 default(sortOrdr.desc)로 조용히 떨어졌다.
+                                //   즉 골라도 최신순과 같은 목록이 나왔고, 사용자는 정렬이 된 줄 알았다.
+                                //   cmnt_cnt 는 BoardEventListener 가 실제로 유지하는 값이므로
+                                //   선택지를 걷는 대신 약속대로 정렬한다(views 축과 대칭).
+                                case "comments":
+                                        orderSpecifier = QBoard.board.cmntCnt.desc();
+                                        break;
                         }
                 }
  
