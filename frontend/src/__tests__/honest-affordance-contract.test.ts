@@ -552,6 +552,34 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 붙어 이미 적용된 설정 이름처럼 읽혔다. 'Core Subject Header'·'Intelligent Payload' 는
    * 사용자가 채우는 입력 라벨 자리에 놓인 의사코드다.
    */
+  /**
+   * 권한별 메뉴 화면이 응답에 없는 필드로 계층을 그리려 하지 않는다.
+   *
+   * `GET /authorities/{cd}/menus` 의 응답(MenuCreateDto)에는 menuNo 도 upperMenuId 도 없다 —
+   * menuSn 과 할당 플래그 chkYeoBu 뿐이다. 그 필드로 트리를 만들려 하면 루트가 하나도 생기지
+   * 않아 **모든 권한에서 '할당된 메뉴 없음'** 이 뜬다(지표 카드가 0 이 아닌 수를 찍는 옆에서).
+   * 계층은 /menus/all 에서 가져와 할당 플래그로 교집합을 낸다.
+   *
+   * 서버 DTO 에 계층이 생기면 이 계약이 red 가 되어 단일 호출로 되돌릴 시점을 알려 준다.
+   */
+  it('권한별 메뉴 화면이 계층을 실제로 가진 API 에서 가져온다', () => {
+    const client = stripComments(
+      readSrc('app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx'),
+    );
+    expect(client, '권한별 메뉴 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('buildMenuTree');
+    expect(client, '계층을 가진 API 를 쓰지 않으면 트리가 영구히 빈다').toContain('menuAdminService.getAllMenus');
+    expect(client, '할당 플래그로 거르지 않으면 전 메뉴가 부여된 것처럼 보인다').toContain('chkYeoBu === 1');
+
+    const dto = stripComments(
+      readRepo('business-core/src/main/java/nuri/business/service/menu/dto/MenuCreateDto.java'),
+    );
+    expect(dto, '권한별 메뉴 DTO 를 찾지 못했다 — 계약이 vacuous 하다').toContain('chkYeoBu');
+    expect(
+      dto,
+      '응답 DTO 에 계층이 생겼다 — 두 번 호출하지 않아도 되니 화면을 되돌리고 이 계약을 갱신하라.',
+    ).not.toContain('upperMenuId');
+  });
+
   it('없는 시스템 이름과 의사코드 라벨을 화면에 쓰지 않는다', () => {
     const cases: Array<[string, string[]]> = [
       ['app/admin/security/authority/page.tsx', ['Security Fabric']],

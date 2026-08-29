@@ -34,7 +34,6 @@ import { authorAdminService, AuthorInfo } from '@/services/foundation/system/Aut
 import type { PageResponse } from '@/types/foundation/system';
 import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
 import { menuAdminService, Menu } from '@/services/foundation/system/MenuAdminService';
-import { MenuByAuthority } from '@/types/foundation/security';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { StandardModal } from '@/app/components/ui/standard-modal';
@@ -283,7 +282,26 @@ export default function SecurityHubClient({
   useEffect(() => {
     if (menusData?.authorMenus) {
       const menus = Array.isArray(menusData.authorMenus) ? menusData.authorMenus : [];
-      const mappedMenuIds = (menus as MenuByAuthority[]).map(m => m.menuNo);
+      /*
+       * [2026-08-29] 기준선을 `m.menuNo` 에서 `chkYeoBu === 1` 인 행의 `menuSn` 으로 바꾼다.
+       *
+       * 이 응답(MenuCreateDto)에는 menuNo 가 **없다** — 서버는 menuSn 과 할당 플래그
+       * chkYeoBu 만 준다(MenuService.selectMenuCreatList). 그래서 종전 기준선은
+       * `Set([undefined])` 였고 모든 메뉴가 '미부여' 로 보였다. 서비스 반환 타입이
+       * MenuByAuthority[] 로 잘못 선언돼 있어 tsc 도 잡지 못했다.
+       *
+       * ⚠ 그 표시가 그대로 저장의 입력이다. 저장은 전체 교체이므로
+       * (MenuService.insertMenuCreatList 가 deleteByIdAuthrtCd 후 재삽입한다) 화면을 열고
+       * 아무것이나 토글해 저장하면 **관리자가 보지도 못한 기존 메뉴 권한이 통째로 지워졌다.**
+       *
+       * 또한 이 응답은 '할당된 메뉴' 가 아니라 '메뉴 전체 + 할당 플래그' 다
+       * (from(menu) leftJoin(menuAuthority)). 플래그로 거르지 않으면 반대로 전 메뉴가
+       * 부여된 것처럼 보인다.
+       */
+      const mappedMenuIds = menus
+        .filter(m => m.chkYeoBu === 1)
+        .map(m => m.menuSn)
+        .filter((sn): sn is number => typeof sn === 'number');
       setTempMenuMappings(new Set(mappedMenuIds));
     }
   }, [menusData, selectedAuthorCode]);
@@ -453,7 +471,13 @@ export default function SecurityHubClient({
       const promises = authorities.map(async (auth) => {
         const menus = await authorAdminService.getAuthorMenus(auth.authrtCd);
         const menuList = Array.isArray(menus) ? menus : [];
-        allMappings.set(auth.authrtCd, new Set(menuList.map(m => m.menuNo)));
+        // 위 기준선과 같은 이유 — menuNo 는 이 응답에 없고, 할당분은 chkYeoBu 로 거른다.
+        allMappings.set(auth.authrtCd, new Set(
+          menuList
+            .filter(m => m.chkYeoBu === 1)
+            .map(m => m.menuSn)
+            .filter((sn): sn is number => typeof sn === 'number'),
+        ));
       });
       await Promise.all(promises);
       setGlobalMappings(allMappings);
