@@ -118,7 +118,7 @@ public class AuthorManageService {
         if (assigned > 0) {
             throw new BusinessException(
                     "이 권한을 가진 사용자가 " + assigned + "명 있습니다. 먼저 사용자 할당을 해제한 뒤 삭제해 주세요.",
-                    CommonErrorCode.INVALID_STATE);
+                    CommonErrorCode.RESOURCE_IN_USE);
         }
     }
 

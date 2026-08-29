@@ -629,7 +629,14 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     );
     const start = service.indexOf('public void deleteAuthor(');
     expect(start, 'deleteAuthor 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
-    const body = service.slice(start, service.indexOf('public ', start + 1));
+    // ⚠ [2026-08-30] 종전 종료 마커는 `indexOf('public ', start + 1)` 이었는데, deleteAuthor
+    //   다음 public 은 deleteAuthors 라 **그 사이의 private assertNoAssignedUsers 선언까지
+    //   슬라이스에 들어왔다**. 그래서 단건 삭제의 호출문만 지워도 이 단언이 green 이었다 —
+    //   메시지가 말하는 회귀를 잡지 못하는 vacuous 단언이었다(자기 검토 실측).
+    //   헬퍼 선언 직전까지만 자른다.
+    const helperAt = service.indexOf('private void assertNoAssignedUsers');
+    expect(helperAt, '보유자 확인 헬퍼가 사라졌다 — 슬라이스 기준점이 없으면 이 계약은 vacuous 하다').toBeGreaterThan(-1);
+    const body = service.slice(start, helperAt);
     expect(body, '삭제 본문 추출이 깨졌다 — 계약이 vacuous 하다').toContain('menuAuthorityRepository');
     /*
      * [2026-08-29 GAP-AUTH-002] 이제 보유자가 있으면 삭제를 **차단**한다.
