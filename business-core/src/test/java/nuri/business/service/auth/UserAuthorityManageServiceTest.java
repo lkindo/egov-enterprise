@@ -41,8 +41,31 @@ class UserAuthorityManageServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private nuri.business.domain.auth.AuthorityRepository authorityRepository;
+
     @InjectMocks
     private UserAuthorityManageService userAuthorityManageService;
+
+    /**
+     * 정상 경로 기본값 — 요청한 권한 코드는 실재한다고 본다.
+     *
+     * <p>[2026-08-30] 쓰기 경로에 존재 검증이 생겼다. 종전 fixture 는 그 검증이 없던 시절의
+     * 것이라, 검증을 넣자 "정상 저장" 테스트들이 알 수 없는 권한으로 거부됐다 — 테스트가
+     * 서버가 만들지 않는 상태를 쓰고 있었다는 뜻이다. 거부 케이스는 각 테스트가 덮어쓴다.
+     */
+    @org.junit.jupiter.api.BeforeEach
+    void stubKnownAuthorities() {
+        org.mockito.Mockito.lenient().when(authorityRepository.findAllById(any()))
+                .thenAnswer(invocation -> {
+                    Iterable<String> ids = invocation.getArgument(0);
+                    java.util.List<nuri.business.domain.auth.Authority> found = new java.util.ArrayList<>();
+                    for (String id : ids) {
+                        found.add(nuri.business.domain.auth.Authority.createRaw(id, id, null, null));
+                    }
+                    return found;
+                });
+    }
 
     @Test
     @DisplayName("사용자별 권한 목록 조회 테스트")
@@ -390,5 +413,48 @@ class UserAuthorityManageServiceTest {
         assertNotNull(saved.getValue().get(1));
         assertEquals("E2", saved.getValue().get(1).getScrtyDcsnTrgtId());
         assertEquals("ROLE_DEPT", saved.getValue().get(1).getAuthrtId());
+    }
+
+    /**
+     * [2026-08-30 자기 검토 발견] 쓰기 경로에 존재 검증이 없어 <b>정규 API 로 끊긴 참조를
+     * 만들 수 있었다</b>. 삭제 쪽만 막은 것은 문을 한쪽만 잠근 것이었다.
+     *
+     * <p>{@code tb_user_authrt_map} 에는 {@code tb_authrt_info} FK 가 없고 JPA 연관도
+     * {@code NO_CONSTRAINT} 라 어떤 문자열이든 저장된다 — DB 가 막아 주지 않는다.
+     */
+    @Test
+    @DisplayName("존재하지 않는 권한으로는 사용자 할당을 저장하지 않는다")
+    void saveUserAuthorities_rejectsUnknownAuthority() {
+        org.mockito.Mockito.reset(authorityRepository);
+        given(authorityRepository.findAllById(any())).willReturn(java.util.List.of());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        userAuthorityManageService.saveUserAuthorities(java.util.List.of(
+                                UserAuthorityDto.builder()
+                                        .scrtyDcsnTrgtId("USER_1")
+                                        .authrtId("ROLE_GONE")
+                                        .build())))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessageContaining("ROLE_GONE");
+
+        verify(userAuthorityRepository, org.mockito.Mockito.never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 권한으로는 부서 일괄 할당도 저장하지 않는다")
+    void saveDeptAuthorities_rejectsUnknownAuthority() {
+        org.mockito.Mockito.reset(authorityRepository);
+        given(authorityRepository.findAllById(any())).willReturn(java.util.List.of());
+        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
+        request.setDeptId("ORGNZT_1");
+        request.setAuthrtId("ROLE_GONE");
+        request.setUserIds(java.util.List.of("USER_1"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> userAuthorityManageService.saveDeptAuthorities(request))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessageContaining("ROLE_GONE");
+
+        verify(userAuthorityRepository, org.mockito.Mockito.never()).saveAll(any());
     }
 }
