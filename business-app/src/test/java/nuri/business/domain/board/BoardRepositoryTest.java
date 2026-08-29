@@ -87,6 +87,52 @@ class BoardRepositoryTest {
     }
 
     @Test
+    @DisplayName("목록·상세가 저장된 댓글 수를 실제로 실어 준다 — 화면의 '댓글 N' 이 언제나 0 이던 축")
+    void searchAndDetailCarryCommentCount() {
+        /*
+         * [2026-08-29] tb_bbs.cmnt_cnt 는 BoardEventListener 가 실제로 유지한다
+         * (commentRepository.countByBbsIdAndPstSnAndUseYn → syncCmntCntAtomic 벌크 UPDATE).
+         * 그런데 BoardRepositoryImpl 의 목록·상세 projection 이 **둘 다** 이 필드를 빼고 있어,
+         * BoardSearchResult/BoardDetailResult 의 commentCnt 가 언제나 null 이었다. 화면은
+         * 그것을 0 으로 렌더했다 — 값이 없는 게 아니라 안 가져온 것이라 사용자는 댓글이 달린
+         * 글도 '댓글 0' 으로 봤다.
+         *
+         * 소스 문자열이 아니라 쿼리 결과로 고정한다. projection 에서 필드를 빼면 여기서 red 다.
+         */
+        Board article = boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId())
+                .pstTtl("Comment count carrier")
+                .pstCn("body")
+                .useYn("Y")
+                .userId("USR_CC")
+                .userNm("Tester")
+                .build());
+        em.flush();
+
+        // 실제 운영 경로와 같은 방식으로 값을 넣는다 — 리스너가 부르는 그 벌크 UPDATE 다.
+        boardRepository.syncCmntCntAtomic(article.getPstSn(), 3);
+        em.clear();
+
+        Optional<BoardDetailResult> detail = boardRepository.findActiveArticleDetail(
+                testMaster.getBbsId(), article.getPstSn());
+        assertThat(detail).isPresent();
+        assertThat(detail.get().getCommentCnt())
+                .as("상세 projection 이 cmnt_cnt 를 빠뜨리면 화면의 댓글 수가 0 이 된다")
+                .isEqualTo(3);
+
+        BoardSearchCondition condition = new BoardSearchCondition();
+        condition.setBbsId(testMaster.getBbsId());
+        Page<BoardSearchResult> page = boardRepository.searchArticles(condition, PageRequest.of(0, 10));
+        assertThat(page.getContent()).isNotEmpty();
+        assertThat(page.getContent())
+                .filteredOn(r -> r.getPstSn().equals(article.getPstSn()))
+                .singleElement()
+                .extracting(BoardSearchResult::getCommentCnt)
+                .as("목록 projection 이 cmnt_cnt 를 빠뜨리면 목록의 댓글 수가 0 이 된다")
+                .isEqualTo(3);
+    }
+
+    @Test
     @DisplayName("상세 조회는 게시판 ID와 활성 상태를 SQL 경계에서 함께 결속한다")
     void findActiveArticleDetailBindsBoardAndUseYn() {
         Board active = boardRepository.save(Board.builder()
