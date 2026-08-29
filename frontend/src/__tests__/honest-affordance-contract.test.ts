@@ -437,6 +437,20 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(commentService).not.toContain('BoardMaster');
   });
 
+  it('알림 드로어에 갈 곳 없는 버튼과 지어낸 시스템 이름을 두지 않는다', () => {
+    const drawer = stripComments(
+      readRepo('frontend/src/app/components/ui/app-notification-drawer.tsx'),
+    );
+    expect(drawer, '드로어를 찾지 못했다 — 계약이 vacuous 하다').toContain('AppNotificationDrawer');
+
+    // 전체 삭제: 서버에 일괄 삭제 경로가 없다(단건 DELETE 뿐).
+    expect(drawer).not.toContain('알림 전체 삭제');
+    // 상세 보기: /admin/notifications 에 [id] 세그먼트가 없다.
+    expect(drawer).not.toContain('상세 보기');
+    // '무결성 피드' 는 저장소에 없는 시스템 이름이다 — 이 화면은 알림 목록을 보여 준다.
+    expect(drawer).not.toContain('무결성 피드');
+  });
+
   it('예시 데이터로 그린 미리보기를 실시간 시스템이라 부르지 않는다', () => {
     expect(wizard).not.toContain('LIVE_SYSTEM_PREVIEW');
     const preview = stripComments(
