@@ -205,7 +205,8 @@ export default function LoginPolicyAdminClient() {
         <div className="flex items-center gap-2">
           <Fingerprint size={12} className={item.otpUseYn === 'Y' ? 'text-emerald-500' : 'text-muted-foreground'} />
           <span className={`text-xs font-bold tracking-widest ${item.otpUseYn === 'Y' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-            {item.otpUseYn === 'Y' ? 'ACTIVE' : 'DISABLED'}
+            {/* [2026-08-29] ADR-0002 한국어 우선. 종전 ACTIVE/DISABLED 는 영문 원시값이었다. */}
+            {item.otpUseYn === 'Y' ? '적용' : '미적용'}
           </span>
         </div>
       )
