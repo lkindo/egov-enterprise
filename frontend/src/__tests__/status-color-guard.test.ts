@@ -101,7 +101,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   붙던 고정 표시였고(서버 DTO 에 검증 여부 필드 자체가 없다) 초록 체크가 "이 응답은
 //   확인됐다" 는 뜻으로 읽혔다. 배지와 함께 emerald 리터럴 2건이 사라졌다. 신규 status
 //   리터럴 0건(사전 red 실측: 540 != 542 — 게이트가 직접 540 으로 내리라고 지시).
-const BASELINE = 540;
+// [하향 래칫 2026-08-29(2)] 알림 드로어의 '알림 전체 삭제' 휴지통 버튼 제거 — onClick 이 전혀
+//   없어 눌러도 아무 일이 없는데 hover 시 빨갛게 변해 파괴적 동작을 예고했다(서버에 일괄 삭제
+//   경로가 없다). 버튼과 함께 rose 리터럴 2건(hover:text-rose-500·hover:border-rose-200)이
+//   사라졌다. 신규 status 리터럴 0건(사전 red 실측: 538 != 540 — 게이트가 직접 538 로 내리라고 지시).
+const BASELINE = 538;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
