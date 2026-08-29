@@ -4,8 +4,11 @@ import nuri.business.domain.board.exception.BoardErrorCode;
 import nuri.business.domain.comment.Comment;
 import nuri.business.domain.comment.CommentRepository;
 import nuri.business.service.comment.dto.CommentDto;
+import nuri.foundation.core.event.PostCommentCountChangedEvent;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.util.TransactionUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentService {
 
     private final CommentRepository commentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public Page<CommentDto> getComments(Long pstSn, String bbsId, Pageable pageable) {
@@ -44,7 +48,9 @@ public class CommentService {
                 .useYn("Y")
                 .build();
 
-        return commentRepository.save(comment).getAnsSn();
+        Long ansSn = commentRepository.save(comment).getAnsSn();
+        publishCountAfterCommit(comment.getBbsId(), comment.getPstSn());
+        return ansSn;
     }
 
     @Transactional
@@ -61,6 +67,25 @@ public class CommentService {
                 .orElseThrow(() -> new BusinessException(BoardErrorCode.COMMENT_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(comment.getFrstRgtrId()); // [IDOR] 작성자/관리자만 삭제
         comment.delete();
+        publishCountAfterCommit(comment.getBbsId(), comment.getPstSn());
+    }
+
+    /**
+     * 댓글 수 변경을 <b>커밋 이후</b>에 알린다.
+     *
+     * <p>개수는 커밋 뒤에 다시 센다 — 트랜잭션 안에서 센 값은 같은 게시글에 동시에 달린 다른
+     * 댓글을 보지 못해, 늦게 커밋된 쪽이 오래된 값으로 덮어쓸 수 있다.
+     *
+     * <p>board 를 직접 부르지 않는다. 게시글의 {@code cmnt_cnt} 는 board 소유이고, 그 쪽
+     * 리스너가 이 이벤트를 받아 벌크 UPDATE 로 반영한다.
+     */
+    private void publishCountAfterCommit(String bbsId, Long pstSn) {
+        if (bbsId == null || pstSn == null) return;
+        TransactionUtils.runAfterCommit(() -> {
+            long count = commentRepository.countByBbsIdAndPstSnAndUseYn(bbsId, pstSn, "Y");
+            eventPublisher.publishEvent(
+                    new PostCommentCountChangedEvent(bbsId, pstSn, (int) count));
+        });
     }
 
     private CommentDto toDto(Comment entity) {
