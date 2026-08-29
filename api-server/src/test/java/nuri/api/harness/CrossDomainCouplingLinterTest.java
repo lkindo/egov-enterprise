@@ -69,18 +69,24 @@ class CrossDomainCouplingLinterTest {
             "^nuri\\.business\\.(?:service|domain|repository)\\.(\\w+)");
 
     /**
-     * app → app 결합 동결(2026-08-23 실측 5건).
+     * app → app 결합 동결(2026-08-29 실측 4건).
      *
-     * <p>board→comment 1건({@code BoardEventListener}), dashboard→notification, stats→board,
-     * informalsanction→sms, informalsanction→mail.
+     * <p>dashboard→notification, stats→board, informalsanction→sms, informalsanction→mail.
      *
      * <p>2026-08-23 {@code BoardUserDeletionCleanupListener} 의 comment 정리를
      * {@code CommentUserDeletionCleanupListener}(comment 도메인 자체 UserDeletionEvent 구독)로
      * 역전해 6→5 로 낮췄다.
      *
+     * <p><b>2026-08-29 5 → 4</b>. {@code BoardEventListener} 의 board→comment 를 역전했다.
+     * comment 가 커밋 이후 {@code PostCommentCountChangedEvent} 를 <b>개수까지 실어</b> 발행하고
+     * board 가 그것만 반영한다. 이벤트를 foundation 에 둔 것이 핵심이다 — 어느 한쪽 도메인
+     * 패키지에 두면 반대편이 import 하게 되어 주입만 사라지고 컴파일 의존은 남는다(숫자만
+     * 내려가는 거짓 진척). 같은 변경에서 <b>댓글 수가 영원히 0 이던 결함</b>도 닫혔다 —
+     * 종전 경로는 게시글 생성 시점에만 돌아 언제나 0 을 썼다.
+     *
      * <p>이것이 "도메인 통째 삭제" 재사용성을 실제로 깨는 부채다. 늘리지 말고, 역전하면 값을 낮춘다.
      */
-    private static final int APP_TO_APP_COUPLING = 5;
+    private static final int APP_TO_APP_COUPLING = 4;
 
     /**
      * app → core 결합 동결(2026-08-29 실측 9건).
