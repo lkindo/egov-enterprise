@@ -145,13 +145,25 @@ export default function NotePage() {
   };
 
   const columns = [
-    {
+    /*
+      [2026-08-29] '상태'(읽음/안읽음) 열은 **받은 쪽지함에만** 둔다.
+
+      보낸 쪽지함의 DTO 는 openYn 을 담지 않는다 — NoteService.convertToDto(NoteTrnsmit) 이
+      그 필드를 설정하지 않는다(수신 목록용 convertToDto(NoteRecptn) 만 채운다). 그래서
+      `item.openYn === 'Y'` 가 언제나 거짓이 되어 **보낸 쪽지 전부가 맥동하는 '안 읽음'
+      아이콘**으로 보였다. 발신자는 그것을 "수신자가 아직 안 읽었다" 로 읽는다 — 남의 행동에
+      대한 거짓 상태다.
+      게다가 한 쪽지에 수신자가 여럿일 수 있어(NoteRecptn 다건) 발신함에서는 읽음 여부를
+      플래그 하나로 표현하는 것 자체가 성립하지 않는다. 집계해서 보여 주려면 서버가
+      findByNoteDsptchNoteSndngSn 으로 모아 내려야 하고, 목록에서는 N+1 이라 별도 설계가 필요하다.
+    */
+    ...(tab === 'received' ? [{
       header: '상태',
       accessor: (item: Note) => (
         item.openYn === 'Y' ? <MailOpen size={18} className="text-slate-300" /> : <Mail size={18} className="text-primary animate-pulse shadow-glow shadow-primary" />
       ),
       className: 'w-16'
-    },
+    }] : []),
     {
       header: '제목',
       accessor: (item: Note) => <span className="font-bold text-foreground tracking-tight">{item.noteSj}</span>,

@@ -570,6 +570,36 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 성공하고 행이 끊긴 참조로 남는다 — 같은 코드로 권한을 다시 만들면 그 사용자들이 아무도
    * 배정하지 않은 권한을 물려받는다. 문구가 "모두 사라집니다" 라고 하면 그 위험이 감춰진다.
    */
+  /**
+   * 보낸 쪽지함이 수신자의 읽음 여부를 아는 척하지 않는다.
+   *
+   * 보낸 쪽지 DTO 에는 openYn 이 없다 — `convertToDto(NoteTrnsmit)` 이 그 필드를 설정하지
+   * 않는다(수신 목록용 오버로드만 채운다). 그래서 상태 열을 두면 **보낸 쪽지 전부가
+   * '안 읽음'** 으로 보이고, 발신자는 그것을 "수신자가 아직 안 읽었다" 로 읽는다.
+   *
+   * 서버가 발신 DTO 에 읽음 상태를 담기 시작하면 이 계약이 red 가 되어 열을 되살릴 시점을
+   * 알려 준다. (수신자가 여럿일 수 있으므로 그때는 집계 표현도 함께 정해야 한다.)
+   */
+  it('보낸 쪽지함이 읽음 상태를 표시하지 않는다', () => {
+    const page = stripComments(readSrc('app/note/page.tsx'));
+    expect(page, '쪽지 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('openYn');
+    expect(
+      page,
+      "상태 열이 두 탭에 공유되면 보낸 쪽지가 전부 '안 읽음' 으로 보인다",
+    ).toContain("tab === 'received' ? [{");
+
+    const service = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/service/note/NoteService.java'),
+    );
+    const start = service.indexOf('private NoteDto convertToDto(NoteTrnsmit');
+    expect(start, '발신 DTO 변환을 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    const body = service.slice(start, service.indexOf('private NoteDto convertToDto(NoteRecptn'));
+    expect(
+      body,
+      '발신 DTO 가 읽음 상태를 담기 시작했다 — 상태 열을 되살리고 다건 수신자 집계 표현을 정하라.',
+    ).not.toContain('.openYn(');
+  });
+
   it('권한 삭제 안내가 서버의 정리 범위를 넘어 약속하지 않는다', () => {
     const hub = stripComments(readSrc('app/admin/security/authority/SecurityHubClient.tsx'));
     expect(hub, '권한 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('권한을 삭제하시겠습니까');
