@@ -989,10 +989,10 @@ export type UserAuthorityDto = z.infer<typeof UserAuthorityDtoSchema>;
 // TemplateDto Schema
 // ==========================================================================
 export const TemplateDtoSchema = z.object({
-  tmpltId: z.string().optional(),
-  tmpltNm: z.string().optional(),
-  tmpltPath: z.string().optional(),
-  tmpltSeCd: z.string().optional(),
+  tmpltId: z.string().min(0).max(20),
+  tmpltNm: z.string().min(0).max(100),
+  tmpltPath: z.string().min(0).max(1000),
+  tmpltSeCd: z.string().min(0).max(12),
   useYn: z.string().min(0).max(1),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),

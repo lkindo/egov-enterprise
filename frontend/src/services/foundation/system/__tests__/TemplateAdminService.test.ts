@@ -65,8 +65,16 @@ import {
  */
 const BASE = 'admin/system/templates';
 
-/** 등록 다이얼로그(TemplateAdminClient)의 초기 상태와 동일한 형태의 페이로드. */
+/**
+ * 등록 다이얼로그(TemplateAdminClient)의 초기 상태와 동일한 형태의 페이로드.
+ *
+ * [2026-08-29] 종전 이 fixture 에는 `tmpltId` 가 없었다 — 화면 폼이 그 값을 묻지 않았기
+ * 때문이다. 그런데 그것은 PK 이자 NOT NULL 이라 **실제 등록은 언제나 실패했다**. 수제
+ * 타입이 `tmpltId?` 로 느슨했던 탓에 타입 검사도 통과했다. 생성 타입으로 되돌리자 이
+ * fixture 가 곧바로 컴파일 오류가 됐다 — 그게 계약이 사실을 말하기 시작했다는 증거다.
+ */
 const newTemplate: TmplatInfo = {
+  tmpltId: 'TMPLT_BASIC',
   tmpltNm: '기본 게시판 스킨',
   tmpltSeCd: 'TMPT01',
   tmpltPath: '/src/templates/board/basic.html',
@@ -252,6 +260,7 @@ describe('TemplateAdminService — 템플릿 관리자 API 계약', () => {
     it('입력한 필드를 클라이언트가 덮어쓰지 않는다 — useYn:N 은 N 그대로 나간다', async () => {
       // 다이얼로그 기본값이 'Y' 라, 비활성으로 고쳐 등록한 값이 되살아나면 화면 입력과 결과가 갈린다.
       const payload: TmplatInfo = {
+        tmpltId: 'TMPLT_PLAIN',
         tmpltNm: '보관용 일반 템플릿',
         tmpltSeCd: 'TMPT03',
         tmpltPath: '/src/templates/common/plain.html',
@@ -263,6 +272,7 @@ describe('TemplateAdminService — 템플릿 관리자 API 계약', () => {
       expect(client.post).toHaveBeenCalledWith(
         BASE,
         {
+          tmpltId: 'TMPLT_PLAIN',
           tmpltNm: '보관용 일반 템플릿',
           tmpltSeCd: 'TMPT03',
           tmpltPath: '/src/templates/common/plain.html',
