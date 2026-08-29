@@ -75,10 +75,40 @@ class MemoReportServiceTest {
         given(memoReportRepository.findByUserId(eq(writerId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
-        Page<MemoReportDto> result = memoReportService.getMyReportList(writerId, pageable);
+        Page<MemoReportDto> result = memoReportService.getMyReportList(writerId, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("발신함·수신함 검색어가 실제로 제목을 좁힌다 — 소유 스코프는 유지된다")
+    void scopedListsApplyTitleSearch() {
+        /*
+         * [2026-08-29] 종전에는 두 목록에 검색 변형이 없었고 컨트롤러도 searchKeyword 를
+         * 선언하지 않아, 화면이 보낸 검색어를 Spring 이 조용히 버렸다 — 기본 탭(수신함)에서
+         * 무엇을 입력해도 목록이 그대로였다. 오류가 아니라 '변하지 않음' 이라 사용자는 검색이
+         * 된 줄 안다.
+         *
+         * 소유 스코프(userId/rptrId)가 유지되는지도 함께 본다 — 검색을 붙이며 인가 범위가
+         * 넓어지면 안 된다.
+         */
+        Pageable pageable = PageRequest.of(0, 10);
+        MemoReport mine = MemoReport.builder().memoRptSn(1L).userId("user1").build();
+        MemoReport received = MemoReport.builder().memoRptSn(2L).rptrId("user1").build();
+
+        given(memoReportRepository.findByUserIdAndRptTtlContaining(eq("user1"), eq("보고"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(mine)));
+        given(memoReportRepository.findByRptrIdAndRptTtlContaining(eq("user1"), eq("보고"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(received)));
+
+        assertThat(memoReportService.getMyReportList("user1", "보고", pageable).getContent()).hasSize(1);
+        assertThat(memoReportService.getReceivedReportList("user1", "보고", pageable).getContent()).hasSize(1);
+
+        // 공백만 있는 검색어는 조건으로 보지 않는다 — 전체 목록과 같아야 한다.
+        given(memoReportRepository.findByUserId(eq("user1"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(mine)));
+        assertThat(memoReportService.getMyReportList("user1", "   ", pageable).getContent()).hasSize(1);
     }
 
     @Test
@@ -91,7 +121,7 @@ class MemoReportServiceTest {
         given(memoReportRepository.findByRptrId(eq(reportrId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
-        Page<MemoReportDto> result = memoReportService.getReceivedReportList(reportrId, pageable);
+        Page<MemoReportDto> result = memoReportService.getReceivedReportList(reportrId, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);

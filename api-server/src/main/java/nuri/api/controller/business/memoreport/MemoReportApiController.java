@@ -41,8 +41,10 @@ public class MemoReportApiController {
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<PageResponse<MemoReportDto>>> getMyReports(
             @AuthenticationPrincipal UserDetails userDetails,
+            // [2026-08-29] 화면이 보내던 검색어를 실제로 받는다 — 종전에는 선언이 없어 조용히 버려졌다.
+            @RequestParam(required = false) String searchKeyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<MemoReportDto> result = memoReportService.getMyReportList(userDetails.getUsername(), pageable);
+        Page<MemoReportDto> result = memoReportService.getMyReportList(userDetails.getUsername(), searchKeyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -50,8 +52,9 @@ public class MemoReportApiController {
     @GetMapping("/received")
     public ResponseEntity<ApiResponse<PageResponse<MemoReportDto>>> getReceivedReports(
             @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) String searchKeyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<MemoReportDto> result = memoReportService.getReceivedReportList(userDetails.getUsername(), pageable);
+        Page<MemoReportDto> result = memoReportService.getReceivedReportList(userDetails.getUsername(), searchKeyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
