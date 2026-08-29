@@ -137,15 +137,26 @@ jobs:
           #   중간 디렉터리가 없어 매치되지 않는다. `|| true` 가 그 실패까지 삼켜, 파일이 정상
           #   생성됐는데도 "변경 없음" 으로 성공 종료했다(run 30418022585 실측 — 거짓 green).
           #   디렉터리를 통째로 넘겨 glob 자체를 없앤다.
+          # ⚠ [2026-08-29 수정] 판정 근거를 add **전의 워킹트리 상태**로 바꾼다.
+          #   종전 가드는 "스테이징이 비었다" 를 본 뒤 `find … -name '*-linux.png'` 로 파일 존재를
+          #   확인해 오류를 냈다. 그런데 기준선은 **이미 커밋돼 저장소에 추적되고 있으므로**
+          #   체크아웃 직후부터 언제나 존재한다 — 즉 그 find 는 항상 참이고, 정상적인 "변경 없음"
+          #   경로(아래 notice)에 도달할 수 없었다. 화면이 그대로여서 기준선이 동일한, 가장 흔한
+          #   경우에 워크플로가 실패한다(run 33235437822 실측 — 캡처 4장 전부 성공했는데
+          #   이 스텝만 red).
+          #
+          #   "변경 없음" 과 "add 경로 파손" 을 가르는 것은 파일의 존재가 아니라 **워킹트리에
+          #   변경이 있었는가** 다. add 전에 그것을 먼저 기록한다.
+          dirty="$(git status --porcelain -- frontend/e2e)"
           git add -A -- frontend/e2e
 
           if git diff --cached --quiet; then
-            # 파일은 생겼는데 스테이징이 비었다면 add 경로가 틀린 것이다 — 조용히 넘기지 않는다.
-            if find frontend/e2e -name '*-linux.png' | grep -q .; then
-              echo "::error title=기준선이 스테이징되지 않았다::리눅스 기준선 파일은 존재하는데 git add 결과가 비었다. add 경로 패턴을 확인하라(이 스텝이 성공으로 끝나면 거짓 green 이 된다)."
+            if [ -n "$dirty" ]; then
+              echo "::error title=기준선이 스테이징되지 않았다::워킹트리에 frontend/e2e 변경이 있는데 git add 결과가 비었다. add 경로 패턴을 확인하라(이 스텝이 성공으로 끝나면 거짓 green 이 된다)."
+              printf '%s\n' "$dirty"
               exit 1
             fi
-            echo "::notice title=변경 없음::기준선이 기존과 동일해 커밋할 것이 없습니다."
+            echo "::notice title=변경 없음::기준선이 기존과 동일해 커밋할 것이 없습니다(화면이 바뀌지 않았다는 뜻이다)."
             exit 0
           fi
           git commit -m "chore(e2e): 비주얼 회귀 기준선 갱신 (linux)
