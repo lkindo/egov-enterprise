@@ -92,7 +92,16 @@ public class AddressBookService {
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정(PII)
 
-        entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), dto.getUseYn());
+        // [2026-08-29] useYn 은 생략되면 **기존 값을 보존**한다.
+        //   종전에는 dto.getUseYn() 을 그대로 넘겨 null 로 덮었다. 그런데 목록 질의는
+        //   AddressBookRepositoryImpl:37,49 에서 useYn.eq("Y") 로만 거른다 — 즉 이름만 바꾼
+        //   주소록이 조용히 목록에서 사라졌다. 화면은 그동안 '주소록이 수정되었습니다.' 라고
+        //   알리고 목록으로 되돌아갔으므로, 사용자는 자기가 방금 무엇을 지웠는지 알 수 없었다.
+        //   이 엔드포인트를 부르는 프런트 경로는 useYn 을 보내지 않으므로 모든 수정이 그랬다.
+        //   adbkNm·rlsScopeCd 는 @NotBlank 라 null 이 도달할 수 없어 이 보존이 필요 없다 —
+        //   useYn 한 축만 다루고 나머지는 종전 대입 의미를 유지한다.
+        String useYn = dto.getUseYn() != null ? dto.getUseYn() : entity.getUseYn();
+        entity.update(dto.getAdbkNm(), dto.getRlsScopeCd(), useYn);
 
         if (dto.getAdbkMan() == null) {
             return;
