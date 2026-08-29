@@ -93,7 +93,14 @@ class KnowledgeService extends ApiService {
    */
   public async getHotArticles(bbsId?: string): Promise<{ list: KnowledgeDto[] }> {
     const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
-    const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 5, sort: 'inqCnt,desc' } });
+    /*
+     * [2026-08-29] `sort: 'inqCnt,desc'` 를 서버가 해석하는 `orderBy` 로 바꾼다.
+     * 게시판 목록 API 가 읽는 정렬 파라미터는 orderBy 이고 값 도메인은 date·views·comments 다
+     * (BoardSearchCondition:16, BoardRepositoryImpl 의 switch). `sort` 는 어디서도 읽지 않아
+     * 조용히 무시됐고, 결과는 기본 정렬(sortOrdr desc)의 상위 5건이었다 — 화면은 그것을
+     * 순위 숫자와 조회수와 함께 '인기 문서 / 조회수가 높은 문서' 라고 불렀다.
+     */
+    const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 5, orderBy: 'views' } });
     
     return {
       list: (res.list || []).map((item: any) => ({
