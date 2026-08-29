@@ -906,9 +906,19 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       filter={
         /* COMMENTS 탭은 백엔드가 키워드 검색을 지원하지 않아(입력해도 결과 불변) 입력 자체를 노출하지 않는다. */
         listConfig?.searchable ? (
+          /*
+            [2026-08-29] 라벨 하나가 세 탭에 공유되는데 **탭마다 서버 술어가 다르다.**
+            - SECURITY·SYSTEM 탭: 둘 다 /logs/system 을 부르고, 술어는
+              `srvcNm.contains OR dmndId.contains` 다(SysLogRepositoryImpl).
+            - LOGIN 탭: /logs/login 이고 술어는 `userId.contains OR lgnIpAddr.contains` 다
+              (LoginLogRepositoryImpl).
+            종전 '서비스명 · 메서드 · 계정' 은 어느 탭에서도 사실이 아니었다 — 메서드로도
+            계정으로도 걸리지 않고, 로그인 탭에서는 서비스명조차 축이 아니다. 조회 조건이
+            틀려도 오류가 나지 않고 빈 결과만 나오므로 "그 계정 기록이 없다" 로 오독된다.
+          */
           <KeywordFilter
-            label="서비스명 · 메서드 · 계정"
-            placeholder="서비스명·메서드·계정 검색"
+            label={activeTab === 'LOGIN' ? '사용자ID · 접속IP' : '서비스명 · 요청ID'}
+            placeholder={activeTab === 'LOGIN' ? '사용자ID, 접속IP 검색' : '서비스명, 요청ID 검색'}
             value={searchKeyword}
             onSearch={handleSearchKeywordChange}
           >
