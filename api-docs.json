@@ -25976,7 +25976,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                  "$ref": "#/components/schemas/ApiResponseMenuListResponse"
                 }
               }
             }
@@ -26017,7 +26017,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                  "$ref": "#/components/schemas/ApiResponseMenuListResponse"
                 }
               }
             }
@@ -26054,6 +26054,14 @@
         "description": "나에게 수신된 메모보고 목록을 조회합니다.",
         "operationId": "getReceivedReports",
         "parameters": [
+          {
+            "name": "searchKeyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "page",
             "in": "query",
@@ -26152,6 +26160,14 @@
         "description": "내가 작성한 메모보고 목록을 조회합니다.",
         "operationId": "getMyReports",
         "parameters": [
+          {
+            "name": "searchKeyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "page",
             "in": "query",
@@ -26420,7 +26436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                  "$ref": "#/components/schemas/ApiResponseHealthStatusResponse"
                 }
               }
             }
@@ -27678,7 +27694,7 @@
           "Satisfaction"
         ],
         "summary": "만족도 평균",
-        "description": "응답이 없으면 null 이다 — 0 과 구분해야 한다.",
+        "description": "평가가 하나도 없으면 average 는 null 이다 — 0 과 구분해야 한다.",
         "operationId": "getAverage",
         "parameters": [
           {
@@ -27705,7 +27721,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseMapStringDouble"
+                  "$ref": "#/components/schemas/ApiResponseSatisfactionAverageResponse"
                 }
               }
             }
@@ -38072,7 +38088,7 @@
           }
         }
       },
-      "ApiResponseMapStringObject": {
+      "ApiResponseMenuListResponse": {
         "type": "object",
         "properties": {
           "success": {
@@ -38089,10 +38105,7 @@
             "type": "string"
           },
           "data": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object"
-            }
+            "$ref": "#/components/schemas/MenuListResponse"
           },
           "timestamp": {
             "type": "string",
@@ -38105,6 +38118,21 @@
             }
           }
         }
+      },
+      "MenuListResponse": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "description": "메뉴 목록",
+            "items": {
+              "$ref": "#/components/schemas/MenuDto"
+            }
+          }
+        },
+        "required": [
+          "list"
+        ]
       },
       "ApiResponsePageResponseMemoReportDto": {
         "type": "object",
@@ -38551,6 +38579,64 @@
           }
         }
       },
+      "ApiResponseHealthStatusResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HealthStatusResponse"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "HealthStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "서비스 상태",
+            "enum": [
+              "UP"
+            ]
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "description": "응답 생성 시각(epoch milliseconds)"
+          },
+          "version": {
+            "type": "string",
+            "description": "빌드에 고정된 표기 버전. 런타임에서 측정한 값이 아니다.",
+            "example": "5.0.0"
+          }
+        },
+        "required": [
+          "status",
+          "timestamp",
+          "version"
+        ]
+      },
       "ApiResponseListFileDto": {
         "type": "object",
         "properties": {
@@ -38788,6 +38874,40 @@
           },
           "data": {
             "$ref": "#/components/schemas/DeptJobBoxDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "ApiResponseMapStringObject": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
           },
           "timestamp": {
             "type": "string",
@@ -39251,7 +39371,7 @@
           }
         }
       },
-      "ApiResponseMapStringDouble": {
+      "ApiResponseSatisfactionAverageResponse": {
         "type": "object",
         "properties": {
           "success": {
@@ -39268,11 +39388,7 @@
             "type": "string"
           },
           "data": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "number",
-              "format": "double"
-            }
+            "$ref": "#/components/schemas/SatisfactionAverageResponse"
           },
           "timestamp": {
             "type": "string",
@@ -39283,6 +39399,17 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
+          }
+        }
+      },
+      "SatisfactionAverageResponse": {
+        "type": "object",
+        "properties": {
+          "average": {
+            "type": "number",
+            "format": "double",
+            "description": "만족도 평균(1~5). 평가가 하나도 없으면 null 이며 0 과 구분해야 한다.",
+            "example": 4.5
           }
         }
       },

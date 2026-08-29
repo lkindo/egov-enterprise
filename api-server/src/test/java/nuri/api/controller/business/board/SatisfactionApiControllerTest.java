@@ -125,14 +125,36 @@ class SatisfactionApiControllerTest {
         verify(satisfactionService).deleteSatisfaction(eq(10L), isNull(), eq("secret"));
     }
 
+    /**
+     * [2026-08-29] 이 테스트는 종전에 <b>결함을 계약으로 고정</b>하고 있었다 —
+     * "평균 - 응답이 없으면 0.0 으로 내려간다 (null 직렬화 회피)".
+     *
+     * <p>이름이 이유까지 정직하게 적어 두었다: {@code Map.of} 는 null 값을 담으면 NPE 라
+     * 평가가 없는 경우를 0.0 으로 바꿀 수밖에 없었다. 그런데 같은 핸들러의 {@code @Operation}
+     * 설명은 "응답이 없으면 null 이다 — 0 과 구분해야 한다" 로 <b>정반대를 약속</b>했고,
+     * 화면은 그 0.0 을 그대로 별점으로 그려 <b>아무도 평가하지 않은 게시글과 모두가 최하점을
+     * 준 게시글이 똑같이 보였다</b>.
+     *
+     * <p>전용 DTO 로 이행하면서 제약 자체가 사라졌으므로 계약을 뒤집는다.
+     */
     @Test
-    @DisplayName("평균 - 응답이 없으면 0.0 으로 내려간다 (null 직렬화 회피)")
-    void averageHandlesNull() throws Exception {
+    @DisplayName("평균 - 평가가 없으면 null 이다 (0 과 구분한다)")
+    void averageKeepsNullWhenNobodyRated() throws Exception {
         when(satisfactionService.getAverageSatisfaction(anyString(), any(Long.class))).thenReturn(null);
 
         mockMvc.perform(get("/api/v1/boards/BBS_01/posts/1/satisfactions/average"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.average").value(0.0));
+                .andExpect(jsonPath("$.data.average").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("평균 - 실제 평균이 있으면 그 값을 그대로 싣는다")
+    void averageCarriesMeasuredValue() throws Exception {
+        when(satisfactionService.getAverageSatisfaction(anyString(), any(Long.class))).thenReturn(4.5);
+
+        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/1/satisfactions/average"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.average").value(4.5));
     }
 
     @Test

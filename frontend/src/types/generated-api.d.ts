@@ -3605,7 +3605,7 @@ export interface paths {
         };
         /**
          * 만족도 평균
-         * @description 응답이 없으면 null 이다 — 0 과 구분해야 한다.
+         * @description 평가가 하나도 없으면 average 는 null 이다 — 0 과 구분해야 한다.
          */
         get: operations["getAverage"];
         put?: never;
@@ -6697,18 +6697,20 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
-        ApiResponseMapStringObject: {
+        ApiResponseMenuListResponse: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: {
-                [key: string]: Record<string, never>;
-            };
+            data?: components["schemas"]["MenuListResponse"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        MenuListResponse: {
+            /** @description 메뉴 목록 */
+            list: components["schemas"]["MenuDto"][];
         };
         ApiResponsePageResponseMemoReportDto: {
             success?: boolean;
@@ -6875,6 +6877,34 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
+        ApiResponseHealthStatusResponse: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["HealthStatusResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        HealthStatusResponse: {
+            /**
+             * @description 서비스 상태
+             * @enum {string}
+             */
+            status: "UP";
+            /**
+             * Format: int64
+             * @description 응답 생성 시각(epoch milliseconds)
+             */
+            timestamp: number;
+            /**
+             * @description 빌드에 고정된 표기 버전. 런타임에서 측정한 값이 아니다.
+             * @example 5.0.0
+             */
+            version: string;
+        };
         ApiResponseListFileDto: {
             success?: boolean;
             /** Format: int32 */
@@ -6963,6 +6993,19 @@ export interface components {
             code?: string;
             message?: string;
             data?: components["schemas"]["DeptJobBoxDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseMapStringObject: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: {
+                [key: string]: Record<string, never>;
+            };
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
@@ -7181,18 +7224,24 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponseMapStringDouble: {
+        ApiResponseSatisfactionAverageResponse: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: {
-                [key: string]: number;
-            };
+            data?: components["schemas"]["SatisfactionAverageResponse"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        SatisfactionAverageResponse: {
+            /**
+             * Format: double
+             * @description 만족도 평균(1~5). 평가가 하나도 없으면 null 이며 0 과 구분해야 한다.
+             * @example 4.5
+             */
+            average?: number;
         };
         ApiResponsePageResponsePublicFaqListItemResponse: {
             success?: boolean;
@@ -27978,7 +28027,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseMapStringObject"];
+                    "application/json": components["schemas"]["ApiResponseMenuListResponse"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -28016,7 +28065,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseMapStringObject"];
+                    "application/json": components["schemas"]["ApiResponseMenuListResponse"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -28042,6 +28091,7 @@ export interface operations {
     getReceivedReports: {
         parameters: {
             query?: {
+                searchKeyword?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -28105,6 +28155,7 @@ export interface operations {
     getMyReports: {
         parameters: {
             query?: {
+                searchKeyword?: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -28315,7 +28366,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseMapStringObject"];
+                    "application/json": components["schemas"]["ApiResponseHealthStatusResponse"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -29241,7 +29292,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseMapStringDouble"];
+                    "application/json": components["schemas"]["ApiResponseSatisfactionAverageResponse"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

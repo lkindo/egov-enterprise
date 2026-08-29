@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import nuri.api.controller.business.board.dto.SatisfactionAverageResponse;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.board.SatisfactionService;
 import nuri.business.service.board.dto.SatisfactionDto;
@@ -14,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 게시글 만족도 API.
@@ -57,13 +57,16 @@ public class SatisfactionApiController {
         return ResponseEntity.ok(ApiResponse.success(satisfactionService.getSatisfactionList(bbsId, pstSn)));
     }
 
-    @Operation(summary = "만족도 평균", description = "응답이 없으면 null 이다 — 0 과 구분해야 한다.")
+    @Operation(summary = "만족도 평균",
+            description = "평가가 하나도 없으면 average 는 null 이다 — 0 과 구분해야 한다.")
     @Authenticated
     @GetMapping("/average")
-    public ResponseEntity<ApiResponse<Map<String, Double>>> getAverage(
+    public ResponseEntity<ApiResponse<SatisfactionAverageResponse>> getAverage(
             @PathVariable String bbsId, @PathVariable Long pstSn) {
-        Double avg = satisfactionService.getAverageSatisfaction(bbsId, pstSn);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("average", avg == null ? 0.0 : avg)));
+        // ⚠ null 을 0.0 으로 바꾸지 않는다. 종전에는 Map.of 가 null 값을 담지 못해 그럴 수밖에
+        //   없었고, 그 결과 "아무도 평가하지 않음" 과 "모두 최하점" 이 화면에서 같아졌다.
+        Double average = satisfactionService.getAverageSatisfaction(bbsId, pstSn);
+        return ResponseEntity.ok(ApiResponse.success(SatisfactionAverageResponse.of(average)));
     }
 
     @Operation(summary = "만족도 등록")

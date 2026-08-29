@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * AGENTS.md Evidence guardrails H5 가 지목한 "게이트가 있다는 서술만 남고 집행은 0" 상태다.
  *
  * <p>[왜 census 인가] 현행 위반을 즉시 전부 고치는 것은 이 게이트의 목적이 아니다.
- * {@code Map} 반환 5건 중 {@code DashboardApiController} 는 foundation 의
+ * {@code Map} 반환 1건({@code DashboardApiController})은 foundation 의
  * {@code DashboardItemProvider} SPI 시그니처에 페이로드가 규정돼 있어 typed 이행이 SPI 계약 변경을
  * 동반한다. 그래서 <b>지금 있는 이탈을 동결</b>한다. 늘어나면 red 이고, <b>줄어도 red</b> 다 —
  * 정당한 상환 시에만 상수가 함께 바뀌어 diff 에 의도가 남는다.
@@ -64,17 +64,25 @@ class ResponseContractLinterTest {
     private static final Pattern WRAPPED = Pattern.compile("ApiResponse\\s*<");
 
     /**
-     * 비정형 payload 동결(2026-08-20 실측 5건).
+     * 비정형 payload 동결(2026-08-29 실측 1건).
      *
-     * <p>{@code SatisfactionApiController#getAverage}, {@code DashboardApiController#getDashboardData},
-     * {@code MenuUserApiController#getHeadMenu}, {@code MenuUserApiController#getLeftMenu},
-     * {@code HealthCheckApiController#checkHealth}.
+     * <p>{@code DashboardApiController#getDashboardData} 하나만 남았다. foundation 의
+     * {@code DashboardItemProvider} SPI 시그니처가 페이로드를 {@code Map} 으로 규정하고 있어
+     * typed 이행이 SPI 계약 변경을 동반한다 — 그 설계 결정이 선행이다.
+     *
+     * <p><b>[2026-08-29] 5 → 1</b>. 저위험 4건을 전용 DTO 로 상환했다 —
+     * {@code HealthCheckApiController#checkHealth}({@code HealthStatusResponse}),
+     * {@code MenuUserApiController#getHeadMenu}·{@code #getLeftMenu}({@code MenuListResponse}),
+     * {@code SatisfactionApiController#getAverage}({@code SatisfactionAverageResponse}).
+     * 만족도 이행은 표현 변경이 아니라 <b>결함 수정</b>이었다 — {@code Map.of} 가 null 값을 담지
+     * 못해 "평가 없음"(서비스의 {@code null})을 0.0 으로 뭉개고 있었고, 같은 핸들러의
+     * {@code @Operation} 설명은 정반대("0 과 구분해야 한다")를 약속하고 있었다.
      *
      * <p>피해는 실측된다 — {@code frontend/src/types/generated-api.d.ts} 의
      * {@code ApiResponseMapStringObject.data} 는 {@code Record<string, never>} 로 생성돼
      * <b>어떤 값도 담을 수 없는 타입</b>이다. Map 반환은 DB→DTO→Zod 계약 체인을 무력화한다.
      */
-    private static final int UNTYPED_PAYLOAD_COUNT = 5;
+    private static final int UNTYPED_PAYLOAD_COUNT = 1;
 
     /**
      * 헌법 제6조 3항 binary/stream 예외의 허용 census — <b>파일 경로 {@code #} 핸들러 메서드</b> 단위.

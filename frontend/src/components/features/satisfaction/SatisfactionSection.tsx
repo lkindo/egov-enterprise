@@ -145,18 +145,26 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
     }
   };
 
-  const average = avg?.average ?? 0;
+  // ⚠ `?? 0` 으로 뭉개지 않는다 — 서버는 평가가 하나도 없으면 average 를 싣지 않는다.
+  //   0 으로 바꾸면 "아무도 평가하지 않음" 과 "모두 최하점" 이 화면에서 같아진다.
+  const average = avg?.average;
 
   return (
     <section className="mt-10 border-t pt-8" aria-label="게시글 만족도">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold tracking-tight">만족도</h3>
         <div className="flex items-center gap-2">
-          <Stars score={Math.round(average)} />
-          <span className="text-sm font-bold text-foreground tabular-nums">
-            {average.toFixed(1)}
-          </span>
-          <span className="text-xs text-muted-foreground">({list.length}명)</span>
+          {average === undefined ? (
+            <span className="text-sm text-muted-foreground">아직 평가가 없습니다</span>
+          ) : (
+            <>
+              <Stars score={Math.round(average)} />
+              <span className="text-sm font-bold text-foreground tabular-nums">
+                {average.toFixed(1)}
+              </span>
+              <span className="text-xs text-muted-foreground">({list.length}명)</span>
+            </>
+          )}
         </div>
       </div>
 

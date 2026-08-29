@@ -32,7 +32,9 @@ describe('SatisfactionSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocked.list.mockResolvedValue([]);
-    mocked.average.mockResolvedValue({ average: 0 });
+    // list 가 비어 있으면 서버는 average 를 싣지 않는다. 종전 fixture 의 { average: 0 } 은
+    // 서버가 만들지 않는 조합이었고, 그래서 화면이 0.0 을 그리는 것이 정상처럼 보였다.
+    mocked.average.mockResolvedValue({});
     mocked.remove.mockResolvedValue(undefined);
   });
 
@@ -209,5 +211,30 @@ describe('SatisfactionSection', () => {
     renderWidget();
 
     expect(await screen.findByText('아직 등록된 만족도가 없습니다.')).toBeInTheDocument();
+  });
+
+  /**
+   * [2026-08-29] 평가가 하나도 없을 때 별점 0개·0.0 을 그리면, 화면이 **측정하지 않은 것을
+   * 측정값으로** 말하는 것이 된다. 백엔드는 이제 average 를 싣지 않는다(Map.of 제약 제거).
+   */
+  it('평가가 하나도 없으면 별점 대신 그 사실을 말한다', async () => {
+    mocked.average.mockResolvedValue({});
+    mocked.list.mockResolvedValue([]);
+
+    renderWidget();
+
+    expect(await screen.findByText('아직 평가가 없습니다')).toBeInTheDocument();
+    // 0.0 을 그리면 "모두 최하점" 과 구분되지 않는다.
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument();
+  });
+
+  it('실제로 0점대 평균이면 수치를 그린다 — 빈 상태와 다르다', async () => {
+    mocked.average.mockResolvedValue({ average: 0 });
+    mocked.list.mockResolvedValue([{ dgstfnSn: 1, dgstfnScr: 1, useYn: 'Y' }]);
+
+    renderWidget();
+
+    expect(await screen.findByText('0.0')).toBeInTheDocument();
+    expect(screen.queryByText('아직 평가가 없습니다')).not.toBeInTheDocument();
   });
 });
