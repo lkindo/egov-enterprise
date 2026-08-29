@@ -253,7 +253,7 @@
       "id": "board",
       "pack": "collaboration",
       "domains": ["board", "comment", "scrap"],
-      "reason": "Board 양방향 댓글 연관, 스크랩 FK 및 댓글 수 동기화 때문에 함께 선택한다."
+      "reason": "Comment 엔티티의 게시글 연관과 BoardErrorCode 참조, 스크랩 FK 때문에 함께 선택한다. (댓글 수 동기화는 2026-08-29 foundation 이벤트로 역전돼 더는 결합 근거가 아니다.)"
     },
     {
       "id": "approval",
