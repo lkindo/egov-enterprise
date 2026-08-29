@@ -78,8 +78,11 @@ export function validateDependencySubmissionContract({ producerContent, publishe
   requireMatch(errors, prStep, /^          validate-wrappers: true$/m,
     'PR graph producer must validate Gradle wrappers');
 
-  requireMatch(errors, trustedJob, /^    if: github\.event_name != 'pull_request'$/m,
-    'write-capable graph submission must exclude pull_request');
+  // 이벤트 이름만으로는 부족하다 — workflow_dispatch 가 임의 브랜치를 지정할 수 있어
+  // ref 가드가 없으면 그 브랜치의 빌드가 contents:write 로 돈다. 두 조건을 함께 동결한다.
+  requireMatch(errors, trustedJob,
+    /^    if: github\.event_name != 'pull_request' && github\.ref == 'refs\/heads\/main'$/m,
+    'write-capable graph submission must exclude pull_request and non-main refs');
   requireMatch(errors, trustedJob, /^    permissions:\n      contents: write$/m,
     'trusted main/manual graph job needs only contents: write');
   const trustedStep = stepByName(trustedJob, 'Generate and submit trusted dependency graph');
