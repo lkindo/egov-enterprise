@@ -4,6 +4,7 @@ import nuri.business.domain.auth.Authority;
 import nuri.business.domain.auth.AuthorityRepository;
 import nuri.business.domain.auth.AuthorityRoleRepository;
 import nuri.business.domain.auth.MenuAuthorityRepository;
+import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.dto.AuthorManageDto;
 import nuri.foundation.core.exception.BusinessException;
@@ -31,6 +32,7 @@ public class AuthorManageService {
     private final AuthorityRepository authorityRepository;
     private final AuthorityRoleRepository authorityRoleRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
+    private final UserAuthorityRepository userAuthorityRepository;
 
     /**
      * 권한 목록을 검색 조건과 함께 한 페이지 조회한다.
@@ -83,16 +85,41 @@ public class AuthorManageService {
     }
 
     /**
-     * 권한 삭제
+     * 권한 삭제.
+     *
+     * <p>[2026-08-29 GAP-AUTH-002] 보유자가 있으면 삭제하지 않는다.
+     *
+     * <p>이 메서드가 정리하는 롤·메뉴 매핑은 권한의 <b>구성</b>이지만, 사용자 할당은 사람에게
+     * <b>준 것</b>이다. 그런데 tb_user_authrt_map 에는 tb_authrt_info 로의 FK 가 없어 삭제가
+     * 그대로 성공하고 사용자 행은 없어진 권한을 가리킨 채 남았다 — 같은 코드로 권한을 다시
+     * 만들면 그 사용자들이 <b>아무도 배정하지 않은 권한을 그대로 물려받는다.</b>
+     *
+     * <p>두 선택지 중 회수(cascade delete)가 아니라 차단을 택했다. 회수는 오삭제 시 복구가
+     * 불가능하고 인가 의미를 조용히 지우지만(H3), 차단은 최악이 "삭제가 막힘" 이고 그건
+     * 정확히 드러나야 할 상황이다 — 아직 그 역할을 가진 사람이 있다는 뜻이다.
+     *
+     * <p>⚠ 이 가드는 애플리케이션 계층이다. DB 제약(FK)으로의 승격은 기존 고아 행 census 와
+     * 정리가 선행되며 인가 데이터 DML 이라 사용자 승인 경계다(V2_12 선례 참조).
      */
     @Transactional
     public void deleteAuthor(@NonNull String authrtCd) {
         Objects.requireNonNull(authrtCd);
+        assertNoAssignedUsers(authrtCd);
         // [V2_13 결속] fk_tb_authrt_role_map/fk_tb_menu_crt_dtl → tb_authrt_info (NO ACTION)
         // 매핑을 선정리해야 권한 삭제가 FK 를 통과한다 (V2_12 MenuService 패턴과 동일)
         authorityRoleRepository.deleteByIdAuthrtCd(authrtCd);
         menuAuthorityRepository.deleteByIdAuthrtCd(authrtCd);
         authorityRepository.deleteById(authrtCd);
+    }
+
+    /** 보유자가 남아 있으면 삭제를 막는다. 메시지에 인원수를 넣어 다음 행동을 알 수 있게 한다. */
+    private void assertNoAssignedUsers(String authrtCd) {
+        long assigned = userAuthorityRepository.countByAuthrtId(authrtCd);
+        if (assigned > 0) {
+            throw new BusinessException(
+                    "이 권한을 가진 사용자가 " + assigned + "명 있습니다. 먼저 사용자 할당을 해제한 뒤 삭제해 주세요.",
+                    CommonErrorCode.INVALID_STATE);
+        }
     }
 
     /**
@@ -102,6 +129,11 @@ public class AuthorManageService {
     public void deleteAuthors(@NonNull String[] authrtCds) {
         List<String> cds = Arrays.asList(Objects.requireNonNull(authrtCds));
         // [V2_13 결속] 위 deleteAuthor 와 동일 사유의 매핑 선정리
+        // 일괄 삭제도 같은 가드를 받는다 — 한 건이라도 보유자가 있으면 전체를 중단한다
+        // (일부만 지우면 어느 것이 남았는지 화면이 말할 수 없다).
+        for (String cd : cds) {
+            assertNoAssignedUsers(cd);
+        }
         for (String cd : cds) {
             authorityRoleRepository.deleteByIdAuthrtCd(cd);
             menuAuthorityRepository.deleteByIdAuthrtCd(cd);

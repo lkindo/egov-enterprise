@@ -19,6 +19,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import nuri.foundation.core.exception.BusinessException;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -34,6 +36,9 @@ class AuthorManageServiceTest {
 
     @Mock
     private nuri.business.domain.auth.MenuAuthorityRepository menuAuthorityRepository;
+
+    @Mock
+    private nuri.business.domain.auth.UserAuthorityRepository userAuthorityRepository;
 
     @InjectMocks
     private AuthorManageService authorManageService;
@@ -110,6 +115,46 @@ class AuthorManageServiceTest {
         String[] codes = {"ROLE_1", "ROLE_2"};
         authorManageService.deleteAuthors(codes);
         verify(authorityRepository).deleteAllById(anyList());
+    }
+
+    /**
+     * [2026-08-29 GAP-AUTH-002] 보유자가 있으면 삭제하지 않는다.
+     *
+     * <p>tb_user_authrt_map 에는 tb_authrt_info 로의 FK 가 없어(V2_0 은 PK 만, V2_12 는
+     * tb_user_info FK 만 추가) 종전에는 삭제가 그대로 성공하고 사용자 행이 없어진 권한을
+     * 가리킨 채 남았다. 같은 코드로 권한을 다시 만들면 그 사용자들이 <b>아무도 배정하지 않은
+     * 권한을 그대로 물려받는다</b> — 권한 코드는 사용자가 입력하는 문자열이라 재사용이 흔하다.
+     *
+     * <p>회수(cascade delete)가 아니라 차단을 택했다. 회수는 오삭제 시 복구가 불가능하고
+     * 인가 의미를 조용히 지운다(H3).
+     */
+    @Test
+    @DisplayName("보유자가 있으면 권한을 삭제하지 않는다 — 끊긴 참조를 남기지 않는다")
+    void deleteAuthor_blockedWhenAssigned() {
+        given(userAuthorityRepository.countByAuthrtId("ROLE_ADMIN")).willReturn(3L);
+
+        assertThatThrownBy(() -> authorManageService.deleteAuthor("ROLE_ADMIN"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("3명");
+
+        // 어느 것도 지워지지 않아야 한다 — 부분 삭제는 권한을 반쯤 부순 상태로 남긴다.
+        verify(authorityRepository, never()).deleteById(anyString());
+        verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
+        verify(menuAuthorityRepository, never()).deleteByIdAuthrtCd(anyString());
+    }
+
+    @Test
+    @DisplayName("일괄 삭제는 한 건이라도 보유자가 있으면 전체를 중단한다")
+    void deleteAuthors_blockedWhenAnyAssigned() {
+        given(userAuthorityRepository.countByAuthrtId("ROLE_1")).willReturn(0L);
+        given(userAuthorityRepository.countByAuthrtId("ROLE_2")).willReturn(1L);
+
+        assertThatThrownBy(() -> authorManageService.deleteAuthors(new String[] {"ROLE_1", "ROLE_2"}))
+                .isInstanceOf(BusinessException.class);
+
+        // 일부만 지우면 어느 것이 남았는지 화면이 말할 수 없다.
+        verify(authorityRepository, never()).deleteAllById(anyList());
+        verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
     }
 
     // ─────────────────────────────────────────────────────────────────────────
