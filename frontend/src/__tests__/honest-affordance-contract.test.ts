@@ -477,6 +477,30 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 양방향 암호화는 ARIA 다. 관리자가 규제 대응 근거로 읽을 수 있는 문구라, 문구만
    * 고치면 다음 사람이 되돌린다. 실제 구현과 **함께** 고정한다.
    */
+  /**
+   * 게시 기간이 집행되지 않는다는 사실을 화면과 술어에 함께 고정한다.
+   *
+   * 집행을 켜면 이미 기간이 지난 기존 글이 예고 없이 사라지므로 그 판단은 제품 결정이다.
+   * 술어에 두 필드가 들어오는 순간 이 계약이 red 가 되어 문구를 되살릴 시점을 알려 준다.
+   */
+  it('게시 기간을 집행하지 않으면서 노출을 제어한다고 말하지 않는다', () => {
+    const write = stripComments(
+      readSrc('app/admin/community/boards/write/CommunityBoardsWriteClient.tsx'),
+    );
+    expect(write, '작성 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('pstBgngYmd');
+    expect(write).toContain('노출 여부를 자동으로 바꾸지는 않습니다');
+
+    const predicate = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/domain/board/BoardPredicate.java'),
+    );
+    expect(predicate, '술어 조립기를 찾지 못했다 — 계약이 vacuous 하다').toContain('searchBoard');
+    expect(
+      predicate,
+      '게시 기간이 술어에 들어왔다 — 집행이 생겼으니 화면 문구를 되살리고 이 계약을 갱신하라.',
+    ).not.toContain('pstBgngYmd');
+    expect(predicate).not.toContain('pstEndYmd');
+  });
+
   it('감사 타임라인이 죽은 액션과 거짓 시스템 상태를 두지 않는다', () => {
     const timeline = stripComments(
       readRepo('frontend/src/app/components/ui/visual-audit-timeline.tsx'),

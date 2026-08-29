@@ -248,10 +248,24 @@ export default function CommunityBoardsWriteClient() {
  </div>
 
  <div className="bg-muted/50 rounded-lg p-8 border border-border space-y-6">
+ {/*
+   [2026-08-29] '게시 기간' 은 **기록만 되고 집행되지 않는다.**
+   두 값은 BoardService 가 normalizeYmd 로 컬럼에 넣지만, 목록·상세 가시성을 결정하는 유일한
+   술어 조립기 BoardPredicate 에는 pstBgngYmd·pstEndYmd 가 등장하지 않는다(전 저장소 실측:
+   엔티티 대입·projection·저장 경로뿐, 조건문 0건). 즉 종료일이 지나도 글은 그대로 보인다.
+
+   집행을 켜는 것은 이 수정의 범위가 아니다 — 켜는 순간 이미 기간이 지난 기존 글이 예고 없이
+   사라지므로, 대상 범위와 마이그레이션을 정하는 제품 결정이 선행된다. 그때까지 화면은
+   자기가 하는 일만 말한다.
+ */}
  <div className="flex items-center gap-3 border-b border-border/50 pb-4">
  <Calendar size={18} className="text-primary" />
- <h4 className="font-bold text-sm tracking-widest text-foreground">게시 기간</h4>
+ <h4 className="font-bold text-sm tracking-widest text-foreground">게시 기간(기록용)</h4>
  </div>
+ <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+ 입력한 기간은 게시글에 함께 저장되지만, 노출 여부를 자동으로 바꾸지는 않습니다.
+ 종료일이 지나도 글은 계속 보이며, 내리려면 직접 삭제하거나 사용 여부를 바꿔야 합니다.
+ </p>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  <FormField
