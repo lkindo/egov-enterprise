@@ -35,26 +35,34 @@ import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { TemplateDtoSchema } from '@/types/generated-zod';
 
-// Generated DTO가 누락한 필드 제약은 실제 Template 엔티티/물리 스키마의 non-null·길이 계약을 보강한다.
+// [2026-08-29] 생성 DTO 가 이제 길이·필수를 스스로 말한다(백엔드 @Size/@NotBlank 추가).
+// 여기서는 사용자에게 보일 한국어 사유만 덧입힌다 — 제약 자체를 여기서 창작하지 않는다.
 export const templateFormSchema = TemplateDtoSchema.pick({
+ tmpltId: true,
  tmpltNm: true,
  tmpltSeCd: true,
  tmpltPath: true,
  useYn: true,
 }).extend({
- tmpltNm: TemplateDtoSchema.shape.tmpltNm.unwrap().trim()
+ // [2026-08-29] tmpltId 는 PK 이자 NOT NULL 인데 폼이 아예 묻지 않아 **등록이 언제나 실패**했다.
+ //   엔티티에 생성 전략이 없고 서버도 값을 만들지 않는다 — 사용자가 정하는 업무 키다.
+ tmpltId: TemplateDtoSchema.shape.tmpltId.trim()
+  .min(1, '템플릿 ID를 입력해 주세요.')
+  .max(20, '템플릿 ID는 최대 20자까지 입력할 수 있습니다.'),
+ tmpltNm: TemplateDtoSchema.shape.tmpltNm.trim()
   .min(1, '템플릿 명칭을 입력해 주세요.')
   .max(100, '템플릿 명칭은 최대 100자까지 입력할 수 있습니다.'),
- tmpltSeCd: TemplateDtoSchema.shape.tmpltSeCd.unwrap().trim()
+ tmpltSeCd: TemplateDtoSchema.shape.tmpltSeCd.trim()
   .min(1, '카테고리를 선택해 주세요.')
   .max(12, '카테고리 코드는 최대 12자까지 입력할 수 있습니다.'),
- tmpltPath: TemplateDtoSchema.shape.tmpltPath.unwrap().trim()
+ tmpltPath: TemplateDtoSchema.shape.tmpltPath.trim()
   .min(1, '소스 경로를 입력해 주세요.')
   .max(1000, '소스 경로는 최대 1000자까지 입력할 수 있습니다.'),
  useYn: TemplateDtoSchema.shape.useYn.pipe(z.enum(['Y', 'N'])),
 });
 
 const templateValidationLabels = {
+ tmpltId: '템플릿 ID',
  tmpltNm: '템플릿 명칭',
  tmpltSeCd: '카테고리',
  tmpltPath: '소스 경로',
@@ -77,6 +85,7 @@ export default function TemplateAdminClient({
  const [templates, setTemplates] = useState(initialTemplates);
  const [isAddOpen, setIsAddOpen] = useState(false);
  const [newTemplate, setNewTemplate] = useState<TmplatInfo>({
+ tmpltId: '',
  tmpltNm: '',
  tmpltSeCd: 'TMPT01',
  tmpltPath: '',
@@ -233,6 +242,24 @@ export default function TemplateAdminClient({
  labels={templateValidationLabels}
  onNavigate={validation.focusError}
  />
+ <div className="space-y-3">
+ <label htmlFor="tmplt-id" className="text-xs font-bold text-muted-foreground tracking-tight ml-2">템플릿 ID</label>
+ <Input
+ id="tmplt-id"
+ {...validation.fieldProps('tmpltId')}
+ placeholder="예: TMPLT_NOTICE"
+ value={newTemplate.tmpltId ?? ''}
+ onChange={(e) => {
+ validation.clearError('tmpltId');
+ setNewTemplate(prev => ({ ...prev, tmpltId: e.target.value }));
+ }}
+ required
+ maxLength={20}
+ className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ />
+ {validation.errors.tmpltId ? <p {...validation.messageProps('tmpltId')} className="text-xs font-bold text-destructive-emphasis ml-2" /> : null}
+ </div>
+
  <div className="space-y-3">
  <label htmlFor="tmplt-nm" className="text-xs font-bold text-muted-foreground tracking-tight ml-2">템플릿 명칭</label>
  <Input

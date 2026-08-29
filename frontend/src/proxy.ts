@@ -246,7 +246,16 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 //     nonce 를 전파해 layout 이 prop 으로 넘긴다 — nextWithCsp 의 주석 참조.
 //   - script-src-attr 'none': Phase 2 유지 — inline 이벤트 핸들러 차단.
 //   - style-src 'unsafe-inline' 잔존: React style prop(= style 속성)이 전면 사용 중이라
-//     여기서 빼면 앱 전체 스타일이 죽는다. 세분화는 Phase 3(sonner·framer-motion 검증) 별건.
+//     여기서 빼면 앱 전체 스타일이 죽는다.
+//     [2026-08-30 측정 완료] Phase 3(elem/attr 세분화)은 **지금 이득이 없다**. 설치본 실측:
+//       · framer-motion 12.43.0 — createElement("style") 직후 `if (nonce) style.nonce = nonce`
+//         가 있어 nonce 를 지원한다(주입은 AnimatePresence popLayout 경로 한정).
+//       · sonner 2.0.7 — 모듈 최상위에서 __insertCSS 를 2회 호출해 전체 스타일시트를 <style>
+//         로 삽입하는데 패키지 전체에 'nonce' 가 0건이다. 끌 수도 nonce 를 붙일 수도 없다.
+//     따라서 style-src-elem 에서 unsafe-inline 을 빼면 토스트가 전부 무스타일이 되고,
+//     style-src-attr 은 React style prop 때문에 어차피 unsafe-inline 이 필요하다 — 쪼개면
+//     지시문만 둘로 늘고 보안 이득은 0 이다. 재검토 조건은 sonner 의 nonce 지원(또는 교체)이며
+//     csp-policy 계약이 그때 red 로 알린다.
 //   - dev 는 'unsafe-eval' 추가(HMR)·connect-src ws: 만 다르고 nonce 구조는 동일하다 —
 //     dev/prod 정책 구조가 갈라지면 위반을 dev 에서 못 보고 CI 에서 처음 만나게 된다.
 //
