@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => ({
   refetch: vi.fn(),
   replace: vi.fn(),
   sendSms: vi.fn(),
+  getSmsList: vi.fn(),
   toast: vi.fn(),
+  queries: {} as Record<string, { queryFn?: () => unknown }>,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -17,20 +19,28 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+// [2026-08-29] useQuery 가 받은 options 를 붙잡는다. 종전에는 통째로 대체해 queryFn 이 한 번도
+//   실행되지 않았고, 그래서 "요청에 무엇을 싣는가" 를 이 스펙이 볼 수 없었다(조회 조건 누락이
+//   여기서 안 잡힌 이유다). 반환값은 그대로라 기존 스펙 거동은 변하지 않는다.
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: () => ({
-    data: { list: [], total: 0, totalPage: 1 },
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: mocks.refetch,
-    isFetching: false,
-  }),
+  useQuery: (options: { queryKey: unknown[]; queryFn?: () => unknown }) => {
+    // 이 화면에는 useQuery 가 둘이다(목록·수신자). queryKey 로 갈라 담지 않으면 마지막 것만
+    // 남아 목록 요청을 검사할 수 없다.
+    mocks.queries[String(options.queryKey?.[0])] = options;
+    return {
+      data: { list: [], total: 0, totalPage: 1 },
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mocks.refetch,
+      isFetching: false,
+    };
+  },
 }));
 
 vi.mock('@/services/foundation/operation/SmsAdminService', () => ({
   smsAdminService: {
-    getSmsList: vi.fn(),
+    getSmsList: mocks.getSmsList,
     getSmsRecipients: vi.fn(),
     sendSms: mocks.sendSms,
   },
@@ -58,6 +68,56 @@ async function openSmsForm(user: ReturnType<typeof userEvent.setup>) {
   const submit = scope.getByRole('button', { name: /발송/ });
   return { recipient, content, submit, form: submit.closest('form')! };
 }
+
+/**
+ * [2026-08-29] 조회 조건이 서버까지 실제로 전달된다.
+ *
+ * 종전에는 키워드만 보냈다. 서버의 SmsRepositoryImpl.searchExpression 은 조건이
+ * '0'(수신전화번호)·'1'(전송내용) 이 아니면 null(= 필터 없음)을 돌려주므로, 무엇을
+ * 입력해도 전체 목록이 그대로 나왔고 화면은 그것을 검색 결과처럼 보여 줬다. 관리자는
+ * "그 번호로 보낸 이력이 이만큼" 이라고 잘못 읽는다.
+ *
+ * 라벨도 실제 축과 달랐다 — 서버가 번호로 거르는 축은 **수신**전화번호이고 발신번호로
+ * 거르는 경로는 없는데 화면은 '발신번호 · 내용' 이라고 말했다.
+ */
+describe('SMS 조회 조건 전달', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getSmsList.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
+  });
+
+  it('검색어와 함께 서버가 해석하는 조회 조건을 보낸다', async () => {
+    const user = userEvent.setup();
+    render(<SmsAdminClient initialSmsList={null} />);
+
+    await user.type(screen.getByRole('textbox', { name: '문자 발송 이력 검색어' }), '안내');
+    await act(async () => { await mocks.queries['admin-sms']?.queryFn?.(); });
+
+    expect(mocks.getSmsList).toHaveBeenCalledWith(
+      expect.objectContaining({ searchCondition: '1', searchKeyword: '안내' }),
+    );
+  });
+
+  it('수신번호 축을 고르면 그 축으로 보낸다', async () => {
+    const user = userEvent.setup();
+    render(<SmsAdminClient initialSmsList={null} />);
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: '문자 발송 이력 검색 조건' }), '0');
+    await user.type(screen.getByRole('textbox', { name: '문자 발송 이력 검색어' }), '010');
+    await act(async () => { await mocks.queries['admin-sms']?.queryFn?.(); });
+
+    expect(mocks.getSmsList).toHaveBeenCalledWith(
+      expect.objectContaining({ searchCondition: '0', searchKeyword: '010' }),
+    );
+  });
+
+  it('화면이 서버에 없는 검색 축을 약속하지 않는다', () => {
+    render(<SmsAdminClient initialSmsList={null} />);
+    // 발신번호로 거르는 경로가 서버에 없다 — 있는 것처럼 말하지 않는다.
+    expect(screen.queryByText(/발신번호/)).toBeNull();
+  });
+});
 
 describe('SmsAdminClient send validation', () => {
   beforeEach(() => {
