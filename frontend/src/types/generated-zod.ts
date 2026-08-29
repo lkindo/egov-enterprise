@@ -3969,9 +3969,14 @@ export type ApiResponseAttachmentIntegrityReport = z.infer<typeof ApiResponseAtt
 // AttachmentIntegrityReport Schema
 // ==========================================================================
 export const AttachmentIntegrityReportSchema = z.object({
-  checked: z.number().optional(),
-  missing: z.number().optional(),
-  samples: z.array(z.string()).optional(),
+  checked: z.number(),
+  missing: z.number(),
+  samples: z.array(z.string()),
+  storageRoot: z.string(),
+  storedFilesChecked: z.number(),
+  orphanCandidates: z.number(),
+  undecidable: z.number(),
+  orphanSamples: z.array(z.string()),
   healthy: z.boolean().optional(),
 });
 export type AttachmentIntegrityReport = z.infer<typeof AttachmentIntegrityReportSchema>;
