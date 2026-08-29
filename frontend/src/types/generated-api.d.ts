@@ -6092,10 +6092,10 @@ export interface components {
             userNm?: string;
         };
         TemplateDto: {
-            tmpltId?: string;
-            tmpltNm?: string;
-            tmpltPath?: string;
-            tmpltSeCd?: string;
+            tmpltId: string;
+            tmpltNm: string;
+            tmpltPath: string;
+            tmpltSeCd: string;
             useYn: string;
             frstRgtrId?: string;
             /** Format: date-time */

@@ -29,6 +29,8 @@ import nuri.business.service.group.dto.GroupManageDto;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.popup.dto.PopupDto;
+import nuri.business.domain.template.Template;
+import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.user.dto.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -100,7 +102,13 @@ class InputContractMirrorLinterTest {
             new LengthBinding(BoardMaster.class, BoardMasterDto.class,
                     List.of("bbsId", "bbsTtl", "bbsExpln", "bbsTypeCd", "bbsAtrbCd",
                             "ansPsbltyYn", "fileAtchPsbltyYn", "tmpltId", "useYn", "blogYn",
-                            "ansYn", "stsfdgYn")));
+                            "ansYn", "stsfdgYn")),
+            // [2026-08-29 표적 확장] tb_tmplt_info 는 다섯 컬럼이 전부 NOT NULL 인데 DTO 는
+            //   useYn 하나만 제약하고 있었다. 특히 tmpltId 는 PK 이자 NOT NULL 이고 생성 전략이
+            //   없어 클라이언트가 보내야 하는데, 등록 폼이 그 값을 묻지도 않아 **등록이 언제나
+            //   실패**했다. 길이·필수를 요청 단계에서 요구하게 하고 그 대응을 여기서 동결한다.
+            new LengthBinding(Template.class, TemplateDto.class,
+                    List.of("tmpltId", "tmpltNm", "tmpltSeCd", "tmpltPath", "useYn")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
@@ -117,7 +125,7 @@ class InputContractMirrorLinterTest {
             new EnumBinding(BoardMasterDto.class, "ansYn", List.of("Y", "N")),
             new EnumBinding(BoardMasterDto.class, "stsfdgYn", List.of("Y", "N")));
 
-    private static final int MIN_LENGTH_FIELDS = 61;
+    private static final int MIN_LENGTH_FIELDS = 66;
     private static final int MIN_ENUM_FIELDS = 13;
 
     @Test

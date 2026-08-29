@@ -18,6 +18,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import nuri.business.support.ControllerTestSupport;
 
 @WebMvcTest(TemplateApiController.class)
@@ -45,11 +50,42 @@ class TemplateApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser(role = "ADMIN")
     @DisplayName("템플릿 등록 테스트")
     void insertTmplatInfoTest() throws Exception {
+        // [2026-08-29] tb_tmplt_info 는 다섯 컬럼이 전부 NOT NULL 이다. 종전 payload 는
+        //   tmpltSeCd·tmpltPath 를 빼고도 통과했는데, 그 요청은 운영에서 DB 제약 위반으로 죽었다.
         mockMvc.perform(post("/api/v1/admin/system/templates")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        // useYn 은 @NotBlank/@Size(1) — @Valid 통과를 위해 유효값 포함(오타 tmplatNm→tmpltNm 정정).
-                        .content("{\"tmpltId\":\"T1\", \"tmpltNm\":\"Test Template\", \"useYn\":\"Y\"}"))
+                        .content("{\"tmpltId\":\"T1\", \"tmpltNm\":\"Test Template\","
+                                + " \"tmpltSeCd\":\"TMPT01\", \"tmpltPath\":\"/t.html\", \"useYn\":\"Y\"}"))
                 .andExpect(status().isOk());
+    }
+
+    /**
+     * 서버가 저장할 수 없는 요청은 <b>요청 단계에서</b> 거절해야 한다.
+     *
+     * <p>종전에는 이런 요청이 검증을 통과해 DB 제약 위반(500)까지 갔고, 화면에는 필드별 사유
+     * 없이 "등록에 실패했습니다" 만 떴다. 400 + 필드 오류라야 사용자가 무엇을 고칠지 안다.
+     *
+     * <p>⚠ 빠뜨린 필드를 <b>하나씩</b> 검사한다. 여러 개를 한꺼번에 빼면 아무 하나 때문에 400 이
+     * 나므로, 나머지 제약을 걷어도 테스트가 green 이라 red 를 증명하지 못한다(실측으로 확인).
+     */
+    @ParameterizedTest(name = "{0} 를 빠뜨리면 400")
+    @ValueSource(strings = {"tmpltId", "tmpltNm", "tmpltSeCd", "tmpltPath", "useYn"})
+    @WithMockCustomUser(role = "ADMIN")
+    @DisplayName("NOT NULL 컬럼을 빠뜨린 등록은 400으로 거절한다 — 500까지 가지 않는다")
+    void insertTmplatInfoRejectsIncompletePayload(String omitted) throws Exception {
+        Map<String, String> payload = new LinkedHashMap<>(Map.of(
+                "tmpltId", "T1",
+                "tmpltNm", "Test Template",
+                "tmpltSeCd", "TMPT01",
+                "tmpltPath", "/t.html",
+                "useYn", "Y"));
+        payload.remove(omitted);
+
+        mockMvc.perform(post("/api/v1/admin/system/templates")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(payload)))
+                .andExpect(status().isBadRequest());
     }
 }
