@@ -7,8 +7,12 @@ import { fileURLToPath } from 'node:url';
 import { validateDependencySubmissionContract } from './dependency-submission-contract.mjs';
 import {
   buildRetryDelays,
+
+  classifySnapshotWarning,
   comparisonUrl,
   isPublisherConfiguredOnBase,
+
+  resolutionGuidance,
   waitForCompleteSnapshots,
 } from './dependency-snapshot-readiness.mjs';
 
@@ -80,6 +84,15 @@ test('contract turns red for write-token PR execution, publisher execution, scop
       ciContent: current.ciContent.replace(
         '        run: node scripts/dependency-snapshot-readiness.mjs',
         '        run: echo node scripts/dependency-snapshot-readiness.mjs',
+      ),
+    },
+    // [2026-08-29] ref 가드를 되돌리면 workflow_dispatch 로 임의 브랜치의 빌드가
+    // contents:write 로 돌 수 있다 — 워크플로 주석이 약속한 경계가 다시 비집행이 된다.
+    {
+      ...current,
+      producerContent: current.producerContent.replace(
+        "    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'",
+        "    if: github.event_name != 'pull_request'",
       ),
     },
   ];
@@ -208,4 +221,151 @@ test('retry schedule reaches the deadline exactly and invalid inputs fail before
     /HEAD_SHA.*40-hex/i,
   );
   assert.equal(called, false);
+});
+
+/**
+ * [2026-08-29] 실패 메시지가 "무엇을 기다려야 하는지" 를 말하게 한다 (GAP-DEP-001).
+ *
+ * 종전 메시지는 디코딩된 경고 원문만 흘렸다. 그래서 base 부재인지 head 부재인지, 기다리면
+ * 해소되는지, 무엇을 실행해야 하는지가 전부 사람의 추적 과제였다 — 실측으로 두 번(8c850384
+ * 의 base 부재, 4772119bd 의 head 부재) 병합이 막혔고 둘 다 대기로는 해소되지 않았다.
+ *
+ * ⚠ 이 계약이 지키는 경계: 분류는 **어느 쪽 SHA 가 비었는가**까지만 단정한다. head 부재의
+ *   하위 원인 7가지는 글자 그대로 같은 경고를 내므로, 안내는 원인을 지어내지 않고 가르는
+ *   명령을 준다. 알 수 없는 경고를 아는 척 분류하면 엉뚱한 곳을 고치게 되므로 unknown 은
+ *   반드시 원문을 그대로 보여 준다.
+ */
+test('snapshot warnings classify into the axis that is actually missing', () => {
+  // GitHub 이 실제로 내보내는 **완전한** 원문 2종. 종전 known-gaps 인용은 앞뒤가 잘린
+  // 부분 문자열이었다("The number of ..." 접두와 "You may see ..." 접미가 빠져 있었다) —
+  // 잘린 인용에만 맞춘 정규식은 실제 헤더를 못 잡는다.
+  assert.equal(
+    classifySnapshotWarning(
+      'The number of snapshots compared for the base SHA (0) and the head SHA (1) do not match.'
+      + ' You may see unexpected additions in the diff.',
+    ).kind,
+    'base-missing',
+  );
+  assert.equal(
+    classifySnapshotWarning(
+      'No snapshots were found for the head SHA 63d50c7154fc8bfb6ce9173f0d0edfe5f31d810f.',
+    ).kind,
+    'head-missing',
+  );
+  // head 부재는 **두 형태 중 하나로** 온다 — 전용 문구와 count 문구 어느 쪽이 오는지는
+  // 비공개 서버 로직이라 갈리지 않는다. 두 경로 모두 같은 축으로 받아야 한다.
+  assert.equal(
+    classifySnapshotWarning(
+      'The number of snapshots compared for the base SHA (1) and the head SHA (0) do not match.'
+      + ' You may see unexpected removals in the diff.',
+    ).kind,
+    'head-missing',
+  );
+  // 종전 원장이 인용한 잘린 형태도 계속 받는다(회귀 방지).
+  assert.equal(
+    classifySnapshotWarning('snapshots compared for the base SHA (0) and the head SHA (1) do not match').kind,
+    'base-missing',
+  );
+
+  // 개수 형태의 나머지 조합.
+  assert.equal(
+    classifySnapshotWarning('snapshots compared for the base SHA (1) and the head SHA (0) do not match').kind,
+    'head-missing',
+  );
+  assert.equal(
+    classifySnapshotWarning('snapshots compared for the base SHA (0) and the head SHA (0) do not match').kind,
+    'both-missing',
+  );
+  // 양쪽 다 있는데 개수가 다르면 부재가 아니다 — correlator/스코프 축이므로 다른 안내가 나가야 한다.
+  assert.equal(
+    classifySnapshotWarning('snapshots compared for the base SHA (2) and the head SHA (1) do not match').kind,
+    'count-mismatch',
+  );
+
+  // 모르는 것을 아는 척하지 않는다.
+  const unknown = classifySnapshotWarning('some future wording GitHub has not used yet');
+  assert.equal(unknown.kind, 'unknown');
+  assert.equal(unknown.warning, 'some future wording GitHub has not used yet');
+  assert.equal(classifySnapshotWarning('').kind, 'none');
+});
+
+test('guidance names the resolution command and whether waiting helps', () => {
+  const base = resolutionGuidance(
+    classifySnapshotWarning('snapshots compared for the base SHA (0) and the head SHA (1) do not match'),
+    inputs,
+  );
+  assert.match(base, /기다려도 해소되지 않습니다/);
+  assert.match(base, /gh workflow run dependency-submission\.yml --ref main/);
+
+  const head = resolutionGuidance(
+    classifySnapshotWarning('No snapshots were found for the head SHA abc123.'),
+    inputs,
+  );
+  // head 부재는 PR 직후 한동안 정상이므로 "기다려도 소용없다" 고 단정하면 거짓이 된다.
+  assert.match(head, /정상입니다/);
+  assert.match(head, /actions\/runs\?head_sha=/);
+  assert.match(head, /action_required/);
+  // ⚠ 안내가 신뢰 경계를 깨는 해소책을 권하면 안 된다. PR 브랜치를 producer 에 dispatch 하면
+  //   그 브랜치의 Gradle 빌드가 contents:write 로 돈다 — 이 워크플로가 막으려는 바로 그것이다.
+  //   (실측: 조사 단계에서 그 해소책이 후보로 올라왔고, 채택했다면 게이트가 스스로 우회로를
+  //    가르치는 문서가 됐을 것이다.)
+  assert.doesNotMatch(head, /gh workflow run dependency-submission\.yml --ref (?!main)/);
+  assert.match(head, /신뢰 경계/);
+
+  // unknown 은 원문을 그대로 싣고 특정 원인을 지목하지 않는다.
+  const unknown = resolutionGuidance(classifySnapshotWarning('brand new wording'), inputs);
+  assert.match(unknown, /brand new wording/);
+  assert.doesNotMatch(unknown, /--ref main/);
+});
+
+test('the fail-closed path emits guidance while keeping the frozen error shape', async () => {
+  const logs = [];
+  const fetchImpl = async (url) => {
+    if (url.includes('/contents/')) return response(200);
+    return response(200, 'snapshots compared for the base SHA (0) and the head SHA (1) do not match');
+  };
+
+  await assert.rejects(
+    waitForCompleteSnapshots(inputs, {
+      maxWaitSeconds: 30,
+      fetchImpl,
+      sleep: async () => {},
+      log: message => logs.push(message),
+    }),
+    // 예외 메시지 형식은 계약이 정규식으로 고정한다 — 안내를 여기에 섞으면 red 다.
+    /completeness was not proven within 30s.*base SHA \(0\)/,
+  );
+
+  const guidance = logs.filter(line => /gh workflow run dependency-submission\.yml --ref main/.test(line));
+  // 첫 관측 1회 + 실패 직전 1회. 시도마다 반복하면 마지막 안내가 스크롤 밖으로 밀린다.
+  assert.equal(guidance.length, 2, `안내가 ${guidance.length}회 나왔다 — 시도마다 반복되고 있다`);
+  const attempts = logs.filter(line => /is not complete yet/.test(line));
+  assert.ok(attempts.length > guidance.length, '안내가 시도 수만큼 반복되고 있다');
+});
+
+test('a terminal API error still carries the snapshot diagnosis seen earlier', async () => {
+  const logs = [];
+  let compareCalls = 0;
+  const fetchImpl = async (url) => {
+    if (url.includes('/contents/')) return response(200);
+    compareCalls += 1;
+    // 첫 시도는 head 부재 경고, 마지막 시도는 API 오류로 끝난다.
+    return compareCalls === 1
+      ? response(200, 'No snapshots were found for the head SHA abc123.')
+      : response(503);
+  };
+
+  await assert.rejects(
+    waitForCompleteSnapshots(inputs, {
+      maxWaitSeconds: 30,
+      fetchImpl,
+      sleep: async () => {},
+      log: message => logs.push(message),
+    }),
+    // 예외는 API 오류만 말한다 — 그래서 진단이 로그에 남아야 한다.
+    /HTTP 503/,
+  );
+
+  const joined = logs.join('\n');
+  assert.match(joined, /actions\/runs\?head_sha=/, 'API 오류로 끝나면서 앞서 본 진단이 사라졌다');
 });
