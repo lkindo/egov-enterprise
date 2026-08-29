@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -136,6 +137,11 @@ class SatisfactionApiControllerTest {
      * 준 게시글이 똑같이 보였다</b>.
      *
      * <p>전용 DTO 로 이행하면서 제약 자체가 사라졌으므로 계약을 뒤집는다.
+     *
+     * <p>⚠ <b>{@code jsonPath(...).doesNotExist()} 로 검사하지 않는다</b> — Spring 의 그 matcher 는
+     * <b>JSON null 에도 통과</b>해서, 서버가 {@code "average":null} 을 실어도 green 이 된다.
+     * 실제로 그 눈먼 단언 때문에 "키가 없다" 고 믿었고, 소비자가 {@code === undefined} 로
+     * 검사하다가 CI e2e 에서 터졌다({@code Cannot read properties of null}). 원문으로 못박는다.
      */
     @Test
     @DisplayName("평균 - 평가가 없으면 null 이다 (0 과 구분한다)")
@@ -144,7 +150,8 @@ class SatisfactionApiControllerTest {
 
         mockMvc.perform(get("/api/v1/boards/BBS_01/posts/1/satisfactions/average"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.average").doesNotExist());
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("average"))));
     }
 
     @Test
