@@ -578,7 +578,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               저장소 → DB 역방향
             </p>
             <p className="text-xs font-medium text-muted-foreground break-all">
-              훑은 저장소: <span className="font-mono">{integrityReport.storageRoot}</span>
+              훑은 범위: <span className="font-mono">{integrityReport.storageRoot}</span>
             </p>
             {integrityReport.orphanCandidates === 0 && integrityReport.undecidable === 0 ? (
               <p role="status" className="text-xs font-bold text-success-emphasis">

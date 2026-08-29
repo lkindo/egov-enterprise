@@ -137,7 +137,8 @@ class AttachmentIntegrityServiceTest {
 
     /** 저장소 열거를 흉내 낸다. 호출마다 새 스트림을 준다 — 스트림은 한 번만 소비된다. */
     private void givenStorage(java.util.Map<String, List<String>> tree) {
-        when(fileStorageService.load(eq(""))).thenReturn(java.nio.file.Path.of("/srv/uploads"));
+        when(fileStorageService.load(eq("general")))
+                .thenReturn(java.nio.file.Path.of("/srv/uploads/general"));
         when(fileStorageService.loadAll(any())).thenAnswer(invocation -> {
             String path = invocation.getArgument(0);
             List<String> entries = tree.get(path);
@@ -171,7 +172,10 @@ class AttachmentIntegrityServiceTest {
         assertThat(report.undecidable()).isZero();
         // 어느 트리를 본 결과인지 없으면 보고서를 해석할 수 없다 — 설정 기본값이 상대 경로다.
         // 구분자는 플랫폼마다 다르므로 Path 로 정규화해 비교한다(CI 는 리눅스, 개발은 Windows).
-        assertThat(report.storageRoot()).isEqualTo(java.nio.file.Path.of("/srv/uploads").toString());
+        // 훑은 범위를 사실대로 말해야 한다 — 루트가 아니라 general/ 이다. 루트만 적으면
+        // 보고서가 훑지 않은 곳까지 훑었다고 말하는 셈이다.
+        assertThat(report.storageRoot())
+                .isEqualTo(java.nio.file.Path.of("/srv/uploads/general").toString());
     }
 
     @Test
@@ -256,7 +260,7 @@ class AttachmentIntegrityServiceTest {
     @DisplayName("저장소를 열거하지 못하면 0 건이라 말하지 않고 모른다고 남긴다")
     void enumerationFailureIsReportedNotSilenced() {
         givenRecords(List.of());
-        when(fileStorageService.load(eq(""))).thenReturn(java.nio.file.Path.of("/srv/uploads"));
+        when(fileStorageService.load(eq("general"))).thenReturn(java.nio.file.Path.of("/srv/uploads/general"));
         when(fileStorageService.loadAll(any())).thenThrow(
                 new nuri.foundation.core.exception.BusinessException(
                         nuri.foundation.core.exception.CommonErrorCode.INTERNAL_SERVER_ERROR));
@@ -274,7 +278,7 @@ class AttachmentIntegrityServiceTest {
     void closesEnumerationStreams() {
         givenRecords(List.of());
         java.util.concurrent.atomic.AtomicInteger closed = new java.util.concurrent.atomic.AtomicInteger();
-        when(fileStorageService.load(eq(""))).thenReturn(java.nio.file.Path.of("/srv/uploads"));
+        when(fileStorageService.load(eq("general"))).thenReturn(java.nio.file.Path.of("/srv/uploads/general"));
         when(fileStorageService.loadAll(any())).thenAnswer(invocation -> {
             String path = invocation.getArgument(0);
             List<String> entries = "general".equals(path) ? List.of("1") : List.of("a.png");
@@ -304,5 +308,43 @@ class AttachmentIntegrityServiceTest {
                 .delete(any(), any());
         org.mockito.Mockito.verify(fileStorageService, org.mockito.Mockito.never())
                 .delete(any());
+    }
+
+    /**
+     * [2026-08-30] 디렉터리 하나가 열거되지 않아도 <b>보고서 전체가 죽지 않아야</b> 한다.
+     *
+     * <p>스캔 도중 지워졌거나 권한이 없을 수 있다. 그 예외가 밖으로 나가면 이미 끝난
+     * <b>정방향 결과까지 통째로 버려진다</b> — 진단 도구가 진단 대상 때문에 죽는 것이다.
+     */
+    @Test
+    @DisplayName("디렉터리 하나의 열거 실패가 보고서 전체를 죽이지 않는다")
+    void perDirectoryEnumerationFailureDoesNotAbortTheReport() {
+        givenRecords(List.of(detail(9L, 1, "general/9", "ok.png")));
+        when(fileStorageService.exists(any(), any())).thenReturn(true);
+        when(fileStorageService.load(eq("general")))
+                .thenReturn(java.nio.file.Path.of("/srv/uploads/general"));
+        when(fileStorageService.loadAll(any())).thenAnswer(invocation -> {
+            String path = invocation.getArgument(0);
+            if ("general".equals(path)) return java.util.stream.Stream.of(
+                    java.nio.file.Path.of("1"), java.nio.file.Path.of("2"));
+            if ("general/1".equals(path)) {
+                throw new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.INTERNAL_SERVER_ERROR);
+            }
+            return java.util.stream.Stream.of(java.nio.file.Path.of("b.png"));
+        });
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any()))
+                .thenReturn(List.of(key(2L, "general/2", "b.png")));
+
+        AttachmentIntegrityReport report = service.scan();
+
+        // 정방향 결과가 살아 있다.
+        assertThat(report.checked()).isEqualTo(1);
+        // 못 훑은 디렉터리는 판정 불가로 세고 나머지는 계속 훑는다.
+        assertThat(report.undecidable()).isEqualTo(1);
+        assertThat(report.storedFilesChecked()).isEqualTo(1);
+        assertThat(report.orphanCandidates()).isZero();
+        assertThat(report.orphanSamples()).anySatisfy(sample ->
+                assertThat(sample).contains("열거 불가(디렉터리)").contains("general/1"));
     }
 }

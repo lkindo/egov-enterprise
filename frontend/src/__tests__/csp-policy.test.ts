@@ -66,6 +66,42 @@ describe('CSP nonce 계약', () => {
   });
 
   /**
+   * [2026-08-30 측정 결과] `style-src` 를 elem/attr 로 쪼개도 지금은 얻는 것이 없다.
+   *
+   * GAP-FE-001 이 남긴 다음 행동은 "sonner·framer-motion 의 런타임 style 주입을 측정한 뒤
+   * 세분화를 검토한다" 였다. 설치본 소스로 측정한 결과는 <b>비대칭</b>이다.
+   *
+   * - **framer-motion 12.43.0**: `document.createElement("style")` 직후
+   *   `if (nonce) style.nonce = nonce` 가 있다 — **nonce 를 지원한다.** 주입은
+   *   AnimatePresence popLayout 경로에 한정된다.
+   * - **sonner 2.0.7**: 모듈 최상위에서 `__insertCSS(...)` 를 2회 호출해 전체 스타일시트를
+   *   `<style>` 로 삽입하는데, 패키지 전체에 `nonce` 문자열이 **0건**이다 — 끌 수도, nonce 를
+   *   붙일 수도 없다.
+   *
+   * 따라서 `style-src-elem` 에서 `'unsafe-inline'` 을 빼면 **토스트가 전부 무스타일이 된다.**
+   * `style-src-attr` 은 React style prop 때문에 어차피 `'unsafe-inline'` 이 필요하다.
+   * 즉 쪼개도 양쪽 다 `'unsafe-inline'` 이라 보안 이득이 0 이고, 지시문만 둘로 늘어 정책이
+   * 어긋날 자리가 생긴다.
+   *
+   * 이 계약은 **현상 유지를 못 박는 것이 아니라 재검토를 강제하는 것**이다. sonner 가 nonce 를
+   * 지원하거나 다른 토스트로 바꾸면 이 단언이 red 가 되고, 그때 측정을 다시 하면 된다.
+   */
+  it('style-src 를 elem/attr 로 쪼개지 않는다 — 측정 결과 이득이 없다', () => {
+    const body = proxySource.slice(proxySource.indexOf('function buildAppCsp'));
+
+    expect(
+      body,
+      'style-src-elem 이 도입됐습니다 — sonner 가 nonce 없는 <style> 을 주입하므로(2.0.7 실측) ' +
+        "elem 에서 'unsafe-inline' 을 빼면 토스트가 무스타일이 됩니다. 측정을 다시 하고 이 계약을 갱신하십시오.",
+    ).not.toContain('style-src-elem');
+    expect(
+      body,
+      'style-src-attr 이 도입됐습니다 — React style prop 때문에 attr 은 어차피 unsafe-inline 이 ' +
+        '필요하므로, 쪼개면 지시문만 늘고 보안 이득이 없습니다.',
+    ).not.toContain('style-src-attr');
+  });
+
+  /**
    * [2026-08-29] img-src 에 외부 호스트를 두지 않는다.
    *
    * 종전에는 `https://images.unsplash.com` 이 열려 있었는데, 그 유일한 소비자는 게시판

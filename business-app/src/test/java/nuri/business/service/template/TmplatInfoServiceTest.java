@@ -74,7 +74,16 @@ class TmplatInfoServiceTest {
     @DisplayName("템플릿 등록")
     void insertTmplatInfo() {
         // given
-        TemplateDto tmplatDto = TemplateDto.builder().tmpltNm("New Template").build();
+        // [2026-08-29] 종전 fixture 에는 tmpltId 가 없었다. 리포지토리가 mock 이라 NOT NULL PK 를
+        //   강제하지 않아 green 이었지만, 운영에서는 같은 요청이 DB 제약 위반으로 죽었다.
+        //   저장 계약을 실제 스키마와 같은 모양으로 맞춘다.
+        TemplateDto tmplatDto = TemplateDto.builder()
+                .tmpltId("TMPLT_NEW")
+                .tmpltNm("New Template")
+                .tmpltSeCd("TMPT01")
+                .tmpltPath("/src/templates/new.html")
+                .useYn("Y")
+                .build();
 
         // when
         tmplatInfoService.insertTmplatInfo(tmplatDto);
