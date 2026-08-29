@@ -413,6 +413,30 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(wizard).toContain('메뉴 관리에서 활성화');
   });
 
+  /**
+   * 집행자 없는 게시판 옵션을 묻지 않는다.
+   *
+   * DOM 부재는 자매 파일(BoardMakerWizard.accessibility.test.tsx)이 잡는다. 여기서는 **왜**
+   * 걷었는지를 고정한다 — 두 값이 조건문에 쓰이지 않는다는 사실이 그 근거이므로, 집행이
+   * 생기면 이 계약이 red 가 되어 토글을 되살릴 시점을 알려 준다.
+   */
+  it('댓글·첨부 플래그의 집행자가 여전히 없다 — 생기면 이 계약을 갱신하고 토글을 되살려야 한다', () => {
+    const detail = stripComments(
+      readRepo('frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'),
+    );
+    expect(detail, '게시글 상세에서 CommentSection 을 찾지 못했다 — 계약이 vacuous 하다').toContain('<CommentSection');
+    // 렌더 자체가 무조건이다. 게이트가 생기면 이 단언이 red 가 된다.
+    expect(detail).not.toMatch(/ansPsbltyYn\s*[=!]==?/);
+    expect(detail).not.toMatch(/ansPsbltyYn\s*&&/);
+
+    // 서버도 게시판 마스터를 보지 않는다.
+    const commentService = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/service/comment/CommentService.java'),
+    );
+    expect(commentService, 'CommentService 를 찾지 못했다 — 계약이 vacuous 하다').toContain('class CommentService');
+    expect(commentService).not.toContain('BoardMaster');
+  });
+
   it('예시 데이터로 그린 미리보기를 실시간 시스템이라 부르지 않는다', () => {
     expect(wizard).not.toContain('LIVE_SYSTEM_PREVIEW');
     const preview = stripComments(
