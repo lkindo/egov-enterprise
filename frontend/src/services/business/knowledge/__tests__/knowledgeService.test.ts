@@ -202,11 +202,24 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
   });
 
   describe('getHotArticles — 인기 게시물', () => {
-    it('조회수 내림차순 5건을 요청하며 page 가 없으므로 pageIndex 는 붙지 않는다', async () => {
+    /*
+     * [2026-08-29] 정렬 파라미터를 `sort` 에서 `orderBy` 로 바꿨다.
+     *
+     * 종전 계약은 `sort: 'inqCnt,desc'` 를 보내는 것을 고정했고 테스트 이름도 '조회수
+     * 내림차순' 이었지만, **서버는 그 파라미터를 읽지 않는다.** 게시판 목록 API 가 해석하는
+     * 정렬 키는 `orderBy` 이고 값 도메인은 date·views·comments 다(BoardSearchCondition:16,
+     * BoardRepositoryImpl 의 switch). 그래서 조회수 정렬이 걸린 적이 없고 결과는 기본
+     * 정렬(sortOrdr desc) 상위 5건이었다 — 화면은 그것을 순위 숫자·조회수와 함께
+     * '인기 문서 / 조회수가 높은 문서' 라고 불렀다.
+     *
+     * 계약이 서버가 읽지 않는 이름을 고정하고 있었으므로 그 이름을 바꿔도 red 가 나지
+     * 않았어야 하는데, 오히려 이 red 가 "계약이 무엇을 고정하고 있었는지" 를 드러냈다.
+     */
+    it('서버가 해석하는 정렬 키로 조회수 상위 5건을 요청한다', async () => {
       await knowledgeService.getHotArticles();
 
       expect(client.get).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
-        params: { size: 5, sort: 'inqCnt,desc', recordCountPerPage: 5 },
+        params: { size: 5, orderBy: 'views', recordCountPerPage: 5 },
       });
     });
 
@@ -215,7 +228,7 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
 
       expect(client.get).toHaveBeenCalledWith(
         `boards/${BBS.COMMUNITY}`,
-        expect.objectContaining({ params: expect.objectContaining({ sort: 'inqCnt,desc' }) }),
+        expect.objectContaining({ params: expect.objectContaining({ orderBy: 'views' }) }),
       );
     });
 
