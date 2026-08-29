@@ -26,7 +26,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
         List<WebLog> content = queryFactory
                 .selectFrom(QWebLog.webLog)
                 .where(
-                        urlLike(searchWrd),
+                        searchWordLike(searchWrd),
                         occrrncDeBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -37,15 +37,24 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
                 .select(QWebLog.webLog.count())
                 .from(QWebLog.webLog)
                 .where(
-                        urlLike(searchWrd),
+                        searchWordLike(searchWrd),
                         occrrncDeBetween(searchBgnDe, searchEndDe));
 
         return PageableExecutionUtils.getPage(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
                 countQuery::fetchOne);
     }
 
-    private BooleanExpression urlLike(String searchWrd) {
-        return StringUtils.hasText(searchWrd) ? QWebLog.webLog.url.contains(searchWrd) : null;
+    /**
+     * 검색어 술어.
+     *
+     * <p>[2026-08-29] 종전에는 {@code url} 만 검색했다. 화면은 'URL · IP' 로 두 축을 안내하고
+     * 표에 '요청자IP' 열을 함께 보여 주므로, 관리자가 IP 를 붙여 넣으면 언제나 0건이었다.
+     * 안내한 두 축을 그대로 검색한다.
+     */
+    private BooleanExpression searchWordLike(String searchWrd) {
+        if (!StringUtils.hasText(searchWrd)) return null;
+        return QWebLog.webLog.url.contains(searchWrd)
+                .or(QWebLog.webLog.dmndUserIpAddr.contains(searchWrd));
     }
 
     private BooleanExpression occrrncDeBetween(String searchBgnDe, String searchEndDe) {
