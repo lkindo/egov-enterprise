@@ -212,7 +212,7 @@ const SelectAddressBookDetailClient = () => {
                                 </div>
                                 <div className="space-y-3">
                                     <Label htmlFor="rlsScopeCd" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
-                                        공개 범위 (수정 불가)
+                                        공개 범위 (기록용 · 접근에 반영되지 않음)
                                     </Label>
                                     <Input
                                         id="rlsScopeCd"

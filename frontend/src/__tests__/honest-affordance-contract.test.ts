@@ -519,6 +519,34 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 'low' 로 보였다. 심각도를 판단해 준 적이 없는데 판단한 것처럼 보여 주면 관리자가 그 열로
    * 분류(triage)한다.
    */
+  /**
+   * 주소록의 '공개 범위' 가 접근을 바꾸지 않는다는 사실을 화면과 서버에 함께 고정한다.
+   *
+   * 서버가 이 값을 무시하는 것은 사고가 아니라 **의도된 결정**이고 사유도 코드에 남아 있다
+   * (코드값이 'P'/'G'/'PUBLIC'/'COMPANY' 로 혼재해 표준화되지 않았고, 상세만 열면 열거
+   * 취약점이 된다). 그런데 화면은 '공개 범위' 열과 '부서 및 외부 협업을 위한 통합 연락처'
+   * 라는 머리말로 조직 공유를 약속했다. 두 방향 모두 위험하다 — 공유됐다고 믿고 민감한
+   * 연락처를 넣거나, 공유했다고 믿고 상대가 못 보는 것을 모른다.
+   */
+  it('주소록이 집행되지 않는 공개 범위로 공유를 약속하지 않는다', () => {
+    const list = stripComments(
+      readSrc('app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx'),
+    );
+    expect(list, '주소록 목록을 찾지 못했다 — 계약이 vacuous 하다').toContain('rlsScopeCd');
+    expect(list).not.toContain('부서 및 외부 협업');
+    expect(list).toContain('공개 범위(미적용)');
+
+    // 목록 질의가 소유자 스코프를 유지하는지 — 공개 범위가 술어에 들어오면 red 다.
+    const repo = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/domain/addressbook/AddressBookRepositoryImpl.java'),
+    );
+    expect(repo, '주소록 저장소를 찾지 못했다 — 계약이 vacuous 하다').toContain('wrterIdEq');
+    expect(
+      repo,
+      '공개 범위가 조회 술어에 들어왔다 — 집행이 생겼으니 화면 문구를 되살리고 이 계약을 갱신하라.',
+    ).not.toContain('rlsScopeCd');
+  });
+
   it('알림 표가 서버에 없는 우선순위를 보여 주지 않는다', () => {
     const hub = stripComments(readSrc('app/components/ui/smart-notification-hub.tsx'));
     expect(hub, '알림 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('SmartNotificationHub');

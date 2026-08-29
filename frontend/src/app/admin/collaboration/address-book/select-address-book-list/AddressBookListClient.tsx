@@ -143,7 +143,15 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  {
  // 목록 응답(AddressBookDto)에는 연락처·이메일이 존재하지 않는다(구성원은 상세 조회에서만 내려온다).
  // 항상 비어 있던 두 열을 제거하고 실제로 내려오는 값만 노출한다.
- header: '공개 범위',
+ /*
+   [2026-08-29] '공개 범위' 가 아니라 '공개 범위(미적용)' 이다.
+   이 값은 저장만 되고 접근을 바꾸지 않는다 — 목록 질의는 소유자(wrterId)로만 스코핑하고
+   상세는 assertOwnerOrAdmin 으로 막는다. 서버가 이 값을 예외로 쓰지 않는 것은 의도된
+   결정이며 사유도 코드에 남아 있다(코드값이 'P'/'G'/'PUBLIC'/'COMPANY' 로 혼재해
+   표준화되지 않았고, 상세만 열면 열거 취약점이 된다 — AddressBookService.getAddressBook).
+   '공개' 라고 적힌 값을 보고 조직에 공유됐다고 믿으면 반대 방향으로도 위험하다.
+ */
+ header: '공개 범위(미적용)',
  accessor: (item) => (
  <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.rlsScopeCd || '-'}</span>
  ),
@@ -189,7 +197,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  return (
  <WorkListPage
  title="통합 주소록 관리"
- description="부서 및 외부 협업을 위한 통합 연락처 목록입니다."
+ description="내가 등록한 연락처 목록입니다. 다른 사용자에게는 공유되지 않습니다."
  breadcrumbItems={[{ label: '협업관리' }, { label: '주소록' }]}
  filterStateKey="collaboration-address-book"
  // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
@@ -240,7 +248,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  headers={[
    { label: '주소록 일련번호', key: 'adbkSn' },
    { label: '주소록 명칭', key: 'adbkNm' },
-   { label: '공개 범위', key: 'rlsScopeCd' },
+   { label: '공개 범위(미적용)', key: 'rlsScopeCd' },
    { label: '등록일자', key: 'crtDt' },
  ]}
  filename="주소록"
