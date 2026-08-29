@@ -16,19 +16,26 @@ interface Notification {
   title: string;
   content: string;
   time: string;
+  /**
+   * 분류. 서버가 저장하는 값이 아니라 **제목 키워드에서 추론**한다
+   * (use-notifications: 제목에 '보안'/'시스템' 포함 여부, 그 밖은 활동).
+   * NotificationDto 에는 분류 필드 자체가 없다.
+   */
   type: 'security' | 'system' | 'message' | 'alert';
-  priority: 'low' | 'medium' | 'high' | 'critical';
   status: 'new' | 'read' | 'archived';
 }
 
 const NOTIFICATION_TABS = [
   { id: 'all', label: '전체 알림' },
   { id: 'unread', label: '읽지 않은 알림' },
-  { id: 'critical', label: '중요 알림' },
+  // [2026-08-29] '중요 알림' → '보안 알림'. 종전 탭은 priority === 'critical' 로 걸렀는데
+  //   그 값은 분류에서 한 번 더 파생된 것이라 결국 분류가 보안인 알림과 완전히 같았다.
+  //   없는 심각도를 만들지 말고 실제로 거르는 축을 그대로 이름에 쓴다.
+  { id: 'security', label: '보안 알림' },
 ] as const;
 
 export function SmartNotificationHub() {
-  const [activeTab, setActiveTab] = useState<'all' | 'critical' | 'unread'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'security' | 'unread'>('all');
   const [searchKeyword, setSearchKeyword] = useState('');
 
   // 실제 알림 API(/notifications)를 헤더 드로어와 동일한 useNotifications 훅으로 연결.
@@ -46,7 +53,11 @@ export function SmartNotificationHub() {
           : n.type === 'SYSTEM' ? 'system'
           : n.type === 'INFO' ? 'alert'
           : 'message',
-        priority: n.type === 'SECURITY' ? 'critical' : n.type === 'SYSTEM' ? 'medium' : 'low',
+        // [2026-08-29] priority 를 걷었다. 서버는 우선순위를 저장하지 않는다
+        //   (NotificationDto: notiSn·notiTtlNm·notiCn·notiDt·notiIvlVal·rcvrId·readYn·linkUrl·crtDt).
+        //   종전 값은 제목 키워드 → 분류 → 우선순위로 **두 단계 파생**한 것이라, 제목에 '보안' 이
+        //   없는 긴급 알림은 언제나 'low' 로 보였다. 심각도를 판단해 준 적이 없는데 판단한 것처럼
+        //   보여 주면 관리자가 그 열로 분류(triage)한다.
         status: n.readYn === 'Y' ? 'read' : 'new',
       })),
     [rawNotifications],
@@ -57,7 +68,7 @@ export function SmartNotificationHub() {
       const matchKeyword = n.title.toLowerCase().includes(searchKeyword.toLowerCase()) || 
                           n.content.toLowerCase().includes(searchKeyword.toLowerCase());
       const matchTab = activeTab === 'all' || 
-                       (activeTab === 'critical' && n.priority === 'critical') ||
+                       (activeTab === 'security' && n.type === 'security') ||
                        (activeTab === 'unread' && n.status === 'new');
       return matchKeyword && matchTab;
     });
@@ -74,16 +85,19 @@ export function SmartNotificationHub() {
       className: 'w-20 text-center'
     },
     {
-      header: '분류',
+      // 헤더에 판정 근거를 밝힌다 — 서버가 분류를 저장하지 않고 제목에서 추론하므로,
+      // 제목에 키워드가 없는 알림은 '활동' 으로 떨어진다. 그 사실을 모르면 관리자가
+      // 이 열로 거르다 놓친다.
+      header: '분류(제목 기준)',
       accessor: (n) => (
         <div className={cn(
-          "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase",
+          "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-tight",
           n.type === 'security' ? "bg-rose-500/10 text-rose-600" :
           n.type === 'system' ? "bg-hub-indigo/10 text-hub-indigo" :
           n.type === 'message' ? "bg-emerald-500/10 text-emerald-600" :
           "bg-amber-500/10 text-amber-600"
         )}>
-          {n.type}
+          {n.type === 'security' ? '보안' : n.type === 'system' ? '시스템' : n.type === 'alert' ? '안내' : '활동'}
         </div>
       ),
       className: 'w-24'
@@ -101,20 +115,6 @@ export function SmartNotificationHub() {
           <p className="text-[11px] font-medium text-muted-foreground truncate max-w-md">{n.content}</p>
         </div>
       )
-    },
-    {
-      header: '우선순위',
-      accessor: (n) => (
-        <span className={cn(
-          "text-[10px] font-black tracking-widest uppercase",
-          n.priority === 'critical' ? "text-rose-600" :
-          n.priority === 'high' ? "text-rose-400" :
-          n.priority === 'medium' ? "text-hub-indigo" : "text-muted-foreground"
-        )}>
-          {n.priority}
-        </span>
-      ),
-      className: 'w-24'
     },
     {
       header: '발생 일시',

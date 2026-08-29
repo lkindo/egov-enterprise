@@ -110,7 +110,12 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   특히 빨간 '스냅샷 롤백' 은 되돌릴 API 가 없는데 파괴적 동작을 예고했다. 함께 사라진
 //   status 리터럴 6건(rose 계열 4·emerald 1·초록 점 1). 신규 status 리터럴 0건
 //   (사전 red 실측: 532 != 538 — 게이트가 직접 532 로 내리라고 지시).
-const BASELINE = 532;
+// [하향 래칫 2026-08-29(4)] 알림 표의 '우선순위' 열 제거 — 서버는 우선순위를 저장하지 않고
+//   (NotificationDto 에 필드 없음) 값은 제목 키워드 -> 분류 -> 우선순위로 두 단계 파생한 것이라
+//   제목에 '보안' 이 없는 긴급 알림은 언제나 'low' 로 보였다. 열과 함께 rose 리터럴 2건
+//   (text-rose-600·text-rose-400)이 사라졌다. 신규 status 리터럴 0건
+//   (사전 red 실측: 530 != 532 — 게이트가 직접 530 으로 내리라고 지시).
+const BASELINE = 530;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

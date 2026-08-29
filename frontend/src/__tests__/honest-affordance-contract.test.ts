@@ -511,6 +511,31 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 됐다고 믿고 결과를 잘못 읽는다("그 담당자의 업무가 이만큼"). 그래서 라벨과 **서버 술어**를
    * 함께 고정한다.
    */
+  /**
+   * 알림 표가 서버에 없는 심각도를 판단해 주지 않는다.
+   *
+   * 서버가 저장하는 알림 필드에는 분류도 우선순위도 없다. 종전 '우선순위' 열은 제목 키워드
+   * → 분류 → 우선순위로 **두 단계 파생**한 값이라, 제목에 '보안' 이 없는 긴급 알림은 언제나
+   * 'low' 로 보였다. 심각도를 판단해 준 적이 없는데 판단한 것처럼 보여 주면 관리자가 그 열로
+   * 분류(triage)한다.
+   */
+  it('알림 표가 서버에 없는 우선순위를 보여 주지 않는다', () => {
+    const hub = stripComments(readSrc('app/components/ui/smart-notification-hub.tsx'));
+    expect(hub, '알림 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('SmartNotificationHub');
+    expect(hub).not.toContain('우선순위');
+    expect(hub).not.toContain("'critical'");
+    // 분류는 제목 추론이라는 사실을 헤더가 밝힌다.
+    expect(hub).toContain('분류(제목 기준)');
+
+    // 서버 DTO 에 두 축이 없다는 것이 판정 근거다 — 생기면 red 가 되어 열을 되살릴 때를 알려 준다.
+    const dto = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/service/notification/dto/NotificationDto.java'),
+    );
+    expect(dto, '알림 DTO 를 찾지 못했다 — 계약이 vacuous 하다').toContain('notiTtlNm');
+    expect(dto).not.toContain('priority');
+    expect(dto).not.toContain('notiSeCd');
+  });
+
   it('업무 허브·게시판 마스터의 조회 조건이 서버 술어와 일치한다', () => {
     const hub = stripComments(readSrc('app/admin/work-hub/WorkHubClient.tsx'));
     expect(hub, '업무 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
