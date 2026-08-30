@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import static nuri.business.domain.board.QBoardMaster.boardMaster;
-import static nuri.business.domain.template.QTemplate.template;
 import static nuri.business.domain.board.QBoardUse.boardUse;
 import com.querydsl.jpa.JPAExpressions;
 
@@ -111,8 +110,6 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 commonCodeAttr.dtlCdNm.as("bbsAtrbCdNm"),
                 boardMaster.bbsTtl,
                 boardMaster.tmpltId,
-                template.tmpltNm.as("tmplatNm"),
-                template.tmpltPath.as("tmplatCours"),
                 boardMaster.fileAtchPsbltyYn,
                 boardMaster.atchPsbltyFileQty,
                 boardMaster.atchPsbltyFileSz,
@@ -125,7 +122,6 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
                 .leftJoin(commonCodeAttr)
                 .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.dtlCd).and(commonCodeAttr.cdId.eq("COM009")))
-                .leftJoin(template).on(boardMaster.tmpltId.eq(template.tmpltId))
                 .where(boardMaster.bbsId.eq(bbsId))
                 .fetchOne();
 
