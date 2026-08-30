@@ -1,8 +1,9 @@
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
-import { CmmnClCode, CmmnCode, CmmnDetailCode, PageResponse } from '@/types/foundation/system';
+import { CmmnClCode, CmmnCode, CmmnDetailCode } from '@/types/foundation/system';
 import CommonCodeHubClient from './CommonCodeHubClient';
 
 export const metadata = {
@@ -34,18 +35,28 @@ export default async function CommonCodePage({
   let fetchError = false;
 
   try {
-    const [clRes, groupsRes, detailsRes] = await Promise.all([
-      codeAdminService.getClCodeList({ pageUnit: 999 }, axiosConfig),
-      codeAdminService.getCmmnCodeList({ pageUnit: 999 }, axiosConfig),
-      groupId 
-        ? codeAdminService.getDetailCodeList({ cdId: groupId, pageUnit: 999 }, axiosConfig) 
-        : Promise.resolve({ list: [], total: 0, page: 1, size: 10, totalPage: 1 } as PageResponse<CmmnDetailCode>)
+    // [2026-08-30] 서버 pageUnit 상한(@Max 100) 때문에 999 는 400 이 된다. 100 으로 낮추면
+    //   목록이 조용히 잘리므로, 끝까지 따라가 전량을 모은다.
+    const [loadedClCodes, loadedGroups, loadedDetails] = await Promise.all([
+      fetchAllPages((pageIndex, pageUnit) =>
+        codeAdminService.getClCodeList({ pageIndex, pageUnit }, axiosConfig)),
+      fetchAllPages((pageIndex, pageUnit) =>
+        codeAdminService.getCmmnCodeList({ pageIndex, pageUnit }, axiosConfig)),
+      groupId
+        ? fetchAllPages((pageIndex, pageUnit) =>
+            codeAdminService.getDetailCodeList({
+              searchCondition: '1',
+              searchKeyword: groupId,
+              pageIndex,
+              pageUnit,
+            }, axiosConfig))
+        : Promise.resolve([] as CmmnDetailCode[]),
     ]);
 
-    clCodes = clRes.list || [];
-    groups = groupsRes.list || [];
+    clCodes = loadedClCodes;
+    groups = loadedGroups;
     details = groupId
-      ? (detailsRes.list || []).filter((item): item is CmmnDetailCode => Boolean(item) && item.cdId === groupId)
+      ? loadedDetails.filter((item): item is CmmnDetailCode => Boolean(item) && item.cdId === groupId)
       : [];
   } catch (error: unknown) {
     const status = (error as { response?: { status?: number } })?.response?.status;

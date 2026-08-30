@@ -60,4 +60,20 @@ describe('P1 frontend safety source contract', () => {
     expect(route).not.toContain('request.text()');
     expect(route).not.toMatch(/['"]sample['"]\s*:/);
   });
+
+  it('SecurityHub 전체교체 저장은 query revision이 임시 기준선에 반영된 뒤에만 활성화된다', () => {
+    const hub = stripComments(
+      readSource('app', 'admin', 'security', 'authority', 'SecurityHubClient.tsx'),
+    );
+
+    for (const mapping of ['user', 'menu', 'role'] as const) {
+      const capitalized = `${mapping[0].toUpperCase()}${mapping.slice(1)}`;
+      expect(hub).toContain(
+        `${mapping}MappingRevision === ${mapping}MappingQueryRevision`,
+      );
+      expect(hub).toContain(
+        `set${capitalized}MappingRevision(${mapping}MappingQueryRevision)`,
+      );
+    }
+  });
 });

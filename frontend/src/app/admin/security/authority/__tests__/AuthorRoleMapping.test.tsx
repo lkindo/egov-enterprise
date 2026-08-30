@@ -33,6 +33,9 @@ const mocks = vi.hoisted(() => ({
   getAuthorMenus: vi.fn(),
   getAllMenus: vi.fn(),
   getUsers: vi.fn(),
+  saveUserAuthorities: vi.fn(),
+  deleteUserAuthorities: vi.fn(),
+  saveMenuCreation: vi.fn(),
   confirm: vi.fn(),
   toast: vi.fn(),
 }));
@@ -75,12 +78,16 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
   ),
 }));
 vi.mock('@/services/foundation/system/MenuAdminService', () => ({
-  menuAdminService: { getAllMenus: (...a: unknown[]) => mocks.getAllMenus(...a), saveMenuCreation: vi.fn() },
+  menuAdminService: {
+    getAllMenus: (...a: unknown[]) => mocks.getAllMenus(...a),
+    saveMenuCreation: (...a: unknown[]) => mocks.saveMenuCreation(...a),
+  },
 }));
 vi.mock('@/services/foundation/system/UserAuthorityAdminService', () => ({
   userAuthorityAdminService: {
-    getUsersByAuthority: (...a: unknown[]) => mocks.getUsers(...a),
-    saveUserAuthorities: vi.fn(),
+    getUserAuthorityList: (...a: unknown[]) => mocks.getUsers(...a),
+    saveUserAuthorities: (...a: unknown[]) => mocks.saveUserAuthorities(...a),
+    deleteUserAuthorities: (...a: unknown[]) => mocks.deleteUserAuthorities(...a),
   },
 }));
 vi.mock('@/services/foundation/system/AuthorAdminService', () => ({
@@ -107,7 +114,16 @@ const ROLES = [
   { roleId: 'ROLE_F', roleNm: '롤 F', regYn: 'N', authrtCd: null },
 ];
 
-const AUTHORITIES = { list: [{ authrtCd: 'AUTH_1', authrtNm: '관리자 권한' }], total: 1, page: 1, size: 10, totalPage: 1 };
+const AUTHORITIES = {
+  list: [
+    { authrtCd: 'AUTH_1', authrtNm: '관리자 권한' },
+    { authrtCd: 'AUTH_2', authrtNm: '검토자 권한' },
+  ],
+  total: 2,
+  page: 1,
+  size: 10,
+  totalPage: 1,
+};
 
 /*
   렌더마다 새 promise 를 만들면 use() 가 영원히 suspend 한다 — 한 번만 만들어 재사용한다.
@@ -153,14 +169,15 @@ describe('권한 → 롤 할당', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getAuthorList.mockResolvedValue({
-      list: [{ authrtCd: 'AUTH_1', authrtNm: '관리자 권한' }], total: 1, totalPage: 1,
-    });
+    mocks.getAuthorList.mockResolvedValue(AUTHORITIES);
     mocks.getAuthorRoles.mockResolvedValue({ list: ROLES, total: ROLES.length, totalPage: 1 });
     mocks.saveAuthorRoles.mockResolvedValue(undefined);
     mocks.getAuthorMenus.mockResolvedValue([]);
     mocks.getAllMenus.mockResolvedValue([]);
     mocks.getUsers.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
+    mocks.saveUserAuthorities.mockResolvedValue(undefined);
+    mocks.deleteUserAuthorities.mockResolvedValue(undefined);
+    mocks.saveMenuCreation.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
   });
 
@@ -171,13 +188,74 @@ describe('권한 → 롤 할당', () => {
     expect(screen.getByRole('button', { name: '롤 D 롤 부여' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('롤 목록을 한 페이지에 전부 받는다 — 나눠 받으면 저장 시 나머지가 지워진다', async () => {
+  it('롤 목록은 서버 상한으로 첫 페이지부터 조회한다 — 이후 페이지는 전량 헬퍼가 잇는다', async () => {
     await openRolePanel();
 
     await waitFor(() => expect(mocks.getAuthorRoles).toHaveBeenCalled());
     const params = mocks.getAuthorRoles.mock.calls[0][1];
-    expect(params.pageIndex).toBe(1);
-    expect(params.pageUnit).toBeGreaterThanOrEqual(ROLES.length * 10);
+    expect(params).toEqual({ pageIndex: 1, pageUnit: 100 });
+  });
+
+  it('다른 권한의 매핑 조회가 실패하면 이전 권한 집합을 저장할 수 없다', async () => {
+    await openRolePanel();
+    await screen.findByRole('button', { name: '롤 A 롤 해제' });
+    await waitFor(() => {
+      expect(mocks.getUsers).toHaveBeenCalled();
+      expect(mocks.getAuthorMenus).toHaveBeenCalled();
+    });
+
+    mocks.getAuthorRoles.mockRejectedValueOnce(new Error('role paging failed'));
+    mocks.getUsers.mockRejectedValueOnce(new Error('user paging failed'));
+    mocks.getAuthorMenus.mockRejectedValueOnce(new Error('menu load failed'));
+    fireEvent.click(screen.getByRole('button', { name: '검토자 권한' }));
+
+    expect(await screen.findByText('롤 목록을 불러오지 못했습니다.')).toBeInTheDocument();
+    const userSave = screen.getByRole('button', { name: '사용자 할당 저장' });
+    const menuSave = screen.getByRole('button', { name: '메뉴 권한 저장' });
+    const roleSave = screen.getByRole('button', { name: '롤 할당 저장' });
+    await waitFor(() => {
+      expect(userSave).toBeDisabled();
+      expect(menuSave).toBeDisabled();
+      expect(roleSave).toBeDisabled();
+    });
+
+    fireEvent.click(userSave);
+    fireEvent.click(menuSave);
+    fireEvent.click(roleSave);
+    expect(mocks.saveUserAuthorities).not.toHaveBeenCalled();
+    expect(mocks.deleteUserAuthorities).not.toHaveBeenCalled();
+    expect(mocks.saveMenuCreation).not.toHaveBeenCalled();
+    expect(mocks.saveAuthorRoles).not.toHaveBeenCalled();
+    expect(mocks.confirm).not.toHaveBeenCalled();
+  });
+
+  it('두 번째 페이지의 할당 롤도 전체교체 저장 본문에 포함한다', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      roleId: `ROLE_PAGE_${String(index).padStart(3, '0')}`,
+      roleNm: `페이지 롤 ${index}`,
+      regYn: 'N',
+      authrtCd: null,
+    }));
+    const lastRole = {
+      roleId: 'ROLE_LAST',
+      roleNm: '마지막 페이지 롤',
+      regYn: 'Y',
+      authrtCd: 'AUTH_1',
+    };
+    mocks.getAuthorRoles
+      .mockResolvedValueOnce({ list: firstPage, total: 101 })
+      .mockResolvedValueOnce({ list: [lastRole], total: 101 });
+
+    await openRolePanel();
+    await screen.findByRole('button', { name: '마지막 페이지 롤 롤 해제' });
+    fireEvent.click(screen.getByRole('button', { name: '롤 할당 저장' }));
+
+    await waitFor(() => expect(mocks.saveAuthorRoles).toHaveBeenCalledTimes(1));
+    expect(mocks.getAuthorRoles.mock.calls.slice(0, 2).map(([, params]) => params)).toEqual([
+      { pageIndex: 1, pageUnit: 100 },
+      { pageIndex: 2, pageUnit: 100 },
+    ]);
+    expect(mocks.saveAuthorRoles).toHaveBeenCalledWith('AUTH_1', ['ROLE_LAST']);
   });
 
   /**

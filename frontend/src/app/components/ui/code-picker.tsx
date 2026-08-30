@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import React, { useCallback, useMemo, useState } from 'react';
 import { StandardModal } from './standard-modal';
 import { VirtualScrollList } from './virtual-scroll-list';
@@ -98,14 +99,15 @@ export function CodePicker({
     try {
       setCodesLoading(true);
       setCodesError(false);
-      // CommonCodeClient 와 동일한 검증된 호출 계약(cdId 스코프 + 페일세이프 필터).
-      const res = await codeAdminService.getDetailCodeList({
-        cdId: group.cdId,
-        searchKeyword: group.cdId,
-        searchCondition: '1',
-        pageUnit: 999,
-      });
-      setCodes((res.list || []).filter(item => item && item.cdId === group.cdId));
+      // CommonCodeClient 와 동일한 검증된 호출 계약(그룹 ID 검색 + 정확 일치 필터).
+      const rows = await fetchAllPages((pageIndex, pageUnit) =>
+        codeAdminService.getDetailCodeList({
+          searchKeyword: group.cdId,
+          searchCondition: '1',
+          pageIndex,
+          pageUnit,
+        }));
+      setCodes(rows.filter(item => item && item.cdId === group.cdId));
     } catch (error) {
       console.error('상세코드 목록 조회 실패', error);
       setCodes([]);

@@ -80,7 +80,7 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
 
         List<BoardMasterSearchResult> results = query
                 .where(builder)
-                .orderBy(boardMaster.crtDt.desc())
+                .orderBy(boardMaster.crtDt.desc(), boardMaster.bbsId.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

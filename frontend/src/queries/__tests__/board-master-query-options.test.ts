@@ -33,4 +33,21 @@ describe('board master query ownership', () => {
     expect(service.getBoardMasterList).toHaveBeenCalledWith({ pageIndex: 1, pageUnit: 20 });
     expect(service.getBoardMaster).toHaveBeenCalledWith('BBSMSTR_A');
   });
+
+  it('전체 선택지 option은 서버 상한 100으로 모든 페이지를 수집한다', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({ bbsId: `BBS_${index}` }));
+    service.getBoardMasterList
+      .mockResolvedValueOnce({ list: firstPage, total: 101 })
+      .mockResolvedValueOnce({ list: [{ bbsId: 'BBS_100' }], total: 101 });
+
+    const completeList = boardMasterQueryOptions.completeList();
+    await expect(completeList.queryFn?.({ queryKey: completeList.queryKey } as never))
+      .resolves.toHaveLength(101);
+
+    expect(completeList.queryKey).toEqual(['board-masters', 'list', 'complete']);
+    expect(service.getBoardMasterList.mock.calls).toEqual([
+      [{ pageIndex: 1, pageUnit: 100 }],
+      [{ pageIndex: 2, pageUnit: 100 }],
+    ]);
+  });
 });

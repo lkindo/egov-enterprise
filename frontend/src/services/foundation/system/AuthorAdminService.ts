@@ -91,11 +91,11 @@ class AuthorAdminService extends AdminService {
   /**
    * 권한별 롤 목록과 할당 여부 조회.
    *
-   * 서버는 `tb_role_info` **전량**에 left join 으로 할당 여부(`regYn`)를 붙여 내려준다.
-   * 즉 한 번 호출로 "이 권한이 가질 수 있는 롤 전체 + 지금 가진 것" 이 모두 온다.
+   * 서버는 `tb_role_info`에 left join 으로 할당 여부(`regYn`)를 붙여 페이지 단위로 내려준다.
+   * 전체 페이지를 모으면 "이 권한이 가질 수 있는 롤 전체 + 지금 가진 것" 이 된다.
    *
-   * ⚠ `pageUnit` 을 크게 잡아 **한 페이지에 전부** 받아야 한다. 저장이 전체 교체
-   * (`insertAuthorRole` 이 기존 매핑을 전량 삭제한 뒤 재삽입)이므로, 한 페이지만 보고
+   * ⚠ 호출자는 서버 상한 안에서 **모든 페이지를 끝까지** 받아야 한다. 저장이 전체 교체
+   * (`insertAuthorRole` 이 기존 매핑을 전량 삭제한 뒤 재삽입)이므로, 첫 페이지만 보고
    * 저장하면 **보지 못한 페이지의 롤이 전부 지워진다**.
    */
   async getAuthorRoles(

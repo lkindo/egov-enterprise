@@ -17,6 +17,11 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.util.Optional;
 import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -160,6 +165,52 @@ class BoardMasterRepositoryTest {
     }
 
     @Test
+    @DisplayName("생성시각이 같아도 두 페이지를 게시판 ID 순서로 중복·누락 없이 잇는다")
+    void searchUsesBoardIdAsStableTieBreaker() {
+        boardMasterRepository.saveAll(List.of(
+                pagingBoard("BBS_PAGE_C"),
+                pagingBoard("BBS_PAGE_A"),
+                pagingBoard("BBS_PAGE_B")));
+        em.flush();
+        em.createNativeQuery("""
+                update tb_bbs_master
+                   set crt_dt = :createdAt
+                 where bbs_id like 'BBS_PAGE_%'
+                """)
+                .setParameter("createdAt", LocalDateTime.of(2026, 8, 30, 0, 0))
+                .executeUpdate();
+        em.clear();
+
+        BoardMasterSearchCondition condition = new BoardMasterSearchCondition();
+        condition.setSearchCnd("0");
+        condition.setSearchWrd("Paging board");
+
+        Page<BoardMasterSearchResult> first = boardMasterRepository.searchBoardMasters(
+                condition, PageRequest.of(0, 2));
+        Page<BoardMasterSearchResult> second = boardMasterRepository.searchBoardMasters(
+                condition, PageRequest.of(1, 2));
+
+        assertThat(first.getTotalElements()).isEqualTo(3);
+        assertThat(second.getTotalElements()).isEqualTo(3);
+        assertThat(List.of(first, second).stream()
+                .flatMap(Page::stream)
+                .map(BoardMasterSearchResult::getBbsId))
+                .containsExactly("BBS_PAGE_A", "BBS_PAGE_B", "BBS_PAGE_C");
+    }
+
+    @Test
+    @DisplayName("생성시각 뒤에는 게시판 PK tie-breaker가 선언된다")
+    void searchDeclaresStablePagingOrder() throws IOException {
+        String source = Files.readString(
+                Path.of("src", "main", "java", "nuri", "business", "domain", "board",
+                        "BoardMasterRepositoryImpl.java"),
+                StandardCharsets.UTF_8);
+
+        assertThat(source).contains(
+                ".orderBy(boardMaster.crtDt.desc(), boardMaster.bbsId.asc())");
+    }
+
+    @Test
     @DisplayName("BoardMaster 상세 조회 테스트 (Custom)")
     void findBoardMasterDetailTest() {
         // Given
@@ -215,5 +266,15 @@ class BoardMasterRepositoryTest {
         // Then
         assertThat(results.getContent()).hasSize(1);
         assertThat(results.getContent().get(0).getBbsId()).isEqualTo("BBS_NOT_USED");
+    }
+
+    private static BoardMaster pagingBoard(String bbsId) {
+        return BoardMaster.builder()
+                .bbsId(bbsId)
+                .bbsTtl("Paging board " + bbsId)
+                .bbsTypeCd("PAGING_TYPE")
+                .bbsAtrbCd("PAGING_ATTR")
+                .useYn("Y")
+                .build();
     }
 }

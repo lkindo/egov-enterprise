@@ -50,7 +50,7 @@ describe('CodePicker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getGroups.mockResolvedValue({ list: groupRows });
-    mocks.getDetails.mockResolvedValue({ list: detailRows });
+    mocks.getDetails.mockResolvedValue({ list: detailRows, total: detailRows.length });
   });
 
   it('닫힌 상태에서는 아무것도 렌더하지 않고 API 도 호출하지 않는다', () => {
@@ -101,10 +101,10 @@ describe('CodePicker', () => {
     // 페일세이프: 다른 그룹(cdId=OTHER) 행은 걸러진다.
     expect(screen.queryByText('다른 그룹 코드')).not.toBeInTheDocument();
     expect(mocks.getDetails).toHaveBeenCalledWith({
-      cdId: 'GRP1',
       searchKeyword: 'GRP1',
       searchCondition: '1',
-      pageUnit: 999,
+      pageIndex: 1,
+      pageUnit: 100,
     });
 
     fireEvent.click(screen.getByRole('button', { name: '코드 선택: 활성' }));

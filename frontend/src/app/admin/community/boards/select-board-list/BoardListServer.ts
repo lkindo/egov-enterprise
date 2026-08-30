@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import client from '../../../../../lib/api/client';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 
 /**
  * bbsId 없이 진입했을 때 쓸 기본 게시판을 **실재하는 목록에서** 고른다.
@@ -15,11 +16,15 @@ export const resolveDefaultBoardId = async (): Promise<string> => {
   if (!accessToken) return NOTICE_BOARD_ID;
 
   try {
-    const response = await client.get<{ list?: Array<{ bbsId?: string; useYn?: string }> }>(
-      '/admin/system/board-masters',
-      { headers: { Authorization: `Bearer ${accessToken}` }, params: { pageIndex: 1, pageUnit: 200 } },
-    );
-    const first = (response?.list ?? []).find((board) => board.useYn !== 'N' && !!board.bbsId);
+    const boards = await fetchAllPages((pageIndex, pageUnit) =>
+      client.get<{
+        list: Array<{ bbsId?: string; useYn?: string }>;
+        total: number;
+      }>('/admin/system/board-masters', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { pageIndex, pageUnit },
+      }));
+    const first = boards.find((board) => board.useYn !== 'N' && !!board.bbsId);
     return first?.bbsId ?? NOTICE_BOARD_ID;
   } catch {
     // 목록 조회 실패는 이 화면의 본 조회에서 다시 드러난다. 여기서는 조용히 시드 기본값을 쓴다.

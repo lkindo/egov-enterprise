@@ -61,7 +61,8 @@ export function useBoardOptions() {
   const isAdmin = isAdministrativeRole(user?.role);
 
   const query = useQuery({
-    ...boardMasterQueryOptions.list({ pageIndex: 1, pageUnit: 200 }),
+    // 전체 선택지는 도메인 query option이 서버 상한(100) 안에서 모든 페이지를 수집한다.
+    ...boardMasterQueryOptions.completeList(),
     // 선택지는 자주 바뀌지 않는다. 화면을 옮겨 다닐 때마다 다시 받지 않는다.
     staleTime: 5 * 60 * 1000,
     enabled: isAdmin,
@@ -69,7 +70,7 @@ export function useBoardOptions() {
     retry: false,
   });
 
-  const serverOptions: BoardOption[] = (query.data?.list ?? [])
+  const serverOptions: BoardOption[] = (query.data ?? [])
     .filter((board) => board.useYn !== 'N')
     .map((board) => ({
       value: String(board.bbsId ?? ''),
