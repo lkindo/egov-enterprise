@@ -1,6 +1,7 @@
 package nuri.migration.etl;
 
 import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.model.MappingSpec.CompositeForeignKey;
 import nuri.migration.model.MappingSpec.TableMapping;
 
 import java.util.ArrayDeque;
@@ -47,6 +48,14 @@ final class TableOrderer {
                 String parent = ref.toLowerCase();
                 if (parent.equals(self) || !byName.containsKey(parent)) {
                     continue; // 자기참조·외부참조는 위상 간선에서 제외
+                }
+                children.get(parent).add(self);
+                indegree.merge(self, 1, (a, b) -> Integer.sum(a, b));
+            }
+            for (CompositeForeignKey foreignKey : t.foreignKeys()) {
+                String parent = foreignKey.parentSource().toLowerCase();
+                if (parent.equals(self) || !byName.containsKey(parent)) {
+                    continue;
                 }
                 children.get(parent).add(self);
                 indegree.merge(self, 1, (a, b) -> Integer.sum(a, b));

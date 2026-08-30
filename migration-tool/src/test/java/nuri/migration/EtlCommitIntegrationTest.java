@@ -66,7 +66,7 @@ class EtlCommitIntegrationTest {
         assertThat(joined).isEqualTo(2);
 
         // 키맵 영속: org 2 + user 2 = 4
-        assertThat(count(tgtJt, "tb_migration_key_map")).isEqualTo(4);
+        assertThat(count(tgtJt, "migration_control.tb_migration_key_map")).isEqualTo(4);
 
         // 코드맵 적용 확인
         assertThat(tgtJt.queryForList("SELECT user_stts_cd FROM tb_user_info", String.class))

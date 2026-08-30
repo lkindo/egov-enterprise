@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS tb_migration_key_map (
+CREATE TABLE IF NOT EXISTS migration_control.tb_migration_key_map (
     run_id varchar(128) NOT NULL,
     source_namespace varchar(128) NOT NULL,
     source_table varchar(128) NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS tb_migration_key_map (
         PRIMARY KEY (run_id, source_namespace, source_table, legacy_key)
 );
 
-CREATE TABLE IF NOT EXISTS tb_migration_run (
+CREATE TABLE IF NOT EXISTS migration_control.tb_migration_run (
     run_id varchar(128) NOT NULL,
     source_namespace varchar(128) NOT NULL,
     run_stts_cd varchar(20) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS tb_migration_run (
     CONSTRAINT pk_tb_migration_run PRIMARY KEY (run_id, source_namespace)
 );
 
-CREATE TABLE IF NOT EXISTS tb_migration_checkpoint (
+CREATE TABLE IF NOT EXISTS migration_control.tb_migration_checkpoint (
     run_id varchar(128) NOT NULL,
     source_namespace varchar(128) NOT NULL,
     source_table varchar(128) NOT NULL,
@@ -31,4 +31,4 @@ CREATE TABLE IF NOT EXISTS tb_migration_checkpoint (
 );
 
 CREATE INDEX IF NOT EXISTS ix_migration_checkpoint_target
-    ON tb_migration_checkpoint (run_id, source_namespace, source_table, target_key);
+    ON migration_control.tb_migration_checkpoint (run_id, source_namespace, source_table, target_key);

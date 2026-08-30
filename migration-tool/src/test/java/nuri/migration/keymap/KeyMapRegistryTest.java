@@ -1,9 +1,12 @@
 package nuri.migration.keymap;
 
+import nuri.migration.identity.TypedKeyTuple;
+import nuri.migration.identity.TypedValue;
 import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class KeyMapRegistryTest {
 
@@ -52,5 +55,36 @@ class KeyMapRegistryTest {
 
         registry.accept(chunk);
         assertThat(registry.hasPending()).isFalse();
+    }
+
+    @Test
+    void typedCompositeMappingsPreserveOrderAndTypeWithoutChangingLegacyStringMappings() {
+        KeyMapRegistry registry = new KeyMapRegistry();
+        TypedKeyTuple source = TypedKeyTuple.of(TypedValue.text("tenant|1"), TypedValue.signedInteger(7));
+        TypedKeyTuple target = TypedKeyTuple.of(TypedValue.text("tenant|1"), TypedValue.signedInteger(107));
+        Checkpoint checkpoint = registry.checkpoint();
+
+        registry.register("LEGACY_ORDER", source, target);
+
+        assertThat(registry.translate("legacy_order", source)).isEqualTo(target);
+        assertThat(registry.translate("legacy_order",
+                TypedKeyTuple.of(TypedValue.text("tenant|1"), TypedValue.text("7")))).isNull();
+        assertThat(registry.translate("legacy_order", "tenant|1|7")).isNull();
+
+        registry.rollback(checkpoint);
+        assertThat(registry.translate("legacy_order", source)).isNull();
+    }
+
+    @Test
+    void typedMappingRejectsConflictingTargetForTheSameSourceIdentity() {
+        KeyMapRegistry registry = new KeyMapRegistry();
+        TypedKeyTuple source = TypedKeyTuple.of(TypedValue.signedInteger(1));
+        registry.register("LEGACY_ORDER", source,
+                TypedKeyTuple.of(TypedValue.signedInteger(101)));
+
+        assertThatThrownBy(() -> registry.register("LEGACY_ORDER", source,
+                TypedKeyTuple.of(TypedValue.signedInteger(102))))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("conflict");
     }
 }

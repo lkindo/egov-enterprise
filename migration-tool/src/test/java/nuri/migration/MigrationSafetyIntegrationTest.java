@@ -91,7 +91,8 @@ class MigrationSafetyIntegrationTest {
             assertThat(r.errors()).isEmpty();
         });
         assertThat(count(target, "tb_node")).isEqualTo(2);
-        assertThat(target.queryForObject("SELECT count(*) FROM tb_migration_checkpoint WHERE run_id=? AND source_namespace=?",
+        assertThat(target.queryForObject("SELECT count(*) FROM migration_control.tb_migration_checkpoint "
+                        + "WHERE run_id=? AND source_namespace=?",
                 Long.class, "resume-run", "legacy-crm")).isEqualTo(2L);
     }
 
@@ -108,11 +109,12 @@ class MigrationSafetyIntegrationTest {
         executor.execute(spec(db, "shared-run", "source-b"), MigrationMode.COMMIT);
 
         assertThat(count(target, "tb_node")).isEqualTo(2);
-        assertThat(target.queryForObject("SELECT count(*) FROM tb_migration_checkpoint "
+        assertThat(target.queryForObject("SELECT count(*) FROM migration_control.tb_migration_checkpoint "
                 + "WHERE run_id='shared-run' AND source_namespace='source-a'", Long.class)).isEqualTo(1L);
-        assertThat(target.queryForObject("SELECT count(*) FROM tb_migration_checkpoint "
+        assertThat(target.queryForObject("SELECT count(*) FROM migration_control.tb_migration_checkpoint "
                 + "WHERE run_id='shared-run' AND source_namespace='source-b'", Long.class)).isEqualTo(1L);
-        assertThat(target.queryForList("SELECT new_key FROM tb_migration_key_map WHERE run_id='shared-run'",
+        assertThat(target.queryForList("SELECT new_key FROM migration_control.tb_migration_key_map "
+                        + "WHERE run_id='shared-run'",
                 String.class)).doesNotHaveDuplicates();
     }
 
@@ -192,7 +194,7 @@ class MigrationSafetyIntegrationTest {
             assertThat(result.errors()).isEmpty();
         });
         assertThat(count(target, "tb_item")).isEqualTo(503);
-        assertThat(count(target, "tb_migration_checkpoint")).isEqualTo(503);
+        assertThat(count(target, "migration_control.tb_migration_checkpoint")).isEqualTo(503);
     }
 
     @Test

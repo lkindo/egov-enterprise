@@ -35,7 +35,8 @@ class EtlAtomicKeyMapIntegrationTest {
 
         JdbcTemplate target = jdbc(databases.target());
         target.execute("CREATE TABLE tb_item (item_id varchar(20) PRIMARY KEY, item_nm varchar(50))");
-        target.execute("CREATE TABLE tb_migration_key_map ("
+        target.execute("CREATE SCHEMA migration_control");
+        target.execute("CREATE TABLE migration_control.tb_migration_key_map ("
                 + "run_id varchar(128) NOT NULL, source_namespace varchar(128) NOT NULL, "
                 + "source_table varchar(128) NOT NULL, legacy_key varchar(256) NOT NULL, "
                 + "new_key varchar(256) NOT NULL CHECK (length(new_key) <= 1), "
@@ -50,7 +51,7 @@ class EtlAtomicKeyMapIntegrationTest {
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("keymap"));
         });
         assertThat(count(target, "tb_item")).isZero();
-        assertThat(count(target, "tb_migration_key_map")).isZero();
+        assertThat(count(target, "migration_control.tb_migration_key_map")).isZero();
     }
 
     @Test
@@ -86,11 +87,13 @@ class EtlAtomicKeyMapIntegrationTest {
         assertThat(parentResult.written()).isEqualTo(1L);
         assertThat(parentResult.errors()).isNotEmpty();
         assertThat(childResult.written()).isZero();
-        assertThat(childResult.errors()).anySatisfy(error -> assertThat(error).contains("FK 고아"));
+        assertThat(childResult.errors()).containsExactly(
+                "행 변환 실패(LEGACY_CHILD): ROW_TRANSFORM_FAILED");
+        assertThat(childResult.errors().getFirst()).doesNotContain("bad", "child-1");
         assertThat(count(target, "tb_item")).isEqualTo(1L);
         assertThat(count(target, "tb_child")).isZero();
         assertThat(target.queryForList(
-                "SELECT legacy_key FROM tb_migration_key_map ORDER BY legacy_key", String.class))
+                "SELECT legacy_key FROM migration_control.tb_migration_key_map ORDER BY legacy_key", String.class))
                 .containsExactly("good");
     }
 
@@ -108,7 +111,8 @@ class EtlAtomicKeyMapIntegrationTest {
         List<EtlExecutor.TableResult> first = executor.execute(spec, MigrationMode.COMMIT);
         String firstId = target.queryForObject("SELECT item_id FROM tb_item", String.class);
         String firstMappedId = target.queryForObject(
-                "SELECT new_key FROM tb_migration_key_map WHERE legacy_key = 'item-1'", String.class);
+                "SELECT new_key FROM migration_control.tb_migration_key_map WHERE legacy_key = 'item-1'",
+                String.class);
 
         List<EtlExecutor.TableResult> rerun = executor.execute(spec, MigrationMode.COMMIT);
 
@@ -118,10 +122,11 @@ class EtlAtomicKeyMapIntegrationTest {
             assertThat(result.errors()).isEmpty();
         });
         assertThat(count(target, "tb_item")).isEqualTo(1L);
-        assertThat(count(target, "tb_migration_key_map")).isEqualTo(1L);
+        assertThat(count(target, "migration_control.tb_migration_key_map")).isEqualTo(1L);
         assertThat(target.queryForObject("SELECT item_id FROM tb_item", String.class)).isEqualTo(firstId);
         assertThat(target.queryForObject(
-                "SELECT new_key FROM tb_migration_key_map WHERE legacy_key = 'item-1'", String.class))
+                "SELECT new_key FROM migration_control.tb_migration_key_map WHERE legacy_key = 'item-1'",
+                String.class))
                 .isEqualTo(firstMappedId)
                 .isEqualTo(firstId);
     }

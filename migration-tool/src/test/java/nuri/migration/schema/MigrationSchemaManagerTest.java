@@ -20,12 +20,12 @@ class MigrationSchemaManagerTest {
         new MigrationSchemaManager().migrateAndValidate(target);
         new MigrationSchemaManager().migrateAndValidate(target);
 
-        assertThat(tableCount(target, "TB_MIGRATION_KEY_MAP")).isEqualTo(1);
-        assertThat(tableCount(target, "TB_MIGRATION_RUN")).isEqualTo(1);
-        assertThat(tableCount(target, "TB_MIGRATION_CHECKPOINT")).isEqualTo(1);
-        assertThat(tableCount(target, "TB_MIGRATION_SCHEMA_HISTORY")).isEqualTo(1);
+        assertThat(tableCount(target, "MIGRATION_CONTROL", "TB_MIGRATION_KEY_MAP")).isEqualTo(1);
+        assertThat(tableCount(target, "MIGRATION_CONTROL", "TB_MIGRATION_RUN")).isEqualTo(1);
+        assertThat(tableCount(target, "MIGRATION_CONTROL", "TB_MIGRATION_CHECKPOINT")).isEqualTo(1);
+        assertThat(tableCount(target, "MIGRATION_CONTROL", "TB_MIGRATION_SCHEMA_HISTORY")).isEqualTo(1);
         assertThat(target.queryForObject(
-                "SELECT count(*) FROM \"tb_migration_schema_history\" "
+                "SELECT count(*) FROM migration_control.\"tb_migration_schema_history\" "
                         + "WHERE \"version\"='1' AND \"success\"=true", Long.class))
                 .isEqualTo(1L);
     }
@@ -41,15 +41,32 @@ class MigrationSchemaManagerTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("legacy 3-column", "run_id", "source_namespace");
 
-        assertThat(tableCount(target, "TB_MIGRATION_SCHEMA_HISTORY")).isZero();
-        assertThat(tableCount(target, "TB_MIGRATION_RUN")).isZero();
-        assertThat(tableCount(target, "TB_MIGRATION_CHECKPOINT")).isZero();
+        assertThat(tableCount(target, "MIGRATION_CONTROL", "TB_MIGRATION_SCHEMA_HISTORY")).isZero();
+        assertThat(tableCount(target, "MIGRATION_CONTROL", "TB_MIGRATION_RUN")).isZero();
+        assertThat(tableCount(target, "MIGRATION_CONTROL", "TB_MIGRATION_CHECKPOINT")).isZero();
     }
 
-    private static int tableCount(JdbcTemplate jdbc, String table) {
+    @Test
+    void currentRuntimeTableOutsideControlSchemaFailsBeforeCreatingNewState() {
+        JdbcTemplate target = h2("existing_current");
+        target.execute("CREATE TABLE public.tb_migration_run ("
+                + "run_id varchar(128) NOT NULL, source_namespace varchar(128) NOT NULL, "
+                + "run_stts_cd varchar(20) NOT NULL, frst_reg_dt timestamp NOT NULL, "
+                + "last_mdfcn_dt timestamp NOT NULL, PRIMARY KEY (run_id, source_namespace))");
+
+        assertThatThrownBy(() -> new MigrationSchemaManager().migrateAndValidate(target))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("PUBLIC.TB_MIGRATION_RUN", "migration_control", "전환");
+
+        assertThat(tableCount(target, "MIGRATION_CONTROL", "TB_MIGRATION_SCHEMA_HISTORY")).isZero();
+        assertThat(tableCount(target, "PUBLIC", "TB_MIGRATION_RUN")).isEqualTo(1);
+    }
+
+    private static int tableCount(JdbcTemplate jdbc, String schema, String table) {
         Integer value = jdbc.queryForObject(
-                "SELECT count(*) FROM information_schema.tables WHERE upper(table_name)=?",
-                Integer.class, table);
+                "SELECT count(*) FROM information_schema.tables "
+                        + "WHERE upper(table_schema)=? AND upper(table_name)=?",
+                Integer.class, schema, table);
         return value == null ? 0 : value;
     }
 

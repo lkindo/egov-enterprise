@@ -1,9 +1,12 @@
 package nuri.migration.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nuri.migration.identity.IdentityValueType;
+import nuri.migration.identity.TargetIdentityPolicy;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * {@code mapping.yml} 바인딩 모델 — 레거시 소스 → 표준 스키마 이관 선언(진실원천).
@@ -31,7 +34,25 @@ public record MappingSpec(
     }
 
     /** JDBC 접속 정보(소스/타깃 공통). */
-    public record DbConfig(String url, String username, String password, String driver) {}
+    public record DbConfig(
+            String url,
+            String username,
+            String password,
+            String driver,
+            String endpointId
+    ) {
+        /** endpoint binding 도입 전 mapping/test source compatibility. 승인 workflow에서는 endpointId를 강제한다. */
+        public DbConfig(String url, String username, String password, String driver) {
+            this(url, username, password, driver, null);
+        }
+
+        /** record 기본 toString이 접속정보를 노출하지 않도록 모든 값 표현을 고정 redaction한다. */
+        @Override
+        public String toString() {
+            return "DbConfig[url=<redacted>, username=<redacted>, password=<redacted>, "
+                    + "driver=<redacted>, endpointId=<redacted>]";
+        }
+    }
 
     /** 재시작 가능한 이관 실행의 영속 identity. 두 값 모두 COMMIT에서 필수다. */
     public record RunContext(String runId, String sourceNamespace) {}
@@ -45,23 +66,36 @@ public record MappingSpec(
             List<String> orderByKeys,
             String targetKey,
             List<ColumnMapping> columns,
-            IdStrategy idStrategy
+            IdStrategy idStrategy,
+            IdentityStrategy identity,
+            List<CompositeForeignKey> foreignKeys
     ) {
+        /** identity DSL 도입 전 canonical 생성자 호환. */
+        public TableMapping(String source, String target, String where, String orderBy,
+                            List<String> orderByKeys, String targetKey,
+                            List<ColumnMapping> columns, IdStrategy idStrategy) {
+            this(source, target, where, orderBy, orderByKeys, targetKey, columns, idStrategy,
+                    null, List.of());
+        }
+
         /** P1 단일키 DSL 호환 생성자. */
         public TableMapping(String source, String target, String where, String orderBy,
                             String targetKey, List<ColumnMapping> columns, IdStrategy idStrategy) {
-            this(source, target, where, orderBy, List.of(), targetKey, columns, idStrategy);
+            this(source, target, where, orderBy, List.of(), targetKey, columns, idStrategy,
+                    null, List.of());
         }
 
         /** 기존 dry-run/검증 호출부 호환 생성자. COMMIT은 orderBy를 별도로 강제한다. */
         public TableMapping(String source, String target, String where,
                             List<ColumnMapping> columns, IdStrategy idStrategy) {
-            this(source, target, where, null, List.of(), null, columns, idStrategy);
+            this(source, target, where, null, List.of(), null, columns, idStrategy,
+                    null, List.of());
         }
 
         public TableMapping {
             orderByKeys = orderByKeys == null ? List.of() : List.copyOf(orderByKeys);
             columns = columns == null ? List.of() : columns;
+            foreignKeys = foreignKeys == null ? List.of() : List.copyOf(foreignKeys);
         }
 
         /** 새 복합키가 없으면 기존 단일 {@code orderBy}를 그대로 사용한다. */
@@ -95,4 +129,44 @@ public record MappingSpec(
      * 자식 테이블의 {@code fkRef} 번역에 쓰인다.
      */
     public record IdStrategy(String column, String generator, String sourceKey) {}
+
+    /** identity tuple 구성요소. 선언 순서가 canonical tuple 순서다. */
+    public record IdentityComponentSpec(String column, IdentityValueType type) {
+        public IdentityComponentSpec {
+            Objects.requireNonNull(column, "identity component column");
+            if (column.isBlank() || !column.equals(column.trim())) {
+                throw new IllegalArgumentException("identity component column must be non-blank and trimmed");
+            }
+            Objects.requireNonNull(type, "identity component type");
+        }
+    }
+
+    /** 기존 문자열 idStrategy와 병용하지 않는 typed/composite identity DSL. */
+    public record IdentityStrategy(
+            TargetIdentityPolicy policy,
+            List<IdentityComponentSpec> sourceComponents,
+            List<IdentityComponentSpec> targetComponents
+    ) {
+        public IdentityStrategy {
+            Objects.requireNonNull(policy, "identity policy");
+            sourceComponents = sourceComponents == null ? List.of() : List.copyOf(sourceComponents);
+            targetComponents = targetComponents == null ? List.of() : List.copyOf(targetComponents);
+        }
+    }
+
+    /** composite 부모 keymap을 여러 자식 target 컬럼으로 번역하는 명시 DSL. */
+    public record CompositeForeignKey(
+            String parentSource,
+            List<IdentityComponentSpec> sourceComponents,
+            List<IdentityComponentSpec> targetComponents
+    ) {
+        public CompositeForeignKey {
+            Objects.requireNonNull(parentSource, "composite foreign key parentSource");
+            if (parentSource.isBlank() || !parentSource.equals(parentSource.trim())) {
+                throw new IllegalArgumentException("composite foreign key parentSource must be non-blank and trimmed");
+            }
+            sourceComponents = sourceComponents == null ? List.of() : List.copyOf(sourceComponents);
+            targetComponents = targetComponents == null ? List.of() : List.copyOf(targetComponents);
+        }
+    }
 }
