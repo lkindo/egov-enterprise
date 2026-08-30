@@ -1,5 +1,15 @@
 -- Framework 필수 시드 데이터 (Repeatable — 멱등)
--- 시스템 기본 역할 정의. 컬럼은 tb_role_info 실 스키마(role_id/role_nm/role_expln/role_crt_ymd)에 정합.
+-- 시스템 기본 권한/역할 정의.
+-- V2_85 이후 tb_user_authrt_map.authrt_id 는 tb_authrt_info.authrt_cd 를 참조한다.
+-- reusable-base 의 schema-only baseline 에도 이 FK가 남으므로, 아래 webmaster 매핑보다
+-- 부모 권한을 먼저 보증해야 신규 base 에 repeatable 을 단독 적용할 수 있다.
+INSERT INTO tb_authrt_info (authrt_cd, authrt_nm, crt_dt)
+VALUES ('ROLE_ADMIN', '관리자 권한', CURRENT_TIMESTAMP)
+ON CONFLICT (authrt_cd) DO NOTHING;
+
+INSERT INTO tb_authrt_info (authrt_cd, authrt_nm, crt_dt)
+VALUES ('ROLE_USER', '사용자 권한', CURRENT_TIMESTAMP)
+ON CONFLICT (authrt_cd) DO NOTHING;
 
 -- ROLE_ADMIN, ROLE_USER 기본 역할
 INSERT INTO tb_role_info (role_id, role_nm, role_expln, role_crt_ymd)
