@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -18,14 +19,18 @@ import java.util.Set;
 /** migration-tool 전용 Flyway bootstrap과 물리 구조 fail-closed 검증. */
 public final class MigrationSchemaManager {
 
+    public static final String CONTROL_SCHEMA = "migration_control";
     public static final String HISTORY_TABLE = "tb_migration_schema_history";
     private static final String LOCATION = "classpath:db/migration-tool";
+    private static final String KEY_MAP_TABLE = "tb_migration_key_map";
+    private static final List<String> RUNTIME_TABLES = List.of(
+            KEY_MAP_TABLE, "tb_migration_run", "tb_migration_checkpoint", HISTORY_TABLE);
     private static final Map<String, List<String>> REQUIRED_PRIMARY_KEYS = Map.of(
-            "tb_migration_key_map", List.of("run_id", "source_namespace", "source_table", "legacy_key"),
+            KEY_MAP_TABLE, List.of("run_id", "source_namespace", "source_table", "legacy_key"),
             "tb_migration_run", List.of("run_id", "source_namespace"),
             "tb_migration_checkpoint", List.of("run_id", "source_namespace", "source_table", "source_key"));
     private static final Map<String, Set<String>> REQUIRED_COLUMNS = Map.of(
-            "tb_migration_key_map", Set.of(
+            KEY_MAP_TABLE, Set.of(
                     "run_id", "source_namespace", "source_table", "legacy_key", "new_key"),
             "tb_migration_run", Set.of(
                     "run_id", "source_namespace", "run_stts_cd", "frst_reg_dt", "last_mdfcn_dt"),
@@ -38,10 +43,14 @@ public final class MigrationSchemaManager {
         if (dataSource == null) {
             throw new IllegalStateException("target DataSource가 없어 migration schema를 검증할 수 없습니다");
         }
-        preflightLegacyKeyMap(dataSource);
+        preflightRuntimeTables(dataSource);
+        String physicalControlSchema = physicalIdentifier(dataSource, CONTROL_SCHEMA);
         Flyway.configure()
                 .dataSource(dataSource)
                 .locations(LOCATION)
+                .schemas(physicalControlSchema)
+                .defaultSchema(physicalControlSchema)
+                .createSchemas(true)
                 .table(HISTORY_TABLE)
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
@@ -51,26 +60,54 @@ public final class MigrationSchemaManager {
         validateRequiredStructure(dataSource);
     }
 
-    private static void preflightLegacyKeyMap(DataSource dataSource) {
-        Set<String> columns = columns(dataSource, "tb_migration_key_map");
-        if (!columns.isEmpty()
-                && (!columns.contains("run_id") || !columns.contains("source_namespace"))) {
-            throw new IllegalStateException(
-                    "legacy 3-column tb_migration_key_map 감지: run_id/source_namespace가 없어 "
-                            + "실행 간 키 충돌을 방지할 수 없습니다. 승인된 schema 전환 후 재실행하세요");
+    private static void preflightRuntimeTables(DataSource dataSource) {
+        List<TableLocation> locations = runtimeTableLocations(dataSource);
+        for (TableLocation location : locations) {
+            if (!KEY_MAP_TABLE.equalsIgnoreCase(location.table())) {
+                continue;
+            }
+            Set<String> columns = columns(dataSource, location.schema(), location.table());
+            if (!columns.contains("run_id") || !columns.contains("source_namespace")) {
+                throw new IllegalStateException(
+                        "legacy 3-column tb_migration_key_map 감지(" + location.displayName() + "): "
+                                + "run_id/source_namespace가 없어 실행 간 키 충돌을 방지할 수 없습니다. "
+                                + "승인된 schema 전환 후 재실행하세요");
+            }
+        }
+        for (TableLocation location : locations) {
+            if (!CONTROL_SCHEMA.equalsIgnoreCase(location.schema())) {
+                throw new IllegalStateException(
+                        "migration runtime table " + location.displayName() + " 이(가) 전용 schema 밖에 있습니다. "
+                                + "기존 상태를 migration_control로 승인된 절차에 따라 전환한 뒤 재실행하세요");
+            }
+        }
+    }
+
+    private static String physicalIdentifier(DataSource dataSource, String identifier) {
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metadata = connection.getMetaData();
+            if (metadata.storesUpperCaseIdentifiers()) {
+                return identifier.toUpperCase(Locale.ROOT);
+            }
+            if (metadata.storesLowerCaseIdentifiers()) {
+                return identifier.toLowerCase(Locale.ROOT);
+            }
+            return identifier;
+        } catch (SQLException e) {
+            throw new IllegalStateException("migration control schema identifier 판정 실패", e);
         }
     }
 
     private static void validateRequiredStructure(DataSource dataSource) {
         for (Map.Entry<String, Set<String>> expected : REQUIRED_COLUMNS.entrySet()) {
-            Set<String> actual = columns(dataSource, expected.getKey());
+            Set<String> actual = columns(dataSource, CONTROL_SCHEMA, expected.getKey());
             Set<String> missing = new LinkedHashSet<>(expected.getValue());
             missing.removeAll(actual);
             if (!missing.isEmpty()) {
                 throw new IllegalStateException(expected.getKey()
                         + " migration schema 필수 컬럼 누락: " + missing);
             }
-            List<String> actualPk = primaryKey(dataSource, expected.getKey());
+            List<String> actualPk = primaryKey(dataSource, CONTROL_SCHEMA, expected.getKey());
             List<String> expectedPk = REQUIRED_PRIMARY_KEYS.get(expected.getKey());
             if (!actualPk.equals(expectedPk)) {
                 throw new IllegalStateException(expected.getKey()
@@ -79,21 +116,47 @@ public final class MigrationSchemaManager {
         }
     }
 
-    private static Set<String> columns(DataSource dataSource, String table) {
+    private static List<TableLocation> runtimeTableLocations(DataSource dataSource) {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metadata = connection.getMetaData();
-            Set<String> columns = new LinkedHashSet<>();
-            for (String candidate : caseVariants(table)) {
-                try (ResultSet result = metadata.getColumns(
-                        connection.getCatalog(), connection.getSchema(), candidate, null)) {
-                    while (result.next()) {
-                        if (table.equalsIgnoreCase(result.getString("TABLE_NAME"))) {
-                            columns.add(normalize(result.getString("COLUMN_NAME")));
+            Set<TableLocation> locations = new LinkedHashSet<>();
+            for (String table : RUNTIME_TABLES) {
+                for (String candidate : caseVariants(table)) {
+                    try (ResultSet result = metadata.getTables(
+                            connection.getCatalog(), null, candidate, null)) {
+                        while (result.next()) {
+                            String actualTable = result.getString("TABLE_NAME");
+                            if (table.equalsIgnoreCase(actualTable)) {
+                                locations.add(new TableLocation(
+                                        result.getString("TABLE_SCHEM"), actualTable));
+                            }
                         }
                     }
                 }
-                if (!columns.isEmpty()) {
-                    break;
+            }
+            return List.copyOf(locations);
+        } catch (SQLException e) {
+            throw new IllegalStateException("migration runtime table 위치 조회 실패", e);
+        }
+    }
+
+    private static Set<String> columns(DataSource dataSource, String schema, String table) {
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metadata = connection.getMetaData();
+            Set<String> columns = new LinkedHashSet<>();
+            for (String schemaCandidate : caseVariants(schema)) {
+                for (String tableCandidate : caseVariants(table)) {
+                    try (ResultSet result = metadata.getColumns(
+                            connection.getCatalog(), schemaCandidate, tableCandidate, null)) {
+                        while (result.next()) {
+                            if (sameLocation(schema, table, result)) {
+                                columns.add(normalize(result.getString("COLUMN_NAME")));
+                            }
+                        }
+                    }
+                    if (!columns.isEmpty()) {
+                        return columns;
+                    }
                 }
             }
             return columns;
@@ -102,38 +165,62 @@ public final class MigrationSchemaManager {
         }
     }
 
-    private static List<String> primaryKey(DataSource dataSource, String table) {
+    private static List<String> primaryKey(DataSource dataSource, String schema, String table) {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metadata = connection.getMetaData();
             Map<Integer, String> ordered = new LinkedHashMap<>();
-            for (String candidate : caseVariants(table)) {
-                try (ResultSet result = metadata.getPrimaryKeys(
-                        connection.getCatalog(), connection.getSchema(), candidate)) {
-                    while (result.next()) {
-                        if (table.equalsIgnoreCase(result.getString("TABLE_NAME"))) {
-                            ordered.put(result.getInt("KEY_SEQ"), normalize(result.getString("COLUMN_NAME")));
+            for (String schemaCandidate : caseVariants(schema)) {
+                for (String tableCandidate : caseVariants(table)) {
+                    try (ResultSet result = metadata.getPrimaryKeys(
+                            connection.getCatalog(), schemaCandidate, tableCandidate)) {
+                        while (result.next()) {
+                            if (sameLocation(schema, table, result)) {
+                                ordered.put(result.getInt("KEY_SEQ"), normalize(result.getString("COLUMN_NAME")));
+                            }
                         }
                     }
-                }
-                if (!ordered.isEmpty()) {
-                    break;
+                    if (!ordered.isEmpty()) {
+                        return orderedPrimaryKey(ordered);
+                    }
                 }
             }
-            return ordered.entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .map(Map.Entry::getValue)
-                    .toList();
+            return List.of();
         } catch (SQLException e) {
             throw new IllegalStateException("migration schema metadata PK 조회 실패: " + table, e);
         }
     }
 
+    private static List<String> orderedPrimaryKey(Map<Integer, String> columns) {
+        return columns.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .toList();
+    }
+
+    private static boolean sameLocation(String schema, String table, ResultSet result) throws SQLException {
+        return table.equalsIgnoreCase(result.getString("TABLE_NAME"))
+                && sameIdentifier(schema, result.getString("TABLE_SCHEM"));
+    }
+
+    private static boolean sameIdentifier(String left, String right) {
+        return left == null ? right == null : right != null && left.equalsIgnoreCase(right);
+    }
+
     private static List<String> caseVariants(String value) {
+        if (value == null) {
+            return Collections.singletonList(null);
+        }
         return List.of(value, value.toUpperCase(Locale.ROOT), value.toLowerCase(Locale.ROOT))
                 .stream().distinct().toList();
     }
 
     private static String normalize(String value) {
         return value.toLowerCase(Locale.ROOT);
+    }
+
+    private record TableLocation(String schema, String table) {
+        private String displayName() {
+            return (schema == null || schema.isBlank() ? "<default>" : schema) + "." + table;
+        }
     }
 }

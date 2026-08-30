@@ -2,7 +2,12 @@ package nuri.migration.verify;
 
 import nuri.migration.etl.EtlExecutor.TableResult;
 import nuri.migration.etl.EtlExecutor;
+import nuri.migration.identity.JdbcTypedValueCodec;
+import nuri.migration.identity.TypedKeyEncoding;
+import nuri.migration.identity.TypedKeyTuple;
+import nuri.migration.identity.TypedValue;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.state.MigrationStateStore;
 import nuri.migration.state.RowChecksum;
@@ -11,7 +16,11 @@ import nuri.migration.verify.MigrationReport.TableReport;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -31,6 +40,9 @@ import java.util.Map;
 public class MigrationVerifier {
 
     private static final int VERIFY_BATCH = 500;
+    private static final int RUNTIME_KEY_MAX = 256;
+
+    private final JdbcTypedValueCodec identityCodec = new JdbcTypedValueCodec();
 
     /** 판정 분기 단위 테스트용: 실제 실행 경로는 반드시 선언 spec까지 전달하는 public overload를 사용한다. */
     MigrationReport verify(List<TableResult> results, JdbcTemplate targetJt) {
@@ -139,6 +151,10 @@ public class MigrationVerifier {
                             + ", written=" + result.written());
         }
 
+        if (table.identity() != null) {
+            return verifyTypedScoped(target, table, checkpoints);
+        }
+
         List<String> columns = EtlExecutor.canonicalTargetColumns(table);
         String targetKey = EtlExecutor.targetIdentityColumn(table);
         if (targetKey == null || targetKey.isBlank() || columns.isEmpty()) {
@@ -181,13 +197,13 @@ public class MigrationVerifier {
                             checkpoint.targetKey(), List.of());
                     if (matched.size() != 1) {
                         return new ScopedVerification(checkpoints.size(),
-                                "run scoped parity 불일치: target key=" + checkpoint.targetKey()
+                                "run scoped parity 불일치: targetDigest=" + keyDigest(checkpoint.targetKey())
                                         + " 행수=" + matched.size());
                     }
                     String actual = RowChecksum.calculate(columns, matched.get(0));
                     if (!actual.equals(checkpoint.rowChecksum())) {
                         return new ScopedVerification(checkpoints.size(),
-                                "run scoped checksum 불일치: source key=" + checkpoint.sourceKey());
+                                "run scoped checksum 불일치: sourceDigest=" + keyDigest(checkpoint.sourceKey()));
                     }
                 }
             } catch (RuntimeException e) {
@@ -196,6 +212,147 @@ public class MigrationVerifier {
             }
         }
         return new ScopedVerification(checkpoints.size(), null);
+    }
+
+    private ScopedVerification verifyTypedScoped(
+            JdbcTemplate target,
+            MappingSpec.TableMapping table,
+            List<MigrationStateStore.CheckpointEntry> checkpoints
+    ) {
+        List<String> columns = EtlExecutor.canonicalTargetColumns(table);
+        List<IdentityComponentSpec> components = table.identity().targetComponents();
+        if (columns.isEmpty() || components.isEmpty()) {
+            return new ScopedVerification(checkpoints.size(),
+                    "run scoped checksum 계약(typed target identity/columns) 부재");
+        }
+
+        List<TypedCheckpoint> typed = new ArrayList<>(checkpoints.size());
+        try {
+            for (MigrationStateStore.CheckpointEntry checkpoint : checkpoints) {
+                if (!TypedKeyEncoding.isTyped(checkpoint.targetKey())) {
+                    return new ScopedVerification(checkpoints.size(),
+                            "run scoped typed target key가 versioned encoding이 아님");
+                }
+                TypedKeyTuple tuple = TypedKeyEncoding.decode(checkpoint.targetKey());
+                requireTupleContract(tuple, components);
+                typed.add(new TypedCheckpoint(checkpoint, tuple));
+            }
+        } catch (RuntimeException e) {
+            return new ScopedVerification(checkpoints.size(),
+                    "run scoped typed target key 계약 불일치");
+        }
+
+        long distinctTargetKeys = checkpoints.stream()
+                .map(MigrationStateStore.CheckpointEntry::targetKey)
+                .distinct()
+                .count();
+        if (distinctTargetKeys != checkpoints.size()) {
+            return new ScopedVerification(checkpoints.size(),
+                    "run scoped parity 불일치: checkpoint target key 중복");
+        }
+
+        String selectPrefix;
+        try {
+            selectPrefix = "SELECT " + String.join(", ", columns.stream()
+                    .map(SourceIntrospector::ident).toList())
+                    + " FROM " + SourceIntrospector.qualifiedIdent(table.target())
+                    + " WHERE ";
+        } catch (IllegalArgumentException e) {
+            return new ScopedVerification(checkpoints.size(),
+                    "run scoped typed target identifier 계약 불일치");
+        }
+
+        for (int from = 0; from < typed.size(); from += VERIFY_BATCH) {
+            List<TypedCheckpoint> batch = typed.subList(
+                    from, Math.min(from + VERIFY_BATCH, typed.size()));
+            try {
+                Object[] arguments = batch.stream()
+                        .flatMap(item -> item.target().values().stream())
+                        .map(TypedValue::jdbcValue)
+                        .toArray();
+                List<Map<String, Object>> rows = target.queryForList(
+                        selectPrefix + typedTuplePredicate(components, batch.size()), arguments);
+                Map<String, List<Map<String, Object>>> rowsByKey = new LinkedHashMap<>();
+                for (Map<String, Object> row : rows) {
+                    TypedKeyTuple actualTuple = tupleFromRow(row, components);
+                    String actualKey = TypedKeyEncoding.encode(
+                            actualTuple, RUNTIME_KEY_MAX, "tb_migration_checkpoint.target_key");
+                    rowsByKey.computeIfAbsent(actualKey, ignored -> new ArrayList<>()).add(row);
+                }
+                for (TypedCheckpoint item : batch) {
+                    MigrationStateStore.CheckpointEntry checkpoint = item.checkpoint();
+                    List<Map<String, Object>> matched = rowsByKey.getOrDefault(
+                            checkpoint.targetKey(), List.of());
+                    if (matched.size() != 1) {
+                        return new ScopedVerification(checkpoints.size(),
+                                "run scoped parity 불일치: targetDigest=" + keyDigest(checkpoint.targetKey())
+                                        + " 행수=" + matched.size());
+                    }
+                    String actual = RowChecksum.calculate(columns, matched.getFirst());
+                    if (!actual.equals(checkpoint.rowChecksum())) {
+                        return new ScopedVerification(checkpoints.size(),
+                                "run scoped checksum 불일치: sourceDigest=" + keyDigest(checkpoint.sourceKey()));
+                    }
+                }
+            } catch (RuntimeException e) {
+                return new ScopedVerification(checkpoints.size(),
+                        "run scoped typed target/checksum batch 대조 실패");
+            }
+        }
+        return new ScopedVerification(checkpoints.size(), null);
+    }
+
+    private record TypedCheckpoint(
+            MigrationStateStore.CheckpointEntry checkpoint,
+            TypedKeyTuple target
+    ) {}
+
+    private void requireTupleContract(
+            TypedKeyTuple tuple,
+            List<IdentityComponentSpec> components
+    ) {
+        if (tuple.values().size() != components.size()) {
+            throw new IllegalArgumentException("typed target identity arity 불일치");
+        }
+        for (int i = 0; i < components.size(); i++) {
+            TypedValue value = tuple.values().get(i);
+            if (value.isNull()) {
+                throw new IllegalArgumentException("typed target identity null component 금지");
+            }
+            TypedValue declared = identityCodec.encode(components.get(i).type(), value.jdbcValue());
+            if (!declared.equals(value)) {
+                throw new IllegalArgumentException("typed target identity type 불일치: "
+                        + components.get(i).column());
+            }
+        }
+    }
+
+    private TypedKeyTuple tupleFromRow(
+            Map<String, Object> row,
+            List<IdentityComponentSpec> components
+    ) {
+        List<TypedValue> values = new ArrayList<>(components.size());
+        for (IdentityComponentSpec component : components) {
+            Object value = valueIgnoreCase(row, component.column());
+            if (value == null) {
+                throw new IllegalStateException("run scoped target identity가 null: " + component.column());
+            }
+            values.add(identityCodec.encode(component.type(), value));
+        }
+        return TypedKeyTuple.of(values.toArray(TypedValue[]::new));
+    }
+
+    static String typedTuplePredicate(List<IdentityComponentSpec> components, int tupleCount) {
+        if (components == null || components.isEmpty()) {
+            throw new IllegalArgumentException("typed target identity components must not be empty");
+        }
+        if (tupleCount <= 0) {
+            throw new IllegalArgumentException("typed tuple predicate count must be positive");
+        }
+        String tuple = "(" + String.join(" AND ", components.stream()
+                .map(component -> SourceIntrospector.ident(component.column()) + " = ?")
+                .toList()) + ")";
+        return "(" + String.join(" OR ", java.util.Collections.nCopies(tupleCount, tuple)) + ")";
     }
 
     private static Object valueIgnoreCase(Map<String, Object> row, String column) {
@@ -240,6 +397,18 @@ public class MigrationVerifier {
             return c == null ? 0L : c;
         } catch (RuntimeException e) {
             return -1L; // 호출자는 대조 불가를 FAIL로 판정한다.
+        }
+    }
+
+    private static String keyDigest(String key) {
+        if (key == null) {
+            return "<null>";
+        }
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(key.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 is unavailable", impossible);
         }
     }
 

@@ -1,5 +1,8 @@
 package nuri.migration.keymap;
 
+import nuri.migration.identity.TypedKeyEncoding;
+import nuri.migration.identity.TypedKeyTuple;
+import nuri.migration.schema.MigrationSchemaManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
@@ -25,7 +28,8 @@ import java.util.Map;
  */
 public class KeyMapRegistry {
 
-    public static final String TABLE = "tb_migration_key_map";
+    public static final String TABLE = MigrationSchemaManager.CONTROL_SCHEMA + ".tb_migration_key_map";
+    private static final int KEY_COLUMN_LIMIT = 256;
 
     private final String runId;
     private final String sourceNamespace;
@@ -68,6 +72,29 @@ public class KeyMapRegistry {
         return newKey;
     }
 
+    /** typed/composite source→target identity를 기존 transaction pending 경계에 등록한다. */
+    public TypedKeyTuple register(
+            String sourceTable,
+            TypedKeyTuple sourceKey,
+            TypedKeyTuple targetKey
+    ) {
+        String encodedSource = TypedKeyEncoding.encode(
+                sourceKey, KEY_COLUMN_LIMIT, "tb_migration_key_map.legacy_key");
+        String encodedTarget = TypedKeyEncoding.encode(
+                targetKey, KEY_COLUMN_LIMIT, "tb_migration_key_map.new_key");
+        Map<String, String> table = maps.computeIfAbsent(key(sourceTable), ignored -> new LinkedHashMap<>());
+        String existing = table.get(encodedSource);
+        if (existing != null) {
+            if (!existing.equals(encodedTarget)) {
+                throw new IllegalStateException("typed keymap conflict for " + sourceTable);
+            }
+            return TypedKeyEncoding.decode(existing);
+        }
+        table.put(encodedSource, encodedTarget);
+        pending.add(new PendingMapping(key(sourceTable), encodedSource, encodedTarget));
+        return targetKey;
+    }
+
     /**
      * 자식 FK 번역: 부모 테이블의 레거시 키 → 신규 키. 매핑 부재 시 {@code null}(고아). null 입력은 null 반환.
      */
@@ -77,6 +104,15 @@ public class KeyMapRegistry {
         }
         Map<String, String> m = maps.get(key(parentSourceTable));
         return m == null ? null : m.get(legacyKey);
+    }
+
+    /** typed/composite 자식 FK 번역. legacy 문자열 map으로 묵시 fallback하지 않는다. */
+    public TypedKeyTuple translate(String parentSourceTable, TypedKeyTuple sourceKey) {
+        String encodedSource = TypedKeyEncoding.encode(
+                sourceKey, KEY_COLUMN_LIMIT, "tb_migration_key_map.legacy_key");
+        Map<String, String> table = maps.get(key(parentSourceTable));
+        String encodedTarget = table == null ? null : table.get(encodedSource);
+        return encodedTarget == null ? null : TypedKeyEncoding.decode(encodedTarget);
     }
 
     public boolean hasMappingFor(String sourceTable) {

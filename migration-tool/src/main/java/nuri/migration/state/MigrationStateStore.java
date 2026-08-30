@@ -1,6 +1,9 @@
 package nuri.migration.state;
 
+import nuri.migration.identity.TypedKeyEncoding;
+import nuri.migration.identity.TypedKeyTuple;
 import nuri.migration.model.MappingSpec.RunContext;
+import nuri.migration.schema.MigrationSchemaManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
@@ -15,15 +18,35 @@ import java.util.Map;
 /** run/source 범위의 성공 행을 타깃 INSERT와 같은 transaction에 기록하는 durable checkpoint. */
 public final class MigrationStateStore {
 
-    public static final String RUN_TABLE = "tb_migration_run";
-    public static final String CHECKPOINT_TABLE = "tb_migration_checkpoint";
+    public static final String RUN_TABLE = MigrationSchemaManager.CONTROL_SCHEMA + ".tb_migration_run";
+    public static final String CHECKPOINT_TABLE = MigrationSchemaManager.CONTROL_SCHEMA
+            + ".tb_migration_checkpoint";
 
     private final String runId;
     private final String sourceNamespace;
     private final Map<String, Map<String, CheckpointEntry>> checkpoints = new LinkedHashMap<>();
 
     public record CheckpointEntry(String sourceTable, String sourceKey, String targetTable,
-                                  String targetKey, String rowChecksum) {}
+                                  String targetKey, String rowChecksum) {
+        private static final int KEY_COLUMN_LIMIT = 256;
+
+        public static CheckpointEntry typed(
+                String sourceTable,
+                TypedKeyTuple sourceKey,
+                String targetTable,
+                TypedKeyTuple targetKey,
+                String rowChecksum
+        ) {
+            return new CheckpointEntry(
+                    sourceTable,
+                    TypedKeyEncoding.encode(sourceKey, KEY_COLUMN_LIMIT,
+                            "tb_migration_checkpoint.source_key"),
+                    targetTable,
+                    TypedKeyEncoding.encode(targetKey, KEY_COLUMN_LIMIT,
+                            "tb_migration_checkpoint.target_key"),
+                    rowChecksum);
+        }
+    }
 
     public MigrationStateStore(RunContext context) {
         if (context == null || blank(context.runId()) || blank(context.sourceNamespace())) {

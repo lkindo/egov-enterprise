@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,6 +39,18 @@ class TransformerRegistryTest {
         assertThat(registry.apply("trim", null)).isNull();
         assertThat(registry.apply("upper", null)).isNull();
         assertThat(registry.apply("lower", null)).isNull();
+    }
+
+    @Test
+    void upper_lower_contractIsIndependentOfProcessDefaultLocale() {
+        Locale previous = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            assertThat(registry.apply("upper", "i")).isEqualTo("I");
+            assertThat(registry.apply("lower", "I")).isEqualTo("i");
+        } finally {
+            Locale.setDefault(previous);
+        }
     }
 
     @Test
