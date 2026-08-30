@@ -20,13 +20,23 @@ vi.mock('next/config', () => ({
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, cleanup } from '@testing-library/react';
 import { useAutoSaveDraft } from '../use-auto-save-draft';
+import {
+  buildBoardDraftStorageKey,
+  type BoardDraftScope,
+} from '@/lib/drafts/board-draft-storage';
 
 vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
-const KEY = 'BBS_001';
-const FULL_KEY = `egov-draft-${KEY}`;
+const SCOPE: BoardDraftScope = {
+  ownerId: 'user-1',
+  boardId: 'BBS_001',
+  action: 'create',
+  recordId: 'new',
+};
+const FULL_KEY = buildBoardDraftStorageKey(SCOPE);
+const NOW = new Date('2026-08-30T00:00:00.000Z');
 
 /** 최소 길이(기본 10)를 넘는 본문. */
 const LONG = { title: '제목입니다', content: '본문 내용입니다' };
@@ -35,15 +45,27 @@ function setup(overrides: Partial<Parameters<typeof useAutoSaveDraft>[0]> = {}) 
   const getData = vi.fn(() => LONG);
   const onRestore = vi.fn();
   const hook = renderHook(() =>
-    useAutoSaveDraft({ storageKey: KEY, getData, onRestore, ...overrides })
+    useAutoSaveDraft({ scope: SCOPE, getData, onRestore, ...overrides })
   );
   return { ...hook, getData, onRestore };
+}
+
+function storedDraft(overrides: Record<string, unknown> = {}) {
+  return {
+    version: 2,
+    title: '이전 제목',
+    content: '이전 본문',
+    savedAt: NOW.toISOString(),
+    expiresAt: NOW.getTime() + 60_000,
+    ...overrides,
+  };
 }
 
 describe('useAutoSaveDraft', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.useFakeTimers();
+    vi.setSystemTime(NOW);
   });
 
   afterEach(() => {
@@ -68,6 +90,7 @@ describe('useAutoSaveDraft', () => {
       expect(saved.title).toBe(LONG.title);
       expect(saved.content).toBe(LONG.content);
       expect(saved.savedAt).toBeTruthy();
+      expect(saved.expiresAt).toBe(NOW.getTime() + 24 * 60 * 60 * 1000);
       expect(result.current.lastSavedAt).toBe(saved.savedAt);
     });
 
@@ -121,16 +144,41 @@ describe('useAutoSaveDraft', () => {
   });
 
   describe('복원', () => {
-    it('저장된 초안이 있으면 마운트 시 감지하고 콜백으로 넘긴다', () => {
-      localStorage.setItem(FULL_KEY, JSON.stringify({
-        title: '이전 제목', content: '이전 본문', savedAt: '2026-08-09T00:00:00.000Z',
-      }));
+    it('저장된 초안은 마운트 시 존재만 감지하고 사용자가 선택할 때 복원한다', () => {
+      localStorage.setItem(FULL_KEY, JSON.stringify(storedDraft()));
 
       const { result, onRestore } = setup();
 
       expect(result.current.hasDraft).toBe(true);
-      expect(result.current.lastSavedAt).toBe('2026-08-09T00:00:00.000Z');
+      expect(result.current.lastSavedAt).toBe(NOW.toISOString());
+      expect(onRestore).not.toHaveBeenCalled();
+
+      act(() => { result.current.restoreDraft(); });
       expect(onRestore).toHaveBeenCalledWith({ title: '이전 제목', content: '이전 본문' });
+    });
+
+    it('TTL이 지난 초안은 삭제하고 복원하지 않는다', () => {
+      localStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ expiresAt: NOW.getTime() - 1 })));
+
+      const { result, onRestore } = setup();
+
+      expect(result.current.hasDraft).toBe(false);
+      expect(result.current.restoreDraft()).toBeNull();
+      expect(localStorage.getItem(FULL_KEY)).toBeNull();
+      expect(onRestore).not.toHaveBeenCalled();
+    });
+
+    it('legacy 공유 키는 복원하지 않고 즉시 제거한다', () => {
+      const legacyKey = 'egov-draft-board_insert_BBS_001';
+      localStorage.setItem(legacyKey, JSON.stringify({
+        title: '다른 사용자 제목', content: '다른 사용자 본문', savedAt: NOW.toISOString(),
+      }));
+
+      const { result, onRestore } = setup({ legacyKeys: [legacyKey] });
+
+      expect(localStorage.getItem(legacyKey)).toBeNull();
+      expect(result.current.hasDraft).toBe(false);
+      expect(onRestore).not.toHaveBeenCalled();
     });
 
     it('저장된 초안이 없으면 hasDraft 가 false 다', () => {
@@ -149,15 +197,14 @@ describe('useAutoSaveDraft', () => {
       // 파싱 예외가 새면 초안 하나 때문에 그 게시판 글쓰기가 영구히 열리지 않는다.
       expect(result.current.hasDraft).toBe(false);
       expect(result.current.restoreDraft()).toBeNull();
+      expect(localStorage.getItem(FULL_KEY)).toBeNull();
     });
 
     it('onRestore 를 주지 않아도 복원값을 돌려준다', () => {
-      localStorage.setItem(FULL_KEY, JSON.stringify({
-        title: 'T', content: 'C', savedAt: '2026-08-09T00:00:00.000Z',
-      }));
+      localStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ title: 'T', content: 'C' })));
 
       const { result } = renderHook(() =>
-        useAutoSaveDraft({ storageKey: KEY, getData: () => LONG })
+        useAutoSaveDraft({ scope: SCOPE, getData: () => LONG })
       );
 
       expect(result.current.restoreDraft()).toMatchObject({ title: 'T', content: 'C' });
@@ -166,9 +213,7 @@ describe('useAutoSaveDraft', () => {
 
   describe('삭제', () => {
     it('정상 제출 후 초안을 지우고 상태도 되돌린다', () => {
-      localStorage.setItem(FULL_KEY, JSON.stringify({
-        title: 'T', content: 'C', savedAt: '2026-08-09T00:00:00.000Z',
-      }));
+      localStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ title: 'T', content: 'C' })));
       const { result } = setup();
       expect(result.current.hasDraft).toBe(true);
 
@@ -181,13 +226,14 @@ describe('useAutoSaveDraft', () => {
     });
 
     it('다른 게시판의 초안은 건드리지 않는다', () => {
-      localStorage.setItem('egov-draft-OTHER', JSON.stringify({ title: 'x', content: 'y' }));
+      const otherKey = buildBoardDraftStorageKey({ ...SCOPE, boardId: 'OTHER' });
+      localStorage.setItem(otherKey, JSON.stringify(storedDraft({ title: 'x', content: 'y' })));
       const { result } = setup();
 
       act(() => { result.current.clearDraft(); });
 
-      // 키에 storageKey 가 안 섞이면 한 게시판 제출이 다른 게시판 초안을 지운다.
-      expect(localStorage.getItem('egov-draft-OTHER')).not.toBeNull();
+      // 키에 boardId 가 안 섞이면 한 게시판 제출이 다른 게시판 초안을 지운다.
+      expect(localStorage.getItem(otherKey)).not.toBeNull();
     });
   });
 

@@ -5,6 +5,8 @@ import nuri.business.domain.auth.AuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.dto.AuthorManageDto;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,6 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +31,17 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthorManageService 단위 테스트")
 class AuthorManageServiceTest {
+
+    @BeforeEach
+    void authenticateAdmin() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new TestingAuthenticationToken("admin", null, "ROLE_ADMIN"));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Mock
     private AuthorityRepository authorityRepository;
@@ -71,6 +86,18 @@ class AuthorManageServiceTest {
 
         assertNotNull(result);
         assertEquals("ROLE_ADMIN", result.getAuthrtCd());
+    }
+
+    @Test
+    @DisplayName("권한 상세 미존재는 404 도메인 오류")
+    void selectAuthorNotFound() {
+        given(authorityRepository.findById("MISSING")).willReturn(Optional.empty());
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> authorManageService.selectAuthor("MISSING"));
+
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND,
+                error.getErrorCode());
     }
 
     @Test
@@ -153,6 +180,34 @@ class AuthorManageServiceTest {
                 .isInstanceOf(BusinessException.class);
 
         // 일부만 지우면 어느 것이 남았는지 화면이 말할 수 없다.
+        verify(authorityRepository, never()).deleteAllById(anyList());
+        verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
+    }
+
+    @Test
+    @DisplayName("역할 계층의 상위·하위 권한으로 사용 중이면 삭제하지 않는다")
+    void deleteAuthor_blockedWhenUsedByRoleHierarchy() {
+        given(userAuthorityRepository.countByAuthrtId("ROLE_ADMIN")).willReturn(0L);
+        given(authorityRepository.countRoleHierarchyReferences("ROLE_ADMIN")).willReturn(2L);
+
+        assertThatThrownBy(() -> authorManageService.deleteAuthor("ROLE_ADMIN"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("역할 계층 2건");
+
+        verify(authorityRepository, never()).deleteById(anyString());
+        verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
+        verify(menuAuthorityRepository, never()).deleteByIdAuthrtCd(anyString());
+    }
+
+    @Test
+    @DisplayName("일괄 삭제도 역할 계층 참조가 하나라도 있으면 전체를 중단한다")
+    void deleteAuthors_blockedWhenAnyRoleHierarchyReferenceExists() {
+        given(authorityRepository.countRoleHierarchyReferences("ROLE_1")).willReturn(0L);
+        given(authorityRepository.countRoleHierarchyReferences("ROLE_2")).willReturn(1L);
+
+        assertThatThrownBy(() -> authorManageService.deleteAuthors(new String[] {"ROLE_1", "ROLE_2"}))
+                .isInstanceOf(BusinessException.class);
+
         verify(authorityRepository, never()).deleteAllById(anyList());
         verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
     }

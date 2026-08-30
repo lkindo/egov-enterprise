@@ -26,7 +26,7 @@ public class AuthorityRoleRepositoryImpl implements AuthorityRoleRepositoryCusto
                                                 roleInfo.rolePatrn.as("rolePatrn"),
                                                 roleInfo.roleExpln.as("roleExpln"),
                                                 roleInfo.roleTypeCd.as("roleTypeCd"),
-                                                roleInfo.roleSort.as("roleSort"),
+                                                roleInfo.roleSort.stringValue().as("roleSort"),
                                                 authorityRole.id.authrtCd.as("authrtCd"),
                                                 new CaseBuilder()
                                                                 .when(authorityRole.id.authrtCd.isNotNull()).then("Y")
@@ -35,9 +35,9 @@ public class AuthorityRoleRepositoryImpl implements AuthorityRoleRepositoryCusto
                                 .from(roleInfo)
                                 .leftJoin(authorityRole).on(roleInfo.roleId.eq(authorityRole.id.roleCd)
                                                 .and(authorityRole.id.authrtCd.eq(authrtCd)))
+                                .orderBy(roleInfo.roleSort.asc().nullsLast(), roleInfo.roleId.asc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
-                                .orderBy(roleInfo.roleSort.asc())
                                 .fetch();
 
                 long total = queryFactory

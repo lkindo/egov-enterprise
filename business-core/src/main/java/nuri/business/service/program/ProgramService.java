@@ -55,8 +55,7 @@ public class ProgramService {
      * 프로그램 목록 조회
      */
     public List<ProgramDto> selectProgrmList(BaseSearchDto searchVO) {
-        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getPageUnit(),
-                Sort.by("prgrmFileNm").ascending());
+        Pageable pageable = searchVO.toPageable(Sort.by("prgrmFileNm").ascending());
         String keyword = searchVO.getSearchKeyword();
 
         Page<Program> page;

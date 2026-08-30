@@ -20,6 +20,15 @@ vi.mock('@/lib/api/client', () => ({
   },
 }));
 
+vi.mock('@/queries/scrap-query-options', () => ({
+  scrapQueryOptions: {
+    list: () => ({ queryKey: ['scraps', 'list'], queryFn: vi.fn() }),
+  },
+  scrapMutationOptions: {
+    remove: () => ({ mutationFn: mocks.delete }),
+  },
+}));
+
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/app/components/patterns/work-list-page', () => ({
@@ -79,8 +88,9 @@ describe('ScrapListClient delete pending contract', () => {
   });
 
   it('confirm 전에 동기 선점하고 정확한 삭제 제어를 안내하며 실패 뒤 목록을 유지한다', async () => {
+    const deleteMutation = mocks.delete;
     let rejectDelete!: (reason?: unknown) => void;
-    mocks.delete.mockReturnValueOnce(new Promise<void>((_, reject) => {
+    deleteMutation.mockReturnValueOnce(new Promise<void>((_, reject) => {
       rejectDelete = reject;
     }));
     render(<ScrapListClient />);
@@ -92,7 +102,7 @@ describe('ScrapListClient delete pending contract', () => {
     });
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(mocks.delete).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(deleteMutation).toHaveBeenCalledTimes(1));
     expect(remove).toBeDisabled();
     expect(remove).toHaveAttribute('aria-busy', 'true');
     expect(remove).toHaveAccessibleName('삭제할 스크랩 삭제 중');

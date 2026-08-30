@@ -33,6 +33,7 @@ vi.mock('@/services/foundation/file/FileService', () => ({
 vi.mock('@/components/features/comment/CommentSection', () => ({ default: () => <div data-testid="comments" /> }));
 vi.mock('@/components/features/satisfaction/SatisfactionSection', () => ({ default: () => <div data-testid="satisfaction" /> }));
 vi.mock('@tanstack/react-query', () => ({
+  queryOptions: <T,>(options: T) => options,
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: ({ initialData }: { initialData?: unknown }) => ({
     data: initialData,

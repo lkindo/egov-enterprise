@@ -67,19 +67,6 @@ function renderSidebar(ui: React.ReactNode) {
   );
 }
 
-function mockDesktopViewport(matches: boolean) {
-  vi.mocked(window.matchMedia).mockImplementation((query) => ({
-    matches,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  } as MediaQueryList));
-}
-
 /**
  * ScrollToTop 계약 테스트.
  *
@@ -127,139 +114,57 @@ describe('Layout Components', () => {
 });
 
 describe('Sidebar responsive primary navigation', () => {
-  it('lg~xl 사이에서 모든 서비스 영역을 전환할 수 있는 명시적 내비게이션을 제공한다', async () => {
-    mockDesktopViewport(true);
+  it('서비스 영역과 하위 메뉴를 하나의 semantic nav tree에 한 번씩 렌더한다', async () => {
     const user = userEvent.setup();
     renderSidebar(<Sidebar initialMenus={sidebarMenus} />);
 
-    const switcher = await screen.findByRole('navigation', { name: '서비스 영역 선택' });
-    expect(switcher).toHaveClass('lg:block', 'xl:hidden');
-    const workspace = within(switcher).getByRole('button', { name: '업무 공간' });
-    const community = within(switcher).getByRole('button', { name: '커뮤니티' });
+    const navigation = await screen.findByRole('navigation', { name: '주 메뉴 탐색' });
+    const workspace = within(navigation).getByRole('button', { name: '업무 공간' });
+    const community = within(navigation).getByRole('button', { name: '커뮤니티' });
+    expect(within(navigation).getAllByRole('button', { name: '업무 공간' })).toHaveLength(1);
+    expect(within(navigation).getAllByRole('button', { name: '커뮤니티' })).toHaveLength(1);
+    expect(within(navigation).getByRole('link', { name: /업무 홈/ })).toBeInTheDocument();
 
     await waitFor(() => expect(workspace).toHaveAttribute('aria-pressed', 'true'));
     await user.click(community);
     expect(community).toHaveAttribute('aria-pressed', 'true');
     expect(workspace).toHaveAttribute('aria-pressed', 'false');
+    await waitFor(() => expect(within(navigation).getByRole('link', { name: /커뮤니티 홈/ })).toBeInTheDocument());
   });
 
-  it('모바일 사이드바는 닫힘 상태를 숨기고 ESC 후 트리거로 포커스를 돌려준다', async () => {
-    mockDesktopViewport(false);
-    const user = userEvent.setup();
+  it('닫힘 상태는 CSS visibility로만 전환하고 공유 tree에 inert·aria-hidden을 두지 않는다', () => {
     const { container } = renderSidebar(<SidebarHarness />);
-    const opener = screen.getByRole('button', { name: '메뉴 열기' });
     const aside = container.querySelector('aside');
 
-    expect(aside).toHaveAttribute('aria-hidden', 'true');
-    expect(aside).toHaveAttribute('inert');
-
-    const skipLink = container.querySelector<HTMLElement>('[data-sidebar-modal-background="skip-link"]')!;
-    const header = container.querySelector<HTMLElement>('[data-sidebar-modal-background="header"]')!;
-    const main = container.querySelector<HTMLElement>('[data-sidebar-modal-background="main"]')!;
-    expect(skipLink).not.toHaveAttribute('inert');
-    expect(skipLink).not.toHaveAttribute('aria-hidden');
-    expect(header).not.toHaveAttribute('inert');
-    expect(header).toHaveAttribute('aria-hidden', 'false');
-    expect(main).toHaveAttribute('inert');
-    expect(main).toHaveAttribute('aria-hidden', 'false');
-
-    await user.click(opener);
-    const dialog = await screen.findByRole('dialog', { name: '주 메뉴' });
-    expect(dialog).toHaveAttribute('id', 'primary-sidebar');
-    expect(dialog).toHaveAttribute('aria-modal', 'true');
-    await waitFor(() => expect(screen.getByRole('button', { name: '사이드바 닫기' })).toHaveFocus());
-    await waitFor(() => {
-      for (const background of [skipLink, header, main]) {
-        expect(background).toHaveAttribute('inert');
-        expect(background).toHaveAttribute('aria-hidden', 'true');
-        expect(background).not.toContainElement(dialog);
-      }
-    });
-    expect(document.body.style.overflow).toBe('hidden');
-
-    const focusable = [...dialog.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    )];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    first.focus();
-    await user.keyboard('{Shift>}{Tab}{/Shift}');
-    expect(last).toHaveFocus();
-    await user.tab();
-    expect(first).toHaveFocus();
-
-    await user.keyboard('{Escape}');
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: '주 메뉴' })).not.toBeInTheDocument());
-    expect(aside).toHaveAttribute('aria-hidden', 'true');
-    expect(document.body.style.overflow).toBe('');
-    expect(opener).toHaveFocus();
-    expect(skipLink).not.toHaveAttribute('inert');
-    expect(skipLink).not.toHaveAttribute('aria-hidden');
-    expect(header).not.toHaveAttribute('inert');
-    expect(header).toHaveAttribute('aria-hidden', 'false');
-    expect(main).toHaveAttribute('inert');
-    expect(main).toHaveAttribute('aria-hidden', 'false');
+    expect(aside).toHaveClass('invisible', '-translate-x-full', 'lg:visible', 'lg:translate-x-0');
+    expect(aside).not.toHaveAttribute('inert');
+    expect(aside).not.toHaveAttribute('aria-hidden');
+    expect(screen.getAllByRole('navigation', { name: '주 메뉴 탐색' })).toHaveLength(1);
   });
 
-  it('모바일 포커스 트랩은 숨겨진 데스크톱 하위 트리를 건너뛴다', async () => {
-    mockDesktopViewport(false);
-    const user = userEvent.setup();
-    renderSidebar(<SidebarHarness />);
-
-    await user.click(screen.getByRole('button', { name: '메뉴 열기' }));
-    const dialog = await screen.findByRole('dialog', { name: '주 메뉴' });
-    const mobileView = dialog.querySelector<HTMLElement>('.lg\\:hidden.space-y-2');
-    const desktopView = dialog.querySelector<HTMLElement>('.hidden.lg\\:block');
-
-    expect(mobileView).not.toBeNull();
-    expect(desktopView).not.toBeNull();
-    if (!mobileView || !desktopView) return;
-
-    // jsdom에는 Tailwind stylesheet가 없으므로 실제 `hidden lg:block`의 모바일 상태를
-    // ancestor display:none으로 재현한다. 하위 button 자체의 computed display는 visible인
-    // 채라서 element-only 필터는 이 decoy를 잘못 focus 순서에 포함한다.
-    desktopView.style.display = 'none';
-    const hiddenDesktopDecoy = within(desktopView).getByRole('button', {
-      name: /커뮤니티/,
-      hidden: true,
-    });
-    const actualLastMobileControl = within(mobileView).getByRole('button', {
-      name: /커뮤니티/,
-    });
-    const firstMobileControl = within(dialog).getByRole('link', {
-      name: '메인 화면으로 이동',
-    });
-
-    actualLastMobileControl.focus();
-    const tab = new KeyboardEvent('keydown', {
-      key: 'Tab',
-      bubbles: true,
-      cancelable: true,
-    });
-    document.dispatchEvent(tab);
-
-    expect(tab.defaultPrevented).toBe(true);
-    expect(firstMobileControl).toHaveFocus();
-    expect(hiddenDesktopDecoy).not.toHaveFocus();
-  });
-
-  it('데스크톱에서는 사이드바 열림 상태도 배경을 격리하지 않는다', async () => {
-    mockDesktopViewport(true);
+  it('열림 상태에서 닫기 버튼으로 포커스를 옮기고 ESC 후 trigger로 복귀한다', async () => {
     const user = userEvent.setup();
     const { container } = renderSidebar(<SidebarHarness />);
     const opener = screen.getByRole('button', { name: '메뉴 열기' });
-    const skipLink = container.querySelector<HTMLElement>('[data-sidebar-modal-background="skip-link"]')!;
     const header = container.querySelector<HTMLElement>('[data-sidebar-modal-background="header"]')!;
     const main = container.querySelector<HTMLElement>('[data-sidebar-modal-background="main"]')!;
 
     await user.click(opener);
-
-    expect(screen.queryByRole('dialog', { name: '주 메뉴' })).not.toBeInTheDocument();
-    expect(skipLink).not.toHaveAttribute('inert');
-    expect(skipLink).not.toHaveAttribute('aria-hidden');
+    expect(screen.getByRole('button', { name: '사이드바 닫기' })).toHaveFocus();
+    expect(container.querySelector('aside')).toHaveClass('visible', 'translate-x-0');
     expect(header).not.toHaveAttribute('inert');
     expect(header).toHaveAttribute('aria-hidden', 'false');
     expect(main).toHaveAttribute('inert');
     expect(main).toHaveAttribute('aria-hidden', 'false');
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(opener).toHaveFocus());
+    expect(container.querySelector('aside')).toHaveClass('invisible', '-translate-x-full');
+  });
+
+  it('렌더 중 viewport JS를 조회하지 않는다', () => {
+    vi.mocked(window.matchMedia).mockClear();
+    renderSidebar(<Sidebar initialMenus={sidebarMenus} />);
+    expect(window.matchMedia).not.toHaveBeenCalled();
   });
 });

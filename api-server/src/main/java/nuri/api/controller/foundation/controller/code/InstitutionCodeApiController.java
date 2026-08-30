@@ -30,7 +30,7 @@ public class InstitutionCodeApiController {
     @Operation(summary = "기관코드 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeDto>>> getInstitutionCodeList(
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
 
         // 목록과 총건수를 한 질의에서 얻는다. 종전에는 총건수가 검색을 무시한 전체 count() 였다.
         Page<InstitutionCodeDto> page = institutionCodeService.selectInstitutionCodeList(searchDto);
@@ -48,7 +48,7 @@ public class InstitutionCodeApiController {
     @Operation(summary = "기관코드 수신 내역 조회")
     @GetMapping("/receptions")
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeRecptnDto>>> getInstitutionCodeRecptnList(
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
 
         // 종전 `totCnt = list.size()` 는 전량 조회 결과의 개수라 페이지 크기와 무관했고,
         // 화면은 그 값으로 도달할 수 없는 페이지 번호를 그렸다.

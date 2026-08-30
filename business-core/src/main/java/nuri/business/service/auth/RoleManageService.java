@@ -5,6 +5,8 @@ import nuri.business.domain.auth.RoleInfo;
 import nuri.business.domain.auth.RoleInfoProjection;
 import nuri.business.domain.auth.RoleInfoRepository;
 import nuri.business.service.auth.dto.RoleManageDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,7 +50,8 @@ public class RoleManageService {
     public RoleManageDto selectRole(String roleCode) {
         return roleInfoRepository.findById(Objects.requireNonNull(roleCode))
                 .map(this::toDto)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "롤을 찾을 수 없습니다: " + roleCode));
     }
 
     /**

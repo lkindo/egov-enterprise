@@ -3,6 +3,7 @@ package nuri.api.controller.foundation.controller.system;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.menu.MenuService;
 import nuri.business.service.menu.dto.MenuCreateDto;
@@ -29,7 +30,7 @@ public class MenuApiController {
     @Operation(summary = "메뉴 목록 조회", description = "시스템 전체 메뉴 목록을 페이징하여 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<MenuDto>>> getMenuList(
-            @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
         List<MenuDto> list = menuService.selectMenuManageList(searchDto);
         int total = menuService.selectMenuManageListTotCnt(searchDto);
@@ -50,6 +51,7 @@ public class MenuApiController {
     }
 
     @Operation(summary = "메뉴 등록", description = "새로운 시스템 메뉴를 등록합니다.")
+    @AdminOrSystem
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createMenu(@Valid @RequestBody MenuDto dto) throws Exception {
         menuService.insertMenuManage(dto);
@@ -57,6 +59,7 @@ public class MenuApiController {
     }
 
     @Operation(summary = "메뉴 정보 수정", description = "기존 시스템 메뉴 정보를 수정합니다.")
+    @AdminOrSystem
     @PutMapping("/{menuNo}")
     public ResponseEntity<ApiResponse<Void>> updateMenu(@PathVariable Long menuNo, @Valid @RequestBody MenuDto dto)
             throws Exception {
@@ -67,6 +70,7 @@ public class MenuApiController {
 
     @Operation(summary = "메뉴 순서 일괄 변경",
             description = "여러 메뉴의 상위메뉴·순서만 일괄 반영합니다. 명칭·설명·아이콘 등 다른 컬럼은 변경하지 않습니다.")
+    @AdminOrSystem
     @PutMapping("/batch-order")
     public ResponseEntity<ApiResponse<Void>> updateMenuOrder(@Valid @RequestBody List<MenuDto> menuList) throws Exception {
         // 종전에는 노드마다 updateMenuManage 를 호출해, 페이로드에 없는 컬럼(menu_expln/rel_img_*)이
@@ -76,6 +80,7 @@ public class MenuApiController {
     }
 
     @Operation(summary = "메뉴 삭제", description = "시스템 메뉴를 삭제합니다.")
+    @AdminOrSystem
     @DeleteMapping("/{menuNo}")
     public ResponseEntity<ApiResponse<Void>> deleteMenu(@PathVariable Long menuNo) throws Exception {
         MenuDto dto = MenuDto.builder().menuNo(menuNo).build();
@@ -86,7 +91,7 @@ public class MenuApiController {
     @Operation(summary = "메뉴 생성 관리 목록 조회", description = "권한별 메뉴 생성 관리 목록을 조회합니다.")
     @GetMapping("/creation-manage")
     public ResponseEntity<ApiResponse<PageResponse<MenuCreateDto>>> getMenuCreationManageList(
-            @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
         
         List<MenuCreateDto> list = menuService.selectMenuCreatManagList(searchDto);
         int total = menuService.selectMenuCreatManagTotCnt(searchDto);
@@ -103,6 +108,7 @@ public class MenuApiController {
     }
 
     @Operation(summary = "권한별 메뉴 할당 저장", description = "특정 권한에 메뉴들을 할당하거나 해제합니다.")
+    @AdminOrSystem
     @PostMapping("/creation/{authorCode}")
     public ResponseEntity<ApiResponse<Void>> createMenuCreation(
             @PathVariable String authorCode,

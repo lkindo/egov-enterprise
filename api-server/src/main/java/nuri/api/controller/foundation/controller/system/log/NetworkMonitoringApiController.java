@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
@@ -56,7 +57,7 @@ public class NetworkMonitoringApiController {
             description = "계측 소스가 연결되기 전까지 항상 빈 목록을 반환한다. 하드코딩된 가짜 헬스 상태를 내리지 않는다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<NetworkStatusDetailedDto>>> getStatus(
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
 
         // [W0-06] 종전에는 노드 6건을 소스에 박아 두고 logDt 만 now() 로 갈아 '실시간 계측'처럼 반환했다.
         //   관리자가 존재하지 않는 인프라의 헬스 상태를 보고 운영 판단을 하게 되므로 제거한다.

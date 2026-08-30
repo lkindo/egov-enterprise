@@ -1,3 +1,4 @@
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import { DndContext, 
  closestCenter, 
  KeyboardSensor, 
@@ -565,14 +566,15 @@ export default function CommonCodeClient({
  queryKey: ['cmmn-detail-codes', selectedCdId],
  enabled: !!selectedCdId,
  queryFn: async () => {
- const res = await codeAdminService.getDetailCodeList({
- cdId: selectedCdId as string,
- searchKeyword: selectedCdId as string,
- searchCondition: '1',
- pageUnit: 999
- });
- // 페일세이프: 백엔드가 전체를 반환하는 경우를 대비해 클라이언트에서도 그룹으로 한 번 더 거른다.
- return (res.list || []).filter(item => item && item.cdId === selectedCdId);
+   const rows = await fetchAllPages((pageIndex, pageUnit) =>
+     codeAdminService.getDetailCodeList({
+       searchKeyword: selectedCdId as string,
+       searchCondition: '1',
+       pageIndex,
+       pageUnit,
+     }));
+   // 페일세이프: contains 검색 결과를 선택한 그룹과 정확히 일치하도록 한 번 더 거른다.
+   return rows.filter(item => item && item.cdId === selectedCdId);
  },
  /*
   * SSR 로 이미 받아 둔 상세 목록만 자리표시자로 재사용한다.

@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures/base-test';
 import { getAdminBearerToken } from './utils/admin-token';
 import { buildSpecScope, ConsoleErrorGuard } from './fixtures/error-detector';
+import { BOARD_DRAFT_PREFIX } from '../src/lib/drafts/board-draft-storage';
 
 /**
  * [Tier 4] Quality & Resilience: Security, UX, A11y, Visual
@@ -83,19 +84,25 @@ test.describe('Tier 4: Quality & Resilience', () => {
             await page.locator('.ProseMirror').fill('This is a test content for auto-save verification.');
             
             console.log('>>> Waiting for auto-save state...');
-            const draftStorageKey = 'egov-draft-board_insert_BBSMSTR_AAAAAAAAAAAA';
+            const draftScopeSuffix = ':BBSMSTR_AAAAAAAAAAAA:create:new';
             await expect.poll(
-                () => page.evaluate((key) => {
-                    const raw = localStorage.getItem(key);
-                    if (!raw) return null;
+                () => page.evaluate(({ prefix, suffix }) => {
+                    const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+                        .filter((key): key is string => Boolean(key?.startsWith(prefix) && key.endsWith(suffix)));
+                    if (keys.length !== 1) return { keyCount: keys.length, title: null };
+                    const raw = localStorage.getItem(keys[0]);
+                    if (!raw) return { keyCount: keys.length, title: null };
                     try {
-                        return (JSON.parse(raw) as { title?: string }).title ?? null;
+                        return {
+                            keyCount: keys.length,
+                            title: (JSON.parse(raw) as { title?: string }).title ?? null,
+                        };
                     } catch {
-                        return null;
+                        return { keyCount: keys.length, title: null };
                     }
-                }, draftStorageKey),
+                }, { prefix: BOARD_DRAFT_PREFIX, suffix: draftScopeSuffix }),
                 { timeout: 10000, message: '자동 임시저장이 localStorage에 기록되지 않음' },
-            ).toBe(draftTitle);
+            ).toEqual({ keyCount: 1, title: draftTitle });
             
             console.log('>>> Simulating crash (Refresh)');
             await page.reload();
@@ -385,14 +392,14 @@ test.describe('Tier 4: Quality & Resilience', () => {
                             .toBeLessThanOrEqual(1);
                     }
 
-                    const domainSwitcher = sidebar.getByRole('navigation', {
-                        name: '서비스 영역 선택',
+                    const domainSwitcher = sidebar.getByRole('group', {
+                        name: '서비스 영역',
                         // 모바일·xl에서는 의도적으로 숨겨지므로 DOM 실재성 검사는 접근성 트리 밖도 포함한다.
                         includeHidden: true,
                     });
                     await expect(
                         domainSwitcher,
-                        `${route.path} 서비스 영역 전환 내비게이션이 하나여야 한다`,
+                        `${route.path} 서비스 영역 전환 그룹이 하나여야 한다`,
                     ).toHaveCount(1);
                     const firstDomainButton = domainSwitcher.getByRole('button', { includeHidden: true }).first();
                     await expect(
@@ -403,7 +410,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
                     if (vp.domainSwitcherVisible) {
                         await expect(
                             domainSwitcher,
-                            `${vp.width}px 에서 서비스 영역 전환 내비게이션이 보여야 한다`,
+                            `${vp.width}px 에서 서비스 영역 전환 그룹이 보여야 한다`,
                         ).toBeVisible();
                         await expect(firstDomainButton).toBeVisible();
                     } else {

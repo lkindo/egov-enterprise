@@ -21,4 +21,12 @@ public interface AuthorityRepository extends JpaRepository<Authority, String>, A
 
     @Query("SELECT a FROM Authority a WHERE a.authrtNm LIKE CONCAT(:searchKeyword, '%') OR a.authrtCd LIKE CONCAT(:searchKeyword, '%')")
     Page<Authority> searchByKeyword(@Param("searchKeyword") @NonNull String searchKeyword, @NonNull Pageable pageable);
+
+    @Query(value = """
+            SELECT count(*)
+              FROM tb_role_hierarchy
+             WHERE higher_authrt = :authrtCd
+                OR lower_authrt = :authrtCd
+            """, nativeQuery = true)
+    long countRoleHierarchyReferences(@Param("authrtCd") String authrtCd);
 }

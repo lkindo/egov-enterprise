@@ -7,6 +7,7 @@ import nuri.business.service.code.dto.CmmnCodeHierarchyDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.business.domain.common.BaseSearchDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,7 +29,7 @@ public class CommonCodeApiController {
 
     @Operation(summary = "분류코드 목록 조회")
     @GetMapping("/cl")
-    public ResponseEntity<ApiResponse<PageResponse<CmmnClCodeDto>>> getClCodeList(@ModelAttribute BaseSearchDto searchVO) throws Exception {
+    public ResponseEntity<ApiResponse<PageResponse<CmmnClCodeDto>>> getClCodeList(@Valid @ModelAttribute BaseSearchDto searchVO) throws Exception {
         List<CmmnClCodeDto> list = commonCodeService.selectCmmnClCodeList(searchVO);
         int total = commonCodeService.selectCmmnClCodeListTotCnt(searchVO);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchVO.getPageIndex(), searchVO.getPageUnit(), total)));
@@ -43,6 +44,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "분류코드 등록")
+    @AdminOrSystem
     @PostMapping("/cl")
     public ResponseEntity<ApiResponse<Void>> createClCode(@Valid @RequestBody CmmnClCodeDto vo) throws Exception {
         commonCodeService.insertCmmnClCode(vo);
@@ -50,6 +52,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "분류코드 수정")
+    @AdminOrSystem
     @PutMapping("/cl/{clCode}")
     public ResponseEntity<ApiResponse<Void>> updateClCode(@PathVariable String clCode, @Valid @RequestBody CmmnClCodeDto vo) throws Exception {
         vo.setClsfCd(clCode);
@@ -58,6 +61,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "분류코드 삭제")
+    @AdminOrSystem
     @DeleteMapping("/cl/{clCode}")
     public ResponseEntity<ApiResponse<Void>> deleteClCode(@PathVariable String clCode) throws Exception {
         CmmnClCodeDto vo = new CmmnClCodeDto();
@@ -70,7 +74,7 @@ public class CommonCodeApiController {
 
     @Operation(summary = "공통코드 목록 조회")
     @GetMapping("/cmmn")
-    public ResponseEntity<ApiResponse<PageResponse<CmmnCodeDto>>> getCmmnCodeList(@ModelAttribute BaseSearchDto searchVO) throws Exception {
+    public ResponseEntity<ApiResponse<PageResponse<CmmnCodeDto>>> getCmmnCodeList(@Valid @ModelAttribute BaseSearchDto searchVO) throws Exception {
         List<CmmnCodeDto> list = commonCodeService.selectCmmnCodeList(searchVO);
         int total = commonCodeService.selectCmmnCodeListTotCnt(searchVO);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchVO.getPageIndex(), searchVO.getPageUnit(), total)));
@@ -85,6 +89,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "공통코드 등록")
+    @AdminOrSystem
     @PostMapping("/cmmn")
     public ResponseEntity<ApiResponse<Void>> createCmmnCode(@Valid @RequestBody CmmnCodeDto vo) throws Exception {
         commonCodeService.insertCmmnCode(vo);
@@ -93,6 +98,7 @@ public class CommonCodeApiController {
 
     @Operation(summary = "공통코드 계층 일괄 저장",
             description = "코드 탐색기 편집 결과(코드그룹의 소속 분류코드)를 일괄 반영합니다. 각 항목의 cdId·clsfCd 는 필수입니다.")
+    @AdminOrSystem
     @PutMapping("/cmmn/batch-hierarchy")
     public ResponseEntity<ApiResponse<Void>> updateCmmnCodeHierarchy(
             @Valid @RequestBody List<CmmnCodeHierarchyDto> items) {
@@ -101,6 +107,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "공통코드 수정")
+    @AdminOrSystem
     @PutMapping("/cmmn/{codeId}")
     public ResponseEntity<ApiResponse<Void>> updateCmmnCode(@PathVariable String codeId, @Valid @RequestBody CmmnCodeDto vo) throws Exception {
         vo.setCdId(codeId);
@@ -109,6 +116,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "공통코드 삭제")
+    @AdminOrSystem
     @DeleteMapping("/cmmn/{codeId}")
     public ResponseEntity<ApiResponse<Void>> deleteCmmnCode(@PathVariable String codeId) throws Exception {
         CmmnCodeDto vo = new CmmnCodeDto();
@@ -121,7 +129,7 @@ public class CommonCodeApiController {
 
     @Operation(summary = "상세코드 목록 조회")
     @GetMapping("/detail")
-    public ResponseEntity<ApiResponse<PageResponse<CmmnDetailCodeDto>>> getDetailCodeList(@ModelAttribute BaseSearchDto searchVO) throws Exception {
+    public ResponseEntity<ApiResponse<PageResponse<CmmnDetailCodeDto>>> getDetailCodeList(@Valid @ModelAttribute BaseSearchDto searchVO) throws Exception {
         List<CmmnDetailCodeDto> list = commonCodeService.selectCmmnDetailCodeList(searchVO);
         int total = commonCodeService.selectCmmnDetailCodeListTotCnt(searchVO);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchVO.getPageIndex(), searchVO.getPageUnit(), total)));
@@ -137,6 +145,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "상세코드 등록")
+    @AdminOrSystem
     @PostMapping("/detail")
     public ResponseEntity<ApiResponse<Void>> createDetailCode(@Valid @RequestBody CmmnDetailCodeDto vo) throws Exception {
         commonCodeService.insertCmmnDetailCode(vo);
@@ -144,6 +153,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "상세코드 수정")
+    @AdminOrSystem
     @PutMapping("/detail/{codeId}/{code}")
     public ResponseEntity<ApiResponse<Void>> updateDetailCode(@PathVariable String codeId, @PathVariable String code, @Valid @RequestBody CmmnDetailCodeDto vo) throws Exception {
         vo.setCdId(codeId);
@@ -153,6 +163,7 @@ public class CommonCodeApiController {
     }
 
     @Operation(summary = "상세코드 삭제")
+    @AdminOrSystem
     @DeleteMapping("/detail/{codeId}/{code}")
     public ResponseEntity<ApiResponse<Void>> deleteDetailCode(@PathVariable String codeId, @PathVariable String code) throws Exception {
         CmmnDetailCodeDto vo = new CmmnDetailCodeDto();

@@ -24,7 +24,6 @@ interface BoardListFiltersProps {
   setEndDate: (date?: Date) => void;
   onSearch: (e: React.FormEvent) => void;
   onReset: () => void;
-  mounted: boolean;
 }
 
 export const BoardListFilters = ({
@@ -39,15 +38,13 @@ export const BoardListFilters = ({
   endDate,
   setEndDate,
   onSearch,
-  onReset,
-  mounted
+  onReset
 }: BoardListFiltersProps) => {
   return (
     <div className="flex flex-row items-center gap-3 mb-4 bg-muted/50 p-6 rounded-lg border border-border shadow-inner">
       <form onSubmit={onSearch} className="flex flex-col gap-3 w-full">
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-          {mounted ? (
-            <Select value={searchCnd} onValueChange={setSearchCnd}>
+          <Select value={searchCnd} onValueChange={setSearchCnd}>
               <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-lg border border-border bg-card font-bold shadow-sm flex items-center leading-none" aria-label="검색 조건 선택">
                 <SelectValue placeholder="검색 조건" />
               </SelectTrigger>
@@ -56,10 +53,7 @@ export const BoardListFilters = ({
                 <SelectItem value="1">내용</SelectItem>
                 <SelectItem value="2">작성자</SelectItem>
               </SelectContent>
-            </Select>
-          ) : (
-            <div className="w-full md:w-[220px] h-12 rounded-lg border border-border bg-muted animate-pulse" />
-          )}
+          </Select>
           <div className="relative flex-1 group !h-12">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 group-focus-within:text-primary transition-colors" />
             <Input
@@ -92,8 +86,7 @@ export const BoardListFilters = ({
 
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
           <div className="flex items-center gap-2 flex-1 w-full overflow-x-auto">
-            {mounted ? (
-              <Popover>
+            <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -149,13 +142,9 @@ export const BoardListFilters = ({
                     />
                   </div>
                 </PopoverContent>
-              </Popover>
-            ) : (
-              <div className="w-full md:w-[220px] h-12 rounded-lg border border-border bg-muted animate-pulse" />
-            )}
+            </Popover>
 
-            {mounted ? (
-              <Select value={orderBy} onValueChange={setOrderBy}>
+            <Select value={orderBy} onValueChange={setOrderBy}>
                 <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-12 rounded-lg border border-border bg-card font-bold shadow-sm text-sm flex items-center leading-none" aria-label="정렬 방식 선택">
                   <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
                   <SelectValue placeholder="정렬 방식" />
@@ -165,10 +154,7 @@ export const BoardListFilters = ({
                   <SelectItem value="views">조회수순</SelectItem>
                   <SelectItem value="comments">댓글순</SelectItem>
                 </SelectContent>
-              </Select>
-            ) : (
-              <div className="w-full md:w-[140px] h-12 rounded-lg border border-border bg-muted animate-pulse" />
-            )}
+            </Select>
           </div>
 
           <div className="flex gap-2 w-full md:w-auto">

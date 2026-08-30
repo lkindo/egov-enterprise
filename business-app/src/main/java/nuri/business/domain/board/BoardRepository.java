@@ -71,6 +71,15 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         @Query("SELECT COUNT(b) FROM Board b WHERE b.bbsId = :bbsId")
         long countAllByBbsId(@Param("bbsId") String bbsId);
 
+        /**
+         * 영구 삭제를 막아야 하는 게시글 보유 게시판 ID를 한 번에 조회한다.
+         *
+         * <p>물리 FK가 보는 전체 행과 같은 집합을 봐야 하므로 native query를 사용해
+         * {@code softDeleteFilter}를 우회한다. 숨김 게시글도 남아 있으면 마스터 물리 삭제는 안전하지 않다.
+         */
+        @Query(value = "SELECT DISTINCT bbs_id FROM tb_bbs_item WHERE bbs_id IN (:bbsIds)", nativeQuery = true)
+        List<String> findBbsIdsHavingAnyArticles(@Param("bbsIds") List<String> bbsIds);
+
         @Query("SELECT COALESCE(SUM(b.inqCnt), 0L) FROM Board b WHERE b.bbsId = :bbsId AND b.useYn = :useYn")
         long sumInqCntByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
 

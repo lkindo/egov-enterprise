@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "2e0e0abdb60101caa15f1f12838f9c957cef36910eb31d0047ce634f935ae8d3"
+    "inventoryHash": "914cc6f37053e75ed20d1584a82b121925f7610141139056e047bbe33879d88e"
   },
   "summary": {
-    "sourceFileCount": 505,
-    "records": 536,
-    "syntaxOccurrences": 611,
-    "ambiguousRecords": 517,
-    "unverifiedRecords": 536,
+    "sourceFileCount": 510,
+    "records": 533,
+    "syntaxOccurrences": 608,
+    "ambiguousRecords": 514,
+    "unverifiedRecords": 533,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -46,12 +46,12 @@
       "query-builder": 22,
       "query-consumer": 57,
       "query-producer": 57,
-      "request-query-producer": 161,
+      "request-query-producer": 158,
       "url-observer": 7
     },
     "bySurface": {
       "navigation": 368,
-      "request-telemetry": 168
+      "request-telemetry": 165
     }
   },
   "requiredNegativeCases": [
@@ -2384,45 +2384,6 @@
       }
     },
     {
-      "id": "URL-580A4AA83E0F7A",
-      "surface": "request-telemetry",
-      "kind": "request-query-producer",
-      "operation": "client.get",
-      "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration/scraps/selectScrapDetail/[id]",
-      "targetCandidate": "/scraps/[computed]",
-      "stateItems": [],
-      "currentBehavior": "Request URL producer emits the observed target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-request-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/scraps/[computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-        "detector": "http-client-get-request",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-DCB119FF909511",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -2535,62 +2496,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-63353E3375945C",
-      "surface": "request-telemetry",
-      "kind": "request-query-producer",
-      "operation": "client.get",
-      "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration/scraps/selectScrapList",
-      "targetCandidate": "/scraps",
-      "stateItems": [
-        {
-          "name": "pageIndex",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        },
-        {
-          "name": "pageUnit",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "GET request carries a computed query configuration whose field semantics require domain review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-request-query",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/scraps",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-        "detector": "http-client-get-request",
         "occurrenceCount": 1
       }
     },
@@ -6511,83 +6416,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-75D940040D00BF",
-      "surface": "request-telemetry",
-      "kind": "request-query-producer",
-      "operation": "fetch",
-      "source": "frontend/src/app/admin/observability/page.tsx",
-      "producerFile": "frontend/src/app/admin/observability/page.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/observability",
-      "targetCandidate": "/actuator/health",
-      "stateItems": [],
-      "currentBehavior": "Request URL producer emits the observed target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/actuator/health",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/observability/page.tsx",
-        "detector": "fetch-request",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-F4035CC22C777C",
-      "surface": "request-telemetry",
-      "kind": "request-query-producer",
-      "operation": "fetch",
-      "source": "frontend/src/app/admin/observability/page.tsx",
-      "producerFile": "frontend/src/app/admin/observability/page.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/observability",
-      "targetCandidate": "/actuator/metrics/[computed][computed]",
-      "stateItems": [],
-      "currentBehavior": "Request URL producer emits the observed target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-request-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/actuator/metrics/[computed][computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/observability/page.tsx",
-        "detector": "fetch-request",
         "occurrenceCount": 1
       }
     },
@@ -16065,10 +15893,10 @@
       }
     },
     {
-      "id": "URL-8E516D8B0341F9",
+      "id": "URL-935189F7552BBC",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
+      "operation": "router.replace",
       "source": "frontend/src/app/UnifiedDashboardClient.tsx",
       "producerFile": "frontend/src/app/UnifiedDashboardClient.tsx",
       "consumerFile": null,
@@ -19810,6 +19638,46 @@
       }
     },
     {
+      "id": "URL-8DD22044FF9F78",
+      "surface": "request-telemetry",
+      "kind": "request-query-producer",
+      "operation": "client.get",
+      "source": "frontend/src/services/business/user/ScrapService.ts",
+      "producerFile": "frontend/src/services/business/user/ScrapService.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/[computed]",
+      "stateItems": [],
+      "currentBehavior": "Request URL producer emits the observed target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-request-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/[computed]",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/services/business/user/ScrapService.ts",
+        "detector": "http-client-get-request",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-974A43C5E4F732",
       "surface": "request-telemetry",
       "kind": "request-query-producer",
@@ -20981,75 +20849,6 @@
       }
     },
     {
-      "id": "URL-B750026612B904",
-      "surface": "request-telemetry",
-      "kind": "request-query-producer",
-      "operation": "client.get",
-      "source": "frontend/src/services/foundation/system/BoardAdminService.ts",
-      "producerFile": "frontend/src/services/foundation/system/BoardAdminService.ts",
-      "consumerFile": null,
-      "routePattern": "unresolved",
-      "targetCandidate": "",
-      "stateItems": [
-        {
-          "name": "<computed-request-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        },
-        {
-          "name": "searchCnd",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        },
-        {
-          "name": "searchWrd",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "free-text-name-signal"
-          ]
-        }
-      ],
-      "currentBehavior": "GET request carries a computed query configuration whose field semantics require domain review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-request-query",
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/services/foundation/system/BoardAdminService.ts",
-        "detector": "http-client-get-request",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-853B45AB0A4B1E",
       "surface": "request-telemetry",
       "kind": "request-query-producer",
@@ -21110,6 +20909,58 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/[computed]/deletable",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/services/foundation/system/BoardAdminService.ts",
+        "detector": "http-client-get-request",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-6B9683085A266D",
+      "surface": "request-telemetry",
+      "kind": "request-query-producer",
+      "operation": "client.get",
+      "source": "frontend/src/services/foundation/system/BoardAdminService.ts",
+      "producerFile": "frontend/src/services/foundation/system/BoardAdminService.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "<computed-request-query>",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "computed-or-aggregate-state"
+          ]
+        }
+      ],
+      "currentBehavior": "GET request carries a computed query configuration whose field semantics require domain review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-request-query",
+        "computed-request-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {

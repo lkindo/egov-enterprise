@@ -408,11 +408,10 @@ public class UserService extends BaseAbstractService {
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
                 userAuthorityRepository.deleteAllByIdInBatch(esntlIds);
-                for (User user : users) {
-                        // [P2 키 규약] tb_auth_rfsh_tk 는 esntlId 단일 키잉 — 발급/로그아웃/재발급 전 경로가
-                        // esntlId 기준임을 실측 확인했고, 레거시 loginId 키 행은 V2_18 이 정리한다(생성 경로 없음)
-                        refreshTokenRepository.deleteByUserId(user.getEsntlId());
-                }
+                // [P2 키 규약] tb_auth_rfsh_tk 는 esntlId 단일 키잉 — 발급/로그아웃/재발급 전 경로가
+                // esntlId 기준임을 실측 확인했고, 레거시 loginId 키 행은 V2_18 이 정리한다(생성 경로 없음).
+                // 사용자별 파생 delete N회를 같은 PK 축의 명시적 IN bulk delete 한 번으로 수렴한다.
+                refreshTokenRepository.deleteAllByEsntlIdIn(esntlIds);
                 // [V2_13 결속] 로그인 정책(키=loginId)·부재 플래그(키=esntlId) 정리 (커뮤니티 멤버십은 이벤트 리스너로 이관)
                 loginPolicyRepository.deleteAllByIdInBatch(
                                 users.stream().map(u -> u.getUserId()).collect(Collectors.toList()));

@@ -51,10 +51,11 @@ public class CommunityService {
                 .orderBy(qCommunity.crtDt.desc())
                 .fetch();
 
-        long totalCount = queryFactory
-                .selectFrom(qCommunity)
+        long totalCount = Objects.requireNonNullElse(queryFactory
+                .select(qCommunity.count())
+                .from(qCommunity)
                 .where(builder)
-                .fetch().size();
+                .fetchOne(), 0L);
 
         return new PageImpl<>(
                 Objects.requireNonNull(content.stream().map(CommunityDto::from).collect(Collectors.toList())),
@@ -64,7 +65,8 @@ public class CommunityService {
     public CommunityDto getCommunity(Long cmntySn) {
         return communityRepository.findById(Objects.requireNonNull(cmntySn))
                 .map(CommunityDto::from)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
     }
 
     @Transactional

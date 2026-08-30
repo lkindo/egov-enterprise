@@ -33,4 +33,14 @@ describe('SmsAdminService numeric transmission serial contract', () => {
     expect(client.post).toHaveBeenCalledWith('admin/operation/sms', request, undefined);
     expect(generatedSn).toBe(101);
   });
+
+  it('rejects an empty recipient list at the generated write boundary', async () => {
+    await expect(smsAdminService.sendSms({
+      sndngTelno: '0212345678',
+      sndngCn: 'message',
+      recipients: [],
+    })).rejects.toThrow();
+
+    expect(client.post).not.toHaveBeenCalled();
+  });
 });

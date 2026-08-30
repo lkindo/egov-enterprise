@@ -51,6 +51,10 @@ vi.mock('@/hooks/use-auto-save-draft', () => ({
   }),
 }));
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'writer', esntlId: 'writer-owner' } }),
+}));
+
 vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));

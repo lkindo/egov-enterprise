@@ -1,6 +1,7 @@
 package nuri.api.controller.business.memoreport;
 
 import jakarta.validation.Valid;
+import nuri.api.controller.business.memoreport.dto.MemoInstructionRequest;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.memoreport.MemoReportService;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -86,11 +88,11 @@ public class MemoReportApiController {
     }
 
     @Operation(summary = "지시사항 업데이트", description = "메모보고에 대한 지시사항을 업데이트합니다.")
-    @PatchMapping("/{memoRptSn}/instr-cn")
+    @PatchMapping(value = "/{memoRptSn}/instr-cn", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<Void>> updateDrctMatter(
             @PathVariable Long memoRptSn,
-            @RequestBody String instrCn) {
-        memoReportService.updateDrctMatter(memoRptSn, instrCn);
+            @Valid @RequestBody MemoInstructionRequest request) {
+        memoReportService.updateDrctMatter(memoRptSn, request.getDrctnMttr());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

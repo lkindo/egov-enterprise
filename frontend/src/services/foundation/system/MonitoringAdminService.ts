@@ -18,17 +18,23 @@ const actuatorInstance = axios.create({
   timeout: 10000,
 });
 
-interface HealthResponse {
+export interface HealthResponse {
   status: 'UP' | 'DOWN' | 'OUT_OF_SERVICE' | 'UNKNOWN';
-  components?: Record<string, any>;
+  components?: Record<string, HealthComponent>;
 }
 
-interface MetricResponse {
+export interface HealthComponent {
+  status?: string;
+  details?: Record<string, unknown>;
+  components?: Record<string, HealthComponent>;
+}
+
+export interface MetricResponse {
   name: string;
-  description: string;
-  baseUnit: string;
+  description?: string;
+  baseUnit?: string;
   measurements: Array<{ statistic: string; value: number }>;
-  availableTags: Array<{ tag: string; values: string[] }>;
+  availableTags?: Array<{ tag: string; values: string[] }>;
 }
 
 /**
@@ -46,8 +52,10 @@ class MonitoringAdminService {
   /**
    * 특정 메트릭 조회
    */
-  async getMetric(name: string): Promise<MetricResponse> {
-    const res = await actuatorInstance.get<MetricResponse>(`metrics/${name}`);
+  async getMetric(name: string, tag?: string): Promise<MetricResponse> {
+    const res = tag
+      ? await actuatorInstance.get<MetricResponse>(`metrics/${name}`, { params: { tag } })
+      : await actuatorInstance.get<MetricResponse>(`metrics/${name}`);
     return res.data;
   }
 

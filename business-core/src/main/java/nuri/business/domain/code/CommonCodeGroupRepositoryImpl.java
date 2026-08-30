@@ -35,6 +35,7 @@ public class CommonCodeGroupRepositoryImpl implements CommonCodeGroupRepositoryC
                 .where(
                         commonCodeCategory.useYn.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
+                .orderBy(commonCodeGroup.cdId.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

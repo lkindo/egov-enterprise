@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.auth.AuthorRoleProjection;
@@ -31,7 +32,7 @@ public class AuthorRoleApiController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorRoleProjection>>> getAuthorRoles(
             @PathVariable String authrtCd,
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
 
         Page<AuthorRoleProjection> result = authorRoleManageService.selectAuthorRoleList(authrtCd, searchDto);
 

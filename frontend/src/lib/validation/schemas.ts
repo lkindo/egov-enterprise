@@ -40,25 +40,27 @@ export const pollSchema = OnlinePollManageDtoSchema.extend({
   path: ['pollEndYmd']
 });
 
-export const smsSchema = SmsDtoSchema.extend({
+// 화면은 수신 번호 하나를 입력받고 API 경계에서 recipients[] 로 승격한다. 서버 응답/검색 필드와
+// recipients 자체를 폼 상태에 섞지 않도록 생성 요청의 두 본문 필드만 선택한다.
+export const smsSchema = SmsDtoSchema.pick({ sndngTelno: true, sndngCn: true }).extend({
   sndngTelno: z.string()
     .trim()
     .min(1, '발신 번호를 입력해 주세요.')
     .max(13, '발신 번호는 최대 13자까지 입력할 수 있습니다.')
     .regex(/^[0-9-]+$/, '발신 번호는 숫자와 하이픈만 입력해 주세요.')
-    .pipe(SmsDtoSchema.shape.sndngTelno.unwrap()),
+    .pipe(SmsDtoSchema.shape.sndngTelno),
   rcptnTelno: z.string()
     .trim()
     .min(1, '수신 번호를 입력해 주세요.')
-    .max(20, '수신 번호는 최대 20자까지 입력할 수 있습니다.')
+    .max(13, '수신 번호는 최대 13자까지 입력할 수 있습니다.')
     .regex(/^[0-9-]+$/, '수신 번호는 숫자와 하이픈만 입력해 주세요.')
-    .pipe(SmsRecptnDtoSchema.shape.rcptnTelno.unwrap()),
+    .pipe(SmsRecptnDtoSchema.shape.rcptnTelno),
   sndngCn: z.string()
     .trim()
     .min(1, '메시지 내용을 입력해 주세요.')
     // 이 화면의 기존 SMS 길이 정책(80자)은 백엔드 4,000자보다 엄격하므로 보존한다.
     .max(80, '메시지 내용은 최대 80자까지 입력할 수 있습니다.')
-    .pipe(SmsDtoSchema.shape.sndngCn.unwrap()),
+    .pipe(SmsDtoSchema.shape.sndngCn),
 });
 
 export const menuSchema = MenuDtoSchema.extend({

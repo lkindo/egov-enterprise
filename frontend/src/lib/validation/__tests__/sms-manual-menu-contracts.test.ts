@@ -16,10 +16,11 @@ describe('SMS, manual, and menu write-boundary contracts', () => {
         rcptnTelno: '010-1234-5678',
         sndngCn: '전송할 문자',
       });
+      expect(valid.data).not.toHaveProperty('recipients');
     }
 
     expect(smsSchema.safeParse({ sndngTelno: '1'.repeat(14), rcptnTelno: '010-1234-5678', sndngCn: '문자' }).success).toBe(false);
-    expect(smsSchema.safeParse({ sndngTelno: '02-1234-5678', rcptnTelno: 'A'.repeat(21), sndngCn: '문자' }).success).toBe(false);
+    expect(smsSchema.safeParse({ sndngTelno: '02-1234-5678', rcptnTelno: '010-1234-56789', sndngCn: '문자' }).success).toBe(false);
     expect(smsSchema.safeParse({ sndngTelno: '02-1234-5678', rcptnTelno: '010-ABCD-1234', sndngCn: '문자' }).success).toBe(false);
     expect(smsSchema.safeParse({ sndngTelno: '02-1234-5678', rcptnTelno: '010-1234-5678', sndngCn: '가'.repeat(81) }).success).toBe(false);
   });

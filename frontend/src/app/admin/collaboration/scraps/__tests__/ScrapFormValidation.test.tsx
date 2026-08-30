@@ -53,6 +53,15 @@ function renderDetail() {
   );
 }
 
+function renderInsert() {
+  const queryClient = new QueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <InsertScrapClient />
+    </QueryClientProvider>,
+  );
+}
+
 describe('scrap form validation contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -88,7 +97,7 @@ describe('scrap form validation contract', () => {
 
   it('등록 URL 오류는 write 없이 인라인으로 연결하고 URL 입력으로 이동한다', async () => {
     const user = userEvent.setup();
-    render(<InsertScrapClient />);
+    renderInsert();
     const name = screen.getByRole('textbox', { name: /스크랩명/ });
     const url = screen.getByRole('textbox', { name: /참조 URL/ });
     await user.type(name, '문서');
@@ -107,7 +116,7 @@ describe('scrap form validation contract', () => {
       response: { data: { errors: [{ field: 'scrapUrl', message: '이미 등록된 URL입니다.' }] } },
     });
     const user = userEvent.setup();
-    render(<InsertScrapClient />);
+    renderInsert();
     const name = screen.getByRole('textbox', { name: /스크랩명/ });
     const url = screen.getByRole('textbox', { name: /참조 URL/ });
     await user.type(name, '보존할 문서');
@@ -118,7 +127,7 @@ describe('scrap form validation contract', () => {
     expect(await screen.findByText('이미 등록된 URL입니다.')).toBeVisible();
     expect(name).toHaveValue('보존할 문서');
     expect(url).toHaveValue('https://example.com/preserved');
-    expect(mocks.post).toHaveBeenCalledWith('/scraps', expect.objectContaining({ useYn: 'Y' }));
+    expect(mocks.post).toHaveBeenCalledWith('scraps', expect.objectContaining({ useYn: 'Y' }), undefined);
     expect(url).toHaveAttribute('aria-invalid', 'true');
     await waitFor(() => expect(url).toHaveFocus());
   });
@@ -128,7 +137,7 @@ describe('scrap form validation contract', () => {
     mocks.post.mockReturnValueOnce(new Promise<number>((resolve) => {
       resolvePost = () => resolve(18);
     }));
-    render(<InsertScrapClient />);
+    renderInsert();
     fireEvent.change(screen.getByRole('textbox', { name: /스크랩명/ }), {
       target: { value: '중복 방지 문서' },
     });
@@ -142,7 +151,7 @@ describe('scrap form validation contract', () => {
     fireEvent.submit(form!);
     fireEvent.submit(form!);
 
-    expect(mocks.post).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(1));
     expect(submit).toBeDisabled();
     resolvePost();
     await waitFor(() => expect(mocks.push).toHaveBeenCalled());
@@ -197,15 +206,16 @@ describe('scrap form validation contract', () => {
     fireEvent.submit(form!);
     fireEvent.submit(form!);
 
-    expect(mocks.put).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mocks.put).toHaveBeenCalledTimes(1));
     expect(submit).toBeDisabled();
     resolvePut();
     await waitFor(() => expect(mocks.push).toHaveBeenCalled());
   });
 
   it('삭제를 동기 잠금하고 pending 제어를 알리며 실패 시 편집값을 보존한다', async () => {
+    const deleteMutation = mocks.delete;
     let rejectDelete!: (reason?: unknown) => void;
-    mocks.delete.mockReturnValueOnce(new Promise<void>((_, reject) => {
+    deleteMutation.mockReturnValueOnce(new Promise<void>((_, reject) => {
       rejectDelete = reject;
     }));
     renderDetail();
@@ -218,7 +228,7 @@ describe('scrap form validation contract', () => {
       fireEvent.click(remove);
     });
 
-    await waitFor(() => expect(mocks.delete).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(deleteMutation).toHaveBeenCalledTimes(1));
     expect(remove).toBeDisabled();
     expect(remove).toHaveAttribute('aria-busy', 'true');
     expect(remove).toHaveAccessibleName('보존할 스크랩 삭제 중');

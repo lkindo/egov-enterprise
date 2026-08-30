@@ -35,7 +35,8 @@ describe('Final Domain Services', () => {
  });
 
  it('scrapService calls correct endpoints', async () => {
- await scrapService.getMyScraps({ page: 0 });
+ vi.mocked(client.get).mockResolvedValueOnce({ list: [], total: 0, page: 0, size: 10, totalPage: 0 });
+ await scrapService.getMyScraps({ pageIndex: 1, pageUnit: 10 });
  expect(client.get).toHaveBeenCalledWith('scraps', expect.any(Object));
  await scrapService.deleteScrap(7);
  expect(client.delete).toHaveBeenCalledWith('scraps/7', undefined);

@@ -17,7 +17,7 @@ import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardMapper;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
-import nuri.business.service.board.event.PostCreatedEvent;
+import nuri.foundation.core.event.PostCreatedEvent;
 import nuri.business.service.file.FileService;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;

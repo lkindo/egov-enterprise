@@ -113,6 +113,7 @@ const TEMPLATES = [
 ];
 
 import { BoardMasterDtoSchema, MenuDtoSchema } from '@/types/generated-zod';
+import { boardMasterKeys } from '@/queries/board-master-query-options';
 
 export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
  bbsTtl: BoardMasterDtoSchema.shape.bbsTtl
@@ -256,7 +257,7 @@ export function BoardMakerWizard() {
  tmpltId: data.tmpltId,
  blogYn: 'N',
  useYn: 'Y'
- } as any);
+ });
 
  if (!bbsId) throw new Error("Failed to get bbsId");
 
@@ -272,7 +273,7 @@ export function BoardMakerWizard() {
 
  setStatus('배포 완료. 목록을 갱신하는 중...');
 
- queryClient.invalidateQueries({ queryKey: ["boardMasters"] });
+ queryClient.invalidateQueries({ queryKey: boardMasterKeys.lists() });
  queryClient.invalidateQueries({ queryKey: ["menus"] });
 
  setIsSuccess(true);

@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -64,6 +65,18 @@ class AdministCodeApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("행정코드 목록 조회 - pageUnit 안전 상한 초과는 서비스 호출 전 400")
+    void getAdministCodeListRejectsOversizedPageUnit() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/system/codes/administ")
+                        .param("pageIndex", "1")
+                        .param("pageUnit", "101")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(administCodeService);
     }
 
     @Test

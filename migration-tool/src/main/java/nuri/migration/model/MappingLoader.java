@@ -42,7 +42,8 @@ public class MappingLoader {
                     resolveDbConfig(raw.source()),
                     resolveDbConfig(raw.target()),
                     raw.tables(),
-                    raw.codemaps());
+                    raw.codemaps(),
+                    raw.run());
         } catch (IOException e) {
             throw new UncheckedIOException("mapping 파일 로드 실패: " + file, e);
         }

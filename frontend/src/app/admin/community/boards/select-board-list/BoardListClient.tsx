@@ -70,8 +70,6 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const likePendingRef = React.useRef(false);
  const [pendingLikePstSn, setPendingLikePstSn] = useState<number | null>(null);
 
- const [mounted, setMounted] = useState(false);
-
  // 필터 로컬 상태 관리 (사용자 입력용)
  const [searchWrd, setSearchWrd] = useState(searchParams.get('searchWrd') || "");
  const [searchCnd, setSearchCnd] = useState(searchParams.get('searchCnd') || "0");
@@ -79,10 +77,6 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
 
  const [startDate, setStartDate] = useState<Date | undefined>(searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined);
  const [endDate, setEndDate] = useState<Date | undefined>(searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined);
-
- useEffect(() => {
-   setMounted(true);
- }, []);
 
  // URL 파라미터 변경 시 로컬 상태 동기화
  useEffect(() => {
@@ -413,7 +407,6 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </p>
  </div>
  <CardAction className="flex items-center gap-4 relative z-10">
- {mounted && (
  <>
  {isAdmin && (
  <Link href="/admin/community/boards/master">
@@ -430,7 +423,6 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </Button>
  </Link>
  </>
- )}
  </CardAction>
  </CardHeader>
  <CardContent className="pt-10 px-10 md:px-14">
@@ -450,7 +442,6 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
     setEndDate={setEndDate}
     onSearch={handleSearch}
     onReset={handleReset}
-    mounted={mounted}
   />
  </div>
 

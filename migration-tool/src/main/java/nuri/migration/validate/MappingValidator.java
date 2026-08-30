@@ -18,6 +18,8 @@ import java.sql.SQLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,6 +73,22 @@ public class MappingValidator {
                 continue;
             }
             validateIdentifier("타깃 테이블", t.target(), errors);
+            if (!isBlank(t.orderBy()) && !t.orderByKeys().isEmpty()) {
+                errors.add(t.source() + ": orderBy와 orderByKeys를 함께 선언할 수 없습니다");
+            }
+            if (!isBlank(t.orderBy())) {
+                validateColumnIdentifier(t.source() + ": orderBy", t.orderBy(), errors);
+            }
+            Set<String> distinctOrderKeys = new HashSet<>();
+            for (String orderKey : t.orderByKeys()) {
+                validateColumnIdentifier(t.source() + ": orderByKeys", orderKey, errors);
+                if (!isBlank(orderKey) && !distinctOrderKeys.add(normalize(orderKey))) {
+                    errors.add(t.source() + ": orderByKeys 중복 금지: " + orderKey);
+                }
+            }
+            if (!isBlank(t.targetKey())) {
+                validateColumnIdentifier(t.target() + ": targetKey", t.targetKey(), errors);
+            }
             if (!isBlank(t.where()) && UNSAFE_WHERE.matcher(t.where()).find()) {
                 errors.add(t.source() + ": where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문 금지)");
             }
@@ -105,7 +123,72 @@ public class MappingValidator {
                 }
             }
         }
+        validateCrossTableCycles(spec.tables(), sourceTables, errors);
         return new ValidationResult(errors, warnings);
+    }
+
+    private static void validateCrossTableCycles(List<MappingSpec.TableMapping> tables,
+                                                  Map<String, MappingSpec.TableMapping> sourceTables,
+                                                  List<String> errors) {
+        Map<String, Set<String>> dependencies = new LinkedHashMap<>();
+        for (MappingSpec.TableMapping table : tables) {
+            if (isBlank(table.source())) {
+                continue;
+            }
+            String child = normalize(table.source());
+            dependencies.putIfAbsent(child, new HashSet<>());
+            for (MappingSpec.ColumnMapping column : table.columns()) {
+                if (isBlank(column.fkRef())) {
+                    continue;
+                }
+                String parent = normalize(column.fkRef());
+                if (sourceTables.containsKey(parent) && !parent.equals(child)) {
+                    dependencies.get(child).add(parent);
+                }
+            }
+        }
+
+        Map<String, Integer> state = new LinkedHashMap<>();
+        Deque<String> path = new ArrayDeque<>();
+        Set<String> reported = new HashSet<>();
+        for (String node : dependencies.keySet()) {
+            detectCycle(node, dependencies, state, path, reported, errors);
+        }
+    }
+
+    private static void detectCycle(String node, Map<String, Set<String>> dependencies,
+                                    Map<String, Integer> state, Deque<String> path,
+                                    Set<String> reported, List<String> errors) {
+        int current = state.getOrDefault(node, 0);
+        if (current == 2) {
+            return;
+        }
+        if (current == 1) {
+            List<String> cycle = new ArrayList<>();
+            boolean collect = false;
+            for (String item : path) {
+                if (item.equals(node)) {
+                    collect = true;
+                }
+                if (collect) {
+                    cycle.add(item);
+                }
+            }
+            cycle.add(node);
+            String signature = cycle.stream().sorted().distinct().reduce((a, b) -> a + "," + b).orElse(node);
+            if (reported.add(signature)) {
+                errors.add("교차 테이블 FK 순환 감지 — 결정적 실행 순서가 없음: "
+                        + String.join(" -> ", cycle));
+            }
+            return;
+        }
+        state.put(node, 1);
+        path.addLast(node);
+        for (String dependency : dependencies.getOrDefault(node, Set.of())) {
+            detectCycle(dependency, dependencies, state, path, reported, errors);
+        }
+        path.removeLast();
+        state.put(node, 2);
     }
 
     private static void validateIdStrategy(MappingSpec.TableMapping table, MappingSpec.IdStrategy id,
@@ -191,6 +274,11 @@ public class MappingValidator {
                     errors.add("실 source에 없는 idStrategy.sourceKey: "
                             + table.source() + "." + id.sourceKey());
                 }
+                for (String orderKey : table.effectiveOrderKeys()) {
+                    if (!liveColumns.contains(normalize(orderKey))) {
+                        errors.add("실 source에 없는 order key: " + table.source() + "." + orderKey);
+                    }
+                }
             }
             return null;
         });
@@ -222,6 +310,9 @@ public class MappingValidator {
                 MappingSpec.IdStrategy id = table.idStrategy();
                 if (id != null && !isBlank(id.column()) && !liveColumns.contains(normalize(id.column()))) {
                     errors.add("실 target에 없는 idStrategy 컬럼: " + qualified + "." + id.column());
+                }
+                if (!isBlank(table.targetKey()) && !liveColumns.contains(normalize(table.targetKey()))) {
+                    errors.add("실 target에 없는 targetKey: " + qualified + "." + table.targetKey());
                 }
                 for (MappingSpec.ColumnMapping column : table.columns()) {
                     if (!isBlank(column.target()) && !liveColumns.contains(normalize(column.target()))) {
@@ -330,6 +421,14 @@ public class MappingValidator {
     private static void validateIdentifier(String label, String identifier, List<String> errors) {
         try {
             SourceIntrospector.qualifiedIdent(identifier);
+        } catch (IllegalArgumentException e) {
+            errors.add(label + " 식별자 오류: " + e.getMessage());
+        }
+    }
+
+    private static void validateColumnIdentifier(String label, String identifier, List<String> errors) {
+        try {
+            SourceIntrospector.ident(identifier);
         } catch (IllegalArgumentException e) {
             errors.add(label + " 식별자 오류: " + e.getMessage());
         }

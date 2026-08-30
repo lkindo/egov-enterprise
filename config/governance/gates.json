@@ -400,6 +400,14 @@
           "source": "api-server/src/test/java/nuri/api/harness/EntitySchemaConformanceLinterTest.java"
         },
         {
+          "id": "GH-ENTITY-TABLE-OWNERSHIP",
+          "source": "api-server/src/test/java/nuri/api/harness/EntityTableOwnershipLinterTest.java"
+        },
+        {
+          "id": "GH-FLYWAY-SCHEMA-OWNERSHIP",
+          "source": "api-server/src/test/java/nuri/api/harness/FlywaySchemaOwnershipLinterTest.java"
+        },
+        {
           "id": "GH-HANDLER-REACHES-SERVICE",
           "source": "api-server/src/test/java/nuri/api/harness/HandlerReachesServiceLinterTest.java"
         },
@@ -664,6 +672,10 @@
         {
           "id": "DB-MIG-ADDRESS-BOOK-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/AddressBookBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-AUTHORITY-REFERENCE-FK",
+          "source": "api-server/src/test/java/nuri/api/schema/AuthorityReferenceFkIntegrationTest.java"
         },
         {
           "id": "DB-MIG-BANNER-BIGINT",

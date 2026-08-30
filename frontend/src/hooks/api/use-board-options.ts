@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import { useUser } from '@/hooks/api/use-user';
 import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import {
@@ -61,16 +61,16 @@ export function useBoardOptions() {
   const isAdmin = isAdministrativeRole(user?.role);
 
   const query = useQuery({
-    queryKey: ['board-master-options'],
+    // 전체 선택지는 도메인 query option이 서버 상한(100) 안에서 모든 페이지를 수집한다.
+    ...boardMasterQueryOptions.completeList(),
     // 선택지는 자주 바뀌지 않는다. 화면을 옮겨 다닐 때마다 다시 받지 않는다.
     staleTime: 5 * 60 * 1000,
     enabled: isAdmin,
     // 403 은 재시도해도 달라지지 않는다.
     retry: false,
-    queryFn: () => boardAdminService.getBoardMasterList({ pageIndex: 1, pageUnit: 200 }),
   });
 
-  const serverOptions: BoardOption[] = (query.data?.list ?? [])
+  const serverOptions: BoardOption[] = (query.data ?? [])
     .filter((board) => board.useYn !== 'N')
     .map((board) => ({
       value: String(board.bbsId ?? ''),

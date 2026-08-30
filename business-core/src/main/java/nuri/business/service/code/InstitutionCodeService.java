@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 
 @Service
+@Transactional(readOnly = true)
 public class InstitutionCodeService extends BaseAbstractService {
 
     /** 수신 이력의 '처리 완료' 구분값. 화면(InstitutionCodeClient)도 이 값으로 완료/대기를 판정한다. */
@@ -153,7 +154,10 @@ public class InstitutionCodeService extends BaseAbstractService {
     }
 
     public InstitutionCodeDto selectInstitutionCodeDetail(InstitutionCodeDto dto) {
-        return institutionCodeRepository.findById(dto.getInstCd()).map(this::toDto).orElse(null);
+        return institutionCodeRepository.findById(dto.getInstCd())
+                .map(this::toDto)
+                .orElseThrow(() -> new BusinessException(
+                        CodeErrorCode.CODE_NOT_FOUND, "기관코드를 찾을 수 없습니다: " + dto.getInstCd()));
     }
 
     @Transactional

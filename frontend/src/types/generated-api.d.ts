@@ -4968,6 +4968,16 @@ export interface components {
             /** Format: date-time */
             crtDt?: string;
         };
+        /** @description 전자결재 승인·반려 요청 */
+        ApprovalConfirmRequest: {
+            /**
+             * @description 결재 상태 코드
+             * @enum {string}
+             */
+            status: "C" | "R";
+            /** @description 반려 사유. status가 R이면 필수 */
+            reason?: string;
+        };
         MyPageContentDto: {
             /** Format: int64 */
             contsSn?: number;
@@ -6193,7 +6203,6 @@ export interface components {
         };
         /** @description 게시판 마스터 사용여부 일괄 변경 요청 */
         BoardMasterBatchStatusRequest: {
-            /** @description 대상 게시판 ID 목록 */
             bbsIds: string[];
             /**
              * @description 사용여부(Y: 활성, N: 비활성)
@@ -6203,7 +6212,6 @@ export interface components {
         };
         /** @description 게시판 마스터 일괄 영구 삭제 요청 */
         BoardMasterBatchDeleteRequest: {
-            /** @description 대상 게시판 ID 목록 */
             bbsIds: string[];
         };
         /** @description SMS 데이터 전송 객체 */
@@ -6214,9 +6222,9 @@ export interface components {
              */
             smsTrsmSn?: number;
             /** @description 발신 번호 */
-            sndngTelno?: string;
+            sndngTelno: string;
             /** @description 발신 내용 */
-            sndngCn?: string;
+            sndngCn: string;
             /**
              * Format: int32
              * @description 수신자 수
@@ -6229,8 +6237,7 @@ export interface components {
              * @description 최초 등록 일시
              */
             crtDt?: string;
-            /** @description 수신자 목록 */
-            recipients?: components["schemas"]["SmsRecptnDto"][];
+            recipients: components["schemas"]["SmsRecptnDto"][];
             /** @description 검색 조건 */
             searchCondition?: string;
             /** @description 검색어 */
@@ -6244,7 +6251,7 @@ export interface components {
              */
             smsTrsmSn?: number;
             /** @description 수신 번호 */
-            rcptnTelno?: string;
+            rcptnTelno: string;
             /** @description 결과 코드 (P:대기, S:성공, F:실패) */
             rsltCd?: string;
             /** @description 결과 메시지 */
@@ -6326,6 +6333,11 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 메모보고 지시사항 요청 */
+        MemoInstructionRequest: {
+            /** @description 지시사항 */
+            drctnMttr: string;
         };
         /** @description 관리자용 비밀번호 변경 요청 */
         AdminPasswordChangeRequest: {
@@ -12059,9 +12071,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: string;
-                };
+                "application/json": components["schemas"]["ApprovalConfirmRequest"];
             };
         };
         responses: {
@@ -26467,7 +26477,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": string;
+                "application/json": components["schemas"]["MemoInstructionRequest"];
             };
         };
         responses: {

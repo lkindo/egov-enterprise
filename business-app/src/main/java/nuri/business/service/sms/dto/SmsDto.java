@@ -1,7 +1,13 @@
 package nuri.business.service.sms.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,13 +23,20 @@ import java.util.List;
 @Schema(description = "SMS 데이터 전송 객체")
 public class SmsDto {
 
+    public static final int MAX_RECIPIENTS_PER_REQUEST = 100;
+
     @Schema(description = "SMS 전송 일련번호")
     private Long smsTrsmSn;
 
-    @Schema(description = "발신 번호")
+    @Schema(description = "발신 번호", minLength = 1, maxLength = 13, pattern = "^[0-9-]+$")
+    @NotBlank
+    @Size(min = 1, max = 13)
+    @Pattern(regexp = "^[0-9-]+$")
     private String sndngTelno;
 
-    @Schema(description = "발신 내용")
+    @Schema(description = "발신 내용", minLength = 1, maxLength = 4000)
+    @NotBlank
+    @Size(min = 1, max = 4000)
     private String sndngCn;
 
     @Schema(description = "수신자 수")
@@ -37,8 +50,15 @@ public class SmsDto {
 
 
 
-    @Schema(description = "수신자 목록")
+    @ArraySchema(
+            arraySchema = @Schema(description = "수신자 목록"),
+            schema = @Schema(implementation = SmsRecptnDto.class),
+            minItems = 1,
+            maxItems = MAX_RECIPIENTS_PER_REQUEST)
     @Builder.Default
+    @NotEmpty
+    @Size(min = 1, max = MAX_RECIPIENTS_PER_REQUEST)
+    @Valid
     private List<SmsRecptnDto> recipients = new java.util.ArrayList<>();
 
     @Schema(description = "검색 조건")

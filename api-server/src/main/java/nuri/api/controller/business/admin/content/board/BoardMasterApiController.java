@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,8 +28,8 @@ public class BoardMasterApiController {
     @Operation(summary = "게시판 마스터 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<BoardMasterDto>>> getBoardMasterList(
-            @ModelAttribute BaseSearchDto searchDto) {
-        Pageable pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
+        Pageable pageable = searchDto.toPageable();
         Page<BoardMasterDto> page = boardMasterService.getBoardMasterList(
                 searchDto.getSearchCondition(), searchDto.getSearchKeyword(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));

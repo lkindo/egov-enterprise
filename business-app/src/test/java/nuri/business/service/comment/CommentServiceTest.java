@@ -2,6 +2,7 @@ package nuri.business.service.comment;
 
 import nuri.business.domain.comment.Comment;
 import nuri.business.domain.comment.CommentRepository;
+import nuri.business.domain.comment.exception.CommentErrorCode;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.event.PostCommentCountChangedEvent;
 import nuri.foundation.core.exception.BusinessException;
@@ -154,7 +155,8 @@ class CommentServiceTest {
 
         // when & then
         assertThatThrownBy(() -> commentService.updateComment(id, "Updated Comment"))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommentErrorCode.COMMENT_NOT_FOUND);
     }
 
     @Test
@@ -185,7 +187,8 @@ class CommentServiceTest {
 
         // when & then
         assertThatThrownBy(() -> commentService.deleteComment(id))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommentErrorCode.COMMENT_NOT_FOUND);
     }
 
     /**

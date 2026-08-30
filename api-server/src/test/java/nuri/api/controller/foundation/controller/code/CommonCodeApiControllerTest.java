@@ -1,10 +1,12 @@
 package nuri.api.controller.foundation.controller.code;
 
 import nuri.business.service.code.CommonCodeService;
+import nuri.business.domain.code.exception.CodeErrorCode;
 import nuri.business.service.code.dto.CmmnClCodeDto;
 import nuri.business.service.code.dto.CmmnCodeDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.common.BaseSearchDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -153,6 +155,19 @@ class CommonCodeApiControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.cdId").value("TEST"));
+    }
+
+    @Test
+    @DisplayName("공통코드 상세 미존재는 성공 null이 아니라 404")
+    void getCmmnCodeNotFound() throws Exception {
+        when(commonCodeService.selectCmmnCodeDetail(any(CmmnCodeDto.class)))
+                .thenThrow(new BusinessException(CodeErrorCode.CODE_NOT_FOUND));
+
+        mockMvc.perform(get("/api/v1/admin/system/codes/cmmn/MISSING")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(CodeErrorCode.CODE_NOT_FOUND.getCode()));
     }
 
     @Test

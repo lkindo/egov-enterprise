@@ -1,5 +1,6 @@
 package nuri.api.controller.business.approval;
 
+import nuri.api.controller.business.approval.dto.ApprovalConfirmRequest;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
@@ -8,13 +9,12 @@ import nuri.business.service.informalsanction.InformalSanctionService;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @Tag(name = "Approval", description = "Unified Electronic Approval APIs")
 @nuri.foundation.security.annotation.Authenticated
@@ -47,8 +47,8 @@ public class ApprovalApiController {
     @PutMapping("/{id}/confirm")
     public ResponseEntity<ApiResponse<Void>> confirm(
             @PathVariable Long id,
-            @RequestBody Map<String, String> request) {
-        approvalService.confirmInformalSanction(id, request.get("status"), request.get("reason"));
+            @Valid @RequestBody ApprovalConfirmRequest request) {
+        approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

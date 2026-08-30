@@ -50,7 +50,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("생성 base day-1 관리자 부트스트랩 시드 (R__zz_seed_base_admin)")
 class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestSupport {
 
-    private static final String SEED_RESOURCE = "/db/migration/R__zz_seed_base_admin.sql";
+    private static final String FRAMEWORK_SEED_RESOURCE = "/db/migration/R__seed_framework.sql";
+    private static final String ADMIN_BOOTSTRAP_SEED_RESOURCE = "/db/migration/R__zz_seed_base_admin.sql";
 
     /** 부트스트랩 트리의 기대 라우트 — 전부 core pack 잔존 화면이어야 한다. */
     private static final Set<String> EXPECTED_LEAF_ROUTES = Set.of(
@@ -69,32 +70,49 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     @DisplayName("풀시드에선 no-op, 빈 base 에선 URL 인가·메뉴·ROLE_ADMIN 매핑을 부트스트랩한다")
     void bootstrapSeedIsProfileSafeAndUnlocksAdmin() throws Exception {
         flyway(null).migrate();
-        String seedSql = readSeedSql();
+        String frameworkSeedSql = readSeedSql(FRAMEWORK_SEED_RESOURCE);
+        String adminBootstrapSeedSql = readSeedSql(ADMIN_BOOTSTRAP_SEED_RESOURCE);
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
 
             // ── 1. 프로필-안전: 풀시드 DB 재실행은 어떤 시드 대상 테이블도 바꾸지 않는다 ──
             Map<String, Long> before = snapshotSeedTargets(statement);
-            statement.execute(seedSql);
+            statement.execute(frameworkSeedSql);
+            statement.execute(adminBootstrapSeedSql);
             Map<String, Long> after = snapshotSeedTargets(statement);
             assertThat(after)
-                    .as("풀시드(제품) DB 에서 부트스트랩 시드는 no-op 이어야 한다 — 데모/운영 상태 보존")
+                    .as("풀시드(제품) DB 에서 base 번들 repeatable 은 no-op 이어야 한다 — 데모/운영 상태 보존")
                     .isEqualTo(before);
 
-            // ── 2. 생성 base 상태 재현: schema-only baseline 이 소거하는 데이터를 비운다 ──
+            // ── 2. 생성 base 상태 재현: versioned 시드를 FK-safe 순서로 비운 뒤 ──
+            // schema-only baseline 에 처음 적용되는 framework repeatable 을 실제 순서로 실행한다.
             statement.executeUpdate("DELETE FROM tb_menu_crt_dtl");
             statement.executeUpdate("DELETE FROM tb_menu_info");
             statement.executeUpdate("DELETE FROM tb_role_prgrm_map");
             statement.executeUpdate("DELETE FROM tb_prgrm_lst");
             statement.executeUpdate("DELETE FROM tb_authrt_role_map");
-            statement.executeUpdate("DELETE FROM tb_authrt_info");
             statement.executeUpdate("DELETE FROM tb_role_hierarchy");
-            statement.executeUpdate("DELETE FROM tb_role_info WHERE role_id='ROLE_SYSTEM'");
+            statement.executeUpdate("DELETE FROM tb_user_authrt_map");
+            statement.executeUpdate("DELETE FROM tb_authrt_info");
+            statement.executeUpdate("DELETE FROM tb_role_info");
             statement.execute("SELECT setval('sq_menu_sn', 1, false)");
 
+            statement.execute(frameworkSeedSql);
+            assertThat(singleLong(statement, "SELECT count(*) FROM tb_authrt_info"))
+                    .as("framework seed 가 user-authority FK 부모 ROLE_ADMIN/ROLE_USER 만 먼저 보증")
+                    .isEqualTo(2L);
+            assertThat(singleLong(statement,
+                    "SELECT count(*) FROM tb_user_authrt_map "
+                            + "WHERE scrty_dcsn_trgt_id='USRCNFRM_00000000001' AND authrt_id='ROLE_ADMIN'"))
+                    .as("framework seed 의 webmaster → ROLE_ADMIN 매핑")
+                    .isEqualTo(1L);
+            assertThat(singleLong(statement, "SELECT count(*) FROM tb_role_info"))
+                    .as("framework seed 의 기본 역할 ROLE_ADMIN/ROLE_USER")
+                    .isEqualTo(2L);
+
             // ── 3. 부트스트랩: 시드 1회 실행으로 day-1 잠금 두 겹이 모두 풀린다 ──
-            statement.execute(seedSql);
+            statement.execute(adminBootstrapSeedSql);
 
             // 3a. URL 인가 anchor — DbUrlAuthorizationManager fail-closed 해제 조건
             assertThat(singleLong(statement,
@@ -162,9 +180,10 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
             }
             assertThat(generated).isGreaterThan(maxSeeded);
 
-            // ── 4. 멱등: 한 번 더 실행해도 행 수 불변 ──
+            // ── 4. 번들 멱등: 실제 순서로 두 repeatable 을 한 번 더 실행해도 행 수 불변 ──
             Map<String, Long> bootstrapped = snapshotSeedTargets(statement);
-            statement.execute(seedSql);
+            statement.execute(frameworkSeedSql);
+            statement.execute(adminBootstrapSeedSql);
             assertThat(snapshotSeedTargets(statement)).isEqualTo(bootstrapped);
         }
 
@@ -222,10 +241,10 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
 
     // ---- 유틸 ----------------------------------------------------------------------
 
-    private String readSeedSql() throws IOException {
-        try (InputStream stream = getClass().getResourceAsStream(SEED_RESOURCE)) {
+    private String readSeedSql(String resource) throws IOException {
+        try (InputStream stream = getClass().getResourceAsStream(resource)) {
             if (stream == null) {
-                fail("부트스트랩 시드 파일이 classpath 에 없습니다: " + SEED_RESOURCE
+                fail("부트스트랩 시드 파일이 classpath 에 없습니다: " + resource
                         + " — 파일 삭제/개명은 생성 base 의 day-1 관리자 잠금을 되살립니다.");
             }
             return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
@@ -236,8 +255,9 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     private Map<String, Long> snapshotSeedTargets(Statement statement) throws SQLException {
         Map<String, Long> counts = new LinkedHashMap<>();
         for (String table : List.of(
-                "tb_authrt_info", "tb_role_info", "tb_authrt_role_map", "tb_role_hierarchy",
-                "tb_prgrm_lst", "tb_role_prgrm_map", "tb_menu_info", "tb_menu_crt_dtl")) {
+                "tb_authrt_info", "tb_role_info", "tb_authrt_role_map", "tb_role_hierarchy", "tb_user_authrt_map",
+                "tb_user_info", "tb_com_clsf_cd", "tb_prgrm_lst", "tb_role_prgrm_map", "tb_menu_info",
+                "tb_menu_crt_dtl")) {
             counts.put(table, singleLong(statement, "SELECT count(*) FROM " + table));
         }
         return counts;

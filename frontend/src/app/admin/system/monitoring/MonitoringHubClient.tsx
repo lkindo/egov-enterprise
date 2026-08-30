@@ -27,9 +27,9 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
-import { commentAdminService } from '@/services/foundation/system/CommentAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { monitoringAdminService } from '@/services/foundation/system/MonitoringAdminService';
+import { monitoringKeys, monitoringQueryOptions } from '@/queries/monitoring-query-options';
+import { commentMutationOptions, commentQueryOptions } from '@/queries/comment-query-options';
 import { attachmentIntegrityService } from '@/services/foundation/system/AttachmentIntegrityService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -259,17 +259,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   // ⚠ 백엔드 CommentApiController 는 키워드 검색을 지원하지 않는다(CommentAdminService 주석 참조).
   //    따라서 COMMENTS 탭에서는 검색 입력을 렌더하지 않고, queryKey 에도 검색어를 넣지 않는다.
   const { data: commentData, isLoading: isCommentLoading, error: commentError, refetch: refetchComments } = useQuery({
-    queryKey: ['admin-comments', page, pageSize],
-    queryFn: () => commentAdminService.getComments({ page: page - 1, size: pageSize }),
+    ...commentQueryOptions.adminList({ page: page - 1, size: pageSize }),
     enabled: activeTab === 'COMMENTS'
   });
   const comments = useMemo(() => commentData?.list || [], [commentData]);
 
   // Real-time Metrics Queries
   const { data: healthData, error: healthError, isLoading: isHealthLoading, refetch: refetchHealth } = useQuery({
-    queryKey: ['admin-health'],
-    queryFn: () => monitoringAdminService.getHealth(),
-    refetchInterval: 30000,
+    ...monitoringQueryOptions.health(),
     enabled: activeTab === 'OBSERVABILITY'
   });
 
@@ -282,16 +279,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const isActuatorUnavailable = activeTab === 'OBSERVABILITY' && !isHealthLoading && (Boolean(healthError) || !healthData);
 
   const { data: cpuUsage = 0 } = useQuery({
-    queryKey: ['admin-metrics-cpu'],
-    queryFn: () => monitoringAdminService.getCpuUsage(),
-    refetchInterval: 5000,
+    ...monitoringQueryOptions.cpu(),
     enabled: activeTab === 'OBSERVABILITY'
   });
 
   const { data: memUsage = 0 } = useQuery({
-    queryKey: ['admin-metrics-mem'],
-    queryFn: () => monitoringAdminService.getMemoryUsage(),
-    refetchInterval: 5000,
+    ...monitoringQueryOptions.memory(),
     enabled: activeTab === 'OBSERVABILITY'
   });
 
@@ -315,15 +308,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   });
 
   const deleteCommentMutation = useMutation({
-    mutationFn: (id: number) => commentAdminService.deleteComment(id),
+    ...commentMutationOptions.removeAdmin(queryClient),
     onSuccess: () => {
       toast('댓글이 성공적으로 삭제되었습니다.', 'success');
-      queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
       if (selectedItemId) setSelectedItemId(null);
     },
-    onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : '';
-      toast(message || '댓글 삭제 중 오류가 발생했습니다.', 'error');
+    onError: (error: Error) => {
+      toast(error.message || '댓글 삭제 중 오류가 발생했습니다.', 'error');
     }
   });
 
@@ -883,9 +874,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       return;
     }
     if (activeTab === 'OBSERVABILITY') {
-      void queryClient.invalidateQueries({ queryKey: ['admin-health'] });
-      void queryClient.invalidateQueries({ queryKey: ['admin-metrics-cpu'] });
-      void queryClient.invalidateQueries({ queryKey: ['admin-metrics-mem'] });
+      void queryClient.invalidateQueries({ queryKey: monitoringKeys.health() });
+      void queryClient.invalidateQueries({ queryKey: monitoringKeys.cpu() });
+      void queryClient.invalidateQueries({ queryKey: monitoringKeys.memory() });
     }
   };
 

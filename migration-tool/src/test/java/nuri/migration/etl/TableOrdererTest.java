@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** fkRef 위상정렬: 선언 순서와 무관하게 부모가 자식보다 먼저 오는지 검증. */
 class TableOrdererTest {
@@ -55,5 +56,15 @@ class TableOrdererTest {
         List<TableMapping> ordered = TableOrderer.order(List.of(tree));
 
         assertThat(ordered).extracting(t -> t.source()).containsExactly("ORG");
+    }
+
+    @Test
+    void crossTableCycleFailsClosedEvenIfValidationWasBypassed() {
+        TableMapping a = table("A", fk("b_id", "B"));
+        TableMapping b = table("B", fk("a_id", "A"));
+
+        assertThatThrownBy(() -> TableOrderer.order(List.of(a, b)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("FK 순환", "a", "b");
     }
 }

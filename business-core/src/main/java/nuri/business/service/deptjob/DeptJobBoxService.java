@@ -39,7 +39,8 @@ public class DeptJobBoxService {
     public DeptJobBoxDto getDeptJobBox(Long deptTaskBoxSn) {
         return deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxSn))
                 .map(DeptJobBoxDto::fromEntity)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "부서업무함을 찾을 수 없습니다: " + deptTaskBoxSn));
     }
 
     @Transactional

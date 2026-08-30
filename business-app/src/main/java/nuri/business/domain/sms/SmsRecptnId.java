@@ -16,6 +16,6 @@ public class SmsRecptnId implements Serializable {
     @Column(name = "sms_trsm_sn")
     private Long smsTrsmSn;
 
-    @Column(length = 20)
+    @Column(length = 13)
     private String rcptnTelno;
 }

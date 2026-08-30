@@ -9,6 +9,7 @@ import nuri.business.domain.code.CommonCodeRepository;
 import nuri.business.service.code.dto.CommonCodeDto;
 import nuri.business.service.code.dto.CommonCodeMapper;
 import nuri.business.service.code.dto.CommonCodeSaveRequest;
+import nuri.business.security.util.SecurityUtil;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -35,6 +36,7 @@ import org.springframework.lang.NonNull;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class CommonCodeService extends BaseAbstractService {
 
         private final CommonCodeRepository commonCodeRepository;
@@ -110,12 +112,15 @@ public class CommonCodeService extends BaseAbstractService {
                 return commonCodeCategoryRepository
                                 .findById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .map(this::toDto)
-                                .orElse(null);
+                                .orElseThrow(() -> new BusinessException(
+                                                CodeErrorCode.CODE_NOT_FOUND,
+                                                "공통분류코드를 찾을 수 없습니다: " + dto.getClsfCd()));
         }
 
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnClCode(@NonNull CmmnClCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 if (commonCodeCategoryRepository
                                 .existsById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))) {
@@ -133,6 +138,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnClCode(@NonNull CmmnClCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 commonCodeCategoryRepository.findById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .ifPresent(entity -> {
@@ -146,6 +152,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnClCode(@NonNull CmmnClCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 commonCodeCategoryRepository.findById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .ifPresent(category -> category.delete());
@@ -183,12 +190,15 @@ public class CommonCodeService extends BaseAbstractService {
         public CmmnCodeDto selectCmmnCodeDetail(@NonNull CmmnCodeDto dto) {
                 return commonCodeGroupRepository.findById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
                                 .map(this::toDto)
-                                .orElse(null);
+                                .orElseThrow(() -> new BusinessException(
+                                                CodeErrorCode.CODE_NOT_FOUND,
+                                                "공통코드를 찾을 수 없습니다: " + dto.getCdId()));
         }
 
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnCode(@NonNull CmmnCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 if (commonCodeGroupRepository
                                 .existsById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))) {
@@ -207,6 +217,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnCode(@NonNull CmmnCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 commonCodeGroupRepository.findById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
                                 .ifPresent(entity -> {
@@ -231,6 +242,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnCodeHierarchy(List<CmmnCodeHierarchyDto> items) {
+                SecurityUtil.assertAdmin();
                 if (items == null || items.isEmpty()) {
                         return;
                 }
@@ -267,6 +279,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnCode(@NonNull CmmnCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 commonCodeGroupRepository.findById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
                                 .ifPresent(group -> group.delete());
@@ -324,12 +337,15 @@ public class CommonCodeService extends BaseAbstractService {
                                                                 dto.getCdId(), dto.getDtlCd()),
                                                 "CommonCodeId 는 null 일 수 없습니다"))
                                 .map(this::toDto)
-                                .orElse(null);
+                                .orElseThrow(() -> new BusinessException(
+                                                CodeErrorCode.CODE_NOT_FOUND,
+                                                "공통상세코드를 찾을 수 없습니다: " + dto.getCdId() + "/" + dto.getDtlCd()));
         }
 
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 if (commonCodeRepository
                                 .existsById(required(
@@ -351,6 +367,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 commonCodeRepository
                                 .findById(required(
@@ -368,6 +385,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
+                SecurityUtil.assertAdmin();
 
                 commonCodeRepository
                                 .findById(required(

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use, useState, useEffect } from 'react';
+import React, { use, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -22,7 +22,8 @@ import { knowledgeService, KnowledgeDto } from '@/services/business/knowledge/kn
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { fileService } from '@/services/foundation/file/FileService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
-import { BoardMaster } from '@/services/foundation/system/BoardAdminService';
+import type { BoardMasterDetail } from '@/services/foundation/system/BoardAdminService';
+import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import CommentSection from '@/components/features/comment/CommentSection';
 import SatisfactionSection from '@/components/features/satisfaction/SatisfactionSection';
 
@@ -31,7 +32,7 @@ import { CommentVO } from '@/types/business/comment';
 interface BoardDetailClientProps {
   dataPromise: Promise<{
     article: KnowledgeDto | null;
-    masterInfo: BoardMaster | null;
+    masterInfo: BoardMasterDetail | null;
     initialComments: CommentVO[];
     /** 감사 P1-1: 서버 조회 실패 사유. null 이면 정상(또는 404 = 실제로 없는 글). */
     fetchError: string | null;
@@ -75,10 +76,9 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
   // React Query for revalidation/stale handling, seeded with initialData
   const { data: masterInfo } = useQuery({
-    queryKey: ['board-master', bbsId],
-    queryFn: () => initialData.masterInfo!,
-    initialData: initialData.masterInfo,
-    enabled: !!initialData.masterInfo,
+    ...boardMasterQueryOptions.detail(bbsId ?? ''),
+    initialData: initialData.masterInfo ?? undefined,
+    enabled: Boolean(initialData.masterInfo && bbsId),
   });
 
   const { data: article } = useQuery({
@@ -103,11 +103,6 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   });
 
   const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // 게시글 추천(좋아요) — 낙관적 UI: 클릭 즉시 카운트 증가 후 서버 반영(실패 시 롤백)
   const [likeDelta, setLikeDelta] = useState(0);
@@ -162,16 +157,6 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       setActiveAction(null);
     }
   };
-
-  if (!mounted) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
-        <h1 className="sr-only">게시글 상세를 불러오는 중</h1>
-        <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-        <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase animate-pulse">게시글을 불러오는 중...</p>
-      </div>
-    );
-  }
 
   // 감사 P1-1: 조회 장애(fetchError)와 '실제로 없는 글'(404)을 구분해 표시한다.
   if (!article && initialData.fetchError) {

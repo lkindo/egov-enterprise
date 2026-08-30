@@ -12,6 +12,7 @@ import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.program.dto.ProgramDto;
+import nuri.business.security.util.SecurityUtil;
 import nuri.foundation.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 
@@ -239,8 +240,7 @@ public class MenuService {
     }
 
     public List<MenuCreateDto> selectMenuCreatManagList(@NonNull BaseSearchDto searchVO) {
-        Pageable pageable = PageRequest.of(searchVO.getPageIndex() - 1, searchVO.getRecordCountPerPage(),
-                Sort.by("id.authrtCd").ascending());
+        Pageable pageable = searchVO.toPageable(Sort.by("id.authrtCd").ascending());
         String searchKeyword = searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "";
 
         return menuAuthorityRepository
@@ -284,6 +284,7 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
+        SecurityUtil.assertAdmin();
         menuAuthorityRepository.deleteByIdAuthrtCd(Objects.requireNonNull(authorCode));
 
         if (checkedMenuNos != null && !checkedMenuNos.isEmpty()) {
@@ -311,6 +312,7 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
+        SecurityUtil.assertAdmin();
         // FE 가 "연결 프로그램 없음"을 빈 문자열로 보내므로 null 로 정규화한다.
         // (정규화하지 않으면 아래 existsById("") 가 false 라 PK 가 빈 문자열인 쓰레기 Program 행이 생성된다)
         String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
@@ -347,6 +349,7 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void updateMenuManage(@NonNull MenuDto vo) {
+        SecurityUtil.assertAdmin();
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
         // Menu.update 는 null-safe 병합이다 — 전달되지 않은(null) 값은 기존 값을 유지하고, 빈 문자열이면 비운다.
@@ -367,6 +370,7 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void updateMenuOrders(@NonNull List<MenuDto> menuList) {
+        SecurityUtil.assertAdmin();
         for (MenuDto vo : menuList) {
             Long menuNo = vo.getMenuNo() != null ? vo.getMenuNo() : vo.getId();
             if (menuNo == null) {
@@ -399,6 +403,7 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void deleteMenuManage(@NonNull MenuDto vo) {
+        SecurityUtil.assertAdmin();
         Long menuNo = Objects.requireNonNull(vo.getMenuNo());
         // [V2_13 결속] 자식 메뉴 존재 시 명시적 도메인 예외 — 무음 고아화(구버그)도, FK 409(불친절)도 아닌 사전 안내
         if (menuRepository.countByUpMenuSn(menuNo) > 0) {

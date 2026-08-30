@@ -1,6 +1,7 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
+import { PageResponseBoardDtoSchema } from '@/types/generated-zod';
 import { AxiosRequestConfig } from 'axios';
 import { HELP_FAQ_BOARD_ID, QNA_BOARD_ID } from '@/config/board-ids';
 
@@ -106,29 +107,32 @@ class HelpUserService extends UserService {
 
   /** Q&A 목록 조회 (페이지) */
   async getQnas(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
-    const response = await this.get<PageResponse<any>>(`/${QNA_BOARD_ID}`, {
+    const response = await this.get<unknown>(`/${QNA_BOARD_ID}`, {
       ...config,
       params: {
         ...params,
         searchWrd: params?.keyword || ''
       }
     });
+    const parsed = PageResponseBoardDtoSchema.parse(response);
+    const list = (parsed.list ?? []).map((item): QNA => ({
+      qaId: String(item.pstSn ?? ''),
+      qstnTtl: item.pstTtl ?? '',
+      qstnCn: item.pstCn ?? '',
+      ansCn: item.pstCn ?? '',
+      wrterNm: item.userNm || item.userId,
+      writngDe: item.crtDt ?? '',
+      qnaSttsCd: item.qnaSttsCd,
+      scrtYn: item.scrtYn,
+    }));
 
-    // Map unified board fields to QNA interface
-    if (response && response.list) {
-      response.list = response.list.map((item: any) => ({
-        qaId: item.pstSn,
-        qstnTtl: item.pstTtl,
-        qstnCn: item.pstCn,
-        ansCn: item.pstCn || '',
-        wrterNm: item.userNm || item.userId,
-        writngDe: item.crtDt,
-        qnaSttsCd: item.qnaSttsCd,
-        scrtYn: item.scrtYn,
-      }));
-      return response as PageResponse<QNA>;
-    }
-    return { list: [], total: 0, totalPage: 0, page: 0, size: 0 } as unknown as PageResponse<QNA>;
+    return {
+      list,
+      total: parsed.total ?? 0,
+      page: parsed.page ?? 0,
+      size: parsed.size ?? 0,
+      totalPage: parsed.totalPage ?? 0,
+    };
   }
 
   /**

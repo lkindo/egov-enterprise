@@ -88,6 +88,33 @@ class BoardRepositoryTest {
     }
 
     @Test
+    @DisplayName("영구삭제 가드 조회는 숨김 게시글도 포함해 게시판 ID를 한 번에 반환한다")
+    void findBbsIdsHavingAnyArticles_includesSoftDeletedRows() {
+        BoardMaster emptyMaster = boardMasterRepository.save(BoardMaster.builder()
+                .bbsId("BBS_EMPTY")
+                .bbsTtl("Empty Board")
+                .bbsTypeCd("COM004")
+                .bbsAtrbCd("COM009")
+                .useYn("N")
+                .build());
+        boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId())
+                .pstTtl("Hidden article")
+                .pstCn("Hidden body")
+                .useYn("N")
+                .userId("USR_001")
+                .userNm("Tester")
+                .build());
+        em.flush();
+        em.clear();
+
+        List<String> result = boardRepository.findBbsIdsHavingAnyArticles(
+                List.of(testMaster.getBbsId(), emptyMaster.getBbsId()));
+
+        assertThat(result).containsExactly(testMaster.getBbsId());
+    }
+
+    @Test
     @DisplayName("목록·상세가 저장된 댓글 수를 실제로 실어 준다 — 화면의 '댓글 N' 이 언제나 0 이던 축")
     void searchAndDetailCarryCommentCount() {
         /*

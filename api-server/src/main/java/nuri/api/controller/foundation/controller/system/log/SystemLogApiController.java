@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
@@ -32,7 +33,7 @@ public class SystemLogApiController {
     @Operation(summary = "시스템 로그 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<SysLogDto>>> getSysLogList(
-            @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
         
         List<SysLogDto> list = logManageService.selectSysLogList(searchDto);
         int totCnt = logManageService.selectSysLogListTotCnt(searchDto);
@@ -62,7 +63,7 @@ public class SystemLogApiController {
     @AdminOrSystem
     @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
     public ResponseEntity<StreamingResponseBody> exportSystemLogs(
-            @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
         int totalCount = logManageService.selectSysLogListTotCnt(searchDto);
         LogExcelExport.assertWithinCap(totalCount);

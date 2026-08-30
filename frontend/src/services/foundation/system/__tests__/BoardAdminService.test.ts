@@ -12,15 +12,10 @@
  *    `admin/{category}/` 접두). 생성자 인자나 접두 규칙이 한 글자만 어긋나도 결과는
  *    404 이고, 화면에는 "조회 실패" 토스트만 뜬다 — 어느 경로가 틀렸는지 아무도 모른다.
  *
- * 2) 검색 파라미터 재명명 — 목록 조회는 프론트의 `searchCondition`/`searchKeyword` 를
- *    백엔드가 받는 `searchCnd`/`searchWrd` 로 바꿔 싣고, 값이 없으면 각각 `'0'`/`''` 를
- *    기본값으로 채운다. 이 기본값이 사라지면 백엔드 BaseSearchDto 바인딩이 null 을
- *    받아 검색 조건 분기가 통째로 어긋난다.
+ * 2) 검색 파라미터 계약 — 목록 조회는 generated BaseSearchDto 키를 그대로 전달한다.
+ *    임의의 `searchCnd`/`searchWrd` 별칭을 섞으면 현재 컨트롤러 바인딩과 어긋난다.
  *
- * 3) 페이징 변환 — ApiService.get 이 `page`(0-based) → `pageIndex`(1-based),
- *    `size`/`pageSize` → `recordCountPerPage` 로 변환해 백엔드 표준에 맞춘다.
- *    이 +1 이 사라지거나 두 번 적용되면 목록이 **한 페이지씩 밀리거나 첫 페이지가 빈다**.
- *    타입은 그대로라 tsc 로는 절대 잡히지 않는다.
+ * 3) generated 응답 검증 — 목록·상세·primitive 응답을 Zod 경계에서 검증한다.
  *
  * 4) 경로 변수 치환 — update/delete 계열은 인자로 받은 bbsId 를 URL 에 박는다.
  *    여기서 다른 값을 집거나 인자 순서가 밀리면 **엉뚱한 게시판을 수정하거나 지운다**.
@@ -40,13 +35,12 @@
  *    'board' 파트(JSON Blob)로 감싼다. 관리자 접두가 붙거나 Blob 의 MIME 이 바뀌면
  *    백엔드 `@RequestPart` 바인딩이 즉시 깨진다.
  *
- * 따라서 본 테스트는 "호출됐다"가 아니라 **어떤 URL·파라미터·본문·config 로 나가는지**를
- * 고정한다. 프로덕션 코드는 수정하지 않는다(관측만 한다).
+ * 따라서 본 테스트는 "호출됐다"가 아니라 **어떤 URL·파라미터·본문·config 로 나가는지**와
+ * generated/adapter 런타임 경계를 함께 고정한다.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AxiosRequestConfig } from 'axios';
-import type { PageResponse } from '@/types/foundation/system';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
 const client = vi.hoisted(() => ({
@@ -58,119 +52,77 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { boardAdminService, type BoardMaster } from '../BoardAdminService';
+import {
+  boardAdminService,
+  type BoardMaster,
+  type BoardMasterSummary,
+} from '../BoardAdminService';
+
+const board: BoardMaster = {
+  bbsId: 'BBSMSTR_000000000001',
+  bbsTtl: '공지사항',
+  bbsTypeCd: 'BBST01',
+  bbsAtrbCd: 'BBSA01',
+  atchPsbltyFileSz: 5_242_880,
+  useYn: 'Y',
+};
+
+// BoardMasterService#toDto(BoardMasterSearchResult)가 실제로 채우는 목록 projection.
+// generated 전체 DTO의 required atchPsbltyFileSz는 목록 JSON에 없으므로 false-green fixture로 넣지 않는다.
+const boardSummary: BoardMasterSummary = {
+  bbsId: board.bbsId!,
+  bbsTtl: board.bbsTtl,
+  bbsTypeCd: board.bbsTypeCd,
+  bbsAtrbCd: board.bbsAtrbCd,
+  useYn: board.useYn,
+};
+
+const boardPage = {
+  list: [boardSummary],
+  total: 1,
+  page: 1,
+  size: 10,
+  totalPage: 1,
+};
 
 describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.get.mockImplementation((url: string) => {
+      if (url.endsWith('/deletable')) return Promise.resolve(false);
+      if (url === 'admin/system/board-masters') return Promise.resolve(boardPage);
+      return Promise.resolve(board);
+    });
+    client.post.mockResolvedValue('BBSMSTR_CREATED');
+  });
 
   describe('목록 조회 (getBoardMasterList)', () => {
-    it('목록은 admin/system/board-masters 로 나가며 컬렉션 경로에 군더더기 슬래시가 붙지 않는다', async () => {
+    it('목록은 generated query를 admin/system/board-masters로 그대로 전달한다', async () => {
       await boardAdminService.getBoardMasterList();
 
-      // 인자를 아예 주지 않아도 검색 기본값(searchCnd '0' / searchWrd '')은 항상 실린다.
       expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
-        params: { searchCnd: '0', searchWrd: '' },
+        params: {},
       });
     });
 
-    it('searchCondition/searchKeyword 는 백엔드 키(searchCnd/searchWrd)로 재명명되고 원본 키도 함께 남는다', async () => {
-      await boardAdminService.getBoardMasterList({ searchCondition: '1', searchKeyword: '공지사항' });
-
-      // 원본 키가 남는 이유는 `...params` 스프레드가 뒤따르기 때문이다(백엔드는 미지의 키를 무시한다).
-      expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
-        params: {
-          searchCnd: '1',
-          searchWrd: '공지사항',
-          searchCondition: '1',
-          searchKeyword: '공지사항',
-        },
-      });
-    });
-
-    it('searchKeyword 가 없으면 searchWrd 값이 검색어로 사용된다', async () => {
-      await boardAdminService.getBoardMasterList({ searchWrd: '자료실' });
-
-      expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
-        params: { searchCnd: '0', searchWrd: '자료실' },
-      });
-    });
-
-    it('빈 문자열 검색 조건은 기본값 0 으로 대체된다 — 폴백이 사라지면 조건 분기가 통째로 어긋난다', async () => {
-      await boardAdminService.getBoardMasterList({ searchCondition: '' });
-
-      expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
-        params: { searchCnd: '0', searchWrd: '', searchCondition: '' },
-      });
-    });
-
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
-      await boardAdminService.getBoardMasterList({ page: 0, size: 10 });
-
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
-      expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
-        params: {
-          searchCnd: '0',
-          searchWrd: '',
-          page: 0,
-          size: 10,
-          pageIndex: 1,
-          recordCountPerPage: 10,
-        },
-      });
-    });
-
-    it('page 2 는 pageIndex 3 으로, size 는 recordCountPerPage 로 변환된다', async () => {
-      await boardAdminService.getBoardMasterList({ page: 2, size: 20 });
-
-      expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
-        params: {
-          searchCnd: '0',
-          searchWrd: '',
-          page: 2,
-          size: 20,
-          pageIndex: 3,
-          recordCountPerPage: 20,
-        },
-      });
-    });
-
-    it('pageSize 는 recordCountPerPage 와 size 양쪽으로 확장되지만 pageIndex 는 만들지 않는다', async () => {
-      await boardAdminService.getBoardMasterList({ pageSize: 30 });
-
-      expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
-        params: {
-          searchCnd: '0',
-          searchWrd: '',
-          pageSize: 30,
-          recordCountPerPage: 30,
-          size: 30,
-        },
-      });
-    });
-
-    it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
+    it('searchKeyword/pageIndex/pageUnit와 config를 변형 없이 보존한다', async () => {
       const { signal } = new AbortController();
-
-      await boardAdminService.getBoardMasterList({ page: 1 }, { timeout: 5000, signal });
+      const params = { searchCondition: '1', searchKeyword: '공지사항', pageIndex: 2, pageUnit: 20 };
+      await boardAdminService.getBoardMasterList(params, { timeout: 5000, signal });
 
       expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
         timeout: 5000,
         signal,
-        params: { searchCnd: '0', searchWrd: '', page: 1, pageIndex: 2 },
+        params,
       });
     });
 
-    it('목록 조회는 클라이언트 응답을 가공 없이 그대로 반환한다', async () => {
-      const page: PageResponse<BoardMaster> = {
-        list: [{ bbsId: 'BBSMSTR_000000000001', bbsTtl: '공지사항' }],
-        total: 1,
-        page: 1,
-        size: 10,
-        totalPage: 1,
-      };
-      client.get.mockResolvedValueOnce(page);
+    it('generated page 컨테이너와 실제 목록 projection을 검증·정규화한다', async () => {
+      await expect(boardAdminService.getBoardMasterList()).resolves.toEqual(boardPage);
+      expect(boardPage.list[0]).not.toHaveProperty('atchPsbltyFileSz');
 
-      await expect(boardAdminService.getBoardMasterList()).resolves.toBe(page);
+      client.get.mockResolvedValueOnce({ list: [{ bbsId: 'BROKEN', bbsTtl: '누락' }] });
+      await expect(boardAdminService.getBoardMasterList()).rejects.toThrow();
     });
   });
 
@@ -202,33 +154,45 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       client.get.mockResolvedValueOnce(false);
 
       await expect(boardAdminService.isBoardMasterDeletable('BBSMSTR_000000000003')).resolves.toBe(false);
+
+      client.get.mockResolvedValueOnce('false');
+      await expect(boardAdminService.isBoardMasterDeletable('BROKEN')).rejects.toThrow();
     });
   });
 
   describe('등록·수정 (createBoardMaster / updateBoardMaster)', () => {
-    it('게시판 등록은 컬렉션 경로에 payload 를 그대로 실어 POST 한다', async () => {
-      const payload: Partial<BoardMaster> = { bbsTtl: '신규게시판', bbsTypeCd: 'BBST01', useYn: 'Y' };
+    it('게시판 등록은 generated 요청을 검증하고 생성 식별자를 반환한다', async () => {
+      const payload: BoardMaster = { ...board, bbsId: undefined, bbsTtl: '신규게시판' };
 
-      await boardAdminService.createBoardMaster(payload);
-
+      await expect(boardAdminService.createBoardMaster(payload)).resolves.toBe('BBSMSTR_CREATED');
       expect(client.post).toHaveBeenCalledWith('admin/system/board-masters', payload, undefined);
-      // 본문을 복제·가공하지 않고 동일 참조를 넘기는지까지 확인한다.
-      expect(client.post.mock.calls[0][1]).toBe(payload);
     });
 
     it('게시판 등록은 호출부 config 를 그대로 전달한다', async () => {
-      const payload: Partial<BoardMaster> = { bbsTtl: '신규게시판' };
+      const payload: BoardMaster = { ...board, bbsTtl: '신규게시판' };
 
       await boardAdminService.createBoardMaster(payload, { timeout: 20000 });
-
       expect(client.post).toHaveBeenCalledWith('admin/system/board-masters', payload, { timeout: 20000 });
     });
 
-    it('게시판 수정은 첫 번째 인자(bbsId)를 경로 변수로, 두 번째 인자를 본문으로 사용한다', async () => {
-      const payload: Partial<BoardMaster> = { bbsTtl: '수정된제목' };
+    it('등록 응답에 generated string 식별자가 없으면 성공으로 오인하지 않는다', async () => {
+      client.post.mockResolvedValueOnce(undefined);
+
+      await expect(boardAdminService.createBoardMaster(board)).rejects.toThrow('게시판 식별자가 응답에 없습니다.');
+    });
+
+    it('필수 generated 요청 필드가 빠지면 네트워크 호출 전에 거부한다', async () => {
+      await expect(boardAdminService.createBoardMaster({ bbsTtl: '누락' } as BoardMaster)).rejects.toThrow();
+      await expect(boardAdminService.updateBoardMaster('BROKEN', { ...board, bbsTypeCd: undefined } as never)).rejects.toThrow();
+
+      expect(client.post).not.toHaveBeenCalled();
+      expect(client.put).not.toHaveBeenCalled();
+    });
+
+    it('게시판 수정은 bbsId를 경로 변수로 쓰고 generated 본문·config를 보존한다', async () => {
+      const payload: BoardMaster = { ...board, bbsTtl: '수정된제목' };
 
       await boardAdminService.updateBoardMaster('BBSMSTR_000000000004', payload, { timeout: 2000 });
-
       expect(client.put).toHaveBeenCalledWith(
         'admin/system/board-masters/BBSMSTR_000000000004',
         payload,
@@ -236,19 +200,17 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       );
     });
 
-    it('수정 대상과 삭제 대상이 다르면 각자의 경로로만 나간다 — 인자가 교차되면 다른 게시판을 건드린다', async () => {
-      await boardAdminService.updateBoardMaster('BBSMSTR_UPDATE_ONLY', { bbsTtl: '수정' });
-      await boardAdminService.deleteBoardMaster('BBSMSTR_DELETE_ONLY', 'USR0000001');
+    it('수정 대상과 삭제 대상이 다르면 각자의 경로로만 나간다', async () => {
+      const payload: BoardMaster = { ...board, bbsTtl: '수정' };
+      await boardAdminService.updateBoardMaster('BBSMSTR_UPDATE_ONLY', payload);
+      await boardAdminService.deleteBoardMaster('BBSMSTR_DELETE_ONLY');
 
       expect(client.put).toHaveBeenCalledWith(
         'admin/system/board-masters/BBSMSTR_UPDATE_ONLY',
-        { bbsTtl: '수정' },
+        payload,
         undefined,
       );
-      expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_DELETE_ONLY', {
-        params: { userId: 'USR0000001' },
-      });
-      // 삭제가 수정 대상 경로로 새어 나가지 않는다.
+      expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_DELETE_ONLY', undefined);
       expect(client.delete).not.toHaveBeenCalledWith(
         'admin/system/board-masters/BBSMSTR_UPDATE_ONLY',
         expect.anything(),
@@ -257,25 +219,22 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
   });
 
   describe('삭제 (deleteBoardMaster / deleteBoardMasterPhysically)', () => {
-    it('논리 삭제는 userId 를 본문이 아니라 쿼리 파라미터로 싣는다', async () => {
-      await boardAdminService.deleteBoardMaster('BBSMSTR_000000000005', 'USR0000002');
+    it('논리 삭제는 서버 인증 주체를 사용하므로 userId를 전송하지 않는다', async () => {
+      await boardAdminService.deleteBoardMaster('BBSMSTR_000000000005');
 
-      expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_000000000005', {
-        params: { userId: 'USR0000002' },
-      });
+      expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_000000000005', undefined);
       // axios delete 는 (url, config) 2-인자 시그니처다 — 본문 자리에 config 가 밀려 들어가지 않는다.
       expect(client.delete.mock.calls[0]).toHaveLength(2);
     });
 
-    it('논리 삭제 시 호출부 config 는 userId 파라미터와 병합되어 유지된다', async () => {
+    it('논리 삭제 시 호출부 config가 그대로 유지된다', async () => {
       const { signal } = new AbortController();
 
-      await boardAdminService.deleteBoardMaster('BBSMSTR_000000000005', 'USR0000002', { timeout: 3000, signal });
+      await boardAdminService.deleteBoardMaster('BBSMSTR_000000000005', { timeout: 3000, signal });
 
       expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_000000000005', {
         timeout: 3000,
         signal,
-        params: { userId: 'USR0000002' },
       });
     });
 
@@ -316,6 +275,16 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       );
     });
 
+    it('서버와 같은 1..100개 generated 배열 경계를 네트워크 전에 집행한다', async () => {
+      const tooMany = Array.from({ length: 101 }, (_, index) => `BBSMSTR_${index}`);
+
+      await expect(boardAdminService.batchUpdateBoardMasterStatus([], 'N')).rejects.toThrow();
+      await expect(boardAdminService.batchUpdateBoardMasterStatus(tooMany, 'N')).rejects.toThrow();
+      await expect(boardAdminService.batchDeleteBoardMastersPhysically([])).rejects.toThrow();
+      await expect(boardAdminService.batchDeleteBoardMastersPhysically(tooMany)).rejects.toThrow();
+      expect(client.post).not.toHaveBeenCalled();
+    });
+
     it('두 일괄 경로는 서로 뒤바뀌지 않는다 — 뒤바뀌면 비활성화 버튼이 영구 삭제를 실행한다', async () => {
       await boardAdminService.batchUpdateBoardMasterStatus(['BBSMSTR_A'], 'Y');
       await boardAdminService.batchDeleteBoardMastersPhysically(['BBSMSTR_B']);
@@ -329,8 +298,14 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
   });
 
   describe('게시글 등록 (createBoardArticle) — 유일하게 basePath 를 타지 않는 경로', () => {
+    beforeEach(() => client.post.mockResolvedValue(101));
+
     it('관리자 접두 없이 /bbs/{bbsId} 로 직접 나간다', async () => {
-      await boardAdminService.createBoardArticle({ bbsId: 'BBSMSTR_000000000001', nttSj: '제목' });
+      await boardAdminService.createBoardArticle({
+        bbsId: 'BBSMSTR_000000000001',
+        pstTtl: '제목',
+        pstCn: '본문',
+      });
 
       const [url] = client.post.mock.calls[0] as [string];
       expect(url).toBe('/bbs/BBSMSTR_000000000001');
@@ -339,7 +314,7 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
     });
 
     it('본문은 multipart/form-data 의 board 파트에 application/json Blob 으로 직렬화되어 실린다', async () => {
-      const data = { bbsId: 'BBSMSTR_000000000001', nttSj: '제목', nttCn: '본문' };
+      const data = { bbsId: 'BBSMSTR_000000000001', pstTtl: '제목', pstCn: '본문' };
 
       await boardAdminService.createBoardArticle(data);
 
@@ -358,7 +333,7 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       const { signal } = new AbortController();
 
       await boardAdminService.createBoardArticle(
-        { bbsId: 'BBSMSTR_000000000007' },
+        { bbsId: 'BBSMSTR_000000000007', pstTtl: '제목', pstCn: '본문' },
         { timeout: 30000, signal, headers: { 'X-Trace-Id': 'trace-1', 'Content-Type': 'application/json' } },
       );
 
@@ -367,6 +342,37 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
         signal,
         headers: { 'X-Trace-Id': 'trace-1', 'Content-Type': 'multipart/form-data' },
       });
+    });
+
+    it('단건 응답은 legacy nullable adapter 뒤 generated BoardMasterDto를 검증한다', async () => {
+      await expect(boardAdminService.getBoardMaster('BBSMSTR_000000000001')).resolves.toEqual(board);
+
+      const { atchPsbltyFileSz: _legacyNull, ...legacyBoard } = board;
+      client.get.mockResolvedValueOnce({
+        ...board,
+        bbsExpln: null,
+        tmpltId: null,
+        atchPsbltyFileSz: null,
+      });
+      await expect(boardAdminService.getBoardMaster('BBSMSTR_NULLABLE')).resolves.toEqual(legacyBoard);
+
+      client.get.mockResolvedValueOnce({ bbsId: 'BROKEN', bbsTtl: '필수 코드 누락' });
+      await expect(boardAdminService.getBoardMaster('BROKEN')).rejects.toThrow();
+    });
+
+    it('생성 요청 스키마를 검증하고 ApiResponseLong의 식별자를 반환한다', async () => {
+      await expect(boardAdminService.createBoardArticle({
+        bbsId: 'BBSMSTR_000000000001',
+        pstTtl: '제목',
+        pstCn: '본문',
+      })).resolves.toBe(101);
+
+      await expect(boardAdminService.createBoardArticle({
+        bbsId: 'BBSMSTR_000000000001',
+        pstTtl: '',
+        pstCn: '본문',
+      })).rejects.toThrow();
+      expect(client.post).toHaveBeenCalledTimes(1);
     });
   });
 

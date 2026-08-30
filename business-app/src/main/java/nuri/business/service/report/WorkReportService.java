@@ -138,7 +138,8 @@ public class WorkReportService extends BaseAbstractService {
                     SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
                     return toDto(entity, lookupName(resolveAuthorNames(List.of(entity)), entity.getUserId()));
                 })
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "업무보고를 찾을 수 없습니다: " + rptpSn));
     }
 
     /**

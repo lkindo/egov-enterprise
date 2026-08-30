@@ -16,6 +16,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.Optional;
+import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -74,6 +80,51 @@ class BoardMasterRepositoryTest {
     }
 
     @Test
+    @DisplayName("일괄 영구삭제 조회는 옵션까지 한 번에 적재해 cascade 삭제를 보존한다")
+    void findAllWithOptionByBbsIdIn_supportsSafeBatchDelete() {
+        BoardMaster first = BoardMaster.builder()
+                .bbsId("BBS_BATCH_001")
+                .bbsTtl("Batch Board 1")
+                .bbsTypeCd("COM004")
+                .bbsAtrbCd("COM009")
+                .useYn("N")
+                .build();
+        first.registerOption("N", "N");
+        BoardMaster second = BoardMaster.builder()
+                .bbsId("BBS_BATCH_002")
+                .bbsTtl("Batch Board 2")
+                .bbsTypeCd("COM004")
+                .bbsAtrbCd("COM009")
+                .useYn("N")
+                .build();
+        second.registerOption("N", "N");
+        // assigned String @Id + @MapsId 옵션은 saveAll→merge 시 신규 옵션을 detached로 오판한다.
+        // 프로덕션 BoardMasterService#createBoardMaster와 같은 persist 생명주기로 fixture를 만든다.
+        em.persist(first);
+        em.persist(second);
+        em.flush();
+        em.clear();
+
+        List<BoardMaster> targets = boardMasterRepository.findAllWithOptionByBbsIdIn(
+                List.of("BBS_BATCH_001", "BBS_BATCH_002"));
+
+        assertThat(targets).extracting(BoardMaster::getBbsId)
+                .containsExactlyInAnyOrder("BBS_BATCH_001", "BBS_BATCH_002");
+        assertThat(targets).allSatisfy(master -> {
+            assertThat(master.getOption()).isNotNull();
+            assertThat(org.hibernate.Hibernate.isInitialized(master.getOption())).isTrue();
+        });
+
+        boardMasterRepository.deleteAll(targets);
+        em.flush();
+        em.clear();
+        assertThat(em.find(BoardMaster.class, "BBS_BATCH_001")).isNull();
+        assertThat(em.find(BoardMasterOption.class, "BBS_BATCH_001")).isNull();
+        assertThat(em.find(BoardMaster.class, "BBS_BATCH_002")).isNull();
+        assertThat(em.find(BoardMasterOption.class, "BBS_BATCH_002")).isNull();
+    }
+
+    @Test
     @DisplayName("BoardMaster 검색 테스트 (QueryDSL)")
     void searchTest() {
         // Given
@@ -111,6 +162,52 @@ class BoardMasterRepositoryTest {
         results = boardMasterRepository.searchBoardMasters(condition, PageRequest.of(0, 10));
         assertThat(results.getContent()).isNotEmpty();
         assertThat(results.getContent().get(0).getBbsTypeCdNm()).isEqualTo("General Board");
+    }
+
+    @Test
+    @DisplayName("생성시각이 같아도 두 페이지를 게시판 ID 순서로 중복·누락 없이 잇는다")
+    void searchUsesBoardIdAsStableTieBreaker() {
+        boardMasterRepository.saveAll(List.of(
+                pagingBoard("BBS_PAGE_C"),
+                pagingBoard("BBS_PAGE_A"),
+                pagingBoard("BBS_PAGE_B")));
+        em.flush();
+        em.createNativeQuery("""
+                update tb_bbs_master
+                   set crt_dt = :createdAt
+                 where bbs_id like 'BBS_PAGE_%'
+                """)
+                .setParameter("createdAt", LocalDateTime.of(2026, 8, 30, 0, 0))
+                .executeUpdate();
+        em.clear();
+
+        BoardMasterSearchCondition condition = new BoardMasterSearchCondition();
+        condition.setSearchCnd("0");
+        condition.setSearchWrd("Paging board");
+
+        Page<BoardMasterSearchResult> first = boardMasterRepository.searchBoardMasters(
+                condition, PageRequest.of(0, 2));
+        Page<BoardMasterSearchResult> second = boardMasterRepository.searchBoardMasters(
+                condition, PageRequest.of(1, 2));
+
+        assertThat(first.getTotalElements()).isEqualTo(3);
+        assertThat(second.getTotalElements()).isEqualTo(3);
+        assertThat(List.of(first, second).stream()
+                .flatMap(Page::stream)
+                .map(BoardMasterSearchResult::getBbsId))
+                .containsExactly("BBS_PAGE_A", "BBS_PAGE_B", "BBS_PAGE_C");
+    }
+
+    @Test
+    @DisplayName("생성시각 뒤에는 게시판 PK tie-breaker가 선언된다")
+    void searchDeclaresStablePagingOrder() throws IOException {
+        String source = Files.readString(
+                Path.of("src", "main", "java", "nuri", "business", "domain", "board",
+                        "BoardMasterRepositoryImpl.java"),
+                StandardCharsets.UTF_8);
+
+        assertThat(source).contains(
+                ".orderBy(boardMaster.crtDt.desc(), boardMaster.bbsId.asc())");
     }
 
     @Test
@@ -169,5 +266,15 @@ class BoardMasterRepositoryTest {
         // Then
         assertThat(results.getContent()).hasSize(1);
         assertThat(results.getContent().get(0).getBbsId()).isEqualTo("BBS_NOT_USED");
+    }
+
+    private static BoardMaster pagingBoard(String bbsId) {
+        return BoardMaster.builder()
+                .bbsId(bbsId)
+                .bbsTtl("Paging board " + bbsId)
+                .bbsTypeCd("PAGING_TYPE")
+                .bbsAtrbCd("PAGING_ATTR")
+                .useYn("Y")
+                .build();
     }
 }

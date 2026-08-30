@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { noteService, Note } from '@/services/business/user/NoteService';
-import { scrapService } from '@/services/business/user/ScrapService';
+import type { Scrap } from '@/services/business/user/ScrapService';
+import { scrapQueryOptions } from '@/queries/scrap-query-options';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -21,7 +22,7 @@ const COLLABORATION_TABS = ['MESSAGES', 'SCRAPS'] as const;
 type CollaborationTab = (typeof COLLABORATION_TABS)[number];
 
 /** 스크랩 목록 원소 타입 — 서비스 반환 타입에서 파생한다(로컬 재선언 금지). */
-type ScrapItem = Awaited<ReturnType<typeof scrapService.getMyScraps>>['list'][number];
+type ScrapItem = Scrap;
 
 const TAB_LABEL: Record<CollaborationTab, string> = {
   MESSAGES: '쪽지',
@@ -67,10 +68,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  });
  const notes: Note[] = notesQuery.data?.list ?? [];
 
- const scrapsQuery = useQuery({
-   queryKey: ['collab-scraps'],
-   queryFn: () => scrapService.getMyScraps({ page: 0, size: 50 }),
- });
+ const scrapsQuery = useQuery(scrapQueryOptions.list({ pageIndex: 1, pageUnit: 50 }));
  const scraps: ScrapItem[] = scrapsQuery.data?.list ?? [];
 
  /** 조회 실패를 "데이터 없음"으로 위장하지 않기 위해 테이블에 그대로 전달한다(P1-1). */

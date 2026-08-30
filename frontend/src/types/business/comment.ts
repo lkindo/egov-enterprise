@@ -1,4 +1,9 @@
-export interface CommentVO {
+import type { components, operations } from '@/types/generated-api';
+
+type GeneratedCommentDto = components['schemas']['CommentDto'];
+
+/** generated CommentDto 중 화면 렌더링·수정 식별에 반드시 필요한 응답 필드. */
+export interface CommentVO extends GeneratedCommentDto {
   ansSn: number;
   pstSn: number;
   bbsId: string;
@@ -22,9 +27,4 @@ export interface CommentSaveRequest {
   pswd?: string;
 }
 
-export interface CommentSearchParams {
-  pstSn: number;
-  bbsId: string;
-  page?: number;
-  size?: number;
-}
+export type CommentSearchParams = operations['getComments']['parameters']['query'];

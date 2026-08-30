@@ -2,6 +2,7 @@ package nuri.business.domain.auth;
 
 import jakarta.persistence.*;
 import lombok.*;
+import nuri.foundation.domain.common.BaseEntity;
 import java.time.Instant;
 
 /**
@@ -15,7 +16,7 @@ import java.time.Instant;
 @Table(name = "tb_auth_rfsh_tk")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class RefreshToken {
+public class RefreshToken extends BaseEntity {
     @Id
     @Column(nullable = false, length = 20)
     private String userId;

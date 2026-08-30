@@ -138,11 +138,13 @@ class RoleManageServiceTest {
         String roleCode = "NOT_FOUND";
         when(roleInfoRepository.findById(roleCode)).thenReturn(Optional.empty());
 
-        // When
-        RoleManageDto result = roleManageService.selectRole(roleCode);
+        nuri.foundation.core.exception.BusinessException error =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        nuri.foundation.core.exception.BusinessException.class,
+                        () -> roleManageService.selectRole(roleCode));
 
-        // Then
-        assertThat(result).isNull();
+        assertThat(error.getErrorCode())
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @Test

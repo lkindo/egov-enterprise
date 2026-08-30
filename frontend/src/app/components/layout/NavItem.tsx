@@ -96,8 +96,6 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   const discriminators = useContext(QueryDiscriminatorContext);
   const { setSidebarOpen } = useLayout();
   const hasChildren = item.children && item.children.length > 0;
-  const [isOpen, setIsOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
 
   // URL normalization and mapping
@@ -115,9 +113,9 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
     () => matchesLocation(href, String(pathname), searchParams, discriminators),
     [href, pathname, searchParams, discriminators]
   );
+  const [isOpen, setIsOpen] = useState(isActive && hasChildren);
 
   useEffect(() => {
-    setIsMounted(true);
     if (isActive && hasChildren) {
       setIsOpen(true);
     }
@@ -180,8 +178,6 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
       )}
     </div>
   );
-
-  if (!isMounted) return null;
 
   return (
     <div className="w-full relative">

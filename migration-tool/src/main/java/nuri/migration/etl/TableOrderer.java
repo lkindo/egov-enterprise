@@ -14,8 +14,8 @@ import java.util.Map;
  * {@code fkRef} 선언으로 이루는 테이블 의존 DAG 를 위상정렬(Kahn)해 <b>부모 먼저</b> 적재 순서를 만든다.
  *
  * <p>부모 PK 가 자식 FK 번역보다 먼저 채번돼야 하므로(키맵 keystone), 선언 순서가 아니라 의존 순서로
- * 실행해야 참조 무결성이 성립한다. 자기참조(fkRef == 자기 소스)는 간선에서 제외한다(트리는 2-pass 로
- * 별도 처리 — 현재는 best-effort). 사이클/외부참조는 잔여를 원래 선언 순서로 덧붙인다(결정적).
+ * 실행해야 참조 무결성이 성립한다. 자기참조(fkRef == 자기 소스)는 간선에서 제외하고 실행기가
+ * 선채번/후 FK 변환 2-pass로 처리한다. 서로 다른 테이블의 사이클은 실행 순서를 임의로 만들지 않고 차단한다.
  */
 final class TableOrderer {
 
@@ -76,11 +76,12 @@ final class TableOrderer {
             }
         }
 
-        // 사이클 잔여는 원래 순서로 덧붙임(부분 순서라도 보존)
-        for (TableMapping t : tables) {
-            if (emitted.add(nodeKey(t))) {
-                ordered.add(t);
-            }
+        if (emitted.size() != byName.size()) {
+            List<String> blocked = tables.stream()
+                    .map(TableOrderer::nodeKey)
+                    .filter(name -> !emitted.contains(name))
+                    .toList();
+            throw new IllegalArgumentException("교차 테이블 FK 순환으로 실행 순서를 결정할 수 없습니다: " + blocked);
         }
         return ordered;
     }

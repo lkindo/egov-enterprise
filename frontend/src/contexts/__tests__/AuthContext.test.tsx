@@ -56,6 +56,10 @@ describe('AuthContext', () => {
 
   it('로그아웃 시 사용자 세션 정보가 비워져야 함', async () => {
     (authService.logout as any).mockResolvedValue({});
+    localStorage.setItem('egov-board-draft:v2:user-1:BBS-1:create:new', 'draft');
+    localStorage.setItem('egov-draft-board_insert_BBS-1', 'legacy');
+    localStorage.setItem('autosave_bbs_write', 'legacy');
+    localStorage.setItem('unrelated-preference', 'keep');
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -65,6 +69,10 @@ describe('AuthContext', () => {
 
     expect(authService.logout).toHaveBeenCalled();
     expect(result.current.user).toBeNull();
+    expect(localStorage.getItem('egov-board-draft:v2:user-1:BBS-1:create:new')).toBeNull();
+    expect(localStorage.getItem('egov-draft-board_insert_BBS-1')).toBeNull();
+    expect(localStorage.getItem('autosave_bbs_write')).toBeNull();
+    expect(localStorage.getItem('unrelated-preference')).toBe('keep');
   });
 
   it('초기화 시 사용자 정보를 조회하여 세션 유지를 확인해야 함', async () => {

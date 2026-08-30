@@ -96,21 +96,15 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
         await page.evaluate(() => localStorage.clear());
         
         console.log('>>> Step 3: Attempting a protected navigation');
-        // AuthContext와 middleware가 모두 만료를 감지할 수 있어 보호 경로 탐색은 로그인 탐색에 의해
-        // 중단될 수 있다. 리다이렉트를 먼저 관찰하고, 그 두 가지 기대 중단만 허용한다.
-        const loginRedirect = page.waitForURL(/\/login(?:\?|$)/, {
-            waitUntil: 'domcontentloaded',
-            timeout: 15000,
+        // API 인터셉터와 middleware가 모두 세션 소실을 감지할 수 있어 보호 경로 탐색은 다른
+        // 로그인 탐색에 의해 중단될 수 있다. 시작한 탐색의 기대 중단만 허용하고, 특정 navigation의
+        // load-state가 아니라 사용자가 최종적으로 도착한 URL과 로그인 화면을 검증한다.
+        await page.goto('/admin/community/boards/master', { waitUntil: 'domcontentloaded' }).catch((error: unknown) => {
+            const message = error instanceof Error ? error.message : String(error);
+            if (!/net::ERR_ABORTED|interrupted by another navigation/i.test(message)) throw error;
         });
-        await Promise.all([
-            loginRedirect,
-            page.goto('/admin/community/boards/master', { waitUntil: 'domcontentloaded' }).catch((error: unknown) => {
-                const message = error instanceof Error ? error.message : String(error);
-                if (!/net::ERR_ABORTED|interrupted by another navigation/i.test(message)) throw error;
-            }),
-        ]);
 
-        await expect(page).toHaveURL(/\/login(?:\?|$)/);
+        await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15000 });
         await expect(page.getByRole('heading', { name: '엔터프라이즈', exact: true })).toBeVisible();
         console.log('>>> Correctly redirected to login after session loss');
     });

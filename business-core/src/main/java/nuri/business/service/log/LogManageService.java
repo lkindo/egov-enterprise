@@ -4,6 +4,8 @@ import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.log.SysLog;
 import nuri.business.domain.log.SysLogRepository;
 import nuri.business.service.log.dto.SysLogDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -72,7 +74,8 @@ public class LogManageService extends BaseAbstractService {
     public SysLogDto selectSysLogDetail(@NonNull Long sysLogSn) {
         return sysLogRepository.findById(sysLogSn)
                 .map(this::toDto)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "시스템 로그를 찾을 수 없습니다: " + sysLogSn));
     }
 
     private SysLogDto toDto(SysLog entity) {

@@ -3,6 +3,7 @@ package nuri.business.service.code;
 import nuri.business.domain.code.AdministCode;
 import nuri.business.repository.code.AdministCodeRepository;
 import nuri.business.service.code.dto.AdministCodeDto;
+import nuri.business.domain.code.exception.CodeErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,8 @@ public class AdministCodeService {
     public AdministCodeDto getAdministCodeDetail(String code) {
         return administCodeRepository.findById(code)
                 .map(this::convertToDto)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CodeErrorCode.CODE_NOT_FOUND, "행정구역 코드를 찾을 수 없습니다: " + code));
     }
 
     @Transactional

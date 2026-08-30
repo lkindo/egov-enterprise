@@ -2,9 +2,11 @@ package nuri.business.service.system.content.community;
 
 import nuri.business.domain.system.content.community.Community;
 import nuri.business.domain.system.content.community.CommunityRepository;
+import nuri.business.domain.system.content.community.QCommunity;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -26,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +47,9 @@ class CommunityServiceImplTest {
     
     @Mock
     private JPAQuery<Community> jpaQuery;
+
+    @Mock
+    private JPAQuery<Long> countQuery;
 
     @Test
     @DisplayName("커뮤니티 생성 - 성공")
@@ -91,6 +97,21 @@ class CommunityServiceImplTest {
     }
 
     @Test
+    @DisplayName("커뮤니티 상세 미존재는 404 도메인 오류")
+    void getCommunityNotFound() {
+        given(communityRepository.findById(404L)).willReturn(Optional.empty());
+
+        nuri.foundation.core.exception.BusinessException error =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        nuri.foundation.core.exception.BusinessException.class,
+                        () -> communityService.getCommunity(404L));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND,
+                error.getErrorCode());
+    }
+
+    @Test
     @DisplayName("커뮤니티 목록 조회 - 성공")
     void getCommunityList() {
         // given
@@ -103,6 +124,10 @@ class CommunityServiceImplTest {
         given(jpaQuery.limit(any(Long.class))).willReturn(jpaQuery);
         given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
         given(jpaQuery.fetch()).willReturn(List.of(community));
+        given(queryFactory.select(org.mockito.ArgumentMatchers.<Expression<Long>>any())).willReturn(countQuery);
+        given(countQuery.from(QCommunity.community)).willReturn(countQuery);
+        given(countQuery.where(any(BooleanBuilder.class))).willReturn(countQuery);
+        given(countQuery.fetchOne()).willReturn(1L);
 
         // when
         Page<CommunityDto> result = communityService.getCommunityList("0", "Comm", pageable);
@@ -112,6 +137,9 @@ class CommunityServiceImplTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getCmntySn()).isEqualTo(101L);
         assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(countQuery).fetchOne();
+        verify(countQuery, never()).fetch();
+        verify(jpaQuery, times(1)).fetch();
     }
     
     @Test

@@ -1,14 +1,18 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import { FormErrorSummary } from '@/components/ui/form';
 import { Check, X, User, Calendar, Info, Plus, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { ApprovalConfirmRequestSchema } from '@/types/generated-zod';
 import {
-  approvalUserService,
   isSanctionPending,
   SANCTION_STATUS,
   type InformalSanctionDto,
@@ -18,8 +22,11 @@ import { Badge } from '@/components/ui/badge';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { ApprovalStepper } from './ApprovalStepper';
 import Link from 'next/link';
-
-type ApprovalTab = 'PENDING' | 'HISTORY';
+import {
+  approvalMutationOptions,
+  approvalQueryOptions,
+  type ApprovalTab,
+} from '@/queries/approval-query-options';
 
 const EMPTY_APPROVALS: InformalSanctionDto[] = [];
 
@@ -27,6 +34,23 @@ const TAB_LABELS: Record<ApprovalTab, string> = {
   PENDING: '대기 중인 결재',
   HISTORY: '결재 처리 이력',
 };
+
+const APPROVAL_DECISION_LABELS = {
+  reason: '반려 사유',
+  status: '결재 상태',
+};
+
+const approvalDecisionSchema = ApprovalConfirmRequestSchema
+  .transform((request) => ({ ...request, reason: request.reason?.trim() }))
+  .superRefine((request, context) => {
+    if (request.status === SANCTION_STATUS.REJECTED && !request.reason) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['reason'],
+        message: '반려 사유를 입력해 주세요.',
+      });
+    }
+  });
 
 /**
  * 상태 코드를 배지로. 색만으로 상태를 전달하지 않도록 라벨을 함께 낸다(카탈로그 A4 금지 항목).
@@ -77,18 +101,19 @@ export default function ApprovalHubClient() {
   const [activeTab, setActiveTab] = useState<ApprovalTab>('PENDING');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [pendingAction, setPendingAction] = useState<SanctionStatusCode | null>(null);
+  const pendingActionRef = useRef(false);
   const itemButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const rejectReasonRef = useRef<HTMLTextAreaElement>(null);
-
-  const { data: approvalData, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery({
-    queryKey: ['approvals', activeTab],
-    queryFn: () => {
-      if (activeTab === 'PENDING') {
-        return approvalUserService.getPending({ page: 0, size: 50 });
-      }
-      return approvalUserService.getMyHistory({ page: 0, size: 50 });
-    }
+  const decisionValidation = useManualFormValidation(approvalDecisionSchema, {
+    focusTargets: { reason: () => rejectReasonRef.current },
+    labels: APPROVAL_DECISION_LABELS,
   });
+
+  const { data: approvalData, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery(
+    approvalQueryOptions.list(activeTab, { page: 0, size: 50 }),
+  );
+  const confirmMutation = useMutation(approvalMutationOptions.confirm(queryClient));
 
   const list = approvalData?.list || EMPTY_APPROVALS;
   /*
@@ -108,9 +133,13 @@ export default function ApprovalHubClient() {
     // 다른 대기열의 문서 식별자를 들고 넘어가면 첫 항목이 아니라 빈 상세가 남는다.
     setSelectedItemId(null);
     setRejectReason('');
+    decisionValidation.setFormErrors({}, false);
   };
 
-  const handleAction = async (item: InformalSanctionDto, aprvYn: SanctionStatusCode) => {
+  const handleAction = async (
+    item: InformalSanctionDto,
+    aprvYn: Extract<SanctionStatusCode, 'C' | 'R'>,
+  ) => {
     const isReject = aprvYn === SANCTION_STATUS.REJECTED;
     const actionNm = isReject ? '반려' : '승인';
 
@@ -119,33 +148,41 @@ export default function ApprovalHubClient() {
       return;
     }
 
-    // 서버는 공백 사유를 거부한다. 종전에는 사유 입력란이 없어 반려가 도달해도 실패했다.
-    const reason = rejectReason.trim();
-    if (isReject && reason.length === 0) {
-      toast('반려 사유를 입력해 주세요. 기안자에게 그대로 전달됩니다.', 'error');
-      rejectReasonRef.current?.focus();
-      return;
-    }
-
-    const isConfirmed = await confirm({
-      title: `결재 ${actionNm}`,
-      message: `[#${item.ifmlAtrzSn}] 요청을 ${actionNm}하시겠습니까?`,
-      variant: isReject ? 'destructive' : 'default'
+    const validatedDecision = decisionValidation.validate({
+      status: aprvYn,
+      reason: isReject ? rejectReason : undefined,
     });
+    if (!validatedDecision) return;
 
-    if (!isConfirmed) return;
+    // confirm 모달이 열려 있는 동안에는 mutation.isPending 이 아직 false다. 같은 tick의
+    // 연속 클릭도 즉시 차단하도록 await 전에 동기 선점하고, 취소·실패를 포함해 finally에서 푼다.
+    if (pendingActionRef.current) return;
+    pendingActionRef.current = true;
+    setPendingAction(aprvYn);
 
     try {
-      await approvalUserService.confirm(
-        item.ifmlAtrzSn,
-        isReject ? SANCTION_STATUS.REJECTED : SANCTION_STATUS.APPROVED,
-        isReject ? reason : undefined,
-      );
+      const isConfirmed = await confirm({
+        title: `결재 ${actionNm}`,
+        message: `[#${item.ifmlAtrzSn}] 요청을 ${actionNm}하시겠습니까?`,
+        variant: isReject ? 'destructive' : 'default'
+      });
+
+      if (!isConfirmed) return;
+
+      await confirmMutation.mutateAsync({
+        ifmlAtrzSn: item.ifmlAtrzSn,
+        status: validatedDecision.status,
+        reason: validatedDecision.reason,
+      });
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       setRejectReason('');
-      queryClient.invalidateQueries({ queryKey: ['approvals'] });
-    } catch {
+    } catch (error) {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) decisionValidation.setFormErrors(fieldErrors);
       toast(`${actionNm} 처리 중 오류가 발생했습니다.`, 'error');
+    } finally {
+      pendingActionRef.current = false;
+      setPendingAction(null);
     }
   };
 
@@ -177,6 +214,12 @@ export default function ApprovalHubClient() {
   // 서버는 신청 상태('A')만 확정을 받는다. 종전 조건(=== 'R')은 값 자체가 없어 영구 false 였고,
   // 설령 값이 있었어도 'R'(반려)에만 승인 버튼을 띄우는 뒤집힌 게이트였다.
   const canDecide = activeTab === 'PENDING' && isSanctionPending(selectedItem?.aprvYn);
+  const isActionPending = pendingAction !== null;
+  const rejectReasonFieldProps = decisionValidation.fieldProps('reason');
+  const rejectReasonDescribedBy = [
+    'reject-reason-help',
+    rejectReasonFieldProps['aria-describedby'],
+  ].filter(Boolean).join(' ');
 
   return (
     <MasterDetailPage
@@ -311,12 +354,19 @@ export default function ApprovalHubClient() {
       }
       detailActions={canDecide && selectedItem ? (
         <>
-          <Button type="button" onClick={() => { void handleAction(selectedItem, SANCTION_STATUS.APPROVED); }}>
+          <Button
+            type="button"
+            disabled={isActionPending}
+            aria-busy={pendingAction === SANCTION_STATUS.APPROVED || undefined}
+            onClick={() => { void handleAction(selectedItem, SANCTION_STATUS.APPROVED); }}
+          >
             <Check aria-hidden="true" /> 결재 승인
           </Button>
           <Button
             type="button"
             variant="destructive"
+            disabled={isActionPending}
+            aria-busy={pendingAction === SANCTION_STATUS.REJECTED || undefined}
             onClick={() => { void handleAction(selectedItem, SANCTION_STATUS.REJECTED); }}
           >
             <X aria-hidden="true" /> 결재 반려
@@ -353,6 +403,11 @@ export default function ApprovalHubClient() {
 
           {canDecide && (
             <section aria-label="반려 사유" className="rounded-md border border-border p-4">
+              <FormErrorSummary
+                errors={decisionValidation.errors}
+                labels={APPROVAL_DECISION_LABELS}
+                onNavigate={decisionValidation.focusError}
+              />
               <label htmlFor="reject-reason" className="text-[length:var(--font-size-body)] font-semibold text-foreground">
                 반려 사유
               </label>
@@ -364,15 +419,22 @@ export default function ApprovalHubClient() {
               <textarea
                 id="reject-reason"
                 ref={rejectReasonRef}
+                {...rejectReasonFieldProps}
                 aria-label="반려 사유"
-                aria-describedby="reject-reason-help"
+                aria-describedby={rejectReasonDescribedBy}
                 value={rejectReason}
-                onChange={(event) => setRejectReason(event.target.value)}
+                onChange={(event) => {
+                  decisionValidation.clearError('reason');
+                  setRejectReason(event.target.value);
+                }}
                 maxLength={4000}
                 rows={3}
                 className="mt-2 w-full rounded-md border border-border bg-background p-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 placeholder="예: 예산 코드가 누락되어 반려합니다."
               />
+              {decisionValidation.errors.reason ? (
+                <p {...decisionValidation.messageProps('reason')} className="mt-1 text-xs font-bold text-destructive-emphasis" />
+              ) : null}
             </section>
           )}
 

@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -216,7 +217,7 @@ class EntitySchemaConformanceLinterTest {
     // ── 마이그레이션 재생 ────────────────────────────────────────────────────────
 
     /** {@code 테이블 -> (컬럼 -> 타입)} — V* 델타를 버전 순으로 적용한 유효 스키마 */
-    private Map<String, Map<String, String>> replayMigrations() throws IOException {
+    Map<String, Map<String, String>> replayMigrations() throws IOException {
         Path dir = resolveMigrationDir();
         List<Path> files = HarnessSourceIndex.filesUnder(dir, p ->
                         p.getFileName().toString().matches("V\\d+_\\d+__.*\\.sql"))
@@ -455,25 +456,36 @@ class EntitySchemaConformanceLinterTest {
         return name.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase(Locale.ROOT);
     }
 
-    /** 컬럼으로 매핑되는 필드만 — 연관·임베디드·정적/transient 는 v1 범위 밖 */
+    /** 컬럼으로 매핑되는 필드만 — 임베디드는 재귀적으로 펼치고 연관·정적/transient 는 제외한다. */
     private static List<Field> persistentFields(Class<?> clazz) {
         List<Field> fields = new ArrayList<>();
+        collectPersistentFields(clazz, fields, new HashSet<>());
+        return fields;
+    }
+
+    private static void collectPersistentFields(Class<?> clazz, List<Field> fields, Set<Class<?>> visiting) {
+        if (!visiting.add(clazz)) {
+            return;
+        }
         for (Class<?> c = clazz; c != null && c != Object.class; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
                 if (Modifier.isStatic(f.getModifiers()) || Modifier.isTransient(f.getModifiers())) {
                     continue;
                 }
+                if (f.isAnnotationPresent(Embedded.class) || f.isAnnotationPresent(EmbeddedId.class)) {
+                    collectPersistentFields(f.getType(), fields, visiting);
+                    continue;
+                }
                 if (f.isAnnotationPresent(Transient.class)
                         || f.isAnnotationPresent(OneToMany.class) || f.isAnnotationPresent(ManyToMany.class)
                         || f.isAnnotationPresent(ManyToOne.class) || f.isAnnotationPresent(OneToOne.class)
-                        || f.isAnnotationPresent(Embedded.class) || f.isAnnotationPresent(EmbeddedId.class)
                         || f.isAnnotationPresent(ElementCollection.class)) {
                     continue;
                 }
                 fields.add(f);
             }
         }
-        return fields;
+        visiting.remove(clazz);
     }
 
     /** PK 생성 전략이 물리 타입에 수용되는지 — 부적합하면 사유, 적합하면 null */

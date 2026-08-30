@@ -123,3 +123,45 @@ describe('HelpUserService FAQ detail', () => {
     expect((thrown as Error).message).not.toContain('노출 금지');
   });
 });
+
+describe('HelpUserService QNA generated contract', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('생성 BoardDto page를 검증한 뒤 UI QNA 모델로 명시적으로 변환한다', async () => {
+    vi.mocked(client.get).mockResolvedValueOnce({
+      list: [{
+        pstSn: 42,
+        bbsId: 'BBSMSTR_QAAAAAAAAAAA',
+        pstTtl: '문의 제목',
+        pstCn: '문의 본문',
+        useYn: 'Y',
+        userId: 'writer-1',
+        userNm: '작성자',
+        qnaSttsCd: 'OPEN',
+        scrtYn: 'N',
+        crtDt: '2026-08-30T00:00:00Z',
+      }],
+      total: 1,
+      page: 0,
+      size: 10,
+      totalPage: 1,
+    });
+
+    const result = await helpUserService.getQnas({ page: 0, size: 10, keyword: '문의' });
+
+    expect(result.list[0]).toMatchObject({
+      qaId: '42',
+      qstnTtl: '문의 제목',
+      wrterNm: '작성자',
+      qnaSttsCd: 'OPEN',
+    });
+  });
+
+  it('생성 계약의 필수 userId/useYn이 빠진 응답을 화면에 통과시키지 않는다', async () => {
+    vi.mocked(client.get).mockResolvedValueOnce({
+      list: [{ pstSn: 42, pstTtl: '불완전 문의', pstCn: '본문' }],
+    });
+
+    await expect(helpUserService.getQnas({ page: 0, size: 10 })).rejects.toThrow();
+  });
+});

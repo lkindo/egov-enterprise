@@ -1,8 +1,11 @@
 package nuri.migration.verify;
 
 import nuri.migration.etl.EtlExecutor.TableResult;
+import nuri.migration.etl.EtlExecutor;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.source.SourceIntrospector;
+import nuri.migration.state.MigrationStateStore;
+import nuri.migration.state.RowChecksum;
 import nuri.migration.verify.MigrationReport.Status;
 import nuri.migration.verify.MigrationReport.TableReport;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,10 +25,12 @@ import java.util.Map;
  * WARN: 변환≠조회(행 드롭/증폭; strict CLI에서는 실패 종료). PASS: 조회==변환==기록 & 오류 0.
  *
  * <p>남은 로드맵(설계문서 §7 P4): 고아 FK/NOT-NULL/UNIQUE 스캔, meta_standard_domains 도메인 적합성,
- * 집계 체크섬 parity, 샘플 N행 소스↔타깃 diff, tb_migration_run 감사 레코드.
+ * 집계 체크섬 parity와 샘플 N행 소스↔타깃 diff.
  */
 @Component
 public class MigrationVerifier {
+
+    private static final int VERIFY_BATCH = 500;
 
     /** 판정 분기 단위 테스트용: 실제 실행 경로는 반드시 선언 spec까지 전달하는 public overload를 사용한다. */
     MigrationReport verify(List<TableResult> results, JdbcTemplate targetJt) {
@@ -50,13 +55,21 @@ public class MigrationVerifier {
         }
 
         for (TableResult r : actualResults) {
-            long targetRows = commit ? targetRowCount(targetJt, r.targetTable()) : -1L;
+            MappingSpec.TableMapping mapping = findMapping(spec, r);
+            ScopedVerification scoped = commit && spec != null && spec.run() != null
+                    ? verifyScoped(targetJt, spec, mapping, r)
+                    : null;
+            long targetRows = !commit ? -1L
+                    : scoped == null ? targetRowCount(targetJt, r.targetTable()) : scoped.rows();
             Status status;
             String note;
 
             if (!r.errors().isEmpty()) {
                 status = Status.FAIL;
                 note = "오류 " + r.errors().size() + "건";
+            } else if (scoped != null && scoped.error() != null) {
+                status = Status.FAIL;
+                note = scoped.error();
             } else if (commit && targetRows < 0) {
                 status = Status.FAIL;
                 note = "타깃 행수 대조 실패 — 성공을 증명할 수 없음";
@@ -82,7 +95,116 @@ public class MigrationVerifier {
                     r.read(), r.transformed(), r.written(), r.errors().size(), targetRows, status, note));
             overall = worst(overall, status);
         }
+        if (commit && spec != null && spec.run() != null) {
+            try {
+                new MigrationStateStore(spec.run()).mark(
+                        targetJt, overall == Status.PASS ? "COMPLETED" : "FAILED");
+            } catch (RuntimeException e) {
+                tables.add(new TableReport("<run-audit>", "<run-audit>",
+                        0L, 0L, 0L, 1L, -1L, Status.FAIL,
+                        "run 상태 기록 실패 — 검증 완료를 증명할 수 없음"));
+                overall = Status.FAIL;
+            }
+        }
         return new MigrationReport(tables, overall);
+    }
+
+    private record ScopedVerification(long rows, String error) {}
+
+    private static MappingSpec.TableMapping findMapping(MappingSpec spec, TableResult result) {
+        if (spec == null) {
+            return null;
+        }
+        return spec.tables().stream()
+                .filter(table -> identity(table.source(), table.target())
+                        .equals(identity(result.sourceTable(), result.targetTable())))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private ScopedVerification verifyScoped(JdbcTemplate target, MappingSpec spec,
+                                             MappingSpec.TableMapping table, TableResult result) {
+        if (table == null) {
+            return new ScopedVerification(-1L, "run scoped 검증 매핑을 찾을 수 없음");
+        }
+        List<MigrationStateStore.CheckpointEntry> checkpoints;
+        try {
+            checkpoints = MigrationStateStore.read(target, spec.run(), table.source());
+        } catch (RuntimeException e) {
+            return new ScopedVerification(-1L, "run scoped checkpoint 대조 실패 — 성공을 증명할 수 없음");
+        }
+        if (checkpoints.size() != result.written()) {
+            return new ScopedVerification(checkpoints.size(),
+                    "run scoped parity 불일치: checkpoint=" + checkpoints.size()
+                            + ", written=" + result.written());
+        }
+
+        List<String> columns = EtlExecutor.canonicalTargetColumns(table);
+        String targetKey = EtlExecutor.targetIdentityColumn(table);
+        if (targetKey == null || targetKey.isBlank() || columns.isEmpty()) {
+            return new ScopedVerification(checkpoints.size(),
+                    "run scoped checksum 계약(target identity/columns) 부재");
+        }
+        long distinctTargetKeys = checkpoints.stream()
+                .map(MigrationStateStore.CheckpointEntry::targetKey)
+                .distinct()
+                .count();
+        if (distinctTargetKeys != checkpoints.size()) {
+            return new ScopedVerification(checkpoints.size(),
+                    "run scoped parity 불일치: checkpoint target key 중복");
+        }
+        String selectPrefix = "SELECT " + String.join(", ", columns.stream()
+                .map(SourceIntrospector::ident).toList())
+                + " FROM " + SourceIntrospector.qualifiedIdent(table.target())
+                + " WHERE " + SourceIntrospector.ident(targetKey) + " IN (";
+        for (int from = 0; from < checkpoints.size(); from += VERIFY_BATCH) {
+            List<MigrationStateStore.CheckpointEntry> batch = checkpoints.subList(
+                    from, Math.min(from + VERIFY_BATCH, checkpoints.size()));
+            try {
+                String placeholders = String.join(", ", batch.stream().map(ignored -> "?").toList());
+                Object[] arguments = batch.stream()
+                        .map(MigrationStateStore.CheckpointEntry::targetKey)
+                        .toArray();
+                List<Map<String, Object>> rows = target.queryForList(
+                        selectPrefix + placeholders + ")", arguments);
+                Map<String, List<Map<String, Object>>> rowsByKey = new LinkedHashMap<>();
+                for (Map<String, Object> row : rows) {
+                    Object actualKey = valueIgnoreCase(row, targetKey);
+                    if (actualKey == null) {
+                        return new ScopedVerification(checkpoints.size(),
+                                "run scoped target identity가 null: " + targetKey);
+                    }
+                    rowsByKey.computeIfAbsent(actualKey.toString(), ignored -> new ArrayList<>()).add(row);
+                }
+                for (MigrationStateStore.CheckpointEntry checkpoint : batch) {
+                    List<Map<String, Object>> matched = rowsByKey.getOrDefault(
+                            checkpoint.targetKey(), List.of());
+                    if (matched.size() != 1) {
+                        return new ScopedVerification(checkpoints.size(),
+                                "run scoped parity 불일치: target key=" + checkpoint.targetKey()
+                                        + " 행수=" + matched.size());
+                    }
+                    String actual = RowChecksum.calculate(columns, matched.get(0));
+                    if (!actual.equals(checkpoint.rowChecksum())) {
+                        return new ScopedVerification(checkpoints.size(),
+                                "run scoped checksum 불일치: source key=" + checkpoint.sourceKey());
+                    }
+                }
+            } catch (RuntimeException e) {
+                return new ScopedVerification(checkpoints.size(),
+                        "run scoped target/checksum batch 대조 실패");
+            }
+        }
+        return new ScopedVerification(checkpoints.size(), null);
+    }
+
+    private static Object valueIgnoreCase(Map<String, Object> row, String column) {
+        for (Map.Entry<String, Object> entry : row.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(column)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     private static String resultContractError(MappingSpec spec, List<TableResult> results) {

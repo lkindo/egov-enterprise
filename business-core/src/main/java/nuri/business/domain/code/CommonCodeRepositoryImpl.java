@@ -35,6 +35,7 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
                 .where(
                         commonCodeGroup.useYn.eq("Y"),
                         conditionEq(searchCondition, searchKeyword))
+                .orderBy(commonCode.cdId.asc(), commonCode.dtlCd.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

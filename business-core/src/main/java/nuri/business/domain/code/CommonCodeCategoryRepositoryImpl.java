@@ -23,6 +23,7 @@ public class CommonCodeCategoryRepositoryImpl implements CommonCodeCategoryRepos
                 .selectFrom(commonCodeCategory)
                 .where(
                         conditionEq(searchCondition, searchKeyword))
+                .orderBy(commonCodeCategory.clsfCd.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

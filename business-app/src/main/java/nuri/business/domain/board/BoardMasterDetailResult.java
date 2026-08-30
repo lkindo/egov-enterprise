@@ -13,8 +13,6 @@ public class BoardMasterDetailResult {
     private String bbsAtrbCdNm;
     private String bbsTtl;
     private String tmpltId;
-    private String tmplatNm;
-    private String tmplatCours;
     private String fileAtchPsbltyYn;
     private Integer atchPsbltyFileQty;
     private Long atchPsbltyFileSz;

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { SecurityMatrixVisualizer } from './components/SecurityMatrixVisualizer';
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
@@ -89,6 +90,8 @@ export default function SecurityHubClient({
   
   const [tempUserMappings, setTempUserMappings] = useState<Set<string>>(new Set());
   const [tempMenuMappings, setTempMenuMappings] = useState<Set<number>>(new Set());
+  const [userMappingRevision, setUserMappingRevision] = useState<string | null>(null);
+  const [menuMappingRevision, setMenuMappingRevision] = useState<string | null>(null);
   /**
    * 이 권한에 할당된 롤 코드 집합.
    *
@@ -97,9 +100,10 @@ export default function SecurityHubClient({
    *
    * ⚠ 저장은 **전체 교체**다(AuthorRoleManageService.insertAuthorRole 이 기존 매핑을 전량
    * 삭제한 뒤 재삽입한다). 그래서 이 집합은 항상 "이 권한이 가질 롤 전체" 여야 하고,
-   * 조회도 한 페이지에 전부 받아야 한다. 부분 집합을 저장하면 나머지가 조용히 사라진다.
+   * 조회도 모든 페이지를 끝까지 받아야 한다. 부분 집합을 저장하면 나머지가 조용히 사라진다.
    */
   const [tempRoleMappings, setTempRoleMappings] = useState<Set<string>>(new Set());
+  const [roleMappingRevision, setRoleMappingRevision] = useState<string | null>(null);
 
   // --- Matrix Mode States ---
   const [globalMappings, setGlobalMappings] = useState<Map<string, Set<number>>>(new Map());
@@ -163,7 +167,7 @@ export default function SecurityHubClient({
   });
   const authorities = authorsData?.list || [];
 
-  const { data: usersData, isLoading: isUsersLoading, error: usersError, refetch: refetchUsers } = useQuery({
+  const { data: usersData, dataUpdatedAt: usersDataUpdatedAt, isLoading: isUsersLoading, isFetching: isUsersFetching, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-user-authorities', selectedAuthorCode, userSearchKeyword, userPage],
     queryFn: () => userAuthorityAdminService.getUserAuthorityList({
       searchKeyword: userSearchKeyword,
@@ -177,7 +181,7 @@ export default function SecurityHubClient({
   });
   const users = usersData?.list || [];
 
-  const { data: menusData, isLoading: isMenusLoading, error: menusError, refetch: refetchMenus } = useQuery({
+  const { data: menusData, dataUpdatedAt: menusDataUpdatedAt, isLoading: isMenusLoading, isFetching: isMenusFetching, error: menusError, refetch: refetchMenus } = useQuery({
     queryKey: ['admin-author-menus', selectedAuthorCode],
     queryFn: async () => {
       const allMenus = await menuAdminService.getAllMenus();
@@ -190,15 +194,55 @@ export default function SecurityHubClient({
   /**
    * 권한별 롤 목록.
    *
-   * ⚠ `pageUnit` 을 크게 잡아 **한 페이지에 전부** 받는다. 저장이 전체 교체라, 페이지를
-   * 나눠 받으면 보지 못한 페이지의 롤이 저장 시 지워진다.
+   * ⚠ 서버 상한 안에서 **모든 페이지를 끝까지** 받는다. 저장이 전체 교체라, 첫 페이지만
+   * 받으면 보지 못한 페이지의 롤이 저장 시 지워진다.
    */
-  const { data: authorRolesData, isLoading: isAuthorRolesLoading, error: authorRolesError, refetch: refetchAuthorRoles } = useQuery({
+  const { data: authorRolesData, dataUpdatedAt: roleDataUpdatedAt, isLoading: isAuthorRolesLoading, isFetching: isAuthorRolesFetching, error: authorRolesError, refetch: refetchAuthorRoles } = useQuery({
     queryKey: ['admin-author-roles', selectedAuthorCode],
-    queryFn: () => authorAdminService.getAuthorRoles(selectedAuthorCode, { pageIndex: 1, pageUnit: 500 }),
+    // [2026-08-30] 서버가 pageUnit 에 @Max(100) 을 걸면서 500 은 400 이 된다. 값을 100 으로
+    //   낮추면 목록이 조용히 잘리는데, 저장이 전체 교체라 **보지 못한 롤이 삭제된다**.
+    //   그래서 끝까지 따라가 전량을 모은다 — 서버 상한을 존중하면서 완전성도 지킨다.
+    queryFn: async () => ({
+      list: await fetchAllPages((pageIndex, pageUnit) =>
+        authorAdminService.getAuthorRoles(selectedAuthorCode, { pageIndex, pageUnit })),
+    }),
     enabled: !!selectedAuthorCode,
   });
   const authorRoles = authorRolesData?.list ?? [];
+  const userMappingQueryRevision = JSON.stringify([
+    selectedAuthorCode,
+    userSearchKeyword,
+    userPage,
+    usersDataUpdatedAt,
+  ]);
+  const menuMappingQueryRevision = JSON.stringify([selectedAuthorCode, menusDataUpdatedAt]);
+  const roleMappingQueryRevision = JSON.stringify([selectedAuthorCode, roleDataUpdatedAt]);
+  const isUserMappingReady = Boolean(
+    selectedAuthorCode
+    && usersData
+    && Array.isArray(usersData.list)
+    && !usersError
+    && !isUsersFetching
+    && userSearchInput === userSearchKeyword
+    && userMappingRevision === userMappingQueryRevision,
+  );
+  const isMenuMappingReady = Boolean(
+    selectedAuthorCode
+    && menusData
+    && Array.isArray(menusData.allMenus)
+    && Array.isArray(menusData.authorMenus)
+    && !menusError
+    && !isMenusFetching
+    && menuMappingRevision === menuMappingQueryRevision,
+  );
+  const isRoleMappingReady = Boolean(
+    selectedAuthorCode
+    && authorRolesData
+    && Array.isArray(authorRolesData.list)
+    && !authorRolesError
+    && !isAuthorRolesFetching
+    && roleMappingRevision === roleMappingQueryRevision,
+  );
 
   useEffect(() => {
     if (!authorRolesData?.list) return;
@@ -212,7 +256,8 @@ export default function SecurityHubClient({
       .map((role) => role?.roleId)
       .filter((roleId): roleId is string => typeof roleId === 'string');
     setTempRoleMappings(new Set(assigned));
-  }, [authorRolesData]);
+    setRoleMappingRevision(roleMappingQueryRevision);
+  }, [authorRolesData, roleMappingQueryRevision]);
 
   const toggleRoleMapping = (roleId: string) => {
     setTempRoleMappings((current) => {
@@ -241,7 +286,7 @@ export default function SecurityHubClient({
   });
 
   const handleSaveRoleMapping = async () => {
-    if (!selectedAuthorCode || authorSaveRequestRef.current || authorDeleteRequestRef.current
+    if (!isRoleMappingReady || authorSaveRequestRef.current || authorDeleteRequestRef.current
       || hasMappingWriteRequest() || saveAuthorRoleMutation.isPending) return;
 
     // 전체 교체라 "지금 화면에서 뺀 롤은 실제로 지워진다" 는 사실을 먼저 말한다.
@@ -278,8 +323,9 @@ export default function SecurityHubClient({
         .filter(u => u?.regYn === 'Y' && u?.authrtId === selectedAuthorCode)
         .map(u => u?.scrtyDcsnTrgtId);
       setTempUserMappings(new Set(registeredUsers));
+      setUserMappingRevision(userMappingQueryRevision);
     }
-  }, [usersData, selectedAuthorCode]);
+  }, [usersData, selectedAuthorCode, userMappingQueryRevision]);
 
   useEffect(() => {
     if (menusData?.authorMenus) {
@@ -305,8 +351,9 @@ export default function SecurityHubClient({
         .map(m => m.menuSn)
         .filter((sn): sn is number => typeof sn === 'number');
       setTempMenuMappings(new Set(mappedMenuIds));
+      setMenuMappingRevision(menuMappingQueryRevision);
     }
-  }, [menusData, selectedAuthorCode]);
+  }, [menusData, selectedAuthorCode, menuMappingQueryRevision]);
 
   const menuTree = useMemo(() => {
     if (!menusData?.allMenus) return [];
@@ -416,7 +463,7 @@ export default function SecurityHubClient({
 
   /** 회수가 포함되면 확인을 받는다(권한 회수는 되돌리기 어려운 파괴적 변경이다). */
   const handleSaveUserMapping = async () => {
-    if (!selectedAuthorCode || authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest() || saveUserMappingMutation.isPending) return;
+    if (!isUserMappingReady || authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest() || saveUserMappingMutation.isPending) return;
     userMappingRequestRef.current = true;
     setMappingPendingAction('user');
     try {
@@ -459,7 +506,7 @@ export default function SecurityHubClient({
   });
 
   const handleSaveMenuMapping = () => {
-    if (!selectedAuthorCode || authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest() || saveMenuMappingMutation.isPending) return;
+    if (!isMenuMappingReady || authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest() || saveMenuMappingMutation.isPending) return;
     menuMappingRequestRef.current = true;
     setMappingPendingAction('menu');
     saveMenuMappingMutation.mutate();
@@ -572,6 +619,16 @@ export default function SecurityHubClient({
   };
 
   const handleRoleSelect = (code: string) => {
+    if (code === selectedAuthorCode) return;
+    // 세 저장 경로 모두 서버 조회 결과의 전체 교체/권한 변경 입력이다. 새 권한의 조회가
+    // 끝나기 전까지 직전 권한의 임시 집합이 화면이나 저장 핸들러에 남지 않게 한다.
+    setTempUserMappings(new Set());
+    setTempMenuMappings(new Set());
+    setTempRoleMappings(new Set());
+    setUserMappingRevision(null);
+    setMenuMappingRevision(null);
+    setRoleMappingRevision(null);
+    setUserPage(1);
     setSelectedAuthorCode(code);
   };
 
@@ -980,7 +1037,7 @@ export default function SecurityHubClient({
                         size="sm"
                         onClick={handleSaveUserMapping}
                         aria-busy={mappingPendingAction === 'user' || undefined}
-                        disabled={!selectedAuthorCode || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
+                        disabled={!isUserMappingReady || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
                         className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
                         <Save size={14} aria-hidden="true" /> {mappingPendingAction === 'user' ? '사용자 할당 저장 중…' : '사용자 할당 저장'}
@@ -1000,7 +1057,10 @@ export default function SecurityHubClient({
                       className="pl-12 h-11 bg-muted/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
                       placeholder="사용자 검색(ID, 성명)..."
                       value={userSearchInput}
-                      onChange={(e) => { setUserSearchInput(e.target.value); setUserPage(1); }}
+                      onChange={(e) => {
+                        setUserSearchInput(e.target.value);
+                        setUserPage(1);
+                      }}
                     />
                   </div>
 
@@ -1031,7 +1091,11 @@ export default function SecurityHubClient({
                           pagination={{
                             currentPage: userPage,
                             totalPages: usersData?.totalPage || 1,
-                            onPageChange: (p) => setUserPage(p)
+                            onPageChange: (p) => {
+                              setTempUserMappings(new Set());
+                              setUserMappingRevision(null);
+                              setUserPage(p);
+                            }
                           }}
                         />
                       )}
@@ -1053,7 +1117,7 @@ export default function SecurityHubClient({
                         size="sm"
                         onClick={handleSaveMenuMapping}
                         aria-busy={mappingPendingAction === 'menu' || undefined}
-                        disabled={!selectedAuthorCode || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
+                        disabled={!isMenuMappingReady || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
                         className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
                         <RefreshCcw size={14} aria-hidden="true" /> {mappingPendingAction === 'menu' ? '메뉴 권한 저장 중…' : '메뉴 권한 저장'}
@@ -1123,7 +1187,7 @@ export default function SecurityHubClient({
               GET/POST /authorities/{authrtCd}/roles 를 갖췄는데 프런트 소비자가 0건이었다.
 
               ⚠ 저장은 전체 교체다. 선택하지 않은 롤은 이 권한에서 제거되므로, 확인 문구가
-              그 사실을 먼저 말하고 조회도 한 페이지에 전부 받는다(위 쿼리 pageUnit 참조).
+              그 사실을 먼저 말하고 조회도 모든 페이지를 끝까지 받는다(위 쿼리 참조).
             */}
             <div className="col-span-12 h-full">
               <HubSectionCard
@@ -1135,7 +1199,7 @@ export default function SecurityHubClient({
                     size="sm"
                     onClick={() => { void handleSaveRoleMapping(); }}
                     aria-busy={mappingPendingAction === 'role' || undefined}
-                    disabled={!selectedAuthorCode || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
+                    disabled={!isRoleMappingReady || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
                     className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                   >
                     <RefreshCcw size={14} aria-hidden="true" /> {mappingPendingAction === 'role' ? '롤 할당 저장 중…' : '롤 할당 저장'}

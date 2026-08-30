@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,8 +26,8 @@ public class WorkReportApiController {
     @Operation(summary = "작업보고 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<WorkReportDto>>> getWorkReportList(
-            @ModelAttribute BaseSearchDto searchDto) {
-        Pageable pageable = PageRequest.of(searchDto.getPageIndex() - 1, searchDto.getPageUnit());
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
+        Pageable pageable = searchDto.toPageable();
 
         // ⚠ 종전에는 searchKeyword 를 첫 인자(searchId)에도 함께 넘겼다. searchId 는
         //   WorkReportRepositoryImpl 에서 userId.eq(...) 즉 **작성자 완전일치**로 쓰이므로,

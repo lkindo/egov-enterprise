@@ -32,7 +32,7 @@ public class DeptAuthorityApiController {
     @GetMapping("/{deptId}")
     public ResponseEntity<ApiResponse<PageResponse<DeptAuthorProjection>>> getDeptAuthorities(
             @PathVariable String deptId,
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
 
         Page<DeptAuthorProjection> result = userAuthorityManageService.selectDeptAuthorityList(deptId, searchDto);
 

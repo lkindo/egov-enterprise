@@ -335,6 +335,9 @@ class UserServiceTest {
 
             userService.deleteUserList(List.of("user1", "user2"));
             // [V2_12] loginId → 사용자 확정 후 종속 정리를 거쳐 일괄 삭제 (기존 PK 불일치 no-op 버그 수정)
+            verify(refreshTokenRepository).deleteAllByEsntlIdIn(
+                    List.of("USR_TEST_ESNTL_0001", "USR_TEST_ESNTL_0002"));
+            verify(refreshTokenRepository, never()).deleteByUserId(anyString());
             verify(userRepository).deleteAllInBatch(List.of(user1, user2));
         }
     }

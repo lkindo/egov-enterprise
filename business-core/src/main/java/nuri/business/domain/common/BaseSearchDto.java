@@ -36,9 +36,12 @@ public class BaseSearchDto implements Serializable {
     private String searchUseYn = "";
 
     /** 현재페이지 (1-based) */
+    @Min(value = 1, message = "페이지 번호는 1 이상이어야 합니다.")
     private int pageIndex = 1;
 
     /** 페이지당 레코드 수 (Page Unit) */
+    @Min(value = 1, message = "페이지당 조회 건수는 1 이상이어야 합니다.")
+    @Max(value = MAX_PAGE_UNIT, message = "페이지당 조회 건수는 최대 100건입니다.")
     private int pageUnit = 10;
 
     /** 페이지 네비게이션 사이즈 */
@@ -85,6 +88,9 @@ public class BaseSearchDto implements Serializable {
 
     /** {@code pageUnit} 이 유효하지 않을 때 쓰는 기본 페이지 크기. */
     public static final int DEFAULT_PAGE_UNIT = 10;
+
+    /** HTTP 목록 요청 한 번에 허용하는 최대 레코드 수. */
+    public static final int MAX_PAGE_UNIT = 100;
 
     /**
      * 1-based 화면 페이지 번호를 Spring Data 의 0-based {@link Pageable} 로 변환한다.

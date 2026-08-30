@@ -2,9 +2,12 @@ package nuri.business.service.code;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.code.*;
+import nuri.business.domain.code.exception.CodeErrorCode;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.code.dto.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -16,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +33,17 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CommonCodeService 단위 테스트")
 class CommonCodeServiceTest {
+
+    @BeforeEach
+    void authenticateAdmin() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new TestingAuthenticationToken("admin", null, "ROLE_ADMIN"));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Mock
     private CommonCodeRepository commonCodeRepository;
@@ -112,6 +128,20 @@ class CommonCodeServiceTest {
     }
 
     @Test
+    @DisplayName("공통코드 쓰기는 서비스 계층에서도 일반 사용자를 거부한다")
+    void commonCodeWriteRequiresAdminAtServiceBoundary() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new TestingAuthenticationToken("user", null, "ROLE_USER"));
+        CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("분류1").build();
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> commonCodeService.insertCmmnClCode(dto));
+
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        verifyNoInteractions(commonCodeCategoryRepository);
+    }
+
+    @Test
     @DisplayName("공통코드(그룹) 목록 조회 테스트")
     void selectCmmnCodeListTest() {
         BaseSearchDto searchVO = new BaseSearchDto();
@@ -170,6 +200,18 @@ class CommonCodeServiceTest {
     }
 
     @Test
+    @DisplayName("공통분류코드 상세 조회 - 미존재는 404 도메인 오류")
+    void selectCmmnClCodeDetailNotFound() {
+        CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("MISSING").build();
+        given(commonCodeCategoryRepository.findById("MISSING")).willReturn(Optional.empty());
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> commonCodeService.selectCmmnClCodeDetail(dto));
+
+        assertEquals(CodeErrorCode.CODE_NOT_FOUND, error.getErrorCode());
+    }
+
+    @Test
     @DisplayName("공통분류코드 수정")
     void updateCmmnClCodeTest() {
         CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("Update").build();
@@ -211,6 +253,18 @@ class CommonCodeServiceTest {
         CmmnCodeDto result = commonCodeService.selectCmmnCodeDetail(dto);
         assertNotNull(result);
         assertEquals("GRP1", result.getCdId());
+    }
+
+    @Test
+    @DisplayName("공통코드 상세 조회 - 미존재는 404 도메인 오류")
+    void selectCmmnCodeDetailNotFound() {
+        CmmnCodeDto dto = CmmnCodeDto.builder().cdId("MISSING").build();
+        given(commonCodeGroupRepository.findById("MISSING")).willReturn(Optional.empty());
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> commonCodeService.selectCmmnCodeDetail(dto));
+
+        assertEquals(CodeErrorCode.CODE_NOT_FOUND, error.getErrorCode());
     }
 
     @Test
@@ -259,6 +313,19 @@ class CommonCodeServiceTest {
         CmmnDetailCodeDto result = commonCodeService.selectCmmnDetailCodeDetail(dto);
         assertNotNull(result);
         assertEquals("CD1", result.getDtlCd());
+    }
+
+    @Test
+    @DisplayName("공통상세코드 상세 조회 - 미존재는 404 도메인 오류")
+    void selectCmmnDetailCodeDetailNotFound() {
+        CmmnDetailCodeDto dto = CmmnDetailCodeDto.builder().cdId("GRP1").dtlCd("MISSING").build();
+        given(commonCodeRepository.findById(new CommonCodeId("GRP1", "MISSING")))
+                .willReturn(Optional.empty());
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> commonCodeService.selectCmmnDetailCodeDetail(dto));
+
+        assertEquals(CodeErrorCode.CODE_NOT_FOUND, error.getErrorCode());
     }
 
     @Test

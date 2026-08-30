@@ -153,32 +153,36 @@
       "path": "/api/v1/admin/system/authorities",
       "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthors",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "AuthorManageService#deleteAuthors"
     },
     {
       "method": "POST",
       "path": "/api/v1/admin/system/authorities",
       "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#createAuthor",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "AuthorManageService#insertAuthor"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/admin/system/authorities/{authrtCd}",
       "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthor",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "AuthorManageService#deleteAuthor"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/system/authorities/{authrtCd}",
       "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#updateAuthor",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "AuthorManageService#updateAuthor"
     },
     {
       "method": "POST",
@@ -289,80 +293,90 @@
       "path": "/api/v1/admin/system/codes/cl",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createClCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#insertCmmnClCode"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/admin/system/codes/cl/{clCode}",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteClCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#deleteCmmnClCode"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/system/codes/cl/{clCode}",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateClCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#updateCmmnClCode"
     },
     {
       "method": "POST",
       "path": "/api/v1/admin/system/codes/cmmn",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createCmmnCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#insertCmmnCode"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/system/codes/cmmn/batch-hierarchy",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateCmmnCodeHierarchy",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#updateCmmnCodeHierarchy"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/admin/system/codes/cmmn/{codeId}",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteCmmnCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#deleteCmmnCode"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/system/codes/cmmn/{codeId}",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateCmmnCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#updateCmmnCode"
     },
     {
       "method": "POST",
       "path": "/api/v1/admin/system/codes/detail",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createDetailCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#insertCmmnDetailCode"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/admin/system/codes/detail/{codeId}/{code}",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteDetailCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#deleteCmmnDetailCode"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/system/codes/detail/{codeId}/{code}",
       "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateDetailCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommonCodeService#updateCmmnDetailCode"
     },
     {
       "method": "POST",
@@ -540,40 +554,45 @@
       "path": "/api/v1/admin/system/menus",
       "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#createMenu",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "MenuService#insertMenuManage"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/system/menus/batch-order",
       "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#updateMenuOrder",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "MenuService#updateMenuOrders"
     },
     {
       "method": "POST",
       "path": "/api/v1/admin/system/menus/creation/{authorCode}",
       "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#createMenuCreation",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "MenuService#insertMenuCreatList"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/admin/system/menus/{menuNo}",
       "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#deleteMenu",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "MenuService#deleteMenuManage"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/system/menus/{menuNo}",
       "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#updateMenu",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "MenuService#updateMenuManage"
     },
     {
       "method": "POST",
@@ -1633,6 +1652,50 @@
       ]
     },
     {
+      "target": "AuthorManageService#deleteAuthor",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "AuthorManageService#deleteAuthors",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "AuthorManageService#insertAuthor",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "AuthorManageService#updateAuthor",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
       "target": "BoardService#deletePost",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
@@ -1684,6 +1747,116 @@
           "helper": "assertOwnerOrAdmin",
           "count": 1,
           "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#deleteCmmnClCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#deleteCmmnCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#deleteCmmnDetailCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#insertCmmnClCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#insertCmmnCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#insertCmmnDetailCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#updateCmmnClCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#updateCmmnCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#updateCmmnCodeHierarchy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommonCodeService#updateCmmnDetailCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
         }
       ]
     },
@@ -1821,6 +1994,61 @@
           "helper": "assertOwnerOrAdmin",
           "count": 1,
           "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "MenuService#deleteMenuManage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "MenuService#insertMenuCreatList",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "MenuService#insertMenuManage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "MenuService#updateMenuManage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "MenuService#updateMenuOrders",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
         }
       ]
     },

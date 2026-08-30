@@ -1,5 +1,5 @@
 package nuri.business.domain.board;
-import nuri.foundation.domain.common.BaseTimeEntity;
+import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -17,7 +17,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "tb_bbs_use_info")
 @IdClass(BoardUseId.class)
-public class BoardUse extends BaseTimeEntity implements Serializable {
+public class BoardUse extends BaseEntity implements Serializable {
 
     @Id
     @Column(length = 20)

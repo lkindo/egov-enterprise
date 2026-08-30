@@ -37,8 +37,34 @@ class MigrationPipelineTest {
         MappingSpec.TableMapping t = spec.tables().get(0);
         assertThat(t.source()).isEqualTo("LEGACY_USER");
         assertThat(t.target()).isEqualTo("tb_user_info");
+        assertThat(t.orderBy()).isEqualTo("USER_ID");
         assertThat(t.columns()).hasSize(4);
         assertThat(spec.codemaps()).containsKey("user_status");
+        assertThat(spec.run().runId()).isEqualTo("sample-run");
+        assertThat(spec.run().sourceNamespace()).isEqualTo("fixture-crm");
+    }
+
+    @Test
+    void loadsCompositeOrderKeysWithoutBreakingTheSingleOrderByDsl(@TempDir Path tmp) throws Exception {
+        Path mapping = tmp.resolve("composite-mapping.yml");
+        Files.writeString(mapping, """
+                source:
+                  url: jdbc:h2:mem:src
+                  username: sa
+                  password: ''
+                tables:
+                  - source: LEGACY_ITEM
+                    target: tb_item
+                    orderByKeys: [TENANT_ID, ITEM_SEQ]
+                    columns: []
+                """, StandardCharsets.UTF_8);
+
+        MappingSpec composite = loader.load(mapping);
+        MappingSpec single = loader.load(resource("mapping-sample.yml"));
+
+        assertThat(composite.tables().get(0).effectiveOrderKeys())
+                .containsExactly("TENANT_ID", "ITEM_SEQ");
+        assertThat(single.tables().get(0).effectiveOrderKeys()).containsExactly("USER_ID");
     }
 
     @Test

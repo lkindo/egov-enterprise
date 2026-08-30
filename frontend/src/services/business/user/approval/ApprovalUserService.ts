@@ -1,5 +1,7 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
+import { ApprovalConfirmRequestSchema } from '@/types/generated-zod';
+import { z } from 'zod';
 
 /**
  * 결재함(사용자) 서비스.
@@ -22,6 +24,16 @@ export {
 import type { InformalSanctionDto } from '@/services/foundation/system/IsmAdminService';
 import { SANCTION_STATUS } from '@/services/foundation/system/IsmAdminService';
 
+const ApprovalDecisionRequestSchema = ApprovalConfirmRequestSchema.superRefine((request, context) => {
+  if (request.status === SANCTION_STATUS.REJECTED && !request.reason?.trim()) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['reason'],
+      message: '반려 사유는 필수입니다.',
+    });
+  }
+});
+
 class ApprovalUserService extends UserService {
   constructor() {
     super('/approvals');
@@ -42,8 +54,8 @@ class ApprovalUserService extends UserService {
    * 서버는 그 값을 받으면 400 을 냈다. DB 도 같은 축으로 동결돼 있어(V2_33 의
    * `CHECK (aprv_yn IN ('A','C','R'))`) 서버를 `'Y'`/`'N'` 수용으로 바꾸는 우회는 물리적으로 불가능하다.
    *
-   * ⚠ 본문 **키**는 `status`/`reason` 이다(컨트롤러가 `Map<String,String>` 에서 그 이름으로 조회한다).
-   * DTO 필드명(`aprvYn`/`rjctRsnCn`)으로 바꾸면 서버가 값을 못 찾는다.
+   * ⚠ 본문 **키**는 generated `ApprovalConfirmRequest`의 `status`/`reason` 이다.
+   * DTO 필드명(`aprvYn`/`rjctRsnCn`)으로 바꾸면 생성 계약 검증에서 거부된다.
    *
    * ⚠ 반려는 사유가 필수다. 서버가 공백 사유를 거부하므로 호출부가 반드시 채워야 한다.
    */
@@ -52,7 +64,8 @@ class ApprovalUserService extends UserService {
     aprvYn: typeof SANCTION_STATUS.APPROVED | typeof SANCTION_STATUS.REJECTED,
     rjctRsnCn?: string,
   ): Promise<void> {
-    return this.put<void>(`/${ifmlAtrzSn}/confirm`, { status: aprvYn, reason: rjctRsnCn });
+    const request = ApprovalDecisionRequestSchema.parse({ status: aprvYn, reason: rjctRsnCn });
+    return this.put<void>(`/${ifmlAtrzSn}/confirm`, request);
   }
 }
 

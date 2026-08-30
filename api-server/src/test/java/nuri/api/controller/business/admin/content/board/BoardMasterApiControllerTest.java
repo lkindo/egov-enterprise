@@ -166,6 +166,24 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
     }
 
     @Test
+    @DisplayName("사용여부 일괄 변경 - 100건을 초과하면 서비스 진입 전 400")
+    void updateBoardMasterStatusInBatch_TooManyIds() throws Exception {
+        List<String> bbsIds = java.util.stream.IntStream.rangeClosed(1, 101)
+                .mapToObj(index -> "BBS_" + index)
+                .toList();
+
+        mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(
+                        java.util.Map.of("bbsIds", bbsIds, "useYn", "N")))
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verify(boardMasterService, org.mockito.Mockito.never())
+                .updateBoardMasterStatusInBatch(anyString(), any(), anyString());
+    }
+
+    @Test
     @DisplayName("일괄 영구 삭제 성공")
     void deleteBoardMastersInBatch_Success() throws Exception {
         mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/delete")
@@ -185,6 +203,23 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/delete")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"bbsIds\":[]}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verify(boardMasterService, org.mockito.Mockito.never())
+                .deleteBoardMastersInBatch(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("일괄 영구 삭제 - 100건을 초과하면 서비스 진입 전 400")
+    void deleteBoardMastersInBatch_TooManyIds() throws Exception {
+        List<String> bbsIds = java.util.stream.IntStream.rangeClosed(1, 101)
+                .mapToObj(index -> "BBS_" + index)
+                .toList();
+
+        mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/delete")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(java.util.Map.of("bbsIds", bbsIds)))
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 

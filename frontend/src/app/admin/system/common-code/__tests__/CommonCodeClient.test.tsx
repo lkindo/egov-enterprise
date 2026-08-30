@@ -219,7 +219,10 @@ describe('CommonCodeClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.confirm.mockResolvedValue(true);
-    mocks.getDetails.mockResolvedValue({ list: [...details, { cdId: 'OTHER', dtlCd: 'X' }] });
+    mocks.getDetails.mockResolvedValue({
+      list: [...details, { cdId: 'OTHER', dtlCd: 'X' }],
+      total: details.length + 1,
+    });
     mocks.saveDetail.mockResolvedValue({ success: true, message: '코드 저장 완료' });
     mocks.deleteDetail.mockResolvedValue({ success: true, message: '코드 삭제 완료' });
     mocks.saveHierarchy.mockResolvedValue({ success: true, message: '계층 저장 완료' });

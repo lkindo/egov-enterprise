@@ -15,7 +15,12 @@ import { Plus,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { boardAdminService, BoardMaster } from '@/services/foundation/system/BoardAdminService';
+import {
+  boardAdminService,
+  type BoardMasterDetail,
+  type BoardMasterSummary,
+} from '@/services/foundation/system/BoardAdminService';
+import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -77,8 +82,8 @@ export function BoardMasterListClient() {
   
   // Settings Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBoard, setSelectedBoard] = useState<BoardMaster | null>(null);
-  const [editData, setEditData] = useState<Partial<BoardMaster>>({});
+  const [selectedBoard, setSelectedBoard] = useState<BoardMasterDetail | null>(null);
+  const [editData, setEditData] = useState<Partial<BoardMasterDetail>>({});
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const savePendingRef = useRef(false);
@@ -89,10 +94,9 @@ export function BoardMasterListClient() {
   const validation = useManualFormValidation(boardMasterEditSchema, { labels: boardMasterValidationLabels });
 
   const { data: boardData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['boardMasters', searchWrd],
-    queryFn: () => boardAdminService.getBoardMasterList({ searchWrd })
+    ...boardMasterQueryOptions.list({ searchKeyword: searchWrd }),
   });
-  const boardList = (boardData?.list || []) as BoardMaster[];
+  const boardList = boardData?.list ?? [];
 
   // 감사 P1-5: 과거 "32 / 1.2k / Optimal / L4" 는 어떤 데이터에서도 산출되지 않는 고정 문자열이었다.
   // 실제 조회 결과로 계산 가능한 지표만 남기고 나머지 카드는 삭제했다.
@@ -106,7 +110,7 @@ export function BoardMasterListClient() {
    * bbsExpln·atchPsbltyFileSz 등은 누락한다. 따라서 상세 조회로 전체 필드를 확보한 뒤 시드해야
    * 저장 시 필수 필드(@NotBlank bbsTypeCd/bbsAtrbCd, @NotNull atchPsbltyFileSz)가 유실되지 않는다.
    */
-  const handleEdit = async (board: BoardMaster) => {
+  const handleEdit = async (board: BoardMasterSummary) => {
     if (
       !board.bbsId
       || savePendingRef.current
@@ -120,14 +124,13 @@ export function BoardMasterListClient() {
       setSelectedBoard(detail);
       setEditData({ ...detail });
     } catch (err) {
-      // 상세 조회 실패 시에도 편집은 가능하게 하되, 목록 값만으로는 필수 필드가 부족할 수 있음을 알린다.
-      setSelectedBoard(board);
-      setEditData({ ...board });
-      toast(extractErrorMessage(err, '게시판 상세 정보를 불러오지 못했습니다. 일부 설정이 누락된 상태로 표시됩니다.'), 'error');
+      // 목록 projection에는 쓰기 필수 atchPsbltyFileSz가 없으므로 상세 실패 상태로 편집을 열지 않는다.
+      toast(extractErrorMessage(err, '게시판 상세 정보를 불러오지 못해 설정을 편집할 수 없습니다.'), 'error');
+      return;
     } finally {
       setIsDetailLoading(false);
-      setIsModalOpen(true);
     }
+    setIsModalOpen(true);
   };
 
   const handleSave = async () => {
@@ -146,7 +149,7 @@ export function BoardMasterListClient() {
     });
     if (!validated) return;
 
-    const payload: Partial<BoardMaster> = {
+    const payload = {
       bbsId: selectedBoard.bbsId,
       bbsTtl: validated.bbsTtl,
       bbsExpln: validated.bbsExpln,
@@ -174,10 +177,16 @@ export function BoardMasterListClient() {
       return;
     }
 
+    const parsedPayload = BoardMasterDtoSchema.safeParse(payload);
+    if (!parsedPayload.success) {
+      toast('게시판 계약 필수값이 누락되어 저장할 수 없습니다. 상세 정보를 다시 불러와 주십시오.', 'error');
+      return;
+    }
+
     savePendingRef.current = true;
     setIsSaving(true);
     try {
-      await boardAdminService.updateBoardMaster(selectedBoard.bbsId, payload);
+      await boardAdminService.updateBoardMaster(selectedBoard.bbsId, parsedPayload.data);
       toast('게시판 설정이 업데이트되었습니다.', 'success');
       setIsModalOpen(false);
       refetch();
@@ -199,7 +208,7 @@ export function BoardMasterListClient() {
     setIsModalOpen(open);
   };
 
-  const handleDelete = async (board: BoardMaster) => {
+  const handleDelete = async (board: BoardMasterSummary) => {
     if (!board.bbsId) return;
     if (deletePendingRef.current || bulkPendingRef.current || savePendingRef.current) return;
 
@@ -219,7 +228,7 @@ export function BoardMasterListClient() {
 
           if (!isConfirmed) return;
 
-          await boardAdminService.deleteBoardMaster(board.bbsId, 'admin');
+          await boardAdminService.deleteBoardMaster(board.bbsId);
           toast('게시판이 비활성화(대기) 상태로 전환되었습니다.', 'success');
           refetch();
         } catch {
@@ -277,7 +286,7 @@ export function BoardMasterListClient() {
   };
 
   const handleBulkStatusChange = async (
-    items: BoardMaster[],
+    items: BoardMasterSummary[],
     status: 'Y' | 'N',
     action: Extract<BulkPendingAction, 'activate' | 'deactivate'>,
   ) => {
@@ -301,7 +310,7 @@ export function BoardMasterListClient() {
     });
   };
 
-  const handleBulkPurge = async (items: BoardMaster[]) => {
+  const handleBulkPurge = async (items: BoardMasterSummary[]) => {
     const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
     if (ids.length === 0) return;
 
@@ -335,10 +344,10 @@ export function BoardMasterListClient() {
     });
   };
 
-  const columns: Column<BoardMaster>[] = [
+  const columns: Column<BoardMasterSummary>[] = [
     {
       header: '마스터 아이템',
-      accessor: (board: BoardMaster) => (
+      accessor: (board: BoardMasterSummary) => (
         <div className="flex items-center group">
           <div className="space-y-1 text-left min-w-0 flex-1 overflow-hidden">
             <p className="text-base font-bold text-foreground tracking-tight leading-none truncate">{board.bbsTtl}</p>
@@ -350,12 +359,11 @@ export function BoardMasterListClient() {
     },
     {
       header: '메타 정보',
-      accessor: (board: BoardMaster) => (
+      accessor: (board: BoardMasterSummary) => (
         <div className="space-y-1.5 text-left min-w-0 max-w-[400px]">
-          <p className="text-xs font-bold text-muted-foreground truncate leading-snug">{board.bbsExpln}</p>
           <div className="flex gap-2">
             <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter">
-              {board.bbsTypeCdNm}
+              {board.bbsTypeCdNm ?? board.bbsTypeCd}
             </Badge>
           </div>
         </div>
@@ -363,7 +371,7 @@ export function BoardMasterListClient() {
     },
     {
       header: '상태',
-      accessor: (board: BoardMaster) => (
+      accessor: (board: BoardMasterSummary) => (
         <div className="flex justify-center">
           <Badge className={cn(
             "px-4 py-1.5 rounded-lg font-bold text-xs uppercase border-none tracking-widest shadow-sm",
@@ -379,7 +387,7 @@ export function BoardMasterListClient() {
     // 보이게 했다(게시글 수를 주는 API 가 없음). 근거가 생길 때까지 열 자체를 제거한다.
     {
       header: '작업 컨트롤',
-      accessor: (board: BoardMaster) => {
+      accessor: (board: BoardMasterSummary) => {
         const isDeleting = deletingBoardId === board.bbsId;
         const idleLabel = board.useYn === 'Y'
           ? `${board.bbsTtl} 대기 상태로 비활성화`
@@ -484,7 +492,7 @@ export function BoardMasterListClient() {
         </span>
       }
     >
-        <StandardDataTable<BoardMaster>
+        <StandardDataTable<BoardMasterSummary>
           columns={columns}
           data={boardList}
           loading={isLoading}

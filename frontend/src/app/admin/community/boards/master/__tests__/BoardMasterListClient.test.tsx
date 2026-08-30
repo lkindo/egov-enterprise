@@ -36,6 +36,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tanstack/react-query', () => ({
+  queryOptions: <T,>(options: T) => options,
   useQuery: () => ({
     data: { list: mocks.boards, total: mocks.boards.length },
     isLoading: false,
