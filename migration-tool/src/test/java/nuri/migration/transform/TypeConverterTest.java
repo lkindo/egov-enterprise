@@ -13,20 +13,38 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class TypeConverterTest {
 
     @Test
-    void nullAndUnknownAndBlankPassThrough() {
+    void nullAndBlankPassThroughButUnknownTypeFailsClosed() {
         assertThat(TypeConverter.convert("int", null)).isNull();
         assertThat(TypeConverter.convert(null, "x")).isEqualTo("x");
         assertThat(TypeConverter.convert("", "x")).isEqualTo("x");
-        assertThat(TypeConverter.convert("weirdtype", "x")).isEqualTo("x"); // 미지 → 원본
+        assertThatThrownBy(() -> TypeConverter.convert("weirdtype", "sentinel-value"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause()
+                .hasMessageNotContaining("sentinel-value");
     }
 
     @Test
     void numericTypes() {
         assertThat(TypeConverter.convert("int", "42")).isEqualTo(42);
-        assertThat(TypeConverter.convert("int", "42.0")).isEqualTo(42); // 소수부 절단
+        assertThat(TypeConverter.convert("int", "42.0")).isEqualTo(42); // exact integral decimal
         assertThat(TypeConverter.convert("long", "123456789012")).isEqualTo(123456789012L);
         assertThat(TypeConverter.convert("decimal", "12.34")).isEqualTo(new BigDecimal("12.34"));
         assertThat(TypeConverter.convert("int", " 7 ")).isEqualTo(7); // trim
+        assertThatThrownBy(() -> TypeConverter.convert("int", "42.5"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
+        assertThatThrownBy(() -> TypeConverter.convert("int", "2147483648"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
+        assertThatThrownBy(() -> TypeConverter.convert("long", "9223372036854775808"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
+        assertThatThrownBy(() -> TypeConverter.convert("double", "NaN"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
+        assertThatThrownBy(() -> TypeConverter.convert("double", "Infinity"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
     }
 
     @Test
@@ -35,8 +53,10 @@ class TypeConverterTest {
         assertThat(TypeConverter.convert("boolean", "N")).isEqualTo(Boolean.FALSE);
         assertThat(TypeConverter.convert("boolean", "1")).isEqualTo(Boolean.TRUE);
         assertThat(TypeConverter.convert("bool", "false")).isEqualTo(Boolean.FALSE);
-        assertThatThrownBy(() -> TypeConverter.convert("boolean", "maybe"))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TypeConverter.convert("boolean", "sentinel-flag"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause()
+                .hasMessageNotContaining("sentinel-flag");
     }
 
     @Test
@@ -87,16 +107,15 @@ class TypeConverterTest {
     }
 
     @Test
-    void stripDecimal_은_소수점_이하를_버린다_경계포함() {
-        // dot < 0 경계: 소수점이 없으면 원본 그대로.
+    void integerConversionAcceptsOnlyExactIntegralValuesAndRejectsLoss() {
         assertThat(TypeConverter.convert("int", "12")).isEqualTo(12);
-        // 소수점이 있으면 앞부분만.
         assertThat(TypeConverter.convert("int", "12.0")).isEqualTo(12);
-        assertThat(TypeConverter.convert("int", "12.987")).isEqualTo(12);
-        // 소수점이 0번 인덱스인 경계 — `dot < 0` 을 `dot <= 0` 으로 바꾼 뮤턴트가 여기서 죽는다.
-        // ".5" 는 앞부분이 빈 문자열이 되어 NumberFormatException 이다.
+        assertThatThrownBy(() -> TypeConverter.convert("int", "12.987"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
         assertThatThrownBy(() -> TypeConverter.convert("int", ".5"))
-                .isInstanceOf(NumberFormatException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
         assertThat(TypeConverter.convert("long", "9007199254740993.0")).isEqualTo(9007199254740993L);
     }
 
@@ -106,11 +125,14 @@ class TypeConverterTest {
         assertThat(TypeConverter.convert("date", "20260809")).isEqualTo(LocalDate.of(2026, 8, 9));
         // ISO 그대로.
         assertThat(TypeConverter.convert("date", "2026-08-09")).isEqualTo(LocalDate.of(2026, 8, 9));
-        // 10자 초과 → 앞 10자만 사용(타임스탬프 문자열이 date 컬럼에 온 경우).
+        // timestamp가 date 컬럼으로 오면 전체 timestamp를 검증한 뒤 date를 취한다.
         assertThat(TypeConverter.convert("date", "2026-08-09 13:45:00")).isEqualTo(LocalDate.of(2026, 8, 9));
-        // 길이는 8인데 숫자가 아니면 재조립 경로가 아니다 — 조건을 뒤집은 뮤턴트가 여기서 죽는다.
         assertThatThrownBy(() -> TypeConverter.convert("date", "2026/8/9"))
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
+        assertThatThrownBy(() -> TypeConverter.convert("date", "2026-08-09-not-a-time"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
     }
 
     @Test

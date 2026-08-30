@@ -1,10 +1,20 @@
 package nuri.migration.etl;
 
+import nuri.migration.adapter.EvidenceLevel;
+import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.identity.JdbcTypedValueCodec;
+import nuri.migration.identity.TargetIdentityPolicy;
+import nuri.migration.identity.TypedKeyEncoding;
+import nuri.migration.identity.TypedKeyTuple;
+import nuri.migration.identity.TypedValue;
 import nuri.migration.keymap.KeyMapRegistry;
 import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.model.MappingSpec.CompositeForeignKey;
 import nuri.migration.model.MappingSpec.IdStrategy;
+import nuri.migration.model.MappingSpec.IdentityComponentSpec;
+import nuri.migration.model.MappingSpec.IdentityStrategy;
 import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.schema.MigrationSchemaManager;
@@ -19,6 +29,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,6 +40,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -53,6 +67,7 @@ public class EtlExecutor {
 
     private final SourceIntrospector introspector;
     private final TransformerRegistry transformers;
+    private final JdbcTypedValueCodec identityCodec = new JdbcTypedValueCodec();
 
     public EtlExecutor(SourceIntrospector introspector, TransformerRegistry transformers) {
         this.introspector = introspector;
@@ -63,59 +78,176 @@ public class EtlExecutor {
                               long read, long transformed, long written, List<String> errors) {}
 
     public List<TableResult> execute(MappingSpec spec, MigrationMode mode) {
+        if (spec == null) {
+            throw new IllegalArgumentException("mapping spec이 없습니다.");
+        }
+        JdbcTemplate sourceJt = spec.source() == null ? null : introspector.jdbc(spec.source());
+        JdbcTemplate targetJt = spec.target() == null ? null : introspector.jdbc(spec.target());
+        return execute(spec, mode, sourceJt, targetJt);
+    }
+
+    /** workflow가 소유하는 source endpoint를 재생성하지 않고 그대로 사용하는 실행 경계. */
+    public List<TableResult> execute(
+            MappingSpec spec,
+            MigrationMode mode,
+            JdbcTemplate sourceJt,
+            JdbcTemplate targetJt
+    ) {
+        return execute(
+                spec,
+                mode,
+                sourceJt,
+                targetJt,
+                SourceReadSessionPolicy.repeatableRead(
+                        EvidenceLevel.UNVERIFIED,
+                        "legacy execute overload compatibility"),
+                true);
+    }
+
+    /** adapter가 승인한 정책으로 load 전체를 하나의 source read transaction에 고정한다. */
+    public List<TableResult> execute(
+            MappingSpec spec,
+            MigrationMode mode,
+            JdbcTemplate sourceJt,
+            JdbcTemplate targetJt,
+            SourceReadSessionPolicy sourceReadPolicy,
+            boolean sourceFreezeAcknowledged
+    ) {
+        if (spec == null) {
+            throw new IllegalArgumentException("mapping spec이 없습니다.");
+        }
         if (spec.source() == null) {
             throw new IllegalArgumentException("mapping.source 접속 설정이 없습니다.");
         }
         if (mode == MigrationMode.COMMIT && spec.target() == null) {
             throw new IllegalArgumentException("commit 모드에는 mapping.target 접속 설정이 필수입니다.");
         }
+        requireSourceReadSession(sourceReadPolicy, sourceFreezeAcknowledged);
         boolean commit = mode == MigrationMode.COMMIT;
         if (commit) {
             requireCommitContract(spec);
         }
-        JdbcTemplate sourceJt = introspector.jdbc(spec.source());
-        DataSource sourceDs = sourceJt.getDataSource();
-        JdbcTemplate targetJt = spec.target() == null ? null : introspector.jdbc(spec.target());
+        DataSource sourceDs = requireDataSource(sourceJt, "source JDBC");
         DataSource targetDs = targetJt == null ? null : targetJt.getDataSource();
+        if (commit && targetDs == null) {
+            throw new IllegalArgumentException("commit 모드에는 target JDBC DataSource가 필수입니다.");
+        }
         RunContext run = spec.run();
         KeyMapRegistry registry = commit
                 ? new KeyMapRegistry(run.runId(), run.sourceNamespace())
                 : new KeyMapRegistry();
         MigrationStateStore state = commit ? new MigrationStateStore(run) : null;
-        if (commit) {
-            new MigrationSchemaManager().migrateAndValidate(targetJt);
-            registry.preload(targetJt); // 재실행 멱등: 기존 대응 재사용
-            state.initialize(targetJt);
-        }
 
         List<TableResult> results = new ArrayList<>();
+        boolean stateInitialized = false;
         try {
-            for (TableMapping t : TableOrderer.order(spec.tables())) {
-                results.add(runTable(sourceDs, targetDs, spec, t, registry, state, commit));
+            List<TableMapping> orderedTables = TableOrderer.order(spec.tables());
+            requireCompositeForeignKeyOrder(orderedTables);
+            if (orderedTables.isEmpty()) {
+                if (commit) {
+                    initializeCommitState(targetJt, registry, state);
+                    stateInitialized = true;
+                }
+            } else {
+                try (Connection sourceConnection = sourceDs.getConnection()) {
+                    try {
+                        sourceConnection.setReadOnly(true);
+                        sourceConnection.setTransactionIsolation(sourceReadPolicy.jdbcIsolation());
+                        sourceConnection.setAutoCommit(false);
+                        TableResult preflightFailure = commit
+                                ? preflightOrderTupleUniqueness(sourceConnection, orderedTables)
+                                : null;
+                        if (preflightFailure != null) {
+                            results.add(preflightFailure);
+                            safeRollback(sourceConnection);
+                        } else {
+                            if (commit) {
+                                initializeCommitState(targetJt, registry, state);
+                                stateInitialized = true;
+                            }
+                            boolean sourceSessionFailed = false;
+                            for (TableMapping table : orderedTables) {
+                                TableExecution execution = runTable(
+                                        sourceConnection, targetDs, spec, table, registry, state, commit);
+                                results.add(execution.result());
+                                if (execution.sourceSessionFailed()) {
+                                    sourceSessionFailed = true;
+                                    safeRollback(sourceConnection);
+                                    break;
+                                }
+                            }
+                            if (!sourceSessionFailed) {
+                                sourceConnection.commit();
+                            }
+                        }
+                    } catch (SQLException sourceFailure) {
+                        safeRollback(sourceConnection);
+                        throw new IllegalStateException("source read session failed", sourceFailure);
+                    } catch (Throwable failure) {
+                        safeRollback(sourceConnection);
+                        throw propagate(failure);
+                    }
+                }
             }
-        } catch (RuntimeException e) {
-            if (state != null) {
+        } catch (SQLException sourceConnectionFailure) {
+            if (stateInitialized) {
                 state.mark(targetJt, "FAILED");
             }
-            throw e;
+            throw new IllegalStateException("source read session failed", sourceConnectionFailure);
+        } catch (Throwable failure) {
+            if (stateInitialized && !isJvmFatal(failure)) {
+                state.mark(targetJt, "FAILED");
+            }
+            throw propagate(failure);
         }
         if (registry.hasPending()) {
             throw new IllegalStateException("처리 종료 후 미확정 keymap이 남았습니다 — 이관 결과를 신뢰할 수 없습니다");
         }
-        if (state != null) {
+        if (stateInitialized) {
             boolean failed = results.stream().anyMatch(result -> !result.errors().isEmpty());
             state.mark(targetJt, failed ? "FAILED" : "LOADED");
         }
         return results;
     }
 
-    private static void requireCommitContract(MappingSpec spec) {
+    private static void initializeCommitState(
+            JdbcTemplate target,
+            KeyMapRegistry registry,
+            MigrationStateStore state
+    ) {
+        new MigrationSchemaManager().migrateAndValidate(target);
+        registry.preload(target); // 재실행 멱등: 기존 대응 재사용
+        state.initialize(target);
+    }
+
+    private static void requireSourceReadSession(
+            SourceReadSessionPolicy policy,
+            boolean sourceFreezeAcknowledged
+    ) {
+        if (policy == null || !policy.supported()) {
+            throw new IllegalStateException("source read session policy is unsupported");
+        }
+        if (policy.sourceFreezeRequired() && !sourceFreezeAcknowledged) {
+            throw new IllegalStateException("source freeze acknowledgement is required");
+        }
+    }
+
+    private static DataSource requireDataSource(JdbcTemplate jdbc, String boundary) {
+        DataSource dataSource = jdbc == null ? null : jdbc.getDataSource();
+        if (dataSource == null) {
+            throw new IllegalArgumentException(boundary + " DataSource가 없습니다.");
+        }
+        return dataSource;
+    }
+
+    static void requireCommitContract(MappingSpec spec) {
         RunContext run = spec.run();
         if (run == null || isBlank(run.runId()) || isBlank(run.sourceNamespace())) {
             throw new IllegalArgumentException(
                     "commit 모드에는 run.runId와 run.sourceNamespace가 필수입니다");
         }
         for (TableMapping table : spec.tables()) {
+            validateIdentityContract(spec, table);
             if (!isBlank(table.orderBy()) && !table.orderByKeys().isEmpty()) {
                 throw new IllegalArgumentException(table.source()
                         + ": orderBy와 orderByKeys를 함께 선언할 수 없습니다");
@@ -133,22 +265,156 @@ public class EtlExecutor {
                             + ": orderByKeys 중복 금지: " + orderKey);
                 }
             }
-            String targetIdentity = targetIdentityColumn(table);
-            if (isBlank(targetIdentity)) {
-                throw new IllegalArgumentException(table.source()
-                        + ": checkpoint/verifier용 targetKey 또는 idStrategy.column이 필수입니다");
+            if (table.identity() == null) {
+                String targetIdentity = targetIdentityColumn(table);
+                if (isBlank(targetIdentity)) {
+                    throw new IllegalArgumentException(table.source()
+                            + ": checkpoint/verifier용 targetKey 또는 idStrategy.column이 필수입니다");
+                }
+                SourceIntrospector.ident(targetIdentity);
             }
-            SourceIntrospector.ident(targetIdentity);
         }
     }
 
-    private TableResult runTable(DataSource sourceDs, DataSource targetDs, MappingSpec spec,
-                                 TableMapping t, KeyMapRegistry reg, MigrationStateStore state,
-                                 boolean commit) {
+    private static void validateIdentityContract(MappingSpec spec, TableMapping table) {
+        IdentityStrategy identity = table.identity();
+        if (identity == null) {
+            if (!table.foreignKeys().isEmpty()) {
+                throw new IllegalArgumentException(table.source()
+                        + ": composite foreignKeys에는 typed identity가 필수입니다");
+            }
+            return;
+        }
+        if (table.idStrategy() != null) {
+            throw new IllegalArgumentException(table.source()
+                    + ": legacy idStrategy와 typed identity를 함께 선언할 수 없습니다");
+        }
+        requireComponents(table.source(), "sourceComponents", identity.sourceComponents());
+        requireComponents(table.source(), "targetComponents", identity.targetComponents());
+        if (identity.policy() == TargetIdentityPolicy.PRESERVE
+                && identity.sourceComponents().size() != identity.targetComponents().size()) {
+            throw new IllegalArgumentException(table.source() + ": PRESERVE identity arity 불일치");
+        }
+        if (identity.policy() == TargetIdentityPolicy.REMAP) {
+            Set<String> valueProducers = new HashSet<>();
+            for (ColumnMapping column : table.columns()) {
+                if (!isBlank(column.target())) {
+                    valueProducers.add(column.target().toLowerCase(Locale.ROOT));
+                }
+            }
+            for (CompositeForeignKey foreignKey : table.foreignKeys()) {
+                for (IdentityComponentSpec component : foreignKey.targetComponents()) {
+                    valueProducers.add(component.column().toLowerCase(Locale.ROOT));
+                }
+            }
+            for (IdentityComponentSpec target : identity.targetComponents()) {
+                if (!valueProducers.contains(target.column().toLowerCase(Locale.ROOT))) {
+                    throw new IllegalArgumentException(table.source()
+                            + ": REMAP target identity component 값 생성 mapping 없음: "
+                            + target.column());
+                }
+            }
+        }
+        if (identity.policy() == TargetIdentityPolicy.TARGET_GENERATED
+                && (spec.target() == null || spec.target().url() == null
+                || !spec.target().url().toLowerCase(Locale.ROOT).startsWith("jdbc:postgresql:"))) {
+            throw new IllegalArgumentException(table.source()
+                    + ": TARGET_GENERATED는 PostgreSQL INSERT ... RETURNING target에서만 지원됩니다");
+        }
+        for (CompositeForeignKey foreignKey : table.foreignKeys()) {
+            requireComponents(table.source(), "foreignKeys.sourceComponents", foreignKey.sourceComponents());
+            requireComponents(table.source(), "foreignKeys.targetComponents", foreignKey.targetComponents());
+            if (foreignKey.sourceComponents().size() != foreignKey.targetComponents().size()) {
+                throw new IllegalArgumentException(table.source()
+                        + ": composite foreign key source/target arity 불일치");
+            }
+            TableMapping parent = spec.tables().stream()
+                    .filter(candidate -> candidate.source() != null
+                            && candidate.source().equalsIgnoreCase(foreignKey.parentSource()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(table.source()
+                            + ": composite foreign key parent mapping 없음: " + foreignKey.parentSource()));
+            if (parent.identity() == null
+                    || !sameOrderedTypes(
+                            parent.identity().sourceComponents(), foreignKey.sourceComponents())
+                    || !sameOrderedTypes(
+                            parent.identity().targetComponents(), foreignKey.targetComponents())) {
+                throw new IllegalArgumentException(table.source()
+                        + ": composite foreign key component arity/type 순서가 parent typed identity와 불일치합니다");
+            }
+        }
+    }
+
+    private static boolean sameOrderedTypes(
+            List<IdentityComponentSpec> expected,
+            List<IdentityComponentSpec> actual
+    ) {
+        if (expected.size() != actual.size()) {
+            return false;
+        }
+        for (int i = 0; i < expected.size(); i++) {
+            if (expected.get(i).type() != actual.get(i).type()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static void requireComponents(
+            String table,
+            String label,
+            List<IdentityComponentSpec> components
+    ) {
+        if (components.isEmpty()) {
+            throw new IllegalArgumentException(table + ": " + label + "가 비어 있습니다");
+        }
+        Set<String> names = new HashSet<>();
+        for (IdentityComponentSpec component : components) {
+            SourceIntrospector.ident(component.column());
+            if (!names.add(component.column().toLowerCase(Locale.ROOT))) {
+                throw new IllegalArgumentException(table + ": " + label + " 중복: " + component.column());
+            }
+        }
+    }
+
+    static void requireCompositeForeignKeyOrder(List<TableMapping> orderedTables) {
+        Map<String, Integer> order = new LinkedHashMap<>();
+        for (int i = 0; i < orderedTables.size(); i++) {
+            order.put(orderedTables.get(i).source().toLowerCase(Locale.ROOT), i);
+        }
+        for (int childIndex = 0; childIndex < orderedTables.size(); childIndex++) {
+            TableMapping child = orderedTables.get(childIndex);
+            for (CompositeForeignKey foreignKey : child.foreignKeys()) {
+                String parent = foreignKey.parentSource().toLowerCase(Locale.ROOT);
+                String self = child.source().toLowerCase(Locale.ROOT);
+                if (parent.equals(self)) {
+                    throw new IllegalArgumentException(child.source()
+                            + ": typed composite self reference is blocked; generated identity pre-mint is unsafe");
+                }
+                Integer parentIndex = order.get(parent);
+                if (parentIndex == null || parentIndex >= childIndex) {
+                    throw new IllegalArgumentException(child.source()
+                            + ": composite foreign key requires explicit parent-first order: "
+                            + foreignKey.parentSource());
+                }
+            }
+        }
+    }
+
+    private TableExecution runTable(Connection sourceConnection, DataSource targetDs, MappingSpec spec,
+                                    TableMapping t, KeyMapRegistry reg, MigrationStateStore state,
+                                    boolean commit) {
         List<String> errors = new ArrayList<>();
         List<String> targetCols = canonicalTargetColumns(t);
-        String insertSql = buildInsertSql(t.target(), targetCols);
+        List<String> insertCols = insertTargetColumns(t);
+        List<String> returningCols = returningTargetColumns(t);
+        WritePlan writePlan = new WritePlan(
+                targetCols,
+                insertCols,
+                returningCols,
+                buildInsertSql(t.target(), insertCols, returningCols));
         long[] c = {0, 0, 0}; // read, transformed, written
+        boolean sourceSessionFailed = false;
 
         Connection targetConn = null;
         try {
@@ -157,32 +423,74 @@ public class EtlExecutor {
                 targetConn.setReadOnly(false);
                 targetConn.setAutoCommit(false);
             }
-            try (Connection sc = sourceDs.getConnection()) {
-                sc.setReadOnly(true);
-                sc.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
-                sc.setAutoCommit(false); // 모든 keyset page가 같은 source snapshot을 보도록 고정
-                preMintSelfReferences(sc, targetConn, t, reg);
-                if (t.effectiveOrderKeys().isEmpty()) {
-                    streamUnorderedDryRun(sc, spec, t, targetCols, insertSql, reg, state,
-                            targetConn, c, errors);
-                } else {
-                    readKeysetPages(sc, spec, t, targetCols, insertSql, reg, state,
-                            targetConn, c, errors);
-                }
-                sc.commit();
+            preMintSelfReferences(sourceConnection, targetConn, t, reg);
+            if (t.effectiveOrderKeys().isEmpty()) {
+                streamUnorderedDryRun(sourceConnection, spec, t, writePlan, reg, state,
+                        targetConn, c, errors);
+            } else {
+                readKeysetPages(sourceConnection, spec, t, writePlan, reg, state,
+                        targetConn, c, errors);
             }
-        } catch (SQLException e) {
-            errors.add("이관 실패(" + t.source() + "): " + e.getMessage());
+        } catch (SQLException ignored) {
+            sourceSessionFailed = true;
+            errors.add("이관 실패(" + t.source() + "): SQL_EXECUTION_FAILED");
             safeRollback(targetConn);
+        } catch (Throwable failure) {
+            safeRollback(targetConn);
+            throw propagate(failure);
         } finally {
             safeClose(targetConn);
         }
         long durableWritten = state == null ? c[2] : state.count(t.source());
-        return new TableResult(t.source(), t.target(), c[0], c[1], durableWritten, errors);
+        return new TableExecution(
+                new TableResult(t.source(), t.target(), c[0], c[1], durableWritten, errors),
+                sourceSessionFailed);
+    }
+
+    private static TableResult preflightOrderTupleUniqueness(
+            Connection source,
+            List<TableMapping> orderedTables
+    ) {
+        for (TableMapping table : orderedTables) {
+            try {
+                requireUniqueOrderTuple(source, table);
+            } catch (SQLException ignored) {
+                return new TableResult(
+                        table.source(), table.target(), 0, 0, 0,
+                        List.of("이관 실패(" + table.source() + "): SQL_EXECUTION_FAILED"));
+            }
+        }
+        return null;
+    }
+
+    /** 같은 source transaction의 DB 비교 의미로 keyset order tuple 유일성을 먼저 증명한다. */
+    private static void requireUniqueOrderTuple(Connection source, TableMapping table) throws SQLException {
+        List<String> orderKeys = table.effectiveOrderKeys();
+        if (orderKeys.isEmpty()) {
+            throw new SQLException("ORDER_TUPLE_UNIQUENESS_UNPROVEN");
+        }
+        String keys = String.join(", ", orderKeys.stream()
+                .map(SourceIntrospector::ident)
+                .toList());
+        String sql = "SELECT " + keys + ", COUNT(*) FROM "
+                + SourceIntrospector.qualifiedIdent(table.source())
+                + (isBlank(table.where()) ? "" : " WHERE " + table.where())
+                + " GROUP BY " + keys + " HAVING COUNT(*) > 1";
+        try (PreparedStatement statement = source.prepareStatement(sql)) {
+            statement.setFetchSize(1);
+            statement.setMaxRows(1);
+            try (ResultSet duplicates = statement.executeQuery()) {
+                if (duplicates.next()) {
+                    throw new SQLException("ORDER_TUPLE_UNIQUENESS_UNPROVEN");
+                }
+            }
+        } catch (SQLException ignored) {
+            throw new SQLException("ORDER_TUPLE_UNIQUENESS_UNPROVEN");
+        }
     }
 
     private void streamUnorderedDryRun(Connection source, MappingSpec spec, TableMapping table,
-                                       List<String> targetColumns, String insertSql,
+                                       WritePlan writePlan,
                                        KeyMapRegistry registry, MigrationStateStore state,
                                        Connection target, long[] counts, List<String> errors) throws SQLException {
         String sql = buildSourcePageSql(table, false);
@@ -195,13 +503,13 @@ public class EtlExecutor {
                     counts[0]++;
                     chunk.add(readRow(result, labels));
                     if (chunk.size() == CHUNK) {
-                        processChunk(chunk, spec, table, targetColumns, insertSql, registry, state,
+                        processChunk(chunk, spec, table, writePlan, registry, state,
                                 target, counts, errors);
                         chunk.clear();
                     }
                 }
                 if (!chunk.isEmpty()) {
-                    processChunk(chunk, spec, table, targetColumns, insertSql, registry, state,
+                    processChunk(chunk, spec, table, writePlan, registry, state,
                             target, counts, errors);
                 }
             }
@@ -209,11 +517,12 @@ public class EtlExecutor {
     }
 
     private void readKeysetPages(Connection source, MappingSpec spec, TableMapping table,
-                                 List<String> targetColumns, String insertSql,
+                                 WritePlan writePlan,
                                  KeyMapRegistry registry, MigrationStateStore state,
                                  Connection target, long[] counts, List<String> errors) throws SQLException {
         List<Object> cursor = null;
         Set<String> seenSourceKeys = new HashSet<>();
+        Set<String> seenOrderDigests = new HashSet<>();
         boolean hasMore;
         do {
             SourcePage page = readSourcePage(source, table, cursor);
@@ -224,12 +533,19 @@ public class EtlExecutor {
                 String sourceKey = sourceKey(row, table);
                 if (!seenSourceKeys.add(sourceKey)) {
                     throw new SQLException(
-                            "중복 orderBy source identity(" + table.source() + "): " + sourceKey);
+                            "중복 source identity(" + table.source() + "): sourceDigest="
+                                    + keyDigest(sourceKey));
+                }
+                String orderDigest = orderDigest(row, table);
+                if (!seenOrderDigests.add(orderDigest)) {
+                    throw new SQLException(
+                            "중복 order identity(" + table.source() + "): orderDigest="
+                                    + orderDigest);
                 }
                 accepted.add(row);
             }
             if (!accepted.isEmpty()) {
-                processChunk(accepted, spec, table, targetColumns, insertSql, registry, state,
+                processChunk(accepted, spec, table, writePlan, registry, state,
                         target, counts, errors);
             }
             if (!page.rows().isEmpty()) {
@@ -240,8 +556,17 @@ public class EtlExecutor {
 
     private record SourcePage(List<Map<String, Object>> rows, boolean hasMore) {}
 
-    private static SourcePage readSourcePage(Connection source, TableMapping table,
-                                             List<Object> cursor) throws SQLException {
+    private record TableExecution(TableResult result, boolean sourceSessionFailed) {}
+
+    private record WritePlan(
+            List<String> targetColumns,
+            List<String> insertColumns,
+            List<String> returningColumns,
+            String insertSql
+    ) {}
+
+    private SourcePage readSourcePage(Connection source, TableMapping table,
+                                      List<Object> cursor) throws SQLException {
         String sql = buildSourcePageSql(table, cursor != null);
         try (PreparedStatement statement = source.prepareStatement(sql)) {
             if (cursor != null) {
@@ -258,10 +583,11 @@ public class EtlExecutor {
                 boolean hasMore = rows.size() > CHUNK;
                 if (hasMore) {
                     Map<String, Object> boundary = rows.remove(rows.size() - 1);
-                    String lastKey = sourceKey(rows.get(rows.size() - 1), table);
-                    if (lastKey.equals(sourceKey(boundary, table))) {
+                    String lastOrderDigest = orderDigest(rows.get(rows.size() - 1), table);
+                    if (lastOrderDigest.equals(orderDigest(boundary, table))) {
                         throw new SQLException(table.source()
-                                + ": keyset page 경계의 order identity 중복: " + lastKey);
+                                + ": keyset page 경계의 order identity 중복: orderDigest="
+                                + lastOrderDigest);
                     }
                 }
                 return new SourcePage(rows, hasMore);
@@ -270,7 +596,15 @@ public class EtlExecutor {
     }
 
     static String buildSourcePageSql(TableMapping table, boolean seek) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM ")
+        List<String> sourceColumns = SourceProjection.requiredColumns(table);
+        String projection = sourceColumns.isEmpty()
+                ? "1 AS __migration_row__"
+                : String.join(", ", sourceColumns.stream()
+                        .map(SourceIntrospector::ident)
+                        .toList());
+        StringBuilder sql = new StringBuilder("SELECT ")
+                .append(projection)
+                .append(" FROM ")
                 .append(SourceIntrospector.qualifiedIdent(table.source()));
         List<String> conditions = new ArrayList<>();
         if (!isBlank(table.where())) {
@@ -341,7 +675,8 @@ public class EtlExecutor {
                 }
                 String legacyKey = raw.toString();
                 if (!seen.add(legacyKey)) {
-                    throw new SQLException(table.source() + ": 자기참조 sourceKey 중복: " + legacyKey);
+                    throw new SQLException(table.source() + ": 자기참조 sourceKey 중복: digest="
+                            + keyDigest(legacyKey));
                 }
                 registry.mintOrGet(table.source(), legacyKey, id.generator());
             }
@@ -366,9 +701,13 @@ public class EtlExecutor {
     }
 
     private void processChunk(List<Map<String, Object>> chunk, MappingSpec spec, TableMapping t,
-                              List<String> targetCols, String insertSql, KeyMapRegistry reg,
+                              WritePlan writePlan, KeyMapRegistry reg,
                               MigrationStateStore state, Connection targetConn,
                               long[] c, List<String> errors) {
+        if (isTargetGenerated(t)) {
+            processGeneratedRows(chunk, spec, t, writePlan, reg, state, targetConn, c, errors);
+            return;
+        }
         Checkpoint chunkCheckpoint = reg.checkpoint();
         List<PreparedRow> batch = new ArrayList<>(chunk.size());
         for (Map<String, Object> row : chunk) {
@@ -376,22 +715,31 @@ public class EtlExecutor {
             try {
                 Map<String, Object> out = transformRow(row, spec, t, reg);
                 c[1]++;
-                CheckpointEntry checkpoint = state == null ? null : checkpoint(row, out, t, targetCols);
+                CheckpointEntry checkpoint = state == null
+                        ? null : checkpoint(row, out, t, writePlan.targetColumns());
                 CheckpointEntry durable = state == null ? null : state.find(t.source(), checkpoint.sourceKey());
                 if (durable != null) {
+                    if (t.identity() != null
+                            && reg.checkpoint().pendingSize() > rowCheckpoint.pendingSize()) {
+                        errors.add("resume checkpoint/keymap missing for durable typed identity("
+                                + t.source() + ", sourceDigest="
+                                + keyDigest(checkpoint.sourceKey()) + ")");
+                        reg.rollback(rowCheckpoint);
+                        continue;
+                    }
                     if (!durable.rowChecksum().equals(checkpoint.rowChecksum())
                             || !durable.targetKey().equals(checkpoint.targetKey())
                             || !durable.targetTable().equalsIgnoreCase(checkpoint.targetTable())) {
                         errors.add("resume checkpoint/source checksum 불일치(" + t.source()
-                                + ", key=" + checkpoint.sourceKey() + ")");
+                                + ", sourceDigest=" + keyDigest(checkpoint.sourceKey()) + ")");
                     }
                     reg.rollback(rowCheckpoint);
                     continue;
                 }
-                batch.add(new PreparedRow(row, toArguments(out, targetCols), checkpoint));
-            } catch (RuntimeException e) {
+                batch.add(new PreparedRow(row, toArguments(out, writePlan.insertColumns()), checkpoint));
+            } catch (RuntimeException ignored) {
                 reg.rollback(rowCheckpoint);
-                errors.add("행 변환 실패(" + t.source() + "): " + e.getMessage());
+                errors.add("행 변환 실패(" + t.source() + "): ROW_TRANSFORM_FAILED");
             }
         }
         if (batch.isEmpty()) {
@@ -404,15 +752,146 @@ public class EtlExecutor {
             return;
         }
         c[2] += writeChunkAtomically(
-                targetConn, insertSql, batch, spec, t, targetCols, reg, state,
+                targetConn, writePlan.insertSql(), batch, spec, t, writePlan, reg, state,
                 chunkCheckpoint, errors);
     }
 
     private record PreparedRow(Map<String, Object> source, Object[] arguments,
                                CheckpointEntry checkpoint) {}
 
-    private static CheckpointEntry checkpoint(Map<String, Object> source, Map<String, Object> transformed,
-                                              TableMapping table, List<String> targetColumns) {
+    /** generated identity는 JDBC batch가 반환값을 증명하지 못하므로 행별 INSERT ... RETURNING 경로만 사용한다. */
+    private void processGeneratedRows(
+            List<Map<String, Object>> rows,
+            MappingSpec spec,
+            TableMapping table,
+            WritePlan writePlan,
+            KeyMapRegistry registry,
+            MigrationStateStore state,
+            Connection connection,
+            long[] counts,
+            List<String> errors
+    ) {
+        if (connection == null) {
+            for (Map<String, Object> row : rows) {
+                Checkpoint checkpoint = registry.checkpoint();
+                try {
+                    transformRow(row, spec, table, registry);
+                    counts[1]++;
+                } catch (RuntimeException ignored) {
+                    errors.add("행 변환 실패(" + table.source() + "): ROW_TRANSFORM_FAILED");
+                } finally {
+                    registry.rollback(checkpoint);
+                }
+            }
+            errors.add(table.source()
+                    + ": TARGET_GENERATED dry-run은 DB 생성 identity를 materialize할 수 없습니다");
+            return;
+        }
+
+        for (Map<String, Object> row : rows) {
+            Checkpoint rowCheckpoint = registry.checkpoint();
+            Map<String, Object> transformed;
+            TypedKeyTuple sourceIdentity;
+            try {
+                transformed = transformRow(row, spec, table, registry);
+                sourceIdentity = tupleFromSource(row, table.identity().sourceComponents());
+                counts[1]++;
+                String encodedSource = TypedKeyEncoding.encode(
+                        sourceIdentity, 256, "tb_migration_checkpoint.source_key");
+                CheckpointEntry durable = state.find(table.source(), encodedSource);
+                if (durable != null) {
+                    if (!TypedKeyEncoding.isTyped(durable.targetKey())) {
+                        throw new IllegalStateException(table.source()
+                                + ": typed identity checkpoint target_key가 legacy 형식입니다");
+                    }
+                    TypedKeyTuple durableTarget = TypedKeyEncoding.decode(durable.targetKey());
+                    TypedKeyTuple mappedTarget = registry.translate(table.source(), sourceIdentity);
+                    if (mappedTarget == null) {
+                        throw new IllegalStateException(table.source()
+                                + ": checkpoint/keymap missing for durable generated identity");
+                    }
+                    if (!mappedTarget.equals(durableTarget)) {
+                        throw new IllegalStateException(table.source()
+                                + ": checkpoint/keymap mismatch for durable generated identity");
+                    }
+                    applyTargetIdentity(transformed, table.identity().targetComponents(), durableTarget);
+                    CheckpointEntry expected = checkpoint(
+                            row, transformed, table, writePlan.targetColumns());
+                    if (!durable.rowChecksum().equals(expected.rowChecksum())
+                            || !durable.targetKey().equals(expected.targetKey())
+                            || !durable.targetTable().equalsIgnoreCase(expected.targetTable())) {
+                        errors.add("resume checkpoint/source checksum 불일치(" + table.source()
+                                + ", sourceDigest=" + keyDigest(encodedSource) + ")");
+                    }
+                    registry.rollback(rowCheckpoint);
+                    continue;
+                }
+            } catch (RuntimeException ignored) {
+                registry.rollback(rowCheckpoint);
+                errors.add("행 변환 실패(" + table.source() + "): ROW_TRANSFORM_FAILED");
+                continue;
+            }
+
+            CheckpointEntry durableCheckpoint;
+            try {
+                TypedKeyTuple generated = executeReturning(
+                        connection,
+                        writePlan.insertSql(),
+                        toArguments(transformed, writePlan.insertColumns()),
+                        table.identity().targetComponents());
+                applyTargetIdentity(transformed, table.identity().targetComponents(), generated);
+                registry.register(table.source(), sourceIdentity, generated);
+                durableCheckpoint = checkpoint(
+                        row, transformed, table, writePlan.targetColumns());
+                registry.writePending(connection, rowCheckpoint);
+                state.write(connection, List.of(durableCheckpoint));
+            } catch (SQLException | RuntimeException ignored) {
+                rollbackAndDiscard(connection, registry, rowCheckpoint, table.target());
+                errors.add("원자 INSERT RETURNING/keymap/checkpoint 실패(" + table.target()
+                        + "): TARGET_GENERATED_WRITE_FAILED");
+                continue;
+            }
+            commitAndAccept(connection, registry, rowCheckpoint, state,
+                    List.of(durableCheckpoint), table.target());
+            counts[2]++;
+        }
+    }
+
+    private TypedKeyTuple executeReturning(
+            Connection connection,
+            String sql,
+            Object[] arguments,
+            List<IdentityComponentSpec> returnedComponents
+    ) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            bind(statement, arguments);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    throw new SQLException("INSERT ... RETURNING이 identity 행을 반환하지 않았습니다");
+                }
+                List<TypedValue> values = new ArrayList<>(returnedComponents.size());
+                for (int i = 0; i < returnedComponents.size(); i++) {
+                    values.add(identityCodec.encode(
+                            returnedComponents.get(i).type(), result.getObject(i + 1)));
+                }
+                if (result.next()) {
+                    throw new SQLException("INSERT ... RETURNING이 둘 이상의 identity 행을 반환했습니다");
+                }
+                return TypedKeyTuple.of(values.toArray(TypedValue[]::new));
+            }
+        }
+    }
+
+    private CheckpointEntry checkpoint(Map<String, Object> source, Map<String, Object> transformed,
+                                       TableMapping table, List<String> targetColumns) {
+        if (table.identity() != null) {
+            return CheckpointEntry.typed(
+                    table.source(),
+                    tupleFromSource(source, table.identity().sourceComponents()),
+                    table.target(),
+                    tupleFromTarget(transformed, table.identity().targetComponents()),
+                    RowChecksum.calculate(targetColumns, transformed));
+        }
         String sourceKey = sourceKey(source, table);
         Object targetValue = transformed.get(targetIdentityColumn(table));
         if (targetValue == null || targetValue.toString().isBlank()) {
@@ -422,7 +901,13 @@ public class EtlExecutor {
                 RowChecksum.calculate(targetColumns, transformed));
     }
 
-    private static String sourceKey(Map<String, Object> source, TableMapping table) {
+    private String sourceKey(Map<String, Object> source, TableMapping table) {
+        if (table.identity() != null) {
+            return TypedKeyEncoding.encode(
+                    tupleFromSource(source, table.identity().sourceComponents()),
+                    256,
+                    "tb_migration_checkpoint.source_key");
+        }
         List<Object> values = orderValues(source, table);
         if (values.size() == 1) {
             return values.get(0).toString(); // 기존 단일키 checkpoint identity 호환
@@ -448,6 +933,12 @@ public class EtlExecutor {
             values.add(value);
         }
         return values;
+    }
+
+    /** keyset order tuple 값은 외부 오류에 노출하지 않고 결정적 digest로만 비교한다. */
+    private static String orderDigest(Map<String, Object> source, TableMapping table) {
+        orderValues(source, table); // null/blank order key를 먼저 fail-closed 한다.
+        return RowChecksum.calculate(table.effectiveOrderKeys(), source);
     }
 
     private static String orderByClause(TableMapping table) {
@@ -489,7 +980,157 @@ public class EtlExecutor {
             String newKey = reg.mintOrGet(t.source(), legacy == null ? null : legacy.toString(), id.generator());
             out.put(id.column(), newKey);
         }
+        applyCompositeForeignKeys(src, out, t, reg);
+        applyTypedIdentity(src, out, t, reg);
         return out;
+    }
+
+    private void applyTypedIdentity(
+            Map<String, Object> source,
+            Map<String, Object> target,
+            TableMapping table,
+            KeyMapRegistry registry
+    ) {
+        IdentityStrategy identity = table.identity();
+        if (identity == null || identity.policy() == TargetIdentityPolicy.TARGET_GENERATED) {
+            return;
+        }
+        TypedKeyTuple sourceTuple = tupleFromSource(source, identity.sourceComponents());
+        if (identity.policy() == TargetIdentityPolicy.PRESERVE) {
+            for (int i = 0; i < identity.sourceComponents().size(); i++) {
+                TypedValue sourceValue = identityCodec.encode(
+                        identity.sourceComponents().get(i).type(),
+                        valueIgnoreCase(source, identity.sourceComponents().get(i).column()));
+                putOrValidateTarget(
+                        target,
+                        identity.targetComponents().get(i),
+                        sourceValue.jdbcValue());
+            }
+        }
+        TypedKeyTuple targetTuple = tupleFromTarget(target, identity.targetComponents());
+        registry.register(table.source(), sourceTuple, targetTuple);
+    }
+
+    private void applyCompositeForeignKeys(
+            Map<String, Object> source,
+            Map<String, Object> target,
+            TableMapping table,
+            KeyMapRegistry registry
+    ) {
+        for (CompositeForeignKey foreignKey : table.foreignKeys()) {
+            List<Object> sourceValues = foreignKey.sourceComponents().stream()
+                    .map(component -> valueIgnoreCase(source, component.column()))
+                    .toList();
+            if (sourceValues.isEmpty()) {
+                throw new IllegalStateException("복합 FK source identity component가 비어 있습니다: "
+                        + foreignKey.parentSource());
+            }
+            long nullComponents = sourceValues.stream().filter(value -> value == null).count();
+            if (nullComponents == sourceValues.size()) {
+                for (IdentityComponentSpec targetComponent : foreignKey.targetComponents()) {
+                    putOrValidateTarget(target, targetComponent, null);
+                }
+                continue;
+            }
+            if (nullComponents > 0) {
+                throw new IllegalStateException("복합 FK partial-null은 허용되지 않습니다: "
+                        + foreignKey.parentSource());
+            }
+            TypedKeyTuple sourceTuple = tupleFromSource(source, foreignKey.sourceComponents());
+            TypedKeyTuple translated = registry.translate(foreignKey.parentSource(), sourceTuple);
+            if (translated == null) {
+                throw new IllegalStateException("복합 FK 고아: 부모 '" + foreignKey.parentSource()
+                        + "' typed keymap에 source identity 없음");
+            }
+            if (translated.values().size() != foreignKey.targetComponents().size()) {
+                throw new IllegalStateException("복합 FK target identity arity 불일치: "
+                        + foreignKey.parentSource());
+            }
+            for (int i = 0; i < foreignKey.targetComponents().size(); i++) {
+                IdentityComponentSpec targetComponent = foreignKey.targetComponents().get(i);
+                TypedValue translatedValue = translated.values().get(i);
+                TypedValue declared = identityCodec.encode(targetComponent.type(), translatedValue.jdbcValue());
+                if (!declared.equals(translatedValue)) {
+                    throw new IllegalStateException("복합 FK target identity 타입 불일치: "
+                            + targetComponent.column());
+                }
+                putOrValidateTarget(target, targetComponent, translatedValue.jdbcValue());
+            }
+        }
+    }
+
+    private TypedKeyTuple tupleFromSource(
+            Map<String, Object> source,
+            List<IdentityComponentSpec> components
+    ) {
+        List<TypedValue> values = new ArrayList<>(components.size());
+        for (IdentityComponentSpec component : components) {
+            values.add(identityCodec.encode(
+                    component.type(), valueIgnoreCase(source, component.column())));
+        }
+        return TypedKeyTuple.of(values.toArray(TypedValue[]::new));
+    }
+
+    private TypedKeyTuple tupleFromTarget(
+            Map<String, Object> target,
+            List<IdentityComponentSpec> components
+    ) {
+        List<TypedValue> values = new ArrayList<>(components.size());
+        for (IdentityComponentSpec component : components) {
+            values.add(identityCodec.encode(
+                    component.type(), valueIgnoreCase(target, component.column())));
+        }
+        return TypedKeyTuple.of(values.toArray(TypedValue[]::new));
+    }
+
+    private void applyTargetIdentity(
+            Map<String, Object> target,
+            List<IdentityComponentSpec> components,
+            TypedKeyTuple identity
+    ) {
+        if (components.size() != identity.values().size()) {
+            throw new IllegalStateException("returned target identity arity 불일치");
+        }
+        for (int i = 0; i < components.size(); i++) {
+            TypedValue value = identity.values().get(i);
+            TypedValue declared = identityCodec.encode(components.get(i).type(), value.jdbcValue());
+            if (!declared.equals(value)) {
+                throw new IllegalStateException("returned target identity 타입 불일치: "
+                        + components.get(i).column());
+            }
+            putOrValidateTarget(target, components.get(i), value.jdbcValue());
+        }
+    }
+
+    private void putOrValidateTarget(
+            Map<String, Object> target,
+            IdentityComponentSpec component,
+            Object value
+    ) {
+        String existingKey = keyIgnoreCase(target, component.column());
+        if (existingKey != null) {
+            TypedValue existing = identityCodec.encode(component.type(), target.get(existingKey));
+            TypedValue candidate = identityCodec.encode(component.type(), value);
+            if (!existing.equals(candidate)) {
+                throw new IllegalStateException("target identity mapped/returned 값 불일치: "
+                        + component.column());
+            }
+        }
+        target.put(component.column(), value);
+    }
+
+    private static Object valueIgnoreCase(Map<String, Object> values, String column) {
+        String key = keyIgnoreCase(values, column);
+        return key == null ? null : values.get(key);
+    }
+
+    private static String keyIgnoreCase(Map<String, Object> values, String column) {
+        for (String key : values.keySet()) {
+            if (key.equalsIgnoreCase(column)) {
+                return key;
+            }
+        }
+        return null;
     }
 
     /** 자식 FK 값을 부모 키맵으로 신규 키에 번역. 미매핑(고아)은 예외로 격리(행 변환 실패). null 은 통과. */
@@ -505,7 +1146,7 @@ public class EtlExecutor {
     }
 
     private long writeChunkAtomically(Connection connection, String sql, List<PreparedRow> rows,
-                                      MappingSpec spec, TableMapping table, List<String> targetColumns,
+                                      MappingSpec spec, TableMapping table, WritePlan writePlan,
                                       KeyMapRegistry registry, MigrationStateStore state,
                                       Checkpoint checkpoint, List<String> errors) {
         List<Object[]> batch = rows.stream().map(PreparedRow::arguments).toList();
@@ -518,14 +1159,14 @@ public class EtlExecutor {
         } catch (SQLException e) {
             rollbackAndDiscard(connection, registry, checkpoint, table.target());
             return writeRowsAtomically(
-                    connection, sql, rows, spec, table, targetColumns, registry, state, errors);
+                    connection, sql, rows, spec, table, writePlan, registry, state, errors);
         }
         commitAndAccept(connection, registry, checkpoint, state, checkpoints, table.target());
         return written;
     }
 
     private long writeRowsAtomically(Connection connection, String sql, List<PreparedRow> rows,
-                                     MappingSpec spec, TableMapping table, List<String> targetColumns,
+                                     MappingSpec spec, TableMapping table, WritePlan writePlan,
                                      KeyMapRegistry registry, MigrationStateStore state,
                                      List<String> errors) {
         long written = 0L;
@@ -535,11 +1176,12 @@ public class EtlExecutor {
             CheckpointEntry durableCheckpoint;
             try {
                 Map<String, Object> transformed = transformRow(row.source(), spec, table, registry);
-                arguments = toArguments(transformed, targetColumns);
-                durableCheckpoint = checkpoint(row.source(), transformed, table, targetColumns);
-            } catch (RuntimeException transformFailure) {
+                arguments = toArguments(transformed, writePlan.insertColumns());
+                durableCheckpoint = checkpoint(
+                        row.source(), transformed, table, writePlan.targetColumns());
+            } catch (RuntimeException ignored) {
                 registry.rollback(rowCheckpoint);
-                errors.add("행 재변환 실패(" + table.source() + "): " + transformFailure.getMessage());
+                errors.add("행 재변환 실패(" + table.source() + "): ROW_RETRY_TRANSFORM_FAILED");
                 continue;
             }
 
@@ -550,9 +1192,9 @@ public class EtlExecutor {
                 commitAndAccept(connection, registry, rowCheckpoint, state,
                         List.of(durableCheckpoint), table.target());
                 written += updateCount;
-            } catch (SQLException rowFailure) {
+            } catch (SQLException ignored) {
                 rollbackAndDiscard(connection, registry, rowCheckpoint, table.target());
-                errors.add("원자 INSERT/keymap 실패(" + table.target() + "): " + rowFailure.getMessage());
+                errors.add("원자 INSERT/keymap 실패(" + table.target() + "): ATOMIC_WRITE_FAILED");
             }
         }
         return written;
@@ -645,20 +1287,54 @@ public class EtlExecutor {
     }
 
     public static List<String> canonicalTargetColumns(TableMapping t) {
-        List<String> cols = new ArrayList<>();
-        for (ColumnMapping c : t.columns()) {
-            if (c.target() != null && !cols.contains(c.target())) {
-                cols.add(c.target());
+        List<String> cols = new ArrayList<>(insertTargetColumns(t));
+        if (t.identity() != null) {
+            for (IdentityComponentSpec component : t.identity().targetComponents()) {
+                addColumn(cols, component.column());
             }
-        }
-        IdStrategy id = t.idStrategy();
-        if (id != null && id.column() != null && !cols.contains(id.column())) {
-            cols.add(id.column());
         }
         return cols;
     }
 
+    public static List<String> insertTargetColumns(TableMapping t) {
+        List<String> cols = new ArrayList<>();
+        for (ColumnMapping c : t.columns()) {
+            if (c.target() != null) {
+                addColumn(cols, c.target());
+            }
+        }
+        IdStrategy id = t.idStrategy();
+        if (id != null && id.column() != null) {
+            addColumn(cols, id.column());
+        }
+        if (t.identity() != null && t.identity().policy() != TargetIdentityPolicy.TARGET_GENERATED) {
+            for (IdentityComponentSpec component : t.identity().targetComponents()) {
+                addColumn(cols, component.column());
+            }
+        }
+        for (CompositeForeignKey foreignKey : t.foreignKeys()) {
+            for (IdentityComponentSpec component : foreignKey.targetComponents()) {
+                addColumn(cols, component.column());
+            }
+        }
+        return cols;
+    }
+
+    private static List<String> returningTargetColumns(TableMapping table) {
+        if (!isTargetGenerated(table)) {
+            return List.of();
+        }
+        return table.identity().targetComponents().stream()
+                .map(IdentityComponentSpec::column)
+                .toList();
+    }
+
     public static String targetIdentityColumn(TableMapping table) {
+        if (table.identity() != null) {
+            return table.identity().targetComponents().size() == 1
+                    ? table.identity().targetComponents().getFirst().column()
+                    : null;
+        }
         IdStrategy id = table.idStrategy();
         if (id != null && !isBlank(id.column())) {
             return id.column();
@@ -666,10 +1342,49 @@ public class EtlExecutor {
         return table.targetKey();
     }
 
+    private static boolean isTargetGenerated(TableMapping table) {
+        return table.identity() != null
+                && table.identity().policy() == TargetIdentityPolicy.TARGET_GENERATED;
+    }
+
+    private static String keyDigest(String key) {
+        if (key == null) {
+            return "<null>";
+        }
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(key.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 is unavailable", impossible);
+        }
+    }
+
+    private static void addColumn(List<String> columns, String candidate) {
+        if (columns.stream().noneMatch(column -> column.equalsIgnoreCase(candidate))) {
+            columns.add(candidate);
+        }
+    }
+
+    static String buildInsertSql(String table, List<String> cols, List<String> returningColumns) {
+        String base;
+        if (cols.isEmpty()) {
+            base = "INSERT INTO " + SourceIntrospector.qualifiedIdent(table) + " DEFAULT VALUES";
+        } else {
+            String colList = String.join(", ", cols.stream().map(SourceIntrospector::ident).toList());
+            String placeholders = String.join(", ", cols.stream().map(c -> "?").toList());
+            base = "INSERT INTO " + SourceIntrospector.qualifiedIdent(table)
+                    + " (" + colList + ") VALUES (" + placeholders + ")";
+        }
+        if (returningColumns.isEmpty()) {
+            return base;
+        }
+        return base + " RETURNING " + String.join(", ", returningColumns.stream()
+                .map(SourceIntrospector::ident)
+                .toList());
+    }
+
     private static String buildInsertSql(String table, List<String> cols) {
-        String colList = String.join(", ", cols.stream().map(SourceIntrospector::ident).toList());
-        String placeholders = String.join(", ", cols.stream().map(c -> "?").toList());
-        return "INSERT INTO " + SourceIntrospector.qualifiedIdent(table) + " (" + colList + ") VALUES (" + placeholders + ")";
+        return buildInsertSql(table, cols, List.of());
     }
 
     private static String[] lowerLabels(ResultSetMetaData md) throws SQLException {
@@ -697,6 +1412,25 @@ public class EtlExecutor {
         } catch (SQLException ignore) {
             // 롤백 실패는 원인 오류를 덮지 않도록 무시
         }
+    }
+
+    private static boolean isJvmFatal(Throwable failure) {
+        return failure instanceof VirtualMachineError
+                || "java.lang.ThreadDeath".equals(failure.getClass().getName());
+    }
+
+    /** checked source failures are wrapped; non-fatal Errors stay visible to the outer sanitize boundary. */
+    private static RuntimeException propagate(Throwable failure) {
+        if (failure instanceof VirtualMachineError fatal) {
+            throw fatal;
+        }
+        if (failure instanceof RuntimeException runtime) {
+            return runtime;
+        }
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        return new IllegalStateException("migration execution failed");
     }
 
     private static void safeClose(Connection conn) {

@@ -2,6 +2,8 @@ package nuri.migration.validate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nuri.migration.identity.IdentityValueType;
+import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.TransformerRegistry;
@@ -15,6 +17,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -94,6 +97,7 @@ public class MappingValidator {
             }
             MappingSpec.IdStrategy id = t.idStrategy();
             validateIdStrategy(t, id, targetColumns, errors);
+            validateTypedIdentity(t, sourceTables, targetColumns, errors);
             for (MappingSpec.ColumnMapping c : t.columns()) {
                 if (isBlank(c.target())) {
                     errors.add(t.target() + ": 타깃 컬럼 미지정");
@@ -142,6 +146,12 @@ public class MappingValidator {
                     continue;
                 }
                 String parent = normalize(column.fkRef());
+                if (sourceTables.containsKey(parent) && !parent.equals(child)) {
+                    dependencies.get(child).add(parent);
+                }
+            }
+            for (MappingSpec.CompositeForeignKey foreignKey : table.foreignKeys()) {
+                String parent = normalize(foreignKey.parentSource());
                 if (sourceTables.containsKey(parent) && !parent.equals(child)) {
                     dependencies.get(child).add(parent);
                 }
@@ -244,6 +254,143 @@ public class MappingValidator {
                 && !isBlank(id.sourceKey());
     }
 
+    private static void validateTypedIdentity(
+            MappingSpec.TableMapping table,
+            Map<String, MappingSpec.TableMapping> sourceTables,
+            Set<String> targetColumns,
+            List<String> errors
+    ) {
+        MappingSpec.IdentityStrategy identity = table.identity();
+        if (identity == null) {
+            if (!table.foreignKeys().isEmpty()) {
+                errors.add(table.source() + ": composite foreignKeys에는 typed identity가 필수입니다");
+            }
+            return;
+        }
+        if (table.idStrategy() != null) {
+            errors.add(table.source() + ": legacy idStrategy와 typed identity를 함께 선언할 수 없습니다");
+        }
+
+        validateComponents(table.source(), "sourceComponents", identity.sourceComponents(), errors);
+        validateComponents(table.source(), "targetComponents", identity.targetComponents(), errors);
+        validateStaticTargetColumns(
+                table, "typed identity", identity.targetComponents(), targetColumns, errors);
+
+        if (identity.policy() == TargetIdentityPolicy.PRESERVE) {
+            validateTypeContract(
+                    table.source(), "PRESERVE identity",
+                    identity.sourceComponents(), identity.targetComponents(), errors);
+        }
+        if (identity.policy() == TargetIdentityPolicy.REMAP) {
+            Set<String> producers = new HashSet<>();
+            for (MappingSpec.ColumnMapping column : table.columns()) {
+                if (!isBlank(column.target())) {
+                    producers.add(normalize(column.target()));
+                }
+            }
+            for (MappingSpec.CompositeForeignKey foreignKey : table.foreignKeys()) {
+                for (MappingSpec.IdentityComponentSpec component : foreignKey.targetComponents()) {
+                    producers.add(normalize(component.column()));
+                }
+            }
+            for (MappingSpec.IdentityComponentSpec component : identity.targetComponents()) {
+                if (!producers.contains(normalize(component.column()))) {
+                    errors.add(table.source()
+                            + ": REMAP target identity component 값 생성 mapping 없음: "
+                            + component.column());
+                }
+            }
+        }
+
+        for (MappingSpec.CompositeForeignKey foreignKey : table.foreignKeys()) {
+            validateIdentifier(table.source() + ": foreign key parentSource",
+                    foreignKey.parentSource(), errors);
+            validateComponents(table.source(), "foreignKeys.sourceComponents",
+                    foreignKey.sourceComponents(), errors);
+            validateComponents(table.source(), "foreignKeys.targetComponents",
+                    foreignKey.targetComponents(), errors);
+            validateStaticTargetColumns(
+                    table, "foreign key", foreignKey.targetComponents(), targetColumns, errors);
+
+            MappingSpec.TableMapping parent = sourceTables.get(normalize(foreignKey.parentSource()));
+            if (parent == null) {
+                errors.add(table.source() + ": composite foreign key parent mapping 없음: "
+                        + foreignKey.parentSource());
+                continue;
+            }
+            if (parent.identity() == null) {
+                errors.add(table.source() + ": composite foreign key parent typed identity 없음: "
+                        + foreignKey.parentSource());
+                continue;
+            }
+            validateTypeContract(
+                    table.source(), "composite foreign key source type",
+                    parent.identity().sourceComponents(), foreignKey.sourceComponents(), errors);
+            validateTypeContract(
+                    table.source(), "composite foreign key target type",
+                    parent.identity().targetComponents(), foreignKey.targetComponents(), errors);
+        }
+    }
+
+    private static void validateComponents(
+            String table,
+            String label,
+            List<MappingSpec.IdentityComponentSpec> components,
+            List<String> errors
+    ) {
+        if (components.isEmpty()) {
+            errors.add(table + ": " + label + "가 비어 있습니다");
+            return;
+        }
+        Set<String> distinct = new HashSet<>();
+        for (MappingSpec.IdentityComponentSpec component : components) {
+            validateColumnIdentifier(table + ": " + label, component.column(), errors);
+            if (!distinct.add(normalize(component.column()))) {
+                errors.add(table + ": " + label + " 중복 금지: " + component.column());
+            }
+        }
+    }
+
+    private static void validateStaticTargetColumns(
+            MappingSpec.TableMapping table,
+            String label,
+            List<MappingSpec.IdentityComponentSpec> components,
+            Set<String> targetColumns,
+            List<String> errors
+    ) {
+        if (targetColumns.isEmpty()) {
+            return;
+        }
+        for (MappingSpec.IdentityComponentSpec component : components) {
+            String key = normalize(table.target() + "." + component.column());
+            if (!targetColumns.contains(key)) {
+                errors.add("표준 스키마에 없는 " + label + " 타깃 컬럼: " + key);
+            }
+        }
+    }
+
+    private static void validateTypeContract(
+            String table,
+            String label,
+            List<MappingSpec.IdentityComponentSpec> expected,
+            List<MappingSpec.IdentityComponentSpec> actual,
+            List<String> errors
+    ) {
+        if (expected.size() != actual.size()) {
+            errors.add(table + ": " + label + " arity 불일치: expected="
+                    + expected.size() + ", actual=" + actual.size());
+            return;
+        }
+        for (int i = 0; i < expected.size(); i++) {
+            if (expected.get(i).type() != actual.get(i).type()) {
+                errors.add(table + ": " + label + " 불일치: "
+                        + actual.get(i).column() + " expected="
+                        + expected.get(i).type().externalName() + ", actual="
+                        + actual.get(i).type().externalName());
+            }
+        }
+    }
+
     /**
      * 실행 전에 실제 source JDBC metadata를 대조한다. 모든 source table, column 및
      * {@code idStrategy.sourceKey}가 확인된 뒤에만 타깃 쓰기 단계로 진행할 수 있다.
@@ -257,27 +404,37 @@ public class MappingValidator {
             String defaultSchema = connection.getSchema();
             for (MappingSpec.TableMapping table : spec.tables()) {
                 QualifiedName name = qualifiedName(table.source(), defaultCatalog, defaultSchema);
-                Set<String> liveColumns = metadataColumns(
+                Map<String, ColumnMetadata> liveColumns = metadataColumnInfo(
                         metadata, name.catalog(), name.schema(), name.table());
                 if (liveColumns.isEmpty()) {
                     errors.add("실 source에 없는 테이블 또는 metadata 접근 불가: " + table.source());
                     continue;
                 }
                 for (MappingSpec.ColumnMapping column : table.columns()) {
-                    if (!isBlank(column.source()) && !liveColumns.contains(normalize(column.source()))) {
+                    if (!isBlank(column.source()) && !liveColumns.containsKey(normalize(column.source()))) {
                         errors.add("실 source에 없는 컬럼: " + table.source() + "." + column.source());
                     }
                 }
                 MappingSpec.IdStrategy id = table.idStrategy();
                 if (id != null && !isBlank(id.sourceKey())
-                        && !liveColumns.contains(normalize(id.sourceKey()))) {
+                        && !liveColumns.containsKey(normalize(id.sourceKey()))) {
                     errors.add("실 source에 없는 idStrategy.sourceKey: "
                             + table.source() + "." + id.sourceKey());
                 }
                 for (String orderKey : table.effectiveOrderKeys()) {
-                    if (!liveColumns.contains(normalize(orderKey))) {
+                    if (!liveColumns.containsKey(normalize(orderKey))) {
                         errors.add("실 source에 없는 order key: " + table.source() + "." + orderKey);
                     }
+                }
+                if (table.identity() != null) {
+                    validateLiveComponents(
+                            "source", table.source(), "identity source",
+                            table.identity().sourceComponents(), liveColumns, errors);
+                }
+                for (MappingSpec.CompositeForeignKey foreignKey : table.foreignKeys()) {
+                    validateLiveComponents(
+                            "source", table.source(), "foreign key source",
+                            foreignKey.sourceComponents(), liveColumns, errors);
                 }
             }
             return null;
@@ -301,23 +458,33 @@ public class MappingValidator {
                     continue;
                 }
                 QualifiedName name = qualifiedName(qualified, defaultCatalog, defaultSchema);
-                Set<String> liveColumns = metadataColumns(
+                Map<String, ColumnMetadata> liveColumns = metadataColumnInfo(
                         metadata, name.catalog(), name.schema(), name.table());
                 if (liveColumns.isEmpty()) {
                     errors.add("실 target에 없는 테이블 또는 metadata 접근 불가: " + qualified);
                     continue;
                 }
                 MappingSpec.IdStrategy id = table.idStrategy();
-                if (id != null && !isBlank(id.column()) && !liveColumns.contains(normalize(id.column()))) {
+                if (id != null && !isBlank(id.column()) && !liveColumns.containsKey(normalize(id.column()))) {
                     errors.add("실 target에 없는 idStrategy 컬럼: " + qualified + "." + id.column());
                 }
-                if (!isBlank(table.targetKey()) && !liveColumns.contains(normalize(table.targetKey()))) {
+                if (!isBlank(table.targetKey()) && !liveColumns.containsKey(normalize(table.targetKey()))) {
                     errors.add("실 target에 없는 targetKey: " + qualified + "." + table.targetKey());
                 }
                 for (MappingSpec.ColumnMapping column : table.columns()) {
-                    if (!isBlank(column.target()) && !liveColumns.contains(normalize(column.target()))) {
+                    if (!isBlank(column.target()) && !liveColumns.containsKey(normalize(column.target()))) {
                         errors.add("실 target에 없는 컬럼: " + qualified + "." + column.target());
                     }
+                }
+                if (table.identity() != null) {
+                    validateLiveComponents(
+                            "target", qualified, "identity target",
+                            table.identity().targetComponents(), liveColumns, errors);
+                }
+                for (MappingSpec.CompositeForeignKey foreignKey : table.foreignKeys()) {
+                    validateLiveComponents(
+                            "target", qualified, "foreign key target",
+                            foreignKey.targetComponents(), liveColumns, errors);
                 }
             }
             return null;
@@ -325,9 +492,13 @@ public class MappingValidator {
         return new ValidationResult(errors, List.of());
     }
 
-    private static Set<String> metadataColumns(DatabaseMetaData metadata, String catalog,
-                                               String schema, String table) throws SQLException {
-        Set<String> columns = new HashSet<>();
+    private static Map<String, ColumnMetadata> metadataColumnInfo(
+            DatabaseMetaData metadata,
+            String catalog,
+            String schema,
+            String table
+    ) throws SQLException {
+        Map<String, ColumnMetadata> columns = new LinkedHashMap<>();
         List<String> schemas = caseVariants(schema);
         List<String> tables = caseVariants(table);
         for (String schemaVariant : schemas) {
@@ -339,7 +510,8 @@ public class MappingValidator {
                         }
                         String column = result.getString("COLUMN_NAME");
                         if (column != null) {
-                            columns.add(normalize(column));
+                            columns.put(normalize(column), new ColumnMetadata(
+                                    result.getInt("DATA_TYPE"), result.getString("TYPE_NAME")));
                         }
                     }
                 }
@@ -349,6 +521,66 @@ public class MappingValidator {
             }
         }
         return columns;
+    }
+
+    private record ColumnMetadata(int jdbcType, String typeName) {}
+
+    private static void validateLiveComponents(
+            String side,
+            String table,
+            String label,
+            List<MappingSpec.IdentityComponentSpec> components,
+            Map<String, ColumnMetadata> liveColumns,
+            List<String> errors
+    ) {
+        for (MappingSpec.IdentityComponentSpec component : components) {
+            ColumnMetadata metadata = liveColumns.get(normalize(component.column()));
+            if (metadata == null) {
+                errors.add("실 " + side + "에 없는 " + label + " 컬럼: "
+                        + table + "." + component.column());
+                continue;
+            }
+            if (!jdbcTypeCompatible(component.type(), metadata)) {
+                errors.add(label + " type 불일치: " + table + "." + component.column()
+                        + " declared=" + component.type().externalName()
+                        + " jdbc=" + metadata.typeName() + "(" + metadata.jdbcType() + ")");
+            }
+        }
+    }
+
+    private static boolean jdbcTypeCompatible(IdentityValueType type, ColumnMetadata metadata) {
+        int jdbcType = metadata.jdbcType();
+        return switch (type) {
+            case TEXT -> jdbcType == Types.CHAR
+                    || jdbcType == Types.VARCHAR
+                    || jdbcType == Types.LONGVARCHAR
+                    || jdbcType == Types.NCHAR
+                    || jdbcType == Types.NVARCHAR
+                    || jdbcType == Types.LONGNVARCHAR;
+            case SIGNED_INTEGER, UNSIGNED_INTEGER, DECIMAL -> jdbcType == Types.TINYINT
+                    || jdbcType == Types.SMALLINT
+                    || jdbcType == Types.INTEGER
+                    || jdbcType == Types.BIGINT
+                    || jdbcType == Types.NUMERIC
+                    || jdbcType == Types.DECIMAL;
+            case BOOLEAN -> jdbcType == Types.BOOLEAN || jdbcType == Types.BIT;
+            case UUID -> isUuidType(metadata.typeName())
+                    || jdbcType == Types.CHAR
+                    || jdbcType == Types.VARCHAR
+                    || jdbcType == Types.NCHAR
+                    || jdbcType == Types.NVARCHAR;
+            case DATE -> jdbcType == Types.DATE;
+            case TIME -> jdbcType == Types.TIME;
+            case LOCAL_TIMESTAMP -> jdbcType == Types.TIMESTAMP;
+            case OFFSET_TIMESTAMP -> jdbcType == Types.TIMESTAMP_WITH_TIMEZONE;
+            case BINARY -> jdbcType == Types.BINARY
+                    || jdbcType == Types.VARBINARY
+                    || jdbcType == Types.LONGVARBINARY;
+        };
+    }
+
+    private static boolean isUuidType(String typeName) {
+        return typeName != null && typeName.equalsIgnoreCase("uuid");
     }
 
     /**

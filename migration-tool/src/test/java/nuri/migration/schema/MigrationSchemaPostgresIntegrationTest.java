@@ -27,10 +27,10 @@ class MigrationSchemaPostgresIntegrationTest {
 
         assertThat(target.queryForObject(
                 "SELECT count(*) FROM information_schema.tables "
-                        + "WHERE table_schema=current_schema() AND table_name LIKE 'tb_migration_%'",
+                        + "WHERE table_schema='migration_control' AND table_name LIKE 'tb_migration_%'",
                 Long.class)).isEqualTo(4L);
         assertThat(target.queryForObject(
-                "SELECT count(*) FROM \"tb_migration_schema_history\" "
+                "SELECT count(*) FROM migration_control.\"tb_migration_schema_history\" "
                         + "WHERE \"version\"='1' AND \"success\"=true", Long.class)).isEqualTo(1L);
     }
 }

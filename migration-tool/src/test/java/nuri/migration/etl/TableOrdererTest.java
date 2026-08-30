@@ -1,6 +1,11 @@
 package nuri.migration.etl;
 
+import nuri.migration.identity.IdentityValueType;
+import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.model.MappingSpec.CompositeForeignKey;
+import nuri.migration.model.MappingSpec.IdentityComponentSpec;
+import nuri.migration.model.MappingSpec.IdentityStrategy;
 import nuri.migration.model.MappingSpec.TableMapping;
 import org.junit.jupiter.api.Test;
 
@@ -66,5 +71,42 @@ class TableOrdererTest {
         assertThatThrownBy(() -> TableOrderer.order(List.of(a, b)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("FK 순환", "a", "b");
+    }
+
+    @Test
+    void typedCompositeForeignKeyAlsoOrdersParentBeforeChild() {
+        TableMapping parent = typedTable("PARENT", List.of());
+        TableMapping child = typedTable("CHILD", List.of(typedFk("PARENT")));
+
+        List<TableMapping> ordered = TableOrderer.order(List.of(child, parent));
+
+        assertThat(ordered).extracting(TableMapping::source).containsExactly("PARENT", "CHILD");
+    }
+
+    @Test
+    void typedCompositeCrossTableCycleFailsClosed() {
+        TableMapping a = typedTable("A", List.of(typedFk("B")));
+        TableMapping b = typedTable("B", List.of(typedFk("A")));
+
+        assertThatThrownBy(() -> TableOrderer.order(List.of(a, b)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("FK 순환", "a", "b");
+    }
+
+    private static TableMapping typedTable(String source, List<CompositeForeignKey> foreignKeys) {
+        IdentityComponentSpec id = new IdentityComponentSpec("ID", IdentityValueType.SIGNED_INTEGER);
+        return new TableMapping(
+                source, "t_" + source.toLowerCase(), null, null, List.of("ID"), null,
+                List.of(), null,
+                new IdentityStrategy(TargetIdentityPolicy.PRESERVE, List.of(id),
+                        List.of(new IdentityComponentSpec("id", IdentityValueType.SIGNED_INTEGER))),
+                foreignKeys);
+    }
+
+    private static CompositeForeignKey typedFk(String parent) {
+        return new CompositeForeignKey(
+                parent,
+                List.of(new IdentityComponentSpec("PARENT_ID", IdentityValueType.SIGNED_INTEGER)),
+                List.of(new IdentityComponentSpec("id", IdentityValueType.SIGNED_INTEGER)));
     }
 }

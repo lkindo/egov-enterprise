@@ -37,16 +37,33 @@ public class MappingLoader {
 
     public MappingSpec load(Path file) {
         try {
-            MappingSpec raw = yaml.readValue(Files.readAllBytes(file), MappingSpec.class);
-            return new MappingSpec(
-                    resolveDbConfig(raw.source()),
-                    resolveDbConfig(raw.target()),
-                    raw.tables(),
-                    raw.codemaps(),
-                    raw.run());
+            return parse(Files.readAllBytes(file));
         } catch (IOException e) {
             throw new UncheckedIOException("mapping 파일 로드 실패: " + file, e);
         }
+    }
+
+    /** 이미 크기·symlink·UTF-8 검증을 통과한 workflow 본문을 경로 재개방 없이 파싱한다. */
+    public MappingSpec loadContent(String content) {
+        Objects.requireNonNull(content, "content");
+        try {
+            return resolve(yaml.readValue(content, MappingSpec.class));
+        } catch (IOException failure) {
+            throw new IllegalArgumentException("mapping YAML parsing failed");
+        }
+    }
+
+    private MappingSpec parse(byte[] content) throws IOException {
+        return resolve(yaml.readValue(content, MappingSpec.class));
+    }
+
+    private MappingSpec resolve(MappingSpec raw) {
+        return new MappingSpec(
+                resolveDbConfig(raw.source()),
+                resolveDbConfig(raw.target()),
+                raw.tables(),
+                raw.codemaps(),
+                raw.run());
     }
 
     private MappingSpec.DbConfig resolveDbConfig(MappingSpec.DbConfig config) {

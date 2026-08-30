@@ -71,82 +71,43 @@ class MigrationRunnerTest {
 
     @Test
     void invalidModeCannotBecomeDryRun() {
-        assertThatThrownBy(() -> runner.run(args("--mapping=mapping.yml", "--mode=comit")))
+        assertThatThrownBy(() -> runner.run(args(
+                "--mapping=mapping.yml", "--mode=sentinel-private-mode")))
                 .isInstanceOf(MigrationExecutionException.class)
-                .hasMessageContaining("dry-run|commit");
+                .hasNoCause()
+                .hasMessageContaining("dry-run|commit")
+                .hasMessageNotContaining("sentinel-private-mode");
         verify(loader, never()).load(any());
     }
 
     @Test
-    void validationErrorsAreThrownPastApplicationRunner() {
-        given(validator.validate(spec)).willReturn(new ValidationResult(List.of("ghost column"), List.of()));
-
-        assertThatThrownBy(() -> runner.run(args("--mapping=mapping.yml")))
-                .isInstanceOf(MigrationExecutionException.class)
-                .hasMessageContaining("매핑 검증 실패");
-        verify(executor, never()).execute(any(), any());
-    }
-
-    @Test
-    void commitWithoutTargetCannotSilentlyRunAsDryRun() {
-        MappingSpec noTarget = new MappingSpec(spec.source(), null, spec.tables(), spec.codemaps());
-        given(loader.load(any(Path.class))).willReturn(noTarget);
-
+    void directCommitCannotBypassApprovedWorkflowArtifacts() {
         assertThatThrownBy(() -> runner.run(args("--mapping=mapping.yml", "--mode=commit")))
                 .isInstanceOf(MigrationExecutionException.class)
-                .hasMessageContaining("mapping.target");
+                .hasMessageContaining("discover", "plan", "validate", "load");
+        verify(loader, never()).load(any());
         verify(executor, never()).execute(any(), any());
     }
 
     @Test
-    void commitFailsBeforeWriteWhenLiveTargetSchemaDoesNotMatch() {
-        JdbcTemplate target = mock(JdbcTemplate.class);
-        given(introspector.jdbc(spec.target())).willReturn(target);
-        given(validator.validateLiveTarget(spec, target))
-                .willReturn(new ValidationResult(List.of("missing live column"), List.of()));
-
-        assertThatThrownBy(() -> runner.run(args("--mapping=mapping.yml", "--mode=commit")))
-                .isInstanceOf(MigrationExecutionException.class)
-                .hasMessageContaining("실 target schema 검증 실패");
+    void commandPresenceDisablesTheLegacyRunnerToPreventDoubleExecution() {
+        assertThatCode(() -> runner.run(args(
+                "--command=load", "--mapping=mapping.yml", "--inventory=i.json", "--plan=p.json")))
+                .doesNotThrowAnyException();
+        verify(loader, never()).load(any());
         verify(executor, never()).execute(any(), any());
     }
 
     @Test
-    void liveSourceSchemaFailureStopsBeforeAnyTargetWritePath() {
-        given(validator.validateLiveSource(spec, sourceJdbc))
-                .willReturn(new ValidationResult(List.of("missing source key"), List.of()));
-
-        assertThatThrownBy(() -> runner.run(args("--mapping=mapping.yml", "--mode=commit")))
-                .isInstanceOf(MigrationExecutionException.class)
-                .hasMessageContaining("실 source schema 검증 실패");
-
-        verify(introspector, never()).jdbc(spec.target());
-        verify(executor, never()).execute(any(), any());
-    }
-
-    @Test
-    void failReportBecomesANonZeroCapableException() {
-        given(verifier.verify(spec, results, null)).willReturn(
-                new MigrationReport(List.of(), MigrationReport.Status.FAIL));
-
+    void directDryRunCannotBypassAdapterInventoryAndFreezeApprovals() {
         assertThatThrownBy(() -> runner.run(args("--mapping=mapping.yml")))
                 .isInstanceOf(MigrationExecutionException.class)
-                .hasMessageContaining("결과 검증 실패");
-    }
+                .hasMessageContaining("discover", "plan", "validate", "load");
 
-    @Test
-    void warnReportIsAlsoANonZeroCapableStrictFailure() {
-        given(verifier.verify(spec, results, null)).willReturn(
-                new MigrationReport(List.of(), MigrationReport.Status.WARN));
-
-        assertThatThrownBy(() -> runner.run(args("--mapping=mapping.yml")))
-                .isInstanceOf(MigrationExecutionException.class)
-                .hasMessageContaining("결과 검증 실패(WARN)");
-    }
-
-    @Test
-    void passingDryRunCompletesNormally() {
-        assertThatCode(() -> runner.run(args("--mapping=mapping.yml"))).doesNotThrowAnyException();
+        verify(loader, never()).load(any());
+        verify(introspector, never()).jdbc(any());
+        verify(executor, never()).execute(any(), any());
+        verify(verifier, never()).verify(any(), any(), any());
     }
 
     private static DefaultApplicationArguments args(String... values) {
