@@ -4202,16 +4202,16 @@ export const WorkReportDtoRequestSchema = z.object({
 });
 
 export const WorkReportDtoResponseSchema = z.object({
-  rptpSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  rptCn: z.string().optional(),
-  rptSeCd: z.string().optional(),
-  userId: z.string().min(0).max(20).optional(),
-  userNm: z.string().optional(),
-  atchFileSn: z.number().int().optional(),
-  rptSttsCd: z.string().min(0).max(12).optional(),
-  rptYmd: z.string().min(0).max(8).optional(),
-  rptTypeCd: z.string().optional(),
+  rptpSn: z.number().int().optional().nullable(),
+  rptTtl: z.string().optional().nullable(),
+  rptCn: z.string().optional().nullable(),
+  rptSeCd: z.string().optional().nullable(),
+  userId: z.string().min(0).max(20).optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  rptSttsCd: z.string().min(0).max(12).optional().nullable(),
+  rptYmd: z.string().min(0).max(8).optional().nullable(),
+  rptTypeCd: z.string().optional().nullable(),
 });
 
 export const ApiResponseVoidRequestSchema = z.object({
@@ -4225,13 +4225,13 @@ export const ApiResponseVoidRequestSchema = z.object({
 });
 
 export const ApiResponseVoidResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.record(z.string(), z.any()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.record(z.string(), z.any()).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const FieldErrorItemRequestSchema = z.object({
@@ -4240,8 +4240,8 @@ export const FieldErrorItemRequestSchema = z.object({
 });
 
 export const FieldErrorItemResponseSchema = z.object({
-  field: z.string().optional(),
-  message: z.string().optional(),
+  field: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
 });
 
 export const UserSelfProfileUpdateRequestRequestSchema = z.object({
@@ -4262,18 +4262,18 @@ export const UserSelfProfileUpdateRequestRequestSchema = z.object({
 
 export const UserSelfProfileUpdateRequestResponseSchema = z.object({
   userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
-  emplNo: z.string().min(0).max(20).optional(),
-  areaNo: z.string().min(0).max(4).optional(),
-  middleTelno: z.string().min(0).max(4).optional(),
-  endTelno: z.string().min(0).max(4).optional(),
-  faxNo: z.string().min(0).max(11).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
-  zip: z.string().min(0).max(5).optional(),
-  officeTelno: z.string().min(0).max(20).optional(),
-  mblTelno: z.string().min(0).max(11).optional(),
-  emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
-  ofcpsNm: z.string().min(0).max(300).optional(),
+  emplNo: z.string().min(0).max(20).optional().nullable(),
+  areaNo: z.string().min(0).max(4).optional().nullable(),
+  middleTelno: z.string().min(0).max(4).optional().nullable(),
+  endTelno: z.string().min(0).max(4).optional().nullable(),
+  faxNo: z.string().min(0).max(11).optional().nullable(),
+  homeAddr: z.string().min(0).max(300).optional().nullable(),
+  daddr: z.string().min(0).max(300).optional().nullable(),
+  zip: z.string().min(0).max(5).optional().nullable(),
+  officeTelno: z.string().min(0).max(20).optional().nullable(),
+  mblTelno: z.string().min(0).max(11).optional().nullable(),
+  emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional().nullable(),
+  ofcpsNm: z.string().min(0).max(300).optional().nullable(),
 });
 
 export const PasswordChangeRequestRequestSchema = z.object({
@@ -4300,16 +4300,16 @@ export const ScrapDtoRequestSchema = z.object({
 });
 
 export const ScrapDtoResponseSchema = z.object({
-  scrapSn: z.number().int().optional(),
-  bbsId: z.string().min(0).max(20).optional(),
-  pstSn: z.number().int().optional(),
-  scrapNm: z.string().min(0).max(100).optional(),
-  scrapUrl: z.string().min(0).max(1000).optional(),
-  scrapExpln: z.string().optional(),
+  scrapSn: z.number().int().optional().nullable(),
+  bbsId: z.string().min(0).max(20).optional().nullable(),
+  pstSn: z.number().int().optional().nullable(),
+  scrapNm: z.string().min(0).max(100).optional().nullable(),
+  scrapUrl: z.string().min(0).max(1000).optional().nullable(),
+  scrapExpln: z.string().optional().nullable(),
   useYn: z.string().min(0).max(1).regex(new RegExp("[YN]")),
-  userId: z.string().min(0).max(20).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  userId: z.string().min(0).max(20).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const ScheduleDtoRequestSchema = z.object({
@@ -4334,24 +4334,24 @@ export const ScheduleDtoRequestSchema = z.object({
 });
 
 export const ScheduleDtoResponseSchema = z.object({
-  schdlSn: z.number().int().optional(),
-  schdlSeCd: z.string().min(0).max(12).optional(),
+  schdlSn: z.number().int().optional().nullable(),
+  schdlSeCd: z.string().min(0).max(12).optional().nullable(),
   schdlNm: z.string().min(0).max(100),
-  schdlCn: z.string().min(0).max(4000).optional(),
-  reptSeCd: z.string().min(0).max(12).optional(),
-  schdlBgngYmd: z.string().min(0).max(8).optional(),
-  schdlEndYmd: z.string().min(0).max(8).optional(),
-  schdlIpAddr: z.string().optional(),
-  schdlPicId: z.string().min(0).max(20).optional(),
-  atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  schdlDeptId: z.string().min(0).max(20).optional(),
-  schdlKndCd: z.string().min(0).max(12).optional(),
-  schdlPlcNm: z.string().min(0).max(100).optional(),
-  schdlImprtCd: z.string().min(0).max(12).optional(),
+  schdlCn: z.string().min(0).max(4000).optional().nullable(),
+  reptSeCd: z.string().min(0).max(12).optional().nullable(),
+  schdlBgngYmd: z.string().min(0).max(8).optional().nullable(),
+  schdlEndYmd: z.string().min(0).max(8).optional().nullable(),
+  schdlIpAddr: z.string().optional().nullable(),
+  schdlPicId: z.string().min(0).max(20).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  schdlDeptId: z.string().min(0).max(20).optional().nullable(),
+  schdlKndCd: z.string().min(0).max(12).optional().nullable(),
+  schdlPlcNm: z.string().min(0).max(100).optional().nullable(),
+  schdlImprtCd: z.string().min(0).max(12).optional().nullable(),
 });
 
 export const OnlinePollArticleDtoRequestSchema = z.object({
@@ -4364,12 +4364,12 @@ export const OnlinePollArticleDtoRequestSchema = z.object({
 });
 
 export const OnlinePollArticleDtoResponseSchema = z.object({
-  pollArtclSn: z.number().int().optional(),
-  pollSn: z.number().int().optional(),
+  pollArtclSn: z.number().int().optional().nullable(),
+  pollSn: z.number().int().optional().nullable(),
   pollArtclNm: z.string().min(0).max(100),
-  pollIemCo: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  pollIemCo: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const OnlinePollManageDtoRequestSchema = z.object({
@@ -4386,16 +4386,16 @@ export const OnlinePollManageDtoRequestSchema = z.object({
 });
 
 export const OnlinePollManageDtoResponseSchema = z.object({
-  pollSn: z.number().int().optional(),
+  pollSn: z.number().int().optional().nullable(),
   pollNm: z.string().min(0).max(100),
-  pollBgngYmd: z.string().min(0).max(8).optional(),
-  pollEndYmd: z.string().min(0).max(8).optional(),
-  pollKndCd: z.string().min(0).max(12).optional(),
-  pollDsuseYn: z.string().optional(),
-  pollAtmcDsuseYn: z.string().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional(),
+  pollBgngYmd: z.string().min(0).max(8).optional().nullable(),
+  pollEndYmd: z.string().min(0).max(8).optional().nullable(),
+  pollKndCd: z.string().min(0).max(12).optional().nullable(),
+  pollDsuseYn: z.string().optional().nullable(),
+  pollAtmcDsuseYn: z.string().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional().nullable(),
 });
 
 export const MemoReportDtoRequestSchema = z.object({
@@ -4415,19 +4415,19 @@ export const MemoReportDtoRequestSchema = z.object({
 });
 
 export const MemoReportDtoResponseSchema = z.object({
-  memoRptSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  memoRptYmd: z.string().optional(),
-  userId: z.string().optional(),
-  wrterNm: z.string().min(0).max(100).optional(),
-  rptrId: z.string().optional(),
-  rptrNm: z.string().optional(),
-  rptCn: z.string().optional(),
-  atchFileSn: z.number().int().optional(),
-  drctnMttr: z.string().optional(),
-  drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  memoRptSn: z.number().int().optional().nullable(),
+  rptTtl: z.string().optional().nullable(),
+  memoRptYmd: z.string().optional().nullable(),
+  userId: z.string().optional().nullable(),
+  wrterNm: z.string().min(0).max(100).optional().nullable(),
+  rptrId: z.string().optional().nullable(),
+  rptrNm: z.string().optional().nullable(),
+  rptCn: z.string().optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  drctnMttr: z.string().optional().nullable(),
+  drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const InformalSanctionDtoRequestSchema = z.object({
@@ -4448,20 +4448,20 @@ export const InformalSanctionDtoRequestSchema = z.object({
 });
 
 export const InformalSanctionDtoResponseSchema = z.object({
-  ifmlAtrzSn: z.number().int().optional(),
+  ifmlAtrzSn: z.number().int().optional().nullable(),
   taskSeCd: z.string().min(0).max(12),
-  taskSeNm: z.string().optional(),
+  taskSeNm: z.string().optional().nullable(),
   aplcntId: z.string().min(0).max(20),
-  aplcntNm: z.string().optional(),
-  reqYmd: z.string().min(0).max(8).optional(),
+  aplcntNm: z.string().optional().nullable(),
+  reqYmd: z.string().min(0).max(8).optional().nullable(),
   aprvrId: z.string().min(0).max(20),
-  aprvrNm: z.string().optional(),
-  aprvrOrgnztNm: z.string().optional(),
-  aprvYn: z.string().min(0).max(1).optional(),
-  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  rjctRsnCn: z.string().min(0).max(4000).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  aprvrNm: z.string().optional().nullable(),
+  aprvrOrgnztNm: z.string().optional().nullable(),
+  aprvYn: z.string().min(0).max(1).optional().nullable(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  rjctRsnCn: z.string().min(0).max(4000).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const OnlineManualDtoRequestSchema = z.object({
@@ -4475,13 +4475,13 @@ export const OnlineManualDtoRequestSchema = z.object({
 });
 
 export const OnlineManualDtoResponseSchema = z.object({
-  onlnMnlSn: z.number().int().optional(),
+  onlnMnlSn: z.number().int().optional().nullable(),
   onlnMnlNm: z.string().min(0).max(100),
   onlnMnlSeCd: z.string().min(0).max(12),
-  onlnMnlDfn: z.string().min(0).max(1000).optional(),
-  onlnMnlExpln: z.string().min(0).max(4000).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  onlnMnlDfn: z.string().min(0).max(1000).optional().nullable(),
+  onlnMnlExpln: z.string().min(0).max(4000).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const HpcmDtoRequestSchema = z.object({
@@ -4494,12 +4494,12 @@ export const HpcmDtoRequestSchema = z.object({
 });
 
 export const HpcmDtoResponseSchema = z.object({
-  hlpSn: z.number().int().optional(),
+  hlpSn: z.number().int().optional().nullable(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
   hlpExpln: z.string().min(0).max(65535),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const DeptJobDtoRequestSchema = z.object({
@@ -4521,21 +4521,21 @@ export const DeptJobDtoRequestSchema = z.object({
 });
 
 export const DeptJobDtoResponseSchema = z.object({
-  deptTaskSn: z.number().int().optional(),
-  deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
-  deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
-  deptTaskNm: z.string().optional(),
-  deptTaskCn: z.string().optional(),
-  picId: z.string().optional(),
-  picNm: z.string().optional(),
-  prrtyRnk: z.string().optional(),
-  atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  deptTaskSn: z.number().int().optional().nullable(),
+  deptTaskBoxSn: z.number().int().optional().nullable(),
+  deptTaskBoxNm: z.string().optional().nullable(),
+  deptId: z.string().min(0).max(20).optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  deptTaskNm: z.string().optional().nullable(),
+  deptTaskCn: z.string().optional().nullable(),
+  picId: z.string().optional().nullable(),
+  picNm: z.string().optional().nullable(),
+  prrtyRnk: z.string().optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const DeptJobBoxDtoRequestSchema = z.object({
@@ -4551,15 +4551,15 @@ export const DeptJobBoxDtoRequestSchema = z.object({
 });
 
 export const DeptJobBoxDtoResponseSchema = z.object({
-  deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
-  deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
-  sortOrdr: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  deptTaskBoxSn: z.number().int().optional().nullable(),
+  deptTaskBoxNm: z.string().optional().nullable(),
+  deptId: z.string().min(0).max(20).optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  sortOrdr: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const CommentDtoRequestSchema = z.object({
@@ -4571,13 +4571,13 @@ export const CommentDtoRequestSchema = z.object({
 });
 
 export const CommentDtoResponseSchema = z.object({
-  ansSn: z.number().int().optional(),
-  pstSn: z.number().int().optional(),
-  bbsId: z.string().min(0).max(20).optional(),
+  ansSn: z.number().int().optional().nullable(),
+  pstSn: z.number().int().optional().nullable(),
+  bbsId: z.string().min(0).max(20).optional().nullable(),
   wrterId: z.string().optional().nullable(),
   wrterNm: z.string().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
-  ansCn: z.string().optional(),
+  ansCn: z.string().optional().nullable(),
   crtDt: z.string().optional().nullable(),
 });
 
@@ -4600,15 +4600,15 @@ export const BoardSaveRequestResponseSchema = z.object({
   bbsId: z.string().min(0).max(20),
   pstTtl: z.string().min(1).max(100),
   pstCn: z.string().min(0).max(4000),
-  pstBgngYmd: z.string().min(0).max(10).optional(),
-  pstEndYmd: z.string().min(0).max(10).optional(),
-  atchFileSn: z.number().int().optional(),
-  evntDt: z.string().min(0).max(20).optional(),
-  qnaSttsCd: z.string().min(0).max(12).optional(),
-  qnaCatCd: z.string().min(0).max(12).optional(),
-  scrtYn: z.string().regex(new RegExp("^[YN]$")).optional(),
-  useYn: z.string().regex(new RegExp("^[YN]$")).optional(),
-  pswd: z.string().min(0).max(200).optional(),
+  pstBgngYmd: z.string().min(0).max(10).optional().nullable(),
+  pstEndYmd: z.string().min(0).max(10).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  evntDt: z.string().min(0).max(20).optional().nullable(),
+  qnaSttsCd: z.string().min(0).max(12).optional().nullable(),
+  qnaCatCd: z.string().min(0).max(12).optional().nullable(),
+  scrtYn: z.string().regex(new RegExp("^[YN]$")).optional().nullable(),
+  useYn: z.string().regex(new RegExp("^[YN]$")).optional().nullable(),
+  pswd: z.string().min(0).max(200).optional().nullable(),
 });
 
 export const SatisfactionDtoRequestSchema = z.object({
@@ -4625,15 +4625,15 @@ export const SatisfactionDtoRequestSchema = z.object({
 });
 
 export const SatisfactionDtoResponseSchema = z.object({
-  dgstfnSn: z.number().int().optional(),
-  bbsId: z.string().min(0).max(20).optional(),
-  pstSn: z.number().int().optional(),
-  dgstfnCn: z.string().optional(),
-  dgstfnScr: z.number().int().optional(),
-  userId: z.string().optional(),
-  userNm: z.string().optional(),
+  dgstfnSn: z.number().int().optional().nullable(),
+  bbsId: z.string().min(0).max(20).optional().nullable(),
+  pstSn: z.number().int().optional().nullable(),
+  dgstfnCn: z.string().optional().nullable(),
+  dgstfnScr: z.number().int().optional().nullable(),
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
   useYn: z.string().min(0).max(1),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const ApprovalConfirmRequestRequestSchema = z.object({
@@ -4643,7 +4643,7 @@ export const ApprovalConfirmRequestRequestSchema = z.object({
 
 export const ApprovalConfirmRequestResponseSchema = z.object({
   status: z.enum(["C","R"]),
-  reason: z.string().min(0).max(4000).optional(),
+  reason: z.string().min(0).max(4000).optional().nullable(),
 });
 
 export const MyPageContentDtoRequestSchema = z.object({
@@ -4656,12 +4656,12 @@ export const MyPageContentDtoRequestSchema = z.object({
 });
 
 export const MyPageContentDtoResponseSchema = z.object({
-  contsSn: z.number().int().optional(),
-  cntntsNm: z.string().min(0).max(100).optional(),
-  cntcUrl: z.string().optional(),
-  cntntsUseYn: z.string().optional(),
-  cntntsLinkUrl: z.string().optional(),
-  cntntsDc: z.string().optional(),
+  contsSn: z.number().int().optional().nullable(),
+  cntntsNm: z.string().min(0).max(100).optional().nullable(),
+  cntcUrl: z.string().optional().nullable(),
+  cntntsUseYn: z.string().optional().nullable(),
+  cntntsLinkUrl: z.string().optional().nullable(),
+  cntntsDc: z.string().optional().nullable(),
 });
 
 export const UserProfileUpdateRequestRequestSchema = z.object({
@@ -4685,21 +4685,21 @@ export const UserProfileUpdateRequestRequestSchema = z.object({
 
 export const UserProfileUpdateRequestResponseSchema = z.object({
   userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
-  emplNo: z.string().min(0).max(20).optional(),
-  areaNo: z.string().min(0).max(4).optional(),
-  middleTelno: z.string().min(0).max(4).optional(),
-  endTelno: z.string().min(0).max(4).optional(),
-  faxNo: z.string().min(0).max(11).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
-  zip: z.string().min(0).max(5).optional(),
-  officeTelno: z.string().min(0).max(20).optional(),
-  mblTelno: z.string().min(0).max(11).optional(),
-  emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
-  ofcpsNm: z.string().min(0).max(300).optional(),
-  groupId: z.string().min(0).max(20).optional(),
-  ognzId: z.string().min(0).max(20).optional(),
-  pstinstCd: z.string().min(0).max(12).optional(),
+  emplNo: z.string().min(0).max(20).optional().nullable(),
+  areaNo: z.string().min(0).max(4).optional().nullable(),
+  middleTelno: z.string().min(0).max(4).optional().nullable(),
+  endTelno: z.string().min(0).max(4).optional().nullable(),
+  faxNo: z.string().min(0).max(11).optional().nullable(),
+  homeAddr: z.string().min(0).max(300).optional().nullable(),
+  daddr: z.string().min(0).max(300).optional().nullable(),
+  zip: z.string().min(0).max(5).optional().nullable(),
+  officeTelno: z.string().min(0).max(20).optional().nullable(),
+  mblTelno: z.string().min(0).max(11).optional().nullable(),
+  emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional().nullable(),
+  ofcpsNm: z.string().min(0).max(300).optional().nullable(),
+  groupId: z.string().min(0).max(20).optional().nullable(),
+  ognzId: z.string().min(0).max(20).optional().nullable(),
+  pstinstCd: z.string().min(0).max(12).optional().nullable(),
 });
 
 export const UserAbsenceDtoRequestSchema = z.object({
@@ -4709,7 +4709,7 @@ export const UserAbsenceDtoRequestSchema = z.object({
 
 export const UserAbsenceDtoResponseSchema = z.object({
   userId: z.string().min(0).max(20),
-  userAbsnYn: z.string().optional(),
+  userAbsnYn: z.string().optional().nullable(),
 });
 
 export const SurveyRespondentDtoRequestSchema = z.object({
@@ -4730,20 +4730,20 @@ export const SurveyRespondentDtoRequestSchema = z.object({
 });
 
 export const SurveyRespondentDtoResponseSchema = z.object({
-  srvyRspdntId: z.string().min(0).max(20).optional(),
-  srvySn: z.number().int().optional(),
-  srvyTmpltSn: z.number().int().optional(),
-  gndrCd: z.string().min(0).max(12).optional(),
-  crTypeCd: z.string().min(0).max(12).optional(),
-  rspdntNm: z.string().min(0).max(100).optional(),
-  brdt: z.string().min(0).max(8).optional(),
-  rgnTelno: z.string().min(0).max(4).optional(),
-  midTelno: z.string().min(0).max(4).optional(),
-  endTelno: z.string().min(0).max(4).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  srvyRspdntId: z.string().min(0).max(20).optional().nullable(),
+  srvySn: z.number().int().optional().nullable(),
+  srvyTmpltSn: z.number().int().optional().nullable(),
+  gndrCd: z.string().min(0).max(12).optional().nullable(),
+  crTypeCd: z.string().min(0).max(12).optional().nullable(),
+  rspdntNm: z.string().min(0).max(100).optional().nullable(),
+  brdt: z.string().min(0).max(8).optional().nullable(),
+  rgnTelno: z.string().min(0).max(4).optional().nullable(),
+  midTelno: z.string().min(0).max(4).optional().nullable(),
+  endTelno: z.string().min(0).max(4).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const SurveyArticleDtoRequestSchema = z.object({
@@ -4759,15 +4759,15 @@ export const SurveyArticleDtoRequestSchema = z.object({
 });
 
 export const SurveyArticleDtoResponseSchema = z.object({
-  srvyArtclSn: z.number().int().optional(),
-  srvyQstnSn: z.number().int().optional(),
-  srvySn: z.number().int().optional(),
-  artclSn: z.number().int().optional(),
-  artclCn: z.string().min(0).max(4000).optional(),
-  etcAnsYn: z.string().min(0).max(1).optional(),
-  srvyTmpltSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  srvyArtclSn: z.number().int().optional().nullable(),
+  srvyQstnSn: z.number().int().optional().nullable(),
+  srvySn: z.number().int().optional().nullable(),
+  artclSn: z.number().int().optional().nullable(),
+  artclCn: z.string().min(0).max(4000).optional().nullable(),
+  etcAnsYn: z.string().min(0).max(1).optional().nullable(),
+  srvyTmpltSn: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const SurveyQuestionDtoRequestSchema = z.object({
@@ -4784,16 +4784,16 @@ export const SurveyQuestionDtoRequestSchema = z.object({
 });
 
 export const SurveyQuestionDtoResponseSchema = z.object({
-  srvyQstnSn: z.number().int().optional(),
-  srvySn: z.number().int().optional(),
-  qstnSn: z.number().int().optional(),
-  qstnTypeCd: z.string().min(0).max(12).optional(),
-  qstnCn: z.string().min(0).max(4000).optional(),
-  maxChcCnt: z.number().int().optional(),
-  srvyTmpltSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  items: z.array(z.lazy(() => SurveyArticleDtoResponseSchema)).optional(),
+  srvyQstnSn: z.number().int().optional().nullable(),
+  srvySn: z.number().int().optional().nullable(),
+  qstnSn: z.number().int().optional().nullable(),
+  qstnTypeCd: z.string().min(0).max(12).optional().nullable(),
+  qstnCn: z.string().min(0).max(4000).optional().nullable(),
+  maxChcCnt: z.number().int().optional().nullable(),
+  srvyTmpltSn: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  items: z.array(z.lazy(() => SurveyArticleDtoResponseSchema)).optional().nullable(),
 });
 
 export const SurveyInfoDtoRequestSchema = z.object({
@@ -4810,16 +4810,16 @@ export const SurveyInfoDtoRequestSchema = z.object({
 });
 
 export const SurveyInfoDtoResponseSchema = z.object({
-  srvySn: z.number().int().optional(),
+  srvySn: z.number().int().optional().nullable(),
   srvyTtl: z.string().min(0).max(100),
-  srvyPrps: z.string().min(0).max(1000).optional(),
-  srvyWrtGdCn: z.string().min(0).max(4000).optional(),
-  srvyBgngYmd: z.string().min(0).max(8).optional(),
-  srvyEndYmd: z.string().min(0).max(8).optional(),
-  srvyTrgt: z.string().min(0).max(1000).optional(),
+  srvyPrps: z.string().min(0).max(1000).optional().nullable(),
+  srvyWrtGdCn: z.string().min(0).max(4000).optional().nullable(),
+  srvyBgngYmd: z.string().min(0).max(8).optional().nullable(),
+  srvyEndYmd: z.string().min(0).max(8).optional().nullable(),
+  srvyTrgt: z.string().min(0).max(1000).optional().nullable(),
   srvyTmpltSn: z.number().int(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const SurveyTemplateDtoRequestSchema = z.object({
@@ -4832,12 +4832,12 @@ export const SurveyTemplateDtoRequestSchema = z.object({
 });
 
 export const SurveyTemplateDtoResponseSchema = z.object({
-  srvyTmpltSn: z.number().int().optional(),
-  srvyTmpltTypeCd: z.string().min(0).max(12).optional(),
-  srvyTmpltPathNm: z.string().min(0).max(100).optional(),
-  srvyTmpltExpln: z.string().min(0).max(4000).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  srvyTmpltSn: z.number().int().optional().nullable(),
+  srvyTmpltTypeCd: z.string().min(0).max(12).optional().nullable(),
+  srvyTmpltPathNm: z.string().min(0).max(100).optional().nullable(),
+  srvyTmpltExpln: z.string().min(0).max(4000).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const RoleManageDtoRequestSchema = z.object({
@@ -4851,13 +4851,13 @@ export const RoleManageDtoRequestSchema = z.object({
 });
 
 export const RoleManageDtoResponseSchema = z.object({
-  roleId: z.string().min(0).max(20).optional(),
+  roleId: z.string().min(0).max(20).optional().nullable(),
   roleNm: z.string().min(0).max(100),
-  rolePatrn: z.string().min(0).max(300).optional(),
-  roleExpln: z.string().min(0).max(4000).optional(),
-  roleTypeCd: z.string().min(0).max(12).optional(),
-  roleSort: z.string().optional(),
-  crtDt: z.string().optional(),
+  rolePatrn: z.string().min(0).max(300).optional().nullable(),
+  roleExpln: z.string().min(0).max(4000).optional().nullable(),
+  roleTypeCd: z.string().min(0).max(12).optional().nullable(),
+  roleSort: z.string().optional().nullable(),
+  crtDt: z.string().optional().nullable(),
 });
 
 export const ProgramDtoRequestSchema = z.object({
@@ -4869,11 +4869,11 @@ export const ProgramDtoRequestSchema = z.object({
 });
 
 export const ProgramDtoResponseSchema = z.object({
-  prgrmFileNm: z.string().min(0).max(100).optional(),
-  prgrmStrgPath: z.string().min(0).max(1000).optional(),
-  prgrmKornNm: z.string().min(0).max(100).optional(),
-  url: z.string().min(0).max(1000).optional(),
-  prgrmExpln: z.string().min(0).max(4000).optional(),
+  prgrmFileNm: z.string().min(0).max(100).optional().nullable(),
+  prgrmStrgPath: z.string().min(0).max(1000).optional().nullable(),
+  prgrmKornNm: z.string().min(0).max(100).optional().nullable(),
+  url: z.string().min(0).max(1000).optional().nullable(),
+  prgrmExpln: z.string().min(0).max(4000).optional().nullable(),
 });
 
 export const PopupDtoRequestSchema = z.object({
@@ -4893,19 +4893,19 @@ export const PopupDtoRequestSchema = z.object({
 });
 
 export const PopupDtoResponseSchema = z.object({
-  popupSn: z.number().int().optional(),
+  popupSn: z.number().int().optional().nullable(),
   popupTtlNm: z.string().min(0).max(100),
-  fileUrl: z.string().min(0).max(1000).optional(),
-  popupWdthPstn: z.string().min(0).max(12).optional(),
-  popupVrtcPstn: z.string().min(0).max(12).optional(),
-  popupVrtcSz: z.string().min(0).max(12).optional(),
-  popupWdthSz: z.string().min(0).max(12).optional(),
-  ntceBgnde: z.string().optional(),
-  ntceEndde: z.string().optional(),
-  stopvewSetupYn: z.enum(["Y","N"]).optional(),
-  ntceYn: z.enum(["Y","N"]).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  fileUrl: z.string().min(0).max(1000).optional().nullable(),
+  popupWdthPstn: z.string().min(0).max(12).optional().nullable(),
+  popupVrtcPstn: z.string().min(0).max(12).optional().nullable(),
+  popupVrtcSz: z.string().min(0).max(12).optional().nullable(),
+  popupWdthSz: z.string().min(0).max(12).optional().nullable(),
+  ntceBgnde: z.string().optional().nullable(),
+  ntceEndde: z.string().optional().nullable(),
+  stopvewSetupYn: z.enum(["Y","N"]).optional().nullable(),
+  ntceYn: z.enum(["Y","N"]).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const PolicyUpdateRequestRequestSchema = z.object({
@@ -4930,14 +4930,14 @@ export const NetworkDtoRequestSchema = z.object({
 });
 
 export const NetworkDtoResponseSchema = z.object({
-  ntwrkId: z.string().optional(),
-  manageIem: z.string().optional(),
-  ntwrkIp: z.string().optional(),
-  gtwy: z.string().optional(),
-  subnet: z.string().optional(),
-  domnServer: z.string().optional(),
-  userNm: z.string().optional(),
-  useYn: z.string().optional(),
+  ntwrkId: z.string().optional().nullable(),
+  manageIem: z.string().optional().nullable(),
+  ntwrkIp: z.string().optional().nullable(),
+  gtwy: z.string().optional().nullable(),
+  subnet: z.string().optional().nullable(),
+  domnServer: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  useYn: z.string().optional().nullable(),
 });
 
 export const MenuDtoRequestSchema = z.object({
@@ -4959,21 +4959,21 @@ export const MenuDtoRequestSchema = z.object({
 });
 
 export const MenuDtoResponseSchema = z.object({
-  id: z.number().int().optional(),
-  menuNo: z.number().int().optional(),
+  id: z.number().int().optional().nullable(),
+  menuNo: z.number().int().optional().nullable(),
   menuNm: z.string().min(0).max(100),
-  prgrmFileNm: z.string().min(0).max(100).optional(),
-  upMenuSn: z.number().int().optional(),
-  upperMenuId: z.number().int().optional(),
+  prgrmFileNm: z.string().min(0).max(100).optional().nullable(),
+  upMenuSn: z.number().int().optional().nullable(),
+  upperMenuId: z.number().int().optional().nullable(),
   menuOrdr: z.number().int(),
-  chkURL: z.string().optional(),
-  menuExpln: z.string().min(0).max(4000).optional(),
-  relImgPath: z.string().min(0).max(100).optional(),
-  relImgNm: z.string().min(0).max(100).optional(),
-  modernRoute: z.string().min(0).max(500).optional(),
-  crtrId: z.string().min(0).max(20).optional(),
-  useYn: z.string().min(0).max(1).optional(),
-  children: z.array(z.lazy((): z.ZodType => MenuDtoResponseSchema)).optional(),
+  chkURL: z.string().optional().nullable(),
+  menuExpln: z.string().min(0).max(4000).optional().nullable(),
+  relImgPath: z.string().min(0).max(100).optional().nullable(),
+  relImgNm: z.string().min(0).max(100).optional().nullable(),
+  modernRoute: z.string().min(0).max(500).optional().nullable(),
+  crtrId: z.string().min(0).max(20).optional().nullable(),
+  useYn: z.string().min(0).max(1).optional().nullable(),
+  children: z.array(z.lazy((): z.ZodType => MenuDtoResponseSchema)).optional().nullable(),
 });
 
 export const LoginPolicyDtoRequestSchema = z.object({
@@ -4992,16 +4992,16 @@ export const LoginPolicyDtoRequestSchema = z.object({
 
 export const LoginPolicyDtoResponseSchema = z.object({
   userId: z.string().min(0).max(20),
-  userNm: z.string().min(0).max(100).optional(),
-  ipAddr: z.string().min(0).max(30).optional(),
-  dpcnPrmYn: z.string().min(0).max(1).optional(),
-  lmtYn: z.string().min(0).max(1).optional(),
-  bgngTm: z.string().min(0).max(6).optional(),
-  endTm: z.string().min(0).max(6).optional(),
-  otpUseYn: z.string().min(0).max(1).optional(),
-  regYn: z.string().optional(),
-  frstRgtrId: z.string().optional(),
-  lastMdfrId: z.string().optional(),
+  userNm: z.string().min(0).max(100).optional().nullable(),
+  ipAddr: z.string().min(0).max(30).optional().nullable(),
+  dpcnPrmYn: z.string().min(0).max(1).optional().nullable(),
+  lmtYn: z.string().min(0).max(1).optional().nullable(),
+  bgngTm: z.string().min(0).max(6).optional().nullable(),
+  endTm: z.string().min(0).max(6).optional().nullable(),
+  otpUseYn: z.string().min(0).max(1).optional().nullable(),
+  regYn: z.string().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
 });
 
 export const InternetSvcGuidanceDtoRequestSchema = z.object({
@@ -5014,12 +5014,12 @@ export const InternetSvcGuidanceDtoRequestSchema = z.object({
 });
 
 export const InternetSvcGuidanceDtoResponseSchema = z.object({
-  itntSrvcSn: z.number().int().optional(),
+  itntSrvcSn: z.number().int().optional().nullable(),
   intnetSvcNm: z.string().min(0).max(255),
   intnetSvcDc: z.string().min(0).max(1000),
-  reflctAt: z.string().min(0).max(1).optional(),
-  userId: z.string().optional(),
-  regDate: z.iso.datetime({ offset: true, local: true }).optional(),
+  reflctAt: z.string().min(0).max(1).optional().nullable(),
+  userId: z.string().optional().nullable(),
+  regDate: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const GroupManageDtoRequestSchema = z.object({
@@ -5030,10 +5030,10 @@ export const GroupManageDtoRequestSchema = z.object({
 });
 
 export const GroupManageDtoResponseSchema = z.object({
-  groupId: z.string().min(0).max(20).optional(),
-  groupNm: z.string().min(0).max(100).optional(),
-  groupDc: z.string().min(0).max(4000).optional(),
-  groupCrtDt: z.string().optional(),
+  groupId: z.string().min(0).max(20).optional().nullable(),
+  groupNm: z.string().min(0).max(100).optional().nullable(),
+  groupDc: z.string().min(0).max(4000).optional().nullable(),
+  groupCrtDt: z.string().optional().nullable(),
 });
 
 export const DeptManageDtoRequestSchema = z.object({
@@ -5047,13 +5047,13 @@ export const DeptManageDtoRequestSchema = z.object({
 });
 
 export const DeptManageDtoResponseSchema = z.object({
-  ognzId: z.string().min(0).max(20).optional(),
+  ognzId: z.string().min(0).max(20).optional().nullable(),
   ognzNm: z.string().min(0).max(100),
-  ognzExpln: z.string().min(0).max(4000).optional(),
-  upOgnzId: z.string().min(0).max(20).optional(),
-  sortOrdr: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  ognzExpln: z.string().min(0).max(4000).optional().nullable(),
+  upOgnzId: z.string().min(0).max(20).optional().nullable(),
+  sortOrdr: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const DeptHierarchyItemRequestRequestSchema = z.object({
@@ -5064,8 +5064,8 @@ export const DeptHierarchyItemRequestRequestSchema = z.object({
 
 export const DeptHierarchyItemRequestResponseSchema = z.object({
   ognzId: z.string().min(0).max(20),
-  upOgnzId: z.string().min(0).max(20).optional(),
-  sortOrdr: z.number().int().optional(),
+  upOgnzId: z.string().min(0).max(20).optional().nullable(),
+  sortOrdr: z.number().int().optional().nullable(),
 });
 
 export const CmmnDetailCodeDtoRequestSchema = z.object({
@@ -5080,14 +5080,14 @@ export const CmmnDetailCodeDtoRequestSchema = z.object({
 });
 
 export const CmmnDetailCodeDtoResponseSchema = z.object({
-  cdId: z.string().min(0).max(20).optional(),
-  cdIdNm: z.string().min(0).max(100).optional(),
-  dtlCd: z.string().min(0).max(12).optional(),
-  dtlCdNm: z.string().min(0).max(100).optional(),
-  dtlCdExpln: z.string().min(0).max(4000).optional(),
+  cdId: z.string().min(0).max(20).optional().nullable(),
+  cdIdNm: z.string().min(0).max(100).optional().nullable(),
+  dtlCd: z.string().min(0).max(12).optional().nullable(),
+  dtlCdNm: z.string().min(0).max(100).optional().nullable(),
+  dtlCdExpln: z.string().min(0).max(4000).optional().nullable(),
   useYn: z.enum(["Y","N"]),
-  frstRgtrId: z.string().optional(),
-  lastMdfrId: z.string().optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
 });
 
 export const CmmnCodeDtoRequestSchema = z.object({
@@ -5102,14 +5102,14 @@ export const CmmnCodeDtoRequestSchema = z.object({
 });
 
 export const CmmnCodeDtoResponseSchema = z.object({
-  cdId: z.string().min(0).max(20).optional(),
-  cdIdNm: z.string().min(0).max(100).optional(),
-  cdIdExpln: z.string().min(0).max(4000).optional(),
-  clsfCd: z.string().min(0).max(12).optional(),
-  clsfCdNm: z.string().min(0).max(100).optional(),
+  cdId: z.string().min(0).max(20).optional().nullable(),
+  cdIdNm: z.string().min(0).max(100).optional().nullable(),
+  cdIdExpln: z.string().min(0).max(4000).optional().nullable(),
+  clsfCd: z.string().min(0).max(12).optional().nullable(),
+  clsfCdNm: z.string().min(0).max(100).optional().nullable(),
   useYn: z.enum(["Y","N"]),
-  frstRgtrId: z.string().optional(),
-  lastMdfrId: z.string().optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
 });
 
 export const CmmnCodeHierarchyDtoRequestSchema = z.object({
@@ -5132,12 +5132,12 @@ export const CmmnClCodeDtoRequestSchema = z.object({
 });
 
 export const CmmnClCodeDtoResponseSchema = z.object({
-  clsfCd: z.string().min(0).max(12).optional(),
-  clsfCdNm: z.string().min(0).max(100).optional(),
-  clsfCdExpln: z.string().min(0).max(4000).optional(),
+  clsfCd: z.string().min(0).max(12).optional().nullable(),
+  clsfCdNm: z.string().min(0).max(100).optional().nullable(),
+  clsfCdExpln: z.string().min(0).max(4000).optional().nullable(),
   useYn: z.enum(["Y","N"]),
-  frstRgtrId: z.string().optional(),
-  lastMdfrId: z.string().optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
 });
 
 export const AdministCodeDtoRequestSchema = z.object({
@@ -5155,17 +5155,17 @@ export const AdministCodeDtoRequestSchema = z.object({
 });
 
 export const AdministCodeDtoResponseSchema = z.object({
-  admdstCd: z.string().min(0).max(12).optional(),
-  admdstSeCd: z.string().min(0).max(12).optional(),
-  admdstZoneNm: z.string().min(0).max(100).optional(),
-  upAdmdstCd: z.string().min(0).max(12).optional(),
+  admdstCd: z.string().min(0).max(12).optional().nullable(),
+  admdstSeCd: z.string().min(0).max(12).optional().nullable(),
+  admdstZoneNm: z.string().min(0).max(100).optional().nullable(),
+  upAdmdstCd: z.string().min(0).max(12).optional().nullable(),
   useYn: z.string().min(0).max(1),
-  crtYmd: z.string().min(0).max(8).optional(),
-  ablYmd: z.string().min(0).max(8).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  crtYmd: z.string().min(0).max(8).optional().nullable(),
+  ablYmd: z.string().min(0).max(8).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const BoardMasterDtoRequestSchema = z.object({
@@ -5196,30 +5196,30 @@ export const BoardMasterDtoRequestSchema = z.object({
 });
 
 export const BoardMasterDtoResponseSchema = z.object({
-  bbsId: z.string().min(0).max(20).optional(),
+  bbsId: z.string().min(0).max(20).optional().nullable(),
   bbsTtl: z.string().min(0).max(100),
-  bbsExpln: z.string().min(0).max(4000).optional(),
+  bbsExpln: z.string().min(0).max(4000).optional().nullable(),
   bbsTypeCd: z.string().min(0).max(12),
-  bbsTypeCdNm: z.string().optional(),
+  bbsTypeCdNm: z.string().optional().nullable(),
   bbsAtrbCd: z.string().min(0).max(12),
-  bbsAtrbCdNm: z.string().optional(),
-  ansPsbltyYn: z.enum(["Y","N"]).optional(),
-  fileAtchPsbltyYn: z.enum(["Y","N"]).optional(),
-  atchPsbltyFileQty: z.number().int().optional(),
+  bbsAtrbCdNm: z.string().optional().nullable(),
+  ansPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  fileAtchPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  atchPsbltyFileQty: z.number().int().optional().nullable(),
   atchPsbltyFileSz: z.number().int(),
-  tmpltId: z.string().min(0).max(20).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  tmpltId: z.string().min(0).max(20).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   useYn: z.enum(["Y","N"]),
-  cmntySn: z.number().int().optional(),
-  blogSn: z.number().int().optional(),
-  blogYn: z.enum(["Y","N"]).optional(),
-  ansYn: z.enum(["Y","N"]).optional(),
-  stsfdgYn: z.enum(["Y","N"]).optional(),
-  authFlag: z.string().optional(),
-  tmplatCours: z.string().optional(),
+  cmntySn: z.number().int().optional().nullable(),
+  blogSn: z.number().int().optional().nullable(),
+  blogYn: z.enum(["Y","N"]).optional().nullable(),
+  ansYn: z.enum(["Y","N"]).optional().nullable(),
+  stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+  authFlag: z.string().optional().nullable(),
+  tmplatCours: z.string().optional().nullable(),
 });
 
 export const BannerDtoRequestSchema = z.object({
@@ -5236,16 +5236,16 @@ export const BannerDtoRequestSchema = z.object({
 });
 
 export const BannerDtoResponseSchema = z.object({
-  bnrSn: z.number().int().optional(),
+  bnrSn: z.number().int().optional().nullable(),
   bnrNm: z.string().min(0).max(100),
-  linkUrl: z.string().min(0).max(512).optional(),
-  bnrImgNm: z.string().min(0).max(100).optional(),
-  bnrExpln: z.string().min(0).max(4000).optional(),
-  sortOrdr: z.number().int().optional(),
-  rfltYn: z.enum(["Y","N"]).optional(),
-  atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  linkUrl: z.string().min(0).max(512).optional().nullable(),
+  bnrImgNm: z.string().min(0).max(100).optional().nullable(),
+  bnrExpln: z.string().min(0).max(4000).optional().nullable(),
+  sortOrdr: z.number().int().optional().nullable(),
+  rfltYn: z.enum(["Y","N"]).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const AuthorManageDtoRequestSchema = z.object({
@@ -5258,8 +5258,8 @@ export const AuthorManageDtoRequestSchema = z.object({
 export const AuthorManageDtoResponseSchema = z.object({
   authrtCd: z.string().min(0).max(20),
   authrtNm: z.string().min(0).max(60),
-  authrtExpln: z.string().min(0).max(200).optional(),
-  authrtCrtYmd: z.string().optional(),
+  authrtExpln: z.string().min(0).max(200).optional().nullable(),
+  authrtCrtYmd: z.string().optional().nullable(),
 });
 
 export const EventInfoDtoRequestSchema = z.object({
@@ -5282,22 +5282,22 @@ export const EventInfoDtoRequestSchema = z.object({
 });
 
 export const EventInfoDtoResponseSchema = z.object({
-  evntSn: z.number().int().optional(),
-  evntNm: z.string().min(0).max(200).optional(),
-  bizYr: z.string().min(0).max(4).optional(),
-  evntCn: z.string().min(0).max(4000).optional(),
-  evntBgngYmd: z.string().min(0).max(8).optional(),
-  evntEndYmd: z.string().min(0).max(8).optional(),
-  evntUseCnt: z.number().int().optional(),
-  picNm: z.string().min(0).max(300).optional(),
-  prepMttr: z.string().min(0).max(2500).optional(),
-  evntTypeCd: z.string().min(0).max(12).optional(),
-  evntAprvYn: z.string().min(0).max(1).optional(),
-  evntAprvYmd: z.string().min(0).max(8).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  evntSn: z.number().int().optional().nullable(),
+  evntNm: z.string().min(0).max(200).optional().nullable(),
+  bizYr: z.string().min(0).max(4).optional().nullable(),
+  evntCn: z.string().min(0).max(4000).optional().nullable(),
+  evntBgngYmd: z.string().min(0).max(8).optional().nullable(),
+  evntEndYmd: z.string().min(0).max(8).optional().nullable(),
+  evntUseCnt: z.number().int().optional().nullable(),
+  picNm: z.string().min(0).max(300).optional().nullable(),
+  prepMttr: z.string().min(0).max(2500).optional().nullable(),
+  evntTypeCd: z.string().min(0).max(12).optional().nullable(),
+  evntAprvYn: z.string().min(0).max(1).optional().nullable(),
+  evntAprvYmd: z.string().min(0).max(8).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const CommunityDtoRequestSchema = z.object({
@@ -5315,17 +5315,17 @@ export const CommunityDtoRequestSchema = z.object({
 });
 
 export const CommunityDtoResponseSchema = z.object({
-  cmntySn: z.number().int().optional(),
-  cmntyNm: z.string().min(0).max(100).optional(),
-  cmntyIntroCn: z.string().min(0).max(4000).optional(),
-  regSeCd: z.string().min(0).max(12).optional(),
-  regSeCdNm: z.string().optional(),
-  tmpltId: z.string().min(0).max(20).optional(),
-  tmpltNm: z.string().optional(),
+  cmntySn: z.number().int().optional().nullable(),
+  cmntyNm: z.string().min(0).max(100).optional().nullable(),
+  cmntyIntroCn: z.string().min(0).max(4000).optional().nullable(),
+  regSeCd: z.string().min(0).max(12).optional().nullable(),
+  regSeCdNm: z.string().optional().nullable(),
+  tmpltId: z.string().min(0).max(20).optional().nullable(),
+  tmpltNm: z.string().optional().nullable(),
   useYn: z.enum(["Y","N"]),
-  frstRgtrId: z.string().optional(),
-  frstRegisterNm: z.string().optional(),
-  crtDt: z.string().optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  frstRegisterNm: z.string().optional().nullable(),
+  crtDt: z.string().optional().nullable(),
 });
 
 export const AddressBookDtoRequestSchema = z.object({
@@ -5343,17 +5343,17 @@ export const AddressBookDtoRequestSchema = z.object({
 });
 
 export const AddressBookDtoResponseSchema = z.object({
-  adbkSn: z.number().int().optional(),
+  adbkSn: z.number().int().optional().nullable(),
   adbkNm: z.string().min(0).max(100),
   rlsScopeCd: z.string(),
-  trgetOgnzId: z.string().optional(),
-  useYn: z.string().optional(),
-  wrterId: z.string().optional(),
-  adbkMan: z.array(z.lazy(() => AddressBookUserDtoResponseSchema)).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  trgetOgnzId: z.string().optional().nullable(),
+  useYn: z.string().optional().nullable(),
+  wrterId: z.string().optional().nullable(),
+  adbkMan: z.array(z.lazy(() => AddressBookUserDtoResponseSchema)).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const AddressBookUserDtoRequestSchema = z.object({
@@ -5369,15 +5369,15 @@ export const AddressBookUserDtoRequestSchema = z.object({
 });
 
 export const AddressBookUserDtoResponseSchema = z.object({
-  adbkMbrSn: z.number().int().optional(),
-  adbkSn: z.number().int().optional(),
+  adbkMbrSn: z.number().int().optional().nullable(),
+  adbkSn: z.number().int().optional().nullable(),
   userId: z.string().min(0).max(20),
-  nm: z.string().min(0).max(100).optional(),
-  emlAddr: z.string().min(0).max(50).optional(),
-  homeTelno: z.string().min(0).max(11).optional(),
-  mblTelno: z.string().min(0).max(11).optional(),
-  ofcTelno: z.string().min(0).max(11).optional(),
-  faxNo: z.string().min(0).max(11).optional(),
+  nm: z.string().min(0).max(100).optional().nullable(),
+  emlAddr: z.string().min(0).max(50).optional().nullable(),
+  homeTelno: z.string().min(0).max(11).optional().nullable(),
+  mblTelno: z.string().min(0).max(11).optional().nullable(),
+  ofcTelno: z.string().min(0).max(11).optional().nullable(),
+  faxNo: z.string().min(0).max(11).optional().nullable(),
 });
 
 export const UserSignupRequestRequestSchema = z.object({
@@ -5392,8 +5392,8 @@ export const UserSignupRequestResponseSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9]+$")),
   pswd: z.string().min(8).max(20).regex(new RegExp("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")),
   userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
-  pswdHint: z.string().optional(),
-  pswdCrans: z.string().optional(),
+  pswdHint: z.string().optional().nullable(),
+  pswdCrans: z.string().optional().nullable(),
 });
 
 export const ApiResponseUserResponseRequestSchema = z.object({
@@ -5407,13 +5407,13 @@ export const ApiResponseUserResponseRequestSchema = z.object({
 });
 
 export const ApiResponseUserResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => UserResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => UserResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const UserResponseRequestSchema = z.object({
@@ -5423,9 +5423,9 @@ export const UserResponseRequestSchema = z.object({
 });
 
 export const UserResponseResponseSchema = z.object({
-  userId: z.string().optional(),
-  userNm: z.string().optional(),
-  role: z.string().optional(),
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  role: z.string().optional().nullable(),
 });
 
 export const AnswerRequestSchema = z.object({
@@ -5438,8 +5438,8 @@ export const AnswerRequestSchema = z.object({
 export const AnswerResponseSchema = z.object({
   srvyQstnSn: z.number().int(),
   srvyArtclSn: z.number().int(),
-  rspdntAnsCn: z.string().min(0).max(4000).optional(),
-  etcAnsCn: z.string().min(0).max(4000).optional(),
+  rspdntAnsCn: z.string().min(0).max(4000).optional().nullable(),
+  etcAnsCn: z.string().min(0).max(4000).optional().nullable(),
 });
 
 export const SurveyResponseSubmitDtoRequestSchema = z.object({
@@ -5448,7 +5448,7 @@ export const SurveyResponseSubmitDtoRequestSchema = z.object({
 });
 
 export const SurveyResponseSubmitDtoResponseSchema = z.object({
-  rspnsNm: z.string().min(0).max(100).optional(),
+  rspnsNm: z.string().min(0).max(100).optional().nullable(),
   answers: z.array(z.lazy(() => AnswerResponseSchema)),
 });
 
@@ -5463,13 +5463,13 @@ export const ApiResponseIntegerRequestSchema = z.object({
 });
 
 export const ApiResponseIntegerResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.number().int().optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.number().int().optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseLongRequestSchema = z.object({
@@ -5483,13 +5483,13 @@ export const ApiResponseLongRequestSchema = z.object({
 });
 
 export const ApiResponseLongResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.number().int().optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.number().int().optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const NotificationDtoRequestSchema = z.object({
@@ -5505,15 +5505,15 @@ export const NotificationDtoRequestSchema = z.object({
 });
 
 export const NotificationDtoResponseSchema = z.object({
-  notiSn: z.number().int().optional(),
-  notiTtlNm: z.string().min(0).max(100).optional(),
-  notiCn: z.string().min(0).max(4000).optional(),
-  notiDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  notiIvlVal: z.string().min(0).max(100).optional(),
-  rcvrId: z.string().min(0).max(20).optional(),
-  readYn: z.string().min(0).max(1).optional(),
-  linkUrl: z.string().min(0).max(1000).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  notiSn: z.number().int().optional().nullable(),
+  notiTtlNm: z.string().min(0).max(100).optional().nullable(),
+  notiCn: z.string().min(0).max(4000).optional().nullable(),
+  notiDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  notiIvlVal: z.string().min(0).max(100).optional().nullable(),
+  rcvrId: z.string().min(0).max(20).optional().nullable(),
+  readYn: z.string().min(0).max(1).optional().nullable(),
+  linkUrl: z.string().min(0).max(1000).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const NoteDtoRequestSchema = z.object({
@@ -5535,21 +5535,21 @@ export const NoteDtoRequestSchema = z.object({
 });
 
 export const NoteDtoResponseSchema = z.object({
-  noteSn: z.number().int().optional(),
-  noteSj: z.string().optional(),
-  noteCn: z.string().min(0).max(4000).optional(),
-  atchFileSn: z.number().int().optional(),
-  noteSndngSn: z.number().int().optional(),
-  dsptchUserId: z.string().optional(),
-  trnsmiterNm: z.string().optional(),
-  noteRcptnSn: z.number().int().optional(),
-  rcverId: z.string().optional(),
-  rcverNm: z.string().optional(),
-  openYn: z.string().min(0).max(1).optional(),
-  recptnSe: z.string().optional(),
-  regDate: z.iso.datetime({ offset: true, local: true }).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  recipients: z.array(z.lazy(() => NoteRecipientDtoResponseSchema)).optional(),
+  noteSn: z.number().int().optional().nullable(),
+  noteSj: z.string().optional().nullable(),
+  noteCn: z.string().min(0).max(4000).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  noteSndngSn: z.number().int().optional().nullable(),
+  dsptchUserId: z.string().optional().nullable(),
+  trnsmiterNm: z.string().optional().nullable(),
+  noteRcptnSn: z.number().int().optional().nullable(),
+  rcverId: z.string().optional().nullable(),
+  rcverNm: z.string().optional().nullable(),
+  openYn: z.string().min(0).max(1).optional().nullable(),
+  recptnSe: z.string().optional().nullable(),
+  regDate: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  recipients: z.array(z.lazy(() => NoteRecipientDtoResponseSchema)).optional().nullable(),
 });
 
 export const NoteRecipientDtoRequestSchema = z.object({
@@ -5562,7 +5562,7 @@ export const NoteRecipientDtoRequestSchema = z.object({
 export const NoteRecipientDtoResponseSchema = z.object({
   noteRcptnSn: z.number().int(),
   rcverId: z.string().min(0).max(20),
-  rcverNm: z.string().min(0).max(50).optional(),
+  rcverNm: z.string().min(0).max(50).optional().nullable(),
   recptnSe: z.string().min(0).max(12),
 });
 
@@ -5578,14 +5578,14 @@ export const SentMailDtoRequestSchema = z.object({
 });
 
 export const SentMailDtoResponseSchema = z.object({
-  emlDsptchSn: z.number().int().optional(),
-  sj: z.string().optional(),
-  emailCn: z.string().optional(),
-  dsptchPerson: z.string().optional(),
-  recptnPerson: z.string().optional(),
-  sndngResultCode: z.string().optional(),
-  sndngDe: z.string().optional(),
-  atchFileSn: z.number().int().optional(),
+  emlDsptchSn: z.number().int().optional().nullable(),
+  sj: z.string().optional().nullable(),
+  emailCn: z.string().optional().nullable(),
+  dsptchPerson: z.string().optional().nullable(),
+  recptnPerson: z.string().optional().nullable(),
+  sndngResultCode: z.string().optional().nullable(),
+  sndngDe: z.string().optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseTokenResponseRequestSchema = z.object({
@@ -5599,13 +5599,13 @@ export const ApiResponseTokenResponseRequestSchema = z.object({
 });
 
 export const ApiResponseTokenResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => TokenResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => TokenResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const TokenResponseRequestSchema = z.object({
@@ -5614,8 +5614,8 @@ export const TokenResponseRequestSchema = z.object({
 });
 
 export const TokenResponseResponseSchema = z.object({
-  accessToken: z.string().optional(),
-  role: z.string().optional(),
+  accessToken: z.string().optional().nullable(),
+  role: z.string().optional().nullable(),
 });
 
 export const ApiResponseStringRequestSchema = z.object({
@@ -5629,13 +5629,13 @@ export const ApiResponseStringRequestSchema = z.object({
 });
 
 export const ApiResponseStringResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.string().optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.string().optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const LoginRequestRequestSchema = z.object({
@@ -5646,8 +5646,8 @@ export const LoginRequestRequestSchema = z.object({
 
 export const LoginRequestResponseSchema = z.object({
   userId: z.string().min(0).max(20),
-  password: z.string().optional(),
-  otpCode: z.number().int().optional(),
+  password: z.string().optional().nullable(),
+  otpCode: z.number().int().optional().nullable(),
 });
 
 export const UserDtoRequestSchema = z.object({
@@ -5686,31 +5686,31 @@ export const UserDtoRequestSchema = z.object({
 export const UserDtoResponseSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9_]+$")),
   userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
-  esntlId: z.string().optional(),
-  role: z.string().min(0).max(50).optional(),
-  emplNo: z.string().min(0).max(20).optional(),
-  gndrCd: z.string().min(0).max(12).optional(),
-  brthYmd: z.string().min(0).max(8).optional(),
-  areaNo: z.string().min(0).max(4).optional(),
-  middleTelno: z.string().min(0).max(4).optional(),
-  endTelno: z.string().min(0).max(4).optional(),
-  mbrTypeCd: z.string().min(0).max(20).optional(),
-  faxNo: z.string().min(0).max(11).optional(),
-  pstinstCd: z.string().min(0).max(12).optional(),
-  ognzId: z.string().min(0).max(20).optional(),
-  groupId: z.string().min(0).max(20).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
-  zip: z.string().min(0).max(5).optional(),
-  officeTelno: z.string().min(0).max(20).optional(),
-  mblTelno: z.string().min(0).max(11).optional(),
-  emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
-  ofcpsNm: z.string().min(0).max(300).optional(),
-  certDnVl: z.string().min(0).max(100).optional(),
-  userSe: z.string().min(0).max(10).optional(),
-  userSttsCd: z.string().min(0).max(12).optional(),
-  lckYn: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  esntlId: z.string().optional().nullable(),
+  role: z.string().min(0).max(50).optional().nullable(),
+  emplNo: z.string().min(0).max(20).optional().nullable(),
+  gndrCd: z.string().min(0).max(12).optional().nullable(),
+  brthYmd: z.string().min(0).max(8).optional().nullable(),
+  areaNo: z.string().min(0).max(4).optional().nullable(),
+  middleTelno: z.string().min(0).max(4).optional().nullable(),
+  endTelno: z.string().min(0).max(4).optional().nullable(),
+  mbrTypeCd: z.string().min(0).max(20).optional().nullable(),
+  faxNo: z.string().min(0).max(11).optional().nullable(),
+  pstinstCd: z.string().min(0).max(12).optional().nullable(),
+  ognzId: z.string().min(0).max(20).optional().nullable(),
+  groupId: z.string().min(0).max(20).optional().nullable(),
+  homeAddr: z.string().min(0).max(300).optional().nullable(),
+  daddr: z.string().min(0).max(300).optional().nullable(),
+  zip: z.string().min(0).max(5).optional().nullable(),
+  officeTelno: z.string().min(0).max(20).optional().nullable(),
+  mblTelno: z.string().min(0).max(11).optional().nullable(),
+  emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional().nullable(),
+  ofcpsNm: z.string().min(0).max(300).optional().nullable(),
+  certDnVl: z.string().min(0).max(100).optional().nullable(),
+  userSe: z.string().min(0).max(10).optional().nullable(),
+  userSttsCd: z.string().min(0).max(12).optional().nullable(),
+  lckYn: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const UserAuthorityDtoRequestSchema = z.object({
@@ -5723,8 +5723,8 @@ export const UserAuthorityDtoRequestSchema = z.object({
 export const UserAuthorityDtoResponseSchema = z.object({
   scrtyDcsnTrgtId: z.string().min(0).max(20),
   authrtId: z.string().min(0).max(20),
-  mbrTypeCd: z.string().min(0).max(12).optional(),
-  userNm: z.string().min(0).max(100).optional(),
+  mbrTypeCd: z.string().min(0).max(12).optional().nullable(),
+  userNm: z.string().min(0).max(100).optional().nullable(),
 });
 
 export const TemplateDtoRequestSchema = z.object({
@@ -5743,8 +5743,8 @@ export const TemplateDtoResponseSchema = z.object({
   tmpltPath: z.string().min(0).max(1000),
   tmpltSeCd: z.string().min(0).max(12),
   useYn: z.string().min(0).max(1),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const DeptAuthorBatchRequestRequestSchema = z.object({
@@ -5755,10 +5755,10 @@ export const DeptAuthorBatchRequestRequestSchema = z.object({
 });
 
 export const DeptAuthorBatchRequestResponseSchema = z.object({
-  deptId: z.string().min(0).max(20).optional(),
+  deptId: z.string().min(0).max(20).optional().nullable(),
   authrtId: z.string().min(0).max(20),
-  allMembers: z.boolean().optional(),
-  userIds: z.array(z.string()).optional(),
+  allMembers: z.boolean().optional().nullable(),
+  userIds: z.array(z.string().optional().nullable()).optional().nullable(),
 });
 
 export const InstitutionCodeRecptnDtoRequestSchema = z.object({
@@ -5794,35 +5794,35 @@ export const InstitutionCodeRecptnDtoRequestSchema = z.object({
 });
 
 export const InstitutionCodeRecptnDtoResponseSchema = z.object({
-  ocrnYmd: z.string().min(0).max(8).optional(),
-  instCd: z.string().min(0).max(7).optional(),
-  jobSn: z.number().int().optional(),
-  chgSeCd: z.string().min(0).max(12).optional(),
-  procSe: z.string().min(0).max(1).optional(),
-  etcCd: z.string().min(0).max(20).optional(),
-  allInstNm: z.string().min(0).max(100).optional(),
-  lwstInstNm: z.string().min(0).max(100).optional(),
-  instAbbrNm: z.string().min(0).max(100).optional(),
-  odr: z.string().min(0).max(2).optional(),
-  ord: z.string().min(0).max(3).optional(),
-  instCycl: z.string().min(0).max(2).optional(),
-  topInstCd: z.string().min(0).max(7).optional(),
-  uprInstCd: z.string().min(0).max(7).optional(),
-  reprsInstCd: z.string().min(0).max(7).optional(),
-  instTypeLclsf: z.string().min(0).max(2).optional(),
-  instTypeMclsf: z.string().min(0).max(2).optional(),
-  instTypeSclsf: z.string().min(0).max(2).optional(),
-  telno: z.string().min(0).max(11).optional(),
-  faxNo: z.string().min(0).max(20).optional(),
-  crtYmd: z.string().min(0).max(8).optional(),
-  ablYmd: z.string().min(0).max(8).optional(),
-  ablYn: z.string().min(0).max(1).optional(),
-  chgYmd: z.string().min(0).max(8).optional(),
-  chgTm: z.string().min(0).max(20).optional(),
-  crtrYmd: z.string().min(0).max(8).optional(),
-  sortOrdr: z.number().int().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  frstRgtrId: z.string().min(0).max(20).optional(),
+  ocrnYmd: z.string().min(0).max(8).optional().nullable(),
+  instCd: z.string().min(0).max(7).optional().nullable(),
+  jobSn: z.number().int().optional().nullable(),
+  chgSeCd: z.string().min(0).max(12).optional().nullable(),
+  procSe: z.string().min(0).max(1).optional().nullable(),
+  etcCd: z.string().min(0).max(20).optional().nullable(),
+  allInstNm: z.string().min(0).max(100).optional().nullable(),
+  lwstInstNm: z.string().min(0).max(100).optional().nullable(),
+  instAbbrNm: z.string().min(0).max(100).optional().nullable(),
+  odr: z.string().min(0).max(2).optional().nullable(),
+  ord: z.string().min(0).max(3).optional().nullable(),
+  instCycl: z.string().min(0).max(2).optional().nullable(),
+  topInstCd: z.string().min(0).max(7).optional().nullable(),
+  uprInstCd: z.string().min(0).max(7).optional().nullable(),
+  reprsInstCd: z.string().min(0).max(7).optional().nullable(),
+  instTypeLclsf: z.string().min(0).max(2).optional().nullable(),
+  instTypeMclsf: z.string().min(0).max(2).optional().nullable(),
+  instTypeSclsf: z.string().min(0).max(2).optional().nullable(),
+  telno: z.string().min(0).max(11).optional().nullable(),
+  faxNo: z.string().min(0).max(20).optional().nullable(),
+  crtYmd: z.string().min(0).max(8).optional().nullable(),
+  ablYmd: z.string().min(0).max(8).optional().nullable(),
+  ablYn: z.string().min(0).max(1).optional().nullable(),
+  chgYmd: z.string().min(0).max(8).optional().nullable(),
+  chgTm: z.string().min(0).max(20).optional().nullable(),
+  crtrYmd: z.string().min(0).max(8).optional().nullable(),
+  sortOrdr: z.number().int().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  frstRgtrId: z.string().min(0).max(20).optional().nullable(),
 });
 
 export const BoardMasterBatchStatusRequestRequestSchema = z.object({
@@ -5831,8 +5831,8 @@ export const BoardMasterBatchStatusRequestRequestSchema = z.object({
 });
 
 export const BoardMasterBatchStatusRequestResponseSchema = z.object({
-  bbsIds: z.array(z.string()).min(1).max(100),
-  useYn: z.enum(["Y","N"]).optional(),
+  bbsIds: z.array(z.string().optional().nullable()).min(1).max(100),
+  useYn: z.enum(["Y","N"]).optional().nullable(),
 });
 
 export const BoardMasterBatchDeleteRequestRequestSchema = z.object({
@@ -5840,7 +5840,7 @@ export const BoardMasterBatchDeleteRequestRequestSchema = z.object({
 });
 
 export const BoardMasterBatchDeleteRequestResponseSchema = z.object({
-  bbsIds: z.array(z.string()).min(1).max(100),
+  bbsIds: z.array(z.string().optional().nullable()).min(1).max(100),
 });
 
 export const SmsDtoRequestSchema = z.object({
@@ -5856,15 +5856,15 @@ export const SmsDtoRequestSchema = z.object({
 });
 
 export const SmsDtoResponseSchema = z.object({
-  smsTrsmSn: z.number().int().optional(),
+  smsTrsmSn: z.number().int().optional().nullable(),
   sndngTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
   sndngCn: z.string().min(1).max(4000),
-  recptnCnt: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  recptnCnt: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   recipients: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)).min(1).max(100),
-  searchCondition: z.string().optional(),
-  searchWrd: z.string().optional(),
+  searchCondition: z.string().optional().nullable(),
+  searchWrd: z.string().optional().nullable(),
 });
 
 export const SmsRecptnDtoRequestSchema = z.object({
@@ -5875,10 +5875,10 @@ export const SmsRecptnDtoRequestSchema = z.object({
 });
 
 export const SmsRecptnDtoResponseSchema = z.object({
-  smsTrsmSn: z.number().int().optional(),
+  smsTrsmSn: z.number().int().optional().nullable(),
   rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
-  rsltCd: z.string().optional(),
-  rsltMsg: z.string().optional(),
+  rsltCd: z.string().optional().nullable(),
+  rsltMsg: z.string().optional().nullable(),
 });
 
 export const RewardManageDtoRequestSchema = z.object({
@@ -5901,22 +5901,22 @@ export const RewardManageDtoRequestSchema = z.object({
 });
 
 export const RewardManageDtoResponseSchema = z.object({
-  rwrdSn: z.number().int().optional(),
-  rwardwnrId: z.string().optional(),
-  rwardCode: z.string().optional(),
-  rwardDe: z.string().optional(),
-  rwardNm: z.string().optional(),
-  pblenCn: z.string().optional(),
-  sanctnerId: z.string().optional(),
-  confmAt: z.string().optional(),
-  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  returnResn: z.string().optional(),
-  atchFileSn: z.number().int().optional(),
-  ifmlAtrzSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  rwrdSn: z.number().int().optional().nullable(),
+  rwardwnrId: z.string().optional().nullable(),
+  rwardCode: z.string().optional().nullable(),
+  rwardDe: z.string().optional().nullable(),
+  rwardNm: z.string().optional().nullable(),
+  pblenCn: z.string().optional().nullable(),
+  sanctnerId: z.string().optional().nullable(),
+  confmAt: z.string().optional().nullable(),
+  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  returnResn: z.string().optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  ifmlAtrzSn: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const ApiResponseRewardManageDtoRequestSchema = z.object({
@@ -5930,13 +5930,13 @@ export const ApiResponseRewardManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponseRewardManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => RewardManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => RewardManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ExternalHrDtoRequestSchema = z.object({
@@ -5960,19 +5960,19 @@ export const ExternalHrDtoRequestSchema = z.object({
 export const ExternalHrDtoResponseSchema = z.object({
   evntSn: z.number().int(),
   otsdHrId: z.string().min(0).max(20),
-  gndrCd: z.string().min(0).max(30).optional(),
-  otsdHrNm: z.string().min(0).max(100).optional(),
-  crTypeCd: z.string().min(0).max(12).optional(),
-  ogdpInstNm: z.string().min(0).max(100).optional(),
-  brdtYmd: z.string().min(0).max(8).optional(),
-  areaNo: z.string().min(0).max(4).optional(),
-  mdTelno: z.string().min(0).max(4).optional(),
-  endTelno: z.string().min(0).max(4).optional(),
-  emlAddr: z.string().min(0).max(50).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  frstRgtrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
+  gndrCd: z.string().min(0).max(30).optional().nullable(),
+  otsdHrNm: z.string().min(0).max(100).optional().nullable(),
+  crTypeCd: z.string().min(0).max(12).optional().nullable(),
+  ogdpInstNm: z.string().min(0).max(100).optional().nullable(),
+  brdtYmd: z.string().min(0).max(8).optional().nullable(),
+  areaNo: z.string().min(0).max(4).optional().nullable(),
+  mdTelno: z.string().min(0).max(4).optional().nullable(),
+  endTelno: z.string().min(0).max(4).optional().nullable(),
+  emlAddr: z.string().min(0).max(50).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
 });
 
 export const ApiResponseExternalHrDtoRequestSchema = z.object({
@@ -5986,13 +5986,13 @@ export const ApiResponseExternalHrDtoRequestSchema = z.object({
 });
 
 export const ApiResponseExternalHrDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => ExternalHrDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ExternalHrDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseCommunityDtoRequestSchema = z.object({
@@ -6006,13 +6006,13 @@ export const ApiResponseCommunityDtoRequestSchema = z.object({
 });
 
 export const ApiResponseCommunityDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => CommunityDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CommunityDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const MemoInstructionRequestRequestSchema = z.object({
@@ -6037,7 +6037,7 @@ export const BulkStatusRequestRequestSchema = z.object({
 });
 
 export const BulkStatusRequestResponseSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string().optional().nullable()),
   status: z.string(),
 });
 
@@ -6047,7 +6047,7 @@ export const BulkRoleRequestRequestSchema = z.object({
 });
 
 export const BulkRoleRequestResponseSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string().optional().nullable()),
   role: z.enum(["USER","ADMIN"]),
 });
 
@@ -6057,7 +6057,7 @@ export const BulkDeptMoveRequestRequestSchema = z.object({
 });
 
 export const BulkDeptMoveRequestResponseSchema = z.object({
-  userIds: z.array(z.string()),
+  userIds: z.array(z.string().optional().nullable()),
   ognzId: z.string(),
 });
 
@@ -6072,13 +6072,13 @@ export const ApiResponsePageResponseWorkReportDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseWorkReportDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseWorkReportDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseWorkReportDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseWorkReportDtoRequestSchema = z.object({
@@ -6090,11 +6090,11 @@ export const PageResponseWorkReportDtoRequestSchema = z.object({
 });
 
 export const PageResponseWorkReportDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => WorkReportDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => WorkReportDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseWorkReportDtoRequestSchema = z.object({
@@ -6108,13 +6108,13 @@ export const ApiResponseWorkReportDtoRequestSchema = z.object({
 });
 
 export const ApiResponseWorkReportDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => WorkReportDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => WorkReportDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListUserSearchDtoRequestSchema = z.object({
@@ -6128,13 +6128,13 @@ export const ApiResponseListUserSearchDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListUserSearchDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => UserSearchDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => UserSearchDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const UserSearchDtoRequestSchema = z.object({
@@ -6144,9 +6144,9 @@ export const UserSearchDtoRequestSchema = z.object({
 });
 
 export const UserSearchDtoResponseSchema = z.object({
-  esntlId: z.string().optional(),
-  userNm: z.string().optional(),
-  deptNm: z.string().optional(),
+  esntlId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  deptNm: z.string().optional().nullable(),
 });
 
 export const ApiResponseUserDtoRequestSchema = z.object({
@@ -6160,13 +6160,13 @@ export const ApiResponseUserDtoRequestSchema = z.object({
 });
 
 export const ApiResponseUserDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => UserDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => UserDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseBooleanRequestSchema = z.object({
@@ -6180,13 +6180,13 @@ export const ApiResponseBooleanRequestSchema = z.object({
 });
 
 export const ApiResponseBooleanResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.boolean().optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.boolean().optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListSurveyStatsDtoRequestSchema = z.object({
@@ -6200,13 +6200,13 @@ export const ApiResponseListSurveyStatsDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListSurveyStatsDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => SurveyStatsDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => SurveyStatsDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const SurveyStatsDtoRequestSchema = z.object({
@@ -6220,13 +6220,13 @@ export const SurveyStatsDtoRequestSchema = z.object({
 });
 
 export const SurveyStatsDtoResponseSchema = z.object({
-  srvyQstnSn: z.number().int().optional(),
-  qstnCn: z.string().optional(),
-  qstnTypeCd: z.string().optional(),
-  srvyArtclSn: z.number().int().optional(),
-  artclCn: z.string().optional(),
-  count: z.number().int().optional(),
-  percentage: z.number().optional(),
+  srvyQstnSn: z.number().int().optional().nullable(),
+  qstnCn: z.string().optional().nullable(),
+  qstnTypeCd: z.string().optional().nullable(),
+  srvyArtclSn: z.number().int().optional().nullable(),
+  artclCn: z.string().optional().nullable(),
+  count: z.number().int().optional().nullable(),
+  percentage: z.number().optional().nullable(),
 });
 
 export const ApiResponseListStatsDtoRequestSchema = z.object({
@@ -6240,13 +6240,13 @@ export const ApiResponseListStatsDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListStatsDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => StatsDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => StatsDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const StatsDtoRequestSchema = z.object({
@@ -6275,28 +6275,28 @@ export const StatsDtoRequestSchema = z.object({
 });
 
 export const StatsDtoResponseSchema = z.object({
-  fromDate: z.string().min(0).max(20).optional(),
-  toDate: z.string().min(0).max(20).optional(),
-  statsKind: z.string().min(0).max(20).optional(),
-  detailStatsKind: z.string().optional(),
-  pdKind: z.string().optional(),
-  statsDate: z.string().optional(),
-  statsCo: z.number().int().optional(),
-  maxStatsCo: z.number().int().optional(),
-  minStatsCo: z.number().int().optional(),
-  creatCo: z.number().int().optional(),
-  inqCnt: z.number().int().optional(),
-  updtCo: z.number().int().optional(),
-  deleteCo: z.number().int().optional(),
-  outptCo: z.number().int().optional(),
-  errorCo: z.number().int().optional(),
-  totInqCnt: z.number().int().optional(),
-  avrgInqCnt: z.number().optional(),
-  mxmmInqireBbsId: z.string().optional(),
-  mxmmInqireBbsNm: z.string().optional(),
-  topNtcepersonId: z.string().optional(),
-  topNtcepersonCo: z.number().int().optional(),
-  maxUnit: z.number().optional(),
+  fromDate: z.string().min(0).max(20).optional().nullable(),
+  toDate: z.string().min(0).max(20).optional().nullable(),
+  statsKind: z.string().min(0).max(20).optional().nullable(),
+  detailStatsKind: z.string().optional().nullable(),
+  pdKind: z.string().optional().nullable(),
+  statsDate: z.string().optional().nullable(),
+  statsCo: z.number().int().optional().nullable(),
+  maxStatsCo: z.number().int().optional().nullable(),
+  minStatsCo: z.number().int().optional().nullable(),
+  creatCo: z.number().int().optional().nullable(),
+  inqCnt: z.number().int().optional().nullable(),
+  updtCo: z.number().int().optional().nullable(),
+  deleteCo: z.number().int().optional().nullable(),
+  outptCo: z.number().int().optional().nullable(),
+  errorCo: z.number().int().optional().nullable(),
+  totInqCnt: z.number().int().optional().nullable(),
+  avrgInqCnt: z.number().optional().nullable(),
+  mxmmInqireBbsId: z.string().optional().nullable(),
+  mxmmInqireBbsNm: z.string().optional().nullable(),
+  topNtcepersonId: z.string().optional().nullable(),
+  topNtcepersonCo: z.number().int().optional().nullable(),
+  maxUnit: z.number().optional().nullable(),
 });
 
 export const ApiResponsePageResponseScrapDtoRequestSchema = z.object({
@@ -6310,13 +6310,13 @@ export const ApiResponsePageResponseScrapDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseScrapDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseScrapDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseScrapDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseScrapDtoRequestSchema = z.object({
@@ -6328,11 +6328,11 @@ export const PageResponseScrapDtoRequestSchema = z.object({
 });
 
 export const PageResponseScrapDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => ScrapDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ScrapDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseScrapDtoRequestSchema = z.object({
@@ -6346,13 +6346,13 @@ export const ApiResponseScrapDtoRequestSchema = z.object({
 });
 
 export const ApiResponseScrapDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => ScrapDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ScrapDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseScheduleDtoRequestSchema = z.object({
@@ -6366,13 +6366,13 @@ export const ApiResponsePageResponseScheduleDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseScheduleDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseScheduleDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseScheduleDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseScheduleDtoRequestSchema = z.object({
@@ -6384,11 +6384,11 @@ export const PageResponseScheduleDtoRequestSchema = z.object({
 });
 
 export const PageResponseScheduleDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => ScheduleDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ScheduleDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseScheduleDtoRequestSchema = z.object({
@@ -6402,13 +6402,13 @@ export const ApiResponseScheduleDtoRequestSchema = z.object({
 });
 
 export const ApiResponseScheduleDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => ScheduleDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ScheduleDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListScheduleDtoRequestSchema = z.object({
@@ -6422,13 +6422,13 @@ export const ApiResponseListScheduleDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListScheduleDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => ScheduleDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => ScheduleDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePopupDtoRequestSchema = z.object({
@@ -6442,13 +6442,13 @@ export const ApiResponsePopupDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePopupDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PopupDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PopupDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListPopupDtoRequestSchema = z.object({
@@ -6462,13 +6462,13 @@ export const ApiResponseListPopupDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListPopupDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => PopupDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => PopupDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseOnlinePollManageDtoRequestSchema = z.object({
@@ -6482,13 +6482,13 @@ export const ApiResponsePageResponseOnlinePollManageDtoRequestSchema = z.object(
 });
 
 export const ApiResponsePageResponseOnlinePollManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseOnlinePollManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseOnlinePollManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseOnlinePollManageDtoRequestSchema = z.object({
@@ -6500,11 +6500,11 @@ export const PageResponseOnlinePollManageDtoRequestSchema = z.object({
 });
 
 export const PageResponseOnlinePollManageDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => OnlinePollManageDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => OnlinePollManageDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseOnlinePollManageDtoRequestSchema = z.object({
@@ -6518,13 +6518,13 @@ export const ApiResponseOnlinePollManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponseOnlinePollManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => OnlinePollManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => OnlinePollManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListOnlinePollArticleDtoRequestSchema = z.object({
@@ -6538,13 +6538,13 @@ export const ApiResponseListOnlinePollArticleDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListOnlinePollArticleDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseNotificationDtoRequestSchema = z.object({
@@ -6558,13 +6558,13 @@ export const ApiResponsePageResponseNotificationDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseNotificationDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseNotificationDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseNotificationDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseNotificationDtoRequestSchema = z.object({
@@ -6576,11 +6576,11 @@ export const PageResponseNotificationDtoRequestSchema = z.object({
 });
 
 export const PageResponseNotificationDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => NotificationDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => NotificationDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseNotificationDtoRequestSchema = z.object({
@@ -6594,13 +6594,13 @@ export const ApiResponseNotificationDtoRequestSchema = z.object({
 });
 
 export const ApiResponseNotificationDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => NotificationDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => NotificationDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseNoteDtoRequestSchema = z.object({
@@ -6614,13 +6614,13 @@ export const ApiResponseNoteDtoRequestSchema = z.object({
 });
 
 export const ApiResponseNoteDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => NoteDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => NoteDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseNoteDtoRequestSchema = z.object({
@@ -6634,13 +6634,13 @@ export const ApiResponsePageResponseNoteDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseNoteDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseNoteDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseNoteDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseNoteDtoRequestSchema = z.object({
@@ -6652,11 +6652,11 @@ export const PageResponseNoteDtoRequestSchema = z.object({
 });
 
 export const PageResponseNoteDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => NoteDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => NoteDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseMenuListResponseRequestSchema = z.object({
@@ -6670,13 +6670,13 @@ export const ApiResponseMenuListResponseRequestSchema = z.object({
 });
 
 export const ApiResponseMenuListResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => MenuListResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => MenuListResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const MenuListResponseRequestSchema = z.object({
@@ -6698,13 +6698,13 @@ export const ApiResponsePageResponseMemoReportDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseMemoReportDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseMemoReportDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseMemoReportDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseMemoReportDtoRequestSchema = z.object({
@@ -6716,11 +6716,11 @@ export const PageResponseMemoReportDtoRequestSchema = z.object({
 });
 
 export const PageResponseMemoReportDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => MemoReportDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => MemoReportDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseMemoReportDtoRequestSchema = z.object({
@@ -6734,13 +6734,13 @@ export const ApiResponseMemoReportDtoRequestSchema = z.object({
 });
 
 export const ApiResponseMemoReportDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => MemoReportDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => MemoReportDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseSentMailDtoRequestSchema = z.object({
@@ -6754,13 +6754,13 @@ export const ApiResponsePageResponseSentMailDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseSentMailDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseSentMailDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseSentMailDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseSentMailDtoRequestSchema = z.object({
@@ -6772,11 +6772,11 @@ export const PageResponseSentMailDtoRequestSchema = z.object({
 });
 
 export const PageResponseSentMailDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => SentMailDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SentMailDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseSentMailDtoRequestSchema = z.object({
@@ -6790,13 +6790,13 @@ export const ApiResponseSentMailDtoRequestSchema = z.object({
 });
 
 export const ApiResponseSentMailDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SentMailDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SentMailDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseInformalSanctionDtoRequestSchema = z.object({
@@ -6810,13 +6810,13 @@ export const ApiResponseInformalSanctionDtoRequestSchema = z.object({
 });
 
 export const ApiResponseInformalSanctionDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => InformalSanctionDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => InformalSanctionDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseInformalSanctionDtoRequestSchema = z.object({
@@ -6830,13 +6830,13 @@ export const ApiResponsePageResponseInformalSanctionDtoRequestSchema = z.object(
 });
 
 export const ApiResponsePageResponseInformalSanctionDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseInformalSanctionDtoRequestSchema = z.object({
@@ -6848,11 +6848,11 @@ export const PageResponseInformalSanctionDtoRequestSchema = z.object({
 });
 
 export const PageResponseInformalSanctionDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => InformalSanctionDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InformalSanctionDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseOnlineManualDtoRequestSchema = z.object({
@@ -6866,13 +6866,13 @@ export const ApiResponsePageResponseOnlineManualDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseOnlineManualDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseOnlineManualDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseOnlineManualDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseOnlineManualDtoRequestSchema = z.object({
@@ -6884,11 +6884,11 @@ export const PageResponseOnlineManualDtoRequestSchema = z.object({
 });
 
 export const PageResponseOnlineManualDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => OnlineManualDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => OnlineManualDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseOnlineManualDtoRequestSchema = z.object({
@@ -6902,13 +6902,13 @@ export const ApiResponseOnlineManualDtoRequestSchema = z.object({
 });
 
 export const ApiResponseOnlineManualDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => OnlineManualDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => OnlineManualDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseHpcmDtoRequestSchema = z.object({
@@ -6922,13 +6922,13 @@ export const ApiResponsePageResponseHpcmDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseHpcmDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseHpcmDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseHpcmDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseHpcmDtoRequestSchema = z.object({
@@ -6940,11 +6940,11 @@ export const PageResponseHpcmDtoRequestSchema = z.object({
 });
 
 export const PageResponseHpcmDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => HpcmDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => HpcmDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseHpcmDtoRequestSchema = z.object({
@@ -6958,13 +6958,13 @@ export const ApiResponseHpcmDtoRequestSchema = z.object({
 });
 
 export const ApiResponseHpcmDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => HpcmDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => HpcmDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseHealthStatusResponseRequestSchema = z.object({
@@ -6978,13 +6978,13 @@ export const ApiResponseHealthStatusResponseRequestSchema = z.object({
 });
 
 export const ApiResponseHealthStatusResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => HealthStatusResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => HealthStatusResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const HealthStatusResponseRequestSchema = z.object({
@@ -7010,13 +7010,13 @@ export const ApiResponseListFileDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListFileDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => FileDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => FileDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const FileDtoRequestSchema = z.object({
@@ -7032,15 +7032,15 @@ export const FileDtoRequestSchema = z.object({
 });
 
 export const FileDtoResponseSchema = z.object({
-  atchFileSn: z.number().int().optional(),
-  fileSn: z.number().int().optional(),
-  fileStreCours: z.string().optional(),
-  streFileNm: z.string().optional(),
-  orignlFileNm: z.string().optional(),
-  fileExtsn: z.string().optional(),
-  fileMg: z.number().int().optional(),
-  fileCn: z.string().min(0).max(4000).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  atchFileSn: z.number().int().optional().nullable(),
+  fileSn: z.number().int().optional().nullable(),
+  fileStreCours: z.string().optional().nullable(),
+  streFileNm: z.string().optional().nullable(),
+  orignlFileNm: z.string().optional().nullable(),
+  fileExtsn: z.string().optional().nullable(),
+  fileMg: z.number().int().optional().nullable(),
+  fileCn: z.string().min(0).max(4000).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const ApiResponsePageResponseDeptJobDtoRequestSchema = z.object({
@@ -7054,13 +7054,13 @@ export const ApiResponsePageResponseDeptJobDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseDeptJobDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseDeptJobDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseDeptJobDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseDeptJobDtoRequestSchema = z.object({
@@ -7072,11 +7072,11 @@ export const PageResponseDeptJobDtoRequestSchema = z.object({
 });
 
 export const PageResponseDeptJobDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => DeptJobDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptJobDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseDeptJobDtoRequestSchema = z.object({
@@ -7090,13 +7090,13 @@ export const ApiResponseDeptJobDtoRequestSchema = z.object({
 });
 
 export const ApiResponseDeptJobDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => DeptJobDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => DeptJobDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseDeptJobBoxDtoRequestSchema = z.object({
@@ -7110,13 +7110,13 @@ export const ApiResponsePageResponseDeptJobBoxDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseDeptJobBoxDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseDeptJobBoxDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseDeptJobBoxDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseDeptJobBoxDtoRequestSchema = z.object({
@@ -7128,11 +7128,11 @@ export const PageResponseDeptJobBoxDtoRequestSchema = z.object({
 });
 
 export const PageResponseDeptJobBoxDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => DeptJobBoxDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptJobBoxDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseDeptJobBoxDtoRequestSchema = z.object({
@@ -7146,13 +7146,13 @@ export const ApiResponseDeptJobBoxDtoRequestSchema = z.object({
 });
 
 export const ApiResponseDeptJobBoxDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => DeptJobBoxDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => DeptJobBoxDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseDashboardResponseRequestSchema = z.object({
@@ -7166,13 +7166,13 @@ export const ApiResponseDashboardResponseRequestSchema = z.object({
 });
 
 export const ApiResponseDashboardResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => DashboardResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => DashboardResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const BoardDtoRequestSchema = z.object({
@@ -7206,8 +7206,8 @@ export const BoardDtoRequestSchema = z.object({
 });
 
 export const BoardDtoResponseSchema = z.object({
-  pstSn: z.number().int().optional(),
-  bbsId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().int().optional().nullable(),
+  bbsId: z.string().min(0).max(20).optional().nullable(),
   ansSn: z.number().int().optional().nullable(),
   pstTtl: z.string().min(0).max(100).optional().nullable(),
   pstCn: z.string().min(0).max(4000).optional().nullable(),
@@ -7257,13 +7257,13 @@ export const ApiResponsePageResponseCommunityDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseCommunityDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseCommunityDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCommunityDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseCommunityDtoRequestSchema = z.object({
@@ -7275,11 +7275,11 @@ export const PageResponseCommunityDtoRequestSchema = z.object({
 });
 
 export const PageResponseCommunityDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => CommunityDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CommunityDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseCommentDtoRequestSchema = z.object({
@@ -7293,13 +7293,13 @@ export const ApiResponsePageResponseCommentDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseCommentDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseCommentDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCommentDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseCommentDtoRequestSchema = z.object({
@@ -7311,11 +7311,11 @@ export const PageResponseCommentDtoRequestSchema = z.object({
 });
 
 export const PageResponseCommentDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => CommentDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CommentDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseBoardDtoRequestSchema = z.object({
@@ -7329,13 +7329,13 @@ export const ApiResponsePageResponseBoardDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseBoardDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseBoardDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseBoardDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseBoardDtoRequestSchema = z.object({
@@ -7347,11 +7347,11 @@ export const PageResponseBoardDtoRequestSchema = z.object({
 });
 
 export const PageResponseBoardDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => BoardDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BoardDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseBoardStatsResponseRequestSchema = z.object({
@@ -7365,13 +7365,13 @@ export const ApiResponseBoardStatsResponseRequestSchema = z.object({
 });
 
 export const ApiResponseBoardStatsResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => BoardStatsResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => BoardStatsResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const BoardStatsResponseRequestSchema = z.object({
@@ -7382,10 +7382,10 @@ export const BoardStatsResponseRequestSchema = z.object({
 });
 
 export const BoardStatsResponseResponseSchema = z.object({
-  totalArticles: z.number().int().optional(),
-  totalViews: z.number().int().optional(),
-  topContributor: z.string().optional(),
-  intelligenceScore: z.number().int().optional(),
+  totalArticles: z.number().int().optional().nullable(),
+  totalViews: z.number().int().optional().nullable(),
+  topContributor: z.string().optional().nullable(),
+  intelligenceScore: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseBoardDtoRequestSchema = z.object({
@@ -7399,13 +7399,13 @@ export const ApiResponseBoardDtoRequestSchema = z.object({
 });
 
 export const ApiResponseBoardDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => BoardDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => BoardDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListSatisfactionDtoRequestSchema = z.object({
@@ -7419,13 +7419,13 @@ export const ApiResponseListSatisfactionDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListSatisfactionDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => SatisfactionDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => SatisfactionDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseSatisfactionAverageResponseRequestSchema = z.object({
@@ -7439,13 +7439,13 @@ export const ApiResponseSatisfactionAverageResponseRequestSchema = z.object({
 });
 
 export const ApiResponseSatisfactionAverageResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SatisfactionAverageResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SatisfactionAverageResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const SatisfactionAverageResponseRequestSchema = z.object({
@@ -7453,7 +7453,7 @@ export const SatisfactionAverageResponseRequestSchema = z.object({
 });
 
 export const SatisfactionAverageResponseResponseSchema = z.object({
-  average: z.number().optional(),
+  average: z.number().optional().nullable(),
 });
 
 export const ApiResponsePageResponsePublicFaqListItemResponseRequestSchema = z.object({
@@ -7467,13 +7467,13 @@ export const ApiResponsePageResponsePublicFaqListItemResponseRequestSchema = z.o
 });
 
 export const ApiResponsePageResponsePublicFaqListItemResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponsePublicFaqListItemResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponsePublicFaqListItemResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponsePublicFaqListItemResponseRequestSchema = z.object({
@@ -7485,11 +7485,11 @@ export const PageResponsePublicFaqListItemResponseRequestSchema = z.object({
 });
 
 export const PageResponsePublicFaqListItemResponseResponseSchema = z.object({
-  list: z.array(z.lazy(() => PublicFaqListItemResponseResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PublicFaqListItemResponseResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const PublicFaqListItemResponseRequestSchema = z.object({
@@ -7523,13 +7523,13 @@ export const ApiResponsePublicFaqDetailResponseRequestSchema = z.object({
 });
 
 export const ApiResponsePublicFaqDetailResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PublicFaqDetailResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PublicFaqDetailResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PublicFaqDetailResponseRequestSchema = z.object({
@@ -7565,13 +7565,13 @@ export const ApiResponseListBannerDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListBannerDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => BannerDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => BannerDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseCurrentUserResponseRequestSchema = z.object({
@@ -7585,13 +7585,13 @@ export const ApiResponseCurrentUserResponseRequestSchema = z.object({
 });
 
 export const ApiResponseCurrentUserResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => CurrentUserResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CurrentUserResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const CurrentUserResponseRequestSchema = z.object({
@@ -7604,12 +7604,12 @@ export const CurrentUserResponseRequestSchema = z.object({
 });
 
 export const CurrentUserResponseResponseSchema = z.object({
-  id: z.string().optional(),
-  esntlId: z.string().optional(),
-  name: z.string().optional(),
-  role: z.string().optional(),
-  userSe: z.string().optional(),
-  email: z.string().optional(),
+  id: z.string().optional().nullable(),
+  esntlId: z.string().optional().nullable(),
+  name: z.string().optional().nullable(),
+  role: z.string().optional().nullable(),
+  userSe: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
 });
 
 export const ApiResponseListMyPageContentDtoRequestSchema = z.object({
@@ -7623,13 +7623,13 @@ export const ApiResponseListMyPageContentDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListMyPageContentDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => MyPageContentDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => MyPageContentDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseUserDtoRequestSchema = z.object({
@@ -7643,13 +7643,13 @@ export const ApiResponsePageResponseUserDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseUserDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseUserDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseUserDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseUserDtoRequestSchema = z.object({
@@ -7661,11 +7661,11 @@ export const PageResponseUserDtoRequestSchema = z.object({
 });
 
 export const PageResponseUserDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => UserDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => UserDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseAuthorGroupProjectionRequestSchema = z.object({
@@ -7679,13 +7679,13 @@ export const ApiResponsePageResponseAuthorGroupProjectionRequestSchema = z.objec
 });
 
 export const ApiResponsePageResponseAuthorGroupProjectionResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAuthorGroupProjectionResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseAuthorGroupProjectionResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const AuthorGroupProjectionRequestSchema = z.object({
@@ -7700,14 +7700,14 @@ export const AuthorGroupProjectionRequestSchema = z.object({
 });
 
 export const AuthorGroupProjectionResponseSchema = z.object({
-  userId: z.string().optional(),
-  userNm: z.string().optional(),
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
   groupId: z.string().optional().nullable(),
-  mbrTypeCd: z.string().optional(),
+  mbrTypeCd: z.string().optional().nullable(),
   mberTyNm: z.string().optional().nullable(),
   authrtId: z.string().optional().nullable(),
-  regYn: z.string().optional(),
-  scrtyDcsnTrgtId: z.string().optional(),
+  regYn: z.string().optional().nullable(),
+  scrtyDcsnTrgtId: z.string().optional().nullable(),
 });
 
 export const PageResponseAuthorGroupProjectionRequestSchema = z.object({
@@ -7719,11 +7719,11 @@ export const PageResponseAuthorGroupProjectionRequestSchema = z.object({
 });
 
 export const PageResponseAuthorGroupProjectionResponseSchema = z.object({
-  list: z.array(z.lazy(() => AuthorGroupProjectionResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AuthorGroupProjectionResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseListUserAbsenceDtoRequestSchema = z.object({
@@ -7737,13 +7737,13 @@ export const ApiResponseListUserAbsenceDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListUserAbsenceDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => UserAbsenceDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => UserAbsenceDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseUserAbsenceDtoRequestSchema = z.object({
@@ -7757,13 +7757,13 @@ export const ApiResponseUserAbsenceDtoRequestSchema = z.object({
 });
 
 export const ApiResponseUserAbsenceDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => UserAbsenceDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => UserAbsenceDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListTemplateDtoRequestSchema = z.object({
@@ -7777,13 +7777,13 @@ export const ApiResponseListTemplateDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListTemplateDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => TemplateDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => TemplateDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseTemplateDtoRequestSchema = z.object({
@@ -7797,13 +7797,13 @@ export const ApiResponseTemplateDtoRequestSchema = z.object({
 });
 
 export const ApiResponseTemplateDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => TemplateDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => TemplateDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseSurveyRespondentDtoRequestSchema = z.object({
@@ -7817,13 +7817,13 @@ export const ApiResponsePageResponseSurveyRespondentDtoRequestSchema = z.object(
 });
 
 export const ApiResponsePageResponseSurveyRespondentDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseSurveyRespondentDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseSurveyRespondentDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseSurveyRespondentDtoRequestSchema = z.object({
@@ -7835,11 +7835,11 @@ export const PageResponseSurveyRespondentDtoRequestSchema = z.object({
 });
 
 export const PageResponseSurveyRespondentDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => SurveyRespondentDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyRespondentDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseSurveyRespondentDtoRequestSchema = z.object({
@@ -7853,13 +7853,13 @@ export const ApiResponseSurveyRespondentDtoRequestSchema = z.object({
 });
 
 export const ApiResponseSurveyRespondentDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SurveyRespondentDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SurveyRespondentDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListSurveyQuestionDtoRequestSchema = z.object({
@@ -7873,13 +7873,13 @@ export const ApiResponseListSurveyQuestionDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListSurveyQuestionDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => SurveyQuestionDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => SurveyQuestionDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseSurveyInfoDtoRequestSchema = z.object({
@@ -7893,13 +7893,13 @@ export const ApiResponseSurveyInfoDtoRequestSchema = z.object({
 });
 
 export const ApiResponseSurveyInfoDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SurveyInfoDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SurveyInfoDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseSurveyTemplateDtoRequestSchema = z.object({
@@ -7913,13 +7913,13 @@ export const ApiResponseSurveyTemplateDtoRequestSchema = z.object({
 });
 
 export const ApiResponseSurveyTemplateDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SurveyTemplateDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SurveyTemplateDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseSurveyTemplateDtoRequestSchema = z.object({
@@ -7933,13 +7933,13 @@ export const ApiResponsePageResponseSurveyTemplateDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseSurveyTemplateDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseSurveyTemplateDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseSurveyTemplateDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseSurveyTemplateDtoRequestSchema = z.object({
@@ -7951,11 +7951,11 @@ export const PageResponseSurveyTemplateDtoRequestSchema = z.object({
 });
 
 export const PageResponseSurveyTemplateDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => SurveyTemplateDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyTemplateDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseSurveyInfoDtoRequestSchema = z.object({
@@ -7969,13 +7969,13 @@ export const ApiResponsePageResponseSurveyInfoDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseSurveyInfoDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseSurveyInfoDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseSurveyInfoDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseSurveyInfoDtoRequestSchema = z.object({
@@ -7987,11 +7987,11 @@ export const PageResponseSurveyInfoDtoRequestSchema = z.object({
 });
 
 export const PageResponseSurveyInfoDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => SurveyInfoDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyInfoDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseSurveyResultDtoRequestSchema = z.object({
@@ -8005,13 +8005,13 @@ export const ApiResponsePageResponseSurveyResultDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseSurveyResultDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseSurveyResultDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseSurveyResultDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseSurveyResultDtoRequestSchema = z.object({
@@ -8023,11 +8023,11 @@ export const PageResponseSurveyResultDtoRequestSchema = z.object({
 });
 
 export const PageResponseSurveyResultDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => SurveyResultDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyResultDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const SurveyResultDtoRequestSchema = z.object({
@@ -8044,11 +8044,11 @@ export const SurveyResultDtoRequestSchema = z.object({
 });
 
 export const SurveyResultDtoResponseSchema = z.object({
-  srvyRspnsSn: z.number().int().optional(),
-  srvySn: z.number().int().optional(),
-  srvyTmpltSn: z.number().int().optional(),
-  srvyQstnSn: z.number().int().optional(),
-  srvyArtclSn: z.number().int().optional(),
+  srvyRspnsSn: z.number().int().optional().nullable(),
+  srvySn: z.number().int().optional().nullable(),
+  srvyTmpltSn: z.number().int().optional().nullable(),
+  srvyQstnSn: z.number().int().optional().nullable(),
+  srvyArtclSn: z.number().int().optional().nullable(),
   rspdntAnsCn: z.string().optional().nullable(),
   rspnsNm: z.string().optional().nullable(),
   etcAnsCn: z.string().optional().nullable(),
@@ -8067,13 +8067,13 @@ export const ApiResponseSurveyResultDtoRequestSchema = z.object({
 });
 
 export const ApiResponseSurveyResultDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SurveyResultDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SurveyResultDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseSummaryStatsDtoRequestSchema = z.object({
@@ -8087,13 +8087,13 @@ export const ApiResponseSummaryStatsDtoRequestSchema = z.object({
 });
 
 export const ApiResponseSummaryStatsDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SummaryStatsDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SummaryStatsDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const SummaryStatsDtoRequestSchema = z.object({
@@ -8103,9 +8103,9 @@ export const SummaryStatsDtoRequestSchema = z.object({
 });
 
 export const SummaryStatsDtoResponseSchema = z.object({
-  totalUsers: z.number().int().optional(),
-  totalPosts: z.number().int().optional(),
-  todayConnects: z.number().int().optional(),
+  totalUsers: z.number().int().optional().nullable(),
+  totalPosts: z.number().int().optional().nullable(),
+  todayConnects: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseRoleManageDtoRequestSchema = z.object({
@@ -8119,13 +8119,13 @@ export const ApiResponsePageResponseRoleManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseRoleManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseRoleManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseRoleManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseRoleManageDtoRequestSchema = z.object({
@@ -8137,11 +8137,11 @@ export const PageResponseRoleManageDtoRequestSchema = z.object({
 });
 
 export const PageResponseRoleManageDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => RoleManageDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => RoleManageDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseRoleManageDtoRequestSchema = z.object({
@@ -8155,13 +8155,13 @@ export const ApiResponseRoleManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponseRoleManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => RoleManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => RoleManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseProgramDtoRequestSchema = z.object({
@@ -8175,13 +8175,13 @@ export const ApiResponsePageResponseProgramDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseProgramDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseProgramDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseProgramDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseProgramDtoRequestSchema = z.object({
@@ -8193,11 +8193,11 @@ export const PageResponseProgramDtoRequestSchema = z.object({
 });
 
 export const PageResponseProgramDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => ProgramDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ProgramDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseProgramDtoRequestSchema = z.object({
@@ -8211,13 +8211,13 @@ export const ApiResponseProgramDtoRequestSchema = z.object({
 });
 
 export const ApiResponseProgramDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => ProgramDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ProgramDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponsePopupDtoRequestSchema = z.object({
@@ -8231,13 +8231,13 @@ export const ApiResponsePageResponsePopupDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponsePopupDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponsePopupDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponsePopupDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponsePopupDtoRequestSchema = z.object({
@@ -8249,11 +8249,11 @@ export const PageResponsePopupDtoRequestSchema = z.object({
 });
 
 export const PageResponsePopupDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => PopupDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PopupDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseListPolicyRequestSchema = z.object({
@@ -8267,13 +8267,13 @@ export const ApiResponseListPolicyRequestSchema = z.object({
 });
 
 export const ApiResponseListPolicyResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => PolicyResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => PolicyResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PolicyRequestSchema = z.object({
@@ -8283,9 +8283,9 @@ export const PolicyRequestSchema = z.object({
 });
 
 export const PolicyResponseSchema = z.object({
-  plcyTypeCd: z.string().optional(),
-  plcyTtl: z.string().optional(),
-  plcyCn: z.string().optional(),
+  plcyTypeCd: z.string().optional().nullable(),
+  plcyTtl: z.string().optional().nullable(),
+  plcyCn: z.string().optional().nullable(),
 });
 
 export const ApiResponsePolicyRequestSchema = z.object({
@@ -8299,13 +8299,13 @@ export const ApiResponsePolicyRequestSchema = z.object({
 });
 
 export const ApiResponsePolicyResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PolicyResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PolicyResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseNetworkStatusDetailedDtoRequestSchema = z.object({
@@ -8319,13 +8319,13 @@ export const ApiResponsePageResponseNetworkStatusDetailedDtoRequestSchema = z.ob
 });
 
 export const ApiResponsePageResponseNetworkStatusDetailedDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseNetworkStatusDetailedDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseNetworkStatusDetailedDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const NetworkStatusDetailedDtoRequestSchema = z.object({
@@ -8337,11 +8337,11 @@ export const NetworkStatusDetailedDtoRequestSchema = z.object({
 });
 
 export const NetworkStatusDetailedDtoResponseSchema = z.object({
-  sysNm: z.string().optional(),
-  sysIp: z.string().optional(),
-  sysPort: z.string().optional(),
-  svcSttus: z.string().optional(),
-  logDt: z.string().optional(),
+  sysNm: z.string().optional().nullable(),
+  sysIp: z.string().optional().nullable(),
+  sysPort: z.string().optional().nullable(),
+  svcSttus: z.string().optional().nullable(),
+  logDt: z.string().optional().nullable(),
 });
 
 export const PageResponseNetworkStatusDetailedDtoRequestSchema = z.object({
@@ -8353,11 +8353,11 @@ export const PageResponseNetworkStatusDetailedDtoRequestSchema = z.object({
 });
 
 export const PageResponseNetworkStatusDetailedDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => NetworkStatusDetailedDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => NetworkStatusDetailedDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseMenuDtoRequestSchema = z.object({
@@ -8371,13 +8371,13 @@ export const ApiResponsePageResponseMenuDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseMenuDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseMenuDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseMenuDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseMenuDtoRequestSchema = z.object({
@@ -8389,11 +8389,11 @@ export const PageResponseMenuDtoRequestSchema = z.object({
 });
 
 export const PageResponseMenuDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => MenuDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => MenuDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseMenuDtoRequestSchema = z.object({
@@ -8407,13 +8407,13 @@ export const ApiResponseMenuDtoRequestSchema = z.object({
 });
 
 export const ApiResponseMenuDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => MenuDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => MenuDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListMenuCreateDtoRequestSchema = z.object({
@@ -8427,13 +8427,13 @@ export const ApiResponseListMenuCreateDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListMenuCreateDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => MenuCreateDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => MenuCreateDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const MenuCreateDtoRequestSchema = z.object({
@@ -8448,14 +8448,14 @@ export const MenuCreateDtoRequestSchema = z.object({
 });
 
 export const MenuCreateDtoResponseSchema = z.object({
-  menuSn: z.number().int().optional(),
-  mapngCrtId: z.string().min(0).max(20).optional(),
-  authrtCd: z.string().min(0).max(12).optional(),
+  menuSn: z.number().int().optional().nullable(),
+  mapngCrtId: z.string().min(0).max(20).optional().nullable(),
+  authrtCd: z.string().min(0).max(12).optional().nullable(),
   authrtNm: z.string().min(0).max(300),
-  authrtExpln: z.string().min(0).max(4000).optional(),
-  authrtCrtYmd: z.string().optional(),
-  crtrId: z.string().min(0).max(20).optional(),
-  chkYeoBu: z.number().int().optional(),
+  authrtExpln: z.string().min(0).max(4000).optional().nullable(),
+  authrtCrtYmd: z.string().optional().nullable(),
+  crtrId: z.string().min(0).max(20).optional().nullable(),
+  chkYeoBu: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseMenuCreateDtoRequestSchema = z.object({
@@ -8469,13 +8469,13 @@ export const ApiResponsePageResponseMenuCreateDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseMenuCreateDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseMenuCreateDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseMenuCreateDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseMenuCreateDtoRequestSchema = z.object({
@@ -8487,11 +8487,11 @@ export const PageResponseMenuCreateDtoRequestSchema = z.object({
 });
 
 export const PageResponseMenuCreateDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => MenuCreateDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => MenuCreateDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseListMenuDtoRequestSchema = z.object({
@@ -8505,13 +8505,13 @@ export const ApiResponseListMenuDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListMenuDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => MenuDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => MenuDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseWebLogDtoRequestSchema = z.object({
@@ -8525,13 +8525,13 @@ export const ApiResponsePageResponseWebLogDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseWebLogDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseWebLogDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseWebLogDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseWebLogDtoRequestSchema = z.object({
@@ -8543,11 +8543,11 @@ export const PageResponseWebLogDtoRequestSchema = z.object({
 });
 
 export const PageResponseWebLogDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => WebLogDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => WebLogDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const WebLogDtoRequestSchema = z.object({
@@ -8560,12 +8560,12 @@ export const WebLogDtoRequestSchema = z.object({
 });
 
 export const WebLogDtoResponseSchema = z.object({
-  webLogSn: z.number().int().optional(),
-  url: z.string().optional(),
-  dmndUserId: z.string().optional(),
-  dmndUserIpAddr: z.string().optional(),
-  occrYmd: z.string().optional(),
-  prcsTm: z.number().int().optional(),
+  webLogSn: z.number().int().optional().nullable(),
+  url: z.string().optional().nullable(),
+  dmndUserId: z.string().optional().nullable(),
+  dmndUserIpAddr: z.string().optional().nullable(),
+  occrYmd: z.string().optional().nullable(),
+  prcsTm: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseUserLogDtoRequestSchema = z.object({
@@ -8579,13 +8579,13 @@ export const ApiResponsePageResponseUserLogDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseUserLogDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseUserLogDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseUserLogDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseUserLogDtoRequestSchema = z.object({
@@ -8597,11 +8597,11 @@ export const PageResponseUserLogDtoRequestSchema = z.object({
 });
 
 export const PageResponseUserLogDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => UserLogDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => UserLogDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const UserLogDtoRequestSchema = z.object({
@@ -8619,17 +8619,17 @@ export const UserLogDtoRequestSchema = z.object({
 });
 
 export const UserLogDtoResponseSchema = z.object({
-  ocrnYmd: z.string().optional(),
-  dmndUserId: z.string().optional(),
-  userNm: z.string().optional(),
-  srvcNm: z.string().optional(),
-  mthdNm: z.string().optional(),
-  crtCnt: z.number().int().optional(),
-  mdfcnCnt: z.number().int().optional(),
-  inqCnt: z.number().int().optional(),
-  delCnt: z.number().int().optional(),
-  otptCnt: z.number().int().optional(),
-  errCnt: z.number().int().optional(),
+  ocrnYmd: z.string().optional().nullable(),
+  dmndUserId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  srvcNm: z.string().optional().nullable(),
+  mthdNm: z.string().optional().nullable(),
+  crtCnt: z.number().int().optional().nullable(),
+  mdfcnCnt: z.number().int().optional().nullable(),
+  inqCnt: z.number().int().optional().nullable(),
+  delCnt: z.number().int().optional().nullable(),
+  otptCnt: z.number().int().optional().nullable(),
+  errCnt: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseSysLogDtoRequestSchema = z.object({
@@ -8643,13 +8643,13 @@ export const ApiResponsePageResponseSysLogDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseSysLogDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseSysLogDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseSysLogDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseSysLogDtoRequestSchema = z.object({
@@ -8661,11 +8661,11 @@ export const PageResponseSysLogDtoRequestSchema = z.object({
 });
 
 export const PageResponseSysLogDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => SysLogDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SysLogDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const SysLogDtoRequestSchema = z.object({
@@ -8681,15 +8681,15 @@ export const SysLogDtoRequestSchema = z.object({
 });
 
 export const SysLogDtoResponseSchema = z.object({
-  sysLogSn: z.number().int().optional(),
-  dmndId: z.string().min(0).max(20).optional(),
-  srvcNm: z.string().min(0).max(100).optional(),
-  methodNm: z.string().optional(),
-  prcsSeCd: z.string().min(0).max(12).optional(),
-  prcsTm: z.string().min(0).max(14).optional(),
-  dmndUserId: z.string().min(0).max(20).optional(),
-  rqesterIp: z.string().optional(),
-  ocrnYmd: z.string().min(0).max(8).optional(),
+  sysLogSn: z.number().int().optional().nullable(),
+  dmndId: z.string().min(0).max(20).optional().nullable(),
+  srvcNm: z.string().min(0).max(100).optional().nullable(),
+  methodNm: z.string().optional().nullable(),
+  prcsSeCd: z.string().min(0).max(12).optional().nullable(),
+  prcsTm: z.string().min(0).max(14).optional().nullable(),
+  dmndUserId: z.string().min(0).max(20).optional().nullable(),
+  rqesterIp: z.string().optional().nullable(),
+  ocrnYmd: z.string().min(0).max(8).optional().nullable(),
 });
 
 export const ApiResponseSysLogDtoRequestSchema = z.object({
@@ -8703,13 +8703,13 @@ export const ApiResponseSysLogDtoRequestSchema = z.object({
 });
 
 export const ApiResponseSysLogDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SysLogDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SysLogDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponsePrivacyLogDtoRequestSchema = z.object({
@@ -8723,13 +8723,13 @@ export const ApiResponsePageResponsePrivacyLogDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponsePrivacyLogDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponsePrivacyLogDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponsePrivacyLogDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponsePrivacyLogDtoRequestSchema = z.object({
@@ -8741,11 +8741,11 @@ export const PageResponsePrivacyLogDtoRequestSchema = z.object({
 });
 
 export const PageResponsePrivacyLogDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => PrivacyLogDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PrivacyLogDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const PrivacyLogDtoRequestSchema = z.object({
@@ -8759,13 +8759,13 @@ export const PrivacyLogDtoRequestSchema = z.object({
 });
 
 export const PrivacyLogDtoResponseSchema = z.object({
-  prvcLogSn: z.number().int().optional(),
-  dmndId: z.string().optional(),
-  inqDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  srvcNm: z.string().optional(),
-  inqInfo: z.string().optional(),
-  dmndUserId: z.string().optional(),
-  dmndUserIpAddr: z.string().optional(),
+  prvcLogSn: z.number().int().optional().nullable(),
+  dmndId: z.string().optional().nullable(),
+  inqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  srvcNm: z.string().optional().nullable(),
+  inqInfo: z.string().optional().nullable(),
+  dmndUserId: z.string().optional().nullable(),
+  dmndUserIpAddr: z.string().optional().nullable(),
 });
 
 export const ApiResponsePageResponseLoginLogDtoRequestSchema = z.object({
@@ -8779,13 +8779,13 @@ export const ApiResponsePageResponseLoginLogDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseLoginLogDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseLoginLogDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseLoginLogDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const LoginLogDtoRequestSchema = z.object({
@@ -8799,13 +8799,13 @@ export const LoginLogDtoRequestSchema = z.object({
 });
 
 export const LoginLogDtoResponseSchema = z.object({
-  lgnSn: z.number().int().optional(),
-  loginId: z.string().optional(),
-  loginIp: z.string().optional(),
-  loginMthd: z.string().optional(),
-  errOccrrAt: z.string().optional(),
-  errorCode: z.string().optional(),
-  creatDt: z.string().optional(),
+  lgnSn: z.number().int().optional().nullable(),
+  loginId: z.string().optional().nullable(),
+  loginIp: z.string().optional().nullable(),
+  loginMthd: z.string().optional().nullable(),
+  errOccrrAt: z.string().optional().nullable(),
+  errorCode: z.string().optional().nullable(),
+  creatDt: z.string().optional().nullable(),
 });
 
 export const PageResponseLoginLogDtoRequestSchema = z.object({
@@ -8817,11 +8817,11 @@ export const PageResponseLoginLogDtoRequestSchema = z.object({
 });
 
 export const PageResponseLoginLogDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => LoginLogDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => LoginLogDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseLoginLogDtoRequestSchema = z.object({
@@ -8835,13 +8835,13 @@ export const ApiResponseLoginLogDtoRequestSchema = z.object({
 });
 
 export const ApiResponseLoginLogDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => LoginLogDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => LoginLogDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseLoginPolicyDtoRequestSchema = z.object({
@@ -8855,13 +8855,13 @@ export const ApiResponsePageResponseLoginPolicyDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseLoginPolicyDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseLoginPolicyDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseLoginPolicyDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseLoginPolicyDtoRequestSchema = z.object({
@@ -8873,11 +8873,11 @@ export const PageResponseLoginPolicyDtoRequestSchema = z.object({
 });
 
 export const PageResponseLoginPolicyDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => LoginPolicyDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => LoginPolicyDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseLoginPolicyDtoRequestSchema = z.object({
@@ -8891,13 +8891,13 @@ export const ApiResponseLoginPolicyDtoRequestSchema = z.object({
 });
 
 export const ApiResponseLoginPolicyDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => LoginPolicyDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => LoginPolicyDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseInternetSvcGuidanceDtoRequestSchema = z.object({
@@ -8911,13 +8911,13 @@ export const ApiResponsePageResponseInternetSvcGuidanceDtoRequestSchema = z.obje
 });
 
 export const ApiResponsePageResponseInternetSvcGuidanceDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseInternetSvcGuidanceDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseInternetSvcGuidanceDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseInternetSvcGuidanceDtoRequestSchema = z.object({
@@ -8929,11 +8929,11 @@ export const PageResponseInternetSvcGuidanceDtoRequestSchema = z.object({
 });
 
 export const PageResponseInternetSvcGuidanceDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => InternetSvcGuidanceDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InternetSvcGuidanceDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseInternetSvcGuidanceDtoRequestSchema = z.object({
@@ -8947,13 +8947,13 @@ export const ApiResponseInternetSvcGuidanceDtoRequestSchema = z.object({
 });
 
 export const ApiResponseInternetSvcGuidanceDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => InternetSvcGuidanceDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => InternetSvcGuidanceDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseGroupManageDtoRequestSchema = z.object({
@@ -8967,13 +8967,13 @@ export const ApiResponsePageResponseGroupManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseGroupManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseGroupManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseGroupManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseGroupManageDtoRequestSchema = z.object({
@@ -8985,11 +8985,11 @@ export const PageResponseGroupManageDtoRequestSchema = z.object({
 });
 
 export const PageResponseGroupManageDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => GroupManageDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => GroupManageDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseGroupManageDtoRequestSchema = z.object({
@@ -9003,13 +9003,13 @@ export const ApiResponseGroupManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponseGroupManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => GroupManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => GroupManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseDeptAuthorProjectionRequestSchema = z.object({
@@ -9023,13 +9023,13 @@ export const ApiResponsePageResponseDeptAuthorProjectionRequestSchema = z.object
 });
 
 export const ApiResponsePageResponseDeptAuthorProjectionResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseDeptAuthorProjectionResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseDeptAuthorProjectionResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const DeptAuthorProjectionRequestSchema = z.object({
@@ -9043,13 +9043,13 @@ export const DeptAuthorProjectionRequestSchema = z.object({
 });
 
 export const DeptAuthorProjectionResponseSchema = z.object({
-  deptCode: z.string().optional(),
-  deptNm: z.string().optional(),
-  userId: z.string().optional(),
-  userNm: z.string().optional(),
+  deptCode: z.string().optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
   authrtId: z.string().optional().nullable(),
-  scrtyDcsnTrgtId: z.string().optional(),
-  regYn: z.string().optional(),
+  scrtyDcsnTrgtId: z.string().optional().nullable(),
+  regYn: z.string().optional().nullable(),
 });
 
 export const PageResponseDeptAuthorProjectionRequestSchema = z.object({
@@ -9061,11 +9061,11 @@ export const PageResponseDeptAuthorProjectionRequestSchema = z.object({
 });
 
 export const PageResponseDeptAuthorProjectionResponseSchema = z.object({
-  list: z.array(z.lazy(() => DeptAuthorProjectionResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptAuthorProjectionResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseDeptManageDtoRequestSchema = z.object({
@@ -9079,13 +9079,13 @@ export const ApiResponsePageResponseDeptManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseDeptManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseDeptManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseDeptManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseDeptManageDtoRequestSchema = z.object({
@@ -9097,11 +9097,11 @@ export const PageResponseDeptManageDtoRequestSchema = z.object({
 });
 
 export const PageResponseDeptManageDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => DeptManageDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptManageDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseDeptManageDtoRequestSchema = z.object({
@@ -9115,13 +9115,13 @@ export const ApiResponseDeptManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponseDeptManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => DeptManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => DeptManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListDeptManageDtoRequestSchema = z.object({
@@ -9135,13 +9135,13 @@ export const ApiResponseListDeptManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListDeptManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => DeptManageDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => DeptManageDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseInstitutionCodeDtoRequestSchema = z.object({
@@ -9155,13 +9155,13 @@ export const ApiResponsePageResponseInstitutionCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseInstitutionCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseInstitutionCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseInstitutionCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const InstitutionCodeDtoRequestSchema = z.object({
@@ -9190,28 +9190,28 @@ export const InstitutionCodeDtoRequestSchema = z.object({
 });
 
 export const InstitutionCodeDtoResponseSchema = z.object({
-  instCd: z.string().min(0).max(7).optional(),
-  allInstNm: z.string().min(0).max(100).optional(),
-  lwstInstNm: z.string().min(0).max(100).optional(),
-  instAbbrNm: z.string().min(0).max(100).optional(),
-  odr: z.string().min(0).max(2).optional(),
-  ord: z.string().min(0).max(3).optional(),
-  instCycl: z.string().min(0).max(2).optional(),
-  topInstCd: z.string().min(0).max(7).optional(),
-  uprInstCd: z.string().min(0).max(7).optional(),
-  reprsInstCd: z.string().min(0).max(7).optional(),
-  instTypeLclsf: z.string().min(0).max(2).optional(),
-  instTypeMclsf: z.string().min(0).max(2).optional(),
-  instTypeSclsf: z.string().min(0).max(2).optional(),
-  telno: z.string().min(0).max(11).optional(),
-  faxNo: z.string().min(0).max(20).optional(),
-  crtYmd: z.string().min(0).max(8).optional(),
-  ablYmd: z.string().min(0).max(8).optional(),
-  ablYn: z.string().min(0).max(1).optional(),
-  chgYmd: z.string().min(0).max(8).optional(),
-  chgTm: z.string().min(0).max(20).optional(),
-  crtrYmd: z.string().min(0).max(8).optional(),
-  sortOrdr: z.number().int().optional(),
+  instCd: z.string().min(0).max(7).optional().nullable(),
+  allInstNm: z.string().min(0).max(100).optional().nullable(),
+  lwstInstNm: z.string().min(0).max(100).optional().nullable(),
+  instAbbrNm: z.string().min(0).max(100).optional().nullable(),
+  odr: z.string().min(0).max(2).optional().nullable(),
+  ord: z.string().min(0).max(3).optional().nullable(),
+  instCycl: z.string().min(0).max(2).optional().nullable(),
+  topInstCd: z.string().min(0).max(7).optional().nullable(),
+  uprInstCd: z.string().min(0).max(7).optional().nullable(),
+  reprsInstCd: z.string().min(0).max(7).optional().nullable(),
+  instTypeLclsf: z.string().min(0).max(2).optional().nullable(),
+  instTypeMclsf: z.string().min(0).max(2).optional().nullable(),
+  instTypeSclsf: z.string().min(0).max(2).optional().nullable(),
+  telno: z.string().min(0).max(11).optional().nullable(),
+  faxNo: z.string().min(0).max(20).optional().nullable(),
+  crtYmd: z.string().min(0).max(8).optional().nullable(),
+  ablYmd: z.string().min(0).max(8).optional().nullable(),
+  ablYn: z.string().min(0).max(1).optional().nullable(),
+  chgYmd: z.string().min(0).max(8).optional().nullable(),
+  chgTm: z.string().min(0).max(20).optional().nullable(),
+  crtrYmd: z.string().min(0).max(8).optional().nullable(),
+  sortOrdr: z.number().int().optional().nullable(),
 });
 
 export const PageResponseInstitutionCodeDtoRequestSchema = z.object({
@@ -9223,11 +9223,11 @@ export const PageResponseInstitutionCodeDtoRequestSchema = z.object({
 });
 
 export const PageResponseInstitutionCodeDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => InstitutionCodeDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InstitutionCodeDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseInstitutionCodeDtoRequestSchema = z.object({
@@ -9241,13 +9241,13 @@ export const ApiResponseInstitutionCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponseInstitutionCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => InstitutionCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => InstitutionCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseInstitutionCodeRecptnDtoRequestSchema = z.object({
@@ -9261,13 +9261,13 @@ export const ApiResponsePageResponseInstitutionCodeRecptnDtoRequestSchema = z.ob
 });
 
 export const ApiResponsePageResponseInstitutionCodeRecptnDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseInstitutionCodeRecptnDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseInstitutionCodeRecptnDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseInstitutionCodeRecptnDtoRequestSchema = z.object({
@@ -9279,11 +9279,11 @@ export const PageResponseInstitutionCodeRecptnDtoRequestSchema = z.object({
 });
 
 export const PageResponseInstitutionCodeRecptnDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => InstitutionCodeRecptnDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InstitutionCodeRecptnDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseCmmnDetailCodeDtoRequestSchema = z.object({
@@ -9297,13 +9297,13 @@ export const ApiResponsePageResponseCmmnDetailCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseCmmnDetailCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseCmmnDetailCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCmmnDetailCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseCmmnDetailCodeDtoRequestSchema = z.object({
@@ -9315,11 +9315,11 @@ export const PageResponseCmmnDetailCodeDtoRequestSchema = z.object({
 });
 
 export const PageResponseCmmnDetailCodeDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => CmmnDetailCodeDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnDetailCodeDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseCmmnDetailCodeDtoRequestSchema = z.object({
@@ -9333,13 +9333,13 @@ export const ApiResponseCmmnDetailCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponseCmmnDetailCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => CmmnDetailCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CmmnDetailCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseCmmnCodeDtoRequestSchema = z.object({
@@ -9353,13 +9353,13 @@ export const ApiResponsePageResponseCmmnCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseCmmnCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseCmmnCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCmmnCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseCmmnCodeDtoRequestSchema = z.object({
@@ -9371,11 +9371,11 @@ export const PageResponseCmmnCodeDtoRequestSchema = z.object({
 });
 
 export const PageResponseCmmnCodeDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => CmmnCodeDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnCodeDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseCmmnCodeDtoRequestSchema = z.object({
@@ -9389,13 +9389,13 @@ export const ApiResponseCmmnCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponseCmmnCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => CmmnCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CmmnCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseCmmnClCodeDtoRequestSchema = z.object({
@@ -9409,13 +9409,13 @@ export const ApiResponsePageResponseCmmnClCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseCmmnClCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseCmmnClCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCmmnClCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseCmmnClCodeDtoRequestSchema = z.object({
@@ -9427,11 +9427,11 @@ export const PageResponseCmmnClCodeDtoRequestSchema = z.object({
 });
 
 export const PageResponseCmmnClCodeDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => CmmnClCodeDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnClCodeDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseCmmnClCodeDtoRequestSchema = z.object({
@@ -9445,13 +9445,13 @@ export const ApiResponseCmmnClCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponseCmmnClCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => CmmnClCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CmmnClCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseAdministCodeDtoRequestSchema = z.object({
@@ -9465,13 +9465,13 @@ export const ApiResponsePageResponseAdministCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseAdministCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAdministCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseAdministCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseAdministCodeDtoRequestSchema = z.object({
@@ -9483,11 +9483,11 @@ export const PageResponseAdministCodeDtoRequestSchema = z.object({
 });
 
 export const PageResponseAdministCodeDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => AdministCodeDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AdministCodeDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseAdministCodeDtoRequestSchema = z.object({
@@ -9501,13 +9501,13 @@ export const ApiResponseAdministCodeDtoRequestSchema = z.object({
 });
 
 export const ApiResponseAdministCodeDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => AdministCodeDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => AdministCodeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseBoardMasterSummaryResponseRequestSchema = z.object({
@@ -9521,13 +9521,13 @@ export const ApiResponsePageResponseBoardMasterSummaryResponseRequestSchema = z.
 });
 
 export const ApiResponsePageResponseBoardMasterSummaryResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseBoardMasterSummaryResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseBoardMasterSummaryResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const BoardMasterSummaryResponseRequestSchema = z.object({
@@ -9546,12 +9546,12 @@ export const BoardMasterSummaryResponseResponseSchema = z.object({
   bbsId: z.string(),
   bbsTtl: z.string(),
   bbsTypeCd: z.string(),
-  bbsTypeCdNm: z.string().optional(),
+  bbsTypeCdNm: z.string().optional().nullable(),
   bbsAtrbCd: z.string(),
-  bbsAtrbCdNm: z.string().optional(),
-  tmpltId: z.string().optional(),
+  bbsAtrbCdNm: z.string().optional().nullable(),
+  tmpltId: z.string().optional().nullable(),
   useYn: z.string(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const PageResponseBoardMasterSummaryResponseRequestSchema = z.object({
@@ -9563,11 +9563,11 @@ export const PageResponseBoardMasterSummaryResponseRequestSchema = z.object({
 });
 
 export const PageResponseBoardMasterSummaryResponseResponseSchema = z.object({
-  list: z.array(z.lazy(() => BoardMasterSummaryResponseResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BoardMasterSummaryResponseResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseBoardMasterDetailResponseRequestSchema = z.object({
@@ -9581,13 +9581,13 @@ export const ApiResponseBoardMasterDetailResponseRequestSchema = z.object({
 });
 
 export const ApiResponseBoardMasterDetailResponseResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => BoardMasterDetailResponseResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => BoardMasterDetailResponseResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const BoardMasterDetailResponseRequestSchema = z.object({
@@ -9620,28 +9620,28 @@ export const BoardMasterDetailResponseRequestSchema = z.object({
 export const BoardMasterDetailResponseResponseSchema = z.object({
   bbsId: z.string(),
   bbsTtl: z.string(),
-  bbsExpln: z.string().optional(),
+  bbsExpln: z.string().optional().nullable(),
   bbsTypeCd: z.string(),
-  bbsTypeCdNm: z.string().optional(),
+  bbsTypeCdNm: z.string().optional().nullable(),
   bbsAtrbCd: z.string(),
-  bbsAtrbCdNm: z.string().optional(),
-  ansPsbltyYn: z.string().optional(),
+  bbsAtrbCdNm: z.string().optional().nullable(),
+  ansPsbltyYn: z.string().optional().nullable(),
   fileAtchPsbltyYn: z.string(),
   atchPsbltyFileQty: z.number().int(),
-  atchPsbltyFileSz: z.number().int().optional(),
-  tmpltId: z.string().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  atchPsbltyFileSz: z.number().int().optional().nullable(),
+  tmpltId: z.string().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   useYn: z.string(),
-  cmntySn: z.number().int().optional(),
-  blogSn: z.number().int().optional(),
-  blogYn: z.string().optional(),
-  ansYn: z.string().optional(),
-  stsfdgYn: z.string().optional(),
-  authFlag: z.string().optional(),
-  tmplatCours: z.string().optional(),
+  cmntySn: z.number().int().optional().nullable(),
+  blogSn: z.number().int().optional().nullable(),
+  blogYn: z.string().optional().nullable(),
+  ansYn: z.string().optional().nullable(),
+  stsfdgYn: z.string().optional().nullable(),
+  authFlag: z.string().optional().nullable(),
+  tmplatCours: z.string().optional().nullable(),
 });
 
 export const ApiResponsePageResponseBannerDtoRequestSchema = z.object({
@@ -9655,13 +9655,13 @@ export const ApiResponsePageResponseBannerDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseBannerDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseBannerDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseBannerDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseBannerDtoRequestSchema = z.object({
@@ -9673,11 +9673,11 @@ export const PageResponseBannerDtoRequestSchema = z.object({
 });
 
 export const PageResponseBannerDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => BannerDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BannerDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseBannerDtoRequestSchema = z.object({
@@ -9691,13 +9691,13 @@ export const ApiResponseBannerDtoRequestSchema = z.object({
 });
 
 export const ApiResponseBannerDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => BannerDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => BannerDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseAuthorManageDtoRequestSchema = z.object({
@@ -9711,13 +9711,13 @@ export const ApiResponsePageResponseAuthorManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseAuthorManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAuthorManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseAuthorManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseAuthorManageDtoRequestSchema = z.object({
@@ -9729,11 +9729,11 @@ export const PageResponseAuthorManageDtoRequestSchema = z.object({
 });
 
 export const PageResponseAuthorManageDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => AuthorManageDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AuthorManageDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseAuthorManageDtoRequestSchema = z.object({
@@ -9747,13 +9747,13 @@ export const ApiResponseAuthorManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponseAuthorManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => AuthorManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => AuthorManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseAuthorRoleProjectionRequestSchema = z.object({
@@ -9767,13 +9767,13 @@ export const ApiResponsePageResponseAuthorRoleProjectionRequestSchema = z.object
 });
 
 export const ApiResponsePageResponseAuthorRoleProjectionResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAuthorRoleProjectionResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseAuthorRoleProjectionResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const AuthorRoleProjectionRequestSchema = z.object({
@@ -9789,15 +9789,15 @@ export const AuthorRoleProjectionRequestSchema = z.object({
 });
 
 export const AuthorRoleProjectionResponseSchema = z.object({
-  roleId: z.string().optional(),
-  roleNm: z.string().optional(),
-  rolePatrn: z.string().optional(),
-  roleExpln: z.string().optional(),
-  roleTypeCd: z.string().optional(),
-  roleSort: z.string().optional(),
-  authrtCd: z.string().optional(),
-  regYn: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  roleId: z.string().optional().nullable(),
+  roleNm: z.string().optional().nullable(),
+  rolePatrn: z.string().optional().nullable(),
+  roleExpln: z.string().optional().nullable(),
+  roleTypeCd: z.string().optional().nullable(),
+  roleSort: z.string().optional().nullable(),
+  authrtCd: z.string().optional().nullable(),
+  regYn: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const PageResponseAuthorRoleProjectionRequestSchema = z.object({
@@ -9809,11 +9809,11 @@ export const PageResponseAuthorRoleProjectionRequestSchema = z.object({
 });
 
 export const PageResponseAuthorRoleProjectionResponseSchema = z.object({
-  list: z.array(z.lazy(() => AuthorRoleProjectionResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AuthorRoleProjectionResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseSmsDtoRequestSchema = z.object({
@@ -9827,13 +9827,13 @@ export const ApiResponsePageResponseSmsDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseSmsDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseSmsDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseSmsDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseSmsDtoRequestSchema = z.object({
@@ -9845,11 +9845,11 @@ export const PageResponseSmsDtoRequestSchema = z.object({
 });
 
 export const PageResponseSmsDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => SmsDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SmsDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseSmsDtoRequestSchema = z.object({
@@ -9863,13 +9863,13 @@ export const ApiResponseSmsDtoRequestSchema = z.object({
 });
 
 export const ApiResponseSmsDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => SmsDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SmsDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseListSmsRecptnDtoRequestSchema = z.object({
@@ -9883,13 +9883,13 @@ export const ApiResponseListSmsRecptnDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListSmsRecptnDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseRewardManageDtoRequestSchema = z.object({
@@ -9903,13 +9903,13 @@ export const ApiResponsePageResponseRewardManageDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseRewardManageDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseRewardManageDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseRewardManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseRewardManageDtoRequestSchema = z.object({
@@ -9921,11 +9921,11 @@ export const PageResponseRewardManageDtoRequestSchema = z.object({
 });
 
 export const PageResponseRewardManageDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => RewardManageDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => RewardManageDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseExternalHrDtoRequestSchema = z.object({
@@ -9939,13 +9939,13 @@ export const ApiResponsePageResponseExternalHrDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseExternalHrDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseExternalHrDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseExternalHrDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseExternalHrDtoRequestSchema = z.object({
@@ -9957,11 +9957,11 @@ export const PageResponseExternalHrDtoRequestSchema = z.object({
 });
 
 export const PageResponseExternalHrDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => ExternalHrDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ExternalHrDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponsePageResponseEventInfoDtoRequestSchema = z.object({
@@ -9975,13 +9975,13 @@ export const ApiResponsePageResponseEventInfoDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseEventInfoDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseEventInfoDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseEventInfoDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseEventInfoDtoRequestSchema = z.object({
@@ -9993,11 +9993,11 @@ export const PageResponseEventInfoDtoRequestSchema = z.object({
 });
 
 export const PageResponseEventInfoDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => EventInfoDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => EventInfoDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseEventInfoDtoRequestSchema = z.object({
@@ -10011,13 +10011,13 @@ export const ApiResponseEventInfoDtoRequestSchema = z.object({
 });
 
 export const ApiResponseEventInfoDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => EventInfoDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => EventInfoDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponseAttachmentIntegrityReportRequestSchema = z.object({
@@ -10031,13 +10031,13 @@ export const ApiResponseAttachmentIntegrityReportRequestSchema = z.object({
 });
 
 export const ApiResponseAttachmentIntegrityReportResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => AttachmentIntegrityReportResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => AttachmentIntegrityReportResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const AttachmentIntegrityReportRequestSchema = z.object({
@@ -10055,13 +10055,13 @@ export const AttachmentIntegrityReportRequestSchema = z.object({
 export const AttachmentIntegrityReportResponseSchema = z.object({
   checked: z.number().int(),
   missing: z.number().int(),
-  samples: z.array(z.string()),
+  samples: z.array(z.string().optional().nullable()),
   storageRoot: z.string(),
   storedFilesChecked: z.number().int(),
   orphanCandidates: z.number().int(),
   undecidable: z.number().int(),
-  orphanSamples: z.array(z.string()),
-  healthy: z.boolean().optional(),
+  orphanSamples: z.array(z.string().optional().nullable()),
+  healthy: z.boolean().optional().nullable(),
 });
 
 export const ApiResponseListCommunityDtoRequestSchema = z.object({
@@ -10075,13 +10075,13 @@ export const ApiResponseListCommunityDtoRequestSchema = z.object({
 });
 
 export const ApiResponseListCommunityDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => CommunityDtoResponseSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => CommunityDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseAddressBookDtoRequestSchema = z.object({
@@ -10095,13 +10095,13 @@ export const ApiResponsePageResponseAddressBookDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseAddressBookDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAddressBookDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseAddressBookDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseAddressBookDtoRequestSchema = z.object({
@@ -10113,11 +10113,11 @@ export const PageResponseAddressBookDtoRequestSchema = z.object({
 });
 
 export const PageResponseAddressBookDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => AddressBookDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AddressBookDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseAddressBookDtoRequestSchema = z.object({
@@ -10131,13 +10131,13 @@ export const ApiResponseAddressBookDtoRequestSchema = z.object({
 });
 
 export const ApiResponseAddressBookDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => AddressBookDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => AddressBookDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseAddressBookUserDtoRequestSchema = z.object({
@@ -10151,13 +10151,13 @@ export const ApiResponsePageResponseAddressBookUserDtoRequestSchema = z.object({
 });
 
 export const ApiResponsePageResponseAddressBookUserDtoResponseSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAddressBookUserDtoResponseSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional(),
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseAddressBookUserDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const PageResponseAddressBookUserDtoRequestSchema = z.object({
@@ -10169,9 +10169,9 @@ export const PageResponseAddressBookUserDtoRequestSchema = z.object({
 });
 
 export const PageResponseAddressBookUserDtoResponseSchema = z.object({
-  list: z.array(z.lazy(() => AddressBookUserDtoResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AddressBookUserDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });

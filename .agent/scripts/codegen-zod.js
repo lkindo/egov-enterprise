@@ -201,6 +201,23 @@ function convertPropertyToZod(
   // nullable인 경우 처리
   if (prop.nullable || unionNullable) {
     zodChain += '.nullable()';
+  } else if (!isRequired && direction === 'response') {
+    // [2026-09-01] 응답의 non-required 필드는 null 도 허용한다.
+    //
+    // ⚠ 이것은 계약 완화가 아니라 **거짓 red 의 제거**다. 세 실측이 근거다.
+    //   ① springdoc 은 Java DTO 에서 nullability 를 추론하지 않는다 — `@Schema(nullable = true)`
+    //      를 손으로 달지 않으면 문서에 아무 표시도 남지 않는다. 즉 문서의 nullable 부재는
+    //      "null 이 아니다" 라는 보장이 아니라 "말하지 않았다" 이다.
+    //   ② 이 저장소에는 전역 Jackson null 생략 설정이 없다(`ApiResponse` 의 특정 필드에만
+    //      `@JsonInclude(NON_NULL)`). 따라서 NULL 허용 컬럼에서 온 값은 응답 JSON 에
+    //      `"authrtExpln": null` 로 그대로 실린다 — 정상 동작이다.
+    //   ③ zod 의 `.optional()` 은 undefined 만 허용하고 null 을 거부한다. 그래서 ①②가 겹치면
+    //      **정상 응답이 런타임에 throw** 된다. 2026-09-01 CI e2e 에서 권한 관리·주소록·알림·
+    //      부서업무 화면이 SSR 단계에서 동시에 죽었다(3개 샤드 전부 red).
+    //
+    // required 필드와 요청(request) 방향은 그대로 엄격하게 둔다 — 서버가 반드시 채우는 값과
+    // 클라이언트가 보내는 값은 이 완화의 근거를 공유하지 않는다.
+    zodChain += '.nullable()';
   }
 
   return zodChain;
