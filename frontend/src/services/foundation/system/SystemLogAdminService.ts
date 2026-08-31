@@ -9,15 +9,62 @@ import type {
   WebLog,
 } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
+import type { operations } from '@/types/generated-api';
+import {
+  getLoginLogListOperation,
+  getLoginLogOperation,
+  getPrivacyLogListOperation,
+  getSysLogListOperation,
+  getSysLogOperation,
+  getUserLogListOperation,
+  getWebLogListOperation,
+} from '@/types/generated-operations';
+
+type LogSearchQuery = NonNullable<operations['getSysLogList']['parameters']['query']>;
+
+const LOG_QUERY_KEYS = [
+  'searchCondition',
+  'searchKeyword',
+  'searchUseYn',
+  'pageIndex',
+  'pageUnit',
+  'pageSize',
+  'firstIndex',
+  'lastIndex',
+  'recordCountPerPage',
+  'searchKeywordFrom',
+  'searchKeywordTo',
+] as const satisfies readonly (keyof LogSearchQuery)[];
 
 /** 목록 화면의 0-base `page`를 API의 1-base `pageIndex` 계약으로 정규화한다. */
-function normalizeLogSearchParams(params: SearchParams): SearchParams {
-  return {
-    ...params,
-    pageIndex: params.pageIndex ?? (params.page ?? 0) + 1,
-    pageUnit: params.pageUnit ?? params.size,
-    searchKeyword: params.searchKeyword ?? params.searchWrd ?? '',
-  };
+function normalizeLogSearchParams(params: SearchParams): LogSearchQuery {
+  const query: LogSearchQuery = {};
+  const generatedParams = params as Partial<LogSearchQuery>;
+  for (const key of LOG_QUERY_KEYS) {
+    const value = generatedParams[key];
+    if (value !== undefined) Object.assign(query, { [key]: value });
+  }
+  query.pageIndex = params.pageIndex ?? (params.page ?? 0) + 1;
+  if (params.pageUnit !== undefined || params.size !== undefined) {
+    query.pageUnit = params.pageUnit ?? params.size;
+  }
+  query.searchKeyword = params.searchKeyword ?? params.searchWrd ?? '';
+  return query;
+}
+
+function requireLogPage<T>(
+  response: { list?: T[]; total?: number; page?: number; size?: number; totalPage?: number },
+): PageResponse<T> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('로그 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return response as PageResponse<T>;
 }
 
 /**
@@ -32,64 +79,69 @@ class SystemLogAdminService extends AdminService {
    * 시스템 로그 목록 조회
    */
   async getSystemLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SysLog>> {
-    return this.get<PageResponse<SysLog>>('/system', {
-      ...config,
-      params: normalizeLogSearchParams(params),
+    const response = await this.executeGenerated(getSysLogListOperation, {
+      query: normalizeLogSearchParams(params),
+      config,
     });
+    return requireLogPage(response);
   }
 
   /**
    * 시스템 로그 상세 조회
    */
   async getSystemLog(sysLogSn: number, config?: AxiosRequestConfig): Promise<SysLog> {
-    return this.get<SysLog>(`/system/${sysLogSn}`, config);
+    return this.executeGenerated(getSysLogOperation, { path: { sysLogSn }, config });
   }
 
   /**
    * 로그인 로그 목록 조회
    */
   async getLoginLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
-    return this.get<PageResponse<LoginLog>>('/login', {
-      ...config,
-      params: normalizeLogSearchParams(params),
+    const response = await this.executeGenerated(getLoginLogListOperation, {
+      query: normalizeLogSearchParams(params),
+      config,
     });
+    return requireLogPage(response);
   }
 
   /**
    * 로그인 로그 상세 조회
    */
   async getLoginLog(lgnSn: number, config?: AxiosRequestConfig): Promise<LoginLog> {
-    return this.get<LoginLog>(`/login/${lgnSn}`, config);
+    return this.executeGenerated(getLoginLogOperation, { path: { lgnSn }, config });
   }
 
   /**
    * 개인정보 접근 로그 목록 조회
    */
   async getPrivacyLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<PrivacyLog>> {
-    return this.get<PageResponse<PrivacyLog>>('/privacy', {
-      ...config,
-      params: normalizeLogSearchParams(params),
+    const response = await this.executeGenerated(getPrivacyLogListOperation, {
+      query: normalizeLogSearchParams(params),
+      config,
     });
+    return requireLogPage(response);
   }
 
   /**
    * 사용자 로그 목록 조회 (관리자용)
    */
   async getUserLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<UserLog>> {
-    return this.get<PageResponse<UserLog>>('/user', {
-      ...config,
-      params: normalizeLogSearchParams(params),
+    const response = await this.executeGenerated(getUserLogListOperation, {
+      query: normalizeLogSearchParams(params),
+      config,
     });
+    return requireLogPage(response);
   }
 
   /**
    * 웹 로그 목록 조회 (HTTP 요청 로그)
    */
   async getWebLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<WebLog>> {
-    return this.get<PageResponse<WebLog>>('/web', {
-      ...config,
-      params: normalizeLogSearchParams(params),
+    const response = await this.executeGenerated(getWebLogListOperation, {
+      query: normalizeLogSearchParams(params),
+      config,
     });
+    return requireLogPage(response);
   }
 
   /*

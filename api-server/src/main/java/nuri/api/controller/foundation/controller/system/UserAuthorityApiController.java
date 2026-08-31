@@ -32,9 +32,11 @@ public class UserAuthorityApiController {
     @Operation(summary = "사용자별 권한 목록 조회", description = "시스템 사용자 목록과 각 사용자의 권한 할당 상태를 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorGroupProjection>>> getUserAuthorities(
+            @RequestParam(required = false) String authorCode,
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 
-        Page<AuthorGroupProjection> result = userAuthorityManageService.selectUserAuthorityList(searchDto);
+        Page<AuthorGroupProjection> result =
+                userAuthorityManageService.selectUserAuthorityList(authorCode, searchDto);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
                 result.getContent(),

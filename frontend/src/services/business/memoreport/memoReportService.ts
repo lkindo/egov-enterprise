@@ -1,4 +1,15 @@
-import client from '@/lib/api/client';
+import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
+import type { components } from '@/types/generated-api';
+import {
+  createMemoReportOperation,
+  deleteMemoReportOperation,
+  getMemoReportOperation,
+  getMemoReportsOperation,
+  getMyReportsOperation,
+  getReceivedReportsOperation,
+  updateDrctMatterOperation,
+  updateMemoReportOperation,
+} from '@/types/generated-operations';
 import { MemoInstructionRequestSchema } from '@/types/generated-zod';
 import { z } from 'zod';
 
@@ -32,32 +43,42 @@ export interface PageResponse<T> {
   total: number;
 }
 
-const BASE_URL = 'memo-reports';
-
 export const memoReportService = {
   getMemoReports: async (params: { searchKeyword?: string; page?: number; size?: number } = {}) => {
-    return client.get<PageResponse<MemoReportInfo>>(BASE_URL, { params });
+    return executeGeneratedOperation(getMemoReportsOperation, { query: params }) as
+      Promise<PageResponse<MemoReportInfo>>;
   },
   getMyReports: async (params: { page?: number; size?: number } = {}) => {
-    return client.get<PageResponse<MemoReportInfo>>(`${BASE_URL}/my`, { params });
+    return executeGeneratedOperation(getMyReportsOperation, { query: params }) as
+      Promise<PageResponse<MemoReportInfo>>;
   },
   getReceivedReports: async (params: { page?: number; size?: number } = {}) => {
-    return client.get<PageResponse<MemoReportInfo>>(`${BASE_URL}/received`, { params });
+    return executeGeneratedOperation(getReceivedReportsOperation, { query: params }) as
+      Promise<PageResponse<MemoReportInfo>>;
   },
   getMemoReport: async (memoRptSn: number) => {
-    return client.get<MemoReportInfo>(`${BASE_URL}/${memoRptSn}`);
+    return executeGeneratedOperation(getMemoReportOperation, { path: { memoRptSn } }) as
+      Promise<MemoReportInfo>;
   },
   createMemoReport: async (data: Partial<MemoReportInfo>) => {
-    return client.post<number>(BASE_URL, data);
+    return executeGeneratedOperation(createMemoReportOperation, {
+      body: data as components['schemas']['MemoReportDto'],
+    });
   },
   updateMemoReport: async (memoRptSn: number, data: Partial<MemoReportInfo>) => {
-    return client.put<void>(`${BASE_URL}/${memoRptSn}`, data);
+    return executeGeneratedOperation(updateMemoReportOperation, {
+      path: { memoRptSn },
+      body: data as components['schemas']['MemoReportDto'],
+    });
   },
   updateDrctMatter: async (memoRptSn: number, drctnMttr: string) => {
     const request = MemoInstructionBoundarySchema.parse({ drctnMttr });
-    return client.patch<void>(`${BASE_URL}/${memoRptSn}/instr-cn`, request);
+    return executeGeneratedOperation(updateDrctMatterOperation, {
+      path: { memoRptSn },
+      body: request,
+    });
   },
   deleteMemoReport: async (memoRptSn: number) => {
-    return client.delete<void>(`${BASE_URL}/${memoRptSn}`);
+    return executeGeneratedOperation(deleteMemoReportOperation, { path: { memoRptSn } });
   }
 };

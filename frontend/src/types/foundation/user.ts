@@ -6,9 +6,9 @@ export interface UserManage {
   pswd?: string;
   pswdHint?: string;
   pswdCrans?: string;
-  emlAddr: string; // Aligned with backend emlAddr
+  emlAddr?: string; // 백엔드 UserDto에서 nullable이며, 누락은 미지정으로 보존한다.
   groupId?: string;
-  userSttsCd: string;
+  userSttsCd?: string; // 목록 projection에는 없으며 상세 응답에서만 제공될 수 있다.
   sbscrbDe?: string;
   esntlId?: string;
   mblTelno?: string;

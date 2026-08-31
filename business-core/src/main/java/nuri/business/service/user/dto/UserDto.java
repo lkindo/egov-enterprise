@@ -1,5 +1,6 @@
 package nuri.business.service.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import org.springframework.lang.NonNull;
@@ -15,6 +16,7 @@ import nuri.business.domain.auth.UserAuthority;
  * 사용자 관리 DTO (Record 버전)
  */
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record UserDto(
     @NonNull
     @NotBlank(message = "사용자 ID 는 필수입니다")

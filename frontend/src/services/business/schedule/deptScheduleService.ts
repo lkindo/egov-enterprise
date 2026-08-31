@@ -1,6 +1,16 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
+import type { GeneratedOperationRequest } from '@/types/generated-operations';
+import {
+  createScheduleOperation,
+  deleteScheduleOperation,
+  getDeptScheduleListOperation,
+  getMonthlyScheduleOperation,
+  getScheduleByDateRangeOperation,
+  getScheduleOperation,
+  updateScheduleOperation,
+} from '@/types/generated-operations';
 
 /**
  * 부서 일정 관리 서비스
@@ -17,7 +27,14 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 페이지 결과
    */
   public async getDeptScheduleList(params: ScheduleSearchParams = {}): Promise<PageResponse<DeptSchedule>> {
-    return this.get<PageResponse<DeptSchedule>>('/dept', { params });
+    const pageIndex = params.pageIndex ?? params.pageNo;
+    return this.executeGenerated(getDeptScheduleListOperation, {
+      query: {
+        ...(pageIndex !== undefined ? { pageIndex } : {}),
+        ...(params.size !== undefined ? { pageUnit: params.size } : {}),
+        ...(params.schdlNm !== undefined ? { schdlNm: params.schdlNm } : {}),
+      },
+    }) as Promise<PageResponse<DeptSchedule>>;
   }
 
   /**
@@ -28,7 +45,7 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 배열 (PageResponse 봉투가 아니라 배열이 그대로 온다)
    */
   public async getDeptScheduleMonthList(params: { yearMonth: string }): Promise<DeptSchedule[]> {
-    return this.get<DeptSchedule[]>('/monthly', { params });
+    return this.executeGenerated(getMonthlyScheduleOperation, { query: params }) as Promise<DeptSchedule[]>;
   }
 
   /**
@@ -38,7 +55,9 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 배열
    */
   public async getDeptScheduleByRange(startDate: string, endDate: string): Promise<DeptSchedule[]> {
-    return this.get<DeptSchedule[]>('/range', { params: { startDate, endDate } });
+    return this.executeGenerated(getScheduleByDateRangeOperation, {
+      query: { startDate, endDate },
+    }) as Promise<DeptSchedule[]>;
   }
 
   /**
@@ -47,7 +66,9 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 상세 정보
    */
   public async getDeptSchedule(schdlSn: number): Promise<DeptSchedule> {
-    return this.get<DeptSchedule>(`/${schdlSn}`);
+    return this.executeGenerated(getScheduleOperation, {
+      path: { schdlSn },
+    }) as Promise<DeptSchedule>;
   }
 
   /**
@@ -57,7 +78,9 @@ class DeptScheduleService extends ApiService {
    * @returns 생성된 일정의 숫자 일련번호
    */
   public async createDeptSchedule(schedule: Partial<DeptSchedule>): Promise<number> {
-    return this.post<number>('', schedule);
+    return this.executeGenerated(createScheduleOperation, {
+      body: schedule as GeneratedOperationRequest<'createSchedule'>,
+    });
   }
 
   /**
@@ -66,7 +89,10 @@ class DeptScheduleService extends ApiService {
    * @param schedule 수정할 일정 정보
    */
   public async updateDeptSchedule(schdlSn: number, schedule: Partial<DeptSchedule>): Promise<void> {
-    return this.put<void>(`/${schdlSn}`, schedule);
+    return this.executeGenerated(updateScheduleOperation, {
+      path: { schdlSn },
+      body: schedule as GeneratedOperationRequest<'updateSchedule'>,
+    });
   }
 
   /**
@@ -74,7 +100,9 @@ class DeptScheduleService extends ApiService {
    * @param schdlSn 일정 일련번호
    */
   public async deleteDeptSchedule(schdlSn: number): Promise<void> {
-    return this.delete<void>(`/${schdlSn}`);
+    return this.executeGenerated(deleteScheduleOperation, {
+      path: { schdlSn },
+    });
   }
 }
 

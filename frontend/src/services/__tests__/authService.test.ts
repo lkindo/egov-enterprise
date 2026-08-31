@@ -6,10 +6,16 @@ vi.mock('next/config', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import axios from 'axios';
 import { authService, normalizeAuthUser } from '../foundation/auth/authService';
 import api from '@/lib/api/client';
+import { getCurrentUserOperation } from '@/types/generated-operations';
 
-const reissueSessionMock = vi.fn();
+const { executeGeneratedOperationMock, reissueSessionMock } = vi.hoisted(() => ({
+ executeGeneratedOperationMock: vi.fn(),
+ reissueSessionMock: vi.fn(),
+}));
+
 vi.mock('@/lib/api/client', () => ({
  default: {
  post: vi.fn(),
@@ -18,29 +24,103 @@ vi.mock('@/lib/api/client', () => ({
  reissueSession: (...args: unknown[]) => reissueSessionMock(...args),
 }));
 
+vi.mock('@/lib/api/generated-api-client', () => ({
+ executeGeneratedOperation: (...args: unknown[]) => executeGeneratedOperationMock(...args),
+}));
+
+vi.mock('axios', () => ({
+ default: { post: vi.fn() },
+}));
+
+const mockedPost = vi.mocked(axios.post);
+
 describe('authService', () => {
  beforeEach(() => {
  vi.clearAllMocks();
  });
 
- it('login should call api.post with credentials', async () => {
- const mockResponse = { result: { accessToken: 'token', role: 'ROLE_USER' } };
- (api.post as any).mockResolvedValue(mockResponse);
+ it('login should call the local auth BFF and parse its strict response', async () => {
+ const mockResponse = { role: 'ROLE_USER' };
+ mockedPost.mockResolvedValue({
+   data: { success: true, data: mockResponse },
+ });
 
- const loginData = { id: 'testuser', password: 'password' };
+ const loginData = { userId: 'testuser', password: 'password' };
  const result = await authService.login(loginData);
 
  // baseURL:'' 오버라이드로 Route Handler 직결(이중 프리픽스 회귀 방어)
- expect(api.post).toHaveBeenCalledWith('/api/auth/login', loginData, { baseURL: '' });
+ expect(mockedPost).toHaveBeenCalledWith('/api/auth/login', loginData, {
+   baseURL: '',
+   withCredentials: true,
+ });
  expect(result).toEqual(mockResponse);
  });
 
- it('logout should call api.post', async () => {
- (api.post as any).mockResolvedValue({ result: null });
+ it('login rejects a local BFF payload containing undeclared token data', async () => {
+ mockedPost.mockResolvedValue({
+   data: {
+     success: true,
+     data: { role: 'ROLE_USER', accessToken: 'must-not-enter-js-state' },
+   },
+ });
+
+ await expect(authService.login({ userId: 'testuser', password: 'password' }))
+   .rejects.toThrow();
+ });
+
+ it('login parses a strict local BFF failure without exposing undeclared upstream detail', async () => {
+ mockedPost.mockRejectedValue({
+   response: {
+     data: {
+       success: false,
+       code: 'LOGIN_INVALID_CREDENTIALS',
+       message: '안전한 로그인 오류',
+     },
+   },
+ });
+
+ await expect(authService.login({ userId: 'testuser', password: 'wrong' }))
+   .rejects.toThrow('안전한 로그인 오류');
+ });
+
+ it('login does not propagate an undeclared error payload through the Axios error object', async () => {
+ const privateValue = 'jdbc://private-auth-store/session-token';
+ mockedPost.mockRejectedValue({
+   response: {
+     data: {
+       success: false,
+       code: 'INTERNAL_TRACE',
+       message: privateValue,
+     },
+   },
+ });
+
+ await expect(authService.login({ userId: 'testuser', password: 'wrong' }))
+   .rejects.toThrow('로그인 응답이 올바르지 않습니다.');
+ });
+
+ it('logout should call the local auth BFF and parse its strict response', async () => {
+ mockedPost.mockResolvedValue({
+   data: { success: true, data: { cleared: true } },
+ });
 
  await authService.logout();
 
- expect(api.post).toHaveBeenCalledWith('/api/auth/logout', undefined, { baseURL: '' });
+ expect(mockedPost).toHaveBeenCalledWith('/api/auth/logout', undefined, {
+   baseURL: '',
+   withCredentials: true,
+ });
+ });
+
+ it('logout rejects a local BFF payload that is not the strict cleared acknowledgement', async () => {
+ mockedPost.mockResolvedValue({
+   data: {
+     success: true,
+     data: { cleared: true, token: 'must-not-enter-js-state' },
+   },
+ });
+
+ await expect(authService.logout()).rejects.toThrow();
  });
 
  // 재발급은 client.post 를 직접 부르지 않는다. 백엔드가 리프레시 토큰을 회전시키므로
@@ -61,7 +141,7 @@ describe('authService', () => {
  await expect(authService.reissue()).rejects.toThrow('401 Unauthorized');
  });
 
- it('getCurrentUser should call api.get', async () => {
+ it('getCurrentUser uses the generated operation and preserves the auth-state allowlist', async () => {
  const wireUser = {
    id: 'user01',
    name: 'Tester',
@@ -71,11 +151,12 @@ describe('authService', () => {
    email: 'tester@example.test',
    pswd: 'must-not-enter-auth-state',
  };
- (api.get as any).mockResolvedValue(wireUser);
+ executeGeneratedOperationMock.mockResolvedValue(wireUser);
 
  const result = await authService.getCurrentUser();
 
- expect(api.get).toHaveBeenCalledWith('auth/me');
+ expect(executeGeneratedOperationMock).toHaveBeenCalledWith(getCurrentUserOperation, {});
+ expect(api.get).not.toHaveBeenCalled();
  expect(result).toEqual({
    id: 'user01',
    name: 'Tester',

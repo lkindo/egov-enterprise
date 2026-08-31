@@ -1,13 +1,23 @@
-import client, { reissueSession } from '@/lib/api/client';
+import axios from 'axios';
+import { reissueSession } from '@/lib/api/client';
+import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
+import {
+ authLoginDataSchema,
+ authLoginResponseSchema,
+ authLogoutDataSchema,
+ authLogoutResponseSchema,
+ type AuthLoginData,
+} from '@/lib/auth/auth-bff-contract';
+import {
+ getCurrentUserOperation,
+ type GeneratedOperationRequest,
+} from '@/types/generated-operations';
 
 /**
  * 인증 서비스
  */
 
-export interface LoginResponse {
- accessToken: string;
- role: string;
-}
+export type LoginResponse = AuthLoginData;
 
 export interface AuthUser {
  id: string;
@@ -60,23 +70,40 @@ export function normalizeAuthUser(value: unknown): AuthUser {
  return user;
 }
 
-const BASE_URL = 'auth';
+// login/logout은 토큰을 HttpOnly 쿠키로 바인딩하는 Next Route Handler의 전체 envelope를
+// strict Zod로 검증해야 한다. 그래서 data만 풀어주는 일반 API client와 분리한 Axios special
+// transport를 쓴다. baseURL:''은 '/api/v1/api/auth/*' 이중 prefix 회귀를 차단한다.
+const ROUTE_HANDLER = { baseURL: '', withCredentials: true } as const;
 
-// Next.js Route Handler(/api/auth/*)는 동일 출처 절대경로다. axiosInstance 의 baseURL(브라우저='/api/v1')
-// 이 전치되면 '/api/v1/api/auth/*' 가 되어 백엔드 프록시로 새 나가 401(Route Handler 미도달, HttpOnly 쿠키 미설정).
-// baseURL:'' 로 오버라이드해 Route Handler 로 정확히 라우팅한다. (getCurrentUser 는 백엔드 직결이라 baseURL 유지)
-const ROUTE_HANDLER = { baseURL: '' } as const;
+function axiosErrorResponseData(error: unknown): unknown {
+ if (!isRecord(error) || !isRecord(error.response)) return undefined;
+ return error.response.data;
+}
 
 export const authService = {
  /** 로그인 (Next.js Route Handler를 통해 HttpOnly 쿠키 바인딩) */
- login: async (loginData: Record<string, string>): Promise<LoginResponse> => {
+ login: async (loginData: GeneratedOperationRequest<'login'>): Promise<LoginResponse> => {
    // 동일 도메인 Next.js API Route Handler로 라우팅
-   return client.post<LoginResponse>('/api/auth/login', loginData, ROUTE_HANDLER);
+   let response;
+   try {
+     response = await axios.post<unknown>('/api/auth/login', loginData, ROUTE_HANDLER);
+   } catch (error: unknown) {
+     const responseData = axiosErrorResponseData(error);
+     const failure = authLoginResponseSchema.safeParse(responseData);
+     if (failure.success && !failure.data.success) throw new Error(failure.data.message);
+     if (responseData !== undefined) throw new Error('로그인 응답이 올바르지 않습니다.');
+     throw error;
+   }
+   const parsed = authLoginResponseSchema.parse(response.data);
+   if (!parsed.success) throw new Error(parsed.message);
+   return authLoginDataSchema.parse(parsed.data);
  },
 
  /** 로그아웃 (Next.js Route Handler를 통해 로컬/원격 세션 쿠키 해제) */
  logout: async (): Promise<void> => {
-   return client.post<void>('/api/auth/logout', undefined, ROUTE_HANDLER);
+   const response = await axios.post<unknown>('/api/auth/logout', undefined, ROUTE_HANDLER);
+   const parsed = authLogoutResponseSchema.parse(response.data);
+   authLogoutDataSchema.parse(parsed.data);
  },
 
  /**
@@ -92,7 +119,7 @@ export const authService = {
 
  /** 현재 사용자정보 조회 (백엔드에 직접 쏘며, 미들웨어가 accessToken 쿠키를 낚아채 Bearer 헤더를 주입해 줌) */
  getCurrentUser: async (): Promise<UserInfo> => {
-   const response = await client.get<unknown>(`${BASE_URL}/me`);
+   const response = await executeGeneratedOperation(getCurrentUserOperation, {});
    return normalizeAuthUser(response);
  },
 };

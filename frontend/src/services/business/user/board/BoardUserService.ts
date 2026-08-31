@@ -1,6 +1,15 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { BoardPost } from '@/types/business/board';
+import type { GeneratedOperationRequest } from '@/types/generated-operations';
+import {
+  createPostOperation,
+  deletePostOperation,
+  getPostOperation,
+  getPostsOperation,
+  likePostOperation,
+  updatePostOperation,
+} from '@/types/generated-operations';
 
 class BoardUserService extends UserService {
   constructor() {
@@ -23,28 +32,44 @@ class BoardUserService extends UserService {
     qnaStatus?: string;
     qnaCategory?: string;
   }): Promise<PageResponse<BoardPost>> {
-    return this.get<PageResponse<BoardPost>>(`/${bbsId}`, { params });
+    return this.executeGenerated(getPostsOperation, {
+      path: { bbsId },
+      query: params,
+    }) as Promise<PageResponse<BoardPost>>;
   }
 
   async getPost(bbsId: string, pstSn: number): Promise<BoardPost> {
-    return this.get<BoardPost>(`/${bbsId}/posts/${pstSn}`);
+    return this.executeGenerated(getPostOperation, {
+      path: { bbsId, pstSn },
+    }) as Promise<BoardPost>;
   }
 
   async createPost(data: Partial<BoardPost>): Promise<BoardPost> {
-    return this.post<BoardPost>('/posts', data);
+    const response = await this.executeGenerated(createPostOperation, {
+      body: data as GeneratedOperationRequest<'createPost'>,
+    });
+    // 서버의 실제 반환값은 생성된 게시글 ID다. 기존 공개 시그니처와 런타임 반환은 모두 유지한다.
+    return response as unknown as BoardPost;
   }
 
   async updatePost(bbsId: string, pstSn: number, data: Partial<BoardPost>): Promise<void> {
-    return this.put<void>(`/${bbsId}/posts/${pstSn}`, data);
+    return this.executeGenerated(updatePostOperation, {
+      path: { bbsId, pstSn },
+      body: data as GeneratedOperationRequest<'updatePost'>,
+    });
   }
 
   async deletePost(bbsId: string, pstSn: number): Promise<void> {
-    return this.delete<void>(`/${bbsId}/posts/${pstSn}`);
+    return this.executeGenerated(deletePostOperation, {
+      path: { bbsId, pstSn },
+    });
   }
 
   async likePost(bbsId: string, pstSn: number): Promise<number> {
     // ApiService.patch가 이미 ApiResponse.data(=새 추천수)를 추출해 반환하므로 추가 .data 접근 금지(과거 undefined 반환 버그).
-    return this.patch<number>(`/${bbsId}/posts/${pstSn}/like`);
+    return this.executeGenerated(likePostOperation, {
+      path: { bbsId, pstSn },
+    });
   }
 }
 

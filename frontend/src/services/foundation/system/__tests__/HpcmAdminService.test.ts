@@ -49,12 +49,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageResponse } from '@/types/foundation/system';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const legacy = { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() };
+  const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+  return {
+    ...legacy,
+    getRaw: vi.fn(async (url: string, config?: unknown) => envelope(await legacy.get(url, config))),
+    requestRaw: vi.fn(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length > 0 ? config : undefined;
+      let response: unknown;
+      if (method === 'post') response = await legacy.post(url, data, forwardedConfig);
+      else if (method === 'put') response = await legacy.put(url, data, forwardedConfig);
+      else if (method === 'delete') response = await legacy.delete(url, forwardedConfig);
+      else throw new Error(`unexpected method: ${String(method)}`);
+      return envelope(response);
+    }),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -69,65 +81,70 @@ const BASE = 'help/hpcm';
 
 /** 형제 서비스(AdminService 상속)였다면 나왔을 경로 — 여기로 바뀌면 전 메서드가 404 다. */
 const ADMIN_PREFIXED = 'admin/system/help/hpcm';
+const validHpcm: Hpcm = {
+  hlpSn: 1,
+  hlpSeCd: '001',
+  hlpDfn: '도움말 정의',
+  hlpExpln: '도움말 설명',
+};
 
 describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.get.mockImplementation((url: string) => Promise.resolve(
+      url === BASE ? { list: [] } : validHpcm,
+    ));
+    client.post.mockResolvedValue(1);
+  });
 
   describe('도움말 목록 조회 (getHpcmList)', () => {
     it('목록은 help/hpcm 으로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await hpcmAdminService.getHpcmList();
 
       // path 인자로 빈 문자열('')을 넘기므로 basePath 그대로가 최종 경로다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
     });
 
     it('admin/system 접두를 붙이지 않는다 — 이 서비스만 ApiService 를 직접 상속한다', async () => {
       await hpcmAdminService.getHpcmList();
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(ADMIN_PREFIXED, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(ADMIN_PREFIXED, { params: {} });
     });
 
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지는 Pageable 계약의 0-based page 0으로 전달한다', async () => {
       await hpcmAdminService.getHpcmList({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, pageIndex: 1 },
+        params: { page: 0 },
       });
     });
 
-    it('page 2·size 20 은 pageIndex 3·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 2·size 20은 generated Pageable query 그대로 전달한다', async () => {
       await hpcmAdminService.getHpcmList({ page: 2, size: 20 });
 
-      // 원본 page/size 를 지우지 않는 것이 이 엔드포인트에서는 필수다 —
-      // 백엔드가 Pageable 로 바인딩하므로 서버가 실제로 읽는 키가 바로 page/size 다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 2, size: 20, pageIndex: 3, recordCountPerPage: 20 },
+        params: { page: 2, size: 20 },
       });
     });
 
-    it('page 값에 +1 이 두 번 적용되지 않는다 — page 4 의 pageIndex 는 5 이고 6 이 아니다', async () => {
+    it('page 4를 0-based 그대로 전달한다', async () => {
       await hpcmAdminService.getHpcmList({ page: 4 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 4, pageIndex: 5 } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 4, pageIndex: 6 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 4 } });
     });
 
-    it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
-      // page 9 였다면 변환 결과는 pageIndex 10 이겠지만, 명시값 1 이 그대로 유지돼야 한다.
+    it('OpenAPI에 없는 pageIndex는 보내지 않고 Pageable page만 유지한다', async () => {
       await hpcmAdminService.getHpcmList({ page: 9, pageIndex: 1 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 9, pageIndex: 1 } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 9, pageIndex: 10 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 9 } });
     });
 
-    it('pageSize 만 오면 recordCountPerPage 와 size 를 함께 채운다 (Common DTO 호환 축)', async () => {
+    it('OpenAPI에 없는 pageSize만 오면 query에 싞지 않는다', async () => {
       await hpcmAdminService.getHpcmList({ pageSize: 25 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 25, recordCountPerPage: 25, size: 25 },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
     it('keyword 는 가공 없이 그대로 실리고 페이징 키가 임의로 동승하지 않는다', async () => {
@@ -138,14 +155,18 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: { keyword: '게시판' } });
     });
 
-    it('searchKeyword 를 keyword 로 승격하지 않는다 — 백엔드는 keyword 단일 축이다', async () => {
-      // 승격 로직이 잘못 이식되면 keyword 와 searchKeyword 가 동시에 나가 서버 바인딩이 흔들린다.
+    it('SSR이 넘기는 단일 sort 문자열을 generated 배열 query로 보존한다', async () => {
+      await hpcmAdminService.getHpcmList({ sort: 'hlpSn,DESC' });
+
+      expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { sort: ['hlpSn,DESC'] },
+      });
+    });
+
+    it('legacy searchKeyword를 OpenAPI keyword로 정규화한다', async () => {
       await hpcmAdminService.getHpcmList({ searchKeyword: '게시판' });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { searchKeyword: '게시판' } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '게시판', keyword: '게시판' },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { keyword: '게시판' } });
     });
 
     it('params 인자가 config.params 를 이긴다 — `{ ...config, params }` 의 전개 순서를 고정한다', async () => {
@@ -164,7 +185,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, pageIndex: 1 },
+        params: { page: 0 },
       });
     });
 
@@ -174,7 +195,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
 
       await hpcmAdminService.getHpcmList(undefined, { headers });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { headers, params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { headers, params: {} });
     });
 
     it('목록 응답은 재포장 없이 클라이언트 결과를 그대로 반환한다', async () => {
@@ -221,7 +242,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     it('상세 응답은 무가공으로 반환된다', async () => {
       const hpcm: Hpcm = {
         hlpSn: 7,
-        hlpSeCd: '회원가입',
+        hlpSeCd: '001',
         hlpDfn: '가입 승인 절차',
         hlpExpln: '관리자 승인 후 활성화된다',
         frstRgtrId: 'ADMIN',
@@ -256,7 +277,12 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     });
 
     it('본문에 hlpSn 이 실려 있어도 경로 변수로 승격되지 않는다 — 채번은 서버 몫이다', async () => {
-      const payload: Partial<Hpcm> = { hlpSn: 99, hlpSeCd: '게시판', hlpDfn: '오탈자 수정 안내' };
+      const payload: Partial<Hpcm> = {
+        hlpSn: 99,
+        hlpSeCd: '게시판',
+        hlpDfn: '오탈자 수정 안내',
+        hlpExpln: '오탈자 수정 절차',
+      };
 
       await hpcmAdminService.createHpcm(payload);
 
@@ -266,7 +292,11 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     });
 
     it('등록 시 config(timeout)가 유실되지 않는다', async () => {
-      const payload: Partial<Hpcm> = { hlpSeCd: '게시판', hlpDfn: '첨부파일 제한' };
+      const payload: Partial<Hpcm> = {
+        hlpSeCd: '게시판',
+        hlpDfn: '첨부파일 제한',
+        hlpExpln: '첨부파일 제한 안내',
+      };
 
       await hpcmAdminService.createHpcm(payload, { timeout: 5000 });
 
@@ -277,7 +307,11 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
       client.post.mockResolvedValueOnce(4103);
 
       // toBe 는 '4103'(문자열)과 4103(숫자)을 구분한다.
-      await expect(hpcmAdminService.createHpcm({ hlpDfn: '신규 도움말' })).resolves.toBe(4103);
+      await expect(hpcmAdminService.createHpcm({
+        ...validHpcm,
+        hlpSn: undefined,
+        hlpDfn: '신규 도움말',
+      })).resolves.toBe(4103);
     });
 
     it('등록 실패(검증 오류 등)는 삼키지 않고 그대로 전파한다', async () => {
@@ -285,7 +319,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
       const failure = new Error('필수 항목이 누락되었습니다');
       client.post.mockRejectedValueOnce(failure);
 
-      await expect(hpcmAdminService.createHpcm({ hlpDfn: '' })).rejects.toBe(failure);
+      await expect(hpcmAdminService.createHpcm({ ...validHpcm, hlpSn: undefined })).rejects.toBe(failure);
     });
   });
 
@@ -293,7 +327,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     it('인자로 받은 hlpSn 이 경로를 결정한다 — 본문의 hlpSn 이 아니다', async () => {
       // 본문에 다른 hlpSn(99)을 심어 두고, 경로는 인자(7)만 따르는지 확인한다.
       // 본문을 따라가도록 바뀌면 화면에서 고른 도움말이 아닌 엉뚱한 도움말이 수정된다.
-      const payload: Partial<Hpcm> = { hlpSn: 99, hlpDfn: '제목만 수정' };
+      const payload: Partial<Hpcm> = { ...validHpcm, hlpSn: 99, hlpDfn: '제목만 수정' };
 
       await hpcmAdminService.updateHpcm(7, payload, { timeout: 2000 });
 
@@ -302,7 +336,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     });
 
     it('수정은 컬렉션 경로로 나가지 않는다 — 경로 변수가 빠지면 전체를 대상으로 하는 요청이 된다', async () => {
-      const payload: Partial<Hpcm> = { hlpDfn: '제목만 수정' };
+      const payload: Partial<Hpcm> = { ...validHpcm, hlpDfn: '제목만 수정' };
 
       await hpcmAdminService.updateHpcm(7, payload);
 
@@ -311,7 +345,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     });
 
     it('config 를 생략하면 undefined 가 그대로 전달된다', async () => {
-      const payload: Partial<Hpcm> = { hlpExpln: '설명 보강' };
+      const payload: Partial<Hpcm> = { ...validHpcm, hlpExpln: '설명 보강' };
 
       await hpcmAdminService.updateHpcm(7, payload);
 
@@ -320,7 +354,11 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     });
 
     it('수정 본문도 래핑 없이 그대로 실린다', async () => {
-      const payload: Partial<Hpcm> = { hlpSeCd: '로그인', hlpDfn: '비밀번호 규칙 변경' };
+      const payload: Partial<Hpcm> = {
+        ...validHpcm,
+        hlpSeCd: '로그인',
+        hlpDfn: '비밀번호 규칙 변경',
+      };
 
       await hpcmAdminService.updateHpcm(7, payload, { timeout: 2000 });
 
@@ -380,7 +418,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
 
     it('같은 hlpSn 에 대한 조회·수정·삭제는 동일한 경로를 겨눈다', async () => {
       await hpcmAdminService.getHpcm(7);
-      await hpcmAdminService.updateHpcm(7, { hlpDfn: '수정' });
+      await hpcmAdminService.updateHpcm(7, { ...validHpcm, hlpDfn: '수정' });
       await hpcmAdminService.deleteHpcm(7);
 
       expect(client.get.mock.calls.map((call) => call[0])).toEqual(['help/hpcm/7']);
@@ -392,8 +430,8 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
       // 선행 슬래시가 붙으면 axios baseURL('/api/v1')의 경로 세그먼트가 통째로 날아간다(절대 경로 해석).
       await hpcmAdminService.getHpcmList({ page: 0 });
       await hpcmAdminService.getHpcm(7);
-      await hpcmAdminService.createHpcm({ hlpDfn: '신규' });
-      await hpcmAdminService.updateHpcm(7, { hlpDfn: '수정' });
+      await hpcmAdminService.createHpcm({ ...validHpcm, hlpSn: undefined, hlpDfn: '신규' });
+      await hpcmAdminService.updateHpcm(7, { ...validHpcm, hlpDfn: '수정' });
       await hpcmAdminService.deleteHpcm(7);
 
       const paths = [client.get, client.post, client.put, client.delete].flatMap((fn) =>

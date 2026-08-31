@@ -1,6 +1,8 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
+import type { components } from '@/types/generated-api';
+import { deleteComment_1Operation, getComments_1Operation } from '@/types/generated-operations';
 
 interface CommentDetail {
   ansSn: number;
@@ -10,6 +12,28 @@ interface CommentDetail {
   wrterNm: string;
   ansCn: string;
   crtDt: string;
+}
+
+function requireCommentPage(
+  response: components['schemas']['PageResponseCommentDto'],
+): PageResponse<CommentDetail> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('댓글 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return response as unknown as PageResponse<CommentDetail>;
+}
+
+function withoutConfigParams(config?: AxiosRequestConfig): AxiosRequestConfig | undefined {
+  if (!config || !Object.hasOwn(config, 'params')) return config;
+  const nextConfig = { ...config };
+  delete nextConfig.params;
+  return nextConfig;
 }
 
 /**
@@ -27,16 +51,29 @@ class CommentAdminService extends ApiService {
 
   /**
    * 전체 댓글 목록 조회.
-   * ⚠ 백엔드 CommentApiController#getComments 는 pstSn/bbsId/Pageable 만 서비스에 배선하고
-   *   키워드 검색(searchKeyword)은 아직 미지원이다. 여기서 넘기는 searchWrd 는 서버에서 무시된다.
+   * 공개 API의 searchWrd 별칭은 OpenAPI가 정의한 searchKeyword 쿼리로 정규화한다.
+   * page/size는 Spring Pageable의 0-based 축을 그대로 유지한다.
    */
   async getComments(params: { pstSn?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
-    return this.get<PageResponse<CommentDetail>>('', { ...config, params });
+    const response = await this.executeGenerated(getComments_1Operation, {
+      query: {
+        ...(params.pstSn === undefined ? {} : { pstSn: params.pstSn }),
+        ...(params.bbsId === undefined ? {} : { bbsId: params.bbsId }),
+        ...(params.page === undefined ? {} : { page: params.page }),
+        ...(params.size === undefined ? {} : { size: params.size }),
+        ...(params.searchWrd === undefined ? {} : { searchKeyword: params.searchWrd }),
+      },
+      config: withoutConfigParams(config),
+    });
+    return requireCommentPage(response);
   }
 
   /** 댓글 삭제 */
   async deleteComment(ansSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${ansSn}`, config);
+    return this.executeGenerated(deleteComment_1Operation, {
+      path: { id: ansSn },
+      config,
+    });
   }
 }
 

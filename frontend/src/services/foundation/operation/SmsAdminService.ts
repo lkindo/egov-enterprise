@@ -1,16 +1,44 @@
-import { AxiosRequestConfig } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
-import { PageResponse } from '@/types/foundation/system';
-import type { components } from '@/types/generated-api';
-import { ApiResponseLongSchema, SmsDtoSchema } from '@/types/generated-zod';
+import type { PageResponse } from '@/types/foundation/system';
+import type { components, operations } from '@/types/generated-api';
+import {
+  getSmsListOperation,
+  getSmsOperation,
+  getSmsRecipientsOperation,
+  sendSmsOperation,
+} from '@/types/generated-operations';
 
 export type SmsDto = components['schemas']['SmsDto'];
 type SmsRecptnDto = components['schemas']['SmsRecptnDto'];
+type SmsSearchParams = NonNullable<operations['getSmsList']['parameters']['query']>;
 
-const SmsWriteRequestSchema = SmsDtoSchema.extend({
-  // 백엔드 SmsDto @NotEmpty/@Size(1..100). 생성 스키마의 required 배열을 실제 쓰기 경계까지 강화한다.
-  recipients: SmsDtoSchema.shape.recipients.min(1).max(100),
-});
+function requireSmsPage(
+  response: {
+    list?: SmsDto[];
+    total?: number;
+    page?: number;
+    size?: number;
+    totalPage?: number;
+  },
+): PageResponse<SmsDto> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('SMS 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    list: response.list,
+    total: response.total,
+    page: response.page,
+    size: response.size,
+    totalPage: response.totalPage,
+  };
+}
 
 class SmsAdminService extends ApiService {
   constructor() {
@@ -18,27 +46,24 @@ class SmsAdminService extends ApiService {
   }
 
   /** SMS 발송 내역 조회 */
-  async getSmsList(params?: { searchCondition?: string; searchKeyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
-    return this.get<PageResponse<SmsDto>>('', { ...config, params });
+  async getSmsList(params: SmsSearchParams = {}, config?: AxiosRequestConfig): Promise<PageResponse<SmsDto>> {
+    const response = await this.executeGenerated(getSmsListOperation, { query: params, config });
+    return requireSmsPage(response);
   }
 
   /** SMS 상세 조회 */
-  async getSms(smsTrsmSn: number, config?: AxiosRequestConfig) {
-    return this.get<SmsDto>(`/${smsTrsmSn}`, config);
+  async getSms(smsTrsmSn: number, config?: AxiosRequestConfig): Promise<SmsDto> {
+    return this.executeGenerated(getSmsOperation, { path: { smsTrsmSn }, config });
   }
 
   /** SMS 수신자 목록 조회 */
-  async getSmsRecipients(smsTrsmSn: number, config?: AxiosRequestConfig) {
-    return this.get<SmsRecptnDto[]>(`/${smsTrsmSn}/recipients`, config);
+  async getSmsRecipients(smsTrsmSn: number, config?: AxiosRequestConfig): Promise<SmsRecptnDto[]> {
+    return this.executeGenerated(getSmsRecipientsOperation, { path: { smsTrsmSn }, config });
   }
 
   /** SMS 발송 실행 */
   async sendSms(smsDto: SmsDto, config?: AxiosRequestConfig): Promise<number> {
-    const request = SmsWriteRequestSchema.parse(smsDto);
-    const response = await this.post<unknown>('', request, config);
-    const smsTrsmSn = ApiResponseLongSchema.shape.data.parse(response);
-    if (smsTrsmSn === undefined) throw new Error('SMS 전송 식별자가 응답에 없습니다.');
-    return smsTrsmSn;
+    return this.executeGenerated(sendSmsOperation, { body: smsDto, config });
   }
 }
 

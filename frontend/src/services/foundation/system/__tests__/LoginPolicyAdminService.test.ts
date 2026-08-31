@@ -41,12 +41,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageResponse, SearchParams } from '@/types/foundation/system';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const legacy = { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() };
+  const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+  return {
+    ...legacy,
+    getRaw: vi.fn(async (url: string, config?: unknown) => envelope(await legacy.get(url, config))),
+    requestRaw: vi.fn(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length > 0 ? config : undefined;
+      let response: unknown;
+      if (method === 'post') response = await legacy.post(url, data, forwardedConfig);
+      else if (method === 'put') response = await legacy.put(url, data, forwardedConfig);
+      else if (method === 'delete') response = await legacy.delete(url, forwardedConfig);
+      else throw new Error(`unexpected method: ${String(method)}`);
+      return envelope(response);
+    }),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -63,74 +75,70 @@ const BASE = 'admin/system/login-policies';
 const USER_ID = 'USER01';
 
 describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.get.mockImplementation((url: string) => Promise.resolve(
+      url === BASE ? { list: [] } : { userId: USER_ID },
+    ));
+  });
 
   describe('목록 조회 (getLoginPolicyList)', () => {
     it('인자 없이 호출해도 admin/system/login-policies 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await loginPolicyAdminService.getLoginPolicyList();
 
-      // params 를 안 넘겨도 pageNo 1 · searchKeyword '' 는 항상 채워져 나간다.
+      // params 를 안 넘겨도 BaseSearchDto의 pageIndex 1·searchKeyword ''는 항상 채워져 나간다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageNo: 1, searchKeyword: '' },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
-    it('첫 페이지(page 0)는 pageNo 1 · pageIndex 1 로 나간다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지(page 0)는 BaseSearchDto pageIndex 1로 나간다', async () => {
       await loginPolicyAdminService.getLoginPolicyList({ page: 0 });
 
-      // page 0 은 falsy 라 서비스의 삼항 연산이 기본값 1 을 쓰고, ApiService 는 0 + 1 = 1 을 쓴다.
-      // 두 경로가 우연이 아니라 같은 값 1 로 수렴하는지 고정한다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, pageNo: 1, searchKeyword: '', pageIndex: 1 },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
-    it('page 1 은 pageNo 2 · pageIndex 2 가 된다 — 두 1-based 키가 반드시 함께 +1 된다', async () => {
+    it('page 1은 BaseSearchDto pageIndex 2로 변환된다', async () => {
       await loginPolicyAdminService.getLoginPolicyList({ page: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 1, pageNo: 2, searchKeyword: '', pageIndex: 2 },
+        params: { pageIndex: 2, searchKeyword: '' },
       });
-      // +1 이 사라진 형태(둘 다 1)로는 절대 나가지 않는다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { page: 1, pageNo: 1, searchKeyword: '', pageIndex: 1 },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
-    it('page 3 · size 20 은 pageNo 4 · pageIndex 4 · recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 3·size 20을 BaseSearchDto pageIndex 4·pageUnit 20으로 변환한다', async () => {
       await loginPolicyAdminService.getLoginPolicyList({ page: 3, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
         params: {
-          page: 3,
-          size: 20,
-          pageNo: 4,
-          searchKeyword: '',
           pageIndex: 4,
-          recordCountPerPage: 20,
+          pageUnit: 20,
+          searchKeyword: '',
         },
       });
     });
 
-    it('호출부가 pageNo 를 직접 지정하면 그 값이 그대로 쓰이고 page 파생값이 이를 덮어쓰지 않는다', async () => {
+    it('legacy pageNo를 직접 지정하면 generated pageIndex로 옮겨 보존한다', async () => {
       await loginPolicyAdminService.getLoginPolicyList({ pageNo: 5 });
 
-      // page 가 없으므로 ApiService 의 pageIndex 변환은 개입하지 않는다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageNo: 5, searchKeyword: '' },
+        params: { pageIndex: 5, searchKeyword: '' },
       });
-      // 지정값을 무시하고 기본값 1 로 되돌리는 형태로는 나가지 않는다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { pageNo: 1, searchKeyword: '' },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
-    it('size 만 지정하면 recordCountPerPage 로 복제되고 페이지 번호는 기본값 1 을 유지한다', async () => {
+    it('size만 지정하면 pageUnit으로 옮겨 페이지 번호는 기본값 1을 유지한다', async () => {
       await loginPolicyAdminService.getLoginPolicyList({ size: 50 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { size: 50, pageNo: 1, searchKeyword: '', recordCountPerPage: 50 },
+        params: { pageIndex: 1, pageUnit: 50, searchKeyword: '' },
       });
     });
 
@@ -138,16 +146,15 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       await loginPolicyAdminService.getLoginPolicyList({ searchKeyword: '관리자' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '관리자', pageNo: 1 },
+        params: { pageIndex: 1, searchKeyword: '관리자' },
       });
     });
 
     it('searchKeyword 가 없으면 레거시 키 searchWrd 를 searchKeyword 로 승격한다', async () => {
       await loginPolicyAdminService.getLoginPolicyList({ searchWrd: '레거시검색' });
 
-      // 원본 searchWrd 도 스프레드로 함께 남는다(백엔드가 어느 쪽을 읽든 무해).
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchWrd: '레거시검색', searchKeyword: '레거시검색', pageNo: 1 },
+        params: { pageIndex: 1, searchKeyword: '레거시검색' },
       });
     });
 
@@ -155,11 +162,11 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       await loginPolicyAdminService.getLoginPolicyList({ searchKeyword: '우선', searchWrd: '후순위' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '우선', searchWrd: '후순위', pageNo: 1 },
+        params: { pageIndex: 1, searchKeyword: '우선' },
       });
       // 폴백 순서가 뒤집힌 형태(후순위가 이기는 형태)로는 나가지 않는다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '후순위', searchWrd: '후순위', pageNo: 1 },
+        params: { pageIndex: 1, searchKeyword: '후순위' },
       });
     });
 
@@ -167,7 +174,7 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       await loginPolicyAdminService.getLoginPolicyList({ searchCondition: 'userNm', searchKeyword: '홍길동' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchCondition: 'userNm', searchKeyword: '홍길동', pageNo: 1 },
+        params: { pageIndex: 1, searchCondition: 'userNm', searchKeyword: '홍길동' },
       });
     });
 
@@ -179,7 +186,7 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, pageNo: 1, searchKeyword: '', pageIndex: 1 },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
@@ -190,7 +197,7 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         signal,
-        params: { pageNo: 1, searchKeyword: '' },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
@@ -261,7 +268,7 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
   });
 
   describe('저장 (saveLoginPolicy)', () => {
-    it('등록·수정을 구분하지 않고 /{userId} 로 PUT 하며 본문을 무가공으로 보낸다', async () => {
+    it('등록·수정을 구분하지 않고 /{userId}로 PUT하며 generated 필수 userId를 본문에 보완한다', async () => {
       const payload: Partial<LoginPolicy> = {
         ipAddr: '10.0.0.1',
         lmtYn: 'Y',
@@ -273,7 +280,11 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       await loginPolicyAdminService.saveLoginPolicy(USER_ID, payload);
 
       // upsert 성격이라 POST 는 쓰지 않는다.
-      expect(client.put).toHaveBeenCalledWith(`${BASE}/${USER_ID}`, payload, undefined);
+      expect(client.put).toHaveBeenCalledWith(
+        `${BASE}/${USER_ID}`,
+        { ...payload, userId: USER_ID },
+        undefined,
+      );
       expect(client.post).not.toHaveBeenCalled();
     });
 
@@ -284,8 +295,16 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
 
       await loginPolicyAdminService.saveLoginPolicy(USER_ID, payload, { timeout: 2000 });
 
-      expect(client.put).toHaveBeenCalledWith(`${BASE}/${USER_ID}`, payload, { timeout: 2000 });
-      expect(client.put).not.toHaveBeenCalledWith(`${BASE}/OTHER99`, payload, { timeout: 2000 });
+      expect(client.put).toHaveBeenCalledWith(
+        `${BASE}/${USER_ID}`,
+        { ...payload, userId: USER_ID },
+        { timeout: 2000 },
+      );
+      expect(client.put).not.toHaveBeenCalledWith(
+        `${BASE}/OTHER99`,
+        expect.anything(),
+        { timeout: 2000 },
+      );
     });
 
     it('저장 시 config(signal)가 유실되지 않는다', async () => {
@@ -293,7 +312,11 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
 
       await loginPolicyAdminService.saveLoginPolicy(USER_ID, { lmtYn: 'Y' }, { signal });
 
-      expect(client.put).toHaveBeenCalledWith(`${BASE}/${USER_ID}`, { lmtYn: 'Y' }, { signal });
+      expect(client.put).toHaveBeenCalledWith(
+        `${BASE}/${USER_ID}`,
+        { lmtYn: 'Y', userId: USER_ID },
+        { signal },
+      );
     });
   });
 
@@ -324,7 +347,7 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
 
       const expected = `${BASE}/${USER_ID}`;
       expect(client.get).toHaveBeenCalledWith(expected, undefined);
-      expect(client.put).toHaveBeenCalledWith(expected, { lmtYn: 'Y' }, undefined);
+      expect(client.put).toHaveBeenCalledWith(expected, { lmtYn: 'Y', userId: USER_ID }, undefined);
       expect(client.delete).toHaveBeenCalledWith(expected, undefined);
     });
 

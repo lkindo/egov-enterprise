@@ -18,49 +18,47 @@ public record BoardDto(
     @Size(max = 20)
     String bbsId,
 
-    @Schema(description = "답글 번호")
+    @Schema(description = "답글 번호", nullable = true, types = {"integer", "null"})
     Long ansSn,
 
-    @Schema(description = "제목")
+    @Schema(description = "제목", nullable = true, types = {"string", "null"})
     @Size(max = 100)
     String pstTtl,
 
-    @Schema(description = "내용")
+    @Schema(description = "내용", nullable = true, types = {"string", "null"})
     @Size(max = 4000)
     String pstCn,
 
-    @Schema(description = "상위 게시글 ID")
+    @Schema(description = "상위 게시글 ID", nullable = true, types = {"integer", "null"})
     Long upPstSn,
 
-    @Schema(description = "정렬 순서")
+    @Schema(description = "정렬 순서", nullable = true, types = {"integer", "null"})
     Long sortOrdr,
 
-    @Schema(description = "제목 굵게 표시 여부")
+    @Schema(description = "제목 굵게 표시 여부", nullable = true, types = {"string", "null"})
     @Size(max = 1)
     String ttlBoldYn,
 
-    @Schema(description = "조회수")
+    @Schema(description = "조회수", nullable = true, types = {"integer", "null"})
     Integer inqCnt,
 
-    @Schema(description = "사용 여부")
+    @Schema(description = "사용 여부", nullable = true, types = {"string", "null"})
     @Size(max = 1)
-    @NotBlank
     String useYn,
 
-    @Schema(description = "게시 시작일")
+    @Schema(description = "게시 시작일", nullable = true, types = {"string", "null"})
     @Size(max = 20)
     String pstBgngYmd,
 
-    @Schema(description = "게시 종료일")
+    @Schema(description = "게시 종료일", nullable = true, types = {"string", "null"})
     @Size(max = 20)
     String pstEndYmd,
 
-    @Schema(description = "작성자 ID")
+    @Schema(description = "작성자 ID", nullable = true, types = {"string", "null"})
     @Size(max = 20)
-    @NotBlank
     String userId,
 
-    @Schema(description = "작성자명")
+    @Schema(description = "작성자명", nullable = true, types = {"string", "null"})
     @Size(max = 100)
     String userNm,
 
@@ -70,42 +68,42 @@ public record BoardDto(
     @Size(max = 200)
     String pswd,
 
-    @Schema(description = "첨부파일 일련번호")
+    @Schema(description = "첨부파일 일련번호", nullable = true, types = {"integer", "null"})
     Long atchFileSn,
 
-    @Schema(description = "비밀글 여부")
+    @Schema(description = "비밀글 여부", nullable = true, types = {"string", "null"})
     @Size(max = 1)
     String scrtYn,
 
-    @Schema(description = "블로그 일련번호")
+    @Schema(description = "블로그 일련번호", nullable = true, types = {"integer", "null"})
     Long blogSn,
 
-    @Schema(description = "행사일")
+    @Schema(description = "행사일", nullable = true, types = {"string", "null"})
     LocalDateTime evntDt,
 
-    @Schema(description = "QNA 상태")
+    @Schema(description = "QNA 상태", nullable = true, types = {"string", "null"})
     String qnaSttsCd,
 
-    @Schema(description = "QNA 카테고리")
+    @Schema(description = "QNA 카테고리", nullable = true, types = {"string", "null"})
     @Size(max = 12)
     String qnaCatCd,
 
-    @Schema(description = "좋아요수")
+    @Schema(description = "좋아요수", nullable = true, types = {"integer", "null"})
     Integer likeCnt,
 
-    @Schema(description = "댓글수")
+    @Schema(description = "댓글수", nullable = true, types = {"integer", "null"})
     Integer commentCnt,
 
-    @Schema(description = "파일수")
+    @Schema(description = "파일수", nullable = true, types = {"integer", "null"})
     Integer fileCnt,
 
-    @Schema(description = "등록일시")
+    @Schema(description = "등록일시", nullable = true, types = {"string", "null"})
     LocalDateTime crtDt,
 
-    @Schema(description = "등록자명")
+    @Schema(description = "등록자명", nullable = true, types = {"string", "null"})
     String frstRegisterNm,
 
-    @Schema(description = "답글 단계")
+    @Schema(description = "답글 단계", nullable = true, types = {"integer", "null"})
     Integer ansLv
 ) {
 }

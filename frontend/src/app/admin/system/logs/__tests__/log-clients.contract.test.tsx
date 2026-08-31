@@ -123,6 +123,13 @@ import SystemLogsUserClient from '../user/SystemLogsUserClient';
 import SystemLogsWebClient from '../web/SystemLogsWebClient';
 import { metadata as userLogMetadata } from '../user/page';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
+import {
+  exportLoginLogsOperation,
+  exportPrivacyLogsOperation,
+  exportSystemLogsOperation,
+  exportUserLogsOperation,
+  exportWebLogsOperation,
+} from '@/types/generated-operations';
 
 type SysLogDto = components['schemas']['SysLogDto'];
 type LoginLogDto = components['schemas']['LoginLogDto'];
@@ -393,16 +400,23 @@ describe('logs cluster modernization (m-1): LGN full-result xlsx export wiring',
     downloadHarness.navigateToDownload.mockReset();
   });
 
-  it('navigates to the export endpoint without parameters when no search keyword is applied', () => {
-    clientHarness.queryData = pageOf(LOGIN_ROW);
-    render(<SystemLogsLoginClient />);
+  it.each([
+    ['LGN', SystemLogsLoginClient, LOGIN_ROW, exportLoginLogsOperation],
+    ['SYS', SystemLogsSystemClient, SYSTEM_ROW, exportSystemLogsOperation],
+    ['USR', SystemLogsUserClient, USER_ROW, exportUserLogsOperation],
+    ['WEB', SystemLogsWebClient, WEB_ROW, exportWebLogsOperation],
+    ['PRV', SystemLogsPrivacyClient, PRIVACY_ROW, exportPrivacyLogsOperation],
+  ] as const)(
+    '%s client binds its download to the exact generated binary operation',
+    (_name, Component, row, operation) => {
+      clientHarness.queryData = pageOf(row);
+      render(<Component />);
 
-    fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
+      fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
 
-    expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(
-      '/api/v1/admin/system/logs/login/export.xlsx',
-    );
-  });
+      expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(operation, undefined);
+    },
+  );
 
   it('carries the current search keyword into the export URL', () => {
     clientHarness.queryData = pageOf(LOGIN_ROW);
@@ -417,7 +431,8 @@ describe('logs cluster modernization (m-1): LGN full-result xlsx export wiring',
     fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
 
     expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(
-      '/api/v1/admin/system/logs/login/export.xlsx?searchKeyword=alice',
+      exportLoginLogsOperation,
+      { searchKeyword: 'alice' },
     );
   });
 

@@ -15,7 +15,7 @@ public record ApiResponse<T>(
         String code,
         String message,
         T data,
-        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
         LocalDateTime timestamp,
         /**
          * 필드 단위 검증 오류. [W1-14]

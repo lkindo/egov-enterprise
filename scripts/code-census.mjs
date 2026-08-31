@@ -25,7 +25,7 @@ const BE_MODULES = ['foundation', 'business-core', 'business-app', 'api-server',
 /** 스캔에서 제외한다 — 자동 산출물·의존성·빌드 결과는 최적화 대상이 아니다. */
 const SKIP_DIRS = new Set(['build', 'node_modules', '.git', '.next', '.gradle', 'coverage', 'test-results', 'playwright-report']);
 /** generated 파일은 codegen 이 소유한다. 손대면 codegen:verify 가 red 가 되고 그게 정상이다. */
-const GENERATED = /generated-api\.d\.ts$|generated-zod\.ts$/;
+const GENERATED = /generated-api\.d\.ts$|generated-zod\.ts$|generated-operations\.ts$/;
 
 function walk(dir, filter, out = []) {
   if (!existsSync(dir)) return out;

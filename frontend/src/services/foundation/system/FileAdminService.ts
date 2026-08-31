@@ -1,5 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
+import { uploadFiles_1Operation } from '@/types/generated-operations';
 
 
 /**
@@ -30,15 +31,9 @@ class FileAdminService extends AdminService {
  * @returns 첨부파일 일련번호
  */
  async uploadFiles(files: File[], config?: AxiosRequestConfig): Promise<number> {
- const formData = new FormData();
- files.forEach(file => formData.append('files', file));
-
- return this.post<number>('', formData, {
- ...config,
- headers: { 
- ...config?.headers,
- 'Content-Type': 'multipart/form-data' 
- }
+ return this.executeGeneratedMultipart(uploadFiles_1Operation, {
+ body: { files },
+ config,
  });
  }
 }

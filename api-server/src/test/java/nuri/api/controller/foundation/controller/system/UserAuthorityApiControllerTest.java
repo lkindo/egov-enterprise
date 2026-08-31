@@ -15,11 +15,14 @@ import nuri.business.security.annotation.WithMockCustomUser;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.nullValue;
 import nuri.business.support.ControllerTestSupport;
 
 @WebMvcTest(UserAuthorityApiController.class)
@@ -36,13 +39,25 @@ class UserAuthorityApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser(role = "ADMIN")
     @DisplayName("사용자별 권한 목록 조회 테스트")
     void getUserAuthoritiesTest() throws Exception {
-        Page<AuthorGroupProjection> page = new PageImpl<>(List.of());
-        given(userAuthorityManageService.selectUserAuthorityList(any())).willReturn(page);
+        Page<AuthorGroupProjection> page = new PageImpl<>(List.of(
+                AuthorGroupProjection.builder()
+                        .userId("user1")
+                        .userNm("홍길동")
+                        .mbrTypeCd("USR03")
+                        .authrtId(null)
+                        .regYn("N")
+                        .scrtyDcsnTrgtId("USR_0001")
+                        .build()));
+        given(userAuthorityManageService.selectUserAuthorityList(eq("ROLE_ADMIN"), any())).willReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/user-authorities")
+                        .param("authorCode", "ROLE_ADMIN")
                         .param("pageIndex", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list").isArray());
+                .andExpect(jsonPath("$.data.list").isArray())
+                .andExpect(jsonPath("$.data.list[0].authrtId").value(nullValue()));
+
+        verify(userAuthorityManageService).selectUserAuthorityList(eq("ROLE_ADMIN"), any());
     }
 
     @Test

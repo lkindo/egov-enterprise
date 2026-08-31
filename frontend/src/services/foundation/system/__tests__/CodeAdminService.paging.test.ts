@@ -31,6 +31,8 @@ const client = vi.hoisted(() => ({
   put: vi.fn(),
   patch: vi.fn(),
   delete: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -39,6 +41,8 @@ import { codeAdminService } from '../CodeAdminService';
 
 /** `AdminService('/codes')` + category 기본값 'system' → `admin/system/codes` (선행 슬래시 없음). */
 const BASE = 'admin/system/codes';
+const success = <T,>(data: T) => ({ success: true as const, code: 'S000', message: 'success', data });
+const emptyPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
 
 /** 서버 `BaseSearchDto` 에 필드가 존재하지 않아 어디에도 바인딩되지 않는 키들. */
 const UNBOUND_KEYS = ['searchWrd', 'pageNo'] as const;
@@ -49,7 +53,21 @@ function paramsOf(call: unknown[]): Record<string, unknown> {
 }
 
 describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      return success(data ?? emptyPage);
+    });
+    client.requestRaw.mockImplementation(async ({ url, method, data, ...config }) => {
+      const requestConfig = Object.keys(config).length > 0 ? config : undefined;
+      if (method === 'post') await client.post(url, data, requestConfig);
+      else if (method === 'put') await client.put(url, data, requestConfig);
+      else if (method === 'patch') await client.patch(url, data, requestConfig);
+      else if (method === 'delete') await client.delete(url, requestConfig);
+      return success(null);
+    });
+  });
 
   describe('행정코드 목록 (getAdministCodeList)', () => {
     it('검색어·페이지·페이지당 건수가 서버가 읽는 키로 나간다', async () => {

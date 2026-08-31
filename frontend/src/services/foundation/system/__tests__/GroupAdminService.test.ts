@@ -56,6 +56,8 @@ const client = vi.hoisted(() => ({
   post: vi.fn(),
   put: vi.fn(),
   delete: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -69,16 +71,37 @@ import { groupAdminService } from '../GroupAdminService';
  */
 const BASE = 'admin/system/groups';
 
+const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+const fallbackGroup: GroupManage = { groupId: 'GROUP_A', groupNm: '그룹', groupDc: '설명' };
+
 describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      return envelope(data ?? (url === BASE ? emptyPage : fallbackGroup));
+    });
+    client.requestRaw.mockImplementation(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
+      let result: unknown;
+      if (method === 'post') result = await client.post(url, data, forwardedConfig);
+      else if (method === 'put') result = await client.put(url, data, forwardedConfig);
+      else if (method === 'delete') {
+        result = await client.delete(url, data === undefined ? forwardedConfig : { ...config, data });
+      }
+      return envelope(result);
+    });
+  });
 
   describe('그룹 목록 조회 (getGroupList)', () => {
     it('목록은 admin/system/groups 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await groupAdminService.getGroupList();
 
       // path 인자로 빈 문자열('')을 넘기므로 basePath 그대로가 최종 경로다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
     });
 
     it('params 를 생략하면 params: undefined 가 그대로 전달된다 — 빈 객체로 바꿔치지 않는다', async () => {
@@ -86,25 +109,22 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
       // 아래 페이징 정규화 분기(config?.params 가 truthy 일 때만 동작)의 전제가 달라진다.
       await groupAdminService.getGroupList(undefined);
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
     it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
       await groupAdminService.getGroupList({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, pageIndex: 1 },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
-    it('page 2·size 20 은 pageIndex 3·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 2는 pageIndex 3으로 바꾸고 명세에 없는 size는 전송하지 않는다', async () => {
       await groupAdminService.getGroupList({ page: 2, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
-      // (백엔드 getGroups 는 pageUnit 을 10 으로 고정하므로 recordCountPerPage 를 현재는 읽지
-      //  않지만, 정규화 축 자체가 살아 있는지는 여기서 고정한다.)
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 2, size: 20, pageIndex: 3, recordCountPerPage: 20 },
+        params: { pageIndex: 3, searchKeyword: '' },
       });
     });
 
@@ -113,19 +133,18 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
       await groupAdminService.getGroupList({ page: 9, pageIndex: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 1 },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 10 },
+        params: { pageIndex: 10, searchKeyword: '' },
       });
     });
 
-    it('pageSize 만 오면 recordCountPerPage 와 size 를 함께 채운다 (Common DTO 호환 축)', async () => {
+    it('명세에 없는 pageSize만 오면 전송하지 않는다', async () => {
       await groupAdminService.getGroupList({ pageSize: 25 });
 
-      // page 축은 건드리지 않으므로 pageIndex 는 생기지 않는다 — 객체 전체 비교로 그것까지 고정한다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 25, recordCountPerPage: 25, size: 25 },
+        params: { searchKeyword: '' },
       });
     });
 
@@ -153,13 +172,12 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: { searchKeyword: '' } });
     });
 
-    it('명시적으로 넘긴 params 인자가 config.params 를 이긴다', async () => {
-      // `{ ...config, params }` 라 spread 뒤에 오는 params 인자가 항상 최종값이다.
-      // 순서가 뒤집히면 호출부가 의도한 검색 조건 대신 config 에 남아 있던 값으로 조회된다.
-      await groupAdminService.getGroupList({ searchKeyword: '보안' }, { params: { searchKeyword: '낡은값' } });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { searchKeyword: '보안' } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { searchKeyword: '낡은값' } });
+    it('config.params 로 생성 query를 덮어쓰려 하면 fail-closed 한다', async () => {
+      await expect(groupAdminService.getGroupList(
+        { searchKeyword: '보안' },
+        { params: { searchKeyword: '낡은값' } },
+      )).rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
 
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
@@ -170,7 +188,7 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, pageIndex: 1 },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
@@ -342,12 +360,10 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
       expect(client.delete).not.toHaveBeenCalledWith(BASE, { data: { groupIds: ['GRP_0001'] } });
     });
 
-    it('인자로 받은 id 배열이 config.data 를 이긴다 — 순서가 뒤집히면 다른 그룹들이 지워진다', async () => {
-      // `{ ...config, data: groupIds }` 라 spread 뒤에 오는 groupIds 가 항상 최종 본문이다.
-      await groupAdminService.deleteGroups(['GRP_0001'], { data: ['GRP_9999'] });
-
-      expect(client.delete).toHaveBeenCalledWith(BASE, { data: ['GRP_0001'] });
-      expect(client.delete).not.toHaveBeenCalledWith(BASE, { data: ['GRP_9999'] });
+    it('config.data 로 생성 operation 본문을 덮어쓰려 하면 fail-closed 한다', async () => {
+      await expect(groupAdminService.deleteGroups(['GRP_0001'], { data: ['GRP_9999'] }))
+        .rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
+      expect(client.delete).not.toHaveBeenCalled();
     });
 
     it('다중 삭제에서도 timeout·헤더가 본문과 함께 보존된다', async () => {

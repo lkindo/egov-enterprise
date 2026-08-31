@@ -13,6 +13,8 @@ import { approvalUserService } from '../approval/ApprovalUserService';
 vi.mock('@/lib/api/client', () => ({
  default: {
  get: vi.fn(),
+ getRaw: vi.fn(),
+ requestRaw: vi.fn(),
  post: vi.fn(),
  put: vi.fn(),
  delete: vi.fn(),
@@ -20,19 +22,25 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 describe('User Domain Services', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(client.getRaw).mockResolvedValue({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+    });
+  });
 
   it('BoardUserService should call correct endpoints', async () => {
     await boardUserService.getPosts('BBS01', { page: 0 });
-    expect(client.get).toHaveBeenCalledWith('boards/BBS01', expect.objectContaining({
-      params: expect.objectContaining({ page: 0, pageIndex: 1 })
-    }));
+    expect(client.getRaw).toHaveBeenCalledWith('boards/BBS01', {
+      params: { page: 0 },
+    });
   });
 
   it('ApprovalUserService should call correct endpoints', async () => {
     await approvalUserService.getPending({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('approvals/pending', expect.objectContaining({
-      params: expect.objectContaining({ page: 0, pageIndex: 1 })
-    }));
+    expect(client.getRaw).toHaveBeenCalledWith('approvals/pending', { params: { page: 0 } });
   });
 });

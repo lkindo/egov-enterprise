@@ -14,18 +14,11 @@
  *    `admin/{category}/` 접두). 한 글자만 어긋나도 결과는 404 이고 화면에는 실패
  *    토스트만 뜬다 — 어느 경로가 틀렸는지 아무도 모른다.
  *
- * 2) 페이징 변환이 **2단으로 겹쳐 있다** — 이 서비스가 가장 위험한 지점이다.
- *    - AuthorAdminService.getAuthorList 가 먼저 `page`(0-based) → `pageIndex`(+1),
- *      `pageNo`(1-based) → `pageIndex`(그대로) 를 계산하고,
- *    - 그 결과를 ApiService.get 이 다시 받아 `size`/`pageSize` → `recordCountPerPage`
- *      를 매핑한다. ApiService 의 `page` → `pageIndex` 변환은 `pageIndex` 가 이미
- *      채워져 있어 **건너뛴다**.
- *    이 순서가 무너져 +1 이 사라지거나 두 번 적용되면 목록이 한 페이지씩 밀리거나
- *    첫 페이지가 빈다. 타입은 그대로라 tsc 로는 절대 잡히지 않는다.
+ * 2) 페이징 변환 — 공개 호출의 `page`/`pageNo`/`size`를 generated query의
+ *    `pageIndex`/`pageUnit`으로 한 번만 변환한다. OpenAPI에 없는 legacy 키는 전송하지 않는다.
  *
- * 3) 호출부 params 의 비(非)변형 — ApiService.get 은 넘겨받은 params 객체를 **제자리에서
- *    변형(mutate)** 한다. getAuthorList 가 사본(`{ ...params }`)이 아니라 원본을 넘기면
- *    React Query 의 queryKey 객체가 오염돼 캐시 키가 요청 후 바뀐다.
+ * 3) 호출부 params 의 비(非)변형 — 별도 generated query를 만들어 React Query의
+ *    queryKey 객체가 요청 과정에서 오염되지 않게 한다.
  *
  * 4) 경로 변수 치환 — update/delete 는 인자로 받은 권한 코드를 URL 에 박는다. 본문 필드
  *    (authrtNm 등)를 잘못 집으면 **엉뚱한 권한 그룹을 수정하거나 삭제한다** — 되돌릴 수
@@ -42,7 +35,6 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageResponse, SearchParams } from '@/types/foundation/system';
-import type { MenuByAuthority } from '@/types/foundation/security';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
 const client = vi.hoisted(() => ({
@@ -52,9 +44,42 @@ const client = vi.hoisted(() => ({
   delete: vi.fn(),
 }));
 
-vi.mock('@/lib/api/client', () => ({ default: client }));
+vi.mock('@/lib/api/client', () => {
+  const success = (data: unknown) => ({ success: true, code: 'S000', message: 'success', data });
+  const defaultAuthor = { authrtCd: 'ROLE_DEFAULT', authrtNm: '기본 권한' };
+  const defaultPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
+  return {
+    default: {
+      ...client,
+      getRaw: async (url: string, config?: unknown) => {
+        const result = await client.get(url, config);
+        const fallback = url.endsWith('/menus') ? [] : url.endsWith('/roles') || url === 'admin/system/authorities'
+          ? defaultPage
+          : defaultAuthor;
+        return success(result ?? fallback);
+      },
+      requestRaw: async (requestConfig: Record<string, unknown>) => {
+        const { url, method, data, ...config } = requestConfig;
+        const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
+        if (method === 'post') await client.post(url, data, forwardedConfig);
+        if (method === 'put') await client.put(url, data, forwardedConfig);
+        if (method === 'delete') {
+          const deleteConfig = data === undefined
+            ? forwardedConfig
+            : { ...(forwardedConfig ?? {}), data };
+          await client.delete(url, deleteConfig);
+        }
+        return success(null);
+      },
+    },
+  };
+});
 
-import { authorAdminService, type AuthorInfo } from '../AuthorAdminService';
+import {
+  authorAdminService,
+  type AuthorInfo,
+  type AuthorMenuAssignment,
+} from '../AuthorAdminService';
 
 /** 이 서비스가 합성해야 하는 실제 최종 URL 접두. 클래스는 export 되지 않으므로 싱글턴으로만 관측한다. */
 const BASE = 'admin/system/authorities';
@@ -74,8 +99,8 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
       await authorAdminService.getAuthorList();
       await authorAdminService.getAuthor('A');
       await authorAdminService.getAuthorMenus('E');
-      await authorAdminService.createAuthor({});
-      await authorAdminService.updateAuthor('B', {});
+      await authorAdminService.createAuthor({ authrtCd: 'A', authrtNm: '권한 A' });
+      await authorAdminService.updateAuthor('B', { authrtCd: 'B', authrtNm: '권한 B' });
       await authorAdminService.deleteAuthor('C');
       await authorAdminService.deleteAuthors(['D']);
 
@@ -95,7 +120,7 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
     it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
       await authorAdminService.getAuthorList({ page: 0 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 0, pageIndex: 1 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 1 } });
     });
 
     it('page 1 은 pageIndex 2 로, size 20 은 recordCountPerPage 20 으로 변환되고 원본 키도 함께 남는다', async () => {
@@ -103,7 +128,7 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
 
       // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 1, size: 20, pageIndex: 2, recordCountPerPage: 20 },
+        params: { pageIndex: 2, pageUnit: 20, recordCountPerPage: 20 },
       });
     });
 
@@ -111,14 +136,14 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
       await authorAdminService.getAuthorList({ page: 4 });
 
       // 서비스가 pageIndex 를 먼저 채우므로 ApiService 의 page→pageIndex 분기는 건너뛴다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 4, pageIndex: 5 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 5 } });
       expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 4, pageIndex: 6 } });
     });
 
     it('pageNo 는 이미 1-based 이므로 +1 없이 그대로 pageIndex 가 된다', async () => {
       await authorAdminService.getAuthorList({ pageNo: 3 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageNo: 3, pageIndex: 3 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 3 } });
     });
 
     it('page 와 pageNo 가 함께 오면 pageNo 가 최종 pageIndex 를 결정한다 (나중 대입이 이긴다)', async () => {
@@ -126,7 +151,7 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
 
       // 두 if 문의 순서가 뒤바뀌면 pageNo 를 쓰는 화면(MenuByAuthorityClient)이 조용히 밀린다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 6, pageNo: 2, pageIndex: 2 },
+        params: { pageIndex: 2 },
       });
     });
 
@@ -135,7 +160,7 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
       await authorAdminService.getAuthorList({ pageIndex: 1, size: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, size: 1, recordCountPerPage: 1 },
+        params: { pageIndex: 1, pageUnit: 1, recordCountPerPage: 1 },
       });
     });
 
@@ -143,7 +168,7 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
       await authorAdminService.getAuthorList({ pageSize: 50 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 50, recordCountPerPage: 50, size: 50 },
+        params: { pageSize: 50, pageUnit: 50 },
       });
     });
 
@@ -156,7 +181,7 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
       });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, pageUnit: 5, searchCondition: '1', searchKeyword: '', pageIndex: 1 },
+        params: { pageIndex: 1, pageUnit: 5, searchCondition: '1', searchKeyword: '' },
       });
     });
 
@@ -179,7 +204,7 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 1, pageIndex: 2 },
+        params: { pageIndex: 2 },
       });
     });
 
@@ -220,8 +245,8 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
       await authorAdminService.createAuthor(payload);
 
       expect(client.post).toHaveBeenCalledWith(BASE, payload, undefined);
-      // 참조까지 동일해야 한다 — 중간에서 필드를 추리거나 재조립하지 않는다는 뜻이다.
-      expect(client.post.mock.calls[0][1]).toBe(payload);
+      // Zod 경계 검증은 안전한 복사본을 전달하되 필드 값은 보존한다.
+      expect(client.post.mock.calls[0][1]).toStrictEqual(payload);
     });
 
     it('권한 수정의 경로는 첫 번째 인자(authorCode)로 결정되며 본문 필드가 경로를 바꾸지 않는다', async () => {
@@ -239,8 +264,8 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
     });
 
     it('권한별 메뉴 조회는 /{권한코드}/menus 하위 경로로 나가고 응답 배열을 그대로 반환한다', async () => {
-      const menus: MenuByAuthority[] = [
-        { menuNo: 1, menuNm: '시스템관리', upperMenuId: 0, menuOrdr: 1, prgrmFileNm: '/admin/system' },
+      const menus: AuthorMenuAssignment[] = [
+        { menuSn: 1, authrtCd: 'ROLE_USER', authrtNm: '시스템관리', chkYeoBu: 1 },
       ];
       client.get.mockResolvedValueOnce(menus);
 

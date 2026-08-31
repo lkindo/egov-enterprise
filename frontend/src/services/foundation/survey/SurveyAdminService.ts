@@ -1,60 +1,192 @@
-import { AxiosRequestConfig } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
-import { Survey, SurveyQuestion, SurveyResponseSubmit, SurveyResultStats } from '@/types/business/survey';
-import { PageResponse } from '@/types/foundation/system';
+import type {
+  Survey,
+  SurveyAnswer,
+  SurveyQuestion,
+  SurveyResponseSubmit,
+  SurveyResultStats,
+} from '@/types/business/survey';
+import type { PageResponse } from '@/types/foundation/system';
+import type { components, operations } from '@/types/generated-api';
+import {
+  getQuestions_1Operation,
+  getStatsOperation,
+  getSurvey_1Operation,
+  getSurveys_1Operation,
+  submitOperation,
+} from '@/types/generated-operations';
 
-/**
- * 설문 관리 서비스 (Admin)
- */
+type SurveySearchParams = NonNullable<operations['getSurveys_1']['parameters']['query']>;
+
+function requireSurvey(item: components['schemas']['SurveyInfoDto']): Survey {
+  if (
+    typeof item.srvySn !== 'number'
+    || typeof item.srvyTtl !== 'string'
+    || typeof item.srvyPrps !== 'string'
+    || typeof item.srvyWrtGdCn !== 'string'
+    || typeof item.srvyTrgt !== 'string'
+    || typeof item.srvyBgngYmd !== 'string'
+    || typeof item.srvyEndYmd !== 'string'
+    || typeof item.srvyTmpltSn !== 'number'
+    || typeof item.crtDt !== 'string'
+  ) {
+    throw new Error('설문 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    srvySn: item.srvySn,
+    srvyTtl: item.srvyTtl,
+    srvyPrps: item.srvyPrps,
+    srvyWrtGdCn: item.srvyWrtGdCn,
+    srvyTrgt: item.srvyTrgt,
+    srvyBgngYmd: item.srvyBgngYmd,
+    srvyEndYmd: item.srvyEndYmd,
+    srvyTmpltSn: item.srvyTmpltSn,
+    ...(item.frstRgtrId === undefined ? {} : { frstRgtrId: item.frstRgtrId }),
+    crtDt: item.crtDt,
+  };
+}
+
+function requireSurveyAnswer(item: components['schemas']['SurveyArticleDto']): SurveyAnswer {
+  if (
+    typeof item.srvyArtclSn !== 'number'
+    || typeof item.srvyQstnSn !== 'number'
+    || typeof item.srvySn !== 'number'
+    || typeof item.artclSn !== 'number'
+    || typeof item.artclCn !== 'string'
+    || typeof item.etcAnsYn !== 'string'
+    || typeof item.srvyTmpltSn !== 'number'
+    || typeof item.frstRgtrId !== 'string'
+    || typeof item.crtDt !== 'string'
+  ) {
+    throw new Error('설문 항목 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    srvyArtclSn: item.srvyArtclSn,
+    srvyQstnSn: item.srvyQstnSn,
+    srvySn: item.srvySn,
+    artclSn: item.artclSn,
+    artclCn: item.artclCn,
+    etcAnsYn: item.etcAnsYn,
+    srvyTmpltSn: item.srvyTmpltSn,
+    frstRgtrId: item.frstRgtrId,
+    crtDt: item.crtDt,
+  };
+}
+
+function requireSurveyQuestion(item: components['schemas']['SurveyQuestionDto']): SurveyQuestion {
+  if (
+    typeof item.srvyQstnSn !== 'number'
+    || typeof item.srvySn !== 'number'
+    || typeof item.qstnSn !== 'number'
+    || typeof item.qstnTypeCd !== 'string'
+    || typeof item.qstnCn !== 'string'
+    || typeof item.maxChcCnt !== 'number'
+    || typeof item.srvyTmpltSn !== 'number'
+    || typeof item.frstRgtrId !== 'string'
+    || typeof item.crtDt !== 'string'
+    || !Array.isArray(item.items)
+  ) {
+    throw new Error('설문 문항 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    srvyQstnSn: item.srvyQstnSn,
+    srvySn: item.srvySn,
+    qstnSn: item.qstnSn,
+    qstnTypeCd: item.qstnTypeCd,
+    qstnCn: item.qstnCn,
+    maxChcCnt: item.maxChcCnt,
+    srvyTmpltSn: item.srvyTmpltSn,
+    frstRgtrId: item.frstRgtrId,
+    crtDt: item.crtDt,
+    items: item.items.map(requireSurveyAnswer),
+  };
+}
+
+function requireSurveyStats(item: components['schemas']['SurveyStatsDto']): SurveyResultStats {
+  if (
+    typeof item.srvyQstnSn !== 'number'
+    || typeof item.qstnCn !== 'string'
+    || typeof item.qstnTypeCd !== 'string'
+    || typeof item.srvyArtclSn !== 'number'
+    || typeof item.count !== 'number'
+    || typeof item.percentage !== 'number'
+  ) {
+    throw new Error('설문 통계 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    srvyQstnSn: item.srvyQstnSn,
+    qstnCn: item.qstnCn,
+    qstnTypeCd: item.qstnTypeCd,
+    srvyArtclSn: item.srvyArtclSn,
+    ...(item.artclCn === undefined ? {} : { artclCn: item.artclCn }),
+    count: item.count,
+    percentage: item.percentage,
+  };
+}
+
+function requireSurveyPage(
+  response: {
+    list?: components['schemas']['SurveyInfoDto'][];
+    total?: number;
+    page?: number;
+    size?: number;
+    totalPage?: number;
+  },
+): PageResponse<Survey> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('설문 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    list: response.list.map(requireSurvey),
+    total: response.total,
+    page: response.page,
+    size: response.size,
+    totalPage: response.totalPage,
+  };
+}
+
+/** 설문 관리 서비스 (Admin). */
 class SurveyAdminService extends ApiService {
   constructor() {
     super('/surveys');
   }
 
-  /**
-   * 설문 목록 조회
-   */
-  async getSurveys(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<Survey>> {
-    return this.get<PageResponse<Survey>>('', { ...config, params });
+  async getSurveys(
+    params: SurveySearchParams,
+    config?: AxiosRequestConfig,
+  ): Promise<PageResponse<Survey>> {
+    const response = await this.executeGenerated(getSurveys_1Operation, { query: params, config });
+    return requireSurveyPage(response);
   }
 
-  /**
-   * 설문 상세 정보 조회
-   */
   async getSurvey(srvySn: number, config?: AxiosRequestConfig): Promise<Survey> {
-    return this.get<Survey>(`/${srvySn}`, config);
+    const response = await this.executeGenerated(getSurvey_1Operation, { path: { srvySn }, config });
+    return requireSurvey(response);
   }
 
-  /**
-   * 설문 문항 목록 조회
-   */
   async getQuestions(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyQuestion[]> {
-    return this.get<SurveyQuestion[]>(`/${srvySn}/questions`, config);
+    const response = await this.executeGenerated(getQuestions_1Operation, { path: { srvySn }, config });
+    return response.map(requireSurveyQuestion);
   }
 
-  /**
-   * 설문 답변 제출.
-   *
-   * <p>[2026-08-28] 경로 교정 — 종전 `/respond` 는 서버에 존재하지 않는다.
-   * 실제 엔드포인트는 SurveySubmissionApiController 의 `POST /api/v1/surveys/{srvySn}/responses` 다.
-   * 호출부가 0건이라 아무도 404 를 보지 못했고, 그래서 이 죽은 경로가 남아 있었다.
-   *
-   * <p>답변 1건이 응답 행 1개가 된다. 같은 사용자의 재제출은 서버가 거부한다.
-   * 서버는 문항·항목이 이 설문 소속인지도 검증하므로 클라이언트가 보증할 필요는 없다.
-   */
   async submitAnswers(
     srvySn: number,
     payload: SurveyResponseSubmit,
     config?: AxiosRequestConfig,
   ): Promise<number> {
-    return this.post<number>(`/${srvySn}/responses`, payload, config);
+    return this.executeGenerated(submitOperation, { path: { srvySn }, body: payload, config });
   }
 
-  /**
-   * 설문 결과 통계 조회
-   */
-  async getStats(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyResultStats> {
-    return this.get<SurveyResultStats>(`/${srvySn}/stats`, config);
+  async getStats(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyResultStats[]> {
+    const response = await this.executeGenerated(getStatsOperation, { path: { srvySn }, config });
+    return response.map(requireSurveyStats);
   }
 }
 

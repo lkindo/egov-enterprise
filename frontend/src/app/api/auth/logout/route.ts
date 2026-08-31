@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { authLogoutResponseSchema } from '@/lib/auth/auth-bff-contract';
+import {
+  parseGeneratedOperationRequest,
+  parseGeneratedOperationResponse,
+} from '@/lib/api/generated-operation';
+import { logoutOperation } from '@/types/generated-operations';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
@@ -25,6 +31,13 @@ function expireLocalSessionCookies(response: NextResponse) {
   });
 }
 
+function logoutResponse() {
+  return NextResponse.json(authLogoutResponseSchema.parse({
+    success: true,
+    data: { cleared: true },
+  }));
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 백엔드로 로그아웃 전송 (쿠키 및 Authorization 헤더 포함 중개)
@@ -35,17 +48,16 @@ export async function POST(request: NextRequest) {
     const accessToken = request.cookies.get('accessToken')?.value;
     const resolvedAuthHeader = accessToken ? `Bearer ${accessToken}` : authHeader;
 
-    const response = await axios.post(`${BACKEND_URL}/auth/logout`, {}, {
+    const upstreamRequest = parseGeneratedOperationRequest(logoutOperation, undefined);
+    const response = await axios.post(`${BACKEND_URL}/auth/logout`, upstreamRequest, {
       headers: {
         'Cookie': cookieHeader,
         ...(resolvedAuthHeader ? { 'Authorization': resolvedAuthHeader } : {}),
       },
     });
+    parseGeneratedOperationResponse(logoutOperation, response.data);
 
-    const nextResponse = NextResponse.json({
-      success: true,
-      data: response.data?.data || 'Logged out successfully',
-    });
+    const nextResponse = logoutResponse();
 
     // 백엔드가 돌려준 Set-Cookie 헤더(예: refreshToken 삭제 쿠키 등)가 있으면 포워딩
     const setCookieHeader = response.headers['set-cookie'];
@@ -62,10 +74,7 @@ export async function POST(request: NextRequest) {
     return nextResponse;
   } catch {
     // 백엔드 통신 실패 시에도 브라우저 로컬 쿠키는 지워주는 것이 Fail-Safe 함
-    const nextResponse = NextResponse.json({
-      success: true,
-      message: 'Logged out with local session cleared',
-    });
+    const nextResponse = logoutResponse();
     
     expireLocalSessionCookies(nextResponse);
     

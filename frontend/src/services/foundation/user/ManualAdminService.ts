@@ -1,72 +1,115 @@
 import { ApiService } from '@/services/core/ApiService';
-import { PageResponse } from '@/types/modernization';
-import { AxiosRequestConfig } from 'axios';
+import type { PageResponse } from '@/types/modernization';
+import type { AxiosRequestConfig } from 'axios';
+import type { components, operations } from '@/types/generated-api';
+import {
+  createManualOperation,
+  deleteManualOperation,
+  getManualOperation,
+  getManualsOperation,
+  updateManualOperation,
+} from '@/types/generated-operations';
 
-
-/**
- * 온라인 매뉴얼 DTO
- */
+/** 온라인 매뉴얼의 현재 공개 표면. */
 export interface ManualDto {
-  onlnMnlSn?: number; // 온라인매뉴얼일련번호
-  onlnMnlNm: string; // 온라인매뉴얼명
-  onlnMnlExpln: string; // 온라인매뉴얼설명
-  onlnMnlDfn: string; // 온라인매뉴얼경로(정의)
-  onlnMnlSeCd?: string; // 온라인매뉴얼구분코드
-  createdBy?: string; // 최초등록자ID
-  crtDt?: string; // 생성일시
+  onlnMnlSn?: number;
+  onlnMnlNm: string;
+  onlnMnlExpln: string;
+  onlnMnlDfn: string;
+  onlnMnlSeCd: string;
+  frstRgtrId?: string;
+  crtDt?: string;
 }
 
-/**
- * 온라인 매뉴얼 관리 서비스
- * 백엔드 HelpApiController (/api/v1/help/manuals)와 연동
- */
+export type ManualSearchParams = NonNullable<operations['getManuals']['parameters']['query']>;
+
+function requireManual(item: components['schemas']['OnlineManualDto']): ManualDto {
+  if (
+    typeof item.onlnMnlNm !== 'string'
+    || typeof item.onlnMnlSeCd !== 'string'
+    || typeof item.onlnMnlDfn !== 'string'
+    || typeof item.onlnMnlExpln !== 'string'
+  ) {
+    throw new Error('온라인 매뉴얼 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    ...(item.onlnMnlSn === undefined ? {} : { onlnMnlSn: item.onlnMnlSn }),
+    onlnMnlNm: item.onlnMnlNm,
+    onlnMnlExpln: item.onlnMnlExpln,
+    onlnMnlDfn: item.onlnMnlDfn,
+    onlnMnlSeCd: item.onlnMnlSeCd,
+    ...(item.frstRgtrId === undefined ? {} : { frstRgtrId: item.frstRgtrId }),
+    ...(item.crtDt === undefined ? {} : { crtDt: item.crtDt }),
+  };
+}
+
+function requireManualPage(
+  response: {
+    list?: components['schemas']['OnlineManualDto'][];
+    total?: number;
+    page?: number;
+    size?: number;
+    totalPage?: number;
+  },
+): PageResponse<ManualDto> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('온라인 매뉴얼 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    list: response.list.map(requireManual),
+    total: response.total,
+    page: response.page,
+    size: response.size,
+    totalPage: response.totalPage,
+  };
+}
+
+/** 백엔드 HelpApiController(`/api/v1/help/manuals`)와 연동하는 매뉴얼 관리 서비스. */
 class ManualAdminService extends ApiService {
   constructor() {
     super('/help');
   }
 
-  /**
-   * 온라인 매뉴얼 목록 조회
-   * @param params 검색 파라미터
-   * @returns 온라인 매뉴얼 페이지 결과
-   */
-  public async getManualList(params: unknown = {}, config?: AxiosRequestConfig): Promise<PageResponse<ManualDto>> {
-    return this.get<PageResponse<ManualDto>>('/manuals', { ...config, params });
+  async getManualList(
+    params: ManualSearchParams = {},
+    config?: AxiosRequestConfig,
+  ): Promise<PageResponse<ManualDto>> {
+    const response = await this.executeGenerated(getManualsOperation, { query: params, config });
+    return requireManualPage(response);
   }
 
-  /**
-   * 온라인 매뉴얼 상세 조회
-   * @param onlnMnlSn 매뉴얼 일련번호
-   * @returns 온라인 매뉴얼 상세 정보
-   */
-  public async getManual(onlnMnlSn: number): Promise<ManualDto> {
-    return this.get<ManualDto>(`/manuals/${onlnMnlSn}`);
+  async getManual(onlnMnlSn: number, config?: AxiosRequestConfig): Promise<ManualDto> {
+    const response = await this.executeGenerated(getManualOperation, {
+      path: { onlnMnlSn },
+      config,
+    });
+    return requireManual(response);
   }
 
-  /**
-   * 온라인 매뉴얼 등록
-   * @param manual 매뉴얼 정보
-   * @returns 생성된 매뉴얼 ID
-   */
-  public async createManual(manual: ManualDto): Promise<number> {
-    return this.post<number>('/manuals', manual);
+  async createManual(manual: ManualDto, config?: AxiosRequestConfig): Promise<number> {
+    return this.executeGenerated(createManualOperation, { body: manual, config });
   }
 
-  /**
-   * 온라인 매뉴얼 수정
-   * @param onlnMnlSn 매뉴얼 일련번호
-   * @param manual 수정할 매뉴얼 정보
-   */
-  public async updateManual(onlnMnlSn: number, manual: ManualDto): Promise<void> {
-    return this.put<void>(`/manuals/${onlnMnlSn}`, manual);
+  async updateManual(
+    onlnMnlSn: number,
+    manual: ManualDto,
+    config?: AxiosRequestConfig,
+  ): Promise<void> {
+    return this.executeGenerated(updateManualOperation, {
+      path: { onlnMnlSn },
+      body: manual,
+      config,
+    });
   }
 
-  /**
-   * 온라인 매뉴얼 삭제
-   * @param onlnMnlSn 매뉴얼 일련번호
-   */
-  public async deleteManual(onlnMnlSn: number): Promise<void> {
-    return this.delete<void>(`/manuals/${onlnMnlSn}`);
+  async deleteManual(onlnMnlSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(deleteManualOperation, { path: { onlnMnlSn }, config });
   }
 }
 

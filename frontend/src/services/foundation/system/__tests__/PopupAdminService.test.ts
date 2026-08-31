@@ -54,12 +54,24 @@ import type { PageResponse } from '@/types/foundation/system';
 import type { Popup } from '@/types/foundation/banner';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const legacy = { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() };
+  const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+  return {
+    ...legacy,
+    getRaw: vi.fn(async (url: string, config?: unknown) => envelope(await legacy.get(url, config))),
+    requestRaw: vi.fn(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length > 0 ? config : undefined;
+      let response: unknown;
+      if (method === 'post') response = await legacy.post(url, data, forwardedConfig);
+      else if (method === 'put') response = await legacy.put(url, data, forwardedConfig);
+      else if (method === 'delete') response = await legacy.delete(url, forwardedConfig);
+      else throw new Error(`unexpected method: ${String(method)}`);
+      return envelope(response);
+    }),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -88,61 +100,58 @@ const popupFixture = (popupSn: number, popupTtlNm: string): Popup => ({
 });
 
 describe('PopupAdminService — 팝업 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.get.mockImplementation((url: string) => Promise.resolve(
+      url === BASE ? { list: [] } : popupFixture(1, '기본 팝업'),
+    ));
+    client.post.mockResolvedValue(1);
+  });
 
   describe('팝업 목록 조회 (getPopupList)', () => {
     it('목록은 admin/system/popups 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await popupAdminService.getPopupList();
 
       // path 인자로 빈 문자열('')을 넘기므로 basePath 그대로가 최종 경로다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
     });
 
-    it('params 를 생략하면 params: undefined 가 그대로 전달된다 — 빈 객체로 바꿔치지 않는다', async () => {
-      // 빈 객체({})로 바꾸면 axios 가 `?` 만 붙은 URL 을 만들 수 있고, 무엇보다
-      // 페이징 정규화 분기(config?.params 가 truthy 일 때만 동작)의 전제가 달라진다.
+    it('params 를 생략하면 generated query의 빈 객체만 전달한다', async () => {
       await popupAdminService.getPopupList(undefined);
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지는 Pageable 계약의 0-based page 0으로 전달한다', async () => {
       await popupAdminService.getPopupList({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, pageIndex: 1 },
+        params: { page: 0 },
       });
     });
 
-    it('page 3·size 20 은 pageIndex 4·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 3·size 20은 generated Pageable query 그대로 전달한다', async () => {
       await popupAdminService.getPopupList({ page: 3, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 3, size: 20, pageIndex: 4, recordCountPerPage: 20 },
+        params: { page: 3, size: 20 },
       });
     });
 
-    it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
+    it('OpenAPI에 없는 pageIndex는 보내지 않고 Pageable page만 유지한다', async () => {
       // page 9 였다면 변환 결과는 pageIndex 10 이겠지만, 명시값 1 이 그대로 유지돼야 한다.
       await popupAdminService.getPopupList({ page: 9, pageIndex: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 1 },
-      });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 10 },
+        params: { page: 9 },
       });
     });
 
-    it('pageSize 만 오면 recordCountPerPage 와 size 를 함께 채운다 (Common DTO 호환 축)', async () => {
+    it('OpenAPI에 없는 pageSize만 오면 쿼리에 섞지 않는다', async () => {
       await popupAdminService.getPopupList({ pageSize: 25 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 25, recordCountPerPage: 25, size: 25 },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
     it('SSR 진입점의 { page: 0, size: 20 } + Authorization 헤더가 온전히 전달된다', async () => {
@@ -155,17 +164,17 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         headers,
-        params: { page: 0, size: 20, pageIndex: 1, recordCountPerPage: 20 },
+        params: { page: 0, size: 20 },
       });
     });
 
-    it('화면 2페이지(popupPage 2 → page 1)는 pageIndex 2 로 나간다', async () => {
+    it('화면 2페이지(popupPage 2 → page 1)는 0-based page 1로 나간다', async () => {
       // BannerAdminClient 는 1-based UI 페이지를 `page: popupPage - 1` 로 0-based 변환해 넘기고,
       // 서비스단이 다시 +1 해 1-based pageIndex 를 만든다. 즉 UI 2페이지 → page 1 → pageIndex 2.
       await popupAdminService.getPopupList({ page: 1, size: 20 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 1, size: 20, pageIndex: 2, recordCountPerPage: 20 },
+        params: { page: 1, size: 20 },
       });
       // +1 이 사라지면 pageIndex 1(=첫 페이지)이 되어 2페이지에서도 1페이지가 보인다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
@@ -173,25 +182,19 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
       });
     });
 
-    it('searchKeyword 를 keyword 로 승격하지 않는다 — 형제 BannerAdminService 와 다른 지점이다', async () => {
+    it('legacy searchKeyword를 OpenAPI searchWrd로 정규화한다', async () => {
       // BannerAdminService.getBannerList 는 `keyword: searchKeyword || searchWrd || ''` 를
       // 항상 덧붙이지만, 팝업 목록은 params 를 가공 없이 흘린다. 같은 화면의 두 탭이라
       // "통일" 명목의 손질이 들어오기 쉬우므로 차이 자체를 고정한다.
       await popupAdminService.getPopupList({ searchKeyword: '공지' });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { searchKeyword: '공지' } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '공지', keyword: '공지' },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { searchWrd: '공지' } });
     });
 
-    it('keyword 는 가공 없이 그대로 실린다 — 빈 문자열 기본값을 끼워 넣지 않는다', async () => {
+    it('legacy keyword도 OpenAPI searchWrd로 정규화하고 빈 기본값은 넣지 않는다', async () => {
       await popupAdminService.getPopupList({ keyword: '점검' });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { keyword: '점검' } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { keyword: '점검', searchKeyword: '점검' },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { searchWrd: '점검' } });
     });
 
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
@@ -202,7 +205,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, pageIndex: 1 },
+        params: { page: 0 },
       });
     });
 
@@ -213,7 +216,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 1000,
-        params: { page: 0, pageIndex: 1 },
+        params: { page: 0 },
       });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
         timeout: 1000,

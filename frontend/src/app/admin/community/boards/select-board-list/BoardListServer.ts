@@ -1,7 +1,14 @@
 import { cookies } from 'next/headers';
-import client from '../../../../../lib/api/client';
+import { redirect } from 'next/navigation';
+import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
 import { fetchAllPages } from '@/lib/api/fetch-all-pages';
+import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { getPostsOperation } from '@/types/generated-operations';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 /**
  * bbsId 없이 진입했을 때 쓸 기본 게시판을 **실재하는 목록에서** 고른다.
@@ -17,12 +24,8 @@ export const resolveDefaultBoardId = async (): Promise<string> => {
 
   try {
     const boards = await fetchAllPages((pageIndex, pageUnit) =>
-      client.get<{
-        list: Array<{ bbsId?: string; useYn?: string }>;
-        total: number;
-      }>('/admin/system/board-masters', {
+      boardAdminService.getBoardMasterList({ pageIndex, pageUnit }, {
         headers: { Authorization: `Bearer ${accessToken}` },
-        params: { pageIndex, pageUnit },
       }));
     const first = boards.find((board) => board.useYn !== 'N' && !!board.bbsId);
     return first?.bbsId ?? NOTICE_BOARD_ID;
@@ -66,12 +69,16 @@ export const getInitialBoardData = async (params: {
     // 감사 P1-1: 목록 조회 실패를 `{ list: [] }` 로 바꿔 삼키면 화면이 "게시글 0건"이라고 거짓말한다.
     // 목록은 실패를 삼키지 않고(= 아래 catch 로 전파) fetchError 로 표면화하며,
     // 게시판 마스터(제목·템플릿) 조회는 목록 표시를 막을 이유가 없어 부가 정보로만 취급한다.
-    const [listResponse, masterResponse]: any = await Promise.all([
-      client.get(`/boards/${bbsId}`, { ...axiosConfig, params: queryParams }),
-      client.get(`/admin/system/board-masters/${bbsId}`, axiosConfig).catch((err: any) => {
+    const [listResponse, masterResponse] = await Promise.all([
+      executeGeneratedOperation(getPostsOperation, {
+        path: { bbsId },
+        query: queryParams,
+        config: axiosConfig,
+      }),
+      boardAdminService.getBoardMaster(bbsId, axiosConfig).catch((err: unknown) => {
         console.warn('BoardListServer: Failed to fetch board master info', err);
         return null;
-      })
+      }),
     ]);
 
     // PageResponse 구조에 맞춰 데이터 추출 (list, total, totalPage)
@@ -82,15 +89,17 @@ export const getInitialBoardData = async (params: {
       masterInfo: masterResponse || null,
       fetchError: null as string | null
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 401 오류는 인증이 필요한 상태이므로 시스템 에러 대신 로그인 페이지로 리다이렉트
-    if (error.response?.status === 401) {
-      const { redirect } = require('next/navigation');
-      redirect('/login');
-    }
+    const response = isRecord(error) && isRecord(error.response) ? error.response : null;
+    if (response?.status === 401) redirect('/login');
     console.error('BoardListServer: Failed to fetch board list', error);
-    const fetchError: string =
-      error?.response?.data?.message || error?.message || '게시글 목록을 불러오지 못했습니다.';
+    const responseData = response && isRecord(response.data) ? response.data : null;
+    const fetchError = typeof responseData?.message === 'string'
+      ? responseData.message
+      : error instanceof Error && error.message
+        ? error.message
+        : '게시글 목록을 불러오지 못했습니다.';
     return { list: [], total: 0, totalPage: 0, masterInfo: null, fetchError };
   }
 }

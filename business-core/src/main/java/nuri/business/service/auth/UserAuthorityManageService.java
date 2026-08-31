@@ -44,6 +44,16 @@ public class UserAuthorityManageService {
                 pageable);
     }
 
+    /** 선택한 권한에 대한 사용자별 할당 여부를 조회한다. */
+    public Page<AuthorGroupProjection> selectUserAuthorityList(String authorCode, BaseSearchDto searchVO) {
+        Pageable pageable = searchVO.toPageable();
+        return userAuthorityRepository.searchAuthorGroups(
+                searchVO.getSearchCondition(),
+                searchVO.getSearchKeyword(),
+                authorCode,
+                pageable);
+    }
+
     /**
      * 부서별 권한 목록 조회
      */

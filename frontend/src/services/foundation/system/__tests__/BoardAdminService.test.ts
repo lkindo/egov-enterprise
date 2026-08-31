@@ -43,12 +43,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AxiosRequestConfig } from 'axios';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const legacy = {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  };
+  const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+  return {
+    ...legacy,
+    getRaw: vi.fn(async (url: string, config?: unknown) => envelope(await legacy.get(url, config))),
+    requestRaw: vi.fn(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length > 0 ? config : undefined;
+      let response: unknown;
+      if (method === 'post') response = await legacy.post(url, data, forwardedConfig);
+      else if (method === 'put') response = await legacy.put(url, data, forwardedConfig);
+      else if (method === 'delete') response = await legacy.delete(url, forwardedConfig);
+      else throw new Error(`unexpected method: ${String(method)}`);
+      return envelope(typeof url === 'string' && url.includes('/batch/') ? undefined : response);
+    }),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -63,6 +80,8 @@ const board: BoardMaster = {
   bbsTtl: '공지사항',
   bbsTypeCd: 'BBST01',
   bbsAtrbCd: 'BBSA01',
+  fileAtchPsbltyYn: 'Y',
+  atchPsbltyFileQty: 5,
   atchPsbltyFileSz: 5_242_880,
   useYn: 'Y',
 };
@@ -178,7 +197,9 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
     it('등록 응답에 generated string 식별자가 없으면 성공으로 오인하지 않는다', async () => {
       client.post.mockResolvedValueOnce(undefined);
 
-      await expect(boardAdminService.createBoardMaster(board)).rejects.toThrow('게시판 식별자가 응답에 없습니다.');
+      await expect(boardAdminService.createBoardMaster(board)).rejects.toThrow(
+        '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
+      );
     });
 
     it('필수 generated 요청 필드가 빠지면 네트워크 호출 전에 거부한다', async () => {
@@ -308,7 +329,7 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       });
 
       const [url] = client.post.mock.calls[0] as [string];
-      expect(url).toBe('/bbs/BBSMSTR_000000000001');
+      expect(url).toBe('bbs/BBSMSTR_000000000001');
       // basePath 를 태우면 admin/system 접두가 붙어 백엔드 라우팅이 즉시 404 가 된다.
       expect(url).not.toContain('admin/system');
     });
@@ -318,9 +339,9 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
 
       await boardAdminService.createBoardArticle(data);
 
-      const [, body, requestConfig] = client.post.mock.calls[0] as [string, FormData, AxiosRequestConfig];
+      const [, body, requestConfig] = client.post.mock.calls[0] as [string, FormData, AxiosRequestConfig | undefined];
       expect(body).toBeInstanceOf(FormData);
-      expect(requestConfig.headers).toEqual({ 'Content-Type': 'multipart/form-data' });
+      expect(requestConfig).toEqual({ headers: { 'Content-Type': undefined } });
 
       const part = body.get('board');
       expect(part).toBeInstanceOf(Blob);
@@ -329,31 +350,31 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       await expect((part as Blob).text()).resolves.toBe(JSON.stringify(data));
     });
 
-    it('호출부 헤더는 유지되고 Content-Type 만 multipart 로 덮어써지며 나머지 config 도 보존된다', async () => {
+    it('호출부 config를 보존하고 Content-Type 수동 지정은 transport 전에 거부한다', async () => {
       const { signal } = new AbortController();
 
       await boardAdminService.createBoardArticle(
         { bbsId: 'BBSMSTR_000000000007', pstTtl: '제목', pstCn: '본문' },
-        { timeout: 30000, signal, headers: { 'X-Trace-Id': 'trace-1', 'Content-Type': 'application/json' } },
+        { timeout: 30000, signal, headers: { 'X-Trace-Id': 'trace-1' } },
       );
 
-      expect(client.post).toHaveBeenCalledWith('/bbs/BBSMSTR_000000000007', expect.any(FormData), {
+      expect(client.post).toHaveBeenCalledWith('bbs/BBSMSTR_000000000007', expect.any(FormData), {
         timeout: 30000,
         signal,
-        headers: { 'X-Trace-Id': 'trace-1', 'Content-Type': 'multipart/form-data' },
+        headers: { 'X-Trace-Id': 'trace-1', 'Content-Type': undefined },
       });
+
+      await expect(boardAdminService.createBoardArticle(
+        { bbsId: 'BBSMSTR_000000000007', pstTtl: '제목', pstCn: '본문' },
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )).rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
     });
 
-    it('단건 응답은 legacy nullable adapter 뒤 generated BoardMasterDto를 검증한다', async () => {
+    it('단건 응답은 전용 generated 상세 DTO를 검증한다', async () => {
       await expect(boardAdminService.getBoardMaster('BBSMSTR_000000000001')).resolves.toEqual(board);
 
       const { atchPsbltyFileSz: _legacyNull, ...legacyBoard } = board;
-      client.get.mockResolvedValueOnce({
-        ...board,
-        bbsExpln: null,
-        tmpltId: null,
-        atchPsbltyFileSz: null,
-      });
+      client.get.mockResolvedValueOnce(legacyBoard);
       await expect(boardAdminService.getBoardMaster('BBSMSTR_NULLABLE')).resolves.toEqual(legacyBoard);
 
       client.get.mockResolvedValueOnce({ bbsId: 'BROKEN', bbsTtl: '필수 코드 누락' });

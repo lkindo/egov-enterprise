@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const client = vi.hoisted(() => ({
   get: vi.fn(),
   post: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -10,7 +12,22 @@ vi.mock('@/lib/api/client', () => ({ default: client }));
 import { smsAdminService } from '../SmsAdminService';
 
 describe('SmsAdminService numeric transmission serial contract', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      const fallback = url.endsWith('/recipients')
+        ? [{ rcptnTelno: '01033334444' }]
+        : { sndngTelno: '0212345678', sndngCn: 'message', recipients: [{ rcptnTelno: '01033334444' }] };
+      return { success: true, code: 'S000', message: 'success', data: data ?? fallback };
+    });
+    client.requestRaw.mockImplementation(async ({ url, method, data, ...config }) => {
+      const response = method === 'post'
+        ? await client.post(url, data, Object.keys(config).length > 0 ? config : undefined)
+        : undefined;
+      return { success: true, code: 'S000', message: 'success', data: response };
+    });
+  });
 
   it('uses the numeric SMS transmission serial number for detail and recipient paths', async () => {
     await smsAdminService.getSms(101);

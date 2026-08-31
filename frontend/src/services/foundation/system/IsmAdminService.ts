@@ -1,7 +1,15 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
-import type { components } from '@/types/generated-api';
+import type { components, operations } from '@/types/generated-api';
+import {
+  confirmInformalSanctionOperation,
+  deleteInformalSanctionOperation,
+  getInformalSanctionListOperation,
+  getInformalSanctionOperation,
+  registerInformalSanctionOperation,
+  updateInformalSanctionOperation,
+} from '@/types/generated-operations';
 
 /**
  * 약식결재(비정형 결재) DTO — 백엔드 `InformalSanctionDto` 의 생성 타입을 그대로 재수출한다.
@@ -9,6 +17,33 @@ import type { components } from '@/types/generated-api';
  * (과거 로컬 `InfrmlSanctn` 재선언이 DTO 와 전면 불일치하여 목록 전 행 공백 / 승인 100% 실패를 유발했다.)
  */
 export type InformalSanctionDto = components['schemas']['InformalSanctionDto'];
+type InformalSanctionListQuery = NonNullable<
+  operations['getInformalSanctionList']['parameters']['query']
+>;
+
+function toInformalSanctionListQuery(
+  params: SearchParams | undefined,
+  type?: string,
+): InformalSanctionListQuery | undefined {
+  if (!params && type === undefined) return undefined;
+  const query = { ...params, ...(type === undefined ? {} : { type }) };
+  return query as InformalSanctionListQuery;
+}
+
+function requireInformalSanctionPage(
+  response: components['schemas']['PageResponseInformalSanctionDto'],
+): PageResponse<InformalSanctionDto> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('약식결재 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return response as PageResponse<InformalSanctionDto>;
+}
 
 /**
  * 결재 상태 코드 — 백엔드 `SanctionStatus` 열거형과 1:1 대응한다.
@@ -35,32 +70,51 @@ export function isSanctionPending(aprvYn?: string): boolean {
  */
 class IsmAdminService extends ApiService {
   constructor() {
-    super('admin/system/ism');
+    // 실제 경로는 각 generated operation이 소유한다. basePath도 같은 도메인명으로 유지한다.
+    super('informal-sanctions');
   }
 
   /** 결재 대기함(내가 결재자인 건) 목록 조회 */
   async getPendingList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InformalSanctionDto>> {
-    return this.get<PageResponse<InformalSanctionDto>>('', { ...config, params: { ...params, type: 'received' } });
+    const response = await this.executeGenerated(getInformalSanctionListOperation, {
+      query: toInformalSanctionListQuery(params, 'received'),
+      config,
+    });
+    return requireInformalSanctionPage(response);
   }
 
   /** 신청함(내가 신청자인 건) 목록 조회 */
   async getHistoryList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<InformalSanctionDto>> {
-    return this.get<PageResponse<InformalSanctionDto>>('', { ...config, params });
+    const response = await this.executeGenerated(getInformalSanctionListOperation, {
+      query: toInformalSanctionListQuery(params),
+      config,
+    });
+    return requireInformalSanctionPage(response);
   }
 
   /** 신청 상세 조회 */
   async getInfrmlSanctn(id: number, config?: AxiosRequestConfig): Promise<InformalSanctionDto> {
-    return this.get<InformalSanctionDto>(`/${id}`, config);
+    return this.executeGenerated(getInformalSanctionOperation, {
+      path: { informalSanctionId: id },
+      config,
+    });
   }
 
   /** 신청 등록 */
   async createInfrmlSanctn(data: Partial<InformalSanctionDto>, config?: AxiosRequestConfig): Promise<number> {
-    return this.post<number>('', data, config);
+    return this.executeGenerated(registerInformalSanctionOperation, {
+      body: data as InformalSanctionDto,
+      config,
+    });
   }
 
   /** 신청 수정 */
   async updateInfrmlSanctn(id: number, data: Partial<InformalSanctionDto>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/${id}`, data, config);
+    return this.executeGenerated(updateInformalSanctionOperation, {
+      path: { informalSanctionId: id },
+      body: data as InformalSanctionDto,
+      config,
+    });
   }
 
   /**
@@ -74,12 +128,13 @@ class IsmAdminService extends ApiService {
     rjctRsnCn?: string,
     config?: AxiosRequestConfig,
   ): Promise<void> {
-    return this.patch(`/${id}/confirm`, null, {
-      ...config,
-      params: {
+    return this.executeGenerated(confirmInformalSanctionOperation, {
+      path: { informalSanctionId: id },
+      query: {
         confmAt: aprvYn,
         returnResn: rjctRsnCn,
       },
+      config,
     });
   }
 
@@ -90,7 +145,10 @@ class IsmAdminService extends ApiService {
    * 결재자 시점이므로 이 경로에서 호출하면 항상 403 이다. 신청함 화면에서만 사용할 것.
    */
   async deleteInfrmlSanctn(id: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${id}`, config);
+    return this.executeGenerated(deleteInformalSanctionOperation, {
+      path: { informalSanctionId: id },
+      config,
+    });
   }
 }
 

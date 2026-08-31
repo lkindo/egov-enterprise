@@ -26,7 +26,17 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
     @Override
     public Page<AuthorGroupProjection> searchAuthorGroups(String searchCondition, String searchKeyword,
             Pageable pageable) {
+        return searchAuthorGroups(searchCondition, searchKeyword, null, pageable);
+    }
+
+    @Override
+    public Page<AuthorGroupProjection> searchAuthorGroups(String searchCondition, String searchKeyword,
+            String authorCode, Pageable pageable) {
         // eGovFrame legacy combines 3 tables, but we focus on NEMPLYRINFO (User entity)
+        BooleanExpression authorityJoin = user.esntlId.eq(userAuthority.scrtyDcsnTrgtId);
+        if (StringUtils.hasText(authorCode)) {
+            authorityJoin = authorityJoin.and(userAuthority.authrtId.eq(authorCode));
+        }
         var query = queryFactory
                 .select(Projections.bean(AuthorGroupProjection.class,
                         user.userId.as("userId"),
@@ -39,7 +49,7 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                                 .otherwise("N").as("regYn"),
                         user.esntlId.as("scrtyDcsnTrgtId")))
                 .from(user)
-                .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.scrtyDcsnTrgtId))
+                .leftJoin(userAuthority).on(authorityJoin)
                 .where(conditionEq(searchCondition, searchKeyword))
                 .orderBy(user.userId.asc());
 

@@ -2,8 +2,16 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
+import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { Banner, Popup } from '@/types/foundation/banner';
+import {
+    createPopupOperation,
+    deleteBannerOperation,
+    deletePopupOperation,
+    insertBannerOperation,
+    updateBannerOperation,
+    updatePopupOperation,
+} from '@/types/generated-operations';
 import { extractErrorMessage, extractFieldErrors } from './actionUtils';
 
 interface ActionResponse {
@@ -15,7 +23,7 @@ interface ActionResponse {
 interface SaveActionParams<T> {
     mode: 'create' | 'edit';
     data: T;
-    id?: string | number;
+    id?: number;
 }
 
 // Banner Actions
@@ -26,9 +34,14 @@ export async function saveBannerAction(prevState: unknown, { mode, data, id }: S
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
         if (mode === 'create') {
-            await client.post('/admin/system/banners', data, axiosConfig);
+            await executeGeneratedOperation(insertBannerOperation, { body: data, config: axiosConfig });
         } else {
-            await client.put(`/admin/system/banners/${id}`, data, axiosConfig);
+            if (id === undefined) throw new Error('수정할 배너 ID가 없습니다.');
+            await executeGeneratedOperation(updateBannerOperation, {
+                path: { bnrSn: id },
+                body: data,
+                config: axiosConfig,
+            });
         }
 
         revalidatePath('/admin/system/banner');
@@ -47,7 +60,10 @@ export async function deleteBannerAction(prevState: unknown, bnrSn: number): Pro
         const accessToken = cookieStore.get('accessToken')?.value;
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-        await client.delete(`/admin/system/banners/${bnrSn}`, axiosConfig);
+        await executeGeneratedOperation(deleteBannerOperation, {
+            path: { bnrSn },
+            config: axiosConfig,
+        });
 
         revalidatePath('/admin/system/banner');
         // [2026-08-09 비대칭 정정] 저장은 '/' 를 재검증하는데 삭제는 하지 않았다.
@@ -68,9 +84,14 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
         if (mode === 'create') {
-            await client.post('/admin/system/popups', data, axiosConfig);
+            await executeGeneratedOperation(createPopupOperation, { body: data, config: axiosConfig });
         } else {
-            await client.put(`/admin/system/popups/${id}`, data, axiosConfig);
+            if (id === undefined) throw new Error('수정할 팝업 ID가 없습니다.');
+            await executeGeneratedOperation(updatePopupOperation, {
+                path: { popupSn: id },
+                body: data,
+                config: axiosConfig,
+            });
         }
 
         revalidatePath('/admin/system/banner');
@@ -89,7 +110,10 @@ export async function deletePopupAction(prevState: unknown, id: number): Promise
         const accessToken = cookieStore.get('accessToken')?.value;
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-        await client.delete(`/admin/system/popups/${id}`, axiosConfig);
+        await executeGeneratedOperation(deletePopupOperation, {
+            path: { popupSn: id },
+            config: axiosConfig,
+        });
 
         revalidatePath('/admin/system/banner');
         // 배너와 같은 비대칭이었다 — 지운 팝업이 공개 화면에 계속 떴다.

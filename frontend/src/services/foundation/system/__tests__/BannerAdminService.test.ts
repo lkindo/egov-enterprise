@@ -54,6 +54,8 @@ const client = vi.hoisted(() => ({
   post: vi.fn(),
   put: vi.fn(),
   delete: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -67,32 +69,51 @@ import { bannerAdminService } from '../BannerAdminService';
  */
 const BASE = 'admin/system/banners';
 
+const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+const fallbackBanner = { bnrSn: 1, bnrNm: '배너' };
+
 describe('BannerAdminService — 배너 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      const fallback = url === BASE ? emptyPage : url === `${BASE}/reflected` ? [] : fallbackBanner;
+      return envelope(data ?? fallback);
+    });
+    client.requestRaw.mockImplementation(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
+      let result: unknown;
+      if (method === 'post') result = await client.post(url, data, forwardedConfig);
+      else if (method === 'put') result = await client.put(url, data, forwardedConfig);
+      else if (method === 'delete') result = await client.delete(url, forwardedConfig);
+      return envelope(result ?? (method === 'post' ? 1 : undefined));
+    });
+  });
 
   describe('배너 목록 조회(getBannerList)', () => {
     it('목록은 admin/system/banners 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await bannerAdminService.getBannerList();
 
-      // params 를 안 넘겨도 keyword 는 빈 문자열로 항상 채워져 나간다.
       expect(client.get).toHaveBeenCalledWith(BASE, { params: { keyword: '' } });
     });
 
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지(page 0)는 생성 Pageable 계약의 page 0으로 유지된다', async () => {
       await bannerAdminService.getBannerList({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, keyword: '', pageIndex: 1 },
+        params: { page: 0, keyword: '' },
       });
     });
 
-    it('page 1·size 10 은 pageIndex 2·recordCountPerPage 10 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 1·size 10 은 생성 Pageable 계약의 두 키만 전달된다', async () => {
       // 화면(BannerAdminClient)은 `page: bannerPage - 1` 로 0-based 를 넘긴다.
       // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       await bannerAdminService.getBannerList({ page: 1, size: 10 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 1, size: 10, keyword: '', pageIndex: 2, recordCountPerPage: 10 },
+        params: { page: 1, size: 10, keyword: '' },
       });
     });
 
@@ -100,15 +121,15 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
       await bannerAdminService.getBannerList({ page: 9, pageIndex: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 1, keyword: '' },
+        params: { page: 0, keyword: '' },
       });
     });
 
-    it('pageSize 는 recordCountPerPage 와 size 양쪽으로 확장된다 — 공통 DTO 호환 축이다', async () => {
+    it('pageSize 는 생성 Pageable 계약의 size로 변환된다', async () => {
       await bannerAdminService.getBannerList({ pageSize: 15 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 15, keyword: '', recordCountPerPage: 15, size: 15 },
+        params: { keyword: '', size: 15 },
       });
     });
 
@@ -116,7 +137,7 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
       await bannerAdminService.getBannerList({ searchKeyword: '메인배너' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '메인배너', keyword: '메인배너' },
+        params: { keyword: '메인배너' },
       });
     });
 
@@ -124,7 +145,7 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
       await bannerAdminService.getBannerList({ searchWrd: '레거시검색' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchWrd: '레거시검색', keyword: '레거시검색' },
+        params: { keyword: '레거시검색' },
       });
     });
 
@@ -132,7 +153,7 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
       await bannerAdminService.getBannerList({ searchKeyword: '우선', searchWrd: '후순위' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '우선', searchWrd: '후순위', keyword: '우선' },
+        params: { keyword: '우선' },
       });
     });
 
@@ -144,7 +165,7 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, keyword: '', pageIndex: 1 },
+        params: { page: 0, keyword: '' },
       });
     });
 
@@ -287,7 +308,7 @@ describe('BannerAdminService — 배너 관리자 API 계약', () => {
     });
 
     it('배너 수정은 본문을 손대지 않고 그대로 전달한다 — rfltYn 같은 플래그가 유실되면 노출이 뒤집힌다', async () => {
-      const payload: Partial<Banner> = { rfltYn: 'N', sortOrdr: 5 };
+      const payload: Partial<Banner> = { bnrNm: '수정 배너', rfltYn: 'N', sortOrdr: 5 };
 
       await bannerAdminService.updateBanner(7, payload);
 

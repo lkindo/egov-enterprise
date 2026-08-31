@@ -160,7 +160,7 @@ const eslintConfig = [
   },
   {
     // 자동 생성 SSOT 스키마 파일은 인라인 z.object 금지 규칙에서 제외(생성물)
-    files: ["src/types/generated-zod.ts"],
+    files: ["src/types/generated-zod.ts", "src/types/generated-operations.ts"],
     rules: {
       "no-restricted-syntax": "off"
     }

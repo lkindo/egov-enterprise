@@ -2,6 +2,16 @@ import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { OnlinePollManageVO, OnlinePollManageDetailVO, OnlinePollItemVO, OnlinePollPartcptnVO, PollSearchParams } from '@/types/business/poll';
 import { AxiosRequestConfig } from 'axios';
+import type { GeneratedOperationRequest } from '@/types/generated-operations';
+import {
+  createPollOperation,
+  deletePollOperation,
+  getPollItemsOperation,
+  getPollOperation,
+  getPollsOperation,
+  updatePollOperation,
+  voteOperation,
+} from '@/types/generated-operations';
 
 /**
  * 온라인 설문(Poll) 서비스
@@ -14,44 +24,67 @@ export class PollUserService extends ApiService {
 
   /** 설문 목록 조회 */
   async getPollList(params: PollSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<OnlinePollManageDetailVO>> {
-    return this.get<PageResponse<OnlinePollManageDetailVO>>('', { 
-      ...config, 
-      params: {
-        ...params,
-        keyword: params.searchKeyword || '' 
-      }
-    });
+    return this.executeGenerated(getPollsOperation, {
+      query: {
+        ...(params.page !== undefined ? { page: params.page } : {}),
+        ...(params.size !== undefined ? { size: params.size } : {}),
+        keyword: params.searchKeyword || '',
+      },
+      config,
+    }) as Promise<PageResponse<OnlinePollManageDetailVO>>;
   }
 
   /** 설문 상세 조회 */
   async getPollDetail(pollSn: number, config?: AxiosRequestConfig): Promise<OnlinePollManageDetailVO> {
-    return this.get<OnlinePollManageDetailVO>(`/${pollSn}`, config);
+    return this.executeGenerated(getPollOperation, {
+      path: { pollSn },
+      config,
+    }) as Promise<OnlinePollManageDetailVO>;
   }
 
   /** 설문 등록 */
   async createPoll(poll: Partial<OnlinePollManageVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post('', poll, config);
+    return this.executeGenerated(createPollOperation, {
+      body: poll as GeneratedOperationRequest<'createPoll'>,
+      config,
+    });
   }
 
   /** 설문 수정 */
   async updatePoll(poll: Partial<OnlinePollManageVO>, config?: AxiosRequestConfig): Promise<void> {
     if (!poll.pollSn) throw new Error('pollSn is required for update');
-    return this.put(`/${poll.pollSn}`, poll, config);
+    return this.executeGenerated(updatePollOperation, {
+      path: { pollSn: poll.pollSn },
+      body: poll as GeneratedOperationRequest<'updatePoll'>,
+      config,
+    });
   }
 
   /** 설문 삭제 */
   async deletePoll(pollSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${pollSn}`, config);
+    return this.executeGenerated(deletePollOperation, {
+      path: { pollSn },
+      config,
+    });
   }
 
   /** 설문 항목 목록 조회 */
   async getPollItemList(pollSn: number, config?: AxiosRequestConfig): Promise<OnlinePollItemVO[]> {
-    return this.get<OnlinePollItemVO[]>(`/${pollSn}/items`, config);
+    return this.executeGenerated(getPollItemsOperation, {
+      path: { pollSn },
+      config,
+    }) as Promise<OnlinePollItemVO[]>;
   }
 
   /** 설문 참여(투표) */
   async participatePoll(participation: OnlinePollPartcptnVO, config?: AxiosRequestConfig): Promise<void> {
-    return this.post(`/${participation.pollSn}/vote/${participation.pollArtclSn}`, null, config);
+    return this.executeGenerated(voteOperation, {
+      path: {
+        pollSn: participation.pollSn,
+        pollArtclSn: participation.pollArtclSn,
+      },
+      config,
+    });
   }
 }
 

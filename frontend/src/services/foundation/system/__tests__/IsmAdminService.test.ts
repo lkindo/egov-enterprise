@@ -7,21 +7,16 @@
  * 거의 없어 보이지만, 아래 항목들은 **틀어져도 tsc·빌드를 전부 통과한 채 런타임에서만
  * 조용히 깨진다.**
  *
- * 1) URL 조합 — 이 서비스는 `AdminService` 가 아니라 **`ApiService` 를 직접 상속**하며
- *    생성자에 완성된 경로 `'admin/system/ism'` 을 그대로 넘긴다(접두 자동 합성이 없다).
- *    백엔드 `InformalSanctionApiController` 는 `/api/v1/admin/system/ism` 을 매핑하므로
- *    한 글자만 어긋나도 404 이고, 화면에는 "조회 실패" 토스트만 남는다.
+ * 1) URL 조합 — generated operation의 실제 경로 `/api/v1/informal-sanctions`를 사용한다.
+ *    path 변수와 `/confirm` 하위 경로도 operation descriptor가 소유한다.
  *
  * 2) 목록 2종의 분기 키 `type` — 결재 대기함은 `type=received`(결재자 시점),
  *    신청함은 `type` **없음**(신청자 시점)으로 서버가 갈라진다
  *    (컨트롤러: `"received".equals(type)`). 이 한 글자가 빠지거나 반대로 붙으면
  *    **남의 결재함이 내 신청함 자리에 뜬다** — 조회는 200 이라 아무도 눈치채지 못한다.
  *
- * 3) 페이징 변환 — `ApiService.get` 이 `page`(0-based) → `pageIndex`(1-based, +1),
- *    `size` → `recordCountPerPage` 로 확장한다. 이 엔드포인트는 Spring `Pageable`
- *    (`@PageableDefault(size = 10)`)로 받으므로 **원본 `page`/`size` 가 지워지면 안 된다**
- *    (그래서 ApiService 가 원본 키를 남긴다). +1 이 사라지거나 두 번 걸리면 목록이
- *    한 페이지씩 밀린다.
+ * 3) 페이징 계약 — 이 엔드포인트는 Spring `Pageable`의 원본 `page`/`size`를 받는다.
+ *    BaseSearchDto용 `pageIndex` 같은 계약 밖 키는 transport 전에 차단한다.
  *
  * 4) 경로 변수 치환 — update/confirm/delete 는 id 를 URL 에 박는다. 잘못된 id 가 나가면
  *    **다른 사람의 결재 건을 고치거나 지운다** — 되돌릴 수 없다.
@@ -49,7 +44,30 @@ const client = vi.hoisted(() => ({
   delete: vi.fn(),
 }));
 
-vi.mock('@/lib/api/client', () => ({ default: client }));
+vi.mock('@/lib/api/client', () => {
+  const success = (data: unknown) => ({ success: true, code: 'S000', message: 'success', data });
+  const defaultSanction = { taskSeCd: 'ETC', aplcntId: 'USR0001', aprvrId: 'USR0002' };
+  const defaultPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+  return {
+    default: {
+      ...client,
+      getRaw: async (url: string, config?: unknown) => {
+        const result = await client.get(url, config);
+        return success(result ?? (url === 'informal-sanctions' ? defaultPage : defaultSanction));
+      },
+      requestRaw: async (requestConfig: Record<string, unknown>) => {
+        const { url, method, data, ...config } = requestConfig;
+        const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
+        let result: unknown;
+        if (method === 'post') result = await client.post(url, data, forwardedConfig);
+        if (method === 'put') result = await client.put(url, data, forwardedConfig);
+        if (method === 'patch') result = await client.patch(url, null, forwardedConfig);
+        if (method === 'delete') result = await client.delete(url, forwardedConfig);
+        return success(result ?? (method === 'post' ? 1 : null));
+      },
+    },
+  };
+});
 
 import {
   ismAdminService,
@@ -59,7 +77,13 @@ import {
 } from '../IsmAdminService';
 
 /** 이 서비스가 생성자에 넘기는 경로 원문. 접두가 바뀌면 이 상수 하나로 전 테스트가 red 가 된다. */
-const BASE_URL = 'admin/system/ism';
+const BASE_URL = 'informal-sanctions';
+
+const VALID_SANCTION: InformalSanctionDto = {
+  taskSeCd: 'VACATION',
+  aplcntId: 'USR0001',
+  aprvrId: 'USR0002',
+};
 
 /** 마지막 GET 호출의 [URL, config]. `params: undefined` 같은 미묘한 차이까지 직접 관측하기 위함이다. */
 function lastGetCall(): [string, AxiosRequestConfig | undefined] {
@@ -70,8 +94,8 @@ function lastGetCall(): [string, AxiosRequestConfig | undefined] {
 describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계약', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  describe('URL 조합 — ApiService 직접 상속(접두 자동 합성 없음)', () => {
-    it('목록 조회는 admin/system/ism 로 나가며 컬렉션 경로에 군더더기 슬래시가 붙지 않는다', async () => {
+  describe('URL 조합 — generated operation 경로', () => {
+    it('목록 조회는 informal-sanctions로 나가며 컬렉션 경로에 군더더기 슬래시가 붙지 않는다', async () => {
       await ismAdminService.getPendingList();
 
       expect(client.get).toHaveBeenCalledWith(BASE_URL, { params: { type: 'received' } });
@@ -93,12 +117,12 @@ describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계�
       );
     });
 
-    it('모든 메서드의 요청 경로가 admin/system/ism 접두를 벗어나지 않고 선행·중복 슬래시도 없다', async () => {
+    it('모든 메서드의 요청 경로가 informal-sanctions 접두를 벗어나지 않고 선행·중복 슬래시도 없다', async () => {
       await ismAdminService.getPendingList();
       await ismAdminService.getHistoryList();
       await ismAdminService.getInfrmlSanctn(1);
-      await ismAdminService.createInfrmlSanctn({});
-      await ismAdminService.updateInfrmlSanctn(1, {});
+      await ismAdminService.createInfrmlSanctn(VALID_SANCTION);
+      await ismAdminService.updateInfrmlSanctn(1, VALID_SANCTION);
       await ismAdminService.confirmInfrmlSanctn(1, SANCTION_STATUS.APPROVED);
       await ismAdminService.deleteInfrmlSanctn(1);
 
@@ -122,12 +146,11 @@ describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계�
   });
 
   describe('목록 2종의 분기 — type=received 유무가 결재함/신청함을 가른다', () => {
-    it('결재 대기함은 항상 type=received 를 실어 보낸다', async () => {
-      await ismAdminService.getPendingList({ searchKeyword: '휴가' });
-
-      expect(client.get).toHaveBeenCalledWith(BASE_URL, {
-        params: { searchKeyword: '휴가', type: 'received' },
-      });
+    it('OpenAPI에 없는 검색 키는 요청 전에 차단한다', async () => {
+      await expect(
+        ismAdminService.getPendingList({ searchKeyword: '휴가' }),
+      ).rejects.toThrow('생성 API 쿼리 파라미터가 OpenAPI 계약과 일치하지 않습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
 
     it('호출부가 다른 type 을 넘겨도 결재 대기함은 received 로 덮어쓴다 — 메서드 이름과 실제 조회 대상이 어긋나지 않게 한다', async () => {
@@ -143,7 +166,7 @@ describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계�
       const [url, requestConfig] = lastGetCall();
       expect(url).toBe(BASE_URL);
       expect(requestConfig?.params).not.toHaveProperty('type');
-      expect(requestConfig?.params).toEqual({ page: 0, pageIndex: 1 });
+      expect(requestConfig?.params).toEqual({ page: 0 });
     });
 
     it('신청함을 인자 없이 호출하면 params 자체가 비어 서버 기본값(Pageable size=10)에 맡겨진다', async () => {
@@ -151,42 +174,37 @@ describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계�
 
       const [url, requestConfig] = lastGetCall();
       expect(url).toBe(BASE_URL);
-      expect(requestConfig?.params).toBeUndefined();
+      expect(requestConfig?.params).toEqual({});
     });
   });
 
-  describe('페이징 변환 — 0-based page 를 1-based pageIndex 로 확장하되 원본 키를 남긴다', () => {
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+  describe('Pageable 페이징 계약 — 원본 page/size를 유지한다', () => {
+    it('첫 페이지는 page=0으로 전송한다', async () => {
       await ismAdminService.getPendingList({ page: 0 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE_URL, {
-        params: { page: 0, pageIndex: 1, type: 'received' },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE_URL, { params: { page: 0, type: 'received' } });
     });
 
-    it('page 2 는 pageIndex 3 으로, size 20 은 recordCountPerPage 20 으로 확장되고 원본 page/size 도 함께 남는다', async () => {
+    it('page 2와 size 20은 Pageable 원형 그대로 전송한다', async () => {
       await ismAdminService.getPendingList({ page: 2, size: 20 });
 
       // 이 엔드포인트는 Spring Pageable 로 받으므로 원본 page/size 가 지워지면 페이징이 무력화된다.
       expect(client.get).toHaveBeenCalledWith(BASE_URL, {
-        params: { page: 2, size: 20, pageIndex: 3, recordCountPerPage: 20, type: 'received' },
+        params: { page: 2, size: 20, type: 'received' },
       });
     });
 
-    it('신청함도 동일한 변환 규칙을 적용받는다 — page 4 는 pageIndex 5 다', async () => {
+    it('신청함도 동일한 Pageable 규칙을 적용받는다', async () => {
       await ismAdminService.getHistoryList({ page: 4, size: 15 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE_URL, {
-        params: { page: 4, size: 15, pageIndex: 5, recordCountPerPage: 15 },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE_URL, { params: { page: 4, size: 15 } });
     });
 
-    it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
-      await ismAdminService.getPendingList({ page: 5, pageIndex: 3 });
-
-      expect(client.get).toHaveBeenCalledWith(BASE_URL, {
-        params: { page: 5, pageIndex: 3, type: 'received' },
-      });
+    it('Pageable 계약에 없는 pageIndex는 요청 전에 차단한다', async () => {
+      await expect(
+        ismAdminService.getPendingList({ page: 5, pageIndex: 3 }),
+      ).rejects.toThrow('생성 API 쿼리 파라미터가 OpenAPI 계약과 일치하지 않습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
 
     it('결재 대기함은 호출부가 넘긴 params 객체를 오염시키지 않는다 — 같은 객체로 재조회해도 pageIndex 가 누적되지 않는다', async () => {
@@ -207,7 +225,7 @@ describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계�
       expect(client.get).toHaveBeenCalledWith(BASE_URL, {
         timeout: 3000,
         signal,
-        params: { page: 1, pageIndex: 2, type: 'received' },
+        params: { page: 1, type: 'received' },
       });
     });
 
@@ -251,8 +269,8 @@ describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계�
       await ismAdminService.createInfrmlSanctn(payload);
 
       expect(client.post).toHaveBeenCalledWith(BASE_URL, payload, undefined);
-      // 참조 동일성까지 확인한다 — 중간에서 복사·가공하면 필드 누락이 조용히 발생한다.
-      expect(client.post.mock.calls[0][1]).toBe(payload);
+      // Zod 경계 검증은 안전한 복사본을 전달하되 필드 값은 보존한다.
+      expect(client.post.mock.calls[0][1]).toStrictEqual(payload);
     });
 
     it('수정은 전달받은 일련번호 경로로만 PUT 하며 컬렉션 전체를 대상으로 하지 않는다', async () => {
@@ -282,7 +300,7 @@ describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계�
     it('수정 본문은 서비스가 id 를 주입하지 않고 원본 그대로 나간다 — 일련번호는 서버가 경로에서 취한다', async () => {
       await ismAdminService.updateInfrmlSanctn(11, payload);
 
-      expect(client.put.mock.calls[0][1]).toBe(payload);
+      expect(client.put.mock.calls[0][1]).toStrictEqual(payload);
       expect(payload).not.toHaveProperty('ifmlAtrzSn');
     });
   });
@@ -333,7 +351,14 @@ describe('IsmAdminService — 약식결재(비정형 결재) 관리자 API 계�
     it('등록은 서버가 준 신규 일련번호를 그대로 돌려준다', async () => {
       client.post.mockResolvedValueOnce(4242);
 
-      await expect(ismAdminService.createInfrmlSanctn({})).resolves.toBe(4242);
+      await expect(ismAdminService.createInfrmlSanctn(VALID_SANCTION)).resolves.toBe(4242);
+    });
+
+    it('필수 본문이 빠진 등록 요청은 transport 호출 전에 차단한다', async () => {
+      await expect(ismAdminService.createInfrmlSanctn({})).rejects.toThrow(
+        '생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.',
+      );
+      expect(client.post).not.toHaveBeenCalled();
     });
   });
 

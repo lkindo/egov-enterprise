@@ -18,17 +18,33 @@ vi.mock('@/lib/api/client', () => ({
  put: vi.fn(),
  delete: vi.fn(),
  patch: vi.fn(),
+ getRaw: vi.fn(),
+ requestRaw: vi.fn(),
  }
 }));
 
 describe('Admin System Services Part 3 (Specialized)', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(client.getRaw).mockResolvedValue({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+    });
+    vi.mocked(client.requestRaw).mockResolvedValue({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: 101,
+    });
+  });
 
   it('AuditAdminService calls correct endpoints', async () => {
     await auditAdminService.getAuditLogs({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('admin/system/logs/system', expect.objectContaining({ 
-      params: expect.objectContaining({ page: 0, pageIndex: 1 }) 
-    }));
+    expect(client.getRaw).toHaveBeenCalledWith('admin/system/logs/system', {
+      params: { pageIndex: 1 },
+    });
   });
 
   // 종전 이 테스트는 `getFiles()` 가 `admin/system/files` 를 친다고 단언했는데, 백엔드에는
@@ -37,15 +53,18 @@ describe('Admin System Services Part 3 (Specialized)', () => {
   // 실재하는 계약(업로드: POST /admin/system/files, multipart)으로 바꾼다.
   it('FileAdminService calls correct endpoints', async () => {
     await fileAdminService.uploadFiles([new File(['x'], 'a.txt')]);
-    expect(client.post).toHaveBeenCalledWith('admin/system/files', expect.any(FormData), expect.objectContaining({
-      headers: expect.objectContaining({ 'Content-Type': 'multipart/form-data' })
-    }));
+    expect(client.requestRaw).toHaveBeenCalledWith({
+      url: 'admin/system/files',
+      method: 'post',
+      data: expect.any(FormData),
+      headers: { 'Content-Type': undefined },
+    });
   });
 
   it('IsmAdminService calls correct endpoints', async () => {
     await ismAdminService.getPendingList({ page: 0 });
-    expect(client.get).toHaveBeenCalledWith('admin/system/ism', expect.objectContaining({ 
-      params: expect.objectContaining({ page: 0, pageIndex: 1, type: 'received' }) 
-    }));
+    expect(client.getRaw).toHaveBeenCalledWith('informal-sanctions', {
+      params: { page: 0, type: 'received' },
+    });
   });
 });

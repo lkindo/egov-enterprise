@@ -15,8 +15,8 @@
  *    중복처럼 보인다고 한쪽을 지우면 전 화면이 404 가 되고, 선행 슬래시가 붙으면 axios baseURL
  *    (`/api/v1`)의 경로 세그먼트가 통째로 날아간다.
  *
- * 2) 페이징 파라미터 변환 — `ApiService.get` 이 `page`(0-based) → `pageIndex`(1-based, +1),
- *    `size` → `recordCountPerPage` 로 변환해 백엔드 `BaseSearchDto` 에 맞춘다. 이 서비스의
+ * 2) 페이징 파라미터 변환 — generated operation 경계에서 `page`(0-based) →
+ *    `pageIndex`(1-based, +1), `size` → `pageUnit`/`recordCountPerPage` 로 변환한다. 이 서비스의
  *    호출부는 **화면의 1-based 페이지에서 1을 빼서**(`page: page - 1`) 넘기므로, +1 이 사라지거나
  *    두 번 적용되면 목록이 한 페이지씩 밀리거나 첫 페이지가 통째로 빈다. 특히 `page: 0` 은
  *    falsy 라서, 변환 조건을 `!== undefined` 가 아닌 truthy 검사로 바꾸면 **첫 페이지만** 깨진다.
@@ -27,10 +27,8 @@
  *    호출부가 주지 않으면 키 자체가 나가지 않는다. 이 차이를 모르고 "통일" 하면 두 서비스 중
  *    하나의 검색이 무력화된다.
  *
- * 4) config 전달 — 호출부가 넘긴 AxiosRequestConfig(timeout·AbortSignal)가 유실되면 화면 이탈 시
- *    요청 취소가 동작하지 않는다. 유실돼도 요청 자체는 성공하므로 아무도 눈치채지 못한다.
- *    또한 `{ ...config, params }` 의 **스프레드 순서**가 `params` 인자를 config 보다 우선시키는데,
- *    순서가 뒤집히면 전용 인자가 조용히 무시된다.
+ * 4) config 전달 — timeout·AbortSignal은 보존하되, config.params로 operation query를
+ *    덮어쓰는 시도는 요청 전에 차단한다.
  *
  * 5) 응답·오류 무가공 — 감사 로그는 폴백으로 빈 목록을 만들어 주면 **"사건이 없었다"는 거짓**이 된다.
  *    서비스에 catch 가 없어 오류가 그대로 화면까지 올라가는 것이 계약이다.
@@ -46,13 +44,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageResponse } from '@/types/foundation/system';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-  patch: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const getRaw = vi.fn();
+  return {
+    get: getRaw,
+    getRaw,
+    requestRaw: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    patch: vi.fn(),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -64,12 +67,17 @@ import { auditAdminService, type AuditLog } from '../AuditAdminService';
  * (선행 슬래시 없음, 후행 슬래시 없음).
  */
 const BASE = 'admin/system/logs/system';
+const EMPTY_PAGE = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
+const success = <T,>(data: T) => ({ success: true as const, code: 'S000', message: 'success', data });
 
 /** 목 호출 인자를 타입 있는 형태로 꺼낸다(`any` 없이 params 키를 직접 들여다보기 위함). */
 type GetCall = [string, { params: Record<string, unknown> }];
 
 describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockResolvedValue(success(EMPTY_PAGE));
+  });
 
   describe('URL 조합', () => {
     it('감사 로그 조회는 admin/system/logs/system 으로 나가며 선행·후행 슬래시가 붙지 않는다', async () => {
@@ -108,7 +116,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ page: 0 });
 
       // page 는 지우지 않는다(Spring Data Pageable 병행 지원).
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 0, pageIndex: 1 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 1 } });
       // 0 을 falsy 로 취급해 변환을 건너뛰면 pageIndex 없이 나간다 — 그 형태를 명시적으로 배제한다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 0 } });
     });
@@ -117,7 +125,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       // 호출부(AuditTimelineClient·MonitoringHubClient)는 1-based 화면 페이지에서 1을 빼서 넘긴다.
       await auditAdminService.getAuditLogs({ page: 1 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 1, pageIndex: 2 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 2 } });
       expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 1, pageIndex: 1 } });
     });
 
@@ -125,7 +133,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ page: 4, size: 10 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 4, size: 10, pageUnit: 10, pageIndex: 5, recordCountPerPage: 10 },
+        params: { pageIndex: 5, pageUnit: 10, recordCountPerPage: 10 },
       });
     });
 
@@ -133,9 +141,9 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ size: 5 });
 
       // page 가 없으면 pageIndex 를 임의로 1 로 채우지 않는다 — 백엔드 기본값 판단에 맡긴다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 5, pageUnit: 5, recordCountPerPage: 5 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageUnit: 5, recordCountPerPage: 5 } });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { size: 5, pageUnit: 5, recordCountPerPage: 5, pageIndex: 1 },
+        params: { pageUnit: 5, recordCountPerPage: 5, pageIndex: 1 },
       });
     });
 
@@ -144,7 +152,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ page: 0, size: 5 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, size: 5, pageUnit: 5, pageIndex: 1, recordCountPerPage: 5 },
+        params: { pageIndex: 1, pageUnit: 5, recordCountPerPage: 5 },
       });
     });
   });
@@ -155,7 +163,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
 
       // SurveyAdminService 처럼 searchKeyword/searchWrd 로 복제하지 않는다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, searchKeyword: '로그인', pageIndex: 1 },
+        params: { pageIndex: 1, searchKeyword: '로그인' },
       });
     });
 
@@ -166,7 +174,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
 
       // 이 서비스에는 `searchKeyword: ''` 폴백이 없다(SurveyAdminService 와의 결정적 차이).
       // 빈 문자열을 임의로 채우면 백엔드가 "빈 검색어로 필터" 로 해석할 여지가 생긴다.
-      expect(Object.keys(config.params).sort()).toEqual(['page', 'pageIndex']);
+      expect(Object.keys(config.params).sort()).toEqual(['pageIndex']);
     });
 
     it('검색어를 지운 상태(빈 문자열)는 빈 문자열 그대로 전송된다', async () => {
@@ -174,7 +182,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ page: 0, size: 20, searchKeyword: '' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, size: 20, searchKeyword: '', pageUnit: 20, pageIndex: 1, recordCountPerPage: 20 },
+        params: { pageIndex: 1, pageUnit: 20, recordCountPerPage: 20, searchKeyword: '' },
       });
     });
   });
@@ -188,7 +196,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, size: 5, pageUnit: 5, pageIndex: 1, recordCountPerPage: 5 },
+        params: { pageIndex: 1, pageUnit: 5, recordCountPerPage: 5 },
       });
     });
 
@@ -200,19 +208,11 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       expect(client.get).not.toHaveBeenCalledWith(BASE, undefined);
     });
 
-    it('config 에 params 가 섞여 와도 전용 params 인자가 이긴다 — 스프레드 순서가 계약이다', async () => {
-      // `{ ...config, params }` 이므로 뒤에 오는 params 인자가 config.params 를 덮어쓴다.
-      // 순서가 뒤집히면(`{ params, ...config }`) 전용 인자가 조용히 무시된다.
-      await auditAdminService.getAuditLogs({ page: 0 }, { timeout: 1000, params: { page: 9 } });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        timeout: 1000,
-        params: { page: 0, pageIndex: 1 },
-      });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        timeout: 1000,
-        params: { page: 9, pageIndex: 10 },
-      });
+    it('config 가 operation query를 덮어쓰려 하면 요청 전에 차단한다', async () => {
+      await expect(
+        auditAdminService.getAuditLogs({ page: 0 }, { timeout: 1000, params: { page: 9 } }),
+      ).rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
   });
 
@@ -240,13 +240,13 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
         size: 5,
         totalPage: 1,
       };
-      client.get.mockResolvedValueOnce(page);
+      client.getRaw.mockResolvedValueOnce(success(page));
 
       await expect(auditAdminService.getAuditLogs({ page: 0, size: 5 })).resolves.toBe(page);
     });
 
     it('조회 실패는 삼키지 않고 그대로 전파한다 — 빈 목록 폴백은 "사건이 없었다"는 거짓이 된다', async () => {
-      client.get.mockRejectedValueOnce(new Error('감사 로그 조회 권한이 없습니다.'));
+      client.getRaw.mockRejectedValueOnce(new Error('감사 로그 조회 권한이 없습니다.'));
 
       await expect(auditAdminService.getAuditLogs({ page: 0 })).rejects.toThrow(
         '감사 로그 조회 권한이 없습니다.'

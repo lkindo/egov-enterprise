@@ -1,5 +1,10 @@
 import { ApiService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
+import {
+  downloadFileOperation,
+  getFileListOperation,
+  uploadFilesOperation,
+} from '@/types/generated-operations';
 
 /**
  * 파일 정보 인터페이스
@@ -28,16 +33,11 @@ class FileService extends ApiService {
    * @param files 업로드할 파일 리스트
    */
   async uploadFiles(files: File[] | FileList, config?: AxiosRequestConfig): Promise<number> {
-    const formData = new FormData();
     const fileList = files instanceof FileList ? Array.from(files) : files;
-    fileList.forEach(file => formData.append('files', file));
 
-    return this.post<number>('', formData, {
-      ...config,
-      headers: { 
-        ...config?.headers,
-        'Content-Type': 'multipart/form-data' 
-      }
+    return this.executeGeneratedMultipart(uploadFilesOperation, {
+      body: { files: fileList },
+      config,
     });
   }
 
@@ -47,7 +47,10 @@ class FileService extends ApiService {
    */
   async getFileList(atchFileSn: number, config?: AxiosRequestConfig): Promise<FileVO[]> {
     if (!atchFileSn) return [];
-    return this.get<FileVO[]>(`/${atchFileSn}`, config);
+    return this.executeGenerated(getFileListOperation, {
+      path: { atchFileSn },
+      config,
+    }) as Promise<FileVO[]>;
   }
 
   /**
@@ -90,12 +93,14 @@ class FileService extends ApiService {
   /**
    * 첨부 바이트를 Blob 으로 가져온다 — `<img src>` 로는 인증할 수 없는 경로를 대신한다.
    *
-   * <p>axios 요청이므로 인터셉터가 `Authorization` 헤더를 붙인다. 응답 본문은 `ApiResponse`
-   * 봉투가 아니라 원시 바이트라서, 봉투를 벗기는 `extractData` 는 `success` 키가 없는 값을
-   * 그대로 통과시킨다(설계상 안전).
+   * <p>generated binary operation이 인증 axios 경로와 `responseType: 'blob'`을 고정한다.
+   * 응답은 JSON envelope로 해석하지 않고 Blob 여부만 검증하므로 원시 바이트를 변조하지 않는다.
    */
   async fetchBlob(atchFileSn: number, fileSn: number, config?: AxiosRequestConfig): Promise<Blob> {
-    return this.get<Blob>(`/${atchFileSn}/${fileSn}`, { ...config, responseType: 'blob' });
+    return this.executeGenerated(downloadFileOperation, {
+      path: { atchFileSn, fileSn },
+      config,
+    });
   }
 
   /*

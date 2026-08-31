@@ -31,7 +31,7 @@ const toast = vi.fn();
 let wsState: { client: unknown; isConnected: boolean } = { client: null, isConnected: false };
 let authUser: { id: string } | null = { id: 'U1' };
 
-vi.mock('@/lib/api/client', () => ({ default: { get: vi.fn(), post: vi.fn() } }));
+vi.mock('@/lib/api/client', () => ({ default: { getRaw: vi.fn(), requestRaw: vi.fn() } }));
 vi.mock('@/contexts/websocket-context', () => ({ useWebSocket: () => wsState }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: authUser }) }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast }) }));
@@ -42,9 +42,14 @@ const NOTIF = {
 
 /** 목록·카운트 응답을 지정한다. Error 를 주면 그 호출만 실패한다. */
 function mockFetch(list: unknown, count: unknown) {
-  vi.mocked(client.get).mockImplementation((url: string) => {
+  vi.mocked(client.getRaw).mockImplementation((url: string) => {
     const value = url.includes('unread-count') ? count : list;
-    return value instanceof Error ? Promise.reject(value) : Promise.resolve(value as never);
+    const data = !url.includes('unread-count') && Array.isArray(value)
+      ? { list: value, total: value.length, page: 0, size: 10, totalPage: value.length ? 1 : 0 }
+      : value;
+    return value instanceof Error
+      ? Promise.reject(value)
+      : Promise.resolve({ success: true, code: 'S000', message: 'success', data } as never);
   });
 }
 
@@ -172,12 +177,22 @@ describe('useNotifications', () => {
       await waitFor(() => expect(result.current.notifications[0]?.readYn).toBe('N'));
     });
 
-    it('카운트가 { count } 객체로 와도 읽는다', async () => {
-      mockFetch([NOTIF], { count: 7 });
+    it('카운트는 generated numeric 응답을 그대로 읽는다', async () => {
+      mockFetch([NOTIF], 7);
 
       const { result } = renderHook(() => useNotifications());
 
       await waitFor(() => expect(result.current.unreadCount).toBe(7));
+    });
+
+    it('OpenAPI에 없는 { count } wrapper는 직전 배지를 덮어쓰지 않는다', async () => {
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(3));
+
+      mockFetch([NOTIF], { count: 7 });
+      await act(async () => { await result.current.refresh(); });
+
+      expect(result.current.unreadCount).toBe(3);
     });
   });
 
@@ -185,11 +200,16 @@ describe('useNotifications', () => {
     it('단건 읽음은 즉시 반영하고 배지를 하나 줄인다', async () => {
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.unreadCount).toBe(3));
-      vi.mocked(client.post).mockResolvedValue(undefined as never);
+      vi.mocked(client.requestRaw).mockResolvedValue(
+        { success: true, code: 'S000', message: 'success', data: null } as never,
+      );
 
       await act(async () => { await result.current.markAsRead(1); });
 
-      expect(client.post).toHaveBeenCalledWith('/notifications/1/read');
+      expect(client.requestRaw).toHaveBeenCalledWith({
+        url: 'notifications/1/read',
+        method: 'post',
+      });
       expect(result.current.notifications[0]?.readYn).toBe('Y');
       expect(result.current.unreadCount).toBe(2);
     });
@@ -198,7 +218,9 @@ describe('useNotifications', () => {
       mockFetch([NOTIF], 0);
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
-      vi.mocked(client.post).mockResolvedValue(undefined as never);
+      vi.mocked(client.requestRaw).mockResolvedValue(
+        { success: true, code: 'S000', message: 'success', data: null } as never,
+      );
 
       await act(async () => { await result.current.markAsRead(1); });
 
@@ -209,7 +231,7 @@ describe('useNotifications', () => {
     it('읽음 처리 실패는 알리고 상태를 바꾸지 않는다', async () => {
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.unreadCount).toBe(3));
-      vi.mocked(client.post).mockRejectedValue(new Error('500'));
+      vi.mocked(client.requestRaw).mockRejectedValue(new Error('500'));
 
       await act(async () => { await result.current.markAsRead(1); });
 
@@ -223,12 +245,12 @@ describe('useNotifications', () => {
       mockFetch([{ ...NOTIF, readYn: 'Y' }], 0);
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
-      vi.mocked(client.post).mockClear();
+      vi.mocked(client.requestRaw).mockClear();
 
       await act(async () => { await result.current.markAllAsRead(); });
 
       // 불필요한 요청을 보내면 미읽음 0 인 화면에서도 서버가 두들겨 맞는다.
-      expect(client.post).not.toHaveBeenCalled();
+      expect(client.requestRaw).not.toHaveBeenCalled();
     });
 
     /**
@@ -246,7 +268,9 @@ describe('useNotifications', () => {
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
       await waitFor(() => expect(result.current.unreadCount).toBe(3));
-      vi.mocked(client.post).mockResolvedValue(undefined as never);
+      vi.mocked(client.requestRaw).mockResolvedValue(
+        { success: true, code: 'S000', message: 'success', data: null } as never,
+      );
 
       await act(async () => { await result.current.markAllAsRead(); });
 
@@ -257,14 +281,14 @@ describe('useNotifications', () => {
     it('모두 읽음 실패는 알리고 서버 상태로 되맞춘다', async () => {
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
-      vi.mocked(client.post).mockRejectedValue(new Error('500'));
-      const getCallsBefore = vi.mocked(client.get).mock.calls.length;
+      vi.mocked(client.requestRaw).mockRejectedValue(new Error('500'));
+      const getCallsBefore = vi.mocked(client.getRaw).mock.calls.length;
 
       await act(async () => { await result.current.markAllAsRead(); });
 
       // 조용히 재조회만 하면 사용자는 버튼이 고장 난 것으로 읽는다 — 알리고 되맞춘다.
       expect(toast).toHaveBeenCalledWith('일부 알림을 읽음 처리하지 못했습니다.', 'error');
-      expect(vi.mocked(client.get).mock.calls.length).toBeGreaterThan(getCallsBefore);
+      expect(vi.mocked(client.getRaw).mock.calls.length).toBeGreaterThan(getCallsBefore);
     });
   });
 
@@ -277,13 +301,13 @@ describe('useNotifications', () => {
 
       // 초기 로드(마이크로태스크)를 흘려보낸다. waitFor 는 가짜 타이머와 충돌하므로 쓰지 않는다.
       await act(async () => { await Promise.resolve(); });
-      const before = vi.mocked(client.get).mock.calls.length;
+      const before = vi.mocked(client.getRaw).mock.calls.length;
       expect(before).toBeGreaterThan(0);
 
       await act(async () => { vi.advanceTimersByTime(60000); });
 
       // 폴백 폴링이 없으면 WebSocket 이 안 붙는 환경에서 알림이 영원히 갱신되지 않는다.
-      expect(vi.mocked(client.get).mock.calls.length).toBeGreaterThan(before);
+      expect(vi.mocked(client.getRaw).mock.calls.length).toBeGreaterThan(before);
     });
 
     it('언마운트하면 폴링을 멈춘다', async () => {
@@ -291,13 +315,13 @@ describe('useNotifications', () => {
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
 
       unmount();
-      const after = vi.mocked(client.get).mock.calls.length;
+      const after = vi.mocked(client.getRaw).mock.calls.length;
 
       // 언마운트 뒤라 새 타이머는 붙지 않는다 — 실제 타이머로 충분히 기다려 확인한다.
       await new Promise(r => setTimeout(r, 50));
 
       // clearInterval 이 빠지면 화면을 떠난 뒤에도 60초마다 서버를 두들긴다.
-      expect(vi.mocked(client.get).mock.calls.length).toBe(after);
+      expect(vi.mocked(client.getRaw).mock.calls.length).toBe(after);
     });
 
     it('WebSocket 이 연결되면 Principal 전용 큐만 구독하고 언마운트 시 해제한다', async () => {
@@ -368,7 +392,7 @@ describe('useNotifications', () => {
       vi.useRealTimers();
 
       // 비로그인 상태에서 알림 API 를 두들기면 401 이 쌓인다.
-      expect(client.get).not.toHaveBeenCalled();
+      expect(client.getRaw).not.toHaveBeenCalled();
     });
   });
 });

@@ -16,6 +16,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import java.util.stream.Collectors;
 
 /**
@@ -99,6 +100,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, message, fieldErrors));
+    }
+
+    /**
+     * 컨테이너 원소·메서드 파라미터 검증 실패 처리.
+     *
+     * <p>Spring 6은 {@code List<@Valid T>}처럼 메서드 수준 제약을
+     * {@link HandlerMethodValidationException}으로 전달하므로 일반 DTO 검증과 같은 400 계약으로 맞춘다.</p>
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    protected ResponseEntity<ApiResponse<Object>> handleHandlerMethodValidationException(
+            HandlerMethodValidationException e) {
+        log.warn(">>> Handler Method Validation Failed: {}", e.getMethod().getName());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
+                        resolve(CommonErrorCode.INVALID_INPUT_VALUE)));
     }
 
     /**

@@ -11,6 +11,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -97,6 +98,22 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertFalse(response.getBody().success());
         assertEquals("defaultMessage", response.getBody().message());
+    }
+
+    @Test
+    @DisplayName("HandlerMethodValidationException 처리 테스트")
+    void testHandleHandlerMethodValidationException() {
+        HandlerMethodValidationException ex = mock(HandlerMethodValidationException.class);
+        java.lang.reflect.Method method = mock(java.lang.reflect.Method.class);
+        when(ex.getMethod()).thenReturn(method);
+        when(method.getName()).thenReturn("validatedMethod");
+
+        ResponseEntity<ApiResponse<Object>> response =
+                handler.handleHandlerMethodValidationException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().success());
+        assertEquals(400, response.getBody().status());
     }
 
     @Test

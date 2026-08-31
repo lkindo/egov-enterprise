@@ -160,6 +160,8 @@ class AuthApiControllerTest {
                 .andExpect(jsonPath("$.data.id").value("user01"))
                 .andExpect(jsonPath("$.data.name").value("Test User"))
                 .andExpect(jsonPath("$.data.esntlId").value("ESNTL_000000000001"))
+                .andExpect(jsonPath("$.data.userSe").doesNotExist())
+                .andExpect(jsonPath("$.data.email").doesNotExist())
                 .andExpect(jsonPath("$.data.pswd").doesNotExist())
                 .andExpect(jsonPath("$.data.password").doesNotExist());
         

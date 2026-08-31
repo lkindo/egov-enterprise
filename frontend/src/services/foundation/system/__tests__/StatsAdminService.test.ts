@@ -51,6 +51,8 @@ const client = vi.hoisted(() => ({
   put: vi.fn<(url: string, data?: unknown, config?: AxiosRequestConfig) => Promise<unknown>>(),
   patch: vi.fn<(url: string, data?: unknown, config?: AxiosRequestConfig) => Promise<unknown>>(),
   delete: vi.fn<(url: string, config?: AxiosRequestConfig) => Promise<unknown>>(),
+  getRaw: vi.fn<(url: string, config?: AxiosRequestConfig) => Promise<unknown>>(),
+  requestRaw: vi.fn<(config: AxiosRequestConfig) => Promise<unknown>>(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -63,8 +65,18 @@ import { statsAdminService, type StatsDto } from '../StatsAdminService';
  */
 const BASE = 'admin/system/statistics';
 
+const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+
 describe('StatsAdminService — 통계 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url, config) => {
+      const data = await client.get(url, config);
+      return envelope(data ?? (url === `${BASE}/summary`
+        ? { totalUsers: 0, totalPosts: 0, todayConnects: 0 }
+        : []));
+    });
+  });
 
   describe('엔드포인트 URL 조합', () => {
     it('6종 통계 경로는 서로 겹치지 않는다 — 응답 스키마가 모두 StatsDto[] 라 뒤바뀌어도 타입으로는 못 잡는다', async () => {
@@ -142,7 +154,7 @@ describe('StatsAdminService — 통계 관리자 API 계약', () => {
       expect(Object.keys(sentParams ?? {})).toEqual(['fromDate', 'toDate']);
     });
 
-    it('params 를 생략하면 params 키가 undefined 로 나간다 — 서비스가 기본 기간을 지어내지 않는다', async () => {
+    it('params 를 생략하면 빈 생성 query로 나가며 서비스가 기본 기간을 지어내지 않는다', async () => {
       // 기간 미지정은 의도된 호출이다: 백엔드 setDefaultDates 가 "최근 1개월"을 적용한다.
       await statsAdminService.getReportStats();
 
@@ -150,23 +162,15 @@ describe('StatsAdminService — 통계 관리자 API 계약', () => {
 
       expect(url).toBe(`${BASE}/report`);
       expect(sentConfig).toBeDefined();
-      expect(sentConfig?.params).toBeUndefined();
+      expect(sentConfig?.params).toEqual({});
     });
 
-    it('params 인자는 config.params 보다 우선한다 — 두 곳에 기간이 들어와도 인자 쪽이 실제로 나간다', async () => {
-      await statsAdminService.getUserStats(
+    it('config.params 로 생성 query를 덮어쓰려 하면 fail-closed 한다', async () => {
+      await expect(statsAdminService.getUserStats(
         { fromDate: '20260801' },
         { params: { fromDate: '19990101' }, timeout: 1000 }
-      );
-
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/user`, {
-        timeout: 1000,
-        params: { fromDate: '20260801' },
-      });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/user`, {
-        timeout: 1000,
-        params: { fromDate: '19990101' },
-      });
+      )).rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
 
     it('호출부가 넘긴 params 객체는 변형되지 않는다 — React Query key 로 재사용해도 오염되지 않는다', async () => {
@@ -189,7 +193,7 @@ describe('StatsAdminService — 통계 관리자 API 계약', () => {
 
       expect(client.get).toHaveBeenCalledWith(`${BASE}/connect`, {
         headers: { Authorization: 'Bearer test-token' },
-        params: undefined,
+        params: {},
       });
     });
 

@@ -2,6 +2,13 @@ import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
 import { AxiosRequestConfig } from 'axios';
+import {
+  createWorkReportOperation,
+  deleteWorkReportOperation,
+  getWorkReportListOperation,
+  getWorkReportOperation,
+  updateWorkReportOperation,
+} from '@/types/generated-operations';
 
 type WorkReportDto = components['schemas']['WorkReportDto'];
 
@@ -28,42 +35,53 @@ class ReportService extends ApiService {
     //   검색이 서버에 아예 도달하지 못했고(무음 실패), size 는 ApiService 가
     //   recordCountPerPage 로 바꿔 보내지만 컨트롤러가 pageUnit 을 읽어 무시됐다(10건 고정).
     //   호출부의 어휘(searchWrd)는 유지하되 여기서 서버 이름으로 옮겨 담는다.
-    return this.get<PageResponse<WorkReport>>('', {
-      ...config,
-      params: {
+    const response = await this.executeGenerated(getWorkReportListOperation, {
+      query: {
         pageIndex: params.pageIndex ?? 1,
         pageUnit: params.pageUnit ?? 10,
         ...(params.searchWrd ? { searchKeyword: params.searchWrd } : {}),
       },
+      config,
     });
+    return response as PageResponse<WorkReport>;
   }
 
   /**
    * 보고 상세 조회
    */
   async getReport(rptpSn: number, config?: AxiosRequestConfig): Promise<WorkReport> {
-    return this.get<WorkReport>(`/${rptpSn}`, config);
+    return this.executeGenerated(getWorkReportOperation, {
+      path: { rptpSn },
+      config,
+    }) as Promise<WorkReport>;
   }
 
   /**
    * 보고 등록
    */
   async createReport(data: Partial<WorkReport>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post<void>('', data, config);
+    return this.executeGenerated(createWorkReportOperation, { body: data, config });
   }
 
   /**
    * 보고 수정 — 작성자 본인 또는 관리자만 가능하다(서버에서 검증).
    */
   async updateReport(rptpSn: number, data: Partial<WorkReport>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${rptpSn}`, data, config);
+    return this.executeGenerated(updateWorkReportOperation, {
+      path: { rptpSn },
+      body: data,
+      config,
+    });
   }
 
   /**
    * 보고 삭제 — 작성자 본인 또는 관리자만 가능하다(서버에서 검증).
    */
   async deleteReport(rptpSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${rptpSn}`, config);
+    return this.executeGenerated(deleteWorkReportOperation, {
+      path: { rptpSn },
+      config,
+    });
   }
 
   // [제거됨] confirmReport(승인/반려)

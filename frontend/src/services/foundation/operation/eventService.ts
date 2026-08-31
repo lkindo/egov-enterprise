@@ -1,4 +1,12 @@
-import client from '@/lib/api/client';
+import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
+import type { components } from '@/types/generated-api';
+import {
+  createEventOperation,
+  deleteEventOperation,
+  getEventListOperation,
+  getEventOperation,
+  updateEventOperation,
+} from '@/types/generated-operations';
 
 export interface EventInfo {
   evntSn: number;
@@ -24,22 +32,26 @@ export interface PageResponse<T> {
   total: number;
 }
 
-const BASE_URL = 'admin/operation/events';
-
 export const eventService = {
   getEvents: async (params: { searchWrd?: string; page?: number; size?: number } = {}) => {
-    return client.get<PageResponse<EventInfo>>(BASE_URL, { params });
+    return executeGeneratedOperation(getEventListOperation, { query: params }) as
+      Promise<PageResponse<EventInfo>>;
   },
   getEvent: async (evntSn: number) => {
-    return client.get<EventInfo>(`${BASE_URL}/${evntSn}`);
+    return executeGeneratedOperation(getEventOperation, { path: { evntSn } }) as Promise<EventInfo>;
   },
   createEvent: async (data: Partial<EventInfo>) => {
-    return client.post<number>(BASE_URL, data);
+    return executeGeneratedOperation(createEventOperation, {
+      body: data as components['schemas']['EventInfoDto'],
+    });
   },
   updateEvent: async (evntSn: number, data: Partial<EventInfo>) => {
-    return client.put<void>(`${BASE_URL}/${evntSn}`, data);
+    return executeGeneratedOperation(updateEventOperation, {
+      path: { evntSn },
+      body: data as components['schemas']['EventInfoDto'],
+    });
   },
   deleteEvent: async (evntSn: number) => {
-    return client.delete<void>(`${BASE_URL}/${evntSn}`);
+    return executeGeneratedOperation(deleteEventOperation, { path: { evntSn } });
   }
 };

@@ -41,12 +41,47 @@ import type { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { Survey, SurveyAnswer, SurveyQuestion } from '@/types/business/survey';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const get = vi.fn();
+  const post = vi.fn();
+  const put = vi.fn();
+  const remove = vi.fn();
+  const fallbackData = (url: string) => {
+    if (url.endsWith('/questions')) return [];
+    if (url === 'admin/system/surveys' || url.endsWith('/templates') || url.endsWith('/respondents')) {
+      return { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+    }
+    return { srvyTtl: '설문', srvyTmpltSn: 1 };
+  };
+
+  return {
+    get,
+    post,
+    put,
+    delete: remove,
+    getRaw: vi.fn(async (url: string, config?: unknown) => {
+      const result = await get(url, config);
+      return {
+        success: true,
+        code: 'S000',
+        message: '성공',
+        data: result ?? fallbackData(url),
+      };
+    }),
+    requestRaw: vi.fn(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...rest } = request;
+      delete rest.params;
+      const config = Object.keys(rest).length > 0 ? rest : undefined;
+      let result: unknown;
+
+      if (method === 'post') result = await post(url, data, config);
+      if (method === 'put') result = await put(url, data, config);
+      if (method === 'delete') result = await remove(url, config);
+
+      return { success: true, code: 'S000', message: '성공', data: result };
+    }),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -61,6 +96,84 @@ const BASE = 'admin/system/surveys';
 describe('SurveyAdminService — 설문 관리자 API 계약', () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it('목록 조회는 공개 검색어를 OpenAPI query로 정규화한 raw envelope 경계를 사용한다', async () => {
+    client.getRaw.mockResolvedValueOnce({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: { list: [], total: 0, page: 0, size: 20, totalPage: 0 },
+    });
+
+    await surveyAdminService.getSurveyList({ pageIndex: 2, size: 20, searchWrd: '만족도' });
+
+    expect(client.getRaw).toHaveBeenCalledWith('admin/system/surveys', {
+      params: { keyword: '만족도', page: 1, size: 20 },
+    });
+  });
+
+  it('일치하는 설문 하위 자원 호출은 모두 생성 operation 경계를 통과한다', async () => {
+    const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+    const responses = [
+      page,
+      { srvySn: 7, srvyTtl: '설문', srvyTmpltSn: 3 },
+      page,
+      page,
+      [],
+    ];
+    for (const data of responses) {
+      client.getRaw.mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data });
+    }
+    for (let index = 0; index < 11; index += 1) {
+      client.requestRaw.mockResolvedValueOnce({
+        success: true,
+        code: 'S000',
+        message: '성공',
+        data: undefined,
+      });
+    }
+
+    await surveyAdminService.getSurveyList();
+    await surveyAdminService.getSurvey(7);
+    await surveyAdminService.getTemplateList();
+    await surveyAdminService.getRespondents(7);
+    await surveyAdminService.getQuestions(7);
+    await surveyAdminService.updateSurvey(7, { srvyTtl: '수정', srvyTmpltSn: 3 });
+    await surveyAdminService.deleteSurvey(7);
+    await surveyAdminService.deleteRespondent(7, 'RSPDNT-0001');
+    await surveyAdminService.createTemplate({ srvyTmpltTypeCd: '01' });
+    await surveyAdminService.updateTemplate(3, { srvyTmpltExpln: '수정' });
+    await surveyAdminService.deleteTemplate(3);
+    await surveyAdminService.createQuestion(7, { qstnCn: '문항' });
+    await surveyAdminService.updateQuestion(7, 55, { qstnCn: '수정 문항' });
+    await surveyAdminService.createItem(55, { artclCn: '항목' });
+    await surveyAdminService.updateItem(900, { artclCn: '수정 항목' });
+    await surveyAdminService.deleteItem(900);
+
+    expect(client.getRaw.mock.calls).toEqual([
+      [BASE, { params: { keyword: '' } }],
+      [`${BASE}/7`, undefined],
+      [`${BASE}/templates`, { params: { keyword: '' } }],
+      [`${BASE}/7/respondents`, { params: { keyword: '' } }],
+      [`${BASE}/7/questions`, undefined],
+    ]);
+    expect(client.requestRaw.mock.calls.map(([request]) => ({
+      url: request.url,
+      method: request.method,
+    }))).toEqual([
+      { url: `${BASE}/7`, method: 'put' },
+      { url: `${BASE}/7`, method: 'delete' },
+      { url: `${BASE}/7/respondents/RSPDNT-0001`, method: 'delete' },
+      { url: `${BASE}/templates`, method: 'post' },
+      { url: `${BASE}/templates/3`, method: 'put' },
+      { url: `${BASE}/templates/3`, method: 'delete' },
+      { url: `${BASE}/7/questions`, method: 'post' },
+      { url: `${BASE}/7/questions/55`, method: 'put' },
+      { url: `${BASE}/questions/55/items`, method: 'post' },
+      { url: `${BASE}/questions/items/900`, method: 'put' },
+      { url: `${BASE}/questions/items/900`, method: 'delete' },
+    ]);
+  });
+
   describe('설문(surveys) CRUD', () => {
     it('설문 목록은 admin/system/surveys 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await surveyAdminService.getSurveyList();
@@ -69,28 +182,27 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: { keyword: '' } });
     });
 
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지(page 0)는 OpenAPI의 0-based page 그대로 전송된다', async () => {
       await surveyAdminService.getSurveyList({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, keyword: '', pageIndex: 1 },
+        params: { keyword: '', page: 0 },
       });
     });
 
-    it('page 3·size 20 은 pageIndex 4·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 3·size 20 은 OpenAPI Pageable 키만 전송한다', async () => {
       await surveyAdminService.getSurveyList({ page: 3, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 3, size: 20, keyword: '', pageIndex: 4, recordCountPerPage: 20 },
+        params: { keyword: '', page: 3, size: 20 },
       });
     });
 
-    it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
+    it('page와 pageIndex가 함께 오면 OpenAPI 고유 키인 page가 우선한다', async () => {
       await surveyAdminService.getSurveyList({ page: 9, pageIndex: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 1, keyword: '' },
+        params: { keyword: '', page: 9 },
       });
     });
 
@@ -98,7 +210,7 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       await surveyAdminService.getSurveyList({ searchKeyword: '만족도' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '만족도', keyword: '만족도' },
+        params: { keyword: '만족도' },
       });
     });
 
@@ -106,7 +218,7 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       await surveyAdminService.getSurveyList({ searchWrd: '레거시검색' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchWrd: '레거시검색', keyword: '레거시검색' },
+        params: { keyword: '레거시검색' },
       });
     });
 
@@ -114,7 +226,7 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       await surveyAdminService.getSurveyList({ searchKeyword: '우선', searchWrd: '후순위' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '우선', searchWrd: '후순위', keyword: '우선' },
+        params: { keyword: '우선' },
       });
     });
 
@@ -126,7 +238,7 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, keyword: '', pageIndex: 1 },
+        params: { keyword: '', page: 0 },
       });
     });
 
@@ -187,12 +299,20 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
 
       await surveyAdminService.createSurvey(payload);
 
-      expect(client.post).toHaveBeenCalledWith(BASE, payload, undefined);
+      expect(client.requestRaw).toHaveBeenCalledWith({
+        url: BASE,
+        method: 'post',
+        data: payload,
+      });
     });
 
     it('설문 수정은 인자로 받은 srvySn 이 경로를 결정한다 — 본문의 srvySn 이 아니다', async () => {
       // 본문에 다른 srvySn(99)을 심어 두고, 경로는 인자(7)만 따르는지 확인한다.
-      const payload: Partial<Survey> = { srvySn: 99, srvyTtl: '제목만 수정' };
+      const payload: Partial<Survey> = {
+        srvySn: 99,
+        srvyTtl: '제목만 수정',
+        srvyTmpltSn: 3,
+      };
 
       await surveyAdminService.updateSurvey(7, payload, { timeout: 2000 });
 
@@ -213,7 +333,7 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       await surveyAdminService.getTemplateList({ page: 0, size: 50 });
 
       expect(client.get).toHaveBeenCalledWith(`${BASE}/templates`, {
-        params: { page: 0, size: 50, keyword: '', pageIndex: 1, recordCountPerPage: 50 },
+        params: { keyword: '', page: 0, size: 50 },
       });
     });
 
@@ -224,7 +344,7 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
 
       expect(client.get).toHaveBeenCalledWith(`${BASE}/templates`, {
         signal,
-        params: { searchKeyword: '기본형', keyword: '기본형' },
+        params: { keyword: '기본형' },
       });
     });
 
@@ -268,11 +388,9 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       // pageIndex 를 직접 줬으므로 page 기반 +1 변환은 개입하지 않고, size 만 확장된다.
       expect(client.get).toHaveBeenCalledWith(`${BASE}/7/respondents`, {
         params: {
-          pageIndex: 2,
-          size: 20,
-          searchKeyword: '홍길동',
           keyword: '홍길동',
-          recordCountPerPage: 20,
+          page: 1,
+          size: 20,
         },
       });
     });
@@ -281,7 +399,7 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       await surveyAdminService.getRespondents(7, { page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(`${BASE}/7/respondents`, {
-        params: { page: 0, keyword: '', pageIndex: 1 },
+        params: { keyword: '', page: 0 },
       });
     });
 
@@ -357,8 +475,10 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
     it('문항 삭제도 (srvySn=7, srvyQstnSn=55) 순서를 지킨다', async () => {
       await surveyAdminService.deleteQuestion(7, 55);
 
-      expect(client.delete).toHaveBeenCalledWith(`${BASE}/7/questions/55`, undefined);
-      expect(client.delete).not.toHaveBeenCalledWith(`${BASE}/55/questions/7`, undefined);
+      expect(client.requestRaw).toHaveBeenCalledWith({
+        url: `${BASE}/7/questions/55`,
+        method: 'delete',
+      });
     });
 
     it('항목 생성은 설문이 아니라 문항 하위(/questions/{srvyQstnSn}/items)로 나간다', async () => {

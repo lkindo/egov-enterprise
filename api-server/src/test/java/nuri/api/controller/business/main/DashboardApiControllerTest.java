@@ -15,7 +15,9 @@ import nuri.business.security.annotation.WithMockCustomUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.Collections;
+import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -85,5 +87,16 @@ class DashboardApiControllerTest extends ControllerTestSupport {
         
         verify(boardService, times(2)).getBoardPosts(anyString(), any());
         verify(approvalService).getReceivedInformalSanctionList(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("확장 provider 값은 extensions 속성이 아니라 응답 루트에 펼쳐진다")
+    void dashboardExtensions_areFlattenedAtTheWireBoundary() {
+        DashboardResponse response = DashboardResponse.from(Map.of("customWidget", "value"));
+
+        com.fasterxml.jackson.databind.JsonNode json = objectMapper.valueToTree(response);
+
+        assertThat(json.has("extensions")).isFalse();
+        assertThat(json.path("customWidget").asText()).isEqualTo("value");
     }
 }

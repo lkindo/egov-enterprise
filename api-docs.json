@@ -614,13 +614,13 @@
           "User"
         ],
         "summary": "내 프로필 수정",
-        "description": "현재 로그인한 사용자의 프로필 정보를 수정합니다. 비밀번호는 이 API 의 대상이 아니며 보내더라도 무시됩니다(변경은 PUT /users/me/password). 스키마의 required 에 pswd 가 표시되는 것은 등록과 스키마를 공유하기 때문이며, 실제로 요구되지 않습니다.",
+        "description": "현재 로그인한 사용자의 프로필 정보를 수정합니다. 사용자 식별자와 소속 조직은 서버가 소유하며 비밀번호 변경은 PUT /users/me/password를 사용합니다.",
         "operationId": "updateMe",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UserDto"
+                "$ref": "#/components/schemas/UserSelfProfileUpdateRequest"
               }
             }
           },
@@ -4102,7 +4102,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
@@ -4627,7 +4627,7 @@
           "User"
         ],
         "summary": "사용자 정보 수정",
-        "description": "기존 시스템 사용자의 정보를 수정합니다. (관리자 권한) 비밀번호는 이 API 의 대상이 아니며 보내더라도 무시됩니다(변경은 PATCH /admin/system/users/{userId}/password). 스키마의 required 에 pswd 가 표시되는 것은 등록과 스키마를 공유하기 때문이며, 실제로 요구되지 않습니다.",
+        "description": "기존 시스템 사용자의 정보를 수정합니다. (관리자 권한) 사용자 식별자는 경로가 소유하며 비밀번호 변경은 PATCH /admin/system/users/{userId}/password를 사용합니다.",
         "operationId": "updateUser",
         "parameters": [
           {
@@ -4643,7 +4643,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UserDto"
+                "$ref": "#/components/schemas/UserProfileUpdateRequest"
               }
             }
           },
@@ -5348,6 +5348,15 @@
         "operationId": "deleteQuestion",
         "parameters": [
           {
+            "name": "srvySn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
             "name": "srvyQstnSn",
             "in": "path",
             "required": true,
@@ -5528,6 +5537,15 @@
         "summary": "설문 문항 삭제",
         "operationId": "deleteQuestion_1",
         "parameters": [
+          {
+            "name": "srvySn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
           {
             "name": "srvyQstnSn",
             "in": "path",
@@ -9496,7 +9514,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/DeptManageDto"
+                  "$ref": "#/components/schemas/DeptHierarchyItemRequest"
                 }
               }
             }
@@ -10675,7 +10693,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseBoardMasterDto"
+                  "$ref": "#/components/schemas/ApiResponseBoardMasterDetailResponse"
                 }
               }
             }
@@ -15917,7 +15935,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
@@ -16542,6 +16560,14 @@
         "description": "시스템 사용자 목록과 각 사용자의 권한 할당 상태를 조회합니다.",
         "operationId": "getUserAuthorities",
         "parameters": [
+          {
+            "name": "authorCode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "searchCondition",
             "in": "query",
@@ -21830,7 +21856,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseBoardMasterDto"
+                  "$ref": "#/components/schemas/ApiResponsePageResponseBoardMasterSummaryResponse"
                 }
               }
             }
@@ -27218,7 +27244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseMapStringObject"
+                  "$ref": "#/components/schemas/ApiResponseDashboardResponse"
                 }
               }
             }
@@ -33416,59 +33442,16 @@
           }
         }
       },
-      "UserDto": {
+      "UserSelfProfileUpdateRequest": {
         "type": "object",
         "properties": {
-          "userId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 4,
-            "pattern": "^[a-zA-Z0-9_]+$"
-          },
           "userNm": {
             "type": "string",
             "pattern": "^[a-zA-Z0-9가-힣\\s]{2,50}$"
           },
-          "esntlId": {
-            "type": "string"
-          },
-          "pswd": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 8,
-            "pattern": "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
-            "writeOnly": true
-          },
-          "pswdHint": {
-            "type": "string",
-            "maxLength": 300,
-            "minLength": 0,
-            "writeOnly": true
-          },
-          "pswdCrans": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 0,
-            "writeOnly": true
-          },
-          "role": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 0
-          },
           "emplNo": {
             "type": "string",
             "maxLength": 20,
-            "minLength": 0
-          },
-          "gndrCd": {
-            "type": "string",
-            "maxLength": 12,
-            "minLength": 0
-          },
-          "brthYmd": {
-            "type": "string",
-            "maxLength": 8,
             "minLength": 0
           },
           "areaNo": {
@@ -33486,29 +33469,9 @@
             "maxLength": 4,
             "minLength": 0
           },
-          "mbrTypeCd": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
-          },
           "faxNo": {
             "type": "string",
             "maxLength": 11,
-            "minLength": 0
-          },
-          "pstinstCd": {
-            "type": "string",
-            "maxLength": 12,
-            "minLength": 0
-          },
-          "ognzId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "groupId": {
-            "type": "string",
-            "maxLength": 20,
             "minLength": 0
           },
           "homeAddr": {
@@ -33546,33 +33509,9 @@
             "type": "string",
             "maxLength": 300,
             "minLength": 0
-          },
-          "certDnVl": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "userSe": {
-            "type": "string",
-            "maxLength": 10,
-            "minLength": 0
-          },
-          "userSttsCd": {
-            "type": "string",
-            "maxLength": 12,
-            "minLength": 0
-          },
-          "lckYn": {
-            "type": "string"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time"
           }
         },
         "required": [
-          "pswd",
-          "userId",
           "userNm"
         ]
       },
@@ -34190,15 +34129,24 @@
             "minLength": 0
           },
           "wrterId": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "readOnly": true
           },
           "wrterNm": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "readOnly": true
           },
           "frstRgtrId": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "readOnly": true
           },
           "pswd": {
@@ -34209,7 +34157,11 @@
             "type": "string"
           },
           "crtDt": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           }
         }
       },
@@ -34391,6 +34343,94 @@
             "type": "string"
           }
         }
+      },
+      "UserProfileUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "userNm": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9가-힣\\s]{2,50}$"
+          },
+          "emplNo": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "areaNo": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "middleTelno": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "endTelno": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "faxNo": {
+            "type": "string",
+            "maxLength": 11,
+            "minLength": 0
+          },
+          "homeAddr": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "daddr": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "zip": {
+            "type": "string",
+            "maxLength": 5,
+            "minLength": 0
+          },
+          "officeTelno": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "mblTelno": {
+            "type": "string",
+            "maxLength": 11,
+            "minLength": 0
+          },
+          "emlAddr": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0,
+            "pattern": "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+          },
+          "ofcpsNm": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "groupId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "ognzId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "pstinstCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "userNm"
+        ]
       },
       "UserAbsenceDto": {
         "type": "object",
@@ -35203,6 +35243,28 @@
         },
         "required": [
           "ognzNm"
+        ]
+      },
+      "DeptHierarchyItemRequest": {
+        "type": "object",
+        "properties": {
+          "ognzId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "upOgnzId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "sortOrdr": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "ognzId"
         ]
       },
       "CmmnDetailCodeDto": {
@@ -36532,6 +36594,166 @@
         },
         "required": [
           "userId"
+        ]
+      },
+      "UserDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 4,
+            "pattern": "^[a-zA-Z0-9_]+$"
+          },
+          "userNm": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9가-힣\\s]{2,50}$"
+          },
+          "esntlId": {
+            "type": "string"
+          },
+          "pswd": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "pattern": "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+            "writeOnly": true
+          },
+          "pswdHint": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0,
+            "writeOnly": true
+          },
+          "pswdCrans": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0,
+            "writeOnly": true
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "emplNo": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "gndrCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "brthYmd": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "areaNo": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "middleTelno": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "endTelno": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "mbrTypeCd": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "faxNo": {
+            "type": "string",
+            "maxLength": 11,
+            "minLength": 0
+          },
+          "pstinstCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "ognzId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "groupId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "homeAddr": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "daddr": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "zip": {
+            "type": "string",
+            "maxLength": 5,
+            "minLength": 0
+          },
+          "officeTelno": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "mblTelno": {
+            "type": "string",
+            "maxLength": 11,
+            "minLength": 0
+          },
+          "emlAddr": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 0,
+            "pattern": "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+          },
+          "ofcpsNm": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 0
+          },
+          "certDnVl": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "userSe": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 0
+          },
+          "userSttsCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "lckYn": {
+            "type": "string"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "pswd",
+          "userId",
+          "userNm"
         ]
       },
       "UserAuthorityDto": {
@@ -39046,7 +39268,7 @@
           }
         }
       },
-      "ApiResponseMapStringObject": {
+      "ApiResponseDashboardResponse": {
         "type": "object",
         "properties": {
           "success": {
@@ -39063,10 +39285,7 @@
             "type": "string"
           },
           "data": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object"
-            }
+            "$ref": "#/components/schemas/DashboardResponse"
           },
           "timestamp": {
             "type": "string",
@@ -39079,6 +39298,256 @@
             }
           }
         }
+      },
+      "BoardDto": {
+        "type": "object",
+        "properties": {
+          "pstSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "게시글 ID"
+          },
+          "bbsId": {
+            "type": "string",
+            "description": "게시판 ID",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "ansSn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "답글 번호"
+          },
+          "pstTtl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "제목",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "pstCn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "내용",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "upPstSn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "상위 게시글 ID"
+          },
+          "sortOrdr": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "정렬 순서"
+          },
+          "ttlBoldYn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "제목 굵게 표시 여부",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "inqCnt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "조회수"
+          },
+          "useYn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "사용 여부",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "pstBgngYmd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "게시 시작일",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "pstEndYmd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "게시 종료일",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자 ID",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "userNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자명",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "pswd": {
+            "type": "string",
+            "description": "비밀번호",
+            "maxLength": 200,
+            "minLength": 0,
+            "writeOnly": true
+          },
+          "atchFileSn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "첨부파일 일련번호"
+          },
+          "scrtYn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "비밀글 여부",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "blogSn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "블로그 일련번호"
+          },
+          "evntDt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "행사일"
+          },
+          "qnaSttsCd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "QNA 상태"
+          },
+          "qnaCatCd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "QNA 카테고리",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "likeCnt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "좋아요수"
+          },
+          "commentCnt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "댓글수"
+          },
+          "fileCnt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "파일수"
+          },
+          "crtDt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "등록일시"
+          },
+          "frstRegisterNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "등록자명"
+          },
+          "ansLv": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "답글 단계"
+          }
+        }
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "properties": {
+          "taskList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardDto"
+            }
+          },
+          "notiList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardDto"
+            }
+          },
+          "pendingApprovalCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "notiList",
+          "pendingApprovalCount",
+          "taskList"
+        ]
       },
       "ApiResponsePageResponseCommunityDto": {
         "type": "object",
@@ -39226,161 +39695,6 @@
             }
           }
         }
-      },
-      "BoardDto": {
-        "type": "object",
-        "properties": {
-          "pstSn": {
-            "type": "integer",
-            "format": "int64",
-            "description": "게시글 ID"
-          },
-          "bbsId": {
-            "type": "string",
-            "description": "게시판 ID",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "ansSn": {
-            "type": "integer",
-            "format": "int64",
-            "description": "답글 번호"
-          },
-          "pstTtl": {
-            "type": "string",
-            "description": "제목",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "pstCn": {
-            "type": "string",
-            "description": "내용",
-            "maxLength": 4000,
-            "minLength": 0
-          },
-          "upPstSn": {
-            "type": "integer",
-            "format": "int64",
-            "description": "상위 게시글 ID"
-          },
-          "sortOrdr": {
-            "type": "integer",
-            "format": "int64",
-            "description": "정렬 순서"
-          },
-          "ttlBoldYn": {
-            "type": "string",
-            "description": "제목 굵게 표시 여부",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "inqCnt": {
-            "type": "integer",
-            "format": "int32",
-            "description": "조회수"
-          },
-          "useYn": {
-            "type": "string",
-            "description": "사용 여부",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "pstBgngYmd": {
-            "type": "string",
-            "description": "게시 시작일",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "pstEndYmd": {
-            "type": "string",
-            "description": "게시 종료일",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "userId": {
-            "type": "string",
-            "description": "작성자 ID",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "userNm": {
-            "type": "string",
-            "description": "작성자명",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "pswd": {
-            "type": "string",
-            "description": "비밀번호",
-            "maxLength": 200,
-            "minLength": 0,
-            "writeOnly": true
-          },
-          "atchFileSn": {
-            "type": "integer",
-            "format": "int64",
-            "description": "첨부파일 일련번호"
-          },
-          "scrtYn": {
-            "type": "string",
-            "description": "비밀글 여부",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "blogSn": {
-            "type": "integer",
-            "format": "int64",
-            "description": "블로그 일련번호"
-          },
-          "evntDt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "행사일"
-          },
-          "qnaSttsCd": {
-            "type": "string",
-            "description": "QNA 상태"
-          },
-          "qnaCatCd": {
-            "type": "string",
-            "description": "QNA 카테고리",
-            "maxLength": 12,
-            "minLength": 0
-          },
-          "likeCnt": {
-            "type": "integer",
-            "format": "int32",
-            "description": "좋아요수"
-          },
-          "commentCnt": {
-            "type": "integer",
-            "format": "int32",
-            "description": "댓글수"
-          },
-          "fileCnt": {
-            "type": "integer",
-            "format": "int32",
-            "description": "파일수"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "등록일시"
-          },
-          "frstRegisterNm": {
-            "type": "string",
-            "description": "등록자명"
-          },
-          "ansLv": {
-            "type": "integer",
-            "format": "int32",
-            "description": "답글 단계"
-          }
-        },
-        "required": [
-          "useYn",
-          "userId"
-        ]
       },
       "PageResponseBoardDto": {
         "type": "object",
@@ -39646,16 +39960,25 @@
             "description": "게시글 ID"
           },
           "pstTtl": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "FAQ 질문 제목"
           },
           "inqCnt": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "조회수"
           },
           "crtDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
             "description": "등록일시"
           },
@@ -39728,20 +40051,32 @@
             "description": "게시글 ID"
           },
           "pstTtl": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "FAQ 질문 제목"
           },
           "pstCn": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "FAQ 답변 본문"
           },
           "inqCnt": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int32",
             "description": "조회수"
           },
           "crtDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
             "description": "등록일시"
           },
@@ -39988,16 +40323,25 @@
             "type": "string"
           },
           "groupId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "mbrTypeCd": {
             "type": "string"
           },
           "mberTyNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "authrtId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "regYn": {
             "type": "string"
@@ -40547,19 +40891,34 @@
             "format": "int64"
           },
           "rspdntAnsCn": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "rspnsNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "etcAnsCn": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "crtDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         }
@@ -42143,7 +42502,10 @@
             "type": "string"
           },
           "authrtId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "scrtyDcsnTrgtId": {
             "type": "string"
@@ -42943,7 +43305,7 @@
           }
         }
       },
-      "ApiResponsePageResponseBoardMasterDto": {
+      "ApiResponsePageResponseBoardMasterSummaryResponse": {
         "type": "object",
         "properties": {
           "success": {
@@ -42960,7 +43322,7 @@
             "type": "string"
           },
           "data": {
-            "$ref": "#/components/schemas/PageResponseBoardMasterDto"
+            "$ref": "#/components/schemas/PageResponseBoardMasterSummaryResponse"
           },
           "timestamp": {
             "type": "string",
@@ -42974,13 +43336,53 @@
           }
         }
       },
-      "PageResponseBoardMasterDto": {
+      "BoardMasterSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "bbsId": {
+            "type": "string"
+          },
+          "bbsTtl": {
+            "type": "string"
+          },
+          "bbsTypeCd": {
+            "type": "string"
+          },
+          "bbsTypeCdNm": {
+            "type": "string"
+          },
+          "bbsAtrbCd": {
+            "type": "string"
+          },
+          "bbsAtrbCdNm": {
+            "type": "string"
+          },
+          "tmpltId": {
+            "type": "string"
+          },
+          "useYn": {
+            "type": "string"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "bbsAtrbCd",
+          "bbsId",
+          "bbsTtl",
+          "bbsTypeCd",
+          "useYn"
+        ]
+      },
+      "PageResponseBoardMasterSummaryResponse": {
         "type": "object",
         "properties": {
           "list": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/BoardMasterDto"
+              "$ref": "#/components/schemas/BoardMasterSummaryResponse"
             }
           },
           "total": {
@@ -43001,7 +43403,7 @@
           }
         }
       },
-      "ApiResponseBoardMasterDto": {
+      "ApiResponseBoardMasterDetailResponse": {
         "type": "object",
         "properties": {
           "success": {
@@ -43018,7 +43420,7 @@
             "type": "string"
           },
           "data": {
-            "$ref": "#/components/schemas/BoardMasterDto"
+            "$ref": "#/components/schemas/BoardMasterDetailResponse"
           },
           "timestamp": {
             "type": "string",
@@ -43031,6 +43433,98 @@
             }
           }
         }
+      },
+      "BoardMasterDetailResponse": {
+        "type": "object",
+        "properties": {
+          "bbsId": {
+            "type": "string"
+          },
+          "bbsTtl": {
+            "type": "string"
+          },
+          "bbsExpln": {
+            "type": "string"
+          },
+          "bbsTypeCd": {
+            "type": "string"
+          },
+          "bbsTypeCdNm": {
+            "type": "string"
+          },
+          "bbsAtrbCd": {
+            "type": "string"
+          },
+          "bbsAtrbCdNm": {
+            "type": "string"
+          },
+          "ansPsbltyYn": {
+            "type": "string"
+          },
+          "fileAtchPsbltyYn": {
+            "type": "string"
+          },
+          "atchPsbltyFileQty": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "atchPsbltyFileSz": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tmpltId": {
+            "type": "string"
+          },
+          "frstRgtrId": {
+            "type": "string"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastMdfrId": {
+            "type": "string"
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "useYn": {
+            "type": "string"
+          },
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "blogSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "blogYn": {
+            "type": "string"
+          },
+          "ansYn": {
+            "type": "string"
+          },
+          "stsfdgYn": {
+            "type": "string"
+          },
+          "authFlag": {
+            "type": "string"
+          },
+          "tmplatCours": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "atchPsbltyFileQty",
+          "bbsAtrbCd",
+          "bbsId",
+          "bbsTtl",
+          "bbsTypeCd",
+          "fileAtchPsbltyYn",
+          "useYn"
+        ]
       },
       "ApiResponsePageResponseBannerDto": {
         "type": "object",

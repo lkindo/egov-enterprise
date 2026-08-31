@@ -21,14 +21,10 @@
  *    특히 `deleteUsers`(다중 삭제)는 경로가 아니라 **컬렉션 경로 + 본문(data)** 이라,
  *    단건 삭제와 경로가 뒤바뀌면 의도와 정반대의 대상이 지워진다.
  *
- * 4) 조회 조건의 전달 위치 — `checkIdDuplicate` 는 아이디를 **쿼리 파라미터**(`?userId=`)로 보낸다.
- *    이를 경로 변수(`/users/{id}`)로 착각해 바꾸면 중복 확인이 항상 성공(=단건 조회)처럼 보여
- *    **중복 아이디 가입이 뚫린다**.
- *
- * 5) HTTP 메서드 — 일괄 변경 3종과 비밀번호 변경은 PATCH 다. PUT 으로 바뀌면 부분 수정이
+ * 4) HTTP 메서드 — 일괄 변경 3종과 비밀번호 변경은 PATCH 다. PUT 으로 바뀌면 부분 수정이
  *    전체 치환이 되어 서버 측에서 누락 필드가 초기화될 수 있다.
  *
- * 6) config 전달 — 호출부가 넘긴 AxiosRequestConfig(timeout·AbortSignal 등)가 유실되면
+ * 5) config 전달 — 호출부가 넘긴 AxiosRequestConfig(timeout·AbortSignal 등)가 유실되면
  *    화면 이탈 시 요청 취소가 동작하지 않고 타임아웃도 기본값으로 되돌아간다.
  *    유실돼도 요청 자체는 성공하므로 아무도 눈치채지 못한다.
  *
@@ -47,6 +43,8 @@ const client = vi.hoisted(() => ({
   put: vi.fn(),
   patch: vi.fn(),
   delete: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -55,9 +53,36 @@ import { userAdminService } from '../UserAdminService';
 
 /** 이 서비스가 조합해야 하는 실제 최종 경로 — AdminService('/users') + category 기본값 'system' */
 const BASE = 'admin/system/users';
+const success = <T,>(data: T) => ({ success: true as const, code: 'S000', message: 'success', data });
+const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+const safeUser = {
+  userId: 'USR001',
+  userNm: '홍길동',
+  emlAddr: 'hong@example.com',
+  userSttsCd: 'A',
+};
 
 describe('UserAdminService — 관리자 사용자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      return success(data ?? (url === BASE ? emptyPage : safeUser));
+    });
+    client.requestRaw.mockImplementation(async ({ url, method, data, ...config }) => {
+      if (method === 'delete') {
+        const deleteConfig = { ...config, ...(data === undefined ? {} : { data }) };
+        await client.delete(url, Object.keys(deleteConfig).length > 0 ? deleteConfig : undefined);
+        return success(null);
+      }
+      const requestConfig = Object.keys(config).length > 0 ? config : undefined;
+      let response;
+      if (method === 'post') response = await client.post(url, data, requestConfig);
+      else if (method === 'put') response = await client.put(url, data, requestConfig);
+      else if (method === 'patch') response = await client.patch(url, data, requestConfig);
+      return success(method === 'post' ? (response ?? 'USR_NEW') : null);
+    });
+  });
 
   describe('목록 조회 (getUserList)', () => {
     it('목록은 admin/system/users 로 나가며 컬렉션 경로에 군더더기 슬래시가 붙지 않는다', async () => {
@@ -66,53 +91,57 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('page 1 은 pageIndex 2 로, size 는 recordCountPerPage 로 변환되고 원본 키도 함께 남는다', async () => {
+    it('OpenAPI Pageable의 page·size 이름과 0-based 의미를 그대로 보존한다', async () => {
       await userAdminService.getUserList({ page: 1, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 1, size: 20, pageIndex: 2, recordCountPerPage: 20 },
+        params: { page: 1, size: 20 },
       });
     });
 
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지(page 0)는 0-based 값을 그대로 보낸다', async () => {
       await userAdminService.getUserList({ page: 0 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 0, pageIndex: 1 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 0 } });
     });
 
     it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
       await userAdminService.getUserList({ page: 5, pageIndex: 3 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 5, pageIndex: 3 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 5 } });
     });
 
-    it('size 만 준 경우 recordCountPerPage 만 생기고 pageIndex 는 만들어지지 않는다', async () => {
+    it('size 만 준 경우 OpenAPI size로만 전달한다', async () => {
       await userAdminService.getUserList({ size: 10 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 10, recordCountPerPage: 10 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 10 } });
     });
 
-    it('pageSize 는 recordCountPerPage 와 size 양쪽으로 확장되지만 pageIndex 는 만들지 않는다', async () => {
+    it('기존 pageSize alias는 OpenAPI size로 변환한다', async () => {
       const params: SearchParams = { pageSize: 50 };
 
       await userAdminService.getUserList(params);
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 50, recordCountPerPage: 50, size: 50 },
+        params: { size: 50 },
       });
     });
 
-    it('검색 조건(searchCondition/searchKeyword/sbscrbSttus)은 변형 없이 그대로 전달된다', async () => {
-      await userAdminService.getUserList({
+    it('OpenAPI에 정확히 존재하는 searchKeyword만 전달한다', async () => {
+      await userAdminService.getUserList({ searchKeyword: '홍길동' });
+
+      expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { searchKeyword: '홍길동' },
+      });
+    });
+
+    it('OpenAPI에 없는 searchCondition·sbscrbSttus는 묵시하지 않고 fail-closed 된다', async () => {
+      await expect(userAdminService.getUserList({
         searchCondition: 'userNm',
         searchKeyword: '홍길동',
         sbscrbSttus: 'A',
-      });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchCondition: 'userNm', searchKeyword: '홍길동', sbscrbSttus: 'A' },
-      });
+      })).rejects.toThrow('생성 API 쿼리 파라미터가 OpenAPI 계약과 일치하지 않습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
 
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
@@ -123,7 +152,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 1, pageIndex: 2 },
+        params: { page: 1 },
       });
     });
 
@@ -132,12 +161,12 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
 
       await userAdminService.getUserList(undefined, { signal });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { signal, params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { signal, params: {} });
     });
 
     it('목록 조회는 클라이언트 응답을 가공 없이 그대로 반환한다', async () => {
       const page: PageResponse<UserManage> = {
-        list: [{ userId: 'USR001', userNm: '홍길동', emlAddr: 'a@b.c', userSttsCd: 'A' }],
+        list: [{ userId: 'USR001', userNm: '홍길동', emlAddr: 'hong@example.com', userSttsCd: 'A' }],
         total: 1,
         page: 1,
         size: 10,
@@ -145,7 +174,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       };
       client.get.mockResolvedValueOnce(page);
 
-      await expect(userAdminService.getUserList({})).resolves.toBe(page);
+      await expect(userAdminService.getUserList({})).resolves.toStrictEqual(page);
     });
   });
 
@@ -168,6 +197,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       const payload: Partial<UserManage> = {
         userId: 'newbie',
         userNm: '신규사용자',
+        pswd: 'Password1!',
         emlAddr: 'newbie@example.com',
         userSttsCd: 'A',
         ognzId: 'ORG_0001',
@@ -181,15 +211,16 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
     it('등록 시에도 호출부 config 가 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await userAdminService.createUser({ userId: 'newbie' }, { signal });
+      const payload = { userId: 'newbie', userNm: '신규사용자', pswd: 'Password1!' };
+      await userAdminService.createUser(payload, { signal });
 
-      expect(client.post).toHaveBeenCalledWith(BASE, { userId: 'newbie' }, { signal });
+      expect(client.post).toHaveBeenCalledWith(BASE, payload, { signal });
     });
   });
 
   describe('수정 (updateUser)', () => {
     it('전달받은 userId 로만 PUT 하고 다른 계정 경로로는 나가지 않는다', async () => {
-      const payload: Partial<UserManage> = { userNm: '변경된이름' };
+      const payload = { userNm: '변경된이름' };
 
       await userAdminService.updateUser('USR010', payload, { timeout: 2000 });
 
@@ -200,16 +231,18 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
     });
 
     it('수정 본문은 가공·필드 누락 없이 그대로 전달된다', async () => {
-      const payload: Partial<UserManage> = {
+      const payload = {
         userNm: '홍길동',
         emlAddr: 'hong@example.com',
-        mblTelno: '010-0000-0000',
+        mblTelno: '01000000000',
         ognzId: 'ORG_0002',
       };
 
       await userAdminService.updateUser('USR010', payload);
 
       expect(client.put).toHaveBeenCalledWith(`${BASE}/USR010`, payload, undefined);
+      expect(client.put.mock.calls[0]?.[1]).not.toHaveProperty('userId');
+      expect(client.put.mock.calls[0]?.[1]).not.toHaveProperty('pswd');
     });
   });
 
@@ -264,33 +297,6 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
     });
   });
 
-  describe('아이디 중복 확인 (checkIdDuplicate)', () => {
-    it('아이디는 경로 변수가 아니라 쿼리 파라미터로 나간다 — 경로로 바뀌면 중복 검사가 무력화된다', async () => {
-      await userAdminService.checkIdDuplicate('newbie');
-
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/check-id`, { params: { userId: 'newbie' } });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/newbie`, { params: { userId: 'newbie' } });
-    });
-
-    it('중복 확인에도 config 가 보존되며 페이징 변환이 개입하지 않는다', async () => {
-      const { signal } = new AbortController();
-
-      await userAdminService.checkIdDuplicate('newbie', { timeout: 800, signal });
-
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/check-id`, {
-        timeout: 800,
-        signal,
-        params: { userId: 'newbie' },
-      });
-    });
-
-    it('중복 확인 응답은 가공 없이 그대로 반환된다', async () => {
-      client.get.mockResolvedValueOnce({ available: false });
-
-      await expect(userAdminService.checkIdDuplicate('admin')).resolves.toEqual({ available: false });
-    });
-  });
-
   describe('일괄 변경 (updateUsersStatus / moveUsersToDept / updateUsersRole)', () => {
     it('상태 일괄 변경은 /status 로 PATCH 하며 본문 키는 userIds·status 다', async () => {
       const userIds = ['USR001', 'USR002'];
@@ -315,7 +321,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
 
       expect(client.patch).toHaveBeenCalledWith(
         `${BASE}/role`,
-        { userIds, role: 'ROLE_ADMIN' },
+        { userIds, role: 'ADMIN' },
         { timeout: 9000 },
       );
     });
@@ -334,12 +340,11 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
     it('모든 메서드가 admin/system/users 접두를 벗어나지 않는다 — 접두가 어긋나면 전 화면이 404 다', async () => {
       await userAdminService.getUserList({});
       await userAdminService.getUser('USR001');
-      await userAdminService.createUser({ userId: 'USR001' });
-      await userAdminService.updateUser('USR001', { userNm: '이름' });
+      await userAdminService.createUser({ userId: 'USR001', userNm: '사용자', pswd: 'Password1!' });
+      await userAdminService.updateUser('USR001', { userNm: '사용자' });
       await userAdminService.deleteUser('USR001');
       await userAdminService.deleteUsers(['USR001']);
-      await userAdminService.updatePassword('USR001', { newPassword: 'x' });
-      await userAdminService.checkIdDuplicate('USR001');
+      await userAdminService.updatePassword('USR001', { newPassword: 'Password2!' });
       await userAdminService.updateUsersStatus(['USR001'], 'P');
       await userAdminService.moveUsersToDept(['USR001'], 'ORG_0001');
       await userAdminService.updateUsersRole(['USR001'], 'ROLE_ADMIN');
@@ -352,8 +357,8 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
         ...client.delete.mock.calls,
       ].map((call) => String(call[0]));
 
-      // 위에서 호출한 메서드 수(11)와 실제 HTTP 호출 수가 같아야 한다(중복 발사·누락 방지).
-      expect(calledPaths).toHaveLength(11);
+      // 위에서 호출한 메서드 수(10)와 실제 HTTP 호출 수가 같아야 한다(중복 발사·누락 방지).
+      expect(calledPaths).toHaveLength(10);
       expect(calledPaths.every((path) => path === BASE || path.startsWith(`${BASE}/`))).toBe(true);
       // 선행 슬래시가 붙으면 axios baseURL 이 무시되어 도메인 루트로 나간다.
       expect(calledPaths.some((path) => path.startsWith('/'))).toBe(false);

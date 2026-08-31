@@ -13,12 +13,31 @@ import { fileService } from '@/services/foundation/file/FileService';
 import * as securityService from '@/services/foundation/security/SecurityAdminService';
 
 vi.mock('@/lib/api/client', () => ({
- default: {
- get: vi.fn(),
- post: vi.fn(),
- put: vi.fn(),
- delete: vi.fn(),
- }
+  default: (() => {
+    const get = vi.fn();
+    const post = vi.fn();
+    const put = vi.fn();
+    const remove = vi.fn();
+    return {
+      get,
+      post,
+      put,
+      delete: remove,
+      getRaw: vi.fn(async (url: string, config?: unknown) => {
+        const result = await get(url, config);
+        const fallback = url.startsWith('files/')
+          ? []
+          : { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+        return { success: true, code: 'S000', message: '성공', data: result ?? fallback };
+      }),
+      requestRaw: vi.fn(async () => ({
+        success: true,
+        code: 'S000',
+        message: '성공',
+        data: null,
+      })),
+    };
+  })(),
 }));
 
 describe('Common Support Services', () => {
@@ -30,14 +49,20 @@ describe('Common Support Services', () => {
   });
 
   it('commentService calls correct endpoints', async () => {
-    (client.get as any).mockResolvedValue({ list: [], total: 0 });
+    (client.get as any).mockResolvedValue({ list: [], total: 0, page: 0, size: 10, totalPage: 0 });
   await commentService.getComments({ pstSn: 1, bbsId: 'BBSMSTR_A' });
   expect(client.get).toHaveBeenCalledWith('comments', expect.any(Object));
   });
 
   it('fileService calls correct endpoints', async () => {
+  vi.mocked(client.getRaw).mockResolvedValueOnce({
+    success: true,
+    code: 'S000',
+    message: '성공',
+    data: [],
+  });
   await fileService.getFileList(101);
-  expect(client.get).toHaveBeenCalledWith('files/101', undefined);
+  expect(client.getRaw).toHaveBeenCalledWith('files/101', undefined);
   });
 
   it('securityService calls correct endpoints', async () => {

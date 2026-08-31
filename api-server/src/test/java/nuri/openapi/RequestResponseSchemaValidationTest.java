@@ -265,13 +265,10 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
     void userUpdate_requestSchema_validation() throws Exception {
         String validRequest = """
                 {
-                  "userId": "updateUser",
                   "userNm": "수정사용자",
-                  "esntlId": "USR_0000000000000001",
-                  "pswd": "password123!",
-                  "pswdHint": "new hint",
-                  "pswdCrans": "new answer",
-                  "role": "ADMIN"
+                  "groupId": "GROUP_ADMIN",
+                  "ognzId": "ORG_ADMIN",
+                  "pstinstCd": "INST_ADMIN"
                 }
                 """;
 

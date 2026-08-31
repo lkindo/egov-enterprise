@@ -8,6 +8,26 @@ import {
   SurveyAnswer,
 } from '@/types/business/survey';
 import type { components } from '@/types/generated-api';
+import {
+  deleteQuestionOperation,
+  deleteItemOperation,
+  deleteRespondentOperation,
+  deleteSurveyOperation,
+  deleteTemplateOperation,
+  getQuestionsOperation,
+  getRespondentsOperation,
+  getSurveyOperation,
+  getSurveysOperation,
+  getTemplatesOperation,
+  insertItemOperation,
+  insertQuestionOperation,
+  insertSurveyOperation,
+  insertTemplateOperation,
+  updateItemOperation,
+  updateQuestionOperation,
+  updateSurveyOperation,
+  updateTemplateOperation,
+} from '@/types/generated-operations';
 
 /**
  * 설문 템플릿 — 백엔드 `SurveyTemplateDto` 의 생성 타입을 SSOT 로 삼는다.
@@ -19,6 +39,40 @@ import type { components } from '@/types/generated-api';
  */
 export type SurveyTemplate = components['schemas']['SurveyTemplateDto'];
 
+type SurveyPageQuery = {
+  keyword?: string;
+  page?: number;
+  size?: number;
+  sort?: string[];
+};
+
+/** 공용 SearchParams의 레거시 어휘를 Spring Pageable OpenAPI query로 한 번만 정규화한다. */
+function toSurveyPageQuery(params?: SearchParams): SurveyPageQuery {
+  const page = typeof params?.page === 'number'
+    ? params.page
+    : typeof params?.pageIndex === 'number'
+      ? params.pageIndex - 1
+      : typeof params?.pageNo === 'number'
+        ? params.pageNo - 1
+        : undefined;
+  const recordCountPerPage = params?.recordCountPerPage;
+  const size = typeof params?.size === 'number'
+    ? params.size
+    : typeof params?.pageUnit === 'number'
+      ? params.pageUnit
+      : typeof recordCountPerPage === 'number'
+        ? recordCountPerPage
+        : undefined;
+  const sort = params?.sort;
+
+  return {
+    keyword: params?.keyword || params?.searchKeyword || params?.searchWrd || '',
+    ...(page !== undefined ? { page } : {}),
+    ...(size !== undefined ? { size } : {}),
+    ...(sort !== undefined ? { sort: sort as string[] } : {}),
+  };
+}
+
 /**
  * 설문 관리 서비스 (Admin)
  */
@@ -29,44 +83,53 @@ class SurveyAdminService extends AdminService {
 
   /** 설문 목록 조회 */
   async getSurveyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyInfo>> {
-    return this.get<PageResponse<SurveyInfo>>('', {
-      ...config,
-      params: {
-        ...params,
-        keyword: params?.searchKeyword || params?.searchWrd || '',
-      },
+    const response = await this.executeGenerated(getSurveysOperation, {
+      query: toSurveyPageQuery(params),
+      config,
     });
+    return response as PageResponse<SurveyInfo>;
   }
 
   /** 설문 상세 조회 */
   async getSurvey(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyInfo> {
-    return this.get<SurveyInfo>(`/${srvySn}`, config);
+    return this.executeGenerated(getSurveyOperation, {
+      path: { srvySn },
+      config,
+    }) as Promise<SurveyInfo>;
   }
 
   /** 설문 등록 */
-  async createSurvey(data: Partial<SurveyInfo>, config?: AxiosRequestConfig): Promise<SurveyInfo> {
-    return this.post<SurveyInfo>('', data, config);
+  async createSurvey(data: Partial<SurveyInfo>, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(insertSurveyOperation, {
+      body: data as components['schemas']['SurveyInfoDto'],
+      config,
+    });
   }
 
   /** 설문 수정 */
   async updateSurvey(srvySn: number, data: Partial<SurveyInfo>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/${srvySn}`, data, config);
+    return this.executeGenerated(updateSurveyOperation, {
+      path: { srvySn },
+      body: data as components['schemas']['SurveyInfoDto'],
+      config,
+    });
   }
 
   /** 설문 삭제 */
   async deleteSurvey(srvySn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${srvySn}`, config);
+    return this.executeGenerated(deleteSurveyOperation, {
+      path: { srvySn },
+      config,
+    });
   }
 
   /** 설문 템플릿목록 조회 */
   async getTemplateList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SurveyTemplate>> {
-    return this.get<PageResponse<SurveyTemplate>>('/templates', {
-      ...config,
-      params: {
-        ...params,
-        keyword: params?.searchKeyword || params?.searchWrd || '',
-      },
+    const response = await this.executeGenerated(getTemplatesOperation, {
+      query: toSurveyPageQuery(params),
+      config,
     });
+    return response as PageResponse<SurveyTemplate>;
   }
 
   /**
@@ -80,32 +143,41 @@ class SurveyAdminService extends AdminService {
     params?: SearchParams,
     config?: AxiosRequestConfig
   ): Promise<PageResponse<SurveyRespondent>> {
-    return this.get<PageResponse<SurveyRespondent>>(`/${srvySn}/respondents`, {
-      ...config,
-      params: {
-        ...params,
-        keyword: params?.searchKeyword || params?.searchWrd || '',
-      },
+    const response = await this.executeGenerated(getRespondentsOperation, {
+      path: { srvySn },
+      query: toSurveyPageQuery(params),
+      config,
     });
+    return response as PageResponse<SurveyRespondent>;
   }
 
   /** 설문 응답자 삭제 */
   async deleteRespondent(srvySn: number, respondentId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${srvySn}/respondents/${respondentId}`, config);
+    return this.executeGenerated(deleteRespondentOperation, {
+      path: { srvySn, respondentId },
+      config,
+    });
   }
 
   // --- 템플릿 CRUD ---
 
   async createTemplate(data: Partial<SurveyTemplate>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post('/templates', data, config);
+    return this.executeGenerated(insertTemplateOperation, { body: data, config });
   }
 
   async updateTemplate(srvyTmpltSn: number, data: Partial<SurveyTemplate>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/templates/${srvyTmpltSn}`, data, config);
+    return this.executeGenerated(updateTemplateOperation, {
+      path: { srvyTmpltSn },
+      body: data,
+      config,
+    });
   }
 
   async deleteTemplate(srvyTmpltSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/templates/${srvyTmpltSn}`, config);
+    return this.executeGenerated(deleteTemplateOperation, {
+      path: { srvyTmpltSn },
+      config,
+    });
   }
 
   // --- 문항·항목 CRUD ---
@@ -115,11 +187,18 @@ class SurveyAdminService extends AdminService {
    * 문항별 항목 조회를 따로 호출하면 안 된다(N+1 을 프론트에서 되살리는 셈이다).
    */
   async getQuestions(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyQuestion[]> {
-    return this.get<SurveyQuestion[]>(`/${srvySn}/questions`, config);
+    return this.executeGenerated(getQuestionsOperation, {
+      path: { srvySn },
+      config,
+    }) as Promise<SurveyQuestion[]>;
   }
 
   async createQuestion(srvySn: number, data: Partial<SurveyQuestion>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post(`/${srvySn}/questions`, data, config);
+    return this.executeGenerated(insertQuestionOperation, {
+      path: { srvySn },
+      body: data,
+      config,
+    });
   }
 
   async updateQuestion(
@@ -128,24 +207,42 @@ class SurveyAdminService extends AdminService {
     data: Partial<SurveyQuestion>,
     config?: AxiosRequestConfig
   ): Promise<void> {
-    return this.put(`/${srvySn}/questions/${srvyQstnSn}`, data, config);
+    return this.executeGenerated(updateQuestionOperation, {
+      path: { srvySn, srvyQstnSn },
+      body: data,
+      config,
+    });
   }
 
   async deleteQuestion(srvySn: number, srvyQstnSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${srvySn}/questions/${srvyQstnSn}`, config);
+    return this.executeGenerated(deleteQuestionOperation, {
+      path: { srvySn, srvyQstnSn },
+      config,
+    });
   }
 
   /** 항목은 문항 하위 자원이다 — 경로가 소속 문항을 강제한다. */
   async createItem(srvyQstnSn: number, data: Partial<SurveyAnswer>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post(`/questions/${srvyQstnSn}/items`, data, config);
+    return this.executeGenerated(insertItemOperation, {
+      path: { srvyQstnSn },
+      body: data,
+      config,
+    });
   }
 
   async updateItem(srvyArtclSn: number, data: Partial<SurveyAnswer>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/questions/items/${srvyArtclSn}`, data, config);
+    return this.executeGenerated(updateItemOperation, {
+      path: { srvyArtclSn },
+      body: data,
+      config,
+    });
   }
 
   async deleteItem(srvyArtclSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/questions/items/${srvyArtclSn}`, config);
+    return this.executeGenerated(deleteItemOperation, {
+      path: { srvyArtclSn },
+      config,
+    });
   }
 }
 

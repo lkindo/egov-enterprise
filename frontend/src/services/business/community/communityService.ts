@@ -1,7 +1,53 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { CommunityVO, CommunitySearchParams } from '@/types/business/community';
+import type { components, operations } from '@/types/generated-api';
+import { getCommunities_1Operation, getCommunity_1Operation } from '@/types/generated-operations';
 ;
+
+type CommunityListQuery = NonNullable<operations['getCommunities_1']['parameters']['query']>;
+
+function toCommunityListQuery(params: CommunitySearchParams): CommunityListQuery {
+  const raw = params as Record<string, unknown>;
+  const page = params.page
+    ?? (params.pageIndex === undefined ? undefined : Math.max(0, params.pageIndex - 1))
+    ?? (params.pageNo === undefined ? undefined : Math.max(0, params.pageNo - 1));
+  const size = typeof params.size === 'number'
+    ? params.size
+    : typeof params.pageUnit === 'number'
+      ? params.pageUnit
+      : typeof raw.pageSize === 'number'
+        ? raw.pageSize
+        : undefined;
+  const searchCnd = typeof raw.searchCnd === 'string' ? raw.searchCnd : params.searchCondition;
+  const searchWrd = typeof raw.searchWrd === 'string' ? raw.searchWrd : params.searchKeyword;
+  const sort = Array.isArray(raw.sort) && raw.sort.every((item) => typeof item === 'string')
+    ? raw.sort as string[]
+    : undefined;
+
+  return {
+    ...(page === undefined ? {} : { page }),
+    ...(size === undefined ? {} : { size }),
+    ...(searchCnd === undefined ? {} : { searchCnd }),
+    ...(searchWrd === undefined ? {} : { searchWrd }),
+    ...(sort === undefined ? {} : { sort }),
+  };
+}
+
+function requireCommunityPage(
+  response: components['schemas']['PageResponseCommunityDto'],
+): PageResponse<CommunityVO> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('커뮤니티 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return response as unknown as PageResponse<CommunityVO>;
+}
 
 /**
  * 커뮤니티 관리 서비스
@@ -18,7 +64,10 @@ class CommunityService extends ApiService {
    * @returns 커뮤니티 페이지 결과
    */
   public async getCommunityList(params: CommunitySearchParams = {}): Promise<PageResponse<CommunityVO>> {
-    return this.get<PageResponse<CommunityVO>>('', { params });
+    const response = await this.executeGenerated(getCommunities_1Operation, {
+      query: toCommunityListQuery(params),
+    });
+    return requireCommunityPage(response);
   }
 
   /**
@@ -27,40 +76,14 @@ class CommunityService extends ApiService {
    * @returns 커뮤니티 상세 정보
    */
   public async getCommunity(cmntySn: number): Promise<CommunityVO> {
-    return this.get<CommunityVO>(`/${cmntySn}`);
+    return this.executeGenerated(getCommunity_1Operation, {
+      path: { cmntySn },
+    }) as Promise<CommunityVO>;
   }
 
-  /**
-   * 커뮤니티 등록
-   * @param community 커뮤니티 정보
-   * @returns 생성된 커뮤니티 정보
-   */
-  public async createCommunity(community: Partial<CommunityVO>): Promise<CommunityVO> {
-    return this.post<CommunityVO>('', community);
-  }
-
-  /**
-   * 커뮤니티 수정
-   * @param cmntySn 커뮤니티 일련번호
-   * @param community 수정할 커뮤니티 정보
-   */
-  public async updateCommunity(cmntySn: number, community: Partial<CommunityVO>): Promise<void> {
-    return this.put<void>(`/${cmntySn}`, community);
-  }
-
-  /**
-   * 커뮤니티 삭제
-   * @param cmntySn 커뮤니티 일련번호
-   */
-  public async deleteCommunity(cmntySn: number): Promise<void> {
-    return this.delete<void>(`/${cmntySn}`);
-  }
 }
 
 export const communityService = new CommunityService();
 
 export const getCommunityList = communityService.getCommunityList.bind(communityService);
 export const getCommunity = communityService.getCommunity.bind(communityService);
-export const createCommunity = communityService.createCommunity.bind(communityService);
-export const updateCommunity = communityService.updateCommunity.bind(communityService);
-export const deleteCommunity = communityService.deleteCommunity.bind(communityService);

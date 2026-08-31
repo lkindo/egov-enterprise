@@ -1,6 +1,7 @@
 import { UserService } from '@/services/core/ApiService';
 import { Banner } from '@/types/foundation/banner';
 import { AxiosRequestConfig } from 'axios';
+import { getReflectedBannersOperation } from '@/types/generated-operations';
 
 /**
  * 배너 서비스(User)
@@ -14,7 +15,7 @@ class BannerUserService extends UserService {
 
   /** 메인화면 노출 배너 목록 */
   async getReflectedBanners(config?: AxiosRequestConfig): Promise<Banner[]> {
-    return this.get<Banner[]>('/reflected', config);
+    return this.executeGenerated(getReflectedBannersOperation, { config }) as Promise<Banner[]>;
   }
 }
 

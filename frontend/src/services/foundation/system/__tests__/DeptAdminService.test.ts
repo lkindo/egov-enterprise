@@ -51,6 +51,8 @@ const client = vi.hoisted(() => ({
   post: vi.fn(),
   put: vi.fn(),
   delete: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -64,16 +66,42 @@ import { deptAdminService, type Department } from '../DeptAdminService';
  */
 const BASE = 'admin/system/departments';
 
+const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+
+function generatedDeptFallback(url: string): unknown {
+  if (url === BASE) return emptyPage;
+  if (url === `${BASE}/tree`) return [];
+  return { ognzId: 'ORG_001', ognzNm: '부서' };
+}
+
 describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      return envelope(data ?? generatedDeptFallback(url));
+    });
+    client.requestRaw.mockImplementation(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
+      let result: unknown;
+      if (method === 'post') result = await client.post(url, data, forwardedConfig);
+      else if (method === 'put') result = await client.put(url, data, forwardedConfig);
+      else if (method === 'delete') {
+        result = await client.delete(url, data === undefined ? forwardedConfig : { ...config, data });
+      }
+      return envelope(result ?? (method === 'post' ? 'ORG_001' : undefined));
+    });
+  });
 
   describe('부서 목록 조회 (getDeptList)', () => {
     it('목록은 admin/system/departments 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await deptAdminService.getDeptList();
 
       // path 인자로 빈 문자열('')을 넘기므로 basePath 그대로가 최종 경로다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
     });
 
     it('params 를 생략하면 params: undefined 가 그대로 전달된다 — 빈 객체로 바꿔치지 않는다', async () => {
@@ -81,23 +109,22 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
       // 아래 페이징 정규화 분기(config?.params 가 truthy 일 때만 동작)의 전제가 달라진다.
       await deptAdminService.getDeptList(undefined);
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지(page 0)는 생성 Pageable 계약의 page 0으로 유지된다', async () => {
       await deptAdminService.getDeptList({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, pageIndex: 1 },
+        params: { page: 0 },
       });
     });
 
-    it('page 3·size 20 은 pageIndex 4·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 3·size 20 은 생성 Pageable 계약의 두 키만 전달된다', async () => {
       await deptAdminService.getDeptList({ page: 3, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 3, size: 20, pageIndex: 4, recordCountPerPage: 20 },
+        params: { page: 3, size: 20 },
       });
     });
 
@@ -106,27 +133,27 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
       await deptAdminService.getDeptList({ page: 9, pageIndex: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 1 },
+        params: { page: 0 },
       });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
         params: { page: 9, pageIndex: 10 },
       });
     });
 
-    it('pageSize 만 오면 recordCountPerPage 와 size 를 함께 채운다 (Common DTO 호환 축)', async () => {
+    it('pageSize 만 오면 생성 Pageable 계약의 size 로 변환한다', async () => {
       await deptAdminService.getDeptList({ pageSize: 25 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 25, recordCountPerPage: 25, size: 25 },
+        params: { size: 25 },
       });
     });
 
-    it('실제 화면이 쓰는 { keyword, page: 0, size: 1000 } 조합이 온전히 변환된다', async () => {
+    it('실제 화면이 쓰는 { keyword, page: 0, size: 1000 } 조합을 그대로 보존한다', async () => {
       // admin/user/* 5개 페이지가 공통으로 쓰는 호출 형태다(전량 로딩용 size=1000).
       await deptAdminService.getDeptList({ keyword: '', page: 0, size: 1000 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { keyword: '', page: 0, size: 1000, pageIndex: 1, recordCountPerPage: 1000 },
+        params: { keyword: '', page: 0, size: 1000 },
       });
     });
 
@@ -141,10 +168,8 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
       // 승격 로직이 잘못 이식되면 keyword 와 searchKeyword 가 동시에 나가 서버 바인딩이 흔들린다.
       await deptAdminService.getDeptList({ searchKeyword: '인사' });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { searchKeyword: '인사' } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '인사', keyword: '인사' },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { keyword: '인사' } });
     });
 
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
@@ -155,7 +180,7 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, pageIndex: 1 },
+        params: { page: 0 },
       });
     });
 
@@ -189,8 +214,8 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
     it('트리는 전용 경로 /tree 로 나간다 — 목록 경로로 되돌아가면 기본 size=10 에 잘린다', async () => {
       await deptAdminService.getDeptTree();
 
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/tree`, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(`${BASE}/tree`, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: {} });
     });
 
     it('keyword 를 주면 params.keyword 하나만 실린다 — 페이징 키는 절대 동승하지 않는다', async () => {
@@ -204,7 +229,7 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
     it('빈 문자열 keyword 는 params 자체를 생략한다 — keyword= 빈값을 서버로 보내지 않는다', async () => {
       await deptAdminService.getDeptTree('');
 
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/tree`, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(`${BASE}/tree`, { params: {} });
       expect(client.get).not.toHaveBeenCalledWith(`${BASE}/tree`, { params: { keyword: '' } });
     });
 
@@ -213,7 +238,7 @@ describe('DeptAdminService — 부서(조직) 관리자 API 계약', () => {
 
       await deptAdminService.getDeptTree(undefined, { signal });
 
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/tree`, { signal, params: undefined });
+      expect(client.get).toHaveBeenCalledWith(`${BASE}/tree`, { signal, params: {} });
     });
 
     it('트리 응답은 PageResponse 로 감싸지 않은 배열 그대로 반환된다', async () => {

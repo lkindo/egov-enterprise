@@ -1,5 +1,13 @@
 import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
+import {
+  getBbsStatsOperation,
+  getConnectStats_1Operation,
+  getDataUsageStatsOperation,
+  getReportStatsOperation,
+  getSummaryOperation,
+  getUserStatsOperation,
+} from '@/types/generated-operations';
 
 /**
  * 통계 관리 서비스(Admin) — `/api/v1/admin/system/statistics`
@@ -26,39 +34,59 @@ export interface StatsDto {
   [key: string]: unknown;
 }
 
+type DateRange = { fromDate?: string; toDate?: string };
+
+function toDateRange(params?: DateRange & { statsKind?: string }): DateRange {
+  if (!params) return {};
+  return {
+    ...(params.fromDate === undefined ? {} : { fromDate: params.fromDate }),
+    ...(params.toDate === undefined ? {} : { toDate: params.toDate }),
+  };
+}
+
 class StatsAdminService extends AdminService {
   constructor() {
     super('/statistics');
   }
 
   /** 요약 통계 조회 */
-  async getSummary(config?: AxiosRequestConfig) {
-    return this.get<Record<string, unknown>>('/summary', config);
+  async getSummary(config?: AxiosRequestConfig): Promise<Record<string, unknown>> {
+    const response = await this.executeGenerated(getSummaryOperation, { config });
+    return response as Record<string, unknown>;
   }
 
   /** 접속 통계 조회 (시스템 활성/화면 요청 지표의 유일한 실존 소스) */
-  async getConnectStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: AxiosRequestConfig) {
-    return this.get<StatsDto[]>('/connect', { ...config, params });
+  async getConnectStats(
+    params?: { fromDate?: string; toDate?: string; statsKind?: string },
+    config?: AxiosRequestConfig,
+  ): Promise<StatsDto[]> {
+    return this.executeGenerated(getConnectStats_1Operation, { query: params ?? {}, config }) as Promise<StatsDto[]>;
   }
 
   /** 게시물 통계 조회 */
-  async getBbsStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: AxiosRequestConfig) {
-    return this.get<StatsDto[]>('/bbs', { ...config, params });
+  async getBbsStats(
+    params?: { fromDate?: string; toDate?: string; statsKind?: string },
+    config?: AxiosRequestConfig,
+  ): Promise<StatsDto[]> {
+    return this.executeGenerated(getBbsStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
   }
 
   /** 사용자 통계 조회 */
-  async getUserStats(params?: { fromDate?: string; toDate?: string; statsKind?: string }, config?: AxiosRequestConfig) {
-    return this.get<StatsDto[]>('/user', { ...config, params });
+  async getUserStats(
+    params?: { fromDate?: string; toDate?: string; statsKind?: string },
+    config?: AxiosRequestConfig,
+  ): Promise<StatsDto[]> {
+    return this.executeGenerated(getUserStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
   }
 
   /** 보고서 통계 조회 */
-  async getReportStats(params?: { fromDate?: string; toDate?: string }, config?: AxiosRequestConfig) {
-    return this.get<StatsDto[]>('/report', { ...config, params });
+  async getReportStats(params?: DateRange, config?: AxiosRequestConfig): Promise<StatsDto[]> {
+    return this.executeGenerated(getReportStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
   }
 
   /** 자료이용현황 통계 조회 */
-  async getDataUsageStats(params?: { fromDate?: string; toDate?: string }, config?: AxiosRequestConfig) {
-    return this.get<StatsDto[]>('/data-usage', { ...config, params });
+  async getDataUsageStats(params?: DateRange, config?: AxiosRequestConfig): Promise<StatsDto[]> {
+    return this.executeGenerated(getDataUsageStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
   }
 }
 

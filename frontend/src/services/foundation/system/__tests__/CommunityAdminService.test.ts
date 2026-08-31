@@ -47,6 +47,8 @@ const client = vi.hoisted(() => ({
   post: vi.fn(),
   put: vi.fn(),
   delete: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -60,13 +62,31 @@ import { communityAdminService } from '../CommunityAdminService';
  */
 const BASE = 'admin/content/community';
 
+const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+const fallbackCommunity = { cmntySn: 1, cmntyNm: '커뮤니티', cmntyIntroCn: '소개', useYn: 'Y' };
+const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+
 // Community 인터페이스는 export 되지 않는다. 서비스 시그니처에서 역으로 끌어와 `any` 없이 타입을 얻는다.
 type CommunityPayload = Parameters<typeof communityAdminService.createCommunity>[0];
-type CommunityPage = Awaited<ReturnType<typeof communityAdminService.getCommunityList>>;
-type CommunityItem = CommunityPage['list'][number];
 
 describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      const fallback = url === BASE ? emptyPage : url === `${BASE}/portlet` ? [] : fallbackCommunity;
+      return envelope(data ?? fallback);
+    });
+    client.requestRaw.mockImplementation(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
+      let result: unknown;
+      if (method === 'post') result = await client.post(url, data, forwardedConfig);
+      else if (method === 'put') result = await client.put(url, data, forwardedConfig);
+      else if (method === 'delete') result = await client.delete(url, forwardedConfig);
+      return envelope(result ?? (method === 'post' ? fallbackCommunity : undefined));
+    });
+  });
 
   describe('URL 조합', () => {
     it('목록은 admin/content/community 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
@@ -84,7 +104,7 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
 
       // 백엔드 @RequestParam 이 필수라면 키 자체가 빠지는 순간 400 이 된다 — 기본값 충전이 계약이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { size: 5, recordCountPerPage: 5, searchCnd: '', searchWrd: '' },
+        params: { size: 5, searchCnd: '', searchWrd: '' },
       });
     });
 
@@ -92,8 +112,8 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
       // 선행 슬래시가 붙으면 axios baseURL('/api/v1')의 경로 세그먼트가 통째로 날아간다(절대 경로로 해석).
       await communityAdminService.getCommunity(7);
       await communityAdminService.getCommunityPortlet();
-      await communityAdminService.createCommunity({ cmntyNm: '신규 커뮤니티' });
-      await communityAdminService.updateCommunity(7, { cmntyNm: '이름 변경' });
+      await communityAdminService.createCommunity({ cmntyNm: '신규 커뮤니티', useYn: 'Y' });
+      await communityAdminService.updateCommunity(7, { cmntyNm: '이름 변경', useYn: 'Y' });
       await communityAdminService.deleteCommunity(7);
 
       const paths = [client.get, client.post, client.put, client.delete].flatMap((fn) =>
@@ -109,37 +129,23 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
   });
 
   describe('목록 조회 — 페이징 변환', () => {
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지(page 0)는 생성 Pageable 계약의 page 0으로 유지된다', async () => {
       await communityAdminService.getCommunityList({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, searchCnd: '', searchWrd: '', pageIndex: 1 },
+        params: { page: 0, searchCnd: '', searchWrd: '' },
       });
     });
 
-    it('page 3·size 20 은 pageIndex 4·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 3·size 20 은 생성 Pageable 계약의 두 키만 전달된다', async () => {
       await communityAdminService.getCommunityList({ page: 3, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
         params: {
           page: 3,
           size: 20,
           searchCnd: '',
           searchWrd: '',
-          pageIndex: 4,
-          recordCountPerPage: 20,
-        },
-      });
-      // +1 이 빠진 형태(pageIndex 3)로 나가면 목록이 한 페이지씩 밀린다.
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: {
-          page: 3,
-          size: 20,
-          searchCnd: '',
-          searchWrd: '',
-          pageIndex: 3,
-          recordCountPerPage: 20,
         },
       });
     });
@@ -149,18 +155,16 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
 
       // page 9 였다면 +1 규칙상 10 이지만, 명시된 pageIndex 가 우선한다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 1, searchCnd: '', searchWrd: '' },
+        params: { page: 0, searchCnd: '', searchWrd: '' },
       });
     });
 
-    it('pageSize 는 recordCountPerPage 와 size 양쪽으로 확장된다 (공통 DTO 지원)', async () => {
+    it('pageSize 는 생성 Pageable 계약의 size로 변환된다', async () => {
       await communityAdminService.getCommunityList({ pageSize: 15 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         params: {
-          pageSize: 15,
           size: 15,
-          recordCountPerPage: 15,
           searchCnd: '',
           searchWrd: '',
         },
@@ -179,11 +183,11 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
   });
 
   describe('목록 조회 — 검색 키 변환', () => {
-    it('searchCondition 은 백엔드 레거시 키 searchCnd 로 승격되고 원본 키도 함께 남는다', async () => {
+    it('searchCondition 은 생성 계약의 searchCnd 로 승격된다', async () => {
       await communityAdminService.getCommunityList({ searchCondition: 'cmntyNm' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchCondition: 'cmntyNm', searchCnd: 'cmntyNm', searchWrd: '' },
+        params: { searchCnd: 'cmntyNm', searchWrd: '' },
       });
     });
 
@@ -191,7 +195,7 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
       await communityAdminService.getCommunityList({ searchKeyword: '개발자' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '개발자', searchWrd: '개발자', searchCnd: '' },
+        params: { searchWrd: '개발자', searchCnd: '' },
       });
     });
 
@@ -208,11 +212,11 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
 
       // 목적지 키가 searchWrd 하나뿐이라 레거시 값('후순위')은 소실된다 — 이것이 현재 계약이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '우선', searchWrd: '우선', searchCnd: '' },
+        params: { searchWrd: '우선', searchCnd: '' },
       });
       // 폴백 순서가 뒤집히면 아래 형태로 나간다 — 신규 화면의 검색어가 무시된다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '우선', searchWrd: '후순위', searchCnd: '' },
+        params: { searchWrd: '후순위', searchCnd: '' },
       });
     });
 
@@ -221,7 +225,7 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
 
       // '' 는 falsy 이므로 `||` 사슬을 끝까지 흘러 기본값 '' 에 도달한다(undefined 가 아니다).
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { searchKeyword: '', searchWrd: '', searchCnd: '' },
+        params: { searchWrd: '', searchCnd: '' },
       });
     });
 
@@ -237,12 +241,8 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
         params: {
           page: 2,
           size: 10,
-          searchCondition: 'cmntyNm',
-          searchKeyword: '스터디',
           searchCnd: 'cmntyNm',
           searchWrd: '스터디',
-          pageIndex: 3,
-          recordCountPerPage: 10,
         },
       });
     });
@@ -257,7 +257,7 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, searchCnd: '', searchWrd: '', pageIndex: 1 },
+        params: { page: 0, searchCnd: '', searchWrd: '' },
       });
     });
 
@@ -269,15 +269,15 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
       expect(client.get).not.toHaveBeenCalledWith(`${BASE}/7`, {});
     });
 
-    it('목록 응답은 재포장 없이 클라이언트 결과를 그대로 반환한다', async () => {
-      const page: CommunityPage = {
+    it('목록 응답의 wire 필드를 기존 공개 필드명으로 어댑트한다', async () => {
+      const page = {
         list: [
           {
             cmntySn: 7,
             cmntyNm: '개발자 커뮤니티',
-            cmntyIntrcn: '사내 개발자 정보 공유 공간',
+            cmntyIntroCn: '사내 개발자 정보 공유 공간',
             useYn: 'Y',
-            rgstrSeCd: '01',
+            regSeCd: '01',
             frstRgtrId: 'admin',
             crtDt: '2026-08-01T09:00:00',
           },
@@ -289,19 +289,26 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
       };
       client.get.mockResolvedValueOnce(page);
 
-      await expect(communityAdminService.getCommunityList()).resolves.toBe(page);
+      await expect(communityAdminService.getCommunityList()).resolves.toEqual({
+        ...page,
+        list: [{ ...page.list[0], cmntyIntrcn: '사내 개발자 정보 공유 공간', rgstrSeCd: '01' }],
+      });
     });
 
-    it('단건 응답도 필드 가공 없이 그대로 반환된다', async () => {
-      const community: CommunityItem = {
+    it('단건 응답도 wire 필드를 기존 공개 필드명으로 어댑트한다', async () => {
+      const community = {
         cmntySn: 7,
         cmntyNm: '개발자 커뮤니티',
-        cmntyIntrcn: '사내 개발자 정보 공유 공간',
+        cmntyIntroCn: '사내 개발자 정보 공유 공간',
         useYn: 'N',
-      };
+      } as const;
       client.get.mockResolvedValueOnce(community);
 
-      await expect(communityAdminService.getCommunity(7)).resolves.toBe(community);
+      await expect(communityAdminService.getCommunity(7)).resolves.toEqual({
+        ...community,
+        cmntyIntrcn: '사내 개발자 정보 공유 공간',
+        rgstrSeCd: undefined,
+      });
     });
   });
 
@@ -312,7 +319,7 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(`${BASE}/7`, { timeout: 1000 });
     });
 
-    it('개설(등록)은 컬렉션 경로에 요청 본문을 무가공으로 POST 한다', async () => {
+    it('개설(등록)은 공개 필드명을 생성 wire 필드명으로 변환해 POST 한다', async () => {
       const payload: CommunityPayload = {
         cmntyNm: '신규 커뮤니티',
         cmntyIntrcn: '신규 개설 소개문',
@@ -321,22 +328,24 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
 
       await communityAdminService.createCommunity(payload);
 
-      // 본문은 손대지 않고 참조 그대로 전달된다(기본값 주입·필드 제거 없음).
-      expect(client.post).toHaveBeenCalledWith(BASE, payload, undefined);
-      expect(client.post.mock.calls[0][1]).toBe(payload);
+      expect(client.post).toHaveBeenCalledWith(BASE, {
+        cmntyNm: '신규 커뮤니티',
+        cmntyIntroCn: '신규 개설 소개문',
+        useYn: 'Y',
+      }, undefined);
     });
 
     it('개설 시 config(signal)가 세 번째 인자로 유실 없이 전달된다', async () => {
       const { signal } = new AbortController();
 
-      await communityAdminService.createCommunity({ cmntyNm: '신규 커뮤니티' }, { signal });
+      await communityAdminService.createCommunity({ cmntyNm: '신규 커뮤니티', useYn: 'Y' }, { signal });
 
-      expect(client.post).toHaveBeenCalledWith(BASE, { cmntyNm: '신규 커뮤니티' }, { signal });
+      expect(client.post).toHaveBeenCalledWith(BASE, { cmntyNm: '신규 커뮤니티', useYn: 'Y' }, { signal });
     });
 
     it('수정은 인자로 받은 cmntySn 이 경로를 결정한다 — 본문의 cmntySn 이 아니다', async () => {
       // 본문에 다른 cmntySn(99)을 심어 두고, 경로는 인자(7)만 따르는지 확인한다.
-      const payload: CommunityPayload = { cmntySn: 99, cmntyNm: '이름만 수정' };
+      const payload: CommunityPayload = { cmntySn: 99, cmntyNm: '이름만 수정', useYn: 'Y' };
 
       await communityAdminService.updateCommunity(7, payload, { timeout: 2000 });
 
@@ -388,14 +397,16 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(`${BASE}/portlet`, { signal });
     });
 
-    it('포틀릿 응답은 배열 그대로 반환된다 — PageResponse 로 감싸지 않는다', async () => {
-      const portlets: CommunityItem[] = [
-        { cmntySn: 7, cmntyNm: '개발자 커뮤니티', cmntyIntrcn: '소개', useYn: 'Y' },
-        { cmntySn: 8, cmntyNm: '디자인 커뮤니티', cmntyIntrcn: '소개', useYn: 'Y' },
+    it('포틀릿 응답도 배열 형태를 유지하며 공개 필드명으로 어댑트한다', async () => {
+      const portlets = [
+        { cmntySn: 7, cmntyNm: '개발자 커뮤니티', cmntyIntroCn: '소개', useYn: 'Y' as const },
+        { cmntySn: 8, cmntyNm: '디자인 커뮤니티', cmntyIntroCn: '소개', useYn: 'Y' as const },
       ];
       client.get.mockResolvedValueOnce(portlets);
 
-      await expect(communityAdminService.getCommunityPortlet()).resolves.toBe(portlets);
+      await expect(communityAdminService.getCommunityPortlet()).resolves.toEqual(
+        portlets.map((item) => ({ ...item, cmntyIntrcn: '소개', rgstrSeCd: undefined })),
+      );
     });
   });
 

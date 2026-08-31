@@ -1,5 +1,9 @@
-import { navigateToDownload } from '@/lib/navigation/full-result-download';
+import {
+  navigateToDownload,
+  type GeneratedBinaryNavigationOperation,
+} from '@/lib/navigation/full-result-download';
 import { periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
+import type { GeneratedOperationQuery } from '@/types/generated-operations';
 
 /**
  * A6 서버측 전체 결과 export.
@@ -17,9 +21,18 @@ import { periodToParams, type PeriodValue } from '@/app/components/patterns/peri
  */
 export const MAX_EXPORT_ROWS = 100_000;
 
+type LogExportOperationId =
+  | 'exportLoginLogs'
+  | 'exportPrivacyLogs'
+  | 'exportSystemLogs'
+  | 'exportUserLogs'
+  | 'exportWebLogs';
+type LogExportOperation = GeneratedBinaryNavigationOperation<LogExportOperationId>;
+type LogExportQuery = GeneratedOperationQuery<LogExportOperationId>;
+
 export interface FullExportRequest {
-  /** `/export.xlsx` 엔드포인트 절대 경로. */
-  url: string;
+  /** OpenAPI/codegen 정본에 결속된 `/export.xlsx` binary GET operation. */
+  operation: LogExportOperation;
   /** 서버가 내려준 총 건수. 모르면 상한 검사를 건너뛴다(서버가 판정한다). */
   totalCount?: number;
   /** 목록 조회에 쓰는 것과 **같은** 검색어. 다르면 파일과 화면이 어긋난다. */
@@ -36,7 +49,7 @@ export interface FullExportRequest {
  * @returns 다운로드를 시작했으면 true, 상한 초과로 막았으면 false.
  */
 export function requestFullExport({
-  url,
+  operation,
   totalCount,
   searchKeyword,
   period,
@@ -50,13 +63,12 @@ export function requestFullExport({
     return false;
   }
 
-  const params = new URLSearchParams();
-  if (searchKeyword) params.set('searchKeyword', searchKeyword);
+  const query: LogExportQuery = {};
+  if (searchKeyword) query.searchKeyword = searchKeyword;
   const periodParams = period ? periodToParams(period) : {};
-  if (periodParams.searchKeywordFrom) params.set('searchKeywordFrom', periodParams.searchKeywordFrom);
-  if (periodParams.searchKeywordTo) params.set('searchKeywordTo', periodParams.searchKeywordTo);
+  if (periodParams.searchKeywordFrom) query.searchKeywordFrom = periodParams.searchKeywordFrom;
+  if (periodParams.searchKeywordTo) query.searchKeywordTo = periodParams.searchKeywordTo;
 
-  const query = params.toString();
-  navigateToDownload(query ? `${url}?${query}` : url);
+  navigateToDownload(operation, Object.keys(query).length > 0 ? query : undefined);
   return true;
 }

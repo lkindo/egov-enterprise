@@ -125,14 +125,50 @@ describe('MonitoringAdminService — 액추에이터 모니터링 계약', () =>
       const health = { status: 'UP', components: { db: { status: 'UP' } } };
       actuatorClient.get.mockResolvedValueOnce({ data: health, status: 200 });
 
-      await expect(monitoringAdminService.getHealth()).resolves.toBe(health);
+      await expect(monitoringAdminService.getHealth()).resolves.toEqual(health);
     });
 
     it('DOWN 상태도 가공 없이 그대로 통과시킨다 — 여기서 정규화하면 장애가 감춰진다', async () => {
       const health = { status: 'DOWN', components: { db: { status: 'DOWN' } } };
       actuatorClient.get.mockResolvedValueOnce({ data: health });
 
-      await expect(monitoringAdminService.getHealth()).resolves.toBe(health);
+      await expect(monitoringAdminService.getHealth()).resolves.toEqual(health);
+    });
+
+    it('재귀 components와 임의 details 값은 검증 후 보존한다', async () => {
+      const health = {
+        status: 'UP',
+        components: {
+          database: {
+            status: 'UP',
+            details: { database: 'PostgreSQL', validationQuery: 'isValid()' },
+            components: {
+              primary: { status: 'UP', details: { latencyMs: 3 } },
+            },
+          },
+        },
+      };
+      actuatorClient.get.mockResolvedValueOnce({ data: health });
+
+      await expect(monitoringAdminService.getHealth()).resolves.toEqual(health);
+    });
+
+    it('잘못된 최상위 status와 재귀 component의 미정의 필드를 fail-closed한다', async () => {
+      actuatorClient.get
+        .mockResolvedValueOnce({ data: { status: 'DEGRADED' } })
+        .mockResolvedValueOnce({
+          data: {
+            status: 'UP',
+            components: { db: { status: 'UP', unexpected: true } },
+          },
+        });
+
+      await expect(monitoringAdminService.getHealth()).rejects.toThrow(
+        'Actuator health 응답이 계약과 일치하지 않습니다.',
+      );
+      await expect(monitoringAdminService.getHealth()).rejects.toThrow(
+        'Actuator health 응답이 계약과 일치하지 않습니다.',
+      );
     });
 
     it('조회 실패는 삼키지 않고 그대로 전파한다 — 0/UP 으로 폴백하면 장애 중 서버가 정상으로 보인다', async () => {
@@ -165,7 +201,38 @@ describe('MonitoringAdminService — 액추에이터 모니터링 계약', () =>
       const envelope = metricEnvelope('process.uptime', 120);
       actuatorClient.get.mockResolvedValueOnce(envelope);
 
-      await expect(monitoringAdminService.getMetric('process.uptime')).resolves.toBe(envelope.data);
+      await expect(monitoringAdminService.getMetric('process.uptime')).resolves.toEqual(envelope.data);
+    });
+
+    it('measurement와 availableTags의 strict 구조를 검증한다', async () => {
+      const metric = {
+        name: 'http.server.requests',
+        description: 'HTTP requests',
+        baseUnit: 'seconds',
+        measurements: [{ statistic: 'COUNT', value: 7 }],
+        availableTags: [{ tag: 'method', values: ['GET', 'POST'] }],
+      };
+      actuatorClient.get.mockResolvedValueOnce({ data: metric });
+
+      await expect(monitoringAdminService.getMetric('http.server.requests')).resolves.toEqual(metric);
+    });
+
+    it('필수 measurements 누락과 nested 미정의 필드를 fail-closed한다', async () => {
+      actuatorClient.get
+        .mockResolvedValueOnce({ data: { name: 'process.uptime' } })
+        .mockResolvedValueOnce({
+          data: {
+            name: 'process.uptime',
+            measurements: [{ statistic: 'VALUE', value: 120, unexpected: true }],
+          },
+        });
+
+      await expect(monitoringAdminService.getMetric('process.uptime')).rejects.toThrow(
+        'Actuator metric 응답이 계약과 일치하지 않습니다.',
+      );
+      await expect(monitoringAdminService.getMetric('process.uptime')).rejects.toThrow(
+        'Actuator metric 응답이 계약과 일치하지 않습니다.',
+      );
     });
 
     it('조회 실패는 그대로 전파한다 — 폴백은 이 계층이 아니라 호출부(getCpuUsage 등)의 책임이다', async () => {

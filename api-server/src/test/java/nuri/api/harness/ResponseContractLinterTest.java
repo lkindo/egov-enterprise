@@ -64,11 +64,11 @@ class ResponseContractLinterTest {
     private static final Pattern WRAPPED = Pattern.compile("ApiResponse\\s*<");
 
     /**
-     * 비정형 payload 동결(2026-08-29 실측 1건).
+     * 비정형 payload 동결(2026-08-31 실측 0건).
      *
-     * <p>{@code DashboardApiController#getDashboardData} 하나만 남았다. foundation 의
-     * {@code DashboardItemProvider} SPI 시그니처가 페이로드를 {@code Map} 으로 규정하고 있어
-     * typed 이행이 SPI 계약 변경을 동반한다 — 그 설계 결정이 선행이다.
+     * <p>{@code DashboardApiController#getDashboardData}도 내부 provider SPI의 확장 Map은
+     * 유지하면서 외부 응답을 {@code DashboardResponse}로 투영해 마지막 비정형 payload를
+     * 상환했다. 새 Map/Object 응답이 생기면 이 exact census가 즉시 red가 된다.
      *
      * <p><b>[2026-08-29] 5 → 1</b>. 저위험 4건을 전용 DTO 로 상환했다 —
      * {@code HealthCheckApiController#checkHealth}({@code HealthStatusResponse}),
@@ -82,7 +82,7 @@ class ResponseContractLinterTest {
      * {@code ApiResponseMapStringObject.data} 는 {@code Record<string, never>} 로 생성돼
      * <b>어떤 값도 담을 수 없는 타입</b>이다. Map 반환은 DB→DTO→Zod 계약 체인을 무력화한다.
      */
-    private static final int UNTYPED_PAYLOAD_COUNT = 1;
+    private static final int UNTYPED_PAYLOAD_COUNT = 0;
 
     /**
      * 헌법 제6조 3항 binary/stream 예외의 허용 census — <b>파일 경로 {@code #} 핸들러 메서드</b> 단위.

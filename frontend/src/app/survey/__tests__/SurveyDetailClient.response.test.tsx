@@ -16,6 +16,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { submitOperation } from '@/types/generated-operations';
 import SurveyDetailClient from '../[id]/SurveyDetailClient';
 
 const mocks = vi.hoisted(() => ({
@@ -186,19 +187,9 @@ describe('설문 응답 제출', () => {
 });
 
 describe('설문 제출 경로', () => {
-  it('서버에 실재하는 /responses 로 나간다 — 종전 /respond 는 존재하지 않았다', async () => {
-    /*
-     * 화면만 만들고 경로가 틀리면 사용자는 제출할 때마다 실패한다. 서비스가 부르는 경로를
-     * 소스에서 직접 고정한다(호출부가 0건이던 시절 아무도 404 를 보지 못했기 때문이다).
-     */
-    const fs = await import('node:fs');
-    const path = await import('node:path');
-    const source = fs.readFileSync(
-      path.resolve(__dirname, '..', '..', '..', 'services', 'foundation', 'survey', 'SurveyAdminService.ts'),
-      'utf8',
-    ).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
-
-    expect(source).toContain('/responses');
-    expect(source).not.toContain('/respond`');
+  it('서버에 실재하는 /responses descriptor로 나간다 — 종전 /respond 는 존재하지 않았다', () => {
+    expect(submitOperation.id).toBe('submit');
+    expect(submitOperation.method).toBe('post');
+    expect(submitOperation.path).toBe('/api/v1/surveys/{srvySn}/responses');
   });
 });

@@ -83,6 +83,26 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
     }
 
     @Test
+    @DisplayName("선택 권한 기준으로 할당 여부를 계산한다")
+    void searchAuthorGroups_SelectedAuthority() {
+        Page<AuthorGroupProjection> assigned = userAuthorityRepository.searchAuthorGroups(
+                "0", "testUser", "ROLE_ADMIN", PageRequest.of(0, 10));
+        Page<AuthorGroupProjection> unassigned = userAuthorityRepository.searchAuthorGroups(
+                "0", "testUser", "ROLE_USER", PageRequest.of(0, 10));
+
+        assertThat(assigned.getContent()).singleElement()
+                .satisfies(item -> {
+                    assertThat(item.getAuthrtId()).isEqualTo("ROLE_ADMIN");
+                    assertThat(item.getRegYn()).isEqualTo("Y");
+                });
+        assertThat(unassigned.getContent()).singleElement()
+                .satisfies(item -> {
+                    assertThat(item.getAuthrtId()).isNull();
+                    assertThat(item.getRegYn()).isEqualTo("N");
+                });
+    }
+
+    @Test
     @DisplayName("부서별 권한 검색 (QueryDSL)")
     void searchDeptAuthors() {
         // Given

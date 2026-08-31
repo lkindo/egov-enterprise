@@ -1,5 +1,7 @@
 package nuri.api.controller.foundation.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * 현재 로그인 사용자 정보(/api/v1/auth/me) 응답 DTO.
  *
@@ -9,6 +11,7 @@ package nuri.api.controller.foundation.auth.dto;
  * 소유권 축으로 쓰는 도메인에서 현재 사용자 본인 여부를 판정할 때만 사용하는 불투명 식별자다.
  * 비밀번호·토큰·인증 자격은 이 DTO에 포함하지 않는다.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record CurrentUserResponse(
         String id,
         String esntlId,
