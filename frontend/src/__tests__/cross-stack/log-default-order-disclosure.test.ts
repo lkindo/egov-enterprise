@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const REPO_DIR = join(SRC_DIR, '..', '..');
 
 /**

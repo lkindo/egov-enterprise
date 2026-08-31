@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import test from 'node:test';
@@ -9,6 +10,7 @@ import {
   codeOwnerCovers,
   containsRunnerSkip,
   findRunnerSkipConstructs,
+  findTaggedGatesOutsideRoots,
   effectiveCodeOwners,
   hasClassAnnotation,
   hasGateSkipConstruct,
@@ -68,6 +70,7 @@ function validate(registry) {
 
 const REQUIRED_GATE_SETS = [
   'GATESET-ARCHITECTURE',
+  'GATESET-CROSS-STACK-CONTRACTS',
   'GATESET-FRONTEND-FORM-VALIDATION',
   'GATESET-FRONTEND-INVARIANTS',
   'GATESET-FRONTEND-VITEST',
@@ -107,6 +110,64 @@ test('repository governance registry exactly covers every tagged gate and curren
   assert.deepEqual(validate(registry), []);
 });
 
+// [2026-08-31 신설] Gradle includeTags 는 테스트 소스셋 전체에서 태그를 찾지만 census 는
+//   선언된 root 만 본다 — 태그된 클래스를 root 밖으로 옮기면 실행은 되면서 census 에서
+//   사라지는 조용한 탈출 경로였다. 합성 트리로 red 를 증명한다.
+test('a tagged gate outside its declared selector roots is a reproducible red', (t) => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'gate-escape-'));
+  t.after(() => rmSync(tempRoot, { recursive: true, force: true }));
+
+  const declaredRoot = 'api-server/src/test/java/nuri/api/harness';
+  const escapedDir = path.join(tempRoot, 'api-server/src/test/java/nuri/api/other');
+  mkdirSync(path.join(tempRoot, declaredRoot), { recursive: true });
+  mkdirSync(escapedDir, { recursive: true });
+  writeFileSync(path.join(escapedDir, 'EscapedGateTest.java'), [
+    'package nuri.api.other;',
+    'import org.junit.jupiter.api.Tag;',
+    'import org.junit.jupiter.api.Test;',
+    '@Tag("governance-harness")',
+    'class EscapedGateTest {',
+    '    @Test',
+    '    void probe() {}',
+    '}',
+    '',
+  ].join('\n'));
+
+  const gateSets = [{
+    id: 'GATESET-GOVERNANCE-HARNESS',
+    selector: {
+      type: 'java-class-annotation',
+      annotation: 'Tag',
+      value: 'governance-harness',
+      roots: [declaredRoot],
+    },
+  }];
+
+  assert.match(
+    findTaggedGatesOutsideRoots(tempRoot, gateSets, ['api-server/src/test/java']).join('\n'),
+    /outside declared selector roots.*EscapedGateTest/s,
+  );
+  // 선언 root 안이면 무해하다 — 같은 파일을 root 아래로 옮기면 오류가 사라진다.
+  rmSync(path.join(escapedDir, 'EscapedGateTest.java'));
+  writeFileSync(path.join(tempRoot, declaredRoot, 'EscapedGateTest.java'), [
+    'package nuri.api.harness;',
+    'import org.junit.jupiter.api.Tag;',
+    'import org.junit.jupiter.api.Test;',
+    '@Tag("governance-harness")',
+    'class EscapedGateTest {',
+    '    @Test',
+    '    void probe() {}',
+    '}',
+    '',
+  ].join('\n'));
+  assert.deepEqual(findTaggedGatesOutsideRoots(tempRoot, gateSets, ['api-server/src/test/java']), []);
+  // 스캔 루트가 사라지면 조용한 skip 이 아니라 오류다(false-green 방지).
+  assert.match(
+    findTaggedGatesOutsideRoots(tempRoot, gateSets, ['missing/src/test/java']).join('\n'),
+    /scan root does not exist/,
+  );
+});
+
 test('UI/UX foundation contract assets remain present in the required Node catalog', () => {
   const registry = loadGovernanceRegistry(registryPath);
   const operational = registry.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS');
@@ -135,17 +196,23 @@ test('UI/UX foundation contract assets remain present in the required Node catal
   ].every((source) => UI_UX_FOUNDATION_CONTRACT_ASSETS.includes(source)));
 });
 
-test('registry keeps the nine authoritative gate sets and six runner catalogs', () => {
+test('registry keeps the ten authoritative gate sets and seven runner catalogs', () => {
   const registry = loadGovernanceRegistry(registryPath);
   const runnerSets = registry.gateSets.filter(({ selector }) => selector.type !== 'java-class-annotation');
   const byId = new Map(runnerSets.map((set) => [set.id, set]));
 
   assert.deepEqual(registry.gateSets.map(({ id }) => id).sort(), REQUIRED_GATE_SETS);
-  assert.equal(runnerSets.length, 6);
+  assert.equal(runnerSets.length, 7);
   assert.ok(runnerSets.every(({ rules }) => rules === undefined));
   assert.equal(byId.get('GATESET-NODE-OPERATIONAL-CONTRACTS').selector.forbidSkips, true);
   assert.equal(byId.get('GATESET-FRONTEND-INVARIANTS').selector.forbidSkips, true);
   assert.equal(byId.get('GATESET-FRONTEND-FORM-VALIDATION').selector.forbidSkips, true);
+  assert.equal(byId.get('GATESET-CROSS-STACK-CONTRACTS').selector.forbidSkips, true);
+  assert.equal(byId.get('GATESET-CROSS-STACK-CONTRACTS').requiredCiContext, 'secret-scan');
+  // [2026-08-31] 최대 카탈로그(FRONTEND-VITEST)에도 skip 금지를 동결한다 — 종전에는 이 카탈로그만
+  //   it.skip/describe.only 가 자유였다(당시 위반 0건이라 무비용으로 켰다). Playwright .spec.ts 의
+  //   플랫폼 waiver 는 suffix 가 달라(이 카탈로그는 .test.ts 만) 충돌하지 않는다.
+  assert.equal(byId.get('GATESET-FRONTEND-VITEST').selector.forbidSkips, true);
   const playwright = byId.get('GATESET-PLAYWRIGHT-E2E');
   assert.equal(playwright.requiredCiContext, 'e2e-test');
   assert.equal(playwright.selector.forbidSkips, undefined);

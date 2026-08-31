@@ -590,19 +590,7 @@ class SecretLiteralLinterTest {
 
     /** cwd 또는 상위에서 settings.gradle 을 가진 저장소 루트를 찾는다(IdentityAxisLinterTest 경로해석 관행). */
     private static Path resolveRepoRoot() {
-        Path cur = Paths.get("").toAbsolutePath();
-        for (int i = 0; i < 4 && cur != null; i++) {
-            if (Files.exists(cur.resolve("settings.gradle")) || Files.exists(cur.resolve("settings.gradle.kts"))) {
-                return cur;
-            }
-            cur = cur.getParent();
-        }
-        Path fallback = Paths.get("").toAbsolutePath().getParent();
-        if (fallback != null && Files.exists(fallback.resolve("settings.gradle"))) {
-            return fallback;
-        }
-        fail("게이트 무결성 파손: settings.gradle 로 저장소 루트를 찾지 못함(cwd="
-                + Paths.get("").toAbsolutePath() + "). 조용한 skip 은 false-green → 실패 처리.");
-        return Paths.get(""); // unreachable
+        // [2026-08-31] 공용 인덱스에 위임 — 7개 사본의 로직 드리프트(무음 폴백 포함)를 제거했다.
+        return HarnessSourceIndex.repoRoot();
     }
 }

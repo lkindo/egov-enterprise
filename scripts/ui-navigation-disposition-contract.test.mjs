@@ -12,8 +12,11 @@ import {
   validateOperationalBinding,
   validateSchemaDefinition,
 } from './ui-navigation-disposition-contract.mjs';
+import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// [2026-08-31] 라우트 수의 단일 원본은 파일시스템 스캔이다(리터럴 120 삼중 하드코딩 제거).
+const FILESYSTEM_ROUTE_COUNT = discoverPageRoutes(repoRoot).length;
 const manifestRaw = readFileSync(path.join(repoRoot, 'config', 'ui-route-capabilities.json'));
 const manifest = JSON.parse(manifestRaw);
 const overlay = JSON.parse(
@@ -128,7 +131,8 @@ test('the proposed overlay drafts dispositions over the sparse 120 + 2 review po
     overlay.externalAliases.map(({ source }) => source),
     initial.externalAliases.map(({ source }) => source),
   );
-  assert.equal(overlay.routes.length, 120);
+  assert.ok(FILESYSTEM_ROUTE_COUNT >= 100, `route discovery collapsed: ${FILESYSTEM_ROUTE_COUNT} < 100`);
+  assert.equal(overlay.routes.length, FILESYSTEM_ROUTE_COUNT);
   assert.equal(overlay.externalAliases.length, 2);
   assert.ok(overlay.routes.every((record, index) => {
     const shared = record.disposition !== 'blocked-review'

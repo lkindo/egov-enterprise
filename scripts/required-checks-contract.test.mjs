@@ -563,7 +563,7 @@ test('one operational-contract catalog runs in required CI and before the docs f
   );
   const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
   const operationalGate = prePush.indexOf('npm run test:operational-contracts');
-  const atlasGate = prePush.indexOf('vitest run src/__tests__/governance-atlas-contract.test.ts');
+  const atlasGate = prePush.indexOf('vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts');
   const fastPassExit = prePush.indexOf('문서/비코드 변경만 감지됨');
   assert.ok(operationalGate >= 0 && operationalGate < fastPassExit,
     'operational contracts must run before docs-only fast-pass');
@@ -679,35 +679,39 @@ test('change classification is fail-closed and its contract runs in the required
   assert.match(secretScanJob, /npm run test:operational-contracts/);
 });
 
-test('Atlas-only changes run their browser-document contract inside the required governance job', () => {
-  function atlasBindingErrors(content) {
+// [2026-08-31 개정] Atlas 계약을 포함한 크로스 스택 계약(frontend/src/__tests__/cross-stack)은
+//   백엔드 소스를 함께 감사한다. frontend 축에만 결속하면 백엔드-only PR 에서 frontend-scope 가
+//   skip 되어 계약이 어디서도 돌지 않으므로(집계는 skip 을 성공으로 매핑), atlas ∪ backend
+//   축으로 required governance job(secret-scan)에 결속하고 그 조건을 여기서 동결한다.
+test('Atlas and backend changes run the cross-stack contracts inside the required governance job', () => {
+  function crossStackBindingErrors(content) {
     const errors = [];
     const secretScanJob = content.match(
       /^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
     )?.[0] ?? '';
     for (const name of [
-      'Set up pnpm for Atlas contract',
-      'Install frontend dependencies for Atlas contract',
-      'Verify Governance Atlas contract',
+      'Set up pnpm for cross-stack contracts',
+      'Install frontend dependencies for cross-stack contracts',
+      'Verify cross-stack contracts (frontend↔backend truth binding)',
     ]) {
       const step = workflowStep(secretScanJob, name);
-      if (!step.includes("if: needs.change-scope.outputs.atlas == 'true'")) {
-        errors.push(`${name} is detached from atlas scope`);
+      if (!step.includes("if: needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true'")) {
+        errors.push(`${name} is detached from the atlas/backend scope`);
       }
     }
-    if (!secretScanJob.includes('pnpm exec vitest run src/__tests__/governance-atlas-contract.test.ts')) {
-      errors.push('Atlas Vitest command is missing');
+    if (!secretScanJob.includes('pnpm exec vitest run src/__tests__/cross-stack')) {
+      errors.push('cross-stack Vitest command is missing');
     }
     return errors;
   }
 
-  assert.deepEqual(atlasBindingErrors(ciContent), []);
+  assert.deepEqual(crossStackBindingErrors(ciContent), []);
 
   const detached = ciContent.replace(
-    /name: Set up pnpm for Atlas contract\r?\n        if: needs\.change-scope\.outputs\.atlas == 'true'/,
-    "name: Set up pnpm for Atlas contract\n        if: false",
+    /name: Set up pnpm for cross-stack contracts\r?\n        if: needs\.change-scope\.outputs\.atlas == 'true' \|\| needs\.change-scope\.outputs\.backend == 'true'/,
+    "name: Set up pnpm for cross-stack contracts\n        if: false",
   );
-  assert.match(atlasBindingErrors(detached).join('\n'), /Set up pnpm.*detached/i);
+  assert.match(crossStackBindingErrors(detached).join('\n'), /Set up pnpm.*detached/i);
 });
 
 test('PR dependency review blocks only newly introduced high-risk runtime dependencies', () => {

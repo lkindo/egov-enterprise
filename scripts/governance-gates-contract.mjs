@@ -514,6 +514,56 @@ export function hasGateSkipConstruct(source) {
     || /\b(?:Assumptions\s*\.\s*)?assume(?:True|False)\s*\(/.test(code);
 }
 
+/**
+ * [2026-08-31 신설] 게이트 태그가 선언된 selector root **밖**에 있는 파일을 잡는다.
+ *
+ * Gradle 의 `includeTags` 는 테스트 소스셋 전체에서 태그를 찾지만 registry census 는
+ * 선언된 root 만 본다 — 태그된 클래스를 root 밖으로 옮기면 CI 에서 실행은 되면서
+ * census 의 양방향 감시(미등록·유령 감지)에서는 사라지는 조용한 탈출 경로였다.
+ * 스캔 루트는 5개 모듈의 테스트 소스와 ArchUnit 규칙이 사는 testFixtures 다.
+ */
+export const JAVA_GATE_SCAN_ROOTS = [
+  'api-server/src/test/java',
+  'business-app/src/test/java',
+  'business-core/src/test/java',
+  'business-core/src/testFixtures/java',
+  'foundation/src/test/java',
+  'migration-tool/src/test/java',
+];
+
+export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA_GATE_SCAN_ROOTS) {
+  const errors = [];
+  const selectors = (gateSets ?? [])
+    .filter((set) => set?.selector?.type === 'java-class-annotation')
+    .map((set) => ({
+      id: set.id ?? '(missing-gate-set-id)',
+      annotation: set.selector.annotation,
+      value: set.selector.value,
+      roots: (set.selector.roots ?? []).map((root) => posix(root).replace(/\/+$/, '')),
+    }));
+  if (selectors.length === 0) return errors;
+  for (const scanRoot of scanRoots) {
+    const absoluteRoot = path.join(repoRoot, scanRoot);
+    if (!isDirectory(absoluteRoot)) {
+      errors.push(`java gate scan root does not exist: ${scanRoot} (silent scan collapse would be a false green)`);
+      continue;
+    }
+    for (const sourcePath of walkJavaFiles(absoluteRoot)) {
+      const relative = posix(path.relative(repoRoot, sourcePath));
+      const source = fs.readFileSync(sourcePath, 'utf8');
+      for (const { id, annotation, value, roots } of selectors) {
+        if (roots.some((root) => relative === root || relative.startsWith(`${root}/`))) continue;
+        if (hasClassAnnotation(source, annotation, value, path.basename(sourcePath, '.java'))) {
+          errors.push(`${id}: tagged gate outside declared selector roots — ${relative} carries `
+            + `@${annotation}("${value}") so the runner may execute it while the census cannot see it; `
+            + 'move it under a declared root or extend the selector roots');
+        }
+      }
+    }
+  }
+  return errors;
+}
+
 function braceBlock(source, markerIndex) {
   const open = source.indexOf('{', markerIndex);
   if (open < 0) return null;
@@ -1720,6 +1770,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
   }
 
   validateGovernanceOwnership(registry, repoRoot, errors);
+  errors.push(...findTaggedGatesOutsideRoots(repoRoot, registry.gateSets));
 
   return errors;
 }

@@ -13,7 +13,7 @@
       "bindings": [
         {
           "source": "scripts/verify.mjs",
-          "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
+          "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
           "tiers": [
             "local-full"
           ]
@@ -52,8 +52,8 @@
       "command": "./gradlew :foundation:check",
       "bindings": [
         {
-          "source": "build.gradle",
-          "fragment": "':business-core:test', ':business-app:test', ':foundation:check',",
+          "source": "scripts/verify.mjs",
+          "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
           "tiers": [
             "local-full"
           ]
@@ -328,7 +328,7 @@
           },
           {
             "source": "scripts/verify.mjs",
-            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
+            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
             "tiers": [
               "local-full"
             ]
@@ -528,7 +528,7 @@
           },
           {
             "source": "scripts/verify.mjs",
-            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
+            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
             "tiers": [
               "local-full"
             ]
@@ -639,7 +639,7 @@
           },
           {
             "source": "scripts/verify.mjs",
-            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
+            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
             "tiers": [
               "local-full"
             ]
@@ -970,6 +970,64 @@
       "redProof": "Break an invariant fixture or remove a runner binding; the targeted Vitest gate or registry contract must fail."
     },
     {
+      "id": "GATESET-CROSS-STACK-CONTRACTS",
+      "selector": {
+        "type": "runner-catalog",
+        "runner": "vitest",
+        "forbidSkips": true,
+        "catalogs": [
+          {
+            "root": "frontend/src/__tests__/cross-stack",
+            "suffixes": [
+              ".test.ts",
+              ".test.tsx"
+            ],
+            "recursive": true
+          }
+        ],
+        "commandBindings": [
+          {
+            "source": ".githooks/pre-push",
+            "fragment": "( cd frontend && npx vitest run src/__tests__/cross-stack ) \\",
+            "tiers": [
+              "pre-push"
+            ]
+          },
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run('pnpm -C frontend exec vitest run src/__tests__/cross-stack');",
+            "tiers": [
+              "local-full"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "run: pnpm exec vitest run src/__tests__/cross-stack",
+            "tiers": [
+              "ci"
+            ]
+          }
+        ]
+      },
+      "tier": [
+        "pre-push",
+        "local-full",
+        "ci"
+      ],
+      "task": "pnpm -C frontend exec vitest run src/__tests__/cross-stack",
+      "category": "governance",
+      "owner": "platform-governance",
+      "requiredCiContext": "secret-scan",
+      "inputs": [
+        "frontend/src/__tests__/cross-stack",
+        "frontend/src/__tests__/cross-stack-boundary.test.ts"
+      ],
+      "evidence": [
+        "Vitest process exit status"
+      ],
+      "redProof": "Detach a pre-push/verify/CI binding line, skip a cross-stack test, or move a backend-auditing contract out of the catalog; the registry contract or the placement guard must fail."
+    },
+    {
       "id": "GATESET-FRONTEND-FORM-VALIDATION",
       "selector": {
         "type": "runner-catalog",
@@ -1038,6 +1096,7 @@
       "id": "GATESET-FRONTEND-VITEST",
       "selector": {
         "type": "runner-catalog",
+        "forbidSkips": true,
         "runner": "vitest",
         "catalogs": [
           {

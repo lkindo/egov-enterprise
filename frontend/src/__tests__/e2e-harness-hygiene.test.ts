@@ -14,9 +14,13 @@ function filesEndingWith(directory: string, suffix: string): string[] {
 }
 
 function withoutComments(source: string): string {
+  // ⚠ [2026-08-31] 줄 주석(콜론 가드)을 **먼저** 지운다 — 블록 주석을 먼저 지우면 줄 주석 안의
+  //   블록 여는 기호가 저 아래 닫는 기호까지 이어져 실행 코드가 통째로 사라진다
+  //   (실측: work-list-adoption-census 가 기록한 WorkHubClient.tsx 1,781자 소실과 같은 순서 결함).
+  //   콜론 가드는 URL 의 `//` 오인 방지용이다(csp-policy 가 기록한 결함).
   return source
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|\n)\s*\/\/[^\n]*/g, '$1');
+    .replace(/(^|[^:])\/\/[^\n]*/gm, '$1')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
 /**

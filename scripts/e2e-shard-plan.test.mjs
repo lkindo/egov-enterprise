@@ -59,6 +59,7 @@ test('duration source provenance rejects missing, malformed, or future evidence'
     ['capturedAt', 'not-a-date', /capturedAt.*valid ISO/],
     ['capturedAt', '2026-02-30', /capturedAt.*valid ISO/],
     ['capturedAt', '2026-08-20T00:00:00Z', /capturedAt.*future/],
+    ['capturedAt', '2026-01-01', /capturedAt.*older than 120 days/],
     ['runner', '   ', /runner.*nonempty/],
     ['workers', 0, /workers.*positive integer/],
     ['workers', 1.5, /workers.*positive integer/],
@@ -100,7 +101,12 @@ test('recursive discovery includes nested specs and requires duration evidence f
       },
       durationsMs: { 'root.spec.ts': 1000 },
     };
-    assert.match(validateDurationProfile(profile, specs).join('\n'), /nested\/admin\/user\.spec\.ts/);
+    // 합성 fixture 는 capturedAt 이 고정이므로 실시간 시계로 검증하면 120일 뒤 이 테스트가
+    // 신선도 상한 때문에 낡는다 — fixture 시점으로 시계를 고정한다.
+    assert.match(
+      validateDurationProfile(profile, specs, Date.parse('2026-08-19T12:00:00Z')).join('\n'),
+      /nested\/admin\/user\.spec\.ts/,
+    );
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

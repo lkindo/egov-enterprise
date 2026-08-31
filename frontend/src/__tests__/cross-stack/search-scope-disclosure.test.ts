@@ -24,7 +24,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const ROOT = path.resolve(__dirname, '..', '..', '..');
+const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(path.join(ROOT, rel), 'utf8');
 const stripComments = (source: string) => source
   .replace(/\/\*[\s\S]*?\*\//g, ' ')

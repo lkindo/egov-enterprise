@@ -79,7 +79,10 @@ class ApiDocsSchemaFieldLinterTest {
      * 새 항목을 추가하는 것은 "계약을 깨고 게이트를 넓히는" 행위이므로 사유를 커밋 메시지에 남긴다(AGENTS.md Evidence guardrails H2).
      */
     private static final Set<String> GRANDFATHERED = Set.of(
-            // (신설 직후 실측으로 채운다 — 아래 assert 가 실제 잔여를 출력한다)
+            // [2026-08-31 실측 확정] 빈 것이 측정 결과다 — 신설(2026-07-28) 시점의 "실측으로 채운다"
+            // placeholder 가 그대로 남아 '채움 누락' 인지 '잔차 0' 인지 판별 불가였는데, 현행
+            // api-docs.json 대비 필드 드리프트 0건이 실행으로 확인됐다. 항목 추가는 계약 위반의
+            // 동결이므로 사유 없이 금지된다(H2).
     );
 
     /** 게이트 무결성 하한 — 스캔이 조용히 0건이 되면 vacuous 통과가 되므로 차단. */
