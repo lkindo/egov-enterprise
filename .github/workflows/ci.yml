@@ -103,6 +103,20 @@ jobs:
       - name: Install pinned operational contract dependencies
         run: npm ci --ignore-scripts
 
+      # 운영 계약 카탈로그(scripts 의 test.mjs 묶음)에는 frontend 의존성을 실제로 로드하는
+      # 계약이 있다 — generated-boundary-census 는 frontend 의 typescript 를 require 해
+      # TS 컴파일러 AST 를 쓴다. 그래서 frontend 설치는 그 카탈로그의 전제이며, 카탈로그가
+      # 무조건 실행되는 이상 설치도 무조건이어야 한다. 조건부로 두거나 카탈로그 뒤로 밀면
+      # required check 가 typescript 모듈 부재로 죽는다(2026-09-01 실측).
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
+        with:
+          version: 9
+
+      - name: Install frontend dependencies for contract execution
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
       # 우회 가능한 로컬 훅에 의존하지 않도록 저장소 운영 계약을 required CI에서 다시 검증한다.
       - name: Verify repository operational contracts
         env:
@@ -117,17 +131,6 @@ jobs:
       # `.desc()` → `.asc()` 로 바꾸는 변경에서, 정확히 그 드리프트를 잡는 계약이 실행 0 이었다.
       # frontend 축이 켜진 실행은 frontend-scope 전체 스위트가 같은 파일을 중복 실행하지만,
       # 조건을 더 쪼개 증거를 잃는 것보다 몇십 초 중복이 싸다.
-      - name: Set up pnpm for cross-stack contracts
-        if: needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true'
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
-        with:
-          version: 9
-
-      - name: Install frontend dependencies for cross-stack contracts
-        if: needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true'
-        run: pnpm install --frozen-lockfile
-        working-directory: frontend
-
       - name: Verify cross-stack contracts (frontend↔backend truth binding)
         if: needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true'
         run: pnpm exec vitest run src/__tests__/cross-stack

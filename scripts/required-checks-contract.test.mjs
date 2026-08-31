@@ -689,18 +689,27 @@ test('Atlas and backend changes run the cross-stack contracts inside the require
     const secretScanJob = content.match(
       /^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
     )?.[0] ?? '';
-    for (const name of [
-      'Set up pnpm for cross-stack contracts',
-      'Install frontend dependencies for cross-stack contracts',
-      'Verify cross-stack contracts (frontend↔backend truth binding)',
-    ]) {
-      const step = workflowStep(secretScanJob, name);
-      if (!step.includes("if: needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true'")) {
-        errors.push(`${name} is detached from the atlas/backend scope`);
-      }
+    const crossStack = workflowStep(secretScanJob, 'Verify cross-stack contracts (frontend↔backend truth binding)');
+    if (!crossStack.includes("if: needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true'")) {
+      errors.push('cross-stack contract step is detached from the atlas/backend scope');
     }
     if (!secretScanJob.includes('pnpm exec vitest run src/__tests__/cross-stack')) {
       errors.push('cross-stack Vitest command is missing');
+    }
+
+    // frontend 설치는 운영 계약 카탈로그의 전제다(generated-boundary-census 가 frontend 의
+    // typescript 를 로드한다). 조건이 붙거나 카탈로그 뒤로 밀리면 required check 가
+    // "Cannot find module 'typescript'" 로 죽는다 — 2026-09-01 실측된 실패다.
+    const install = workflowStep(secretScanJob, 'Install frontend dependencies for contract execution');
+    if (install === '') {
+      errors.push('frontend dependency install step is missing');
+    } else if (/^\s+if:/m.test(install)) {
+      errors.push('frontend dependency install must stay unconditional — the contract catalog depends on it');
+    }
+    const installAt = secretScanJob.indexOf('name: Install frontend dependencies for contract execution');
+    const contractsAt = secretScanJob.indexOf('name: Verify repository operational contracts');
+    if (installAt < 0 || contractsAt < 0 || installAt > contractsAt) {
+      errors.push('frontend dependencies must be installed before the operational contract catalog runs');
     }
     return errors;
   }
@@ -708,10 +717,17 @@ test('Atlas and backend changes run the cross-stack contracts inside the require
   assert.deepEqual(crossStackBindingErrors(ciContent), []);
 
   const detached = ciContent.replace(
-    /name: Set up pnpm for cross-stack contracts\r?\n        if: needs\.change-scope\.outputs\.atlas == 'true' \|\| needs\.change-scope\.outputs\.backend == 'true'/,
-    "name: Set up pnpm for cross-stack contracts\n        if: false",
+    /name: Verify cross-stack contracts \(frontend↔backend truth binding\)\r?\n        if: needs\.change-scope\.outputs\.atlas == 'true' \|\| needs\.change-scope\.outputs\.backend == 'true'/,
+    'name: Verify cross-stack contracts (frontend↔backend truth binding)\n        if: false',
   );
-  assert.match(crossStackBindingErrors(detached).join('\n'), /Set up pnpm.*detached/i);
+  assert.match(crossStackBindingErrors(detached).join('\n'), /cross-stack contract step is detached/i);
+
+  // CRLF 체크아웃에서도 성립하도록 개행을 정규식으로 흡수한다.
+  const conditionalInstall = ciContent.replace(
+    /( +- name: Install frontend dependencies for contract execution\r?\n)( +run: pnpm install)/,
+    '$1        if: false\n$2',
+  );
+  assert.match(crossStackBindingErrors(conditionalInstall).join('\n'), /install must stay unconditional/i);
 });
 
 test('PR dependency review blocks only newly introduced high-risk runtime dependencies', () => {

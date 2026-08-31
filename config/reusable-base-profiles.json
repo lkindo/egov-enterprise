@@ -194,7 +194,6 @@
           "src/components/business/schedule",
           "src/services/business/community",
           "src/services/business/memoreport",
-          "src/services/business/roughmap",
           "src/services/business/schedule",
           "src/services/business/user/ReportService.ts",
           "src/services/business/user/BannerService.ts",
