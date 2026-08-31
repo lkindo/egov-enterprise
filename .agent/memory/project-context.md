@@ -5,8 +5,8 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-08-20
-verified_against: 8cf281d71b36abbdfb60975e8a50494216a26b4c
+verified_at: 2026-08-31
+verified_against: 1c8f7724e23ab81b0eb6cba99a87fa796cdc85e4
 canonical_sources:
   - ../../AGENTS.md
   - ../../GEMINI.md
@@ -20,6 +20,7 @@ canonical_sources:
   - ../../.github/workflows/dependency-submission.yml
   - ../../.github/workflows/dependency-submission-publish.yml
   - ../../config/governance/gates.json
+  - ../../docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md
 refresh_triggers:
   - source-change
   - dependency-or-module-change
@@ -58,7 +59,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-004 | 프론트 계약 생성의 결정적 기본 경로는 `codegen:file` 뒤 `codegen:zod`이며, live `codegen:ts`는 API 서버가 필요하다. | [frontend/package.json](../../frontend/package.json), [API 문서 가이드](../../docs/03-guides/api-documentation-guide.md) | 2026-08-18 |
 | CTX-005 | main 병합 명세는 `backend-build`, `frontend-build`, `secret-scan`, 안정 이름의 `e2e-test`, `mutation-test` 5개 required context와, DEC-OPS-009로 확정된 단독 운영 review policy(approval 0·code-owner/last-push/thread-resolution 비활성)다. 2026-08-20 `verify:ops` 실측에서 원격 ruleset이 이 전부와 exact-match했다. reviewer 확보 시 후속 DEC로 상향한다. | [.github/required-checks.json](../../.github/required-checks.json), [branch verifier](../../scripts/verify-branch-protection.mjs), [decisions.md](decisions.md) | 2026-08-20 |
 | CTX-006 | DB 표준의 규범 SSOT는 DB 헌법이고, 물리 변경 판단은 live metadata/schema 실측을 함께 요구한다. | [DB 헌법](../knowledge/db-standard-constitution/artifacts/constitution.md), [AGENTS Evidence guardrails](../../AGENTS.md#evidence-guardrails) | 2026-08-18 |
-| CTX-007 | `migration-tool`은 data와 해당 chunk/row keymap을 같은 target transaction에 묶고 batch 실패 시 행 단위로 원자 재시도하며 실패 mapping을 제거한다. commit/rollback 불확정은 fatal이지만, run 전체 원자성·source-system/run namespace·durable checkpoint/upsert·불확정 commit reconciliation·실 DB/cutover 증거가 없어 production 도구 전체는 PARTIAL 상태다. | [EtlExecutor](../../migration-tool/src/main/java/nuri/migration/etl/EtlExecutor.java), [KeyMapRegistry](../../migration-tool/src/main/java/nuri/migration/keymap/KeyMapRegistry.java), [atomic integration test](../../migration-tool/src/test/java/nuri/migration/EtlAtomicKeyMapIntegrationTest.java), [Atlas migration section](../../frontend/public/governance_harness_atlas.html#content-migration) | 2026-08-19 |
+| CTX-007 | `migration-tool`은 온라인 앱과 분리된 승인형 offline `bootJar`다. PostgreSQL·Oracle·Tibero·MySQL·MariaDB·SQL Server source adapter(그리고 제한된 JDBC fallback)가 객체 inventory를 만들고, `discover → plan(+사람 review) → validate → load`가 source endpoint·driver·discovery scope·mapping·execution contract·PostgreSQL target schema digest를 결속한다. load는 typed/composite identity·FK 재작성과 Flyway 소유 `migration_control` run/keymap/checkpoint를 사용해 재시작 가능한 INSERT를 수행한다. production 한계는 실제 YAML의 `endpointId`가 loader에서 유실되는 승인 경로 blocker, PostgreSQL source의 `EXPERIMENTAL` 및 나머지 vendor·외부 드라이버 commit 차단과 실 DB·권한·snapshot/LOB 증거 부족, target JDBC 위치·instance identity 결속과 target schema allowlist의 부재, INSERT-only(no upsert/CDC), chunk 부분 commit의 reconciliation·전체 rollback/cutover 런북 부재, 영속 실행 결과 artifact 부재다. | [ADR-0008](../../docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md), [MigrationWorkflowRunner](../../migration-tool/src/main/java/nuri/migration/MigrationWorkflowRunner.java), [SourceAdapterRegistry](../../migration-tool/src/main/java/nuri/migration/adapter/SourceAdapterRegistry.java), [MappingLoader](../../migration-tool/src/main/java/nuri/migration/model/MappingLoader.java), [runtime schema](../../migration-tool/src/main/resources/db/migration-tool/V1__create_migration_runtime_schema.sql) | 2026-08-31 |
 | CTX-008 | 중앙 gate registry가 governance JUnit 35개·ArchUnit 10개·schema-validation 38개, runner catalog 6개, execution profile 6개, quality population 3개와 ratchet 15개를 source·task·실행 tier·CI 소비자에 exact-match한다. | [gate registry](../../config/governance/gates.json), [registry contract](../../scripts/governance-gates-contract.mjs) | 2026-08-26 |
 | CTX-009 | 내부 E2E 실행은 최근 성공 run의 spec 실행시간 profile로 3개 shard에 명시적 spec 집합을 균형 분배하고, 브랜치 보호에는 shard 수와 무관한 안정 context `e2e-test` 하나만 노출한다. | [duration profile](../../frontend/e2e/shard-duration-profile.json), [shard planner](../../scripts/e2e-shard-plan.mjs), [CI workflow](../../.github/workflows/ci.yml) | 2026-08-19 |
 | CTX-010 | PR 의존성 검사는 read-only Gradle graph producer → checkout/run 없는 trusted `workflow_run` 제출 → 최대 600초 snapshot readiness → runtime High 이상 review 순서로 fail-closed하도록 정의돼 있다. 신규 `workflow_run`은 기본 브랜치 선반영이 필요하므로 public fork probe 전에는 live 집행 완료로 간주하지 않는다. | [producer workflow](../../.github/workflows/dependency-submission.yml), [publisher workflow](../../.github/workflows/dependency-submission-publish.yml), [readiness verifier](../../scripts/dependency-snapshot-readiness.mjs), [dependency contract](../../scripts/dependency-submission-contract.mjs) | 2026-08-19 |
