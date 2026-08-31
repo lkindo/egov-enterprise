@@ -12,3 +12,4 @@
 | [ADR-0005](ADR-0005-ui-quality-durable-evidence.md) | UI 품질 증거를 버전형 compact summary와 tracked index로 보존 | Accepted |
 | [ADR-0006](ADR-0006-css-only-responsive-table.md) | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환 | Accepted |
 | [ADR-0007](ADR-0007-reference-default-ia-approval.md) | 하이브리드 IA를 참조-기본 IA로 승인, 연구·live census 요건은 채택 시점 재검증으로 이전 | Accepted — reference-default scope |
+| [ADR-0008](ADR-0008-multi-source-approved-migration-workflow.md) | 다중 소스 DB→PostgreSQL 승인형 오프라인 마이그레이션 워크플로 | Accepted |

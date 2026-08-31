@@ -46,7 +46,7 @@
 | [zero-downtime-migration.md](02-architecture/zero-downtime-migration.md) | 무중단 배포 4단계 이행 및 DDL 린터 |
 | [user-reference-key-policy.md](02-architecture/user-reference-key-policy.md) | 사용자 참조 키 규약 |
 | [db-naming-exceptions.md](02-architecture/db-naming-exceptions.md) | DB 명명 표준 **예외 대장** |
-| [legacy-migration-tool-design.md](02-architecture/legacy-migration-tool-design.md) | 레거시 데이터 이관 도구 설계 |
+| [legacy-migration-tool-design.md](02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline 이관 도구 설계·운영 경계 |
 | [pitest-mutation-testing.md](02-architecture/pitest-mutation-testing.md) | PITest 증분 Mutation Testing 연동 설계 |
 | [dual-operator-coordination.md](02-architecture/dual-operator-coordination.md) | 레거시 Gemini↔Claude 실시간 조정 설계(구현 보류); 현행 다중 operator 공통 계약은 [AGENTS.md](../AGENTS.md) |
 

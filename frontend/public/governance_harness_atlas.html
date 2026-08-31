@@ -2142,38 +2142,38 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <div class="status-panel" role="region" aria-label="레거시 이관 도구 상태 요약">
           <article class="status-card">
             <span class="badge badge-success">IMPLEMENTED</span>
-            <h3>선언형 ETL 엔진</h3>
-            <p><code>mapping.yml</code>, 타입·코드 변환, 신규 키 재매핑, 자식 FK 번역, 부모 우선 정렬, 500행 스트리밍·배치 INSERT가 구현돼 있습니다.</p>
+            <h3>다중 source 승인형 workflow</h3>
+            <p><code>discover → plan → validate → load</code>, 44종 객체 inventory·visibility, digest 결속 plan과 PostgreSQL-only target table-data ETL이 구현돼 있습니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-warning">PARTIAL EVIDENCE</span>
             <h3>테스트·CI</h3>
-            <p>테스트 소스 16개·<code>@Test</code> 120건을 루트 <code>backend-build</code>가 실행합니다. mutation은 transform과 validate/verify 두 범위만 보호하며 CLI 자체는 required check가 아닙니다.</p>
+            <p>테스트 소스 81개·<code>@Test</code> 400건을 루트 <code>backend-build</code>가 실행합니다. PostgreSQL Testcontainers 일부 경로가 있지만 실제 source vendor 전수·cutover 증거는 아닙니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-success">FAIL-CLOSED</span>
-            <h3>종료 상태</h3>
-            <p>mode·필수 설정·정적/live target 검증과 최종 <code>FAIL</code>은 예외로 전파돼 process exit를 non-zero로 만듭니다.</p>
+            <h3>승인·재결속</h3>
+            <p>source endpoint·driver·adapter·scope·inventory, mapping, target fingerprint와 실행 구현 digest를 load 직전에 다시 대조하며 WARN/FAIL은 non-zero 종료입니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-error">PRODUCTION GAP</span>
             <h3>운영 준비도</h3>
-            <p>데이터 chunk와 keymap의 원자성, 실패 행 orphan mapping·commit ambiguity, snapshot 신선도·DB 권한 수준 source read-only, checkpoint/upsert, 감사 산출물, 실 PostgreSQL·Oracle·Tibero E2E와 cutover/rollback이 남아 있습니다.</p>
+            <p>실제 YAML의 <code>endpointId</code> 소실 결함, target JDBC location/instance 미결속, DB 권한 수준 source read-only, 실 PostgreSQL·Oracle·Tibero E2E, 결과 artifact, upsert·CDC와 cutover/rollback이 남아 있습니다.</p>
           </article>
         </div>
 
         <div class="glass-card">
           <h3 class="glow-header">실제 CLI 실행 경로</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-            아래는 설계 문서의 목표가 아니라 현재 코드가 연결하는 경로입니다. 설계상 <code>SourceIntrospector</code> 카탈로그 단계는 존재하지만 CLI가 <code>introspect(...)</code>를 호출하지 않으므로 자동 사전 진단으로 표시하지 않습니다.
+            아래는 현재 코드가 연결하는 유일한 승인형 경로입니다. 직접 <code>--mapping --mode=dry-run|commit</code> 실행은 artifact 승인을 우회하므로 두 mode 모두 차단됩니다.
           </p>
           <div class="flow-timeline">
             <div class="flow-step-node">
               <span class="flow-step-dot" aria-hidden="true"></span>
               <div class="flow-step-info">
-                <div class="flow-step-title">CLI + mapping load <span class="flow-step-badge backend">ENTRY</span></div>
-                <div class="flow-step-desc"><code>--mapping=&lt;file&gt;</code>과 <code>--mode=dry-run|commit</code>을 strict하게 읽습니다. 알 수 없는 속성·mode·누락 환경 변수는 실패하며 DB 연결 필드의 정확한 <code>${NAME}</code> 전체 값만 파싱 후 치환합니다.</div>
-                <div class="flow-step-file">MigrationToolApplication.java → MigrationRunner.java → MappingLoader.java</div>
+                <div class="flow-step-title">Discover <span class="flow-step-badge backend">INVENTORY</span></div>
+                <div class="flow-step-desc">source를 JDBC read-only로 열고 product/version adapter preflight 뒤 catalog·schema·44종 object kind를 조사합니다. 객체 0건과 UNREADABLE·UNSUPPORTED·PARTIAL·QUERY_FAILED를 구분하고 endpoint·driver·adapter·scope에 결속된 credential-free canonical JSON inventory를 atomic write합니다.</div>
+                <div class="flow-step-file">MigrationWorkflowRunner.java → SourceAdapterRegistry.java → CatalogSnapshotArtifactCodec.java</div>
               </div>
               <div class="flow-step-number">01</div>
             </div>
@@ -2181,9 +2181,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
             <div class="flow-step-node">
               <span class="flow-step-dot" aria-hidden="true"></span>
               <div class="flow-step-info">
-                <div class="flow-step-title">Mapping validation <span class="flow-step-badge database">FAIL-CLOSED</span></div>
-                <div class="flow-step-desc">UTF-8 <code>db_columns.json</code>의 타깃 컬럼·코드맵·FK·ID·transform/type·식별자·위험한 where 토큰을 검사하고, commit 직전 JDBC metadata로 실제 target table/column을 다시 대조합니다. snapshot 신선도와 타입·제약 의미는 별도 증거가 필요합니다.</div>
-                <div class="flow-step-file">migration-tool/src/main/java/nuri/migration/validate/MappingValidator.java</div>
+                <div class="flow-step-title">Plan <span class="flow-step-badge database">BOUND REVIEW</span></div>
+                <div class="flow-step-desc">inventory와 mapping, 실제 PostgreSQL target table·column·PK fingerprint를 결합합니다. 선택 review는 객체 stable ID별 disposition을 inventory·target·mapping·execution digest 네 축에 결속하며, 미분류·미검토·불완전 visibility는 <code>commitReady=false</code> blocker입니다.</div>
+                <div class="flow-step-file">MigrationPlanner.java · WorkflowReviewLoader.java · PostgresTargetSchemaFingerprinter.java</div>
               </div>
               <div class="flow-step-number">02</div>
             </div>
@@ -2191,9 +2191,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
             <div class="flow-step-node">
               <span class="flow-step-dot" aria-hidden="true"></span>
               <div class="flow-step-info">
-                <div class="flow-step-title">Transform + dry-run / commit <span class="flow-step-badge backend">ETL</span></div>
-                <div class="flow-step-desc">dry-run은 조회·변환·오류 집계만 수행하고 commit은 타깃에 배치 INSERT합니다. 소스 연결은 JDBC <code>setReadOnly(true)</code>를 사용하고 위험한 where 토큰을 차단하지만, 실제 쓰기 금지는 읽기 전용 DB 계정으로도 보증해야 합니다.</div>
-                <div class="flow-step-file">EtlExecutor.java · TypeConverter.java · TransformerRegistry.java</div>
+                <div class="flow-step-title">Validate <span class="flow-step-badge client">APPROVAL GATE</span></div>
+                <div class="flow-step-desc">schema v3 plan의 <code>commitReady</code>를 검사합니다. 별도 live 재조회나 artifact 생성 단계가 아니며, load가 다시 모든 digest와 live 상태를 대조합니다.</div>
+                <div class="flow-step-file">WorkflowCliOptions.java → MigrationWorkflowRunner.validate()</div>
               </div>
               <div class="flow-step-number">03</div>
             </div>
@@ -2201,9 +2201,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
             <div class="flow-step-node">
               <span class="flow-step-dot" aria-hidden="true"></span>
               <div class="flow-step-info">
-                <div class="flow-step-title">Key/FK rewrite + target write <span class="flow-step-badge database">TARGET</span></div>
-                <div class="flow-step-desc">부모 키를 새 표준 ID로 매핑하고 자식 FK를 번역합니다. keymap flush 실패는 실행 실패로 전파되지만 모든 데이터 chunk를 commit한 뒤 pending mapping을 별도 transaction으로 flush합니다. 실패 INSERT 행의 pending mapping도 제거하지 않아 data-keymap 원자성·orphan mapping·crash/retry commit ambiguity를 별도로 해결해야 합니다.</div>
-                <div class="flow-step-file">KeyMapRegistry.java · StandardIdGenerator.java · TableOrderer.java</div>
+                <div class="flow-step-title">Load dry-run / commit <span class="flow-step-badge database">ETL</span></div>
+                <div class="flow-step-desc">동일 source를 live 재발견하고 endpoint·driver·scope·inventory, mapping, target PostgreSQL fingerprint와 migration-tool 구현·adapter·transformer 계약을 exact-match합니다. 모든 table을 source read transaction 하나에서 읽고, commit은 일반 chunk의 data·keymap·durable checkpoint를 같은 target transaction에 기록합니다.</div>
+                <div class="flow-step-file">MigrationWorkflowRunner.load() → EtlExecutor.java → migration_control</div>
               </div>
               <div class="flow-step-number">04</div>
             </div>
@@ -2211,9 +2211,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
             <div class="flow-step-node">
               <span class="flow-step-dot" aria-hidden="true"></span>
               <div class="flow-step-info">
-                <div class="flow-step-title">Verification summary <span class="flow-step-badge client">PASS / WARN / FAIL</span></div>
-                <div class="flow-step-desc">read/transformed/written/error와 타깃 행수를 요약합니다. target count 실패와 report FAIL은 실행 실패가 되지만 dry-run PASS는 cutover 준비 완료가 아니며 JSON/Markdown 감사 artifact도 아직 생성하지 않습니다.</div>
-                <div class="flow-step-file">MigrationVerifier.java → MigrationReport.toSummary()</div>
+                <div class="flow-step-title">Run-scoped verification <span class="flow-step-badge client">PASS / WARN / FAIL</span></div>
+                <div class="flow-step-desc">commit에서는 checkpoint 수·target identity 유일성·재조회 행 checksum과 read/transformed/written/error를 대조합니다. dry-run은 source 조회·변환 결과만 판정하고 target을 대조하지 않습니다. WARN/FAIL은 non-zero지만 report 객체를 JSON/Markdown 감사 artifact로 보존하지 않습니다.</div>
+                <div class="flow-step-file">MigrationVerifier.java → MigrationReport</div>
               </div>
               <div class="flow-step-number">05</div>
             </div>
@@ -2230,32 +2230,32 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               <tbody>
                 <tr>
                   <td>1. 소스 준비</td>
-                  <td>JDBC 연결과 테이블 조회</td>
-                  <td>읽기 전용 DB 계정·최소 권한, 네트워크 격리, 승인된 환경 변수/secret provider 주입. JDBC read-only 힌트만으로 DB 권한을 대체하지 않습니다.</td>
+                  <td>PostgreSQL·Oracle·Tibero·MySQL·MariaDB·SQL Server·generic JDBC adapter, 44종 object-kind manifest와 visibility finding</td>
+                  <td>읽기 전용 DB 계정·최소 권한, 지원 version/driver, 네트워크 격리와 source freeze를 실제 DB에서 증명. vendor query 정의만으로 지원 완료를 선언하지 않습니다.</td>
                   <td><span class="badge badge-error">REQUIRED</span></td>
                 </tr>
                 <tr>
                   <td>2. 타깃 준비</td>
-                  <td>선언된 타깃에 INSERT</td>
-                  <td>Flyway 적용 완료, 백업/스냅샷, 빈 타깃 또는 기존 행 처리정책, rollback 책임자와 승인 기록</td>
+                  <td>PostgreSQL-only target fingerprint와 Flyway 관리 <code>migration_control</code> run/keymap/checkpoint</td>
+                  <td>credential-redacted JDBC location/instance 결속, 애플리케이션 Flyway 적용 완료, backup, 기존 행 충돌과 INSERT-only 정책, rollback 책임자와 승인 기록</td>
                   <td><span class="badge badge-error">REQUIRED</span></td>
                 </tr>
                 <tr>
-                  <td>3. dry-run</td>
-                  <td>변환·코드맵·키/FK 오류 집계</td>
-                  <td>PASS를 완료로 보지 않고 표본 diff·행수·고아 FK·NOT NULL·UNIQUE·도메인·문자셋을 독립 검증</td>
-                  <td><span class="badge badge-warning">EXPLORATORY</span></td>
+                  <td>3. 승인 계획</td>
+                  <td>inventory 전 객체 disposition, endpoint/driver/scope/mapping/target/implementation digest 결속</td>
+                  <td>실제 YAML의 <code>endpointId</code> 보존 결함을 먼저 수정하고 owner review로 모든 객체와 visibility blocker를 판정</td>
+                  <td><span class="badge badge-error">BLOCKED</span></td>
                 </tr>
                 <tr>
-                  <td>4. commit 승인</td>
-                  <td>500행 단위 배치 INSERT와 실패 행 격리</td>
-                  <td>별도 사용자/운영 승인, 실행 창, 중단 기준, 복원 절차. target data와 keymap의 동일 commit 경계, 실패 행 pending mapping 제거, crash/retry 복구를 먼저 증명하며 non-zero 종료만으로 자동 cutover를 승인하지 않음</td>
+                  <td>4. dry-run / commit</td>
+                  <td>단일 source read session과 typed·composite·generated identity. commit은 500행 chunk의 data-keymap 원자성과 durable checksum resume를 제공하고, dry-run은 target을 쓰거나 대조하지 않습니다.</td>
+                  <td>chunk 부분 성공·self-reference 예약 keymap·commit ambiguity의 reconciliation, LOB/charset/규모, upsert·CDC 필요 여부와 실행 창을 rehearsal</td>
                   <td><span class="badge badge-error">MANUAL GATE</span></td>
                 </tr>
                 <tr>
                   <td>5. 사후 검증</td>
-                  <td>console PASS/WARN/FAIL 요약</td>
-                  <td>원본·타깃 checksum/표본 diff, 제약 위반, 감사 run ID, 결과 artifact 보존과 독립 승인</td>
+                  <td>commit의 run-scoped checkpoint·target identity·행 checksum 대조와 PASS/WARN/FAIL 판정</td>
+                  <td>canonical 결과 artifact, FK/UNIQUE/도메인·표본 diff, cutover/rollback 의사결정과 독립 승인</td>
                   <td><span class="badge badge-warning">PARTIAL</span></td>
                 </tr>
               </tbody>
@@ -2267,13 +2267,13 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="glass-card">
             <h3 class="glow-header">현행 CI 증거</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">
-              루트 <code>./gradlew build</code>가 migration-tool 테스트를 실행하고 JaCoCo에 포함합니다. required <code>mutation-test</code>에는 <code>migration-transform</code>과 <code>migration-validate-verify</code> 범위가 있으나 runner·JDBC·실 DB cutover 전체를 보증하지 않습니다.
+              루트 <code>./gradlew build</code>가 81개 Java 테스트 소스의 <code>@Test</code> 400건을 실행하고 JaCoCo에 포함합니다. required <code>mutation-test</code>에는 transform과 validate/verify 범위가 있으나 workflow·adapter·JDBC·실 DB cutover 전체를 보증하지 않습니다. PostgreSQL Testcontainers도 runtime schema와 generated identity의 제한된 경로입니다.
             </p>
           </article>
           <article class="glass-card">
             <h3 class="glow-header">권장 강화 순서</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">
-              <strong>P1</strong> data-keymap 단일 commit 경계·실패 행 pending mapping 정리·crash/retry 검증, snapshot 계보·DB 권한 read-only·Flyway 관리 keymap·감사 artifact → <strong>P2</strong> PostgreSQL Testcontainers·Oracle/Tibero dialect·CP949/LOB·checkpoint/upsert·delta/cutover/rollback 순입니다. strict exit·target metadata·JDBC read-only·flush 실패 전파는 구현됐지만 원자성을 뜻하지 않습니다.
+              <strong>P1</strong> MappingLoader의 <code>endpointId</code> 보존 + 실제 YAML workflow 회귀, target JDBC location/instance 결속, 지원 vendor/version·최소권한 source read-only rehearsal, canonical 결과 artifact와 부분 성공 reconciliation → <strong>P2</strong> LOB/문자셋·운영 규모, 제한적 upsert·증분/CDC·cutover/rollback 순입니다. target은 PostgreSQL-only이고 비데이터 객체 DDL은 현재 프로젝트 Flyway가 소유합니다.
             </p>
           </article>
         </div>
@@ -2282,7 +2282,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <strong>근거:</strong>
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md" target="_blank" rel="noopener noreferrer">설계·로드맵</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/tree/main/migration-tool" target="_blank" rel="noopener noreferrer">구현 모듈</a> ·
-          <a href="https://github.com/lkindo/egov-enterprise/blob/main/migration-tool/src/main/java/nuri/migration/MigrationRunner.java" target="_blank" rel="noopener noreferrer">CLI 오케스트레이션</a> ·
+          <a href="https://github.com/lkindo/egov-enterprise/blob/main/migration-tool/src/main/java/nuri/migration/MigrationWorkflowRunner.java" target="_blank" rel="noopener noreferrer">승인형 CLI 오케스트레이션</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/.github/workflows/ci.yml" target="_blank" rel="noopener noreferrer">CI/mutation 연결</a>
         </div>
       </section>
@@ -2377,8 +2377,8 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>레거시 이관 CLI는 strict mode·환경변수·정적/실 target schema·read-only connection·FAIL 종료를 강제하지만 data chunk commit 뒤 keymap을 별도 transaction으로 flush하고 실패 행 pending mapping을 제거하지 않아 원자성과 재시도 의미가 미완성</td>
-                  <td>target data와 keymap의 commit 경계를 일치시키고 실패 행 orphan mapping을 제거한 뒤 crash/retry·부분 실패를 PostgreSQL Testcontainers로 검증. 이어 read-only DB 계정, 감사 JSON/Markdown, Flyway keymap, checkpoint/upsert, Oracle·Tibero dialect와 rollback 시나리오를 단계적으로 검증</td>
+                  <td>승인형 discover/plan/validate/load, 44종 discovery·visibility, source endpoint/driver/scope·mapping·target schema·implementation 결속, typed identity와 chunk data-keymap-checkpoint 원자성·durable resume가 구현됐다. 다만 MappingLoader가 YAML <code>endpointId</code>를 소실해 실제 workflow가 차단되고, target JDBC location/instance는 결속되지 않으며 vendor adapter는 실 DB 증거가 부족하고 target DBMS는 PostgreSQL-only다.</td>
+                  <td><code>endpointId</code> 보존과 실제 YAML E2E, credential-redacted target location binding을 먼저 추가한다. 이어 최소권한 source 계정과 PostgreSQL·Oracle·Tibero E2E를 포함한 vendor rehearsal, canonical 결과 artifact, 부분 성공/commit ambiguity reconciliation, backup·cutover/rollback을 증명하고 필요 시 staging 기반 upsert와 CDC를 별도 설계한다.</td>
                   <td><strong>불필요</strong> — 문서·도구·하네스 현행화</td>
                 </tr>
                 <tr>
@@ -2626,7 +2626,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 8,
         title: "Legacy ETL 정확성·이관 안전성",
-        desc: "migration-tool은 strict mode·환경변수 해석·정적 snapshot과 live target metadata·source JDBC read-only·verification FAIL 종료를 강제하고 테스트/CI mutation이 핵심 경로를 보호합니다. 다만 data chunk와 별도 keymap transaction, 실패 행 pending mapping 때문에 원자성·재시도 의미가 미완성이며 운영 DB 계정·실 PostgreSQL/Oracle/Tibero·checkpoint/cutover/rollback도 아직 PARTIAL입니다.",
+        desc: "migration-tool은 discover→plan→validate→load 승인형 CLI, 44종 객체·visibility inventory, source endpoint/driver/scope와 mapping·PostgreSQL target fingerprint·실행 구현 결속, typed/composite/generated identity 및 chunk data-keymap-checkpoint 원자성과 durable checksum resume를 구현했습니다. 다만 MappingLoader의 endpointId 소실, target JDBC location/instance 미결속, vendor 실 DB·운영 권한 증거, 결과 artifact, upsert·CDC와 cutover/rollback은 아직 PARTIAL입니다.",
         badge1: "Data Migration", badge2: "Fail-closed Core", badge3: "Production Partial", type1: "cyan", type2: "success", type3: "warning",
         impl: "migration-tool/src/test · ci.yml migration-transform/migration-validate-verify · :migration-tool:test",
         doc: "Legacy migration design", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md",
