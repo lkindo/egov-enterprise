@@ -180,8 +180,11 @@ test('protected branch is explicit manifest metadata rather than an implicit def
 });
 
 test('stable E2E required context is independent from the internal shard cardinality', () => {
+  // 치환 기준은 **현행** matrix 여야 한다 — 옛 문자열을 남겨 두면 치환이 조용히 실패하고
+  // 이 테스트가 "샤드 수를 바꿔도 안정 context 는 그대로" 를 더 이상 증명하지 못한다
+  // (2026-09-01 샤드 3 → 2 축소 때 실제로 red 로 드러났다).
   const expanded = ciContent.replace(
-    '        shard: [1/3, 2/3, 3/3]',
+    '        shard: [1/2, 2/2]',
     '        shard: [1/4, 2/4, 3/4, 4/4]',
   );
   const expandedManifest = structuredClone(manifest);

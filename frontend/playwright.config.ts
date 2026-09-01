@@ -50,10 +50,14 @@ export default defineConfig({
     //   줄여 그 중복 빌드를 없앨 수 있다(1 샤드 × workers 3 이면 wall-clock 동일, 러너 1/3).
     //
     //   로컬은 1 을 유지한다 — 포트 점유·자원 고갈 이력은 로컬 축의 근거이고 러너와 다르다.
-    //   CI 는 매 실행이 새 컨테이너다. 우선 2 로 올려 OOM/connection-refused 가설을 실측한다.
-    //   샤드 축소는 이 실측이 green 인 뒤의 별도 변경이다(shard 수는 required-checks·gates·
-    //   shard-plan 계약에 동결돼 있어 함께 바꿔야 한다).
-    workers: process.env.CI ? 2 : 1,
+    //
+    //   [2026-09-01 실측 결과: 2 → 3] CI workers 2 가 green 이었다 — 테스트 실행이 98~102초에서
+    //   82~91초로 줄었고 OOM·connection-refused 는 재현되지 않았다. 즉 종전 주석의 우려는
+    //   적어도 2 에서는 성립하지 않는다. 그 실측을 근거로 샤드를 3 → 2 로 줄이면서(중복 스택
+    //   빌드 1회 제거) 줄어든 병렬성을 workers 로 회수한다.
+    //   추정 병렬 효율(위 실측에서 역산: workers2 ≈ 1.4배)로 2샤드 × workers 3 은 wall-clock
+    //   을 현재 수준으로 유지하면서 러너 시간을 약 29% 줄인다.
+    workers: process.env.CI ? 3 : 1,
     reporter: 'html',
     use: {
         baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001',

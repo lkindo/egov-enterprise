@@ -132,7 +132,10 @@ test('invalid shard coordinates are rejected', () => {
 
 test('CI consumes the duration-balanced plan instead of count-based Playwright sharding', () => {
   const workflow = fs.readFileSync('.github/workflows/ci.yml', 'utf8');
-  assert.match(workflow, /^        shard: \[1\/3, 2\/3, 3\/3\]$/m);
+  // [2026-09-01 3 → 2] 샤드 수는 러너 비용에 직결된다 — 샤드마다 스택을 통째로 다시 빌드하고
+  //   그 오버헤드가 테스트 시간의 2.4배다(실측: 샤드당 243초 vs 82~100초). 이 단언이 matrix 를
+  //   정확히 동결하므로, 수를 바꾸려면 required-checks 의 sourceMatrix·workers 와 함께 바꿔야 한다.
+  assert.match(workflow, /^        shard: \[1\/2, 2\/2\]$/m);
   assert.match(workflow, /node \.\.\/scripts\/e2e-shard-plan\.mjs --shard "\$\{\{ matrix\.shard \}\}"/);
   assert.match(workflow, /npx playwright test --project=full-suite "\$\{E2E_SPECS\[@\]\}" --reporter=blob,line,json/);
   assert.match(workflow, /node \.\.\/scripts\/playwright-result-contract\.mjs --report "\$PLAYWRIGHT_JSON_OUTPUT_FILE" "\$\{E2E_SPECS\[@\]\}"/);
