@@ -584,7 +584,26 @@ jobs:
         run: npx playwright install-deps chromium
         working-directory: frontend
 
-      # 서로 다른 임시 JWT로 빌드된 Next 캐시는 복원하지 않는다. 재사용하려면 secret 계보가 같아야 한다.
+      # [2026-09-01] Next 빌드 캐시를 복원한다 — 종전 주석의 전제가 같은 파일에서 이미 반증됐다.
+      #
+      # 종전에는 "서로 다른 임시 JWT로 빌드된 Next 캐시는 복원하지 않는다" 였다. 그런데 아래
+      # auth-diagnostics 의 2026-07-28 기록(`Edge 는 이 변수를 빌드 시 인라인하지 않는다.
+      # 빌드=A/실행=B 로 기동해 실측하면 B 로 서명한 토큰만 통과한다 = 런타임 조회`)이 그 전제를
+      # 정면으로 반증한다. 빌드 산출물이 secret 계보와 무관하므로 캐시 재사용은 안전하다.
+      #
+      # 그 결과 `frontend-scope` 가 업로드하던 `next-build-cache` 는 **아무도 내려받지 않는
+      # 죽은 아티팩트**였고(워크플로 전체에서 download 는 e2e 리포트 병합 한 곳뿐), 샤드마다
+      # 콜드 빌드를 반복했다(실측 47~59초 × 3). 여기서 그 아티팩트를 실제 소비자에 연결한다.
+      #
+      # 캐시가 없으면(프런트 스코프 skip·아티팩트 만료) 그냥 콜드 빌드로 진행해야 하므로
+      # 이 스텝만 실패를 허용한다 — 캐시 부재는 결함이 아니다.
+      - name: Restore Next.js build cache
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: next-build-cache
+          path: frontend/.next/cache
+
       # 프론트 빌드·기동·테스트를 분리해 각 실패와 소요시간을 독립적으로 관측한다.
       # E2E는 개발 서버 전용 transport 변동을 피하도록 프로덕션 빌드로 실행한다.
       - name: Build frontend (production)
