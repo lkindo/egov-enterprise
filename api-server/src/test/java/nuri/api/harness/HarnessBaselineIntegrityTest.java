@@ -167,10 +167,23 @@ class HarnessBaselineIntegrityTest {
      * 스캔 루트를 빈 경로로 바꾸거나 탐지 정규식을 무력하게 고치는 것도 동일한 은폐이기 때문이다.
      * <p>타입은 패키지 수식(예: {@code java.util.Set<String>})을 허용한다. 종전 축약형만 매칭하던 정규식은
      * 완전수식 선언으로 우회됐다(2026-07-26 자체 침투 검증에서 발견).
+     *
+     * <p><b>[2026-09-01] 숫자·boolean 을 추가한 이유 — 이 메타 게이트에 또 하나의 구멍이 있었다.</b>
+     * 종전 목록은 참조형만 봤다. 그런데 이 하네스의 방어 상당수는 <b>숫자</b>다 —
+     * anti-vacuity 플로어({@code HANDLER_FLOOR}·{@code MIN_*}), 결합 census
+     * ({@code APP_TO_APP_COUPLING}), 부채 동결({@code LEGACY_DEBT_*}), 비정형 payload 동결
+     * ({@code UNTYPED_PAYLOAD_COUNT}), 엔티티·테이블 census. 실측 36개가 전부 매니페스트 밖이었다.
+     *
+     * <p>가설이 아니라 실증이다: {@code HANDLER_FLOOR} 을 250 → 1 로 낮춰도 이 게이트가 <b>통과했다</b>.
+     * 플로어는 "스캔이 조용히 붕괴하면 통과가 아니라 실패" 를 보장하는 장치인데, 그 장치 자체를
+     * 조용히 낮출 수 있으면 census 를 비워도 red 가 나지 않는다. 목록을 지우는 것과 같은 은폐가
+     * 숫자 한 글자로 가능했던 셈이다.
      */
     private static final Pattern CONST_DECL = Pattern.compile(
             "static\\s+final\\s+(?:[A-Za-z_$][\\w$]*\\s*\\.\\s*)*"
-                    + "(?:String|Set|List|Collection|Map|Pattern)\\s*(?:<[^=;]*>)?\\s*(?:\\[\\s*\\])?"
+                    + "(?:String|Set|List|Collection|Map|Pattern"
+                    + "|int|long|short|byte|double|float|boolean|char)"
+                    + "\\s*(?:<[^=;]*>)?\\s*(?:\\[\\s*\\])?"
                     + "\\s+([A-Za-z_$][\\w$]*)\\s*=");
 
     private static final Pattern STRING_LITERAL = Pattern.compile("\"(?:\\\\.|[^\"\\\\])*\"");
