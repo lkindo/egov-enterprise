@@ -18,6 +18,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Tag("governance-harness")
 class SharedPostgresMigrationHarnessContractTest {
 
+    /**
+     * 공용 PostgreSQL support 로 이관해야 하는 migration 검증 클래스 수(동결).
+     *
+     * <p>[2026-09-01] 종전에는 이름 없는 매직 리터럴({@code hasSize(35)})이라 무엇을 세는 수인지
+     * 호출부에서만 알 수 있었다. 파생값으로 바꾸지 않는 이유는 이 수가 <b>동결</b>이기 때문이다 —
+     * 자동으로 세면 신규 migration 검증이 공용 support 를 쓰지 않아도 census 가 조용히 따라 올라간다.
+     * 정당한 증감은 이 상수를 함께 고쳐 diff 에 의도를 남긴다.
+     */
+    private static final int EXPECTED_MIGRATION_TEST_COUNT = 35;
+
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")
     void isolatedDatabaseNamesAreSafeAndCollisionFree() {
@@ -45,8 +55,9 @@ class SharedPostgresMigrationHarnessContractTest {
                 .toList();
 
         assertThat(migrationTests)
-                .as("공용 서버로 이관해야 하는 migration 검증 클래스 census")
-                .hasSize(35);
+                .as("공용 서버로 이관해야 하는 migration 검증 클래스 census(동결 %d)"
+                        .formatted(EXPECTED_MIGRATION_TEST_COUNT))
+                .hasSize(EXPECTED_MIGRATION_TEST_COUNT);
 
         Pattern directLifecycle = Pattern.compile(
                 "(?m)^import org\\.testcontainers|^\\s*@(?:Testcontainers|Container)\\b|new PostgreSQLContainer|\\bPOSTGRES\\.");

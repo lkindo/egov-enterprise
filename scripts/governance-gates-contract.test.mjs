@@ -441,6 +441,80 @@ test('bound commands require exact executable lines', () => {
   assert.equal(exactBindingLineMatches(expected, expected), true);
 });
 
+// [2026-09-01 신설 — GAP-HARNESS-002] 소비자 파일의 주석 문법을 파일 종류로 가른다.
+//   종전에는 모든 파일에 Java 블록 주석 규칙을 적용해, YAML 주석 안의 `/*`(경로 glob·정규식·URL)가
+//   블록 주석 시작으로 해석되면서 그 뒤 실행 내용이 통째로 사라졌다. 실측: ci.yml 주석에
+//   'scripts' + '/*.test.mjs' 를 적은 것만으로 무관한 binding 4건이 동시에 ghost 판정됐다.
+//   같은 원리로 실재하지 않는 binding 이 통과하는 false-green 방향도 성립했다.
+test('binding matching uses the comment syntax of the consumer file, not Java rules everywhere', () => {
+  const command = 'run: npm run test:operational-contracts';
+  // 주석에 블록 주석 시작으로 읽힐 수 있는 시퀀스를 넣어도 YAML 의 실행 라인은 살아남아야 한다.
+  const yaml = [
+    'jobs:',
+    '  secret-scan:',
+    '    steps:',
+    `      # 카탈로그(scripts${'/*'}.test.mjs)는 frontend 의존성을 로드한다`,
+    `      ${command}`,
+  ].join('\n');
+  assert.equal(exactBindingLineMatches(yaml, command, '.github/workflows/ci.yml'), true);
+  // 셸 훅도 같은 규칙이다(확장자가 없어 basename 으로 가른다).
+  const hook = [`# glob 예시: scripts${'/*'}.test.mjs`, 'npm run test:operational-contracts \\'].join('\n');
+  assert.equal(exactBindingLineMatches(hook, 'npm run test:operational-contracts \\', '.githooks/pre-push'), true);
+  // 반대로 YAML 의 `#` 주석은 여전히 실행이 아니다 — 완화가 아니라 문법 정합이다.
+  assert.equal(
+    exactBindingLineMatches(`      # ${command}`, command, '.github/workflows/ci.yml'),
+    false,
+  );
+  // Java 계열 소비자(.mjs·.gradle)는 종전 규칙을 유지한다 — 블록 주석 안의 명령은 실행이 아니다.
+  const js = `/*\n  run('pnpm -C frontend run lint');\n*/`;
+  assert.equal(exactBindingLineMatches(js, "run('pnpm -C frontend run lint');", 'scripts/verify.mjs'), false);
+});
+
+// [2026-09-01 신설 — GAP-HARNESS-001] CI tier binding 은 "그 줄이 파일에 있다" 로 tier 를 주장할 수
+//   없다. 어느 job 인지, 조건부 step 뒤인지까지 선언해야 하고 실제와 어긋나면 red 다. 종전에는
+//   EXEC-FOUNDATION-COVERAGE 가 local-full 을 선언하고도 실제 진입점이 그 태스크를 부르지 않아
+//   커버리지 래칫 2종이 로컬에서 한 번도 검증되지 않았다(2026-08-31 실측).
+test('workflow bindings bind to a job and declare conditional steps honestly', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const ciBindings = [];
+  const collect = (owner, bindings) => (bindings ?? []).forEach((binding) => {
+    if (/^\.github\/workflows\/.+\.ya?ml$/.test(binding.source)) ciBindings.push([owner, binding]);
+  });
+  registry.executionProfiles.forEach((profile) => collect(profile.id, profile.bindings));
+  registry.gateSets.forEach((set) => {
+    collect(set.id, set.selector?.executionBindings);
+    collect(set.id, set.selector?.commandBindings);
+  });
+
+  assert.ok(ciBindings.length >= 12, `CI binding 모집단이 붕괴했습니다: ${ciBindings.length}`);
+  assert.ok(ciBindings.every(([, binding]) => typeof binding.job === 'string' && binding.job !== ''));
+  assert.deepEqual(validate(registry), []);
+
+  // ① 선언한 job 밖의 라인은 red — 라인이 다른 job 으로 옮겨가면 잡힌다.
+  const wrongJob = clone(registry);
+  wrongJob.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS')
+    .selector.commandBindings.find((b) => b.source.includes('ci.yml')).job = 'backend-scope';
+  assert.match(validate(wrongJob).join('\n'), /not inside job backend-scope/);
+
+  // ② 조건부 step 인데 선언하지 않으면 red — tier 주장이 조용히 과장되는 것을 막는다.
+  const hiddenCondition = clone(registry);
+  delete hiddenCondition.gateSets.find(({ id }) => id === 'GATESET-CROSS-STACK-CONTRACTS')
+    .selector.commandBindings.find((b) => b.source.includes('ci.yml')).conditional;
+  assert.match(validate(hiddenCondition).join('\n'), /runs behind a step-level 'if:'/);
+
+  // ③ 반대 방향(stale 선언)도 red — 조건이 사라지면 registry 도 함께 바뀌어야 한다.
+  const staleCondition = clone(registry);
+  staleCondition.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS')
+    .selector.commandBindings.find((b) => b.source.includes('ci.yml')).conditional = true;
+  assert.match(validate(staleCondition).join('\n'), /declares conditional: true but the step/);
+
+  // ④ 워크플로가 아닌 소비자에 job/conditional 을 붙이면 red — 의미 없는 선언을 남기지 않는다.
+  const misplaced = clone(registry);
+  misplaced.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS')
+    .selector.commandBindings.find((b) => b.source.includes('verify.mjs')).job = 'secret-scan';
+  assert.match(misplaced && validate(misplaced).join('\n'), /workflow-only binding fields/);
+});
+
 test('authoritative runner catalogs reject every supported skip/focus form without decoy false positives', () => {
   for (const forbidden of [
     'test.skip("rule", () => {})',

@@ -242,9 +242,18 @@ describe('권한 → 롤 할당', () => {
       regYn: 'Y',
       authrtCd: 'AUTH_1',
     };
-    mocks.getAuthorRoles
-      .mockResolvedValueOnce({ list: firstPage, total: 101 })
-      .mockResolvedValueOnce({ list: [lastRole], total: 101 });
+    // ⚠ [2026-09-01] `mockResolvedValueOnce` 2개로 두 페이지를 흉내내면 **호출 순서·횟수에
+    //   의존**한다. 그 2개가 소진된 뒤의 호출은 beforeEach 의 fallback(`ROLES`, total 6)을 받고,
+    //   그러면 전량 헬퍼가 1페이지만 조회하고 끝나 `ROLE_LAST` 가 사라진다 — 쿼리가 한 번 더
+    //   돌기만 해도(마운트·리트라이·리렌더) 선택 집합이 통째로 바뀐다.
+    //   실측: CI 에서 이 테스트가 간헐 실패했고 저장 본문이 빈 배열로 관측됐다(로컬은 통과).
+    //   pageIndex 로 응답을 결정하면 몇 번 호출되든 같은 결과라 비결정성이 사라진다.
+    mocks.getAuthorRoles.mockImplementation((...args: unknown[]) => {
+      const params = args[1] as { pageIndex?: number } | undefined;
+      return Promise.resolve((params?.pageIndex ?? 1) === 1
+        ? { list: firstPage, total: 101 }
+        : { list: [lastRole], total: 101 });
+    });
 
     await openRolePanel();
     await screen.findByRole('button', { name: '마지막 페이지 롤 롤 해제' });
