@@ -1,5 +1,6 @@
 import { UserService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
+import { searchAssignableUsersOperation } from '@/types/generated-operations';
 
 /**
  * 담당자 지정용 사용자 검색 서비스.
@@ -21,7 +22,12 @@ class UserSearchService extends UserService {
    * (인명부 전량 수집 방지). 페이징이 없는 것은 의도다 — 호출부에서 page 를 넘기지 말 것.
    */
   async searchAssignableUsers(keyword: string, config?: AxiosRequestConfig): Promise<UserSearchResult[]> {
-    return this.get<UserSearchResult[]>('/search', { ...config, params: { keyword } });
+    const generatedConfig = config ? { ...config } : undefined;
+    if (generatedConfig && Object.hasOwn(generatedConfig, 'params')) delete generatedConfig.params;
+    return this.executeGenerated(searchAssignableUsersOperation, {
+      query: { keyword },
+      config: generatedConfig,
+    });
   }
 }
 

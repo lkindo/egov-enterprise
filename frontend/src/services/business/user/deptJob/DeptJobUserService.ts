@@ -2,6 +2,19 @@ import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { DeptJobVO, DeptJobBxVO } from '@/types/business/deptJob';
 import { AxiosRequestConfig } from 'axios';
+import type { GeneratedOperationRequest } from '@/types/generated-operations';
+import {
+  createDeptJobBoxOperation,
+  createDeptJobOperation,
+  deleteDeptJobBoxOperation,
+  deleteDeptJobOperation,
+  getDeptJobBoxListOperation,
+  getDeptJobBoxOperation,
+  getDeptJobListOperation,
+  getDeptJobOperation,
+  updateDeptJobBoxOperation,
+  updateDeptJobOperation,
+} from '@/types/generated-operations';
 
 /**
  * 부서업무 관리 서비스(User)
@@ -24,38 +37,56 @@ class DeptJobUserService extends UserService {
     }, 
     config?: AxiosRequestConfig
   ): Promise<PageResponse<DeptJobBxVO>> {
-    return this.get<PageResponse<DeptJobBxVO>>('/boxes', { 
-      ...config, 
-      params
-    });
+    return this.executeGenerated(getDeptJobBoxListOperation, {
+      query: {
+        ...(params.page !== undefined ? { pageIndex: params.page + 1 } : {}),
+        ...(params.size !== undefined ? { pageUnit: params.size } : {}),
+        ...(params.searchWrd !== undefined ? { searchWrd: params.searchWrd } : {}),
+        ...(params.deptId !== undefined ? { deptId: params.deptId } : {}),
+      },
+      config,
+    }) as Promise<PageResponse<DeptJobBxVO>>;
   }
 
   /**
    * 부서 업무함 상세 조회
    */
   async getDeptJobBox(deptTaskBoxSn: number, config?: AxiosRequestConfig): Promise<DeptJobBxVO> {
-    return this.get<DeptJobBxVO>(`/boxes/${deptTaskBoxSn}`, config);
+    return this.executeGenerated(getDeptJobBoxOperation, {
+      path: { deptTaskBoxSn },
+      config,
+    }) as Promise<DeptJobBxVO>;
   }
 
   /**
    * 부서 업무함 등록
    */
   async createDeptJobBox(data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<number> {
-    return this.post<number>('/boxes', data, config);
+    return this.executeGenerated(createDeptJobBoxOperation, {
+      body: data as GeneratedOperationRequest<'createDeptJobBox'>,
+      config,
+    });
   }
 
   /**
    * 부서 업무함 수정
    */
   async updateDeptJobBox(deptTaskBoxSn: number, data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/boxes/${deptTaskBoxSn}`, data, config);
+    return this.executeGenerated(updateDeptJobBoxOperation, {
+      path: { deptTaskBoxSn },
+      body: data as GeneratedOperationRequest<'updateDeptJobBox'>,
+      config,
+    });
   }
 
   /**
    * 부서 업무함 삭제
    */
   async deleteDeptJobBox(deptTaskBoxSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/boxes/${deptTaskBoxSn}`, config);
+    return this.executeGenerated(deleteDeptJobBoxOperation, {
+      path: { deptTaskBoxSn },
+      config,
+    });
   }
 
   /**
@@ -92,9 +123,8 @@ class DeptJobUserService extends UserService {
     // ⚠ page/size 로 보내지 않는다. ApiService 의 자동 매핑은 size → recordCountPerPage 인데
     //   이 엔드포인트(및 형제 /boxes)는 pageUnit 을 읽으므로, 자동 매핑에 기대면 페이지 크기가
     //   조용히 무시되고 서버 기본값 10건에 고정된다. 서버가 실제로 읽는 이름으로 직접 보낸다.
-    return this.get<PageResponse<DeptJobVO>>('', {
-      ...config,
-      params: {
+    return this.executeGenerated(getDeptJobListOperation, {
+      query: {
         pageIndex: params.pageIndex ?? 1,
         pageUnit: params.pageUnit ?? 10,
         scope: params.scope ?? 'mine',
@@ -103,14 +133,18 @@ class DeptJobUserService extends UserService {
         ...(params.deptTaskBoxSn ? { deptTaskBoxSn: params.deptTaskBoxSn } : {}),
         ...(params.deptId ? { deptId: params.deptId } : {}),
       },
-    });
+      config,
+    }) as Promise<PageResponse<DeptJobVO>>;
   }
 
   /**
    * 부서 업무 상세 조회
    */
   async getDeptJob(deptTaskSn: number, config?: AxiosRequestConfig): Promise<DeptJobVO> {
-    return this.get<DeptJobVO>(`/${deptTaskSn}`, config);
+    return this.executeGenerated(getDeptJobOperation, {
+      path: { deptTaskSn },
+      config,
+    }) as Promise<DeptJobVO>;
   }
 
   /**
@@ -118,21 +152,31 @@ class DeptJobUserService extends UserService {
    */
   async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<number> {
     // 서버가 채번한 식별자를 돌려준다(등록 직후 상세로 이동하기 위해 필요).
-    return this.post<number>('', data, config);
+    return this.executeGenerated(createDeptJobOperation, {
+      body: data as GeneratedOperationRequest<'createDeptJob'>,
+      config,
+    });
   }
 
   /**
    * 부서 업무 수정
    */
   async updateDeptJob(deptTaskSn: number, data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${deptTaskSn}`, data, config);
+    return this.executeGenerated(updateDeptJobOperation, {
+      path: { deptTaskSn },
+      body: data as GeneratedOperationRequest<'updateDeptJob'>,
+      config,
+    });
   }
 
   /**
    * 부서 업무 삭제
    */
   async deleteDeptJob(deptTaskSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${deptTaskSn}`, config);
+    return this.executeGenerated(deleteDeptJobOperation, {
+      path: { deptTaskSn },
+      config,
+    });
   }
 }
 

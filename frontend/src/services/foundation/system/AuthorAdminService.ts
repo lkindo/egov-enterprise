@@ -1,7 +1,18 @@
 import { AxiosRequestConfig } from 'axios';
-import type { components } from '@/types/generated-api';
+import type { components, operations } from '@/types/generated-api';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
+import {
+  createAuthorOperation,
+  deleteAuthorOperation,
+  deleteAuthorsOperation,
+  getAuthorMenusOperation,
+  getAuthorOperation,
+  getAuthorRolesOperation,
+  getAuthorsOperation,
+  saveAuthorRolesOperation,
+  updateAuthorOperation,
+} from '@/types/generated-operations';
 /**
  * 권한별 메뉴 할당 여부 응답 1건 — 서버 `MenuCreateDto` 의 실제 모양이다.
  *
@@ -14,11 +25,58 @@ export type AuthorMenuAssignment = components['schemas']['MenuCreateDto'];
 /** 롤 한 건 + 이 권한에 할당됐는지(regYn). 생성 계약을 그대로 쓴다. */
 export type AuthorRoleProjection = components['schemas']['AuthorRoleProjection'];
 
-export interface AuthorInfo {
-  authrtCd: string;
-  authrtNm: string;
-  authrtExpln?: string;
-  authrtCrtYmd?: string;
+export type AuthorInfo = components['schemas']['AuthorManageDto'];
+type AuthorListQuery = NonNullable<operations['getAuthors']['parameters']['query']>;
+
+const AUTHOR_QUERY_KEYS = [
+  'searchCondition',
+  'searchKeyword',
+  'searchUseYn',
+  'pageIndex',
+  'pageUnit',
+  'pageSize',
+  'firstIndex',
+  'lastIndex',
+  'recordCountPerPage',
+  'searchKeywordFrom',
+  'searchKeywordTo',
+] as const satisfies readonly (keyof AuthorListQuery)[];
+
+function toAuthorListQuery(params?: SearchParams): AuthorListQuery {
+  const query: AuthorListQuery = {};
+  if (!params) return query;
+
+  const generatedParams = params as Partial<AuthorListQuery>;
+  for (const key of AUTHOR_QUERY_KEYS) {
+    const value = generatedParams[key];
+    if (value !== undefined) Object.assign(query, { [key]: value });
+  }
+
+  if (params.page !== undefined) query.pageIndex = params.page + 1;
+  if (params.pageNo !== undefined) query.pageIndex = params.pageNo;
+  if (params.pageUnit === undefined && params.size !== undefined) query.pageUnit = params.size;
+  if (params.recordCountPerPage === undefined && params.size !== undefined) {
+    query.recordCountPerPage = params.size;
+  }
+  if (params.pageUnit === undefined && params.size === undefined && generatedParams.pageSize !== undefined) {
+    query.pageUnit = generatedParams.pageSize;
+  }
+  return query;
+}
+
+function requireAuthorPage<T>(
+  response: { list?: T[]; total?: number; page?: number; size?: number; totalPage?: number },
+): PageResponse<T> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('권한 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return response as PageResponse<T>;
 }
 
 /**
@@ -31,43 +89,46 @@ class AuthorAdminService extends AdminService {
 
   /** 권한 그룹 목록 조회 */
   async getAuthorList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<AuthorInfo>> {
-    const finalParams = { ...params };
-    
-    // Standardize page parameter
-    if (params?.page !== undefined) {
-      finalParams.pageIndex = params.page + 1;
-    }
-    
-    if (params?.pageNo !== undefined) {
-      finalParams.pageIndex = params.pageNo;
-    }
-    
-    return this.get<PageResponse<AuthorInfo>>('', { ...config, params: finalParams });
+    const response = await this.executeGenerated(getAuthorsOperation, {
+      query: toAuthorListQuery(params),
+      config,
+    });
+    return requireAuthorPage(response);
   }
 
   /** 권한 그룹 상세 조회 */
   async getAuthor(authorCode: string, config?: AxiosRequestConfig): Promise<AuthorInfo> {
-    return this.get<AuthorInfo>(`/${authorCode}`, config);
+    return this.executeGenerated(getAuthorOperation, {
+      path: { authrtCd: authorCode },
+      config,
+    });
   }
 
   /** 권한 그룹 등록 */
   async createAuthor(data: Partial<AuthorInfo>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post<void>('', data, config);
+    return this.executeGenerated(createAuthorOperation, { body: data as AuthorInfo, config });
   }
 
   /** 권한 그룹 수정 */
   async updateAuthor(authorCode: string, data: Partial<AuthorInfo>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${authorCode}`, data, config);
+    return this.executeGenerated(updateAuthorOperation, {
+      path: { authrtCd: authorCode },
+      body: data as AuthorInfo,
+      config,
+    });
   }
 
   /** 권한 그룹 삭제 */
   async deleteAuthor(authorCode: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${authorCode}`, config);
+    return this.executeGenerated(deleteAuthorOperation, {
+      path: { authrtCd: authorCode },
+      config,
+    });
   }
 
   /** 권한 그룹 다중 삭제 */
   async deleteAuthors(authorCodes: string[], config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>('', { ...config, data: authorCodes });
+    return this.executeGenerated(deleteAuthorsOperation, { body: authorCodes, config });
   }
 
   /**
@@ -85,7 +146,10 @@ class AuthorAdminService extends AdminService {
    * 메뉴 이름·계층은 여기 없으므로 `MenuAdminService.getAllMenus()` 와 합쳐 써야 한다.
    */
   async getAuthorMenus(authorCode: string, config?: AxiosRequestConfig): Promise<AuthorMenuAssignment[]> {
-    return this.get<AuthorMenuAssignment[]>(`/${authorCode}/menus`, config);
+    return this.executeGenerated(getAuthorMenusOperation, {
+      path: { authrtCd: authorCode },
+      config,
+    });
   }
 
   /**
@@ -103,7 +167,12 @@ class AuthorAdminService extends AdminService {
     params?: { pageIndex?: number; pageUnit?: number; searchKeyword?: string },
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<AuthorRoleProjection>> {
-    return this.get<PageResponse<AuthorRoleProjection>>(`/${authorCode}/roles`, { ...config, params });
+    const response = await this.executeGenerated(getAuthorRolesOperation, {
+      path: { authrtCd: authorCode },
+      query: params,
+      config,
+    });
+    return requireAuthorPage(response);
   }
 
   /**
@@ -114,7 +183,11 @@ class AuthorAdminService extends AdminService {
    * 보내야 한다.
    */
   async saveAuthorRoles(authorCode: string, roleCodes: string[], config?: AxiosRequestConfig): Promise<void> {
-    return this.post<void>(`/${authorCode}/roles`, roleCodes, config);
+    return this.executeGenerated(saveAuthorRolesOperation, {
+      path: { authrtCd: authorCode },
+      body: roleCodes,
+      config,
+    });
   }
 }
 

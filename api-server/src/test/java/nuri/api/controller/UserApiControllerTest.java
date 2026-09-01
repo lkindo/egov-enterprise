@@ -17,6 +17,7 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -86,25 +88,43 @@ public class UserApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(get("/api/v1/users/me"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.esntlId").doesNotExist())
+                .andExpect(jsonPath("$.data.emlAddr").doesNotExist());
     }
 
     @Test
     @DisplayName("내 프로필 수정 성공")
     void updateMe() throws Exception {
-        UserDto dto = UserDto.builder()
-                .userId("testuser")
-                .userNm("홍길동")
-                .pswd("ValidPass123!")
-                .build();
-        
         doNothing().when(userService).updateUser(eq("testuser"), any(UserDto.class));
 
         mockMvc.perform(put("/api/v1/users/me")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(toUserRequestJson(dto)))
+                .content("{\"userNm\":\"홍길동\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("내 프로필 수정으로 관리자 소유 조직 필드를 변경할 수 없다")
+    void updateMe_doesNotAcceptAdministratorOwnedOrganizationFields() throws Exception {
+        mockMvc.perform(put("/api/v1/users/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "userNm": "홍길동",
+                          "groupId": "FORGED_GROUP",
+                          "ognzId": "FORGED_ORG",
+                          "pstinstCd": "FORGED_INST"
+                        }
+                        """))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<UserDto> profile = ArgumentCaptor.forClass(UserDto.class);
+        verify(userService).updateUser(eq("testuser"), profile.capture());
+        assertNull(profile.getValue().groupId());
+        assertNull(profile.getValue().ognzId());
+        assertNull(profile.getValue().pstinstCd());
     }
 
     @Test
@@ -154,11 +174,18 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("관리자: 사용자 목록 조회 성공")
     void getUsers() throws Exception {
-        Page<UserDto> page = new PageImpl<>(Collections.emptyList());
+        UserDto mockDto = UserDto.builder()
+                .userId("targetUser")
+                .userNm("홍길동")
+                .build();
+        Page<UserDto> page = new PageImpl<>(List.of(mockDto));
         when(userService.getPagedUserList(any(), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/users"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].userId").value("targetUser"))
+                .andExpect(jsonPath("$.data.list[0].esntlId").doesNotExist())
+                .andExpect(jsonPath("$.data.list[0].emlAddr").doesNotExist());
     }
 
     @Test
@@ -172,7 +199,9 @@ public class UserApiControllerTest extends BaseControllerTest {
         when(userService.getUserById("targetUser")).thenReturn(mockDto);
 
         mockMvc.perform(get("/api/v1/admin/system/users/targetUser"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.esntlId").doesNotExist())
+                .andExpect(jsonPath("$.data.emlAddr").doesNotExist());
     }
 
     @Test
@@ -196,16 +225,11 @@ public class UserApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("관리자: 사용자 정보 수정 성공")
     void updateUser() throws Exception {
-        UserDto dto = UserDto.builder()
-                .userId("targetUser")
-                .userNm("홍길동")
-                .pswd("ValidPass123!")
-                .build();
         doNothing().when(userService).updateUser(eq("targetUser"), any(UserDto.class));
 
         mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(toUserRequestJson(dto)))
+                .content("{\"userNm\":\"홍길동\"}"))
                 .andExpect(status().isOk());
     }
 
@@ -256,6 +280,25 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk());
 
         verify(userService).updateUser(eq("testuser"), any(UserDto.class));
+    }
+
+    @Test
+    @DisplayName("내 프로필 수정은 경로 소유 ID와 비밀번호 없이 최소 프로필만 받는다")
+    void updateMe_minimalProfileRequest_succeeds() throws Exception {
+        doNothing().when(userService).updateUser(eq("testuser"), any(UserDto.class));
+
+        mockMvc.perform(put("/api/v1/users/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"userNm":"테스트","emlAddr":"me@egov.kr"}
+                        """))
+                .andExpect(status().isOk());
+
+        verify(userService).updateUser(eq("testuser"), argThat(dto ->
+                "테스트".equals(dto.userNm())
+                        && "me@egov.kr".equals(dto.emlAddr())
+                        && dto.userId() == null
+                        && dto.pswd() == null));
     }
 
     @Test

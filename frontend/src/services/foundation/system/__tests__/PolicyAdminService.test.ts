@@ -8,12 +8,30 @@ vi.mock('@/lib/api/client', () => ({
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
+    getRaw: vi.fn(),
+    requestRaw: vi.fn(),
   }
 }));
 
 describe('PolicyAdminService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(client.getRaw).mockImplementation(async (url, config) => {
+      const data = await vi.mocked(client.get)(url, config);
+      return {
+        success: true,
+        code: 'S000',
+        message: 'success',
+        data: data ?? (url === 'admin/system/policies' ? [] : {}),
+      };
+    });
+    vi.mocked(client.requestRaw).mockImplementation(async ({ url, method, data, ...config }) => {
+      if (!url) throw new Error('generated request URL is required');
+      if (method === 'put') {
+        await vi.mocked(client.put)(url, data, Object.keys(config).length > 0 ? config : undefined);
+      }
+      return { success: true, code: 'S000', message: 'success', data: null };
+    });
   });
 
   it('getPolicies should call correct endpoint', async () => {

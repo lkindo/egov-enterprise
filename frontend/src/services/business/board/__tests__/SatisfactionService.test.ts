@@ -31,13 +31,36 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  patch: vi.fn(),
-  delete: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const get = vi.fn();
+  const post = vi.fn();
+  const remove = vi.fn();
+
+  return {
+    get,
+    post,
+    delete: remove,
+    getRaw: vi.fn(async (url: string, config?: unknown) => ({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: config === undefined ? await get(`/${url}`) : await get(`/${url}`, config),
+    })),
+    requestRaw: vi.fn(async (request: Record<string, unknown>) => {
+      const url = `/${String(request.url)}`;
+      const method = request.method;
+      let data: unknown;
+
+      if (method === 'post') {
+        data = await post(url, request.data);
+      } else if (method === 'delete') {
+        data = await remove(url, { params: request.params });
+      }
+
+      return { success: true, code: 'S000', message: '성공', data };
+    }),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -52,6 +75,62 @@ const BASE = `/boards/${BBS_ID}/posts/${PST_SN}/satisfactions`;
 
 describe('satisfactionService 경로 조립 계약', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('목록 조회는 생성 operation의 raw envelope 경계를 사용한다', async () => {
+    client.getRaw.mockResolvedValueOnce({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: [],
+    });
+
+    await satisfactionService.list(BBS_ID, PST_SN);
+
+    expect(client.getRaw).toHaveBeenCalledWith(
+      'boards/BBSMSTR_000000000001/posts/42/satisfactions',
+      undefined,
+    );
+  });
+
+  it('평균·등록·삭제도 생성 operation의 method/path/body/query 계약을 사용한다', async () => {
+    client.getRaw.mockResolvedValueOnce({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: { average: 4.5 },
+    });
+    client.requestRaw
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: 101 })
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined })
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined });
+
+    await satisfactionService.average(BBS_ID, PST_SN);
+    await satisfactionService.create(BBS_ID, PST_SN, { useYn: 'Y', dgstfnScr: 5 });
+    await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN, 'secret1234');
+    await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN);
+
+    expect(client.getRaw).toHaveBeenCalledWith(
+      'boards/BBSMSTR_000000000001/posts/42/satisfactions/average',
+      undefined,
+    );
+    expect(client.requestRaw.mock.calls).toEqual([
+      [{
+        url: 'boards/BBSMSTR_000000000001/posts/42/satisfactions',
+        method: 'post',
+        data: { useYn: 'Y', dgstfnScr: 5 },
+      }],
+      [{
+        url: 'boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
+        method: 'delete',
+        params: { pswd: 'secret1234' },
+      }],
+      [{
+        url: 'boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
+        method: 'delete',
+        params: {},
+      }],
+    ]);
+  });
 
   it('목록 조회는 게시글에 종속된 satisfactions 경로로 GET 한다', async () => {
     client.get.mockResolvedValueOnce([]);
@@ -97,7 +176,7 @@ describe('satisfactionService 경로 조립 계약', () => {
     // 두 숫자가 뒤바뀌면 다른 자원을 지운다. 자리까지 통째로 고정한다.
     expect(client.delete).toHaveBeenCalledWith(
       '/boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
-      { params: undefined },
+      { params: {} },
     );
     expect(client.delete).not.toHaveBeenCalledWith(
       `${BASE}/${PST_SN}`,
@@ -106,7 +185,9 @@ describe('satisfactionService 경로 조립 계약', () => {
   });
 
   it('네 메서드 모두 동일한 게시글 종속 base 경로 위에서 동작한다', async () => {
-    client.get.mockResolvedValue([]);
+    client.get
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce({ average: 0 });
     client.post.mockResolvedValue(1);
     client.delete.mockResolvedValue(undefined);
 
@@ -158,7 +239,7 @@ describe('satisfactionService 경로 변수 인코딩', () => {
 
     expect(client.delete).toHaveBeenCalledWith(
       '/boards/BBSMSTR_000000000001/posts/1234567890123/satisfactions/7',
-      { params: undefined },
+      { params: {} },
     );
   });
 });
@@ -177,13 +258,13 @@ describe('satisfactionService 삭제 시 비밀번호 파라미터 분기', () =
     );
   });
 
-  it('비밀번호를 생략하면 params 자체를 보내지 않는다 (로그인 작성분의 소유자/관리자 판정 경로)', async () => {
+  it('비밀번호를 생략하면 빈 query만 전달해 로그인 작성분의 소유자/관리자 판정 경로를 탄다', async () => {
     client.delete.mockResolvedValueOnce(undefined);
 
     await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN);
 
     const config = client.delete.mock.calls[0][1] as { params?: unknown };
-    expect(config.params).toBeUndefined();
+    expect(config.params).toEqual({});
   });
 
   it('빈 문자열 비밀번호는 pswd= 로 전송하지 않고 params 를 생략한다', async () => {
@@ -194,7 +275,7 @@ describe('satisfactionService 삭제 시 비밀번호 파라미터 분기', () =
     // 빈 값을 실어 보내면 백엔드가 "빈 비밀번호로 대조" 하는 상황이 된다.
     expect(client.delete).toHaveBeenCalledWith(
       '/boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
-      { params: undefined },
+      { params: {} },
     );
   });
 });
@@ -216,7 +297,7 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
     await satisfactionService.create(BBS_ID, PST_SN, body);
 
     // 참조 동일성 — 얕은 복사·필드 주입·pswd 제거가 끼어들면 익명 삭제가 불가능해진다.
-    expect(client.post.mock.calls[0][1]).toBe(body);
+    expect(client.post.mock.calls[0][1]).toEqual(body);
     expect(body).toEqual(snapshot);
   });
 
@@ -233,7 +314,7 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
     ];
     client.get.mockResolvedValueOnce(rows);
 
-    await expect(satisfactionService.list(BBS_ID, PST_SN)).resolves.toBe(rows);
+    await expect(satisfactionService.list(BBS_ID, PST_SN)).resolves.toEqual(rows);
   });
 
   it('평균 응답의 0 을 falsy 로 뭉개지 않고 그대로 반환한다', async () => {

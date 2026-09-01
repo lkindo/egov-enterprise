@@ -1,103 +1,72 @@
 import { ApiService } from '@/services/core/ApiService';
-import { PageResponse, SearchParams } from '@/types/foundation/system';
-import { AxiosRequestConfig } from 'axios';
+import type { PageResponse } from '@/types/foundation/system';
+import type { AxiosRequestConfig } from 'axios';
+import type { components, operations } from '@/types/generated-api';
+import {
+  createExternalHrOperation,
+  createRewardOperation,
+  getAllExternalHrOperation,
+  getAllRewardsOperation,
+} from '@/types/generated-operations';
 
-/**
- * 외부인사정보 (ExternalHrDto 백엔드 계약과 1:1 대응)
- * - 서버: nuri.business.service.operation.dto.ExternalHrDto
- */
-export interface ExternalHr {
-  evntSn?: number;
-  otsdHrId?: string;
-  otsdHrNm?: string;
-  gndrCd?: string;
-  crTypeCd?: string;
-  ogdpInstNm?: string;
-  brdtYmd?: string;
-  areaNo?: string;
-  mdTelno?: string;
-  endTelno?: string;
-  emlAddr?: string;
-  crtDt?: string;
-  frstRgtrId?: string;
-  mdfcnDt?: string;
-  lastMdfrId?: string;
+/** 외부인사정보: OpenAPI ExternalHrDto를 단일 원본으로 사용한다. */
+export type ExternalHr = components['schemas']['ExternalHrDto'];
+
+/** 포상정보: OpenAPI RewardManageDto를 단일 원본으로 사용한다. */
+export type Reward = components['schemas']['RewardManageDto'];
+
+/** Spring Pageable의 0-based page를 그대로 받는 exact query. */
+export type OperationSearchParams = NonNullable<operations['getAllExternalHr']['parameters']['query']>;
+
+function requireOperationPage<T>(
+  response: { list?: T[]; total?: number; page?: number; size?: number; totalPage?: number },
+): PageResponse<T> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('운영지원 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    list: response.list,
+    total: response.total,
+    page: response.page,
+    size: response.size,
+    totalPage: response.totalPage,
+  };
 }
 
-/**
- * 포상정보 (RewardManageDto 백엔드 계약과 1:1 대응)
- * - 서버: nuri.business.service.operation.dto.RewardManageDto
- */
-export interface Reward {
-  rwrdSn?: number;
-  rwardwnrId?: string;
-  rwardCode?: string;
-  rwardDe?: string;
-  rwardNm?: string;
-  pblenCn?: string;
-  sanctnerId?: string;
-  confmAt?: string;
-  sanctnDt?: string;
-  returnResn?: string;
-  atchFileSn?: number;
-  ifmlAtrzSn?: number;
-  frstRgtrId?: string;
-  crtDt?: string;
-  lastMdfrId?: string;
-  mdfcnDt?: string;
-}
-
-/**
- * 운영지원 목록 조회 파라미터.
- * - `name`: 서버가 @RequestParam("name") 으로 받는 검색어(성명/포상명 부분일치)
- * - `page`: Spring Data Pageable 0-based 페이지 번호
- * - `size`: 페이지당 건수
- */
-export interface OperationSearchParams extends SearchParams {
-  name?: string;
-}
-
-/**
- * 운영지원(외부인사·포상) 관리자 서비스
- * 목록 응답은 백엔드 PageResponse(list/total/page/size/totalPage) 표준을 따른다.
- */
+/** 운영지원(외부인사·포상) 관리자 서비스. */
 class OperationAdminService extends ApiService {
   constructor() {
     super('/admin/operation');
   }
 
-  /**
-   * 외부인사정보 목록 조회 (페이징)
-   */
   async getExternalHrList(
-    params?: OperationSearchParams,
-    config?: AxiosRequestConfig
+    params: OperationSearchParams = {},
+    config?: AxiosRequestConfig,
   ): Promise<PageResponse<ExternalHr>> {
-    return this.get<PageResponse<ExternalHr>>('/external-hr', { ...config, params });
+    const response = await this.executeGenerated(getAllExternalHrOperation, { query: params, config });
+    return requireOperationPage(response);
   }
 
-  /**
-   * 외부인사정보 등록
-   */
-  async createExternalHr(data: Partial<ExternalHr>, config?: AxiosRequestConfig): Promise<ExternalHr> {
-    return this.post<ExternalHr>('/external-hr', data, config);
+  async createExternalHr(data: ExternalHr, config?: AxiosRequestConfig): Promise<ExternalHr> {
+    return this.executeGenerated(createExternalHrOperation, { body: data, config });
   }
 
-  /**
-   * 포상 목록 조회 (페이징)
-   */
   async getRewardList(
-    params?: OperationSearchParams,
-    config?: AxiosRequestConfig
+    params: OperationSearchParams = {},
+    config?: AxiosRequestConfig,
   ): Promise<PageResponse<Reward>> {
-    return this.get<PageResponse<Reward>>('/rewards', { ...config, params });
+    const response = await this.executeGenerated(getAllRewardsOperation, { query: params, config });
+    return requireOperationPage(response);
   }
 
-  /**
-   * 포상 정보 등록
-   */
-  async createReward(data: Partial<Reward>, config?: AxiosRequestConfig): Promise<Reward> {
-    return this.post<Reward>('/rewards', data, config);
+  async createReward(data: Reward, config?: AxiosRequestConfig): Promise<Reward> {
+    return this.executeGenerated(createRewardOperation, { body: data, config });
   }
 }
 

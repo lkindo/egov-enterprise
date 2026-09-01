@@ -181,12 +181,16 @@ public class SurveyService {
     }
 
     @Transactional
-    public void deleteQuestion(Long srvyQstnSn) {
+    public void deleteQuestion(Long srvySn, Long srvyQstnSn) {
+        Objects.requireNonNull(srvySn);
         Objects.requireNonNull(srvyQstnSn);
+        SurveyQuestion question = qesitmRepository.findById(srvyQstnSn)
+                .filter(candidate -> srvySn.equals(candidate.getSrvySn()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [V2_13 결속] 문항 삭제 시 응답·항목 선정리 (기존 fk_tb_srvy_artcl_tb_srvy_qstn 기왕 부채 해소)
-        rsltRepository.deleteBySrvyQstnSn(srvyQstnSn);
-        iemRepository.deleteBySrvyQstnSn(srvyQstnSn);
-        qesitmRepository.deleteById(srvyQstnSn);
+        rsltRepository.deleteBySrvyQstnSn(question.getSrvyQstnSn());
+        iemRepository.deleteBySrvyQstnSn(question.getSrvyQstnSn());
+        qesitmRepository.deleteById(question.getSrvyQstnSn());
     }
 
     // 설문 항목

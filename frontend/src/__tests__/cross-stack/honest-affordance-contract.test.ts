@@ -17,8 +17,8 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ROOT = path.resolve(__dirname, '..', '..', '..');
-const SRC = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
+const SRC = path.resolve(__dirname, '..', '..');
 
 const readSrc = (relative: string) => fs.readFileSync(path.join(SRC, relative), 'utf8');
 const readRepo = (relative: string) => fs.readFileSync(path.join(ROOT, relative), 'utf8');

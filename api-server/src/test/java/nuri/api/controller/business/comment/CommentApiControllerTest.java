@@ -80,6 +80,7 @@ class CommentApiControllerTest {
                         .pstSn(1L)
                         .bbsId("BBS_001")
                         .ansCn("Comment")
+                        .pswd("response-must-not-expose-this")
                         .build()
         ));
         given(commentService.getComments(any(Long.class), anyString(), any(Pageable.class))).willReturn(page);
@@ -92,7 +93,12 @@ class CommentApiControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].ansSn").value(1));
+                .andExpect(jsonPath("$.data.list[0].ansSn").value(1))
+                .andExpect(jsonPath("$.data.list[0].wrterId").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.list[0].wrterNm").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.list[0].frstRgtrId").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.list[0].crtDt").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.list[0].pswd").doesNotExist());
     }
 
     @Test
@@ -126,7 +132,8 @@ class CommentApiControllerTest {
         mockMvc.perform(post("/api/v1/comments")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"pstSn\":\"1\",\"bbsId\":\"BBS_001\",\"ansCn\":\"Content\","
-                        + "\"wrterId\":\"SPOOFED_ID\",\"wrterNm\":\"남의이름\"}")
+                        + "\"wrterId\":\"SPOOFED_ID\",\"wrterNm\":\"남의이름\","
+                        + "\"crtDt\":\"2099-01-01T00:00:00\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
@@ -138,6 +145,7 @@ class CommentApiControllerTest {
                 body.capture());
         assertThat(body.getValue().getWrterId()).isNull();
         assertThat(body.getValue().getWrterNm()).isNull();
+        assertThat(body.getValue().getCrtDt()).isNull();
     }
 
     @Test

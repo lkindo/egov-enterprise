@@ -21,17 +21,35 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("governance-harness")
 class HarnessSourceAccessContractTest {
 
+    /**
+     * [2026-08-31 확장] {@code readAllLines|readAllBytes|list|lines} 를 금지 목록에 추가했다.
+     * 종전에는 walk/readString 만 막아서, 같은 우회(공용 인덱스를 지나치는 직접 I/O·중복 루트 해석)를
+     * 다른 API 이름으로 하면 이 계약이 보지 못했다 — 실제로 harness 안에 7건이 그렇게 쌓여 있었다.
+     */
     private static final Pattern DIRECT_ACCESS = Pattern.compile(
-            "Files\\s*\\.\\s*(walk|readString)\\s*\\(");
+            "Files\\s*\\.\\s*(walk|readString|readAllLines|readAllBytes|list|lines)\\s*\\(");
 
     /**
      * 직접 파일 접근의 구조화 예외. 공용 인덱스의 실제 I/O 경계만 허용하며, 새 예외에는 경로·연산·사유가
-     * 모두 필요하다. 빈번한 스캔을 편의상 예외로 추가해서는 안 된다.
+     * 모두 필요하다. 빈번한 스캔을 편의상 예외로 추가해서는 안 된다. 미사용 예외는 그 자체가 위반이다.
      */
     private static final Map<String, List<Allowance>> ALLOWANCES = Map.of(
             "HarnessSourceIndex.java", List.of(
                     new Allowance("walk", 1, "디렉터리 인덱스의 단일 실제 I/O 경계"),
-                    new Allowance("readString", 1, "UTF-8 텍스트 캐시의 단일 실제 I/O 경계")));
+                    new Allowance("readString", 1, "UTF-8 텍스트 캐시의 단일 실제 I/O 경계")),
+            "ConfigSafetyLinterTest.java", List.of(
+                    new Allowance("readAllLines", 1, "YAML 행 단위 규칙 검사의 기존 경계 — 신규 유입 금지 동결")),
+            "FlywaySchemaOwnershipLinterTest.java", List.of(
+                    new Allowance("readAllLines", 1, "CI YAML 행 검사 기존 경계 — 신규 유입 금지 동결"),
+                    new Allowance("readAllBytes", 1, "바이트 정확 해시 검사 기존 경계 — 신규 유입 금지 동결")),
+            "HibernatePropertyBindingLinterTest.java", List.of(
+                    new Allowance("readAllLines", 1, "설정 YAML 행 검사 기존 경계 — 신규 유입 금지 동결")),
+            "ControllerScanBaseLinterTest.java", List.of(
+                    new Allowance("list", 1, "패키지 루트 census 의 1단 나열 기존 경계 — 신규 유입 금지 동결")),
+            "WorkflowManifestLinterTest.java", List.of(
+                    new Allowance("list", 1, "워크플로 디렉터리 1단 나열 기존 경계 — 신규 유입 금지 동결")),
+            "SecretLiteralLinterTest.java", List.of(
+                    new Allowance("readAllBytes", 1, "스크립트 바이트 검사 기존 경계 — 신규 유입 금지 동결")));
 
     @Test
     @DisplayName("거버넌스 하네스는 공용 source index를 우회해 Files.walk/readString을 호출하지 않는다")
@@ -73,15 +91,16 @@ class HarnessSourceAccessContractTest {
     }
 
     @Test
-    @DisplayName("부정 증명: 직접 Files.walk/readString 호출은 위반으로 인식한다")
+    @DisplayName("부정 증명: 직접 Files.walk/readString/readAllLines/list 호출은 위반으로 인식한다")
     void detectorRejectsDirectAccess() {
-        String injected = "Files" + ".walk(root);\nvar text = Files" + ".readString(path);";
+        String injected = "Files" + ".walk(root);\nvar text = Files" + ".readString(path);\n"
+                + "var lines = Files" + ".readAllLines(path);\nvar children = Files" + ".list(dir);";
         Matcher matcher = DIRECT_ACCESS.matcher(injected);
         List<String> operations = new ArrayList<>();
         while (matcher.find()) {
             operations.add(matcher.group(1));
         }
-        assertEquals(List.of("walk", "readString"), operations);
+        assertEquals(List.of("walk", "readString", "readAllLines", "list"), operations);
         assertTrue(ALLOWANCES.values().stream().flatMap(List::stream)
                 .allMatch(allowance -> !allowance.reason().isBlank()),
                 "모든 예외에는 검토 가능한 사유가 있어야 합니다.");

@@ -1,5 +1,18 @@
 import client from '@/lib/api/client';
 import type { AxiosRequestConfig } from 'axios';
+import type {
+  GeneratedOperationDescriptor,
+  GeneratedOperationResponse,
+} from '@/types/generated-operations';
+import {
+  type GeneratedMultipartDescriptor,
+  type GeneratedMultipartOperationArguments,
+  type GeneratedOperationArguments,
+} from '@/lib/api/generated-operation';
+import {
+  executeGeneratedMultipartOperation,
+  executeGeneratedOperation,
+} from '@/lib/api/generated-api-client';
 
 /**
  * 기본 API 서비스 클래스
@@ -60,6 +73,25 @@ export abstract class ApiService {
 
   protected async delete<T = unknown>(path: string = '', config?: AxiosRequestConfig): Promise<T> {
     return client.delete<T>(`${this.basePath}${path}`, config);
+  }
+
+  /**
+   * OpenAPI operationId에서 생성한 method/path/request/response 계약을 한 번에 실행한다.
+   * 기존 basePath와 호출자 generic은 의도적으로 사용하지 않는다.
+   */
+  protected async executeGenerated<const Descriptor extends GeneratedOperationDescriptor>(
+    descriptor: Descriptor,
+    args: GeneratedOperationArguments<Descriptor>,
+  ): Promise<GeneratedOperationResponse<Descriptor>> {
+    return executeGeneratedOperation(descriptor, args);
+  }
+
+  /** Multipart bytes는 FormData가, method/path/JSON 응답은 generated descriptor가 소유한다. */
+  protected async executeGeneratedMultipart<const Descriptor extends GeneratedMultipartDescriptor>(
+    descriptor: Descriptor,
+    args: GeneratedMultipartOperationArguments<Descriptor>,
+  ): Promise<GeneratedOperationResponse<Descriptor>> {
+    return executeGeneratedMultipartOperation(descriptor, args);
   }
 }
 

@@ -17,11 +17,8 @@
  *    404 가 된다. 선행 슬래시가 되살아나면 axios `baseURL`('/api/v1')의 경로 세그먼트가 통째로
  *    날아가 절대 경로로 해석된다.
  *
- * 2) config 원형 전달 — 이 서비스의 `getTemplateList(config)` 는 형제 서비스들과 달리 params 인자를
- *    따로 받지 않고 **호출부의 AxiosRequestConfig 를 상속 `get()` 에 그대로 넘긴다**. 그래서
- *    `{ ...config, params }` 같은 재포장이 일어나지 않고, 인자를 생략하면 `undefined` 가, SSR 이
- *    토큰 없이 넘기는 `{}` 는 `{}` 그대로 클라이언트에 도달한다. 여기에 임의의 기본 params 를
- *    끼워 넣으면 백엔드가 query 파라미터를 선언하지 않은 엔드포인트에 불필요한 질의가 붙는다.
+ * 2) config 전달 — 헤더·timeout·signal은 보존한다. query가 없는 generated operation이므로
+ *    config.params로 계약을 덮어쓰려는 시도는 요청 전에 차단하고, 의미 없는 빈 config는 생략한다.
  *
  * 3) Authorization 헤더 — `page.tsx` 는 서버 컴포넌트라 쿠키의 accessToken 을 직접 헤더로 실어
  *    보낸다(SSR 은 브라우저 쿠키 자동 전송·미들웨어 주입이 없다). 이 헤더가 유실되면 SSR 프리페치가
@@ -47,9 +44,33 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // axios 인스턴스/인터셉터는 로드하지 않고, 파일별 mock 격리는 유지한다.
-vi.mock('@/lib/api/client', async () => ({
-  default: (await import('@/test-utils/api-client-test-double')).apiClientTestDouble,
-}));
+vi.mock('@/lib/api/client', async () => {
+  const { apiClientTestDouble } = await import('@/test-utils/api-client-test-double');
+  const success = (data: unknown) => ({ success: true, code: 'S000', message: 'success', data });
+  const defaultTemplate = {
+    tmpltId: 'TMPT_DEFAULT',
+    tmpltNm: '기본 템플릿',
+    tmpltSeCd: 'TMPT01',
+    tmpltPath: '/templates/default',
+    useYn: 'Y',
+  };
+
+  return {
+    default: {
+      ...apiClientTestDouble,
+      getRaw: async (url: string, config?: unknown) => {
+        const result = await apiClientTestDouble.get(url, config);
+        return success(result ?? (url === 'admin/system/templates' ? [] : defaultTemplate));
+      },
+      requestRaw: async (requestConfig: Record<string, unknown>) => {
+        const { url, method: _method, data, ...config } = requestConfig;
+        const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
+        const result = await apiClientTestDouble.post(url, data, forwardedConfig);
+        return success(result ?? null);
+      },
+    },
+  };
+});
 
 import { templateAdminService, type TmplatInfo } from '../TemplateAdminService';
 import {
@@ -112,12 +133,11 @@ describe('TemplateAdminService — 템플릿 관리자 API 계약', () => {
       expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { pageIndex: 1 } });
     });
 
-    it('SSR 이 토큰 없이 넘기는 빈 config({})는 빈 객체 그대로 전달된다', async () => {
+    it('SSR 이 토큰 없이 넘기는 빈 config({})는 의미 없는 빈 설정으로 정규화된다', async () => {
       // page.tsx: `const axiosConfig = accessToken ? { headers: {...} } : {}`
       await templateAdminService.getTemplateList({});
 
-      expect(client.get).toHaveBeenCalledWith(BASE, {});
-      expect(client.get).not.toHaveBeenCalledWith(BASE, undefined);
+      expect(client.get).toHaveBeenCalledWith(BASE, undefined);
     });
 
     it('SSR 호출부가 넘기는 Authorization 헤더가 유실되지 않는다', async () => {
@@ -138,21 +158,11 @@ describe('TemplateAdminService — 템플릿 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { timeout: 3000, signal });
     });
 
-    it('호출부가 config.params 를 주면 상속된 BaseSearchDto 변환이 적용된다 — page 2 는 pageIndex 3 이다', async () => {
-      // 이 서비스 고유의 페이징 축은 없다(백엔드 selectTmplatInfoList 는 query 파라미터를 선언하지 않고
-      // 현재 호출부도 params 를 넘기지 않는다). 다만 config 를 상속 get() 에 그대로 넘기므로
-      // ApiService 의 0-based page → 1-based pageIndex(+1), size → recordCountPerPage 변환이
-      // 이 메서드를 통해서도 살아 있다는 사실을 고정해 둔다. page/size 원본 키는 지워지지 않는다
-      // (Spring Data Pageable 병행 지원).
-      await templateAdminService.getTemplateList({ params: { page: 2, size: 10 } });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 2, size: 10, pageIndex: 3, recordCountPerPage: 10 },
-      });
-      // +1 이 사라지면(pageIndex 2) 목록이 한 페이지씩 밀린다.
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { page: 2, size: 10, pageIndex: 2, recordCountPerPage: 10 },
-      });
+    it('query가 없는 operation에 config.params를 주면 요청 전에 차단한다', async () => {
+      await expect(
+        templateAdminService.getTemplateList({ params: { page: 2, size: 10 } }),
+      ).rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
 
     it('목록 응답은 재포장 없이 클라이언트 결과를 그대로 반환한다', async () => {

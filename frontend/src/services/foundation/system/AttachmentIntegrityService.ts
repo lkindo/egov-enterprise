@@ -1,5 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
 import type { components } from '@/types/generated-api';
+import { scanOperation } from '@/types/generated-operations';
 
 /**
  * 첨부 정합성 점검 결과.
@@ -23,7 +24,7 @@ class AttachmentIntegrityAdminService extends AdminService {
   }
 
   async scan(): Promise<AttachmentIntegrityReport> {
-    return this.get<AttachmentIntegrityReport>();
+    return this.executeGenerated(scanOperation, {});
   }
 }
 

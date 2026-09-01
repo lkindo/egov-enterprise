@@ -64,11 +64,11 @@ class ResponseContractLinterTest {
     private static final Pattern WRAPPED = Pattern.compile("ApiResponse\\s*<");
 
     /**
-     * 비정형 payload 동결(2026-08-29 실측 1건).
+     * 비정형 payload 동결(2026-08-31 실측 0건).
      *
-     * <p>{@code DashboardApiController#getDashboardData} 하나만 남았다. foundation 의
-     * {@code DashboardItemProvider} SPI 시그니처가 페이로드를 {@code Map} 으로 규정하고 있어
-     * typed 이행이 SPI 계약 변경을 동반한다 — 그 설계 결정이 선행이다.
+     * <p>{@code DashboardApiController#getDashboardData}도 내부 provider SPI의 확장 Map은
+     * 유지하면서 외부 응답을 {@code DashboardResponse}로 투영해 마지막 비정형 payload를
+     * 상환했다. 새 Map/Object 응답이 생기면 이 exact census가 즉시 red가 된다.
      *
      * <p><b>[2026-08-29] 5 → 1</b>. 저위험 4건을 전용 DTO 로 상환했다 —
      * {@code HealthCheckApiController#checkHealth}({@code HealthStatusResponse}),
@@ -82,7 +82,7 @@ class ResponseContractLinterTest {
      * {@code ApiResponseMapStringObject.data} 는 {@code Record<string, never>} 로 생성돼
      * <b>어떤 값도 담을 수 없는 타입</b>이다. Map 반환은 DB→DTO→Zod 계약 체인을 무력화한다.
      */
-    private static final int UNTYPED_PAYLOAD_COUNT = 1;
+    private static final int UNTYPED_PAYLOAD_COUNT = 0;
 
     /**
      * 헌법 제6조 3항 binary/stream 예외의 허용 census — <b>파일 경로 {@code #} 핸들러 메서드</b> 단위.
@@ -202,6 +202,88 @@ class ResponseContractLinterTest {
 
         log.info("✅ 응답 계약 census 일치 — 핸들러 {}건, 비정형 {}건, 래퍼 밖 {}건.",
                 handlers, untyped.size(), unwrapped.size());
+    }
+
+    /**
+     * [2026-08-31 신설] 정규식 census 의 <b>손실 방어</b> — 컴파일된 클래스 표면과 교차 검증한다.
+     *
+     * <p>{@link #HANDLER_MAPPING} 은 시그니처가 한 줄임을 전제한다. 반환형이 줄바꿈되거나
+     * 비{@code public} 핸들러가 생기면 그 핸들러는 census 에서 <b>조용히 빠지고</b>, 동결 상수가
+     * 0 인 지금은 {@code Map} 반환이 숨으면 red 가 아니라 <b>false green</b> 이 된다.
+     * {@code HANDLER_FLOOR} 는 대량 붕괴만 잡는다 — 한두 건의 누락은 통과한다.
+     *
+     * <p>그래서 reflection 으로 같은 파일들의 메서드 레벨 매핑 애노테이션을 세어 <b>정확히 같은
+     * 집합</b>임을 요구한다. 정규식이 못 본 핸들러가 하나라도 있으면 이 테스트가 그 목록을 들고
+     * red 가 된다. (reflection 쪽만 있는 항목 = 정규식 손실, 정규식 쪽만 있는 항목 = 파싱 오탐.)
+     */
+    @Test
+    @DisplayName("📦 핸들러 census 손실 방어 — 정규식 추출 ↔ 컴파일 표면 exact 교차 검증")
+    void handlerCensusMatchesCompiledSurface() throws IOException {
+        Path repoRoot = HarnessSourceIndex.repoRoot();
+        Path base = repoRoot.resolve(CONTROLLER_BASE);
+        List<Class<? extends java.lang.annotation.Annotation>> mappings = List.of(
+                org.springframework.web.bind.annotation.GetMapping.class,
+                org.springframework.web.bind.annotation.PostMapping.class,
+                org.springframework.web.bind.annotation.PutMapping.class,
+                org.springframework.web.bind.annotation.PatchMapping.class,
+                org.springframework.web.bind.annotation.DeleteMapping.class,
+                org.springframework.web.bind.annotation.RequestMapping.class);
+
+        List<String> scanned = new ArrayList<>();
+        List<String> compiled = new ArrayList<>();
+        String sourcePrefix = "api-server/src/main/java/";
+
+        for (Path source : HarnessSourceIndex.javaSources(base)) {
+            String relative = repoRoot.relativize(source).toString().replace('\\', '/');
+            String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+                    HarnessSourceIndex.read(source));
+            Matcher handler = HANDLER_MAPPING.matcher(code);
+            while (handler.find()) {
+                scanned.add(relative + "#" + handler.group(2));
+            }
+
+            String fqn = relative.substring(sourcePrefix.length(), relative.length() - ".java".length())
+                    .replace('/', '.');
+            try {
+                collectMappedMethods(Class.forName(fqn, false, getClass().getClassLoader()),
+                        relative, mappings, compiled);
+            } catch (ClassNotFoundException e) {
+                fail("게이트 무결성 파손: 컨트롤러 소스의 컴파일 클래스를 찾지 못했습니다 — " + fqn
+                        + " (조용한 skip 은 교차 검증을 무력화합니다)");
+            }
+        }
+
+        java.util.Collections.sort(scanned);
+        java.util.Collections.sort(compiled);
+        if (!scanned.equals(compiled)) {
+            List<String> onlyCompiled = new ArrayList<>(compiled);
+            scanned.forEach(onlyCompiled::remove);
+            List<String> onlyScanned = new ArrayList<>(scanned);
+            compiled.forEach(onlyScanned::remove);
+            fail("핸들러 census 교차 검증 실패 — 정규식 추출과 컴파일 표면이 다릅니다.\n"
+                    + "  · 정규식이 놓친 핸들러(시그니처 줄바꿈·비public 등 — census 손실 = false-green 경로): "
+                    + (onlyCompiled.isEmpty() ? "없음" : "\n      " + String.join("\n      ", onlyCompiled)) + "\n"
+                    + "  · 정규식만 잡은 항목(파싱 오탐): "
+                    + (onlyScanned.isEmpty() ? "없음" : "\n      " + String.join("\n      ", onlyScanned)));
+        }
+
+        log.info("✅ 핸들러 census 교차 검증 OK — 정규식 {}건 == 컴파일 표면 {}건.", scanned.size(), compiled.size());
+    }
+
+    /** 최상위·중첩 클래스의 메서드 레벨 매핑을 수집(합성·bridge 메서드 제외). */
+    private static void collectMappedMethods(Class<?> type, String relative,
+            List<Class<? extends java.lang.annotation.Annotation>> mappings, List<String> out) {
+        for (java.lang.reflect.Method method : type.getDeclaredMethods()) {
+            if (method.isSynthetic() || method.isBridge()) {
+                continue;
+            }
+            if (mappings.stream().anyMatch(method::isAnnotationPresent)) {
+                out.add(relative + "#" + method.getName());
+            }
+        }
+        for (Class<?> nested : type.getDeclaredClasses()) {
+            collectMappedMethods(nested, relative, mappings, out);
+        }
     }
 
     private static void writeActual(String relative, List<String> values) throws IOException {

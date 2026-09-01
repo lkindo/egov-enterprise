@@ -1,7 +1,12 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
-import { PageResponseBoardDtoSchema } from '@/types/generated-zod';
+import {
+  createPostOperation,
+  getPostsOperation,
+  getPublicFaqDetailOperation,
+  getPublicFaqsOperation,
+} from '@/types/generated-operations';
 import { AxiosRequestConfig } from 'axios';
 import { HELP_FAQ_BOARD_ID, QNA_BOARD_ID } from '@/config/board-ids';
 
@@ -59,11 +64,9 @@ class HelpUserService extends UserService {
 
   /** FAQ 목록 조회 (전용 ID: BBSMSTR_AAAAAAAAAAAA) */
   async getFaqs(params: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig): Promise<PageResponse<FAQ>> {
-    const response = await this.get<PageResponse<BoardFaqListItem>>('/public-faqs', {
-      ...config,
-      params: {
-        ...params,
-      }
+    const response = await this.executeGenerated(getPublicFaqsOperation, {
+      query: params,
+      config,
     });
 
     // 목록 projection에는 본문(pstCn)이 없으며, 상세 내용은 펼침 시 별도 조회한다.
@@ -77,7 +80,13 @@ class HelpUserService extends UserService {
         inqCnt: item.inqCnt || 0,
         mdfcnDt: item.crtDt ?? '',
       }));
-      return { ...response, list };
+      return {
+        list,
+        total: response.total ?? 0,
+        totalPage: response.totalPage ?? 0,
+        page: response.page ?? 0,
+        size: response.size ?? 0,
+      };
     }
     return { list: [], total: 0, totalPage: 0, page: 0, size: 0 } as unknown as PageResponse<FAQ>;
   }
@@ -87,10 +96,18 @@ class HelpUserService extends UserService {
     const canonicalFaqId = canonicalPositiveInteger(faqId);
     if (!canonicalFaqId) throw new Error('유효하지 않은 FAQ 식별자입니다.');
 
-    const item = await this.get<unknown>(
-      `/public-faqs/${canonicalFaqId}`,
-      config,
-    );
+    let item: BoardFaqDetail;
+    try {
+      item = await this.executeGenerated(getPublicFaqDetailOperation, {
+        path: { pstSn: Number(canonicalFaqId) },
+        config,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('생성 API 응답')) {
+        throw new Error('FAQ 상세 정보를 표시할 수 없습니다.');
+      }
+      throw error;
+    }
 
     if (!isPublicFaqDetail(item, canonicalFaqId)) {
       throw new Error('FAQ 상세 정보를 표시할 수 없습니다.');
@@ -107,31 +124,42 @@ class HelpUserService extends UserService {
 
   /** Q&A 목록 조회 (페이지) */
   async getQnas(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
-    const response = await this.get<unknown>(`/${QNA_BOARD_ID}`, {
-      ...config,
-      params: {
-        ...params,
-        searchWrd: params?.keyword || ''
-      }
+    const { keyword, ...pageQuery } = params;
+    const response = await this.executeGenerated(getPostsOperation, {
+      path: { bbsId: QNA_BOARD_ID },
+      query: {
+        ...pageQuery,
+        searchWrd: keyword || '',
+      },
+      config,
     });
-    const parsed = PageResponseBoardDtoSchema.parse(response);
-    const list = (parsed.list ?? []).map((item): QNA => ({
-      qaId: String(item.pstSn ?? ''),
-      qstnTtl: item.pstTtl ?? '',
-      qstnCn: item.pstCn ?? '',
-      ansCn: item.pstCn ?? '',
-      wrterNm: item.userNm || item.userId,
-      writngDe: item.crtDt ?? '',
-      qnaSttsCd: item.qnaSttsCd,
-      scrtYn: item.scrtYn,
-    }));
+    const list = (response.list ?? []).map((item): QNA => {
+      if (
+        typeof item.pstSn !== 'number'
+        || typeof item.userId !== 'string'
+        || typeof item.useYn !== 'string'
+      ) {
+        throw new Error('Q&A 목록 정보를 표시할 수 없습니다.');
+      }
+
+      return {
+        qaId: String(item.pstSn),
+        qstnTtl: item.pstTtl ?? '',
+        qstnCn: item.pstCn ?? '',
+        ansCn: item.pstCn ?? '',
+        wrterNm: item.userNm || item.userId,
+        writngDe: item.crtDt ?? '',
+        ...(item.qnaSttsCd == null ? {} : { qnaSttsCd: item.qnaSttsCd }),
+        ...(item.scrtYn == null ? {} : { scrtYn: item.scrtYn }),
+      };
+    });
 
     return {
       list,
-      total: parsed.total ?? 0,
-      page: parsed.page ?? 0,
-      size: parsed.size ?? 0,
-      totalPage: parsed.totalPage ?? 0,
+      total: response.total ?? 0,
+      page: response.page ?? 0,
+      size: response.size ?? 0,
+      totalPage: response.totalPage ?? 0,
     };
   }
 
@@ -143,15 +171,17 @@ class HelpUserService extends UserService {
    * 본다). 서버가 열람 범위를 이 값으로 집행하므로 화면 문구가 아니라 이 필드가 실제 경계다.
    */
   async createQna(data: Partial<QNA>, config?: AxiosRequestConfig): Promise<void> {
+    if (typeof data.qstnTtl !== 'string' || typeof data.qstnCn !== 'string') {
+      throw new Error('Q&A 제목과 본문은 필수입니다.');
+    }
     const boardData = {
       bbsId: QNA_BOARD_ID,
       pstTtl: data.qstnTtl,
       pstCn: data.qstnCn,
       pswd: data.writngPassword,
-      userNm: data.wrterNm,
       scrtYn: 'Y',
     };
-    return this.post<void>('/posts', boardData, config);
+    await this.executeGenerated(createPostOperation, { body: boardData, config });
   }
 }
 

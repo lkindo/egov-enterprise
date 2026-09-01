@@ -1,6 +1,13 @@
 import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
+import type { GeneratedOperationRequest } from '@/types/generated-operations';
+import {
+  getPoll_1Operation,
+  getPolls_1Operation,
+  insertPollOperation,
+  vote_1Operation,
+} from '@/types/generated-operations';
 
 /**
  * 온라인설문(OnlinePoll) 정보 DTO 인터페이스
@@ -36,22 +43,39 @@ class OnlinePollAdminService extends AdminService {
 
   /** ⑤씪님Poll 목록 페이지조회 */
   async getPollList(params?: { keyword?: string; page?: number; size?: number }, config?: AxiosRequestConfig) {
-    return this.get<PageResponse<OnlinePollDto>>('', { ...config, params });
+    const generatedConfig = config ? { ...config } : undefined;
+    if (generatedConfig) delete generatedConfig.params;
+    return this.executeGenerated(getPolls_1Operation, {
+      query: params ?? {},
+      config: generatedConfig,
+    }) as Promise<PageResponse<OnlinePollDto>>;
   }
 
   /** ⑤씪님Poll 상세 조회 */
   async getPoll(pollSn: number, config?: AxiosRequestConfig) {
-    return this.get<OnlinePollDto>(`/${pollSn}`, config);
+    return this.executeGenerated(getPoll_1Operation, {
+      path: { pollSn },
+      config,
+    }) as Promise<OnlinePollDto>;
   }
 
   /** ⑤씪님Poll 등록 */
   async createPoll(pollDto: OnlinePollDto, config?: AxiosRequestConfig) {
-    return this.post<void>('', pollDto, config);
+    return this.executeGenerated(insertPollOperation, {
+      body: pollDto as GeneratedOperationRequest<'insertPoll'>,
+      config,
+    });
   }
 
   /** ы몴 泥섎━ */
   async vote(pollSn: number, pollArtclSn: number, config?: AxiosRequestConfig) {
-    return this.post<void>(`/${pollSn}/vote`, null, { ...config, params: { pollArtclSn } });
+    const generatedConfig = config ? { ...config } : undefined;
+    if (generatedConfig) delete generatedConfig.params;
+    return this.executeGenerated(vote_1Operation, {
+      path: { pollSn },
+      query: { pollArtclSn },
+      config: generatedConfig,
+    });
   }
 }
 

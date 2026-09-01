@@ -1567,7 +1567,7 @@
       "routeGate": "DEFAULT_AUTHENTICATED",
       "guardRef": "UserService#updateUser",
       "handlerRequiredTokens": [
-        "userService.updateUser(userDetails.getUserId(), userDto)"
+        "userService.updateUser(userDetails.getUserId(), request.toUserDto())"
       ]
     },
     {

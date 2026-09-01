@@ -6,6 +6,8 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const PROFILE_PATH = path.join(REPO_ROOT, 'frontend', 'e2e', 'shard-duration-profile.json');
 const SPEC_ROOT = path.join(REPO_ROOT, 'frontend', 'e2e');
 const ISO_CAPTURED_AT = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))?$/;
+/** 프로파일 신선도 상한(일) — 초과하면 red. 해소는 최근 성공 run 기반 재생성이다. */
+const MAX_PROFILE_AGE_DAYS = 120;
 
 function toPosix(value) {
   return value.split(path.sep).join('/');
@@ -59,6 +61,12 @@ function validateSourceEvidence(source, nowMs) {
     errors.push('source.capturedAt must be a valid ISO date or timestamp');
   } else if (capturedAtMs > nowMs) {
     errors.push('source.capturedAt must not be in the future');
+  } else if (capturedAtMs < nowMs - MAX_PROFILE_AGE_DAYS * 24 * 60 * 60 * 1000) {
+    // [2026-08-31] provenance 는 있었지만 신선도 상한이 없었다 — ≤15% 균형 불변식이
+    // 임의로 낡은 실행시간을 기준으로 검사될 수 있었다. 해소는 최근 성공 e2e run 의
+    // 실행시간으로 프로파일을 재생성하는 것이다(run id·commit·capturedAt 함께 갱신).
+    errors.push(`source.capturedAt is older than ${MAX_PROFILE_AGE_DAYS} days`
+      + ' — regenerate shard-duration-profile.json from a recent successful e2e run');
   }
 
   if (typeof source.runner !== 'string' || source.runner.trim().length === 0) {

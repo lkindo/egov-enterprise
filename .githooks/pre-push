@@ -65,8 +65,8 @@ echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / frontend
 if [ -n "$CHANGED_FILES" ]; then
   # Atlas는 전용 docs-as-code 계약을 통과한 경우에만 문서 fast-pass를 허용한다.
   if echo "$CHANGED_FILES" | grep -qx 'frontend/public/governance_harness_atlas.html'; then
-    echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/governance-atlas-contract.test.ts"
-    pnpm -C frontend exec vitest run src/__tests__/governance-atlas-contract.test.ts \
+    echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts"
+    pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts \
       || { echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }
   fi
 
@@ -122,6 +122,15 @@ if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   echo "  → frontend: codegen drift gate (api-docs.json ↔ generated types/zod)"
   ( cd frontend && pnpm run codegen:verify && pnpm run codegen:verify:zod ) \
     || { echo "❌ codegen 드리프트 — api-docs.json 과 generated-api.d.ts/generated-zod.ts 불일치. 'pnpm -C frontend codegen:file && pnpm -C frontend codegen:zod' 로 재생성 후 커밋하세요 (계약 드리프트 방어)"; exit 1; }
+fi
+
+# 크로스 스택 계약(frontend/src/__tests__/cross-stack)은 백엔드 소스를 함께 감사한다.
+# 프런트 게이트가 생략되는 백엔드-only push 에서도 이 하위 집합은 실행해야
+# "감사 대상만 고치면 감사자가 돌지 않는" 경로가 생기지 않는다(H5).
+if [ "$SCOPE_BACKEND" = "true" ] && [ "$SCOPE_FRONTEND" != "true" ] && [ -f frontend/package.json ]; then
+  echo "  → cross-stack: vitest src/__tests__/cross-stack (frontend↔backend 진실 결속)"
+  ( cd frontend && npx vitest run src/__tests__/cross-stack ) \
+    || { echo "❌ 크로스 스택 계약 실패 — 백엔드 변경이 프런트 화면의 고지·문구 계약과 어긋납니다"; exit 1; }
 fi
 
 # 헌법·표준 governance 하네스. 로컬은 우회 가능하며 authoritative merge gate는 CI다.

@@ -20,6 +20,12 @@ const NOW = Date.parse('2026-08-20T12:00:00Z');
 
 const repository = inspectRouteRepository(ROOT);
 
+// [2026-08-31] 라우트 수의 단일 원본은 파일시스템 스캔이다 — 같은 수(120)가 세 테스트 파일에
+//   각각 하드코딩되어 신규 화면 1개가 리터럴 3곳을 동시 수정하게 만들던 중복을 제거했다.
+//   census JSON 의 드리프트는 구조 검사(missing filesystem route ↔ ghost route)가 잡고,
+//   스캔 자체의 붕괴는 아래 vacuity 하한이 막는다.
+const FILESYSTEM_ROUTE_COUNT = discoverPageRoutes(ROOT).length;
+
 function currentAnalysis() {
   return analyzeRouteCapabilities(ROOT, MANIFEST_PATH, NOW);
 }
@@ -27,10 +33,39 @@ function currentAnalysis() {
 test('current manifest covers every filesystem route exactly once without structural errors', () => {
   const analysis = currentAnalysis();
 
+  assert.ok(FILESYSTEM_ROUTE_COUNT >= 100, `route discovery collapsed: ${FILESYSTEM_ROUTE_COUNT} < 100`);
   assert.deepEqual(analysis.result.errors, []);
-  assert.equal(analysis.result.summary.filesystemRoutes, 120);
-  assert.equal(analysis.result.summary.manifestRoutes, 120);
-  assert.equal(new Set(analysis.manifest.routes.map(({ route }) => route)).size, 120);
+  assert.equal(analysis.result.summary.filesystemRoutes, FILESYSTEM_ROUTE_COUNT);
+  assert.equal(analysis.result.summary.manifestRoutes, FILESYSTEM_ROUTE_COUNT);
+  assert.equal(new Set(analysis.manifest.routes.map(({ route }) => route)).size, FILESYSTEM_ROUTE_COUNT);
+});
+
+// [2026-08-31 신설] 종전에는 CI 가 고정 NOW(2026-08-20)로만 검증해 reviewBy 만료가
+//   실제로는 영원히 발화하지 않았다 — CLI 만 Date.now() 를 쓰는데 CI 는 CLI 를 실행하지
+//   않는다. 이 테스트가 실시간 시계를 결속한다. 만료 red 의 해소는 해당 review 의 실제
+//   재검토, 또는 사유를 남긴 명시적 기한 연장 커밋이다 — 조용한 방치는 이제 red 가 된다.
+test('review horizons hold against the real clock, not only the pinned fixture date', () => {
+  const nowMs = Date.now();
+  const analysis = analyzeRouteCapabilities(ROOT, MANIFEST_PATH, nowMs);
+
+  // 만료 임박(60일 이내)은 절벽이 오기 전에 콘솔로 드러낸다. red 는 만료 시점부터다.
+  const horizonMs = nowMs + 60 * 24 * 60 * 60 * 1000;
+  const expiring = (analysis.manifest.routes ?? [])
+    .map(({ review }) => review?.reviewBy)
+    .filter((reviewBy) => typeof reviewBy === 'string')
+    .filter((reviewBy) => {
+      const deadline = Date.parse(`${reviewBy}T23:59:59.999Z`);
+      return deadline >= nowMs && deadline <= horizonMs;
+    });
+  if (expiring.length > 0) {
+    const dates = [...new Set(expiring)].sort();
+    console.warn(
+      `⚠ [ui-route-capabilities] review 기한 60일 이내 만료 예정 ${expiring.length}건 (기한: ${dates.join(', ')}) — `
+      + '만료 시 이 게이트가 red 가 됩니다. 재검토를 완료하거나 기한 연장을 사유와 함께 커밋하세요.',
+    );
+  }
+
+  assert.deepEqual(analysis.result.errors, []);
 });
 
 test('route discovery covers every Next page extension and fails closed on URL collisions', (t) => {

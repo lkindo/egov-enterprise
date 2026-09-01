@@ -50,12 +50,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const legacy = { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() };
+  const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+  return {
+    ...legacy,
+    getRaw: vi.fn(async (url: string, config?: unknown) => envelope(await legacy.get(url, config))),
+    requestRaw: vi.fn(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length > 0 ? config : undefined;
+      let response: unknown;
+      if (method === 'post') response = await legacy.post(url, data, forwardedConfig);
+      else if (method === 'put') response = await legacy.put(url, data, forwardedConfig);
+      else if (method === 'delete') response = await legacy.delete(url, forwardedConfig);
+      else throw new Error(`unexpected method: ${String(method)}`);
+      return envelope(response);
+    }),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -72,15 +84,18 @@ const BASE = 'admin/system/ntwrksvc-monitoring';
 const FORBIDDEN_BASE = 'admin/system/networks';
 
 describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.get.mockResolvedValue({ list: [], total: 0, page: 1, size: 10, totalPage: 0 });
+  });
 
   describe('노드 목록 조회 (getNetworks)', () => {
     it('목록은 admin/system/ntwrksvc-monitoring 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await networkAdminService.getNetworks();
 
       // path 인자로 빈 문자열('')을 넘기므로 basePath 그대로가 최종 경로다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
     });
 
     it('미매핑 경로(admin/system/networks)로 새지 않는다 — 그 경로엔 컨트롤러가 없다', async () => {
@@ -88,31 +103,30 @@ describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () 
       // networks로 옮기면 전 메서드가 404 다.
       await networkAdminService.getNetworks();
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(FORBIDDEN_BASE, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(FORBIDDEN_BASE, { params: {} });
     });
 
     it('params 없이 config 만 넘겨도 timeout 이 유실되지 않는다', async () => {
       // `{ ...config, params }` 를 `params ? {...} : undefined` 로 바꾸는 식의 회귀를 막는다.
       await networkAdminService.getNetworks(undefined, { timeout: 3000 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { timeout: 3000, params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { timeout: 3000, params: {} });
     });
 
     it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
       await networkAdminService.getNetworks({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, pageIndex: 1 },
+        params: { pageIndex: 1 },
       });
     });
 
-    it('page 3·size 20 은 pageIndex 4·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 3·size 20을 BaseSearchDto의 pageIndex 4·pageUnit 20으로 변환한다', async () => {
       await networkAdminService.getNetworks({ page: 3, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 3, size: 20, pageIndex: 4, recordCountPerPage: 20 },
+        params: { pageIndex: 4, pageUnit: 20 },
       });
     });
 
@@ -122,7 +136,7 @@ describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () 
       await networkAdminService.getNetworks({ page: 0, size: 100 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, size: 100, pageIndex: 1, recordCountPerPage: 100 },
+        params: { pageIndex: 1, pageUnit: 100 },
       });
     });
 
@@ -131,30 +145,29 @@ describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () 
       await networkAdminService.getNetworks({ page: 9, pageIndex: 2 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 2 },
+        params: { pageIndex: 2 },
       });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { page: 9, pageIndex: 10 },
+        params: { pageIndex: 10 },
       });
     });
 
-    it('recordCountPerPage 를 직접 지정하면 size 기반 변환이 이를 덮어쓰지 않는다', async () => {
-      // size 20 이었다면 변환 결과는 recordCountPerPage 20 이겠지만, 명시값 50 이 이겨야 한다.
+    it('legacy recordCountPerPage를 직접 지정하면 pageUnit으로 옮겨 size보다 우선한다', async () => {
       await networkAdminService.getNetworks({ size: 20, recordCountPerPage: 50 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { size: 20, recordCountPerPage: 50 },
+        params: { pageUnit: 50 },
       });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { size: 20, recordCountPerPage: 20 },
+        params: { pageUnit: 20 },
       });
     });
 
-    it('pageSize 만 오면 recordCountPerPage 와 size 를 함께 채운다 (Common DTO 호환 축)', async () => {
+    it('legacy pageSize만 오면 페이지당 건수 의미를 pageUnit으로 보존한다', async () => {
       await networkAdminService.getNetworks({ pageSize: 25 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 25, recordCountPerPage: 25, size: 25 },
+        params: { pageUnit: 25 },
       });
     });
 
@@ -177,7 +190,7 @@ describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () 
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         headers,
-        params: { page: 0, size: 100, pageIndex: 1, recordCountPerPage: 100 },
+        params: { pageIndex: 1, pageUnit: 100 },
       });
     });
 
@@ -188,11 +201,11 @@ describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () 
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         signal,
-        params: { page: 1, pageIndex: 2 },
+        params: { pageIndex: 2 },
       });
     });
 
-    it('목록 응답은 재포장 없이 클라이언트 결과를 그대로 반환한다', async () => {
+    it('OpenAPI PageResponse가 아닌 배열 응답은 fail-closed한다', async () => {
       const nodes: Network[] = [
         {
           ntwrkId: 'N1',
@@ -207,7 +220,9 @@ describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () 
       ];
       client.get.mockResolvedValueOnce(nodes);
 
-      await expect(networkAdminService.getNetworks()).resolves.toBe(nodes);
+      await expect(networkAdminService.getNetworks()).rejects.toThrow(
+        '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
+      );
     });
 
     it('응답이 PageResponse 형태로 내려와도 서비스는 정규화하지 않고 그대로 넘긴다', async () => {

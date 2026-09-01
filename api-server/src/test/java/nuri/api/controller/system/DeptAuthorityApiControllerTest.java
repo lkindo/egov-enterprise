@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.Matchers.nullValue;
 
 public class DeptAuthorityApiControllerTest extends BaseControllerTest {
 
@@ -75,5 +76,28 @@ public class DeptAuthorityApiControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
 
         verify(userAuthorityManageService, times(1)).saveDeptAuthorities(any(DeptAuthorBatchRequest.class));
+    }
+
+    @Test
+    public void getDeptAuthorities_ShouldSerializeMissingLeftJoinedAuthorityAsNull() throws Exception {
+        DeptAuthorProjection projection = DeptAuthorProjection.builder()
+                .deptCode("ORGNZT_0000000000001")
+                .deptNm("기획부")
+                .userId("user1")
+                .userNm("홍길동")
+                .authrtId(null)
+                .scrtyDcsnTrgtId("USR_0001")
+                .regYn("N")
+                .build();
+        Page<DeptAuthorProjection> page = new PageImpl<>(
+                Collections.singletonList(projection), PageRequest.of(0, 10), 1);
+        when(userAuthorityManageService.selectDeptAuthorityList(
+                eq("ORGNZT_0000000000001"), any(BaseSearchDto.class))).thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/admin/system/dept-authorities/ORGNZT_0000000000001")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].regYn").value("N"))
+                .andExpect(jsonPath("$.data.list[0].authrtId").value(nullValue()));
     }
 }

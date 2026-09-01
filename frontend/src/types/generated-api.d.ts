@@ -37,7 +37,7 @@ export interface paths {
         get: operations["getMe"];
         /**
          * 내 프로필 수정
-         * @description 현재 로그인한 사용자의 프로필 정보를 수정합니다. 비밀번호는 이 API 의 대상이 아니며 보내더라도 무시됩니다(변경은 PUT /users/me/password). 스키마의 required 에 pswd 가 표시되는 것은 등록과 스키마를 공유하기 때문이며, 실제로 요구되지 않습니다.
+         * @description 현재 로그인한 사용자의 프로필 정보를 수정합니다. 사용자 식별자와 소속 조직은 서버가 소유하며 비밀번호 변경은 PUT /users/me/password를 사용합니다.
          */
         put: operations["updateMe"];
         post?: never;
@@ -474,7 +474,7 @@ export interface paths {
         get: operations["getUser"];
         /**
          * 사용자 정보 수정
-         * @description 기존 시스템 사용자의 정보를 수정합니다. (관리자 권한) 비밀번호는 이 API 의 대상이 아니며 보내더라도 무시됩니다(변경은 PATCH /admin/system/users/{userId}/password). 스키마의 required 에 pswd 가 표시되는 것은 등록과 스키마를 공유하기 때문이며, 실제로 요구되지 않습니다.
+         * @description 기존 시스템 사용자의 정보를 수정합니다. (관리자 권한) 사용자 식별자는 경로가 소유하며 비밀번호 변경은 PATCH /admin/system/users/{userId}/password를 사용합니다.
          */
         put: operations["updateUser"];
         post?: never;
@@ -4606,25 +4606,13 @@ export interface components {
             field?: string;
             message?: string;
         };
-        UserDto: {
-            userId: string;
+        UserSelfProfileUpdateRequest: {
             userNm: string;
-            esntlId?: string;
-            pswd: string;
-            pswdHint?: string;
-            pswdCrans?: string;
-            role?: string;
             emplNo?: string;
-            gndrCd?: string;
-            brthYmd?: string;
             areaNo?: string;
             middleTelno?: string;
             endTelno?: string;
-            mbrTypeCd?: string;
             faxNo?: string;
-            pstinstCd?: string;
-            ognzId?: string;
-            groupId?: string;
             homeAddr?: string;
             daddr?: string;
             zip?: string;
@@ -4632,12 +4620,6 @@ export interface components {
             mblTelno?: string;
             emlAddr?: string;
             ofcpsNm?: string;
-            certDnVl?: string;
-            userSe?: string;
-            userSttsCd?: string;
-            lckYn?: string;
-            /** Format: date-time */
-            crtDt?: string;
         };
         /** @description 비밀번호 변경 요청 DTO */
         PasswordChangeRequest: {
@@ -4915,12 +4897,12 @@ export interface components {
             /** Format: int64 */
             pstSn?: number;
             bbsId?: string;
-            readonly wrterId?: string;
-            readonly wrterNm?: string;
-            readonly frstRgtrId?: string;
+            readonly wrterId?: string | null;
+            readonly wrterNm?: string | null;
+            readonly frstRgtrId?: string | null;
             pswd?: string;
             ansCn?: string;
-            crtDt?: string;
+            readonly crtDt?: string | null;
         };
         /** @description 게시글 저장 요청 */
         BoardSaveRequest: {
@@ -4986,6 +4968,24 @@ export interface components {
             cntntsUseYn?: string;
             cntntsLinkUrl?: string;
             cntntsDc?: string;
+        };
+        UserProfileUpdateRequest: {
+            userNm: string;
+            emplNo?: string;
+            areaNo?: string;
+            middleTelno?: string;
+            endTelno?: string;
+            faxNo?: string;
+            homeAddr?: string;
+            daddr?: string;
+            zip?: string;
+            officeTelno?: string;
+            mblTelno?: string;
+            emlAddr?: string;
+            ofcpsNm?: string;
+            groupId?: string;
+            ognzId?: string;
+            pstinstCd?: string;
         };
         UserAbsenceDto: {
             userId: string;
@@ -5408,6 +5408,12 @@ export interface components {
              * @description 등록 일시
              */
             crtDt?: string;
+        };
+        DeptHierarchyItemRequest: {
+            ognzId: string;
+            upOgnzId?: string;
+            /** Format: int32 */
+            sortOrdr?: number;
         };
         /** @description 공통 상세 코드 정보 DTO */
         CmmnDetailCodeDto: {
@@ -6077,6 +6083,39 @@ export interface components {
              * @example 123456
              */
             otpCode?: number;
+        };
+        UserDto: {
+            userId: string;
+            userNm: string;
+            esntlId?: string;
+            pswd: string;
+            pswdHint?: string;
+            pswdCrans?: string;
+            role?: string;
+            emplNo?: string;
+            gndrCd?: string;
+            brthYmd?: string;
+            areaNo?: string;
+            middleTelno?: string;
+            endTelno?: string;
+            mbrTypeCd?: string;
+            faxNo?: string;
+            pstinstCd?: string;
+            ognzId?: string;
+            groupId?: string;
+            homeAddr?: string;
+            daddr?: string;
+            zip?: string;
+            officeTelno?: string;
+            mblTelno?: string;
+            emlAddr?: string;
+            ofcpsNm?: string;
+            certDnVl?: string;
+            userSe?: string;
+            userSttsCd?: string;
+            lckYn?: string;
+            /** Format: date-time */
+            crtDt?: string;
         };
         /** @description 사용자 권한 정보 DTO */
         UserAuthorityDto: {
@@ -7009,18 +7048,117 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponseMapStringObject: {
+        ApiResponseDashboardResponse: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: {
-                [key: string]: Record<string, never>;
-            };
+            data?: components["schemas"]["DashboardResponse"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        BoardDto: {
+            /**
+             * Format: int64
+             * @description 게시글 ID
+             */
+            pstSn?: number;
+            /** @description 게시판 ID */
+            bbsId?: string;
+            /**
+             * Format: int64
+             * @description 답글 번호
+             */
+            ansSn?: number | null;
+            /** @description 제목 */
+            pstTtl?: string | null;
+            /** @description 내용 */
+            pstCn?: string | null;
+            /**
+             * Format: int64
+             * @description 상위 게시글 ID
+             */
+            upPstSn?: number | null;
+            /**
+             * Format: int64
+             * @description 정렬 순서
+             */
+            sortOrdr?: number | null;
+            /** @description 제목 굵게 표시 여부 */
+            ttlBoldYn?: string | null;
+            /**
+             * Format: int32
+             * @description 조회수
+             */
+            inqCnt?: number | null;
+            /** @description 사용 여부 */
+            useYn?: string | null;
+            /** @description 게시 시작일 */
+            pstBgngYmd?: string | null;
+            /** @description 게시 종료일 */
+            pstEndYmd?: string | null;
+            /** @description 작성자 ID */
+            userId?: string | null;
+            /** @description 작성자명 */
+            userNm?: string | null;
+            /** @description 비밀번호 */
+            pswd?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일 일련번호
+             */
+            atchFileSn?: number | null;
+            /** @description 비밀글 여부 */
+            scrtYn?: string | null;
+            /**
+             * Format: int64
+             * @description 블로그 일련번호
+             */
+            blogSn?: number | null;
+            /**
+             * Format: date-time
+             * @description 행사일
+             */
+            evntDt?: string | null;
+            /** @description QNA 상태 */
+            qnaSttsCd?: string | null;
+            /** @description QNA 카테고리 */
+            qnaCatCd?: string | null;
+            /**
+             * Format: int32
+             * @description 좋아요수
+             */
+            likeCnt?: number | null;
+            /**
+             * Format: int32
+             * @description 댓글수
+             */
+            commentCnt?: number | null;
+            /**
+             * Format: int32
+             * @description 파일수
+             */
+            fileCnt?: number | null;
+            /**
+             * Format: date-time
+             * @description 등록일시
+             */
+            crtDt?: string | null;
+            /** @description 등록자명 */
+            frstRegisterNm?: string | null;
+            /**
+             * Format: int32
+             * @description 답글 단계
+             */
+            ansLv?: number | null;
+        };
+        DashboardResponse: {
+            taskList: components["schemas"]["BoardDto"][];
+            notiList: components["schemas"]["BoardDto"][];
+            /** Format: int64 */
+            pendingApprovalCount: number;
         };
         ApiResponsePageResponseCommunityDto: {
             success?: boolean;
@@ -7076,101 +7214,6 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        BoardDto: {
-            /**
-             * Format: int64
-             * @description 게시글 ID
-             */
-            pstSn?: number;
-            /** @description 게시판 ID */
-            bbsId?: string;
-            /**
-             * Format: int64
-             * @description 답글 번호
-             */
-            ansSn?: number;
-            /** @description 제목 */
-            pstTtl?: string;
-            /** @description 내용 */
-            pstCn?: string;
-            /**
-             * Format: int64
-             * @description 상위 게시글 ID
-             */
-            upPstSn?: number;
-            /**
-             * Format: int64
-             * @description 정렬 순서
-             */
-            sortOrdr?: number;
-            /** @description 제목 굵게 표시 여부 */
-            ttlBoldYn?: string;
-            /**
-             * Format: int32
-             * @description 조회수
-             */
-            inqCnt?: number;
-            /** @description 사용 여부 */
-            useYn: string;
-            /** @description 게시 시작일 */
-            pstBgngYmd?: string;
-            /** @description 게시 종료일 */
-            pstEndYmd?: string;
-            /** @description 작성자 ID */
-            userId: string;
-            /** @description 작성자명 */
-            userNm?: string;
-            /** @description 비밀번호 */
-            pswd?: string;
-            /**
-             * Format: int64
-             * @description 첨부파일 일련번호
-             */
-            atchFileSn?: number;
-            /** @description 비밀글 여부 */
-            scrtYn?: string;
-            /**
-             * Format: int64
-             * @description 블로그 일련번호
-             */
-            blogSn?: number;
-            /**
-             * Format: date-time
-             * @description 행사일
-             */
-            evntDt?: string;
-            /** @description QNA 상태 */
-            qnaSttsCd?: string;
-            /** @description QNA 카테고리 */
-            qnaCatCd?: string;
-            /**
-             * Format: int32
-             * @description 좋아요수
-             */
-            likeCnt?: number;
-            /**
-             * Format: int32
-             * @description 댓글수
-             */
-            commentCnt?: number;
-            /**
-             * Format: int32
-             * @description 파일수
-             */
-            fileCnt?: number;
-            /**
-             * Format: date-time
-             * @description 등록일시
-             */
-            crtDt?: string;
-            /** @description 등록자명 */
-            frstRegisterNm?: string;
-            /**
-             * Format: int32
-             * @description 답글 단계
-             */
-            ansLv?: number;
         };
         PageResponseBoardDto: {
             list?: components["schemas"]["BoardDto"][];
@@ -7289,17 +7332,17 @@ export interface components {
              */
             pstSn: number;
             /** @description FAQ 질문 제목 */
-            pstTtl?: string;
+            pstTtl?: string | null;
             /**
              * Format: int32
              * @description 조회수
              */
-            inqCnt?: number;
+            inqCnt?: number | null;
             /**
              * Format: date-time
              * @description 등록일시
              */
-            crtDt?: string;
+            crtDt?: string | null;
             /**
              * @description 활성 상태
              * @enum {string}
@@ -7334,19 +7377,19 @@ export interface components {
              */
             pstSn: number;
             /** @description FAQ 질문 제목 */
-            pstTtl?: string;
+            pstTtl?: string | null;
             /** @description FAQ 답변 본문 */
-            pstCn?: string;
+            pstCn?: string | null;
             /**
              * Format: int32
              * @description 조회수
              */
-            inqCnt?: number;
+            inqCnt?: number | null;
             /**
              * Format: date-time
              * @description 등록일시
              */
-            crtDt?: string;
+            crtDt?: string | null;
             /**
              * @description 활성 상태
              * @enum {string}
@@ -7435,10 +7478,10 @@ export interface components {
         AuthorGroupProjection: {
             userId?: string;
             userNm?: string;
-            groupId?: string;
+            groupId?: string | null;
             mbrTypeCd?: string;
-            mberTyNm?: string;
-            authrtId?: string;
+            mberTyNm?: string | null;
+            authrtId?: string | null;
             regYn?: string;
             scrtyDcsnTrgtId?: string;
         };
@@ -7640,12 +7683,12 @@ export interface components {
             srvyQstnSn?: number;
             /** Format: int64 */
             srvyArtclSn?: number;
-            rspdntAnsCn?: string;
-            rspnsNm?: string;
-            etcAnsCn?: string;
-            frstRgtrId?: string;
+            rspdntAnsCn?: string | null;
+            rspnsNm?: string | null;
+            etcAnsCn?: string | null;
+            frstRgtrId?: string | null;
             /** Format: date-time */
-            crtDt?: string;
+            crtDt?: string | null;
         };
         ApiResponseSurveyResultDto: {
             success?: boolean;
@@ -8242,7 +8285,7 @@ export interface components {
             deptNm?: string;
             userId?: string;
             userNm?: string;
-            authrtId?: string;
+            authrtId?: string | null;
             scrtyDcsnTrgtId?: string;
             regYn?: string;
         };
@@ -8538,19 +8581,31 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponsePageResponseBoardMasterDto: {
+        ApiResponsePageResponseBoardMasterSummaryResponse: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseBoardMasterDto"];
+            data?: components["schemas"]["PageResponseBoardMasterSummaryResponse"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        PageResponseBoardMasterDto: {
-            list?: components["schemas"]["BoardMasterDto"][];
+        BoardMasterSummaryResponse: {
+            bbsId: string;
+            bbsTtl: string;
+            bbsTypeCd: string;
+            bbsTypeCdNm?: string;
+            bbsAtrbCd: string;
+            bbsAtrbCdNm?: string;
+            tmpltId?: string;
+            useYn: string;
+            /** Format: date-time */
+            crtDt?: string;
+        };
+        PageResponseBoardMasterSummaryResponse: {
+            list?: components["schemas"]["BoardMasterSummaryResponse"][];
             /** Format: int64 */
             total?: number;
             /** Format: int32 */
@@ -8560,16 +8615,48 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
-        ApiResponseBoardMasterDto: {
+        ApiResponseBoardMasterDetailResponse: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["BoardMasterDto"];
+            data?: components["schemas"]["BoardMasterDetailResponse"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        BoardMasterDetailResponse: {
+            bbsId: string;
+            bbsTtl: string;
+            bbsExpln?: string;
+            bbsTypeCd: string;
+            bbsTypeCdNm?: string;
+            bbsAtrbCd: string;
+            bbsAtrbCdNm?: string;
+            ansPsbltyYn?: string;
+            fileAtchPsbltyYn: string;
+            /** Format: int32 */
+            atchPsbltyFileQty: number;
+            /** Format: int64 */
+            atchPsbltyFileSz?: number;
+            tmpltId?: string;
+            frstRgtrId?: string;
+            /** Format: date-time */
+            crtDt?: string;
+            lastMdfrId?: string;
+            /** Format: date-time */
+            mdfcnDt?: string;
+            useYn: string;
+            /** Format: int64 */
+            cmntySn?: number;
+            /** Format: int64 */
+            blogSn?: number;
+            blogYn?: string;
+            ansYn?: string;
+            stsfdgYn?: string;
+            authFlag?: string;
+            tmplatCours?: string;
         };
         ApiResponsePageResponseBannerDto: {
             success?: boolean;
@@ -9164,7 +9251,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserDto"];
+                "application/json": components["schemas"]["UserSelfProfileUpdateRequest"];
             };
         };
         responses: {
@@ -11929,7 +12016,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
+                "multipart/form-data": {
                     board: components["schemas"]["BoardSaveRequest"];
                     file?: string[];
                 };
@@ -12348,7 +12435,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserDto"];
+                "application/json": components["schemas"]["UserProfileUpdateRequest"];
             };
         };
         responses: {
@@ -12899,6 +12986,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                srvySn: number;
                 srvyQstnSn: number;
             };
             cookie?: never;
@@ -13038,6 +13126,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                srvySn: number;
                 srvyQstnSn: number;
             };
             cookie?: never;
@@ -16257,7 +16346,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeptManageDto"][];
+                "application/json": components["schemas"]["DeptHierarchyItemRequest"][];
             };
         };
         responses: {
@@ -17208,7 +17297,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseBoardMasterDto"];
+                    "application/json": components["schemas"]["ApiResponseBoardMasterDetailResponse"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -21073,7 +21162,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": {
+                "multipart/form-data": {
                     board: components["schemas"]["BoardSaveRequest"];
                     file?: string[];
                 };
@@ -21561,6 +21650,7 @@ export interface operations {
     getUserAuthorities: {
         parameters: {
             query?: {
+                authorCode?: string;
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
@@ -25035,7 +25125,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseBoardMasterDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseBoardMasterSummaryResponse"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -28962,7 +29052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseMapStringObject"];
+                    "application/json": components["schemas"]["ApiResponseDashboardResponse"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

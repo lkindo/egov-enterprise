@@ -7,6 +7,11 @@ import {
   QNA_BOARD_ID,
   WIKI_BOARD_ID,
 } from '@/config/board-ids';
+import {
+  getPostOperation,
+  getPostsOperation,
+  getStats_1Operation,
+} from '@/types/generated-operations';
 
 /**
  * 지식 기반 서비스 DTO (Enterprise v5 Standard)
@@ -78,14 +83,17 @@ class KnowledgeService extends ApiService {
     }
 
     const boardParams = {
-      qnaCatCd: params.category,
+      qnaCategory: params.category,
       searchWrd: params.searchWrd,
       searchCnd: params.searchCnd || '0',
       page: params.page || 0,
       size: params.size || 20,
     };
 
-    return this.get<PageResponse<KnowledgeDto>>(`/${targetBbsId}`, { params: boardParams });
+    return this.executeGenerated(getPostsOperation, {
+      path: { bbsId: targetBbsId },
+      query: boardParams,
+    }) as Promise<PageResponse<KnowledgeDto>>;
   }
 
   /**
@@ -100,7 +108,10 @@ class KnowledgeService extends ApiService {
      * 조용히 무시됐고, 결과는 기본 정렬(sortOrdr desc)의 상위 5건이었다 — 화면은 그것을
      * 순위 숫자와 조회수와 함께 '인기 문서 / 조회수가 높은 문서' 라고 불렀다.
      */
-    const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 5, orderBy: 'views' } });
+    const res = await this.executeGenerated(getPostsOperation, {
+      path: { bbsId: targetBbsId },
+      query: { size: 5, orderBy: 'views' },
+    });
     
     return {
       list: (res.list || []).map((item: any) => ({
@@ -115,7 +126,9 @@ class KnowledgeService extends ApiService {
    * 게시물 상세 조회
    */
   public async getArticle(bbsId: string, pstSn: number): Promise<KnowledgeDto> {
-    return this.get<KnowledgeDto>(`/${bbsId}/posts/${pstSn}`);
+    return this.executeGenerated(getPostOperation, {
+      path: { bbsId, pstSn },
+    }) as Promise<KnowledgeDto>;
   }
 
   /**
@@ -123,7 +136,9 @@ class KnowledgeService extends ApiService {
    */
   public async getStats(bbsId?: string): Promise<any> {
     const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
-    return this.get<any>(`/${targetBbsId}/stats`);
+    return this.executeGenerated(getStats_1Operation, {
+      path: { bbsId: targetBbsId },
+    });
   }
 
   /**
@@ -131,7 +146,10 @@ class KnowledgeService extends ApiService {
    */
   public async getActivities(bbsId?: string): Promise<any[]> {
     const targetBbsId = bbsId || this.BBS_IDS.NOTICE;
-    const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 10 } });
+    const res = await this.executeGenerated(getPostsOperation, {
+      path: { bbsId: targetBbsId },
+      query: { size: 10 },
+    });
     
     return (res.list || []).map((item: any) => ({
       id: item.pstSn || item.nttId,

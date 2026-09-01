@@ -9,6 +9,7 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
 import { requestFullExport } from '@/app/components/patterns/full-result-export';
+import { exportWebLogsOperation } from '@/types/generated-operations';
 import { FileDown } from 'lucide-react';
 import { useToast } from '@/app/components/ui/toast';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -43,7 +44,7 @@ const SystemLogsWebClient = () => {
     /** 전체 결과 xlsx 요청. 상한 초과는 다운로드를 시작하지 않고 즉시 알린다(서버도 같은 상한으로 400). */
     const handleFullExport = () => {
         requestFullExport({
-            url: '/api/v1/admin/system/logs/web/export.xlsx',
+            operation: exportWebLogsOperation,
             totalCount,
             searchKeyword,
             period,

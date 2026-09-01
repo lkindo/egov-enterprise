@@ -1,5 +1,6 @@
 package nuri.business.domain.auth;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 @Getter
@@ -13,6 +14,7 @@ public class DeptAuthorProjection {
     private String userId;
     private String userNm;
 
+    @Schema(nullable = true, types = {"string", "null"})
     private String authrtId;
     private String scrtyDcsnTrgtId;
     private String regYn;

@@ -23,9 +23,17 @@ vi.mock('next/headers', () => ({
 // Mock API client
 vi.mock('@/lib/api/client', () => ({
   default: {
-    get: vi.fn(),
+    getRaw: vi.fn(),
+    requestRaw: vi.fn(),
   },
 }));
+
+const success = (data: unknown) => ({
+  success: true as const,
+  code: 'S000',
+  message: 'success',
+  data,
+});
 
 // Mock UnifiedDashboardClient
 vi.mock('./UnifiedDashboardClient', () => ({
@@ -70,11 +78,11 @@ describe('DashboardPage Server Component', () => {
       get: vi.fn().mockReturnValue({ value: 'mock-token' }),
     } as any);
 
-    vi.mocked(client.get).mockResolvedValue({
-      notiList: [{ pstSn: 1, pstTtl: '공지사항 테스트' }],
-      taskList: [{ pstSn: 2, pstTtl: '할일 테스트' }],
-      pendingApprovalCount: 10
-    });
+    vi.mocked(client.getRaw).mockResolvedValue(success({
+      notiList: [{ pstSn: 1, pstTtl: '공지사항 테스트', useYn: 'Y', userId: 'admin' }],
+      taskList: [{ pstSn: 2, pstTtl: '할일 테스트', useYn: 'Y', userId: 'admin' }],
+      pendingApprovalCount: 10,
+    }));
 
     const result = await DashboardPage();
     render(result);
@@ -85,23 +93,43 @@ describe('DashboardPage Server Component', () => {
       expect(screen.getByText(/공지사항: 1개/)).toBeInTheDocument();
       expect(screen.getByText(/결재대기: 10건/)).toBeInTheDocument();
     });
+    expect(client.getRaw).toHaveBeenCalledWith('dashboard', {
+      headers: { Authorization: 'Bearer mock-token' },
+    });
   });
 
   it('대시보드 API 실패를 0건 데이터로 위장하지 않고 error boundary로 전파합니다.', async () => {
     vi.mocked(cookies).mockResolvedValue({
       get: vi.fn().mockReturnValue({ value: 'mock-token' }),
     } as any);
-    vi.mocked(client.get).mockRejectedValue(new Error('dashboard unavailable'));
+    vi.mocked(client.getRaw).mockRejectedValue(new Error('dashboard unavailable'));
 
     await expect(loadDashboardData()).rejects.toThrow('dashboard unavailable');
   });
 
-  it('비어 있거나 잘못된 대시보드 응답도 0건으로 표시하지 않습니다.', async () => {
+  it('필수 pendingApprovalCount가 없는 응답을 0건으로 표시하지 않습니다.', async () => {
     vi.mocked(cookies).mockResolvedValue({
       get: vi.fn().mockReturnValue({ value: 'mock-token' }),
     } as any);
-    vi.mocked(client.get).mockResolvedValue(null as never);
+    vi.mocked(client.getRaw).mockResolvedValue(success({ taskList: [], notiList: [] }));
 
-    await expect(loadDashboardData()).rejects.toThrow(/dashboard response/i);
+    await expect(loadDashboardData()).rejects.toThrow(
+      '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
+    );
+  });
+
+  it('대시보드 게시글에 writeOnly pswd가 노출되면 응답을 거부합니다.', async () => {
+    vi.mocked(cookies).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: 'mock-token' }),
+    } as any);
+    vi.mocked(client.getRaw).mockResolvedValue(success({
+      taskList: [{ pstSn: 1, useYn: 'Y', userId: 'admin', pswd: 'secret' }],
+      notiList: [],
+      pendingApprovalCount: 0,
+    }));
+
+    await expect(loadDashboardData()).rejects.toThrow(
+      '생성 API 응답에 허용되지 않은 필드가 있습니다.',
+    );
   });
 });

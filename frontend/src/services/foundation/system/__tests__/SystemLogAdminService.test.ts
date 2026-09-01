@@ -4,7 +4,12 @@ const clientGet = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/api/client', () => ({
   default: {
-    get: clientGet,
+    getRaw: async (url: string, config?: unknown) => ({
+      success: true,
+      code: 'S000',
+      message: 'success',
+      data: await clientGet(url, config),
+    }),
   },
 }));
 
@@ -35,13 +40,9 @@ describe('SystemLogAdminService pagination contract', () => {
       'admin/system/logs/user',
       expect.objectContaining({
         params: expect.objectContaining({
-          page: 2,
           pageIndex: 3,
           pageUnit: 25,
-          recordCountPerPage: 25,
           searchKeyword: 'alice',
-          searchWrd: 'alice',
-          size: 25,
         }),
       }),
     );
@@ -58,13 +59,9 @@ describe('SystemLogAdminService pagination contract', () => {
       'admin/system/logs/web',
       expect.objectContaining({
         params: expect.objectContaining({
-          page: 2,
           pageIndex: 3,
           pageUnit: 25,
-          recordCountPerPage: 25,
           searchKeyword: 'orders',
-          searchWrd: 'orders',
-          size: 25,
         }),
       }),
     );
@@ -76,7 +73,7 @@ describe('SystemLogAdminService pagination contract', () => {
     expect(clientGet).toHaveBeenCalledWith(
       'admin/system/logs/web',
       expect.objectContaining({
-        params: expect.objectContaining({ page: 2, pageIndex: 9, pageUnit: 40 }),
+        params: expect.objectContaining({ pageIndex: 9, pageUnit: 40 }),
       }),
     );
   });

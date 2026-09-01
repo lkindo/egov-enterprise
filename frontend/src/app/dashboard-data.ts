@@ -1,15 +1,19 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import client from '@/lib/api/client';
+import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import type { DashboardTask } from '@/types/foundation/dashboard';
+import type { components } from '@/types/generated-api';
+import { getDashboardDataOperation } from '@/types/generated-operations';
 
-interface DashboardResponse {
-  notiList: Record<string, unknown>[];
-  taskList: Record<string, unknown>[];
-  pendingApprovalCount: number;
-}
+type DashboardItem = components['schemas']['BoardDto'] & {
+  id?: unknown;
+  title?: unknown;
+  date?: unknown;
+  frstRegisterPnttmStr?: unknown;
+  isNew?: unknown;
+};
 
-function toDashboardTask(item: Record<string, unknown>): DashboardTask {
+function toDashboardTask(item: DashboardItem): DashboardTask {
   return {
     id: String(item.id || item.pstSn || ''),
     title: String(item.title || item.pstTtl || ''),
@@ -28,20 +32,9 @@ export async function loadDashboardData() {
 
   if (!accessToken) redirect('/login');
 
-  const dashboardResponse = await client.get<DashboardResponse>('/dashboard', {
-    headers: { Authorization: `Bearer ${accessToken}` },
+  const dashboardResponse = await executeGeneratedOperation(getDashboardDataOperation, {
+    config: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
-
-  if (
-    !dashboardResponse
-    || !Array.isArray(dashboardResponse.notiList)
-    || !Array.isArray(dashboardResponse.taskList)
-    || typeof dashboardResponse.pendingApprovalCount !== 'number'
-    || !Number.isFinite(dashboardResponse.pendingApprovalCount)
-    || dashboardResponse.pendingApprovalCount < 0
-  ) {
-    throw new Error('Invalid dashboard response');
-  }
 
   return {
     initialNotiList: dashboardResponse.notiList.slice(0, 6).map(toDashboardTask),

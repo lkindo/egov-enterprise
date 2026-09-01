@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { getJwtExpiryMs, cookieMaxAgeSecondsFrom } from '@/lib/auth/jwt';
 import { safeLoginFailure } from '@/lib/auth/login-error';
+import { authLoginResponseSchema } from '@/lib/auth/auth-bff-contract';
+import {
+  parseGeneratedOperationRequest,
+  parseGeneratedOperationResponse,
+} from '@/lib/api/generated-operation';
+import { loginOperation, type GeneratedOperationRequest } from '@/types/generated-operations';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
@@ -13,26 +19,46 @@ function upstreamStatus(error: unknown): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
+function loginResponse(body: unknown, status: number) {
+  return NextResponse.json(authLoginResponseSchema.parse(body), { status });
+}
 
+export async function POST(request: NextRequest) {
+  let upstreamRequest: GeneratedOperationRequest<'login'>;
+  try {
+    upstreamRequest = parseGeneratedOperationRequest(loginOperation, await request.json());
+  } catch {
+    return loginResponse({
+      success: false,
+      code: 'LOGIN_INVALID_REQUEST',
+      message: '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.',
+    }, 400);
+  }
+
+  try {
     // 백엔드 로그인 API 호출
-    const response = await axios.post(`${BACKEND_URL}/auth/login`, body, {
+    const response = await axios.post(`${BACKEND_URL}/auth/login`, upstreamRequest, {
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    const responseData = response.data;
-    if (responseData.success && responseData.data?.accessToken) {
-      const { accessToken, role } = responseData.data;
+    let tokenResponse;
+    try {
+      tokenResponse = parseGeneratedOperationResponse(loginOperation, response.data);
+    } catch {
+      const failure = safeLoginFailure(502);
+      return loginResponse(failure.body, failure.status);
+    }
+
+    const { accessToken, role } = tokenResponse;
+    if (accessToken && role) {
 
       // Next.js Response 생성
-      const nextResponse = NextResponse.json({
+      const nextResponse = loginResponse({
         success: true,
         data: { role },
-      });
+      }, 200);
 
       // [2026-08-15] 쿠키 수명을 **토큰 수명에서 유도**한다. 종전 하드코딩 86400(24시간)은
       //   백엔드 기본 토큰 수명(1시간)과 어긋나, 토큰이 죽은 뒤에도 쿠키가 최대 23시간 남았다.
@@ -72,10 +98,10 @@ export async function POST(request: NextRequest) {
       return nextResponse;
     }
 
-    const failure = safeLoginFailure(response.status);
-    return NextResponse.json(failure.body, { status: failure.status });
+    const failure = safeLoginFailure(502);
+    return loginResponse(failure.body, failure.status);
   } catch (error: unknown) {
     const failure = safeLoginFailure(upstreamStatus(error));
-    return NextResponse.json(failure.body, { status: failure.status });
+    return loginResponse(failure.body, failure.status);
   }
 }

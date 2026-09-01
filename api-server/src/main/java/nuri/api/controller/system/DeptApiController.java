@@ -76,8 +76,16 @@ public class DeptApiController {
     @Operation(summary = "조직 계층 일괄 저장",
             description = "조직도 편집 결과(상위 부서·정렬 순서)를 일괄 반영합니다. 각 항목의 ognzId 는 필수입니다.")
     @PutMapping("/batch-hierarchy")
-    public ResponseEntity<ApiResponse<Void>> updateDeptHierarchy(@RequestBody java.util.List<DeptManageDto> items) {
-        deptManageService.updateDeptHierarchy(items);
+    public ResponseEntity<ApiResponse<Void>> updateDeptHierarchy(
+            @Valid @RequestBody java.util.List<@Valid DeptHierarchyItemRequest> items) {
+        java.util.List<DeptManageDto> hierarchy = items.stream()
+                .map(item -> DeptManageDto.builder()
+                        .ognzId(item.ognzId())
+                        .upOgnzId(item.upOgnzId())
+                        .sortOrdr(item.sortOrdr())
+                        .build())
+                .toList();
+        deptManageService.updateDeptHierarchy(hierarchy);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

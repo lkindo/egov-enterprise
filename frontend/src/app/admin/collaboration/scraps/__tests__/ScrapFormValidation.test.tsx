@@ -29,8 +29,27 @@ vi.mock('@/lib/api/client', () => ({
   default: {
     delete: mocks.delete,
     get: mocks.get,
+    getRaw: async (url: string, config?: unknown) => ({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: await mocks.get(url.replace(/^\/api\/v1\//, ''), config),
+    }),
     post: mocks.post,
     put: mocks.put,
+    requestRaw: async (config: {
+      data?: unknown;
+      method?: string;
+      url?: string;
+    }) => {
+      const url = (config.url ?? '').replace(/^\/api\/v1\//, '');
+      let data: unknown;
+      if (config.method === 'post') data = await mocks.post(url, config.data, undefined);
+      else if (config.method === 'put') data = await mocks.put(url, config.data, undefined);
+      else if (config.method === 'delete') data = await mocks.delete(url, undefined);
+      else throw new Error(`지원하지 않는 테스트 HTTP method: ${config.method ?? ''}`);
+      return { success: true, code: 'S000', message: '성공', data };
+    },
   },
 }));
 

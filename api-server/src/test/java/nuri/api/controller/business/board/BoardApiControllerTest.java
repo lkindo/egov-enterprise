@@ -22,6 +22,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -41,7 +42,11 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시글 목록 조회 성공")
     void getPosts_Success() throws Exception {
         // Given
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstSn(1L).pstTtl("Subject").build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder()
+                .pstSn(1L)
+                .bbsId("BBS_001")
+                .pstTtl("Subject")
+                .build()));
         given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -49,7 +54,14 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].pstSn").value(1));
+                .andExpect(jsonPath("$.data.list[0].pstSn").value(1))
+                // 목록 projection이 선택하지 않거나 원본 DB에서 nullable인 응답 필드는
+                // Jackson 기본 계약상 생략되지 않고 explicit null로 직렬화된다.
+                .andExpect(jsonPath("$.data.list[0].pstCn").value(nullValue()))
+                .andExpect(jsonPath("$.data.list[0].useYn").value(nullValue()))
+                .andExpect(jsonPath("$.data.list[0].userId").value(nullValue()))
+                .andExpect(jsonPath("$.data.list[0].fileCnt").value(nullValue()))
+                .andExpect(jsonPath("$.data.list[0].frstRegisterNm").value(nullValue()));
 
         verify(boardService).getBoardPosts(
                 eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
@@ -93,6 +105,8 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.list[0].bbsId").value("BBSMSTR_AAAAAAAAAAAA"))
                 .andExpect(jsonPath("$.data.list[0].useYn").value("Y"))
                 .andExpect(jsonPath("$.data.list[0].scrtYn").value("N"))
+                .andExpect(jsonPath("$.data.list[0].inqCnt").value(nullValue()))
+                .andExpect(jsonPath("$.data.list[0].crtDt").value(nullValue()))
                 .andExpect(jsonPath("$.data.list[0].pstCn").doesNotExist())
                 .andExpect(jsonPath("$.data.list[0].userId").doesNotExist());
 
@@ -119,6 +133,9 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.bbsId").value("BBSMSTR_AAAAAAAAAAAA"))
                 .andExpect(jsonPath("$.data.useYn").value("Y"))
                 .andExpect(jsonPath("$.data.scrtYn").value("N"))
+                .andExpect(jsonPath("$.data.pstTtl").value(nullValue()))
+                .andExpect(jsonPath("$.data.inqCnt").value(nullValue()))
+                .andExpect(jsonPath("$.data.crtDt").value(nullValue()))
                 .andExpect(jsonPath("$.data.userId").doesNotExist())
                 .andExpect(jsonPath("$.data.userNm").doesNotExist())
                 .andExpect(jsonPath("$.data.pswd").doesNotExist())

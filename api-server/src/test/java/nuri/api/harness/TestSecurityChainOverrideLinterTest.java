@@ -115,10 +115,10 @@ class TestSecurityChainOverrideLinterTest {
     /**
      * mock 체인 stereotype 사용처 수 동결(2026-08-20 실측).
      *
-     * <p>HTTP 계열 4건을 {@code @ApiHttpIntegrationTest} 로 옮긴 뒤 남은 비-HTTP 서비스 통합
+     * <p>HTTP 계열 5건을 {@code @ApiHttpIntegrationTest} 로 옮긴 뒤 남은 비-HTTP 서비스 통합
      * 사용처다. 늘리지 말고, 줄이면 이 값을 함께 낮춘다.
      */
-    private static final int MOCK_CHAIN_STEREOTYPE_USERS = 3;
+    private static final int MOCK_CHAIN_STEREOTYPE_USERS = 2;
 
     private static final Set<String> FROZEN_OVERRIDES = new TreeSet<>(Arrays.asList(
             // api-server — @Primary 로 프로덕션 체인을 대체하고, admin 인가를 하드코딩한다.

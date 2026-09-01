@@ -2,6 +2,8 @@ import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 
+import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
+
 /*
  * 요청 단위 옵션 확장.
  *
@@ -124,7 +126,7 @@ export function reissueSession(): Promise<void> {
   if (inFlightReissue) return inFlightReissue;
 
   inFlightReissue = axiosInstance
-    .post<ApiResponse<unknown>>(
+    .post<unknown>(
       '/api/auth/reissue',
       {},
       {
@@ -136,7 +138,8 @@ export function reissueSession(): Promise<void> {
       } as AxiosRequestConfig & { _retry: boolean }
     )
     .then((res) => {
-      if (!res.data?.success) throw new Error('Token reissue failed');
+      const validation = authReissueResponseSchema.safeParse(res.data);
+      if (!validation.success || !validation.data.success) throw new Error('Token reissue failed');
     })
     .finally(() => {
       inFlightReissue = null;
@@ -249,7 +252,50 @@ axiosInstance.interceptors.response.use(
  * 표준화된 API 클라이언트
  * Optimization: Priority 3 - React.cache를 사용한 서버 사이드 요청 중복 제거
  */
+function serializeGeneratedFormExplodeQuery(params: unknown): string {
+  if (typeof params !== 'object' || params === null || Array.isArray(params)) {
+    throw new Error('생성 API 쿼리 파라미터를 wire 형식으로 직렬화할 수 없습니다.');
+  }
+
+  const searchParams = new URLSearchParams();
+  const append = (name: string, value: unknown) => {
+    if (value === undefined) return;
+    if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+      throw new Error('생성 API 쿼리 파라미터를 wire 형식으로 직렬화할 수 없습니다.');
+    }
+    searchParams.append(name, String(value));
+  };
+
+  for (const [name, value] of Object.entries(params)) {
+    if (Array.isArray(value)) value.forEach((item) => append(name, item));
+    else append(name, value);
+  }
+  return searchParams.toString();
+}
+
+function withGeneratedQuerySerializer(config: AxiosRequestConfig): AxiosRequestConfig;
+function withGeneratedQuerySerializer(config?: AxiosRequestConfig): AxiosRequestConfig | undefined;
+function withGeneratedQuerySerializer(config?: AxiosRequestConfig): AxiosRequestConfig | undefined {
+  if (config?.params === undefined) return config;
+  return {
+    ...config,
+    // OpenAPI query의 기본 style=form, explode=true: 배열은 bracket이 아니라 같은 key를 반복한다.
+    // getRaw/requestRaw는 generated executor 전용 seam이며 호출자 paramsSerializer는 앞단에서 차단된다.
+    paramsSerializer: { serialize: serializeGeneratedFormExplodeQuery },
+  };
+}
+
 const client = {
+  /** Generated operation 경계가 공통 envelope를 직접 검증할 수 있도록 원문 body를 보존한다. */
+  getRaw: cache(async (url: string, config?: AxiosRequestConfig): Promise<unknown> => {
+    const res = await axiosInstance.get<unknown>(url, withGeneratedQuerySerializer(config));
+    return res.data;
+  }),
+  /** GET 외 generated operation용 raw transport. URL·method·body는 descriptor executor가 소유한다. */
+  requestRaw: async (config: AxiosRequestConfig): Promise<unknown> => {
+    const res = await axiosInstance.request<unknown>(withGeneratedQuerySerializer(config));
+    return res.data;
+  },
   get: cache(async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
     const res = await axiosInstance.get<ApiResponse<T>>(url, config);
     return extractData<T>(res.data);

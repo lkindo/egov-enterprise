@@ -48,10 +48,20 @@ import type { PageResponse } from '@/types/foundation/system';
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
 // 이 서비스가 쓰는 동사는 get·post 뿐이라 둘만 심는다. put/delete 로 새는 회귀가 생기면
 // "함수가 아니다"로 요란하게 죽어 조용한 통과가 불가능하다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-}));
+const client = vi.hoisted(() => {
+  const legacy = { get: vi.fn(), post: vi.fn() };
+  const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+  return {
+    ...legacy,
+    getRaw: vi.fn(async (url: string, config?: unknown) => envelope(await legacy.get(url, config))),
+    requestRaw: vi.fn(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      if (method !== 'post') throw new Error(`unexpected method: ${String(method)}`);
+      const forwardedConfig = Object.keys(config).length > 0 ? config : undefined;
+      return envelope(await legacy.post(url, data ?? null, forwardedConfig));
+    }),
+  };
+});
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
@@ -75,16 +85,19 @@ const buildPollDto = (): OnlinePollDto => ({
 });
 
 describe('OnlinePollAdminService — 온라인 투표 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.get.mockImplementation((url: string) => Promise.resolve(
+      url === BASE ? { list: [] } : buildPollDto(),
+    ));
+  });
 
   describe('목록 조회(getPollList)', () => {
     it('목록은 admin/system/polls 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await onlinePollAdminService.getPollList();
 
-      // 인자를 아예 생략하면 서비스가 `{ ...config, params }` 로 감싸 params: undefined 가 실린다.
-      // ApiService.get 은 params 가 falsy 면 정규화를 건너뛰고 config 를 그대로 넘긴다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
     });
 
     it('빈 params 객체는 그대로 나간다 — keyword 기본값을 지어내 채우지 않는다', async () => {
@@ -97,30 +110,24 @@ describe('OnlinePollAdminService — 온라인 투표 관리자 API 계약', () 
       expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { keyword: '' } });
     });
 
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+    it('첫 페이지는 Pageable 계약의 0-based page 0으로 전달한다', async () => {
       await onlinePollAdminService.getPollList({ page: 0 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 0, pageIndex: 1 } });
-      // 0 을 그대로 흘리면 백엔드 BaseSearchDto 계열이 0페이지를 요구해 결과가 비거나 밀린다.
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 0, pageIndex: 0 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 0 } });
     });
 
-    it('page 3·size 20 은 pageIndex 4·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 3·size 20은 generated Pageable query 그대로 전달한다', async () => {
       await onlinePollAdminService.getPollList({ page: 3, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
-      // 이 컨트롤러는 @PageableDefault(size = 10) Pageable 로 받으므로 실제 페이징은 원본 키가 결정한다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 3, size: 20, pageIndex: 4, recordCountPerPage: 20 },
+        params: { page: 3, size: 20 },
       });
     });
 
-    it('size 만 주면 recordCountPerPage 만 생기고 pageIndex 는 만들어지지 않는다', async () => {
+    it('size만 주면 generated Pageable size만 전달한다', async () => {
       await onlinePollAdminService.getPollList({ size: 15 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { size: 15, recordCountPerPage: 15 },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 15 } });
     });
 
     it('keyword 는 가공·인코딩 없이 원문 그대로 전달된다', async () => {
@@ -137,7 +144,7 @@ describe('OnlinePollAdminService — 온라인 투표 관리자 API 계약', () 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 1, size: 10, pageIndex: 2, recordCountPerPage: 10 },
+        params: { page: 1, size: 10 },
       });
     });
 
@@ -210,13 +217,13 @@ describe('OnlinePollAdminService — 온라인 투표 관리자 API 계약', () 
       expect(client.post).not.toHaveBeenCalledWith(`${BASE}/`, payload, undefined);
     });
 
-    it('본문은 복제·재가공 없이 동일 참조로 전달된다 — yyyyMMdd 8자가 재포맷되면 varchar(8) 제약에 걸려 400 이다', async () => {
+    it('본문은 generated Zod 검증 후 필드·중첩 항목을 보존해 전달한다', async () => {
       const payload = buildPollDto();
 
       await onlinePollAdminService.createPoll(payload);
 
-      // 동일 참조 단언이 곧 "얕은 복제로 중첩 pollArticles 를 흘리지 않는다"의 증명이기도 하다.
-      expect(client.post.mock.calls[0][1]).toBe(payload);
+      // Zod parse가 새 객체를 만들어도 값과 중첩 pollArticles는 그대로여야 한다.
+      expect(client.post.mock.calls[0][1]).toStrictEqual(payload);
     });
 
     it('등록에서도 호출부의 timeout·signal 이 유실되지 않는다', async () => {

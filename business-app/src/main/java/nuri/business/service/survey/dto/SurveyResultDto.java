@@ -1,5 +1,6 @@
 package nuri.business.service.survey.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import nuri.business.domain.survey.SurveyResult;
 
@@ -26,14 +27,19 @@ public record SurveyResultDto(
         /** 항목 일련번호 */
         Long srvyArtclSn,
         /** 응답 내용 (주관식 답변 또는 선택 항목 내용) */
+        @Schema(nullable = true, types = {"string", "null"})
         String rspdntAnsCn,
         /** 응답자명 */
+        @Schema(nullable = true, types = {"string", "null"})
         String rspnsNm,
         /** 기타 답변 */
+        @Schema(nullable = true, types = {"string", "null"})
         String etcAnsCn,
         /** 제출자 ID (감사 컬럼 @CreatedBy) */
+        @Schema(nullable = true, types = {"string", "null"})
         String frstRgtrId,
         /** 제출 일시 */
+        @Schema(nullable = true, types = {"string", "null"})
         LocalDateTime crtDt
 ) {
 

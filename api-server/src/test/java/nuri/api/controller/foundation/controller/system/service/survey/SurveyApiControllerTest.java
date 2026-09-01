@@ -258,13 +258,13 @@ public class SurveyApiControllerTest extends BaseControllerTest {
 
     @Test
     public void deleteQuestion_ShouldSucceed() throws Exception {
-        doNothing().when(surveyService).deleteQuestion(301L);
+        doNothing().when(surveyService).deleteQuestion(201L, 301L);
 
         mockMvc.perform(delete("/api/v1/admin/system/surveys/201/questions/301"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(surveyService, times(1)).deleteQuestion(301L);
+        verify(surveyService, times(1)).deleteQuestion(201L, 301L);
     }
 
     // --- Items ---

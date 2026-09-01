@@ -21,3 +21,10 @@ const ADMINISTRATIVE_ROLE_SET: ReadonlySet<string> = new Set(ADMINISTRATIVE_ROLE
 export function isAdministrativeRole(role: string | null | undefined): boolean {
   return ADMINISTRATIVE_ROLE_SET.has((role ?? '').toUpperCase());
 }
+
+/** 사용자 관리 API가 허용하는 두 역할을 authority id 표기와 정규 표기에서 정규화한다. */
+export function toManagedUserRole(role: string): 'USER' | 'ADMIN' {
+  const normalized = role.trim().toUpperCase().replace(/^ROLE_/, '');
+  if (normalized === 'USER' || normalized === 'ADMIN') return normalized;
+  throw new Error('사용자 권한은 USER 또는 ADMIN만 허용됩니다.');
+}

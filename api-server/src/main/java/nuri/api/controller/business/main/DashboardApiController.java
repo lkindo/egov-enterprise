@@ -32,7 +32,7 @@ public class DashboardApiController {
 
     @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.")
     @GetMapping
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ApiResponse<DashboardResponse>> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
             return ResponseEntity.status(401).body(ApiResponse.error(CommonErrorCode.UNAUTHORIZED, "User not authenticated"));
         }
@@ -50,6 +50,6 @@ public class DashboardApiController {
             }
         }
 
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ResponseEntity.ok(ApiResponse.success(DashboardResponse.from(result)));
     }
 }

@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { MenuInfo } from '@/types/foundation/menu';
+import { getHeadMenuOperation, getLeftMenuOperation } from '@/types/generated-operations';
 
 class MenuService extends ApiService {
   constructor() {
@@ -12,8 +13,8 @@ class MenuService extends ApiService {
    */
   async getHeadMenus(config?: AxiosRequestConfig): Promise<MenuInfo[]> {
     try {
-      const res = await this.get<{ list: MenuInfo[] }>('/head', config);
-      return res?.list || [];
+      const response = await this.executeGenerated(getHeadMenuOperation, { config });
+      return response.list as unknown as MenuInfo[];
     } catch {
       return [];
     }
@@ -24,8 +25,11 @@ class MenuService extends ApiService {
    */
   async getLeftMenus(menuNo: number, config?: AxiosRequestConfig): Promise<MenuInfo[]> {
     try {
-      const res = await this.get<{ list: MenuInfo[] }>(`/left?menuNo=${menuNo}`, config);
-      return res?.list || [];
+      const response = await this.executeGenerated(getLeftMenuOperation, {
+        query: { menuNo },
+        config,
+      });
+      return response.list as unknown as MenuInfo[];
     } catch {
       return [];
     }

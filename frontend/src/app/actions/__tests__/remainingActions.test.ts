@@ -21,7 +21,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createComment, deleteComment, updateComment } from '../commentActions';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '../menuActions';
 import { saveNetworkAction, deleteNetworkAction } from '../networkActions';
-import client from '@/lib/api/client';
+import { commentService } from '@/services/business/comment/commentService';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { networkAdminService } from '@/services/foundation/system/NetworkAdminService';
 import { cookies } from 'next/headers';
@@ -29,8 +29,10 @@ import { revalidatePath } from 'next/cache';
 
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('@/lib/api/client', () => ({
-  default: { post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+vi.mock('@/services/business/comment/commentService', () => ({
+  commentService: {
+    createComment: vi.fn(), updateComment: vi.fn(), deleteComment: vi.fn(),
+  },
 }));
 vi.mock('@/services/foundation/system/MenuAdminService', () => ({
   menuAdminService: {
@@ -71,16 +73,16 @@ describe('남은 서버 액션', () => {
         message: '댓글 내용을 입력해주세요.',
         fieldErrors: { ansCn: '댓글 내용을 입력해주세요.' },
       });
-      expect(client.post).not.toHaveBeenCalled();
+      expect(commentService.createComment).not.toHaveBeenCalled();
     });
 
     it('등록은 세 필드를 실어 보내고 목록을 재검증한다', async () => {
-      vi.mocked(client.post).mockResolvedValueOnce({ id: 1 } as never);
+      vi.mocked(commentService.createComment).mockResolvedValueOnce(1);
 
       const result = await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
-      expect(client.post).toHaveBeenCalledWith(
-        '/comments', { pstSn: 1, bbsId: 'B1', ansCn: '내용' }, AUTH);
+      expect(commentService.createComment).toHaveBeenCalledWith(
+        { pstSn: 1, bbsId: 'B1', ansCn: '내용' }, AUTH);
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/detail');
       expect(result.success).toBe(true);
     });
@@ -90,7 +92,7 @@ describe('남은 서버 액션', () => {
       //   null 이 되어 **성공을 실패로 보고**했다. 사용자는 다시 누르고, 댓글이 두 개 달렸다.
       //   client 는 실패 시 반드시 예외를 던지므로(인터셉터 reject + extractData throw),
       //   await 다음 줄에 도달했다면 이미 성공이다.
-      vi.mocked(client.post).mockResolvedValueOnce(null as never);
+      vi.mocked(commentService.createComment).mockResolvedValueOnce(1);
 
       const result = await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
@@ -99,48 +101,48 @@ describe('남은 서버 액션', () => {
     });
 
     it('수정도 본문 없는 성공을 성공으로 본다', async () => {
-      vi.mocked(client.put).mockResolvedValueOnce(null as never);
+      vi.mocked(commentService.updateComment).mockResolvedValueOnce();
 
       const result = await updateComment(null, form({
-        id: 'C1', bbsId: 'B1', pstSn: '1', ansCn: '고친 내용',
+        id: '11', bbsId: 'B1', pstSn: '1', ansCn: '고친 내용',
       }));
 
       expect(result.success).toBe(true);
     });
 
     it('삭제는 본문이 없어도(undefined 가 아니면) 성공으로 본다', async () => {
-      vi.mocked(client.delete).mockResolvedValueOnce(null as never);
+      vi.mocked(commentService.deleteComment).mockResolvedValueOnce();
 
-      const result = await deleteComment(null, form({ id: 'C1', bbsId: 'B1', pstSn: '1' }));
+      const result = await deleteComment(null, form({ id: '11', bbsId: 'B1', pstSn: '1' }));
 
-      expect(client.delete).toHaveBeenCalledWith('/comments/C1', AUTH);
+      expect(commentService.deleteComment).toHaveBeenCalledWith(11, AUTH);
       expect(result.success).toBe(true);
       expect(revalidatePath).toHaveBeenCalledWith(
         '/admin/community/boards/detail?bbsId=B1&pstSn=1');
     });
 
     it('수정은 대상 id 를 URL 에, 나머지를 본문에 싣는다', async () => {
-      vi.mocked(client.put).mockResolvedValueOnce({ ok: true } as never);
+      vi.mocked(commentService.updateComment).mockResolvedValueOnce();
 
       const result = await updateComment(null, form({
-        id: 'C1', bbsId: 'B1', pstSn: '1', ansCn: '고친 내용',
+        id: '11', bbsId: 'B1', pstSn: '1', ansCn: '고친 내용',
       }));
 
       // id 가 본문으로 새면 엉뚱한 댓글을 덮어쓴다.
-      expect(client.put).toHaveBeenCalledWith(
-        '/comments/C1', { pstSn: 1, bbsId: 'B1', ansCn: '고친 내용' }, AUTH);
+      expect(commentService.updateComment).toHaveBeenCalledWith(
+        11, { pstSn: 1, bbsId: 'B1', ansCn: '고친 내용' }, AUTH);
       expect(result.success).toBe(true);
     });
 
     it('수정도 빈 내용을 막는다', async () => {
-      const result = await updateComment(null, form({ id: 'C1', bbsId: 'B1', pstSn: '1', ansCn: '' }));
+      const result = await updateComment(null, form({ id: '11', bbsId: 'B1', pstSn: '1', ansCn: '' }));
 
       expect(result.success).toBe(false);
-      expect(client.put).not.toHaveBeenCalled();
+      expect(commentService.updateComment).not.toHaveBeenCalled();
     });
 
     it('백엔드 오류는 throw 하지 않고 메시지로 돌려준다', async () => {
-      vi.mocked(client.post).mockRejectedValueOnce({
+      vi.mocked(commentService.createComment).mockRejectedValueOnce({
         response: {
           data: {
             message: '삭제된 게시글입니다.',
@@ -161,11 +163,11 @@ describe('남은 서버 액션', () => {
 
     it('토큰이 없으면 빈 설정으로 호출한다', async () => {
       withToken(undefined);
-      vi.mocked(client.post).mockResolvedValueOnce({ id: 1 } as never);
+      vi.mocked(commentService.createComment).mockResolvedValueOnce(1);
 
       await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
-      expect(client.post).toHaveBeenCalledWith('/comments', expect.anything(), {});
+      expect(commentService.createComment).toHaveBeenCalledWith(expect.anything(), {});
     });
   });
 

@@ -100,7 +100,7 @@ class UserApiControllerTest extends BaseControllerTest {
     void updateMe_success() throws Exception {
         mockMvc.perform(put("/api/v1/users/me")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(toUserRequestJson(createMockUser())))
+                .content("{\"userNm\":\"테스트사용자\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 

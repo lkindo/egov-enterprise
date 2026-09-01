@@ -1,5 +1,6 @@
 package nuri.api.harness;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,6 +28,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -58,6 +61,15 @@ class ApiDocsSchemaFieldLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(ApiDocsSchemaFieldLinterTest.class);
 
+    @Test
+    @DisplayName("@JsonAnyGetter backing store는 named property가 아니며 일반 Map은 계속 검사한다")
+    void jsonAnyGetterBackingStore_isExcludedWithoutHidingNamedMaps() {
+        assertFalse(jsonPropertyNames(DynamicPropertiesFixture.class, false).contains("extensions"));
+        assertFalse(jsonPropertyNames(DynamicPropertiesFixture.class, true).contains("extensions"));
+        assertTrue(jsonPropertyNames(NamedMapFixture.class, false).contains("extensions"));
+        assertTrue(jsonPropertyNames(NamedMapFixture.class, true).contains("extensions"));
+    }
+
     /** DTO 클래스를 찾을 베이스 패키지. */
     private static final String SCAN_BASE = "nuri";
 
@@ -67,7 +79,10 @@ class ApiDocsSchemaFieldLinterTest {
      * 새 항목을 추가하는 것은 "계약을 깨고 게이트를 넓히는" 행위이므로 사유를 커밋 메시지에 남긴다(AGENTS.md Evidence guardrails H2).
      */
     private static final Set<String> GRANDFATHERED = Set.of(
-            // (신설 직후 실측으로 채운다 — 아래 assert 가 실제 잔여를 출력한다)
+            // [2026-08-31 실측 확정] 빈 것이 측정 결과다 — 신설(2026-07-28) 시점의 "실측으로 채운다"
+            // placeholder 가 그대로 남아 '채움 누락' 인지 '잔차 0' 인지 판별 불가였는데, 현행
+            // api-docs.json 대비 필드 드리프트 0건이 실행으로 확인됐다. 항목 추가는 계약 위반의
+            // 동결이므로 사유 없이 금지된다(H2).
     );
 
     /** 게이트 무결성 하한 — 스캔이 조용히 0건이 되면 vacuous 통과가 되므로 차단. */
@@ -230,7 +245,10 @@ class ApiDocsSchemaFieldLinterTest {
                 // Jackson 은 필드와 접근자(getter/record accessor)의 애노테이션을 **병합**한다.
                 // 필드에 @JsonIgnore 가 없어도 getter 에 있으면 직렬화되지 않는다
                 // (실사례: CustomUserDetails.password — 필드 무표시, getPassword() 에 @JsonIgnore).
-                if (f.isAnnotationPresent(JsonIgnore.class) || isIgnoredViaAccessor(clazz, f.getName())) {
+                if (f.isAnnotationPresent(JsonIgnore.class)
+                        || f.isAnnotationPresent(JsonAnyGetter.class)
+                        || isIgnoredViaAccessor(clazz, f.getName())
+                        || isDynamicViaAccessor(clazz, f.getName())) {
                     continue;
                 }
                 JsonProperty jp = f.getAnnotation(JsonProperty.class);
@@ -244,6 +262,11 @@ class ApiDocsSchemaFieldLinterTest {
                     continue;
                 }
                 if (m.isAnnotationPresent(JsonIgnore.class)) {
+                    continue;
+                }
+                // @JsonAnyGetter의 Map 원소는 필드/getter 이름의 property가 아니라 응답 루트의
+                // 동적 property로 펼쳐진다. 따라서 getter 이름을 OpenAPI named property로 세면 안 된다.
+                if (m.isAnnotationPresent(JsonAnyGetter.class)) {
                     continue;
                 }
                 JsonProperty jp = m.getAnnotation(JsonProperty.class);
@@ -283,6 +306,25 @@ class ApiDocsSchemaFieldLinterTest {
         return false;
     }
 
+    /** 필드가 {@link JsonAnyGetter} 접근자의 backing store라면 named property가 아니다. */
+    private static boolean isDynamicViaAccessor(Class<?> clazz, String fieldName) {
+        String cap = fieldName.isEmpty()
+                ? fieldName
+                : Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        for (Class<?> c = clazz; c != null && c != Object.class; c = c.getSuperclass()) {
+            for (Method m : c.getDeclaredMethods()) {
+                if (m.getParameterCount() != 0 || !m.isAnnotationPresent(JsonAnyGetter.class)) {
+                    continue;
+                }
+                String n = m.getName();
+                if (n.equals("get" + cap) || n.equals(fieldName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static boolean isBooleanReturn(Method m) {
         return m.getReturnType() == boolean.class || m.getReturnType() == Boolean.class;
     }
@@ -297,6 +339,23 @@ class ApiDocsSchemaFieldLinterTest {
             }
         }
         return false;
+    }
+
+    private static final class DynamicPropertiesFixture {
+        private final Map<String, Object> extensions = Map.of();
+
+        @JsonAnyGetter
+        public Map<String, Object> getExtensions() {
+            return extensions;
+        }
+    }
+
+    private static final class NamedMapFixture {
+        private final Map<String, Object> extensions = Map.of();
+
+        public Map<String, Object> getExtensions() {
+            return extensions;
+        }
     }
 
     private static String decapitalize(String s) {

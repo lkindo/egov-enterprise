@@ -20,7 +20,7 @@
     "codegen:file": "openapi-typescript ../api-docs.json -o src/types/generated-api.d.ts",
     "codegen:verify": "git ls-files --error-unmatch src/types/generated-api.d.ts && npm run codegen:file && git diff --exit-code src/types/generated-api.d.ts",
     "codegen:zod": "node ../.agent/scripts/codegen-zod.js",
-    "codegen:verify:zod": "git ls-files --error-unmatch src/types/generated-zod.ts && npm run codegen:zod && git diff --exit-code src/types/generated-zod.ts",
+    "codegen:verify:zod": "git ls-files --error-unmatch src/types/generated-zod.ts src/types/generated-operations.ts && npm run codegen:zod && git diff --exit-code src/types/generated-zod.ts src/types/generated-operations.ts",
     "format:api-docs": "node -e \"const fs=require('fs'); const p='../api-docs.json'; if(fs.existsSync(p)){ const d=JSON.parse(fs.readFileSync(p,'utf8')); fs.writeFileSync(p, JSON.stringify(d, null, 2)+'\\n'); }\"",
     "syncContract": "pnpm run codegen:file && pnpm run codegen:zod && pnpm run format:api-docs",
     "test": "vitest run --coverage",

@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { IMessage } from '@stomp/stompjs';
-import client from '@/lib/api/client';
+import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { useWebSocket } from '@/contexts/websocket-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/app/components/ui/toast';
+import {
+  getNotificationsOperation,
+  getUnreadCountOperation,
+  markAsReadOperation,
+} from '@/types/generated-operations';
 
 export interface Notification {
   notiSn: number;
@@ -80,8 +85,8 @@ export function useNotifications() {
     //     · 목록 실패 → 오류 상태로 올리고 **기존 목록을 지우지 않는다**(지우는 것도 거짓말이다)
     //     · 카운트만 실패 → 목록은 살리고 배지는 직전 값을 유지한다(0 으로 덮으면 미읽음이 사라진다)
     const [listResult, countResult] = await Promise.allSettled([
-      client.get('/notifications'),
-      client.get('/notifications/unread-count')
+      executeGeneratedOperation(getNotificationsOperation, { query: {} }),
+      executeGeneratedOperation(getUnreadCountOperation, {}),
     ]);
 
     if (listResult.status === 'rejected') {
@@ -97,11 +102,7 @@ export function useNotifications() {
     errorNotifiedRef.current = false;
     setError(null);
 
-    // client.ts 인터셉터가 이미 data.data를 떼서 주므로 바로 사용합니다.
-    const listPayload = listResult.value as unknown;
-    const candidates = Array.isArray(listPayload)
-      ? listPayload
-      : isRecord(listPayload) && Array.isArray(listPayload.list) ? listPayload.list : null;
+    const candidates = Array.isArray(listResult.value.list) ? listResult.value.list : null;
     const parsed: Notification[] = [];
     let invalidPayload = candidates === null;
     for (const candidate of candidates ?? []) {
@@ -123,8 +124,7 @@ export function useNotifications() {
     setNotifications(parsed);
 
     if (countResult.status === 'fulfilled') {
-      const countData = countResult.value as unknown as number | { count: number };
-      setUnreadCount(typeof countData === 'number' ? countData : (countData?.count || 0));
+      setUnreadCount(countResult.value);
     }
     // 카운트 실패 시 배지를 0 으로 떨어뜨리지 않는다. 오류 객체에는 요청 정보가 포함될 수 있으므로
     // 브라우저 콘솔에도 보내지 않고 직전 값을 유지한다.
@@ -174,7 +174,7 @@ export function useNotifications() {
 
   const markAsRead = async (id: number) => {
     try {
-      await client.post(`/notifications/${id}/read`);
+      await executeGeneratedOperation(markAsReadOperation, { path: { notiSn: id } });
       // Update local state immediately for better UX
       setNotifications(prev => prev.map(n => n.notiSn === id ? { ...n, readYn: 'Y' } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -202,7 +202,9 @@ export function useNotifications() {
     if (unreadIds.length === 0) return;
 
     try {
-      await Promise.all(unreadIds.map(id => client.post(`/notifications/${id}/read`)));
+      await Promise.all(unreadIds.map(notiSn => (
+        executeGeneratedOperation(markAsReadOperation, { path: { notiSn } })
+      )));
       setNotifications(prev => prev.map(n => ({ ...n, readYn: 'Y' })));
       setUnreadCount(prev => Math.max(0, prev - unreadIds.length));
       toast(`불러온 알림 ${unreadIds.length}건을 읽음 처리했습니다.`, 'success');

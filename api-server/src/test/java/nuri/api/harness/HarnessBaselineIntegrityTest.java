@@ -73,17 +73,53 @@ class HarnessBaselineIntegrityTest {
 
     /**
      * 스캔 루트 — 게이트는 {@code nuri.api.harness} 밖에도 있다(모듈별 ArchUnit·RBAC 매트릭스·쿼리수 가드레일).
-     * 한 디렉터리만 지키면 "매니페스트 밖으로 게이트를 옮기는" 우회가 성립하므로 4개 모듈 테스트 소스를 모두 본다.
+     * 한 디렉터리만 지키면 "매니페스트 밖으로 게이트를 옮기는" 우회가 성립하므로 5개 모듈 테스트 소스와,
+     * ArchUnit 규칙 정의가 사는 {@code business-core} testFixtures 를 모두 본다.
+     * <p>[2026-08-31] {@code testFixtures}·{@code migration-tool} 을 추가했다 — 종전에는 규칙 본문
+     * ({@code LayeredArchitectureRules} 등)이 스캔 밖이라 규칙 완화가 census 에 전혀 남지 않았다.
      */
     private static final List<String> SCAN_ROOTS = List.of(
             "api-server/src/test/java",
             "business-app/src/test/java",
             "business-core/src/test/java",
-            "foundation/src/test/java");
+            "business-core/src/testFixtures/java",
+            "foundation/src/test/java",
+            "migration-tool/src/test/java");
 
-    /** 게이트 성격의 테스트 파일 — {@code harness} 디렉터리 소속이거나 이름이 게이트 패턴인 것 */
+    /**
+     * 게이트 성격의 테스트 파일 — {@code harness} 디렉터리 소속이거나 이름이 게이트 패턴인 것.
+     * <p>[2026-08-31] ArchUnit 계층({@code *ArchitectureTest}·{@code *IsolationTest}·규칙 정의
+     * {@code *ArchitectureRules}·{@code *ConventionRules})을 편입했다 — 종전 패턴은 이들을 하나도
+     * 매칭하지 않아, "게이트 조용한 삭제" 차단이 ArchUnit 계층 전체에 비어 있었다.
+     */
     private static final Pattern GATE_FILE = Pattern.compile(
-            "(?:LinterTest|ArchTest|MatrixTest|GuardrailIntegrationTest|ValidationIntegrationTest|Archunit\\w*)\\.java$");
+            "(?:LinterTest|ArchTest|MatrixTest|GuardrailIntegrationTest|ValidationIntegrationTest|Archunit\\w*"
+                    + "|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules)\\.java$");
+
+    /**
+     * 게이트 태그 — census 술어를 registry({@code gates.json})와 단일화하는 축.
+     * <p>[2026-08-31 신설] 종전에는 "무엇이 게이트인가" 의 술어가 둘이었다 — registry 는 태그 기반,
+     * 이 메타 게이트는 디렉터리+이름 기반. 태그가 있는데 이름이 패턴 밖이면(예: schema-validation
+     * 의 migration IT 들) 이 census 의 보호를 받지 못했다. 태그를 편입 술어에 더해 두 census 가
+     * 같은 모집단을 보게 한다.
+     */
+    private static final List<String> GATE_TAGS = List.of(
+            "@Tag(\"governance-harness\")",
+            "@Tag(\"schema-validation\")",
+            "@ArchTag(\"architecture-gate\")");
+
+    /**
+     * 소스 전체 해시 대상 — ArchUnit 계열 파일.
+     * <p>[2026-08-31 신설] ArchUnit 의 규칙과 allowlist({@code DomainIsolationTest.ignoreDependency(...)},
+     * {@code JpaArchitectureRules} 의 LAZY 규칙 등)는 {@code static final} 상수가 아니라 메서드 체인에
+     * 산다 — 상수 해시만으로는 allowlist 를 한 줄 늘려도 매니페스트에 아무것도 남지 않는다. 이 계열은
+     * 주석 제거·개행 정규화 후 소스 전체를 해시해, 규칙 본문의 어떤 완화도 diff 두 곳에 드러나게 한다.
+     */
+    private static final Pattern ARCH_RULE_FILE = Pattern.compile(
+            "(?:ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\\w*)\\.java$");
+
+    /** 소스 전체 해시 키 접미 — {@code <module>/<Class>.__sourceHash} */
+    private static final String SOURCE_HASH_SUFFIX = ".__sourceHash";
 
     private static final String MANIFEST_PATH = "api-server/src/test/resources/harness/baseline-manifest.properties";
     private static final String ACTUAL_OUT = "build/harness/baseline-manifest.actual.properties";
@@ -160,8 +196,9 @@ class HarnessBaselineIntegrityTest {
         }
 
         // 게이트 무결성(false-green 방지): 스캔이 조용히 붕괴하면 vacuous 통과가 되므로 차단
-        if (gateSources.size() < 12) {
-            fail("게이트 무결성 파손: 게이트 소스 스캔 건수(" + gateSources.size() + ")가 예상 하한(12) 미만 — "
+        // [2026-08-31] 태그 술어·ArchUnit 계층 편입으로 모집단이 커져 하한을 12 → 40 으로 올렸다.
+        if (gateSources.size() < 40) {
+            fail("게이트 무결성 파손: 게이트 소스 스캔 건수(" + gateSources.size() + ")가 예상 하한(40) 미만 — "
                     + "경로/클래스 삭제 의심 (workingDir=" + Paths.get("").toAbsolutePath() + ").");
         }
 
@@ -174,6 +211,10 @@ class HarnessBaselineIntegrityTest {
             String code = stripCommentsPreservingStrings(HarnessSourceIndex.read(src));
             for (Map.Entry<String, String> e : extractConstants(code).entrySet()) {
                 actual.put(className + "." + e.getKey(), e.getValue());
+            }
+            // ArchUnit 계열은 규칙·allowlist 가 상수 밖(메서드 체인)에 살므로 소스 전체를 동결한다.
+            if (ARCH_RULE_FILE.matcher(src.getFileName().toString()).find()) {
+                actual.put(className + SOURCE_HASH_SUFFIX, sha256Short(code.replace("\r\n", "\n")));
             }
         }
         actual.put(CLASSES_KEY, String.join(",", actualClasses));
@@ -317,10 +358,23 @@ class HarnessBaselineIntegrityTest {
                 actualClasses.size(), actual.size() - 1);
     }
 
-    /** {@code harness} 디렉터리 소속이거나 이름이 게이트 패턴인 테스트 소스 */
+    /**
+     * {@code harness} 디렉터리 소속이거나, 이름이 게이트 패턴이거나, 게이트 태그를 단 테스트 소스.
+     * <p>태그 판정은 주석 제거 후 수행한다 — javadoc 에 태그 문자열을 인용한 지원 클래스가
+     * 오탐 편입되는 것을 막는다(오탐 = 무관 파일의 상수 동결 = 소음).
+     */
     private static boolean isGateSource(Path p) {
         String normalized = p.toString().replace('\\', '/');
-        return normalized.contains("/harness/") || GATE_FILE.matcher(normalized).find();
+        if (normalized.contains("/harness/") || GATE_FILE.matcher(normalized).find()) {
+            return true;
+        }
+        try {
+            String code = stripCommentsPreservingStrings(HarnessSourceIndex.read(p));
+            return GATE_TAGS.stream().anyMatch(code::contains);
+        } catch (IOException e) {
+            // 읽기 실패를 '게이트 아님' 으로 넘기면 조용한 census 탈락이 된다 — fail-closed.
+            throw new java.io.UncheckedIOException("게이트 술어 판정용 소스 읽기 실패: " + p, e);
+        }
     }
 
     /** {@code CONST -> "<문자열리터럴 수>:<정규화 RHS 의 sha256 앞 12자리>"} */

@@ -1,6 +1,12 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
+import {
+  deleteMailOperation,
+  getSentMailOperation,
+  getSentMailsOperation,
+  sendMailOperation,
+} from '@/types/generated-operations';
 
 /**
  * 발신 메일 DTO — 백엔드 `SentMailDto` 의 생성 타입을 SSOT 로 삼는다.
@@ -40,33 +46,34 @@ class MailService extends ApiService {
     searchKeyword?: string;
     page?: number;
     size?: number;
-  }) {
-    const response = await this.get<PageResponse<SentMail>>('', { params });
-    return response;
+  }): Promise<PageResponse<SentMail>> {
+    const response = await this.executeGenerated(getSentMailsOperation, { query: params });
+    return response as PageResponse<SentMail>;
   }
 
   /**
    * 발신 메일 상세 조회
    */
-  async getSentMail(emlDsptchSn: number) {
-    const response = await this.get<SentMail>(`/${emlDsptchSn}`);
-    return response;
+  async getSentMail(emlDsptchSn: number): Promise<SentMail> {
+    return this.executeGenerated(getSentMailOperation, {
+      path: { emlDsptchSn },
+    }) as Promise<SentMail>;
   }
 
   /**
    * 메일 발송
    */
-  async sendMail(mailData: Partial<SentMail>) {
-    const response = await this.post<number>('', mailData);
-    return response;
+  async sendMail(mailData: Partial<SentMail>): Promise<number> {
+    return this.executeGenerated(sendMailOperation, { body: mailData });
   }
 
   /**
    * 메일 삭제
    */
-  async deleteMail(emlDsptchSn: number) {
-    const response = await this.delete<void>(`/${emlDsptchSn}`);
-    return response;
+  async deleteMail(emlDsptchSn: number): Promise<void> {
+    return this.executeGenerated(deleteMailOperation, {
+      path: { emlDsptchSn },
+    });
   }
 }
 

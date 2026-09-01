@@ -167,11 +167,23 @@ test.describe('Tier 24: 조직 ↔ 일정 통합 사슬', () => {
         //   테스트가 특정 달에만 성립하도록 쓰여 있던 문제다.
         //   (위 API 전용 테스트들의 하드코딩 날짜는 조회도 같은 yearMonth 로 하므로 자기정합적이다.)
         //
-        //   현재 달의 15일로 만든다 — 1일/말일을 피하면 러너 TZ(UTC)와 표시 TZ 차이로
-        //   달이 넘어가는 경계 문제도 함께 없앤다. selectedDate 는 초기값이 undefined 라
-        //   그 달의 일정이면 어느 날짜든 목록에 나온다(visibleSchedules 참조).
-        const today = new Date();
-        const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}15`;
+        //   현재 달의 15일로 만든다 — 1일/말일을 피하면 하루 경계의 어긋남도 함께 없앤다.
+        //   selectedDate 는 초기값이 undefined 라 그 달의 일정이면 어느 날짜든 목록에 나온다
+        //   (visibleSchedules 참조).
+        //
+        // [2026-09-01 시한폭탄 제거 — 같은 함정의 '달' 축] 위 수정은 **일** 경계만 피했고
+        //   **월** 경계는 그대로 남아 있었다. 화면의 기준 달은 SSR 이 내려주는
+        //   `getTodayYmd()` 가 정하는데 그 함수는 `Asia/Seoul` 고정이다(하이드레이션 불일치
+        //   방지 목적). 반면 이 픽스처는 러너 TZ(CI 는 UTC)로 달을 골랐다. 그래서
+        //   KST 자정~09:00(UTC 15:00~24:00) 구간에는 화면이 다음 달을 조회하고 픽스처는
+        //   이전 달에 남아 목록이 비었다 — schedule-edit 이 존재하지 않아 실패한다.
+        //   실측: CI UTC 2026-08-31T23:07 = KST 2026-09-01 08:07 → 화면 202609 / 픽스처 202608.
+        //   main 의 마지막 e2e(8/30)는 KST 로도 8월이라 통과했으므로 회귀가 아니라 날짜 폭탄이다.
+        //   화면과 같은 기준(Asia/Seoul)으로 달을 고른다 — 앱이 TZ 를 바꾸면 여기도 함께 바뀐다.
+        const seoulToday = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(new Date()).replaceAll('-', '');
+        const ymd = `${seoulToday.slice(0, 6)}15`;
         const res = await request.post(SCHEDULE_API, {
             headers: auth,
             data: { schdlNm: `${PREFIX}UiFixture`, schdlBgngYmd: ymd, schdlEndYmd: ymd, schdlSeCd: '2' },

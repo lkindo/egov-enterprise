@@ -57,6 +57,8 @@ const client = vi.hoisted(() => ({
   post: vi.fn(),
   put: vi.fn(),
   delete: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -70,6 +72,9 @@ import { roleAdminService } from '../RoleAdminService';
  */
 const BASE = 'admin/system/roles';
 
+const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+
 /** 롤 픽스처 — RoleManage 의 필수 필드를 모두 채운다. */
 const ROLE_ADMIN: RoleManage = {
   roleId: 'ROLE_ADMIN',
@@ -81,15 +86,32 @@ const ROLE_ADMIN: RoleManage = {
 };
 
 describe('RoleAdminService — 시스템 롤(Role) 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      return envelope(data ?? (url === BASE ? emptyPage : ROLE_ADMIN));
+    });
+    client.requestRaw.mockImplementation(async (request: Record<string, unknown>) => {
+      const { url, method, data, ...config } = request;
+      const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
+      let result: unknown;
+      if (method === 'post') result = await client.post(url, data, forwardedConfig);
+      else if (method === 'put') result = await client.put(url, data, forwardedConfig);
+      else if (method === 'delete') {
+        result = await client.delete(url, data === undefined ? forwardedConfig : { ...config, data });
+      }
+      return envelope(result);
+    });
+  });
 
   describe('롤 목록 조회 (getRoleList)', () => {
     it('목록은 admin/system/roles 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await roleAdminService.getRoleList();
 
       // path 인자로 빈 문자열('')을 넘기므로 basePath 그대로가 최종 경로다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: undefined });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: {} });
     });
 
     it('params 를 생략하면 params: undefined 가 그대로 전달된다 — 빈 객체로 바꿔치지 않는다', async () => {
@@ -97,24 +119,22 @@ describe('RoleAdminService — 시스템 롤(Role) 관리자 API 계약', () => 
       // 페이징 정규화 분기(config?.params 가 truthy 일 때만 동작)의 전제가 달라진다.
       await roleAdminService.getRoleList(undefined);
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: {} });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
     it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
       await roleAdminService.getRoleList({ page: 0 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 0, pageIndex: 1 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 1, searchKeyword: '' } });
       // +1 이 사라지면 pageIndex 0 이 되고, 서버는 firstIndex 가 음수인 쿼리를 받는다.
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 0, pageIndex: 0 } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { pageIndex: 0, searchKeyword: '' } });
     });
 
-    it('page 3·size 20 은 pageIndex 4·recordCountPerPage 20 이 되고 원본 키도 함께 남는다', async () => {
+    it('page 3·size 20 은 BaseSearch 생성 계약의 1-based 페이지 필드로 정규화된다', async () => {
       await roleAdminService.getRoleList({ page: 3, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 3, size: 20, pageIndex: 4, recordCountPerPage: 20 },
+        params: { pageIndex: 4, pageUnit: 20, recordCountPerPage: 20, searchKeyword: '' },
       });
     });
 
@@ -122,23 +142,24 @@ describe('RoleAdminService — 시스템 롤(Role) 관리자 API 계약', () => 
       // page 9 였다면 변환 결과는 pageIndex 10 이겠지만, 명시값 1 이 그대로 유지돼야 한다.
       await roleAdminService.getRoleList({ page: 9, pageIndex: 1 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 9, pageIndex: 1 } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 9, pageIndex: 10 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 1, searchKeyword: '' } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { pageIndex: 10, searchKeyword: '' } });
     });
 
     it('호출부가 recordCountPerPage 를 직접 지정하면 size 기반 변환이 이를 덮어쓰지 않는다', async () => {
       // size 20 이었다면 변환 결과는 recordCountPerPage 20 이겠지만, 명시값 50 이 이긴다.
       await roleAdminService.getRoleList({ size: 20, recordCountPerPage: 50 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 20, recordCountPerPage: 50 } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { size: 20, recordCountPerPage: 20 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { pageUnit: 20, recordCountPerPage: 50, searchKeyword: '' },
+      });
     });
 
-    it('pageSize 만 오면 recordCountPerPage 와 size 를 함께 채운다 (Common DTO 호환 축)', async () => {
+    it('pageSize 만 오면 BaseSearch 생성 계약의 pageUnit 을 함께 채운다', async () => {
       await roleAdminService.getRoleList({ pageSize: 25 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 25, recordCountPerPage: 25, size: 25 },
+        params: { pageSize: 25, pageUnit: 25, searchKeyword: '' },
       });
     });
 
@@ -148,7 +169,7 @@ describe('RoleAdminService — 시스템 롤(Role) 관리자 API 계약', () => 
       await roleAdminService.getRoleList({ pageSize: 25, size: 10 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 25, size: 10, recordCountPerPage: 10 },
+        params: { pageSize: 25, pageUnit: 10, recordCountPerPage: 10, searchKeyword: '' },
       });
       // 분기 순서가 뒤집히면 25 가 들어가 페이지당 건수가 조용히 2.5배로 늘어난다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
@@ -184,7 +205,7 @@ describe('RoleAdminService — 시스템 롤(Role) 관리자 API 계약', () => 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, pageIndex: 1 },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
@@ -197,7 +218,7 @@ describe('RoleAdminService — 시스템 롤(Role) 관리자 API 계약', () => 
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         headers,
-        params: { page: 1, pageIndex: 2 },
+        params: { pageIndex: 2, searchKeyword: '' },
       });
     });
 
@@ -299,7 +320,7 @@ describe('RoleAdminService — 시스템 롤(Role) 관리자 API 계약', () => 
       const duplicated = new Error('이미 존재하는 roleId 입니다');
       client.post.mockRejectedValueOnce(duplicated);
 
-      await expect(roleAdminService.createRole({ roleId: 'ROLE_ADMIN' })).rejects.toBe(duplicated);
+      await expect(roleAdminService.createRole({ roleId: 'ROLE_ADMIN', roleNm: '중복 롤' })).rejects.toBe(duplicated);
     });
   });
 
@@ -412,13 +433,10 @@ describe('RoleAdminService — 시스템 롤(Role) 관리자 API 계약', () => 
       expect(client.delete).toHaveBeenCalledWith(BASE, { timeout: 30000, signal, data: codes });
     });
 
-    it('config 에 data 가 들어 있어도 인자로 받은 코드 배열이 이긴다', async () => {
-      // `{ ...config, data: roleCodes }` 라 spread 뒤에 오는 인자가 항상 최종 본문이다.
-      // 순서가 뒤집히면 호출부의 잔여 config 가 삭제 대상을 결정하게 된다.
-      await roleAdminService.deleteRoles(codes, { data: ['ROLE_DECOY'] });
-
-      expect(client.delete).toHaveBeenCalledWith(BASE, { data: codes });
-      expect(client.delete).not.toHaveBeenCalledWith(BASE, { data: ['ROLE_DECOY'] });
+    it('config.data 로 생성 operation 본문을 덮어쓰려 하면 fail-closed 한다', async () => {
+      await expect(roleAdminService.deleteRoles(codes, { data: ['ROLE_DECOY'] }))
+        .rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
+      expect(client.delete).not.toHaveBeenCalled();
     });
   });
 

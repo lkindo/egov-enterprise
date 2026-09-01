@@ -5,6 +5,7 @@ import { programAdminService } from '@/services/foundation/system/ProgramAdminSe
 import { MenuInfo } from '@/types/foundation/menu';
 import MenuAdminClient, { type FetchResult, type ProgramOption } from './MenuAdminClient';
 import { SITE_IDENTITY } from '@/config/site-identity';
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 
 export const metadata = {
     title: `시스템 메뉴 관리 | ${SITE_IDENTITY.frameworkName}`,
@@ -39,9 +40,13 @@ export default async function MenuAdminPage() {
             return { data: [] as MenuInfo[], error: toMessage(error) };
         });
 
-    const programsPromise: Promise<FetchResult<ProgramOption[]>> = programAdminService
-        .getProgramList({ page: 0, size: 1000 }, axiosConfig)
-        .then((data) => ({ data: (data?.list ?? []) as ProgramOption[], error: null }))
+    const programsPromise: Promise<FetchResult<ProgramOption[]>> = fetchAllPages(
+        (pageIndex, pageUnit) => programAdminService.getProgramList(
+            { pageIndex, pageUnit },
+            axiosConfig,
+        ),
+    )
+        .then((data) => ({ data, error: null }))
         .catch((error: unknown) => {
             return { data: [] as ProgramOption[], error: toMessage(error) };
         });

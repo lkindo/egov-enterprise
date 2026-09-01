@@ -1070,6 +1070,11 @@ function expectedSummary(records, summary) {
 /** Validate fail-closed semantics independently from the generated snapshot comparison. */
 export function validateUrlStateCensus(census, options = {}) {
   const repoRoot = resolve(options.repoRoot ?? DEFAULT_REPO_ROOT);
+  // 기본은 실시간 시계다. 종전에는 reviewBy 만료를 어디서도 실제 시각으로 검사하지 않아
+  // 재검토 기한이 영구히 장식이었다(고정 NOW 픽스처만 존재). 만료 red 의 해소는
+  // 재검토 완료 또는 DEFAULT_REVIEW_BY 의 의식적 연장 + --write 재생성이며,
+  // 둘 다 diff 에 드러난다 — 조용한 연장은 불가능하다.
+  const nowMs = options.nowMs ?? Date.now();
   const errors = [];
   if (census?.schemaVersion !== 1) errors.push('schemaVersion must be 1');
   if (census?.authority !== 'generated-pre-decision-census-not-policy') errors.push('authority must remain non-normative');
@@ -1099,6 +1104,9 @@ export function validateUrlStateCensus(census, options = {}) {
     }
     if (record?.review?.status !== 'unverified' || record?.review?.decisionSafe !== false) errors.push(`${label}: review must remain unverified and decisionSafe=false`);
     if (!record?.review?.owner || !/^\d{4}-\d{2}-\d{2}$/.test(record?.review?.reviewBy ?? '')) errors.push(`${label}: owner and bounded reviewBy are required`);
+    else if (Date.parse(`${record.review.reviewBy}T23:59:59.999Z`) < nowMs) {
+      errors.push(`${label}: review horizon expired on ${record.review.reviewBy} — 재검토를 완료하거나, 사유와 함께 DEFAULT_REVIEW_BY 를 연장하고 --write 로 재생성하세요`);
+    }
     if (record?.canonical?.status !== 'unverified') errors.push(`${label}: canonical route status cannot be approved by syntax`);
     if (record?.authorizationBoundary?.capabilityRoles !== 'unverified'
       || record?.authorizationBoundary?.objectAuthorization !== 'unverified') {

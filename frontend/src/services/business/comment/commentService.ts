@@ -3,20 +3,14 @@ import { CommentVO, CommentSearchParams, CommentSaveRequest } from '@/types/busi
 import { AxiosRequestConfig } from 'axios';
 import { PageResponse } from '@/types/foundation/system';
 import { CommentDtoSchema, PageResponseCommentDtoSchema } from '@/types/generated-zod';
-import { z } from 'zod';
+import {
+  createCommentOperation,
+  deleteCommentOperation,
+  getCommentsOperation,
+  updateCommentOperation,
+} from '@/types/generated-operations';
 
-const LegacyCompatibleCommentSchema = CommentDtoSchema.extend({
-  wrterId: z.preprocess((value) => value === null ? undefined : value, CommentDtoSchema.shape.wrterId),
-  wrterNm: z.preprocess((value) => value === null ? undefined : value, CommentDtoSchema.shape.wrterNm),
-  frstRgtrId: z.preprocess((value) => value === null ? undefined : value, CommentDtoSchema.shape.frstRgtrId),
-  crtDt: z.preprocess((value) => value === null ? undefined : value, CommentDtoSchema.shape.crtDt),
-});
-
-const CommentPageBoundarySchema = PageResponseCommentDtoSchema.extend({
-  list: z.array(LegacyCompatibleCommentSchema).optional(),
-});
-
-const CommentViewSchema = LegacyCompatibleCommentSchema.extend({
+const CommentViewSchema = CommentDtoSchema.extend({
   ansSn: CommentDtoSchema.shape.ansSn.unwrap(),
   pstSn: CommentDtoSchema.shape.pstSn.unwrap(),
   bbsId: CommentDtoSchema.shape.bbsId.unwrap(),
@@ -25,6 +19,7 @@ const CommentViewSchema = LegacyCompatibleCommentSchema.extend({
   ...comment,
   wrterId: comment.wrterId ?? '',
   wrterNm: comment.wrterNm ?? '작성자 정보 없음',
+  frstRgtrId: comment.frstRgtrId ?? undefined,
   crtDt: comment.crtDt ?? '',
 }));
 
@@ -38,8 +33,8 @@ class CommentService extends ApiService {
 
   /** 댓글 목록 조회 */
   async getComments(params: CommentSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CommentVO>> {
-    const response = await this.get<unknown>('', { ...config, params });
-    const parsed = CommentPageBoundarySchema.parse(response);
+    const response = await this.executeGenerated(getCommentsOperation, { query: params, config });
+    const parsed = PageResponseCommentDtoSchema.parse(response);
     return {
       list: (parsed.list ?? []).map((comment) => CommentViewSchema.parse(comment)),
       total: parsed.total ?? 0,
@@ -49,20 +44,27 @@ class CommentService extends ApiService {
     };
   }
 
- /** 댓글 등록 */
- async createComment(data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<number> {
- return this.post<number>('', data, config);
- }
+  /** 댓글 등록 */
+  async createComment(data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<number> {
+    return this.executeGenerated(createCommentOperation, { body: data, config });
+  }
 
- /** 댓글 수정 */
- async updateComment(id: number, data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<void> {
- return this.put<void>(`/${id}`, data, config);
- }
+  /** 댓글 수정 */
+  async updateComment(id: number, data: CommentSaveRequest, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(updateCommentOperation, {
+      path: { commentNo: id },
+      body: data,
+      config,
+    });
+  }
 
- /** 댓글 삭제 */
- async deleteComment(id: number, config?: AxiosRequestConfig): Promise<void> {
- return this.delete<void>(`/${id}`, config);
- }
+  /** 댓글 삭제 */
+  async deleteComment(id: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(deleteCommentOperation, {
+      path: { commentNo: id },
+      config,
+    });
+  }
 }
 
 export const commentService = new CommentService();

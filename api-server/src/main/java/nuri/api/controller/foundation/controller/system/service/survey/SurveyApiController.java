@@ -156,8 +156,10 @@ public class SurveyApiController {
     @Operation(summary = "설문 문항 삭제")
     @AdminOrSystem
     @DeleteMapping("/{srvySn}/questions/{srvyQstnSn}")
-    public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable Long srvyQstnSn) {
-        surveyService.deleteQuestion(srvyQstnSn);
+    public ResponseEntity<ApiResponse<Void>> deleteQuestion(
+            @PathVariable Long srvySn,
+            @PathVariable Long srvyQstnSn) {
+        surveyService.deleteQuestion(srvySn, srvyQstnSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

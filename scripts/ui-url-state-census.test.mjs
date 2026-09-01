@@ -12,8 +12,13 @@ import {
   tokenizeUrlStateSource,
   validateUrlStateCensus,
 } from './ui-url-state-census.mjs';
+import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// [2026-08-31] 라우트 수의 단일 원본은 파일시스템 스캔이다(리터럴 120 삼중 하드코딩 제거).
+//   두 스캐너(capabilities·url-state)가 서로 다른 발견 로직을 쓰므로, 한쪽이 무너지면
+//   아래 exactPopulations 비교가 어긋나 red 가 된다 — 교차 검증을 겸한다.
+const FILESYSTEM_ROUTE_COUNT = discoverPageRoutes(repoRoot).length;
 const manifestPath = join(repoRoot, 'config', 'ui-url-state-census.json');
 
 function refreshHash(census) {
@@ -34,8 +39,9 @@ test('current URL-state census exactly covers critical route and URL producer po
   // [2026-08-27] configRedirects 15 → 14. /admin/security/login-policy 의 리다이렉트를 제거해
   //   그 화면(로그인 보안 정책, 424줄 + API 5개)을 정본 경로로 되살렸다. 리다이렉트가 **줄어드는**
   //   방향이라 URL 상태 표면이 넓어지지 않는다 — filesystemRoutes 120 은 불변이다.
+  assert.ok(FILESYSTEM_ROUTE_COUNT >= 100, `route discovery collapsed: ${FILESYSTEM_ROUTE_COUNT} < 100`);
   assert.deepEqual(actual.summary.exactPopulations, {
-    filesystemRoutes: 120,
+    filesystemRoutes: FILESYSTEM_ROUTE_COUNT,
     dynamicRoutePatterns: 11,
     configRedirects: 14,
     pageRedirects: 5,
@@ -57,6 +63,21 @@ test('current URL-state census exactly covers critical route and URL producer po
     && review.decisionSafe === false
     && canonical.status === 'unverified'
   )));
+});
+
+// [2026-08-31 신설] validateUrlStateCensus 는 기본이 실시간 시계다(위 테스트가 그 경로로
+//   커밋본·재생성본을 함께 검증한다). 이 테스트는 만료가 실제로 red 를 내는 것을
+//   합성 시계로 증명한다 — 기한이 지나도 green 이면 재검토 기한은 장식이다.
+test('an expired review horizon is a reproducible red under the real-clock validator', () => {
+  const census = buildUrlStateCensus({ repoRoot });
+  const firstReviewBy = census.records[0].review.reviewBy;
+  const afterDeadline = Date.parse(`${firstReviewBy}T23:59:59.999Z`) + 1;
+
+  assert.match(
+    validateUrlStateCensus(census, { repoRoot, nowMs: afterDeadline }).join('\n'),
+    /review horizon expired/,
+  );
+  assert.deepEqual(validateUrlStateCensus(census, { repoRoot, nowMs: afterDeadline - 2 }), []);
 });
 
 test('implemented login destination controls are recorded without claiming global policy approval', () => {

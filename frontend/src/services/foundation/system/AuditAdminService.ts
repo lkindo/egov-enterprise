@@ -1,7 +1,8 @@
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
-import type { components } from '@/types/generated-api';
+import type { components, operations } from '@/types/generated-api';
+import { getSysLogListOperation } from '@/types/generated-operations';
 
 /**
  * 감사 로그 DTO — `/logs/system` 이 반환하는 백엔드 `SysLogDto` 그 자체다.
@@ -11,6 +12,42 @@ import type { components } from '@/types/generated-api';
  *  타임라인 필드 전량 공백 + `undefined === undefined` 로 전 카드가 선택 강조되는 결함을 낳았다.)
  */
 export type AuditLog = components['schemas']['SysLogDto'];
+type AuditLogQuery = NonNullable<operations['getSysLogList']['parameters']['query']>;
+
+function toAuditLogQuery(params: {
+  page?: number;
+  size?: number;
+  pageUnit?: number;
+  searchKeyword?: string;
+  searchKeywordFrom?: string;
+  searchKeywordTo?: string;
+}): AuditLogQuery {
+  const query: AuditLogQuery = {};
+  if (params.page !== undefined) query.pageIndex = params.page + 1;
+  if (params.pageUnit !== undefined || params.size !== undefined) {
+    query.pageUnit = params.pageUnit ?? params.size;
+  }
+  if (params.size !== undefined) query.recordCountPerPage = params.size;
+  if (params.searchKeyword !== undefined) query.searchKeyword = params.searchKeyword;
+  if (params.searchKeywordFrom !== undefined) query.searchKeywordFrom = params.searchKeywordFrom;
+  if (params.searchKeywordTo !== undefined) query.searchKeywordTo = params.searchKeywordTo;
+  return query;
+}
+
+function requireAuditPage(
+  response: components['schemas']['PageResponseSysLogDto'],
+): PageResponse<AuditLog> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('감사 로그 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return response as PageResponse<AuditLog>;
+}
 
 /**
  * 감사 로그 관리 서비스 (Admin)
@@ -43,20 +80,13 @@ class AuditAdminService extends AdminService {
     },
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<AuditLog>> {
-    /*
-     * 서버 BaseSearchDto.toPageable() 은 effectivePageUnit() = pageUnit 만 본다.
-     * recordCountPerPage(ApiService 가 size 로부터 만들어 주는 키)는 calculatePagination 전용이라
-     * 페이지 크기에 영향을 주지 않는다. 그래서 종전에는 화면이 '페이지당 50건'을 골라도
-     * **항상 10건**만 나왔고, 총 페이지 수만 10건 기준으로 부풀려졌다. 같은 화면의 SYSTEM·LOGIN
-     * 탭은 SystemLogAdminService 가 정규화해 정상이라, 같은 컨트롤이 탭마다 다르게 동작했다.
-     *
-     * ⚠ 무조건 대입(SystemLogAdminService 방식)을 복사하면 안 된다 — 이 서비스에는
-     *   "인자에 없는 키를 만들지 않는다"는 Object.keys 계약이 있다(AuditAdminService.test.ts).
-     *   호출부가 크기를 준 경우에만 채운다.
-     */
-    const pageUnit = params.pageUnit ?? params.size;
-    const requestParams = pageUnit === undefined ? params : { ...params, pageUnit };
-    return this.get<PageResponse<AuditLog>>('', { ...config, params: requestParams });
+    // 화면의 0-base page/size를 BaseSearchDto의 생성 query 계약으로 변환한다.
+    // 생성 스키마에 없는 legacy 키(page/size)는 transport에 넘기지 않는다.
+    const response = await this.executeGenerated(getSysLogListOperation, {
+      query: toAuditLogQuery(params),
+      config,
+    });
+    return requireAuditPage(response);
   }
 }
 

@@ -105,7 +105,23 @@ public class DeptApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(deptManageService, times(1)).updateDeptHierarchy(any());
+        verify(deptManageService, times(1)).updateDeptHierarchy(argThat(items ->
+                items.size() == 1
+                        && "ORGNZT_CHILD".equals(items.get(0).getOgnzId())
+                        && "ORGNZT_PARENT".equals(items.get(0).getUpOgnzId())
+                        && Integer.valueOf(1).equals(items.get(0).getSortOrdr())));
+    }
+
+    @Test
+    public void updateDeptHierarchy_MissingDepartmentId_ShouldBeRejected() throws Exception {
+        String body = "[{\"upOgnzId\":\"ORGNZT_PARENT\",\"sortOrdr\":1}]";
+
+        mockMvc.perform(put("/api/v1/admin/system/departments/batch-hierarchy")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isBadRequest());
+
+        verify(deptManageService, never()).updateDeptHierarchy(any());
     }
 
     @Test

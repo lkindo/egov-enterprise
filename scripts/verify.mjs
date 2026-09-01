@@ -39,7 +39,7 @@ function runOperationalContracts() {
 
 function runDocumentationContracts() {
   runOperationalContracts();
-  run('pnpm -C frontend exec vitest run src/__tests__/governance-atlas-contract.test.ts');
+  run('pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts');
 }
 
 function runRepositoryContracts() {
@@ -71,7 +71,14 @@ function frontendBuildEnvironment() {
 
 function runBackendFull() {
   runRepositoryContracts();
-  run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
+  // `:foundation:check` 는 foundation 커버리지 ratchet(INSTRUCTION 0.60 · CLASS-LINE 0.50)의
+  // 유일한 로컬 실행 경로다 — jacocoTestCoverageVerification 이 check 에만 결속돼 있어,
+  // 이 태스크 없이 green 이면 local-full tier 선언이 거짓이 된다(2026-08-31 실측 정합).
+  run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
+  // 크로스 스택 계약은 백엔드 소스를 감사하므로 backend full 검증에 포함한다.
+  // (full 프로필에서는 runFrontendFull 의 test:coverage 가 같은 파일을 재실행하지만
+  //  be 단독 프로필이 이 계약 없이 green 이 되는 것을 막는 쪽이 우선이다.)
+  run('pnpm -C frontend exec vitest run src/__tests__/cross-stack');
 }
 
 function runFrontendFull() {

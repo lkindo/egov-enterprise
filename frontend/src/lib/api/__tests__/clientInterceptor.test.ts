@@ -51,6 +51,7 @@ function makeInstanceStub() {
       put: vi.fn(),
       patch: vi.fn(),
       delete: vi.fn(),
+      request: vi.fn(),
     }
   );
   return { instance, captured };
@@ -85,6 +86,14 @@ describe('API 클라이언트 인터셉터', () => {
   });
 
   describe('응답 본문 처리 (extractData)', () => {
+    it('generated 경계용 raw 요청은 envelope를 벗기지 않는다', async () => {
+      const { client, instance } = await loadClient();
+      const envelope = { success: true, code: 'S001', message: 'ok', data: { id: 7 } };
+      instance.request.mockResolvedValueOnce({ data: envelope });
+
+      await expect(client.requestRaw({ url: '/x', method: 'get' })).resolves.toEqual(envelope);
+    });
+
     it('success:false 는 예외로 바꾼다 — 오류 본문이 데이터로 흘러가면 안 된다', async () => {
       const { client, instance } = await loadClient();
       instance.get.mockResolvedValueOnce({
@@ -177,7 +186,7 @@ describe('API 클라이언트 인터셉터', () => {
         configurable: true, writable: true,
       });
       const { instance, captured } = await loadClient();
-      instance.post.mockResolvedValueOnce({ data: { success: true } });
+      instance.post.mockResolvedValueOnce({ data: { success: true, data: {} } });
 
       await captured.responseErr!({ response: { status: 401 }, config: { url: '/x' } });
 
@@ -200,7 +209,7 @@ describe('API 클라이언트 인터셉터', () => {
         configurable: true, writable: true,
       });
       const { instance, captured } = await loadClient();
-      instance.post.mockResolvedValueOnce({ data: { success: true } });
+      instance.post.mockResolvedValueOnce({ data: { success: true, data: {} } });
       const original = { url: '/x' };
 
       const result = await captured.responseErr!({ response: { status: 401 }, config: original });
@@ -214,7 +223,13 @@ describe('API 클라이언트 인터셉터', () => {
       Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
       const { instance, captured } = await loadClient();
       // HTTP 200 이지만 본문이 실패 — 상태코드만 보면 성공으로 오독한다.
-      instance.post.mockResolvedValueOnce({ data: { success: false } });
+      instance.post.mockResolvedValueOnce({
+        data: {
+          success: false,
+          code: 'SESSION_EXPIRED',
+          message: '세션이 만료되었습니다.',
+        },
+      });
 
       await expect(
         captured.responseErr!({ response: { status: 401 }, config: { url: '/x' } })
@@ -223,6 +238,22 @@ describe('API 클라이언트 인터셉터', () => {
       expect(win.location.href).toContain('/login?expired=true');
       // 돌아올 곳을 실어 보내야 사용자가 하던 화면으로 복귀한다.
       expect(win.location.href).toContain(encodeURIComponent('/admin/users'));
+    });
+
+    it('truthy success와 토큰 필드가 섞인 malformed 응답은 성공으로 오독하지 않는다', async () => {
+      const win = { location: { pathname: '/admin/users', href: '' }, dispatchEvent: vi.fn() };
+      Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
+      const { instance, captured } = await loadClient();
+      instance.post.mockResolvedValueOnce({
+        data: { success: 'yes', data: { accessToken: 'must-not-cross-bff-boundary' } },
+      });
+
+      await expect(
+        captured.responseErr!({ response: { status: 401 }, config: { url: '/x' } }),
+      ).rejects.toThrow('Token reissue failed');
+
+      expect(instance).not.toHaveBeenCalled();
+      expect(win.location.href).toContain('/login?expired=true');
     });
 
     it('재발급 자체가 실패해도 로그인으로 보낸다', async () => {

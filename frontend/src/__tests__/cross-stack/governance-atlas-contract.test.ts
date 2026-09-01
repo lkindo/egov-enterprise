@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
-const FRONTEND_DIR = join(TEST_DIR, '..', '..');
+const FRONTEND_DIR = join(TEST_DIR, '..', '..', '..');
 const REPO_DIR = join(FRONTEND_DIR, '..');
 const ATLAS_PATH = join(FRONTEND_DIR, 'public', 'governance_harness_atlas.html');
 const ATLAS_HTML = readFileSync(ATLAS_PATH, 'utf8');

@@ -1,9 +1,20 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
+import {
+  executeGeneratedMultipartOperation,
+  executeGeneratedOperation,
+} from '@/lib/api/generated-api-client';
 import { revalidatePath } from 'next/cache';
 import { QNA_BOARD_ID } from '@/config/board-ids';
+import {
+  createBbsPostOperation,
+  createPostOperation,
+  deletePostOperation,
+  likePostOperation,
+  updateBbsPostOperation,
+  updatePostOperation,
+} from '@/types/generated-operations';
 
 const BOARD_SAVE_ERROR = '게시글 저장 중 오류가 발생했습니다.';
 const BOARD_DELETE_ERROR = '게시글 삭제 중 오류가 발생했습니다.';
@@ -93,30 +104,34 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     let response: unknown;
     
     if (hasFiles) {
-      // Backend currently doesn't have @RequestPart in BoardApiController,
-      // so this might still fail 415 or 400 until backend is updated.
-      // But we use multipart/form-data as intended for files.
-      const apiFormData = new FormData();
-      apiFormData.append('board', new Blob([JSON.stringify(articleData)], { type: 'application/json' }));
-      files.forEach(file => { if (file && file.size > 0) apiFormData.append('file', file); });
+      const uploadFiles = files.filter((file) => file && file.size > 0);
       
       if (isEdit) {
-        response = await client.put(`/boards/${bbsId}/posts/${pstSn}`, apiFormData, {
-            ...axiosConfig,
-            headers: { ...axiosConfig?.headers, 'Content-Type': 'multipart/form-data' }
-          });
+        response = await executeGeneratedMultipartOperation(updateBbsPostOperation, {
+          path: { bbsId, pstSn: Number(pstSn) },
+          body: { board: articleData, file: uploadFiles },
+          config: axiosConfig,
+        });
       } else {
-        response = await client.post(`/boards/posts`, apiFormData, {
-            ...axiosConfig,
-            headers: { ...axiosConfig?.headers, 'Content-Type': 'multipart/form-data' }
-          });
+        response = await executeGeneratedMultipartOperation(createBbsPostOperation, {
+          path: { bbsId },
+          body: { board: articleData, file: uploadFiles },
+          config: axiosConfig,
+        });
       }
     } else {
       // No files? Send plain JSON. This matches @RequestBody in BoardApiController.
       if (isEdit) {
-        response = await client.put(`/boards/${bbsId}/posts/${pstSn}`, articleData, axiosConfig);
+        response = await executeGeneratedOperation(updatePostOperation, {
+          path: { bbsId, pstSn: Number(pstSn) },
+          body: articleData,
+          config: axiosConfig,
+        });
       } else {
-        response = await client.post(`/boards/posts`, articleData, axiosConfig);
+        response = await executeGeneratedOperation(createPostOperation, {
+          body: articleData,
+          config: axiosConfig,
+        });
       }
     }
 
@@ -149,7 +164,10 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/boards/${bbsId}/posts/${pstSn}`, axiosConfig);
+    await executeGeneratedOperation(deletePostOperation, {
+      path: { bbsId, pstSn: Number(pstSn) },
+      config: axiosConfig,
+    });
     
     revalidatePath(`/admin/community/boards/select-board-list`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
@@ -164,7 +182,10 @@ export async function likeBoardArticle(bbsId: string, pstSn: number): Promise<{ 
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response = await client.patch<number>(`/boards/${bbsId}/posts/${pstSn}/like`, null, axiosConfig);
+    const response = await executeGeneratedOperation(likePostOperation, {
+      path: { bbsId, pstSn },
+      config: axiosConfig,
+    });
 
     if (response !== undefined) {
       return { success: true, count: response };

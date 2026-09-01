@@ -56,7 +56,7 @@ describe('reissueSession 단일 실행', () => {
   });
 
   it('겹치는 동안에는 요청을 한 번만 보내고 결과를 공유한다', async () => {
-    const gate = deferred<{ data: { success: boolean } }>();
+    const gate = deferred<{ data: { success: true; data: Record<string, never> } }>();
     postMock.mockReturnValue(gate.promise);
 
     const { reissueSession } = await import('../client');
@@ -66,7 +66,7 @@ describe('reissueSession 단일 실행', () => {
 
     expect(postMock).toHaveBeenCalledTimes(1);
 
-    gate.resolve({ data: { success: true } });
+    gate.resolve({ data: { success: true, data: {} } });
     await expect(first).resolves.toBeUndefined();
     await expect(second).resolves.toBeUndefined();
   });
@@ -87,7 +87,7 @@ describe('reissueSession 단일 실행', () => {
   });
 
   it('이전 재발급이 끝난 뒤의 호출은 새로 보낸다', async () => {
-    postMock.mockResolvedValue({ data: { success: true } });
+    postMock.mockResolvedValue({ data: { success: true, data: {} } });
 
     const { reissueSession } = await import('../client');
 
@@ -98,7 +98,7 @@ describe('reissueSession 단일 실행', () => {
   });
 
   it('Route Handler 직결 경로로 보낸다 (baseURL 전치 회귀 방어)', async () => {
-    postMock.mockResolvedValue({ data: { success: true } });
+    postMock.mockResolvedValue({ data: { success: true, data: {} } });
 
     const { reissueSession } = await import('../client');
     await reissueSession();
@@ -110,7 +110,9 @@ describe('reissueSession 단일 실행', () => {
   });
 
   it('success 가 아니면 실패로 다룬다', async () => {
-    postMock.mockResolvedValue({ data: { success: false } });
+    postMock.mockResolvedValue({
+      data: { success: false, code: 'SESSION_EXPIRED', message: '세션이 만료되었습니다.' },
+    });
 
     const { reissueSession } = await import('../client');
 

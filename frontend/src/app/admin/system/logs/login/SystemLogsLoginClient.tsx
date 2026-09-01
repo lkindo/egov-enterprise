@@ -12,15 +12,13 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useToast } from '@/app/components/ui/toast';
 import { requestFullExport } from '@/app/components/patterns/full-result-export';
+import { exportLoginLogsOperation } from '@/types/generated-operations';
 import { Terminal, Calendar, Globe, FileDown } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
-
-/** 전체 결과 xlsx export 엔드포인트 (DEC-OPS-016 — 로그 화면 중 login 에만 존재). */
-const EXPORT_XLSX_URL = '/api/v1/admin/system/logs/login/export.xlsx';
 
 const EXPORT_HEADERS = [
     { label: '로그인 일련번호', key: 'lgnSn' },
@@ -65,7 +63,7 @@ const SystemLogsLoginClient = () => {
      */
     const handleFullExport = () => {
         requestFullExport({
-            url: EXPORT_XLSX_URL,
+            operation: exportLoginLogsOperation,
             totalCount,
             searchKeyword,
             period,
@@ -180,7 +178,7 @@ const SystemLogsLoginClient = () => {
                         filename="로그인로그"
                         className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary"
                     />
-                    {/* 전체 결과 xlsx — 서버 스트리밍 export(DEC-OPS-016). login 로그에만 엔드포인트가 있다. */}
+                    {/* 전체 결과 xlsx — 로그 5종 공통 서버 스트리밍 export(DEC-OPS-016). */}
                     <button
                         type="button"
                         onClick={handleFullExport}

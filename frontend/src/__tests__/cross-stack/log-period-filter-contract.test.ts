@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EMPTY_PERIOD, periodToParams, presetToPeriod } from '@/app/components/patterns/period-filter';
 
-const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const REPO_DIR = join(SRC_DIR, '..', '..');
 
 /**

@@ -43,6 +43,8 @@ const client = vi.hoisted(() => ({
   post: vi.fn(),
   put: vi.fn(),
   delete: vi.fn(),
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
@@ -54,8 +56,45 @@ import {
   getAuthorList,
 } from '../SecurityAdminService';
 
+const success = <T,>(data: T) => ({ success: true as const, code: 'S000', message: 'success', data });
+const emptyPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
+
+function securityResponse(url: string) {
+  if (url.endsWith('/menus')) return [{ authrtNm: '일반 사용자' }];
+  if (url === 'admin/system/authorities' || url === 'admin/system/roles' || url === 'admin/system/groups') {
+    return emptyPage;
+  }
+  if (url.includes('/authorities/')) {
+    return { authrtCd: 'ROLE_ADMIN', authrtNm: '관리자', authrtExpln: '관리자 권한' };
+  }
+  if (url.includes('/roles/')) {
+    return {
+      roleId: 'ROLE_MANAGER',
+      roleNm: '관리 롤',
+      rolePatrn: '/admin/**',
+      roleExpln: '관리 전용',
+      roleTypeCd: 'url',
+      roleSort: '1',
+    };
+  }
+  return { groupId: 'GRP_0001', groupNm: '관리 그룹', groupDc: '관리자 그룹' };
+}
+
 describe('SecurityAdminService — 관리자 보안 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation(async (url: string, config?: unknown) => {
+      const data = await client.get(url, config);
+      return success(data ?? securityResponse(url));
+    });
+    client.requestRaw.mockImplementation(async ({ url, method, data, ...config }) => {
+      const requestConfig = Object.keys(config).length > 0 ? config : undefined;
+      if (method === 'post') await client.post(url, data, requestConfig);
+      else if (method === 'put') await client.put(url, data, requestConfig);
+      else if (method === 'delete') await client.delete(url, requestConfig);
+      return success(null);
+    });
+  });
 
   describe('AuthorityAdminService (권한)', () => {
     const service = new AuthorityAdminService();
@@ -66,12 +105,11 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities', { params: {} });
     });
 
-    it('page 1 은 pageIndex 2 로, size 는 recordCountPerPage 로 변환되고 원본 키도 함께 남는다', async () => {
+    it('page 1 은 pageIndex 2 로, size 는 OpenAPI의 pageUnit·recordCountPerPage로 변환된다', async () => {
       await service.getAuthorList({ page: 1, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities', {
-        params: { page: 1, size: 20, pageIndex: 2, recordCountPerPage: 20 },
+        params: { pageIndex: 2, pageUnit: 20, recordCountPerPage: 20 },
       });
     });
 
@@ -79,7 +117,7 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
       await service.getAuthorList({ page: 0 });
 
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities', {
-        params: { page: 0, pageIndex: 1 },
+        params: { pageIndex: 1 },
       });
     });
 
@@ -87,7 +125,7 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
       await service.getAuthorList({ page: 5, pageIndex: 3 });
 
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities', {
-        params: { page: 5, pageIndex: 3 },
+        params: { pageIndex: 3 },
       });
     });
 
@@ -95,7 +133,7 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
       await service.getAuthorList({ pageSize: 50 });
 
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities', {
-        params: { pageSize: 50, recordCountPerPage: 50, size: 50 },
+        params: { pageSize: 50, pageUnit: 50, recordCountPerPage: 50 },
       });
     });
 
@@ -115,15 +153,21 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities', {
         timeout: 3000,
         signal,
-        params: { page: 1, pageIndex: 2 },
+        params: { pageIndex: 2 },
       });
     });
 
     it('목록 조회는 클라이언트 응답을 가공 없이 그대로 반환한다', async () => {
-      const page = { list: [{ authrtCd: 'ROLE_ADMIN' }], total: 1, page: 1, size: 10, totalPage: 1 };
+      const page = {
+        list: [{ authrtCd: 'ROLE_ADMIN', authrtNm: '관리자', authrtExpln: '관리자 권한' }],
+        total: 1,
+        page: 1,
+        size: 10,
+        totalPage: 1,
+      };
       client.get.mockResolvedValueOnce(page);
 
-      await expect(service.getAuthorList({})).resolves.toBe(page);
+      await expect(service.getAuthorList({})).resolves.toStrictEqual(page);
     });
 
     it('단건 조회는 권한 코드를 경로 변수로 붙이고 config 를 그대로 넘긴다', async () => {
@@ -156,7 +200,9 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
     });
 
     it('권한별 메뉴 조회는 /{권한코드}/menus 하위 경로로 나간다', async () => {
-      await service.getMenuByAuthority('ROLE_USER');
+      await expect(service.getMenuByAuthority('ROLE_USER')).rejects.toThrow(
+        '권한 메뉴 OpenAPI 응답을 기존 메뉴 트리 페이지로 안전하게 변환할 수 없습니다.',
+      );
 
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities/ROLE_USER/menus', undefined);
     });
@@ -169,7 +215,7 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
       await service.getRoleList({ page: 2, size: 15 });
 
       expect(client.get).toHaveBeenCalledWith('admin/system/roles', {
-        params: { page: 2, size: 15, pageIndex: 3, recordCountPerPage: 15 },
+        params: { pageIndex: 3, pageUnit: 15, recordCountPerPage: 15 },
       });
     });
 
@@ -213,7 +259,7 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
 
       expect(client.get).toHaveBeenCalledWith('admin/system/groups', {
         signal,
-        params: { page: 0, pageIndex: 1 },
+        params: { pageIndex: 1 },
       });
     });
 
@@ -263,10 +309,10 @@ describe('SecurityAdminService — 관리자 보안 API 계약', () => {
 
     it('모듈이 내보내는 getAuthorList 는 인스턴스에 bind 되어 있어 단독 호출로도 동작한다', async () => {
       // bind 가 단순 참조로 바뀌면 this 가 undefined 가 되어 호출 즉시 TypeError 다.
-      await expect(getAuthorList({ page: 1 })).resolves.toBeUndefined();
+      await expect(getAuthorList({ page: 1 })).resolves.toStrictEqual(emptyPage);
 
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities', {
-        params: { page: 1, pageIndex: 2 },
+        params: { pageIndex: 2 },
       });
     });
   });

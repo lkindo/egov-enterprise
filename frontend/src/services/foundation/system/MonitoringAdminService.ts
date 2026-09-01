@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { z } from 'zod';
 
 // Get Base URL for Actuator (without /api/v1 prefix)
 const getActuatorBaseURL = () => {
@@ -37,6 +38,45 @@ export interface MetricResponse {
   availableTags?: Array<{ tag: string; values: string[] }>;
 }
 
+// Actuator는 `/api/v1` OpenAPI 문서 밖의 별도 transport다. generated descriptor로 가장하지 않고,
+// 이 특수 경계가 실제로 노출하는 두 응답만 로컬 strict schema로 검증한다.
+const HealthComponentSchema: z.ZodType<HealthComponent> = z.lazy(() => z.strictObject({
+  status: z.string().optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
+  components: z.record(z.string(), HealthComponentSchema).optional(),
+}));
+
+const HealthResponseSchema: z.ZodType<HealthResponse> = z.strictObject({
+  status: z.enum(['UP', 'DOWN', 'OUT_OF_SERVICE', 'UNKNOWN']),
+  components: z.record(z.string(), HealthComponentSchema).optional(),
+});
+
+const MetricResponseSchema: z.ZodType<MetricResponse> = z.strictObject({
+  name: z.string(),
+  description: z.string().optional(),
+  baseUnit: z.string().optional(),
+  measurements: z.array(z.strictObject({
+    statistic: z.string(),
+    value: z.number(),
+  })),
+  availableTags: z.array(z.strictObject({
+    tag: z.string(),
+    values: z.array(z.string()),
+  })).optional(),
+});
+
+function parseHealthResponse(value: unknown): HealthResponse {
+  const parsed = HealthResponseSchema.safeParse(value);
+  if (!parsed.success) throw new Error('Actuator health 응답이 계약과 일치하지 않습니다.');
+  return parsed.data;
+}
+
+function parseMetricResponse(value: unknown): MetricResponse {
+  const parsed = MetricResponseSchema.safeParse(value);
+  if (!parsed.success) throw new Error('Actuator metric 응답이 계약과 일치하지 않습니다.');
+  return parsed.data;
+}
+
 /**
  * 액추에이터 모니터링 서비스
  */
@@ -45,8 +85,8 @@ class MonitoringAdminService {
    * 전체 시스템 헬스 체크
    */
   async getHealth(): Promise<HealthResponse> {
-    const res = await actuatorInstance.get<HealthResponse>('health');
-    return res.data;
+    const res = await actuatorInstance.get<unknown>('health');
+    return parseHealthResponse(res.data);
   }
 
   /**
@@ -54,9 +94,9 @@ class MonitoringAdminService {
    */
   async getMetric(name: string, tag?: string): Promise<MetricResponse> {
     const res = tag
-      ? await actuatorInstance.get<MetricResponse>(`metrics/${name}`, { params: { tag } })
-      : await actuatorInstance.get<MetricResponse>(`metrics/${name}`);
-    return res.data;
+      ? await actuatorInstance.get<unknown>(`metrics/${name}`, { params: { tag } })
+      : await actuatorInstance.get<unknown>(`metrics/${name}`);
+    return parseMetricResponse(res.data);
   }
 
   /**

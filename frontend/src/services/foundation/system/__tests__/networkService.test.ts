@@ -5,20 +5,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageResponse, SearchParams } from '@/types/foundation/system';
 
-vi.mock('@/lib/api/client', async () => ({
-  default: (await import('@/test-utils/api-client-test-double')).apiClientTestDouble,
+const client = vi.hoisted(() => ({
+  get: vi.fn(),
+  getRaw: vi.fn(),
 }));
 
-import { networkService, type NetworkStatusDetailed } from '../networkService';
-import {
-  apiClientTestDouble as client,
-  resetApiClientTestDouble,
-} from '@/test-utils/api-client-test-double';
+vi.mock('@/lib/api/client', () => ({ default: client }));
 
-const MONITORING_PATH = '/admin/system/ntwrksvc-monitoring';
+import { networkService, type NetworkStatusDetailed } from '../networkService';
+
+const MONITORING_PATH = 'admin/system/ntwrksvc-monitoring';
+const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
 
 describe('networkService — 네트워크 모니터링 API 계약', () => {
-  beforeEach(() => resetApiClientTestDouble());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    client.getRaw.mockResolvedValue(envelope({
+      list: [], total: 0, page: 1, size: 10, totalPage: 0,
+    }));
+  });
 
   it('실사용 getStatus만 공개한다', () => {
     expect(Object.keys(networkService)).toStrictEqual(['getStatus']);
@@ -27,15 +32,16 @@ describe('networkService — 네트워크 모니터링 API 계약', () => {
   it('상태 목록을 실제 백엔드 모니터링 경로에서 조회한다', async () => {
     await networkService.getStatus({ page: 0, size: 50 });
 
-    expect(client.get).toHaveBeenCalledWith(MONITORING_PATH, {
-      params: { page: 0, size: 50 },
+    expect(client.getRaw).toHaveBeenCalledWith(MONITORING_PATH, {
+      params: { pageIndex: 1, pageUnit: 50 },
     });
+    expect(client.get).not.toHaveBeenCalled();
   });
 
   it('params를 생략해도 호출 형태를 바꾸지 않는다', async () => {
     await networkService.getStatus();
 
-    expect(client.get).toHaveBeenCalledWith(MONITORING_PATH, { params: undefined });
+    expect(client.getRaw).toHaveBeenCalledWith(MONITORING_PATH, { params: {} });
   });
 
   it('호출부의 검색 객체를 변형하지 않는다', async () => {
@@ -62,14 +68,26 @@ describe('networkService — 네트워크 모니터링 API 계약', () => {
       size: 50,
       totalPage: 1,
     };
-    client.get.mockResolvedValueOnce(response);
+    client.getRaw.mockResolvedValueOnce(envelope(response));
 
-    await expect(networkService.getStatus()).resolves.toBe(response);
+    await expect(networkService.getStatus()).resolves.toStrictEqual(response);
+  });
+
+  it('필수 네트워크 상태 필드가 빠진 응답은 경계에서 거부한다', async () => {
+    client.getRaw.mockResolvedValueOnce(envelope({
+      list: [{ sysNm: 'API-GATEWAY' }],
+      total: 1,
+      page: 1,
+      size: 50,
+      totalPage: 1,
+    }));
+
+    await expect(networkService.getStatus()).rejects.toThrow(/필수 계약/);
   });
 
   it('조회 실패를 빈 목록으로 숨기지 않는다', async () => {
     const failure = new Error('모니터링 소스 연결 실패');
-    client.get.mockRejectedValueOnce(failure);
+    client.getRaw.mockRejectedValueOnce(failure);
 
     await expect(networkService.getStatus()).rejects.toBe(failure);
   });

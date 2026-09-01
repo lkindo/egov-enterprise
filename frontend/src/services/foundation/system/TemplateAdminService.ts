@@ -1,6 +1,11 @@
 import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import type { components } from '@/types/generated-api';
+import {
+  insertTmplatInfoOperation,
+  selectTmplatInfoDetailOperation,
+  selectTmplatInfoListOperation,
+} from '@/types/generated-operations';
 
 /**
  * 템플릿 정보.
@@ -19,17 +24,20 @@ class TemplateAdminService extends AdminService {
 
   /** 템플릿목록 조회 */
   async getTemplateList(config?: AxiosRequestConfig) {
-    return this.get<TmplatInfo[]>('', config);
+    return this.executeGenerated(selectTmplatInfoListOperation, { config });
   }
 
-  /** 템플릿님곸꽭 조회 */
+  /** 템플릿 상세 조회 */
   async getTemplate(tmpltId: string, config?: AxiosRequestConfig) {
-    return this.get<TmplatInfo>(`/${tmpltId}`, config);
+    return this.executeGenerated(selectTmplatInfoDetailOperation, {
+      path: { tmpltId },
+      config,
+    });
   }
 
   /** 템플릿등록 */
   async createTemplate(tmplatInfo: TmplatInfo, config?: AxiosRequestConfig) {
-    return this.post<void>('', tmplatInfo, config);
+    return this.executeGenerated(insertTmplatInfoOperation, { body: tmplatInfo, config });
   }
 }
 

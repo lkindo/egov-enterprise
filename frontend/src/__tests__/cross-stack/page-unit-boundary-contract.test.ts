@@ -4,7 +4,7 @@ import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MAX_PAGE_UNIT } from '@/lib/api/fetch-all-pages';
 
-const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const SRC_DIR = join(FRONTEND_DIR, 'src');
 const BASE_SEARCH_DTO = join(
   FRONTEND_DIR,

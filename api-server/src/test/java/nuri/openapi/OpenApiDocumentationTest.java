@@ -1,10 +1,9 @@
 package nuri.openapi;
 
-import nuri.business.support.IntegrationTest;
+import nuri.api.support.ApiHttpIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -12,13 +11,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.hamcrest.Matchers.hasItem;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * OpenAPI 문서화 테스트
  * API 문서화 생성 및 검증
  */
-@IntegrationTest
-@AutoConfigureMockMvc
+@ApiHttpIntegrationTest
 @org.springframework.test.context.TestPropertySource(properties = {
     "springdoc.api-docs.enabled=true",
     "springdoc.swagger-ui.enabled=true",
@@ -32,6 +31,9 @@ class OpenApiDocumentationTest {
 
   @Autowired
   private MockMvc mockMvc;
+
+  @Autowired
+  private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
   @Test
   @DisplayName("Swagger UI 엔드포인트 접근성 확인")
@@ -67,7 +69,7 @@ class OpenApiDocumentationTest {
   @Test
   @DisplayName("공개 FAQ 전용 경로와 closed response schema가 OpenAPI에 노출된다")
   void publicFaqQueryContract_isDocumented() throws Exception {
-    mockMvc.perform(get("/v3/api-docs")
+    String content = mockMvc.perform(get("/v3/api-docs")
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$['paths']['/api/v1/boards/public-faqs']['get']").exists())
@@ -83,7 +85,293 @@ class OpenApiDocumentationTest {
         .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.required")
             .value(hasItem("useYn")))
         .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.required")
-            .value(hasItem("scrtYn")));
+            .value(hasItem("scrtYn")))
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+
+    com.fasterxml.jackson.databind.JsonNode schemas =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+            .path("components").path("schemas");
+    assertNullableProperties(schemas.path("PublicFaqListItemResponse"),
+        "pstTtl", "inqCnt", "crtDt");
+    assertNullableProperties(schemas.path("PublicFaqDetailResponse"),
+        "pstTtl", "pstCn", "inqCnt", "crtDt");
+  }
+
+  @Test
+  @DisplayName("게시판 응답과 사용자 권한 LEFT JOIN projection은 실제 null 생산 필드를 nullable로 문서화한다")
+  void generatedResponseNullabilityContract_isDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+
+    com.fasterxml.jackson.databind.JsonNode schemas =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+            .path("components").path("schemas");
+    assertNullableProperties(schemas.path("BoardDto"),
+        "ansSn", "pstTtl", "pstCn", "upPstSn", "sortOrdr", "ttlBoldYn", "inqCnt",
+        "useYn", "pstBgngYmd", "pstEndYmd", "userId", "userNm", "atchFileSn", "scrtYn",
+        "blogSn", "evntDt", "qnaSttsCd", "qnaCatCd", "likeCnt", "commentCnt", "fileCnt",
+        "crtDt", "frstRegisterNm", "ansLv");
+    assertNullableProperties(schemas.path("AuthorGroupProjection"),
+        "groupId", "mberTyNm", "authrtId");
+    assertNullableProperties(schemas.path("DeptAuthorProjection"), "authrtId");
+  }
+
+  @Test
+  @DisplayName("User/Auth의 실제 JSON null 생략 방식과 OpenAPI optional non-null 계약이 일치한다")
+  void generatedUserJsonNullabilityContract_matchesRuntimeSerialization() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode schemas = objectMapper.readTree(content)
+        .path("components").path("schemas");
+
+    nuri.business.service.user.dto.UserDto user =
+        nuri.business.service.user.dto.UserDto.builder()
+            .userId("user01")
+            .userNm("홍길동")
+            .build();
+    com.fasterxml.jackson.databind.JsonNode userJson = objectMapper.valueToTree(user);
+    assertThat(userJson.has("esntlId"))
+        .as("UserDto optional non-null schema requires null-valued response fields to be absent")
+        .isFalse();
+    assertThat(userJson.has("emlAddr")).isFalse();
+    assertThat(isNullableSchema(schemas.path("UserDto").path("properties").path("esntlId")))
+        .isFalse();
+
+    nuri.api.controller.foundation.auth.dto.CurrentUserResponse currentUser =
+        new nuri.api.controller.foundation.auth.dto.CurrentUserResponse(
+            "user01", null, "홍길동", null, null, null);
+    com.fasterxml.jackson.databind.JsonNode currentUserJson = objectMapper.valueToTree(currentUser);
+    assertThat(currentUserJson.has("esntlId"))
+        .as("CurrentUserResponse optional non-null schema requires null-valued fields to be absent")
+        .isFalse();
+    assertThat(currentUserJson.has("role")).isFalse();
+    assertThat(currentUserJson.has("userSe")).isFalse();
+    assertThat(currentUserJson.has("email")).isFalse();
+  }
+
+  @Test
+  @DisplayName("Survey의 실제 JSON null 생산 방식과 OpenAPI nullable 계약이 일치한다")
+  void generatedSurveyJsonNullabilityContract_matchesRuntimeSerialization() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode schemas = objectMapper.readTree(content)
+        .path("components").path("schemas");
+
+    nuri.business.service.survey.dto.SurveyResultDto survey =
+        nuri.business.service.survey.dto.SurveyResultDto.builder()
+            .srvyRspnsSn(1L)
+            .srvySn(2L)
+            .srvyTmpltSn(3L)
+            .srvyQstnSn(4L)
+            .srvyArtclSn(5L)
+            .build();
+    com.fasterxml.jackson.databind.JsonNode surveyJson = objectMapper.valueToTree(survey);
+    assertThat(surveyJson.path("rspdntAnsCn").isNull()).isTrue();
+    assertThat(surveyJson.path("rspnsNm").isNull()).isTrue();
+    assertThat(surveyJson.path("etcAnsCn").isNull()).isTrue();
+    assertThat(surveyJson.path("frstRgtrId").isNull()).isTrue();
+    assertThat(surveyJson.path("crtDt").isNull()).isTrue();
+    assertNullableProperties(schemas.path("SurveyResultDto"),
+        "rspdntAnsCn", "rspnsNm", "etcAnsCn", "frstRgtrId", "crtDt");
+  }
+
+  @Test
+  @DisplayName("댓글 DTO는 응답 nullable 필드와 요청 비밀번호 방향을 정확히 문서화한다")
+  void commentDtoNullabilityAndAccessContract_isDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+
+    com.fasterxml.jackson.databind.JsonNode properties =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+            .path("components").path("schemas").path("CommentDto").path("properties");
+    java.util.Set<String> nullableProperties = new java.util.HashSet<>();
+    java.util.Set<String> readOnlyProperties = new java.util.HashSet<>();
+    properties.properties().forEach(entry -> {
+      if (isNullableSchema(entry.getValue())) {
+        nullableProperties.add(entry.getKey());
+      }
+      if (entry.getValue().path("readOnly").asBoolean(false)) {
+        readOnlyProperties.add(entry.getKey());
+      }
+    });
+
+    assertThat(nullableProperties)
+        .containsExactlyInAnyOrder("wrterId", "wrterNm", "frstRgtrId", "crtDt");
+    assertThat(readOnlyProperties)
+        .containsExactlyInAnyOrder("wrterId", "wrterNm", "frstRgtrId", "crtDt");
+    assertThat(properties.path("pswd").path("writeOnly").asBoolean(false)).isTrue();
+    assertThat(properties.path("pswd").path("readOnly").asBoolean(false)).isFalse();
+    assertThat(isNullableSchema(properties.path("pswd"))).isFalse();
+  }
+
+  @Test
+  @DisplayName("조직 계층 일괄 저장은 전용 최소 요청 계약을 문서화한다")
+  void departmentHierarchyRequestContract_isDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode document =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content);
+    com.fasterxml.jackson.databind.JsonNode itemSchema = document.path("paths")
+        .path("/api/v1/admin/system/departments/batch-hierarchy")
+        .path("put").path("requestBody").path("content").path("application/json")
+        .path("schema").path("items");
+    String reference = itemSchema.path("$ref").asText();
+    String schemaName = reference.substring(reference.lastIndexOf('/') + 1);
+    com.fasterxml.jackson.databind.JsonNode schema =
+        document.path("components").path("schemas").path(schemaName);
+
+    assertThat(schema.path("properties").propertyStream().map(java.util.Map.Entry::getKey).toList())
+        .containsExactlyInAnyOrder("ognzId", "upOgnzId", "sortOrdr");
+    assertThat(schema.path("required").valueStream()
+        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList())
+        .contains("ognzId");
+    assertThat(schema.path("properties").has("ognzNm")).isFalse();
+  }
+
+  @Test
+  @DisplayName("게시글 등록은 JSON이 아니라 실제 multipart 요청 계약을 문서화한다")
+  void boardPostMultipartContract_isDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode operation =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+            .path("paths").path("/api/v1/bbs/{bbsId}").path("post");
+    com.fasterxml.jackson.databind.JsonNode mediaTypes = operation.path("requestBody").path("content");
+
+    assertThat(mediaTypes.has("multipart/form-data")).isTrue();
+    assertThat(mediaTypes.has("application/json")).isFalse();
+    assertThat(mediaTypes.path("multipart/form-data").path("schema").path("properties").has("board"))
+        .isTrue();
+  }
+
+  @Test
+  @DisplayName("게시판 마스터 조회는 쓰기 DTO가 아닌 실제 응답 projection을 문서화한다")
+  void boardMasterReadContracts_areDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode schemas =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
+            .path("components").path("schemas");
+    com.fasterxml.jackson.databind.JsonNode summary = schemas.path("BoardMasterSummaryResponse");
+    com.fasterxml.jackson.databind.JsonNode detail = schemas.path("BoardMasterDetailResponse");
+
+    assertThat(summary.path("properties").has("bbsId")).isTrue();
+    assertThat(summary.path("properties").has("atchPsbltyFileSz")).isFalse();
+    assertThat(detail.path("properties").has("atchPsbltyFileSz")).isTrue();
+    assertThat(detail.path("required").valueStream()
+        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList())
+        .doesNotContain("atchPsbltyFileSz");
+  }
+
+  @Test
+  @DisplayName("사용자 수정은 등록 DTO가 아닌 비밀번호 없는 프로필 요청 계약을 문서화한다")
+  void userProfileUpdateContract_isDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode document =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content);
+    com.fasterxml.jackson.databind.JsonNode request = document.path("paths")
+        .path("/api/v1/users/me").path("put")
+        .path("requestBody").path("content").path("application/json").path("schema");
+    String schemaName = request.path("$ref").asText()
+        .substring(request.path("$ref").asText().lastIndexOf('/') + 1);
+    com.fasterxml.jackson.databind.JsonNode schema = document.path("components").path("schemas").path(schemaName);
+    java.util.List<String> required = schema.path("required").valueStream()
+        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList();
+
+    assertThat(required).contains("userNm");
+    assertThat(schema.path("properties").has("userId")).isFalse();
+    assertThat(schema.path("properties").has("pswd")).isFalse();
+    assertThat(schema.path("properties").has("groupId")).isFalse();
+    assertThat(schema.path("properties").has("ognzId")).isFalse();
+    assertThat(schema.path("properties").has("pstinstCd")).isFalse();
+
+    com.fasterxml.jackson.databind.JsonNode adminRequest = document.path("paths")
+        .path("/api/v1/admin/system/users/{userId}").path("put")
+        .path("requestBody").path("content").path("application/json").path("schema");
+    String adminSchemaName = adminRequest.path("$ref").asText()
+        .substring(adminRequest.path("$ref").asText().lastIndexOf('/') + 1);
+    com.fasterxml.jackson.databind.JsonNode adminSchema =
+        document.path("components").path("schemas").path(adminSchemaName);
+    assertThat(adminSchema.path("properties").has("groupId")).isTrue();
+    assertThat(adminSchema.path("properties").has("ognzId")).isTrue();
+    assertThat(adminSchema.path("properties").has("pstinstCd")).isTrue();
+  }
+
+  @Test
+  @DisplayName("대시보드는 Map이 아닌 필수 필드가 있는 응답 DTO를 문서화한다")
+  void dashboardResponseContract_isDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode document =
+        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content);
+    com.fasterxml.jackson.databind.JsonNode schema = document.path("components")
+        .path("schemas").path("DashboardResponse");
+    java.util.List<String> required = schema.path("required").valueStream()
+        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList();
+
+    assertThat(schema.isMissingNode()).isFalse();
+    assertThat(schema.path("properties").has("taskList")).isTrue();
+    assertThat(schema.path("properties").has("notiList")).isTrue();
+    assertThat(schema.path("properties").has("pendingApprovalCount")).isTrue();
+    assertThat(schema.path("properties").has("extensions")).isFalse();
+    assertThat(required).contains("taskList", "notiList", "pendingApprovalCount");
+  }
+
+  private static boolean isNullableSchema(com.fasterxml.jackson.databind.JsonNode schema) {
+    if (schema.path("nullable").asBoolean(false)) {
+      return true;
+    }
+    com.fasterxml.jackson.databind.JsonNode type = schema.path("type");
+    if (type.isArray()) {
+      for (com.fasterxml.jackson.databind.JsonNode candidate : type) {
+        if ("null".equals(candidate.asText())) {
+          return true;
+        }
+      }
+    }
+    return containsNullType(schema.path("anyOf")) || containsNullType(schema.path("oneOf"));
+  }
+
+  private static void assertNullableProperties(
+      com.fasterxml.jackson.databind.JsonNode schema, String... propertyNames) {
+    assertThat(schema.isMissingNode()).isFalse();
+    com.fasterxml.jackson.databind.JsonNode properties = schema.path("properties");
+    for (String propertyName : propertyNames) {
+      assertThat(isNullableSchema(properties.path(propertyName)))
+          .as("%s.%s must accept explicit JSON null", schema.path("name").asText("schema"), propertyName)
+          .isTrue();
+    }
+  }
+
+  private static boolean containsNullType(com.fasterxml.jackson.databind.JsonNode alternatives) {
+    if (!alternatives.isArray()) {
+      return false;
+    }
+    for (com.fasterxml.jackson.databind.JsonNode alternative : alternatives) {
+      if ("null".equals(alternative.path("type").asText())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

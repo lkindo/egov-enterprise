@@ -1,6 +1,7 @@
 package nuri.business.service.comment.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 import lombok.AllArgsConstructor;
@@ -27,8 +28,10 @@ public class CommentDto {
      * 쓴다(BoardService). 같은 규칙을 여기에도 적용하되, 클라이언트가 남의 이름으로 댓글을 다는
      * 위조 경로를 열지 않도록 요청 수용 자체를 막는다.
      */
+    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String wrterId;
+    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String wrterNm;
 
@@ -39,6 +42,7 @@ public class CommentDto {
      * wrterId(esntlId)로 판정하면 서버가 검사하는 값과 다른 값으로 표시를 정하게 되고, 이 변경 이전에
      * 저장된 행은 wrterId 가 NULL 이라 본인 댓글인데 버튼이 사라진다.
      */
+    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String frstRgtrId;
 
@@ -46,5 +50,7 @@ public class CommentDto {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String pswd;
     private String ansCn;
+    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String crtDt;
 }

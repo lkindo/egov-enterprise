@@ -403,8 +403,31 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 문항 삭제 - 성공")
     void deleteQuestion_Success() {
-        surveyService.deleteQuestion(301L);
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L)
+                .srvySn(201L)
+                .srvyTmpltSn(101L)
+                .build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+
+        surveyService.deleteQuestion(201L, 301L);
+
         verify(qesitmRepository, times(1)).deleteById(301L);
+    }
+
+    @Test
+    @DisplayName("설문 문항 삭제 - 다른 설문의 문항이면 거부")
+    void deleteQuestion_WrongSurvey_ShouldThrowBusinessException() {
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L)
+                .srvySn(999L)
+                .srvyTmpltSn(101L)
+                .build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+
+        assertThatThrownBy(() -> surveyService.deleteQuestion(201L, 301L))
+                .isInstanceOf(BusinessException.class);
+        verify(qesitmRepository, never()).deleteById(anyLong());
     }
 
     // ==========================================

@@ -1,8 +1,8 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
+import { commentService } from '@/services/business/comment/commentService';
 import { extractErrorMessage, extractFieldErrors } from './actionUtils';
 
 export interface ActionResponse {
@@ -50,7 +50,7 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
     //   그런데 백엔드가 본문 없이 성공하면 response 가 null 이 되어 **성공을 실패로 보고**했다.
     //   사용자는 다시 누르고, 그러면 댓글이 두 개 달린다.
     //   (삭제만 `!== undefined` 로 판정해 이 문제가 없었다 — 셋의 판정이 비대칭이었다.)
-    await client.post(`/comments`, commentData, axiosConfig);
+    await commentService.createComment(commentData, axiosConfig);
 
     revalidatePath(`/admin/community/boards/detail`);
     return { success: true, message: '댓글이 등록되었습니다.' };
@@ -66,11 +66,11 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
 }
 
 export async function deleteComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const id = formData.get('id') as string;
+  const id = Number(formData.get('id'));
   const bbsId = formData.get('bbsId') as string;
   const pstSn = Number(formData.get('pstSn'));
 
-  if (!Number.isSafeInteger(pstSn) || pstSn <= 0) {
+  if (!Number.isSafeInteger(pstSn) || pstSn <= 0 || !Number.isSafeInteger(id) || id <= 0) {
     return { success: false, message: '유효한 게시글 번호가 필요합니다.' };
   }
 
@@ -79,7 +79,7 @@ export async function deleteComment(prevState: unknown, formData: FormData): Pro
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/comments/${id}`, axiosConfig);
+    await commentService.deleteComment(id, axiosConfig);
 
     revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`);
     return { success: true, message: '댓글이 삭제되었습니다.' };
@@ -90,12 +90,12 @@ export async function deleteComment(prevState: unknown, formData: FormData): Pro
 }
 
 export async function updateComment(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const id = formData.get('id') as string;
+  const id = Number(formData.get('id'));
   const bbsId = formData.get('bbsId') as string;
   const pstSn = Number(formData.get('pstSn'));
   const ansCn = formData.get('ansCn') as string;
 
-  if (!Number.isSafeInteger(pstSn) || pstSn <= 0) {
+  if (!Number.isSafeInteger(pstSn) || pstSn <= 0 || !Number.isSafeInteger(id) || id <= 0) {
     return { success: false, message: '유효한 게시글 번호가 필요합니다.' };
   }
   if (!ansCn || ansCn.trim() === '') {
@@ -117,7 +117,7 @@ export async function updateComment(prevState: unknown, formData: FormData): Pro
       ansCn
     };
 
-    await client.put(`/comments/${id}`, commentData, axiosConfig);
+    await commentService.updateComment(id, commentData, axiosConfig);
 
     revalidatePath(`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`);
     return { success: true, message: '댓글이 수정되었습니다.' };

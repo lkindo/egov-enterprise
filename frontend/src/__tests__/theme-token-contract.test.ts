@@ -11,7 +11,9 @@ const GLOBALS = join(FRONTEND_DIR, 'src', 'app', 'globals.css');
  * 브랜드 프로필 × 컬러 모드 2축 토큰 계약 (ADR-0003 §2, ADR-0006 이후 후속 작업).
  *
  * 시맨틱 이름(--background·--primary·--hub-*·--surface-inverse …)은 3층 토큰 구조의 **2층**이며,
- * 110개 .tsx 소비자와 색 가드 2종(hardcoded-color 78 / status-color 752)이 이 이름에 결속돼 있다.
+ * 110개 .tsx 소비자와 색 가드 2종(hardcoded-color-guard·status-color-guard — baseline 수치는
+ * 각 가드 파일의 BASELINE 상수가 정본이다. 이 주석에 수를 적으면 래칫이 내려갈 때마다 낡는다,
+ * 2026-08-31 실측: 종전 주석 78/752 vs 실제 61/529)이 이 이름에 결속돼 있다.
  * 브랜드 프로필은 그 이름들의 **값만** 갈아끼운다 — 이름을 바꾸는 순간 소비자와 가드가 함께 깨진다.
  *
  * 이 계약이 지키는 것:

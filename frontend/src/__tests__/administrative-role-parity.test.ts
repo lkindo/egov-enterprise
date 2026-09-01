@@ -116,9 +116,12 @@ describe('관리자 판정 parity', () => {
         if (full.endsWith(join('src', 'proxy.ts'))) continue;
 
         scanned += 1;
+        // ⚠ [2026-08-31] 줄 주석(콜론 가드) → 블록 주석 순서로 지운다. 종전에는 블록을 먼저
+        //   지우고 `//` 를 무가드로 지워서, 줄 주석 속 블록 여는 기호가 코드를 삼키거나
+        //   URL 의 `//` 뒤를 먹는 두 결함(형제 계약들이 실측 기록)을 그대로 갖고 있었다.
         const source = readFileSync(full, 'utf8')
-          .replace(/\/\*[\s\S]*?\*\//g, ' ')
-          .replace(/\/\/.*$/gm, ' ');
+          .replace(/(^|[^:])\/\/[^\n]*/gm, '$1')
+          .replace(/\/\*[\s\S]*?\*\//g, ' ');
         if (/\brole\s*===\s*'[A-Za-z_]+'/.test(source)) {
           violations.push(full.slice(SRC_DIR.length + 1).replace(/\\/g, '/'));
           continue;

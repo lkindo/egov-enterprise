@@ -3,6 +3,15 @@ import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 import { NameCard } from '@/types/business/addressbook';
+import type { GeneratedOperationRequest } from '@/types/generated-operations';
+import {
+  createAddressBookOperation,
+  deleteAddressBookOperation,
+  getAddressBookOperation,
+  getAddressBooksOperation,
+  searchUsersOperation,
+  updateAddressBookOperation,
+} from '@/types/generated-operations';
 
 export interface AddressBook {
   adbkSn: number;
@@ -47,45 +56,63 @@ class AddressbookUserService extends UserService {
      *   @PageableDefault Pageable 을 쓰므로 이미 정상이다. 다른 화면의 pageUnit 보정을
      *   여기에 복사하면 안 된다(같은 문법이 같은 의미가 아니다).
      */
-    return this.get<PageResponse<AddressBook>>('', {
-      ...config,
-      params: { ...params, searchCnd: params.searchCnd ?? '0' }
-    });
+    return this.executeGenerated(getAddressBooksOperation, {
+      query: { ...params, searchCnd: params.searchCnd ?? '0' },
+      config,
+    }) as Promise<PageResponse<AddressBook>>;
   }
 
   /**
    * 주소록 상세 조회
    */
   async getAddressBook(adbkSn: number, config?: AxiosRequestConfig): Promise<AddressBook> {
-    return this.get<AddressBook>(`/${adbkSn}`, config);
+    return this.executeGenerated(getAddressBookOperation, {
+      path: { adbkSn },
+      config,
+    }) as Promise<AddressBook>;
   }
 
   /**
    * 주소록 등록
    */
   async createAddressBook(data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<AddressBook> {
-    return this.post<AddressBook>('', data, config);
+    const response = await this.executeGenerated(createAddressBookOperation, {
+      body: data as GeneratedOperationRequest<'createAddressBook'>,
+      config,
+    });
+    // 이 API는 실제로 void를 반환해 왔지만 공개 시그니처는 호환을 위해 유지한다.
+    return response as unknown as AddressBook;
   }
 
   /**
    * 주소록 수정
    */
   async updateAddressBook(adbkSn: number, data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${adbkSn}`, data, config);
+    return this.executeGenerated(updateAddressBookOperation, {
+      path: { adbkSn },
+      body: data as GeneratedOperationRequest<'updateAddressBook'>,
+      config,
+    });
   }
 
   /**
    * 주소록 삭제
    */
   async deleteAddressBook(adbkSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${adbkSn}`, config);
+    return this.executeGenerated(deleteAddressBookOperation, {
+      path: { adbkSn },
+      config,
+    });
   }
 
   /**
    * 사용자 검색 (주소록 대상자 검색)
    */
   async searchUsers(searchWrd: string, config?: AxiosRequestConfig): Promise<PageResponse<NameCard>> {
-    return this.get<PageResponse<NameCard>>('/search-users', { ...config, params: { searchWrd } });
+    return this.executeGenerated(searchUsersOperation, {
+      query: { searchWrd },
+      config,
+    }) as Promise<PageResponse<NameCard>>;
   }
 }
 

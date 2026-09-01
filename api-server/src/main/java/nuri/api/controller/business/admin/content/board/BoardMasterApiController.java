@@ -27,19 +27,20 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 목록 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<BoardMasterDto>>> getBoardMasterList(
+    public ResponseEntity<ApiResponse<PageResponse<BoardMasterSummaryResponse>>> getBoardMasterList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
         Pageable pageable = searchDto.toPageable();
         Page<BoardMasterDto> page = boardMasterService.getBoardMasterList(
                 searchDto.getSearchCondition(), searchDto.getSearchKeyword(), pageable);
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
+                page.map(BoardMasterSummaryResponse::from))));
     }
 
     @Operation(summary = "게시판 마스터 상세 조회")
     @GetMapping("/{bbsId}")
-    public ResponseEntity<ApiResponse<BoardMasterDto>> getBoardMaster(@PathVariable String bbsId) {
+    public ResponseEntity<ApiResponse<BoardMasterDetailResponse>> getBoardMaster(@PathVariable String bbsId) {
         BoardMasterDto result = boardMasterService.getBoardMaster(bbsId);
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ResponseEntity.ok(ApiResponse.success(BoardMasterDetailResponse.from(result)));
     }
 
     @Operation(summary = "게시판 마스터 등록")

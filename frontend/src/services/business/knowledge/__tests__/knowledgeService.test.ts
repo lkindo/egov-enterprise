@@ -13,9 +13,8 @@
  *  2. 게시판 ID 매핑 — 카테고리(FAQ/QNA/WIKI/COMMUNITY)별 BBSMSTR_* 상수는 하드코딩 문자열이다.
  *     한 글자만 틀려도(A/B/C/D/E 반복 문자열이라 오타가 눈에 띄지 않는다) **다른 게시판의 글이
  *     아무 오류 없이 정상 조회**된다. 가장 발견이 늦는 종류의 사고다.
- *  3. 페이징 변환 — ApiService.get 이 0-based `page` 를 1-based `pageIndex` 로, `size` 를
- *     `recordCountPerPage` 로 변환해 보낸다. 이 오프셋이 뒤집히면 첫 페이지가 통째로 비거나
- *     목록이 한 페이지씩 밀린다. 원본 `page`/`size` 도 Spring Data Pageable 용으로 함께 남아야 한다.
+ *  3. 페이징 계약 — 생성된 getPosts operation은 Spring Pageable의 0-based `page`와 `size`만
+ *     허용한다. BaseSearchDto용 별칭이 섞이면 서로 다른 페이징 규약이 조용히 결합된다.
  *  4. 경로 변수 치환 — 상세(`/{bbsId}/posts/{pstSn}`)·통계(`/{bbsId}/stats`)는 식별자가 잘못
  *     끼워지면 **다른 자원을 읽거나 건드린다**.
  *  5. 응답 정규화 — getHotArticles/getActivities 는 레거시 필드(`nttId`/`nttSj`)를 신규
@@ -27,15 +26,29 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/api/client', async () => ({
-  default: (await import('@/test-utils/api-client-test-double')).apiClientTestDouble,
+const client = vi.hoisted(() => ({
+  getRaw: vi.fn(),
+  requestRaw: vi.fn(),
 }));
 
+vi.mock('@/lib/api/client', () => ({ default: client }));
+
 import { knowledgeService } from '../knowledgeService';
-import {
-  apiClientTestDouble as client,
-  resetApiClientTestDouble,
-} from '@/test-utils/api-client-test-double';
+
+const successEnvelope = (data: unknown) => ({
+  success: true,
+  code: 'S000',
+  message: '성공',
+  data,
+});
+
+const validBoard = {
+  pstSn: 1,
+  pstTtl: '제목',
+  pstCn: '본문',
+  useYn: 'Y',
+  userId: 'writer01',
+};
 
 /** 소스에 하드코딩된 게시판 ID 상수 (private 이라 테스트에서 리터럴로 재선언해 고정한다) */
 const BBS = {
@@ -48,15 +61,17 @@ const BBS = {
 
 describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
   beforeEach(() => {
-    // 정규화 메서드(getHotArticles/getActivities)가 res.list 를 읽으므로 기본 응답을 깔아둔다.
-    resetApiClientTestDouble({ get: { list: [] } });
+    vi.clearAllMocks();
+    client.getRaw.mockImplementation((url: string) => Promise.resolve(successEnvelope(
+      url.includes('/posts/') ? validBoard : url.endsWith('/stats') ? {} : { list: [] },
+    )));
   });
 
   describe('getArticles — 목록 조회', () => {
     it('카테고리를 지정하지 않으면 공지사항 게시판 경로로 요청한다', async () => {
       await knowledgeService.getArticles();
 
-      expect(client.get).toHaveBeenCalledWith(
+      expect(client.getRaw).toHaveBeenCalledWith(
         `boards/${BBS.NOTICE}`,
         expect.objectContaining({ params: expect.any(Object) }),
       );
@@ -70,21 +85,21 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     ])('카테고리 %s 는 게시판 %s 경로로 정확히 매핑된다', async (category, expectedBbsId) => {
       await knowledgeService.getArticles({ category });
 
-      expect(client.get).toHaveBeenCalledWith(
+      expect(client.getRaw).toHaveBeenCalledWith(
         `boards/${expectedBbsId}`,
         expect.objectContaining({
-          params: expect.objectContaining({ qnaCatCd: category }),
+          params: expect.objectContaining({ qnaCategory: category }),
         }),
       );
     });
 
-    it('매핑 표에 없는 카테고리는 공지사항 게시판으로 폴백하되 qnaCatCd 는 원문을 유지한다', async () => {
+    it('매핑 표에 없는 카테고리는 공지사항 게시판으로 폴백하되 qnaCategory 는 원문을 유지한다', async () => {
       await knowledgeService.getArticles({ category: 'NOTICE' });
 
-      expect(client.get).toHaveBeenCalledWith(
+      expect(client.getRaw).toHaveBeenCalledWith(
         `boards/${BBS.NOTICE}`,
         expect.objectContaining({
-          params: expect.objectContaining({ qnaCatCd: 'NOTICE' }),
+          params: expect.objectContaining({ qnaCategory: 'NOTICE' }),
         }),
       );
     });
@@ -92,42 +107,38 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     it('bbsId 를 명시하면 카테고리 매핑보다 우선해 그 게시판을 조회한다', async () => {
       await knowledgeService.getArticles({ bbsId: 'BBSMSTR_CUSTOM000001', category: 'FAQ' });
 
-      expect(client.get).toHaveBeenCalledWith(
+      expect(client.getRaw).toHaveBeenCalledWith(
         'boards/BBSMSTR_CUSTOM000001',
         expect.objectContaining({
-          params: expect.objectContaining({ qnaCatCd: 'FAQ' }),
+          params: expect.objectContaining({ qnaCategory: 'FAQ' }),
         }),
       );
     });
 
-    it('기본 페이징(page 0 · size 20)을 pageIndex 1 · recordCountPerPage 20 으로 변환해 보낸다', async () => {
+    it('기본 페이징은 generated getPosts의 0-based page 0 · size 20으로 보낸다', async () => {
       await knowledgeService.getArticles();
 
-      expect(client.get).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
+      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
         params: {
-          qnaCatCd: undefined,
+          qnaCategory: undefined,
           searchWrd: undefined,
           searchCnd: '0',
           page: 0,
           size: 20,
-          pageIndex: 1,
-          recordCountPerPage: 20,
         },
       });
     });
 
-    it('0-based page 2 는 1-based pageIndex 3 으로 나가며 원본 page·size 도 함께 유지된다', async () => {
+    it('0-based page 2와 size 50을 generated query 그대로 유지한다', async () => {
       await knowledgeService.getArticles({ page: 2, size: 50 });
 
-      expect(client.get).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
+      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
         params: {
-          qnaCatCd: undefined,
+          qnaCategory: undefined,
           searchWrd: undefined,
           searchCnd: '0',
           page: 2,
           size: 50,
-          pageIndex: 3,
-          recordCountPerPage: 50,
         },
       });
     });
@@ -136,14 +147,14 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
       await knowledgeService.getArticles({ searchWrd: '전자정부', searchCnd: '1', category: 'FAQ' });
       await knowledgeService.getArticles({ searchWrd: '전자정부' });
 
-      expect(client.get).toHaveBeenNthCalledWith(
+      expect(client.getRaw).toHaveBeenNthCalledWith(
         1,
         `boards/${BBS.FAQ}`,
         expect.objectContaining({
           params: expect.objectContaining({ searchWrd: '전자정부', searchCnd: '1' }),
         }),
       );
-      expect(client.get).toHaveBeenNthCalledWith(
+      expect(client.getRaw).toHaveBeenNthCalledWith(
         2,
         `boards/${BBS.NOTICE}`,
         expect.objectContaining({
@@ -153,8 +164,7 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     });
 
     it('호출자가 넘긴 파라미터 객체를 변형(mutate)하지 않는다', async () => {
-      // ApiService.get 은 전달받은 params 객체에 pageIndex/recordCountPerPage 를 **제자리 주입**한다.
-      // 호출부의 객체(예: React 상태)를 그대로 넘기게 바뀌면 화면 상태가 조용히 오염된다.
+      // 생성 operation용 query adapter가 호출부 객체(예: React 상태)를 오염시키면 안 된다.
       const callerParams = { category: 'FAQ', page: 1, size: 10 };
 
       await knowledgeService.getArticles(callerParams);
@@ -164,31 +174,47 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
 
     it('백엔드 PageResponse 를 가공 없이 그대로 반환한다', async () => {
       const pageResponse = {
-        list: [{ pstSn: 1, pstTtl: '제목', pstCn: '본문' }],
+        list: [{ ...validBoard }],
         total: 1,
         page: 1,
         size: 20,
         totalPage: 1,
       };
-      client.get.mockResolvedValueOnce(pageResponse);
+      client.getRaw.mockResolvedValueOnce(successEnvelope(pageResponse));
 
       await expect(knowledgeService.getArticles()).resolves.toBe(pageResponse);
+    });
+
+    it('writeOnly pswd가 목록 응답에 섞이면 generated 경계에서 거부한다', async () => {
+      client.getRaw.mockResolvedValueOnce(successEnvelope({
+        list: [{ ...validBoard, pswd: 'secret' }],
+      }));
+
+      await expect(knowledgeService.getArticles()).rejects.toThrow(
+        '생성 API 응답에 허용되지 않은 필드가 있습니다.',
+      );
     });
   });
 
   describe('getArticle / getStats — 경로 변수 치환', () => {
     it('상세 조회는 boards/{bbsId}/posts/{pstSn} 경로로 정확히 나간다', async () => {
-      client.get.mockResolvedValueOnce({ pstSn: 42, pstTtl: '제목', pstCn: '본문' });
+      client.getRaw.mockResolvedValueOnce(successEnvelope({
+        pstSn: 42,
+        pstTtl: '제목',
+        pstCn: '본문',
+        useYn: 'Y',
+        userId: 'writer01',
+      }));
 
       await knowledgeService.getArticle(BBS.QNA, 42);
 
-      expect(client.get).toHaveBeenCalledWith(`boards/${BBS.QNA}/posts/42`, undefined);
+      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.QNA}/posts/42`, undefined);
     });
 
     it('상세 조회는 쿼리 파라미터를 붙이지 않는다(페이징 변환이 개입하지 않는다)', async () => {
       await knowledgeService.getArticle(BBS.NOTICE, 7);
 
-      const [, config] = client.get.mock.calls[0];
+      const [, config] = client.getRaw.mock.calls[0];
       expect(config).toBeUndefined();
     });
 
@@ -196,8 +222,8 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
       await knowledgeService.getStats(BBS.WIKI);
       await knowledgeService.getStats();
 
-      expect(client.get).toHaveBeenNthCalledWith(1, `boards/${BBS.WIKI}/stats`, undefined);
-      expect(client.get).toHaveBeenNthCalledWith(2, `boards/${BBS.NOTICE}/stats`, undefined);
+      expect(client.getRaw).toHaveBeenNthCalledWith(1, `boards/${BBS.WIKI}/stats`, undefined);
+      expect(client.getRaw).toHaveBeenNthCalledWith(2, `boards/${BBS.NOTICE}/stats`, undefined);
     });
   });
 
@@ -218,27 +244,34 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     it('서버가 해석하는 정렬 키로 조회수 상위 5건을 요청한다', async () => {
       await knowledgeService.getHotArticles();
 
-      expect(client.get).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
-        params: { size: 5, orderBy: 'views', recordCountPerPage: 5 },
+      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
+        params: { size: 5, orderBy: 'views' },
       });
     });
 
     it('bbsId 를 주면 해당 게시판의 인기글을 조회한다', async () => {
       await knowledgeService.getHotArticles(BBS.COMMUNITY);
 
-      expect(client.get).toHaveBeenCalledWith(
+      expect(client.getRaw).toHaveBeenCalledWith(
         `boards/${BBS.COMMUNITY}`,
         expect.objectContaining({ params: expect.objectContaining({ orderBy: 'views' }) }),
       );
     });
 
     it('레거시 nttId·nttSj 를 pstSn·pstTtl 로 정규화하고 나머지 필드는 보존한다', async () => {
-      client.get.mockResolvedValueOnce({
+      client.getRaw.mockResolvedValueOnce(successEnvelope({
         list: [
-          { nttId: 11, nttSj: '레거시 제목', inqCnt: 300 },
-          { pstSn: 22, pstTtl: '신규 제목', nttId: 99, nttSj: '무시되어야 함' },
+          { nttId: 11, nttSj: '레거시 제목', inqCnt: 300, useYn: 'Y', userId: 'writer01' },
+          {
+            pstSn: 22,
+            pstTtl: '신규 제목',
+            nttId: 99,
+            nttSj: '무시되어야 함',
+            useYn: 'Y',
+            userId: 'writer02',
+          },
         ],
-      });
+      }));
 
       const result = await knowledgeService.getHotArticles();
 
@@ -247,32 +280,32 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     });
 
     it('응답에 list 가 없으면 예외 대신 빈 배열을 돌려준다', async () => {
-      client.get.mockResolvedValueOnce({});
+      client.getRaw.mockResolvedValueOnce(successEnvelope({}));
 
       await expect(knowledgeService.getHotArticles()).resolves.toEqual({ list: [] });
     });
   });
 
   describe('getActivities — 최근 활동 피드', () => {
-    it('활동 피드는 10건을 요청한다(size 10 → recordCountPerPage 10)', async () => {
+    it('활동 피드는 generated query로 size 10을 요청한다', async () => {
       await knowledgeService.getActivities();
 
-      expect(client.get).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
-        params: { size: 10, recordCountPerPage: 10 },
+      expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
+        params: { size: 10 },
       });
     });
 
     it('bbsId 를 주면 해당 게시판의 활동을 조회한다', async () => {
       await knowledgeService.getActivities(BBS.QNA);
 
-      expect(client.get).toHaveBeenCalledWith(
+      expect(client.getRaw).toHaveBeenCalledWith(
         `boards/${BBS.QNA}`,
         expect.objectContaining({ params: expect.objectContaining({ size: 10 }) }),
       );
     });
 
     it('피드 항목을 id·type·title·user·time·impact 규칙대로 변환한다', async () => {
-      client.get.mockResolvedValueOnce({
+      client.getRaw.mockResolvedValueOnce(successEnvelope({
         list: [
           {
             pstSn: 5,
@@ -281,9 +314,11 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
             frstRgtrId: 'USER0001',
             crtDt: '2026-08-15T10:20:30',
             inqCnt: 250,
+            useYn: 'Y',
+            userId: 'writer01',
           },
         ],
-      });
+      }));
 
       const [activity] = await knowledgeService.getActivities();
 
@@ -298,9 +333,16 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     });
 
     it('레거시 필드만 있는 항목도 nttId·nttSj·frstRgtrId 로 채워진다', async () => {
-      client.get.mockResolvedValueOnce({
-        list: [{ nttId: 77, nttSj: '레거시 활동', frstRgtrId: 'USER0002', crtDt: '2026-01-02T00:00:00' }],
-      });
+      client.getRaw.mockResolvedValueOnce(successEnvelope({
+        list: [{
+          nttId: 77,
+          nttSj: '레거시 활동',
+          frstRgtrId: 'USER0002',
+          crtDt: '2026-01-02T00:00:00',
+          useYn: 'Y',
+          userId: 'writer02',
+        }],
+      }));
 
       const [activity] = await knowledgeService.getActivities();
 
@@ -308,7 +350,9 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     });
 
     it('작성일이 없으면 "Just now", 조회수가 없으면 "+0 Reach" 로 채운다', async () => {
-      client.get.mockResolvedValueOnce({ list: [{ pstSn: 9, pstTtl: '방금 등록' }] });
+      client.getRaw.mockResolvedValueOnce(successEnvelope({
+        list: [{ pstSn: 9, pstTtl: '방금 등록', useYn: 'Y', userId: 'writer03' }],
+      }));
 
       const [activity] = await knowledgeService.getActivities();
 
@@ -316,7 +360,7 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
     });
 
     it('응답에 list 가 없으면 예외 대신 빈 배열을 돌려준다', async () => {
-      client.get.mockResolvedValueOnce({});
+      client.getRaw.mockResolvedValueOnce(successEnvelope({}));
 
       await expect(knowledgeService.getActivities()).resolves.toEqual([]);
     });

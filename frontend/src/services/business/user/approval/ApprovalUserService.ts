@@ -2,6 +2,12 @@ import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { ApprovalConfirmRequestSchema } from '@/types/generated-zod';
 import { z } from 'zod';
+import type { components } from '@/types/generated-api';
+import {
+  confirmOperation,
+  getMyHistoryOperation,
+  getPendingOperation,
+} from '@/types/generated-operations';
 
 /**
  * 결재함(사용자) 서비스.
@@ -34,17 +40,34 @@ const ApprovalDecisionRequestSchema = ApprovalConfirmRequestSchema.superRefine((
   }
 });
 
+function requireApprovalPage(
+  response: components['schemas']['PageResponseInformalSanctionDto'],
+): PageResponse<InformalSanctionDto> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('결재 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return response as PageResponse<InformalSanctionDto>;
+}
+
 class ApprovalUserService extends UserService {
   constructor() {
     super('/approvals');
   }
 
   async getPending(params: { page?: number; size?: number }): Promise<PageResponse<InformalSanctionDto>> {
-    return this.get<PageResponse<InformalSanctionDto>>('/pending', { params });
+    const response = await this.executeGenerated(getPendingOperation, { query: params });
+    return requireApprovalPage(response);
   }
 
   async getMyHistory(params: { page?: number; size?: number }): Promise<PageResponse<InformalSanctionDto>> {
-    return this.get<PageResponse<InformalSanctionDto>>('/my', { params });
+    const response = await this.executeGenerated(getMyHistoryOperation, { query: params });
+    return requireApprovalPage(response);
   }
 
   /**
@@ -65,7 +88,10 @@ class ApprovalUserService extends UserService {
     rjctRsnCn?: string,
   ): Promise<void> {
     const request = ApprovalDecisionRequestSchema.parse({ status: aprvYn, reason: rjctRsnCn });
-    return this.put<void>(`/${ifmlAtrzSn}/confirm`, request);
+    return this.executeGenerated(confirmOperation, {
+      path: { id: ifmlAtrzSn },
+      body: request,
+    });
   }
 }
 
