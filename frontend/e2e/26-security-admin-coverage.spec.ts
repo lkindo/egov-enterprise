@@ -144,10 +144,15 @@ test.describe('Tier 26: 보안 관리 쓰기 경로', () => {
         await expect(page.getByLabel('로그인 정책 목록 새로고침')).toBeVisible();
 
         // 정책 수정 진입점(사용자별)이 노출되는지 — 없으면 화면이 읽기 전용으로 죽은 것이다.
-        // 시드 사용자 수에 의존하지 않도록 "행이 있으면 수정 버튼도 있다"로 단언한다.
+        //
+        // ⚠ `count()` 는 **즉시 평가**라 목록이 아직 도착하지 않았으면 0 을 돌려준다. 검색창이
+        //   보인다고 목록까지 온 것은 아니다 — 그 둘은 다른 시점이다. 2026-09-02 CI 에서 정확히
+        //   이 이유로 red 가 났다(`getByLabel(검색)` 은 통과, 그 다음 `count()` 가 0).
+        //   비동기 목록에는 `toBeVisible` 로 **기다리며** 단언해야 한다.
         const editButtons = page.getByRole('button', { name: /로그인 정책 수정$/ });
-        const rowCount = await editButtons.count();
-        expect(rowCount, '로그인 정책 대상 사용자가 최소 1명은 조회돼야 한다').toBeGreaterThan(0);
-        await expect(editButtons.first()).toBeVisible();
+        await expect(
+            editButtons.first(),
+            '로그인 정책 대상 사용자가 최소 1명은 조회돼야 한다(목록이 비면 이 화면은 조작 불가다)',
+        ).toBeVisible({ timeout: 20000 });
     });
 });
