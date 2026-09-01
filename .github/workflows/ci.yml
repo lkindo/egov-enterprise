@@ -252,8 +252,22 @@ jobs:
             sleep "$delay"
           done
 
-      - name: Strict Schema Integrity Validation (No Cache Gateway)
-        if: needs.change-scope.outputs.schema == 'true'
+      # [2026-09-01 main 한정] 이 스텝은 빌드 캐시를 우회해 foundation 테스트를 한 번은 실제로
+      #   돌리는 anti-vacuity 게이트다(`org.gradle.caching=true` + setup-gradle 캐시 복원이라
+      #   캐시 히트로 스킵될 수 있다). 목적은 정당하지만 **비용이 순수 중복**이었다.
+      #
+      #   실측(run 33513096063 backend-scope): `:foundation:test` 가 같은 잡에서 두 번 실행됐다
+      #   (13:28:35 이 스텝 · 13:29:22 아래 `build ... check`). `--no-build-cache` 는 결과를
+      #   캐시에 넣지 않으므로 뒤따르는 build 가 캐시를 못 찾고 처음부터 다시 돌린다. 다른 네
+      #   모듈은 각 1회인데 foundation 만 2회였고, 그 중복이 85초다.
+      #
+      #   Gradle 빌드 캐시는 입력 해시 기반이라 히트는 정당한 스킵이고, 이 저장소는 그 입력
+      #   선언도 관리한다(api-server/build.gradle 의 flywayMigrations inputs.dir — SQL 만 바뀐
+      #   커밋이 테스트를 스킵하지 못하게 한 이력). 그래서 PR 마다 지불할 이유는 약하다.
+      #   다만 "캐시 키 계산이 틀린 경우" 라는 위험은 실재하므로 게이트를 없애지 않고
+      #   **main 병합 시점**으로 옮긴다 — PR 은 85초 빨라지고 캐시 오염은 계속 잡힌다.
+      - name: Cache-bypass regression gate (foundation, main only)
+        if: github.ref == 'refs/heads/main' && needs.change-scope.outputs.schema == 'true'
         run: ./gradlew :foundation:test --no-build-cache --warning-mode fail --console=plain
 
       - name: Build and Test with Gradle

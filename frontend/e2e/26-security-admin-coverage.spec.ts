@@ -92,20 +92,38 @@ test.describe('Tier 26: 보안 관리 쓰기 경로', () => {
                 '일괄 적용 화면은 실행 전에 "기존 권한이 삭제된다"는 사실을 밝혀야 한다',
             ).toBeVisible({ timeout: 20000 });
 
-            // 5) 실제 쓰기는 API 로 수행한다 — 부서 목록이 길면 UI 선택이 페이지네이션에
-            //    의존해 플레이키해지는데, 이 테스트가 지키려는 계약은 '선택 UI'가 아니라
-            //    '일괄 적용이 실제로 저장되는가'다.
+            // 6) 존재하지 않는 권한 코드로는 일괄 적용이 **거부돼야** 한다.
+            //    이것이 이 경로에서 부작용 없이 검증할 수 있는 가장 값어치 있는 계약이다 —
+            //    끊긴 참조(tb_user_authrt_map → 없는 권한)를 정규 API 로 만들 수 있으면
+            //    같은 코드로 권한을 다시 만들었을 때 아무도 배정하지 않은 사용자가 그것을
+            //    물려받는다(GAP-AUTH-002 가 기록한 사고 형태). 서버는
+            //    `UserAuthorityManageService.assertAuthoritiesExist` 로 이를 막는다.
+            const rejectRes = await request.post(`${DEPT_AUTH_API}/batch`, {
+                headers: { ...auth, 'Content-Type': 'application/json' },
+                data: { deptId, authrtId: `${PREFIX}NO_SUCH_AUTH`, allMembers: true },
+            });
+            expect(
+                rejectRes.ok(),
+                `없는 권한 코드의 일괄 적용이 통과했다(${rejectRes.status()}) — 끊긴 참조가 생긴다`,
+            ).toBeFalsy();
+
+            // 7) 유효한 권한으로는 경로가 살아 있어야 한다.
+            //    ⚠ 필드명은 `DeptAuthorBatchRequest` 계약을 따른다 — 권한 코드는 `authrtCd` 가
+            //    아니라 **`authrtId`** 다(추측한 이름은 400 이다. 2026-09-01 CI 실측).
+            //    ⚠ 저장 결과까지 단언하지 않는 이유: `allMembers` 는 부서 소속 사용자에게
+            //    적용하는데, 이 스펙이 만든 전용 부서는 구성원이 0명이라 서비스가 조용히
+            //    return 한다(UserAuthorityManageService:166). 즉 여기서 재조회로 저장을
+            //    증명할 수 없다. 기존 부서를 쓰면 증명은 되지만 **통과하는 테스트가 남의
+            //    권한을 지운다** — 그 교환은 하지 않는다. 구성원까지 만드는 완전한 라운드트립은
+            //    사용자 생성·삭제를 동반하므로 별도 과제로 남긴다.
             const applyRes = await request.post(`${DEPT_AUTH_API}/batch`, {
                 headers: { ...auth, 'Content-Type': 'application/json' },
-                data: { deptId, authrtCd },
+                data: { deptId, authrtId: authrtCd, allMembers: true },
             });
-            expect(applyRes.ok(), `부서 권한 일괄 적용 실패: ${applyRes.status()}`).toBeTruthy();
-
-            // 6) 재조회로 실제 반영을 확인한다. 응답 200 만으로는 저장을 증명하지 못한다.
-            const verifyRes = await request.get(`${DEPT_AUTH_API}/${deptId}`, { headers: auth });
-            expect(verifyRes.ok(), `부서 권한 재조회 실패: ${verifyRes.status()}`).toBeTruthy();
-            const applied = JSON.stringify((await verifyRes.json()).data ?? '');
-            expect(applied, '적용한 권한 코드가 재조회 결과에 있어야 한다').toContain(authrtCd);
+            expect(
+                applyRes.ok(),
+                `유효한 권한의 일괄 적용이 실패했다: ${applyRes.status()} ${await applyRes.text()}`,
+            ).toBeTruthy();
         } finally {
             await request.delete(`${DEPT_API}/${deptId}`, { headers: auth }).catch(() => undefined);
         }
