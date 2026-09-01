@@ -39,7 +39,29 @@ export default defineConfig({
     //   스위트가 전량 그린(112 passed)이 된 지금은 재시도 의존도 자체가 낮다.
     //   상한: 180s × 2 = 6분 (종전 300s × 3 = 15분).
     retries: process.env.CI ? 1 : 0,
-    workers: 1, // Limit workers to 1 to prevent OOM and connection refused errors
+    // [2026-09-01 실측 개시: CI 만 1 → 2] 종전 `workers: 1` 의 근거는 "prevent OOM and connection
+    //   refused errors" 라는 **미측정 주석 한 줄**이었다. 같은 파일의 다른 튜닝값(timeout 300→180,
+    //   expect 60→20, retries 2→1)이 전부 측정과 날짜를 달고 있는 것과 대조된다.
+    //
+    //   왜 지금 건드리는가 — 실행 구조가 이 값에 묶여 있다. 직렬 실행(364초)을 감당하려고
+    //   병렬성을 job 레벨(3 샤드)로 올렸는데, 샤드마다 스택을 통째로 다시 빌드한다.
+    //   실측(PR #529): 샤드당 343초 중 테스트는 100초뿐이고 나머지 243초가 빌드·기동이며,
+    //   3 샤드 러너 합계 1093초 중 테스트는 300초(27%)다. workers 를 올릴 수 있으면 샤드를
+    //   줄여 그 중복 빌드를 없앨 수 있다(1 샤드 × workers 3 이면 wall-clock 동일, 러너 1/3).
+    //
+    //   로컬은 1 을 유지한다 — 포트 점유·자원 고갈 이력은 로컬 축의 근거이고 러너와 다르다.
+    //
+    //   [2026-09-01 실측] CI 1 → 2 는 유효했다. 테스트 실행이 98~102초에서 82~91초로 줄었고
+    //   OOM·connection-refused 는 재현되지 않았다 — 종전 주석의 우려는 2 에서 성립하지 않는다.
+    //
+    //   ⚠ 3 은 **이득이 없어 되돌렸다.** 같은 날 2샤드 × workers 3 으로 실측하니 샤드당
+    //   직렬 185초가 130초로 줄어 효율 1.42배였는데, 이는 workers 2 의 효율(120→82초, 1.46배)과
+    //   같다. 즉 병렬 이득이 이미 포화돼 있다 — GitHub `ubuntu-latest` 가 2 vCPU 이고 브라우저
+    //   테스트가 그 위에서 CPU 를 나눠 쓰기 때문이다. 3 을 유지하면 근거 없는 값이 남고
+    //   컨텍스트 스위칭만 늘어난다.
+    //   샤드 축소(3 → 2)의 이득은 그대로다 — 그것은 병렬성이 아니라 **중복 스택 빌드 1회**를
+    //   없앤 것이고, workers 와 독립적이다.
+    workers: process.env.CI ? 2 : 1,
     reporter: 'html',
     use: {
         baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001',

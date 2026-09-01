@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/base-test';
+import type { APIRequestContext, APIResponse } from '@playwright/test';
 import { NotificationPage } from './pages/NotificationPage';
 import fs from 'fs';
 import path from 'path';
@@ -30,6 +31,41 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         await page.goto('/');
         await page.waitForLoadState('networkidle');
     });
+
+    /**
+     * 이 spec 이 만든 알림을 지운다.
+     *
+     * <p>⚠ [2026-09-01 신설] 종전에는 세 테스트가 알림을 API 로 만들고 **아무것도 지우지 않았다.**
+     * globalTeardown 도 도와주지 못한다 — `e2e/scripts/cleanup-db.ts` 의 카테고리 목록에
+     * 알림 축이 아예 없어서(실측 0건) 잔존분이 영구히 남는다.
+     *
+     * <p>남은 알림은 조용히 다른 단언을 오염시킨다. 이 파일의 `count > 0` 단언은 **다른 테스트가
+     * 남긴 알림으로도 만족**되므로, 방금 만든 것이 실제로 전달됐는지를 더 이상 증명하지 못한다.
+     * 같은 계열의 사고가 이미 실측됐다 — 05-public-experience 는 배너가 7건 누적되자
+     * 격리 실행에서도 100% 실패했다(그 파일 :81-85 기록).
+     *
+     * <p>삭제 실패는 테스트를 깨뜨리지 않는다(정리는 계약이 아니다). 다만 조용히 넘기지 않고
+     * 로그로 남겨, 잔존이 쌓이는 상황을 사람이 볼 수 있게 한다.
+     */
+    async function deleteNotification(request: APIRequestContext, notiSn: unknown): Promise<void> {
+        if (notiSn === undefined || notiSn === null || notiSn === '') return;
+        const res = await request.delete(`${API_BASE}/notifications/${notiSn}`, {
+            headers: { 'Authorization': `Bearer ${adminToken}` },
+        });
+        if (!res.ok()) {
+            console.warn(`>>> [cleanup] 알림 ${notiSn} 삭제 실패(${res.status()}) — 잔존분이 누적됩니다.`);
+        }
+    }
+
+    /** 생성 응답에서 알림 식별자를 꺼낸다. 래퍼(`data`)와 평문 양쪽을 받는다. */
+    async function createdNotificationId(response: APIResponse): Promise<unknown> {
+        try {
+            const body = await response.json();
+            return body?.data?.notiSn ?? body?.data ?? body?.notiSn ?? null;
+        } catch {
+            return null;
+        }
+    }
 
     test('Notification: Real-time Delivery and Read Flow', async ({ request, page }) => {
         const testTitle = `E2E_Notif_${Date.now()}`;
@@ -63,7 +99,9 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
             console.log(`>>> API Error Body: ${errorText}`);
         }
         expect(response.ok()).toBeTruthy();
+        const createdId = await createdNotificationId(response);
 
+        try {
         console.log('>>> Step 2: Verifying real-time badge update');
         // Wait for WebSocket delivery or polling update
         await expect(async () => {
@@ -90,6 +128,9 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         
         await notificationPage.closeNotificationDrawer();
         console.log('>>> Notification workflow verified successfully!');
+        } finally {
+            await deleteNotification(request, createdId);
+        }
     });
 
     test('Notification: Long Content and UI Stability', async ({ request, page }) => {
@@ -97,11 +138,13 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         const testMessage = 'A'.repeat(500) + ' [END]'; // Very long content
 
         console.log('>>> Step 1: Creating long notification');
-        await request.post(`${API_BASE}/notifications`, {
+        const longRes = await request.post(`${API_BASE}/notifications`, {
             headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
             data: { notiTtlNm: testTitle, notiCn: testMessage, rcvrId: 'webmaster' }
         });
+        const longId = await createdNotificationId(longRes);
 
+        try {
         console.log('>>> Step 2: Verifying UI stability in drawer');
         await notificationPage.openNotificationDrawer();
         
@@ -128,6 +171,9 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         ).toBeLessThanOrEqual(clientWidth + 1);
 
         await notificationPage.closeNotificationDrawer();
+        } finally {
+            await deleteNotification(request, longId);
+        }
     });
 
     test('Notification: Hub Search and Filter Verification', async ({ request, page }) => {
@@ -139,7 +185,9 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
             data: { notiTtlNm: uniqueTag, notiCn: 'Hub search filter validation payload.', readYn: 'N', rcvrId: 'webmaster' }
         });
         expect(seedRes.ok(), `알림 seed 실패: ${seedRes.status()}`).toBeTruthy();
+        const seedId = await createdNotificationId(seedRes);
 
+        try {
         console.log('>>> Navigating to Notification Hub');
         await page.goto('/admin/notifications');
         await page.waitForLoadState('networkidle');
@@ -151,5 +199,8 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
 
         // 검색 결과에 seed한 항목이 반드시 나타나야 한다.
         await expect(page.getByText(uniqueTag).first()).toBeVisible({ timeout: 15000 });
+        } finally {
+            await deleteNotification(request, seedId);
+        }
     });
 });

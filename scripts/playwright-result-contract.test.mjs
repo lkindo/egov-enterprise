@@ -110,12 +110,31 @@ test('rejects skipped, zero-expected, and all-skipped false-green reports', () =
   assert.match(errors, /planned spec has no non-skipped test.*02-admin\.spec\.ts/);
 });
 
-test('does not reinterpret unexpected or flaky outcomes that Playwright owns', () => {
-  const mixed = report([
+test('does not reinterpret unexpected outcomes that Playwright already fails on', () => {
+  // `unexpected` 는 Playwright 가 non-zero exit 로 CI 를 이미 red 로 만든다. 계약이 같은 판정을
+  // 중복하지 않는다 — outcome 분류를 재해석하지 않는다는 원래 의미는 이 축에 그대로 남는다.
+  const failed = report([
     jsonSpec('01-core.spec.ts', 'unexpected'),
+    jsonSpec('nested/02-admin.spec.ts'),
+  ]);
+  assert.deepEqual(validatePlaywrightResult(failed, planned, { cwd }).errors, []);
+});
+
+// [2026-09-01 신설] flaky 는 다르다 — 재시도로 통과하면 Playwright 는 **exit 0** 이라 어떤 층도
+//   잡지 않는다. 종전에는 이 계약도 집계·출력만 해서, 실패 후 재시도로 통과한 테스트가 green 과
+//   구별되지 않았다(2026-08-31 PR #528 의 간헐 실패가 이 구멍으로 통과했다).
+test('gates flaky outcomes that no other layer would catch', () => {
+  const flaky = report([
+    jsonSpec('01-core.spec.ts'),
     jsonSpec('nested/02-admin.spec.ts', 'flaky'),
   ]);
-  assert.deepEqual(validatePlaywrightResult(mixed, planned, { cwd }).errors, []);
+  assert.match(
+    validatePlaywrightResult(flaky, planned, { cwd }).errors.join('\n'),
+    /stats\.flaky must be zero/,
+  );
+
+  // 정상(재시도 없이 통과)은 그대로 green 이어야 한다 — 완화가 아니라 신호 복구다.
+  assert.deepEqual(validatePlaywrightResult(report(), planned, { cwd }).errors, []);
 });
 
 test('rejects malformed counters, traversal, duplicate plans, and invalid test records', () => {

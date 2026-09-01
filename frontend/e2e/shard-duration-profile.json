@@ -33,6 +33,7 @@
     "22-deep-security-guard.spec.ts": 6770,
     "23-security-auth-supplement.spec.ts": 18400,
     "24-org-schedule-journey.spec.ts": 3330,
-    "25-deptjob-workreport-journey.spec.ts": 14550
+    "25-deptjob-workreport-journey.spec.ts": 14550,
+    "26-security-admin-coverage.spec.ts": 6000
   }
 }

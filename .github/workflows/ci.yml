@@ -252,8 +252,22 @@ jobs:
             sleep "$delay"
           done
 
-      - name: Strict Schema Integrity Validation (No Cache Gateway)
-        if: needs.change-scope.outputs.schema == 'true'
+      # [2026-09-01 main 한정] 이 스텝은 빌드 캐시를 우회해 foundation 테스트를 한 번은 실제로
+      #   돌리는 anti-vacuity 게이트다(`org.gradle.caching=true` + setup-gradle 캐시 복원이라
+      #   캐시 히트로 스킵될 수 있다). 목적은 정당하지만 **비용이 순수 중복**이었다.
+      #
+      #   실측(run 33513096063 backend-scope): `:foundation:test` 가 같은 잡에서 두 번 실행됐다
+      #   (13:28:35 이 스텝 · 13:29:22 아래 `build ... check`). `--no-build-cache` 는 결과를
+      #   캐시에 넣지 않으므로 뒤따르는 build 가 캐시를 못 찾고 처음부터 다시 돌린다. 다른 네
+      #   모듈은 각 1회인데 foundation 만 2회였고, 그 중복이 85초다.
+      #
+      #   Gradle 빌드 캐시는 입력 해시 기반이라 히트는 정당한 스킵이고, 이 저장소는 그 입력
+      #   선언도 관리한다(api-server/build.gradle 의 flywayMigrations inputs.dir — SQL 만 바뀐
+      #   커밋이 테스트를 스킵하지 못하게 한 이력). 그래서 PR 마다 지불할 이유는 약하다.
+      #   다만 "캐시 키 계산이 틀린 경우" 라는 위험은 실재하므로 게이트를 없애지 않고
+      #   **main 병합 시점**으로 옮긴다 — PR 은 85초 빨라지고 캐시 오염은 계속 잡힌다.
+      - name: Cache-bypass regression gate (foundation, main only)
+        if: github.ref == 'refs/heads/main' && needs.change-scope.outputs.schema == 'true'
         run: ./gradlew :foundation:test --no-build-cache --warning-mode fail --console=plain
 
       - name: Build and Test with Gradle
@@ -424,13 +438,17 @@ jobs:
           pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log
         working-directory: frontend
 
-      - name: Upload Next.js build cache
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: next-build-cache
-          path: frontend/.next/cache
-          retention-days: 7
-
+      # [2026-09-01 제거] `next-build-cache` 업로드를 걷어낸다.
+      #
+      # 이 아티팩트는 워크플로 어디서도 내려받지 않는 죽은 업로드였다. e2e 샤드가 콜드 Next
+      # 빌드를 반복하므로(실측 47~65초 × 3) 소비자로 연결해 보려 했으나, **전제가 틀렸다**:
+      # 이 프로젝트는 Turbopack 을 쓰고(next.config.ts 의 `turbopack` 설정) `.next/cache` 에는
+      # 이미지 캐시만 남는다. 실측 — 업로드된 아티팩트 크기가 283 바이트였고, 복원 스텝은
+      # 1초 만에 끝났으며 그 뒤 빌드 시간은 60~65초로 **줄지 않았다**(오히려 콜드와 같다).
+      # 빈 껍데기를 주고받는 비용만 남으므로 업로드째 제거한다.
+      #
+      # 샤드 간 프런트 빌드 재사용이 필요하면 Turbopack 이 실제로 쓰는 캐시 경로를 먼저
+      # 실측해야 한다 — 그 전에 경로를 추측해 옮기면 지금과 같은 무효 캐시가 다시 생긴다.
       # 실패 스텝과 빌드·테스트 출력을 annotation으로 노출해 로그 권한 없이도 진단하게 한다.
       - name: Surface failure detail (annotations)
         if: failure()
@@ -485,7 +503,15 @@ jobs:
         # 실제 스펙은 shard-duration-profile.json의 성공 실행시간을 기준으로 LPT 균등 분배한다.
         # 새/삭제 스펙, 잘못된 시간, 예상 편차 15% 초과는 e2e-shard-plan 계약이 차단한다.
         # 분포 변경 시 profile의 source와 durationsMs를 함께 갱신한다.
-        shard: [1/3, 2/3, 3/3]
+        # [2026-09-01 축소: 3 → 2] 샤드는 병렬성을 사지만 **스택 빌드를 그만큼 반복**한다.
+        #   실측(PR #529·#530): 샤드당 343초 중 테스트는 82~100초뿐이고 243초가 빌드·기동이다.
+        #   즉 샤드를 늘릴수록 러너 시간이 오버헤드만큼 곱해진다(3샤드 러너 991초 중 테스트 27%).
+        #   workers 를 2 로 올린 실측이 green 이었으므로(테스트 98~102 → 82~91초, OOM 없음)
+        #   그만큼을 샤드에서 회수한다. 이번 실측으로 추정한 병렬 효율(workers2 ≈ 1.4배)을
+        #   대입하면 2샤드 × workers 3 은 wall-clock 352초(현재 330초와 대등)에 러너 704초로
+        #   **약 29% 절감**이다. 1샤드까지 줄이면 러너는 절반이 되지만 wall-clock 이 461초로
+        #   40% 늘어 피드백이 눈에 띄게 느려지므로 채택하지 않았다.
+        shard: [1/2, 2/2]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
@@ -584,7 +610,6 @@ jobs:
         run: npx playwright install-deps chromium
         working-directory: frontend
 
-      # 서로 다른 임시 JWT로 빌드된 Next 캐시는 복원하지 않는다. 재사용하려면 secret 계보가 같아야 한다.
       # 프론트 빌드·기동·테스트를 분리해 각 실패와 소요시간을 독립적으로 관측한다.
       # E2E는 개발 서버 전용 transport 변동을 피하도록 프로덕션 빌드로 실행한다.
       - name: Build frontend (production)

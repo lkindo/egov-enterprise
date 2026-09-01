@@ -1,7 +1,58 @@
 import { test, expect } from './fixtures/base-test';
+import type { APIRequestContext } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 import { SurveyPage } from './pages/SurveyPage';
 import { PromotionPage } from './pages/PromotionPage';
 import { KnowledgePage } from './pages/KnowledgePage';
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
+
+/**
+ * 이 spec 이 UI 로 만든 홍보물(팝업·배너)을 제목으로 찾아 지운다.
+ *
+ * <p>⚠ [2026-09-01 신설] 종전에는 이 파일이 팝업과 배너를 만들고 **아무것도 지우지 않았다**
+ * (`finally`·`afterEach`·delete 0건). globalTeardown 에만 의존했는데, 그 사이 잔존분이
+ * 같은 실행의 다른 단언을 오염시킨다.
+ *
+ * <p>이것은 가설이 아니라 이 파일이 이미 겪은 사고다 — 아래 배너 검증 주석이 기록하듯
+ * <b>E2E 배너가 7건까지 누적되자 이 테스트는 격리 실행에서도 100% 실패했다.</b> 당시 조치는
+ * 단언을 순서 무관하게 바꾼 것(캐러셀 순회)이었고, 그 우회는 옳았지만 <b>누수 자체는 그대로</b>였다.
+ * 여기서 그 원인을 닫는다.
+ *
+ * <p>정리 실패는 테스트를 깨뜨리지 않는다(정리는 계약이 아니다). 대신 경고로 남겨 누적을 드러낸다.
+ */
+async function deletePromotionByTitle(
+    request: APIRequestContext,
+    kind: 'popups' | 'banners',
+    title: string,
+): Promise<void> {
+    const idField = kind === 'popups' ? 'popupSn' : 'bnrSn';
+    try {
+        const token = JSON.parse(
+            fs.readFileSync(path.join(__dirname, 'playwright', '.auth', 'admin.json'), 'utf8'),
+        ).cookies?.find((c: { name: string }) => c.name === 'accessToken')?.value;
+        if (!token) return;
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const listRes = await request.get(`${API_BASE}/admin/system/${kind}?pageIndex=1&pageUnit=100`, { headers });
+        if (!listRes.ok()) return;
+        const body = await listRes.json();
+        const rows: Array<Record<string, unknown>> = body?.data?.list ?? body?.data ?? [];
+        for (const row of rows) {
+            const rowTitle = String(row?.popupNm ?? row?.bnrNm ?? row?.title ?? '');
+            if (!rowTitle.includes(title)) continue;
+            const id = row?.[idField];
+            if (id === undefined || id === null) continue;
+            const del = await request.delete(`${API_BASE}/admin/system/${kind}/${id}`, { headers });
+            if (!del.ok()) {
+                console.warn(`>>> [cleanup] ${kind} ${id} 삭제 실패(${del.status()}) — 잔존분이 누적됩니다.`);
+            }
+        }
+    } catch (error) {
+        console.warn(`>>> [cleanup] ${kind} 정리 중 오류 — 잔존분이 누적됩니다: ${String(error)}`);
+    }
+}
 
 test.describe('Tier 5: Public Engagement & Experience', () => {
     
@@ -42,11 +93,12 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         });
     });
 
-    test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage }) => {
+    test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage, request }) => {
         const popupTitle = `E2E Popup ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const bannerTitle = `E2E Banner ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const promo = new PromotionPage(adminPage);
 
+        try {
         await test.step('Admin: Configure Layer Popup', async () => {
             console.log(`>>> Configuring popup: ${popupTitle}`);
             await promo.gotoBannerPopupAdmin(); // Fixed method name
@@ -112,6 +164,11 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
 
             await expect(bannerTitleLoc).toBeVisible({ timeout: 10000 });
         });
+        } finally {
+            // 누적이 다음 실행의 캐러셀 순회를 다시 어렵게 만들기 전에 지운다(위 주석의 7건 사고).
+            await deletePromotionByTitle(request, 'popups', popupTitle);
+            await deletePromotionByTitle(request, 'banners', bannerTitle);
+        }
     });
 
     test('FAQ Lifecycle and Help Search', async ({ adminPage, userPage }) => {

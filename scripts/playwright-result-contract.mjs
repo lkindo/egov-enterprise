@@ -177,6 +177,22 @@ export function validatePlaywrightResult(report, plannedSpecs, options = {}) {
     }
     if (report.stats.expected === 0) errors.push('stats.expected must be greater than zero');
     if (report.stats.skipped !== 0) errors.push(`stats.skipped must be zero, received ${report.stats.skipped}`);
+    // [2026-09-01 신설] flaky 를 게이트한다.
+    //
+    // ⚠ 종전에는 `flaky` 를 집계·출력만 하고 어디서도 판정하지 않았다. 그래서 실패한 뒤
+    //   재시도로 통과한 테스트가 green 과 구별되지 않았다 — playwright.config.ts 의
+    //   `retries: 1` 주석은 재시도가 flake 를 "가시화" 한다고 말하는데, 그 가시성을 읽는
+    //   소비자가 없어 실제로는 **재시도가 실패를 삼키는** 장치였다.
+    //   실측: 2026-08-31 PR #528 의 e2e 간헐 실패가 정확히 이 구멍으로 통과했다.
+    //
+    //   임계를 0 으로 두는 근거는 현행 실측이다 — 최근 성공 run 3 샤드 전부 `0 flaky` 였다.
+    //   즉 지금 거는 것은 무비용이고, 예산을 두면 그 예산만큼 다시 보이지 않게 된다.
+    //   정당한 flaky(외부 의존·플랫폼 편차)가 생기면 예산이 아니라 원인을 기록한 waiver 로
+    //   다뤄야 재발이 드러난다.
+    if (report.stats.flaky !== 0) {
+      errors.push(`stats.flaky must be zero, received ${report.stats.flaky}`
+        + ' — 재시도로 통과한 테스트는 green 이 아니다. 원인을 고치거나 근거를 남겨라.');
+    }
   }
 
   return {
