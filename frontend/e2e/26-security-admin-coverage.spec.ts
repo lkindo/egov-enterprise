@@ -68,17 +68,26 @@ test.describe('Tier 26: 보안 관리 쓰기 경로', () => {
             expect(authorities.length, '적용할 권한 그룹이 최소 1개는 있어야 한다').toBeGreaterThan(0);
             const authrtCd = authorities[0].authrtCd as string;
 
-            // 3) 화면이 되돌릴 수 없는 변경임을 먼저 밝히는지 확인한다(G10 — 실행 전 결과 고지).
             await page.goto('/admin/security/dept-authority');
+
+            // 3) 부서를 고르기 전에는 적용 버튼이 눌리지 않아야 한다 — 대상 없는 일괄 쓰기 방지.
+            const applyButton = page.getByRole('button', { name: '부서 전체에 적용' });
+            await expect(applyButton).toBeVisible({ timeout: 20000 });
+            await expect(applyButton, '권한 그룹을 고르기 전에는 적용이 막혀야 한다').toBeDisabled();
+
+            // 4) 화면이 되돌릴 수 없는 변경임을 밝히는지 확인한다(G10 — 실행 전 결과 고지).
+            //    ⚠ 이 고지는 상세 패널 소속이라 **부서를 고른 뒤에만** 렌더된다
+            //    (SecurityDeptAuthorityClient 의 `detail={selectedDept ? ... : ...}`).
+            //    부서 선택 없이 찾으면 element not found 로 실패한다 — 2026-09-01 CI 실측.
+            const firstDept = page.locator('button[data-a2-master-item]').first();
+            await expect(firstDept, '부서 목록이 비어 있으면 이 계약을 검증할 수 없다')
+                .toBeVisible({ timeout: 20000 });
+            await firstDept.click();
+
             await expect(
-                page.getByRole('note').filter({ hasText: '기존 개별 권한은 모두 삭제' }).first(),
+                page.getByText('기존 개별 권한은 모두 삭제').first(),
                 '일괄 적용 화면은 실행 전에 "기존 권한이 삭제된다"는 사실을 밝혀야 한다',
             ).toBeVisible({ timeout: 20000 });
-
-            // 4) 부서를 고르기 전에는 적용 버튼이 눌리지 않아야 한다 — 대상 없는 일괄 쓰기 방지.
-            const applyButton = page.getByRole('button', { name: '부서 전체에 적용' });
-            await expect(applyButton).toBeVisible({ timeout: 15000 });
-            await expect(applyButton, '권한 그룹을 고르기 전에는 적용이 막혀야 한다').toBeDisabled();
 
             // 5) 실제 쓰기는 API 로 수행한다 — 부서 목록이 길면 UI 선택이 페이지네이션에
             //    의존해 플레이키해지는데, 이 테스트가 지키려는 계약은 '선택 UI'가 아니라

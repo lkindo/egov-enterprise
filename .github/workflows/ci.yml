@@ -424,13 +424,17 @@ jobs:
           pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log
         working-directory: frontend
 
-      - name: Upload Next.js build cache
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: next-build-cache
-          path: frontend/.next/cache
-          retention-days: 7
-
+      # [2026-09-01 제거] `next-build-cache` 업로드를 걷어낸다.
+      #
+      # 이 아티팩트는 워크플로 어디서도 내려받지 않는 죽은 업로드였다. e2e 샤드가 콜드 Next
+      # 빌드를 반복하므로(실측 47~65초 × 3) 소비자로 연결해 보려 했으나, **전제가 틀렸다**:
+      # 이 프로젝트는 Turbopack 을 쓰고(next.config.ts 의 `turbopack` 설정) `.next/cache` 에는
+      # 이미지 캐시만 남는다. 실측 — 업로드된 아티팩트 크기가 283 바이트였고, 복원 스텝은
+      # 1초 만에 끝났으며 그 뒤 빌드 시간은 60~65초로 **줄지 않았다**(오히려 콜드와 같다).
+      # 빈 껍데기를 주고받는 비용만 남으므로 업로드째 제거한다.
+      #
+      # 샤드 간 프런트 빌드 재사용이 필요하면 Turbopack 이 실제로 쓰는 캐시 경로를 먼저
+      # 실측해야 한다 — 그 전에 경로를 추측해 옮기면 지금과 같은 무효 캐시가 다시 생긴다.
       # 실패 스텝과 빌드·테스트 출력을 annotation으로 노출해 로그 권한 없이도 진단하게 한다.
       - name: Surface failure detail (annotations)
         if: failure()
@@ -583,26 +587,6 @@ jobs:
         timeout-minutes: 5
         run: npx playwright install-deps chromium
         working-directory: frontend
-
-      # [2026-09-01] Next 빌드 캐시를 복원한다 — 종전 주석의 전제가 같은 파일에서 이미 반증됐다.
-      #
-      # 종전에는 "서로 다른 임시 JWT로 빌드된 Next 캐시는 복원하지 않는다" 였다. 그런데 아래
-      # auth-diagnostics 의 2026-07-28 기록(`Edge 는 이 변수를 빌드 시 인라인하지 않는다.
-      # 빌드=A/실행=B 로 기동해 실측하면 B 로 서명한 토큰만 통과한다 = 런타임 조회`)이 그 전제를
-      # 정면으로 반증한다. 빌드 산출물이 secret 계보와 무관하므로 캐시 재사용은 안전하다.
-      #
-      # 그 결과 `frontend-scope` 가 업로드하던 `next-build-cache` 는 **아무도 내려받지 않는
-      # 죽은 아티팩트**였고(워크플로 전체에서 download 는 e2e 리포트 병합 한 곳뿐), 샤드마다
-      # 콜드 빌드를 반복했다(실측 47~59초 × 3). 여기서 그 아티팩트를 실제 소비자에 연결한다.
-      #
-      # 캐시가 없으면(프런트 스코프 skip·아티팩트 만료) 그냥 콜드 빌드로 진행해야 하므로
-      # 이 스텝만 실패를 허용한다 — 캐시 부재는 결함이 아니다.
-      - name: Restore Next.js build cache
-        continue-on-error: true
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
-        with:
-          name: next-build-cache
-          path: frontend/.next/cache
 
       # 프론트 빌드·기동·테스트를 분리해 각 실패와 소요시간을 독립적으로 관측한다.
       # E2E는 개발 서버 전용 transport 변동을 피하도록 프로덕션 빌드로 실행한다.
