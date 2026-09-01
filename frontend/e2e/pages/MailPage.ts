@@ -41,7 +41,11 @@ export class MailPage {
         // Submit
         const sendBtn = this.page.getByTestId('mail-send-btn');
         await expect(sendBtn).toBeEnabled({ timeout: 10000 });
-        await sendBtn.click({ force: true });
+        // [2026-09-02] `force: true` 를 걷어낸다. 바로 위에서 enabled 를 이미 단언했고,
+        //   force 는 그 위에 **가시성·오버레이·포인터 수신까지 건너뛴다** — 즉 실제 사용자가
+        //   누를 수 없는 버튼도 통과시킨다. 확인한 것(enabled)과 건너뛴 것(나머지)이 다르므로
+        //   force 는 여기서 안전을 더하지 않고 신호만 지운다.
+        await sendBtn.click();
         
         // Should redirect to history
         await this.page.waitForURL(/\/mail-history/, { timeout: 15000 });

@@ -32,7 +32,13 @@ function withoutComments(source: string): string {
  * **하향 전용 래칫**을 건다: 늘리면 red, 줄이면 상수를 낮춰 되돌릴 수 없게 만든다.
  * 정말 force 가 필요한 자리가 생기면 상수를 올리지 말고, 왜 정상 클릭이 불가능한지를 먼저 밝힐 것.
  */
-const FORCE_CLICK_BASELINE = 12;
+// [2026-09-02 하향: 12 → 10] 이미 자기 가드를 갖고 있어 force 가 아무것도 더하지 않던 두 곳을
+//   걷어냈다 — `MailPage`(바로 위에서 `toBeEnabled` 단언)와 `PromotionPage`(바로 위에서
+//   `waitFor visible`). 확인한 것(enabled·visible)과 force 가 건너뛰는 것(안정성·오버레이·
+//   포인터 수신)이 서로 다르므로, 그 자리에서 force 는 안전을 더하지 않고 신호만 지웠다.
+//   남은 10곳은 hover 로만 드러나는 컨트롤·구조 클래스 로케이터 등 각자 다른 사유가 있어
+//   개별 판단이 필요하다(일괄 제거는 H4 가 금지하는 기계적 sweep 이다).
+const FORCE_CLICK_BASELINE = 10;
 
 describe('E2E force-click 하향 래칫', () => {
   it('force 클릭 사용처가 baseline 을 넘지 않는다', () => {
