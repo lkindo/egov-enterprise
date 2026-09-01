@@ -335,8 +335,35 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
   }
 }
 
-export function exactBindingLineMatches(source, expectedLine) {
-  return executableContent(source)
+/**
+ * 소비자 파일의 주석 문법에 맞는 실행 내용 추출기.
+ *
+ * <p>[2026-09-01 신설 — GAP-HARNESS-002] 종전에는 파일 종류와 무관하게
+ * {@link executableContent}(= Java 블록/줄 주석 제거 후 hash 주석 제거)를 적용했다. 그런데
+ * YAML·셸에는 `/* *\/` 주석이 없다. 그래서 그런 파일에 `/*` 시퀀스가 등장하면 — 경로 glob,
+ * 정규식, URL 무엇이든 — 그 지점부터 다음 닫는 기호까지, 없으면 파일 끝까지가 통째로
+ * 비실행 구간으로 취급된다.
+ *
+ * <p>실측(2026-09-01): `.github/workflows/ci.yml` 주석에 `scripts/` + `*.test.mjs` 를 적은 것만으로
+ * 무관한 binding 4건(gradle build · schemaValidationTest · operational-contracts · cross-stack)이
+ * 동시에 ghost 판정됐다. 라인은 파일에 그대로 있는데 매칭만 실패해 grep 으로는 원인이 보이지 않는다.
+ * 반대 방향도 성립한다 — 같은 원리로 실재하지 않는 binding 이 통과할 수 있다(false-green).
+ */
+function executableContentForSource(sourcePath, source) {
+  const base = path.basename(sourcePath).toLowerCase();
+  const ext = path.extname(base);
+  // YAML 과 셸 훅은 `#` 만 주석이다. 블록 주석 규칙을 적용하면 위 실측처럼 실행 내용을 삼킨다.
+  if (ext === '.yml' || ext === '.yaml' || base === 'pre-push' || base === 'pre-commit') {
+    return stripHashComments(source);
+  }
+  // JSON 에는 주석 문법이 없다 — 무엇도 제거하지 않는다.
+  if (ext === '.json') return source;
+  // Gradle(Groovy)·JS·TS 는 Java 계열 주석 문법을 쓴다(현행 유지).
+  return executableContent(source);
+}
+
+export function exactBindingLineMatches(source, expectedLine, sourcePath = '') {
+  return executableContentForSource(sourcePath, source)
     .split(/\r?\n/)
     .some((line) => line.trim() === expectedLine);
 }
@@ -452,6 +479,79 @@ export function containsRunnerSkip(source) {
   return findRunnerSkipConstructs(source).length > 0;
 }
 
+/**
+ * GitHub Actions 워크플로의 job 블록을 잘라낸다(2칸 들여쓴 `<job-id>:` ~ 다음 job 직전).
+ * 파싱이 실패하면 빈 문자열을 반환하고, 호출부가 그것을 위반으로 처리한다(조용한 통과 금지).
+ */
+function workflowJobBlock(content, jobId) {
+  const normalized = content.replace(/\r\n/g, '\n');
+  const lines = normalized.split('\n');
+  const starts = [];
+  lines.forEach((line, index) => {
+    if (/^ {2}[a-z][a-z0-9-]*:\s*$/.test(line)) starts.push(index);
+  });
+  const at = starts.find((index) => lines[index].trim() === `${jobId}:`);
+  if (at === undefined) return '';
+  const next = starts.find((index) => index > at);
+  return lines.slice(at, next === undefined ? lines.length : next).join('\n');
+}
+
+/** 워크플로 job 블록 안에서 해당 실행 라인이 속한 step 블록을 돌려준다. */
+function workflowStepContaining(jobBlock, fragment) {
+  const lines = jobBlock.split('\n');
+  const at = lines.findIndex((line) => line.trim() === fragment.trim());
+  if (at < 0) return null;
+  let start = -1;
+  for (let index = at; index >= 0; index -= 1) {
+    if (/^ {6}- /.test(lines[index])) { start = index; break; }
+  }
+  if (start < 0) return null;
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) {
+    if (/^ {6}- /.test(lines[index])) { end = index; break; }
+  }
+  return lines.slice(start, end).join('\n');
+}
+
+/**
+ * [2026-09-01 신설 — GAP-HARNESS-001] 실행 문맥 검증.
+ *
+ * <p>종전 binding 검증은 "그 trim 라인이 파일 어딘가에 있는가" 만 봤다. 어느 job 인지, 조건부
+ * step 뒤인지는 구조적으로 볼 수 없었고, 그래서 tier 선언이 실행 실체와 어긋나도 green 이었다.
+ * 실측(2026-08-31): `EXEC-FOUNDATION-COVERAGE` 가 local-full tier 를 선언하고 binding 은
+ * `build.gradle` 의 `localGate` 라인을 가리켰는데, 실제 진입점인 `verify.mjs` 는 그 태스크를
+ * 부르지 않아 foundation 커버리지 래칫 2종이 로컬에서 한 번도 검증되지 않았다.
+ *
+ * <p>이제 CI tier binding 은 `job` 을 선언해야 하고, 그 job 블록 안에서 라인을 찾는다. step 에
+ * `if:` 가 붙어 있으면 `conditional` 로 명시해야 하며, 명시와 실제가 어긋나면 양방향으로 red 다 —
+ * 조건이 새로 붙거나 사라지면 registry diff 에 의도가 드러난다.
+ */
+function validateWorkflowBindingContext({ binding, content, setLabel, errors }) {
+  const declaredJob = binding.job;
+  if (typeof declaredJob !== 'string' || declaredJob === '') {
+    errors.push(`${setLabel}: CI execution binding must declare the workflow job it runs in: ${binding.fragment}`);
+    return;
+  }
+  const jobBlock = workflowJobBlock(content, declaredJob);
+  if (jobBlock === '') {
+    errors.push(`${setLabel}: declared workflow job does not exist in ${binding.source}: ${declaredJob}`);
+    return;
+  }
+  if (!exactBindingLineMatches(jobBlock, binding.fragment, binding.source)) {
+    errors.push(`${setLabel}: execution binding is not inside job ${declaredJob} in ${binding.source}: ${binding.fragment}`);
+    return;
+  }
+  const step = workflowStepContaining(jobBlock, binding.fragment);
+  const conditional = /^ {8}if:/m.test(step ?? '');
+  if (conditional && binding.conditional !== true) {
+    errors.push(`${setLabel}: execution binding runs behind a step-level 'if:' in job ${declaredJob}`
+      + ' — declare conditional: true so the tier claim stays honest');
+  }
+  if (!conditional && binding.conditional === true) {
+    errors.push(`${setLabel}: execution binding declares conditional: true but the step in job ${declaredJob} has no 'if:'`);
+  }
+}
+
 function validateExecutionBindings({
   bindings,
   repoRoot,
@@ -480,8 +580,15 @@ function validateExecutionBindings({
     for (const tier of binding.tiers) boundTiers.add(tier);
     const absolute = path.join(repoRoot, binding.source);
     const content = isFile(absolute) ? fs.readFileSync(absolute, 'utf8') : '';
-    if (!exactBindingLineMatches(content, binding.fragment)) {
+    if (!exactBindingLineMatches(content, binding.fragment, binding.source)) {
       errors.push(`${setLabel}: ghost execution binding in ${binding.source}: ${binding.fragment}`);
+      continue;
+    }
+    // 워크플로 소비자는 라인 존재만으로 tier 를 주장할 수 없다 — job·조건까지 결속한다.
+    if (/^\.github\/workflows\/.+\.ya?ml$/.test(binding.source)) {
+      validateWorkflowBindingContext({ binding, content, setLabel, errors });
+    } else if (binding.job !== undefined || binding.conditional !== undefined) {
+      errors.push(`${setLabel}: job/conditional are workflow-only binding fields: ${binding.source}`);
     }
   }
   const missingTiers = expectedTiers.filter((tier) => !boundTiers.has(tier));

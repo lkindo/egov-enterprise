@@ -23,7 +23,8 @@
           "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
           "tiers": [
             "ci"
-          ]
+          ],
+          "job": "backend-scope"
         }
       ]
     },
@@ -39,7 +40,8 @@
           "fragment": "run: ./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
           "tiers": [
             "ci"
-          ]
+          ],
+          "job": "mutation-scope"
         }
       ]
     },
@@ -63,7 +65,8 @@
           "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
           "tiers": [
             "ci"
-          ]
+          ],
+          "job": "backend-scope"
         }
       ]
     },
@@ -87,7 +90,8 @@
           "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
           "tiers": [
             "ci"
-          ]
+          ],
+          "job": "frontend-scope"
         }
       ]
     },
@@ -119,7 +123,8 @@
           "fragment": "run: pnpm run lint",
           "tiers": [
             "ci"
-          ]
+          ],
+          "job": "frontend-scope"
         }
       ]
     },
@@ -143,7 +148,8 @@
           "fragment": "pnpm run bundle:check",
           "tiers": [
             "ci"
-          ]
+          ],
+          "job": "frontend-scope"
         }
       ]
     }
@@ -538,7 +544,8 @@
             "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "backend-scope"
           }
         ]
       },
@@ -649,7 +656,9 @@
             "fragment": "./gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain 2>&1 | tee /tmp/schema-validation.log",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "backend-scope",
+            "conditional": true
           }
         ]
       },
@@ -884,7 +893,8 @@
             "fragment": "run: npm run test:operational-contracts",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "secret-scan"
           }
         ]
       },
@@ -944,7 +954,8 @@
             "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "frontend-scope"
           }
         ]
       },
@@ -1005,7 +1016,9 @@
             "fragment": "run: pnpm exec vitest run src/__tests__/cross-stack",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "secret-scan",
+            "conditional": true
           }
         ]
       },
@@ -1067,7 +1080,8 @@
             "fragment": "run: pnpm run test:form-validation",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "frontend-scope"
           }
         ]
       },
@@ -1152,7 +1166,8 @@
             "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "frontend-scope"
           }
         ]
       },
@@ -1246,21 +1261,24 @@
             "fragment": "mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\")",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "e2e-tests"
           },
           {
             "source": ".github/workflows/ci.yml",
             "fragment": "npx playwright test --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "e2e-tests"
           },
           {
             "source": ".github/workflows/ci.yml",
             "fragment": "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" \"${E2E_SPECS[@]}\"",
             "tiers": [
               "ci"
-            ]
+            ],
+            "job": "e2e-tests"
           }
         ]
       },
