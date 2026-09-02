@@ -4014,6 +4014,29 @@ export const ApiResponseListSmsRecptnDtoSchema = z.object({
 export type ApiResponseListSmsRecptnDto = z.infer<typeof ApiResponseListSmsRecptnDtoSchema>;
 
 // ==========================================================================
+// ApiResponseSmsDeliveryStatusDto Schema
+// ==========================================================================
+export const ApiResponseSmsDeliveryStatusDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => SmsDeliveryStatusDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseSmsDeliveryStatusDto = z.infer<typeof ApiResponseSmsDeliveryStatusDtoSchema>;
+
+// ==========================================================================
+// SmsDeliveryStatusDto Schema
+// ==========================================================================
+export const SmsDeliveryStatusDtoSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
+});
+export type SmsDeliveryStatusDto = z.infer<typeof SmsDeliveryStatusDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseRewardManageDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseRewardManageDtoSchema = z.object({
@@ -9955,6 +9978,36 @@ export const ApiResponseListSmsRecptnDtoResponseSchema = z.object({
   data: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const ApiResponseSmsDeliveryStatusDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => SmsDeliveryStatusDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseSmsDeliveryStatusDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SmsDeliveryStatusDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const SmsDeliveryStatusDtoRequestSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
+});
+
+export const SmsDeliveryStatusDtoResponseSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
 });
 
 export const ApiResponsePageResponseRewardManageDtoRequestSchema = z.object({

@@ -9,8 +9,11 @@ const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   sendSms: vi.fn(),
   getSmsList: vi.fn(),
+  getDeliveryStatus: vi.fn(),
   toast: vi.fn(),
   queries: {} as Record<string, { queryFn?: () => unknown }>,
+  /** 발송 가능 상태 조회 결과. undefined = 아직 판정 못 함(배너를 띄워야 하는 쪽). */
+  deliveryStatusData: undefined as { deliveryConfigured?: boolean } | undefined,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -24,11 +27,15 @@ vi.mock('next/navigation', () => ({
 //   여기서 안 잡힌 이유다). 반환값은 그대로라 기존 스펙 거동은 변하지 않는다.
 vi.mock('@tanstack/react-query', () => ({
   useQuery: (options: { queryKey: unknown[]; queryFn?: () => unknown }) => {
-    // 이 화면에는 useQuery 가 둘이다(목록·수신자). queryKey 로 갈라 담지 않으면 마지막 것만
-    // 남아 목록 요청을 검사할 수 없다.
-    mocks.queries[String(options.queryKey?.[0])] = options;
+    // 이 화면에는 useQuery 가 셋이다(목록·수신자·발송가능상태). queryKey 로 갈라 담지 않으면
+    // 마지막 것만 남아 목록 요청을 검사할 수 없다.
+    const key = String(options.queryKey?.[0]);
+    mocks.queries[key] = options;
     return {
-      data: { list: [], total: 0, totalPage: 1 },
+      // 발송 가능 상태는 테스트가 키별로 덮어쓸 수 있게 한다 — 배너의 두 방향을 모두 검증한다.
+      data: key === 'admin-sms-delivery-status'
+        ? mocks.deliveryStatusData
+        : { list: [], total: 0, totalPage: 1 },
       isLoading: false,
       isError: false,
       error: null,
@@ -43,6 +50,7 @@ vi.mock('@/services/foundation/operation/SmsAdminService', () => ({
     getSmsList: mocks.getSmsList,
     getSmsRecipients: vi.fn(),
     sendSms: mocks.sendSms,
+    getDeliveryStatus: mocks.getDeliveryStatus,
   },
 }));
 
@@ -311,6 +319,48 @@ describe('SMS 발송 결과 고지', () => {
   it('게이트웨이 미연동을 보내기 전에 고지한다', () => {
     expect(source).toContain('문자 게이트웨이가 연동되어 있지 않아');
     expect(source).toContain('‘실패’로 기록됩니다');
+  });
+
+  /**
+   * [2026-09-02] 배너를 **런타임 사실**에 결속한다.
+   *
+   * 저장소 계약(아래 '모든 sender 가 실패를 돌려준다')은 이 저장소 안의 구현만 본다. 그런데
+   * 이 저장소는 재사용 base 라, 파생 제품이 자기 게이트웨이를 붙이면 배너가 반대로 거짓말한다
+   * (연결됐는데 "연동되어 있지 않다"). 서버가 알려 주는 상태로 두 방향을 모두 고정한다.
+   */
+  describe('배너가 런타임 발송 가능 상태를 따른다', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mocks.deliveryStatusData = undefined;
+    });
+
+    it('게이트웨이가 연결되면 미연동 배너를 띄우지 않는다', () => {
+      mocks.deliveryStatusData = { deliveryConfigured: true };
+
+      render(<SmsAdminClient initialSmsList={null} />);
+
+      expect(screen.queryByText(/문자 게이트웨이가 연동되어 있지 않아/)).toBeNull();
+    });
+
+    it('게이트웨이가 없으면 미연동 배너를 띄운다', () => {
+      mocks.deliveryStatusData = { deliveryConfigured: false };
+
+      render(<SmsAdminClient initialSmsList={null} />);
+
+      expect(screen.getByText(/문자 게이트웨이가 연동되어 있지 않아/)).toBeInTheDocument();
+    });
+
+    /**
+     * 판정 불가(조회 실패·로딩)에서 배너를 감추면 관리자가 전달을 기대하게 된다.
+     * 확인되지 않은 안심보다 불필요한 경고가 낫다.
+     */
+    it('상태를 판정할 수 없으면 경고하는 쪽으로 기운다', () => {
+      mocks.deliveryStatusData = undefined;
+
+      render(<SmsAdminClient initialSmsList={null} />);
+
+      expect(screen.getByText(/문자 게이트웨이가 연동되어 있지 않아/)).toBeInTheDocument();
+    });
   });
 
   /**

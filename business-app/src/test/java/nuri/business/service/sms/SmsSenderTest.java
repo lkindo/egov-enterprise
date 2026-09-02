@@ -31,4 +31,28 @@ class SmsSenderTest {
         assertThat(profile).isNotNull();
         assertThat(profile.value()).containsExactly("prod");
     }
+
+    /**
+     * 현재 배포된 두 구현은 <b>어느 것도 실제로 전달하지 않는다</b>. 화면은 이 값으로
+     * "접수는 되지만 전달되지 않는다" 배너를 띄우므로, 스텁이 실수로 true 를 반환하면
+     * 관리자가 전달을 기대하게 된다 — 거짓 안심은 침묵보다 나쁘다.
+     */
+    @Test
+    @DisplayName("두 스텁 모두 발송 가능으로 자신을 신고하지 않는다")
+    void stubsNeverReportDeliveryConfigured() {
+        assertThat(new LoggingSmsSender().isDeliveryConfigured()).isFalse();
+        assertThat(new UnavailableSmsSender().isDeliveryConfigured()).isFalse();
+    }
+
+    /**
+     * 기본값이 {@code false} 라 새 구현체가 이 메서드를 잊어도 "연결됨" 으로 표시되지 않는다.
+     * 실제 공급자 어댑터만 명시적으로 true 를 선언해야 한다.
+     */
+    @Test
+    @DisplayName("인터페이스 기본값은 미연결이다 — 선언하지 않은 구현체는 연결됨으로 표시되지 않는다")
+    void defaultIsNotConfigured() {
+        SmsSender bareImplementation = (recipient, message, sender) -> false;
+
+        assertThat(bareImplementation.isDeliveryConfigured()).isFalse();
+    }
 }

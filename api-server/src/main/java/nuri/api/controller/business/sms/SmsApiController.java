@@ -6,6 +6,7 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.sms.SmsService;
+import nuri.business.service.sms.dto.SmsDeliveryStatusDto;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,23 @@ import java.util.List;
 public class SmsApiController {
 
     private final SmsService smsService;
+
+    /**
+     * 이 배포에서 문자가 실제로 전달될 수 있는지 알린다.
+     *
+     * <p>발송 이력·수신자 결과는 <b>보낸 뒤에야</b> 알 수 있다. 그런데 게이트웨이가 없는 배포에서는
+     * 모든 결과가 실패로 정해져 있으므로, 관리자가 문안을 작성하기 <b>전에</b> 그 사실을 알아야 한다.
+     * 화면은 이 값으로 안내 배너를 띄운다.
+     */
+    @Operation(summary = "SMS 발송 가능 상태 조회",
+            description = """
+                    이 배포에 실제 발송 게이트웨이가 연결돼 있는지 조회합니다.
+                    `deliveryConfigured=false` 면 발송 접수는 성공하지만 모든 수신자 결과가 실패로 기록됩니다 \
+                    (발송 파이프라인의 장애가 아니라 배포 형상입니다).""")
+    @GetMapping("/delivery-status")
+    public ResponseEntity<ApiResponse<SmsDeliveryStatusDto>> getDeliveryStatus() {
+        return ResponseEntity.ok(ApiResponse.success(smsService.getDeliveryStatus()));
+    }
 
     @Operation(summary = "SMS 발송 내역 조회", description = "발송된 SMS 목록을 페이징 조회합니다.")
     @GetMapping

@@ -4441,6 +4441,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/operation/sms/delivery-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * SMS 발송 가능 상태 조회
+         * @description 이 배포에 실제 발송 게이트웨이가 연결돼 있는지 조회합니다.
+         *     `deliveryConfigured=false` 면 발송 접수는 성공하지만 모든 수신자 결과가 실패로 기록됩니다 (발송 파이프라인의 장애가 아니라 배포 형상입니다).
+         */
+        get: operations["getDeliveryStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/files/integrity": {
         parameters: {
             query?: never;
@@ -8857,6 +8878,24 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseSmsDeliveryStatusDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["SmsDeliveryStatusDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description SMS 발송 가능 상태 */
+        SmsDeliveryStatusDto: {
+            /** @description 실제 발송 게이트웨이 연결 여부. false 면 접수는 되지만 전달되지 않는다. */
+            deliveryConfigured: boolean;
+            /** @description 현재 발송 구현체의 단순 클래스명. 운영 문의 시 어느 형상인지 식별한다. */
+            senderImplementation: string;
         };
         ApiResponsePageResponseRewardManageDto: {
             success?: boolean;
@@ -32376,6 +32415,62 @@ export interface operations {
             };
             /** @description 대상을 찾을 수 없음 (code: C003/C007) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getDeliveryStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseSmsDeliveryStatusDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

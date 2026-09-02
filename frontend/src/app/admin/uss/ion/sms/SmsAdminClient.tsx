@@ -168,6 +168,22 @@ export default function SmsAdminClient({
   };
 
   /**
+   * 이 배포에서 문자가 실제로 전달될 수 있는가.
+   *
+   * [2026-09-02] 종전에는 미연동 배너가 **하드코딩**이었다. 저장소 안의 sender 구현체를 읽는
+   * 계약이 이를 지켰지만, 이 저장소는 재사용 base 라 <b>파생 제품이 자기 게이트웨이를 붙이면</b>
+   * 화면이 반대로 거짓말한다(연결됐는데 "연동되어 있지 않다"). 그래서 사실을 서버에서 받는다.
+   *
+   * ⚠ 판정할 수 없으면 <b>경고하는 쪽</b>으로 기운다 — 조회 실패·로딩 중에 배너를 감추면
+   * 관리자가 전달을 기대하게 된다. 확인되지 않은 안심보다 불필요한 경고가 낫다.
+   */
+  const { data: deliveryStatus } = useQuery({
+    queryKey: ['admin-sms-delivery-status'],
+    queryFn: () => smsAdminService.getDeliveryStatus(),
+  });
+  const deliveryConfigured = deliveryStatus?.deliveryConfigured === true;
+
+  /**
    * 수신자별 전달 결과. 발송 이력 목록에는 rsltCd 가 없어(수신자 테이블에만 있다) 결과를
    * 판정할 수 없다 — 그래서 종전의 '상태' 열이 전 행을 '전송완료'로 칠했고 지금은 제거돼 있다.
    * 대신 이미 존재하던 GET /{smsTrsmSn}/recipients 를 화면에 연결해 실제 결과를 드러낸다.
@@ -324,19 +340,26 @@ export default function SmsAdminClient({
 
           이 문구는 위 두 구현체와 양방향으로 결속돼 있다(sms-gateway-disclosure 계약) —
           실제 게이트웨이 sender 가 생기면 계약이 red 가 되어 이 배너를 걷어내게 한다.
+
+          [2026-09-02] 나아가 **런타임 사실**에 결속했다. 저장소 계약은 이 저장소 안의 구현만
+          보므로, 파생 제품이 자기 게이트웨이를 붙이면 배너가 반대로 거짓말한다. 이제 서버가
+          알려 주는 deliveryConfigured 가 false 일 때만 띄운다(판정 불가 시에는 띄운다 —
+          확인되지 않은 안심보다 불필요한 경고가 낫다).
         */}
-        <div
-          role="status"
-          className="mb-6 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
-        >
-          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning-emphasis" aria-hidden="true" />
-          <div className="text-xs font-bold leading-relaxed text-foreground space-y-1">
-            <p>문자 게이트웨이가 연동되어 있지 않아 지금은 문자가 실제로 발송되지 않습니다.</p>
-            <p className="font-normal">
-              발송을 누르면 요청은 이력에 남지만 전달 결과는 ‘실패’로 기록됩니다. 아래 목록의 ‘수신자 결과’에서 확인할 수 있습니다.
-            </p>
+        {!deliveryConfigured ? (
+          <div
+            role="status"
+            className="mb-6 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
+          >
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning-emphasis" aria-hidden="true" />
+            <div className="text-xs font-bold leading-relaxed text-foreground space-y-1">
+              <p>문자 게이트웨이가 연동되어 있지 않아 지금은 문자가 실제로 발송되지 않습니다.</p>
+              <p className="font-normal">
+                발송을 누르면 요청은 이력에 남지만 전달 결과는 ‘실패’로 기록됩니다. 아래 목록의 ‘수신자 결과’에서 확인할 수 있습니다.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <StandardDataTable<SmsDto>
           accessibleLabel="문자 발송 이력"
