@@ -11,6 +11,7 @@ import nuri.foundation.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AddressBookService {
+
+    private static final int USER_SEARCH_MIN_KEYWORD_LENGTH = 2;
+    private static final int USER_SEARCH_MAX_PAGE_SIZE = 20;
 
     private final AddressBookRepository addressBookRepository;
     private final AddressBookUserRepository addressBookUserRepository;
@@ -160,7 +164,17 @@ public class AddressBookService {
     }
 
     public Page<AddressBookUserDto> searchUsers(String searchWrd, @NonNull Pageable pageable) {
-        return addressBookRepository.searchAddressBookUsers(searchWrd, Objects.requireNonNull(pageable))
+        Pageable requestedPageable = Objects.requireNonNull(pageable);
+        Pageable cappedPageable = PageRequest.of(
+                requestedPageable.getPageNumber(),
+                Math.min(requestedPageable.getPageSize(), USER_SEARCH_MAX_PAGE_SIZE),
+                requestedPageable.getSort());
+        String normalizedSearchWrd = searchWrd == null ? "" : searchWrd.trim();
+        if (normalizedSearchWrd.length() < USER_SEARCH_MIN_KEYWORD_LENGTH) {
+            return Page.empty(cappedPageable);
+        }
+
+        return addressBookRepository.searchAddressBookUsers(normalizedSearchWrd, cappedPageable)
                 .map(res -> AddressBookUserDto.builder()
                         .userId(res.getUserId())
                         .nm(res.getUserNm())

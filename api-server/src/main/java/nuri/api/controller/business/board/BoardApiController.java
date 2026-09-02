@@ -6,6 +6,7 @@ import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
+import nuri.api.controller.business.board.dto.BoardSearchItemResponse;
 import nuri.api.controller.business.board.dto.PublicFaqDetailResponse;
 import nuri.api.controller.business.board.dto.PublicFaqListItemResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,6 +47,33 @@ public class BoardApiController {
                 bbsId, searchCnd, searchWrd, orderBy, startDate, endDate,
                 qnaStatus, qnaCategory, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+    }
+
+    /**
+     * 통합 검색({@code /search} 화면)의 게시글 창구.
+     *
+     * <p>종전에는 이 엔드포인트가 없어 화면의 게시글 탭이 <b>항상 빈 결과</b>였다(라벨에 '미지원'
+     * 이라고 적혀 있었다). 새 노출 경로를 만들지 않고 기존 게시판 목록과 같은 가시성 술어를
+     * 재사용하므로, 여기서 보이는 글은 모두 해당 게시판 목록에서 이미 보이는 글이다.
+     *
+     * <p>페이지 번호를 받지 않는다 — 넘겨 가며 전량 수집하는 경로를 만들지 않기 위해서다
+     * (담당자 검색 API 가 같은 이유로 {@code PageResponse} 를 쓰지 않는다). 상한은
+     * {@code BoardService.GLOBAL_SEARCH_MAX_RESULTS} 다.
+     */
+    @Operation(summary = "게시글 통합 검색",
+            description = """
+                    활성 게시판 전체에서 게시글 **제목**을 검색합니다. 본문은 검색하지 않습니다 \
+                    (본문은 에디터 HTML 원문이라 태그·속성이 그대로 매칭됩니다).
+                    검색어는 2자 이상이어야 하며(미달 시 빈 목록), 최대 20건까지 반환합니다.
+                    비밀글은 작성자 본인과 관리자에게만 보입니다.""")
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<java.util.List<BoardSearchItemResponse>>> searchPosts(
+            @Parameter(description = "제목 검색어(2자 이상)") @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 20) Pageable pageable) {
+        java.util.List<BoardSearchItemResponse> result = boardService.searchAcrossBoards(keyword, pageable)
+                .map(BoardSearchItemResponse::from)
+                .getContent();
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @Operation(summary = "공개 FAQ 목록 조회", description = "활성 FAQ 게시판의 공개 글 제목만 검색하여 조회합니다.")

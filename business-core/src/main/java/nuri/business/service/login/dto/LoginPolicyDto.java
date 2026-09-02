@@ -25,7 +25,7 @@ public class LoginPolicyDto {
     @Size(max = 100)
     private String userNm;
     /** IP 주소 */
-    @Size(max = 30)
+    @Size(max = 45)
     private String ipAddr;
     /** 중복 로그인 허용 여부 */
     @Size(max = 1)

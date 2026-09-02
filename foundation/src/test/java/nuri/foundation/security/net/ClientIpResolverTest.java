@@ -225,6 +225,27 @@ class ClientIpResolverTest {
         }
 
         @Test
+        @DisplayName("XFF의 호스트명·임의 장문은 IP로 오인하지 않고 건너뛴다")
+        void discardsNonIpForwardedValues() {
+            ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+            String oversized = "x".repeat(1_000);
+
+            assertEquals("203.0.113.9", resolver.resolve(
+                    request("10.0.0.1", "203.0.113.9, attacker.example, " + oversized)));
+            assertEquals("10.0.0.1", resolver.resolve(
+                    request("10.0.0.1", "attacker.example, " + oversized)));
+        }
+
+        @Test
+        @DisplayName("IPv6는 DNS 없이 표준 압축 표기로 정규화한다")
+        void canonicalizesIpv6Literal() {
+            ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+
+            assertEquals("2001:db8::1", resolver.resolve(request(
+                    "10.0.0.1", "2001:0db8:0000:0000:0000:0000:0000:0001")));
+        }
+
+        @Test
         @DisplayName("remoteAddr 이 없으면 'unknown' 을 돌려준다")
         void unknownWhenNoRemoteAddr() {
             ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);

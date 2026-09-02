@@ -169,7 +169,7 @@ class CommentServiceTest {
                 .useYn("Y")
                 .build();
 
-        given(commentRepository.findById(id)).willReturn(Optional.of(comment));
+        given(commentRepository.findByIdForUpdate(id)).willReturn(Optional.of(comment));
 
         // when
         commentService.deleteComment(id);
@@ -183,7 +183,7 @@ class CommentServiceTest {
     void deleteComment_NotFound() {
         // given
         Long id = 1L;
-        given(commentRepository.findById(id)).willReturn(Optional.empty());
+        given(commentRepository.findByIdForUpdate(id)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> commentService.deleteComment(id))
@@ -199,20 +199,21 @@ class CommentServiceTest {
      * 그때 댓글 수는 언제나 0 이다. 댓글을 달거나 지울 때 갱신하는 경로가 아예 없었으므로
      * 세 화면의 '댓글 N' 이 전부 0 으로 고정돼 있었다.
      *
-     * <p>개수를 <b>이벤트가 나른다</b>. 그래야 board 가 comment 를 다시 조회하지 않아
-     * 교차 도메인 결합이 되살아나지 않는다.
+     * <p>단건 변화량을 <b>이벤트가 나른다</b>. 그래야 comment 가 커밋 뒤 개수를 다시 세거나
+     * board 가 comment 저장소를 조회하지 않아 교차 도메인 결합이 되살아나지 않는다.
      */
     @Test
-    @DisplayName("댓글 등록은 커밋 이후 실측 개수를 실어 알린다")
-    void createComment_publishesCount() {
+    @DisplayName("댓글 등록은 같은 트랜잭션에서 +1 증가량을 알린다")
+    void createComment_publishesIncrementDelta() {
         CommentDto dto = CommentDto.builder().pstSn(10L).bbsId("BBS_01").ansCn("내용").build();
         given(commentRepository.save(any(Comment.class)))
                 .willReturn(Comment.builder().ansSn(1L).pstSn(10L).bbsId("BBS_01").build());
-        given(commentRepository.countByBbsIdAndPstSnAndUseYn("BBS_01", 10L, "Y")).willReturn(3L);
 
         commentService.createComment("ESNTL_01", "홍길동", dto);
 
-        verify(eventPublisher).publishEvent(new PostCommentCountChangedEvent("BBS_01", 10L, 3));
+        verify(eventPublisher).publishEvent(new PostCommentCountChangedEvent("BBS_01", 10L, 1));
+        verify(commentRepository, org.mockito.Mockito.never())
+                .countByBbsIdAndPstSnAndUseYn(any(), any(), any());
     }
 
     /**
@@ -236,14 +237,42 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 삭제(논리)도 개수를 다시 세어 알린다")
-    void deleteComment_publishesCount() {
+    @DisplayName("댓글 삭제(논리)는 같은 트랜잭션에서 -1 감소량을 알린다")
+    void deleteComment_publishesDecrementDelta() {
         Comment comment = Comment.builder().ansSn(1L).pstSn(10L).bbsId("BBS_01").useYn("Y").build();
-        given(commentRepository.findById(1L)).willReturn(Optional.of(comment));
-        given(commentRepository.countByBbsIdAndPstSnAndUseYn("BBS_01", 10L, "Y")).willReturn(2L);
+        given(commentRepository.findByIdForUpdate(1L)).willReturn(Optional.of(comment));
 
         commentService.deleteComment(1L);
 
-        verify(eventPublisher).publishEvent(new PostCommentCountChangedEvent("BBS_01", 10L, 2));
+        verify(eventPublisher).publishEvent(new PostCommentCountChangedEvent("BBS_01", 10L, -1));
+        verify(commentRepository, org.mockito.Mockito.never())
+                .countByBbsIdAndPstSnAndUseYn(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 수 delta는 원본 댓글 트랜잭션 안에서 즉시 발행한다")
+    void createComment_publishesCountDeltaInsideSourceTransaction() {
+        CommentDto dto = CommentDto.builder().pstSn(10L).bbsId("BBS_01").ansCn("내용").build();
+        given(commentRepository.save(any(Comment.class)))
+                .willReturn(Comment.builder().ansSn(1L).pstSn(10L).bbsId("BBS_01").build());
+        org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
+        try {
+            commentService.createComment("ESNTL_01", "홍길동", dto);
+
+            verify(eventPublisher).publishEvent(new PostCommentCountChangedEvent("BBS_01", 10L, 1));
+        } finally {
+            org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    @DisplayName("이미 삭제된 댓글은 다시 감소 이벤트를 발행하지 않는다")
+    void deleteComment_alreadyDeleted_doesNotPublishAnotherDelta() {
+        Comment comment = Comment.builder().ansSn(1L).pstSn(10L).bbsId("BBS_01").useYn("N").build();
+        given(commentRepository.findByIdForUpdate(1L)).willReturn(Optional.of(comment));
+
+        commentService.deleteComment(1L);
+
+        verify(eventPublisher, org.mockito.Mockito.never()).publishEvent(any(Object.class));
     }
 }

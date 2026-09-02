@@ -115,7 +115,11 @@ const SystemLogsUserClient = () => {
              * 값인 카운터 6종(생성·수정·조회·삭제·출력·오류)은 어디에도 표시되지 않았다.
              * 이 로그는 개별 요청 기록이 아니라 사용자×서비스×메서드×일자 집계이므로 카운터가 본체다.
              */
-            header: '행위 (생성/수정/조회/삭제/출력/오류)',
+            // [2026-09-02] '출력' 은 측정되지 않는다 — 집계기가 HTTP 메서드로 처리구분을 판정하는데
+            //   다운로드·엑셀 내보내기는 GET 이라 조회와 구분되지 않는다(ProcessTypeCode 에 OUTPUT
+            //   매핑이 없다). 그 값을 숫자 0 으로 그리면 "출력이 한 번도 없었다" 로 읽힌다.
+            //   측정하지 않는 값은 0 이 아니라 '측정 안 함' 으로 말한다.
+            header: '행위 (생성/수정/조회/삭제/출력·미측정/오류)',
             accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-1.5 font-mono text-xs tabular-nums">
                     <Terminal size={12} className="opacity-30" />
@@ -127,7 +131,13 @@ const SystemLogsUserClient = () => {
                     <span className="text-muted-foreground/40">/</span>
                     <span className="text-rose-500 font-bold">{item.delCnt ?? 0}</span>
                     <span className="text-muted-foreground/40">/</span>
-                    <span className="text-muted-foreground font-bold">{item.otptCnt ?? 0}</span>
+                    <span
+                        className="text-muted-foreground/50 font-bold"
+                        title="출력 건수는 현재 측정하지 않습니다. 다운로드·내보내기는 HTTP 메서드만으로 조회와 구분되지 않습니다."
+                        aria-label="출력 건수 측정 안 함"
+                    >
+                        –
+                    </span>
                     <span className="text-muted-foreground/40">/</span>
                     <span className={(item.errCnt ?? 0) > 0 ? 'text-rose-600 font-black' : 'text-muted-foreground/50 font-bold'}>
                         {item.errCnt ?? 0}

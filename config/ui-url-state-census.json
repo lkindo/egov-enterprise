@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "2720edff3fd69982f8820b2d3f3606600c83f6135e40967b1def288563a1beb6"
+    "inventoryHash": "19c01f6021625097680403a61cdba0af038ebdd2222022199f4e24adfb8b4518"
   },
   "summary": {
     "sourceFileCount": 514,
-    "records": 376,
-    "syntaxOccurrences": 448,
-    "ambiguousRecords": 357,
-    "unverifiedRecords": 376,
+    "records": 377,
+    "syntaxOccurrences": 449,
+    "ambiguousRecords": 358,
+    "unverifiedRecords": 377,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -41,7 +41,7 @@
       "config-redirect": 14,
       "dynamic-segment": 11,
       "form-producer": 47,
-      "navigation-producer": 155,
+      "navigation-producer": 156,
       "page-redirect": 5,
       "query-builder": 23,
       "query-consumer": 57,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 368,
+      "navigation": 369,
       "request-telemetry": 8
     }
   },
@@ -13190,6 +13190,46 @@
       "evidence": {
         "source": "frontend/src/app/components/patterns/keyword-filter.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-8917C98C6112F5",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/components/ui/app-notification-drawer.tsx",
+      "producerFile": "frontend/src/app/components/ui/app-notification-drawer.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/ui/app-notification-drawer.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

@@ -6,6 +6,7 @@ import nuri.business.domain.sms.Sms;
 import nuri.business.domain.sms.SmsRecptn;
 import nuri.business.domain.sms.SmsRecptnRepository;
 import nuri.business.domain.sms.SmsRepository;
+import nuri.business.service.sms.dto.SmsDeliveryStatusDto;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
 import nuri.business.service.sms.dto.SmsMapper;
@@ -37,6 +38,21 @@ public class SmsService {
     private final SmsAsyncProcessor smsAsyncProcessor;
     private final SmsMapper smsMapper;
     private final SmsRecptnMapper smsRecptnMapper;
+    private final SmsSender smsSender;
+
+    /**
+     * 이 배포에서 문자가 실제로 전달될 수 있는지 알린다.
+     *
+     * <p>발송 파이프라인 자체는 정상이다 — 접수·수신자 행 생성·재시도·결과 기록이 모두 동작한다.
+     * 다만 현재 배포된 {@link SmsSender} 구현이 실제 게이트웨이가 아니면 모든 수신자 결과가
+     * 'F(Gateway delivery failed)' 로 남는다. 그 사실은 <b>보내 보기 전에</b> 알아야 하는
+     * 배포 형상이므로 화면이 조회할 수 있게 노출한다.
+     */
+    public SmsDeliveryStatusDto getDeliveryStatus() {
+        return new SmsDeliveryStatusDto(
+                smsSender.isDeliveryConfigured(),
+                smsSender.getClass().getSimpleName());
+    }
 
     public Page<SmsDto> getSmsList(String keyword, Pageable pageable) {
         log.debug("Fetching SMS list with keyword: {}", keyword);

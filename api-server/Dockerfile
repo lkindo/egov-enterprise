@@ -53,8 +53,16 @@ LABEL org.opencontainers.image.revision="${BASELINE_BUILD_SHA}" \
 WORKDIR /app
 
 # Create non-root user and setup directory permissions
+#
+# [2026-09-02] storage/uploads 를 **이미지 안에 미리 만든다.**
+#   첨부 저장 경로는 application.yml 의 `./storage/uploads`(= /app/storage/uploads)다. 운영에서
+#   이 경로를 named volume 으로 마운트하는데, Docker 는 <b>이미지에 없는 경로</b>에 빈 볼륨을
+#   붙이면 그 디렉터리를 root 소유로 만든다. 컨테이너는 spring 유저로 돌므로 그 상태에서는
+#   업로드가 전부 permission denied 로 죽는다 — 컨테이너는 기동하고 화면도 뜨므로 파일을
+#   올리기 전까지 아무도 모른다.
+#   이미지에 올바른 소유자로 존재하면 Docker 가 첫 마운트 때 그 소유권을 볼륨에 복사한다.
 RUN addgroup -S spring && adduser -S spring -G spring && \
-    mkdir -p logs && \
+    mkdir -p logs storage/uploads && \
     chown -R spring:spring /app
 
 USER spring:spring
@@ -66,4 +74,4 @@ ENV JAVA_OPTS="-Xms512m -Xmx512m -XX:+UseParallelGC"
 
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

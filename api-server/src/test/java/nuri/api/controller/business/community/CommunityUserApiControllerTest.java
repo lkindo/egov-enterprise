@@ -38,7 +38,7 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
     @DisplayName("커뮤니티 목록 조회 성공")
     void getCommunities_Success() throws Exception {
         Page<CommunityDto> page = new PageImpl<>(List.of(CommunityDto.builder().cmntySn(101L).cmntyNm("Test Comm").build()));
-        given(communityService.getCommunityList(any(), any(), any(Pageable.class))).willReturn(page);
+        given(communityService.getActiveCommunityList(any(), any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/communities")
                 .accept(MediaType.APPLICATION_JSON))

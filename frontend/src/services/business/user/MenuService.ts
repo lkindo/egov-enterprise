@@ -12,27 +12,19 @@ class MenuService extends ApiService {
    * GNB(Head) 메뉴 목록 조회
    */
   async getHeadMenus(config?: AxiosRequestConfig): Promise<MenuInfo[]> {
-    try {
-      const response = await this.executeGenerated(getHeadMenuOperation, { config });
-      return response.list as unknown as MenuInfo[];
-    } catch {
-      return [];
-    }
+    const response = await this.executeGenerated(getHeadMenuOperation, { config });
+    return response.list as unknown as MenuInfo[];
   }
 
   /**
    * LNB(Left) 메뉴 목록 조회 - 상위 메뉴 번호 기준
    */
   async getLeftMenus(menuNo: number, config?: AxiosRequestConfig): Promise<MenuInfo[]> {
-    try {
-      const response = await this.executeGenerated(getLeftMenuOperation, {
-        query: { menuNo },
-        config,
-      });
-      return response.list as unknown as MenuInfo[];
-    } catch {
-      return [];
-    }
+    const response = await this.executeGenerated(getLeftMenuOperation, {
+      query: { menuNo },
+      config,
+    });
+    return response.list as unknown as MenuInfo[];
   }
 }
 

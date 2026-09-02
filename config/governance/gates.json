@@ -442,6 +442,10 @@
           "source": "api-server/src/test/java/nuri/api/harness/PageableConstructionLinterTest.java"
         },
         {
+          "id": "GH-PRIVACY-ACCESS-CENSUS",
+          "source": "api-server/src/test/java/nuri/api/harness/PrivacyAccessCensusLinterTest.java"
+        },
+        {
           "id": "GH-PK-GENERATION-STANDARD",
           "source": "api-server/src/test/java/nuri/api/harness/PkGenerationStandardLinterTest.java"
         },
@@ -743,6 +747,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/InternetServiceGuidanceBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-IP-ADDRESS-IPV6",
+          "source": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-LOGIN-LOG-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/LoginLogBigintMigrationIntegrationTest.java"
         },
@@ -821,6 +829,10 @@
         {
           "id": "DB-MIG-SYS-LOG-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/SysLogBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-USER-ACTIVITY-UPSERT",
+          "source": "api-server/src/test/java/nuri/api/schema/UserActivityUpsertIntegrationTest.java"
         },
         {
           "id": "DB-MIG-WEB-LOG-BIGINT",

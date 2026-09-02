@@ -196,6 +196,82 @@ describe('useNotifications', () => {
     });
   });
 
+  /*
+   * [2026-09-02] 목적지 링크.
+   *
+   * 서버의 알림 producer 3종(결재 승인·반려 / 쪽지 수신 / 내 글 댓글)이 갈 곳을 계산해
+   * 저장하고 API 도 내려주는데, 정규화가 그 필드를 복사하지 않아 **어떤 화면도 쓸 수 없었다**.
+   * 그래서 드로어의 이동 버튼도 "갈 곳이 없다"는 이유로 걷혀 있었다.
+   *
+   * 동시에 이 필드는 관리자용 알림 생성 API 로 임의 문자열이 들어올 수 있는 자리다.
+   * 살리되 **내부 경로로만** 살린다.
+   */
+  describe('목적지 링크', () => {
+    it('서버가 준 내부 경로를 화면까지 나른다', async () => {
+      mockFetch([{ ...NOTIF, linkUrl: '/approvals' }], 0);
+
+      const { result } = renderHook(() => useNotifications());
+
+      await waitFor(() => expect(result.current.notifications[0]?.linkUrl).toBe('/approvals'));
+    });
+
+    it('질의 문자열이 붙은 경로도 보존한다 — 게시글 알림이 이 형태다', async () => {
+      mockFetch([{ ...NOTIF, linkUrl: '/admin/community/boards/detail?bbsId=BBS_01&pstSn=7' }], 0);
+
+      const { result } = renderHook(() => useNotifications());
+
+      await waitFor(() => expect(result.current.notifications[0]?.linkUrl)
+        .toBe('/admin/community/boards/detail?bbsId=BBS_01&pstSn=7'));
+    });
+
+    it('목적지가 없는 알림은 null 이다 — 누를 수 없는 버튼을 만들지 않는다', async () => {
+      mockFetch([NOTIF], 0);
+
+      const { result } = renderHook(() => useNotifications());
+
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      expect(result.current.notifications[0]?.linkUrl).toBeNull();
+    });
+
+    /**
+     * linkUrl 은 varchar(2000) 이고 관리자 알림 생성 API 로 임의 값이 들어온다.
+     * 검증 없이 링크에 쓰면 열린 리다이렉트가 되고, javascript 스킴이면 그보다 나쁘다.
+     */
+    it.each([
+      ['외부 origin', 'https://evil.example.com/steal'],
+      ['프로토콜 상대 경로', '//evil.example.com/steal'],
+      ['javascript 스킴', 'javascript:alert(1)'],
+      ['자격 포함 URL', 'https://user:pw@evil.example.com/'],
+      ['백슬래시 우회', '/\\evil.example.com'],
+      ['상위 경로 이탈', '/admin/../../etc/passwd'],
+    ])('%s 목적지는 버린다', async (_label, hostile) => {
+      mockFetch([{ ...NOTIF, linkUrl: hostile }], 0);
+
+      const { result } = renderHook(() => useNotifications());
+
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      // 그대로 통과하면 알림 한 건으로 임의 목적지에 사용자를 보낼 수 있다.
+      expect(result.current.notifications[0]?.linkUrl).toBeNull();
+    });
+
+    /**
+     * 문자열이 아닌 목적지는 생성 응답 계약(zod)이 먼저 거절한다 — 훅까지 오지 않는다.
+     * 즉 방어가 두 겹이다. 여기서 고정하는 불변식은 "어떤 경로로도 문자열 아닌 값이
+     * linkUrl 에 앉지 않는다" 이며, 목록이 비는 것도 그 불변식을 지키는 결과다.
+     */
+    it('문자열이 아닌 목적지는 어떤 경우에도 linkUrl 에 앉지 않는다', async () => {
+      mockFetch([{ ...NOTIF, linkUrl: { href: '/approvals' } }], 0);
+
+      const { result } = renderHook(() => useNotifications());
+
+      // 계약이 응답을 거절하므로 오류 상태가 올라온다 — '알림 없음' 으로 위장하지 않는다.
+      await waitFor(() => expect(result.current.error).toBeTruthy());
+      for (const n of result.current.notifications) {
+        expect(n.linkUrl === null || (typeof n.linkUrl === 'string' && n.linkUrl.startsWith('/'))).toBe(true);
+      }
+    });
+  });
+
   describe('읽음 처리', () => {
     it('단건 읽음은 즉시 반영하고 배지를 하나 줄인다', async () => {
       const { result } = renderHook(() => useNotifications());

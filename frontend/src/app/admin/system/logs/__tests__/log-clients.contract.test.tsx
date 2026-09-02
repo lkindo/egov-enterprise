@@ -246,9 +246,14 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     render(<SystemLogsUserClient />);
 
     const table = within(screen.getByTestId('data-table'));
-    for (const value of ['20260813', 'UserService', 'updateUser', 'Alice Kim', '1', '2', '3', '4', '5', '6']) {
+    // [2026-09-02] '출력'(otptCnt) 은 렌더 목록에서 뺐다 — 집계기가 OUTPUT 을 어떤 HTTP 메서드에도
+    //   매핑하지 않아 구조적으로 항상 0 인 값이다. 숫자로 그리면 "출력이 없었다" 로 읽히므로
+    //   화면은 '측정 안 함' 표식을 그리고, 아래에서 원시 숫자가 새어 나오지 않는지도 함께 본다.
+    for (const value of ['20260813', 'UserService', 'updateUser', 'Alice Kim', '1', '2', '3', '4', '6']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
+    expect(table.getByLabelText('출력 건수 측정 안 함')).toBeInTheDocument();
+    expect(table.queryByText('5')).toBeNull();
 
     const props = currentTableProps();
     expect(props.keyField).toBe('rowKey');
@@ -304,7 +309,9 @@ const CLUSTER_CASES: ClusterCase[] = [
     Component: SystemLogsSystemClient,
     row: SYSTEM_ROW,
     method: 'getSystemLogs',
-    sortKeys: { 발생일자: 'ocrnYmd', 서비스설명: 'srvcNm', 처리구분: 'prcsSeCd' },
+    // [2026-09-02] '응답'(rspnsCd) 추가 — 이 표가 실패 요청 전용이 되면서 상태코드가 실제 값이 됐다.
+    //   종전에는 DTO 에 없어 어느 화면도 못 읽던 dead write 였다.
+    sortKeys: { 발생일자: 'ocrnYmd', 서비스설명: 'srvcNm', 처리구분: 'prcsSeCd', 응답: 'rspnsCd' },
   },
   {
     name: 'USR',

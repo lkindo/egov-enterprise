@@ -1,5 +1,6 @@
 package nuri.api.config;
 
+import nuri.api.interceptor.OperationalAuditInterceptor;
 import nuri.business.security.iam.EgovAuthenticationProvider;
 import nuri.foundation.security.jwt.JwtAuthenticationFilter;
 import nuri.foundation.security.jwt.JwtTokenProvider;
@@ -143,7 +144,11 @@ public class ApiSecurityConfig {
 
         @Bean
         @Order(1)
-        public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, EgovAuthenticationProvider egovAuthenticationProvider) throws Exception {
+        public SecurityFilterChain apiSecurityFilterChain(
+                        HttpSecurity http,
+                        EgovAuthenticationProvider egovAuthenticationProvider,
+                        OperationalAuditInterceptor operationalAuditInterceptor) throws Exception {
+                HttpStatusEntryPoint unauthorizedEntryPoint = new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED);
                 http
                                 .securityMatchers(matchers -> matchers.requestMatchers(
                                                 pathMatcher("/api/v1/**"),
@@ -204,9 +209,15 @@ public class ApiSecurityConfig {
                                                 auth.anyRequest().authenticated();
                                 })
                                 .exceptionHandling(ex -> ex
-                                                .authenticationEntryPoint(
-                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                                                .authenticationEntryPoint((request, response, authenticationException) -> {
+                                                        operationalAuditInterceptor.publishSecurityFailure(
+                                                                        request, HttpStatus.UNAUTHORIZED.value());
+                                                        unauthorizedEntryPoint.commence(
+                                                                        request, response, authenticationException);
+                                                })
                                                 .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                                        operationalAuditInterceptor.publishSecurityFailure(
+                                                                        request, HttpStatus.FORBIDDEN.value());
                                                         log.warn(">>> Access denied to {}: {}", request.getRequestURI(), accessDeniedException.getMessage());
                                                         response.setContentType("application/json;charset=UTF-8");
                                                         response.setStatus(HttpStatus.FORBIDDEN.value());

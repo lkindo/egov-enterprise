@@ -39,6 +39,7 @@ import {
   ApiResponseIntegerResponseSchema,
   ApiResponseInternetSvcGuidanceDtoResponseSchema,
   ApiResponseListBannerDtoResponseSchema,
+  ApiResponseListBoardSearchItemResponseResponseSchema,
   ApiResponseListCommunityDtoResponseSchema,
   ApiResponseListDeptManageDtoResponseSchema,
   ApiResponseListFileDtoResponseSchema,
@@ -132,6 +133,7 @@ import {
   ApiResponseScheduleDtoResponseSchema,
   ApiResponseScrapDtoResponseSchema,
   ApiResponseSentMailDtoResponseSchema,
+  ApiResponseSmsDeliveryStatusDtoResponseSchema,
   ApiResponseSmsDtoResponseSchema,
   ApiResponseStringResponseSchema,
   ApiResponseSummaryStatsDtoResponseSchema,
@@ -159,6 +161,7 @@ import {
   BoardMasterDetailResponseResponseSchema,
   BoardMasterDtoRequestSchema,
   BoardSaveRequestRequestSchema,
+  BoardSearchItemResponseResponseSchema,
   BoardStatsResponseResponseSchema,
   BulkDeptMoveRequestRequestSchema,
   BulkRoleRequestRequestSchema,
@@ -298,6 +301,7 @@ import {
   ScrapDtoResponseSchema,
   SentMailDtoRequestSchema,
   SentMailDtoResponseSchema,
+  SmsDeliveryStatusDtoResponseSchema,
   SmsDtoRequestSchema,
   SmsDtoResponseSchema,
   SmsRecptnDtoResponseSchema,
@@ -5773,6 +5777,23 @@ export const getAverageOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const searchPostsOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "searchPosts",
+  method: "get",
+  path: "/api/v1/boards/search",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.array(z.lazy(() => BoardSearchItemResponseResponseSchema)),
+  envelopeSchema: ApiResponseListBoardSearchItemResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getPublicFaqsOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getPublicFaqs",
   method: "get",
@@ -6517,6 +6538,23 @@ export const getSmsRecipientsOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)),
   envelopeSchema: ApiResponseListSmsRecptnDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getDeliveryStatusOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getDeliveryStatus",
+  method: "get",
+  path: "/api/v1/admin/operation/sms/delivery-status",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => SmsDeliveryStatusDtoResponseSchema),
+  envelopeSchema: ApiResponseSmsDeliveryStatusDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

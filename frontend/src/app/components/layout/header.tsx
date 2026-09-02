@@ -282,7 +282,10 @@ export function Header({
           message: n.notiCn,
           time: n.notiDt,
           isRead: n.readYn === 'Y',
-          type: n.type
+          type: n.type,
+          // [2026-09-02] 서버가 계산해 저장한 목적지를 화면까지 나른다. 훅이 이미 내부 경로로
+          //   검증했으므로(normalizeInternalRoute) 신뢰할 수 없는 값은 null 로 온다.
+          linkUrl: n.linkUrl ?? null,
         }))}
       />
     </header>

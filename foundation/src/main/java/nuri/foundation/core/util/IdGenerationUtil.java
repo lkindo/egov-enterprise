@@ -63,6 +63,48 @@ public final class IdGenerationUtil {
                 "고유 ID 생성 실패: " + MAX_UNIQUE_RETRIES + "회 시도 내 미충돌 값 확보 불가(prefix=" + prefix + ", length=" + length + ")");
     }
 
+    /** 감사 요청 ID 총 길이 — {@code tb_sys_log.dmnd_id}·{@code tb_privacy_log.dmnd_id} 컬럼 폭과 같다. */
+    public static final int AUDIT_REQUEST_ID_LENGTH = 20;
+
+    /** 시각부(epoch millis 10진) 자릿수. 서기 2286년까지 13자리를 넘지 않는다. */
+    private static final int AUDIT_TIME_DIGITS = 13;
+
+    /** 무작위부 자릿수 — base36 7자리 = 약 7.8e10 조합/ms. */
+    private static final int AUDIT_RANDOM_DIGITS = AUDIT_REQUEST_ID_LENGTH - AUDIT_TIME_DIGITS;
+
+    private static final long AUDIT_RANDOM_BOUND = 78_364_164_096L; // 36^7
+
+    private static final java.security.SecureRandom AUDIT_RANDOM = new java.security.SecureRandom();
+
+    /**
+     * 감사 로그의 요청 ID를 생성한다 — 정확히 {@value #AUDIT_REQUEST_ID_LENGTH}자.
+     *
+     * <p>{@code tb_sys_log.dmnd_id}와 {@code tb_privacy_log.dmnd_id}는 <b>UNIQUE</b>이고 폭이
+     * varchar(20)이다. 따라서 이 값은 폭을 넘지 않으면서 충돌하지 않아야 한다.
+     *
+     * <p>앞 13자리는 epoch millis라 <b>시간 순으로 정렬</b>된다 — 인덱스 없는 로그 테이블에서
+     * 요청 ID만으로 대략의 시각을 읽을 수 있고, B-tree 삽입도 끝에 몰려 단편화가 적다.
+     * 뒤 7자리는 {@link java.security.SecureRandom} base36이라 같은 밀리초 안에서만 경쟁한다.
+     *
+     * <p>충돌은 최종적으로 DB UNIQUE 제약이 막는다. 감사 적재는 best-effort 경로이므로
+     * 재시도 대신 리스너가 실패를 세고 넘어간다 — 요청 처리를 막지 않는 것이 우선이다.
+     */
+    public static String generateAuditRequestId() {
+        long millis = System.currentTimeMillis();
+        String time = Long.toString(millis);
+        if (time.length() > AUDIT_TIME_DIGITS) {
+            // 서기 2286년 이후 — 폭 초과로 INSERT 가 죽지 않도록 하위 13자리만 쓴다(순서성만 잃는다).
+            time = time.substring(time.length() - AUDIT_TIME_DIGITS);
+        } else if (time.length() < AUDIT_TIME_DIGITS) {
+            time = "0".repeat(AUDIT_TIME_DIGITS - time.length()) + time;
+        }
+        String random = Long.toString(Math.floorMod(AUDIT_RANDOM.nextLong(), AUDIT_RANDOM_BOUND), 36);
+        if (random.length() < AUDIT_RANDOM_DIGITS) {
+            random = "0".repeat(AUDIT_RANDOM_DIGITS - random.length()) + random;
+        }
+        return time + random.toUpperCase();
+    }
+
     /**
      * 사용자용 고유 ID(EsntlId)를 생성합니다.
      */

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X,  
+import Link from 'next/link';
+import { X,
   Bell,  
   ShieldAlert,  
   Activity,  
@@ -19,6 +20,14 @@ interface Notification {
   time: string;
   isRead: boolean;
   type?: 'SECURITY' | 'SYSTEM' | 'ACTIVITY' | 'INFO';
+  /**
+   * 알림을 눌렀을 때 갈 내부 경로. 목적지가 없으면 {@code null} 이고 이동 어포던스를 그린다.
+   *
+   * <p>훅({@code useNotifications})이 {@code normalizeInternalRoute} 로 이미 검증한 값이다 —
+   * 외부 origin·다른 스킴·자격 포함 URL 은 여기 도달하기 전에 null 이 된다. 이 컴포넌트는
+   * 값을 다시 신뢰하지 않고 <b>있으면 링크, 없으면 링크 없음</b>으로만 분기한다.
+   */
+  linkUrl?: string | null;
 }
 
 interface AppNotificationDrawerProps {
@@ -41,6 +50,7 @@ type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
 export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, error, onRetry }: AppNotificationDrawerProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
+  const hasUnreadNotifications = notifications.some(n => !n.isRead);
 
   const filteredNotifications = notifications.filter(n => {
     if (activeFilter === 'ALL') return true;
@@ -84,7 +94,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
               <p className="text-xs font-bold text-muted-foreground tracking-tight">받은 알림</p>
             </div>
             <div className="flex items-center gap-2">
-              {notifications.some(n => !n.isRead) && (
+              {hasUnreadNotifications && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -168,27 +178,20 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                   <span className="text-sm font-bold tracking-widest uppercase text-muted-foreground">활성화된 알림이 없습니다</span>
                 </div>
              ) : (
-                filteredNotifications.map((notif, idx) => (
-                  <div
-                    key={notif.id}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`알림: ${notif.title || '알림 항목'}`}
-                    className={cn(
-                      "group relative p-6 rounded-lg border transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-sm",
-                      notif.isRead
-                        ? "bg-muted/10 border-border/40 opacity-60"
-                        : "bg-card border-border shadow-xl hover:shadow-primary/5 hover:border-primary/20",
-                      !notif.isRead && notif.type === 'SECURITY' && "border-rose-100 dark:border-rose-950 bg-rose-50/20 dark:bg-rose-950/10"
-                    )}
-                    onClick={() => !notif.isRead && onMarkRead(notif.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        if (!notif.isRead) onMarkRead(notif.id);
-                      }
-                    }}
-                  >
+                filteredNotifications.map((notif) => {
+                  const canMarkRead = !notif.linkUrl && !notif.isRead;
+                  /* 목적지 링크가 있으면 카드와 링크를 중첩 인터랙션으로 만들지 않는다.
+                     링크가 없는 미읽음 알림만 카드 자체가 "읽음 처리" 버튼 역할을 한다. */
+                  const cardClassName = cn(
+                    "group relative w-full p-6 rounded-lg border text-left transition-all duration-300 overflow-hidden backdrop-blur-sm",
+                    canMarkRead && "cursor-pointer",
+                    notif.isRead
+                      ? "bg-muted/10 border-border/40 opacity-60"
+                      : "bg-card border-border shadow-xl hover:shadow-primary/5 hover:border-primary/20",
+                    !notif.isRead && notif.type === 'SECURITY' && "border-rose-100 dark:border-rose-950 bg-rose-50/20 dark:bg-rose-950/10"
+                  );
+                  const cardContent = (
+                    <>
                     <div className="flex justify-between items-start gap-4 relative z-10">
                       <div className={cn(
                          "w-10 h-10 rounded-lg flex items-center justify-center shadow-md shrink-0",
@@ -213,10 +216,31 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{notif.time}</span>
                       {/*
                          [2026-08-29] '상세 보기 →' 버튼을 걷었다. onClick·href·router.push 가
-                         전혀 없었고, 갈 곳도 없다 — 알림 라우트는 /admin/notifications 의
-                         page.tsx·NotificationsClient.tsx 둘뿐이고 [id] 세그먼트가 없다.
-                         상세 화면을 만들면 그때 되살린다(서버에는 단건 조회가 이미 있다).
+                         전혀 없었고, 갈 곳도 없었다.
+
+                         [2026-09-02] 갈 곳이 생겨서 되살린다 — 다만 '상세 보기' 가 아니라
+                         **업무로 이동**이다. 서버의 알림 producer 3종이 결재함·쪽지함·게시글로
+                         가는 경로를 계산해 저장하고, 훅이 그것을 내부 경로로 검증해 넘긴다.
+                         목적지가 없는 알림(관리자 수기 공지 등)에는 아무것도 그리지 않는다 —
+                         누를 수 없는 버튼을 두는 것이 종전에 걷어낸 바로 그 문제였다.
+
+                         ⚠ Link 클릭이 바깥 카드의 onClick(읽음 처리)까지 타지 않게 stopPropagation
+                         하지 않는다. 오히려 반대로, 이동하면서 읽음 처리도 되는 것이 맞다 —
+                         사용자가 알림을 눌러 업무로 갔는데 그 알림이 미읽음으로 남으면 안 된다.
                       */}
+                      {notif.linkUrl ? (
+                        <Link
+                          href={notif.linkUrl}
+                          aria-label={`${notif.title || '알림'} 업무로 이동`}
+                          onClick={() => {
+                            if (!notif.isRead) onMarkRead(notif.id);
+                            onClose();
+                          }}
+                          className="text-xs font-bold text-primary hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 rounded-sm"
+                        >
+                          바로가기 →
+                        </Link>
+                      ) : null}
                     </div>
 
                     {/* Background Decoration */}
@@ -225,8 +249,29 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                           <ShieldAlert size={80} />
                        </div>
                     )}
-                  </div>
-                ))
+                    </>
+                  );
+
+                  if (canMarkRead) {
+                    return (
+                      <button
+                        key={notif.id}
+                        type="button"
+                        aria-label={`알림: ${notif.title || '알림 항목'}`}
+                        className={cardClassName}
+                        onClick={() => onMarkRead(notif.id)}
+                      >
+                        {cardContent}
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <div key={notif.id} className={cardClassName}>
+                      {cardContent}
+                    </div>
+                  );
+                })
              )}
           </div>
 
@@ -235,9 +280,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
              <Button
                data-testid="read-all-broadcasts-btn"
                onClick={onMarkAllRead}
+               disabled={!hasUnreadNotifications}
                className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-bold tracking-[0.3em] uppercase text-xs shadow-2xl hover:bg-primary/90 transition-all"
              >
-                모든 알림 읽음 처리
+                불러온 알림 읽음 처리
              </Button>
           </div>
         </DialogPrimitive.Content>

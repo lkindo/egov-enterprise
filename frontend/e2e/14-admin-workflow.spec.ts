@@ -24,6 +24,12 @@ test.describe('Tier 14: Administrative Workflow Management', () => {
         await expect(demoNotice).toBeVisible();
         await expect(demoNotice).toContainText('실제 저장·실행·운영 지표를 제공하지 않습니다');
 
+        // [2026-09-02] 고지가 **실제 결재 능력의 범위**까지 말하는지 함께 고정한다.
+        //   "데모다" 만 말하면 읽는 사람은 진짜 엔진이 전자결재함 쪽에 있다고 읽는다 —
+        //   캔버스가 4단계 결재선을 그리고 있으니 더욱 그렇다. 실제 구현은 결재자 1인의
+        //   승인/반려 단일 단계이고 결재선·대결·회수가 없다.
+        await expect(demoNotice).toContainText('결재자 1인의 승인·반려 단일 단계');
+
         // Hub metric cards + canvas/panel section cards.
         await workflowPage.verifyHubLoaded();
 

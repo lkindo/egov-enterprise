@@ -41,6 +41,13 @@ class NoteServiceImplTest {
     @Mock
     private NoteDomainRepository noteRepository;
 
+    /**
+     * 쪽지 수신 알림은 foundation 이벤트로 요청한다. 목이 없으면 발송 경로에서 NPE 가 난다 —
+     * 알림 요청이 실제로 발행 경로에 결속돼 있다는 증거이기도 하다.
+     */
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private NoteService noteService;
 
@@ -106,6 +113,29 @@ class NoteServiceImplTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
+    }
+
+    /**
+     * [2026-09-02] 목록 질의에 ORDER BY 가 있는지를 애노테이션에서 직접 읽어 고정한다.
+     *
+     * <p>종전에는 수신·발신 목록 JPQL 에 정렬이 없어 순서가 DB 임의 순서였다 — 같은 결과가
+     * 새로고침마다 다른 순서로 올 수 있었다. 저장소가 목이라 실행으로는 검증할 수 없으므로
+     * 질의 문자열을 계약으로 삼는다. 누군가 ORDER BY 를 지우면 여기서 red 가 된다.
+     */
+    @Test
+    @DisplayName("수신·발신 목록 질의는 최신순 ORDER BY 를 명시한다")
+    void listQueries_declareDeterministicOrdering() throws NoSuchMethodException {
+        String received = nuri.business.domain.note.NoteRecptnDomainRepository.class
+                .getMethod("searchNoteRecptns", String.class, String.class, String.class,
+                        org.springframework.data.domain.Pageable.class)
+                .getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        String sent = nuri.business.domain.note.NoteTrnsmitDomainRepository.class
+                .getMethod("searchNoteTrnsmits", String.class, String.class, String.class,
+                        org.springframework.data.domain.Pageable.class)
+                .getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+
+        assertThat(received).containsIgnoringCase("ORDER BY r.noteRcptnSn DESC");
+        assertThat(sent).containsIgnoringCase("ORDER BY t.noteSndngSn DESC");
     }
 
     @Test
@@ -184,6 +214,29 @@ class NoteServiceImplTest {
         assertThat(result.getNoteRcptnSn()).isEqualTo(relationSn);
         assertThat(result.getNoteSj()).isEqualTo("Title");
         assertThat(result.getNoteCn()).isEqualTo("Content");
+        // [2026-09-02] 열람과 동시에 읽음 처리된다. 종전에는 openYn 을 'Y' 로 바꾸는 코드가
+        //   저장소 어디에도 없어 수신함의 모든 쪽지가 영원히 '안 읽음' 이었다.
+        assertThat(recptn.getOpenYn()).isEqualTo("Y");
+        assertThat(result.getOpenYn()).isEqualTo("Y");
+    }
+
+    /**
+     * 읽음 처리는 <b>소유자 검증 뒤에</b> 일어나야 한다. 순서가 뒤집히면 남의 수신 사본을
+     * 조회 시도만으로 '읽음' 으로 만들 수 있다(접근은 거부되더라도 상태는 이미 바뀐 뒤다).
+     */
+    @Test
+    @DisplayName("[보안 H1] 소유자가 아니면 읽음 처리도 일어나지 않는다")
+    void getNoteDetail_received_notOwner_doesNotMarkOpened() {
+        Long relationSn = 3L;
+        Note note = Note.builder().noteSn(1L).noteTtl("T").noteCn("C").build();
+        NoteRecptn recptn = NoteRecptn.builder()
+                .noteRcptnSn(relationSn).note(note).rcvrId("user2").openYn("N").build();
+        given(noteRecptnRepository.findById(relationSn)).willReturn(Optional.of(recptn));
+
+        assertThatThrownBy(() -> noteService.getNoteDetail(1L, "received", relationSn, "attacker"))
+                .isInstanceOf(BusinessException.class);
+
+        assertThat(recptn.getOpenYn()).isEqualTo("N");
     }
 
     @Test
@@ -255,6 +308,46 @@ class NoteServiceImplTest {
         verify(noteTrnsmitRepository, times(1)).save(any(NoteTrnsmit.class));
         // 수신자가 2명이므로 2번 호출되어야 함
         verify(noteRecptnRepository, times(2)).save(any(NoteRecptn.class));
+    }
+
+    /**
+     * 쪽지가 도착하면 수신자에게 알린다.
+     *
+     * <p>종전에는 어떤 사건도 알림을 만들지 않아, 쪽지가 와도 종 아이콘이 조용했다. 수신자는
+     * 쪽지함을 직접 열어 보기 전에는 알 방법이 없었다.
+     */
+    @Test
+    @DisplayName("쪽지 발송 시 수신자마다 알림을 요청한다")
+    void sendNote_requestsNotificationPerRecipient() {
+        noteService.sendNote("user1", NoteDto.builder()
+                .noteSj("회의 일정 공유").noteCn("본문").rcverId("user2, user3").build());
+
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(captor.capture());
+
+        assertThat(captor.getAllValues())
+                .extracting(nuri.foundation.core.event.NotificationRequestedEvent::receiverEsntlId)
+                .containsExactlyInAnyOrder("user2", "user3");
+        assertThat(captor.getAllValues().get(0).linkUrl()).isEqualTo("/note");
+    }
+
+    /**
+     * 알림은 목록·종 아이콘·WebSocket 으로 퍼진다. 본문을 복제하면 쪽지의 열람 통제
+     * ({@code NoteRecptn} 소유자 가드)를 우회하는 사본이 생긴다 — 제목만 싣는다.
+     */
+    @Test
+    @DisplayName("알림에 쪽지 본문을 복제하지 않는다")
+    void sendNote_notificationCarriesSubjectNotBody() {
+        noteService.sendNote("user1", NoteDto.builder()
+                .noteSj("회의 일정 공유").noteCn("대외비 본문 내용").rcverId("user2").build());
+
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+
+        assertThat(captor.getValue().content()).isEqualTo("회의 일정 공유");
+        assertThat(captor.getValue().content()).doesNotContain("대외비 본문 내용");
     }
 
     @Test

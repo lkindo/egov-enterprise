@@ -58,9 +58,16 @@ public class HelpService {
         entity.update(dto.getHlpSeCd(), dto.getHlpDfn(), dto.getHlpExpln());
     }
 
+    /**
+     * [2026-09-02] 존재 확인을 거친다. 같은 서비스의 조회·수정은 없는 id 에 404 를 주는데 삭제만
+     * {@code deleteById} 를 바로 불러, Spring Data 3 에서는 없는 id 가 <b>조용히 200</b> 으로 끝났다
+     * (수정과 삭제가 같은 id 에 서로 다른 답을 했다). 화면은 성공 토스트를 띄우고 목록은 그대로다.
+     */
     @Transactional
     public void deleteHpcm(Long hlpSn) {
-        hpcmRepository.deleteById(Objects.requireNonNull(hlpSn));
+        Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hlpSn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        hpcmRepository.delete(entity);
     }
 
     // Online Manual
@@ -100,8 +107,11 @@ public class HelpService {
         entity.update(dto.getOnlnMnlNm(), dto.getOnlnMnlSeCd(), dto.getOnlnMnlDfn(), dto.getOnlnMnlExpln());
     }
 
+    /** 존재 확인 — {@link #deleteHpcm} 과 같은 이유. */
     @Transactional
     public void deleteOnlineManual(Long onlnMnlSn) {
-        onlineManualRepository.deleteById(Objects.requireNonNull(onlnMnlSn));
+        var entity = onlineManualRepository.findById(Objects.requireNonNull(onlnMnlSn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        onlineManualRepository.delete(entity);
     }
 }

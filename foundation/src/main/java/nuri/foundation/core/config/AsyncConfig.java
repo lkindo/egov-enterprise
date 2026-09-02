@@ -31,12 +31,58 @@ public class AsyncConfig implements AsyncConfigurer {
      */
     private static final int LOG_EXECUTOR_CONCURRENCY_LIMIT = 64;
 
+    /** 알림 영속화 전용 풀 크기. auditExecutor와 합쳐 DB 풀을 무제한 점유하지 않게 작게 둔다. */
+    private static final int NOTIFICATION_POOL_SIZE = 2;
+
+    /** 알림 폭주가 힙의 무계 큐로 번지지 않게 하는 대기열 상한. */
+    private static final int NOTIFICATION_QUEUE_CAPACITY = 500;
+
+    /** 큐 포화로 수락하지 못한 알림 태스크 수. */
+    public static final String NOTIFICATION_REJECTED_METRIC = "notification.dispatch.executor.rejected";
+
     @Bean(name = "logExecutor")
     public Executor logExecutor() {
         SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("LogAsync-");
         executor.setVirtualThreads(true);
         executor.setConcurrencyLimit(LOG_EXECUTOR_CONCURRENCY_LIMIT);
+        // SimpleAsyncTaskExecutor의 기본 종료 대기는 0이다. 명시하지 않으면 Spring context가
+        // 닫힐 때 이미 수락한 제재·로그 작업을 기다리지 않고 JVM 종료와 함께 유실할 수 있다.
+        executor.setTaskTerminationTimeout(60_000);
         executor.setTaskDecorator(new ThreadLocalCopyTaskDecorator());
+        return executor;
+    }
+
+    /**
+     * 앱 내 알림 영속화 전용 실행자.
+     *
+     * <p>{@code SanctionEventListener}는 {@code logExecutor}에서 실행 중 다시 알림 이벤트를
+     * 발행한다. 알림 리스너도 같은 blocking throttle을 쓰면 64개 부모가 permit을 쥔 채
+     * 자식 permit을 기다리는 교착이 생기므로 물리적으로 분리한다. 포화 시에는 발행 스레드를
+     * 막거나 깨뜨리지 않고 거부를 계측한다. 영속 재시도는 별도 outbox 과제다.
+     */
+    @Bean(name = "notificationExecutor")
+    public Executor notificationExecutor(
+            org.springframework.beans.factory.ObjectProvider<
+                    io.micrometer.core.instrument.MeterRegistry> meterRegistries) {
+        org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor executor =
+                new org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor();
+        executor.setThreadNamePrefix("NotificationAsync-");
+        executor.setCorePoolSize(NOTIFICATION_POOL_SIZE);
+        executor.setMaxPoolSize(NOTIFICATION_POOL_SIZE);
+        executor.setQueueCapacity(NOTIFICATION_QUEUE_CAPACITY);
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.setTaskDecorator(new ThreadLocalCopyTaskDecorator());
+        executor.setRejectedExecutionHandler((task, poolExecutor) -> {
+            io.micrometer.core.instrument.MeterRegistry registry = meterRegistries.getIfAvailable();
+            if (registry != null) {
+                registry.counter(NOTIFICATION_REJECTED_METRIC).increment();
+            }
+            log.warn("[NOTIFICATION] 알림 태스크를 수락하지 못했습니다 — 큐 포화(capacity={}). "
+                            + "유실은 {} 메트릭으로 관측하십시오.",
+                    NOTIFICATION_QUEUE_CAPACITY, NOTIFICATION_REJECTED_METRIC);
+        });
+        executor.initialize();
         return executor;
     }
 
@@ -103,6 +149,10 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setCorePoolSize(AUDIT_POOL_SIZE);
         executor.setMaxPoolSize(AUDIT_POOL_SIZE);
         executor.setQueueCapacity(AUDIT_QUEUE_CAPACITY);
+        // 정상 종료에서는 이미 수락한 감사 작업을 큐에서 버리지 않는다. 무한 대기를 피하도록
+        // api-server 의 outbound executor 와 같은 bounded 종료 유예를 둔다.
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
         executor.setTaskDecorator(new ThreadLocalCopyTaskDecorator());
         executor.setRejectedExecutionHandler((task, poolExecutor) -> {
             io.micrometer.core.instrument.MeterRegistry registry = meterRegistries.getIfAvailable();

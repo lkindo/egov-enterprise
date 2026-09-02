@@ -8,12 +8,41 @@ import {
   getPostOperation,
   getPostsOperation,
   likePostOperation,
+  searchPostsOperation,
   updatePostOperation,
 } from '@/types/generated-operations';
+
+/**
+ * 통합 검색 결과 1건. 백엔드 `BoardSearchItemResponse` 와 1:1 대응한다.
+ *
+ * 본문({@code pstCn})과 게시글 비밀번호는 담기지 않는다 — 서버가 목록 표면을 의도적으로
+ * 좁힌 것이니, 화면에서 필요해 보이더라도 필드를 늘리기 전에 노출면부터 따져야 한다.
+ */
+export interface BoardSearchResultItem {
+  bbsId: string;
+  pstSn: number;
+  pstTtl?: string;
+  userNm?: string;
+  inqCnt?: number;
+  crtDt?: string;
+}
 
 class BoardUserService extends UserService {
   constructor() {
     super('/boards');
+  }
+
+  /**
+   * 활성 게시판 전체에서 게시글 **제목**을 검색한다(통합 검색 전용).
+   *
+   * 서버가 검색어 2자 미만이면 빈 목록을, 그 이상이면 최대 20건을 돌려준다.
+   * 페이징이 없는 것은 의도다 — 담당자 검색과 같은 이유로 호출부에서 page 를 넘기지 말 것.
+   * 본문은 검색하지 않는다(에디터 HTML 원문이라 태그·속성이 그대로 매칭된다).
+   */
+  async searchPosts(keyword: string): Promise<BoardSearchResultItem[]> {
+    return this.executeGenerated(searchPostsOperation, {
+      query: { keyword },
+    }) as Promise<BoardSearchResultItem[]>;
   }
 
   /**

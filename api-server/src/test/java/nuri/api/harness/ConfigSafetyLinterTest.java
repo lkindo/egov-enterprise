@@ -64,9 +64,12 @@ class ConfigSafetyLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigSafetyLinterTest.class);
 
-    // ---- 감사 대상 4파일 (하나라도 없으면 게이트 파손 → 즉시 실패) ----------------------
+    // ---- 감사 대상 파일 (하나라도 없으면 게이트 파손 → 즉시 실패) ----------------------
     private static final String COMPOSE_BASE = "docker-compose.yml";
     private static final String COMPOSE_PROD = "docker-compose.prod.yml";
+    private static final String API_DOCKERFILE = "api-server/Dockerfile";
+    private static final String ASYNC_CONFIG =
+            "foundation/src/main/java/nuri/foundation/core/config/AsyncConfig.java";
     private static final String APP_YML = "api-server/src/main/resources/application.yml";
     private static final String APP_PROD_YML = "api-server/src/main/resources/application-prod.yml";
 
@@ -94,6 +97,7 @@ class ConfigSafetyLinterTest {
     private static final long MAX_POOL_SIZE = 50L;
     private static final long MAX_MULTIPART_FILE_BYTES = 10L * 1024 * 1024;
     private static final long MAX_MULTIPART_REQUEST_BYTES = 50L * 1024 * 1024;
+    private static final long MIN_API_STOP_GRACE_SECONDS = 200L;
 
     // ---- 파싱 정규식 -----------------------------------------------------------------
     /** YAML 매핑 한 줄: 들여쓰기 + 키 + 값. 시퀀스({@code - item})·연속행은 매칭되지 않는다. */
@@ -107,6 +111,14 @@ class ConfigSafetyLinterTest {
 
     /** vacuity 방지: compose 파일이 실제로 api 서비스를 정의하고 있는지(구조가 통째로 바뀌면 위 매칭이 무의미). */
     private static final Pattern COMPOSE_API_SERVICE = Pattern.compile("(?m)^\\s+api\\s*:\\s*$");
+    private static final Pattern COMPOSE_API_BLOCK = Pattern.compile(
+            "(?ms)^  api\\s*:\\s*\\R(.*?)(?=^  [A-Za-z0-9_.-]+\\s*:\\s*$|^volumes\\s*:\\s*$|^networks\\s*:\\s*$|\\z)");
+    private static final Pattern COMPOSE_STOP_GRACE_SECONDS = Pattern.compile(
+            "(?m)^\\s{4}stop_grace_period\\s*:\\s*\\\"?(\\d+)s\\\"?\\s*$");
+    private static final String API_EXEC_ENTRYPOINT =
+            "ENTRYPOINT [\"sh\", \"-c\", \"exec java $JAVA_OPTS -jar app.jar\"]";
+    private static final String LOG_EXECUTOR_DRAIN_SIGNAL =
+            "executor.setTaskTerminationTimeout(60_000);";
 
     /** {@code ${VAR:default}} 형태에서 default 를 뽑는다(placeholder 를 숫자 파싱 실패로 오판하지 않기 위함). */
     private static final Pattern PLACEHOLDER_DEFAULT = Pattern.compile("^\\$\\{[^:}]*:([^}]*)}$");
@@ -148,9 +160,11 @@ class ConfigSafetyLinterTest {
     void auditDeploymentConfigSafety() throws IOException {
         Path root = resolveRepoRoot();
 
-        // ── vacuity ①: 감사 대상 4파일 전부 존재해야 한다. 하나라도 없으면 조용한 통과가 아니라 실패.
+        // ── vacuity ①: 감사 대상 파일 전부 존재해야 한다. 하나라도 없으면 조용한 통과가 아니라 실패.
         Path composeBase = requireFile(root, COMPOSE_BASE);
         Path composeProd = requireFile(root, COMPOSE_PROD);
+        Path apiDockerfile = requireFile(root, API_DOCKERFILE);
+        Path asyncConfig = requireFile(root, ASYNC_CONFIG);
         Path appYml = requireFile(root, APP_YML);
         Path appProdYml = requireFile(root, APP_PROD_YML);
 
@@ -158,6 +172,8 @@ class ConfigSafetyLinterTest {
         Map<String, String> prod = flattenYaml(appProdYml);
         String composeBaseSrc = stripComments(HarnessSourceIndex.read(composeBase));
         String composeProdSrc = stripComments(HarnessSourceIndex.read(composeProd));
+        String apiDockerfileSrc = stripComments(HarnessSourceIndex.read(apiDockerfile));
+        String asyncConfigSrc = stripComments(HarnessSourceIndex.read(asyncConfig));
 
         // ── vacuity ②: 파싱이 조용히 붕괴하면 아래 검사가 전부 vacuous 통과가 된다.
         //    실측(2026-08-01): application.yml 147 키 / application-prod.yml 62 키.
@@ -200,6 +216,15 @@ class ConfigSafetyLinterTest {
         // ── 9) [W0-04 보완] 배포 스크립트가 prod 오버레이를 물고 있는가
         auditDeployScriptUsesProdOverlay(root, violations);
 
+        // ── 10) [2026-09-02] 번들 DB 의 운영 노출면
+        auditBundledDatabaseExposure(composeBaseSrc, composeProdSrc, violations);
+
+        // ── 11) [2026-09-02] 첨부 named volume 지속성과 최초 전환 fail-closed
+        auditAttachmentStorageTransition(root, composeBaseSrc, violations);
+
+        // ── 12) accepted 비동기 작업이 컨테이너 재기동 중 강제 종료되지 않는가
+        auditApiShutdownDrain(composeBaseSrc, apiDockerfileSrc, asyncConfigSrc, violations);
+
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             sb.append("\n========================================================================\n");
@@ -220,6 +245,160 @@ class ConfigSafetyLinterTest {
     }
 
     // ---- 개별 검사 -------------------------------------------------------------------
+
+    /** base compose 의 db 서비스가 커밋해 둔 개발 비밀번호. 이 값이 운영까지 새는지를 본다. */
+    private static final Pattern COMPOSE_DB_SERVICE = Pattern.compile("(?m)^\\s+db\\s*:\\s*$");
+
+    /** 모든 인터페이스(0.0.0.0)에 5432 를 공개하는 형태. 호스트 IP 접두가 없으면 여기 걸린다. */
+    private static final Pattern DB_PORT_PUBLISHED_ON_ALL_INTERFACES =
+            Pattern.compile("(?m)^\\s*-\\s*\"?\\d+:5432\"?\\s*$");
+
+    /** 루프백 한정 공개. `127.0.0.1:5432:5432` 형태. */
+    private static final Pattern DB_PORT_PUBLISHED_ON_LOOPBACK =
+            Pattern.compile("(?m)^\\s*-\\s*\"?(127\\.0\\.0\\.1|localhost):\\d+:5432\"?\\s*$");
+
+    /** prod 오버레이가 번들 DB 자격을 환경변수로 덮어쓰는가. */
+    private static final Pattern PROD_DB_PASSWORD_OVERRIDE =
+            Pattern.compile("(?m)^\\s*POSTGRES_PASSWORD\\s*:\\s*\\$\\{[A-Z_]+:\\?");
+
+    /** DB healthcheck가 prod 오버레이 이후의 실효 사용자·DB명을 컨테이너 환경에서 읽는가. */
+    private static final Pattern DB_HEALTHCHECK_USES_CONTAINER_ENV = Pattern.compile(
+            "(?m)^\\s*test\\s*:.*pg_isready.*\\$\\$\\{POSTGRES_USER\\}.*\\$\\$\\{POSTGRES_DB\\}.*$");
+
+    /** 첨부 실물이 컨테이너 쓰기 계층으로 되돌아가지 않도록 고정하는 api mount. */
+    private static final Pattern ATTACHMENT_STORAGE_MOUNT = Pattern.compile(
+            "(?m)^\\s*-\\s*attachment_storage:/app/storage\\s*$");
+
+    /**
+     * 번들 PostgreSQL 이 운영 배포에서 <b>개발 형상 그대로</b> 뜨는 경로를 막는다.
+     *
+     * <p>[왜 필요한가 — 2026-09-02 실측] {@code scripts/deploy.sh} 는
+     * {@code -f docker-compose.yml -f docker-compose.prod.yml} 로 올린다. 즉 <b>base 의 db 서비스가
+     * 운영에서도 뜬다</b>. 그런데 종전 오버레이에는 db 블록이 아예 없어서 두 가지가 그대로 새고 있었다.
+     * <ul>
+     *   <li>{@code POSTGRES_PASSWORD: egov123} — 저장소에 커밋된 값이 운영 DB 비밀번호가 된다.
+     *       api 쪽만 {@code DB_PASSWORD} 를 fail-fast 로 요구해 "주입했다"는 착각이 들기 쉬웠다.</li>
+     *   <li>{@code ports: "5432:5432"} — 0.0.0.0 바인딩이라 운영 호스트의 모든 인터페이스에 열린다.</li>
+     * </ul>
+     *
+     * <p><b>포트는 오버레이로 닫을 수 없다.</b> compose 는 {@code ports} 를 리스트로 보고 병합 시
+     * <b>이어붙이므로</b>, 오버레이에서 비워도 base 의 공개가 남는다. 그래서 base 자체가 루프백
+     * 한정이어야 하고, 이 검사도 base 를 본다. 반대로 {@code environment} 는 맵이라 오버레이가 이긴다.
+     *
+     * <p>판정 불가는 통과가 아니라 위반이다 — db 서비스 정의를 찾지 못하면 이 검사 전체가
+     * vacuous 해지므로 그 사실 자체를 실패로 올린다.
+     */
+    private void auditBundledDatabaseExposure(String composeBaseSrc, String composeProdSrc,
+                                              List<String> violations) {
+        if (!COMPOSE_DB_SERVICE.matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: 'db' 서비스 정의를 찾지 못했습니다 — 번들 DB 노출면 검사가"
+                    + " vacuous 해집니다. 서비스명을 바꿨다면 이 린터를 함께 갱신하십시오.");
+            return;
+        }
+
+        if (DB_PORT_PUBLISHED_ON_ALL_INTERFACES.matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: db 의 5432 가 모든 인터페이스(0.0.0.0)에 공개돼 있습니다."
+                    + " deploy.sh 가 base 를 함께 올리므로 이 공개는 운영 호스트에 그대로 적용됩니다."
+                    + " '127.0.0.1:5432:5432' 로 좁히십시오 — 컨테이너 간 통신은 egov-net 을 쓰므로 영향이 없습니다."
+                    + " (오버레이로는 닫을 수 없습니다: compose 는 ports 리스트를 이어붙입니다.)");
+        } else if (!DB_PORT_PUBLISHED_ON_LOOPBACK.matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: db 의 5432 공개 형태를 판정할 수 없습니다 —"
+                    + " 루프백 한정('127.0.0.1:5432:5432')이거나 공개가 아예 없어야 합니다."
+                    + " 판정 불가를 통과로 넘기면 이 게이트가 무의미해집니다.");
+        }
+
+        if (!PROD_DB_PASSWORD_OVERRIDE.matcher(composeProdSrc).find()) {
+            violations.add("docker-compose.prod.yml: 번들 db 의 POSTGRES_PASSWORD 를 필수 환경변수로"
+                    + " 재정의하지 않았습니다 — base 에 커밋된 개발 비밀번호가 운영 DB 자격이 됩니다."
+                    + " db 블록에 'POSTGRES_PASSWORD: ${DB_PASSWORD:?...}' 를 두십시오"
+                    + "(deploy.sh 가 이미 필수로 검증하는 변수입니다).");
+        }
+
+        if (!DB_HEALTHCHECK_USES_CONTAINER_ENV.matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: db healthcheck가 컨테이너의 POSTGRES_USER/POSTGRES_DB를"
+                    + " 사용하지 않습니다 — prod 오버레이가 사용자를 바꾸면 존재하지 않는 개발 역할을"
+                    + " 검사해 DB가 영구 unhealthy가 됩니다. Compose 이스케이프 '$${...}'로 실효 값을"
+                    + " 전달하십시오.");
+        }
+    }
+
+    /**
+     * 첨부 저장소가 재배포 때 소실되지 않고, writable layer에서 named volume으로 처음 넘어갈 때
+     * 기존 컨테이너를 검증 없이 제거하지 않는지 확인한다.
+     */
+    private void auditAttachmentStorageTransition(Path root, String composeBaseSrc,
+                                                   List<String> violations) throws IOException {
+        if (!ATTACHMENT_STORAGE_MOUNT.matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: api의 attachment_storage:/app/storage mount가 없습니다 —"
+                    + " 첨부 실물이 컨테이너 쓰기 계층에 쌓여 평범한 재배포에도 소실됩니다.");
+        }
+
+        Path script = root.resolve(DEPLOY_SCRIPT);
+        if (!Files.isRegularFile(script)) {
+            return; // 부재 위반은 auditDeployScriptUsesProdOverlay가 이미 보고한다.
+        }
+        String src = stripComments(HarnessSourceIndex.read(script));
+        List<String> requiredSignals = List.of(
+                "ATTACHMENT_MIGRATION_MARKER=\".egov-attachment-migration-v1\"",
+                "CURRENT_ATTACHMENT_VOLUME=$(docker inspect egov-api",
+                "[ \"$CURRENT_ATTACHMENT_VOLUME\" != \"$ATTACHMENT_VOLUME\" ]",
+                "docker volume inspect \"$ATTACHMENT_VOLUME\"",
+                "test -f /migration/${ATTACHMENT_MIGRATION_MARKER}",
+                "for v in API_IMAGE_REF FRONTEND_IMAGE_REF",
+                "docker pull \"$ref\"",
+                "case \"$DB_URL\" in",
+                "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)",
+                "up --no-build -d --wait",
+                "docker image inspect \"$API_IMAGE_REF\"",
+                "docker image inspect \"$FRONTEND_IMAGE_REF\"");
+        List<String> missing = requiredSignals.stream().filter(signal -> !src.contains(signal)).toList();
+        int guardIndex = src.indexOf("CURRENT_ATTACHMENT_VOLUME=$(docker inspect egov-api");
+        int deployIndex = src.indexOf("up --no-build -d --wait");
+        if (!missing.isEmpty() || guardIndex < 0 || deployIndex < 0 || guardIndex > deployIndex) {
+            violations.add(DEPLOY_SCRIPT + ": 첨부 최초 전환 가드가 없거나 실제 배포보다 뒤에 있습니다 —"
+                    + " 기존 egov-api의 /app/storage가 목표 named volume과 다르면, 무결성 검증 marker 없는"
+                    + " 재생성을 fail-closed로 중단하고, 검증한 digest release를 --no-build/--wait로"
+                    + " 기동해야 합니다. 누락 신호=" + missing);
+        }
+    }
+
+    /** JVM에 SIGTERM을 직접 전달하고 세 executor의 60초 drain 예산을 모두 보장한다. */
+    private void auditApiShutdownDrain(String composeBaseSrc, String apiDockerfileSrc,
+                                       String asyncConfigSrc,
+                                       List<String> violations) {
+        if (!apiDockerfileSrc.contains(API_EXEC_ENTRYPOINT)) {
+            violations.add(API_DOCKERFILE + ": runtime ENTRYPOINT가 shell을 exec로 교체하지 않습니다 —"
+                    + " JVM이 PID 1이어야 SIGTERM을 직접 받아 Spring graceful shutdown을 시작합니다.");
+        }
+
+        int logExecutorStart = asyncConfigSrc.indexOf("public Executor logExecutor()");
+        int nextBean = logExecutorStart < 0 ? -1 : asyncConfigSrc.indexOf("@Bean", logExecutorStart + 1);
+        String logExecutorMethod = logExecutorStart < 0
+                ? ""
+                : asyncConfigSrc.substring(logExecutorStart,
+                        nextBean < 0 ? asyncConfigSrc.length() : nextBean);
+        if (!logExecutorMethod.contains(LOG_EXECUTOR_DRAIN_SIGNAL)) {
+            violations.add(ASYNC_CONFIG + ": logExecutor가 수락한 작업의 종료 대기 60초를 보장하지 않습니다 —"
+                    + " SimpleAsyncTaskExecutor 기본값 0은 Spring context 종료 시 진행 중 로그 작업을 기다리지 않습니다.");
+        }
+
+        Matcher apiBlock = COMPOSE_API_BLOCK.matcher(composeBaseSrc);
+        if (!apiBlock.find()) {
+            violations.add(COMPOSE_BASE + ": api 서비스 블록을 분리할 수 없어 stop_grace_period를 판정할 수 없습니다.");
+            return;
+        }
+        Matcher grace = COMPOSE_STOP_GRACE_SECONDS.matcher(apiBlock.group(1));
+        if (!grace.find()) {
+            violations.add(COMPOSE_BASE + ": api.stop_grace_period가 초 단위로 선언되지 않았습니다 —"
+                    + " Compose 기본 10초는 세 executor의 종료 예산보다 짧습니다.");
+            return;
+        }
+        long seconds = Long.parseLong(grace.group(1));
+        if (seconds < MIN_API_STOP_GRACE_SECONDS) {
+            violations.add(COMPOSE_BASE + ": api.stop_grace_period=" + seconds + "s가 최소 종료 예산 "
+                    + MIN_API_STOP_GRACE_SECONDS + "s보다 짧습니다 — accepted audit/notification/log 작업이 유실될 수 있습니다.");
+        }
+    }
 
     /**
      * actuator 노출면. include 는 CSV 인라인 형식만 판정 가능하므로, 블록/리스트 형식으로 바뀌면

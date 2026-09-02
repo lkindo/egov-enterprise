@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * 커밋 후 실행 유틸 테스트.
@@ -102,6 +103,29 @@ class TransactionUtilsTest {
         TransactionSynchronizationManager.clearSynchronization();
 
         assertThat(ran.get()).isZero();
+    }
+
+    @Test
+    @DisplayName("커밋 후 한 부수효과가 실패해도 거짓 API 실패나 뒤 콜백 차단을 만들지 않는다")
+    void isolatesFailureAfterCommit() {
+        TransactionSynchronizationManager.initSynchronization();
+        AtomicInteger ran = new AtomicInteger();
+
+        TransactionUtils.runAfterCommit(() -> {
+            throw new IllegalStateException("sensitive failure detail");
+        });
+        TransactionUtils.runAfterCommit(ran::incrementAndGet);
+
+        assertThatCode(TransactionUtilsTest::commit).doesNotThrowAnyException();
+        assertThat(ran.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("트랜잭션이 없을 때의 즉시 실행 오류는 호출자에게 그대로 전달한다")
+    void immediateFailureStillPropagates() {
+        assertThatCode(() -> TransactionUtils.runAfterCommit(
+                () -> { throw new IllegalStateException("failure"); }))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     /** 등록된 동기화들의 afterCommit 을 순서대로 발화시킨다(스프링이 커밋 시 하는 일). */

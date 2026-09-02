@@ -496,6 +496,43 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("댓글 접근 검사는 게시판-게시글 관계를 확인하고 조회수를 올리지 않는다")
+    void assertCommentAccess_usesBoundedDetailWithoutViewIncrement() {
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .bbsId("BBS_01").pstSn(21L).scrtYn("N").build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 21L)).willReturn(Optional.of(detail));
+
+        boardService.assertCommentAccess("BBS_01", 21L);
+
+        verify(boardRepository).findActiveArticleDetail("BBS_01", 21L);
+        verify(viewCountService, never()).increaseViewCount(anyLong());
+    }
+
+    @Test
+    @DisplayName("댓글 접근 검사는 다른 게시판 ID와 결합한 게시글 번호를 거부한다")
+    void assertCommentAccess_rejectsMismatchedBoardAndPost() {
+        given(boardRepository.findActiveArticleDetail("WRONG_BBS", 22L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> boardService.assertCommentAccess("WRONG_BBS", 22L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("댓글 접근 검사는 비밀글 비소유자를 거부한다")
+    void assertCommentAccess_rejectsSecretPostForNonOwner() {
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .bbsId("BBS_01").pstSn(23L).scrtYn("Y").userId("ESNTL_owner").build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 23L)).willReturn(Optional.of(detail));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("ESNTL_other"));
+
+        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 23L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
     @DisplayName("게시판 통계는 현재 viewer와 exact role visibility를 repository 집계에 결속한다")
     void getBoardStatsBindsViewerVisibility() {
         String bbsId = "BBS_STATS";
@@ -1267,5 +1304,119 @@ class BoardServiceTest {
 
         verify(fileService, never()).uploadFiles(any());
         verify(fileService, never()).updateFiles(any(), any());
+    }
+
+    // ------------------------------------------------------------------
+    // 통합 검색 (searchAcrossBoards)
+    //
+    // 이 엔드포인트가 생기기 전까지 /search 화면의 게시글 탭은 항상 빈 결과였다.
+    // 아래 테스트들은 "결과가 나온다"보다 **가시성 계약이 새지 않는가**를 고정한다.
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("통합 검색 - 게시판을 한정하지 않고 제목으로 활성 글을 찾는다")
+    void searchAcrossBoards_searchesTitlesWithoutBoardFilter() {
+        Pageable pageable = PageRequest.of(0, 20);
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(Collections.singletonList(
+                        BoardSearchResult.builder().pstSn(7L).pstTtl("연차 신청 안내").build())));
+
+        Page<BoardDto> result = boardService.searchAcrossBoards("연차", pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).pstSn()).isEqualTo(7L);
+
+        BoardSearchCondition condition = captor.getValue();
+        // 게시판 한정 술어가 빠져야 전 게시판을 훑는다. 활성 게시판 조인은 저장소 쪽에 있다.
+        //   BoardPredicate 는 StringUtils.hasText 로 판정하므로 null 과 "" 가 같은 뜻이다 —
+        //   기본 생성자가 어느 쪽을 넣든 술어가 빠지는 것이 계약이다.
+        assertThat(org.springframework.util.StringUtils.hasText(condition.getBbsId()))
+                .as("게시판 한정 술어가 붙으면 전 게시판 검색이 아니다")
+                .isFalse();
+        assertThat(condition.getUseYn()).isEqualTo("Y");
+        assertThat(condition.getSearchCnd()).as("0 = 제목").isEqualTo("0");
+        assertThat(condition.getSearchWrd()).isEqualTo("연차");
+    }
+
+    /**
+     * 본문은 에디터 HTML 원문이라 검색하면 태그·속성이 매칭된다. 검색 대상이 제목임을
+     * 계약으로 고정해, 나중에 조용히 본문 검색으로 넓히지 못하게 한다.
+     */
+    @Test
+    @DisplayName("통합 검색 - 본문(searchCnd=1)으로 넓히지 않는다")
+    void searchAcrossBoards_neverSearchesContent() {
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(Collections.emptyList()));
+
+        boardService.searchAcrossBoards("공지", PageRequest.of(0, 20));
+
+        assertThat(captor.getValue().getSearchCnd()).isNotEqualTo("1");
+    }
+
+    @Test
+    @DisplayName("통합 검색 - 검색어가 2자 미만이면 저장소를 조회하지 않고 빈 결과를 준다")
+    void searchAcrossBoards_rejectsTooShortKeyword() {
+        assertThat(boardService.searchAcrossBoards("가", PageRequest.of(0, 20)).getContent()).isEmpty();
+        assertThat(boardService.searchAcrossBoards("", PageRequest.of(0, 20)).getContent()).isEmpty();
+        assertThat(boardService.searchAcrossBoards(null, PageRequest.of(0, 20)).getContent()).isEmpty();
+        assertThat(boardService.searchAcrossBoards("  ", PageRequest.of(0, 20)).getContent()).isEmpty();
+
+        verify(boardRepository, never()).searchArticles(any(BoardSearchCondition.class), any(Pageable.class));
+    }
+
+    /**
+     * 페이지를 넘겨 가며 전량 수집하는 경로를 만들지 않는다 — 담당자 검색 API 와 같은 이유다.
+     */
+    @Test
+    @DisplayName("통합 검색 - 요청 페이지·크기와 무관하게 첫 페이지 20건으로 상한을 건다")
+    void searchAcrossBoards_capsPageSizeAndPageNumber() {
+        org.mockito.ArgumentCaptor<Pageable> captor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        given(boardRepository.searchArticles(any(BoardSearchCondition.class), captor.capture()))
+                .willReturn(new PageImpl<>(Collections.emptyList()));
+
+        boardService.searchAcrossBoards("공지", PageRequest.of(9, 500));
+
+        assertThat(captor.getValue().getPageNumber()).isZero();
+        assertThat(captor.getValue().getPageSize()).isEqualTo(BoardService.GLOBAL_SEARCH_MAX_RESULTS);
+    }
+
+    /**
+     * 관리자가 아니면 비밀글은 작성자 본인 것만 보여야 한다. 통합 검색이 게시판 목록과
+     * 다른 가시성을 쓰면 목록에서 못 보던 글이 검색으로 새어 나온다(H3 인가 의미 보존).
+     */
+    @Test
+    @DisplayName("통합 검색 - 비관리자에게는 조회자 기준 비밀글 가시성이 적용된다")
+    void searchAcrossBoards_appliesSecretPostVisibilityForNonAdmin() {
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("USRCNFRM_0001"));
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(Collections.emptyList()));
+
+        boardService.searchAcrossBoards("공지", PageRequest.of(0, 20));
+
+        assertThat(captor.getValue().isSecretPostAdminOverride()).isFalse();
+        assertThat(captor.getValue().getViewerEsntlId()).isEqualTo("USRCNFRM_0001");
+    }
+
+    @Test
+    @DisplayName("통합 검색 - 관리자에게는 비밀글 우회가 적용된다(게시판 목록과 동일)")
+    void searchAcrossBoards_appliesAdminOverride() {
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil
+                .hasRole(AuthorityConstants.ROLE_ADMIN)).thenReturn(true);
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(Collections.emptyList()));
+
+        boardService.searchAcrossBoards("공지", PageRequest.of(0, 20));
+
+        assertThat(captor.getValue().isSecretPostAdminOverride()).isTrue();
+        assertThat(captor.getValue().getViewerEsntlId()).isNull();
     }
 }

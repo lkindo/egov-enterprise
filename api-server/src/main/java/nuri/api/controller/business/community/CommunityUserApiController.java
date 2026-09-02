@@ -25,13 +25,17 @@ public class CommunityUserApiController {
 
     private final CommunityService communityService;
 
-    @Operation(summary = "커뮤니티 목록 조회", description = "시스템에 등록된 전체 커뮤니티 목록을 페이징하여 조회합니다.")
+    /**
+     * [2026-09-02] 사용 중인 커뮤니티만 돌려준다. 종전에는 관리자 목록과 같은 메서드를 불러
+     * 논리 삭제된(useYn='N') 커뮤니티가 일반 사용자에게 그대로 보였다.
+     */
+    @Operation(summary = "커뮤니티 목록 조회", description = "사용 중인 커뮤니티 목록을 페이징하여 조회합니다. 관리자가 사용 중지한 커뮤니티는 제외됩니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CommunityDto>>> getCommunities(
             @RequestParam(required = false) String searchCnd,
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<CommunityDto> page = communityService.getCommunityList(searchCnd, searchWrd, pageable);
+        Page<CommunityDto> page = communityService.getActiveCommunityList(searchCnd, searchWrd, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 

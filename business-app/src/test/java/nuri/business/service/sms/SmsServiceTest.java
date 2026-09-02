@@ -46,6 +46,9 @@ class SmsServiceTest {
     @Mock
     private SmsAsyncProcessor smsAsyncProcessor;
 
+    @Mock
+    private SmsSender smsSender;
+
     // 실제 MapStruct 생성 구현체를 주입해 필드 변환 커버리지를 그대로 유지한다 (mock 대체 아님).
     private final SmsMapper smsMapper = new SmsMapperImpl();
     private final SmsRecptnMapper smsRecptnMapper = new SmsRecptnMapperImpl();
@@ -55,7 +58,7 @@ class SmsServiceTest {
     @BeforeEach
     void setUp() {
         smsService = new SmsService(smsRepository, smsRecptnRepository, smsAsyncProcessor,
-                smsMapper, smsRecptnMapper);
+                smsMapper, smsRecptnMapper, smsSender);
         lenient().when(smsRepository.save(any(Sms.class))).thenAnswer(invocation -> {
             Sms saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "smsTrsmSn", 101L);
@@ -197,6 +200,29 @@ class SmsServiceTest {
     @DisplayName("SmsRecptnDto - null 엔티티 변환")
     void smsRecptnDto_FromNull() {
         assertThat(smsRecptnMapper.toDto(null)).isNull();
+    }
+
+    /**
+     * 발송 가능 상태는 <b>보내기 전에</b> 알아야 하는 배포 형상이다. 게이트웨이가 없으면 접수는
+     * 성공하지만 모든 수신자 결과가 실패로 기록되므로, 화면이 그 사실을 미리 알린다.
+     */
+    @Test
+    @DisplayName("발송 가능 상태 - 게이트웨이 미연결을 구현체명과 함께 알린다")
+    void deliveryStatus_reportsUnconfigured() {
+        when(smsSender.isDeliveryConfigured()).thenReturn(false);
+
+        var status = smsService.getDeliveryStatus();
+
+        assertThat(status.deliveryConfigured()).isFalse();
+        assertThat(status.senderImplementation()).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("발송 가능 상태 - 실제 게이트웨이가 연결되면 그대로 전달한다")
+    void deliveryStatus_reportsConfigured() {
+        when(smsSender.isDeliveryConfigured()).thenReturn(true);
+
+        assertThat(smsService.getDeliveryStatus().deliveryConfigured()).isTrue();
     }
 
     private Sms sms(Long smsTrsmSn, String sndngTelno, String sndngCn) {

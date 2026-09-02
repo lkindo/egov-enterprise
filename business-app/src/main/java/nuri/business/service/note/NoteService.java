@@ -31,6 +31,14 @@ public class NoteService {
     private final NoteTrnsmitDomainRepository noteTrnsmitRepository;
     private final NoteRecptnDomainRepository noteRecptnRepository;
 
+    /**
+     * 쪽지 수신 알림을 foundation 이벤트로 요청한다({@code NotificationService} 를 주입하지 않는다).
+     *
+     * <p>주입하면 note→notification 이라는 새 교차 도메인 결합이 생겨 GAP-ARCH-001 의 잔여
+     * 목록이 늘어난다. 발행만 하면 어느 쪽도 상대를 import 하지 않는다.
+     */
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     public Page<NoteDto> getReceivedNotes(String userId, String searchWrd, Pageable pageable) {
         return noteRecptnRepository
                 .searchNoteRecptns(null, searchWrd, userId, Objects.requireNonNull(pageable))
@@ -77,6 +85,18 @@ public class NoteService {
         });
     }
 
+    /**
+     * 쪽지 상세 조회. <b>받은 쪽지는 열람과 동시에 읽음 처리된다.</b>
+     *
+     * <p>클래스는 {@code readOnly = true} 지만 이 메서드는 쓰기 트랜잭션이어야 한다 — 받은 쪽지의
+     * {@code openYn} 을 'Y' 로 바꾸기 때문이다. 종전에는 그 전이가 어디에도 없어 수신함의
+     * 모든 쪽지가 영원히 '안 읽음' 이었다({@link NoteRecptn#markOpened} 참조).
+     *
+     * <p>조회 요청(GET)이 상태를 바꾸는 것은 메시지 함의 관례이고, 프런트 서비스 주석도 처음부터
+     * '상세 조회 및 읽음 처리' 로 이 동작을 약속하고 있었다. 발신자가 자기 보낸 쪽지를 보는
+     * 경로에는 읽음 개념이 없으므로 아무것도 바꾸지 않는다.
+     */
+    @Transactional
     public NoteDto getNoteDetail(Long noteSn, String type, Long relationSn, String currentUserId) {
         if ("sent".equals(type)) {
             NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationSn)
@@ -103,6 +123,8 @@ public class NoteService {
             if ("Y".equals(recptn.getDelYn())) {
                 throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
             }
+            // 소유자 검증을 통과한 뒤에만 읽음 처리한다 — 남의 쪽지를 '읽음' 으로 만들 수 없다.
+            recptn.markOpened();
             return convertToDto(recptn);
         }
     }
@@ -125,6 +147,7 @@ public class NoteService {
             if (dto.getRcverId() != null) {
                 String[] rcverIds = dto.getRcverId().split(",");
                 boolean anyRecipient = false;
+                java.util.List<String> notifyTargets = new java.util.ArrayList<>();
                 for (String raw : rcverIds) {
                     // [V2_21] 공백/NULL 수신자 방어 — rcvr_id NULL 사본은 어떤 수신자도 소유하지 못해
                     // 논리삭제(IDOR 가드 통과 불가)가 영원히 불가능 → 물리 수거를 구조적으로 봉쇄한다. 원천 차단.
@@ -132,18 +155,21 @@ public class NoteService {
                         continue;
                     }
                     anyRecipient = true;
+                    String receiverId = raw.trim();
                     NoteRecptn recptn = NoteRecptn.builder()
                             .note(note)
                             .noteDsptch(trnsmit)
-                            .rcvrId(raw.trim())
+                            .rcvrId(receiverId)
                             .openYn("N")
                             .rcptnSeCd("0")
                             .build();
                     noteRecptnRepository.save(recptn);
+                    notifyTargets.add(receiverId);
                 }
                 if (!anyRecipient) {
                     throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
                 }
+                publishReceivedNotifications(notifyTargets, dto.getNoteSj());
             }
         } catch (BusinessException e) {
             throw e; // 입력 검증 등 의도된 비즈니스 예외는 그대로 전파
@@ -151,6 +177,32 @@ public class NoteService {
             log.error("Failed to send note", e);
             throw new BusinessException("쪽지 발송 중 오류가 발생했습니다.", CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * 쪽지 수신 알림 요청.
+     *
+     * <p><b>반드시 커밋 이후에 발행한다.</b> 커밋 전에 발행하면 롤백된 쪽지에 대한 알림이 남아
+     * 사용자가 존재하지 않는 쪽지를 보러 간다. 쪽지함이 비어 있는데 알림만 있는 상태가 그것이다.
+     *
+     * <p><b>제목만 싣고 본문은 싣지 않는다.</b> 알림은 목록·종 아이콘·WebSocket 으로 퍼지므로
+     * 본문을 복제하면 쪽지의 열람 통제({@code NoteRecptn} 소유자 가드)를 우회하는 사본이 생긴다.
+     * 알림은 "왔다" 를 알리고, 내용은 쪽지함에서 본인이 연다.
+     */
+    private void publishReceivedNotifications(java.util.List<String> receiverIds, String subject) {
+        if (receiverIds.isEmpty()) {
+            return;
+        }
+        String title = org.springframework.util.StringUtils.hasText(subject) ? subject : "(제목 없음)";
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
+            for (String receiverId : receiverIds) {
+                eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
+                        receiverId,
+                        "새 쪽지",
+                        title,
+                        "/note"));
+            }
+        });
     }
 
     /**

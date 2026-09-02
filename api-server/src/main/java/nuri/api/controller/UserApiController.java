@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.security.annotation.Authenticated;
 import nuri.foundation.security.annotation.PublicApi;
 import org.springframework.web.bind.annotation.*;
@@ -117,6 +118,7 @@ public class UserApiController {
     // --- [관리자 전용 기능] /api/v1/admin/system/users ---
 
     @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다.")
+    @PrivacyAccess("사용자 목록(생년월일·휴대전화·이메일·주소)")
     @GetMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsers(
             @RequestParam(required = false) String searchKeyword,
@@ -126,6 +128,7 @@ public class UserApiController {
     }
 
     @Operation(summary = "사용자 상세 조회", description = "특정 사용자 ID에 해당하는 상세 정보를 조회합니다.")
+    @PrivacyAccess("사용자 상세(생년월일·휴대전화·이메일·주소)")
     @GetMapping("/admin/system/users/{userId}")
     public ResponseEntity<ApiResponse<UserDto>> getUser(
             @Parameter(description = "사용자 ID") @PathVariable String userId) {

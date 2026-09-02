@@ -30,14 +30,14 @@ public class NotificationService {
 
     public Page<NotificationDto> getNotificationList(String userId, String keyword, Pageable pageable) {
         requireUserId(userId);
-        log.debug("Fetching notification list for receiver: {} with keyword: {}", userId, keyword);
+        log.debug("Fetching notification list (keywordPresent={})", keyword != null && !keyword.isBlank());
         return notificationRepository.searchNotificationsByReceiver(userId, keyword, pageable)
                 .map(notificationMapper::toDto);
     }
 
     public NotificationDto getNotification(Long notiSn, String userId) {
         requireUserId(userId);
-        log.debug("Fetching notification details for receiver: {}, ID: {}", userId, notiSn);
+        log.debug("Fetching notification details: ID={}", notiSn);
         return findOwnedNotification(notiSn, userId)
                 .map(notificationMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -46,7 +46,7 @@ public class NotificationService {
     @Transactional
     public Long createNotification(String userId, NotificationDto dto) {
         requireUserId(userId);
-        log.info("Creating notification for user: {}", userId);
+        log.info("Creating notification");
         Notification entity = Notification.builder()
                 .notiTtlNm(dto.getNotiTtlNm())
                 .notiCn(dto.getNotiCn())
@@ -75,7 +75,7 @@ public class NotificationService {
     @Transactional
     public void updateNotification(Long notiSn, String userId, NotificationDto dto) {
         requireUserId(userId);
-        log.info("Updating notification ID: {} for user: {}", notiSn, userId);
+        log.info("Updating notification ID: {}", notiSn);
         Notification entity = findOwnedNotification(notiSn, userId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getNotiTtlNm(), dto.getNotiCn(), dto.getNotiDt(), dto.getNotiIvlVal());
@@ -84,7 +84,7 @@ public class NotificationService {
     @Transactional
     public void deleteNotification(Long notiSn, String userId) {
         requireUserId(userId);
-        log.warn("Deleting notification ID: {} for receiver: {}", notiSn, userId);
+        log.info("Deleting notification ID: {}", notiSn);
         Notification owned = findOwnedNotification(notiSn, userId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         notificationRepository.delete(owned);
@@ -111,7 +111,7 @@ public class NotificationService {
     @Transactional
     public void markAsRead(Long notiSn, String userId) {
         requireUserId(userId);
-        log.info("Marking notification ID: {} as read for receiver: {}", notiSn, userId);
+        log.info("Marking notification ID: {} as read", notiSn);
         Notification owned = findOwnedNotification(notiSn, userId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         owned.markAsRead();

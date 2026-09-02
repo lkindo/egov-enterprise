@@ -38,15 +38,28 @@ public class InternetSvcGuidanceService {
         return saved.getItntSrvcSn();
     }
 
+    /**
+     * [2026-09-02] 없는 id 는 404 다. 종전 {@code ifPresent} 는 존재하지 않는 항목의 수정 요청을
+     * <b>조용히 무시하고 200</b> 을 돌려줬다 — 호출자는 저장됐다고 믿는다. 같은 pack 의
+     * Banner·Popup 서비스가 쓰는 {@code orElseThrow(RESOURCE_NOT_FOUND)} 규약에 맞춘다.
+     */
     @Transactional
     public void updateIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
-        internetSvcGuidanceRepository.findById(Objects.requireNonNull(dto.getItntSrvcSn()))
-                .ifPresent(isg -> isg.update(dto.getIntnetSvcNm(), dto.getIntnetSvcDc(), dto.getReflctAt()));
+        InternetSvcGuidance isg = internetSvcGuidanceRepository
+                .findById(Objects.requireNonNull(dto.getItntSrvcSn()))
+                .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND));
+        isg.update(dto.getIntnetSvcNm(), dto.getIntnetSvcDc(), dto.getReflctAt());
     }
 
+    /** 존재 확인 — 수정과 같은 이유(없는 id 가 조용히 200 으로 끝나지 않게). */
     @Transactional
     public void deleteIntnetSvcGuidance(Long itntSrvcSn) {
-        internetSvcGuidanceRepository.deleteById(Objects.requireNonNull(itntSrvcSn));
+        InternetSvcGuidance isg = internetSvcGuidanceRepository
+                .findById(Objects.requireNonNull(itntSrvcSn))
+                .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND));
+        internetSvcGuidanceRepository.delete(isg);
     }
 
     public Page<InternetSvcGuidanceDto> getIntnetSvcGuidanceList(String searchKeyword, Pageable pageable) {

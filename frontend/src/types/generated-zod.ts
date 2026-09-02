@@ -208,7 +208,7 @@ export const HpcmDtoSchema = z.object({
   hlpSn: z.number().int().optional(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
-  hlpExpln: z.string().min(0).max(65535),
+  hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
@@ -540,7 +540,7 @@ export type MenuDto = z.infer<typeof MenuDtoSchema>;
 export const LoginPolicyDtoSchema = z.object({
   userId: z.string().min(0).max(20),
   userNm: z.string().min(0).max(100).optional(),
-  ipAddr: z.string().min(0).max(30).optional(),
+  ipAddr: z.string().min(0).max(45).optional(),
   dpcnPrmYn: z.string().min(0).max(1).optional(),
   lmtYn: z.string().min(0).max(1).optional(),
   bgngTm: z.string().min(0).max(6).optional(),
@@ -557,7 +557,7 @@ export type LoginPolicyDto = z.infer<typeof LoginPolicyDtoSchema>;
 // ==========================================================================
 export const InternetSvcGuidanceDtoSchema = z.object({
   itntSrvcSn: z.number().int().optional(),
-  intnetSvcNm: z.string().min(0).max(255),
+  intnetSvcNm: z.string().min(0).max(100),
   intnetSvcDc: z.string().min(0).max(1000),
   reflctAt: z.string().min(0).max(1).optional(),
   userId: z.string().optional(),
@@ -2269,6 +2269,33 @@ export const SatisfactionAverageResponseSchema = z.object({
 export type SatisfactionAverageResponse = z.infer<typeof SatisfactionAverageResponseSchema>;
 
 // ==========================================================================
+// ApiResponseListBoardSearchItemResponse Schema
+// ==========================================================================
+export const ApiResponseListBoardSearchItemResponseSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => BoardSearchItemResponseSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListBoardSearchItemResponse = z.infer<typeof ApiResponseListBoardSearchItemResponseSchema>;
+
+// ==========================================================================
+// BoardSearchItemResponse Schema
+// ==========================================================================
+export const BoardSearchItemResponseSchema = z.object({
+  bbsId: z.string(),
+  pstSn: z.number().int(),
+  pstTtl: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  inqCnt: z.number().int().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+export type BoardSearchItemResponse = z.infer<typeof BoardSearchItemResponseSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponsePublicFaqListItemResponse Schema
 // ==========================================================================
 export const ApiResponsePageResponsePublicFaqListItemResponseSchema = z.object({
@@ -3143,6 +3170,9 @@ export const SysLogDtoSchema = z.object({
   dmndUserId: z.string().min(0).max(20).optional(),
   rqesterIp: z.string().optional(),
   ocrnYmd: z.string().min(0).max(8).optional(),
+  rspnsCd: z.string().min(0).max(12).optional(),
+  errSeCd: z.string().min(0).max(12).optional(),
+  errCd: z.string().min(0).max(12).optional(),
 });
 export type SysLogDto = z.infer<typeof SysLogDtoSchema>;
 
@@ -3987,6 +4017,29 @@ export const ApiResponseListSmsRecptnDtoSchema = z.object({
 export type ApiResponseListSmsRecptnDto = z.infer<typeof ApiResponseListSmsRecptnDtoSchema>;
 
 // ==========================================================================
+// ApiResponseSmsDeliveryStatusDto Schema
+// ==========================================================================
+export const ApiResponseSmsDeliveryStatusDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => SmsDeliveryStatusDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseSmsDeliveryStatusDto = z.infer<typeof ApiResponseSmsDeliveryStatusDtoSchema>;
+
+// ==========================================================================
+// SmsDeliveryStatusDto Schema
+// ==========================================================================
+export const SmsDeliveryStatusDtoSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
+});
+export type SmsDeliveryStatusDto = z.infer<typeof SmsDeliveryStatusDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseRewardManageDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseRewardManageDtoSchema = z.object({
@@ -4488,7 +4541,7 @@ export const HpcmDtoRequestSchema = z.object({
   hlpSn: z.number().int().optional(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
-  hlpExpln: z.string().min(0).max(65535),
+  hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
@@ -4497,7 +4550,7 @@ export const HpcmDtoResponseSchema = z.object({
   hlpSn: z.number().int().optional().nullable(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
-  hlpExpln: z.string().min(0).max(65535),
+  hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
@@ -4979,7 +5032,7 @@ export const MenuDtoResponseSchema = z.object({
 export const LoginPolicyDtoRequestSchema = z.object({
   userId: z.string().min(0).max(20),
   userNm: z.string().min(0).max(100).optional(),
-  ipAddr: z.string().min(0).max(30).optional(),
+  ipAddr: z.string().min(0).max(45).optional(),
   dpcnPrmYn: z.string().min(0).max(1).optional(),
   lmtYn: z.string().min(0).max(1).optional(),
   bgngTm: z.string().min(0).max(6).optional(),
@@ -4993,7 +5046,7 @@ export const LoginPolicyDtoRequestSchema = z.object({
 export const LoginPolicyDtoResponseSchema = z.object({
   userId: z.string().min(0).max(20),
   userNm: z.string().min(0).max(100).optional().nullable(),
-  ipAddr: z.string().min(0).max(30).optional().nullable(),
+  ipAddr: z.string().min(0).max(45).optional().nullable(),
   dpcnPrmYn: z.string().min(0).max(1).optional().nullable(),
   lmtYn: z.string().min(0).max(1).optional().nullable(),
   bgngTm: z.string().min(0).max(6).optional().nullable(),
@@ -5006,7 +5059,7 @@ export const LoginPolicyDtoResponseSchema = z.object({
 
 export const InternetSvcGuidanceDtoRequestSchema = z.object({
   itntSrvcSn: z.number().int().optional(),
-  intnetSvcNm: z.string().min(0).max(255),
+  intnetSvcNm: z.string().min(0).max(100),
   intnetSvcDc: z.string().min(0).max(1000),
   reflctAt: z.string().min(0).max(1).optional(),
   userId: z.string().optional(),
@@ -5015,7 +5068,7 @@ export const InternetSvcGuidanceDtoRequestSchema = z.object({
 
 export const InternetSvcGuidanceDtoResponseSchema = z.object({
   itntSrvcSn: z.number().int().optional().nullable(),
-  intnetSvcNm: z.string().min(0).max(255),
+  intnetSvcNm: z.string().min(0).max(100),
   intnetSvcDc: z.string().min(0).max(1000),
   reflctAt: z.string().min(0).max(1).optional().nullable(),
   userId: z.string().optional().nullable(),
@@ -7456,6 +7509,44 @@ export const SatisfactionAverageResponseResponseSchema = z.object({
   average: z.number().optional().nullable(),
 });
 
+export const ApiResponseListBoardSearchItemResponseRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => BoardSearchItemResponseRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseListBoardSearchItemResponseResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => BoardSearchItemResponseResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const BoardSearchItemResponseRequestSchema = z.object({
+  bbsId: z.string(),
+  pstSn: z.number().int(),
+  pstTtl: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  inqCnt: z.number().int().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+
+export const BoardSearchItemResponseResponseSchema = z.object({
+  bbsId: z.string(),
+  pstSn: z.number().int(),
+  pstTtl: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  inqCnt: z.number().int().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+
 export const ApiResponsePageResponsePublicFaqListItemResponseRequestSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -8678,6 +8769,9 @@ export const SysLogDtoRequestSchema = z.object({
   dmndUserId: z.string().min(0).max(20).optional(),
   rqesterIp: z.string().optional(),
   ocrnYmd: z.string().min(0).max(8).optional(),
+  rspnsCd: z.string().min(0).max(12).optional(),
+  errSeCd: z.string().min(0).max(12).optional(),
+  errCd: z.string().min(0).max(12).optional(),
 });
 
 export const SysLogDtoResponseSchema = z.object({
@@ -8690,6 +8784,9 @@ export const SysLogDtoResponseSchema = z.object({
   dmndUserId: z.string().min(0).max(20).optional().nullable(),
   rqesterIp: z.string().optional().nullable(),
   ocrnYmd: z.string().min(0).max(8).optional().nullable(),
+  rspnsCd: z.string().min(0).max(12).optional().nullable(),
+  errSeCd: z.string().min(0).max(12).optional().nullable(),
+  errCd: z.string().min(0).max(12).optional().nullable(),
 });
 
 export const ApiResponseSysLogDtoRequestSchema = z.object({
@@ -9890,6 +9987,36 @@ export const ApiResponseListSmsRecptnDtoResponseSchema = z.object({
   data: z.array(z.lazy(() => SmsRecptnDtoResponseSchema)).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const ApiResponseSmsDeliveryStatusDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => SmsDeliveryStatusDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseSmsDeliveryStatusDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => SmsDeliveryStatusDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const SmsDeliveryStatusDtoRequestSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
+});
+
+export const SmsDeliveryStatusDtoResponseSchema = z.object({
+  deliveryConfigured: z.boolean(),
+  senderImplementation: z.string(),
 });
 
 export const ApiResponsePageResponseRewardManageDtoRequestSchema = z.object({

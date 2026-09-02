@@ -17,7 +17,9 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, Lo
     // [N+1 방지] convertToDto 가 noteDsptch.getSndrId()(비-@Id) 에 접근하므로 to-one 지연연관을 함께 fetch.
     // note·noteDsptch 모두 @ManyToOne(to-one)이라 다중 join fetch + 페이지네이션 안전(HHH000104 무관). 레거시 null 대비 LEFT.
     // [V2_21] 수신자 논리삭제된 사본(del_yn='Y')은 수신함에서 제외.
-    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n LEFT JOIN FETCH r.noteDsptch d WHERE r.rcvrId = :rcverId AND r.delYn = 'N' AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%)",
+    // [2026-09-02] ORDER BY 를 명시한다. 종전에는 정렬이 없어 수신함 순서가 DB 임의 순서였다 —
+    //   같은 결과가 새로고침마다 다른 순서로 올 수 있었다. 일련번호는 IDENTITY 라 최신순과 같다.
+    @Query(value = "SELECT r FROM NoteRecptn r JOIN FETCH r.note n LEFT JOIN FETCH r.noteDsptch d WHERE r.rcvrId = :rcverId AND r.delYn = 'N' AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) ORDER BY r.noteRcptnSn DESC",
            countQuery = "SELECT count(r) FROM NoteRecptn r WHERE r.rcvrId = :rcverId AND r.delYn = 'N' AND (:searchWrd IS NULL OR r.note.noteTtl LIKE %:searchWrd% OR r.note.noteCn LIKE %:searchWrd%)")
     Page<NoteRecptn> searchNoteRecptns(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("rcverId") String rcverId, Pageable pageable);

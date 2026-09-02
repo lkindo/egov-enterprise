@@ -280,7 +280,7 @@
         {
           "kind": "technical-audit-fields",
           "evidence": "메소드명·요청자·행위별 건수의 역할 적합성과 개인정보 노출 범위",
-          "sourceEvidence": ["메소드명", "요청자", "행위 (생성/수정/조회/삭제/출력/오류)"],
+          "sourceEvidence": ["메소드명", "요청자", "행위 (생성/수정/조회/삭제/출력·미측정/오류)"],
           "status": "blocked-input",
           "owner": "security-privacy",
           "reviewBy": "2026-10-31"

@@ -24,7 +24,7 @@ public class LoginPolicy extends BaseEntity {
     @Column(length = 20)
     private String userId;
 
-    @Column(length = 30)
+    @Column(length = 45)
     private String ipAddr;
 
     @Column(length = 1)

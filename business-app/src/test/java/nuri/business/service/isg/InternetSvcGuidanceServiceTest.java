@@ -122,12 +122,47 @@ class InternetSvcGuidanceServiceTest {
     void deleteIntnetSvcGuidance() {
         // given
         Long id = 1L;
+        InternetSvcGuidance entity = InternetSvcGuidance.builder().itntSrvcSn(id).itntSvcNm("ISG").build();
+        given(internetSvcGuidanceRepository.findById(id)).willReturn(Optional.of(entity));
 
         // when
         internetSvcGuidanceService.deleteIntnetSvcGuidance(id);
 
         // then
-        verify(internetSvcGuidanceRepository, times(1)).deleteById(id);
+        verify(internetSvcGuidanceRepository, times(1)).delete(entity);
+    }
+
+    /**
+     * [2026-09-02] 없는 id 의 수정은 404 다. 종전 {@code ifPresent} 는 존재하지 않는 항목의 수정 요청을
+     * <b>조용히 무시하고 200</b> 을 돌려줬다 — 호출자는 저장됐다고 믿었다.
+     * 같은 pack 의 Banner·Popup 이 쓰는 orElseThrow(RESOURCE_NOT_FOUND) 규약에 맞춘다.
+     */
+    @Test
+    @DisplayName("인터넷 서비스 안내 수정 - 없는 id 는 404")
+    void updateIntnetSvcGuidance_NotFound() {
+        given(internetSvcGuidanceRepository.findById(99L)).willReturn(Optional.empty());
+        InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
+                .itntSrvcSn(99L).intnetSvcNm("X").intnetSvcDc("Y").reflctAt("N").build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> internetSvcGuidanceService.updateIntnetSvcGuidance(dto))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("인터넷 서비스 안내 삭제 - 없는 id 는 404 이고 삭제를 호출하지 않는다")
+    void deleteIntnetSvcGuidance_NotFound() {
+        given(internetSvcGuidanceRepository.findById(99L)).willReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> internetSvcGuidanceService.deleteIntnetSvcGuidance(99L))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+        verify(internetSvcGuidanceRepository, org.mockito.Mockito.never()).delete(org.mockito.ArgumentMatchers.any());
+        verify(internetSvcGuidanceRepository, org.mockito.Mockito.never()).deleteById(org.mockito.ArgumentMatchers.any());
     }
 
     @Test

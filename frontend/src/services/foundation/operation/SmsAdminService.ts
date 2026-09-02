@@ -3,6 +3,7 @@ import { ApiService } from '@/services/core/ApiService';
 import type { PageResponse } from '@/types/foundation/system';
 import type { components, operations } from '@/types/generated-api';
 import {
+  getDeliveryStatusOperation,
   getSmsListOperation,
   getSmsOperation,
   getSmsRecipientsOperation,
@@ -10,6 +11,7 @@ import {
 } from '@/types/generated-operations';
 
 export type SmsDto = components['schemas']['SmsDto'];
+export type SmsDeliveryStatus = components['schemas']['SmsDeliveryStatusDto'];
 type SmsRecptnDto = components['schemas']['SmsRecptnDto'];
 type SmsSearchParams = NonNullable<operations['getSmsList']['parameters']['query']>;
 
@@ -64,6 +66,16 @@ class SmsAdminService extends ApiService {
   /** SMS 발송 실행 */
   async sendSms(smsDto: SmsDto, config?: AxiosRequestConfig): Promise<number> {
     return this.executeGenerated(sendSmsOperation, { body: smsDto, config });
+  }
+
+  /**
+   * 이 배포에서 문자가 실제로 전달될 수 있는지 조회한다.
+   *
+   * 발송 이력·수신자 결과는 보낸 뒤에야 알 수 있다. 게이트웨이가 없는 배포에서는 모든 결과가
+   * 실패로 정해져 있으므로, 문안을 작성하기 **전에** 화면이 그 사실을 알려야 한다.
+   */
+  async getDeliveryStatus(config?: AxiosRequestConfig): Promise<SmsDeliveryStatus> {
+    return this.executeGenerated(getDeliveryStatusOperation, { config });
   }
 }
 

@@ -125,7 +125,24 @@ class SecurityAuthAnnotationLinterTest {
             // 0건이고 URL 게이트(ADMIN_ALL) 한 겹뿐이라, 그 매핑 한 줄이 빠지면 접속 IP 제한·허용 시간대·
             // OTP 설정이 함께 열리는 단일 실패점이었다. ADMIN_ALL 은 운영 시드에서 ROLE_ADMIN·ROLE_SYSTEM
             // 두 롤에 매핑돼 있어 실효 접근 집합은 그대로다(동작 무변경). endpoint 수 174 불변.
-            "b88c86cab9671c79420f6bf9dcc62d94326701afd2e6c11a3d348f037d3435c7";
+            // [2026-09-02 게시글 통합 검색 신설] GET /api/v1/boards/search 1행 추가 —
+            // DEFAULT_AUTHENTICATED|isAuthenticated(). 같은 컨트롤러의 다른 조회와 동일한 인가 축이며,
+            // **새 노출면을 만들지 않는다**: 서비스가 게시판 목록 조회와 같은 술어
+            // (BoardPredicate.searchBoard + 활성 게시판 조인 + 비밀글 가시성)를 그대로 재사용하므로
+            // 이 API 로 보이는 글은 모두 해당 게시판 목록에서 이미 보이는 글이다(H3 인가 의미 보존).
+            // 종전에는 이 엔드포인트가 없어 /search 화면의 게시글 탭이 항상 빈 결과였다.
+            // 변경이 이 한 줄뿐임을 실측으로 확인했다 — 이 행을 제거하면 직전 해시
+            // b88c86ca… 가 정확히 재현된다. endpoint 수 174 -> 175.
+            // [2026-09-02 SMS 발송 가능 상태 조회 신설] GET /api/v1/admin/operation/sms/delivery-status
+            // 1행 추가 — RBAC_ADMIN_OR_SYSTEM|-. 같은 컨트롤러의 다른 조회와 **동일한 URL 게이트**이며
+            // (컨트롤러 전체가 /api/v1/admin/operation/sms 아래), 응답은 게이트웨이 연결 여부와
+            // sender 구현체 단순 클래스명뿐이라 개인정보·자격이 실리지 않는다.
+            // 신설 이유: 발송 이력·수신자 결과는 **보낸 뒤에야** 알 수 있는데, 게이트웨이가 없는
+            // 배포에서는 모든 결과가 실패로 정해져 있다. 그 사실을 문안 작성 전에 알리기 위한
+            // 조회 창구다(종전 배너는 하드코딩이라 파생 제품에서 반대로 거짓말했다).
+            // 변경이 이 한 줄뿐임을 실측으로 확인했다 — 이 행을 제거하면 직전 해시 cd681f2a… 가
+            // 정확히 재현된다. endpoint 수 175 -> 176.
+            "6e3763bbceee080c7dc467bde31ec48d960315cf6e2dbe187212cf4655e6bb2d";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

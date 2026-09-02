@@ -141,6 +141,52 @@ class CommunityServiceImplTest {
         verify(countQuery, never()).fetch();
         verify(jpaQuery, times(1)).fetch();
     }
+
+    /*
+     * [2026-09-02] 관리자 목록과 사용자 목록의 필터가 갈린다.
+     *
+     * 종전에는 두 컨트롤러가 같은 메서드를 불렀고 regSeCd 만 걸려서, 관리자가 논리 삭제(useYn='N')한
+     * 커뮤니티가 일반 사용자 목록에 그대로 남았다. 저장소가 목이라 실행 결과로는 검증할 수 없으므로
+     * 질의에 실린 술어(BooleanBuilder)를 붙잡아 문자열로 대조한다 — QueryDSL 은
+     * "community.useYn = Y" 형태로 직렬화한다.
+     */
+    private String capturedWherePredicate(Runnable call) {
+        given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
+        given(jpaQuery.where(any(BooleanBuilder.class))).willReturn(jpaQuery);
+        given(jpaQuery.offset(any(Long.class))).willReturn(jpaQuery);
+        given(jpaQuery.limit(any(Long.class))).willReturn(jpaQuery);
+        given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
+        given(jpaQuery.fetch()).willReturn(List.of());
+        given(queryFactory.select(org.mockito.ArgumentMatchers.<Expression<Long>>any())).willReturn(countQuery);
+        given(countQuery.from(QCommunity.community)).willReturn(countQuery);
+        given(countQuery.where(any(BooleanBuilder.class))).willReturn(countQuery);
+        given(countQuery.fetchOne()).willReturn(0L);
+
+        call.run();
+
+        org.mockito.ArgumentCaptor<BooleanBuilder> captor = org.mockito.ArgumentCaptor.forClass(BooleanBuilder.class);
+        verify(jpaQuery).where(captor.capture());
+        return String.valueOf(captor.getValue());
+    }
+
+    @Test
+    @DisplayName("사용자 목록은 사용 중(useYn='Y')인 커뮤니티만 조회한다")
+    void getActiveCommunityList_filtersOutLogicallyDeleted() {
+        String predicate = capturedWherePredicate(
+                () -> communityService.getActiveCommunityList(null, null, PageRequest.of(0, 10)));
+
+        assertThat(predicate).contains("useYn = Y");
+    }
+
+    /** 관리자는 중지된 커뮤니티를 되살리거나 정리해야 하므로 전체를 본다(H3 — 의미 보존). */
+    @Test
+    @DisplayName("관리자 목록은 사용 중지된 커뮤니티도 포함한다 — useYn 술어가 없다")
+    void getCommunityList_keepsLogicallyDeletedForAdmin() {
+        String predicate = capturedWherePredicate(
+                () -> communityService.getCommunityList(null, null, PageRequest.of(0, 10)));
+
+        assertThat(predicate).doesNotContain("useYn");
+    }
     
     @Test
     @DisplayName("커뮤니티 수정 - 성공")

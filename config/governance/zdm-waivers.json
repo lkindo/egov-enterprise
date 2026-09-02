@@ -49,5 +49,56 @@
     { "path": "api-server/src/main/resources/db/migration/V2_82__stamp_bigint_identity.sql", "ignoreCount": 1, "contentSha256": "a9ff9f0f2d861bc55f47ed5e3898ee915864b779dc6f18675ca45494257ac2ac", "owner": "database-platform", "reviewBy": "2027-02-19", "status": "legacy-debt-unapproved", "reason": "legacy-debt inventory predating the structured waiver registry; this record is not retroactive approval" },
     { "path": "api-server/src/main/resources/db/migration/V2_83__sms_bigint_identity.sql", "ignoreCount": 2, "contentSha256": "c6019b5fa10a332403a01990d8eda7dfe48b7e74acbcb1ead63bab122a280861", "owner": "database-platform", "reviewBy": "2027-02-19", "status": "legacy-debt-unapproved", "reason": "legacy-debt inventory predating the structured waiver registry; this record is not retroactive approval" }
   ],
-  "waivers": []
+  "waivers": [
+    {
+      "id": "ZDM-2026-0001",
+      "path": "api-server/src/main/resources/db/migration/V2_86__expand_ip_address_for_ipv6.sql",
+      "directive": "ignore",
+      "reason": "tb_login_log.lgn_ip_addr를 같은 VARCHAR base type에서 30자에서 45자로 무손실 확장하며 5개 대상 테이블의 ACCESS EXCLUSIVE 잠금을 NOWAIT로 사전 선점한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-02",
+      "expiresAt": "2027-09-02",
+      "evidence": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0002",
+      "path": "api-server/src/main/resources/db/migration/V2_86__expand_ip_address_for_ipv6.sql",
+      "directive": "ignore",
+      "reason": "tb_login_policy.ip_addr를 같은 VARCHAR base type에서 30자에서 45자로 무손실 확장하며 5개 대상 테이블의 ACCESS EXCLUSIVE 잠금을 NOWAIT로 사전 선점한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-02",
+      "expiresAt": "2027-09-02",
+      "evidence": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0003",
+      "path": "api-server/src/main/resources/db/migration/V2_86__expand_ip_address_for_ipv6.sql",
+      "directive": "ignore",
+      "reason": "tb_privacy_log.dmnd_user_ip_addr를 같은 VARCHAR base type에서 30자에서 45자로 무손실 확장하며 5개 대상 테이블의 ACCESS EXCLUSIVE 잠금을 NOWAIT로 사전 선점한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-02",
+      "expiresAt": "2027-09-02",
+      "evidence": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0004",
+      "path": "api-server/src/main/resources/db/migration/V2_86__expand_ip_address_for_ipv6.sql",
+      "directive": "ignore",
+      "reason": "tb_sys_log.dmnd_user_ip_addr를 같은 VARCHAR base type에서 30자에서 45자로 무손실 확장하며 5개 대상 테이블의 ACCESS EXCLUSIVE 잠금을 NOWAIT로 사전 선점한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-02",
+      "expiresAt": "2027-09-02",
+      "evidence": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0005",
+      "path": "api-server/src/main/resources/db/migration/V2_86__expand_ip_address_for_ipv6.sql",
+      "directive": "ignore",
+      "reason": "tb_web_log.dmnd_user_ip_addr를 같은 VARCHAR base type에서 30자에서 45자로 무손실 확장하며 5개 대상 테이블의 ACCESS EXCLUSIVE 잠금을 NOWAIT로 사전 선점한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-02",
+      "expiresAt": "2027-09-02",
+      "evidence": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+    }
+  ]
 }

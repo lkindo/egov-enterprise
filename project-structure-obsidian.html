@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>eGov Enterprise - Obsidian Knowledge Graph & Architecture Vault</title>
+  <!-- D3.js v7 CDN -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg-main: #141417;
+      --bg-sidebar: #1a1a1e;
+      --bg-ribbon: #111113;
+      --bg-card: #222227;
+      --bg-card-hover: #2b2b32;
+      --bg-input: #17171a;
+      --border-color: #2e2e36;
+      --border-focus: #7c3aed;
+      --text-primary: #e4e4e7;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --accent-purple: #8b5cf6;
+      --accent-purple-glow: rgba(139, 92, 246, 0.25);
+      --accent-blue: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-cyan: #06b6d4;
+      --accent-indigo: #6366f1;
+      --font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Top App Titlebar (Obsidian Window Header) */
+    .titlebar {
+      height: 38px;
+      background: var(--bg-ribbon);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      z-index: 100;
+    }
+
+    .titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .obsidian-logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      color: #c4b5fd;
+      background: rgba(139, 92, 246, 0.15);
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .vault-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .titlebar-center {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-input);
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      width: 320px;
+    }
+
+    .titlebar-center input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .titlebar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tag-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-secondary);
+    }
+
+    /* App Main Layout */
+    .app-container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 62px);
+      position: relative;
+    }
+
+    /* Left Ribbon (Obsidian Leftmost Bar) */
+    .ribbon {
+      width: 44px;
+      background: var(--bg-ribbon);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+      gap: 12px;
+      z-index: 20;
+    }
+
+    .ribbon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: transparent;
+      border: none;
+    }
+
+    .ribbon-btn:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .ribbon-btn.active {
+      background: var(--accent-purple);
+      color: #fff;
+      box-shadow: 0 0 10px var(--accent-purple-glow);
+    }
+
+    /* Left Sidebar (File Explorer / Tags) */
+    .sidebar-left {
+      width: 290px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.2s ease;
+    }
+
+    .sidebar-header {
+      padding: 12px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .tree-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 6px;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      user-select: none;
+    }
+
+    .tree-item:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .tree-item.active {
+      background: rgba(139, 92, 246, 0.2);
+      color: #e4e4e7;
+      font-weight: 600;
+      border-left: 2px solid var(--accent-purple);
+    }
+
+    .tree-folder {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 4px;
+    }
+
+    .tree-children {
+      margin-left: 14px;
+      padding-left: 6px;
+      border-left: 1px dashed rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .tree-icon {
+      width: 15px;
+      height: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Main Workspace (Tabs & Graph / Content) */
+    .workspace-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Workspace Tab Bar */
+    .tab-bar {
+      height: 38px;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 4px;
+    }
+
+    .tab-item {
+      height: 28px;
+      padding: 0 12px;
+      border-radius: 5px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .tab-item:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
+
+    .tab-item.active {
+      background: var(--bg-main);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+      font-weight: 600;
+    }
+
+    .view-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .view-pane {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+    }
+
+    .view-pane.active {
+      display: flex;
+    }
+
+    /* Graph View Pane */
+    #graph-view {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, #1b1b22 0%, #111114 100%);
+    }
+
+    #graph-svg {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    #graph-svg:active {
+      cursor: grabbing;
+    }
+
+    /* Graph Floating Controls */
+    .graph-controls {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(26, 26, 30, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      width: 250px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      z-index: 10;
+    }
+
+    .graph-controls h4 {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-primary);
+    }
+
+    .control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .control-row input[type="range"] {
+      accent-color: var(--accent-purple);
+      height: 4px;
+      cursor: pointer;
+    }
+
+    .graph-legend {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: background 0.1s;
+    }
+
+    .legend-item:hover {
+      background: var(--bg-card);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Note Markdown Viewer Pane */
+    #note-view {
+      padding: 32px 48px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      user-select: text;
+    }
+
+    .note-container {
+      max-width: 860px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .note-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    .note-breadcrumb {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .note-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .yaml-frontmatter {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .yaml-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .yaml-key {
+      color: var(--accent-purple);
+      font-weight: 600;
+    }
+
+    .yaml-val {
+      color: #e4e4e7;
+    }
+
+    .note-body {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    .note-body h2 {
+      font-size: 20px;
+      color: var(--text-primary);
+      margin: 28px 0 12px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .note-body h3 {
+      font-size: 16px;
+      color: #f4f4f5;
+      margin: 20px 0 8px 0;
+    }
+
+    .note-body p {
+      margin-bottom: 14px;
+    }
+
+    .note-body ul, .note-body ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    .note-body li {
+      margin-bottom: 6px;
+    }
+
+    .note-link {
+      color: var(--accent-blue);
+      text-decoration: none;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+
+    .note-link:hover {
+      background: rgba(56, 189, 248, 0.2);
+      color: #fff;
+    }
+
+    .code-block {
+      background: #0d0d10;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: #f1f5f9;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    /* Architecture Canvas View */
+    #canvas-view {
+      padding: 30px;
+      overflow: auto;
+      background: #0f0f13;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .canvas-board {
+      max-width: 1000px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .canvas-layer {
+      background: rgba(26, 26, 32, 0.85);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .canvas-layer-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .canvas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px;
+    }
+
+    .canvas-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .canvas-card:hover {
+      border-color: var(--accent-purple);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .canvas-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .canvas-card-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Right Sidebar (Inspector & Linked Mentions) */
+    .sidebar-right {
+      width: 280px;
+      background: var(--bg-sidebar);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 16px;
+      gap: 20px;
+    }
+
+    .inspector-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .inspector-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .inspector-content {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .linked-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .linked-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      background: var(--bg-card);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.12s;
+      border: 1px solid transparent;
+    }
+
+    .linked-item:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-color);
+      color: #fff;
+    }
+
+    /* Bottom Status Bar */
+    .statusbar {
+      height: 24px;
+      background: var(--bg-ribbon);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 100;
+    }
+
+    .statusbar-left, .statusbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* D3 SVG Styling */
+    .link {
+      stroke: #3f3f4e;
+      stroke-opacity: 0.6;
+      stroke-width: 1.5px;
+      transition: stroke 0.2s, stroke-opacity 0.2s;
+    }
+
+    .link.highlight {
+      stroke: var(--accent-purple);
+      stroke-opacity: 1;
+      stroke-width: 2.5px;
+    }
+
+    .node circle {
+      cursor: pointer;
+      transition: transform 0.2s, filter 0.2s, stroke 0.2s;
+    }
+
+    .node:hover circle {
+      filter: drop-shadow(0 0 8px currentColor);
+      transform: scale(1.2);
+    }
+
+    .node.active circle {
+      stroke: #fff;
+      stroke-width: 2.5px;
+      filter: drop-shadow(0 0 12px currentColor);
+    }
+
+    .node text {
+      font-size: 10px;
+      fill: #a1a1aa;
+      pointer-events: none;
+      text-anchor: middle;
+      dy: 18px;
+      font-weight: 500;
+      transition: fill 0.2s;
+    }
+
+    .node:hover text, .node.active text {
+      fill: #ffffff;
+      font-weight: 700;
+    }
+
+    .dimmed {
+      opacity: 0.12 !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Obsidian Window Titlebar -->
+  <header class="titlebar">
+    <div class="titlebar-left">
+      <div class="obsidian-logo-badge">
+        <i data-lucide="gem" style="width: 13px; height: 13px;"></i>
+        <span>Obsidian Vault</span>
+      </div>
+      <span class="vault-name">egov-enterprise</span>
+      <span class="tag-badge">Spring Boot 3.5 + Next.js 16</span>
+    </div>
+
+    <div class="titlebar-center">
+      <i data-lucide="search" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+      <input type="text" id="global-search" placeholder="노드, 모듈, 도메인, ADR 검색 (단축키: /)..." />
+    </div>
+
+    <div class="titlebar-right">
+      <span class="tag-badge" style="background: rgba(139, 92, 246, 0.15); color: #c4b5fd;">Java 21</span>
+      <span class="tag-badge" style="background: rgba(56, 189, 248, 0.15); color: #7dd3fc;">TypeScript 5</span>
+      <span class="tag-badge" style="background: rgba(16, 185, 129, 0.15); color: #6ee7b7;">PostgreSQL</span>
+    </div>
+  </header>
+
+  <!-- App Main Container -->
+  <div class="app-container">
+
+    <!-- Leftmost Obsidian Ribbon -->
+    <nav class="ribbon">
+      <button class="ribbon-btn active" id="btn-tab-graph" title="Graph View (그래프 뷰)">
+        <i data-lucide="network" style="width: 18px; height: 18px;"></i>
+      </button>
+      <button class="ribbon-btn" id="btn-tab-note" title="Note View (노트 상세 뷰)">
+        <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
+      </button>
+      <button class="ribbon-btn" id="btn-tab-canvas" title="Canvas View (아키텍처 캔버스)">
+        <i data-lucide="layout-grid" style="width: 18px; height: 18px;"></i>
+      </button>
+      <div style="flex: 1;"></div>
+      <button class="ribbon-btn" id="btn-reset-graph" title="그래프 뷰 중앙 정렬">
+        <i data-lucide="crosshair" style="width: 18px; height: 18px;"></i>
+      </button>
+    </nav>
+
+    <!-- Left Sidebar: File Explorer & Architecture Tree -->
+    <aside class="sidebar-left">
+      <div class="sidebar-header">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="folder-tree" style="width: 14px; height: 14px;"></i>
+          <span>PROJECT EXPLORER</span>
+        </div>
+        <span id="node-count-badge" class="tag-badge">52 Nodes</span>
+      </div>
+
+      <div class="tree-container" id="file-tree">
+        <!-- Tree items generated dynamically via JS -->
+      </div>
+    </aside>
+
+    <!-- Main Workspace Center -->
+    <main class="workspace-center">
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <div class="tab-item active" data-tab="graph">
+          <i data-lucide="network" style="width: 14px; height: 14px; color: var(--accent-purple);"></i>
+          <span>Interactive Graph View</span>
+        </div>
+        <div class="tab-item" data-tab="note">
+          <i data-lucide="file-code" style="width: 14px; height: 14px; color: var(--accent-blue);"></i>
+          <span id="active-note-tab-title">Note: egov-enterprise</span>
+        </div>
+        <div class="tab-item" data-tab="canvas">
+          <i data-lucide="layers" style="width: 14px; height: 14px; color: var(--accent-emerald);"></i>
+          <span>Layered Architecture Canvas</span>
+        </div>
+      </div>
+
+      <!-- View Panes -->
+      <div class="view-container">
+
+        <!-- 1. GRAPH VIEW PANE -->
+        <div class="view-pane active" id="pane-graph">
+          <div id="graph-view">
+            <svg id="graph-svg"></svg>
+
+            <!-- Floating Controls in Graph -->
+            <div class="graph-controls">
+              <h4>
+                <span>Graph Controls</span>
+                <i data-lucide="sliders" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+              </h4>
+              <div class="control-row">
+                <div class="control-label">
+                  <span>반발력 (Repulsion)</span>
+                  <span id="charge-val">-160</span>
+                </div>
+                <input type="range" id="slider-charge" min="-400" max="-40" value="-160" />
+              </div>
+              <div class="control-row">
+                <div class="control-label">
+                  <span>링크 거리 (Distance)</span>
+                  <span id="distance-val">65</span>
+                </div>
+                <input type="range" id="slider-distance" min="20" max="150" value="65" />
+              </div>
+              <div class="control-row">
+                <div class="control-label">
+                  <span>노드 라벨 크기</span>
+                  <span id="labelsize-val">10px</span>
+                </div>
+                <input type="range" id="slider-labelsize" min="8" max="15" value="10" />
+              </div>
+
+              <!-- Color Legend -->
+              <div class="graph-legend">
+                <div class="legend-item" data-type="root">
+                  <span class="legend-dot" style="background: #e4e4e7;"></span>
+                  <span>Root</span>
+                </div>
+                <div class="legend-item" data-type="module">
+                  <span class="legend-dot" style="background: #8b5cf6;"></span>
+                  <span>Core Module</span>
+                </div>
+                <div class="legend-item" data-type="domain">
+                  <span class="legend-dot" style="background: #38bdf8;"></span>
+                  <span>Domain</span>
+                </div>
+                <div class="legend-item" data-type="frontend">
+                  <span class="legend-dot" style="background: #10b981;"></span>
+                  <span>Frontend</span>
+                </div>
+                <div class="legend-item" data-type="doc">
+                  <span class="legend-dot" style="background: #f59e0b;"></span>
+                  <span>ADR / Doc</span>
+                </div>
+                <div class="legend-item" data-type="governance">
+                  <span class="legend-dot" style="background: #f43f5e;"></span>
+                  <span>Governance</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. NOTE MARKDOWN PANE -->
+        <div class="view-pane" id="pane-note">
+          <div id="note-view">
+            <div class="note-container" id="note-content-target">
+              <!-- Note dynamically rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. CANVAS ARCHITECTURE PANE -->
+        <div class="view-pane" id="pane-canvas">
+          <div id="canvas-view">
+            <div class="canvas-board" id="canvas-board-content">
+              <!-- Canvas rendered here -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Right Sidebar (Inspector & Linked Mentions) -->
+    <aside class="sidebar-right">
+      <div class="inspector-section">
+        <div class="inspector-title">
+          <i data-lucide="info" style="width: 13px; height: 13px;"></i>
+          <span>NODE INSPECTOR</span>
+        </div>
+        <div id="inspector-name" style="font-size: 16px; font-weight: 700; color: #fff;">egov-enterprise</div>
+        <div id="inspector-desc" class="inspector-content">전자정부 표준프레임워크 5.0 기반 Next.js 16 + Spring Boot 3.5 멀티모듈 엔터프라이즈 아키텍처</div>
+      </div>
+
+      <div class="inspector-section">
+        <div class="inspector-title">
+          <i data-lucide="link-2" style="width: 13px; height: 13px;"></i>
+          <span>OUTGOING LINKS (의존 관계)</span>
+        </div>
+        <div class="linked-list" id="inspector-outgoing"></div>
+      </div>
+
+      <div class="inspector-section">
+        <div class="inspector-title">
+          <i data-lucide="corner-down-right" style="width: 13px; height: 13px;"></i>
+          <span>BACKLINKS (참조하는 노드)</span>
+        </div>
+        <div class="linked-list" id="inspector-backlinks"></div>
+      </div>
+
+      <div class="inspector-section" style="margin-top: auto;">
+        <div class="inspector-title">
+          <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i>
+          <span>ARCHITECTURAL CONSTRAINTS</span>
+        </div>
+        <div class="inspector-content" style="font-size: 11px; color: var(--text-muted);">
+          • 단방향 의존성: <code style="color: #c4b5fd;">api-server → business-app → business-core → foundation</code><br>
+          • ArchUnit: 형제 도메인 간 직접 결합 차단<br>
+          • MapStruct 표준 엔티티-DTO 매핑
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Bottom Obsidian Statusbar -->
+  <footer class="statusbar">
+    <div class="statusbar-left">
+      <span><i data-lucide="git-branch" style="width: 11px; height: 11px; display: inline-block; vertical-align: middle;"></i> main</span>
+      <span id="status-selected-node">Selected: egov-enterprise (Root)</span>
+    </div>
+    <div class="statusbar-right">
+      <span id="status-stats">52 Nodes • 68 Connections</span>
+      <span>Obsidian Engine v1.6.0 Style</span>
+    </div>
+  </footer>
+
+  <script>
+    // ----------------------------------------------------
+    // 1. DATASET DEFINITION (Project Structure & Nodes)
+    // ----------------------------------------------------
+    const projectData = {
+      nodes: [
+        // Root
+        { id: "root", name: "egov-enterprise", type: "root", color: "#e4e4e7", size: 26, category: "Project Root", path: "/", desc: "전자정부 표준프레임워크 5.0 기반 Next.js 16 + Spring Boot 3.5 멀티 모듈 모더니제이션 프로젝트", details: "Java 21, Spring Boot 3.5.16, Next.js 16.x App Router 기반 엔터프라이즈 참조 아키텍처." },
+
+        // Backend Core Modules
+        { id: "mod-foundation", name: "foundation", type: "module", color: "#8b5cf6", size: 20, category: "Core Module", path: "/foundation", desc: "최하위 코어: 공통 응답, ErrorCode, BaseEntity, 보안 백본(JWT/IAM)", details: "다른 프로젝트 모듈에 의존하지 않는 순수 라이브러리. ApiResponse, PageResponse, JwtTokenProvider, SecurityConfig 등 공통 계약 집합." },
+        { id: "mod-business-core", name: "business-core", type: "module", color: "#8b5cf6", size: 20, category: "Core Module", path: "/business-core", desc: "재사용 필수 코어: 사용자, 인증, 메뉴, 공통코드, 조직, 보안정책", details: "foundation 모듈에 의존하며, 필수적인 사용자/권한/메뉴/로그/공통코드 도메인과 공용 테스트 하네스를 제공." },
+        { id: "mod-business-app", name: "business-app", type: "module", color: "#8b5cf6", size: 20, category: "Core Module", path: "/business-app", desc: "선택/확장 업무 도메인: 게시판, 설문, 일정, 메일, SMS, 결재 등", details: "business-core를 확장하는 업무 도메인 모듈. ArchUnit DomainIsolationTest로 각 도메인 간 독립성 보장." },
+        { id: "mod-api-server", name: "api-server", type: "module", color: "#8b5cf6", size: 22, category: "Presentation Module", path: "/api-server", desc: "REST/API 실행 진입점: Controller, API DTO, Spring Boot 실행 jar", details: "모든 라이브러리 모듈(foundation, core, app)을 조립하여 실행 가능한 bootJar 생성. OpenAPI 3.0 명세 제공." },
+        { id: "mod-migration-tool", name: "migration-tool", type: "module", color: "#a855f7", size: 18, category: "ETL Tool", path: "/migration-tool", desc: "레거시→표준 스키마 offline ETL CLI 도구 (PostgreSQL/Oracle/Tibero/MySQL/MSSQL)", details: "ADR-0008 기반 승인형 offline CLI. Discover → Plan → Validate → Load 파이프라인 수행." },
+
+        // Frontend
+        { id: "mod-frontend", name: "frontend", type: "frontend", color: "#10b981", size: 22, category: "Frontend Application", path: "/frontend", desc: "Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS", details: "TanStack Query 5, Axios, Shadcn/UI, Recharts 기반의 현대적인 대시보드 및 공통 컴포넌트 프론트엔드." },
+
+        // Business-Core Domains
+        { id: "dom-user", name: "User (사용자)", type: "domain", color: "#38bdf8", size: 14, category: "Core Domain", path: "/business-core/domain/user", desc: "사용자 계정, 프로필, 상태 관리", details: "User, UserEntity, UserRepository, UserService 구현" },
+        { id: "dom-auth", name: "Auth (인증/인가)", type: "domain", color: "#38bdf8", size: 14, category: "Core Domain", path: "/business-core/domain/auth", desc: "JWT 토큰 발급/검증, RBAC 권한 체크", details: "AuthenticationProvider, Role, Permission 매핑" },
+        { id: "dom-menu", name: "Menu (메뉴 관리)", type: "domain", color: "#38bdf8", size: 13, category: "Core Domain", path: "/business-core/domain/menu", desc: "계층형 메뉴 구조 및 롤별 접근 권한 매핑", details: "MenuEntity, MenuHierarchyService" },
+        { id: "dom-code", name: "Code (공통코드)", type: "domain", color: "#38bdf8", size: 13, category: "Core Domain", path: "/business-core/domain/code", desc: "표준 분류 코드 및 상세 코드 체계", details: "CommonCode, CommonDetailCode 관리" },
+        { id: "dom-org", name: "Organization (조직)", type: "domain", color: "#38bdf8", size: 13, category: "Core Domain", path: "/business-core/domain/organization", desc: "부서/조직도 트리 및 담당자 연계", details: "Dept, OrganizationTreeService" },
+        { id: "dom-log", name: "Log (감사 로그)", type: "domain", color: "#38bdf8", size: 13, category: "Core Domain", path: "/business-core/domain/log", desc: "시스템/웹/개인정보 접근 감사 로깅", details: "SystemLog, WebLog, PrivacyAccessLog" },
+        { id: "dom-file", name: "File (파일 스토리지)", type: "domain", color: "#38bdf8", size: 13, category: "Core Domain", path: "/business-core/domain/file", desc: "첨부파일 업로드, 다운로드, 해시 검증", details: "FileMaster, FileDetail, StorageService" },
+
+        // Business-App Domains
+        { id: "dom-board", name: "Board (게시판)", type: "domain", color: "#06b6d4", size: 14, category: "App Domain", path: "/business-app/domain/board", desc: "공지사항, 일반 게시판, 갤러리, 답글", details: "BBSMaster, Article, Comment, Attachment 연계" },
+        { id: "dom-survey", name: "Survey (설문조사)", type: "domain", color: "#06b6d4", size: 14, category: "App Domain", path: "/business-app/domain/survey", desc: "온라인 설문 작성, 문항 관리, 응답 통계", details: "SurveyMaster, Question, Response, StatsService" },
+        { id: "dom-schedule", name: "Schedule (일정)", type: "domain", color: "#06b6d4", size: 13, category: "App Domain", path: "/business-app/domain/schedule", desc: "개인 및 부서 공유 캘린더 일정", details: "ScheduleEntity, CalendarService" },
+        { id: "dom-sanction", name: "Sanction (약식결재)", type: "domain", color: "#06b6d4", size: 13, category: "App Domain", path: "/business-app/domain/informalsanction", desc: "약식 결재 및 승인 워크플로우", details: "SanctionProcess, ApprovalStatus" },
+        { id: "dom-memo", name: "Memo (업무보고)", type: "domain", color: "#06b6d4", size: 13, category: "App Domain", path: "/business-app/domain/memoreport", desc: "주간/월간 업무 메모 및 보고서", details: "MemoReportEntity, ReportService" },
+        { id: "dom-sms", name: "SMS (문자발송)", type: "domain", color: "#06b6d4", size: 13, category: "App Domain", path: "/business-app/domain/sms", desc: "SMS/알림톡 발송 큐 및 이력", details: "SmsService, DispatchQueue" },
+        { id: "dom-mail", name: "Mail (메일)", type: "domain", color: "#06b6d4", size: 13, category: "App Domain", path: "/business-app/domain/mail", desc: "템플릿 기반 이메일 송수신", details: "MailTemplate, SmtpMailSender" },
+
+        // API Controllers
+        { id: "api-user-ctrl", name: "UserApiController", type: "domain", color: "#6366f1", size: 11, category: "API Controller", path: "/api-server/controller/UserApiController", desc: "사용자 CRUD 및 프로필 수정 엔드포인트", details: "@RestController @RequestMapping(/api/v1/users)" },
+        { id: "api-board-ctrl", name: "BoardApiController", type: "domain", color: "#6366f1", size: 11, category: "API Controller", path: "/api-server/controller/business/BoardApiController", desc: "게시판 목록, 상세, 작성, 수정, 첨부 엔드포인트", details: "@RestController @RequestMapping(/api/v1/boards)" },
+        { id: "api-survey-ctrl", name: "SurveyApiController", type: "domain", color: "#6366f1", size: 11, category: "API Controller", path: "/api-server/controller/business/SurveyApiController", desc: "설문 생성, 참여, 통계 조회 엔드포인트", details: "@RestController @RequestMapping(/api/v1/surveys)" },
+        { id: "api-sms-ctrl", name: "SmsApiController", type: "domain", color: "#6366f1", size: 11, category: "API Controller", path: "/api-server/controller/business/SmsApiController", desc: "SMS 발송 및 발송 결과 조회 엔드포인트", details: "@RestController @RequestMapping(/api/v1/sms)" },
+
+        // Frontend Routes / Components
+        { id: "fe-app-dashboard", name: "app/dashboard", type: "frontend", color: "#34d399", size: 14, category: "FE Page", path: "/frontend/src/app", desc: "통합 대시보드 (통계 차트, 최근 공지, 설문 현황)", details: "UnifiedDashboardClient, Recharts 시각화" },
+        { id: "fe-app-admin", name: "app/admin", type: "frontend", color: "#34d399", size: 14, category: "FE Page", path: "/frontend/src/app/admin", desc: "관리자 포털 (사용자, 코드, 메뉴, 롤, 로그 관리)", details: "Shadcn/UI DataTable 기반 필터링 및 관리 UI" },
+        { id: "fe-app-cop", name: "app/cop (게시판/공지)", type: "frontend", color: "#34d399", size: 13, category: "FE Page", path: "/frontend/src/app/cop", desc: "협업 커뮤니티, 공지사항, 갤러리", details: "BoardList, ArticleView, CommentList" },
+        { id: "fe-app-survey", name: "app/survey", type: "frontend", color: "#34d399", size: 13, category: "FE Page", path: "/frontend/src/app/survey", desc: "설문 참여 및 실시간 차트 통계 화면", details: "SurveyForm, ResultAnalytics" },
+        { id: "fe-app-login", name: "app/login", type: "frontend", color: "#34d399", size: 13, category: "FE Page", path: "/frontend/src/app/login", desc: "Glassmorphism 스타일 로그인 및 세션 관리", details: "JWT 토큰 수신, 저장 및 쿠키 동기화" },
+        { id: "fe-services", name: "services (API Client)", type: "frontend", color: "#059669", size: 14, category: "FE Layer", path: "/frontend/src/services", desc: "Axios 기반 API 통신 클라이언트 및 토큰 인터셉터", details: "Codegen TS / Zod 스키마 연동" },
+        { id: "fe-queries", name: "queries (TanStack Query)", type: "frontend", color: "#059669", size: 14, category: "FE Layer", path: "/frontend/src/queries", desc: "서버 상태 캐싱, 낙관적 업데이트, 페이지네이션 훅", details: "useQuery, useMutation 래퍼" },
+
+        // Architecture Docs & ADRs
+        { id: "doc-adr-0001", name: "ADR-0001: 제품/코어 경계", type: "doc", color: "#f59e0b", size: 14, category: "Architecture Decision", path: "/docs/02-architecture/decisions/ADR-0001", desc: "재사용 코어(core)와 제품 도메인(app)의 물리적 분리 기준", details: "foundation 및 business-core는 재사용 자산으로 유지, business-app은 안전하게 교체 가능한 경계로 분리." },
+        { id: "doc-adr-0002", name: "ADR-0002: 한국어 우선 UI", type: "doc", color: "#f59e0b", size: 12, category: "Architecture Decision", path: "/docs/02-architecture/decisions/ADR-0002", desc: "공공/엔터프라이즈 특성에 맞춘 한국어 UI/UX 표준 가이드라인", details: "메뉴, 에러 메시지, 날짜 포맷 등의 로컬라이제이션 정본" },
+        { id: "doc-adr-0003", name: "ADR-0003: 프론트 UX 현대화", type: "doc", color: "#f59e0b", size: 12, category: "Architecture Decision", path: "/docs/02-architecture/decisions/ADR-0003", desc: "Next.js App Router와 반응형 UI 디자인 원칙", details: "Next.js 16 + React 19 최적화, Server/Client 컴포넌트 분리 원칙" },
+        { id: "doc-adr-0008", name: "ADR-0008: 멀티소스 마이그레이션", type: "doc", color: "#f59e0b", size: 14, category: "Architecture Decision", path: "/docs/02-architecture/decisions/ADR-0008", desc: "다기종 레거시 DB(Postgres, Oracle, Tibero 등) 이관 워크플로우", details: "Discover → Plan → Validate → Load 4단계 검증 및 재시작 가능 ETL 파이프라인 명세" },
+        { id: "doc-getting-started", name: "온보딩 런북 (Getting Started)", type: "doc", color: "#fbbf24", size: 13, category: "Guide", path: "/docs/03-guides/getting-started.md", desc: "로컬 개발 환경 부트스트랩, 빌드 및 도메인 생성 가이드", details: "make bootstrap, npm run dev, scripts/generate-domain.ps1 실행 절차" },
+        { id: "doc-orchestration", name: "오케스트레이션 프로토콜", type: "doc", color: "#fbbf24", size: 13, category: "Guide", path: "/docs/03-guides/orchestration-protocol.md", desc: "작업 등급, 승인 경계, 다중 에이전트 협업 SSOT", details: "Tier 1~3 검증 절차 및 Git 안전 수칙" },
+
+        // Governance & Memory
+        { id: "gov-gates", name: "Gate Registry (gates.json)", type: "governance", color: "#f43f5e", size: 15, category: "Governance", path: "/config/governance/gates.json", desc: "JUnit, ArchUnit, Checkstyle, DB Schema 검증 중앙 게이트", details: "JUnit 37개, ArchUnit 10개, Schema-validation 39개 일치성 검증" },
+        { id: "gov-archunit", name: "ArchUnit (도메인 격리 검증)", type: "governance", color: "#f43f5e", size: 14, category: "Quality Assurance", path: "/business-app/src/test/.../DomainIsolationTest", desc: "형제 도메인 간 참조 금지 및 단방향 레이어 아키텍처 자동 강제", details: "business-app 내 도메인 간의 불필요한 결합을 컴파일/테스트 단계에서 방지" },
+        { id: "mem-context", name: "project-context.md", type: "governance", color: "#ec4899", size: 14, category: "Agent Memory", path: "/.agent/memory/project-context.md", desc: "에이전트 공용 검증 사실 및 런타임 지도 인덱스", details: "CTX-001 ~ CTX-012 검증된 사실 SSOT 요약" },
+        { id: "mem-decisions", name: "decisions.md", type: "governance", color: "#ec4899", size: 13, category: "Agent Memory", path: "/.agent/memory/decisions.md", desc: "승인된 아키텍처 및 운영 결정 기록", details: "ADR 및 운영 결정 변경 이력 요약" },
+        { id: "mem-known-gaps", name: "known-gaps.md", type: "governance", color: "#ec4899", size: 13, category: "Agent Memory", path: "/.agent/memory/known-gaps.md", desc: "재현 가능한 미해결 리스크 및 기술 부채 추적", details: "GAP-001 ~ GAP-008 위험도 및 완화 방안" }
+      ],
+
+      links: [
+        // Root links
+        { source: "root", target: "mod-foundation", type: "contains" },
+        { source: "root", target: "mod-business-core", type: "contains" },
+        { source: "root", target: "mod-business-app", type: "contains" },
+        { source: "root", target: "mod-api-server", type: "contains" },
+        { source: "root", target: "mod-migration-tool", type: "contains" },
+        { source: "root", target: "mod-frontend", type: "contains" },
+
+        // Module Dependencies (단방향 의존성)
+        { source: "mod-api-server", target: "mod-business-app", type: "depends_on" },
+        { source: "mod-api-server", target: "mod-business-core", type: "depends_on" },
+        { source: "mod-api-server", target: "mod-foundation", type: "depends_on" },
+        { source: "mod-business-app", target: "mod-business-core", type: "depends_on" },
+        { source: "mod-business-app", target: "mod-foundation", type: "depends_on" },
+        { source: "mod-business-core", target: "mod-foundation", type: "depends_on" },
+
+        // Core Domain Contains
+        { source: "mod-business-core", target: "dom-user", type: "contains" },
+        { source: "mod-business-core", target: "dom-auth", type: "contains" },
+        { source: "mod-business-core", target: "dom-menu", type: "contains" },
+        { source: "mod-business-core", target: "dom-code", type: "contains" },
+        { source: "mod-business-core", target: "dom-org", type: "contains" },
+        { source: "mod-business-core", target: "dom-log", type: "contains" },
+        { source: "mod-business-core", target: "dom-file", type: "contains" },
+
+        // App Domain Contains
+        { source: "mod-business-app", target: "dom-board", type: "contains" },
+        { source: "mod-business-app", target: "dom-survey", type: "contains" },
+        { source: "mod-business-app", target: "dom-schedule", type: "contains" },
+        { source: "mod-business-app", target: "dom-sanction", type: "contains" },
+        { source: "mod-business-app", target: "dom-memo", type: "contains" },
+        { source: "mod-business-app", target: "dom-sms", type: "contains" },
+        { source: "mod-business-app", target: "dom-mail", type: "contains" },
+
+        // API Controllers
+        { source: "mod-api-server", target: "api-user-ctrl", type: "contains" },
+        { source: "mod-api-server", target: "api-board-ctrl", type: "contains" },
+        { source: "mod-api-server", target: "api-survey-ctrl", type: "contains" },
+        { source: "mod-api-server", target: "api-sms-ctrl", type: "contains" },
+        { source: "api-user-ctrl", target: "dom-user", type: "calls" },
+        { source: "api-board-ctrl", target: "dom-board", type: "calls" },
+        { source: "api-survey-ctrl", target: "dom-survey", type: "calls" },
+        { source: "api-sms-ctrl", target: "dom-sms", type: "calls" },
+
+        // Frontend Structure
+        { source: "mod-frontend", target: "fe-app-dashboard", type: "contains" },
+        { source: "mod-frontend", target: "fe-app-admin", type: "contains" },
+        { source: "mod-frontend", target: "fe-app-cop", type: "contains" },
+        { source: "mod-frontend", target: "fe-app-survey", type: "contains" },
+        { source: "mod-frontend", target: "fe-app-login", type: "contains" },
+        { source: "mod-frontend", target: "fe-services", type: "contains" },
+        { source: "mod-frontend", target: "fe-queries", type: "contains" },
+        { source: "fe-queries", target: "fe-services", type: "calls" },
+        { source: "fe-services", target: "mod-api-server", type: "calls" },
+        { source: "fe-app-admin", target: "fe-queries", type: "calls" },
+        { source: "fe-app-cop", target: "fe-queries", type: "calls" },
+
+        // ADR & Documentation Links
+        { source: "doc-adr-0001", target: "mod-business-core", type: "documents" },
+        { source: "doc-adr-0001", target: "mod-business-app", type: "documents" },
+        { source: "doc-adr-0003", target: "mod-frontend", type: "documents" },
+        { source: "doc-adr-0008", target: "mod-migration-tool", type: "documents" },
+        { source: "doc-getting-started", target: "root", type: "documents" },
+        { source: "doc-orchestration", target: "root", type: "documents" },
+
+        // Governance & Memory Links
+        { source: "gov-gates", target: "mod-api-server", type: "validates" },
+        { source: "gov-gates", target: "mod-frontend", type: "validates" },
+        { source: "gov-archunit", target: "mod-business-app", type: "validates" },
+        { source: "mem-context", target: "root", type: "indexes" },
+        { source: "mem-decisions", target: "doc-adr-0001", type: "indexes" },
+        { source: "mem-known-gaps", target: "mod-migration-tool", type: "tracks" }
+      ]
+    };
+
+    // ----------------------------------------------------
+    // 2. STATE & OBSIDIAN WORKSPACE MANAGEMENT
+    // ----------------------------------------------------
+    let selectedNodeId = "root";
+    let activeTab = "graph";
+    let simulation, svg, g, linkElements, nodeElements;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ----------------------------------------------------
+    // 3. TREE EXPLORER GENERATION
+    // ----------------------------------------------------
+    function buildFileTree() {
+      const container = document.getElementById("file-tree");
+      
+      const treeStructure = [
+        {
+          name: "root: egov-enterprise", id: "root", icon: "folder-git-2",
+          children: [
+            {
+              name: "foundation (Core Library)", id: "mod-foundation", icon: "box",
+              children: [
+                { name: "constants", id: "mod-foundation", icon: "file-code" },
+                { name: "core (ApiResponse, ErrorCode)", id: "mod-foundation", icon: "file-code" },
+                { name: "security (JWT, IAM)", id: "mod-foundation", icon: "shield" }
+              ]
+            },
+            {
+              name: "business-core (Reusable Core)", id: "mod-business-core", icon: "boxes",
+              children: [
+                { name: "user (사용자)", id: "dom-user", icon: "user" },
+                { name: "auth (인증/권한)", id: "dom-auth", icon: "key" },
+                { name: "menu (메뉴 체계)", id: "dom-menu", icon: "menu" },
+                { name: "code (공통코드)", id: "dom-code", icon: "binary" },
+                { name: "organization (조직도)", id: "dom-org", icon: "users" },
+                { name: "log (감사로그)", id: "dom-log", icon: "file-text" },
+                { name: "file (스토리지)", id: "dom-file", icon: "file-up" }
+              ]
+            },
+            {
+              name: "business-app (Domain Apps)", id: "mod-business-app", icon: "package",
+              children: [
+                { name: "board (게시판/공지)", id: "dom-board", icon: "clipboard-list" },
+                { name: "survey (설문조사)", id: "dom-survey", icon: "bar-chart-2" },
+                { name: "schedule (일정)", id: "dom-schedule", icon: "calendar" },
+                { name: "informalsanction (결재)", id: "dom-sanction", icon: "check-square" },
+                { name: "memoreport (업무보고)", id: "dom-memo", icon: "file-text" },
+                { name: "sms (문자발송)", id: "dom-sms", icon: "message-square" },
+                { name: "mail (메일)", id: "dom-mail", icon: "mail" }
+              ]
+            },
+            {
+              name: "api-server (Spring Boot App)", id: "mod-api-server", icon: "server",
+              children: [
+                { name: "UserApiController", id: "api-user-ctrl", icon: "code" },
+                { name: "BoardApiController", id: "api-board-ctrl", icon: "code" },
+                { name: "SurveyApiController", id: "api-survey-ctrl", icon: "code" },
+                { name: "SmsApiController", id: "api-sms-ctrl", icon: "code" }
+              ]
+            },
+            {
+              name: "migration-tool (Offline ETL)", id: "mod-migration-tool", icon: "database-zap"
+            },
+            {
+              name: "frontend (Next.js 16 App)", id: "mod-frontend", icon: "globe",
+              children: [
+                { name: "app/dashboard", id: "fe-app-dashboard", icon: "layout-dashboard" },
+                { name: "app/admin", id: "fe-app-admin", icon: "settings" },
+                { name: "app/cop (커뮤니티)", id: "fe-app-cop", icon: "message-circle" },
+                { name: "app/survey", id: "fe-app-survey", icon: "pie-chart" },
+                { name: "app/login", id: "fe-app-login", icon: "lock" },
+                { name: "services (API Client)", id: "fe-services", icon: "cpu" },
+                { name: "queries (TanStack)", id: "fe-queries", icon: "refresh-cw" }
+              ]
+            },
+            {
+              name: "docs (Architecture & ADR)", id: "doc-adr-0001", icon: "book-open",
+              children: [
+                { name: "ADR-0001 (코어 경계)", id: "doc-adr-0001", icon: "file-check" },
+                { name: "ADR-0002 (한국어 UI)", id: "doc-adr-0002", icon: "file-check" },
+                { name: "ADR-0003 (프론트 UX)", id: "doc-adr-0003", icon: "file-check" },
+                { name: "ADR-0008 (ETL 워크플로)", id: "doc-adr-0008", icon: "file-check" },
+                { name: "Getting Started Guide", id: "doc-getting-started", icon: "compass" },
+                { name: "Orchestration Protocol", id: "doc-orchestration", icon: "git-merge" }
+              ]
+            },
+            {
+              name: ".agent & Governance", id: "gov-gates", icon: "shield",
+              children: [
+                { name: "Gate Registry (gates.json)", id: "gov-gates", icon: "shield-alert" },
+                { name: "ArchUnit Isolation", id: "gov-archunit", icon: "shield-check" },
+                { name: "project-context.md", id: "mem-context", icon: "brain" },
+                { name: "decisions.md", id: "mem-decisions", icon: "brain" },
+                { name: "known-gaps.md", id: "mem-known-gaps", icon: "alert-triangle" }
+              ]
+            }
+          ]
+        }
+      ];
+
+      function renderTree(items) {
+        let html = '';
+        items.forEach(item => {
+          const hasChildren = item.children && item.children.length > 0;
+          html += `
+            <div class="tree-node">
+              <div class="tree-item ${item.id === selectedNodeId ? 'active' : ''}" data-id="${item.id}">
+                <span class="tree-icon"><i data-lucide="${item.icon || 'file'}" style="width: 13px; height: 13px;"></i></span>
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</span>
+              </div>
+              ${hasChildren ? `<div class="tree-children">${renderTree(item.children)}</div>` : ''}
+            </div>
+          `;
+        });
+        return html;
+      }
+
+      container.innerHTML = renderTree(treeStructure);
+      lucide.createIcons();
+
+      // Tree click listener
+      container.querySelectorAll('.tree-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-id');
+          selectNode(id);
+        });
+      });
+    }
+
+    // ----------------------------------------------------
+    // 4. FORCE-DIRECTED GRAPH VIEW (D3.js)
+    // ----------------------------------------------------
+    function initGraph() {
+      const container = document.getElementById('graph-view');
+      const rect = container.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      svg = d3.select("#graph-svg")
+        .attr("viewBox", [0, 0, w, h]);
+
+      svg.selectAll("*").remove();
+
+      // Zoom filter
+      const zoom = d3.zoom()
+        .scaleExtent([0.15, 4])
+        .on("zoom", (event) => {
+          g.attr("transform", event.transform);
+        });
+
+      svg.call(zoom);
+
+      g = svg.append("g");
+
+      // Deep copy nodes/links to avoid mutating original
+      const nodes = projectData.nodes.map(d => ({ ...d }));
+      const links = projectData.links.map(d => ({ ...d }));
+
+      simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(65))
+        .force("charge", d3.forceManyBody().strength(-160))
+        .force("center", d3.forceCenter(w / 2, h / 2))
+        .force("collision", d3.forceCollide().radius(d => d.size + 12));
+
+      // Draw Links
+      linkElements = g.append("g")
+        .attr("class", "links")
+        .selectAll("line")
+        .data(links)
+        .join("line")
+        .attr("class", "link");
+
+      // Draw Nodes
+      nodeElements = g.append("g")
+        .attr("class", "nodes")
+        .selectAll("g")
+        .data(nodes)
+        .join("g")
+        .attr("class", d => `node ${d.id === selectedNodeId ? 'active' : ''}`)
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended))
+        .on("click", (event, d) => {
+          event.stopPropagation();
+          selectNode(d.id);
+        })
+        .on("mouseover", (event, d) => {
+          highlightNeighbors(d.id);
+        })
+        .on("mouseout", () => {
+          clearHighlight();
+        });
+
+      // Node circles
+      nodeElements.append("circle")
+        .attr("r", d => d.size)
+        .attr("fill", d => d.color)
+        .attr("stroke", "#1e1e24")
+        .attr("stroke-width", 2);
+
+      // Node labels
+      nodeElements.append("text")
+        .text(d => d.name)
+        .attr("font-size", "10px");
+
+      // Simulation Tick
+      simulation.on("tick", () => {
+        linkElements
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+        nodeElements
+          .attr("transform", d => `translate(${d.x},${d.y})`);
+      });
+
+      function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
+
+      // Reset button
+      document.getElementById("btn-reset-graph").addEventListener("click", () => {
+        svg.transition().duration(600).call(
+          zoom.transform,
+          d3.zoomIdentity.translate(w / 2, h / 2).scale(1).translate(-w / 2, -h / 2)
+        );
+      });
+    }
+
+    function highlightNeighbors(nodeId) {
+      const neighborIds = new Set([nodeId]);
+      projectData.links.forEach(l => {
+        const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+        const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+        if (sourceId === nodeId) neighborIds.add(targetId);
+        if (targetId === nodeId) neighborIds.add(sourceId);
+      });
+
+      nodeElements.classed("dimmed", d => !neighborIds.has(d.id));
+      linkElements.classed("highlight", l => {
+        const s = typeof l.source === 'object' ? l.source.id : l.source;
+        const t = typeof l.target === 'object' ? l.target.id : l.target;
+        return s === nodeId || t === nodeId;
+      });
+      linkElements.classed("dimmed", l => {
+        const s = typeof l.source === 'object' ? l.source.id : l.source;
+        const t = typeof l.target === 'object' ? l.target.id : l.target;
+        return s !== nodeId && t !== nodeId;
+      });
+    }
+
+    function clearHighlight() {
+      nodeElements.classed("dimmed", false);
+      linkElements.classed("dimmed", false);
+      linkElements.classed("highlight", false);
+    }
+
+    // ----------------------------------------------------
+    // 5. NODE SELECTION & DETAIL RENDERING
+    // ----------------------------------------------------
+    function selectNode(nodeId) {
+      selectedNodeId = nodeId;
+      const node = projectData.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      // Update tree active state
+      document.querySelectorAll('.tree-item').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-id') === nodeId);
+      });
+
+      // Update D3 active class
+      if (nodeElements) {
+        nodeElements.classed("active", d => d.id === nodeId);
+      }
+
+      // Update Top/Tab/Statusbar Titles
+      document.getElementById('active-note-tab-title').textContent = `Note: ${node.name}`;
+      document.getElementById('status-selected-node').innerHTML = `<i data-lucide="check-circle-2" style="width:11px;height:11px;display:inline-block;vertical-align:middle;color:var(--accent-purple)"></i> Selected: <b>${node.name}</b> (${node.category})`;
+
+      // Render Note Markdown
+      renderNote(node);
+
+      // Render Inspector Sidebar
+      renderInspector(node);
+
+      lucide.createIcons();
+    }
+
+    function renderNote(node) {
+      const target = document.getElementById("note-content-target");
+      
+      // Outgoing & Ingoing Links
+      const outgoing = projectData.links
+        .filter(l => (typeof l.source === 'object' ? l.source.id : l.source) === node.id)
+        .map(l => projectData.nodes.find(n => n.id === (typeof l.target === 'object' ? l.target.id : l.target)))
+        .filter(Boolean);
+
+      const backlinks = projectData.links
+        .filter(l => (typeof l.target === 'object' ? l.target.id : l.target) === node.id)
+        .map(l => projectData.nodes.find(n => n.id === (typeof l.source === 'object' ? l.source.id : l.source)))
+        .filter(Boolean);
+
+      target.innerHTML = `
+        <div class="note-header">
+          <div class="note-breadcrumb">
+            <span>vault</span>
+            <span>/</span>
+            <span>${node.category}</span>
+            <span>/</span>
+            <span style="color: var(--text-primary);">${node.name}</span>
+          </div>
+          <h1 class="note-title">
+            <span style="display:inline-block; width:16px; height:16px; border-radius:50%; background:${node.color}; box-shadow: 0 0 10px ${node.color}"></span>
+            ${node.name}
+          </h1>
+        </div>
+
+        <div class="yaml-frontmatter">
+          <div class="yaml-row"><span class="yaml-key">id:</span> <span class="yaml-val">${node.id}</span></div>
+          <div class="yaml-row"><span class="yaml-key">type:</span> <span class="yaml-val">${node.type}</span></div>
+          <div class="yaml-row"><span class="yaml-key">layer:</span> <span class="yaml-val">${node.category}</span></div>
+          <div class="yaml-row"><span class="yaml-key">path:</span> <span class="yaml-val">${node.path}</span></div>
+        </div>
+
+        <div class="note-body">
+          <h2>📌 개요 및 책임 (Overview & Scope)</h2>
+          <p>${node.desc}</p>
+          <p>${node.details}</p>
+
+          <h2>🔗 연결된 노드 (Linked Relations)</h2>
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+            <div>
+              <strong style="color: var(--text-primary); font-size: 13px;">Outgoing Dependencies (${outgoing.length}):</strong>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                ${outgoing.length ? outgoing.map(o => `<a class="note-link" onclick="selectNode('${o.id}')"><i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i> [[${o.name}]]</a>`).join('') : '<span style="color:var(--text-muted);font-size:12px;">없음 (최하위 코어/독립 계층)</span>'}
+              </div>
+            </div>
+            <div>
+              <strong style="color: var(--text-primary); font-size: 13px;">Backlinks / Referrers (${backlinks.length}):</strong>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                ${backlinks.length ? backlinks.map(b => `<a class="note-link" onclick="selectNode('${b.id}')"><i data-lucide="corner-down-right" style="width:12px;height:12px;"></i> [[${b.name}]]</a>`).join('') : '<span style="color:var(--text-muted);font-size:12px;">없음 (진입점 또는 최상위 모듈)</span>'}
+              </div>
+            </div>
+          </div>
+
+          <h2>🏛️ 아키텍처 규칙 및 코드 가이드</h2>
+          <ul>
+            <li><strong>단방향 의존성 준수:</strong> 상위 레이어는 하위 레이어를 참조할 수 있으나 역방향 참조는 엄격히 금지됩니다.</li>
+            <li><strong>MapStruct 표준 매핑:</strong> Entity ↔ DTO 변환 시 수기 작성 대신 <code>@Mapper</code> 어노테이션 컴파일 타임 생성기를 사용합니다.</li>
+            <li><strong>안전한 도메인 격리:</strong> 각 도메인은 독립적으로 동작하며, ArchUnit 테스트를 통해 형제 도메인 간의 직접 결합이 차단됩니다.</li>
+          </ul>
+
+          <div class="code-block">
+// 패키지 경로: ${node.path}
+// 계약 검증: gates.json & ArchUnit DomainIsolationTest 통과
+package nuri.${node.id.replace('mod-', '').replace('dom-', '')};
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function renderInspector(node) {
+      document.getElementById('inspector-name').textContent = node.name;
+      document.getElementById('inspector-desc').textContent = node.desc;
+
+      const outgoingContainer = document.getElementById('inspector-outgoing');
+      const backlinksContainer = document.getElementById('inspector-backlinks');
+
+      const outgoing = projectData.links
+        .filter(l => (typeof l.source === 'object' ? l.source.id : l.source) === node.id)
+        .map(l => ({ ...projectData.nodes.find(n => n.id === (typeof l.target === 'object' ? l.target.id : l.target)), rel: l.type }));
+
+      const backlinks = projectData.links
+        .filter(l => (typeof l.target === 'object' ? l.target.id : l.target) === node.id)
+        .map(l => ({ ...projectData.nodes.find(n => n.id === (typeof l.source === 'object' ? l.source.id : l.source)), rel: l.type }));
+
+      outgoingContainer.innerHTML = outgoing.length
+        ? outgoing.map(item => `
+          <div class="linked-item" onclick="selectNode('${item.id}')">
+            <span style="width:8px;height:8px;border-radius:50%;background:${item.color};"></span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}</span>
+            <span style="font-size:10px;color:var(--text-muted);">${item.rel}</span>
+          </div>
+        `).join('')
+        : '<div style="font-size:11px;color:var(--text-muted);">의존하는 노드가 없습니다.</div>';
+
+      backlinksContainer.innerHTML = backlinks.length
+        ? backlinks.map(item => `
+          <div class="linked-item" onclick="selectNode('${item.id}')">
+            <span style="width:8px;height:8px;border-radius:50%;background:${item.color};"></span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}</span>
+            <span style="font-size:10px;color:var(--text-muted);">${item.rel}</span>
+          </div>
+        `).join('')
+        : '<div style="font-size:11px;color:var(--text-muted);">참조하는 노드가 없습니다.</div>';
+    }
+
+    // ----------------------------------------------------
+    // 6. CANVAS ARCHITECTURE BOARD RENDERING
+    // ----------------------------------------------------
+    function renderCanvas() {
+      const board = document.getElementById('canvas-board-content');
+      board.innerHTML = `
+        <!-- Layer 1: Presentation & UI Layer -->
+        <div class="canvas-layer" style="border-color: rgba(16, 185, 129, 0.4);">
+          <div class="canvas-layer-title">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:#10b981;"></span>
+              <span>1. Presentation Layer (Frontend & API Server)</span>
+            </div>
+            <span class="tag-badge" style="background:rgba(16,185,129,0.15);color:#6ee7b7;">Next.js 16 + Spring Boot 3.5</span>
+          </div>
+          <div class="canvas-grid">
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('mod-frontend');">
+              <div class="canvas-card-header"><i data-lucide="globe" style="width:14px;height:14px;color:#10b981;"></i> frontend (App Router)</div>
+              <div class="canvas-card-desc">Next.js 16, React 19, TypeScript, Tailwind CSS, TanStack Query 5</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('mod-api-server');">
+              <div class="canvas-card-header"><i data-lucide="server" style="width:14px;height:14px;color:#8b5cf6;"></i> api-server (REST API)</div>
+              <div class="canvas-card-desc">Spring Boot 3.5.16, OpenAPI 3.0, Spring Security 6, JWT Filter</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layer 2: Business App Layer -->
+        <div class="canvas-layer" style="border-color: rgba(6, 182, 212, 0.4);">
+          <div class="canvas-layer-title">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:#06b6d4;"></span>
+              <span>2. Extended Business App Domain Layer (선택/교체 가능한 업무 모듈)</span>
+            </div>
+            <span class="tag-badge" style="background:rgba(6,182,212,0.15);color:#67e8f9;">business-app</span>
+          </div>
+          <div class="canvas-grid">
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-board');">
+              <div class="canvas-card-header"><i data-lucide="clipboard-list" style="width:14px;height:14px;color:#06b6d4;"></i> Board (게시판/공지)</div>
+              <div class="canvas-card-desc">BBS, 갤러리, 답글, 파일 첨부 연동</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-survey');">
+              <div class="canvas-card-header"><i data-lucide="bar-chart-2" style="width:14px;height:14px;color:#06b6d4;"></i> Survey (설문조사)</div>
+              <div class="canvas-card-desc">설문 생성, 문항 관리, 응답 통계 시각화</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-schedule');">
+              <div class="canvas-card-header"><i data-lucide="calendar" style="width:14px;height:14px;color:#06b6d4;"></i> Schedule (일정)</div>
+              <div class="canvas-card-desc">부서/개인 일정 캘린더 관리</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-sanction');">
+              <div class="canvas-card-header"><i data-lucide="check-square" style="width:14px;height:14px;color:#06b6d4;"></i> Sanction (결재)</div>
+              <div class="canvas-card-desc">약식 결재 및 전자 승인 프로세스</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-sms');">
+              <div class="canvas-card-header"><i data-lucide="message-square" style="width:14px;height:14px;color:#06b6d4;"></i> SMS & Mail</div>
+              <div class="canvas-card-desc">알림톡/문자 발송 및 메일 전송</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layer 3: Business Core Layer -->
+        <div class="canvas-layer" style="border-color: rgba(56, 189, 248, 0.4);">
+          <div class="canvas-layer-title">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:#38bdf8;"></span>
+              <span>3. Reusable Essential Core Layer (필수 코어 도메인)</span>
+            </div>
+            <span class="tag-badge" style="background:rgba(56,189,248,0.15);color:#7dd3fc;">business-core</span>
+          </div>
+          <div class="canvas-grid">
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-user');">
+              <div class="canvas-card-header"><i data-lucide="user" style="width:14px;height:14px;color:#38bdf8;"></i> User & Auth (사용자/인증)</div>
+              <div class="canvas-card-desc">계정 관리, JWT 발급, RBAC 권한</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-menu');">
+              <div class="canvas-card-header"><i data-lucide="menu" style="width:14px;height:14px;color:#38bdf8;"></i> Menu & Code (메뉴/공통코드)</div>
+              <div class="canvas-card-desc">계층형 메뉴 및 시스템 표준 분류 코드</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-org');">
+              <div class="canvas-card-header"><i data-lucide="users" style="width:14px;height:14px;color:#38bdf8;"></i> Org & Dept (조직 체계)</div>
+              <div class="canvas-card-desc">부서 트리 및 부서원 매핑</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('dom-log');">
+              <div class="canvas-card-header"><i data-lucide="file-text" style="width:14px;height:14px;color:#38bdf8;"></i> Audit & File (감사/파일)</div>
+              <div class="canvas-card-desc">웹/시스템 감사 로그 및 첨부파일 스토리지</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layer 4: Foundation Core & DB -->
+        <div class="canvas-layer" style="border-color: rgba(139, 92, 246, 0.4);">
+          <div class="canvas-layer-title">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;"></span>
+              <span>4. Foundation Infrastructure & Offline ETL</span>
+            </div>
+            <span class="tag-badge" style="background:rgba(139,92,246,0.15);color:#c4b5fd;">foundation & migration-tool</span>
+          </div>
+          <div class="canvas-grid">
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('mod-foundation');">
+              <div class="canvas-card-header"><i data-lucide="box" style="width:14px;height:14px;color:#8b5cf6;"></i> foundation (기반 라이브러리)</div>
+              <div class="canvas-card-desc">ApiResponse, BaseEntity, ErrorCode, JWT 보안 백본</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('mod-migration-tool');">
+              <div class="canvas-card-header"><i data-lucide="database-zap" style="width:14px;height:14px;color:#a855f7;"></i> migration-tool (데이터 이관)</div>
+              <div class="canvas-card-desc">ADR-0008 승인형 Multi-Source ETL CLI 파이프라인</div>
+            </div>
+            <div class="canvas-card" onclick="switchTab('note'); selectNode('gov-gates');">
+              <div class="canvas-card-header"><i data-lucide="shield-check" style="width:14px;height:14px;color:#f43f5e;"></i> Governance & Gates</div>
+              <div class="canvas-card-desc">Gate Registry, ArchUnit 격리, JaCoCo 커버리지</div>
+            </div>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    // ----------------------------------------------------
+    // 7. TAB & SEARCH EVENT HANDLERS
+    // ----------------------------------------------------
+    function switchTab(tabName) {
+      activeTab = tabName;
+
+      // Update Ribbon Buttons
+      document.querySelectorAll('.ribbon-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-tab-${tabName}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Update Top Tabs
+      document.querySelectorAll('.tab-item').forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
+      });
+
+      // Update Panes
+      document.querySelectorAll('.view-pane').forEach(pane => pane.classList.remove('active'));
+      const activePane = document.getElementById(`pane-${tabName}`);
+      if (activePane) activePane.classList.add('active');
+
+      if (tabName === 'canvas') {
+        renderCanvas();
+      }
+    }
+
+    // Ribbon & Tab Clicks
+    document.getElementById('btn-tab-graph').addEventListener('click', () => switchTab('graph'));
+    document.getElementById('btn-tab-note').addEventListener('click', () => switchTab('note'));
+    document.getElementById('btn-tab-canvas').addEventListener('click', () => switchTab('canvas'));
+
+    document.querySelectorAll('.tab-item').forEach(tab => {
+      tab.addEventListener('click', () => {
+        switchTab(tab.getAttribute('data-tab'));
+      });
+    });
+
+    // Graph Controls Sliders
+    document.getElementById('slider-charge').addEventListener('input', (e) => {
+      const val = +e.target.value;
+      document.getElementById('charge-val').textContent = val;
+      if (simulation) {
+        simulation.force("charge", d3.forceManyBody().strength(val));
+        simulation.alpha(0.3).restart();
+      }
+    });
+
+    document.getElementById('slider-distance').addEventListener('input', (e) => {
+      const val = +e.target.value;
+      document.getElementById('distance-val').textContent = val;
+      if (simulation) {
+        simulation.force("link").distance(val);
+        simulation.alpha(0.3).restart();
+      }
+    });
+
+    document.getElementById('slider-labelsize').addEventListener('input', (e) => {
+      const val = e.target.value;
+      document.getElementById('labelsize-val').textContent = `${val}px`;
+      if (nodeElements) {
+        nodeElements.selectAll("text").style("font-size", `${val}px`);
+      }
+    });
+
+    // Global Search Filter
+    const searchInput = document.getElementById('global-search');
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      if (!query) {
+        clearHighlight();
+        return;
+      }
+
+      const matchedNode = projectData.nodes.find(n =>
+        n.name.toLowerCase().includes(query) ||
+        n.desc.toLowerCase().includes(query) ||
+        n.category.toLowerCase().includes(query)
+      );
+
+      if (matchedNode) {
+        selectNode(matchedNode.id);
+        highlightNeighbors(matchedNode.id);
+      }
+    });
+
+    // Keyboard shortcut '/' for search
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+    });
+
+    // ----------------------------------------------------
+    // 8. INITIAL BOOTSTRAP
+    // ----------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      buildFileTree();
+      initGraph();
+      selectNode("root");
+    });
+
+    window.addEventListener('resize', () => {
+      if (simulation) {
+        const container = document.getElementById('graph-view');
+        const rect = container.getBoundingClientRect();
+        simulation.force("center", d3.forceCenter(rect.width / 2, rect.height / 2));
+        simulation.alpha(0.2).restart();
+      }
+    });
+  </script>
+</body>
+</html>

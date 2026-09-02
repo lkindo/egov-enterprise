@@ -3,16 +3,32 @@ services:
     image: postgres:17@sha256:a426e44bac0b759c95894d68e1a0ac03ecc20b619f498a91aae373bf06d8508d
     container_name: egov-postgres
     restart: always
+    # [2026-09-02] 호스트 공개를 루프백으로 좁힌다.
+    #
+    #   종전 `"5432:5432"` 는 **0.0.0.0 에 바인딩**된다. 이 파일은 개발 스택이지만
+    #   운영 배포(scripts/deploy.sh)가 `-f docker-compose.yml -f docker-compose.prod.yml` 로
+    #   base 를 함께 올리므로, 아래 커밋된 개발 비밀번호를 쓰는 DB 가 **운영 호스트의 모든
+    #   인터페이스에 열려 있었다**. 오버레이로는 닫을 수 없다 — compose 는 `ports` 를 맵이
+    #   아니라 리스트로 보고 **병합 시 이어붙이므로**, 오버레이에서 `ports: []` 를 써도
+    #   base 의 공개가 그대로 남는다. 그래서 base 에서 고친다.
+    #
+    #   컨테이너 사이 통신은 `egov-net` 을 통하므로(api 의 datasource 가 `db:5432`) 이 변경에
+    #   영향을 받지 않는다. 호스트에서의 psql·db-bridge 접속도 localhost 로 계속 동작한다.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: egovdb
       POSTGRES_USER: egov
+      # ⚠ 개발 전용 자격이다. 운영 오버레이가 이 두 값을 DB_USERNAME/DB_PASSWORD 로 덮어쓴다
+      #   (docker-compose.prod.yml 의 db 블록 참조).
       POSTGRES_PASSWORD: egov123
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U egov -d egovdb"]
+      # prod 오버레이는 POSTGRES_USER를 DB_USERNAME으로 바꾼다. 개발 리터럴을 쓰면 신규 운영
+      # 볼륨에는 `egov` 역할이 없어 DB가 영구 unhealthy가 되므로 컨테이너의 실효 값을 따른다.
+      # `$$`는 Compose 호스트 치환을 피하고 컨테이너 셸에서 `$`로 전달하기 위한 이스케이프다.
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -20,11 +36,17 @@ services:
       - egov-net
 
   api:
+    # 복원 시에는 manifest에 기록된 pull 가능한 digest reference를 주입한다. 기본값은
+    # 로컬/CI compose build의 안정적인 태그이며 운영 복원은 --no-build로 덮어쓴다.
+    image: ${API_IMAGE_REF:-egov-enterprise-api:local}
     build:
       context: .
       dockerfile: api-server/Dockerfile
     container_name: egov-api
     restart: on-failure
+    # audit/notification/log executors each drain accepted work for up to 60s during
+    # Spring shutdown. Keep the container alive for all three drains plus lifecycle overhead.
+    stop_grace_period: 200s
     ports:
       - "8080:8080"
     environment:
@@ -70,6 +92,19 @@ services:
       #   1시간을 넘길 수 있는 환경에서만 바깥에서 늘린다(CI 의 e2e 잡이 주입). 늘리지 않으면
       #   토큰이 중간에 만료돼 이후 테스트가 전부 /login 리다이렉트로 죽는다(실측: CI shard 2, 66분).
       JWT_ACCESS_TOKEN_VALIDITY_MS: ${JWT_ACCESS_TOKEN_VALIDITY_MS:-3600000}
+    # [2026-09-02] 첨부 저장소를 named volume 으로 보존한다.
+    #
+    #   종전에는 api 서비스에 volumes 가 **하나도 없었다**. 첨부는 application.yml 의
+    #   `./storage/uploads`(= 컨테이너의 /app/storage/uploads)에 저장되므로 컨테이너 쓰기 계층에
+    #   쌓였고, `docker compose up --build` 로 컨테이너를 재생성하는 **평범한 재배포마다
+    #   업로드된 파일이 전부 사라졌다**. DB 의 첨부 레코드는 남으므로 화면은 파일이 있다고
+    #   말하고 다운로드만 실패한다 — 관리자 첨부 정합성 점검(/api/v1/admin/files/integrity)이
+    #   바로 이 상태를 '실물 부재'로 세는데, 원인이 사용자 실수가 아니라 배포 형상이었다.
+    #
+    #   ⚠ 이 볼륨은 DB 와 **함께** 백업·복원해야 한다. 한쪽만 되돌리면 DB↔저장소가 어긋나
+    #   같은 점검이 대량 불일치를 보고한다(docs/04-operations/backup-and-restore-runbook.md).
+    volumes:
+      - attachment_storage:/app/storage
     depends_on:
       db:
         condition: service_healthy
@@ -82,6 +117,7 @@ services:
       - egov-net
 
   frontend:
+    image: ${FRONTEND_IMAGE_REF:-egov-enterprise-frontend:local}
     build:
       context: ./frontend
       args:
@@ -123,6 +159,8 @@ services:
 
 volumes:
   postgres_data:
+  # 첨부 파일 실물. DB 의 tb_atch_file_* 레코드와 짝을 이루므로 백업·복원 단위가 같다.
+  attachment_storage:
 
 networks:
   egov-net:

@@ -27,7 +27,7 @@ public class LoginLog extends BaseEntity {
     @Column(length = 20)
     private String userId;
 
-    @Column(length = 30)
+    @Column(length = 45)
     private String lgnIpAddr;
 
     @Column(length = 12)
