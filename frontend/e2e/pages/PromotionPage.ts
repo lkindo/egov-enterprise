@@ -97,7 +97,9 @@ export class PromotionPage {
         // ('등록'|'저장'을 넣으면 모달을 여는 '신규 배너/팝업 등록' 버튼이 .first()로 먼저 매칭돼 폼이 제출되지 않았음.)
         const submitBtn = this.page.getByRole('button', { name: /운영 배포|자산 수정/i }).first();
         await submitBtn.waitFor({ state: 'visible', timeout: 5000 });
-        await submitBtn.click({ force: true });
+        // [2026-09-02] `force: true` 를 걷어낸다. 위에서 visible 을 이미 기다렸고, force 는
+        //   그 위에 안정성·오버레이·포인터 수신 검사를 건너뛴다 — 가려진 버튼도 통과한다.
+        await submitBtn.click();
         console.log('>>> [Promotion] Submit button clicked, waiting for response...');
         // [2026-07-27] 종전에는 3초 blind wait 이었다. 그러면 **등록이 실패해도 그냥 지나간다** —
         //   검증 대상이 "무엇이 일어났는가"가 아니라 "시간이 지났는가"였기 때문이다.
