@@ -75,7 +75,7 @@ public class SystemLogApiController {
 
         return LogExcelExport.attachment("system-logs.xlsx", "system-logs",
                 new String[]{"로그 일련번호", "요청 ID", "서비스명", "메서드명", "처리구분", "처리시간",
-                        "요청자 ID", "요청 IP", "발생일자"},
+                        "요청자 ID", "요청 IP", "발생일자", "응답코드", "오류구분", "오류코드"},
                 rows,
                 (row, dto) -> {
                     row.createCell(0).setCellValue(LogExcelExport.nullSafe(dto.getSysLogSn()));
@@ -87,6 +87,10 @@ public class SystemLogApiController {
                     row.createCell(6).setCellValue(LogExcelExport.nullSafe(dto.getDmndUserId()));
                     row.createCell(7).setCellValue(LogExcelExport.nullSafe(dto.getRqesterIp()));
                     row.createCell(8).setCellValue(LogExcelExport.nullSafe(dto.getOcrnYmd()));
+                    // [2026-09-02] 실패 분류 3종 — 화면과 같은 값을 내보낸다.
+                    row.createCell(9).setCellValue(LogExcelExport.nullSafe(dto.getRspnsCd()));
+                    row.createCell(10).setCellValue(LogExcelExport.nullSafe(dto.getErrSeCd()));
+                    row.createCell(11).setCellValue(LogExcelExport.nullSafe(dto.getErrCd()));
                 });
     }
 

@@ -85,6 +85,18 @@ public class NoteService {
         });
     }
 
+    /**
+     * 쪽지 상세 조회. <b>받은 쪽지는 열람과 동시에 읽음 처리된다.</b>
+     *
+     * <p>클래스는 {@code readOnly = true} 지만 이 메서드는 쓰기 트랜잭션이어야 한다 — 받은 쪽지의
+     * {@code openYn} 을 'Y' 로 바꾸기 때문이다. 종전에는 그 전이가 어디에도 없어 수신함의
+     * 모든 쪽지가 영원히 '안 읽음' 이었다({@link NoteRecptn#markOpened} 참조).
+     *
+     * <p>조회 요청(GET)이 상태를 바꾸는 것은 메시지 함의 관례이고, 프런트 서비스 주석도 처음부터
+     * '상세 조회 및 읽음 처리' 로 이 동작을 약속하고 있었다. 발신자가 자기 보낸 쪽지를 보는
+     * 경로에는 읽음 개념이 없으므로 아무것도 바꾸지 않는다.
+     */
+    @Transactional
     public NoteDto getNoteDetail(Long noteSn, String type, Long relationSn, String currentUserId) {
         if ("sent".equals(type)) {
             NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationSn)
@@ -111,6 +123,8 @@ public class NoteService {
             if ("Y".equals(recptn.getDelYn())) {
                 throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
             }
+            // 소유자 검증을 통과한 뒤에만 읽음 처리한다 — 남의 쪽지를 '읽음' 으로 만들 수 없다.
+            recptn.markOpened();
             return convertToDto(recptn);
         }
     }

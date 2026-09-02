@@ -191,6 +191,29 @@ class NoteServiceImplTest {
         assertThat(result.getNoteRcptnSn()).isEqualTo(relationSn);
         assertThat(result.getNoteSj()).isEqualTo("Title");
         assertThat(result.getNoteCn()).isEqualTo("Content");
+        // [2026-09-02] 열람과 동시에 읽음 처리된다. 종전에는 openYn 을 'Y' 로 바꾸는 코드가
+        //   저장소 어디에도 없어 수신함의 모든 쪽지가 영원히 '안 읽음' 이었다.
+        assertThat(recptn.getOpenYn()).isEqualTo("Y");
+        assertThat(result.getOpenYn()).isEqualTo("Y");
+    }
+
+    /**
+     * 읽음 처리는 <b>소유자 검증 뒤에</b> 일어나야 한다. 순서가 뒤집히면 남의 수신 사본을
+     * 조회 시도만으로 '읽음' 으로 만들 수 있다(접근은 거부되더라도 상태는 이미 바뀐 뒤다).
+     */
+    @Test
+    @DisplayName("[보안 H1] 소유자가 아니면 읽음 처리도 일어나지 않는다")
+    void getNoteDetail_received_notOwner_doesNotMarkOpened() {
+        Long relationSn = 3L;
+        Note note = Note.builder().noteSn(1L).noteTtl("T").noteCn("C").build();
+        NoteRecptn recptn = NoteRecptn.builder()
+                .noteRcptnSn(relationSn).note(note).rcvrId("user2").openYn("N").build();
+        given(noteRecptnRepository.findById(relationSn)).willReturn(Optional.of(recptn));
+
+        assertThatThrownBy(() -> noteService.getNoteDetail(1L, "received", relationSn, "attacker"))
+                .isInstanceOf(BusinessException.class);
+
+        assertThat(recptn.getOpenYn()).isEqualTo("N");
     }
 
     @Test

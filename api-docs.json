@@ -28248,6 +28248,7 @@
           "Approval"
         ],
         "summary": "Get Pending Approvals (Inbox)",
+        "description": "결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다.",
         "operationId": "getPending",
         "parameters": [
           {
@@ -42202,6 +42203,21 @@
           "ocrnYmd": {
             "type": "string",
             "maxLength": 8,
+            "minLength": 0
+          },
+          "rspnsCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "errSeCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "errCd": {
+            "type": "string",
+            "maxLength": 12,
             "minLength": 0
           }
         }

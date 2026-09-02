@@ -3170,6 +3170,9 @@ export const SysLogDtoSchema = z.object({
   dmndUserId: z.string().min(0).max(20).optional(),
   rqesterIp: z.string().optional(),
   ocrnYmd: z.string().min(0).max(8).optional(),
+  rspnsCd: z.string().min(0).max(12).optional(),
+  errSeCd: z.string().min(0).max(12).optional(),
+  errCd: z.string().min(0).max(12).optional(),
 });
 export type SysLogDto = z.infer<typeof SysLogDtoSchema>;
 
@@ -8766,6 +8769,9 @@ export const SysLogDtoRequestSchema = z.object({
   dmndUserId: z.string().min(0).max(20).optional(),
   rqesterIp: z.string().optional(),
   ocrnYmd: z.string().min(0).max(8).optional(),
+  rspnsCd: z.string().min(0).max(12).optional(),
+  errSeCd: z.string().min(0).max(12).optional(),
+  errCd: z.string().min(0).max(12).optional(),
 });
 
 export const SysLogDtoResponseSchema = z.object({
@@ -8778,6 +8784,9 @@ export const SysLogDtoResponseSchema = z.object({
   dmndUserId: z.string().min(0).max(20).optional().nullable(),
   rqesterIp: z.string().optional().nullable(),
   ocrnYmd: z.string().min(0).max(8).optional().nullable(),
+  rspnsCd: z.string().min(0).max(12).optional().nullable(),
+  errSeCd: z.string().min(0).max(12).optional().nullable(),
+  errCd: z.string().min(0).max(12).optional().nullable(),
 });
 
 export const ApiResponseSysLogDtoRequestSchema = z.object({

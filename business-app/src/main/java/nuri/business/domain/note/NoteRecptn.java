@@ -68,6 +68,20 @@ public class NoteRecptn extends BaseEntity {
         this.delYn = "Y";
     }
 
+    /**
+     * 수신자가 쪽지를 열었다.
+     *
+     * <p>[2026-09-02] 종전에는 {@code openYn} 을 <b>'N' 으로 쓰기만 하고 'Y' 로 바꾸는 코드가
+     * 저장소 어디에도 없었다</b>. 수신함의 '읽음/안읽음' 아이콘은 그 값을 그리므로 모든 쪽지가
+     * 영원히 '안 읽음' 으로 맥동했고, 프런트 {@code NoteService.getNote} 의 주석은
+     * '상세 조회 및 읽음 처리' 라고 없는 동작을 약속하고 있었다.
+     *
+     * <p>멱등이다 — 이미 연 쪽지를 다시 열어도 상태는 그대로다.
+     */
+    public void markOpened() {
+        this.openYn = "Y";
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.openYn == null)

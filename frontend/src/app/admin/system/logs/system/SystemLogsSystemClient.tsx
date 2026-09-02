@@ -28,6 +28,8 @@ const EXPORT_HEADERS = [
     { label: '메소드명', key: 'methodNm' },
     { label: '응답시간(ms)', key: 'prcsTm' },
     { label: '처리구분', key: 'prcsSeCd' },
+    { label: '응답코드', key: 'rspnsCd' },
+    { label: '오류구분', key: 'errSeCd' },
     { label: '요청자ID', key: 'dmndUserId' },
     { label: '요청자IP', key: 'rqesterIp' },
 ];
@@ -120,7 +122,7 @@ const SystemLogsSystemClient = () => {
         },
         {
             // 기존 '상태' 열은 데이터와 무관하게 전 행에 SUCCESS 배지를 찍는 거짓 지표였다.
-            // SysLogDto 에 성공/실패 필드가 없으므로 실제 값인 처리구분(prcsSeCd)을 노출한다.
+            // 실제 값인 처리구분(prcsSeCd)을 노출한다.
             header: '처리구분',
             sortKey: 'prcsSeCd',
             accessor: (item: SysLog) => (
@@ -131,13 +133,36 @@ const SystemLogsSystemClient = () => {
                 </div>
             ),
             className: 'w-28'
+        },
+        {
+            // [2026-09-02] 이 표는 이제 **실패 요청 전용**이다(SystemErrorLogListener 가 4xx 이상만
+            //   기록한다). 그런데 리스너가 쓰는 응답코드·오류구분이 DTO 에 없어 어느 화면도 못 읽었다 —
+            //   "무엇이 실패했는가" 를 보여 줘야 할 표가 정작 그 값을 숨기고 있었다.
+            //   서버 오류(5xx)와 클라이언트 오류(4xx)는 조사 주체가 다르므로 색으로도 가른다.
+            header: '응답',
+            sortKey: 'rspnsCd',
+            accessor: (item: SysLog) => (
+                <div className="flex items-center justify-center gap-1.5">
+                    <span className={
+                        item.errSeCd === 'SERVER'
+                            ? 'px-2 py-0.5 rounded-md border text-xs font-bold tabular-nums bg-destructive/10 text-destructive-emphasis border-destructive/30'
+                            : 'px-2 py-0.5 rounded-md border text-xs font-bold tabular-nums bg-warning/10 text-warning-emphasis border-warning/30'
+                    }>
+                        {item.rspnsCd || '-'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                        {item.errSeCd === 'SERVER' ? '서버' : item.errSeCd === 'CLIENT' ? '요청' : ''}
+                    </span>
+                </div>
+            ),
+            className: 'w-32'
         }
     ];
 
     return (
         <WorkListPage
             title="시스템 로그"
-            description="서버 동작 상태와 모듈별 수행 이력을 발생일자 최신순으로 조회합니다."
+            description="실패한 API 요청(4xx·5xx)을 발생일자 최신순으로 조회합니다. 정상 요청 이력은 웹 로그에 있습니다."
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '시스템 로그' }]}
             filterStateKey="system-logs-system"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.

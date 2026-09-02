@@ -89,6 +89,10 @@ public class LogManageService extends BaseAbstractService {
                 .dmndUserId(entity.getDmndUserId())
                 .rqesterIp(entity.getDmndUserIpAddr())
                 .ocrnYmd(entity.getOcrnYmd())
+                // 실패 분류 3종 — 리스너가 쓰는 값이 화면까지 도달하게 한다(종전엔 dead write).
+                .rspnsCd(entity.getRspnsCd())
+                .errSeCd(entity.getErrSeCd())
+                .errCd(entity.getErrCd())
                 .build();
     }
 }

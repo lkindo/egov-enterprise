@@ -20,7 +20,7 @@ class NoteService extends ApiService {
  }
 
  /**
- * 諛쏆? 쪽지 목록 조회
+ * 받은 쪽지 목록 조회
  */
  async getReceivedNotes(params: { page?: number; size?: number; searchWrd?: string }): Promise<PageResponse<Note>> {
  const response = await this.executeGenerated(getReceivedNotesOperation, { query: params });
@@ -36,13 +36,18 @@ class NoteService extends ApiService {
  }
 
  /**
- * 쪽지 蹂대궡湲 */
+ * 쪽지 보내기
+ */
  async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }): Promise<void> {
  return this.executeGenerated(sendNoteOperation, { body: data });
  }
 
  /**
- * 쪽지 상세 조회 諛님쎌쓬 泥섎━
+ * 쪽지 상세 조회 및 읽음 처리.
+ *
+ * [2026-09-02] 이 주석은 원래부터 '읽음 처리' 를 약속했지만 서버에 그 동작이 없었다
+ * (인코딩이 깨진 채 남아 있던 문구다). 이제 받은 쪽지(type=received)는 서버가 열람과
+ * 동시에 openYn 을 'Y' 로 바꾼다. 보낸 쪽지(type=sent)에는 읽음 개념이 없다.
  */
  async getNote(noteSn: number, params: { type: string; relationSn: number }): Promise<Note> {
  return this.executeGenerated(getNoteOperation, {
@@ -52,7 +57,7 @@ class NoteService extends ApiService {
  }
 
  /**
- * 쪽지 님젣
+ * 쪽지 삭제
  */
  async deleteNote(relationSn: number, params: { type: string }): Promise<void> {
   return this.executeGenerated(deleteNoteOperation, {

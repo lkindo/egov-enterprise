@@ -22,14 +22,21 @@ import { menuService } from '@/services/business/user/MenuService';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import type { MenuInfo } from '@/types/foundation/menu';
 
+/**
+ * 검색 결과 카드가 쓰는 게시글 필드. 백엔드 `BoardSearchItemResponse` 와 같은 범위다.
+ *
+ * [2026-09-02] `pstCn`·`frstRegisterNm` 을 걷었다. 서버 DTO 가 본문을 **의도적으로** 싣지 않는데
+ * (본문은 에디터 HTML 원문이고 목록 표면을 좁힌다) 카드는 그 필드를 읽어 없으면
+ * '본문 내용이 없습니다.' 를 출력했다 — 본문이 있는 글에 없다고 말하는 거짓 문구였다.
+ * 없는 필드를 타입에 두면 그런 카드가 다시 생긴다.
+ */
 interface SearchArticle {
     bbsId: string;
     pstSn: number;
     pstTtl: string;
-    pstCn?: string;
     crtDt?: string;
     userNm?: string;
-    frstRegisterNm?: string;
+    inqCnt?: number;
 }
 
 type SearchUser = UserSearchResult;
@@ -116,6 +123,7 @@ export const SearchResultsContent = ({
                         pstTtl: item.pstTtl ?? '(제목 없음)',
                         crtDt: item.crtDt,
                         userNm: item.userNm,
+                        inqCnt: item.inqCnt,
                     }));
                 } catch {
                     articles = [];
@@ -195,7 +203,7 @@ export const SearchResultsContent = ({
                             검색 범위를 사실대로 적는다. */}
                         <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-lg border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
-                            <span className="text-sm font-bold text-surface-inverse-foreground tracking-tight">임직원 · 바로가기 검색</span>
+                            <span className="text-sm font-bold text-surface-inverse-foreground tracking-tight">게시글 제목 · 임직원 · 바로가기 검색</span>
                         </div>
                     </div>
 
@@ -214,7 +222,7 @@ export const SearchResultsContent = ({
                             <Input
                                 name="q"
                                 defaultValue={query}
-                                placeholder="임직원 또는 바로가기 이름을 입력하세요"
+                                placeholder="게시글 제목, 임직원 또는 바로가기 이름을 입력하세요"
                                 className="h-11 pl-16 pr-40 rounded-lg border-0 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
                             />
                             <Button
@@ -364,15 +372,20 @@ function ArticleResultItem({ item }: { item: SearchArticle }) {
                         {item.crtDt?.substring(0, 10)}
                     </span>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-6">
-                    {item.pstCn?.replace(/<[^>]*>?/gm, '') || '본문 내용이 없습니다.'}
-                </p>
+                {/*
+                    [2026-09-02] 본문 미리보기 문단을 걷었다. 서버가 본문을 싣지 않으므로 이 자리는
+                    언제나 '본문 내용이 없습니다.' 였다 — 본문이 있는 글에 없다고 말하는 거짓이다.
+                    대신 서버가 실제로 주는 조회수를 보여 준다. 본문은 카드를 눌러 상세에서 본다.
+                */}
                 <div className="flex items-center justify-between pt-6 border-t border-primary/5">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
                             <UserIcon size={14} className="text-muted-foreground" />
                         </div>
-                        <span className="text-sm font-bold text-foreground/70">{item.userNm || item.frstRegisterNm}</span>
+                        <span className="text-sm font-bold text-foreground/70">{item.userNm || '작성자 미상'}</span>
+                        {typeof item.inqCnt === 'number' ? (
+                            <span className="text-xs text-muted-foreground tabular-nums">조회 {item.inqCnt.toLocaleString()}</span>
+                        ) : null}
                     </div>
                     <ArrowRight size={18} className="text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
                 </div>

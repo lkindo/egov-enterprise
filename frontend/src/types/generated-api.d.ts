@@ -3721,7 +3721,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Pending Approvals (Inbox) */
+        /**
+         * Get Pending Approvals (Inbox)
+         * @description 결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다.
+         */
         get: operations["getPending"];
         put?: never;
         post?: never;
@@ -8159,6 +8162,9 @@ export interface components {
             dmndUserId?: string;
             rqesterIp?: string;
             ocrnYmd?: string;
+            rspnsCd?: string;
+            errSeCd?: string;
+            errCd?: string;
         };
         ApiResponseSysLogDto: {
             success?: boolean;

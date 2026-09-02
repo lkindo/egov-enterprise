@@ -304,7 +304,9 @@ const CLUSTER_CASES: ClusterCase[] = [
     Component: SystemLogsSystemClient,
     row: SYSTEM_ROW,
     method: 'getSystemLogs',
-    sortKeys: { 발생일자: 'ocrnYmd', 서비스설명: 'srvcNm', 처리구분: 'prcsSeCd' },
+    // [2026-09-02] '응답'(rspnsCd) 추가 — 이 표가 실패 요청 전용이 되면서 상태코드가 실제 값이 됐다.
+    //   종전에는 DTO 에 없어 어느 화면도 못 읽던 dead write 였다.
+    sortKeys: { 발생일자: 'ocrnYmd', 서비스설명: 'srvcNm', 처리구분: 'prcsSeCd', 응답: 'rspnsCd' },
   },
   {
     name: 'USR',
