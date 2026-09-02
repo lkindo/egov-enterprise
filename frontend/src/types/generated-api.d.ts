@@ -3525,7 +3525,7 @@ export interface paths {
         };
         /**
          * 커뮤니티 목록 조회
-         * @description 시스템에 등록된 전체 커뮤니티 목록을 페이징하여 조회합니다.
+         * @description 사용 중인 커뮤니티 목록을 페이징하여 조회합니다. 관리자가 사용 중지한 커뮤니티는 제외됩니다.
          */
         get: operations["getCommunities_1"];
         put?: never;

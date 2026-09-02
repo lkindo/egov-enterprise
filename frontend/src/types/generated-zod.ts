@@ -208,7 +208,7 @@ export const HpcmDtoSchema = z.object({
   hlpSn: z.number().int().optional(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
-  hlpExpln: z.string().min(0).max(65535),
+  hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
@@ -557,7 +557,7 @@ export type LoginPolicyDto = z.infer<typeof LoginPolicyDtoSchema>;
 // ==========================================================================
 export const InternetSvcGuidanceDtoSchema = z.object({
   itntSrvcSn: z.number().int().optional(),
-  intnetSvcNm: z.string().min(0).max(255),
+  intnetSvcNm: z.string().min(0).max(100),
   intnetSvcDc: z.string().min(0).max(1000),
   reflctAt: z.string().min(0).max(1).optional(),
   userId: z.string().optional(),
@@ -4541,7 +4541,7 @@ export const HpcmDtoRequestSchema = z.object({
   hlpSn: z.number().int().optional(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
-  hlpExpln: z.string().min(0).max(65535),
+  hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
@@ -4550,7 +4550,7 @@ export const HpcmDtoResponseSchema = z.object({
   hlpSn: z.number().int().optional().nullable(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
-  hlpExpln: z.string().min(0).max(65535),
+  hlpExpln: z.string().min(0).max(4000),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
@@ -5059,7 +5059,7 @@ export const LoginPolicyDtoResponseSchema = z.object({
 
 export const InternetSvcGuidanceDtoRequestSchema = z.object({
   itntSrvcSn: z.number().int().optional(),
-  intnetSvcNm: z.string().min(0).max(255),
+  intnetSvcNm: z.string().min(0).max(100),
   intnetSvcDc: z.string().min(0).max(1000),
   reflctAt: z.string().min(0).max(1).optional(),
   userId: z.string().optional(),
@@ -5068,7 +5068,7 @@ export const InternetSvcGuidanceDtoRequestSchema = z.object({
 
 export const InternetSvcGuidanceDtoResponseSchema = z.object({
   itntSrvcSn: z.number().int().optional().nullable(),
-  intnetSvcNm: z.string().min(0).max(255),
+  intnetSvcNm: z.string().min(0).max(100),
   intnetSvcDc: z.string().min(0).max(1000),
   reflctAt: z.string().min(0).max(1).optional().nullable(),
   userId: z.string().optional().nullable(),

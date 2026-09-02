@@ -30,12 +30,39 @@ public class CommunityService {
     private final CommunityUserRepository communityUserRepository;
     private final JPAQueryFactory queryFactory;
 
+    /**
+     * 관리자용 커뮤니티 목록 — 사용 중지(useYn='N')된 것까지 <b>전부</b> 보여 준다.
+     * 중지된 커뮤니티를 되살리거나 정리하려면 관리자가 볼 수 있어야 한다.
+     */
     public Page<CommunityDto> getCommunityList(String searchCnd, String searchWrd,
             @org.springframework.lang.NonNull Pageable pageable) {
+        return searchCommunities(searchCnd, searchWrd, pageable, false);
+    }
+
+    /**
+     * 일반 사용자용 커뮤니티 목록 — 사용 중(useYn='Y')인 것만.
+     *
+     * <p><b>왜 나눴나 — 2026-09-02 실측.</b> 관리자·사용자 컨트롤러가 같은 목록 메서드를 불렀고 그
+     * 메서드는 {@code regSeCd} 만 걸렀다. 그래서 관리자가 '삭제'(논리 삭제, useYn='N')한 커뮤니티가
+     * <b>일반 사용자 목록에 그대로 남았다</b> — 목록 화면에 사용여부 열도 없어 사용자는 죽은
+     * 커뮤니티를 산 것과 구분할 수 없었다. 포틀릿용 목록({@link #getCommunityListPortlet})은
+     * 처음부터 {@code useYn='Y'} 를 걸고 있었으므로 같은 규칙을 사용자 목록에도 적용한다.
+     * 하나의 메서드에 필터를 넣지 않은 것은 관리자 목록의 의미(전체)를 보존하기 위해서다(H3).
+     */
+    public Page<CommunityDto> getActiveCommunityList(String searchCnd, String searchWrd,
+            @org.springframework.lang.NonNull Pageable pageable) {
+        return searchCommunities(searchCnd, searchWrd, pageable, true);
+    }
+
+    private Page<CommunityDto> searchCommunities(String searchCnd, String searchWrd,
+            Pageable pageable, boolean activeOnly) {
         QCommunity qCommunity = QCommunity.community;
         BooleanBuilder builder = new BooleanBuilder();
 
         builder.and(qCommunity.regSeCd.eq("REGC01"));
+        if (activeOnly) {
+            builder.and(qCommunity.useYn.eq("Y"));
+        }
 
         if (searchWrd != null && !searchWrd.isEmpty()) {
             if ("0".equals(searchCnd)) {

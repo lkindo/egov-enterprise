@@ -94,8 +94,30 @@ class HelpServiceTest {
     @Test
     @DisplayName("도움말 삭제 테스트")
     void deleteHpcm_Success() {
+        Hpcm entity = Hpcm.builder().hlpSn(1L).hlpDfn("Def").build();
+        when(hpcmRepository.findById(1L)).thenReturn(Optional.of(entity));
+
         helpService.deleteHpcm(1L);
-        verify(hpcmRepository).deleteById(1L);
+
+        verify(hpcmRepository).delete(entity);
+    }
+
+    /**
+     * [2026-09-02] 없는 id 의 삭제는 404 다. 종전에는 deleteById 를 바로 불러 Spring Data 3 에서
+     * 없는 id 가 조용히 200 으로 끝났다 — 같은 서비스의 조회·수정은 404 를 주는데 삭제만 달랐고,
+     * 화면은 성공 토스트를 띄우고 목록은 그대로였다.
+     */
+    @Test
+    @DisplayName("도움말 삭제 - 없는 id 는 404 이고 삭제를 호출하지 않는다")
+    void deleteHpcm_NotFound() {
+        when(hpcmRepository.findById(99L)).thenReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> helpService.deleteHpcm(99L))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+        verify(hpcmRepository, org.mockito.Mockito.never()).delete(any());
+        verify(hpcmRepository, org.mockito.Mockito.never()).deleteById(any());
     }
 
     // --- Online Manual Tests ---
@@ -152,7 +174,25 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 삭제 테스트")
     void deleteOnlineManual_Success() {
+        OnlineManual entity = org.mockito.Mockito.mock(OnlineManual.class);
+        when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(entity));
+
         helpService.deleteOnlineManual(1L);
-        verify(onlineManualRepository).deleteById(1L);
+
+        verify(onlineManualRepository).delete(entity);
+    }
+
+    /** 없는 id 는 404 — {@link #deleteHpcm_NotFound} 와 같은 이유. */
+    @Test
+    @DisplayName("온라인 매뉴얼 삭제 - 없는 id 는 404 이고 삭제를 호출하지 않는다")
+    void deleteOnlineManual_NotFound() {
+        when(onlineManualRepository.findById(99L)).thenReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> helpService.deleteOnlineManual(99L))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+        verify(onlineManualRepository, org.mockito.Mockito.never()).delete(any());
+        verify(onlineManualRepository, org.mockito.Mockito.never()).deleteById(any());
     }
 }

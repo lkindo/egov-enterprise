@@ -27298,7 +27298,7 @@
           "Community User"
         ],
         "summary": "커뮤니티 목록 조회",
-        "description": "시스템에 등록된 전체 커뮤니티 목록을 페이징하여 조회합니다.",
+        "description": "사용 중인 커뮤니티 목록을 페이징하여 조회합니다. 관리자가 사용 중지한 커뮤니티는 제외됩니다.",
         "operationId": "getCommunities_1",
         "parameters": [
           {
@@ -34168,7 +34168,7 @@
           "hlpExpln": {
             "type": "string",
             "description": "도움말 설명",
-            "maxLength": 65535,
+            "maxLength": 4000,
             "minLength": 0
           },
           "frstRgtrId": {
@@ -35319,7 +35319,7 @@
           },
           "intnetSvcNm": {
             "type": "string",
-            "maxLength": 255,
+            "maxLength": 100,
             "minLength": 0
           },
           "intnetSvcDc": {
