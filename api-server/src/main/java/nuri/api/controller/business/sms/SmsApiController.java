@@ -6,6 +6,7 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.sms.SmsService;
+import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.business.service.sms.dto.SmsDeliveryStatusDto;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
@@ -68,7 +69,19 @@ public class SmsApiController {
         return ResponseEntity.ok(ApiResponse.success(smsService.getSms(smsTrsmSn)));
     }
 
+    /**
+     * ⚠ 이 응답만 <b>수신자 전화번호 원문</b>을 내보낸다.
+     *
+     * <p>같은 컨트롤러의 목록·상세({@code getSmsList}·{@code getSms})는 읽기 매퍼가 recipients 를
+     * 항상 빈 배열로 채우므로 연락처가 실리지 않는다. 즉 이 엔드포인트가 SMS 도메인에서
+     * 타인의 개인정보가 나가는 <b>유일한 창구</b>이고, {@code SmsRecptnMapper} 는 단순 필드 복사라
+     * 마스킹이 없다({@code PiiMaskUtil} 은 로그에만 쓰인다 — 로그는 가리면서 응답은 그대로였다).
+     *
+     * <p>그래서 {@code @PrivacyAccess} 를 붙여 성공 조회를 {@code tb_privacy_log} 에 남긴다.
+     * 부착 지점 전수는 {@code PrivacyAccessCensusLinterTest} 가 양방향으로 동결한다.
+     */
     @Operation(summary = "SMS 수신자 목록 조회", description = "특정 SMS의 수신자 목록을 조회합니다.")
+    @PrivacyAccess("SMS 수신자 목록(수신 전화번호)")
     @GetMapping("/{smsTrsmSn}/recipients")
     public ResponseEntity<ApiResponse<List<SmsRecptnDto>>> getSmsRecipients(
             @Parameter(description = "SMS 전송 일련번호") @PathVariable Long smsTrsmSn) {

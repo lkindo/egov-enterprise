@@ -200,6 +200,9 @@ class ConfigSafetyLinterTest {
         // ── 9) [W0-04 보완] 배포 스크립트가 prod 오버레이를 물고 있는가
         auditDeployScriptUsesProdOverlay(root, violations);
 
+        // ── 10) [2026-09-02] 번들 DB 의 운영 노출면
+        auditBundledDatabaseExposure(composeBaseSrc, composeProdSrc, violations);
+
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             sb.append("\n========================================================================\n");
@@ -220,6 +223,67 @@ class ConfigSafetyLinterTest {
     }
 
     // ---- 개별 검사 -------------------------------------------------------------------
+
+    /** base compose 의 db 서비스가 커밋해 둔 개발 비밀번호. 이 값이 운영까지 새는지를 본다. */
+    private static final Pattern COMPOSE_DB_SERVICE = Pattern.compile("(?m)^\\s+db\\s*:\\s*$");
+
+    /** 모든 인터페이스(0.0.0.0)에 5432 를 공개하는 형태. 호스트 IP 접두가 없으면 여기 걸린다. */
+    private static final Pattern DB_PORT_PUBLISHED_ON_ALL_INTERFACES =
+            Pattern.compile("(?m)^\\s*-\\s*\"?\\d+:5432\"?\\s*$");
+
+    /** 루프백 한정 공개. `127.0.0.1:5432:5432` 형태. */
+    private static final Pattern DB_PORT_PUBLISHED_ON_LOOPBACK =
+            Pattern.compile("(?m)^\\s*-\\s*\"?(127\\.0\\.0\\.1|localhost):\\d+:5432\"?\\s*$");
+
+    /** prod 오버레이가 번들 DB 자격을 환경변수로 덮어쓰는가. */
+    private static final Pattern PROD_DB_PASSWORD_OVERRIDE =
+            Pattern.compile("(?m)^\\s*POSTGRES_PASSWORD\\s*:\\s*\\$\\{[A-Z_]+:\\?");
+
+    /**
+     * 번들 PostgreSQL 이 운영 배포에서 <b>개발 형상 그대로</b> 뜨는 경로를 막는다.
+     *
+     * <p>[왜 필요한가 — 2026-09-02 실측] {@code scripts/deploy.sh} 는
+     * {@code -f docker-compose.yml -f docker-compose.prod.yml} 로 올린다. 즉 <b>base 의 db 서비스가
+     * 운영에서도 뜬다</b>. 그런데 종전 오버레이에는 db 블록이 아예 없어서 두 가지가 그대로 새고 있었다.
+     * <ul>
+     *   <li>{@code POSTGRES_PASSWORD: egov123} — 저장소에 커밋된 값이 운영 DB 비밀번호가 된다.
+     *       api 쪽만 {@code DB_PASSWORD} 를 fail-fast 로 요구해 "주입했다"는 착각이 들기 쉬웠다.</li>
+     *   <li>{@code ports: "5432:5432"} — 0.0.0.0 바인딩이라 운영 호스트의 모든 인터페이스에 열린다.</li>
+     * </ul>
+     *
+     * <p><b>포트는 오버레이로 닫을 수 없다.</b> compose 는 {@code ports} 를 리스트로 보고 병합 시
+     * <b>이어붙이므로</b>, 오버레이에서 비워도 base 의 공개가 남는다. 그래서 base 자체가 루프백
+     * 한정이어야 하고, 이 검사도 base 를 본다. 반대로 {@code environment} 는 맵이라 오버레이가 이긴다.
+     *
+     * <p>판정 불가는 통과가 아니라 위반이다 — db 서비스 정의를 찾지 못하면 이 검사 전체가
+     * vacuous 해지므로 그 사실 자체를 실패로 올린다.
+     */
+    private void auditBundledDatabaseExposure(String composeBaseSrc, String composeProdSrc,
+                                              List<String> violations) {
+        if (!COMPOSE_DB_SERVICE.matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: 'db' 서비스 정의를 찾지 못했습니다 — 번들 DB 노출면 검사가"
+                    + " vacuous 해집니다. 서비스명을 바꿨다면 이 린터를 함께 갱신하십시오.");
+            return;
+        }
+
+        if (DB_PORT_PUBLISHED_ON_ALL_INTERFACES.matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: db 의 5432 가 모든 인터페이스(0.0.0.0)에 공개돼 있습니다."
+                    + " deploy.sh 가 base 를 함께 올리므로 이 공개는 운영 호스트에 그대로 적용됩니다."
+                    + " '127.0.0.1:5432:5432' 로 좁히십시오 — 컨테이너 간 통신은 egov-net 을 쓰므로 영향이 없습니다."
+                    + " (오버레이로는 닫을 수 없습니다: compose 는 ports 리스트를 이어붙입니다.)");
+        } else if (!DB_PORT_PUBLISHED_ON_LOOPBACK.matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: db 의 5432 공개 형태를 판정할 수 없습니다 —"
+                    + " 루프백 한정('127.0.0.1:5432:5432')이거나 공개가 아예 없어야 합니다."
+                    + " 판정 불가를 통과로 넘기면 이 게이트가 무의미해집니다.");
+        }
+
+        if (!PROD_DB_PASSWORD_OVERRIDE.matcher(composeProdSrc).find()) {
+            violations.add("docker-compose.prod.yml: 번들 db 의 POSTGRES_PASSWORD 를 필수 환경변수로"
+                    + " 재정의하지 않았습니다 — base 에 커밋된 개발 비밀번호가 운영 DB 자격이 됩니다."
+                    + " db 블록에 'POSTGRES_PASSWORD: ${DB_PASSWORD:?...}' 를 두십시오"
+                    + "(deploy.sh 가 이미 필수로 검증하는 변수입니다).");
+        }
+    }
 
     /**
      * actuator 노출면. include 는 CSV 인라인 형식만 판정 가능하므로, 블록/리스트 형식으로 바뀌면

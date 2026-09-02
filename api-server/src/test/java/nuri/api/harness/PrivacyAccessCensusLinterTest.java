@@ -53,7 +53,10 @@ class PrivacyAccessCensusLinterTest {
     private static final Set<String> DECLARED_PRIVACY_HANDLERS = Set.of(
             "UserApiController#getUsers",
             "UserApiController#getUser",
-            "ExternalHrApiController#getAllExternalHr");
+            "ExternalHrApiController#getAllExternalHr",
+            // [2026-09-02] SMS 도메인에서 타인 연락처가 나가는 유일한 창구다. 목록·상세는
+            //   읽기 매퍼가 recipients 를 빈 배열로 채워 연락처를 싣지 않는다.
+            "SmsApiController#getSmsRecipients");
 
     @Test
     @DisplayName("🔒 @PrivacyAccess 부착 지점이 선언 census 와 정확히 일치한다")
