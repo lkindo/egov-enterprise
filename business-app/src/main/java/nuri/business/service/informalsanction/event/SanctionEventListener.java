@@ -17,12 +17,23 @@ public class SanctionEventListener {
     private final nuri.business.service.sms.SmsService smsService;
     private final nuri.business.service.mail.MailService mailService;
 
+    /**
+     * 앱 내 알림은 {@code NotificationService} 를 주입하지 않고 foundation 이벤트로 요청한다.
+     *
+     * <p>주입하면 informalsanction→notification 이라는 <b>새 교차 도메인 결합</b>이 생긴다.
+     * 이 리스너는 이미 sms·mail 두 결합을 갖고 있고(GAP-ARCH-001 의 잔여 4건 중 둘),
+     * 그 목록을 늘리는 대신 발행만 한다 — 어느 쪽도 상대를 import 하지 않는다.
+     */
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     public SanctionEventListener(nuri.business.service.user.UserService userService,
                                 nuri.business.service.sms.SmsService smsService,
-                                nuri.business.service.mail.MailService mailService) {
+                                nuri.business.service.mail.MailService mailService,
+                                org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.userService = userService;
         this.smsService = smsService;
         this.mailService = mailService;
+        this.eventPublisher = eventPublisher;
     }
 
     // 발행 자체가 커밋 후 이뤄지도록 발행부(confirmInformalSanction)에서 TransactionUtils.runAfterCommit 로 감싼다.
@@ -83,6 +94,40 @@ public class SanctionEventListener {
 
         } catch (Exception e) {
             log.error("Failed to send notification for sanction {}", event.getInformalSanctionSn(), e);
+        }
+
+        publishInAppNotification(event);
+    }
+
+    /**
+     * 앱 내 알림 요청.
+     *
+     * <p><b>SMS·메일과 별개의 try 로 두는 이유</b> — 위 블록은 사용자 조회부터 발송까지를 한
+     * try 로 감싸므로, 연락처가 없거나 외부 발송이 실패하면 통째로 빠져나온다. 그런데 앱 내
+     * 알림은 연락처가 없어도 전달되는 유일한 경로이고, 특히 이 배포에는 실 SMS 게이트웨이가
+     * 없어 <b>사실상 유일하게 도달하는 통지</b>다. 같은 try 에 넣으면 가장 중요한 경로가
+     * 부수적인 실패에 함께 묻힌다.
+     *
+     * <p>이 리스너는 발행부가 커밋 이후 발행하도록 감싸 두었으므로 여기서 추가 트랜잭션 경계를
+     * 두지 않는다.
+     */
+    private void publishInAppNotification(SanctionStatusChangedEvent event) {
+        if (!org.springframework.util.StringUtils.hasText(event.getApplicantId())) {
+            return;
+        }
+        try {
+            String reason = org.springframework.util.StringUtils.hasText(event.getReason())
+                    ? event.getReason()
+                    : "없음";
+            eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
+                    event.getApplicantId(),
+                    "결재 상태 변경",
+                    String.format("결재(ID:%s)가 %s 되었습니다. 사유: %s",
+                            event.getInformalSanctionSn(), event.getNewStatus(), reason),
+                    "/approvals"));
+        } catch (Exception e) {
+            log.error("Failed to request in-app notification for sanction {}",
+                    event.getInformalSanctionSn(), e);
         }
     }
 }

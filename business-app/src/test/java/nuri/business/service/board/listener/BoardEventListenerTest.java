@@ -3,6 +3,7 @@ package nuri.business.service.board.listener;
 import nuri.business.domain.board.Board;
 import nuri.business.domain.board.BoardRepository;
 import nuri.foundation.core.event.PostCommentCountChangedEvent;
+import nuri.foundation.core.event.PostCommentedEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +27,10 @@ class BoardEventListenerTest {
 
     @Mock
     private BoardRepository boardRepository;
+
+    /** 알림은 foundation 이벤트로 요청한다 — board→notification 결합을 만들지 않는다. */
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private BoardEventListener boardEventListener;
@@ -75,5 +80,68 @@ class BoardEventListenerTest {
         assertThat(anyCommentField)
                 .as("board 리스너가 comment 도메인 타입을 다시 주입받고 있다 — 이벤트가 개수를 나르게 하십시오")
                 .isFalse();
+    }
+
+    // ------------------------------------------------------------------
+    // 내 글에 댓글이 달리면 글쓴이에게 알린다.
+    //
+    // 게시글의 작성자는 board 가 소유한 사실이라 board 가 판정한다 — comment 가 알아내려면
+    // board 를 조회해야 하고, 그 순간 2026-08-29 에 역전시킨 comment→board 결합이 되살아난다.
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("댓글이 달리면 게시글 작성자에게 알림을 요청한다")
+    void handlePostCommented_requestsNotificationForAuthor() {
+        given(boardRepository.findById(1L)).willReturn(java.util.Optional.of(
+                Board.builder().pstSn(1L).bbsId("BBS_01").pstTtl("연차 신청 안내")
+                        .userId("USRCNFRM_AUTHOR").build()));
+
+        boardEventListener.handlePostCommented(
+                new PostCommentedEvent("BBS_01", 1L, "USRCNFRM_OTHER", "홍길동"));
+
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().receiverEsntlId()).isEqualTo("USRCNFRM_AUTHOR");
+        assertThat(captor.getValue().content()).contains("홍길동").contains("연차 신청 안내");
+        assertThat(captor.getValue().linkUrl()).contains("BBS_01").contains("1");
+    }
+
+    /**
+     * 자기 행동을 자기에게 통지하면 알림함이 자기 발자국으로 채워져 남이 남긴 반응이 묻힌다.
+     */
+    @Test
+    @DisplayName("자기 글에 자기가 단 댓글은 알리지 않는다")
+    void handlePostCommented_skipsSelfComment() {
+        given(boardRepository.findById(1L)).willReturn(java.util.Optional.of(
+                Board.builder().pstSn(1L).bbsId("BBS_01").pstTtl("제목").userId("USRCNFRM_AUTHOR").build()));
+
+        boardEventListener.handlePostCommented(
+                new PostCommentedEvent("BBS_01", 1L, "USRCNFRM_AUTHOR", "본인"));
+
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("작성자를 알 수 없는 글에는 알림을 요청하지 않는다")
+    void handlePostCommented_skipsWhenAuthorUnknown() {
+        given(boardRepository.findById(1L)).willReturn(java.util.Optional.of(
+                Board.builder().pstSn(1L).bbsId("BBS_01").pstTtl("제목").build()));
+
+        boardEventListener.handlePostCommented(
+                new PostCommentedEvent("BBS_01", 1L, "USRCNFRM_OTHER", "홍길동"));
+
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("이미 삭제된 글의 댓글 알림은 조용히 건너뛴다")
+    void handlePostCommented_skipsWhenPostGone() {
+        given(boardRepository.findById(1L)).willReturn(java.util.Optional.empty());
+
+        boardEventListener.handlePostCommented(
+                new PostCommentedEvent("BBS_01", 1L, "USRCNFRM_OTHER", "홍길동"));
+
+        verify(eventPublisher, never()).publishEvent(any(Object.class));
     }
 }

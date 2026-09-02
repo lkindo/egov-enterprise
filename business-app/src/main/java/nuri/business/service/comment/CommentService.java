@@ -50,6 +50,7 @@ public class CommentService {
 
         Long ansSn = commentRepository.save(comment).getAnsSn();
         publishCountAfterCommit(comment.getBbsId(), comment.getPstSn());
+        publishCommentedAfterCommit(comment.getBbsId(), comment.getPstSn(), wrterEsntlId, wrterNm);
         return ansSn;
     }
 
@@ -86,6 +87,23 @@ public class CommentService {
             eventPublisher.publishEvent(
                     new PostCommentCountChangedEvent(bbsId, pstSn, (int) count));
         });
+    }
+
+    /**
+     * 댓글이 <b>새로 달렸음</b>을 커밋 이후에 알린다 — 게시글 작성자 알림의 출발점이다.
+     *
+     * <p><b>왜 개수 이벤트를 재사용하지 않는가</b> — 그 이벤트는 삭제에도 발행되고 누가 썼는지를
+     * 나르지 않는다. 하나로 겸하게 하면 댓글을 지웠을 때도 "댓글이 달렸다" 알림이 나간다.
+     *
+     * <p><b>왜 게시글 작성자를 여기서 찾지 않는가</b> — comment 는 게시글의 작성자를 모른다.
+     * 알아내려면 board 를 조회해야 하고 그 순간 comment→board 결합이 되살아난다
+     * (GAP-ARCH-001 이 2026-08-29 에 역전시킨 바로 그 방향이다). 게시글을 소유한 board 가
+     * 이 이벤트를 받아 작성자를 판정한다.
+     */
+    private void publishCommentedAfterCommit(String bbsId, Long pstSn, String wrterEsntlId, String wrterNm) {
+        if (bbsId == null || pstSn == null) return;
+        TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(
+                new nuri.foundation.core.event.PostCommentedEvent(bbsId, pstSn, wrterEsntlId, wrterNm)));
     }
 
     private CommentDto toDto(Comment entity) {

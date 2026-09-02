@@ -41,6 +41,13 @@ class NoteServiceImplTest {
     @Mock
     private NoteDomainRepository noteRepository;
 
+    /**
+     * 쪽지 수신 알림은 foundation 이벤트로 요청한다. 목이 없으면 발송 경로에서 NPE 가 난다 —
+     * 알림 요청이 실제로 발행 경로에 결속돼 있다는 증거이기도 하다.
+     */
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private NoteService noteService;
 
@@ -255,6 +262,46 @@ class NoteServiceImplTest {
         verify(noteTrnsmitRepository, times(1)).save(any(NoteTrnsmit.class));
         // 수신자가 2명이므로 2번 호출되어야 함
         verify(noteRecptnRepository, times(2)).save(any(NoteRecptn.class));
+    }
+
+    /**
+     * 쪽지가 도착하면 수신자에게 알린다.
+     *
+     * <p>종전에는 어떤 사건도 알림을 만들지 않아, 쪽지가 와도 종 아이콘이 조용했다. 수신자는
+     * 쪽지함을 직접 열어 보기 전에는 알 방법이 없었다.
+     */
+    @Test
+    @DisplayName("쪽지 발송 시 수신자마다 알림을 요청한다")
+    void sendNote_requestsNotificationPerRecipient() {
+        noteService.sendNote("user1", NoteDto.builder()
+                .noteSj("회의 일정 공유").noteCn("본문").rcverId("user2, user3").build());
+
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(captor.capture());
+
+        assertThat(captor.getAllValues())
+                .extracting(nuri.foundation.core.event.NotificationRequestedEvent::receiverEsntlId)
+                .containsExactlyInAnyOrder("user2", "user3");
+        assertThat(captor.getAllValues().get(0).linkUrl()).isEqualTo("/note");
+    }
+
+    /**
+     * 알림은 목록·종 아이콘·WebSocket 으로 퍼진다. 본문을 복제하면 쪽지의 열람 통제
+     * ({@code NoteRecptn} 소유자 가드)를 우회하는 사본이 생긴다 — 제목만 싣는다.
+     */
+    @Test
+    @DisplayName("알림에 쪽지 본문을 복제하지 않는다")
+    void sendNote_notificationCarriesSubjectNotBody() {
+        noteService.sendNote("user1", NoteDto.builder()
+                .noteSj("회의 일정 공유").noteCn("대외비 본문 내용").rcverId("user2").build());
+
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+
+        assertThat(captor.getValue().content()).isEqualTo("회의 일정 공유");
+        assertThat(captor.getValue().content()).doesNotContain("대외비 본문 내용");
     }
 
     @Test

@@ -1,9 +1,12 @@
 package nuri.business.service.board.listener;
 
 import nuri.business.domain.board.BoardRepository;
+import nuri.foundation.core.event.NotificationRequestedEvent;
 import nuri.foundation.core.event.PostCommentCountChangedEvent;
+import nuri.foundation.core.event.PostCommentedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -33,6 +36,12 @@ public class BoardEventListener {
 
     private final BoardRepository boardRepository;
 
+    /**
+     * 알림은 {@code NotificationService} 를 주입하지 않고 foundation 이벤트로 요청한다 —
+     * board→notification 이라는 새 교차 도메인 결합을 만들지 않기 위해서다.
+     */
+    private final ApplicationEventPublisher eventPublisher;
+
     // 발행부가 TransactionUtils.runAfterCommit 으로 감싸 커밋 이후에만 발행한다.
     // (@TransactionalEventListener + @Async 조합은 AsyncTransactionalListenerArchTest 게이트로 금지된다.)
     @Async
@@ -59,5 +68,51 @@ public class BoardEventListener {
             return;
         }
         log.info(">>> Updated comment count for pstSn {}: {}", pstSn, count);
+    }
+
+    /**
+     * 내 글에 댓글이 달리면 글쓴이에게 알린다.
+     *
+     * <p><b>왜 board 가 이 일을 하는가</b> — 게시글의 작성자는 board 가 소유한 사실이다.
+     * comment 가 알아내려면 board 를 조회해야 하고, 그 순간 GAP-ARCH-001 이 역전시킨
+     * comment→board 결합이 되살아난다. 그래서 comment 는 "댓글이 달렸다" 만 알리고,
+     * 작성자 판정은 글을 가진 쪽이 한다.
+     *
+     * <p><b>자기 글에 자기가 단 댓글은 알리지 않는다.</b> 자기 행동을 자기에게 통지하면
+     * 알림함이 자기 발자국으로 채워져 정작 남이 남긴 반응이 묻힌다.
+     *
+     * <p>[비파괴 원칙] 알림 실패가 댓글 등록을 되돌리면 안 된다. 이미 커밋된 뒤이므로
+     * 되돌릴 수도 없다 — 예외를 흡수하고 로그로 남긴다.
+     */
+    @Async
+    @EventListener
+    public void handlePostCommented(PostCommentedEvent event) {
+        try {
+            boardRepository.findById(event.pstSn()).ifPresent(post -> {
+                String authorEsntlId = post.getUserId();
+                if (!org.springframework.util.StringUtils.hasText(authorEsntlId)) {
+                    return;
+                }
+                if (authorEsntlId.equals(event.commenterEsntlId())) {
+                    return;
+                }
+                String commenter = org.springframework.util.StringUtils.hasText(event.commenterName())
+                        ? event.commenterName()
+                        : "누군가";
+                eventPublisher.publishEvent(new NotificationRequestedEvent(
+                        authorEsntlId,
+                        "새 댓글",
+                        String.format("%s 님이 '%s' 글에 댓글을 남겼습니다.",
+                                commenter,
+                                org.springframework.util.StringUtils.hasText(post.getPstTtl())
+                                        ? post.getPstTtl()
+                                        : "(제목 없음)"),
+                        String.format("/admin/community/boards/detail?bbsId=%s&pstSn=%d",
+                                event.bbsId(), event.pstSn())));
+            });
+        } catch (Exception e) {
+            log.error("댓글 알림 요청 실패(댓글 등록에는 영향 없음) — pstSn={}, 사유={}",
+                    event.pstSn(), e.toString());
+        }
     }
 }
