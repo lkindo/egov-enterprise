@@ -38,6 +38,62 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
+    /*
+     * [2026-09-02] 통합 검색 컨트롤러 계약.
+     *
+     * 같은 컨트롤러에 @GetMapping("/{bbsId}") 가 있어 "/search" 가 bbsId="search" 로 잡힐 수 있는
+     * 자리다. 리터럴 경로가 우선한다는 Spring 규칙에 기대지만, 그 사실을 여기서 고정한다 —
+     * 누군가 매핑 순서나 패턴을 바꾸면 검색이 조용히 "search 라는 게시판 조회" 로 변한다.
+     * 응답은 PageResponse 가 아니라 bare List 이며(페이지를 넘겨 전량 수집하는 경로를 만들지 않는다),
+     * 좁힌 projection 이라 본문·비밀번호가 실리지 않는다.
+     */
+    @Test
+    @WithMockCustomUser(username = "user01", esntlId = "user01")
+    @DisplayName("통합 검색은 /search 리터럴 경로로 잡히고 게시판 목록 조회로 새지 않는다")
+    void searchPosts_resolvesLiteralPathNotBbsId() throws Exception {
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder()
+                .pstSn(7L).bbsId("BBS_001").pstTtl("연차 신청 안내").userNm("홍길동").inqCnt(3)
+                .pstCn("<p>본문</p>").pswd("secret")
+                .build()));
+        given(boardService.searchAcrossBoards(any(), any(Pageable.class))).willReturn(page);
+
+        mockMvc.perform(get("/api/v1/boards/search")
+                        .param("keyword", "연차")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].pstSn").value(7))
+                .andExpect(jsonPath("$.data[0].pstTtl").value("연차 신청 안내"))
+                .andExpect(jsonPath("$.data[0].userNm").value("홍길동"))
+                .andExpect(jsonPath("$.data[0].inqCnt").value(3))
+                // 좁힌 projection — 본문 HTML 과 게시글 비밀번호는 목록 표면에 실리지 않는다.
+                .andExpect(jsonPath("$.data[0].pstCn").doesNotExist())
+                .andExpect(jsonPath("$.data[0].pswd").doesNotExist())
+                // PageResponse 봉투가 아니다.
+                .andExpect(jsonPath("$.data.list").doesNotExist());
+
+        // 검색어가 그대로 서비스에 도달한다.
+        org.mockito.ArgumentCaptor<String> keyword = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(boardService).searchAcrossBoards(keyword.capture(), any(Pageable.class));
+        org.assertj.core.api.Assertions.assertThat(keyword.getValue()).isEqualTo("연차");
+        // "/search" 가 bbsId 로 잡혔다면 이쪽이 불렸을 것이다.
+        verify(boardService, org.mockito.Mockito.never()).getBoardPosts(
+                anyString(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "user01", esntlId = "user01")
+    @DisplayName("통합 검색은 검색어가 없어도 400 이 아니라 빈 목록이다 — 판정은 서비스가 한다")
+    void searchPosts_withoutKeywordDelegatesToService() throws Exception {
+        given(boardService.searchAcrossBoards(any(), any(Pageable.class))).willReturn(Page.empty());
+
+        mockMvc.perform(get("/api/v1/boards/search").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(0));
+    }
+
     @Test
     @DisplayName("게시글 목록 조회 성공")
     void getPosts_Success() throws Exception {
