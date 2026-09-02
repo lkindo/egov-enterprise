@@ -123,8 +123,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         await page.waitForLoadState('networkidle');
         
         await notificationPage.openNotificationDrawer();
-        const notificationItem = page.locator('div.group').filter({ has: page.locator('h3', { hasText: testTitle }) });
-        await expect(notificationItem).toHaveClass(/opacity-60/);
+        await notificationPage.expectNotificationRead(testTitle);
         
         await notificationPage.closeNotificationDrawer();
         console.log('>>> Notification workflow verified successfully!');
@@ -133,7 +132,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         }
     });
 
-    test('Notification: Long Content and UI Stability', async ({ request, page }) => {
+    test('Notification: Long Content and UI Stability', async ({ request }) => {
         const testTitle = `Looong_Title_${Date.now()}`;
         const testMessage = 'A'.repeat(500) + ' [END]'; // Very long content
 
@@ -148,9 +147,9 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         console.log('>>> Step 2: Verifying UI stability in drawer');
         await notificationPage.openNotificationDrawer();
         
-        // Search for item by a partial match in case of truncation
+        // 화면에서 말줄임되더라도 접근 가능한 제목과 카드 상태 계약은 전체 제목을 유지한다.
         const partialTitle = testTitle.substring(0, 15);
-        const notificationItem = page.locator('div.group').filter({ has: page.locator('h3', { hasText: new RegExp(partialTitle) }) }).first();
+        const notificationItem = notificationPage.getUnreadNotificationCard(new RegExp(partialTitle));
         await expect(notificationItem).toBeVisible({ timeout: 10000 });
         
         // Verify content is visible

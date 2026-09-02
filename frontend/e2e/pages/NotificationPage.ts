@@ -1,7 +1,22 @@
-import { Page, expect } from '@playwright/test';
+import { Page, expect, type Locator } from '@playwright/test';
 
 export class NotificationPage {
     constructor(private page: Page) {}
+
+    private drawer(): Locator {
+        return this.page.getByRole('dialog', { name: /알림.*센터/i });
+    }
+
+    private notificationHeading(title: string | RegExp): Locator {
+        return this.drawer().getByRole('heading', { level: 3, name: title }).first();
+    }
+
+    getUnreadNotificationCard(title: string | RegExp): Locator {
+        if (typeof title === 'string') {
+            return this.drawer().getByRole('button', { name: `알림: ${title}`, exact: true });
+        }
+        return this.drawer().getByRole('button', { name: title }).first();
+    }
 
     async openNotificationDrawer() {
         const bellButton = this.page.locator('#e2e-bell-button');
@@ -10,15 +25,16 @@ export class NotificationPage {
         // Wait for drawer to appear and finish animation.
         // AppNotificationDrawer는 Radix DialogPrimitive(role="dialog", Title '알림 센터', z-[1000])로 렌더된다.
         // (과거 하드코딩 '[class*=z-[9999]]'는 실제 z-[1000]과 불일치해 항상 타임아웃했음.)
-        const drawer = this.page.getByRole('dialog', { name: /알림.*센터/i });
+        const drawer = this.drawer();
         await expect(drawer).toBeVisible({ timeout: 15000 });
         
         // Wait for the header to be visible which indicates the drawer content is rendering.
         // 드로어엔 h2가 2개(Radix sr-only Title + 시각 헤더)라 strict-mode 회피 위해 first() 사용.
         await expect(drawer.locator('h2').first()).toContainText(/알림.*센터/i, { timeout: 10000 });
         
-        // Wait for at least one notification item or the "No active alerts" message
-        await drawer.locator('div.group, span:has-text("알림이 없습니다")').first().waitFor({ state: 'visible', timeout: 15000 });
+        // 목록 내용은 비동기로 갱신된다. 카드 태그나 빈 상태 문구에 묶지 않고,
+        // 항상 렌더되는 드로어 제어가 준비됐는지만 확인한다. 각 시나리오는 고유 카드 자체를 기다린다.
+        await expect(drawer.getByRole('button', { name: '알림 센터 닫기' })).toBeVisible({ timeout: 15000 });
     }
 
     async closeNotificationDrawer() {
@@ -40,20 +56,22 @@ export class NotificationPage {
     }
 
     async verifyNotificationExists(title: string) {
-        // Wait for the drawer to be stable and the item to appear
-        const notificationItem = this.page.locator('div.group h3').filter({ hasText: title }).first();
-        await notificationItem.waitFor({ state: 'visible', timeout: 15000 });
-        await expect(notificationItem).toBeVisible();
+        await expect(this.notificationHeading(title)).toBeVisible({ timeout: 15000 });
     }
 
     async markNotificationAsRead(title: string) {
-        const notificationItem = this.page.locator('div.group').filter({ has: this.page.locator('h3', { hasText: title }) }).first();
+        const notificationItem = this.getUnreadNotificationCard(title);
+        await expect(notificationItem).toBeVisible({ timeout: 15000 });
         await notificationItem.scrollIntoViewIfNeeded();
-        await notificationItem.click({ force: true });
-        
-        // Wait for the opacity-60 class to be applied (visual confirmation of state change)
-        // Bento Grid uses opacity-60 for read items
-        await expect(notificationItem).toHaveClass(/opacity-60/, { timeout: 15000 });
+        await notificationItem.click();
+
+        // React가 읽음 처리 후 button을 정적 카드로 교체한다. 제목은 남고 읽음 액션만 사라져야 한다.
+        await this.expectNotificationRead(title);
+    }
+
+    async expectNotificationRead(title: string) {
+        await expect(this.notificationHeading(title)).toBeVisible({ timeout: 15000 });
+        await expect(this.getUnreadNotificationCard(title)).toHaveCount(0, { timeout: 15000 });
     }
 
     async readAllNotifications() {

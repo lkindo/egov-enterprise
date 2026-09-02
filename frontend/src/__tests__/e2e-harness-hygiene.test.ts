@@ -36,9 +36,12 @@ function withoutComments(source: string): string {
 //   걷어냈다 — `MailPage`(바로 위에서 `toBeEnabled` 단언)와 `PromotionPage`(바로 위에서
 //   `waitFor visible`). 확인한 것(enabled·visible)과 force 가 건너뛰는 것(안정성·오버레이·
 //   포인터 수신)이 서로 다르므로, 그 자리에서 force 는 안전을 더하지 않고 신호만 지웠다.
-//   남은 10곳은 hover 로만 드러나는 컨트롤·구조 클래스 로케이터 등 각자 다른 사유가 있어
+//   당시 남은 10곳은 hover 로만 드러나는 컨트롤·구조 클래스 로케이터 등 각자 다른 사유가 있어
 //   개별 판단이 필요하다(일괄 제거는 H4 가 금지하는 기계적 sweep 이다).
-const FORCE_CLICK_BASELINE = 10;
+// [2026-09-03 하향: 10 → 9] 알림 카드가 접근 가능한 button 으로 바뀐 뒤에도 남아 있던
+//   `div.group` 로케이터를 역할·이름 계약으로 교체했다. 정상 actionability 클릭이 실제 E2E 에서
+//   통과하므로 force 우회가 필요하지 않다.
+const FORCE_CLICK_BASELINE = 9;
 
 describe('E2E force-click 하향 래칫', () => {
   it('force 클릭 사용처가 baseline 을 넘지 않는다', () => {
