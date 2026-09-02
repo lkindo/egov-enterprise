@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -64,5 +65,34 @@ class PrivacyLogRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result.getContent()).isNotEmpty();
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @DisplayName("만료 로그 벌크 삭제는 호출자 트랜잭션 없이도 자체 쓰기 트랜잭션으로 실행된다")
+    void deleteOldLogsStartsItsOwnWriteTransaction() {
+        privacyLogRepository.deleteAll();
+        try {
+            PrivacyLog expired = PrivacyLog.builder()
+                    .dmndId("RETENTION_OLD")
+                    .inqDt(LocalDateTime.now().minusMonths(13))
+                    .inqInfo("expired")
+                    .build();
+            PrivacyLog current = PrivacyLog.builder()
+                    .dmndId("RETENTION_CURRENT")
+                    .inqDt(LocalDateTime.now())
+                    .inqInfo("current")
+                    .build();
+            privacyLogRepository.save(expired);
+            privacyLogRepository.save(current);
+
+            privacyLogRepository.deleteOldLogs(12);
+
+            assertThat(privacyLogRepository.findAll())
+                    .extracting(PrivacyLog::getDmndId)
+                    .containsExactly("RETENTION_CURRENT");
+        } finally {
+            privacyLogRepository.deleteAll();
+        }
     }
 }

@@ -62,7 +62,8 @@ public class PrivacyAccessLogListener {
         } catch (Exception e) {
             long total = persistFailureCount.incrementAndGet();
             recordDropMetric();
-            log.error("개인정보 접근 로그 영속화 실패(요청 처리에는 영향 없음) — 누적 유실 {}건: {}", total, e.toString());
+            log.error("개인정보 접근 로그 영속화 실패(요청 처리에는 영향 없음) — 누적 유실 {}건, 예외유형={}",
+                    total, e.getClass().getSimpleName());
         }
     }
 

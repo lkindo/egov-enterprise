@@ -135,4 +135,29 @@ class AddressBookServiceImplTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getUserId()).isEqualTo("E1");
     }
+
+    @Test
+    @DisplayName("사용자 검색어를 trim하고 페이지 크기를 20으로 제한")
+    void searchUsers_NormalizesKeywordAndCapsPageSize() {
+        Pageable requested = PageRequest.of(2, 100);
+        given(addressBookRepository.searchAddressBookUsers(eq("홍길"), any(Pageable.class)))
+                .willReturn(Page.empty());
+
+        addressBookService.searchUsers("  홍길  ", requested);
+
+        org.mockito.ArgumentCaptor<Pageable> pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(addressBookRepository).searchAddressBookUsers(eq("홍길"), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(2);
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
+    }
+
+    @Test
+    @DisplayName("trim한 검색어가 2자 미만이면 저장소를 조회하지 않음")
+    void searchUsers_RejectsShortKeywordBeforeRepository() {
+        Page<AddressBookUserDto> result = addressBookService.searchUsers(" a ", PageRequest.of(0, 100));
+
+        assertThat(result).isEmpty();
+        assertThat(result.getSize()).isEqualTo(20);
+        verifyNoInteractions(addressBookRepository);
+    }
 }

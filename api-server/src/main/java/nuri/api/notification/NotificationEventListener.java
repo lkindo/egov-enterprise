@@ -19,7 +19,8 @@ public class NotificationEventListener {
     @Async
     @EventListener
     public void handleNotificationEvent(NotificationEvent event) {
-        log.info("Handling notification event for user: {}, message: {}", event.getUserId(), event.getMessage());
+        // 수신자 ID와 본문은 모두 개인정보/업무내용일 수 있으므로 애플리케이션 로그에 복제하지 않는다.
+        log.info("Handling notification event: type={}", event.getType());
 
         NotificationDto dto = NotificationDto.builder()
                 .notiTtlNm("Notification: " + event.getType())

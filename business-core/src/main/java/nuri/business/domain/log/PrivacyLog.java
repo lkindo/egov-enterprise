@@ -40,7 +40,7 @@ public class PrivacyLog extends BaseEntity {
     @Column(length = 20)
     private String dmndUserId;
 
-    @Column(length = 30)
+    @Column(length = 45)
     private String dmndUserIpAddr;
 
     private PrivacyLog(Long prvcLogSn, String dmndId, LocalDateTime inqDt, String srvcNm, String inqInfo,

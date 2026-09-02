@@ -496,6 +496,43 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("댓글 접근 검사는 게시판-게시글 관계를 확인하고 조회수를 올리지 않는다")
+    void assertCommentAccess_usesBoundedDetailWithoutViewIncrement() {
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .bbsId("BBS_01").pstSn(21L).scrtYn("N").build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 21L)).willReturn(Optional.of(detail));
+
+        boardService.assertCommentAccess("BBS_01", 21L);
+
+        verify(boardRepository).findActiveArticleDetail("BBS_01", 21L);
+        verify(viewCountService, never()).increaseViewCount(anyLong());
+    }
+
+    @Test
+    @DisplayName("댓글 접근 검사는 다른 게시판 ID와 결합한 게시글 번호를 거부한다")
+    void assertCommentAccess_rejectsMismatchedBoardAndPost() {
+        given(boardRepository.findActiveArticleDetail("WRONG_BBS", 22L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> boardService.assertCommentAccess("WRONG_BBS", 22L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("댓글 접근 검사는 비밀글 비소유자를 거부한다")
+    void assertCommentAccess_rejectsSecretPostForNonOwner() {
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .bbsId("BBS_01").pstSn(23L).scrtYn("Y").userId("ESNTL_owner").build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 23L)).willReturn(Optional.of(detail));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("ESNTL_other"));
+
+        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 23L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
     @DisplayName("게시판 통계는 현재 viewer와 exact role visibility를 repository 집계에 결속한다")
     void getBoardStatsBindsViewerVisibility() {
         String bbsId = "BBS_STATS";

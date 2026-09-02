@@ -55,6 +55,31 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        int responseStatus = response.getStatus();
+        // DispatcherServlet 이 예외를 남긴 채 완료되면 응답 버퍼에는 아직 기본 200이 남을 수 있다.
+        // 그 값을 성공으로 감사하면 시스템 오류 로그가 빠지고 @PrivacyAccess 성공 이벤트까지 거짓 발행된다.
+        int statusCode = ex != null && responseStatus < 400
+                ? HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+                : responseStatus;
+        HandlerMethod handlerMethod = (handler instanceof HandlerMethod hm) ? hm : null;
+        publishAuditEvent(request, handlerMethod, statusCode);
+    }
+
+    /**
+     * Spring Security가 DispatcherServlet 전에 종료한 API 요청을 같은 감사 이벤트 흐름에 연결한다.
+     * 핸들러가 실행되지 않았으므로 개인정보 접근 이벤트는 발생할 수 없다.
+     */
+    public void publishSecurityFailure(HttpServletRequest request, int statusCode) {
+        try {
+            publishAuditEvent(request, null, statusCode);
+        } catch (RuntimeException eventFailure) {
+            // 감사 경로 장애가 인증·인가 응답 자체를 5xx로 바꾸면 안 된다. 요청 값은 로그에 싣지 않는다.
+            log.error("보안 필터 감사 이벤트 발행 실패: 상태={}, 예외유형={}",
+                    statusCode, eventFailure.getClass().getSimpleName());
+        }
+    }
+
+    private void publishAuditEvent(HttpServletRequest request, HandlerMethod handlerMethod, int statusCode) {
         String reqURL = request.getRequestURI();
         if (reqURL == null || !reqURL.startsWith("/api/")) {
             return;
@@ -66,12 +91,9 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
             durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
         }
 
-        HandlerMethod handlerMethod = (handler instanceof HandlerMethod hm) ? hm : null;
         String serviceName = handlerMethod != null ? handlerMethod.getBeanType().getSimpleName() : null;
         String methodName = handlerMethod != null ? handlerMethod.getMethod().getName() : null;
-
         String httpMethod = request.getMethod() != null ? request.getMethod() : UNKNOWN_METHOD;
-        int statusCode = response.getStatus();
         String clientIp = clientIpResolver.resolve(request);
         LocalDateTime occurredAt = LocalDateTime.now();
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

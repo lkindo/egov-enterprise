@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -22,6 +23,7 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
          * 이 테이블의 조회 시각({@code inq_dt})은 timestamp 다. 문자열 절단 없이 시각으로 비교한다.
          */
         @Override
+        @Transactional
         public void deleteOldLogs(int months) {
                 LocalDateTime cutoff = LocalDateTime.now().minusMonths(months);
                 queryFactory.delete(QPrivacyLog.privacyLog)

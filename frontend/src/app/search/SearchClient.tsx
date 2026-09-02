@@ -83,7 +83,9 @@ export const SearchResultsContent = ({
     //    읽으면 red 가 된다.)
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(initialResults);
-    const [searchError, setSearchError] = useState<string | null>(null);
+    const [userSearchError, setUserSearchError] = useState<string | null>(null);
+    const [articleSearchError, setArticleSearchError] = useState<string | null>(null);
+    const [menuSearchError, setMenuSearchError] = useState<string | null>(null);
 
     // 결과 조회. 검색어가 있을 때만 돈다.
     //
@@ -93,60 +95,30 @@ export const SearchResultsContent = ({
     //   객체 동일성(`results === initialResults`)에 기대는 것도 부모가 리터럴을 새로 만들면
     //   깨진다. 조건을 검색어 하나로 좁히고, 늦게 도착한 응답이 최신 결과를 덮지 않도록 취소 표식을 둔다.
     useEffect(() => {
-        if (!query) return;
+        if (!query) {
+            setLoading(false);
+            setResults(EMPTY_RESULTS);
+            setUserSearchError(null);
+            setArticleSearchError(null);
+            setMenuSearchError(null);
+            return;
+        }
 
         let cancelled = false;
 
         const fetchResults = async () => {
             setLoading(true);
-            setSearchError(null);
-            try {
-                // [2026-09-02] 게시글 검색이 실제로 동작한다.
-                //   종전에는 전역 검색 엔드포인트가 없어 articles 를 항상 빈 배열로 뒀고, 탭 라벨에
-                //   '미지원' 이라고 적어 그 사실을 드러내고 있었다. 이제 GET /api/v1/boards/search 가
-                //   활성 게시판 전체의 **제목**을 검색한다(본문은 에디터 HTML 원문이라 제외).
-                //   가시성은 게시판 목록과 같은 술어라 여기서 보이는 글은 목록에서도 보이는 글이다.
-                //
-                // 모든 인증 사용자가 접근하는 route이므로 연락처·주소까지 담은
-                // admin 전용 목록이 아닌 식별자·성명·부서만 반환하는 최소정보 API를 사용한다.
-                const users = await userSearchService.searchAssignableUsers(query);
-                if (cancelled) return;
+            setUserSearchError(null);
+            setArticleSearchError(null);
+            setMenuSearchError(null);
 
-                // 게시글 검색 실패가 임직원·메뉴 결과까지 죽이지 않게 독립적으로 처리한다.
-                //   (메뉴도 아래에서 같은 이유로 자체 실패를 흡수한다.)
-                let articles: SearchArticle[] = [];
-                try {
-                    const found = await boardUserService.searchPosts(query);
-                    articles = found.map(item => ({
-                        bbsId: item.bbsId,
-                        pstSn: item.pstSn,
-                        pstTtl: item.pstTtl ?? '(제목 없음)',
-                        crtDt: item.crtDt,
-                        userNm: item.userNm,
-                        inqCnt: item.inqCnt,
-                    }));
-                } catch {
-                    articles = [];
-                }
-                if (cancelled) return;
-
-                /*
-                  [2026-08-29] '메뉴 바로가기' 를 실제 메뉴에서 만든다.
-
-                  종전에는 하드코딩한 두 항목을 이름 부분일치로 걸렀다. 두 라벨 모두 목적지와
-                  달랐고('공지사항 관리' → 실제로는 시스템 메뉴 관리, '자유 게시판' → 업무게시판),
-                  게다가 /admin/system/menus 는 관리자 전용이라 비관리자는 검색 결과를 눌러도
-                  라우트 게이트에 막혔다. '메뉴' 로 검색하면 0건이 나오는 것도 그래서였다.
-
-                  메뉴 트리는 이미 API 로 있고 Ctrl+K 커맨드 센터가 같은 조합을 쓴다. 목적지는
-                  반드시 resolveMenuInternalRoute 를 거친다 — DB 의 modernRoute/chkURL 원문을
-                  그대로 링크에 넣지 않는다(fail-closed).
-                  메뉴 조회가 실패해도 임직원 결과는 살린다(두 서비스 모두 실패 시 [] 반환).
-                */
+            // 세 검색 축은 서로 다른 API다. 한 축의 장애가 뒤 API 호출을 막거나 정상 0건으로
+            // 번역되지 않도록 동시에 실행하고, 성공 결과와 오류를 축별로 보존한다.
+            const menuSearch = async (): Promise<SearchMenu[]> => {
                 const head = await menuService.getHeadMenus();
                 const subLists = await Promise.all(head.map(m => menuService.getLeftMenus(m.menuNo)));
                 const keyword = String(query || '');
-                const menus = head.flatMap((m, i) => (
+                return head.flatMap((m, i) => (
                     [{ parent: null as MenuInfo | null, node: m },
                      ...subLists[i].map(l => ({ parent: m as MenuInfo | null, node: l }))]
                 )).flatMap(({ parent, node }) => {
@@ -154,16 +126,40 @@ export const SearchResultsContent = ({
                     if (!path || !node.menuNm?.includes(keyword)) return [];
                     return [{ name: node.menuNm, path, category: parent?.menuNm ?? '메뉴' }];
                 });
+            };
 
-                if (cancelled) return;
-                setResults({ articles, users: users.slice(0, 10), menus });
-            } catch {
-                if (!cancelled) {
-                    setSearchError('임직원 검색 결과를 불러오지 못했습니다.');
-                }
-            } finally {
-                if (!cancelled) setLoading(false);
+            const [userResult, articleResult, menuResult] = await Promise.allSettled([
+                // 모든 인증 사용자가 접근하므로 연락처·주소가 없는 최소정보 API만 사용한다.
+                userSearchService.searchAssignableUsers(query),
+                boardUserService.searchPosts(query),
+                menuSearch(),
+            ]);
+            if (cancelled) return;
+
+            const users = userResult.status === 'fulfilled' ? userResult.value.slice(0, 10) : [];
+            const articles: SearchArticle[] = articleResult.status === 'fulfilled'
+                ? articleResult.value.map(item => ({
+                    bbsId: item.bbsId,
+                    pstSn: item.pstSn,
+                    pstTtl: item.pstTtl ?? '(제목 없음)',
+                    crtDt: item.crtDt,
+                    userNm: item.userNm,
+                    inqCnt: item.inqCnt,
+                }))
+                : [];
+            const menus = menuResult.status === 'fulfilled' ? menuResult.value : [];
+
+            if (userResult.status === 'rejected') {
+                setUserSearchError('임직원 검색 결과를 불러오지 못했습니다.');
             }
+            if (articleResult.status === 'rejected') {
+                setArticleSearchError('게시글 검색 결과를 불러오지 못했습니다.');
+            }
+            if (menuResult.status === 'rejected') {
+                setMenuSearchError('메뉴 바로가기 검색 결과를 불러오지 못했습니다.');
+            }
+            setResults({ articles, users, menus });
+            setLoading(false);
         };
 
         fetchResults();
@@ -176,10 +172,37 @@ export const SearchResultsContent = ({
     //   이제 검색 대상은 **제목**이므로 그 범위는 아래 안내 문구가 말한다.
     const tabs = [
         { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
-        { id: 'articles', label: '게시글', count: results.articles.length, icon: <MessageSquare size={16} /> },
-        { id: 'users', label: '임직원', count: results.users.length, icon: <UserIcon size={16} /> },
-        { id: 'menus', label: '메뉴 바로가기', count: results.menus.length, icon: <FileText size={16} /> }
+        {
+            id: 'articles',
+            label: articleSearchError ? '게시글 (조회 실패)' : '게시글',
+            count: articleSearchError ? undefined : results.articles.length,
+            icon: <MessageSquare size={16} />,
+        },
+        {
+            id: 'users',
+            label: userSearchError ? '임직원 (조회 실패)' : '임직원',
+            count: userSearchError ? undefined : results.users.length,
+            icon: <UserIcon size={16} />,
+        },
+        {
+            id: 'menus',
+            label: menuSearchError ? '메뉴 바로가기 (조회 실패)' : '메뉴 바로가기',
+            count: menuSearchError ? undefined : results.menus.length,
+            icon: <FileText size={16} />,
+        },
     ];
+    const visibleErrors = [
+        { axis: 'articles', message: articleSearchError },
+        { axis: 'users', message: userSearchError },
+        { axis: 'menus', message: menuSearchError },
+    ].filter(({ axis, message }) => message != null && (activeTab === 'all' || activeTab === axis));
+    const visibleResultCount = activeTab === 'all'
+        ? results.articles.length + results.users.length + results.menus.length
+        : activeTab === 'articles'
+            ? results.articles.length
+            : activeTab === 'users'
+                ? results.users.length
+                : results.menus.length;
 
     return (
         <div className="max-w-6xl mx-auto space-y-10 pb-32 p-4 md:p-10">
@@ -197,9 +220,9 @@ export const SearchResultsContent = ({
                     </div>
                         {/* [2026-08-04] '실시간 인덱스 활성화' 배지 제거.
                             그런 인덱스는 존재하지 않는다 — 임직원 검색은 사용자 목록 API 의 키워드 조회이고,
-                            바로가기는 이 파일에 하드코딩된 2건을 필터링하며, 게시글은 전역 검색 엔드포인트가
-                            없어 항상 빈 배열이다. 운영자가 "인덱스가 돌고 있다"고 믿을 근거를 UI 가 만들면
-                            안 된다(감사 클러스터 E — 실패를 정상 상태로 번역하지 않는다).
+                            바로가기는 메뉴 API, 게시글은 제목 검색 API 를 실시간으로 조회한다. 검색 인덱스나
+                            색인 작업은 여전히 없으므로 운영자가 "인덱스가 돌고 있다"고 믿을 근거를 UI 가
+                            만들면 안 된다(감사 클러스터 E — 실패를 정상 상태로 번역하지 않는다).
                             검색 범위를 사실대로 적는다. */}
                         <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-lg border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
@@ -221,6 +244,7 @@ export const SearchResultsContent = ({
                             <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
                             <Input
                                 name="q"
+                                aria-label="통합검색어"
                                 defaultValue={query}
                                 placeholder="게시글 제목, 임직원 또는 바로가기 이름을 입력하세요"
                                 className="h-11 pl-16 pr-40 rounded-lg border-0 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
@@ -281,20 +305,28 @@ export const SearchResultsContent = ({
                         </div>
                     ) : null}
 
+                    {visibleErrors.map(({ axis, message }) => (
+                        <div key={axis} role="alert" className="rounded-lg border border-warning/30 bg-warning/10 px-6 py-5">
+                            <p className="text-sm font-bold text-foreground">{message}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                정상 응답한 다른 검색 결과는 계속 표시합니다. 잠시 후 다시 검색해 주세요.
+                            </p>
+                        </div>
+                    ))}
+
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[500px]">
-                        {searchError ? (
-                            <div role="alert" className="flex flex-col items-center justify-center py-24 text-center space-y-4 rounded-lg border border-destructive/30 bg-destructive/5 px-6">
-                                <AlertTriangle size={36} className="text-destructive-emphasis" />
-                                <h3 className="text-lg font-bold text-foreground">{searchError}</h3>
-                                <p className="text-sm text-muted-foreground">입력한 검색어는 유지됩니다. 잠시 후 ‘검색 실행’을 다시 선택해 주세요.</p>
-                            </div>
-                        ) : loading ? (
+                        {loading ? (
                             <div className="space-y-6">
                                 {[1, 2, 3, 4].map(i => (
                                     <div key={`search-skeleton-${i}`} className="h-32 bg-muted/40 animate-pulse rounded-lg" />
                                 ))}
                             </div>
-                        ) : results.articles.length === 0 && results.users.length === 0 && results.menus.length === 0 ? (
+                        ) : visibleResultCount === 0 && visibleErrors.length > 0 ? (
+                            <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
+                                <AlertTriangle size={36} className="text-warning" aria-hidden="true" />
+                                <p className="text-sm text-muted-foreground">현재 표시할 수 있는 정상 응답 결과가 없습니다.</p>
+                            </div>
+                        ) : visibleResultCount === 0 ? (
                             <div className="flex flex-col items-center justify-center py-32 text-center space-y-6">
                                 <div className="w-24 h-24 bg-muted/30 rounded-lg flex items-center justify-center">
                                     <Search size={48} className="text-muted-foreground/30" />

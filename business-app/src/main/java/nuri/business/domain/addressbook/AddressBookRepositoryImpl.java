@@ -57,10 +57,13 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
 
     @Override
     public Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchWrd, Pageable pageable) {
-        BooleanExpression searchPredicate = null;
-        if (StringUtils.hasText(searchWrd)) {
-            searchPredicate = user.userNm.contains(searchWrd).or(user.userId.contains(searchWrd));
+        Pageable requestedPageable = Objects.requireNonNull(pageable);
+        String normalizedSearchWrd = searchWrd == null ? "" : searchWrd.trim();
+        if (normalizedSearchWrd.length() < 2) {
+            return Page.empty(requestedPageable);
         }
+        BooleanExpression searchPredicate = user.userNm.contains(normalizedSearchWrd)
+                .or(user.userId.contains(normalizedSearchWrd));
 
         List<AddressBookUserSearchResult> results = queryFactory
                 .select(Projections.fields(AddressBookUserSearchResult.class,
@@ -69,20 +72,18 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                          user.emlAddr,
                          user.mblTelno))
                 .from(user)
-                .leftJoin(addressBook).on(user.userId.eq(addressBook.wrterId).and(addressBook.useYn.eq("Y")))
                 .where(searchPredicate)
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .offset(requestedPageable.getOffset())
+                .limit(requestedPageable.getPageSize())
                 .fetch();
 
         Long total = queryFactory
                 .select(user.count())
                 .from(user)
-                .leftJoin(addressBook).on(user.userId.eq(addressBook.wrterId).and(addressBook.useYn.eq("Y")))
                 .where(searchPredicate)
                 .fetchOne();
 
-        return new PageImpl<>(Objects.requireNonNull(results), Objects.requireNonNull(pageable),
+        return new PageImpl<>(Objects.requireNonNull(results), requestedPageable,
                 total != null ? total.longValue() : 0L);
     }
 

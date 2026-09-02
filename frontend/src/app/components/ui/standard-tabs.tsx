@@ -7,6 +7,7 @@ interface TabItem {
  id: string;
  label: string;
  icon?: React.ReactNode;
+ count?: number;
 }
 
 interface StandardTabsProps {
@@ -30,6 +31,9 @@ export function StandardTabs({
  {items.map((item) => (
  <button
  key={item.id}
+ type="button"
+ aria-pressed={activeTab === item.id}
+ aria-label={typeof item.count === 'number' ? `${item.label} ${item.count}건` : item.label}
  onClick={() => onChange(item.id)}
  className={cn(
  "flex items-center gap-2 px-8 py-4 text-sm font-bold border-b-2 transition-all",
@@ -38,8 +42,9 @@ export function StandardTabs({
  : "border-transparent text-muted-foreground hover:text-foreground"
  )}
  >
- {item.icon}
+ {item.icon ? <span aria-hidden="true">{item.icon}</span> : null}
  {item.label}
+ {typeof item.count === 'number' ? <span aria-label={`${item.count}건`}>{item.count}</span> : null}
  </button>
  ))}
  </div>
@@ -51,6 +56,9 @@ export function StandardTabs({
  {items.map((item) => (
  <button
  key={item.id}
+ type="button"
+ aria-pressed={activeTab === item.id}
+ aria-label={typeof item.count === 'number' ? `${item.label} ${item.count}건` : item.label}
  onClick={() => onChange(item.id)}
  className={cn(
  "flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all",
@@ -59,8 +67,9 @@ export function StandardTabs({
  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
  )}
  >
- {item.icon}
+ {item.icon ? <span aria-hidden="true">{item.icon}</span> : null}
  {item.label}
+ {typeof item.count === 'number' ? <span aria-label={`${item.count}건`}>{item.count}</span> : null}
  </button>
  ))}
  </div>

@@ -121,6 +121,29 @@ class LoginPolicyManageServiceTest {
     }
 
     @Test
+    @DisplayName("로그인 정책 IP 비교 - IPv6 확장·압축·대소문자 표기는 같은 주소로 본다")
+    void validateLoginPolicyTreatsEquivalentIpv6FormsAsEqual() {
+        LoginPolicy expandedUppercase = LoginPolicy.builder()
+                .userId("USER1")
+                .ipAddr("2001:0DB8:0000:0000:0000:0000:0000:0001")
+                .lmtYn("N")
+                .build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(expandedUppercase));
+
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "2001:db8::1"));
+
+        LoginPolicy compressedLowercase = LoginPolicy.builder()
+                .userId("USER1")
+                .ipAddr("2001:db8::1")
+                .lmtYn("N")
+                .build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(compressedLowercase));
+
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy(
+                "USER1", "2001:0DB8:0000:0000:0000:0000:0000:0001"));
+    }
+
+    @Test
     @DisplayName("로그인 정책 유효성 검증 - 시간 불일치 (이전)")
     void validateLoginPolicyTimeBeforeTest() {
         // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
@@ -183,14 +206,14 @@ class LoginPolicyManageServiceTest {
     void updateLoginPolicySuccessTest() {
         LoginPolicyDto dto = new LoginPolicyDto();
         dto.setUserId("USER1");
-        dto.setIpAddr("1.1.1.1");
+        dto.setIpAddr("2001:0DB8:0000:0000:0000:0000:0000:0001");
 
         LoginPolicy entity = mock(LoginPolicy.class);
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
 
         loginPolicyManageService.updateLoginPolicy(dto);
 
-        verify(entity).update(eq("1.1.1.1"), any(), any(), any(), any(), any());
+        verify(entity).update(eq("2001:db8::1"), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -487,7 +510,8 @@ class LoginPolicyManageServiceTest {
         User user = User.builder().esntlId("ESNTL01").userId("tester").userNm("테스터").build();
         given(userRepository.findByUserId("tester")).willReturn(Optional.of(user));
         LoginPolicyDto dto = LoginPolicyDto.builder()
-                .userId("tester").ipAddr("10.0.0.1").dpcnPrmYn("Y").lmtYn("N")
+                .userId("tester").ipAddr("2001:0DB8:0000:0000:0000:0000:0000:0001")
+                .dpcnPrmYn("Y").lmtYn("N")
                 .bgngTm("0900").endTm("1800").otpUseYn("Y").build();
 
         loginPolicyManageService.insertLoginPolicy(dto);
@@ -498,7 +522,40 @@ class LoginPolicyManageServiceTest {
         // `removed call to setFrstRgtrId` 뮤턴트가 여기서 죽는다(감사 컬럼 NOT NULL 위반 경로).
         assertEquals("SYSTEM", saved.getValue().getFrstRgtrId());
         assertEquals("tester", saved.getValue().getUserId());
+        assertEquals("2001:db8::1", saved.getValue().getIpAddr());
         assertEquals("Y", saved.getValue().getOtpUseYn());
+    }
+
+    @Test
+    @DisplayName("등록: 유효한 IP 리터럴이 아닌 값은 C001/400으로 거부한다")
+    void insertRejectsInvalidIpAddress() {
+        LoginPolicyDto dto = LoginPolicyDto.builder()
+                .userId("tester")
+                .ipAddr("attacker.example")
+                .build();
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> loginPolicyManageService.insertLoginPolicy(dto));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, ex.getErrorCode());
+        assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getErrorCode().getStatus());
+        verifyNoInteractions(userRepository, loginPolicyRepository);
+    }
+
+    @Test
+    @DisplayName("수정: 잘못된 IPv6 리터럴은 C001/400으로 거부한다")
+    void updateRejectsInvalidIpAddress() {
+        LoginPolicyDto dto = LoginPolicyDto.builder()
+                .userId("tester")
+                .ipAddr("2001:db8::zz")
+                .build();
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> loginPolicyManageService.updateLoginPolicy(dto));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, ex.getErrorCode());
+        assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getErrorCode().getStatus());
+        verifyNoInteractions(loginPolicyRepository);
     }
 
     @Test

@@ -1,6 +1,7 @@
 package nuri.api.controller.business.comment;
 
 import jakarta.validation.Valid;
+import nuri.business.service.board.BoardService;
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -21,12 +22,14 @@ import org.springframework.web.bind.annotation.*;
 public class CommentApiController {
 
     private final CommentService commentService;
+    private final BoardService boardService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CommentDto>>> getComments(
             @RequestParam Long pstSn,
             @RequestParam String bbsId,
             @PageableDefault(size = 10) Pageable pageable) {
+        boardService.assertCommentAccess(bbsId, pstSn);
         Page<CommentDto> result = commentService.getComments(pstSn, bbsId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
@@ -41,6 +44,7 @@ public class CommentApiController {
     public ResponseEntity<ApiResponse<Long>> createComment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CommentDto commentDto) {
+        boardService.assertCommentAccess(commentDto.getBbsId(), commentDto.getPstSn());
         return ResponseEntity.ok(ApiResponse.success(
                 commentService.createComment(userDetails.getEsntlId(), userDetails.getUserNm(), commentDto)));
     }

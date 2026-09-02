@@ -1696,6 +1696,17 @@
       ]
     },
     {
+      "target": "BoardService#assertCommentAccess",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdminByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
       "target": "BoardService#deletePost",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [

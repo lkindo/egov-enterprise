@@ -1,5 +1,11 @@
 package nuri.api.harness;
 
+import nuri.business.service.addressbook.dto.AddressBookDto;
+import nuri.business.service.addressbook.dto.AddressBookUserDto;
+import nuri.business.service.operation.dto.ExternalHrDto;
+import nuri.business.service.sms.dto.SmsRecptnDto;
+import nuri.business.service.survey.dto.SurveyRespondentDto;
+import nuri.business.service.user.dto.UserDto;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -7,12 +13,25 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -56,12 +75,42 @@ class PrivacyAccessCensusLinterTest {
             "ExternalHrApiController#getAllExternalHr",
             // [2026-09-02] SMS 도메인에서 타인 연락처가 나가는 유일한 창구다. 목록·상세는
             //   읽기 매퍼가 recipients 를 빈 배열로 채워 연락처를 싣지 않는다.
-            "SmsApiController#getSmsRecipients");
+            "SmsApiController#getSmsRecipients",
+            "AddressBookApiController#getAddressBook",
+            "AddressBookApiController#searchUsers",
+            "SurveyRespondentApiController#getRespondents",
+            "SurveyRespondentApiController#getRespondent");
+
+    private static final Set<Class<?>> KNOWN_SENSITIVE_RESPONSE_TYPES = Set.of(
+            UserDto.class,
+            ExternalHrDto.class,
+            SmsRecptnDto.class,
+            AddressBookDto.class,
+            AddressBookUserDto.class,
+            SurveyRespondentDto.class);
+
+    private static final Set<String> SENSITIVE_FIELD_NAMES = Set.of(
+            "emladdr", "email", "emailaddress",
+            "mbltelno", "mobilephone", "mobilenumber", "hometelno",
+            "brthymd", "brdtymd", "brdt", "birthdate", "dateofbirth",
+            "rcptntelno", "recipientphone", "rspdntnm",
+            "homeaddr", "daddr", "residentregistrationnumber", "rrn", "ssn");
+
+    private static final Map<String, String> SENSITIVE_GET_EXEMPTIONS = Map.of(
+            "UserApiController#getMe", "인증 주체 본인의 프로필 조회",
+            "AddressBookApiController#getAddressBooks", "목록 매퍼가 구성원 연락처를 채우지 않는 소유자 범위 조회",
+            "SmsApiController#getSmsList", "읽기 매퍼가 수신자 목록을 빈 배열로 고정",
+            "SmsApiController#getSms", "읽기 매퍼가 수신자 목록을 빈 배열로 고정");
 
     @Test
     @DisplayName("🔒 @PrivacyAccess 부착 지점이 선언 census 와 정확히 일치한다")
     void privacyAccessHandlersMatchDeclaredCensus() {
         Set<String> actual = new TreeSet<>();
+        Set<String> sensitiveGetHandlers = new TreeSet<>();
+        Set<Class<?>> fieldDerivedSensitiveTypes = scanFieldDerivedSensitiveDtos();
+        assertThat(fieldDerivedSensitiveTypes)
+                .as("수동 민감 응답 roster의 각 타입은 DTO 필드명이라는 독립 신호로도 탐지돼야 한다")
+                .containsAll(KNOWN_SENSITIVE_RESPONSE_TYPES);
         int controllerCount = 0;
 
         ClassPathScanningCandidateComponentProvider scanner =
@@ -75,12 +124,18 @@ class PrivacyAccessCensusLinterTest {
                 }
                 controllerCount++;
                 for (Method m : clazz.getDeclaredMethods()) {
+                    String handler = clazz.getSimpleName() + "#" + m.getName();
                     PrivacyAccess annotation = AnnotationUtils.findAnnotation(m, PrivacyAccess.class);
                     if (annotation != null) {
                         assertThat(annotation.value())
                                 .as("%s#%s 의 조회 항목 서술은 비어 있을 수 없다", clazz.getSimpleName(), m.getName())
                                 .isNotBlank();
-                        actual.add(clazz.getSimpleName() + "#" + m.getName());
+                        actual.add(handler);
+                    }
+                    if (isGetHandler(m)
+                            && (containsType(m.getGenericReturnType(), KNOWN_SENSITIVE_RESPONSE_TYPES)
+                            || containsType(m.getGenericReturnType(), fieldDerivedSensitiveTypes))) {
+                        sensitiveGetHandlers.add(handler);
                     }
                 }
             } catch (ClassNotFoundException | LinkageError ex) {
@@ -113,5 +168,140 @@ class PrivacyAccessCensusLinterTest {
             }
             fail(sb.toString());
         }
+
+        assertThat(SENSITIVE_GET_EXEMPTIONS.values())
+                .as("민감 GET 예외에는 검토 가능한 사유가 있어야 한다")
+                .allSatisfy(reason -> assertThat(reason).isNotBlank());
+
+        Set<String> expectedSensitiveGetHandlers = new TreeSet<>(DECLARED_PRIVACY_HANDLERS);
+        expectedSensitiveGetHandlers.addAll(SENSITIVE_GET_EXEMPTIONS.keySet());
+        List<String> uncoveredSensitiveGets = new ArrayList<>(sensitiveGetHandlers);
+        uncoveredSensitiveGets.removeAll(expectedSensitiveGetHandlers);
+        List<String> staleDeclarationsOrExemptions = new ArrayList<>(expectedSensitiveGetHandlers);
+        staleDeclarationsOrExemptions.removeAll(sensitiveGetHandlers);
+
+        if (!uncoveredSensitiveGets.isEmpty() || !staleDeclarationsOrExemptions.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("🔒 [PRIVACY-RESPONSE CENSUS] GET 응답 타입 기반 개인정보 탐지가 선언과 어긋납니다.\n");
+            if (!uncoveredSensitiveGets.isEmpty()) {
+                sb.append("   · 증적 또는 명시 예외가 없는 민감 응답: ").append(uncoveredSensitiveGets).append('\n');
+            }
+            if (!staleDeclarationsOrExemptions.isEmpty()) {
+                sb.append("   · 민감 응답으로 탐지되지 않는 선언/예외: ")
+                        .append(staleDeclarationsOrExemptions).append('\n');
+            }
+            fail(sb.toString());
+        }
+    }
+
+    private static boolean isGetHandler(Method method) {
+        RequestMapping mapping = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
+        return mapping != null && Arrays.asList(mapping.method()).contains(RequestMethod.GET);
+    }
+
+    private static Set<Class<?>> scanFieldDerivedSensitiveDtos() {
+        ClassPathScanningCandidateComponentProvider scanner =
+                new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter((metadataReader, metadataReaderFactory) -> isApplicationDtoName(
+                metadataReader.getClassMetadata().getClassName()));
+
+        Set<Class<?>> sensitiveTypes = new HashSet<>();
+        for (var bd : scanner.findCandidateComponents(SCAN_BASE)) {
+            String className = bd.getBeanClassName();
+            try {
+                Class<?> dtoType = Class.forName(className);
+                if (hasSensitiveFieldGraph(dtoType, new HashSet<>())) {
+                    sensitiveTypes.add(dtoType);
+                }
+            } catch (ClassNotFoundException | LinkageError ex) {
+                throw new AssertionError("민감 DTO 필드 census 로드 실패: " + className, ex);
+            }
+        }
+        return sensitiveTypes;
+    }
+
+    private static boolean containsType(Type type, Set<Class<?>> targetTypes) {
+        return containsType(type, targetTypes, new HashSet<>());
+    }
+
+    private static boolean containsType(Type type, Set<Class<?>> targetTypes, Set<Type> visited) {
+        if (type == null || !visited.add(type)) {
+            return false;
+        }
+        if (type instanceof Class<?> clazz) {
+            return targetTypes.contains(clazz)
+                    || (clazz.isArray() && containsType(clazz.getComponentType(), targetTypes, visited));
+        }
+        if (type instanceof ParameterizedType parameterizedType) {
+            if (containsType(parameterizedType.getRawType(), targetTypes, visited)
+                    || containsType(parameterizedType.getOwnerType(), targetTypes, visited)) {
+                return true;
+            }
+            return Arrays.stream(parameterizedType.getActualTypeArguments())
+                    .anyMatch(argument -> containsType(argument, targetTypes, visited));
+        }
+        if (type instanceof GenericArrayType genericArrayType) {
+            return containsType(genericArrayType.getGenericComponentType(), targetTypes, visited);
+        }
+        if (type instanceof WildcardType wildcardType) {
+            return Arrays.stream(wildcardType.getUpperBounds())
+                    .anyMatch(bound -> containsType(bound, targetTypes, visited))
+                    || Arrays.stream(wildcardType.getLowerBounds())
+                    .anyMatch(bound -> containsType(bound, targetTypes, visited));
+        }
+        if (type instanceof TypeVariable<?> typeVariable) {
+            return Arrays.stream(typeVariable.getBounds())
+                    .anyMatch(bound -> containsType(bound, targetTypes, visited));
+        }
+        return false;
+    }
+
+    private static boolean hasSensitiveFieldGraph(Class<?> dtoType, Set<Class<?>> visited) {
+        if (!visited.add(dtoType)) {
+            return false;
+        }
+        for (Field field : dtoType.getDeclaredFields()) {
+            if (field.isSynthetic() || Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            if (SENSITIVE_FIELD_NAMES.contains(field.getName().toLowerCase(Locale.ROOT))
+                    || typeHasSensitiveFieldGraph(field.getGenericType(), visited)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean typeHasSensitiveFieldGraph(Type type, Set<Class<?>> visited) {
+        if (type instanceof Class<?> clazz) {
+            if (clazz.isArray()) {
+                return typeHasSensitiveFieldGraph(clazz.getComponentType(), visited);
+            }
+            return isApplicationDtoName(clazz.getName()) && hasSensitiveFieldGraph(clazz, visited);
+        }
+        if (type instanceof ParameterizedType parameterizedType) {
+            return Arrays.stream(parameterizedType.getActualTypeArguments())
+                    .anyMatch(argument -> typeHasSensitiveFieldGraph(argument, visited));
+        }
+        if (type instanceof GenericArrayType genericArrayType) {
+            return typeHasSensitiveFieldGraph(genericArrayType.getGenericComponentType(), visited);
+        }
+        if (type instanceof WildcardType wildcardType) {
+            return Arrays.stream(wildcardType.getUpperBounds())
+                    .anyMatch(bound -> typeHasSensitiveFieldGraph(bound, visited))
+                    || Arrays.stream(wildcardType.getLowerBounds())
+                    .anyMatch(bound -> typeHasSensitiveFieldGraph(bound, visited));
+        }
+        if (type instanceof TypeVariable<?> typeVariable) {
+            return Arrays.stream(typeVariable.getBounds())
+                    .anyMatch(bound -> typeHasSensitiveFieldGraph(bound, visited));
+        }
+        return false;
+    }
+
+    private static boolean isApplicationDtoName(String className) {
+        return className.startsWith("nuri.business.service.")
+                && className.contains(".dto.")
+                && className.endsWith("Dto");
     }
 }

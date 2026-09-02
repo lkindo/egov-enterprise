@@ -90,7 +90,8 @@ public class WebAuditLogListener {
             // 요청 처리에는 영향을 주지 않되(비파괴 원칙), 유실을 셀 수 있게 남긴다.
             long total = persistFailureCount.incrementAndGet();
             recordDropMetric();
-            log.error("웹 감사 로그 영속화 실패(요청 처리에는 영향 없음) — 누적 유실 {}건: {}", total, e.toString());
+            log.error("웹 감사 로그 영속화 실패(요청 처리에는 영향 없음) — 누적 유실 {}건, 예외유형={}",
+                    total, e.getClass().getSimpleName());
         }
     }
 

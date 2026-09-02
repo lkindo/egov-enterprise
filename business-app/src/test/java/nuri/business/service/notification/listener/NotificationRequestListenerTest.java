@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.springframework.scheduling.annotation.Async;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -29,6 +30,17 @@ import static org.mockito.Mockito.verify;
  */
 @DisplayName("NotificationRequestListener — 업무 사건을 알림으로 만든다")
 class NotificationRequestListenerTest {
+
+    @Test
+    @DisplayName("알림 리스너는 부모 logExecutor와 분리된 전용 executor를 사용한다")
+    void usesDedicatedNotificationExecutor() throws NoSuchMethodException {
+        Async async = NotificationRequestListener.class
+                .getDeclaredMethod("onNotificationRequested", NotificationRequestedEvent.class)
+                .getAnnotation(Async.class);
+
+        assertThat(async).isNotNull();
+        assertThat(async.value()).isEqualTo("notificationExecutor");
+    }
 
     @Test
     @DisplayName("요청받은 제목·본문·링크로 수신자에게 알림을 만든다")

@@ -10,7 +10,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,7 +55,7 @@ public class UserActivityLogAggregator {
     private final UserLogRepository userLogRepository;
     private final ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistryProvider;
 
-    private final Map<ActivityKey, ActivityCounters> buffer = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<ActivityKey, ActivityCounters> buffer = new ConcurrentHashMap<>();
     private final AtomicLong persistFailureCount = new AtomicLong();
     private final AtomicLong droppedEventCount = new AtomicLong();
 
@@ -79,7 +78,8 @@ public class UserActivityLogAggregator {
             accumulate(event);
         } catch (Exception e) {
             droppedEventCount.incrementAndGet();
-            log.warn("사용자 활동 집계 누적 실패(요청 처리에는 영향 없음): {}", e.toString());
+            log.warn("사용자 활동 집계 누적 실패(요청 처리에는 영향 없음): 예외유형={}",
+                    e.getClass().getSimpleName());
         }
     }
 
@@ -104,7 +104,20 @@ public class UserActivityLogAggregator {
             droppedEventCount.incrementAndGet();
             return;
         }
-        buffer.computeIfAbsent(key, k -> new ActivityCounters()).add(event);
+        /*
+         * 카운터 선택과 증가를 키 단위 원자 연산 안에서 끝낸다.
+         *
+         * computeIfAbsent(...).add(...)처럼 두 단계로 나누면 flush가 그 사이에 같은 키를
+         * remove할 수 있다. 그러면 요청 스레드는 이미 맵에서 분리된 카운터를 증가시키고,
+         * 그 1건은 현재 flush에도 다음 flush에도 들어가지 않아 정상 실행 중에도 유실된다.
+         * ConcurrentHashMap.compute와 remove는 같은 키에 대해 직렬화되므로, 증가는 제거 전
+         * 스냅샷에 포함되거나 제거 후 새 버퍼에 남는다.
+         */
+        buffer.compute(key, (ignored, counters) -> {
+            ActivityCounters target = counters != null ? counters : new ActivityCounters();
+            target.add(event);
+            return target;
+        });
     }
 
     /**
@@ -138,7 +151,9 @@ public class UserActivityLogAggregator {
                 failed++;
                 persistFailureCount.incrementAndGet();
                 recordDropMetric();
-                log.error("사용자 활동 로그 누적 실패 — key={}, 사유={}", key, e.toString());
+                // esntlId는 사용자 식별자이므로 애플리케이션 로그에 다시 노출하지 않는다.
+                log.error("사용자 활동 로그 누적 실패 — 일자={}, 서비스={}, 메서드={}, 예외유형={}",
+                        key.ocrnYmd(), key.srvcNm(), key.mthdNm(), e.getClass().getSimpleName());
             }
         }
         if (failed > 0) {

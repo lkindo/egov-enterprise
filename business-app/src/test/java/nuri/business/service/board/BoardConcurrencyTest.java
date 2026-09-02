@@ -19,6 +19,7 @@ import nuri.business.security.annotation.WithMockCustomUser;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -128,5 +129,48 @@ class BoardConcurrencyTest {
         assertThat(finalBoard.getLikeCnt())
                 .withFailMessage("갱신 분실이 발생했습니다. 예상 추천수: 100, 실제 추천수: %d", finalBoard.getLikeCnt())
                 .isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("동시 댓글 delta는 갱신 유실 없이 누적되고 감소 시 0에서 멈춘다")
+    void adjustCommentCount_concurrentDeltasAreAtomicAndNonNegative() throws InterruptedException {
+        runConcurrentCommentDeltas(64, 1);
+
+        assertThat(boardRepository.findById(testPstSn).orElseThrow().getCmntCnt())
+                .as("동시 +1 갱신 중 하나라도 read-modify-write로 유실되면 64보다 작아진다")
+                .isEqualTo(64);
+
+        runConcurrentCommentDeltas(80, -1);
+
+        assertThat(boardRepository.findById(testPstSn).orElseThrow().getCmntCnt())
+                .as("감소량이 현재 수보다 많아도 댓글 수는 음수가 되면 안 된다")
+                .isZero();
+    }
+
+    private void runConcurrentCommentDeltas(int requestCount, int delta) throws InterruptedException {
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(requestCount);
+        ConcurrentLinkedQueue<Throwable> failures = new ConcurrentLinkedQueue<>();
+
+        for (int i = 0; i < requestCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    startLatch.await();
+                    boardRepository.adjustCmntCntAtomic(testBbsId, testPstSn, delta);
+                } catch (Throwable failure) {
+                    failures.add(failure);
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        assertThat(doneLatch.await(30, TimeUnit.SECONDS))
+                .as("동시 댓글 수 갱신이 제한 시간 안에 끝나야 한다")
+                .isTrue();
+        assertThat(failures)
+                .as("worker 예외를 삼키면 최종 count 단언만으로 원인을 잃는다")
+                .isEmpty();
     }
 }

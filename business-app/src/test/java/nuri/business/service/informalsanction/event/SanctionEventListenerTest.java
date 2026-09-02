@@ -1,5 +1,8 @@
 package nuri.business.service.informalsanction.event;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import nuri.business.service.mail.MailService;
 import nuri.business.service.mail.dto.SentMailDto;
 import nuri.business.service.sms.SmsService;
@@ -12,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 
 
@@ -182,5 +186,145 @@ class SanctionEventListenerTest {
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().receiverEsntlId()).isEqualTo("USER_002");
         assertThat(captor.getValue().content()).contains("사유: 없음");
+    }
+
+    @Test
+    @DisplayName("최대 길이 반려 사유도 SMS·메일·앱 알림의 최종 본문 한도를 넘지 않는다")
+    void boundsFinalChannelMessagesForMaximumReason() {
+        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
+                10L, "USER_003", "SANCTIONER_001",
+                nuri.business.domain.informalsanction.SanctionStatus.REJECTED, "가".repeat(4_000));
+        given(userService.getUserById("USER_003")).willReturn(UserDto.builder()
+                .userId("USER_003")
+                .mblTelno("01011112222")
+                .emlAddr("user3@egov.com")
+                .build());
+
+        sanctionEventListener.handleStatusChanged(event);
+
+        org.mockito.ArgumentCaptor<SmsDto> smsCaptor = org.mockito.ArgumentCaptor.forClass(SmsDto.class);
+        org.mockito.ArgumentCaptor<SentMailDto> mailCaptor = org.mockito.ArgumentCaptor.forClass(SentMailDto.class);
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> appCaptor =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(smsService).sendSms(eq("SANCTIONER_001"), smsCaptor.capture());
+        verify(mailService).sendMail(eq("SANCTIONER_001"), mailCaptor.capture());
+        verify(eventPublisher).publishEvent(appCaptor.capture());
+
+        assertThat(smsCaptor.getValue().getSndngCn())
+                .hasSize(4_000)
+                .startsWith("[eGov Enterprise]")
+                .endsWith("가");
+        assertThat(mailCaptor.getValue().getEmailCn())
+                .hasSize(4_000)
+                .startsWith("[eGov Enterprise]")
+                .endsWith("가");
+        assertThat(appCaptor.getValue().content())
+                .hasSize(4_000)
+                .startsWith("결재(ID:10)")
+                .endsWith("가");
+    }
+
+    @Test
+    @DisplayName("SMS 채널 실패가 메일과 앱 내 알림을 막지 않는다")
+    void smsFailureDoesNotSkipOtherChannels() {
+        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
+                11L, "USER_004", "SANCTIONER_001",
+                nuri.business.domain.informalsanction.SanctionStatus.REJECTED, "반려 사유");
+        given(userService.getUserById("USER_004")).willReturn(UserDto.builder()
+                .userId("USER_004")
+                .mblTelno("01011112222")
+                .emlAddr("user4@egov.com")
+                .build());
+        doThrow(new IllegalStateException("sms unavailable"))
+                .when(smsService).sendSms(eq("SANCTIONER_001"), any(SmsDto.class));
+
+        sanctionEventListener.handleStatusChanged(event);
+
+        verify(mailService).sendMail(eq("SANCTIONER_001"), any(SentMailDto.class));
+        verify(eventPublisher).publishEvent(any(nuri.foundation.core.event.NotificationRequestedEvent.class));
+    }
+
+    @Test
+    @DisplayName("로그에는 결재 번호·상태·예외 타입만 남기고 외부 문자열과 개행을 기록하지 않는다")
+    void logsOnlySafeSanctionMetadata() {
+        Logger logger = (Logger) LoggerFactory.getLogger(SanctionEventListener.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
+        String successApplicant = "PII_APPLICANT_SUCCESS\r\nFORGED_APPLICANT_SUCCESS";
+        String failedApplicant = "PII_APPLICANT_LOOKUP\r\nFORGED_APPLICANT_LOOKUP";
+        String channelApplicant = "PII_APPLICANT_CHANNEL\r\nFORGED_APPLICANT_CHANNEL";
+        String missingApplicant = "PII_APPLICANT_MISSING\r\nFORGED_APPLICANT_MISSING";
+        String reason = "PII_REASON\r\nFORGED_REASON";
+        UserDto user = UserDto.builder()
+                .userId("PII_USER_ID")
+                .userNm("PII_USER_NAME")
+                .mblTelno("01098765432")
+                .emlAddr("pii-mail-marker@secret.invalid")
+                .build();
+
+        try {
+            given(userService.getUserById(successApplicant)).willReturn(user);
+            sanctionEventListener.handleStatusChanged(new SanctionStatusChangedEvent(
+                    71L, successApplicant, "PII_ACTOR",
+                    nuri.business.domain.informalsanction.SanctionStatus.REJECTED, reason));
+
+            given(userService.getUserById(failedApplicant))
+                    .willThrow(new IllegalStateException("PII_LOOKUP_EXCEPTION\r\nFORGED_LOOKUP_EXCEPTION"));
+            sanctionEventListener.handleStatusChanged(new SanctionStatusChangedEvent(
+                    72L, failedApplicant, "PII_ACTOR",
+                    nuri.business.domain.informalsanction.SanctionStatus.REJECTED, reason));
+
+            given(userService.getUserById(channelApplicant)).willReturn(user);
+            doThrow(new IllegalArgumentException("PII_SMS_EXCEPTION\r\nFORGED_SMS_EXCEPTION"))
+                    .when(smsService).sendSms(anyString(), any(SmsDto.class));
+            doThrow(new UnsupportedOperationException("PII_MAIL_EXCEPTION\r\nFORGED_MAIL_EXCEPTION"))
+                    .when(mailService).sendMail(anyString(), any(SentMailDto.class));
+            doThrow(new SecurityException("PII_APP_EXCEPTION\r\nFORGED_APP_EXCEPTION"))
+                    .when(eventPublisher)
+                    .publishEvent(any(nuri.foundation.core.event.NotificationRequestedEvent.class));
+            sanctionEventListener.handleStatusChanged(new SanctionStatusChangedEvent(
+                    73L, channelApplicant, "PII_ACTOR",
+                    nuri.business.domain.informalsanction.SanctionStatus.REJECTED, reason));
+
+            given(userService.getUserById(missingApplicant)).willReturn(null);
+            sanctionEventListener.handleStatusChanged(new SanctionStatusChangedEvent(
+                    74L, missingApplicant, "PII_ACTOR",
+                    nuri.business.domain.informalsanction.SanctionStatus.REJECTED, reason));
+        } finally {
+            logger.detachAppender(appender);
+            appender.stop();
+        }
+
+        java.util.Set<Object> allowedArguments = java.util.Set.of(
+                71L, 72L, 73L, 74L,
+                nuri.business.domain.informalsanction.SanctionStatus.REJECTED,
+                "IllegalStateException", "IllegalArgumentException",
+                "UnsupportedOperationException", "SecurityException");
+        assertThat(appender.list).isNotEmpty();
+        for (ILoggingEvent loggingEvent : appender.list) {
+            assertThat(loggingEvent.getThrowableProxy())
+                    .as("Throwable 원문/stack은 로그 이벤트에 결합하지 않는다: %s",
+                            loggingEvent.getFormattedMessage())
+                    .isNull();
+            assertThat(loggingEvent.getFormattedMessage())
+                    .as("외부 문자열의 개행으로 별도 로그 행을 위조할 수 없어야 한다")
+                    .doesNotContain("\r", "\n");
+            for (Object argument : loggingEvent.getArgumentArray()) {
+                assertThat(allowedArguments)
+                        .as("동적 로그 인자는 결재 번호·상태·예외 타입으로 제한한다")
+                        .contains(argument);
+            }
+        }
+
+        String formattedLogs = appender.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .collect(java.util.stream.Collectors.joining("|"));
+        assertThat(formattedLogs)
+                .contains("sanctionSn=71", "status=REJECTED", "exceptionType=IllegalStateException",
+                        "exceptionType=IllegalArgumentException", "exceptionType=UnsupportedOperationException",
+                        "exceptionType=SecurityException")
+                .doesNotContain("PII_", "FORGED_", "98765432", "secret.invalid");
     }
 }

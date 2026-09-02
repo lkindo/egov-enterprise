@@ -540,7 +540,7 @@ export type MenuDto = z.infer<typeof MenuDtoSchema>;
 export const LoginPolicyDtoSchema = z.object({
   userId: z.string().min(0).max(20),
   userNm: z.string().min(0).max(100).optional(),
-  ipAddr: z.string().min(0).max(30).optional(),
+  ipAddr: z.string().min(0).max(45).optional(),
   dpcnPrmYn: z.string().min(0).max(1).optional(),
   lmtYn: z.string().min(0).max(1).optional(),
   bgngTm: z.string().min(0).max(6).optional(),
@@ -5032,7 +5032,7 @@ export const MenuDtoResponseSchema = z.object({
 export const LoginPolicyDtoRequestSchema = z.object({
   userId: z.string().min(0).max(20),
   userNm: z.string().min(0).max(100).optional(),
-  ipAddr: z.string().min(0).max(30).optional(),
+  ipAddr: z.string().min(0).max(45).optional(),
   dpcnPrmYn: z.string().min(0).max(1).optional(),
   lmtYn: z.string().min(0).max(1).optional(),
   bgngTm: z.string().min(0).max(6).optional(),
@@ -5046,7 +5046,7 @@ export const LoginPolicyDtoRequestSchema = z.object({
 export const LoginPolicyDtoResponseSchema = z.object({
   userId: z.string().min(0).max(20),
   userNm: z.string().min(0).max(100).optional().nullable(),
-  ipAddr: z.string().min(0).max(30).optional().nullable(),
+  ipAddr: z.string().min(0).max(45).optional().nullable(),
   dpcnPrmYn: z.string().min(0).max(1).optional().nullable(),
   lmtYn: z.string().min(0).max(1).optional().nullable(),
   bgngTm: z.string().min(0).max(6).optional().nullable(),

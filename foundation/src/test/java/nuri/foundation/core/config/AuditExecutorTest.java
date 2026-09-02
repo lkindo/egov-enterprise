@@ -106,4 +106,54 @@ class AuditExecutorTest {
             executor.shutdown();
         }
     }
+
+    @Test
+    @DisplayName("정상 종료는 실행 중 작업을 기다린 뒤 큐의 감사 작업까지 완료한다")
+    void shutdownWaitsForQueuedAuditTasks() throws InterruptedException {
+        ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) auditExecutor(new SimpleMeterRegistry());
+        CountDownLatch workersStarted = new CountDownLatch(executor.getCorePoolSize());
+        CountDownLatch releaseWorkers = new CountDownLatch(1);
+        CountDownLatch queuedTaskRan = new CountDownLatch(1);
+        Thread shutdownThread = null;
+        try {
+            for (int i = 0; i < executor.getCorePoolSize(); i++) {
+                executor.execute(() -> {
+                    workersStarted.countDown();
+                    try {
+                        releaseWorkers.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            }
+            assertThat(workersStarted.await(5, TimeUnit.SECONDS)).isTrue();
+            executor.execute(queuedTaskRan::countDown);
+
+            CountDownLatch shutdownEntered = new CountDownLatch(1);
+            shutdownThread = Thread.ofPlatform().name("audit-shutdown-test").start(() -> {
+                shutdownEntered.countDown();
+                executor.shutdown();
+            });
+            assertThat(shutdownEntered.await(5, TimeUnit.SECONDS)).isTrue();
+            long shutdownDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (!executor.getThreadPoolExecutor().isShutdown()
+                    && System.nanoTime() < shutdownDeadline) {
+                Thread.onSpinWait();
+            }
+            assertThat(executor.getThreadPoolExecutor().isShutdown()).isTrue();
+            releaseWorkers.countDown();
+
+            assertThat(queuedTaskRan.await(5, TimeUnit.SECONDS))
+                    .as("정상 종료 중 큐에 있던 감사 작업이 폐기됐다")
+                    .isTrue();
+            shutdownThread.join(5_000);
+            assertThat(shutdownThread.isAlive()).isFalse();
+        } finally {
+            releaseWorkers.countDown();
+            if (shutdownThread != null) {
+                shutdownThread.interrupt();
+            }
+            executor.shutdown();
+        }
+    }
 }

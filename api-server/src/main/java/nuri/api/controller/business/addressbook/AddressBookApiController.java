@@ -2,6 +2,7 @@ package nuri.api.controller.business.addressbook;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.business.service.addressbook.AddressBookService;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
@@ -40,6 +41,7 @@ public class AddressBookApiController {
     }
 
     @Operation(summary = "주소록 상세 조회", description = "주소록의 상세 정보와 포함된 사용자 목록을 조회합니다.")
+    @PrivacyAccess("주소록 상세 구성원(성명·이메일·전화번호·팩스)")
     @GetMapping("/{adbkSn}")
     public ResponseEntity<ApiResponse<AddressBookDto>> getAddressBook(
             @Parameter(description = "주소록 일련번호") @PathVariable Long adbkSn) {
@@ -76,6 +78,7 @@ public class AddressBookApiController {
     }
 
     @Operation(summary = "주소록 사용자 검색", description = "주소록에 추가할 사용자를 시스템 전체에서 검색합니다.")
+    @PrivacyAccess("주소록 사용자 검색(성명·이메일·전화번호)")
     @GetMapping("/search-users")
     public ResponseEntity<ApiResponse<PageResponse<AddressBookUserDto>>> searchUsers(
             @RequestParam String searchWrd,

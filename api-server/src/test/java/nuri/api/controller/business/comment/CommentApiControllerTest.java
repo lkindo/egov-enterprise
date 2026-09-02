@@ -2,6 +2,9 @@ package nuri.api.controller.business.comment;
 
 import nuri.business.service.comment.CommentService;
 import nuri.business.service.comment.dto.CommentDto;
+import nuri.business.service.board.BoardService;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +24,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -35,6 +40,9 @@ class CommentApiControllerTest {
 
     @Mock
     private CommentService commentService;
+
+    @Mock
+    private BoardService boardService;
 
     @InjectMocks
     private CommentApiController commentApiController;
@@ -99,6 +107,7 @@ class CommentApiControllerTest {
                 .andExpect(jsonPath("$.data.list[0].frstRgtrId").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.data.list[0].crtDt").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.data.list[0].pswd").doesNotExist());
+        verify(boardService).assertCommentAccess("BBS_001", 1L);
     }
 
     @Test
@@ -122,6 +131,7 @@ class CommentApiControllerTest {
                 org.mockito.ArgumentMatchers.eq("USRCNFRM_00000000001"),
                 org.mockito.ArgumentMatchers.eq("홍길동"),
                 any(CommentDto.class));
+        verify(boardService).assertCommentAccess("BBS_001", 1L);
     }
 
     @Test
@@ -146,6 +156,20 @@ class CommentApiControllerTest {
         assertThat(body.getValue().getWrterId()).isNull();
         assertThat(body.getValue().getWrterNm()).isNull();
         assertThat(body.getValue().getCrtDt()).isNull();
+    }
+
+    @Test
+    @DisplayName("비밀글·게시판 불일치 접근이 거부되면 댓글 조회를 실행하지 않는다")
+    void getComments_deniedPostDoesNotReadComments() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(boardService).assertCommentAccess("WRONG_BBS", 1L);
+
+        mockMvc.perform(get("/api/v1/comments")
+                        .param("pstSn", "1")
+                        .param("bbsId", "WRONG_BBS"))
+                .andExpect(status().isForbidden());
+
+        verify(commentService, never()).getComments(anyLong(), anyString(), any(Pageable.class));
     }
 
     @Test

@@ -105,7 +105,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd,
                                                  // [2026-08-29] cmnt_cnt 를 실제로 가져온다. 컬럼은 BoardEventListener 가
-                                                 //   PostCommentCountChangedEvent 를 받아 syncCmntCntAtomic 으로 유지하는데,
+                                                 //   PostCommentCountChangedEvent 를 받아 adjustCmntCntAtomic 으로 유지하는데,
                                                  //   목록·상세 projection 이 둘 다 이 필드를 빼고 있어 화면의 '댓글 N' 이
                                                  //   글마다 언제나 0 이었다. 값이 없는 게 아니라 안 가져온 것이다.
                                                  QBoard.board.cmntCnt.as("commentCnt"),

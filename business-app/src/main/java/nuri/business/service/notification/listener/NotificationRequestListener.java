@@ -36,12 +36,12 @@ public class NotificationRequestListener {
 
     private final NotificationService notificationService;
 
-    @Async("logExecutor")
+    @Async("notificationExecutor")
     @EventListener
     public void onNotificationRequested(NotificationRequestedEvent event) {
         if (!event.hasReceiver()) {
             // 발행 측에서 걸러야 하지만, 수신자 없는 알림 행은 아무도 볼 수 없는 쓰레기가 된다.
-            log.warn("수신자 없는 알림 요청을 무시합니다 — title={}", event.title());
+            log.warn("수신자 없는 알림 요청을 무시합니다");
             return;
         }
         try {
@@ -54,7 +54,8 @@ public class NotificationRequestListener {
                             .build());
         } catch (Exception e) {
             // 원 업무는 이미 커밋됐다. 알림 실패로 그것을 되돌릴 수 없고 되돌려서도 안 된다.
-            log.error("알림 생성 실패(업무 처리에는 영향 없음) — title={}, 사유={}", event.title(), e.toString());
+            log.error("알림 생성 실패(업무 처리에는 영향 없음) — 예외유형={}",
+                    e.getClass().getSimpleName());
         }
     }
 }

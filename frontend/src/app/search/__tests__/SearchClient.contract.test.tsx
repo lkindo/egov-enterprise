@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchResultsContent } from '../SearchClient';
 
@@ -95,12 +95,23 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
 
   it('사용자 검색 실패를 결과 0건으로 위장하지 않는다', async () => {
     mocks.searchAssignableUsers.mockRejectedValue(new Error('private upstream detail'));
+    mocks.searchPosts.mockResolvedValue([
+      { bbsId: 'BBS_01', pstSn: 8, pstTtl: '독립 게시글 결과' },
+    ]);
 
     render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('임직원 검색 결과를 불러오지 못했습니다');
+    expect(await screen.findByText('독립 게시글 결과')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('임직원 검색 결과를 불러오지 못했습니다');
+    expect(screen.getByRole('button', { name: '임직원 (조회 실패)' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '임직원 0건' })).not.toBeInTheDocument();
+    expect(mocks.searchPosts).toHaveBeenCalledWith('홍길');
+    expect(mocks.getHeadMenus).toHaveBeenCalled();
     expect(screen.queryByText('일치하는 결과가 없습니다.')).not.toBeInTheDocument();
     expect(screen.queryByText('private upstream detail')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /게시글/ }));
+    expect(screen.getByRole('button', { name: '임직원 (조회 실패)' })).toBeInTheDocument();
   });
 
   it('빈 검색어에서는 사용자 API를 호출하지 않는다', async () => {
@@ -140,15 +151,55 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
   });
 
   /**
-   * 게시글 검색이 실패해도 임직원·메뉴 결과는 살아야 한다. 한 축의 장애가 화면 전체를
-   * 비우면 사용자는 "검색 결과가 없다" 로 오독한다.
+   * 게시글 검색이 실패해도 임직원·메뉴 결과는 살아야 하지만, 실패를 0건으로 위장해서도
+   * 안 된다. 부분 결과와 실패 축을 함께 표시한다.
    */
-  it('게시글 검색 실패가 임직원 결과를 죽이지 않는다', async () => {
+  it('게시글 검색 실패를 알리면서 임직원 결과는 유지한다', async () => {
     mocks.searchPosts.mockRejectedValue(new Error('board search down'));
 
     render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
 
     expect(await screen.findByText('홍길동')).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent('게시글 검색 결과를 불러오지 못했습니다');
+    expect(screen.getByRole('button', { name: '게시글 (조회 실패)' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '게시글 0건' })).not.toBeInTheDocument();
+    expect(screen.queryByText('일치하는 결과가 없습니다.')).not.toBeInTheDocument();
+  });
+
+  it('메뉴 검색 실패를 알리면서 다른 두 검색 축은 유지한다', async () => {
+    mocks.getHeadMenus.mockRejectedValue(new Error('menu endpoint down'));
+    mocks.searchPosts.mockResolvedValue([
+      { bbsId: 'BBS_01', pstSn: 9, pstTtl: '메뉴와 무관한 게시글' },
+    ]);
+
+    render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
+
+    expect(await screen.findByText('홍길동')).toBeInTheDocument();
+    expect(screen.getByText('메뉴와 무관한 게시글')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('메뉴 바로가기 검색 결과를 불러오지 못했습니다');
+    expect(screen.getByRole('button', { name: '메뉴 바로가기 (조회 실패)' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '메뉴 바로가기 0건' })).not.toBeInTheDocument();
+    expect(screen.queryByText('menu endpoint down')).not.toBeInTheDocument();
+  });
+
+  it('선택한 검색 범주만 0건이면 다른 범주의 결과 대신 빈 상태를 표시한다', async () => {
+    mocks.searchPosts.mockResolvedValue([
+      { bbsId: 'BBS_01', pstSn: 10, pstTtl: '게시글만 존재' },
+    ]);
+    mocks.searchAssignableUsers.mockResolvedValue([]);
+
+    render(<SearchResultsContent initialResults={emptyResults} query="게시글" />);
+
+    expect(await screen.findByText('게시글만 존재')).toBeInTheDocument();
+    const emptyUsersTab = screen.getByRole('button', { name: '임직원 0건' });
+    fireEvent.click(emptyUsersTab);
+    expect(screen.getByText('일치하는 결과가 없습니다.')).toBeInTheDocument();
+    expect(screen.queryByText('게시글만 존재')).not.toBeInTheDocument();
+  });
+
+  it('검색 입력에 placeholder와 별개의 접근 가능한 이름을 제공한다', () => {
+    render(<SearchResultsContent initialResults={emptyResults} query="" />);
+
+    expect(screen.getByRole('textbox', { name: '통합검색어' })).toBeInTheDocument();
   });
 });

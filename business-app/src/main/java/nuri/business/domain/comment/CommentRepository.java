@@ -1,10 +1,13 @@
 package nuri.business.domain.comment;
 
 import java.util.List;
+import java.util.Optional;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,6 +31,17 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     //   댓글 순번이 뒤엉키는 구조였다. 실제 댓글 PK 는 JpaRepository<Comment, Long> 표준 경로를 쓴다.
 
     long countByBbsIdAndPstSnAndUseYn(String bbsId, Long pstSn, String useYn);
+
+    /**
+     * 논리 삭제 전이를 직렬화한다.
+     *
+     * <p>활성 행만 잠근다. 잠금 대기 중 선행 트랜잭션이 {@code useYn=N}으로 바꾸면 후행
+     * 쿼리는 빈 결과가 되어 기존 {@code COMMENT_NOT_FOUND} 의미를 유지하고, 감소 이벤트도
+     * 한 번만 발행된다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Comment c WHERE c.ansSn = :commentNo AND c.useYn = 'Y'")
+    Optional<Comment> findByIdForUpdate(@Param("commentNo") Long commentNo);
 
     // [V2_12 결속] 사용자 삭제 시 댓글 작성자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
     // (fk_tb_bbs_comment_tb_user_info NO ACTION 하에서 작성자 행 삭제 전 필수)

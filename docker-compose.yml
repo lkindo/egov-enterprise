@@ -25,7 +25,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U egov -d egovdb"]
+      # prod 오버레이는 POSTGRES_USER를 DB_USERNAME으로 바꾼다. 개발 리터럴을 쓰면 신규 운영
+      # 볼륨에는 `egov` 역할이 없어 DB가 영구 unhealthy가 되므로 컨테이너의 실효 값을 따른다.
+      # `$$`는 Compose 호스트 치환을 피하고 컨테이너 셸에서 `$`로 전달하기 위한 이스케이프다.
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,11 +36,17 @@ services:
       - egov-net
 
   api:
+    # 복원 시에는 manifest에 기록된 pull 가능한 digest reference를 주입한다. 기본값은
+    # 로컬/CI compose build의 안정적인 태그이며 운영 복원은 --no-build로 덮어쓴다.
+    image: ${API_IMAGE_REF:-egov-enterprise-api:local}
     build:
       context: .
       dockerfile: api-server/Dockerfile
     container_name: egov-api
     restart: on-failure
+    # audit/notification/log executors each drain accepted work for up to 60s during
+    # Spring shutdown. Keep the container alive for all three drains plus lifecycle overhead.
+    stop_grace_period: 200s
     ports:
       - "8080:8080"
     environment:
@@ -108,6 +117,7 @@ services:
       - egov-net
 
   frontend:
+    image: ${FRONTEND_IMAGE_REF:-egov-enterprise-frontend:local}
     build:
       context: ./frontend
       args:

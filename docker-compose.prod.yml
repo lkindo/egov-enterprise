@@ -27,12 +27,13 @@ services:
   #     postgres_data 볼륨의 비밀번호는 이 값으로 바뀌지 않는다. 기존 배포의 자격을 바꾸려면
   #     DB 안에서 ALTER ROLE 을 수행해야 한다(백업·복원 런북 참조).
   #
-  #   ⚠ 외부 관리형 DB 를 쓴다면 DB_URL 이 그쪽을 가리키므로 이 번들 서비스는 불필요하다.
-  #     그때는 `docker compose ... up -d api frontend` 처럼 db 를 제외해 올린다.
+  #   ⚠ 현재 공식 deploy.sh와 백업·복원 런북은 이 번들 DB 전용이다. base의 api.depends_on.db도
+  #     이 서비스를 요구하므로 외부 관리형 DB에서 db만 제외하는 형상은 지원되지 않는다.
+  #     관리형 DB는 별도 compose profile과 공급자별 백업·복원 절차가 마련된 뒤 사용한다.
   db:
     environment:
-      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME 이 필요합니다 (번들 DB 를 쓰지 않으면 db 서비스를 제외해 올리십시오)}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 가 필요합니다 (번들 DB 를 쓰지 않으면 db 서비스를 제외해 올리십시오)}
+      POSTGRES_USER: ${DB_USERNAME:?번들 DB의 DB_USERNAME 이 필요합니다}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?번들 DB의 DB_PASSWORD 가 필요합니다}
 
   api:
     environment:

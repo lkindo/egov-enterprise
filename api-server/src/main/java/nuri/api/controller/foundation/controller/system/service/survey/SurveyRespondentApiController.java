@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.survey.SurveyRespondentService;
 import nuri.business.service.survey.dto.SurveyRespondentDto;
+import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.security.annotation.AdminOnly;
@@ -43,6 +44,7 @@ public class SurveyRespondentApiController {
 
     @Operation(summary = "설문 응답자 목록", description = "해당 설문의 응답자를 이름 부분일치로 검색한다.")
     @AdminOnly
+    @PrivacyAccess("설문 응답자 목록(성명·성별·생년월일·전화번호)")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<SurveyRespondentDto>>> getRespondents(
             @PathVariable Long srvySn,
@@ -54,6 +56,7 @@ public class SurveyRespondentApiController {
 
     @Operation(summary = "설문 응답자 단건 조회")
     @AdminOnly
+    @PrivacyAccess("설문 응답자 상세(성명·성별·생년월일·전화번호)")
     @GetMapping("/{respondentId}")
     public ResponseEntity<ApiResponse<SurveyRespondentDto>> getRespondent(
             @PathVariable Long srvySn,

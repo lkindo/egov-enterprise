@@ -9,16 +9,23 @@ package nuri.foundation.core.event;
  * 어느 도메인도 삭제할 수 없는 상태가 유지된다(AGENTS H2 — 신호 은폐).
  * {@link AuditEvent} 가 발행자(api-server)와 영속 구현(business-core)을 떼어 놓는 것과 같은 자리다.
  *
- * <p><b>왜 개수를 이벤트가 나르는가</b> — 댓글 수의 진실은 comment 가 소유한다. 개수를 싣지
- * 않으면 board 가 다시 {@code CommentRepository} 를 조회해야 하고 결합이 되돌아온다.
+ * <p><b>절대 개수가 아니라 단건 변화량을 나른다.</b> comment가 현재 개수를 다시 세게 하면
+ * 커밋 뒤 추가 조회가 필요하고, board가 세게 하면 comment 저장소에 역의존한다. 등록은 {@code +1},
+ * 실제 삭제 전이는 {@code -1}만 발행하고 board는 자기 행에서 원자적으로 누적한다.
  *
  * @param bbsId        게시판 ID
  * @param pstSn        게시글 번호
- * @param commentCount 커밋 이후 실측한 사용 중(use_yn='Y') 댓글 수
+ * @param delta         단건 댓글 변화량. 등록 {@code +1}, 삭제 {@code -1}
  */
 public record PostCommentCountChangedEvent(
         String bbsId,
         Long pstSn,
-        int commentCount
+        int delta
 ) implements DomainEvent {
+
+    public PostCommentCountChangedEvent {
+        if (delta != 1 && delta != -1) {
+            throw new IllegalArgumentException("comment count delta must be +1 or -1");
+        }
+    }
 }

@@ -49,7 +49,7 @@ public class CommentService {
                 .build();
 
         Long ansSn = commentRepository.save(comment).getAnsSn();
-        publishCountAfterCommit(comment.getBbsId(), comment.getPstSn());
+        publishCountDelta(comment.getBbsId(), comment.getPstSn(), 1);
         publishCommentedAfterCommit(comment.getBbsId(), comment.getPstSn(), wrterEsntlId, wrterNm);
         return ansSn;
     }
@@ -64,29 +64,30 @@ public class CommentService {
 
     @Transactional
     public void deleteComment(Long commentNo) {
-        Comment comment = commentRepository.findById(commentNo)
+        Comment comment = commentRepository.findByIdForUpdate(commentNo)
                 .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(comment.getFrstRgtrId()); // [IDOR] 작성자/관리자만 삭제
+        if (!"Y".equals(comment.getUseYn())) {
+            return;
+        }
         comment.delete();
-        publishCountAfterCommit(comment.getBbsId(), comment.getPstSn());
+        publishCountDelta(comment.getBbsId(), comment.getPstSn(), -1);
     }
 
     /**
-     * 댓글 수 변경을 <b>커밋 이후</b>에 알린다.
+     * 댓글 수 단건 변화량을 <b>원본 댓글 트랜잭션 안에서</b> 알린다.
      *
-     * <p>개수는 커밋 뒤에 다시 센다 — 트랜잭션 안에서 센 값은 같은 게시글에 동시에 달린 다른
-     * 댓글을 보지 못해, 늦게 커밋된 쪽이 오래된 값으로 덮어쓸 수 있다.
+     * <p>절대 개수를 다시 세지 않는다. 댓글 트랜잭션 하나가 만든 실제 상태 전이만 {@code +1/-1}로
+     * 표현하면 추가 SELECT가 없어지고, board는 자기 행의 원자 UPDATE만으로 동시 갱신을 보존한다.
+     * 동기 consumer가 같은 트랜잭션에 참여하므로 댓글 저장과 count 갱신은 함께 commit/rollback되고,
+     * 비동기 순서 역전으로 {@code -1}이 {@code +1}보다 먼저 0 하한에 닿는 오차도 만들지 않는다.
      *
      * <p>board 를 직접 부르지 않는다. 게시글의 {@code cmnt_cnt} 는 board 소유이고, 그 쪽
      * 리스너가 이 이벤트를 받아 벌크 UPDATE 로 반영한다.
      */
-    private void publishCountAfterCommit(String bbsId, Long pstSn) {
+    private void publishCountDelta(String bbsId, Long pstSn, int delta) {
         if (bbsId == null || pstSn == null) return;
-        TransactionUtils.runAfterCommit(() -> {
-            long count = commentRepository.countByBbsIdAndPstSnAndUseYn(bbsId, pstSn, "Y");
-            eventPublisher.publishEvent(
-                    new PostCommentCountChangedEvent(bbsId, pstSn, (int) count));
-        });
+        eventPublisher.publishEvent(new PostCommentCountChangedEvent(bbsId, pstSn, delta));
     }
 
     /**

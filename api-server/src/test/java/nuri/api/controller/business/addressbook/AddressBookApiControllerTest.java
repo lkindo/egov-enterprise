@@ -4,6 +4,7 @@ import nuri.business.service.addressbook.AddressBookService;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
 import nuri.business.support.ControllerTestSupport;
+import nuri.foundation.core.annotation.PrivacyAccess;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,6 +18,7 @@ import nuri.business.security.annotation.WithMockCustomUser;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -29,6 +31,22 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
     private AddressBookService addressBookService;
+
+    @Test
+    @DisplayName("개인정보를 반환하는 상세·사용자 검색에 접근 증적을 선언")
+    void sensitiveReadsDeclarePrivacyAccess() throws NoSuchMethodException {
+        PrivacyAccess detail = AddressBookApiController.class
+                .getDeclaredMethod("getAddressBook", Long.class)
+                .getAnnotation(PrivacyAccess.class);
+        PrivacyAccess userSearch = AddressBookApiController.class
+                .getDeclaredMethod("searchUsers", String.class, Pageable.class)
+                .getAnnotation(PrivacyAccess.class);
+
+        assertThat(detail).isNotNull();
+        assertThat(detail.value()).isNotBlank();
+        assertThat(userSearch).isNotNull();
+        assertThat(userSearch.value()).isNotBlank();
+    }
 
     @Test
     @WithMockCustomUser(username = "testUser", esntlId = "testUser")

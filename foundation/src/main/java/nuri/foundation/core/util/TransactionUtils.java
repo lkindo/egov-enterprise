@@ -12,6 +12,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  */
 public final class TransactionUtils {
 
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(TransactionUtils.class);
+
     private TransactionUtils() {
     }
 
@@ -20,7 +23,15 @@ public final class TransactionUtils {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    action.run();
+                    try {
+                        action.run();
+                    } catch (RuntimeException e) {
+                        // DB 커밋은 이미 끝났다. 여기서 예외를 다시 던지면 클라이언트에는 실패가
+                        // 보이지만 데이터는 저장된 거짓 실패가 되고, 뒤에 등록한 콜백도 막힌다.
+                        // 업무 데이터나 예외 메시지를 복제하지 않고 유형만 남긴다.
+                        log.error("커밋 후 부수효과 실행 실패 — 예외유형={}",
+                                e.getClass().getSimpleName());
+                    }
                 }
             });
         } else {

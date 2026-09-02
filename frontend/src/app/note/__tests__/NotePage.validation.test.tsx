@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import NotePage from '../page';
 
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   getReceivedNotes: vi.fn(),
   getSentNotes: vi.fn(),
+  getNote: vi.fn(),
   sendNote: vi.fn(),
   deleteNote: vi.fn(),
 }));
@@ -25,17 +26,33 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
 }));
 
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data }: any) => (
-    <div>
-      {data.map((item: any, rowIndex: number) => (
-        <div key={item.noteRcptnSn ?? item.noteSndngSn ?? rowIndex}>
-          {columns.map((column: any, columnIndex: number) => (
-            <React.Fragment key={columnIndex}>{column.accessor(item, rowIndex)}</React.Fragment>
-          ))}
-        </div>
-      ))}
-    </div>
-  ),
+  StandardDataTable: ({ columns, data, loading, error, onRetry, onRowClick, rowActionLabel, emptyMessage }: any) => {
+    if (loading) return <div role="status">쪽지 목록을 불러오는 중입니다.</div>;
+    if (error) return (
+      <div role="alert">
+        쪽지 목록을 불러오지 못했습니다.
+        <button type="button" onClick={onRetry}>목록 다시 시도</button>
+      </div>
+    );
+    if (data.length === 0) return <div>{emptyMessage}</div>;
+
+    return (
+      <div>
+        {data.map((item: any, rowIndex: number) => (
+          <div key={item.noteRcptnSn ?? item.noteSndngSn ?? rowIndex}>
+            {columns.map((column: any, columnIndex: number) => (
+              <React.Fragment key={columnIndex}>{column.accessor(item, rowIndex)}</React.Fragment>
+            ))}
+            {onRowClick && (
+              <button type="button" onClick={() => onRowClick(item)}>
+                {typeof rowActionLabel === 'function' ? rowActionLabel(item, rowIndex) : rowActionLabel}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  },
 }));
 
 vi.mock('@/app/components/ui/user-picker', () => ({
@@ -50,6 +67,7 @@ vi.mock('@/services/business/user/NoteService', () => ({
   noteService: {
     getReceivedNotes: mocks.getReceivedNotes,
     getSentNotes: mocks.getSentNotes,
+    getNote: mocks.getNote,
     sendNote: mocks.sendNote,
     deleteNote: mocks.deleteNote,
   },
@@ -68,6 +86,16 @@ describe('NotePage validation contract', () => {
     vi.clearAllMocks();
     mocks.getReceivedNotes.mockResolvedValue({ list: [] });
     mocks.getSentNotes.mockResolvedValue({ list: [] });
+    mocks.getNote.mockResolvedValue({
+      noteSn: 1,
+      noteRcptnSn: 11,
+      noteSj: '기본 쪽지',
+      noteCn: '기본 본문',
+      dsptchUserId: 'sender',
+      rcverId: 'receiver',
+      openYn: 'Y',
+      crtDt: '2026-08-26',
+    });
     mocks.sendNote.mockResolvedValue(undefined);
     mocks.deleteNote.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
@@ -189,5 +217,153 @@ describe('NotePage validation contract', () => {
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('삭제 중 오류가 발생했습니다.', 'error'));
     expect(screen.getByText('보존할 쪽지')).toBeInTheDocument();
     expect(remove).not.toBeDisabled();
+  });
+
+  it('받은 쪽지 삭제 완료가 뒤늦게 와도 전환한 보낸함 조회를 덮어쓰지 않는다', async () => {
+    mocks.getReceivedNotes.mockResolvedValueOnce({
+      list: [{
+        noteSn: 2,
+        noteRcptnSn: 21,
+        noteSj: '삭제할 받은 쪽지',
+        noteCn: '본문',
+        dsptchUserId: 'sender',
+        rcverId: 'receiver',
+        openYn: 'N',
+        crtDt: '2026-09-02',
+      }],
+    });
+    mocks.getSentNotes.mockResolvedValueOnce({
+      list: [{
+        noteSn: 3,
+        noteSndngSn: 31,
+        noteSj: '현재 보낸 쪽지',
+        noteCn: '본문',
+        dsptchUserId: 'sender',
+        rcverId: 'receiver',
+        crtDt: '2026-09-02',
+      }],
+    });
+    let resolveDelete!: () => void;
+    mocks.deleteNote.mockImplementationOnce(() => new Promise<void>((resolve) => {
+      resolveDelete = resolve;
+    }));
+    render(<NotePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '삭제할 받은 쪽지 삭제' }));
+    await waitFor(() => expect(mocks.deleteNote).toHaveBeenCalledWith(21, { type: 'received' }));
+    fireEvent.click(screen.getByRole('tab', { name: '보낸 쪽지함' }));
+    expect(await screen.findByText('현재 보낸 쪽지')).toBeInTheDocument();
+
+    resolveDelete();
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('삭제되었습니다.', 'success'));
+    expect(screen.getByText('현재 보낸 쪽지')).toBeInTheDocument();
+    expect(screen.queryByText('삭제할 받은 쪽지')).not.toBeInTheDocument();
+    expect(mocks.getReceivedNotes).toHaveBeenCalledTimes(1);
+    expect(mocks.getSentNotes).toHaveBeenCalledTimes(1);
+  });
+
+  it('받은 쪽지 행을 열면 관계 식별자로 상세를 조회하고 읽음 상태와 답장 수신자를 갱신한다', async () => {
+    const listNote = {
+      noteSn: 7,
+      noteRcptnSn: 71,
+      noteSj: '읽지 않은 쪽지',
+      noteCn: '목록 본문',
+      dsptchUserId: 'sender-7',
+      rcverId: 'receiver',
+      openYn: 'N',
+      crtDt: '2026-09-02',
+    };
+    let resolveDetail!: (note: typeof listNote & { trnsmiterNm: string }) => void;
+    mocks.getReceivedNotes.mockResolvedValueOnce({ list: [listNote] });
+    mocks.getNote.mockImplementationOnce(() => new Promise((resolve) => { resolveDetail = resolve; }));
+    render(<NotePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '읽지 않은 쪽지 쪽지 열기' }));
+
+    expect(mocks.getNote).toHaveBeenCalledWith(7, { type: 'received', relationSn: 71 });
+    const detail = screen.getByRole('region', { name: '쪽지 데이터 상세 정보' });
+    expect(within(detail).getByRole('status')).toHaveTextContent('쪽지 상세 정보를 불러오는 중입니다.');
+
+    resolveDetail({
+      ...listNote,
+      noteCn: '서버가 반환한 상세 본문',
+      trnsmiterNm: '발신자 이름',
+      openYn: 'Y',
+    });
+
+    expect(await within(detail).findByText('서버가 반환한 상세 본문')).toBeInTheDocument();
+    expect(screen.getAllByText('읽음').length).toBeGreaterThan(0);
+    expect(screen.queryByText('읽지 않음')).not.toBeInTheDocument();
+
+    fireEvent.click(within(detail).getByRole('button', { name: '실시간 답장 전송' }));
+    expect(screen.getByRole('textbox', { name: '수신 대상자' })).toHaveValue('발신자 이름 (sender-7)');
+  });
+
+  it('상세 조회가 실패하면 이전 행 본문을 상세처럼 보이지 않고 재시도할 수 있다', async () => {
+    const listNote = {
+      noteSn: 8,
+      noteRcptnSn: 81,
+      noteSj: '상세 실패 쪽지',
+      noteCn: '목록에 있던 축약 본문',
+      dsptchUserId: 'sender-8',
+      rcverId: 'receiver',
+      openYn: 'N',
+      crtDt: '2026-09-02',
+    };
+    mocks.getReceivedNotes.mockResolvedValueOnce({ list: [listNote] });
+    mocks.getNote
+      .mockRejectedValueOnce(new Error('상세 서버 오류'))
+      .mockResolvedValueOnce({ ...listNote, noteCn: '재시도로 받은 본문', openYn: 'Y' });
+    render(<NotePage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '상세 실패 쪽지 쪽지 열기' }));
+
+    const detail = screen.getByRole('region', { name: '쪽지 데이터 상세 정보' });
+    expect(await within(detail).findByRole('alert')).toHaveTextContent('쪽지 상세 정보를 불러오지 못했습니다.');
+    expect(within(detail).queryByText('목록에 있던 축약 본문')).not.toBeInTheDocument();
+
+    fireEvent.click(within(detail).getByRole('button', { name: '쪽지 상세 다시 시도' }));
+
+    expect(await within(detail).findByText('재시도로 받은 본문')).toBeInTheDocument();
+    expect(mocks.getNote).toHaveBeenCalledTimes(2);
+  });
+
+  it('첫 목록 조회 실패를 빈 받은 쪽지함으로 위장하지 않고 재시도한다', async () => {
+    mocks.getReceivedNotes.mockRejectedValueOnce(new Error('목록 서버 오류'));
+    render(<NotePage />);
+
+    const error = await screen.findByRole('alert');
+    expect(error).toHaveTextContent('쪽지 목록을 불러오지 못했습니다.');
+    expect(screen.queryByText('받은 쪽지가 없습니다.')).not.toBeInTheDocument();
+
+    fireEvent.click(within(error).getByRole('button', { name: '목록 다시 시도' }));
+
+    await waitFor(() => expect(mocks.getReceivedNotes).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('받은 쪽지가 없습니다.')).toBeInTheDocument();
+  });
+
+  it('탭 전환 조회 실패 시 이전 탭 행과 빈 상태를 모두 숨기고 오류를 표시한다', async () => {
+    mocks.getReceivedNotes.mockResolvedValueOnce({
+      list: [{
+        noteSn: 9,
+        noteRcptnSn: 91,
+        noteSj: '받은 쪽지 잔상',
+        noteCn: '본문',
+        dsptchUserId: 'sender-9',
+        rcverId: 'receiver',
+        openYn: 'N',
+        crtDt: '2026-09-02',
+      }],
+    });
+    mocks.getSentNotes.mockRejectedValueOnce(new Error('보낸함 서버 오류'));
+    render(<NotePage />);
+    expect(await screen.findByText('받은 쪽지 잔상')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: '보낸 쪽지함' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('쪽지 목록을 불러오지 못했습니다.');
+    expect(screen.queryByText('받은 쪽지 잔상')).not.toBeInTheDocument();
+    expect(screen.queryByText('보낸 쪽지가 없습니다.')).not.toBeInTheDocument();
   });
 });

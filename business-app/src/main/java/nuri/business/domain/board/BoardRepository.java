@@ -138,27 +138,35 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         int increaseInqCntAtomic(@Param("pstSn") Long pstSn, @Param("delta") int delta);
 
         /**
-         * 댓글 수 동기화. [W1-D5]
+         * 댓글 수 변화량을 board 소유 행에서 원자적으로 반영한다. [W1-D5]
          *
-         * <p>[왜 벌크 UPDATE 인가] 종전 경로는 {@code BoardEventListener} 가
-         * {@code findById → changeCmntCnt → save} 로 더티체킹 저장을 했다. 그 리스너는
-         * {@code @Async} 라 <b>SecurityContext 가 전파되지 않는 스레드</b>에서 돈다(TaskDecorator 는
-         * 프로덕션에서 의도적으로 no-op 이다 — 전파하면 비동기 경로의 인가 판정 거동이 통째로 바뀐다).
-         * 그래서 저장할 때마다 감사 컬럼 {@code last_mdfr_id} 가 실제 수정자를 지우고
-         * {@code SYSTEM} 으로 덮였다. 즉 "누가 글을 고쳤는가" 가 댓글 하나로 소실됐다.
+         * <p>단일 {@code UPDATE ... SET cmnt_cnt = GREATEST(...)} 이므로 동시 {@code +1/-1}의
+         * read-modify-write 유실이 없다. 하한 0은 중복 삭제나 방어적 감소가 음수 통계를 만들지 않게
+         * 한다. nullable 레거시 행은 {@code COALESCE}로 0에서 시작한다.
          *
-         * <p>동시에 {@code version} 이 올라 {@link #increaseInqCntAtomic} 이 해결한 것과 <b>같은 종류의
-         * 409 위양성</b>을 만들었다 — 글을 편집 중일 때 누가 댓글을 달면 편집이 충돌로 실패했다.
+         * <p>네이티브 벌크 UPDATE 는 감사 컬럼과 {@code version}을 건드리지 않는다. 따라서 비동기
+         * 리스너의 SYSTEM 감사값 덮어쓰기와 게시글 편집의 낙관적 락 위양성도 만들지 않는다.
          *
-         * <p>네이티브 벌크 UPDATE 는 감사 컬럼도 {@code version} 도 건드리지 않으므로 두 문제가 함께 사라진다.
-         * (전파 대신 손해가 확정된 지점만 봉합하는 방침 — AGENTS.md Evidence guardrails H4의 일괄 변경 경계와 정합한다.)
+         * <p><b>롤아웃 전제:</b> delta는 배포 전에 이미 어긋난 절대값을 복구하지 못한다. 기존
+         * {@code cmnt_cnt}와 실제 활성 댓글 수가 일치한다는 실측 또는 승인된 일회성 reconciliation이
+         * 먼저 필요하다. 런타임 쿼리는 이 경계를 지키기 위해 댓글 저장소를 읽지 않는다.
          *
-         * @return 영향 행 수. 0 이면 해당 게시글이 없다(이미 삭제된 글에 달린 댓글 등).
+         * @return 영향 행 수. 등록({@code +1})은 활성 게시글만, 삭제({@code -1})는 게시글의
+         *         논리 삭제와 경합해도 물리 키가 일치하면 반영한다.
          */
         @org.springframework.transaction.annotation.Transactional
         @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
-        @Query(value = "UPDATE tb_bbs_item SET cmnt_cnt = :cnt WHERE pst_sn = :pstSn", nativeQuery = true)
-        int syncCmntCntAtomic(@Param("pstSn") Long pstSn, @Param("cnt") int cnt);
+        @Query(value = """
+                        UPDATE tb_bbs_item
+                        SET cmnt_cnt = GREATEST(COALESCE(cmnt_cnt, 0) + :delta, 0)
+                        WHERE bbs_id = :bbsId
+                          AND pst_sn = :pstSn
+                          AND (use_yn = 'Y' OR :delta < 0)
+                        """, nativeQuery = true)
+        int adjustCmntCntAtomic(
+                        @Param("bbsId") String bbsId,
+                        @Param("pstSn") Long pstSn,
+                        @Param("delta") int delta);
 
         // [V2_12 결속] 사용자 삭제 시 게시글 저자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
         // (fk_tb_bbs_item_tb_user_info NO ACTION 하에서 저자 행 삭제 전 필수)

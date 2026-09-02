@@ -747,6 +747,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/InternetServiceGuidanceBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-IP-ADDRESS-IPV6",
+          "source": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-LOGIN-LOG-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/LoginLogBigintMigrationIntegrationTest.java"
         },

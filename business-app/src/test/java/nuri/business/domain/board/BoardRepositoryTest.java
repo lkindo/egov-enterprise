@@ -119,7 +119,7 @@ class BoardRepositoryTest {
     void searchAndDetailCarryCommentCount() {
         /*
          * [2026-08-29] tb_bbs.cmnt_cnt 는 BoardEventListener 가 실제로 유지한다
-         * (commentRepository.countByBbsIdAndPstSnAndUseYn → syncCmntCntAtomic 벌크 UPDATE).
+         * (PostCommentCountChangedEvent delta → adjustCmntCntAtomic 벌크 UPDATE).
          * 그런데 BoardRepositoryImpl 의 목록·상세 projection 이 **둘 다** 이 필드를 빼고 있어,
          * BoardSearchResult/BoardDetailResult 의 commentCnt 가 언제나 null 이었다. 화면은
          * 그것을 0 으로 렌더했다 — 값이 없는 게 아니라 안 가져온 것이라 사용자는 댓글이 달린
@@ -134,11 +134,9 @@ class BoardRepositoryTest {
                 .useYn("Y")
                 .userId("USR_CC")
                 .userNm("Tester")
+                .cmntCnt(3)
                 .build());
         em.flush();
-
-        // 실제 운영 경로와 같은 방식으로 값을 넣는다 — 리스너가 부르는 그 벌크 UPDATE 다.
-        boardRepository.syncCmntCntAtomic(article.getPstSn(), 3);
         em.clear();
 
         Optional<BoardDetailResult> detail = boardRepository.findActiveArticleDetail(
@@ -161,6 +159,54 @@ class BoardRepositoryTest {
     }
 
     @Test
+    @DisplayName("댓글 수 delta는 board 행에서 원자 반영되고 0 아래로 내려가지 않는다")
+    void adjustCommentCountAppliesDeltaAndClampsAtZero() {
+        Board article = boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId())
+                .pstTtl("Adjust comments")
+                .pstCn("body")
+                .useYn("Y")
+                .cmntCnt(1)
+                .build());
+        em.flush();
+
+        assertThat(boardRepository.adjustCmntCntAtomic(testMaster.getBbsId(), article.getPstSn(), 1))
+                .isEqualTo(1);
+        assertThat(boardRepository.adjustCmntCntAtomic(testMaster.getBbsId(), article.getPstSn(), -1))
+                .isEqualTo(1);
+        assertThat(boardRepository.adjustCmntCntAtomic(testMaster.getBbsId(), article.getPstSn(), -1))
+                .isEqualTo(1);
+        assertThat(boardRepository.adjustCmntCntAtomic(testMaster.getBbsId(), article.getPstSn(), -1))
+                .isEqualTo(1);
+        assertThat(boardRepository.adjustCmntCntAtomic("OTHER_BOARD", article.getPstSn(), 1))
+                .isZero();
+        em.clear();
+
+        assertThat(boardRepository.findActiveArticleDetail(testMaster.getBbsId(), article.getPstSn()))
+                .get()
+                .extracting(BoardDetailResult::getCommentCnt)
+                .isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 게시글은 +1을 거부하고 진행 중이던 삭제의 -1은 반영한다")
+    void adjustCommentCountRejectsCreateButAllowsDeleteForSoftDeletedPost() {
+        Board hidden = boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId())
+                .pstTtl("Hidden comments")
+                .pstCn("body")
+                .useYn("N")
+                .cmntCnt(2)
+                .build());
+        em.flush();
+
+        assertThat(boardRepository.adjustCmntCntAtomic(testMaster.getBbsId(), hidden.getPstSn(), 1))
+                .isZero();
+        assertThat(boardRepository.adjustCmntCntAtomic(testMaster.getBbsId(), hidden.getPstSn(), -1))
+                .isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("정렬 '댓글순'(orderBy=comments)이 실제로 댓글 수 내림차순이다")
     void searchArticlesSortsByCommentCount() {
         /*
@@ -170,15 +216,13 @@ class BoardRepositoryTest {
          */
         Board few = boardRepository.save(Board.builder()
                 .bbsId(testMaster.getBbsId()).pstTtl("few comments").pstCn("b")
-                .useYn("Y").userId("U1").userNm("T").build());
+                .useYn("Y").userId("U1").userNm("T").cmntCnt(1).build());
         Board many = boardRepository.save(Board.builder()
                 .bbsId(testMaster.getBbsId()).pstTtl("many comments").pstCn("b")
-                .useYn("Y").userId("U2").userNm("T").build());
+                .useYn("Y").userId("U2").userNm("T").cmntCnt(9).build());
         em.flush();
 
         // sortOrdr 는 기본 정렬 축이다. '댓글순' 이 무시되면 default 로 떨어져 few 가 앞에 온다.
-        boardRepository.syncCmntCntAtomic(few.getPstSn(), 1);
-        boardRepository.syncCmntCntAtomic(many.getPstSn(), 9);
         em.clear();
 
         BoardSearchCondition condition = new BoardSearchCondition();

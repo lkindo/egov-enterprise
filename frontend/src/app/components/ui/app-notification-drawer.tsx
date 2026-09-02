@@ -50,6 +50,7 @@ type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
 export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, error, onRetry }: AppNotificationDrawerProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
+  const hasUnreadNotifications = notifications.some(n => !n.isRead);
 
   const filteredNotifications = notifications.filter(n => {
     if (activeFilter === 'ALL') return true;
@@ -93,7 +94,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
               <p className="text-xs font-bold text-muted-foreground tracking-tight">받은 알림</p>
             </div>
             <div className="flex items-center gap-2">
-              {notifications.some(n => !n.isRead) && (
+              {hasUnreadNotifications && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -177,27 +178,20 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                   <span className="text-sm font-bold tracking-widest uppercase text-muted-foreground">활성화된 알림이 없습니다</span>
                 </div>
              ) : (
-                filteredNotifications.map((notif, idx) => (
-                  <div
-                    key={notif.id}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`알림: ${notif.title || '알림 항목'}`}
-                    className={cn(
-                      "group relative p-6 rounded-lg border transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-sm",
-                      notif.isRead
-                        ? "bg-muted/10 border-border/40 opacity-60"
-                        : "bg-card border-border shadow-xl hover:shadow-primary/5 hover:border-primary/20",
-                      !notif.isRead && notif.type === 'SECURITY' && "border-rose-100 dark:border-rose-950 bg-rose-50/20 dark:bg-rose-950/10"
-                    )}
-                    onClick={() => !notif.isRead && onMarkRead(notif.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        if (!notif.isRead) onMarkRead(notif.id);
-                      }
-                    }}
-                  >
+                filteredNotifications.map((notif) => {
+                  const canMarkRead = !notif.linkUrl && !notif.isRead;
+                  /* 목적지 링크가 있으면 카드와 링크를 중첩 인터랙션으로 만들지 않는다.
+                     링크가 없는 미읽음 알림만 카드 자체가 "읽음 처리" 버튼 역할을 한다. */
+                  const cardClassName = cn(
+                    "group relative w-full p-6 rounded-lg border text-left transition-all duration-300 overflow-hidden backdrop-blur-sm",
+                    canMarkRead && "cursor-pointer",
+                    notif.isRead
+                      ? "bg-muted/10 border-border/40 opacity-60"
+                      : "bg-card border-border shadow-xl hover:shadow-primary/5 hover:border-primary/20",
+                    !notif.isRead && notif.type === 'SECURITY' && "border-rose-100 dark:border-rose-950 bg-rose-50/20 dark:bg-rose-950/10"
+                  );
+                  const cardContent = (
+                    <>
                     <div className="flex justify-between items-start gap-4 relative z-10">
                       <div className={cn(
                          "w-10 h-10 rounded-lg flex items-center justify-center shadow-md shrink-0",
@@ -237,7 +231,11 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                       {notif.linkUrl ? (
                         <Link
                           href={notif.linkUrl}
-                          onClick={onClose}
+                          aria-label={`${notif.title || '알림'} 업무로 이동`}
+                          onClick={() => {
+                            if (!notif.isRead) onMarkRead(notif.id);
+                            onClose();
+                          }}
                           className="text-xs font-bold text-primary hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 rounded-sm"
                         >
                           바로가기 →
@@ -251,8 +249,29 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                           <ShieldAlert size={80} />
                        </div>
                     )}
-                  </div>
-                ))
+                    </>
+                  );
+
+                  if (canMarkRead) {
+                    return (
+                      <button
+                        key={notif.id}
+                        type="button"
+                        aria-label={`알림: ${notif.title || '알림 항목'}`}
+                        className={cardClassName}
+                        onClick={() => onMarkRead(notif.id)}
+                      >
+                        {cardContent}
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <div key={notif.id} className={cardClassName}>
+                      {cardContent}
+                    </div>
+                  );
+                })
              )}
           </div>
 
@@ -261,9 +280,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
              <Button
                data-testid="read-all-broadcasts-btn"
                onClick={onMarkAllRead}
+               disabled={!hasUnreadNotifications}
                className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-bold tracking-[0.3em] uppercase text-xs shadow-2xl hover:bg-primary/90 transition-all"
              >
-                모든 알림 읽음 처리
+                불러온 알림 읽음 처리
              </Button>
           </div>
         </DialogPrimitive.Content>

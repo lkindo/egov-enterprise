@@ -14,7 +14,9 @@ import org.springframework.test.context.ContextConfiguration;
 import nuri.business.security.annotation.WithMockCustomUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -101,6 +103,8 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
     void unauthorizedAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/system/users"))
                 .andExpect(status().isUnauthorized());
+
+        verify(operationalAuditInterceptor).publishSecurityFailure(any(), eq(401));
     }
 
     @Test
@@ -109,6 +113,8 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
     void forbiddenAccessTest() throws Exception {
         mockMvc.perform(get("/api/v1/admin/system/users"))
                 .andExpect(status().isForbidden());
+
+        verify(operationalAuditInterceptor).publishSecurityFailure(any(), eq(403));
     }
 
     @Test

@@ -2,6 +2,7 @@ package nuri.api.controller.foundation.controller.system.service.survey;
 
 import nuri.business.service.survey.SurveyRespondentService;
 import nuri.business.service.survey.dto.SurveyRespondentDto;
+import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.security.annotation.AdminOnly;
 import nuri.foundation.security.annotation.AdminOrSystem;
@@ -89,6 +90,22 @@ class SurveyRespondentApiControllerTest {
                     .as("%s: @Authenticated 는 인증만 보므로 일반 사용자에게 열린다", m.getName())
                     .isFalse();
         }
+    }
+
+    @Test
+    @DisplayName("응답자 목록·상세 GET은 개인정보 접근 증적을 선언")
+    void readHandlersDeclarePrivacyAccess() throws NoSuchMethodException {
+        PrivacyAccess list = SurveyRespondentApiController.class
+                .getDeclaredMethod("getRespondents", Long.class, String.class, Pageable.class)
+                .getAnnotation(PrivacyAccess.class);
+        PrivacyAccess detail = SurveyRespondentApiController.class
+                .getDeclaredMethod("getRespondent", Long.class, String.class)
+                .getAnnotation(PrivacyAccess.class);
+
+        assertThat(list).isNotNull();
+        assertThat(list.value()).isNotBlank();
+        assertThat(detail).isNotNull();
+        assertThat(detail.value()).isNotBlank();
     }
 
     @Test

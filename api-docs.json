@@ -35268,7 +35268,7 @@
           },
           "ipAddr": {
             "type": "string",
-            "maxLength": 30,
+            "maxLength": 45,
             "minLength": 0
           },
           "dpcnPrmYn": {

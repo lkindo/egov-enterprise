@@ -3,6 +3,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.security.net.IpAddressCanonicalizer;
 import nuri.business.domain.login.LoginPolicy;
 import nuri.business.domain.login.LoginPolicyRepository;
 import nuri.business.domain.user.entity.User;
@@ -93,12 +94,13 @@ public class LoginPolicyManageService {
 
     @Transactional
     public void insertLoginPolicy(LoginPolicyDto dto) {
+        String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         // [V2_13 결속] fk_tb_login_policy_tb_user_info(user_id UNIQUE 대상) — 유령 loginId 등록 차단
         userRepository.findByUserId(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         LoginPolicy entity = LoginPolicy.builder()
                 .userId(dto.getUserId())
-                .ipAddr(dto.getIpAddr())
+                .ipAddr(canonicalIpAddr)
                 .dpcnPrmYn(dto.getDpcnPrmYn())
                 .lmtYn(dto.getLmtYn())
                 .bgngTm(dto.getBgngTm())
@@ -111,9 +113,10 @@ public class LoginPolicyManageService {
 
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {
+        String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(dto.getIpAddr(), dto.getDpcnPrmYn(), dto.getLmtYn(), dto.getBgngTm(), dto.getEndTm(), dto.getOtpUseYn());
+        entity.update(canonicalIpAddr, dto.getDpcnPrmYn(), dto.getLmtYn(), dto.getBgngTm(), dto.getEndTm(), dto.getOtpUseYn());
     }
 
     @Transactional
@@ -126,7 +129,8 @@ public class LoginPolicyManageService {
             if ("Y".equals(policy.getLmtYn())) {
                 throw new BusinessException("접속이 제한된 계정입니다.", CommonErrorCode.LOGIN_POLICY_LIMITED);
             }
-            if (policy.getIpAddr() != null && !policy.getIpAddr().isEmpty() && !policy.getIpAddr().equals(clientIp)) {
+            if (policy.getIpAddr() != null && !policy.getIpAddr().isEmpty()
+                    && !sameIpAddress(policy.getIpAddr(), clientIp)) {
                 throw new BusinessException("허용되지 않은 IP에서의 접속입니다.", CommonErrorCode.LOGIN_POLICY_IP_MISMATCH);
             }
             if (policy.getBgngTm() != null && !policy.getBgngTm().isEmpty() && policy.getEndTm() != null && !policy.getEndTm().isEmpty()) {
@@ -176,5 +180,28 @@ public class LoginPolicyManageService {
                 }
             }
         });
+    }
+
+    /** 빈 값은 IP 제한 없음이며, 비어 있지 않은 값은 DNS 없는 IP 리터럴만 허용한다. */
+    private static String canonicalizeConfiguredIp(String ipAddr) {
+        if (ipAddr == null || ipAddr.isBlank()) {
+            return null;
+        }
+        try {
+            return IpAddressCanonicalizer.canonicalize(ipAddr);
+        } catch (IllegalArgumentException invalidAddress) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "IP 주소는 유효한 IPv4 또는 IPv6 리터럴이어야 합니다.");
+        }
+    }
+
+    /** 저장된 legacy 표기까지 양쪽을 정규화해 비교한다. 파싱 불가 값은 제한을 풀지 않고 불일치로 본다. */
+    private static boolean sameIpAddress(String configuredIp, String clientIp) {
+        try {
+            return IpAddressCanonicalizer.canonicalize(configuredIp)
+                    .equals(IpAddressCanonicalizer.canonicalize(clientIp));
+        } catch (IllegalArgumentException invalidAddress) {
+            return false;
+        }
     }
 }

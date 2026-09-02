@@ -426,6 +426,23 @@ public class BoardService extends BaseAbstractService {
                 return boardMapper.toDto(detail);
         }
 
+        /**
+         * 댓글 조회·등록 전에 게시글의 실제 소속과 현재 사용자의 열람 권한을 확인한다.
+         * 상세 조회와 같은 repository/비밀글 정책을 쓰되 조회수는 올리지 않는다.
+         */
+        @Transactional(readOnly = true)
+        public void assertCommentAccess(String bbsId, Long pstSn) {
+                if (!StringUtils.hasText(bbsId) || pstSn == null) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                        "댓글의 bbsId와 pstSn은 필수입니다.");
+                }
+                BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+                if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
+                        SecurityUtil.assertOwnerOrAdminByEsntlId(detail.getUserId());
+                }
+        }
+
         @Transactional(readOnly = true)
         public BoardDto getPublicFaqDetail(@NonNull Long pstSn) {
                 BoardDetailResult detail = boardRepository

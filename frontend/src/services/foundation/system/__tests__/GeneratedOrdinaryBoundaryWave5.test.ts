@@ -51,10 +51,10 @@ describe('ordinary generated boundary wave5', () => {
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'menus/left', { params: { menuNo: 1 } });
   });
 
-  it('menu fallback still turns generated response failures into an empty list', async () => {
+  it('menu query failures remain observable instead of becoming a legitimate empty list', async () => {
     client.getRaw.mockResolvedValueOnce({ list: [] });
 
-    await expect(menuService.getHeadMenus()).resolves.toStrictEqual([]);
+    await expect(menuService.getHeadMenus()).rejects.toBeDefined();
   });
 
   it('popup, banner, and assignable-user reads use their exact operations', async () => {

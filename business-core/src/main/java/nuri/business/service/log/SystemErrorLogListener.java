@@ -83,7 +83,8 @@ public class SystemErrorLogListener {
         } catch (Exception e) {
             long total = persistFailureCount.incrementAndGet();
             recordDropMetric();
-            log.error("시스템 오류 로그 영속화 실패(요청 처리에는 영향 없음) — 누적 유실 {}건: {}", total, e.toString());
+            log.error("시스템 오류 로그 영속화 실패(요청 처리에는 영향 없음) — 누적 유실 {}건, 예외유형={}",
+                    total, e.getClass().getSimpleName());
         }
     }
 

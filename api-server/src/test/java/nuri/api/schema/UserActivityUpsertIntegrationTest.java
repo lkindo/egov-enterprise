@@ -127,9 +127,11 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
 
     /** {@code tb_user_log.dmnd_user_id} → {@code tb_user_info.esntl_id} FK 를 만족시킬 최소 사용자. */
     private String seedUser(Connection connection, String esntlId, String loginId) throws SQLException {
+        // 상태는 물리 컬럼 user_stts_cd의 DB 기본값('P')에 맡긴다. 레거시 DTO 이름
+        // emplyr_sttus_code를 SQL 컬럼으로 쓰면 실 PostgreSQL에서 즉시 실패한다.
         try (PreparedStatement ps = connection.prepareStatement("""
-                INSERT INTO tb_user_info (esntl_id, user_id, user_nm, pswd, emplyr_sttus_code)
-                VALUES (?, ?, '활동집계 테스트', 'x', 'P')
+                INSERT INTO tb_user_info (esntl_id, user_id, user_nm, pswd)
+                VALUES (?, ?, '활동집계 테스트', 'x')
                 """)) {
             ps.setString(1, esntlId);
             ps.setString(2, loginId);

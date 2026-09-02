@@ -129,13 +129,23 @@ public class ClientIpResolver {
         // IPv6 대괄호 표기와 포트 접미를 제거한다. IPv4 는 콜론이 하나뿐일 때만 포트로 본다.
         if (v.startsWith("[")) {
             int close = v.indexOf(']');
-            return close > 0 ? v.substring(1, close) : null;
+            v = close > 0 ? v.substring(1, close) : null;
+            if (v == null) {
+                return null;
+            }
         }
         int colon = v.indexOf(':');
         if (colon > 0 && v.indexOf(':', colon + 1) < 0) {
-            return v.substring(0, colon);
+            v = v.substring(0, colon);
         }
-        return v;
+        try {
+            // XFF는 외부 입력이다. 임의 문자열을 그대로 반환하면 레이트리밋 키를 무한히
+            // 늘리고 varchar IP 감사 컬럼의 INSERT를 실패시킬 수 있다. DNS 조회 없이 IP
+            // 리터럴만 받아 표준 표기로 정규화한다(IPv6 최대 39자).
+            return IpAddressCanonicalizer.canonicalize(v);
+        } catch (IllegalArgumentException invalidAddress) {
+            return null;
+        }
     }
 
     private boolean isTrusted(String ip) {
