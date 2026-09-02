@@ -1410,7 +1410,7 @@
               <div class="stat-desc"><code>nuri.api.harness</code> 실측</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">40</div>
+              <div class="stat-val">41</div>
               <div class="stat-label">PostgreSQL 스키마 검증 클래스</div>
               <div class="stat-desc"><code>@Tag("schema-validation")</code> 실측</div>
             </div>
@@ -1446,7 +1446,7 @@
           <article class="status-card">
             <span class="badge badge-success">ENFORCED</span>
             <h3>중앙 gate registry</h3>
-            <p><code>gates.json</code>이 governance 38·ArchUnit 10·schema-validation 40개와 7개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
+            <p><code>gates.json</code>이 governance 38·ArchUnit 10·schema-validation 41개와 7개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-warning">ADVISORY</span>
@@ -2340,7 +2340,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">평가 기준</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            2026-09-02 기준 중앙 registry가 <strong>governance JUnit 38개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 40개</strong>와 runner catalog 6개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
+            2026-09-02 기준 중앙 registry가 <strong>governance JUnit 38개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 41개</strong>와 runner catalog 7개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
           </p>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
             <strong style="color: var(--accent-success);">핵심 집행:</strong> 태그 기반 전수 census, 단일 source index, 의미 기반 인가 정책 matrix, Entity Lombok gate, schema suite의 공유 PostgreSQL, 구조화 E2E 오류 ledger·고정 대기 0건·실행시간 기반 shard, 85/70/75 exact ratchet이 실행 경로에 결속돼 있습니다.
@@ -2371,7 +2371,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               <tbody>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>적용된 SQL의 <code>linter:ignore</code> 188건/43파일은 내용 hash·owner·reviewBy와 함께 <code>legacy-debt-unapproved</code>로 동결됐지만 승인된 waiver나 제거 완료를 뜻하지 않음</td>
+                  <td>적용된 SQL의 <code>linter:ignore</code> 193건/44파일은 내용 hash·owner·reviewBy와 함께 <code>legacy-debt-unapproved</code>로 동결됐지만 승인된 waiver나 제거 완료를 뜻하지 않음</td>
                   <td>신규 예외는 안정 ID·reason·owner·approvedAt·expiresAt·evidence를 1:1 등록하고, legacy debt는 reviewBy 전에 재검토해 신규 보정 migration과 배포 증거로 위험을 단계적으로 상환</td>
                   <td><strong>권장</strong> — “구조화 waiver·만료·선행 release 증거” 원칙만 조문에 추가, 세부 schema는 manifest로 분리</td>
                 </tr>
@@ -2499,7 +2499,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           "목표: live information_schema 선조회와 meta_standard_* 사전 정렬",
           "모든 환경·전체 Flyway SQL에 ZeroDowntimeMigrationLinter hard-stop 적용",
           "현행 공백: EntitySchema 검증은 repo migration을 기준으로 하며 live DB divergence는 직접 확인하지 않음",
-          "기존 linter:ignore 188건/43파일은 hash·owner·reviewBy를 가진 legacy-debt-unapproved inventory로 동결되며 소급 승인되지 않음",
+          "기존 linter:ignore 193건/44파일은 hash·owner·reviewBy를 가진 legacy-debt-unapproved inventory로 동결되며 소급 승인되지 않음",
           "DB·ZDM 스킬은 live metadata 우선, CHAR 금지, read-only bridge 경계와 단계별 migration 절차로 교정됨"
         ]
       },
