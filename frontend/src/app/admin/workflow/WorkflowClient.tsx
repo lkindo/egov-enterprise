@@ -61,10 +61,27 @@ export default function WorkflowClient() {
           마케팅 문구)가 한 번 더 있었고 주요 액션이 그쪽에 붙어 있었다.
           한 화면의 페이지 헤더는 하나이며, 액션은 그 하나가 소유한다. */}
 
+            {/*
+              [2026-09-02] 고지에 **실제 결재 능력의 범위**를 더한다.
+
+              종전 고지는 "이 화면이 데모다" 까지만 말했다. 그것만으로는 읽는 사람이
+              "그럼 진짜 엔진은 전자결재함 쪽에 있겠구나" 로 읽는다 — 캔버스가 4단계 결재선을
+              그리고 있으니 더욱 그렇다. 그런데 실제 구현
+              (InformalSanctionService#confirmInformalSanction)은 **결재자 한 명의 승인/반려
+              단일 단계**이고 결재선·대결·회수가 없다. 화면이 없는 능력을 암시하지 않도록
+              범위를 함께 적는다.
+
+              ⚠ '실제 저장·실행·운영 지표를 제공하지 않습니다' 문구는 e2e(14-admin-workflow)가
+              계약으로 붙잡고 있다. 문구를 바꾸려면 그 스펙을 함께 고쳐야 한다.
+            */}
             <div role="status" className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-4 text-sm leading-relaxed">
                 <strong className="font-bold">정적 데모 화면입니다.</strong>{' '}
                 아래 노드·담당자·시간·수치는 모두 예시이며 실제 저장·실행·운영 지표를 제공하지 않습니다.
                 실제 전자결재 조회와 승인·반려는 <Link className="font-bold underline underline-offset-4" href="/approvals">전자결재함</Link>에서 수행합니다.
+                <span className="mt-2 block font-normal">
+                    현재 제공되는 결재는 <strong className="font-bold">결재자 1인의 승인·반려 단일 단계</strong>입니다.
+                    이 캔버스가 그리는 다단계 결재선·대결·회수는 아직 구현되어 있지 않습니다.
+                </span>
             </div>
 
             <HubMetricGrid>

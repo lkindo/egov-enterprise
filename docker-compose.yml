@@ -70,6 +70,19 @@ services:
       #   1시간을 넘길 수 있는 환경에서만 바깥에서 늘린다(CI 의 e2e 잡이 주입). 늘리지 않으면
       #   토큰이 중간에 만료돼 이후 테스트가 전부 /login 리다이렉트로 죽는다(실측: CI shard 2, 66분).
       JWT_ACCESS_TOKEN_VALIDITY_MS: ${JWT_ACCESS_TOKEN_VALIDITY_MS:-3600000}
+    # [2026-09-02] 첨부 저장소를 named volume 으로 보존한다.
+    #
+    #   종전에는 api 서비스에 volumes 가 **하나도 없었다**. 첨부는 application.yml 의
+    #   `./storage/uploads`(= 컨테이너의 /app/storage/uploads)에 저장되므로 컨테이너 쓰기 계층에
+    #   쌓였고, `docker compose up --build` 로 컨테이너를 재생성하는 **평범한 재배포마다
+    #   업로드된 파일이 전부 사라졌다**. DB 의 첨부 레코드는 남으므로 화면은 파일이 있다고
+    #   말하고 다운로드만 실패한다 — 관리자 첨부 정합성 점검(/api/v1/admin/files/integrity)이
+    #   바로 이 상태를 '실물 부재'로 세는데, 원인이 사용자 실수가 아니라 배포 형상이었다.
+    #
+    #   ⚠ 이 볼륨은 DB 와 **함께** 백업·복원해야 한다. 한쪽만 되돌리면 DB↔저장소가 어긋나
+    #   같은 점검이 대량 불일치를 보고한다(docs/04-operations/backup-and-restore-runbook.md).
+    volumes:
+      - attachment_storage:/app/storage
     depends_on:
       db:
         condition: service_healthy
@@ -123,6 +136,8 @@ services:
 
 volumes:
   postgres_data:
+  # 첨부 파일 실물. DB 의 tb_atch_file_* 레코드와 짝을 이루므로 백업·복원 단위가 같다.
+  attachment_storage:
 
 networks:
   egov-net:
