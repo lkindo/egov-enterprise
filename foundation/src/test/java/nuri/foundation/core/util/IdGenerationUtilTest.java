@@ -134,4 +134,49 @@ class IdGenerationUtilTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("exists");
     }
+
+    /**
+     * {@code tb_sys_log.dmnd_id}·{@code tb_privacy_log.dmnd_id} 는 varchar(20) 이고 UNIQUE 다.
+     * 한 글자라도 넘치면 감사 적재가 통째로 실패하므로 길이를 정확히 고정한다.
+     */
+    @Test
+    @DisplayName("감사 요청 ID 는 항상 정확히 20자다 — 컬럼 폭과 같다")
+    void auditRequestIdIsExactlyColumnWidth() {
+        for (int i = 0; i < 500; i++) {
+            assertThat(IdGenerationUtil.generateAuditRequestId())
+                    .hasSize(IdGenerationUtil.AUDIT_REQUEST_ID_LENGTH);
+        }
+    }
+
+    @Test
+    @DisplayName("감사 요청 ID 는 같은 밀리초 안에서도 충돌하지 않는다")
+    void auditRequestIdIsUniqueWithinSameMillisecond() {
+        Set<String> generated = new HashSet<>();
+        for (int i = 0; i < 5_000; i++) {
+            generated.add(IdGenerationUtil.generateAuditRequestId());
+        }
+        assertThat(generated).as("5,000개 생성에서 중복이 없어야 한다").hasSize(5_000);
+    }
+
+    /**
+     * 앞 13자리가 epoch millis 라 사전식 정렬이 시간 순서와 같다. 인덱스 없는 로그 테이블에서
+     * 요청 ID 만으로 대략의 시각을 읽을 수 있다는 주석의 주장을 실제로 고정한다.
+     */
+    @Test
+    @DisplayName("감사 요청 ID 는 시간 순으로 사전식 정렬된다")
+    void auditRequestIdIsLexicographicallyTimeOrdered() throws InterruptedException {
+        String earlier = IdGenerationUtil.generateAuditRequestId();
+        Thread.sleep(2);
+        String later = IdGenerationUtil.generateAuditRequestId();
+
+        assertThat(earlier.compareTo(later)).isNegative();
+    }
+
+    @Test
+    @DisplayName("감사 요청 ID 는 영문 대문자와 숫자만 쓴다 — 로그 검색·URL 안전")
+    void auditRequestIdUsesUpperCaseAlphanumericOnly() {
+        for (int i = 0; i < 200; i++) {
+            assertThat(IdGenerationUtil.generateAuditRequestId()).matches("[0-9A-Z]{20}");
+        }
+    }
 }

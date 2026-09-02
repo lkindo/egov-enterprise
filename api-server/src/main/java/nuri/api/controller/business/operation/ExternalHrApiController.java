@@ -3,6 +3,7 @@ package nuri.api.controller.business.operation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.operation.ExternalHrService;
@@ -24,6 +25,7 @@ public class ExternalHrApiController {
     private final ExternalHrService externalHrService;
 
     @Operation(summary = "외부인사 목록 조회", description = "외부인사 정보를 페이징하여 조회한다. name 지정 시 성명 부분일치 검색.")
+    @PrivacyAccess("외부인사 목록(생년월일·전화번호·이메일)")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ExternalHrDto>>> getAllExternalHr(
             @RequestParam(required = false) String name,

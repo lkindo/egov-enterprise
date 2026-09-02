@@ -33,7 +33,8 @@ import static org.mockito.Mockito.when;
 class WebAuditLogListenerTest {
 
     private static final AuditEvent EVENT = new AuditEvent(
-            "/api/v1/things", "webmaster", "10.0.0.1", 12L, LocalDateTime.of(2026, 8, 4, 12, 0));
+            "/api/v1/things", "GET", 200, "webmaster", "USRCNFRM_0001", "10.0.0.1", 12L,
+            LocalDateTime.of(2026, 8, 4, 12, 0), "ThingApiController", "listThings");
 
     private WebAuditLogListener listener(WebLogRepository repository, MeterRegistry registry) {
         @SuppressWarnings("unchecked")
