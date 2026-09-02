@@ -17,6 +17,18 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
 
         private final JPAQueryFactory queryFactory;
 
+        /**
+         * 형제 저장소({@code WebLogRepositoryImpl} 등)는 {@code yyyyMMdd} 문자열 컬럼을 비교하지만
+         * 이 테이블의 조회 시각({@code inq_dt})은 timestamp 다. 문자열 절단 없이 시각으로 비교한다.
+         */
+        @Override
+        public void deleteOldLogs(int months) {
+                LocalDateTime cutoff = LocalDateTime.now().minusMonths(months);
+                queryFactory.delete(QPrivacyLog.privacyLog)
+                                .where(QPrivacyLog.privacyLog.inqDt.lt(cutoff))
+                                .execute();
+        }
+
         @Override
         public Page<PrivacyLog> searchPrivacyLogs(String searchWrd, String searchBgnDe, String searchEndDe,
                         Pageable pageable) {

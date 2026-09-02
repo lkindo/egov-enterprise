@@ -25,7 +25,8 @@ public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, 
     /** 특정 쪽지(note)를 참조하는 발신 건 수(info 물리삭제 안전성 판정용). */
     long countByNoteNoteSn(Long noteSn);
 
-    @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'",
+    // [2026-09-02] ORDER BY 를 명시한다(수신함과 같은 이유 — 종전엔 DB 임의 순서였다).
+    @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.delYn = 'N' ORDER BY t.noteSndngSn DESC",
            countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR t.note.noteTtl LIKE %:searchWrd% OR t.note.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'")
     Page<NoteTrnsmit> searchNoteTrnsmits(@Param("searchCondition") String searchCondition, @Param("searchWrd") String searchWrd,
             @Param("dsptchUserId") String dsptchUserId, Pageable pageable);

@@ -130,6 +130,10 @@ nuri:
       sys-months: 24            # 시스템 처리 로그 2년
       login-months: 24          # 로그인 이력 2년(기록경로 복원 시 유효)
       user-months: 24           # 개인 사용통계 백스톱 2년(주 정리는 사용자 삭제 시 즉시)
+      # [2026-09-02] 개인정보 접근 로그. 접속기록은 법정 최저 1년(대규모·민감 처리 시 2년)이라
+      #   형제 테이블과 같은 2년으로 둔다. 인수처 규모·규정에 따라 상향할 수는 있어도 하향은
+      #   스케줄러의 법정 하한 가드가 막는다. 파기 경로 부재는 log-retention-policy.md 참조.
+      privacy-months: 24        # 개인정보 접근 증적 2년
 
   # 로그인 무차별 대입(brute-force) 방어 — 연속 실패 N회 도달 시 계정 잠금, M분 경과 후 자동 해제.
   # 판정/해제 주체: EgovAuthenticationProvider. 잠금 시각은 tb_user_info.lck_last_pnttm 에 기록된다.

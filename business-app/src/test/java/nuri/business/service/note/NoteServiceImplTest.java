@@ -115,6 +115,29 @@ class NoteServiceImplTest {
         assertThat(result.getContent()).hasSize(1);
     }
 
+    /**
+     * [2026-09-02] 목록 질의에 ORDER BY 가 있는지를 애노테이션에서 직접 읽어 고정한다.
+     *
+     * <p>종전에는 수신·발신 목록 JPQL 에 정렬이 없어 순서가 DB 임의 순서였다 — 같은 결과가
+     * 새로고침마다 다른 순서로 올 수 있었다. 저장소가 목이라 실행으로는 검증할 수 없으므로
+     * 질의 문자열을 계약으로 삼는다. 누군가 ORDER BY 를 지우면 여기서 red 가 된다.
+     */
+    @Test
+    @DisplayName("수신·발신 목록 질의는 최신순 ORDER BY 를 명시한다")
+    void listQueries_declareDeterministicOrdering() throws NoSuchMethodException {
+        String received = nuri.business.domain.note.NoteRecptnDomainRepository.class
+                .getMethod("searchNoteRecptns", String.class, String.class, String.class,
+                        org.springframework.data.domain.Pageable.class)
+                .getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        String sent = nuri.business.domain.note.NoteTrnsmitDomainRepository.class
+                .getMethod("searchNoteTrnsmits", String.class, String.class, String.class,
+                        org.springframework.data.domain.Pageable.class)
+                .getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+
+        assertThat(received).containsIgnoringCase("ORDER BY r.noteRcptnSn DESC");
+        assertThat(sent).containsIgnoringCase("ORDER BY t.noteSndngSn DESC");
+    }
+
     @Test
     @DisplayName("보낸 쪽지 상세 조회 성공")
     void getNoteDetail_sent_success() {
