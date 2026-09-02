@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { menuService } from '@/services/business/user/MenuService';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import type { MenuInfo } from '@/types/foundation/menu';
@@ -93,10 +94,32 @@ export const SearchResultsContent = ({
             setLoading(true);
             setSearchError(null);
             try {
-                // 전역 게시글 검색 백엔드 엔드포인트는 부재(/api/v1/bbs는 /{bbsId} 기반이라 /bbs는 404) → 팬텀 호출 제거.
+                // [2026-09-02] 게시글 검색이 실제로 동작한다.
+                //   종전에는 전역 검색 엔드포인트가 없어 articles 를 항상 빈 배열로 뒀고, 탭 라벨에
+                //   '미지원' 이라고 적어 그 사실을 드러내고 있었다. 이제 GET /api/v1/boards/search 가
+                //   활성 게시판 전체의 **제목**을 검색한다(본문은 에디터 HTML 원문이라 제외).
+                //   가시성은 게시판 목록과 같은 술어라 여기서 보이는 글은 목록에서도 보이는 글이다.
+                //
                 // 모든 인증 사용자가 접근하는 route이므로 연락처·주소까지 담은
                 // admin 전용 목록이 아닌 식별자·성명·부서만 반환하는 최소정보 API를 사용한다.
                 const users = await userSearchService.searchAssignableUsers(query);
+                if (cancelled) return;
+
+                // 게시글 검색 실패가 임직원·메뉴 결과까지 죽이지 않게 독립적으로 처리한다.
+                //   (메뉴도 아래에서 같은 이유로 자체 실패를 흡수한다.)
+                let articles: SearchArticle[] = [];
+                try {
+                    const found = await boardUserService.searchPosts(query);
+                    articles = found.map(item => ({
+                        bbsId: item.bbsId,
+                        pstSn: item.pstSn,
+                        pstTtl: item.pstTtl ?? '(제목 없음)',
+                        crtDt: item.crtDt,
+                        userNm: item.userNm,
+                    }));
+                } catch {
+                    articles = [];
+                }
                 if (cancelled) return;
 
                 /*
@@ -125,7 +148,7 @@ export const SearchResultsContent = ({
                 });
 
                 if (cancelled) return;
-                setResults({ articles: [], users: users.slice(0, 10), menus });
+                setResults({ articles, users: users.slice(0, 10), menus });
             } catch {
                 if (!cancelled) {
                     setSearchError('임직원 검색 결과를 불러오지 못했습니다.');
@@ -139,15 +162,13 @@ export const SearchResultsContent = ({
         return () => { cancelled = true; };
     }, [query]);
 
-    // [2026-08-04] 게시글 탭은 **미지원**이다 — 전역 게시글 검색 백엔드 엔드포인트가 없어
-    //   fetchResults 가 articles 를 항상 빈 배열로 둔다(위 주석 참조).
-    //   종전에는 `count: 0` 인 평범한 탭이라 사용자가 "검색은 됐는데 결과가 없다" 로 읽었다.
-    //   **결과 없음과 기능 없음은 다른 사실**이고, 후자를 전자로 표시하는 것이 거짓 성공이다.
-    //   라벨에 직접 드러낸다 — TabItem 은 id/label/icon 만 받으므로 플래그를 넘겨도 렌더되지 않는다
-    //   (배선되지 않는 산출물을 만들지 않는다).
+    // [2026-09-02] 게시글 탭이 실제 결과를 센다.
+    //   종전 라벨은 '게시글 (미지원)' 이었다 — 전역 검색 엔드포인트가 없어 결과가 늘 빈 배열이라
+    //   `count: 0` 으로 두면 "결과 없음" 과 "기능 없음" 이 같은 모양이 되기 때문이었다.
+    //   이제 검색 대상은 **제목**이므로 그 범위는 아래 안내 문구가 말한다.
     const tabs = [
         { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
-        { id: 'articles', label: '게시글 (미지원)', icon: <MessageSquare size={16} /> },
+        { id: 'articles', label: '게시글', count: results.articles.length, icon: <MessageSquare size={16} /> },
         { id: 'users', label: '임직원', count: results.users.length, icon: <UserIcon size={16} /> },
         { id: 'menus', label: '메뉴 바로가기', count: results.menus.length, icon: <FileText size={16} /> }
     ];
@@ -164,7 +185,7 @@ export const SearchResultsContent = ({
                         <h1 className="text-3xl md:text-3xl font-bold text-surface-inverse-foreground tracking-tighter ">
                             통합 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">검색</span>
                         </h1>
-                        <p className="text-muted-foreground font-medium text-lg">임직원 성명과 메뉴 이름을 찾습니다. 게시글 본문은 검색하지 않습니다.</p>
+                        <p className="text-muted-foreground font-medium text-lg">게시글 제목, 임직원 성명, 메뉴 이름을 찾습니다. 게시글 본문은 검색하지 않습니다.</p>
                     </div>
                         {/* [2026-08-04] '실시간 인덱스 활성화' 배지 제거.
                             그런 인덱스는 존재하지 않는다 — 임직원 검색은 사용자 목록 API 의 키워드 조회이고,
@@ -212,7 +233,7 @@ export const SearchResultsContent = ({
                 <div className="w-full md:w-64 space-y-8 shrink-0">
                     <div className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-xl space-y-3">
                         <h2 className="text-sm font-bold tracking-tight text-foreground">현재 검색 범위</h2>
-                        <p className="text-sm text-muted-foreground leading-relaxed">임직원과 메뉴 바로가기를 검색합니다. 게시글 통합 검색은 아직 제공되지 않습니다.</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">게시글 제목, 임직원, 메뉴 바로가기를 검색합니다. 게시글 본문은 검색하지 않습니다.</p>
                     </div>
 
                     <div className="p-8 bg-surface-inverse rounded-lg text-surface-inverse-foreground shadow-2xl relative overflow-hidden group">
@@ -235,18 +256,19 @@ export const SearchResultsContent = ({
                         className="p-1.5 bg-muted/30 rounded-lg"
                     />
 
-                    {/* [2026-08-04] 게시글 검색 미지원을 화면에 명시한다.
-                        이 탭은 '결과 0건' 이 아니라 '기능 부재' 다 — 전역 게시글 검색 엔드포인트가
-                        백엔드에 없다. 구분해 적지 않으면 사용자는 검색어를 바꿔 가며 재시도하고,
-                        그 시간은 전부 헛수고가 된다.
+                    {/* [2026-09-02] '미지원' 안내를 **검색 범위** 안내로 바꾼다.
+                        종전에는 전역 게시글 검색 API 가 없어 이 탭이 '결과 0건' 이 아니라 '기능 부재'
+                        였고, 그 사실을 경고로 적어 두고 있었다. 이제 기능은 있으나 범위가 제목으로
+                        한정되므로(본문은 에디터 HTML 원문이라 태그·속성이 매칭된다) 그 경계를 대신 말한다.
+                        범위를 적지 않으면 사용자는 본문에만 있는 낱말로 검색하고 "글이 없다" 로 오독한다.
                         ⚠ 결과 영역 **밖**에 둔다. 아래 분기는 세 결과가 모두 비면 '일치하는 결과가
                         없습니다' 를 먼저 렌더하므로, 안쪽에 두면 정작 필요한 순간에 가려진다. */}
                     {activeTab === 'articles' ? (
-                        <div className="rounded-lg border border-warning/40 bg-warning/10 px-6 py-5">
-                            <p className="text-sm font-bold text-foreground">게시글 통합 검색은 아직 제공되지 않습니다.</p>
+                        <div className="rounded-lg border border-border bg-muted/30 px-6 py-5">
+                            <p className="text-sm font-bold text-foreground">게시글은 제목만 검색합니다.</p>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                전역 게시글 검색 API 가 준비되지 않아 이 탭은 항상 비어 있습니다.
-                                검색어를 바꿔도 결과는 달라지지 않습니다 — 게시판별 검색을 이용해 주세요.
+                                본문 내용은 검색 대상이 아니며, 활성 게시판의 글을 최대 20건까지 보여 줍니다.
+                                본문까지 찾으려면 해당 게시판의 검색을 이용해 주세요.
                             </p>
                         </div>
                     ) : null}

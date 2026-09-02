@@ -3616,6 +3616,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 게시글 통합 검색
+         * @description 활성 게시판 전체에서 게시글 **제목**을 검색합니다. 본문은 검색하지 않습니다 (본문은 에디터 HTML 원문이라 태그·속성이 그대로 매칭됩니다).
+         *     검색어는 2자 이상이어야 하며(미달 시 빈 목록), 최대 20건까지 반환합니다.
+         *     비밀글은 작성자 본인과 관리자에게만 보입니다.
+         */
+        get: operations["searchPosts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/boards/public-faqs": {
         parameters: {
             query?: never;
@@ -7297,6 +7319,40 @@ export interface components {
              * @example 4.5
              */
             average?: number;
+        };
+        ApiResponseListBoardSearchItemResponse: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["BoardSearchItemResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        BoardSearchItemResponse: {
+            /** @description 게시판 ID */
+            bbsId: string;
+            /**
+             * Format: int64
+             * @description 게시글 ID
+             */
+            pstSn: number;
+            /** @description 게시글 제목 */
+            pstTtl?: string | null;
+            /** @description 작성자명 */
+            userNm?: string | null;
+            /**
+             * Format: int32
+             * @description 조회수
+             */
+            inqCnt?: number | null;
+            /**
+             * Format: date-time
+             * @description 등록일시
+             */
+            crtDt?: string | null;
         };
         ApiResponsePageResponsePublicFaqListItemResponse: {
             success?: boolean;
@@ -29432,6 +29488,71 @@ export interface operations {
             };
             /** @description 대상을 찾을 수 없음 (code: C003/C007) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    searchPosts: {
+        parameters: {
+            query?: {
+                /** @description 제목 검색어(2자 이상) */
+                keyword?: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseListBoardSearchItemResponse"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

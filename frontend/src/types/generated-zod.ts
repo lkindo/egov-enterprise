@@ -2269,6 +2269,33 @@ export const SatisfactionAverageResponseSchema = z.object({
 export type SatisfactionAverageResponse = z.infer<typeof SatisfactionAverageResponseSchema>;
 
 // ==========================================================================
+// ApiResponseListBoardSearchItemResponse Schema
+// ==========================================================================
+export const ApiResponseListBoardSearchItemResponseSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => BoardSearchItemResponseSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListBoardSearchItemResponse = z.infer<typeof ApiResponseListBoardSearchItemResponseSchema>;
+
+// ==========================================================================
+// BoardSearchItemResponse Schema
+// ==========================================================================
+export const BoardSearchItemResponseSchema = z.object({
+  bbsId: z.string(),
+  pstSn: z.number().int(),
+  pstTtl: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  inqCnt: z.number().int().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+export type BoardSearchItemResponse = z.infer<typeof BoardSearchItemResponseSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponsePublicFaqListItemResponse Schema
 // ==========================================================================
 export const ApiResponsePageResponsePublicFaqListItemResponseSchema = z.object({
@@ -7454,6 +7481,44 @@ export const SatisfactionAverageResponseRequestSchema = z.object({
 
 export const SatisfactionAverageResponseResponseSchema = z.object({
   average: z.number().optional().nullable(),
+});
+
+export const ApiResponseListBoardSearchItemResponseRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => BoardSearchItemResponseRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseListBoardSearchItemResponseResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => BoardSearchItemResponseResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const BoardSearchItemResponseRequestSchema = z.object({
+  bbsId: z.string(),
+  pstSn: z.number().int(),
+  pstTtl: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  inqCnt: z.number().int().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+
+export const BoardSearchItemResponseResponseSchema = z.object({
+  bbsId: z.string(),
+  pstSn: z.number().int(),
+  pstTtl: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  inqCnt: z.number().int().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const ApiResponsePageResponsePublicFaqListItemResponseRequestSchema = z.object({

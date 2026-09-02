@@ -5,6 +5,7 @@ import { SearchResultsContent } from '../SearchClient';
 const mocks = vi.hoisted(() => ({
   legacyGet: vi.fn(),
   searchAssignableUsers: vi.fn(),
+  searchPosts: vi.fn(),
   getHeadMenus: vi.fn(),
   getLeftMenus: vi.fn(),
   push: vi.fn(),
@@ -36,6 +37,16 @@ vi.mock('@/services/business/user/MenuService', () => ({
   menuService: { getHeadMenus: mocks.getHeadMenus, getLeftMenus: mocks.getLeftMenus },
 }));
 
+/*
+ * [2026-09-02] 게시글 검색이 실제 백엔드 엔드포인트를 쓴다.
+ *
+ * 종전에는 전역 검색 API 가 없어 articles 가 늘 빈 배열이었고 탭 라벨이 '미지원' 이었다.
+ * 이제 GET /api/v1/boards/search 를 쓰므로 그 서비스도 목 해야 원시 client 단언이 유효하다.
+ */
+vi.mock('@/services/business/user/board/BoardUserService', () => ({
+  boardUserService: { searchPosts: mocks.searchPosts },
+}));
+
 const emptyResults = { articles: [], users: [], menus: [] };
 const users = [{ esntlId: 'synthetic-user-1', userNm: '홍길동', deptNm: '연구부' }];
 
@@ -44,6 +55,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     vi.clearAllMocks();
     mocks.legacyGet.mockResolvedValue(users);
     mocks.searchAssignableUsers.mockResolvedValue(users);
+    mocks.searchPosts.mockResolvedValue([]);
     mocks.getHeadMenus.mockResolvedValue([]);
     mocks.getLeftMenus.mockResolvedValue([]);
   });
@@ -97,6 +109,46 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     await waitFor(() => {
       expect(mocks.legacyGet).not.toHaveBeenCalled();
       expect(mocks.searchAssignableUsers).not.toHaveBeenCalled();
+      expect(mocks.searchPosts).not.toHaveBeenCalled();
     });
+  });
+
+  /*
+   * 게시글 검색 계약.
+   *
+   * 이 탭은 오랫동안 '미지원' 이었다 — 전역 검색 엔드포인트가 없어 결과가 항상 빈 배열이었고,
+   * 화면은 그 사실을 경고로 정직하게 알렸다. 아래 세 건은 그 상태로 되돌아가는 것을 막는다.
+   */
+  it('게시글을 통합 검색 API 에서 가져와 표시한다', async () => {
+    mocks.searchPosts.mockResolvedValue([
+      { bbsId: 'BBS_01', pstSn: 7, pstTtl: '연차 신청 안내', userNm: '홍길동', crtDt: '2026-09-01T10:00:00' },
+    ]);
+
+    render(<SearchResultsContent initialResults={emptyResults} query="연차" />);
+
+    expect(await screen.findByText('연차 신청 안내')).toBeInTheDocument();
+    expect(mocks.searchPosts).toHaveBeenCalledWith('연차');
+  });
+
+  it('게시글 탭에 기능 부재가 아니라 검색 범위를 안내한다', async () => {
+    render(<SearchResultsContent initialResults={emptyResults} query="연차" />);
+
+    // '미지원' 문구로 되돌아가면 red 가 된다 — 기능이 있는데 없다고 말하는 것도 거짓이다.
+    await waitFor(() => {
+      expect(screen.queryByText(/제공되지 않습니다/)).toBeNull();
+    });
+  });
+
+  /**
+   * 게시글 검색이 실패해도 임직원·메뉴 결과는 살아야 한다. 한 축의 장애가 화면 전체를
+   * 비우면 사용자는 "검색 결과가 없다" 로 오독한다.
+   */
+  it('게시글 검색 실패가 임직원 결과를 죽이지 않는다', async () => {
+    mocks.searchPosts.mockRejectedValue(new Error('board search down'));
+
+    render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
+
+    expect(await screen.findByText('홍길동')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

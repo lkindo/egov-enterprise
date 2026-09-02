@@ -27841,6 +27841,113 @@
         }
       }
     },
+    "/api/v1/boards/search": {
+      "get": {
+        "tags": [
+          "Board"
+        ],
+        "summary": "게시글 통합 검색",
+        "description": "활성 게시판 전체에서 게시글 **제목**을 검색합니다. 본문은 검색하지 않습니다 (본문은 에디터 HTML 원문이라 태그·속성이 그대로 매칭됩니다).\n검색어는 2자 이상이어야 하며(미달 시 빈 목록), 최대 20건까지 반환합니다.\n비밀글은 작성자 본인과 관리자에게만 보입니다.",
+        "operationId": "searchPosts",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "제목 검색어(2자 이상)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListBoardSearchItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/boards/public-faqs": {
       "get": {
         "tags": [
@@ -39885,6 +39992,88 @@
             "example": 4.5
           }
         }
+      },
+      "ApiResponseListBoardSearchItemResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardSearchItemResponse"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "BoardSearchItemResponse": {
+        "type": "object",
+        "properties": {
+          "bbsId": {
+            "type": "string",
+            "description": "게시판 ID"
+          },
+          "pstSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "게시글 ID"
+          },
+          "pstTtl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "게시글 제목"
+          },
+          "userNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자명"
+          },
+          "inqCnt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "조회수"
+          },
+          "crtDt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "등록일시"
+          }
+        },
+        "required": [
+          "bbsId",
+          "pstSn"
+        ]
       },
       "ApiResponsePageResponsePublicFaqListItemResponse": {
         "type": "object",
