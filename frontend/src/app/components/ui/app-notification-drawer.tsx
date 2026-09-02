@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X,  
+import Link from 'next/link';
+import { X,
   Bell,  
   ShieldAlert,  
   Activity,  
@@ -19,6 +20,14 @@ interface Notification {
   time: string;
   isRead: boolean;
   type?: 'SECURITY' | 'SYSTEM' | 'ACTIVITY' | 'INFO';
+  /**
+   * 알림을 눌렀을 때 갈 내부 경로. 목적지가 없으면 {@code null} 이고 이동 어포던스를 그린다.
+   *
+   * <p>훅({@code useNotifications})이 {@code normalizeInternalRoute} 로 이미 검증한 값이다 —
+   * 외부 origin·다른 스킴·자격 포함 URL 은 여기 도달하기 전에 null 이 된다. 이 컴포넌트는
+   * 값을 다시 신뢰하지 않고 <b>있으면 링크, 없으면 링크 없음</b>으로만 분기한다.
+   */
+  linkUrl?: string | null;
 }
 
 interface AppNotificationDrawerProps {
@@ -213,10 +222,27 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{notif.time}</span>
                       {/*
                          [2026-08-29] '상세 보기 →' 버튼을 걷었다. onClick·href·router.push 가
-                         전혀 없었고, 갈 곳도 없다 — 알림 라우트는 /admin/notifications 의
-                         page.tsx·NotificationsClient.tsx 둘뿐이고 [id] 세그먼트가 없다.
-                         상세 화면을 만들면 그때 되살린다(서버에는 단건 조회가 이미 있다).
+                         전혀 없었고, 갈 곳도 없었다.
+
+                         [2026-09-02] 갈 곳이 생겨서 되살린다 — 다만 '상세 보기' 가 아니라
+                         **업무로 이동**이다. 서버의 알림 producer 3종이 결재함·쪽지함·게시글로
+                         가는 경로를 계산해 저장하고, 훅이 그것을 내부 경로로 검증해 넘긴다.
+                         목적지가 없는 알림(관리자 수기 공지 등)에는 아무것도 그리지 않는다 —
+                         누를 수 없는 버튼을 두는 것이 종전에 걷어낸 바로 그 문제였다.
+
+                         ⚠ Link 클릭이 바깥 카드의 onClick(읽음 처리)까지 타지 않게 stopPropagation
+                         하지 않는다. 오히려 반대로, 이동하면서 읽음 처리도 되는 것이 맞다 —
+                         사용자가 알림을 눌러 업무로 갔는데 그 알림이 미읽음으로 남으면 안 된다.
                       */}
+                      {notif.linkUrl ? (
+                        <Link
+                          href={notif.linkUrl}
+                          onClick={onClose}
+                          className="text-xs font-bold text-primary hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 rounded-sm"
+                        >
+                          바로가기 →
+                        </Link>
+                      ) : null}
                     </div>
 
                     {/* Background Decoration */}

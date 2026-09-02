@@ -34,9 +34,39 @@ public class InformalSanctionService {
                 .map(this::convertToDto);
     }
 
+    /**
+     * 결재자 기준 <b>전체</b> 수신 목록(처리 완료 건 포함).
+     *
+     * <p>대기함·대기 건수에는 쓰지 말 것 — 그 용도는 {@link #getPendingApprovalList}다.
+     * 이 메서드의 소비자는 "결재자 기준 목록"을 약속하는 {@code /api/v1/informal-sanctions?type=received}
+     * 하나이며, 그 계약은 전체를 뜻한다.
+     */
     public Page<InformalSanctionDto> getReceivedInformalSanctionList(String aprvrId, Pageable pageable) {
         return informalSanctionRepository
                 .findByAprvrId(Objects.requireNonNull(aprvrId), Objects.requireNonNull(pageable))
+                .map(this::convertToDto);
+    }
+
+    /**
+     * 결재자의 <b>대기 중</b> 결재만 조회한다(상태 {@code A} = 신청).
+     *
+     * <p><b>왜 신설했나 — 2026-09-02 실측.</b> 대기함({@code GET /api/v1/approvals/pending})과
+     * 대시보드 위젯의 {@code pendingApprovalCount} 가 둘 다 상태 조건이 없는
+     * {@link #getReceivedInformalSanctionList} 를 불렀다. 그래서 <b>이미 승인·반려한 건까지
+     * 대기함에 남고 대기 건수에 계속 잡혔다</b> — 결재자는 처리한 문서를 다시 열어 보고서야
+     * 끝난 건임을 알게 된다. 정작 필터 메서드
+     * ({@code findByAprvrIdAndAprvYn})는 저장소에 <b>이미 선언돼 있었고 아무도 쓰지 않았다.</b>
+     *
+     * <p>기존 메서드를 그대로 좁히지 않은 것은 의도다. 세 번째 소비자
+     * ({@code /informal-sanctions?type=received})는 계약상 "결재자 기준 목록" 전체를 뜻하므로,
+     * 그것까지 대기 전용으로 바꾸면 처리 이력을 볼 창구가 사라진다(H3 — 도메인 의미 보존).
+     */
+    public Page<InformalSanctionDto> getPendingApprovalList(String aprvrId, Pageable pageable) {
+        return informalSanctionRepository
+                .findByAprvrIdAndAprvYn(
+                        Objects.requireNonNull(aprvrId),
+                        SanctionStatus.REQUESTED.getCode(),
+                        Objects.requireNonNull(pageable))
                 .map(this::convertToDto);
     }
 

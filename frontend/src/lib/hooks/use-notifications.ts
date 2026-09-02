@@ -6,6 +6,7 @@ import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { useWebSocket } from '@/contexts/websocket-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/app/components/ui/toast';
+import { normalizeInternalRoute } from '@/lib/navigation/internal-route';
 import {
   getNotificationsOperation,
   getUnreadCountOperation,
@@ -19,6 +20,15 @@ export interface Notification {
   notiDt: string;
   readYn: 'Y' | 'N';
   type?: 'SECURITY' | 'SYSTEM' | 'ACTIVITY' | 'INFO';
+  /**
+   * 알림을 눌렀을 때 갈 내부 경로. 목적지가 없거나 신뢰할 수 없으면 {@code null}.
+   *
+   * <p>[2026-09-02] 종전에는 이 필드가 <b>정규화 단계에서 통째로 버려졌다.</b> 서버의 알림
+   * producer 3종(결재·쪽지·댓글)이 목적지를 계산해 저장하고 API 도 내려주는데, 화면이 그것을
+   * 복사하지 않아 어떤 소비자도 쓸 수 없었다 — 그래서 드로어의 '상세 보기' 버튼도
+   * "갈 곳이 없다"는 이유로 걷혔다. 이제 목적지가 실재하므로 되살린다.
+   */
+  linkUrl?: string | null;
 }
 
 type NotificationKind = NonNullable<Notification['type']>;
@@ -47,6 +57,16 @@ function normalizeNotification(value: unknown): Notification | null {
     ? value.notiDt
     : typeof value.crtDt === 'string' ? value.crtDt : null;
 
+  /*
+   * 목적지는 **내부 경로로 검증한 뒤에만** 싣는다.
+   *
+   * linkUrl 은 tb_user_noti 의 varchar(2000) 컬럼이고, 관리자용 알림 생성 API 로 임의 문자열을
+   * 넣을 수 있다. 검증 없이 그대로 링크에 쓰면 열린 리다이렉트가 되고, `javascript:` 스킴이면
+   * 그보다 나쁘다. 메뉴 경로가 같은 이유로 쓰는 정규화기를 그대로 재사용한다 —
+   * 외부 origin·자격 포함 URL·백슬래시·점 세그먼트를 모두 거부하고 실패 시 null 을 준다.
+   */
+  const linkUrl = typeof value.linkUrl === 'string' ? normalizeInternalRoute(value.linkUrl) : null;
+
   return {
     notiSn,
     notiTtlNm,
@@ -54,6 +74,7 @@ function normalizeNotification(value: unknown): Notification | null {
     notiDt: dateCandidate || new Date().toISOString(),
     readYn: value.readYn === 'Y' ? 'Y' : 'N',
     type,
+    linkUrl,
   };
 }
 

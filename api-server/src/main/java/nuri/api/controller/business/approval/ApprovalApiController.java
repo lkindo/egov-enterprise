@@ -25,12 +25,20 @@ public class ApprovalApiController {
 
     private final InformalSanctionService approvalService;
 
-    @Operation(summary = "Get Pending Approvals (Inbox)")
+    /**
+     * 결재 대기함.
+     *
+     * <p>[2026-09-02] 종전에는 상태 조건이 없는 {@code getReceivedInformalSanctionList} 를 불러
+     * <b>이미 승인·반려한 건까지 대기함에 남았다.</b> 결재자는 처리한 문서를 다시 열어 보고서야
+     * 끝난 건임을 알게 됐다. 이름이 약속하는 것(pending)과 실제 질의가 어긋난 자리다.
+     */
+    @Operation(summary = "Get Pending Approvals (Inbox)",
+            description = "결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다.")
     @GetMapping("/pending")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getPending(
             @LoginUser CustomUserDetails userDetails,
             Pageable pageable) {
-        Page<InformalSanctionDto> result = approvalService.getReceivedInformalSanctionList(userDetails.getEsntlId(), pageable);
+        Page<InformalSanctionDto> result = approvalService.getPendingApprovalList(userDetails.getEsntlId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

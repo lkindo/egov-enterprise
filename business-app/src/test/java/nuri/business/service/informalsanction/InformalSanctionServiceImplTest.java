@@ -97,6 +97,45 @@ class InformalSanctionServiceImplTest {
         assertThat(result.getContent()).hasSize(1);
     }
 
+    /*
+     * [2026-09-02] 대기함은 대기 건만 담는다.
+     *
+     * 종전에는 대기함과 대시보드 대기 건수가 상태 조건 없는 findByAprvrId 를 썼다. 그래서
+     * **이미 승인·반려한 건까지 대기함에 남고 건수에 계속 잡혔다** — 결재자가 아무것도 하지
+     * 않아도 줄지 않는 숫자였다. 정작 필터 메서드는 저장소에 이미 선언돼 있었고 호출자가 0이었다.
+     */
+    @Test
+    @DisplayName("getPendingApprovalList 는 신청(A) 상태만 조회한다")
+    void getPendingApprovalList_filtersByRequestedState() {
+        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L).build()));
+        given(informalSanctionRepository.findByAprvrIdAndAprvYn(
+                eq("user1"),
+                eq(nuri.business.domain.informalsanction.SanctionStatus.REQUESTED.getCode()),
+                any())).willReturn(page);
+
+        Page<InformalSanctionDto> result =
+                informalSanctionService.getPendingApprovalList("user1", PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(1);
+        // 무필터 질의로 되돌아가면 이 단언이 잡는다.
+        verify(informalSanctionRepository, never()).findByAprvrId(anyString(), any());
+    }
+
+    /**
+     * 세 번째 소비자({@code /informal-sanctions?type=received})는 계약상 "결재자 기준 목록"
+     * 전체를 뜻한다. 그것까지 대기 전용으로 좁히면 처리 이력을 볼 창구가 사라진다(H3).
+     */
+    @Test
+    @DisplayName("수신 전체 목록은 여전히 상태로 거르지 않는다 — 처리 이력 창구를 지운다")
+    void getReceivedInformalSanctionList_staysUnfiltered() {
+        given(informalSanctionRepository.findByAprvrId(eq("user1"), any()))
+                .willReturn(new PageImpl<>(List.of()));
+
+        informalSanctionService.getReceivedInformalSanctionList("user1", PageRequest.of(0, 10));
+
+        verify(informalSanctionRepository, never()).findByAprvrIdAndAprvYn(anyString(), anyString(), any());
+    }
+
     @Test
     @DisplayName("getInformalSanction 테스트")
     void getInformalSanction() {
