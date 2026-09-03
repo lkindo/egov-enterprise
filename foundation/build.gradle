@@ -158,7 +158,7 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = 0.60 // 최소 60% 커버리지 목표
+                minimum = 0.80 // 실측 0.850(검증 태스크 기준) 대비 약 5pp 여유 — JaCoCo 래칫과 동일 원칙
             }
         }
         rule {
@@ -168,7 +168,7 @@ jacocoTestCoverageVerification {
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.50 // 클래스별 최소 50% 라인 커버리지
+                minimum = 0.55 // 클래스별 최소. 최악 실측 0.666(6/9) — 0.60 은 그 클래스의 여유를 0라인으로 만든다
             }
             
             // 제외할 클래스 패턴
