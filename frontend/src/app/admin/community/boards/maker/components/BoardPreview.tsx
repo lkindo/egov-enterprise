@@ -20,10 +20,24 @@ interface PreviewProps {
  bbsExpln: string;
 }
 
+/**
+ * 미리보기 레이아웃이 받는 행 모양.
+ *
+ * [2026-09-03] 종전에는 레이아웃 7개가 전부 `posts: any[]` 였다. 그런데 호출부는 예외 없이
+ * 바로 아래 {@link MOCK_POSTS} 하나만 넘긴다 — 외부 API 계약과 무관한 **이 파일 안의 예시 데이터**다.
+ * 즉 넓힐 이유가 없는 자리였고, `any` 8건(미사용 prop 1건 포함)을 혼자 만들고 있었다.
+ * 예시 데이터의 모양을 그대로 타입으로 삼아 실제 데이터가 들어오면 그때 계약을 바꾸게 한다.
+ */
+type PreviewPost = (typeof MOCK_POSTS)[number];
+
 const MOCK_POSTS = [
- { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45 },
- { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23 },
- { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67 },
+ // [2026-09-03] `content` 를 채운 이유: FAQ 레이아웃(FaqLayout)이 첫 항목의 답변 본문으로
+ //   `post.content` 를 렌더하는데 그 필드가 없어 **답변 상자가 늘 비어 있었다**.
+ //   `posts: any[]` 라 타입 검사가 이 누락을 못 봤고, 미리보기는 FAQ 템플릿을
+ //   '답변이 보이지 않는 템플릿' 으로 잘못 보여 주고 있었다.
+ { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, content: '4.x 는 Java 21 과 Spring Boot 3 계열을 기준으로 합니다. 3.x 설정은 그대로 쓸 수 없으므로 마이그레이션 가이드의 호환성 표를 먼저 확인해 주세요.' },
+ { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23, content: '서버 컴포넌트에서는 브라우저 전용 API 를 쓸 수 없습니다. 상태가 필요한 구간만 클라이언트 컴포넌트로 분리하세요.' },
+ { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, content: '2단계 커밋 대신 보상 트랜잭션으로 일관성을 맞춥니다. 각 단계는 실패 시 되돌릴 수 있어야 합니다.' },
 ];
 
 export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
@@ -59,7 +73,7 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  {tmpltId === 'TMPLT_LIST' && <ListLayout posts={MOCK_POSTS} />}
  {tmpltId === 'TMPLT_GALLERY' && <GalleryLayout posts={MOCK_POSTS} />}
  {tmpltId === 'TMPLT_QNA' && <QnaLayout posts={MOCK_POSTS} />}
- {tmpltId === 'TMPLT_CALENDAR' && <CalendarLayout posts={MOCK_POSTS} />}
+ {tmpltId === 'TMPLT_CALENDAR' && <CalendarLayout />}
  {tmpltId === 'TMPLT_FAQ' && <FaqLayout posts={MOCK_POSTS} />}
  {tmpltId === 'TMPLT_WIKI' && <WikiLayout posts={MOCK_POSTS} />}
  </div>
@@ -71,7 +85,7 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  );
 }
 
-function HubLayout({ posts }: { posts: any[] }) {
+function HubLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="space-y-8">
  <div className="grid grid-cols-2 gap-6">
@@ -113,7 +127,7 @@ function HubLayout({ posts }: { posts: any[] }) {
  );
 }
 
-function ListLayout({ posts }: { posts: any[] }) {
+function ListLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="space-y-2">
  {posts.map(post => (
@@ -141,7 +155,7 @@ function ListLayout({ posts }: { posts: any[] }) {
  );
 }
 
-function GalleryLayout({ posts }: { posts: any[] }) {
+function GalleryLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="grid grid-cols-1 gap-8">
  {posts.map(post => (
@@ -173,7 +187,7 @@ function GalleryLayout({ posts }: { posts: any[] }) {
  );
 }
 
-function QnaLayout({ posts }: { posts: any[] }) {
+function QnaLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="space-y-4">
  {posts.map((post, idx) => (
@@ -204,7 +218,7 @@ function QnaLayout({ posts }: { posts: any[] }) {
  );
 }
 
-function FaqLayout({ posts }: { posts: any[] }) {
+function FaqLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="space-y-4">
  {posts.slice(0, 3).map((post, idx) => (
@@ -234,7 +248,7 @@ function FaqLayout({ posts }: { posts: any[] }) {
  );
 }
 
-function WikiLayout({ posts }: { posts: any[] }) {
+function WikiLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {posts.map((post, idx) => (
@@ -254,7 +268,7 @@ function WikiLayout({ posts }: { posts: any[] }) {
  );
 }
 
-function CalendarLayout({ posts }: { posts: any[] }) {
+function CalendarLayout() {
  const days = Array.from({ length: 35 }, (_, i) => i + 1 - 3); // Simple offset for preview
  return (
  <div className="space-y-6">

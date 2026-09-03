@@ -128,6 +128,32 @@ const eslintConfig = [
     }
   },
   {
+    // [2026-09-03] `console.log` 정적 차단 — 배포되는 src 코드에만 적용한다.
+    //
+    // 왜 필요한가. 이 저장소가 반복해서 걷어낸 결함 유형이 "동작 대신 로그만 남기는 컨트롤"이다.
+    // 본문 편집기 툴바 버튼 12개가 전부 `console.log('Applying style: ...')` 하나에 걸려 눌러도
+    // 아무 일이 없었고(2026-09-03 수정), DEC-OPS-022 는 `console.log` 뿐인 검색 컨트롤을 같은
+    // 이유로 제거했다. 둘 다 사람이 눈으로 발견할 때까지 어떤 게이트도 보지 못했다 —
+    // 저장소 전수 검색으로 `no-console`·`removeConsole` 규칙이 0건임을 확인했다.
+    //
+    // 왜 warn/error 는 허용하는가. 남은 호출 19건은 전부 진단이다(error 12·warn 7). 특히
+    // `app/api/security/csp/route.ts` 의 warn 은 **CSP 위반 리포트의 현재 유일한 sink** 이고
+    // (known-gaps GAP-FE-001 이 수집 채널 결정 PD-CSP-002 를 대기 중으로 기록한다),
+    // `proxy.ts` 의 warn 도 의도적인 서버 경고다. 이것들을 지우는 것은 개선이 아니라 관측 삭제다.
+    //
+    // 왜 `src/**` 로 좁히는가. `pnpm lint` 의 대상은 `src e2e` 둘 다인데 e2e 에는 러너 진행 로그가
+    // `console.log` 로 355건 있다. 전역 적용하면 그 355건이 즉시 `--max-warnings` 캡을 날린다.
+    // e2e 의 브라우저 콘솔은 이미 `e2e/fixtures/error-detector.ts` 의 ConsoleErrorGuard 가
+    // 만료되는 원장으로 통제하므로 이 규칙이 덮을 축이 아니다.
+    //
+    // 도입 시점 위반 0건 — src 비테스트 코드의 `console.log` 실호출은 현재 없다.
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    ignores: ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.test.tsx"],
+    rules: {
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+    }
+  },
+  {
     files: ["src/services/**/*.ts"],
     rules: {
       "@typescript-eslint/naming-convention": [
