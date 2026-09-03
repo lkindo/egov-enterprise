@@ -304,17 +304,21 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  if (bannerSubmitLock.current || popupSubmitLock.current || deletePendingRef.current) return;
  bannerSubmitLock.current = true;
  try {
- const data = {
+ const data: Partial<Banner> = {
  ...values,
  rfltYn: values.rfltYn as "Y" | "N"
- } as any;
+ };
  if (formFiles.length > 0) {
- const uploadRes = await fileAdminService.uploadFiles(formFiles);
- const uploadedFileSn = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
- if (uploadedFileSn) {
- data.atchFileSn = uploadedFileSn;
+ // [2026-09-03] 종전에는 `(uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes`
+ //   로 응답 형태를 **짐작**했다. 앞 두 항은 도달 불가능한 죽은 코드다 — `uploadFiles` 는
+ //   생성 계약(uploadFiles_1Operation, responseSchema `z.number().int()`)을 지나고,
+ //   생성 클라이언트가 envelope 을 이미 언랩·검증한 뒤 값만 돌려준다. 계약과 어긋나면
+ //   여기 도달하기 전에 예외가 난다. 짐작을 지우면 응답 형태가 바뀌었을 때 런타임에 조용히
+ //   undefined 가 되는 대신 컴파일 시점에 드러난다.
+ //   같은 이유로 `if (uploadedFileSn)` 가드도 걷었다 — atchFileSn 은 IDENTITY BIGINT PK 이고
+ //   서비스가 non-null 을 단언하므로(FileService#uploadFiles) falsy 값이 만들어질 경로가 없다.
+ data.atchFileSn = await fileAdminService.uploadFiles(formFiles);
  data.bnrImgNm = formFiles[0].name;
- }
  } else if (editingItem) {
  data.atchFileSn = (editingItem as Banner).atchFileSn;
  data.bnrImgNm = (editingItem as Banner).bnrImgNm;
@@ -347,7 +351,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  if (popupSubmitLock.current || bannerSubmitLock.current || deletePendingRef.current) return;
  popupSubmitLock.current = true;
  try {
- const data = {
+ const data: Partial<Popup> = {
  ...values,
  ntceYn: values.ntceYn as "Y" | "N",
  stopvewSetupYn: values.stopvewSetupYn as "Y" | "N",
@@ -357,18 +361,18 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  popupVrtcPstn: String(values.popupVrtcPstn),
  popupWdthSz: String(values.popupWdthSz),
  popupVrtcSz: String(values.popupVrtcSz)
- } as any;
+ };
 
  if (formFiles.length > 0) {
- const uploadRes = await fileAdminService.uploadFiles(formFiles);
- const uploadedFileSn = typeof uploadRes === 'number' ? uploadRes : (uploadRes as any)?.data?.data || (uploadRes as any)?.data;
- 
- if (uploadedFileSn) {
+ // [2026-09-03] 배너 쪽과 같은 짐작을 걷었다. 두 호출부는 **모양이 달랐지만**
+ //   (여기는 `typeof === 'number'` 가드로 시작해 최종 폴백이 없고, 배너 쪽은 3중 `||` 였다)
+ //   실제 도달 가능한 표현은 양쪽 다 `uploadRes` 하나뿐이다 — 생성 계약이 number 를 보장한다.
+ //   같은 문법이 같은 의미가 아니므로 한쪽 형태를 복사하지 않고 각각의 도달 가능성을 확인했다.
+ const uploadedFileSn = await fileAdminService.uploadFiles(formFiles);
  // 종전에는 `/api/v1/files/download?fileId=…` 를 저장했는데 백엔드에 그 경로가 없다(매핑 0건).
  // 실존 경로를 저장한다. 렌더는 blob 으로 하되(헤더 인증), 값 자체는 실재하는 URL 이어야
  // 나중에 다른 소비자가 열어 보더라도 404 가 아니게 된다.
  data.fileUrl = `/api/v1/files/${uploadedFileSn}`;
- }
  } else if (editingItem) {
  data.fileUrl = (editingItem as Popup).fileUrl;
  }

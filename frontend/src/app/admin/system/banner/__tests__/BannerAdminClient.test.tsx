@@ -2,6 +2,15 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BannerAdminClient from '../BannerAdminClient';
+import type { fileAdminService } from '@/services/foundation/system/FileAdminService';
+
+/**
+ * 업로드 mock 이 돌려줄 값. **타입이 실제 서비스 선언에 결속돼 있다** —
+ * 여기에 envelope 형태(`{ data: { data: n } }`)를 다시 넣으면 컴파일 오류다.
+ *
+ * `import type` 이라 런타임에는 지워지므로 아래 `vi.mock` 이 대체하는 모듈을 실제로 부르지 않는다.
+ */
+const UPLOADED_FILE_SN: Awaited<ReturnType<typeof fileAdminService.uploadFiles>> = 999;
 
 const mocks = vi.hoisted(() => ({
   query: '',
@@ -201,7 +210,13 @@ describe('BannerAdminClient', () => {
     mocks.confirm.mockResolvedValue(true);
     mocks.getBanners.mockResolvedValue({ list: [banner], total: 21, totalPage: 2 });
     mocks.getPopups.mockResolvedValue({ list: [popup], total: 12, totalPage: 1 });
-    mocks.upload.mockResolvedValue({ data: { data: 999 } });
+    // [2026-09-03] 종전 mock 은 `{ data: { data: 999 } }` 를 돌려줬다 — **서비스가 만들 수 없는
+    //   형태**다. `fileAdminService.uploadFiles` 는 `Promise<number>` 로 선언돼 있고
+    //   생성 클라이언트(`parseGeneratedOperationResponse`)가 envelope 을 언랩·검증한 뒤 값만
+    //   돌려주기 때문이다. 그 mock 때문에 화면의 `?.data?.data || ?.data || uploadRes` 3중 짐작이
+    //   **필요한 것처럼 보였고**, 짐작을 지우면 테스트가 깨지는 구조였다(false-green).
+    //   계약대로 number 를 돌려주고, 단언(atchFileSn 999 · fileUrl /api/v1/files/999)은 그대로 둔다.
+    mocks.upload.mockResolvedValue(UPLOADED_FILE_SN);
     mocks.saveBanner.mockResolvedValue({ success: true, message: '배너 저장 완료' });
     mocks.deleteBanner.mockResolvedValue({ success: true, message: '배너 삭제 완료' });
     mocks.savePopup.mockResolvedValue({ success: true, message: '팝업 저장 완료' });
