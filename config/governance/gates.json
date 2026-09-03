@@ -707,6 +707,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-BOARD-COMMENT-COUNT-RECONCILIATION",
+          "source": "api-server/src/test/java/nuri/api/schema/BoardCommentCountReconciliationMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-COMMUNITY-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/CommunityBigintMigrationIntegrationTest.java"
         },

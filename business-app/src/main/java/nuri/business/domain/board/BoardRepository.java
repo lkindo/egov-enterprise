@@ -147,9 +147,9 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          * <p>네이티브 벌크 UPDATE 는 감사 컬럼과 {@code version}을 건드리지 않는다. 따라서 비동기
          * 리스너의 SYSTEM 감사값 덮어쓰기와 게시글 편집의 낙관적 락 위양성도 만들지 않는다.
          *
-         * <p><b>롤아웃 전제:</b> delta는 배포 전에 이미 어긋난 절대값을 복구하지 못한다. 기존
-         * {@code cmnt_cnt}와 실제 활성 댓글 수가 일치한다는 실측 또는 승인된 일회성 reconciliation이
-         * 먼저 필요하다. 런타임 쿼리는 이 경계를 지키기 위해 댓글 저장소를 읽지 않는다.
+         * <p><b>롤아웃 baseline:</b> delta는 배포 전에 이미 어긋난 절대값을 복구하지 못하므로
+         * Flyway V2_87이 {@code cmnt_cnt}를 실제 활성 댓글 수로 일회성 정합한다. 그 뒤 런타임은
+         * 이 경계를 지키기 위해 댓글 저장소를 다시 세지 않고 단건 변화량만 반영한다.
          *
          * @return 영향 행 수. 등록({@code +1})은 활성 게시글만, 삭제({@code -1})는 게시글의
          *         논리 삭제와 경합해도 물리 키가 일치하면 반영한다.

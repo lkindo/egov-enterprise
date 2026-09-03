@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,5 +79,25 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     void getUnreadCount() {
         long unreadCount = notificationService.getUnreadCount("testUser");
         assertThat(unreadCount).isEqualTo(20);
+    }
+
+    @Test
+    @DisplayName("알림 목록은 등록일시가 같아도 일련번호 역순으로 결정적으로 정렬한다")
+    void getNotificationList_breaksCreatedAtTiesByNewestId() {
+        entityManager.createNativeQuery("""
+                UPDATE tb_user_noti
+                   SET crt_dt = TIMESTAMP '2026-09-03 00:00:00'
+                 WHERE rcvr_id = 'testUser'
+                """).executeUpdate();
+        entityManager.clear();
+
+        List<Long> ids = notificationService
+                .getNotificationList("testUser", null, PageRequest.of(0, 25))
+                .getContent().stream()
+                .map(NotificationDto::getNotiSn)
+                .toList();
+
+        assertThat(ids).hasSize(25)
+                .isSortedAccordingTo(Comparator.reverseOrder());
     }
 }

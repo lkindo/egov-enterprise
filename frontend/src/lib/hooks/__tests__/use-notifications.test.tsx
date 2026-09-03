@@ -40,6 +40,29 @@ const NOTIF = {
   notiSn: 1, notiTtlNm: '보안 경고', notiCn: '내용', notiDt: '2026-08-09T00:00:00Z', readYn: 'N',
 };
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+function listResponse(list: unknown[]) {
+  return {
+    success: true,
+    code: 'S000',
+    message: 'success',
+    data: { list, total: list.length, page: 0, size: 10, totalPage: list.length ? 1 : 0 },
+  } as never;
+}
+
+function countResponse(count: number) {
+  return { success: true, code: 'S000', message: 'success', data: count } as never;
+}
+
 /** 목록·카운트 응답을 지정한다. Error 를 주면 그 호출만 실패한다. */
 function mockFetch(list: unknown, count: unknown) {
   vi.mocked(client.getRaw).mockImplementation((url: string) => {
@@ -317,6 +340,67 @@ describe('useNotifications', () => {
       expect(toast).toHaveBeenCalledWith('알림 읽음 처리에 실패했습니다.', 'error');
     });
 
+    it('단건 읽음 요청 중 섞인 REST count를 적용해 배지를 두 번 줄이지 않는다', async () => {
+      mockFetch([NOTIF], 2);
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(2));
+      const readRequest = deferred<never>();
+      vi.mocked(client.requestRaw).mockReturnValue(readRequest.promise);
+      mockFetch([NOTIF], 1);
+
+      let mark!: Promise<void>;
+      act(() => { mark = result.current.markAsRead(1); });
+      await act(async () => { await result.current.refresh(); });
+      expect(result.current.unreadCount, 'pending POST의 결과를 REST count와 중복 반영하면 안 된다').toBe(2);
+
+      await act(async () => {
+        readRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        await mark;
+      });
+
+      expect(result.current.notifications[0]?.readYn).toBe('Y');
+      expect(result.current.unreadCount).toBe(1);
+    });
+
+    it('U1→U2→U1 전환 뒤 옛 단건 요청 cleanup이 새 pending barrier를 지우지 않는다', async () => {
+      mockFetch([NOTIF], 2);
+      const { result, rerender } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(2));
+      const oldRequest = deferred<never>();
+      const newRequest = deferred<never>();
+      vi.mocked(client.requestRaw)
+        .mockReturnValueOnce(oldRequest.promise)
+        .mockReturnValueOnce(newRequest.promise);
+
+      let oldMark!: Promise<void>;
+      act(() => { oldMark = result.current.markAsRead(1); });
+      authUser = { id: 'U2' };
+      mockFetch([], 0);
+      rerender();
+      expect(result.current.notifications).toEqual([]);
+
+      authUser = { id: 'U1' };
+      mockFetch([NOTIF], 2);
+      rerender();
+      await waitFor(() => expect(result.current.unreadCount).toBe(2));
+      let newMark!: Promise<void>;
+      act(() => { newMark = result.current.markAsRead(1); });
+
+      await act(async () => {
+        oldRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        await oldMark;
+      });
+      mockFetch([NOTIF], 1);
+      await act(async () => { await result.current.refresh(); });
+      expect(result.current.unreadCount, '옛 cleanup이 새 pending entry를 삭제하면 REST 1로 내려간다').toBe(2);
+
+      await act(async () => {
+        newRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        await newMark;
+      });
+      expect(result.current.unreadCount).toBe(1);
+    });
+
     it('모두 읽음: 미읽음이 없으면 아무것도 하지 않는다', async () => {
       mockFetch([{ ...NOTIF, readYn: 'Y' }], 0);
       const { result } = renderHook(() => useNotifications());
@@ -354,6 +438,65 @@ describe('useNotifications', () => {
       expect(result.current.unreadCount, '불러오지 않은 미읽음까지 0 으로 덮으면 안 된다').toBe(2);
     });
 
+    it('일괄 읽음 요청 중 섞인 REST count도 완료 후 다시 빼지 않는다', async () => {
+      mockFetch([NOTIF], 2);
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(2));
+      const readRequest = deferred<never>();
+      vi.mocked(client.requestRaw).mockReturnValue(readRequest.promise);
+      mockFetch([NOTIF], 1);
+
+      let markAll!: Promise<void>;
+      act(() => { markAll = result.current.markAllAsRead(); });
+      await act(async () => { await result.current.refresh(); });
+      expect(result.current.unreadCount).toBe(2);
+
+      await act(async () => {
+        readRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        await markAll;
+      });
+
+      expect(result.current.notifications[0]?.readYn).toBe('Y');
+      expect(result.current.unreadCount).toBe(1);
+    });
+
+    it('U1 재로그인 뒤 옛 일괄 요청 cleanup도 새 일괄 pending barrier를 건드리지 않는다', async () => {
+      mockFetch([NOTIF], 2);
+      const { result, rerender } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(2));
+      const oldRequest = deferred<never>();
+      const newRequest = deferred<never>();
+      vi.mocked(client.requestRaw)
+        .mockReturnValueOnce(oldRequest.promise)
+        .mockReturnValueOnce(newRequest.promise);
+
+      let oldMark!: Promise<void>;
+      act(() => { oldMark = result.current.markAllAsRead(); });
+      authUser = { id: 'U2' };
+      mockFetch([], 0);
+      rerender();
+      authUser = { id: 'U1' };
+      mockFetch([NOTIF], 2);
+      rerender();
+      await waitFor(() => expect(result.current.unreadCount).toBe(2));
+      let newMark!: Promise<void>;
+      act(() => { newMark = result.current.markAllAsRead(); });
+
+      await act(async () => {
+        oldRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        await oldMark;
+      });
+      mockFetch([NOTIF], 1);
+      await act(async () => { await result.current.refresh(); });
+      expect(result.current.unreadCount).toBe(2);
+
+      await act(async () => {
+        newRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        await newMark;
+      });
+      expect(result.current.unreadCount).toBe(1);
+    });
+
     it('모두 읽음 실패는 알리고 서버 상태로 되맞춘다', async () => {
       const { result } = renderHook(() => useNotifications());
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
@@ -369,6 +512,35 @@ describe('useNotifications', () => {
   });
 
   describe('구독과 정리', () => {
+    it('Principal 큐 구독을 REST snapshot보다 먼저 시작한다', async () => {
+      const subscribe = vi.fn(() => ({ unsubscribe: vi.fn() }));
+      wsState = { client: { subscribe }, isConnected: true };
+
+      renderHook(() => useNotifications());
+
+      await waitFor(() => expect(client.getRaw).toHaveBeenCalled());
+      expect(subscribe.mock.invocationCallOrder[0])
+        .toBeLessThan(vi.mocked(client.getRaw).mock.invocationCallOrder[0]!);
+    });
+
+    it('SUBSCRIBE가 동기 실패해도 REST 초기 조회와 주기 reconcile을 유지한다', async () => {
+      vi.useFakeTimers();
+      const subscribe = vi.fn(() => { throw new Error('broker disconnected'); });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result, unmount } = renderHook(() => useNotifications());
+
+      await act(async () => { await Promise.resolve(); });
+      expect(subscribe).toHaveBeenCalledTimes(1);
+      expect(result.current.notifications).toHaveLength(1);
+      const before = vi.mocked(client.getRaw).mock.calls.length;
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
+
+      expect(vi.mocked(client.getRaw).mock.calls.length).toBeGreaterThan(before);
+      unmount();
+      vi.clearAllTimers();
+    });
+
     it('WebSocket 이 없으면 60초 폴링으로 대체한다', async () => {
       // ⚠ 렌더 **전에** 가짜 타이머를 켜야 한다 — 훅이 붙이는 setInterval 이 가짜여야
       //   advanceTimersByTime 으로 앞당길 수 있다. 렌더 뒤에 켜면 이미 실제 타이머라 안 움직인다.
@@ -416,6 +588,26 @@ describe('useNotifications', () => {
       expect(userSub.unsubscribe).toHaveBeenCalled();
     });
 
+    it('unsubscribe가 실패해도 lifecycle을 폐기해 늦은 메시지를 무시한다', async () => {
+      let handler: ((m: { body: string }) => void) | undefined;
+      const unsubscribe = vi.fn(() => { throw new Error('already disconnected'); });
+      const subscribe = vi.fn((_destination: string, callback: (m: { body: string }) => void) => {
+        handler = callback;
+        return { unsubscribe };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { unmount } = renderHook(() => useNotifications());
+      await waitFor(() => expect(subscribe).toHaveBeenCalledTimes(1));
+
+      expect(() => unmount()).not.toThrow();
+      await act(async () => {
+        handler!({ body: JSON.stringify({ ...NOTIF, notiSn: 99, notiTtlNm: '늦은 알림' }) });
+      });
+
+      expect(unsubscribe).toHaveBeenCalledTimes(1);
+      expect(toast).not.toHaveBeenCalled();
+    });
+
     it('실시간 알림이 오면 맨 앞에 붙이고 배지를 늘린다', async () => {
       let handler: ((m: { body: string }) => void) | undefined;
       const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
@@ -436,6 +628,347 @@ describe('useNotifications', () => {
       expect(result.current.notifications).toHaveLength(2);
       expect(result.current.unreadCount).toBe(4);
       expect(toast).toHaveBeenCalledWith('보안 경고', 'success');
+    });
+
+    it('느린 REST snapshot이 그 뒤 도착한 실시간 알림을 지우거나 배지를 낮추지 않는다', async () => {
+      let handler: ((m: { body: string }) => void) | undefined;
+      const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
+        handler = cb;
+        return { unsubscribe: vi.fn() };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(3));
+
+      const staleList = deferred<ReturnType<typeof listResponse>>();
+      const staleCount = deferred<ReturnType<typeof countResponse>>();
+      let listCalls = 0;
+      let countCalls = 0;
+      const live = { ...NOTIF, notiSn: 99, notiTtlNm: '새 알림' };
+      vi.mocked(client.getRaw).mockImplementation((url: string) => {
+        if (url.includes('unread-count')) {
+          countCalls += 1;
+          return countCalls === 1 ? staleCount.promise : Promise.resolve(countResponse(4));
+        }
+        listCalls += 1;
+        return listCalls === 1 ? staleList.promise : Promise.resolve(listResponse([NOTIF]));
+      });
+
+      let refresh!: Promise<void>;
+      act(() => { refresh = result.current.refresh(); });
+      await act(async () => {
+        handler!({ body: JSON.stringify(live) });
+      });
+      expect(result.current.unreadCount).toBe(4);
+
+      await act(async () => {
+        staleList.resolve(listResponse([NOTIF]));
+        staleCount.resolve(countResponse(3));
+        await refresh;
+      });
+
+      expect(result.current.notifications.map(item => item.notiSn)).toEqual([99, 1]);
+      expect(result.current.unreadCount).toBe(4);
+      expect(listCalls).toBe(2);
+    });
+
+    it('REST와 STOMP가 같은 notiSn을 전달해도 한 건·한 번만 반영한다', async () => {
+      mockFetch([], 0);
+      let handler: ((m: { body: string }) => void) | undefined;
+      const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
+        handler = cb;
+        return { unsubscribe: vi.fn() };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(0));
+      const live = { ...NOTIF, notiSn: 99, notiTtlNm: '중복 방지' };
+
+      await act(async () => { handler!({ body: JSON.stringify(live) }); });
+      mockFetch([live], 1);
+      await act(async () => { await result.current.refresh(); });
+      await act(async () => { handler!({ body: JSON.stringify(live) }); });
+
+      expect(result.current.notifications.filter(item => item.notiSn === 99)).toHaveLength(1);
+      expect(result.current.unreadCount).toBe(1);
+      expect(toast).toHaveBeenCalledTimes(1);
+    });
+
+    it('페이지보다 많은 WS 알림도 서버 visible window로 수렴하고 오래된 replay를 되살리지 않는다', async () => {
+      mockFetch([], 0);
+      let handler: ((m: { body: string }) => void) | undefined;
+      const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
+        handler = cb;
+        return { unsubscribe: vi.fn() };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(0));
+
+      const burst = Array.from({ length: 11 }, (_, index) => ({
+        ...NOTIF,
+        notiSn: 100 + index,
+        notiTtlNm: `burst-${index}`,
+      }));
+      await act(async () => {
+        for (const notification of burst) handler!({ body: JSON.stringify(notification) });
+      });
+      expect(result.current.notifications).toHaveLength(10);
+      expect(result.current.unreadCount).toBe(11);
+
+      const serverWindow = [...burst].reverse().slice(0, 10);
+      mockFetch(serverWindow, 11);
+      await act(async () => { await result.current.refresh(); });
+
+      expect(result.current.notifications.map(item => item.notiSn))
+        .toEqual(serverWindow.map(item => item.notiSn));
+      expect(result.current.unreadCount).toBe(11);
+
+      toast.mockClear();
+      await act(async () => { handler!({ body: JSON.stringify(burst[0]) }); });
+      expect(result.current.notifications.map(item => item.notiSn))
+        .toEqual(serverWindow.map(item => item.notiSn));
+      expect(result.current.unreadCount).toBe(11);
+      expect(toast).not.toHaveBeenCalled();
+    });
+
+    it('놓친 최신 WS가 한 페이지를 채우면 전달받은 오래된 event를 window 밖으로 retire한다', async () => {
+      mockFetch([], 0);
+      let handler: ((m: { body: string }) => void) | undefined;
+      const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
+        handler = cb;
+        return { unsubscribe: vi.fn() };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(0));
+
+      const deliveredOld = {
+        ...NOTIF,
+        notiSn: 101,
+        notiTtlNm: '먼저 전달된 오래된 알림',
+        crtDt: '2026-09-03T00:01:00',
+      };
+      await act(async () => { handler!({ body: JSON.stringify(deliveredOld) }); });
+
+      const missedNewer = Array.from({ length: 10 }, (_, index) => ({
+        ...NOTIF,
+        notiSn: 102 + index,
+        notiTtlNm: `놓친 최신 알림-${index}`,
+        crtDt: `2026-09-03T00:${String(index + 2).padStart(2, '0')}:00`,
+      })).reverse();
+      mockFetch(missedNewer, 11);
+      await act(async () => { await result.current.refresh(); });
+
+      expect(result.current.notifications.map(item => item.notiSn))
+        .toEqual(missedNewer.map(item => item.notiSn));
+      expect(result.current.notifications.some(item => item.notiSn === deliveredOld.notiSn)).toBe(false);
+      expect(result.current.unreadCount).toBe(11);
+
+      await act(async () => { await result.current.refresh(); });
+      expect(result.current.notifications.map(item => item.notiSn))
+        .toEqual(missedNewer.map(item => item.notiSn));
+    });
+
+    it('PostgreSQL microsecond 정렬을 JS millisecond로 절단하지 않는다', async () => {
+      mockFetch([], 0);
+      let handler: ((m: { body: string }) => void) | undefined;
+      wsState = {
+        client: {
+          subscribe: (_dest: string, cb: (m: { body: string }) => void) => {
+            handler = cb;
+            return { unsubscribe: vi.fn() };
+          },
+        },
+        isConnected: true,
+      };
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(0));
+
+      const olderHigherId = {
+        ...NOTIF,
+        notiSn: 102,
+        crtDt: '2026-09-03T00:00:00.000001',
+      };
+      const newerLowerId = {
+        ...NOTIF,
+        notiSn: 101,
+        crtDt: '2026-09-03T00:00:00.000002',
+      };
+      await act(async () => { handler!({ body: JSON.stringify(olderHigherId) }); });
+      mockFetch([newerLowerId], 2);
+      await act(async () => { await result.current.refresh(); });
+
+      expect(result.current.notifications.map(item => item.notiSn)).toEqual([101, 102]);
+    });
+
+    it('WebSocket 연결 중에도 60초마다 REST 정본과 재조정한다', async () => {
+      vi.useFakeTimers();
+      const subscribe = vi.fn(() => ({ unsubscribe: vi.fn() }));
+      wsState = { client: { subscribe }, isConnected: true };
+      const { unmount } = renderHook(() => useNotifications());
+      await act(async () => { await Promise.resolve(); });
+      const before = vi.mocked(client.getRaw).mock.calls.length;
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
+
+      expect(vi.mocked(client.getRaw).mock.calls.length).toBeGreaterThan(before);
+      unmount();
+      vi.clearAllTimers();
+    });
+
+    it('느린 REST snapshot은 그 뒤 성공한 단건 읽음을 미읽음으로 되돌리지 않는다', async () => {
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(3));
+      vi.mocked(client.requestRaw).mockResolvedValue(
+        { success: true, code: 'S000', message: 'success', data: null } as never,
+      );
+
+      const staleList = deferred<ReturnType<typeof listResponse>>();
+      const staleCount = deferred<ReturnType<typeof countResponse>>();
+      let listCalls = 0;
+      let countCalls = 0;
+      vi.mocked(client.getRaw).mockImplementation((url: string) => {
+        if (url.includes('unread-count')) {
+          countCalls += 1;
+          return countCalls === 1 ? staleCount.promise : Promise.resolve(countResponse(2));
+        }
+        listCalls += 1;
+        return listCalls === 1
+          ? staleList.promise
+          : Promise.resolve(listResponse([{ ...NOTIF, readYn: 'Y' }]));
+      });
+
+      let refresh!: Promise<void>;
+      act(() => { refresh = result.current.refresh(); });
+      await act(async () => { await result.current.markAsRead(1); });
+      await act(async () => {
+        staleList.resolve(listResponse([NOTIF]));
+        staleCount.resolve(countResponse(3));
+        await refresh;
+      });
+
+      expect(result.current.notifications[0]?.readYn).toBe('Y');
+      expect(result.current.unreadCount).toBe(2);
+    });
+
+    it('불러온 알림 읽음 처리 중 새로 온 알림은 미읽음으로 남긴다', async () => {
+      let handler: ((m: { body: string }) => void) | undefined;
+      const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
+        handler = cb;
+        return { unsubscribe: vi.fn() };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      const readRequest = deferred<never>();
+      vi.mocked(client.requestRaw).mockReturnValue(readRequest.promise);
+
+      let markAll!: Promise<void>;
+      act(() => { markAll = result.current.markAllAsRead(); });
+      await act(async () => {
+        handler!({ body: JSON.stringify({ ...NOTIF, notiSn: 99, notiTtlNm: '처리 중 도착' }) });
+      });
+      await act(async () => {
+        readRequest.resolve({ success: true, code: 'S000', message: 'success', data: null } as never);
+        await markAll;
+      });
+
+      expect(result.current.notifications.find(item => item.notiSn === 1)?.readYn).toBe('Y');
+      expect(result.current.notifications.find(item => item.notiSn === 99)?.readYn).toBe('N');
+      expect(result.current.unreadCount).toBe(3);
+    });
+
+    it('겹친 두 refresh가 역순 완료돼도 최신 요청만 반영한다', async () => {
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      const listA = deferred<ReturnType<typeof listResponse>>();
+      const countA = deferred<ReturnType<typeof countResponse>>();
+      const listB = deferred<ReturnType<typeof listResponse>>();
+      const countB = deferred<ReturnType<typeof countResponse>>();
+      let listCalls = 0;
+      let countCalls = 0;
+      vi.mocked(client.getRaw).mockImplementation((url: string) => {
+        if (url.includes('unread-count')) {
+          countCalls += 1;
+          return countCalls === 1 ? countA.promise : countB.promise;
+        }
+        listCalls += 1;
+        return listCalls === 1 ? listA.promise : listB.promise;
+      });
+
+      let refreshA!: Promise<void>;
+      let refreshB!: Promise<void>;
+      act(() => {
+        refreshA = result.current.refresh();
+        refreshB = result.current.refresh();
+      });
+      await act(async () => {
+        listB.resolve(listResponse([{ ...NOTIF, notiSn: 22 }]));
+        countB.resolve(countResponse(2));
+        await refreshB;
+      });
+      await act(async () => {
+        listA.resolve(listResponse([{ ...NOTIF, notiSn: 11 }]));
+        countA.resolve(countResponse(11));
+        await refreshA;
+      });
+
+      expect(result.current.notifications.map(item => item.notiSn)).toEqual([22]);
+      expect(result.current.unreadCount).toBe(2);
+    });
+
+    it('로그아웃 뒤 완료된 이전 사용자 요청은 상태·오류·토스트를 바꾸지 않는다', async () => {
+      const { result, rerender } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      const delayedList = deferred<never>();
+      const delayedCount = deferred<never>();
+      vi.mocked(client.getRaw).mockImplementation((url: string) => (
+        url.includes('unread-count') ? delayedCount.promise : delayedList.promise
+      ));
+
+      let refresh!: Promise<void>;
+      act(() => { refresh = result.current.refresh(); });
+      authUser = null;
+      rerender();
+      await waitFor(() => expect(result.current.notifications).toEqual([]));
+      toast.mockClear();
+
+      await act(async () => {
+        delayedList.reject(new Error('old user failure'));
+        delayedCount.resolve(countResponse(99));
+        await refresh;
+      });
+
+      expect(result.current.notifications).toEqual([]);
+      expect(result.current.unreadCount).toBe(0);
+      expect(result.current.error).toBeNull();
+      expect(toast).not.toHaveBeenCalled();
+    });
+
+    it('사용자 전환 commit에서 이전 상태와 늦은 STOMP 메시지를 함께 폐기한다', async () => {
+      let handler: ((m: { body: string }) => void) | undefined;
+      const subscribe = vi.fn((_destination: string, callback: (m: { body: string }) => void) => {
+        handler = callback;
+        return { unsubscribe: vi.fn() };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result, rerender } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      const u1Handler = handler!;
+      toast.mockClear();
+      mockFetch([], 0);
+
+      authUser = { id: 'U2' };
+      rerender();
+      await act(async () => {
+        u1Handler({ body: JSON.stringify({ ...NOTIF, notiSn: 99, notiTtlNm: 'U1 전용 알림' }) });
+      });
+
+      expect(result.current.notifications).toEqual([]);
+      expect(result.current.unreadCount).toBe(0);
+      expect(result.current.notifications.some(item => item.notiSn === 99)).toBe(false);
+      expect(toast).not.toHaveBeenCalled();
     });
 
     it('형식이 깨진 WebSocket 프레임은 상태·배지를 오염시키지 않는다', async () => {

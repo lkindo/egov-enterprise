@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Migration 검증 36개가 공유하는 PostgreSQL 17 서버와 클래스별 격리 database lifecycle.
+ * Migration 검증 37개가 공유하는 PostgreSQL 17 서버와 클래스별 격리 database lifecycle.
  *
  * <p>서버는 테스트 JVM에서 한 번만 lazy-start하고, 각 하위 클래스는 서로 다른 database를 생성한다.
  * 따라서 migration target과 fixture가 서로 오염되지 않으며 JUnit 병렬 실행에서도 이름이 충돌하지 않는다.

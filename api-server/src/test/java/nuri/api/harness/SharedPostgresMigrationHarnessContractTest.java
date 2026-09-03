@@ -26,7 +26,7 @@ class SharedPostgresMigrationHarnessContractTest {
      * 자동으로 세면 신규 migration 검증이 공용 support 를 쓰지 않아도 census 가 조용히 따라 올라간다.
      * 정당한 증감은 이 상수를 함께 고쳐 diff 에 의도를 남긴다.
      */
-    private static final int EXPECTED_MIGRATION_TEST_COUNT = 36;
+    private static final int EXPECTED_MIGRATION_TEST_COUNT = 37;
 
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")
@@ -47,7 +47,7 @@ class SharedPostgresMigrationHarnessContractTest {
     }
 
     @Test
-    @DisplayName("36개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
+    @DisplayName("37개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
     void migrationTestsUseSharedPostgresSupport() throws IOException {
         List<Path> migrationTests = HarnessSourceIndex.javaSources(schemaSourceRoot()).stream()
                 .filter(SharedPostgresMigrationHarnessContractTest::isMigrationTest)
@@ -74,7 +74,7 @@ class SharedPostgresMigrationHarnessContractTest {
         }
 
         assertThat(violations)
-                .as("migration 클래스마다 PostgreSQLContainer를 다시 띄우면 36회 부팅으로 회귀한다")
+                .as("migration 클래스마다 PostgreSQLContainer를 다시 띄우면 37회 부팅으로 회귀한다")
                 .isEmpty();
     }
 

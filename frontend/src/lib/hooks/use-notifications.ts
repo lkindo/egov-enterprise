@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import type { IMessage } from '@stomp/stompjs';
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { useWebSocket } from '@/contexts/websocket-context';
@@ -18,6 +18,8 @@ export interface Notification {
   notiTtlNm: string;
   notiCn: string;
   notiDt: string;
+  /** 서버 첫 페이지 정렬 기준. 화면 표시용 notiDt와 분리해 reconcile 순서를 보존한다. */
+  crtDt?: string | null;
   readYn: 'Y' | 'N';
   type?: 'SECURITY' | 'SYSTEM' | 'ACTIVITY' | 'INFO';
   /**
@@ -33,6 +35,8 @@ export interface Notification {
 
 type NotificationKind = NonNullable<Notification['type']>;
 const NOTIFICATION_KINDS = new Set<NotificationKind>(['SECURITY', 'SYSTEM', 'ACTIVITY', 'INFO']);
+const DEFAULT_NOTIFICATION_WINDOW_SIZE = 10;
+const RECENT_ID_WINDOW_PAGES = 10;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -53,9 +57,10 @@ function normalizeNotification(value: unknown): Notification | null {
     : notiTtlNm.includes('시스템') ? 'SYSTEM' : 'ACTIVITY';
   const suppliedType = typeof value.type === 'string' ? value.type as NotificationKind : null;
   const type = suppliedType && NOTIFICATION_KINDS.has(suppliedType) ? suppliedType : inferredType;
+  const createdAt = typeof value.crtDt === 'string' ? value.crtDt : null;
   const dateCandidate = typeof value.notiDt === 'string'
     ? value.notiDt
-    : typeof value.crtDt === 'string' ? value.crtDt : null;
+    : createdAt;
 
   /*
    * 목적지는 **내부 경로로 검증한 뒤에만** 싣는다.
@@ -72,10 +77,80 @@ function normalizeNotification(value: unknown): Notification | null {
     notiTtlNm,
     notiCn,
     notiDt: dateCandidate || new Date().toISOString(),
+    crtDt: createdAt,
     readYn: value.readYn === 'Y' ? 'Y' : 'N',
     type,
     linkUrl,
   };
+}
+
+interface RevisionedNotification {
+  revision: number;
+  notification: Notification;
+}
+
+interface PendingReadMutation {
+  generation: number;
+  requests: number;
+  wasUnread: boolean;
+  countAccounted: boolean;
+}
+
+/** REST 한 페이지 안의 중복 ID는 첫(최신 정렬) 항목 하나만 보존한다. */
+function deduplicateNotifications(items: Notification[]): Notification[] {
+  const seen = new Set<number>();
+  return items.filter(item => {
+    if (seen.has(item.notiSn)) return false;
+    seen.add(item.notiSn);
+    return true;
+  });
+}
+
+/** 서버의 ORDER BY crtDt DESC, notiSn DESC와 같은 first-page 순서를 재현한다. */
+function compareNotificationsNewestFirst(left: Notification, right: Notification): number {
+  if (!left.crtDt || !right.crtDt) return 0;
+  // LocalDateTime ISO 문자열을 숫자로 바꾸면 JS Date가 PostgreSQL microsecond를 millisecond로
+  // 절단한다. 같은 zone/형식의 원문을 비교해야 서버의 crtDt DESC 경계와 정확히 일치한다.
+  if (left.crtDt !== right.crtDt) return left.crtDt > right.crtDt ? -1 : 1;
+  return right.notiSn - left.notiSn;
+}
+
+/** 중복 STOMP 억제 이력은 최근 여러 페이지로 제한해 장기 mount에서도 메모리가 누적되지 않게 한다. */
+function rememberNotificationId(
+  recentIds: Map<number, true>,
+  id: number,
+  pageSize: number,
+): boolean {
+  if (recentIds.has(id)) return false;
+  recentIds.set(id, true);
+  const limit = Math.max(DEFAULT_NOTIFICATION_WINDOW_SIZE, pageSize) * RECENT_ID_WINDOW_PAGES;
+  while (recentIds.size > limit) {
+    const oldest = recentIds.keys().next().value;
+    if (oldest === undefined) break;
+    recentIds.delete(oldest);
+  }
+  return true;
+}
+
+/** 조회 시작 뒤 도착한 WS/읽음 변경을 오래 걸린 REST snapshot 위에 다시 적용한다. */
+function overlayLocalChanges(
+  snapshot: Notification[],
+  liveUpserts: Map<number, RevisionedNotification>,
+  readRevisions: Map<number, number>,
+): Notification[] {
+  let merged = deduplicateNotifications(snapshot);
+  const pendingUpserts = [...liveUpserts.values()]
+    .sort((left, right) => left.revision - right.revision);
+
+  for (const { notification } of pendingUpserts) {
+    merged = [notification, ...merged.filter(item => item.notiSn !== notification.notiSn)];
+  }
+
+  return merged.map(item => (
+    readRevisions.has(item.notiSn)
+      ? { ...item, readYn: 'Y' as const }
+      : item
+  )).sort(compareNotificationsNewestFirst);
 }
 
 export function useNotifications() {
@@ -88,6 +163,49 @@ export function useNotifications() {
   const { client: wsClient, isConnected } = useWebSocket();
   const { user } = useAuth();
   const { toast } = useToast();
+  const userId = user?.id ?? null;
+
+  // 비동기 REST snapshot보다 나중에 일어난 로컬 사실(WS·읽음)을 잃지 않기 위한 barrier 상태.
+  const notificationsRef = useRef<Notification[]>([]);
+  const unreadCountRef = useRef(0);
+  const localRevisionRef = useRef(0);
+  const liveUpsertsRef = useRef(new Map<number, RevisionedNotification>());
+  const readRevisionsRef = useRef(new Map<number, number>());
+  const pendingReadMutationsRef = useRef(new Map<number, PendingReadMutation>());
+  const recentNotificationIdsRef = useRef(new Map<number, true>());
+  const visibleWindowSizeRef = useRef(DEFAULT_NOTIFICATION_WINDOW_SIZE);
+  const latestRequestRef = useRef(0);
+  const lifecycleGenerationRef = useRef(0);
+  const ownerIdRef = useRef<string | null>(userId);
+
+  const replaceNotifications = useCallback((next: Notification[]) => {
+    const visible = deduplicateNotifications(next)
+      .sort(compareNotificationsNewestFirst)
+      .slice(0, visibleWindowSizeRef.current);
+    const visibleIds = new Set(visible.map(notification => notification.notiSn));
+    for (const id of liveUpsertsRef.current.keys()) {
+      if (!visibleIds.has(id)) liveUpsertsRef.current.delete(id);
+    }
+    for (const id of readRevisionsRef.current.keys()) {
+      if (!visibleIds.has(id)) readRevisionsRef.current.delete(id);
+    }
+    notificationsRef.current = visible;
+    setNotifications(visible);
+  }, []);
+
+  const replaceUnreadCount = useCallback((next: number) => {
+    const safe = Math.max(0, next);
+    unreadCountRef.current = safe;
+    setUnreadCount(safe);
+  }, []);
+
+  const reportFetchError = useCallback((message: string) => {
+    setError(message);
+    if (!errorNotifiedRef.current) {
+      errorNotifiedRef.current = true;
+      toast(message, 'error');
+    }
+  }, [toast]);
 
   const fetchNotifications = useCallback(async () => {
     // [2026-08-04] 조회 실패를 '알림 없음' 으로 번역하던 경로를 제거했다.
@@ -105,51 +223,95 @@ export function useNotifications() {
     //   Promise.allSettled 로 두 호출을 개별 판정한다:
     //     · 목록 실패 → 오류 상태로 올리고 **기존 목록을 지우지 않는다**(지우는 것도 거짓말이다)
     //     · 카운트만 실패 → 목록은 살리고 배지는 직전 값을 유지한다(0 으로 덮으면 미읽음이 사라진다)
-    const [listResult, countResult] = await Promise.allSettled([
-      executeGeneratedOperation(getNotificationsOperation, { query: {} }),
-      executeGeneratedOperation(getUnreadCountOperation, {}),
-    ]);
+    if (!userId || ownerIdRef.current !== userId) return;
 
-    if (listResult.status === 'rejected') {
-      setError('알림을 불러오지 못했습니다.');
-      // 60초 폴링이라 매번 토스트를 띄우면 화면이 잠긴다. 오류 '전이' 에서만 한 번 알린다.
-      if (!errorNotifiedRef.current) {
-        errorNotifiedRef.current = true;
-        toast('알림을 불러오지 못했습니다.', 'error');
+    const requestId = ++latestRequestRef.current;
+    const lifecycleGeneration = lifecycleGenerationRef.current;
+
+    // 조회 중 WS/read 변경이 발생하면 한 번 즉시 재조회한다. 두 번째에도 트래픽이 계속되면
+    // 목록에는 patch를 재생하고 전체 count는 현재 값을 보존한 뒤 다음 60초 reconcile에 맡긴다.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const barrierRevision = localRevisionRef.current;
+      const [listResult, countResult] = await Promise.allSettled([
+        executeGeneratedOperation(getNotificationsOperation, { query: {} }),
+        executeGeneratedOperation(getUnreadCountOperation, {}),
+      ]);
+
+      if (requestId !== latestRequestRef.current
+          || lifecycleGeneration !== lifecycleGenerationRef.current
+          || ownerIdRef.current !== userId) {
+        return;
       }
-      return;
-    }
 
-    errorNotifiedRef.current = false;
-    setError(null);
-
-    const candidates = Array.isArray(listResult.value.list) ? listResult.value.list : null;
-    const parsed: Notification[] = [];
-    let invalidPayload = candidates === null;
-    for (const candidate of candidates ?? []) {
-      const item = normalizeNotification(candidate);
-      if (!item) {
-        invalidPayload = true;
-        break;
+      if (listResult.status === 'rejected') {
+        reportFetchError('알림을 불러오지 못했습니다.');
+        return;
       }
-      parsed.push(item);
-    }
-    if (invalidPayload) {
-      setError('알림 응답 형식이 올바르지 않습니다.');
-      if (!errorNotifiedRef.current) {
-        errorNotifiedRef.current = true;
-        toast('알림 응답 형식이 올바르지 않습니다.', 'error');
-      }
-      return;
-    }
-    setNotifications(parsed);
 
-    if (countResult.status === 'fulfilled') {
-      setUnreadCount(countResult.value);
+      const candidates = Array.isArray(listResult.value.list) ? listResult.value.list : null;
+      const parsed: Notification[] = [];
+      let invalidPayload = candidates === null;
+      for (const candidate of candidates ?? []) {
+        const item = normalizeNotification(candidate);
+        if (!item) {
+          invalidPayload = true;
+          break;
+        }
+        parsed.push(item);
+      }
+      if (invalidPayload) {
+        reportFetchError('알림 응답 형식이 올바르지 않습니다.');
+        return;
+      }
+
+      const responseSize = listResult.value.size;
+      if (typeof responseSize === 'number' && Number.isSafeInteger(responseSize) && responseSize > 0) {
+        visibleWindowSizeRef.current = responseSize;
+      }
+
+      errorNotifiedRef.current = false;
+      setError(null);
+
+      const currentRevision = localRevisionRef.current;
+      const concurrentLocalChange = currentRevision !== barrierRevision;
+      const deduplicated = deduplicateNotifications(parsed);
+      const snapshotById = new Map(deduplicated.map(item => [item.notiSn, item]));
+
+      // journal은 snapshot이 해당 사실을 실제로 포함한 뒤에만 비운다. 단순히 두 번째 요청이
+      // 끝났다는 이유로 지우면 캐시/복제 지연 시 WS 알림이나 성공한 읽음 처리가 다시 사라진다.
+      for (const id of liveUpsertsRef.current.keys()) {
+        if (snapshotById.has(id)) liveUpsertsRef.current.delete(id);
+      }
+      for (const id of readRevisionsRef.current.keys()) {
+        if (snapshotById.get(id)?.readYn === 'Y') readRevisionsRef.current.delete(id);
+      }
+
+      const reconciled = overlayLocalChanges(
+        deduplicated,
+        liveUpsertsRef.current,
+        readRevisionsRef.current,
+      );
+      replaceNotifications(reconciled);
+      for (const notification of notificationsRef.current) {
+        rememberNotificationId(
+          recentNotificationIdsRef.current,
+          notification.notiSn,
+          visibleWindowSizeRef.current,
+        );
+      }
+
+      if (countResult.status === 'fulfilled'
+          && !concurrentLocalChange
+          && pendingReadMutationsRef.current.size === 0) {
+        replaceUnreadCount(countResult.value);
+      }
+      // 카운트 실패 또는 barrier 뒤 변경 시 배지를 0/오래된 snapshot으로 덮지 않는다.
+
+      if (!concurrentLocalChange) {
+        return;
+      }
     }
-    // 카운트 실패 시 배지를 0 으로 떨어뜨리지 않는다. 오류 객체에는 요청 정보가 포함될 수 있으므로
-    // 브라우저 콘솔에도 보내지 않고 직전 값을 유지한다.
-  }, [toast]);
+  }, [replaceNotifications, replaceUnreadCount, reportFetchError, userId]);
 
   const handleNewNotification = useCallback((message: IMessage) => {
     let decoded: unknown;
@@ -163,44 +325,152 @@ export function useNotifications() {
       return;
     }
 
-    setNotifications(prev => [newNotif, ...prev]);
-    setUnreadCount(prev => prev + 1);
+    // STOMP 재전달이나 REST와의 중첩은 같은 알림을 두 건/배지 +2로 만들면 안 된다.
+    if (!rememberNotificationId(
+      recentNotificationIdsRef.current,
+      newNotif.notiSn,
+      visibleWindowSizeRef.current,
+    )) return;
+
+    const revision = ++localRevisionRef.current;
+    liveUpsertsRef.current.set(newNotif.notiSn, { revision, notification: newNotif });
+    replaceNotifications([
+      newNotif,
+      ...notificationsRef.current.filter(item => item.notiSn !== newNotif.notiSn),
+    ]);
+    if (newNotif.readYn === 'N') {
+      replaceUnreadCount(unreadCountRef.current + 1);
+    }
 
     // 실시간 토스트 표시
     toast(newNotif.notiTtlNm || '새로운 알림이 도착했습니다.', 'success');
-  }, [toast]);
+  }, [replaceNotifications, replaceUnreadCount, toast]);
+
+  // 사용자 경계가 바뀌면 이전 사용자의 화면 상태와 delayed request를 함께 폐기한다.
+  useLayoutEffect(() => {
+    if (ownerIdRef.current === userId) return;
+    ownerIdRef.current = userId;
+    lifecycleGenerationRef.current += 1;
+    latestRequestRef.current += 1;
+    localRevisionRef.current = 0;
+    liveUpsertsRef.current.clear();
+    readRevisionsRef.current.clear();
+    pendingReadMutationsRef.current.clear();
+    recentNotificationIdsRef.current.clear();
+    visibleWindowSizeRef.current = DEFAULT_NOTIFICATION_WINDOW_SIZE;
+    errorNotifiedRef.current = false;
+    replaceNotifications([]);
+    replaceUnreadCount(0);
+    setError(null);
+  }, [replaceNotifications, replaceUnreadCount, userId]);
+
+  const beginReadMutations = (ids: number[], generation: number) => {
+    for (const id of ids) {
+      const pending = pendingReadMutationsRef.current.get(id);
+      if (pending?.generation === generation) {
+        pending.requests += 1;
+        pending.wasUnread ||= notificationsRef.current.some(
+          notification => notification.notiSn === id && notification.readYn === 'N',
+        );
+      } else {
+        pendingReadMutationsRef.current.set(id, {
+          generation,
+          requests: 1,
+          wasUnread: notificationsRef.current.some(
+            notification => notification.notiSn === id && notification.readYn === 'N',
+          ),
+          countAccounted: false,
+        });
+      }
+    }
+  };
+
+  const finishReadMutations = (ids: number[], generation: number) => {
+    for (const id of ids) {
+      const pending = pendingReadMutationsRef.current.get(id);
+      if (!pending || pending.generation !== generation) continue;
+      pending.requests -= 1;
+      if (pending.requests === 0) pendingReadMutationsRef.current.delete(id);
+    }
+  };
+
+  const accountReadMutation = (id: number, generation: number): boolean => {
+    const pending = pendingReadMutationsRef.current.get(id);
+    if (!pending || pending.generation !== generation || pending.countAccounted) return false;
+    pending.countAccounted = true;
+    return pending.wasUnread;
+  };
 
   // 초기 로드 및 WebSocket 구독 설정
   useEffect(() => {
-    if (user) {
-      fetchNotifications();
-    }
+    const generation = ++lifecycleGenerationRef.current;
+    latestRequestRef.current += 1;
+    if (!userId) return;
 
+    let userSub: { unsubscribe: () => void } | null = null;
     if (wsClient && isConnected) {
       // Spring user destination은 Principal에 바인딩된다. 경로에 클라이언트 제공 user.id를 넣지 않아야
       // 타 사용자 큐를 지정하는 우회가 생기지 않고, 서버의 convertAndSendToUser와 정확히 대응한다.
-      const userSub = wsClient.subscribe('/user/queue/notifications', handleNewNotification);
-
-      return () => {
-        userSub.unsubscribe();
-      };
-    } else {
-      // 폴백: WebSocket을 사용할 수 없는 경우 60초마다 폴링
-      const interval = setInterval(() => {
-        if (user) fetchNotifications();
-      }, 60000);
-      return () => clearInterval(interval);
+      // SUBSCRIBE frame을 먼저 보내고 그 다음 REST snapshot을 읽어 사이의 유실 창을 줄인다.
+      try {
+        userSub = wsClient.subscribe('/user/queue/notifications', message => {
+          if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
+            handleNewNotification(message);
+          }
+        });
+      } catch {
+        // 연결 상태 확인과 SUBSCRIBE 사이에 broker가 끊길 수 있다. 구독 실패가 effect 전체를
+        // 중단시켜 REST 초기 조회와 60초 reconcile까지 잃지 않도록 폴링 경로를 계속 설치한다.
+        userSub = null;
+      }
     }
-  }, [fetchNotifications, wsClient, isConnected, user, handleNewNotification]);
+
+    // effect 본문에서는 구독만 동기 완료하고, 조회는 다음 microtask에서 시작한다. cleanup으로
+    // generation이 바뀐 경우 fetch 내부 guard가 결과를 폐기한다.
+    queueMicrotask(() => {
+      if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
+        void fetchNotifications();
+      }
+    });
+    // 연결 중에도 broker 재연결·일시 유실을 REST 정본으로 주기적으로 되맞춘다.
+    const interval = setInterval(() => { void fetchNotifications(); }, 60000);
+
+    return () => {
+      clearInterval(interval);
+      try {
+        userSub?.unsubscribe();
+      } catch {
+        // 이미 끊어진 broker에서 unsubscribe가 실패해도 lifecycle 폐기는 반드시 수행한다.
+      } finally {
+        if (generation === lifecycleGenerationRef.current) {
+          lifecycleGenerationRef.current += 1;
+          latestRequestRef.current += 1;
+        }
+      }
+    };
+  }, [fetchNotifications, wsClient, isConnected, userId, handleNewNotification]);
 
   const markAsRead = async (id: number) => {
+    if (!userId || ownerIdRef.current !== userId) return;
+    const generation = lifecycleGenerationRef.current;
+    beginReadMutations([id], generation);
     try {
       await executeGeneratedOperation(markAsReadOperation, { path: { notiSn: id } });
-      // Update local state immediately for better UX
-      setNotifications(prev => prev.map(n => n.notiSn === id ? { ...n, readYn: 'Y' } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (generation !== lifecycleGenerationRef.current || ownerIdRef.current !== userId) return;
+
+      const decrementUnreadCount = accountReadMutation(id, generation);
+      const revision = ++localRevisionRef.current;
+      readRevisionsRef.current.set(id, revision);
+      replaceNotifications(notificationsRef.current.map(
+        n => n.notiSn === id ? { ...n, readYn: 'Y' } : n,
+      ));
+      if (decrementUnreadCount) replaceUnreadCount(unreadCountRef.current - 1);
     } catch {
-      toast('알림 읽음 처리에 실패했습니다.', 'error');
+      if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
+        toast('알림 읽음 처리에 실패했습니다.', 'error');
+      }
+    } finally {
+      finishReadMutations([id], generation);
     }
   };
 
@@ -219,24 +489,56 @@ export function useNotifications() {
    * 그때까지는 처리한 범위를 그대로 말하고, 배지는 0 으로 덮지 않고 처리한 만큼만 뺀다.
    */
   const markAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => n.readYn === 'N').map(n => n.notiSn);
+    if (!userId || ownerIdRef.current !== userId) return;
+    const unreadIds = notificationsRef.current.filter(n => n.readYn === 'N').map(n => n.notiSn);
     if (unreadIds.length === 0) return;
+    const generation = lifecycleGenerationRef.current;
+    beginReadMutations(unreadIds, generation);
+    let shouldReconcile = false;
 
     try {
-      await Promise.all(unreadIds.map(notiSn => (
+      const results = await Promise.allSettled(unreadIds.map(notiSn => (
         executeGeneratedOperation(markAsReadOperation, { path: { notiSn } })
       )));
-      setNotifications(prev => prev.map(n => ({ ...n, readYn: 'Y' })));
-      setUnreadCount(prev => Math.max(0, prev - unreadIds.length));
+      if (generation !== lifecycleGenerationRef.current || ownerIdRef.current !== userId) return;
+      if (results.some(result => result.status === 'rejected')) {
+        shouldReconcile = true;
+        toast('일부 알림을 읽음 처리하지 못했습니다.', 'error');
+        return;
+      }
+
+      const captured = new Set(unreadIds);
+      const accountedIds = unreadIds.filter(id => accountReadMutation(id, generation));
+      if (unreadIds.length > 0) {
+        const revision = ++localRevisionRef.current;
+        for (const id of unreadIds) readRevisionsRef.current.set(id, revision);
+        replaceNotifications(notificationsRef.current.map(
+          n => captured.has(n.notiSn) ? { ...n, readYn: 'Y' } : n,
+        ));
+        replaceUnreadCount(unreadCountRef.current - accountedIds.length);
+      }
       toast(`불러온 알림 ${unreadIds.length}건을 읽음 처리했습니다.`, 'success');
     } catch {
-      // [2026-08-04] 종전에는 조용히 재조회만 했다. 사용자는 '모두 읽음' 을 눌렀는데
-      //   아무 반응이 없고 배지가 그대로라 버튼이 고장 난 것으로 읽는다.
-      //   일부만 성공했을 수도 있으므로 서버 상태로 되맞추되, 실패 사실은 알린다.
-      toast('일부 알림을 읽음 처리하지 못했습니다.', 'error');
-      fetchNotifications(); // Sync with server on failure
+      if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
+        shouldReconcile = true;
+        toast('일부 알림을 읽음 처리하지 못했습니다.', 'error');
+      }
+    } finally {
+      finishReadMutations(unreadIds, generation);
+      if (shouldReconcile
+          && generation === lifecycleGenerationRef.current
+          && ownerIdRef.current === userId) {
+        void fetchNotifications();
+      }
     }
   };
 
-  return { notifications, unreadCount, error, markAsRead, markAllAsRead, refresh: fetchNotifications };
+  return {
+    notifications,
+    unreadCount,
+    error,
+    markAsRead,
+    markAllAsRead,
+    refresh: fetchNotifications,
+  };
 }
