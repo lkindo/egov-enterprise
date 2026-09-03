@@ -1690,8 +1690,8 @@
         "flag": "--max-warnings"
       },
       "executionProfile": "EXEC-FRONTEND-LINT",
-      "current": 150,
-      "baseline": 150,
+      "current": 144,
+      "baseline": 144,
       "direction": "maximum",
       "tier": [
         "pre-push",
