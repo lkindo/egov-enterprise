@@ -16,7 +16,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     @Query("SELECT n FROM Notification n WHERE n.rcvrId = :rcvrId "
             + "AND (:keyword IS NULL OR n.notiTtlNm LIKE %:keyword% OR n.notiCn LIKE %:keyword%) "
-            + "ORDER BY n.crtDt DESC")
+            + "ORDER BY n.crtDt DESC, n.notiSn DESC")
     Page<Notification> searchNotificationsByReceiver(
             @Param("rcvrId") String rcvrId,
             @Param("keyword") String keyword,

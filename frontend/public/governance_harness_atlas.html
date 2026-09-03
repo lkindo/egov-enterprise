@@ -1410,7 +1410,7 @@
               <div class="stat-desc"><code>nuri.api.harness</code> 실측</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">41</div>
+              <div class="stat-val">42</div>
               <div class="stat-label">PostgreSQL 스키마 검증 클래스</div>
               <div class="stat-desc"><code>@Tag("schema-validation")</code> 실측</div>
             </div>
@@ -1446,7 +1446,7 @@
           <article class="status-card">
             <span class="badge badge-success">ENFORCED</span>
             <h3>중앙 gate registry</h3>
-            <p><code>gates.json</code>이 governance 38·ArchUnit 10·schema-validation 41개와 7개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
+            <p><code>gates.json</code>이 governance 38·ArchUnit 10·schema-validation 42개와 7개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-warning">ADVISORY</span>
@@ -2340,7 +2340,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">평가 기준</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            2026-09-02 기준 중앙 registry가 <strong>governance JUnit 38개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 41개</strong>와 runner catalog 7개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
+            2026-09-03 기준 중앙 registry가 <strong>governance JUnit 38개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 42개</strong>와 runner catalog 7개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
           </p>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
             <strong style="color: var(--accent-success);">핵심 집행:</strong> 태그 기반 전수 census, 단일 source index, 의미 기반 인가 정책 matrix, Entity Lombok gate, schema suite의 공유 PostgreSQL, 구조화 E2E 오류 ledger·고정 대기 0건·실행시간 기반 shard, 85/70/75 exact ratchet이 실행 경로에 결속돼 있습니다.
