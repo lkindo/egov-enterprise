@@ -119,7 +119,12 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   어디에도 없는 식별자를 한국어 라벨 밑에 초록색으로 붙여 두어 이미 적용된 설정 이름처럼
 //   읽혔다. 문구와 함께 emerald 리터럴 1건(text-emerald-600)이 사라졌다. 신규 status 리터럴 0건
 //   (사전 red 실측: 529 != 530 — 게이트가 직접 529 로 내리라고 지시).
-const BASELINE = 529;
+// [하향 래칫 2026-09-03] 본문 편집기의 가짜 상태 푸터 제거 — 초록 점 + 'Ready for Production'
+//   이 어떤 상태도 가리키지 않았고(그런 상태값이 서버에도 화면에도 없다) 옆의
+//   '{길이} _ CHARACTERS_LOGGED' 도 실재하지 않는 로깅을 주장했다. 푸터를 사실(글자 수)과
+//   저장 형식 안내로 바꾸며 emerald 리터럴 1건(bg-emerald-500)이 사라졌다. 신규 status 리터럴 0건
+//   (사전 red 실측: 528 != 529 — 게이트가 직접 528 로 내리라고 지시).
+const BASELINE = 528;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
