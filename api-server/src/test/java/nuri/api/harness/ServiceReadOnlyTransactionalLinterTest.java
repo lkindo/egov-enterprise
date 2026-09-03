@@ -51,11 +51,39 @@ class ServiceReadOnlyTransactionalLinterTest {
             // [동결 2026-07-18, 축소 2026-08-30] 클래스레벨 readOnly 누락 @Service 11종 중
             // 조회 경계가 명확한 5종(CommonCode·InstitutionCode·LoginLogManage·MenuIntegration·
             // CustomUserDetails)은 클래스 기본 readOnly + 쓰기 메서드 override로 정렬했다.
-            // 성격: 쓰기 전용/카운터(BoardViewCountService·OtpService), 파일 IO(LocalFileStorageService·
-            // 정당한 무-tx), 쓰기 혼재(BoardService·CommentService), 비-DB 실시간 카운터(RealTimeDashboardService).
             // 신규 추가 금지 — 신규 @Service 는 클래스레벨 readOnly=true 사용.
-            "BoardService", "BoardViewCountService", "CommentService", "LocalFileStorageService",
-            "OtpService", "RealTimeDashboardService"
+            //
+            // [사유 결속 2026-09-03] 종전에는 여섯 항목의 성격이 한 덩어리 문장에 뭉쳐 있었고 그중
+            // OtpService 분류가 틀렸다(쓰기 전용/카운터가 아니라 DB 미접근이다). 외부 감사가 이 여섯을
+            // "단순 검증/파싱 위주" 로 묶어 전부 readOnly 를 붙이라고 권고한 일이 있어, 항목별 사유와
+            // **붙였을 때 무슨 일이 생기는지**를 각 줄에 남긴다.
+            //
+            // ⚠ 이 목록에서 항목을 지우는 것은 해소가 아니다. stale 판정은 "대상이 readOnly 를 갖게
+            // 됐다" 는 뜻이고, 아래 BoardViewCountService 처럼 붙이면 안 되는 대상이 섞여 있다.
+            // stale 이 떴다면 먼저 그 클래스에 readOnly 가 왜 붙었는지부터 확인한다.
+
+            // 쓰기 혼재 — 조회와 쓰기가 한 서비스에 있고 메서드 레벨로 경계를 잡는다.
+            "BoardService",
+
+            // ⛔ readOnly 를 붙이면 조회수 반영이 죽는다. @Scheduled syncViewCountsToDb 가 읽기전용
+            //    트랜잭션을 열면, REQUIRED 인 BoardRepository#increaseInqCntAtomic(@Modifying 네이티브
+            //    UPDATE)이 그 트랜잭션에 참여해 PostgreSQL 이 UPDATE 를 거부한다. catch 가 예외를
+            //    삼키므로 조회수는 영구 0 이 되고 버퍼만 늘어난다 — 테스트는 H2 라 CI 는 green 이다.
+            //    건별 트랜잭션은 결함 수정으로 **의도적으로** 도입한 설계다(서비스 javadoc 참조).
+            "BoardViewCountService",
+
+            // 쓰기 혼재 — BoardService 와 같은 축.
+            "CommentService",
+
+            // DB 미접근 — 파일 IO 전용. Repository·EntityManager 주입이 0 이라 트랜잭션을 열 대상이 없다.
+            "LocalFileStorageService",
+
+            // DB 미접근 — 필드가 GoogleAuthenticator 하나뿐이고 전 메서드가 라이브러리 호출이다.
+            //    (2026-09-03 정정: 종전 주석은 이 클래스를 '쓰기 전용/카운터' 로 분류했으나 사실이 아니다.)
+            "OtpService",
+
+            // 비-DB 실시간 카운터 — 방송 주기에 AtomicInteger 를 읽고, 알림 건수만 리포지토리로 센다.
+            "RealTimeDashboardService"
     ));
 
     @Test
@@ -105,7 +133,11 @@ class ServiceReadOnlyTransactionalLinterTest {
                 sb.append("❌ ").append(v).append(" — 클래스레벨 @Transactional(readOnly=true) 부재\n");
             }
             for (String stale : staleGrandfathered) {
-                sb.append("❌ ").append(stale).append(" — 이미 정렬됐거나 제거된 stale GRANDFATHERED 항목\n");
+                sb.append("❌ ").append(stale).append(" — 동결 항목인데 클래스레벨 readOnly 를 갖게 되었거나 제거됨(stale)\n");
+                sb.append("     ⚠ 목록에서 지우기 전에 그 클래스에 readOnly 가 왜 붙었는지 먼저 확인하십시오.\n");
+                sb.append("       동결 사유(GRANDFATHERED 주석)에 '붙이면 안 되는' 대상이 섞여 있습니다 —\n");
+                sb.append("       예: BoardViewCountService 는 읽기전용 tx 안에서 네이티브 UPDATE 가 거부되어\n");
+                sb.append("       조회수 반영이 조용히 죽습니다(H2 테스트 프로파일은 이를 재현하지 못합니다).\n");
             }
             sb.append("\n💡 §2.C: @Service 는 클래스레벨 @Transactional(readOnly=true), 쓰기 메서드만 메서드레벨 오버라이드.\n");
             sb.append("   정당한 예외(파일 IO·쓰기 전용 등)면 사유와 함께 ServiceReadOnlyTransactionalLinterTest.GRANDFATHERED 에 추가.\n");
