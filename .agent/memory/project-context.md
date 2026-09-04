@@ -6,7 +6,7 @@ authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-09-04
-verified_against: 568462a8ceb1b4885f32efde8d9ffb4a4c58b71e
+verified_against: c0d6ae7b586f33fe4ffe87c920100e512f3efad9
 canonical_sources:
   - ../../AGENTS.md
   - ../../GEMINI.md
