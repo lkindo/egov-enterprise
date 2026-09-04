@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "edb6de37b20f7f1bac3d7d130538262fa1391c2fa273b5e143d3dbd2d300332e"
+    "inventoryHash": "069b4089c3e387a55202d22c3a3626d3a834cd3682063271addc915359ea1b39"
   },
   "summary": {
     "sourceFileCount": 514,
-    "records": 369,
-    "syntaxOccurrences": 434,
-    "ambiguousRecords": 349,
-    "unverifiedRecords": 369,
+    "records": 370,
+    "syntaxOccurrences": 435,
+    "ambiguousRecords": 350,
+    "unverifiedRecords": 370,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,13 +44,13 @@
       "navigation-producer": 157,
       "page-redirect": 5,
       "query-builder": 23,
-      "query-consumer": 58,
+      "query-consumer": 59,
       "query-producer": 46,
       "request-query-producer": 1,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 361,
+      "navigation": 362,
       "request-telemetry": 8
     }
   },
@@ -13930,6 +13930,53 @@
       "evidence": {
         "source": "frontend/src/app/not-found.tsx",
         "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-2CE013208411B6",
+      "surface": "navigation",
+      "kind": "query-consumer",
+      "operation": "read",
+      "source": "frontend/src/app/page.tsx",
+      "producerFile": null,
+      "consumerFile": "frontend/src/app/page.tsx",
+      "routePattern": "/",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "auth_error",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Server page reads a named URL search parameter property.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/page.tsx",
+        "detector": "server-search-param-property",
         "occurrenceCount": 1
       }
     },
