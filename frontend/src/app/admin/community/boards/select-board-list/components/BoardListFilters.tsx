@@ -48,6 +48,12 @@ export const BoardListFilters = ({
               <SelectTrigger className="w-full md:w-[220px] !h-12 rounded-lg border border-border bg-card font-bold shadow-sm flex items-center leading-none" aria-label="검색 조건 선택">
                 <SelectValue placeholder="검색 조건" />
               </SelectTrigger>
+              {/*
+                [2026-09-04 owner 결정] '작성자' 모드(searchCnd=2)를 유지한다(PD-UX-002 Q1).
+                이 모드를 쓰면 짝인 `searchWrd` 에 **사람 이름이 URL 에 실린다** — 부작용이 아니라
+                그 모드의 정의다. 그 사실이 알려진 채 URL 유지가 승인됐다.
+                ⚠ `searchWrd` 를 URL 에서 걷게 되면 `searchCnd` 도 홀로 남을 이유가 없어 함께 제거해야 한다.
+              */}
               <SelectContent>
                 <SelectItem value="0">제목</SelectItem>
                 <SelectItem value="1">내용</SelectItem>

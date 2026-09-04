@@ -66,6 +66,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const isAdmin = isAdministrativeRole(user?.role);
  const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
  const router = useRouter();
+
+ /**
+  * 이 목록 라우트가 URL 에서 읽는 파라미터 **전수**(2026-09-04 실측).
+  * 클라이언트와 서버 컴포넌트(`page.tsx`)가 읽는 집합이 정확히 일치한다.
+  * `buildListParams` 가 이 목록만 다시 조립하므로, 여기 없는 파라미터는 조회·이동 시 버려진다.
+  */
+ const LIST_PARAM_KEYS = ['bbsId', 'searchWrd', 'searchCnd', 'orderBy', 'startDate', 'endDate', 'page'] as const;
  const { toast } = useToast();
  const likePendingRef = React.useRef(false);
  const [pendingLikePstSn, setPendingLikePstSn] = useState<number | null>(null);
@@ -87,16 +94,57 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    setEndDate(searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined);
  }, [searchParams]);
 
+ /*
+   [2026-09-04] 목록 URL 조립을 이 헬퍼 하나로 모았다(PD-UX-002 Q2).
+
+   종전에는 네 곳(조회·페이지 이동·이전달·다음달)이 각자
+   `new URLSearchParams(searchParams.toString())` 로 **들어온 쿼리를 이름을 묻지 않고 전부 복사**한
+   뒤 자기 키만 덮어썼다. 그 관용구는 모르는 파라미터까지 이동마다 재발행하는 캐리어다.
+
+   왜 지금 바꿨나 — Q1 결정이 무게를 바꿨다. Q1 은 "URL 에 실리는 검색어를 전부 유지" 로
+   결정됐고, 이 화면의 `searchCnd=2`(작성자) + `searchWrd` 조합은 **URL 에 사람 이름을 싣는다**.
+   copy-all 은 그 값의 증폭기였다.
+
+   ⚠ `bbsId` 는 화면이 만든 값이 아니라 **DB 메뉴(`modern_route`)가 `?bbsId=` 로 지목하는
+     라우팅 키**다. allowlist 에서 빠지면 목록이 기본 게시판으로 튀고 사이드바 활성 판정도
+     흔들리는데(`lib/navigation/active-menu.ts`) **조회는 성공하므로 조용히 틀린다.**
+     copy-all 은 이 값을 우연히 보존했을 뿐이라, 그 우연을 명시로 바꾼다.
+
+   ⚠ 새 파라미터를 도입하면 `LIST_PARAM_KEYS` 에 함께 추가해야 한다 —
+     그러지 않으면 조회·페이지 이동 시 조용히 사라진다. 이 목록이 이 라우트가 읽는 키 전수이며
+     클라이언트와 서버 컴포넌트(`page.tsx`)가 읽는 집합이 정확히 일치함을 확인했다(2026-09-04).
+ */
+ const buildListParams = (
+   overrides: Partial<Record<(typeof LIST_PARAM_KEYS)[number], string | undefined>>,
+ ) => {
+   const params = new URLSearchParams();
+   for (const key of LIST_PARAM_KEYS) {
+     const value = key in overrides ? overrides[key] : (searchParams.get(key) ?? undefined);
+     if (value) params.set(key, value);
+   }
+   return params;
+ };
+
+ /*
+   [2026-09-04] `router.push` → `router.replace`(조회·페이지·월 이동 전부).
+   이것들은 새 화면이 아니라 같은 목록의 조건 변경이다. push 를 쓰면 조작할 때마다 히스토리
+   항목이 쌓이고, Q1 결정으로 그 항목마다 **사람 이름이 남는다**. 이 저장소의 다른 목록 화면은
+   이미 replace 를 쓰며 사유를 적어 두었다(`admin/system/logs/use-log-url-state.ts:10`
+   "히스토리를 오염시키지 않고"). 이 화면만 예외였다.
+   대가: 뒤로가기가 이전 조건으로 돌아가지 않고 목록을 벗어난다 — 로그 화면과 같은 동작이다.
+ */
  const handleSearch = (e?: React.FormEvent) => {
    if (e) e.preventDefault();
-   const params = new URLSearchParams(searchParams.toString());
-   if (searchWrd) params.set('searchWrd', searchWrd); else params.delete('searchWrd');
-   if (searchCnd !== '0') params.set('searchCnd', searchCnd); else params.delete('searchCnd');
-   if (orderBy !== 'date') params.set('orderBy', orderBy); else params.delete('orderBy');
-   if (startDate) params.set('startDate', toQueryDate(startDate)); else params.delete('startDate');
-   if (endDate) params.set('endDate', toQueryDate(endDate)); else params.delete('endDate');
-   params.set('page', '1'); // 검색 시 1페이지로 이동
-   router.push(`${pathname}?${params.toString()}`);
+   const params = buildListParams({
+     bbsId,
+     searchWrd,
+     searchCnd: searchCnd !== '0' ? searchCnd : undefined,
+     orderBy: orderBy !== 'date' ? orderBy : undefined,
+     startDate: startDate ? toQueryDate(startDate) : undefined,
+     endDate: endDate ? toQueryDate(endDate) : undefined,
+     page: '1', // 검색 시 1페이지로 이동
+   });
+   router.replace(`${pathname}?${params.toString()}`);
  };
 
  const handleReset = () => {
@@ -105,13 +153,12 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    setOrderBy("date");
    setStartDate(undefined);
    setEndDate(undefined);
-   router.push(`${pathname}?bbsId=${bbsId}`);
+   router.replace(`${pathname}?bbsId=${bbsId}`);
  };
 
  const handlePageChange = (page: number) => {
-   const params = new URLSearchParams(searchParams.toString());
-   params.set('page', page.toString());
-   router.push(`${pathname}?${params.toString()}`);
+   const params = buildListParams({ page: page.toString() });
+   router.replace(`${pathname}?${params.toString()}`);
  };
 
 
@@ -143,7 +190,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  };
  const queryKey = ['boardList', bbsId, currentParams];
 
- // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.push로 트리거)
+ // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.replace 로 트리거)
  // 감사 P1-1: isError/error/refetch 를 구조분해해 조회 실패를 "게시글 0건"으로 위장하지 않는다.
  const { data, isLoading: loading, isError, error, refetch } = useBoardList({
   bbsId,
@@ -215,15 +262,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const currentViewDate = queryStartDate ? new Date(queryStartDate) : new Date();
  const handlePrevMonth = () => {
    const d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() - 1, 1);
-   const params = new URLSearchParams(searchParams.toString());
-   params.set('startDate', toQueryDate(d));
-   router.push(`${pathname}?${params.toString()}`);
+   const params = buildListParams({ startDate: toQueryDate(d) });
+   router.replace(`${pathname}?${params.toString()}`);
  };
  const handleNextMonth = () => {
    const d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 1);
-   const params = new URLSearchParams(searchParams.toString());
-   params.set('startDate', toQueryDate(d));
-   router.push(`${pathname}?${params.toString()}`);
+   const params = buildListParams({ startDate: toQueryDate(d) });
+   router.replace(`${pathname}?${params.toString()}`);
  };
 
  // SSR 경로(BoardListServer)가 실패했을 때 전달하는 사유. 필터가 걸리지 않은 첫 렌더는 SSR 결과를
