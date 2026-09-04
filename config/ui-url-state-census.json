@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "affd3da29cb8377443282922add8a8344cf43d04649b50523d647a76ee52d304"
+    "inventoryHash": "63643bbfad019faefe5a32a02b9c742b3c1a28fe4e1cfd618dd3eeac0e6c0a29"
   },
   "summary": {
     "sourceFileCount": 514,
-    "records": 367,
-    "syntaxOccurrences": 432,
-    "ambiguousRecords": 347,
-    "unverifiedRecords": 367,
+    "records": 368,
+    "syntaxOccurrences": 433,
+    "ambiguousRecords": 348,
+    "unverifiedRecords": 368,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,13 +44,13 @@
       "navigation-producer": 157,
       "page-redirect": 5,
       "query-builder": 23,
-      "query-consumer": 56,
+      "query-consumer": 57,
       "query-producer": 46,
       "request-query-producer": 1,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 359,
+      "navigation": 360,
       "request-telemetry": 8
     }
   },
@@ -13746,6 +13746,53 @@
       "evidence": {
         "source": "frontend/src/app/login/LoginClient.tsx",
         "detector": "location-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-B89DFDD93EBA91",
+      "surface": "navigation",
+      "kind": "query-consumer",
+      "operation": "get",
+      "source": "frontend/src/app/login/LoginClient.tsx",
+      "producerFile": null,
+      "consumerFile": "frontend/src/app/login/LoginClient.tsx",
+      "routePattern": "/login",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "expired",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is consumed with get().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "public",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/login/LoginClient.tsx",
+        "detector": "url-search-param-method",
         "occurrenceCount": 1
       }
     },

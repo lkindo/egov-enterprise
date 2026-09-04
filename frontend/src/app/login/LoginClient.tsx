@@ -79,6 +79,14 @@ function LoginContent() {
     // 재전파하지 않아 record locator나 자유 입력값이 인증 경계를 넘어 URL에 남는 것을 막는다.
     const redirectUrl = resolveInternalRedirect(searchParams.get('redirect'));
 
+    // [PD-UX-002 Q4] 세션이 끊겨 튕겨 나왔다는 사실을 화면이 말한다.
+    //   종전에는 `?expired=true` 를 **쓰기만 하고 아무도 읽지 않았다** — 저장소 전체에서 producer 7곳
+    //   (API 401 처리기·만료 경고 모달·서버 컴포넌트 리다이렉트 5)인데 consumer 0 이었다.
+    //   같은 URL 의 `redirect` 는 바로 위에서 읽으므로, 사용자는 원래 자리로 되돌아가긴 해도
+    //   **왜 갑자기 로그인 화면인지는 듣지 못했다.** 작업 중 튕긴 사용자에게 가장 먼저 필요한 정보다.
+    //   값 비교는 'true' 정확 일치다 — 존재만 보면 `?expired=false` 도 만료로 읽힌다.
+    const sessionExpired = searchParams.get('expired') === 'true';
+
     // 이번 제출로 인증된 것인지(=세션 경계), 이미 인증된 상태로 이 페이지를 방문한 것인지 구분한다.
     // 두 경우는 필요한 이동 방식이 다르다(아래 각 주석 참조). ref 이므로 렌더를 유발하지 않는다.
     const justLoggedIn = React.useRef(false);
@@ -312,6 +320,20 @@ function LoginContent() {
                         aria-hidden={isSubmitting ? 'true' : undefined}
                     >
                         <CardContent className="space-y-5 px-8">
+                            {/* 만료 안내는 이번 제출의 오류가 아니라 '여기 온 이유' 다. 그래서 폼 맨 위에 두고,
+                                제출 오류(아래 login-error)가 생기면 더 구체적인 그쪽이 이기도록 감춘다.
+                                role="status"(polite) 인 이유: 페이지 진입과 함께 이미 있는 정보라
+                                assertive 로 사용자의 첫 탐색을 끊을 필요가 없다. */}
+                            {sessionExpired && !error && (
+                                <div
+                                    role="status"
+                                    data-testid="login-session-expired"
+                                    className="text-sm text-center text-secondary bg-muted/40 p-3 rounded-[var(--radius-hub-item)] border border-border"
+                                >
+                                    세션이 만료되어 로그아웃되었습니다. 다시 로그인해 주세요.
+                                </div>
+                            )}
+
                             <FormErrorSummary
                                 data-testid="login-validation-summary"
                                 errors={validation.errors}
