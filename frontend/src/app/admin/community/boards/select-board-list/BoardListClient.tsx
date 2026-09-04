@@ -55,6 +55,32 @@ export const toQueryDate = (date: Date) => {
   return `${date.getFullYear()}-${month}-${day}`;
 };
 
+/**
+ * `toQueryDate` 의 역함수. URL 에서 읽은 날짜를 **검증해서** 받는다.
+ *
+ * ⚠ [2026-09-05] 종전에는 `new Date(searchParams.get('startDate')!)` 로 검증 없이 받았다.
+ *   그런데 **`new Date('bogus')` 는 Invalid Date 를 돌려주고 그 값은 truthy 다.** 그래서
+ *   `startDate ? format(startDate, 'yyyy.MM.dd') : …` 의 참 가지로 들어가 date-fns 가
+ *   `RangeError: Invalid time value` 를 던졌다(설치본 4.4.0 실측).
+ *
+ *   이 저장소는 전 페이지가 force-dynamic SSR 이라(DEC-OPS-011) 그 예외는 브라우저가 아니라
+ *   **서버 렌더 단계에서 터진다.** 즉 `?startDate=bogus` 링크 하나로 화면이 통째로 죽었다.
+ *
+ * 형식이 어긋나면 **없는 것으로 취급한다.** 이 화면의 다른 URL 파라미터와 같은 규약이다
+ * (`page` 는 하한 클램프, `orderBy` 는 기본값 폴백). 잘못된 값 때문에 화면이 죽는 것보다
+ * 필터가 안 걸린 목록을 보여 주는 편이 낫고, 사용자는 기간을 다시 고르면 된다.
+ *
+ * 왕복 검증을 쓰는 이유 — `new Date('2026-02-30')` 은 3월 2일로 **조용히 굴러간다.**
+ * 문자열을 다시 만들어 대조해야 그 굴림을 잡는다.
+ */
+export const fromQueryDate = (raw: string | null | undefined): Date | undefined => {
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return undefined;
+  const [year, month, day] = raw.split('-').map(Number);
+  // 로컬 자정으로 만든다 — toQueryDate 가 로컬 연·월·일을 쓰므로 대칭을 맞춘다.
+  const parsed = new Date(year, month - 1, day);
+  return Number.isFinite(parsed.getTime()) && toQueryDate(parsed) === raw ? parsed : undefined;
+};
+
 export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPromise: Promise<any>; params: any }) => {
  const initialData = use(dataPromise);
  const searchParams = useSearchParams();
@@ -82,16 +108,16 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const [searchCnd, setSearchCnd] = useState(searchParams.get('searchCnd') || "0");
  const [orderBy, setOrderBy] = useState(searchParams.get('orderBy') || "date");
 
- const [startDate, setStartDate] = useState<Date | undefined>(searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined);
- const [endDate, setEndDate] = useState<Date | undefined>(searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined);
+ const [startDate, setStartDate] = useState<Date | undefined>(fromQueryDate(searchParams.get('startDate')));
+ const [endDate, setEndDate] = useState<Date | undefined>(fromQueryDate(searchParams.get('endDate')));
 
  // URL 파라미터 변경 시 로컬 상태 동기화
  useEffect(() => {
    setSearchWrd(searchParams.get('searchWrd') || "");
    setSearchCnd(searchParams.get('searchCnd') || "0");
    setOrderBy(searchParams.get('orderBy') || "date");
-   setStartDate(searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined);
-   setEndDate(searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined);
+   setStartDate(fromQueryDate(searchParams.get('startDate')));
+   setEndDate(fromQueryDate(searchParams.get('endDate')));
  }, [searchParams]);
 
  /*
@@ -172,8 +198,17 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const querySearchCnd = searchParams.get('searchCnd') || "0";
  const queryOrderBy = searchParams.get('orderBy') || "date";
  const queryPage = Number(searchParams.get('page')) || 1;
- const queryStartDate = searchParams.get('startDate');
- const queryEndDate = searchParams.get('endDate');
+ /*
+   [2026-09-05] 서버로 보내는 값도 **검증을 통과한 것만** 쓴다.
+
+   종전에는 화면 상태(startDate)와 조회 조건(queryStartDate)이 URL 을 각자 읽었다. 검증을
+   화면 쪽에만 넣으면 `?startDate=bogus` 에서 **필터 칩은 비어 있는데 조회는 400** 이 되어
+   사용자가 이유를 알 수 없는 상태가 된다. 한 번 검증해 두 경로가 같은 값을 쓴다.
+ */
+ const queryStartDateValue = fromQueryDate(searchParams.get('startDate'));
+ const queryEndDateValue = fromQueryDate(searchParams.get('endDate'));
+ const queryStartDate = queryStartDateValue ? toQueryDate(queryStartDateValue) : null;
+ const queryEndDate = queryEndDateValue ? toQueryDate(queryEndDateValue) : null;
 
  // 필터가 적용된 상태인지 확인 (SSR 캐시 무효화 판단용)
  const hasFilter = !!querySearchWrd || querySearchCnd !== '0' || queryOrderBy !== 'date' || !!queryStartDate || !!queryEndDate;
@@ -259,7 +294,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const totalPages = data?.totalPage || 0;
 
  // URL 파라미터로 캘린더 상태 관리
- const currentViewDate = queryStartDate ? new Date(queryStartDate) : new Date();
+ // 검증을 통과한 값만 쓴다 — 종전에는 여기서도 원문을 new Date 에 넣어, 잘못된 값이면
+ // getFullYear()/getMonth() 가 NaN 이 되어 이전달·다음달 이동이 `NaN-NaN-NaN` 을 URL 에 실었다.
+ const currentViewDate = queryStartDateValue ?? new Date();
  const handlePrevMonth = () => {
    const d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() - 1, 1);
    const params = buildListParams({ startDate: toQueryDate(d) });
