@@ -87,8 +87,12 @@ public class MenuDto {
     @Schema(description = "현대화된 라우트 경로 (Next.js). 쿼리 키는 tab·bbsId 만 허용한다.",
             example = "/admin/survey/hub?tab=manage")
     @Size(max = 500)
+    // ⚠ 빈 문자열을 반드시 허용해야 한다. 라우트가 없는 폴더 메뉴가 실재하고(운영 실측 14행이
+    //   modern_route NULL), 관리자 화면의 폼은 그 경우 null 이 아니라 ''를 보낸다.
+    //   Bean Validation 의 @Pattern 은 null 만 건너뛰고 ''는 검사하므로, 빈 문자열을 별도 분기로
+    //   열지 않으면 **폴더 메뉴 저장이 통째로 막힌다**(MenuAdminClient 계약 3건이 이를 잡았다).
     @Pattern(
-            regexp = "^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)"
+            regexp = "^$|^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)"
                     + "(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$",
             message = "연결 라우트 형식이 올바르지 않습니다. 절대경로(/로 시작) 또는 레거시 .do 경로여야 하고, "
                     + "쿼리는 tab·bbsId 키만 쓸 수 있습니다.")

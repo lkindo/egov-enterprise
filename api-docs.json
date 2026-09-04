@@ -35225,7 +35225,7 @@
             "example": "/admin/survey/hub?tab=manage",
             "maxLength": 500,
             "minLength": 0,
-            "pattern": "^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$"
+            "pattern": "^$|^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$"
           },
           "crtrId": {
             "type": "string",

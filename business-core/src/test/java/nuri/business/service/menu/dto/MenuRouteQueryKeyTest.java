@@ -115,7 +115,24 @@ class MenuRouteQueryKeyTest {
     @Test
     @DisplayName("값이 없으면 검사 대상이 아니다 — 폴더 메뉴는 라우트를 갖지 않는다")
     void allowsAbsentRoute() {
-        // 실측: 메뉴 90행 중 14행이 modern_route NULL 이고 전부 prgrm_file_nm='dir' 인 폴더다.
+        // 실측: 운영 메뉴 84행 중 14행이 modern_route NULL 이고 전부 prgrm_file_nm='dir' 인 폴더다.
         assertThat(validate(null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("빈 문자열도 허용한다 — 관리자 폼은 라우트 없는 메뉴를 ''로 보낸다")
+    void allowsEmptyRoute() {
+        /*
+          ⚠ 이 케이스를 빠뜨려 폴더 메뉴 저장이 통째로 막혔다(2026-09-04, MenuAdminClient 계약 3건이 red).
+
+          Bean Validation 의 @Pattern 은 **null 만 건너뛰고 빈 문자열은 검사한다.** 그런데 관리자
+          화면의 메뉴 폼은 라우트가 없을 때 필드를 생략하는 것이 아니라 ''를 실어 보낸다
+          (MenuAdminClient 의 form.reset 기본값이 modernRoute: '' 다). 그래서 패턴에 빈 분기가
+          없으면 '이름만 입력하고 저장' 이라는 가장 평범한 경로가 400 이 된다.
+
+          같은 이유로 생성 zod 도 .regex() 로 ''를 거부하므로 프런트에서 먼저 막힌다 —
+          즉 서버에 닿지도 않고 저장 버튼이 조용히 아무 일도 하지 않는 것처럼 보인다.
+        */
+        assertThat(validate("")).isEmpty();
     }
 }
