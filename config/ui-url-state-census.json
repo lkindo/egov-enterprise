@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "19c01f6021625097680403a61cdba0af038ebdd2222022199f4e24adfb8b4518"
+    "inventoryHash": "2df376be0f175fcfc99828279690388009e15ac1722e916090ddea63b95a5f59"
   },
   "summary": {
     "sourceFileCount": 514,
-    "records": 377,
-    "syntaxOccurrences": 449,
-    "ambiguousRecords": 358,
-    "unverifiedRecords": 377,
+    "records": 375,
+    "syntaxOccurrences": 447,
+    "ambiguousRecords": 356,
+    "unverifiedRecords": 375,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,13 +44,13 @@
       "navigation-producer": 156,
       "page-redirect": 5,
       "query-builder": 23,
-      "query-consumer": 57,
+      "query-consumer": 55,
       "query-producer": 56,
       "request-query-producer": 1,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 369,
+      "navigation": 367,
       "request-telemetry": 8
     }
   },
@@ -1554,55 +1554,6 @@
           "approvalStatus": "unverified",
           "exception": "none-proposed",
           "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Server page reads a named URL search parameter property.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-        "detector": "server-search-param-property",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-9DB46F8DE6DDB4",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "read",
-      "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-      "routePattern": "/admin/collaboration/address-book/select-address-book-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "searchWrd",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "free-text-name-signal"
-          ]
         }
       ],
       "currentBehavior": "Server page reads a named URL search parameter property.",
@@ -11006,55 +10957,6 @@
           "approvalStatus": "unverified",
           "exception": "none-proposed",
           "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Server page reads a named URL search parameter property.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/programs/page.tsx",
-        "detector": "server-search-param-property",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-B380570B3028D3",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "read",
-      "source": "frontend/src/app/admin/system/programs/page.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/system/programs/page.tsx",
-      "routePattern": "/admin/system/programs",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "searchWrd",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "free-text-name-signal"
-          ]
         }
       ],
       "currentBehavior": "Server page reads a named URL search parameter property.",

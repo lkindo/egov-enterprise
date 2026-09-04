@@ -26,8 +26,19 @@ export default async function ProgramAdminPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = await searchParams;
-  const searchWrd = (resolvedSearchParams.searchWrd as string) || '';
   const page = parsePage(resolvedSearchParams.page);
+
+  /*
+    [2026-09-04] `?searchWrd=` 읽기를 걷었다 — **URL 에 그 값을 싣는 코드가 저장소에 없었다.**
+    이 화면의 검색어는 `ProgramAdminClient` 의 로컬 상태이고, 서버로는
+    `BaseSearchDto.searchKeyword` 로 나간다(같은 파일 :102 주석 참조 — `searchWrd` 는 바인딩 대상도 아니다).
+    즉 producer 0건의 소비자 전용 잔존 경로였고 손으로 URL 을 만들지 않는 한 도달하지 않았다.
+    시드 메뉴(`modern_route`)에도 `searchWrd` 참조가 없음을 확인했다.
+
+    PD-UX-002 Q1 은 "URL 에 실리는 검색어를 전부 유지" 로 결정됐는데, 이 값은 **실린 적이 없어**
+    그 결정의 대상이 아니다(Q4 죽은 표면). 되살리려면 producer 를 함께 만들어야 한다.
+  */
+  const searchWrd = '';
 
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
