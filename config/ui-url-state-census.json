@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "174f1ca5e7ffa21e9ace9895cc357658fa43903a16c23093688bab34593b7371"
+    "inventoryHash": "6e52cf16cab688ba1701b9e02ee708279f4beb4918e771b62544fe412a150d6a"
   },
   "summary": {
     "sourceFileCount": 514,
-    "records": 370,
-    "syntaxOccurrences": 435,
-    "ambiguousRecords": 350,
-    "unverifiedRecords": 370,
+    "records": 369,
+    "syntaxOccurrences": 430,
+    "ambiguousRecords": 349,
+    "unverifiedRecords": 369,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,13 +44,13 @@
       "navigation-producer": 157,
       "page-redirect": 5,
       "query-builder": 23,
-      "query-consumer": 59,
+      "query-consumer": 58,
       "query-producer": 46,
       "request-query-producer": 1,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 362,
+      "navigation": 361,
       "request-telemetry": 8
     }
   },
@@ -1533,53 +1533,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListServer.ts",
         "detector": "server-redirect-call",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-30D70184B9F627",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "read",
-      "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-      "routePattern": "/admin/collaboration/address-book/select-address-book-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "pageNo",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Server page reads a named URL search parameter property.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-        "detector": "server-search-param-property",
         "occurrenceCount": 1
       }
     },
@@ -4155,7 +4108,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 5
+        "occurrenceCount": 3
       }
     },
     {
@@ -4392,7 +4345,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 5
+        "occurrenceCount": 3
       }
     },
     {

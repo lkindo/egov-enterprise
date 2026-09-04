@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-url-state-approval.schema.json",
   "manifestRef": {
     "path": "config/ui-url-state-census.json",
-    "sha256": "5cdc541b8defceba067b0fdf8721c6b26f2265b5fcc4eae63a062aa2da4f7c29"
+    "sha256": "f5517d8fc43c668afb45bf5764d76370c5c6cf34127e242e9e4263164242ab1e"
   },
   "classes": [
     {
@@ -16,7 +16,6 @@
           "endDate",
           "orderBy",
           "page",
-          "pageNo",
           "startDate",
           "tab",
           "view"
@@ -39,7 +38,6 @@
       "selector": {
         "stateItemNames": [
           "[id]",
-          "[type]",
           "bbsId",
           "groupId",
           "nttId",
@@ -81,12 +79,11 @@
     },
     {
       "classId": "control-flag",
-      "description": "열거형 제어 플래그 — 세션 만료·권한 부족 안내·로그인 후 복귀 지점. 값 도메인이 코드에 고정돼 있다.",
+      "description": "열거형 제어 플래그 — 세션 만료 안내와 권한 부족 되돌림. producer·consumer 양쪽이 리터럴 상수를 정확 일치 비교하므로 값 도메인이 실제로 코드에 고정돼 있다.",
       "selector": {
         "stateItemNames": [
           "auth_error",
-          "expired",
-          "redirect"
+          "expired"
         ]
       },
       "reviewState": "proposed",
@@ -113,6 +110,44 @@
         ]
       },
       "reviewState": "blocked-input",
+      "dataClass": "indeterminate",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    },
+    {
+      "classId": "path-intent",
+      "description": "redirect — 로그인 후 되돌아갈 내부 경로. 값 도메인이 코드에 열거돼 있지 않고 미들웨어 matcher 가 통과시키는 라우트 전체다. 경로에 박힌 동적 세그먼트(record locator)가 그대로 주소창에 남으며, producer 하나(admin/error.tsx)는 이전 화면의 쿼리스트링까지 함께 싣는다.",
+      "selector": {
+        "stateItemNames": [
+          "redirect"
+        ]
+      },
+      "reviewState": "proposed",
+      "dataClass": "indeterminate",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    },
+    {
+      "classId": "hand-assembled-segment",
+      "description": "[type] — 서버가 발급하지 않고 producer 도 0건이라 사람이 조립한 URL 로만 들어온다. census 가 double-encoded-segment·slash-or-traversal-injection·record-locator-unverified 세 위험 신호를 미해소로 달아 두었다.",
+      "selector": {
+        "stateItemNames": [
+          "[type]"
+        ]
+      },
+      "reviewState": "proposed",
       "dataClass": "indeterminate",
       "privacyReview": "unverified",
       "authorizationReview": "unverified",
