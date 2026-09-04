@@ -82,20 +82,25 @@ export function normalizeInternalRoute(rawRoute?: string | null): string | null 
  *
  * `chkURL` is not a screen route. It is `tb_prgrm_lst.url` under an alias
  * (`MenuRepositoryImpl` selects `program.url.as("chkURL")`), and that column holds
- * **authorization path patterns**, not navigation destinations. Live measurement
- * (2026-09-04, 18 rows) found every value to be an API pattern such as
- * `/api/v1/admin/**`, `/actuator/**` or `/api/v1/admin/system/users/{userId}`.
+ * **authorization path patterns**, not navigation destinations.
+ *
+ * Production (OCI) measurement, 2026-09-04, read-only: of 18 rows, **0 are legacy
+ * `.do` endpoints**, 16 are API paths and 11 carry wildcards or templates
+ * (`/api/v1/admin/**`, `/actuator/**`, `/api/v1/admin/system/users/{userId}`).
+ * So the shape this fallback was designed for no longer exists in the data — what
+ * remained was only a way for authorization patterns to leak into user URLs.
  *
  * Those pass `normalizeInternalRoute` — it only rejects foreign origins and path
  * ambiguity, and an absolute API path is neither. So a menu with an empty
  * `modernRoute` and a linked program would have navigated the user to an API
  * pattern (verified: the resolver returned `/api/v1/admin/**` verbatim).
  *
- * That path is not currently reachable — all 14 menus with a null `modern_route`
- * carry the `dir` placeholder, which this module rejects outright — so this is a
- * latent hazard rather than a live defect. Narrowing it costs nothing: no test
- * asserts an absolute-path `chkURL` is used as a destination, and the legacy `.do`
- * behaviour the tests do pin is preserved.
+ * That path is not currently reachable — in production all 14 menus with a null
+ * `modern_route` carry the `dir` placeholder, which this module rejects outright,
+ * and none of them joins to a program URL (measured: 0) — so this is a latent
+ * hazard rather than a live defect. Narrowing it costs nothing: no test asserts an
+ * absolute-path `chkURL` is used as a destination, and the legacy `.do` behaviour
+ * the tests do pin is preserved.
  */
 export function resolveMenuInternalRoute(source: MenuRouteSource): string | null {
   if (source.modernRoute) return normalizeInternalRoute(source.modernRoute);

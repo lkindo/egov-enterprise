@@ -25,10 +25,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p><b>왜 여기서 검사하는가.</b> 읽기 쪽에서 잘라내면 저장된 값이 조용히 달라져 관리자가 이유를
  * 모른다. 저장에서 거부해야 입력한 사람에게 사유를 말할 수 있다.
  *
- * <p><b>실측 근거(2026-09-04, e2e Postgres 17.9).</b> 메뉴 90행 중 {@code modern_route} 보유 76,
- * 쿼리 보유 12행이며 distinct 키는 {@code tab} <b>1종</b>(값 12개 전부 열거형)이다.
- * {@code bbsId} 는 시드에 없고 게시판 생성 마법사가 런타임에 써 넣는다.
- * 아래 정상 케이스는 그 76행에서 형태별로 뽑았다 — 즉 이 계약은 <b>현행 데이터를 100% 통과</b>시킨다.
+ * <p><b>실측 근거 — 두 환경에서 같은 결과가 나왔다(2026-09-04, 읽기 전용).</b>
+ * <ul>
+ *   <li>e2e Postgres 17.9 — 메뉴 90행 · {@code modern_route} 보유 76 · 쿼리 보유 12</li>
+ *   <li><b>운영(OCI) Postgres 17.9 — 메뉴 84행 · 보유 70 · 쿼리 보유 12</b></li>
+ * </ul>
+ * 양쪽 모두 distinct 쿼리 키는 {@code tab} <b>1종</b>이고 값 12개까지 동일하다
+ * (FAQ·items·manage·observability·QNA·questions·respondents·security·stats·system·templates·WIKI).
+ * {@code bbsId} 는 어느 쪽에도 없다 — 게시판 생성 마법사가 런타임에 써 넣는 형태다.
+ *
+ * <p>아래 정상 케이스는 그 행들에서 형태별로 뽑았고, <b>운영 70행 전부를 이 패턴에 넣어 불통과 0</b> 을
+ * 확인했다. 즉 이 계약은 현행 데이터를 100% 통과시키며 배포로 편집이 막히는 메뉴가 없다.
  *
  * <p>⚠ 이 테스트가 red 인데 패턴을 넓혀 통과시키는 것은 수정이 아니라 은폐다.
  * 키를 늘려야 한다면 그 키가 URL 에 실려도 되는 값인지부터 판정하고, 사유를 함께 남긴다.

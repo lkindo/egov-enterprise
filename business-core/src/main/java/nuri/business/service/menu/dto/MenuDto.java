@@ -75,9 +75,14 @@ public class MenuDto {
      * distinct 키는 {@code tab} 1종·값 12개 전부 열거형. {@code bbsId} 는 게시판 생성 마법사가
      * 런타임에 {@code modern_route} 에 써 넣는 형태다).
      *
+     * <p><b>운영(OCI) 실측으로 배포 안전을 확인했다(2026-09-04, 읽기 전용).</b>
+     * 메뉴 84행 · {@code modern_route} 보유 70 · 쿼리 보유 12행이고 distinct 키는 시드와 똑같이
+     * {@code tab} <b>1종</b>(값 12개 동일)이다. 그 70행 전부를 이 패턴에 넣어 <b>불통과 0</b> 을 확인했다 —
+     * 즉 이 제약으로 편집이 막히는 기존 메뉴는 없다.
+     *
      * <p>⚠ 키를 늘리려면 이 패턴과 {@code MenuRouteQueryKeyTest} 를 함께 고쳐야 한다.
-     * ⚠ 운영 DB 에 허용 밖 키를 단 메뉴가 이미 있으면 그 메뉴의 <b>수정 저장이 막힌다</b>
-     *   (조회·표시는 영향 없다). 도입 전 {@code SELECT DISTINCT} 로 확인할 것.
+     * ⚠ 허용 밖 키를 단 메뉴가 나중에 생기면 그 메뉴의 <b>수정 저장이 막힌다</b>(조회·표시는 영향 없다).
+     *   그때는 패턴을 넓히기 전에 그 키가 URL 에 실려도 되는 값인지부터 판정한다.
      */
     @Schema(description = "현대화된 라우트 경로 (Next.js). 쿼리 키는 tab·bbsId 만 허용한다.",
             example = "/admin/survey/hub?tab=manage")
