@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "state": "proposed",
+  "authority": "non-normative-pre-decision-evidence",
+  "schemaRef": "config/ui-url-state-approval.schema.json",
+  "manifestRef": {
+    "path": "config/ui-url-state-census.json",
+    "sha256": "5cdc541b8defceba067b0fdf8721c6b26f2265b5fcc4eae63a062aa2da4f7c29"
+  },
+  "classes": [
+    {
+      "classId": "presentation-state",
+      "description": "화면 표현 상태 — 페이지·탭·정렬·기간 필터. 값이 사용자를 식별하지 않고 새로고침·공유 시 같은 화면을 복원한다.",
+      "selector": {
+        "stateItemNames": [
+          "endDate",
+          "orderBy",
+          "page",
+          "pageNo",
+          "startDate",
+          "tab",
+          "view"
+        ]
+      },
+      "reviewState": "proposed",
+      "dataClass": "non-sensitive-presentation",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    },
+    {
+      "classId": "resource-identifier",
+      "description": "서버가 발급한 리소스 식별자와 라우트 세그먼트. 값은 목록·검색 결과에서 나오며 접근 통제는 서비스 계층이 별도로 한다.",
+      "selector": {
+        "stateItemNames": [
+          "[id]",
+          "[type]",
+          "bbsId",
+          "groupId",
+          "nttId",
+          "pstSn",
+          "srvySn"
+        ]
+      },
+      "reviewState": "proposed",
+      "dataClass": "server-issued-identifier",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    },
+    {
+      "classId": "search-input",
+      "description": "사용자가 타이핑한 자유 입력 검색어. Q1(2026-09-04 owner 결정)이 URL 유지를 확정했으나 그것은 \"주소창에 실린다\" 는 사실의 승인이지 데이터 등급 판정이 아니다.",
+      "selector": {
+        "stateItemNames": [
+          "q",
+          "searchCnd",
+          "searchWrd"
+        ]
+      },
+      "reviewState": "proposed",
+      "dataClass": "user-typed-free-text",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    },
+    {
+      "classId": "control-flag",
+      "description": "열거형 제어 플래그 — 세션 만료·권한 부족 안내·로그인 후 복귀 지점. 값 도메인이 코드에 고정돼 있다.",
+      "selector": {
+        "stateItemNames": [
+          "auth_error",
+          "expired",
+          "redirect"
+        ]
+      },
+      "reviewState": "proposed",
+      "dataClass": "enumerated-control-flag",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    },
+    {
+      "classId": "opaque",
+      "description": "census 가 무엇인지 알아내지 못한 항목 — 계산된 타깃, 출처를 특정하지 못한 쿼리, 원시 URL 조립. detector 개선이 선행돼야 판정할 수 있다.",
+      "selector": {
+        "stateItemNames": [
+          "<computed>",
+          "<form-field-population>",
+          "<raw-url-or-component>",
+          "<source-query>",
+          "<unknown-source-query>"
+        ]
+      },
+      "reviewState": "blocked-input",
+      "dataClass": "indeterminate",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    }
+  ]
+}

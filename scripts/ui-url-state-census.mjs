@@ -1111,6 +1111,49 @@ function expectedSummary(records, summary) {
   return summaryFor(records, summary.sourceFileCount, summary.exactPopulations);
 }
 
+/**
+ * 승인 오버레이가 인정한 stateItem 이름 집합을 읽는다.
+ *
+ * ⚠ **이 census 는 여전히 스스로를 승인하지 못한다.** 아래 record 검증부의 7축 `unverified`
+ *   강제는 그대로다. 오버레이는 그 값을 바꾸는 것이 아니라, "이 부류는 사람이 근거와 함께
+ *   승인했다" 는 **별도 사실**을 만료 검사에만 전달한다.
+ *
+ * fail-closed 규칙 셋 — 하나라도 어긋나면 **아무것도 승인되지 않은 것으로 본다.**
+ *   1. 오버레이가 없으면 빈 집합(현재 상태에서 만료가 그대로 작동해야 한다)
+ *   2. 파싱 실패·형식 이상도 빈 집합(깨진 오버레이가 면제를 만들면 안 된다)
+ *   3. `manifestRef.sha256` 이 지금 census 와 다르면 빈 집합 — **승인은 자기가 본 census 에만
+ *      유효하다.** census 가 재생성됐는데 오버레이가 그대로면 그 승인은 다른 문서에 대한 것이다.
+ *
+ * 계약은 scripts/ui-url-state-approval-contract.test.mjs 가 별도로 검사한다.
+ */
+function readApprovedStateItemNames(repoRoot, census) {
+  const empty = new Set();
+  const overlayPath = join(repoRoot, 'config', 'ui-url-state-approval.json');
+  if (!existsSync(overlayPath)) return empty;
+
+  let overlay;
+  try {
+    overlay = JSON.parse(readFileSync(overlayPath, 'utf8'));
+  } catch {
+    return empty;
+  }
+  if (!Array.isArray(overlay?.classes)) return empty;
+
+  // census 본문 해시로 결속한다. 인자로 받은 census 객체를 정규화해 비교하므로,
+  // 디스크의 파일이 아니라 **지금 검증 중인 문서**에 대한 승인인지 확인한다.
+  const expected = createHash('sha256')
+    .update(`${JSON.stringify(census, null, 2)}\n`.replace(/\r\n?/gu, '\n'), 'utf8')
+    .digest('hex');
+  if (overlay?.manifestRef?.sha256 !== expected) return empty;
+
+  const names = new Set();
+  for (const cls of overlay.classes) {
+    if (cls?.reviewState !== 'approved') continue;
+    for (const name of cls?.selector?.stateItemNames ?? []) names.add(name);
+  }
+  return names;
+}
+
 /** Validate fail-closed semantics independently from the generated snapshot comparison. */
 export function validateUrlStateCensus(census, options = {}) {
   const repoRoot = resolve(options.repoRoot ?? DEFAULT_REPO_ROOT);
@@ -1120,6 +1163,7 @@ export function validateUrlStateCensus(census, options = {}) {
   // 둘 다 diff 에 드러난다 — 조용한 연장은 불가능하다.
   const nowMs = options.nowMs ?? Date.now();
   const errors = [];
+  const approvedStateItemNames = readApprovedStateItemNames(repoRoot, census);
   if (census?.schemaVersion !== 1) errors.push('schemaVersion must be 1');
   if (census?.authority !== 'generated-pre-decision-census-not-policy') errors.push('authority must remain non-normative');
   if (census?.decision?.registryStatus !== 'not-registered') errors.push('global URL decision must remain not-registered');
@@ -1164,9 +1208,24 @@ export function validateUrlStateCensus(census, options = {}) {
           그 오버레이는 아직 없다. 그래서 현재 코드가 실제로 허용하는 해소는 기한 연장 하나뿐이며,
           문구도 그렇게 말한다. 없는 선택지를 안내하면 읽는 사람이 있지도 않은 경로를 찾는다.
       */
-      errors.push(`${label}: review horizon expired on ${record.review.reviewBy} — 사유와 함께 DEFAULT_REVIEW_BY 를 연장하고 --write 로 재생성하세요. `
-        + '이 census 는 기계 생성물이라 "재검토 완료" 를 여기에 기록할 수 없습니다(문법이 스스로를 승인하지 못하게 하는 의도된 제약입니다). '
-        + '승인을 기록하려면 사람이 쓰는 별도 승인 오버레이가 필요하며 아직 없습니다.');
+      /*
+        [2026-09-05] 승인 오버레이가 덮은 record 는 만료에서 제외한다.
+
+        면제 조건은 **record 의 모든 stateItem 이 approved 부류에 속할 때** 뿐이다. 하나라도
+        승인되지 않은 항목이 섞여 있으면 그 record 는 그대로 만료된다 —
+        **부분 승인이 전체 면제가 되지 않는다.**
+
+        stateItem 이 없는 record 는 면제 대상이 아니다(빈 집합에 every 는 참이라 조용히 전부
+        면제될 수 있다. 그 함정을 막으려고 length 를 먼저 본다).
+      */
+      const items = record.stateItems ?? [];
+      const fullyApproved = items.length > 0 && items.every((item) => approvedStateItemNames.has(item?.name));
+
+      if (!fullyApproved) {
+        errors.push(`${label}: review horizon expired on ${record.review.reviewBy} — 사유와 함께 DEFAULT_REVIEW_BY 를 연장하고 --write 로 재생성하거나, `
+          + '승인 오버레이(config/ui-url-state-approval.json)에서 이 record 의 stateItem 부류를 근거와 함께 승인하세요. '
+          + '이 census 는 기계 생성물이라 "재검토 완료" 를 여기에 직접 기록할 수 없습니다 — 문법이 스스로를 승인하지 못하게 하는 의도된 제약입니다.');
+      }
     }
     if (record?.canonical?.status !== 'unverified') errors.push(`${label}: canonical route status cannot be approved by syntax`);
     if (record?.authorizationBoundary?.capabilityRoles !== 'unverified'
