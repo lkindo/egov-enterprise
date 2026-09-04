@@ -16,13 +16,20 @@ vi.mock('@/contexts/AuthContext', () => ({
   }),
 }));
 
+// 종전 mock 은 어떤 키를 물어도 '/admin/work-hub' 를 돌려줬다. 그래서 `expired` 같은 다른 키의
+// 동작을 시험할 수 없었다(무엇을 넣어도 같은 값이 나온다). 키를 구분하는 mock 으로 바꾸고
+// 기존 기대값인 redirect 는 beforeEach 에서 그대로 채운다.
+const { mockSearchParams } = vi.hoisted(() => ({
+  mockSearchParams: new Map<string, string>(),
+}));
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),
   }),
   useSearchParams: () => ({
-    get: vi.fn().mockReturnValue('/admin/work-hub'),
+    get: (key: string) => mockSearchParams.get(key) ?? null,
   }),
 }));
 
@@ -57,6 +64,8 @@ describe('LoginPage Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReducedMotion.mockReturnValue(false);
+    mockSearchParams.clear();
+    mockSearchParams.set('redirect', '/admin/work-hub');
   });
 
   afterEach(() => {
@@ -296,5 +305,73 @@ describe('LoginPage Component', () => {
     ['/admin/work-hub?tab=my#pending', '/admin/work-hub'],
   ])('only accepts a canonical same-origin redirect path: %j', (rawRedirect, expected) => {
     expect(resolveInternalRedirect(rawRedirect)).toBe(expected);
+  });
+});
+
+/**
+ * 세션 만료 안내 (PD-UX-002 Q4).
+ *
+ * 종전에는 `?expired=true` 를 **쓰기만 하고 아무도 읽지 않았다** — producer 7곳(API 401 처리기,
+ * 만료 경고 모달, 서버 컴포넌트 리다이렉트 5)에 consumer 0. 같은 URL 의 `redirect` 는 읽으므로
+ * 사용자는 원래 자리로 되돌아가긴 해도 왜 로그인 화면인지는 듣지 못했다.
+ *
+ * ⚠ 이 테스트가 red 인데 안내 문구를 지워 통과시키는 것은 수정이 아니다. producer 7곳을 함께
+ *   걷어내야 '쓰고 안 읽는' 상태로 되돌아가지 않는다.
+ */
+describe('세션 만료 안내', () => {
+  // 위 describe 의 beforeEach 는 이 블록에 적용되지 않는다. 없으면 앞 테스트가 넣은 expired 값이
+  // 그대로 새어 들어와 '파라미터가 없을 때' 를 시험할 수 없다(실제로 그렇게 red 가 났다).
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSearchParams.clear();
+    mockSearchParams.set('redirect', '/admin/work-hub');
+  });
+
+  it('expired=true 로 들어오면 만료 사실을 말한다', async () => {
+    mockSearchParams.set('expired', 'true');
+
+    await act(async () => { render(<LoginPage />); });
+
+    expect(screen.getByTestId('login-session-expired')).toHaveTextContent('세션이 만료되어 로그아웃되었습니다');
+  });
+
+  it('만료 파라미터가 없으면 안내하지 않는다 — 평상시 로그인은 사고가 아니다', async () => {
+    await act(async () => { render(<LoginPage />); });
+
+    expect(screen.queryByTestId('login-session-expired')).toBeNull();
+  });
+
+  it("'true' 가 아닌 값은 만료로 읽지 않는다", async () => {
+    // 존재만 보면 `?expired=false` 도 만료로 읽힌다.
+    mockSearchParams.set('expired', 'false');
+
+    await act(async () => { render(<LoginPage />); });
+
+    expect(screen.queryByTestId('login-session-expired')).toBeNull();
+  });
+
+  it('보조기술에 알리되 첫 탐색을 끊지 않는다 — status(polite) 이고 alert 가 아니다', async () => {
+    mockSearchParams.set('expired', 'true');
+
+    await act(async () => { render(<LoginPage />); });
+
+    const notice = screen.getByTestId('login-session-expired');
+    expect(notice).toHaveAttribute('role', 'status');
+    // role="alert" 는 assertive 를 함의한다. 진입 시점에 이미 있는 정보라 그렇게 끊을 이유가 없다.
+    expect(notice.getAttribute('role')).not.toBe('alert');
+  });
+
+  it('제출 오류가 나면 더 구체적인 그쪽이 이긴다 — 두 문구를 겹쳐 쌓지 않는다', async () => {
+    mockSearchParams.set('expired', 'true');
+    mockLogin.mockRejectedValueOnce(new Error('bad credentials'));
+
+    await act(async () => { render(<LoginPage />); });
+
+    fireEvent.change(screen.getByRole('textbox', { name: '아이디' }), { target: { value: 'tester' } });
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'pw123456!' } });
+    fireEvent.click(screen.getByRole('button', { name: /로그인/ }));
+
+    await waitFor(() => { expect(screen.getByTestId('login-error')).toBeInTheDocument(); });
+    expect(screen.queryByTestId('login-session-expired')).toBeNull();
   });
 });

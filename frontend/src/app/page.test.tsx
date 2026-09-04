@@ -84,7 +84,8 @@ describe('DashboardPage Server Component', () => {
       pendingApprovalCount: 10,
     }));
 
-    const result = await DashboardPage();
+    // Next 는 페이지 컴포넌트에 항상 searchParams 를 넘긴다. 여기서도 같은 모양으로 호출한다.
+    const result = await DashboardPage({ searchParams: Promise.resolve({}) });
     render(result);
 
     await waitFor(() => {

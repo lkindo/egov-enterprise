@@ -35,15 +35,25 @@ export default async function AddressBookListPage({
   const params = await searchParams;
   const parsedPage = parseInt((params.pageNo as string) || '1', 10);
   const pageNo = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
-  const searchWrd = (params.searchWrd as string) || '';
+
+  /*
+    [2026-09-04] `?searchWrd=` 읽기를 걷었다 — **URL 에 그 값을 싣는 코드가 저장소에 없었다.**
+    이 화면의 검색어는 클라이언트 로컬 상태이고(`AddressBookListClient` 의 useState),
+    검색은 `router.push`/`replace` 가 아니라 `fetchList` 직접 호출로 처리된다. 즉 producer 0건의
+    소비자 전용 잔존 경로였고, 손으로 URL 을 만들지 않는 한 도달하지 않았다.
+    시드 메뉴(`modern_route`)에도 `searchWrd` 참조가 없음을 확인했다.
+
+    PD-UX-002 Q1 은 "URL 에 실리는 검색어를 전부 유지" 로 결정됐는데, 이 값은 **실린 적이 없어**
+    그 결정의 대상이 아니다(Q4 죽은 표면). 되살리려면 producer 를 함께 만들어야 한다.
+  */
 
   // [P1: Waterfall Elimination] Initiate data promise on server
   // 백엔드는 Spring Pageable(0-base page) 을 받는다.
-  const dataPromise = getInitialAddressBookData({ page: pageNo - 1, size: PAGE_UNIT, searchWrd });
+  const dataPromise = getInitialAddressBookData({ page: pageNo - 1, size: PAGE_UNIT, searchWrd: '' });
 
   return (
     <Suspense fallback={<AddressBookListSkeleton />}>
-      <AddressBookListClient dataPromise={dataPromise} initialParams={{ pageNo, searchWrd }} />
+      <AddressBookListClient dataPromise={dataPromise} initialParams={{ pageNo, searchWrd: '' }} />
     </Suspense>
   );
 }

@@ -63,6 +63,17 @@ export function requestFullExport({
     return false;
   }
 
+  /*
+    [2026-09-04 owner 결정] 검색어를 다운로드 URL 에 싣는 것은 **승인된 상태**다(PD-UX-002 Q1).
+
+    같은 화면의 목록 상태 훅(`admin/system/logs/use-log-url-state.ts`)은 검색어를 주소창에 싣지
+    않는데, 여기서는 싣는다. 이 비대칭은 실수가 아니라 **경계가 주소창으로 정의됐기 때문**이다 —
+    이 값은 `window.location.assign` 으로 나가는 다운로드 내비게이션이지 화면 상태가 아니다.
+
+    ⚠ "일관성" 을 이유로 이 줄을 걷지 말 것. 제거하려면 POST + Blob 전환이 필요하고 그러면
+      대용량 스트리밍의 메모리 이점을 잃으며, binary GET 계약(DEC-OPS-016) 영향 확인이 선행이다.
+      소비 화면 5개 중 하나가 개인정보 접근 로그라는 사실도 결정 시점에 알려진 채 승인됐다.
+  */
   const query: LogExportQuery = {};
   if (searchKeyword) query.searchKeyword = searchKeyword;
   const periodParams = period ? periodToParams(period) : {};

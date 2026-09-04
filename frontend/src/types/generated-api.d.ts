@@ -5386,8 +5386,8 @@ export interface components {
              */
             relImgNm?: string;
             /**
-             * @description 현대화된 라우트 경로 (Next.js)
-             * @example /admin/system
+             * @description 현대화된 라우트 경로 (Next.js). 쿼리 키는 tab·bbsId 만 허용한다.
+             * @example /admin/survey/hub?tab=manage
              */
             modernRoute?: string;
             /**

@@ -69,7 +69,14 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const confirm = useConfirm();
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId');
-  const rawPstSn = searchParams.get('pstSn');
+  // [PD-UX-002 Q4] 서버와 같은 키 공간을 읽는다.
+  //   page.tsx 는 `params.pstSn || params.nttId` 로 **두 키를 다 받는데** 여기는 pstSn 만 읽었다.
+  //   그래서 `?nttId=` 로 들어오면 서버는 글을 제대로 렌더하지만 클라이언트는 pstSn=0 으로 동작했다 —
+  //   화면이 "게시글 번호: 0" 을 표시하고, 수정 버튼이 0번 글로 이동하며, 댓글·만족도 섹션에도 0 이
+  //   전달됐다. 추천만 hasValidPstSn 가드에 막혀 조용히 아무 일도 하지 않았다.
+  //   nttId 는 레거시 별칭이다(백엔드 파라미터에는 존재하지 않고, knowledgeService 가 응답에서
+  //   이미 pstSn 으로 정규화한다). 새 링크는 pstSn 을 쓰되 기존 링크·북마크는 계속 받는다.
+  const rawPstSn = searchParams.get('pstSn') ?? searchParams.get('nttId');
   const pstSn = Number(rawPstSn);
   const hasValidPstSn = Number.isSafeInteger(pstSn) && pstSn > 0;
   const queryClient = useQueryClient();

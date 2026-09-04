@@ -62,9 +62,21 @@ describe('기간 필터를 ISO 문자열로 되돌리지 않는다', () => {
     .replace(/\/\/.*$/gm, ' ');
 
   it('startDate·endDate 쿼리 파라미터를 toQueryDate 로 만든다', () => {
-    // 검색 제출과 캘린더 월 이동(이전·다음) 세 경로가 모두 같은 형식을 써야 한다.
-    expect(source.match(/params\.set\('startDate', toQueryDate\(/g) ?? []).toHaveLength(3);
-    expect(source).toContain("params.set('endDate', toQueryDate(");
+    /*
+      검색 제출(startDate·endDate)과 캘린더 월 이동(이전·다음) — **네 곳**이 모두 같은 형식을 써야 한다.
+
+      [2026-09-04] 단언 형태를 갱신했다. 종전에는 `params.set('startDate', toQueryDate(` 을 3회
+      셌는데, PD-UX-002 Q2 로 URL 조립이 `buildListParams({ startDate: ... })` allowlist 헬퍼로
+      모이면서 그 리터럴이 사라졌다. **불변식은 그대로다** — 날짜를 쿼리에 넣는 모든 경로가
+      toQueryDate 를 지난다. 형태가 아니라 그 사실을 센다.
+    */
+    expect(source.match(/toQueryDate\(/g) ?? []).toHaveLength(4);
+
+    // 월 이동 두 곳은 allowlist 헬퍼에 startDate 만 넘긴다.
+    expect(source.match(/startDate: toQueryDate\(d\)/g) ?? []).toHaveLength(2);
+    // 검색 제출은 값이 있을 때만 싣는다(두 축 모두 toQueryDate 경유).
+    expect(source).toContain('startDate: startDate ? toQueryDate(startDate) : undefined');
+    expect(source).toContain('endDate: endDate ? toQueryDate(endDate) : undefined');
   });
 
   it('쿼리 값으로 toISOString 을 쓰지 않는다', () => {
