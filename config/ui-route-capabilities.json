@@ -22,8 +22,8 @@
     "retryCommand": "node scripts/menu-census.mjs --json",
     "review": {
       "owner": "product/IA + DB operator",
-      "reviewBy": "2026-10-31",
-      "reason": "The read-only structural census could not run because DB_HOST was not present. It only reads tb_menu_info; role-aware exposure needs separate live schema evidence."
+      "reviewBy": "2026-11-30",
+      "reason": "Structural census of tb_menu_info ran read-only against the production instance on 2026-09-04 (84 menus, 70 with modern_route, 12 carrying a query, single distinct key \"tab\"). What remains blocked is role-aware exposure: which menus each authority actually sees. That needs authority-to-menu mapping evidence, not another structural read."
     }
   },
   "externalAliases": [
@@ -123,7 +123,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -193,7 +193,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -263,7 +263,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -334,7 +334,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -402,7 +402,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -470,7 +470,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -538,7 +538,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -608,7 +608,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -678,7 +678,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -748,7 +748,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -818,7 +818,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -888,7 +888,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -958,7 +958,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1026,7 +1026,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1094,7 +1094,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1162,7 +1162,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1232,7 +1232,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1302,7 +1302,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1405,7 +1405,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1475,7 +1475,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1545,7 +1545,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1615,7 +1615,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1685,7 +1685,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1755,7 +1755,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1823,7 +1823,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1891,7 +1891,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -1959,7 +1959,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2027,7 +2027,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2156,7 +2156,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2228,7 +2228,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2296,7 +2296,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2364,7 +2364,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2432,7 +2432,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2500,7 +2500,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2568,7 +2568,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2636,7 +2636,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2751,7 +2751,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2821,7 +2821,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2895,7 +2895,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -2965,7 +2965,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3035,7 +3035,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3105,7 +3105,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3175,7 +3175,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3245,7 +3245,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3313,7 +3313,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3381,7 +3381,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3449,7 +3449,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3517,7 +3517,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3585,7 +3585,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3653,7 +3653,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3724,7 +3724,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3792,7 +3792,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3864,7 +3864,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -3934,7 +3934,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4002,7 +4002,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4070,7 +4070,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4138,7 +4138,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4203,7 +4203,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4271,7 +4271,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4343,7 +4343,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4415,7 +4415,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4485,7 +4485,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4557,7 +4557,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4629,7 +4629,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4699,7 +4699,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4771,7 +4771,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4843,7 +4843,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4913,7 +4913,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -4985,7 +4985,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5055,7 +5055,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5123,7 +5123,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5191,7 +5191,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5261,7 +5261,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5331,7 +5331,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5401,7 +5401,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5471,7 +5471,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5541,7 +5541,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5611,7 +5611,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5681,7 +5681,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5751,7 +5751,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5821,7 +5821,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5891,7 +5891,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -5961,7 +5961,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6034,7 +6034,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6104,7 +6104,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6176,7 +6176,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6268,7 +6268,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6338,7 +6338,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6408,7 +6408,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6480,7 +6480,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6550,7 +6550,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6620,7 +6620,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6688,7 +6688,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6756,7 +6756,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6867,7 +6867,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -6968,7 +6968,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7068,7 +7068,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7165,7 +7165,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7233,7 +7233,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7301,7 +7301,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7373,7 +7373,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7441,7 +7441,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7509,7 +7509,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7579,7 +7579,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7649,7 +7649,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7764,7 +7764,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7834,7 +7834,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7904,7 +7904,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -7974,7 +7974,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8047,7 +8047,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8120,7 +8120,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8193,7 +8193,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8261,7 +8261,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8329,7 +8329,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8397,7 +8397,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8465,7 +8465,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8533,7 +8533,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8601,7 +8601,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8669,7 +8669,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     },
@@ -8737,7 +8737,7 @@
       ],
       "review": {
         "owner": "product/UX + domain owner",
-        "reviewBy": "2026-10-31",
+        "reviewBy": "2026-11-30",
         "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
       }
     }

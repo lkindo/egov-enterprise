@@ -36,7 +36,51 @@ import {
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
 const DEFAULT_MANIFEST_PATH = join(DEFAULT_REPO_ROOT, 'config', 'ui-url-state-census.json');
-const DEFAULT_REVIEW_BY = '2026-10-31';
+/*
+  [2026-09-04] 2026-10-31 → 2026-12-31 연장. **사유 없는 인상은 H2 위반이므로 여기에 남긴다.**
+
+  무엇이 막혔나 — 이 census 는 재검토를 닫을 수단이 **구조적으로 없다.** :1105·:1110·:1112·:1117 이
+  review.status·canonical.status·capabilityRoles·objectAuthorization·dataClass·approvalStatus 를 전부
+  'unverified' 로 강제하고, 생성기(:440-446, :488-501)도 그 값을 하드코딩한다. 즉 재검토를 아무리
+  해도 결과를 적을 곳이 없다.
+
+  그 강제는 결함이 아니라 의도다 — 기계 생성물이 스스로를 승인하지 못하게 막는다
+  (:1110 주석 "cannot be approved by syntax"). 따라서 해결책은 이 제약을 푸는 것이 아니라
+  **사람이 쓰는 승인 오버레이를 만드는 것**이며, 그 선례가 이미 있다
+  (내비게이션 disposition overlay — reviewState·approvals·ADR 해시 결속).
+
+  ⚠ 그 overlay 의 파일 경로를 여기 리터럴로 적지 마라. DEC-OPS-020 의 소비자 등록 게이트가
+    경로 문자열을 스캔하는데 **주석까지 함께 본다** — 이 파일은 overlay 를 읽지 않는데도
+    "proposed executable consumer is not registered" 로 red 가 된다(실측).
+
+  새 날짜의 근거 — 승인 오버레이 설계·신설과 370 record 의 부류별 분류 승인을 담을 창이다.
+  DEC-OPS-027 이 이 만료를 "의도된 강제 재검토 지점" 으로 남긴 취지를 지키기 위해 무기한이 아닌
+  2개월로 잡았다. 상한은 없으므로(:1106 은 형식·만료만 본다) 이 값은 의식적 선택이다.
+
+  부분 승인 범위 — Q1~Q4 는 2026-09-04 에 종결됐다(DEC-OPS-029). 남은 것은 Q5 뿐이며,
+  이 연장은 **Q5 를 미루는 것이 아니라 Q5 를 기록할 수단을 만들 시간**을 확보한다.
+
+  ⚠ 이 상수를 바꾸면 반드시 `node scripts/ui-url-state-census.mjs --write` 를 함께 실행한다.
+    상수만 바꾸면 커밋본과 어긋나 drift red 가 **당일 즉시** 난다(:1176-1181).
+*/
+const DEFAULT_REVIEW_BY = '2026-12-31';
+
+/**
+ * 실재하는 ISO 날짜인지 왕복 검증한다.
+ *
+ * ⚠ [2026-09-04] 종전에는 정규식 `^\d{4}-\d{2}-\d{2}$` 만 봤다. 그래서 **`2026-13-45` 같은
+ *   비실재 날짜가 통과했고**, 그 값은 `Date.parse` 가 NaN 을 돌려주는데 `NaN < nowMs` 는 항상
+ *   false 라 **만료 검사가 조용히 무력화**됐다(형식은 맞으니 형식 검사도 통과). 즉 오타 하나로
+ *   그 record 는 영원히 만료되지 않는 상태가 된다.
+ *
+ *   형제 게이트인 ui-route-capabilities-contract.mjs 의 `validIsoDate`(:546-550)는 같은 자리에서
+ *   이미 왕복 검증을 한다. 두 게이트가 같은 required job 에서 도는데 한쪽만 구멍이 있었다.
+ */
+function isRealIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
 const SOURCE_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx']);
 const NEGATIVE_CASE_IDS = Object.freeze([
   'unknown-query',
@@ -1103,9 +1147,26 @@ export function validateUrlStateCensus(census, options = {}) {
       errors.push(`${label}: evidence occurrenceCount must be a positive integer`);
     }
     if (record?.review?.status !== 'unverified' || record?.review?.decisionSafe !== false) errors.push(`${label}: review must remain unverified and decisionSafe=false`);
-    if (!record?.review?.owner || !/^\d{4}-\d{2}-\d{2}$/.test(record?.review?.reviewBy ?? '')) errors.push(`${label}: owner and bounded reviewBy are required`);
+    if (!record?.review?.owner || !isRealIsoDate(record?.review?.reviewBy)) errors.push(`${label}: owner and bounded reviewBy are required`);
     else if (Date.parse(`${record.review.reviewBy}T23:59:59.999Z`) < nowMs) {
-      errors.push(`${label}: review horizon expired on ${record.review.reviewBy} — 재검토를 완료하거나, 사유와 함께 DEFAULT_REVIEW_BY 를 연장하고 --write 로 재생성하세요`);
+      /*
+        ⚠ [2026-09-04] 안내문 정정. 종전 문구는 첫 대안으로 "재검토를 완료하거나" 를 제시했는데
+          **그 경로는 이 파일 안에 존재하지 않는다.** 바로 위 :1105 와 아래 :1110·:1111·:1117 이
+          review.status·canonical.status·capabilityRoles·objectAuthorization·dataClass·approvalStatus 를
+          전부 'unverified' 로 강제하기 때문이다.
+
+          그 강제는 결함이 아니라 의도다 — 이 census 는 소스를 훑어 기계 생성되므로, 여기에 승인을
+          쓸 수 있게 하면 **문법이 스스로를 승인**하게 된다(:1110 주석 "cannot be approved by syntax").
+          따라서 사람의 승인은 이 파일이 아니라 사람이 직접 쓰는 오버레이에 있어야 한다 —
+          내비게이션 disposition overlay 가 그 선례다(reviewState·approvals·ADR 해시 결속).
+          경로 리터럴은 일부러 쓰지 않았다 — 위 :50 주석 참조.
+
+          그 오버레이는 아직 없다. 그래서 현재 코드가 실제로 허용하는 해소는 기한 연장 하나뿐이며,
+          문구도 그렇게 말한다. 없는 선택지를 안내하면 읽는 사람이 있지도 않은 경로를 찾는다.
+      */
+      errors.push(`${label}: review horizon expired on ${record.review.reviewBy} — 사유와 함께 DEFAULT_REVIEW_BY 를 연장하고 --write 로 재생성하세요. `
+        + '이 census 는 기계 생성물이라 "재검토 완료" 를 여기에 기록할 수 없습니다(문법이 스스로를 승인하지 못하게 하는 의도된 제약입니다). '
+        + '승인을 기록하려면 사람이 쓰는 별도 승인 오버레이가 필요하며 아직 없습니다.');
     }
     if (record?.canonical?.status !== 'unverified') errors.push(`${label}: canonical route status cannot be approved by syntax`);
     if (record?.authorizationBoundary?.capabilityRoles !== 'unverified'

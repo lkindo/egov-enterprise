@@ -88,13 +88,36 @@ PD-UX-002 의 기본 검토안("페이지·탭 등 비민감 상태만 URL 에 �
 |---|---|---|---|---|---|
 | `bbsId` | 21 | server-id | low | `keep-in-url` | 화면 상태가 아니라 **DB 에 영속된 라우팅 키**다 — 생성 마법사가 `modern_route` 에 `?bbsId=` 를 써 넣고 브레드크럼이 그 값으로 메뉴를 역해석한다 |
 | `[id]` (세그먼트 소비 7 route) | 7 | server-id | low | `keep-in-url` | 세그먼트가 곧 라우트다. IDENTITY 정수라 열거 가능하지만 개인 소유 리소스는 서비스 계층 `assertOwnerOrAdmin` 이 실제로 막는다 |
-| `[id]` (세그먼트 **미소비** 2 route) | 2 | unknown | none | **`remove-from-url`** | `/admin/community/[id]`·`/admin/community/boards/[id]` 는 `params` 를 받지도 `useParams` 를 쓰지도 않고, 같은 경로의 정적 형제가 이미 존재한다. 어떤 값을 넣어도 같은 화면 |
+| `[id]` (세그먼트 **미소비** 2 route) | 2 | unknown | none | **`remove-from-url`**(세그먼트만) | `/admin/community/[id]`·`/admin/community/boards/[id]` 는 `params` 를 받지도 `useParams` 를 쓰지도 않고 정적 형제가 실재한다. ⚠ **2026-09-04 정정: "어떤 값을 넣어도 같은 화면" 은 맞지만 "그러니 지워도 되는 화면" 이 아니다** — 아래 경고 참조 |
 | `[id]` (레거시 별칭 1 route) | 1 | server-id | none | `needs-owner-decision` | 세그먼트는 정본 경로로 넘기는 통로일 뿐. 판정 불가는 **별칭 route 존치 여부**(§3-D) |
 | `pstSn` | 8 | server-id | none | `keep-in-url` | `(bbsId, pstSn)` 쌍이 맞아야 조회되고 비밀글은 작성자·관리자만. 값은 항상 목록·검색 결과에서 나온다 |
 | `nttId` | 2 | server-id | none | **`remove-from-url`** | `pstSn` 의 별칭이다 — 소비자가 두 이름을 같은 값으로 받고 producer 도 실제로는 `item.pstSn` 을 싣는다. 같은 글이 두 URL 로 공유·북마크된다 |
 | `srvySn` | 2 | user-typed | none | `keep-in-url` | 이 부류에서 유일한 사용자 타이핑이나 `type="number" min={1}` 로 정수만 받고, 통계 응답에 응답자 축이 없다 |
-| `groupId` | 1 | enumerated | none | `needs-owner-decision` | **producer 0건**의 소비자 전용 잔존 파라미터. DEC-OPS-022 가 legacy 로 보존하며 신규 producer 를 계약으로 금지했다(§3-D) |
+| `groupId` | 1 | enumerated | none | `keep-in-url` | ⚠ **2026-09-04 정정: 종전 `needs-owner-decision` 은 오분류였다.** "producer 0건의 잔존 파라미터" 라는 서술이 죽은 표면으로 읽혔으나, [common-code/page.tsx:20-21,45,58-59](../../frontend/src/app/admin/system/common-code/page.tsx) 가 이 값으로 코드 그룹을 선택하고 상세를 필터하는 **동작하는 딥링크**다. producer 가 없다는 것은 저장소가 링크를 만들지 않는다는 뜻일 뿐, 외부 북마크가 그 기능을 쓴다. DEC-OPS-022 의 legacy 보존은 유효 |
 | `[type]` | 1 | enumerated | none | `keep-in-url` | `systemPolicyRepository.findById(type)` 이라 값 도메인이 등록 PK 로 한정. 경로 파라미터는 `encodeURIComponent` 를 거친다 |
+
+> ### ⚠ 2026-09-04 정정 — `remove-from-url`(세그먼트)을 화면 삭제로 읽지 마라
+>
+> 이 초안의 종전 서술("어떤 값을 넣어도 같은 화면", "정적 형제가 이미 존재한다")은 사실이지만,
+> **읽는 사람이 '중복이니 지워도 된다'로 오독하기 쉽다.** 실측하면 두 화면 다 살아 있다.
+>
+> **`/admin/community/boards/[id]` 는 상세 화면이 아니라 '새 게시글 작성' 폼이다.**
+> [CommunityBoardsDetailClient.tsx](../../frontend/src/app/admin/community/boards/%5Bid%5D/CommunityBoardsDetailClient.tsx)
+> 가 `fileAdminService.uploadFiles → atchFileSn → boardUserService.createPost` 로 **첨부 업로드를
+> 실제로 배선**하고 있고, 파일 주석은 과거 "첨부가 전송되지 않고 사라지던" 결함을 고친 이력을 남긴다.
+> 이 파일은 또한 저장소에서 **`StandardEditor` 의 유일한 소비자**이며(컴포넌트·테스트 제외 grep 1건),
+> 전용 테스트 9건과 `frontend-form-validation-census.json` 의 formless-write 레코드를 소유한다.
+> 지우면 동작하는 기능과 그 계약이 함께 사라진다.
+>
+> `/admin/community/[id]` 도 목록 화면으로 살아 있고 A1 채택 census(`WorkListPage` 셸 경유)·
+> shell-accessibility 계약·demo pack `removePaths` 에 결속돼 있다.
+>
+> **따라서 이 권고의 범위는 "세그먼트를 정적 경로로 바꾼다" 이지 "라우트를 제거한다" 가 아니다.**
+> 그 이름 변경조차 동결점 6개 이상을 동시에 움직이며(`dynamicRoutePatterns` 11 · A1 census ·
+> shell-accessibility · board-option-source-contract · form-validation census 키 · reusable-base
+> 3프로필 투영), [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md)
+> §Decision 4 의 route 별 owner PR 리뷰가 선행이다. 세 라우트 모두 `reviewState=proposed` 에
+> approvals 4축이 전부 `null` 이다.
 
 주요 인용: [BoardMakerWizard.tsx:269](../../frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx) 가 생성 시 `modernRoute` 에 `?bbsId=` 를 써 넣는다 · [V2_2__seed_framework_data.sql:288](../../api-server/src/main/resources/db/migration/V2_2__seed_framework_data.sql) 시드 메뉴도 동일 형태 · [DynamicBreadcrumb.tsx:45](../../frontend/src/app/components/layout/DynamicBreadcrumb.tsx) 가 메뉴 route 의 `bbsId` 로 현재 메뉴를 역탐색 · [AddressBookService.java:45-48](../../business-app/src/main/java/nuri/business/service/addressbook/AddressBookService.java) "[IDOR] 소유자/관리자만 열람(PII)" · [next.config.ts:77](../../frontend/next.config.ts) `Referrer-Policy: strict-origin-when-cross-origin`.
 
@@ -212,7 +235,7 @@ census 의 `<computed>`·`<unknown-source-query>` 는 "값이 불투명"이 아�
 |---|---|---|---|
 | `expired` | 5 | 만료 안내를 구현할 것인가, 파라미터를 걷을 것인가 | 세션 만료로 튕긴 사용자에게 그 사실을 알려야 하는가. **현상 유지만은 선택지가 아니다** — 죽은 값이 남거나 안내가 영원히 안 뜨거나 둘 중 하나다. **제거 대상은 census 가 센 5곳이 아니라 7곳**(§4-E) |
 | `[id]` 미소비 | 2 | 정적 라우트로 수렴할 것인가 | 라우트 형태 변경이라 disposition overlay([ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md) §Decision 4)의 route 별 owner PR 리뷰 경로를 타야 한다 |
-| `nttId` | 2 | producer 2곳을 `pstSn=` 으로 바꿀 것인가, 소비자 폴백 폐지 시점은 | 순수한 canonical 이름 정합 문제. 개인정보·인가 위험 0 |
+| `nttId` | 2 | producer 2곳을 `pstSn=` 으로 바꿀 것인가, 소비자 폴백 폐지 시점은 | ⚠ **2026-09-04 정정: "순수한 canonical 이름 정합 문제, 위험 0" 은 틀렸다.** 서버는 `params.pstSn \|\| params.nttId` 로 두 키를 받는데 클라이언트는 `pstSn` 만 읽어, `?nttId=` 진입 시 **상호작용 전체가 0번 글로 동작**하는 실제 결함이었다(§3-D 진행 상황). 이름 부채로 분류한 탓에 우선순위가 낮게 매겨져 있었다 |
 | 주소록·프로그램 `searchWrd` | 2 | 소비자 코드까지 걷을 것인가 | 없음 — 제거 비용 0 |
 | `groupId` | 1 | 보존인가 소멸인가 | DEC-OPS-022 가 이 파라미터를 남긴 의도가 '외부 딥링크 계약 보존'인가 '이행 중 임시 보존'인가. 운영 DB `modern_route` 에 `groupId=` 참조가 있는지(읽기 전용 census 로 확인 가능) |
 | 레거시 별칭 route | 1 | 별칭을 폐지할 것인가 | 운영 DB `modern_route` 에 해당 경로가 있는지. **시드 부재는 운영 부재의 증거가 아니다** — 메뉴는 런타임 편집 가능 |
@@ -232,7 +255,7 @@ owner 위임(2026-08-23)에 따라 **잃는 동작이 없는 정리분**을 먼�
 | `[id]` 미소비 | 2 | **owner 대기** | 라우트 형태 변경이라 ADR-0007 §Decision 4 의 route 별 owner PR 리뷰 경로가 선행이다. 코드로 앞서갈 수 없다 |
 | `groupId` | 1 | **증거 확보, owner 대기** | ⚠ **'죽은 표면' 이라는 전제가 틀렸다** — `/admin/system/common-code/page.tsx` 가 이 값으로 코드 그룹을 선택하고 상세를 필터하는 **동작하는 딥링크 소비자**다. 필요했던 외부 증거(운영 `modern_route` 에 `groupId=` 참조가 있는가)는 확보했다: **없다**(§4-K). 남은 것은 "외부 딥링크 계약으로 보존" 인지의 판정뿐 |
 | 레거시 별칭 route | 1 | **증거 확보, owner 대기** | 필요했던 증거(운영 메뉴에 해당 경로가 있는가)는 §4-K 의 실측 범위에 들어온다 |
-| `pageNo` | 1 | **owner 대기** | 이름 통일(`page`)은 공개 URL 계약 변경이라 별도 축이다 |
+| `pageNo` | 1 | **현행 유지 권고** | ⚠ **2026-09-04 정정: 이름 통일은 안전한 리네임이 아니다.** `page` 는 **이미 다른 의미로 점유**돼 있다 — [select-address-book-list/page.tsx:52](../../frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx) 가 `page: pageNo - 1` 로 변환한다(URL 은 1-base, API 는 0-base Spring Pageable). URL 키만 바꾸면 **같은 화면 안에서 `page` 가 두 기준으로 공존**한다. 서비스 계층 계약 18건(7파일)이 `pageNo` 이름을 고정하고 있고, 그중 `AuthorAdminService.test.ts:149` 는 `page`·`pageNo` 동시 입력 시의 우선순위까지 검증한다 |
 
 종결분은 전부 **소비처를 만드는 쪽**을 택했다. 셋 다 코드가 이미 이유를 URL 에 실어 보내는데
 화면만 버리고 있었다 — 걷어내면 그 의도까지 지운다. 방향이 저장소의 기존 사례와 반대다:
