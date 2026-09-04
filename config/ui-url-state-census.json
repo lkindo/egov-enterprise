@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "63643bbfad019faefe5a32a02b9c742b3c1a28fe4e1cfd618dd3eeac0e6c0a29"
+    "inventoryHash": "edb6de37b20f7f1bac3d7d130538262fa1391c2fa273b5e143d3dbd2d300332e"
   },
   "summary": {
     "sourceFileCount": 514,
-    "records": 368,
-    "syntaxOccurrences": 433,
-    "ambiguousRecords": 348,
-    "unverifiedRecords": 368,
+    "records": 369,
+    "syntaxOccurrences": 434,
+    "ambiguousRecords": 349,
+    "unverifiedRecords": 369,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,13 +44,13 @@
       "navigation-producer": 157,
       "page-redirect": 5,
       "query-builder": 23,
-      "query-consumer": 57,
+      "query-consumer": 58,
       "query-producer": 46,
       "request-query-producer": 1,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 360,
+      "navigation": 361,
       "request-telemetry": 8
     }
   },
@@ -3075,6 +3075,55 @@
       }
     },
     {
+      "id": "URL-2BB718AE354104",
+      "surface": "navigation",
+      "kind": "query-consumer",
+      "operation": "get",
+      "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
+      "producerFile": null,
+      "consumerFile": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
+      "routePattern": "/admin/community/boards/detail",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "nttId",
+          "dataClass": "unverified",
+          "recommendation": "deny",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "record-locator-name-signal"
+          ]
+        }
+      ],
+      "currentBehavior": "URL search parameter is consumed with get().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-982EF0338E4075",
       "surface": "navigation",
       "kind": "query-consumer",
@@ -5159,7 +5208,7 @@
       }
     },
     {
-      "id": "URL-2C133B5CDFA1BC",
+      "id": "URL-B5A56C7D3A385E",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "router.push",
@@ -5167,7 +5216,7 @@
       "producerFile": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/help",
-      "targetCandidate": "/admin/community/boards/detail?bbsId=[computed]&nttId=[computed]",
+      "targetCandidate": "/admin/community/boards/detail?bbsId=[computed]&pstSn=[computed]",
       "stateItems": [
         {
           "name": "bbsId",
@@ -5180,7 +5229,7 @@
           ]
         },
         {
-          "name": "nttId",
+          "name": "pstSn",
           "dataClass": "unverified",
           "recommendation": "deny",
           "approvalStatus": "unverified",
