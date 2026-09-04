@@ -28,7 +28,7 @@
         "status": "unverified",
         "description": "현재 렌더 기본값을 식별하기 위한 baseline label이며 승인된 기관 브랜드 profile이 아니다.",
         "owner": "design-system + product/UX",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       }
     ],
     "colorModes": [
@@ -258,21 +258,21 @@
       "status": "unmeasured",
       "reason": "current authoritative r12는 exact 8개 scenario·96/96 state·48/48 performance를 invalid 0으로 완료했고, synthetic mutation task evidence 36건도 case-bound 실행·authoritative readback·rollback·cleanup·active residue 0으로 닫았다. r12 automated-only durable publication은 UA-04에서 완료됐지만 execution-captured protocol hash와 manual evidence 48건이 없어 8개 scenario 모두 partial-automated-evidence다.",
       "owner": "quality engineering",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-19"
     },
     {
       "id": "baseline-artifact-durability",
       "status": "unmeasured",
       "reason": "r12 automated-only summary는 사람 redaction review 8/8을 거쳐 canonical digest e7822b6a31dcf9ff5e129238e42cce7be29d5f126554e8ea400cf249c69af8e4와 tracked index 첫 entry로 발행됐다. clean-checkout committed Git blob identity readback, PR #434 required CI와 merge commit f39ba9930df973710318088ccb00a2800643d9a3의 post-merge CI가 모두 통과해 UA-04 durable publication은 완료됐지만, r12는 execution-captured protocol hash와 manual evidence 부재로 measured 승격 대상이 아니다.",
       "owner": "quality engineering + repository governance",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-19"
     },
     {
       "id": "manual-at-evidence",
       "status": "blocked-external",
       "reason": "r12 manual evidence 48건 중 40건은 전문가 검토가 필요하고 NVDA/Chrome 8건은 외부 차단 상태다. 실제 Windows 접근성 설정을 사용하는 지정 평가자, 격리 계정과 기록 승인 없이는 수동 결과를 만들 수 없다.",
       "owner": "accessibility owner",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-19"
     }
   ],
   "scenarios": [
@@ -296,7 +296,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + auth domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         },
         {
@@ -313,7 +313,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + auth domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         }
       ],
@@ -330,7 +330,7 @@
         "reason": "r12 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
         "artifactPath": "build/reports/ui-quality-baseline/auth-login/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       },
       "sourceEvidence": [
         "frontend/src/app/login/page.tsx",
@@ -357,7 +357,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + admin-shell owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         }
       ],
@@ -374,7 +374,7 @@
         "reason": "r12 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
         "artifactPath": "build/reports/ui-quality-baseline/admin-shell-hub/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/page.tsx",
@@ -401,7 +401,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + logging domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         },
         {
@@ -417,7 +417,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + logging domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         },
         {
@@ -433,7 +433,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + logging domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         }
       ],
@@ -450,7 +450,7 @@
         "reason": "r12 dense-list 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
         "artifactPath": "build/reports/ui-quality-baseline/dense-user-logs/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/system/logs/user/page.tsx",
@@ -477,7 +477,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + user domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         },
         {
@@ -494,7 +494,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + user domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         }
       ],
@@ -511,7 +511,7 @@
         "reason": "r12 synthetic user mutation task evidence 12건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
         "artifactPath": "build/reports/ui-quality-baseline/user-management-hub/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/user/manage/page.tsx",
@@ -539,7 +539,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + board domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         },
         {
@@ -556,7 +556,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + board domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         }
       ],
@@ -573,7 +573,7 @@
         "reason": "r12 composer 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
         "artifactPath": "build/reports/ui-quality-baseline/board-article-composer/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
@@ -603,7 +603,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + help/board domain owners",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         },
         {
@@ -620,7 +620,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + help domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         },
         {
@@ -637,7 +637,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + help domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         }
       ],
@@ -654,7 +654,7 @@
         "reason": "r12 synthetic FAQ mutation task evidence 18건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
         "artifactPath": "build/reports/ui-quality-baseline/faq-admin-user-lifecycle/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
@@ -684,7 +684,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + board domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         },
         {
@@ -700,7 +700,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + board domain owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         }
       ],
@@ -717,7 +717,7 @@
         "reason": "r12 synthetic board deploy task evidence 6건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
         "artifactPath": "build/reports/ui-quality-baseline/board-maker-wizard/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/community/boards/maker/page.tsx",
@@ -745,7 +745,7 @@
           "truth": {
             "status": "unverified",
             "owner": "product/UX + onboarding owner",
-            "reviewBy": "2026-10-31"
+            "reviewBy": "2026-11-19"
           }
         }
       ],
@@ -762,7 +762,7 @@
         "reason": "r12 first-use 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
         "artifactPath": "build/reports/ui-quality-baseline/first-use-onboarding/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-11-19"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/page.tsx",

@@ -23,7 +23,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "069b4089c3e387a55202d22c3a3626d3a834cd3682063271addc915359ea1b39"
+    "inventoryHash": "174f1ca5e7ffa21e9ace9895cc357658fa43903a16c23093688bab34593b7371"
   },
   "summary": {
     "sourceFileCount": 514,
@@ -187,7 +187,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -239,7 +239,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -299,7 +299,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -351,7 +351,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -411,7 +411,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -471,7 +471,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -531,7 +531,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -591,7 +591,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -651,7 +651,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -711,7 +711,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -771,7 +771,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -831,7 +831,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -883,7 +883,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -935,7 +935,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/next.config.ts",
@@ -973,7 +973,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
@@ -1012,7 +1012,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
@@ -1051,7 +1051,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
@@ -1089,7 +1089,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
@@ -1127,7 +1127,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/page.tsx",
@@ -1165,7 +1165,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/page.tsx",
@@ -1218,7 +1218,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/page.tsx",
@@ -1257,7 +1257,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
@@ -1296,7 +1296,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
@@ -1335,7 +1335,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
@@ -1374,7 +1374,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
@@ -1413,7 +1413,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
@@ -1451,7 +1451,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
@@ -1490,7 +1490,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
@@ -1528,7 +1528,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListServer.ts",
@@ -1575,7 +1575,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
@@ -1613,7 +1613,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1651,7 +1651,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1689,7 +1689,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1727,7 +1727,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1766,7 +1766,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1804,7 +1804,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1856,7 +1856,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1909,7 +1909,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -1956,7 +1956,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -2003,7 +2003,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
@@ -2041,7 +2041,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx",
@@ -2080,7 +2080,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx",
@@ -2118,7 +2118,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx",
@@ -2157,7 +2157,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
@@ -2195,7 +2195,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
@@ -2248,7 +2248,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
@@ -2287,7 +2287,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
@@ -2326,7 +2326,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
@@ -2364,7 +2364,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
@@ -2403,7 +2403,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
@@ -2442,7 +2442,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
@@ -2480,7 +2480,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
@@ -2518,7 +2518,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
@@ -2578,7 +2578,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
@@ -2631,7 +2631,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/[id]/page.tsx",
@@ -2691,7 +2691,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/board/CommunityBoardClient.tsx",
@@ -2729,7 +2729,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/board/CommunityBoardClient.tsx",
@@ -2778,7 +2778,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/board/CommunityBoardClient.tsx",
@@ -2816,7 +2816,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
@@ -2854,7 +2854,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
@@ -2907,7 +2907,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
@@ -2967,7 +2967,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
@@ -3017,7 +3017,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
@@ -3066,7 +3066,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
@@ -3115,7 +3115,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
@@ -3164,7 +3164,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
@@ -3202,7 +3202,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/BoardDetailServer.ts",
@@ -3251,7 +3251,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/page.tsx",
@@ -3300,7 +3300,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/page.tsx",
@@ -3349,7 +3349,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/detail/page.tsx",
@@ -3388,7 +3388,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
@@ -3427,7 +3427,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
@@ -3476,7 +3476,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
@@ -3525,7 +3525,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
@@ -3564,7 +3564,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
@@ -3602,7 +3602,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
@@ -3640,7 +3640,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
@@ -3678,7 +3678,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
@@ -3728,7 +3728,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
@@ -3778,7 +3778,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -3816,7 +3816,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -3866,7 +3866,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -3918,7 +3918,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -3968,7 +3968,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4004,7 +4004,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4054,7 +4054,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4103,7 +4103,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4150,7 +4150,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4197,7 +4197,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4244,7 +4244,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4291,7 +4291,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4340,7 +4340,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4387,7 +4387,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4437,7 +4437,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
@@ -4475,7 +4475,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListServer.ts",
@@ -4514,7 +4514,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/components/BoardListFilters.tsx",
@@ -4574,7 +4574,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/components/BoardTemplates.tsx",
@@ -4623,7 +4623,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
@@ -4670,7 +4670,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
@@ -4717,7 +4717,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
@@ -4764,7 +4764,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
@@ -4811,7 +4811,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
@@ -4860,7 +4860,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
@@ -4907,7 +4907,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
@@ -4946,7 +4946,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
@@ -4996,7 +4996,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
@@ -5034,7 +5034,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/components/InsightBanner.tsx",
@@ -5072,7 +5072,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/error.tsx",
@@ -5110,7 +5110,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/error.tsx",
@@ -5149,7 +5149,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/error.tsx",
@@ -5199,7 +5199,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/error.tsx",
@@ -5259,7 +5259,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5309,7 +5309,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5347,7 +5347,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5399,7 +5399,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5452,7 +5452,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5501,7 +5501,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5548,7 +5548,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5597,7 +5597,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5644,7 +5644,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
@@ -5683,7 +5683,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
@@ -5736,7 +5736,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
@@ -5783,7 +5783,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
@@ -5830,7 +5830,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
@@ -5877,7 +5877,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
@@ -5916,7 +5916,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -5955,7 +5955,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -6008,7 +6008,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -6055,7 +6055,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -6102,7 +6102,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -6149,7 +6149,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -6188,7 +6188,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
@@ -6227,7 +6227,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
@@ -6280,7 +6280,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
@@ -6327,7 +6327,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
@@ -6374,7 +6374,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
@@ -6421,7 +6421,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
@@ -6460,7 +6460,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6499,7 +6499,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6552,7 +6552,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6599,7 +6599,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6646,7 +6646,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6693,7 +6693,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6740,7 +6740,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6787,7 +6787,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6834,7 +6834,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -6873,7 +6873,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
@@ -6912,7 +6912,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
@@ -6959,7 +6959,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/audit/page.tsx",
@@ -6998,7 +6998,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -7051,7 +7051,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -7098,7 +7098,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -7145,7 +7145,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -7192,7 +7192,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -7239,7 +7239,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -7286,7 +7286,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -7333,7 +7333,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -7372,7 +7372,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
@@ -7411,7 +7411,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
@@ -7463,7 +7463,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
@@ -7516,7 +7516,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
@@ -7563,7 +7563,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
@@ -7610,7 +7610,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
@@ -7649,7 +7649,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
@@ -7688,7 +7688,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
@@ -7726,7 +7726,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
@@ -7778,7 +7778,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
@@ -7831,7 +7831,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
@@ -7878,7 +7878,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
@@ -7925,7 +7925,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
@@ -7972,7 +7972,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/items/page.tsx",
@@ -8025,7 +8025,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/manage/[id]/page.tsx",
@@ -8063,7 +8063,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx",
@@ -8101,7 +8101,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx",
@@ -8140,7 +8140,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/manage/SurveyManageClient.tsx",
@@ -8178,7 +8178,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/manage/SurveyManageClient.tsx",
@@ -8216,7 +8216,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/page.tsx",
@@ -8254,7 +8254,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/page.tsx",
@@ -8293,7 +8293,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
@@ -8346,7 +8346,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
@@ -8393,7 +8393,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
@@ -8440,7 +8440,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
@@ -8487,7 +8487,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
@@ -8534,7 +8534,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/questions/page.tsx",
@@ -8581,7 +8581,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/respondents/page.tsx",
@@ -8628,7 +8628,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/templates/page.tsx",
@@ -8667,7 +8667,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -8719,7 +8719,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -8772,7 +8772,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -8819,7 +8819,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -8866,7 +8866,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -8913,7 +8913,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -8960,7 +8960,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
@@ -9017,7 +9017,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/page.tsx",
@@ -9056,7 +9056,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/codes/administ/AdministCodeClient.tsx",
@@ -9113,7 +9113,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/codes/administ/page.tsx",
@@ -9170,7 +9170,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/codes/institution/page.tsx",
@@ -9208,7 +9208,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/codes/CommonCodeCodesClient.tsx",
@@ -9247,7 +9247,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
@@ -9299,7 +9299,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx",
@@ -9352,7 +9352,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx",
@@ -9399,7 +9399,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx",
@@ -9446,7 +9446,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx",
@@ -9493,7 +9493,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/page.tsx",
@@ -9542,7 +9542,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/page.tsx",
@@ -9581,7 +9581,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
@@ -9620,7 +9620,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
@@ -9673,7 +9673,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
@@ -9720,7 +9720,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
@@ -9767,7 +9767,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
@@ -9814,7 +9814,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
@@ -9853,7 +9853,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/ism/IsmClient.tsx",
@@ -9891,7 +9891,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
@@ -9930,7 +9930,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
@@ -9983,7 +9983,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
@@ -10033,7 +10033,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
@@ -10083,7 +10083,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
@@ -10133,7 +10133,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
@@ -10171,7 +10171,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx",
@@ -10210,7 +10210,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
@@ -10249,7 +10249,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
@@ -10302,7 +10302,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
@@ -10349,7 +10349,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
@@ -10396,7 +10396,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
@@ -10446,7 +10446,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
@@ -10496,7 +10496,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
@@ -10535,7 +10535,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/policies/PolicyAdminClient.tsx",
@@ -10592,7 +10592,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/programs/page.tsx",
@@ -10639,7 +10639,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/programs/page.tsx",
@@ -10678,7 +10678,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
@@ -10725,7 +10725,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
@@ -10772,7 +10772,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
@@ -10822,7 +10822,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
@@ -10860,7 +10860,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -10898,7 +10898,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -10936,7 +10936,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -10975,7 +10975,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11013,7 +11013,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11052,7 +11052,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11091,7 +11091,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11144,7 +11144,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11191,7 +11191,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11238,7 +11238,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11285,7 +11285,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -11324,7 +11324,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
@@ -11363,7 +11363,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
@@ -11416,7 +11416,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
@@ -11463,7 +11463,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
@@ -11510,7 +11510,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
@@ -11557,7 +11557,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
@@ -11596,7 +11596,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
@@ -11635,7 +11635,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
@@ -11688,7 +11688,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
@@ -11735,7 +11735,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
@@ -11782,7 +11782,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
@@ -11829,7 +11829,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
@@ -11868,7 +11868,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
@@ -11906,7 +11906,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
@@ -11945,7 +11945,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
@@ -11984,7 +11984,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
@@ -12031,7 +12031,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
@@ -12069,7 +12069,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/admin/workflow/WorkflowClient.tsx",
@@ -12107,7 +12107,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/approvals/ApprovalHubClient.tsx",
@@ -12147,7 +12147,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/dashboard/BannerSlider.tsx",
@@ -12187,7 +12187,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
@@ -12226,7 +12226,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
@@ -12266,7 +12266,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
@@ -12316,7 +12316,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
@@ -12355,7 +12355,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/footer.tsx",
@@ -12394,7 +12394,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/header.tsx",
@@ -12433,7 +12433,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/header.tsx",
@@ -12472,7 +12472,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/header.tsx",
@@ -12511,7 +12511,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/header.tsx",
@@ -12550,7 +12550,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/header.tsx",
@@ -12590,7 +12590,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/header.tsx",
@@ -12629,7 +12629,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/header.tsx",
@@ -12669,7 +12669,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/NavItem.tsx",
@@ -12708,7 +12708,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/layout/sidebar.tsx",
@@ -12748,7 +12748,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/patterns/keyword-filter.tsx",
@@ -12788,7 +12788,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/app-notification-drawer.tsx",
@@ -12828,7 +12828,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/code-picker.tsx",
@@ -12868,7 +12868,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/global-command-center.tsx",
@@ -12907,7 +12907,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/global-command-center.tsx",
@@ -12958,7 +12958,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/session-expiry-warning.tsx",
@@ -13009,7 +13009,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
@@ -13049,7 +13049,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/standard-data-table.tsx",
@@ -13100,7 +13100,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/standard-error-boundary.tsx",
@@ -13140,7 +13140,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/standard-form.tsx",
@@ -13180,7 +13180,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/standard-search-filter.tsx",
@@ -13220,7 +13220,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/components/ui/user-picker.tsx",
@@ -13258,7 +13258,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
@@ -13296,7 +13296,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
@@ -13349,7 +13349,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
@@ -13388,7 +13388,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/cop/cmy/selectCommunityList/CommunityHubClient.tsx",
@@ -13427,7 +13427,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
@@ -13466,7 +13466,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/dashboard-data.ts",
@@ -13505,7 +13505,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/error.tsx",
@@ -13544,7 +13544,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/error.tsx",
@@ -13583,7 +13583,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/help/HelpClient.tsx",
@@ -13634,7 +13634,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/help/policies/[type]/page.tsx",
@@ -13673,7 +13673,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/layout.tsx",
@@ -13712,7 +13712,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/login/LoginClient.tsx",
@@ -13751,7 +13751,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/login/LoginClient.tsx",
@@ -13790,7 +13790,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/login/LoginClient.tsx",
@@ -13837,7 +13837,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/login/LoginClient.tsx",
@@ -13886,7 +13886,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/login/LoginClient.tsx",
@@ -13925,7 +13925,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/not-found.tsx",
@@ -13972,7 +13972,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/page.tsx",
@@ -14021,7 +14021,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/search/SearchClient.tsx",
@@ -14081,7 +14081,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/search/SearchClient.tsx",
@@ -14120,7 +14120,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/search/SearchClient.tsx",
@@ -14169,7 +14169,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/search/SearchResultsSlot.tsx",
@@ -14207,7 +14207,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx",
@@ -14245,7 +14245,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx",
@@ -14298,7 +14298,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/[id]/page.tsx",
@@ -14336,7 +14336,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.tsx",
@@ -14375,7 +14375,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.tsx",
@@ -14413,7 +14413,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/insertDeptJob/page.tsx",
@@ -14451,7 +14451,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/insertDeptJob/page.tsx",
@@ -14504,7 +14504,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/selectDeptJobDetail/[id]/page.tsx",
@@ -14543,7 +14543,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/selectDeptJobDetail/[id]/page.tsx",
@@ -14582,7 +14582,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/selectDeptJobDetail/[id]/page.tsx",
@@ -14620,7 +14620,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/selectDeptJobList/page.tsx",
@@ -14658,7 +14658,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/selectDeptJobList/page.tsx",
@@ -14711,7 +14711,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/[id]/page.tsx",
@@ -14749,7 +14749,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/[id]/SurveyDetailClient.tsx",
@@ -14802,7 +14802,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/response/[id]/page.tsx",
@@ -14841,7 +14841,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/response/SurveyResponseClient.tsx",
@@ -14879,7 +14879,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/response/SurveyResponseClient.tsx",
@@ -14918,7 +14918,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
@@ -14956,7 +14956,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
@@ -15006,7 +15006,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
@@ -15055,7 +15055,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
@@ -15094,7 +15094,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/survey/SurveyClient.tsx",
@@ -15133,7 +15133,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/UnifiedDashboardClient.tsx",
@@ -15172,7 +15172,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/UnifiedDashboardClient.tsx",
@@ -15212,7 +15212,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/UnifiedDashboardClient.tsx",
@@ -15251,7 +15251,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/app/UnifiedDashboardClient.tsx",
@@ -15291,7 +15291,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/admin/security/AuthorForm.tsx",
@@ -15331,7 +15331,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/admin/system/NetworkForm.tsx",
@@ -15371,7 +15371,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/admin/system/ProgramForm.tsx",
@@ -15411,7 +15411,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/admin/user/DepartmentForm.tsx",
@@ -15451,7 +15451,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/admin/user/UserManageForm.tsx",
@@ -15491,7 +15491,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/business/deptJob/DeptJobForm.tsx",
@@ -15531,7 +15531,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/business/report/ReportCreateForm.tsx",
@@ -15571,7 +15571,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/business/schedule/ScheduleCreateForm.tsx",
@@ -15610,7 +15610,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/common/PagePagination.tsx",
@@ -15650,7 +15650,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/features/satisfaction/SatisfactionSection.tsx",
@@ -15690,7 +15690,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/components/ui/hub/HubListCard.tsx",
@@ -15728,7 +15728,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/api/client.ts",
@@ -15779,7 +15779,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/api/client.ts",
@@ -15819,7 +15819,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/api/client.ts",
@@ -15870,7 +15870,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/api/client.ts",
@@ -15923,7 +15923,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/hooks/use-search-state.ts",
@@ -15977,7 +15977,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/hooks/use-search-state.ts",
@@ -16025,7 +16025,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/hooks/use-search-state.ts",
@@ -16076,7 +16076,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/hooks/use-search-state.ts",
@@ -16127,7 +16127,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/hooks/use-search-state.ts",
@@ -16175,7 +16175,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/hooks/use-search-state.ts",
@@ -16215,7 +16215,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/navigation/active-menu.ts",
@@ -16253,7 +16253,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/navigation/active-menu.ts",
@@ -16304,7 +16304,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/navigation/active-menu.ts",
@@ -16344,7 +16344,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/navigation/full-result-download.ts",
@@ -16382,7 +16382,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/navigation/full-result-download.ts",
@@ -16433,7 +16433,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/lib/navigation/full-result-download.ts",
@@ -16472,7 +16472,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/proxy.ts",
@@ -16511,7 +16511,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/proxy.ts",
@@ -16558,7 +16558,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/proxy.ts",
@@ -16607,7 +16607,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/proxy.ts",
@@ -16657,7 +16657,7 @@
         "status": "unverified",
         "decisionSafe": false,
         "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
+        "reviewBy": "2026-12-31"
       },
       "evidence": {
         "source": "frontend/src/proxy.ts",

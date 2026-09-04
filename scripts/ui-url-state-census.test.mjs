@@ -29,9 +29,44 @@ function refreshHash(census) {
   })).digest('hex');
 }
 
+/*
+  [2026-09-04 신설] 만료 60일 전 사전 경고.
+
+  ⚠ 이 게이트는 **사전 신호가 0 인 절벽**이었다. 커밋본 370 record 의 reviewBy 가 전부 같은
+    날짜라 하루 만에 전량이 넘어가는데, 이 파일에는 경고 경로가 없었다.
+
+  형제 게이트인 ui-route-capabilities-contract.test.mjs:51-63 은 같은 패턴의 경고를 이미 갖고
+  있다. 그러나 그 경고는 `[ui-route-capabilities]` 라벨로 **자기 121건만 센다** — 같은 날짜에
+  3배 큰 370건이 있다는 사실을 말하지 않는다. 두 게이트가 같은 required job(secret-scan)의
+  같은 로그 스트림에 찍히므로, 한쪽만 경고하면 읽는 사람이 규모를 과소평가한다.
+
+  red 는 만료 시점부터이고 이 경고는 red 를 만들지 않는다(H2 — 신호를 늘리되 지우지 않는다).
+*/
+function warnOnUpcomingExpiry(census) {
+  const nowMs = Date.now();
+  const horizonMs = nowMs + 60 * 24 * 60 * 60 * 1000;
+  const expiring = (census.records ?? [])
+    .map((record) => record?.review?.reviewBy)
+    .filter((reviewBy) => typeof reviewBy === 'string')
+    .filter((reviewBy) => {
+      const deadline = Date.parse(`${reviewBy}T23:59:59.999Z`);
+      return deadline >= nowMs && deadline <= horizonMs;
+    });
+
+  if (expiring.length === 0) return;
+  const dates = [...new Set(expiring)].sort();
+  console.warn(
+    `⚠ [ui-url-state] review 기한 60일 이내 만료 예정 ${expiring.length}건 (기한: ${dates.join(', ')}) — `
+    + '만료 시 required secret-scan 이 red 가 되어 문서-only PR 까지 막힙니다. '
+    + '기한 연장을 사유와 함께 커밋하세요(현재 스키마는 "재검토 완료" 를 표현하지 못합니다).',
+  );
+}
+
 test('current URL-state census exactly covers critical route and URL producer populations', () => {
   const actual = buildUrlStateCensus({ repoRoot });
   const expected = JSON.parse(readFileSync(manifestPath, 'utf8'));
+
+  warnOnUpcomingExpiry(expected);
 
   assert.deepEqual(validateUrlStateCensus(actual, { repoRoot }), []);
   assert.deepEqual(validateUrlStateCensus(expected, { repoRoot }), []);
@@ -78,6 +113,47 @@ test('an expired review horizon is a reproducible red under the real-clock valid
     /review horizon expired/,
   );
   assert.deepEqual(validateUrlStateCensus(census, { repoRoot, nowMs: afterDeadline - 2 }), []);
+});
+
+/*
+  [2026-09-04 신설] 만료 검사를 무력화하는 비실재 날짜를 막는다.
+
+  ⚠ 종전에는 reviewBy 를 정규식으로만 검사해 `2026-13-45` 같은 **존재하지 않는 날짜가 통과**했다.
+    그 값은 `Date.parse` 가 NaN 이고 `NaN < nowMs` 는 언제나 false 라, 형식 검사도 만료 검사도
+    빠져나간다 — 오타 한 번으로 그 record 는 **영원히 만료되지 않는다.**
+
+    형제 게이트(ui-route-capabilities-contract.mjs:546-550)는 같은 자리에 왕복 검증을 이미 갖고
+    있었다. 같은 required job 에서 도는 두 게이트 중 한쪽만 구멍이 있던 셈이다.
+*/
+test('a non-existent reviewBy date cannot silently disable the expiry check', () => {
+  const census = buildUrlStateCensus({ repoRoot });
+  const far = Date.parse('2099-01-01T00:00:00.000Z');
+
+  for (const bogus of ['2026-13-45', '2026-02-30', '2026-00-10', '2026-01-32']) {
+    const tampered = structuredClone(census);
+    tampered.records[0].review.reviewBy = bogus;
+
+    assert.match(
+      validateUrlStateCensus(tampered, { repoRoot, nowMs: far }).join('\n'),
+      /owner and bounded reviewBy are required/,
+      `${bogus} 가 형식 검사를 통과하면 만료 검사가 영원히 발화하지 않는다`,
+    );
+  }
+
+  // 실재하는 날짜는 그대로 통과해야 한다 — 위 검사가 과잉이면 정상 갱신이 막힌다.
+  const valid = structuredClone(census);
+  valid.records[0].review.reviewBy = '2026-02-29'; // 2026 은 평년이 아니라 윤년이 아니다 → 거부돼야 한다
+  assert.match(
+    validateUrlStateCensus(valid, { repoRoot, nowMs: far }).join('\n'),
+    /owner and bounded reviewBy are required/,
+  );
+
+  const leap = structuredClone(census);
+  leap.records[0].review.reviewBy = '2028-02-29'; // 2028 은 윤년 → 통과해야 한다
+  assert.ok(
+    !validateUrlStateCensus(leap, { repoRoot, nowMs: Date.parse('2028-02-01T00:00:00.000Z') })
+      .some((error) => error.includes('owner and bounded reviewBy are required')),
+  );
 });
 
 test('implemented login destination controls are recorded without claiming global policy approval', () => {

@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "0f4739e48dba36d592fb8422312946342381724cf9d10557d41137f179de6eb1"
+    "sha256": "29a2342f1bffc1b14e0aab451e8a8741d3ed350cf220bc822e48ecde4239e486"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -82,7 +82,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -100,7 +100,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -118,7 +118,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -136,7 +136,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -154,7 +154,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -172,7 +172,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -190,7 +190,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -208,7 +208,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -226,7 +226,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -244,7 +244,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -262,7 +262,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -280,7 +280,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -298,7 +298,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -316,7 +316,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -334,7 +334,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -352,7 +352,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -370,7 +370,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -388,7 +388,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -406,7 +406,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -424,7 +424,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -442,7 +442,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -460,7 +460,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -478,7 +478,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -496,7 +496,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -514,7 +514,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -532,7 +532,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -550,7 +550,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -568,7 +568,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -586,7 +586,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -604,7 +604,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -622,7 +622,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -640,7 +640,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -658,7 +658,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -676,7 +676,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -694,7 +694,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -712,7 +712,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -730,7 +730,7 @@
       "capabilityReview": "verified",
       "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": {
           "reviewer": "lkindo (DEC-OPS-013)",
@@ -776,7 +776,7 @@
       "capabilityReview": "verified",
       "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": {
           "reviewer": "lkindo (DEC-OPS-013)",
@@ -822,7 +822,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -840,7 +840,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -858,7 +858,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -876,7 +876,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -894,7 +894,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -912,7 +912,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -930,7 +930,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -948,7 +948,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -966,7 +966,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -984,7 +984,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1002,7 +1002,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1020,7 +1020,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1038,7 +1038,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1056,7 +1056,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1074,7 +1074,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1092,7 +1092,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1110,7 +1110,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1128,7 +1128,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1146,7 +1146,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1164,7 +1164,7 @@
       "capabilityReview": "verified",
       "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": {
           "reviewer": "lkindo (DEC-OPS-013)",
@@ -1210,7 +1210,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1228,7 +1228,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1246,7 +1246,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1264,7 +1264,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1282,7 +1282,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1300,7 +1300,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1318,7 +1318,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1336,7 +1336,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1354,7 +1354,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1372,7 +1372,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1390,7 +1390,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1408,7 +1408,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1426,7 +1426,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1444,7 +1444,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1462,7 +1462,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1480,7 +1480,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1498,7 +1498,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1516,7 +1516,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1534,7 +1534,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1552,7 +1552,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1570,7 +1570,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1588,7 +1588,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1606,7 +1606,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1624,7 +1624,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1642,7 +1642,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1660,7 +1660,7 @@
       "capabilityReview": "verified",
       "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": {
           "reviewer": "lkindo (DEC-OPS-013)",
@@ -1706,7 +1706,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1724,7 +1724,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1742,7 +1742,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1760,7 +1760,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1778,7 +1778,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1796,7 +1796,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1814,7 +1814,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1832,7 +1832,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1850,7 +1850,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1868,7 +1868,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1886,7 +1886,7 @@
       "capabilityReview": "verified",
       "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": {
           "reviewer": "lkindo (DEC-OPS-013)",
@@ -1932,7 +1932,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1950,7 +1950,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -1968,7 +1968,7 @@
       "capabilityReview": "verified",
       "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": {
           "reviewer": "lkindo (DEC-OPS-013)",
@@ -2014,7 +2014,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2032,7 +2032,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2050,7 +2050,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2068,7 +2068,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2086,7 +2086,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2104,7 +2104,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2122,7 +2122,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2140,7 +2140,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2158,7 +2158,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2176,7 +2176,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2194,7 +2194,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2212,7 +2212,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2230,7 +2230,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2248,7 +2248,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2266,7 +2266,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2284,7 +2284,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2302,7 +2302,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2320,7 +2320,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2338,7 +2338,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2356,7 +2356,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2374,7 +2374,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
@@ -2392,7 +2392,7 @@
       "capabilityReview": "unverified",
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-30",
       "approvals": {
         "domain": null,
         "productIa": null,
