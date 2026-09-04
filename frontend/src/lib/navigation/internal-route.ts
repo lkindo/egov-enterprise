@@ -76,7 +76,36 @@ export function normalizeInternalRoute(rawRoute?: string | null): string | null 
  * Preserve the existing `modernRoute || chkURL` precedence as one auditable
  * decision. An invalid, non-empty modernRoute must not silently fall through to
  * a different legacy destination.
+ *
+ * [2026-09-04 · PD-UX-002 Q3] The `chkURL` fallback is now restricted to legacy
+ * `.do` endpoints — the only shape it was ever designed for.
+ *
+ * `chkURL` is not a screen route. It is `tb_prgrm_lst.url` under an alias
+ * (`MenuRepositoryImpl` selects `program.url.as("chkURL")`), and that column holds
+ * **authorization path patterns**, not navigation destinations. Live measurement
+ * (2026-09-04, 18 rows) found every value to be an API pattern such as
+ * `/api/v1/admin/**`, `/actuator/**` or `/api/v1/admin/system/users/{userId}`.
+ *
+ * Those pass `normalizeInternalRoute` — it only rejects foreign origins and path
+ * ambiguity, and an absolute API path is neither. So a menu with an empty
+ * `modernRoute` and a linked program would have navigated the user to an API
+ * pattern (verified: the resolver returned `/api/v1/admin/**` verbatim).
+ *
+ * That path is not currently reachable — all 14 menus with a null `modern_route`
+ * carry the `dir` placeholder, which this module rejects outright — so this is a
+ * latent hazard rather than a live defect. Narrowing it costs nothing: no test
+ * asserts an absolute-path `chkURL` is used as a destination, and the legacy `.do`
+ * behaviour the tests do pin is preserved.
  */
 export function resolveMenuInternalRoute(source: MenuRouteSource): string | null {
-  return normalizeInternalRoute(source.modernRoute || source.chkURL);
+  if (source.modernRoute) return normalizeInternalRoute(source.modernRoute);
+  if (!source.chkURL) return null;
+
+  const pathEnd = source.chkURL.search(/[?#]/);
+  const rawPath = pathEnd === -1 ? source.chkURL : source.chkURL.slice(0, pathEnd);
+  // Accept both `legacy/menu.do` and `/legacy/menu.do`; reject anything that is
+  // not a legacy endpoint — API patterns and wildcards land here.
+  if (!LEGACY_DOT_DO_PATH.test(rawPath.replace(/^\//, ''))) return null;
+
+  return normalizeInternalRoute(source.chkURL);
 }

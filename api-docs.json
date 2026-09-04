@@ -35221,10 +35221,11 @@
           },
           "modernRoute": {
             "type": "string",
-            "description": "현대화된 라우트 경로 (Next.js)",
-            "example": "/admin/system",
+            "description": "현대화된 라우트 경로 (Next.js). 쿼리 키는 tab·bbsId 만 허용한다.",
+            "example": "/admin/survey/hub?tab=manage",
             "maxLength": 500,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$"
           },
           "crtrId": {
             "type": "string",
