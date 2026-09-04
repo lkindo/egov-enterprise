@@ -97,3 +97,91 @@ test('결정을 되돌리는 편집은 재현 가능한 red 다', () => {
   const exportWithoutKeyword = 'const query = {};\nnavigateToDownload(operation, query);';
   assert.equal(/query\.searchKeyword\s*=\s*searchKeyword/u.test(exportWithoutKeyword), false);
 });
+
+/*
+  [2026-09-04] PD-UX-002 Q2 — 게시판 목록의 copy-all 캐리어 제거를 고정한다.
+
+  Q1 이 "URL 에 실리는 검색어를 전부 유지" 로 결정되면서, 이 화면의
+  `searchCnd=2`(작성자) + `searchWrd` 조합은 URL 에 사람 이름을 싣는 것이 승인된 상태가 됐다.
+  그 상태에서 `new URLSearchParams(searchParams.toString())` 관용구는 **모르는 파라미터까지
+  조회할 때마다 재발행하는 증폭기**다. allowlist 재조립으로 바꿨고, 되돌아가면 red 다.
+
+  `bbsId` 를 함께 고정하는 이유: 그 값은 화면이 만든 것이 아니라 DB 메뉴(`modern_route`)가
+  지목하는 라우팅 키다. allowlist 에서 빠지면 목록이 기본 게시판으로 튀고 사이드바 활성 판정이
+  흔들리는데, 조회는 여전히 성공하므로 **조용히 틀린다**.
+*/
+const BOARD_LIST_CLIENT = 'frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx';
+
+/**
+ * 주석을 지우고 실행 코드만 남긴다.
+ *
+ * 줄 접두사 필터로는 부족하다 — 이 저장소의 블록 주석은 본문 줄이 `*` 로 시작하지 않는 형태가
+ * 흔하고(`/* ... 여러 줄 ... *\/`), 그 본문이 종전 관용구를 **그대로 인용**한다.
+ * 그래서 블록·라인 주석을 실제로 제거한다. 문자열 안의 `//` 는 이 파일이 검사하는 패턴에
+ * 등장하지 않으므로 단순 제거로 충분하다.
+ */
+function executableLines(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//gu, '')
+    .split(/\r?\n/u)
+    .map((line) => line.replace(/\/\/.*$/u, ''))
+    .join('\n');
+}
+
+test('게시판 목록 조회는 들어온 쿼리를 통째로 복사하지 않는다', () => {
+  const source = read(BOARD_LIST_CLIENT);
+  const code = executableLines(source);
+
+  // vacuity 가드 — 이 화면이 여전히 URL 을 쓰는지부터 확인한다.
+  assert.match(code, /const handleSearch/u, `${BOARD_LIST_CLIENT} 의 조회 핸들러가 사라졌습니다 — 계약 전제가 깨졌습니다.`);
+  assert.match(code, /const buildListParams/u, 'allowlist 헬퍼가 사라졌습니다 — 네 곳이 각자 조립하던 상태로 돌아갔을 수 있습니다.');
+
+  assert.equal(
+    /new URLSearchParams\(\s*searchParams(\.toString\(\))?\s*\)/u.test(code),
+    false,
+    'copy-all 관용구가 돌아왔습니다. 들어온 쿼리를 이름을 묻지 않고 재발행하면 URL 에 실린 사람 이름이 이동마다 보존됩니다(PD-UX-002 Q2).',
+  );
+  assert.match(code, /new URLSearchParams\(\)/u, 'allowlist 재조립(빈 URLSearchParams)이 사라졌습니다.');
+});
+
+test('게시판 목록 allowlist 는 이 라우트가 읽는 키 전수를 담는다', () => {
+  const code = executableLines(read(BOARD_LIST_CLIENT));
+  const declared = code.match(/const LIST_PARAM_KEYS = \[([^\]]*)\]/u);
+  assert.ok(declared, 'LIST_PARAM_KEYS 선언이 사라졌습니다 — allowlist 의 단일 원본입니다.');
+
+  const keys = declared[1].split(',').map((entry) => entry.trim().replace(/^'|'$/gu, '')).filter(Boolean);
+
+  // 클라이언트(`searchParams.get`)와 서버 컴포넌트가 읽는 키가 전부 들어 있어야 한다.
+  // 빠진 키는 조회·페이지 이동 때 조용히 사라진다 — 화면은 성공하고 조건만 없어진다.
+  for (const required of ['bbsId', 'searchWrd', 'searchCnd', 'orderBy', 'startDate', 'endDate', 'page']) {
+    assert.ok(
+      keys.includes(required),
+      `allowlist 에서 '${required}' 가 빠졌습니다. 이 라우트가 읽는 키라, 빠지면 조회·이동 시 조용히 사라집니다.`
+      + (required === 'bbsId'
+        ? ' 특히 bbsId 는 DB 메뉴(modern_route)가 지목하는 라우팅 키라 목록이 기본 게시판으로 튀고 사이드바 활성 판정도 흔들립니다.'
+        : ''),
+    );
+  }
+
+  // 조회는 화면 상태의 bbsId 를 명시적으로 실어야 한다(URL 에 없을 때 initialParams 로 떨어지는 경로).
+  assert.match(code, /buildListParams\(\{[\s\S]{0,400}?bbsId/u, '조회가 bbsId 를 명시적으로 싣지 않습니다.');
+});
+
+test('게시판 목록의 조건 변경은 히스토리를 쌓지 않는다', () => {
+  const code = executableLines(read(BOARD_LIST_CLIENT));
+
+  // 조립된 쿼리를 push 로 내보내는 형태만 금지한다.
+  // 게시판 전환(`?bbsId=${bbsId}` 리터럴)은 다른 게시판으로 가는 내비게이션이라 push 가 정당하고,
+  // allowlist 밖 값을 나를 수도 없으므로 이 계약의 대상이 아니다.
+  assert.equal(
+    /router\.push\(`\$\{pathname\}\?\$\{params\.toString\(\)\}`\)/u.test(code),
+    false,
+    '조건 변경이 router.push 로 되돌아갔습니다. 조작마다 히스토리 항목이 쌓이고 Q1 결정으로 그 항목마다 사람 이름이 남습니다.',
+  );
+
+  const replaces = code.match(/router\.replace\(/gu) ?? [];
+  assert.ok(
+    replaces.length >= 4,
+    `조건 변경 경로가 replace 를 쓰지 않습니다(현재 ${replaces.length}곳). 조회·초기화·페이지·이전달·다음달이 대상입니다.`,
+  );
+});

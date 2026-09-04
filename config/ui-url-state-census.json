@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "2df376be0f175fcfc99828279690388009e15ac1722e916090ddea63b95a5f59"
+    "inventoryHash": "affd3da29cb8377443282922add8a8344cf43d04649b50523d647a76ee52d304"
   },
   "summary": {
     "sourceFileCount": 514,
-    "records": 375,
-    "syntaxOccurrences": 447,
-    "ambiguousRecords": 356,
-    "unverifiedRecords": 375,
+    "records": 367,
+    "syntaxOccurrences": 432,
+    "ambiguousRecords": 347,
+    "unverifiedRecords": 367,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -41,16 +41,16 @@
       "config-redirect": 14,
       "dynamic-segment": 11,
       "form-producer": 47,
-      "navigation-producer": 156,
+      "navigation-producer": 157,
       "page-redirect": 5,
       "query-builder": 23,
-      "query-consumer": 55,
-      "query-producer": 56,
+      "query-consumer": 56,
+      "query-producer": 46,
       "request-query-producer": 1,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 367,
+      "navigation": 359,
       "request-telemetry": 8
     }
   },
@@ -3776,10 +3776,60 @@
       }
     },
     {
-      "id": "URL-0B79B9DEF6EB54",
+      "id": "URL-A59A4FD1C9B747",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "router.push",
+      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards/select-board-list",
+      "targetCandidate": "[computed]?bbsId=[computed]",
+      "stateItems": [
+        {
+          "name": "bbsId",
+          "dataClass": "unverified",
+          "recommendation": "deny",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "record-locator-name-signal"
+          ]
+        }
+      ],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "[computed]",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-EB6D68F9C4A76B",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.replace",
       "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "consumerFile": null,
@@ -3828,10 +3878,10 @@
       }
     },
     {
-      "id": "URL-A59A4FD1C9B747",
+      "id": "URL-76E158EEABD9BC",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
+      "operation": "router.replace",
       "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "consumerFile": null,
@@ -3874,22 +3924,58 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
       }
     },
     {
-      "id": "URL-02F11D7C301C7D",
+      "id": "URL-7AD7D398001A6B",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "construct-query",
       "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "consumerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "routePattern": "/admin/community/boards/select-board-list",
       "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
+        "detector": "url-search-params-constructor",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-22DA07E23978EF",
+      "surface": "navigation",
+      "kind": "query-consumer",
+      "operation": "get",
+      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
+      "producerFile": null,
+      "consumerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
+      "routePattern": "/admin/community/boards/select-board-list",
+      "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<unknown-source-query>",
+          "name": "<computed>",
           "dataClass": "unverified",
           "recommendation": "deny-until-reviewed",
           "approvalStatus": "unverified",
@@ -3899,14 +3985,11 @@
           ]
         }
       ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
+      "currentBehavior": "URL search parameter is consumed with get().",
+      "riskSignals": [],
       "ambiguityReasons": [
-        "unknown-source-query-copied"
+        "computed-query-key",
+        "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -3926,8 +4009,8 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-params-constructor",
-        "occurrenceCount": 4
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
       }
     },
     {
@@ -4264,10 +4347,10 @@
       }
     },
     {
-      "id": "URL-F6CCC7AA138BDA",
+      "id": "URL-E753253E7633DA",
       "surface": "navigation",
       "kind": "query-producer",
-      "operation": "delete",
+      "operation": "set",
       "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
       "consumerFile": null,
@@ -4275,444 +4358,20 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "endDate",
+          "name": "<computed>",
           "dataClass": "unverified",
           "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-518BF297CDBB7E",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "orderBy",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-F2EB5BBD1D4737",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "searchCnd",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-D43BEB8163DF4D",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "searchWrd",
-          "dataClass": "unverified",
-          "recommendation": "deny",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
           "riskSignals": [
-            "free-text-name-signal"
-          ]
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-FBD6244FF83977",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "startDate",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-95EE7170785216",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "endDate",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-146B372025486D",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "orderBy",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-82F1C08904B10E",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "page",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 2
-      }
-    },
-    {
-      "id": "URL-13FDC2E28AB70A",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "searchCnd",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-CE23F8A1991AC9",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "searchWrd",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "free-text-name-signal"
+            "computed-or-aggregate-state"
           ]
         }
       ],
       "currentBehavior": "URL search parameter is mutated with set().",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-query-key",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -4735,53 +4394,6 @@
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "url-search-param-method",
         "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-209ADDD70FA9C9",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "startDate",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 3
       }
     },
     {
