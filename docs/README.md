@@ -30,6 +30,8 @@
 
 [information-architecture.md](01-product/information-architecture.md) — ADR-0004의 hybrid 잠정 방향, 119 route disposition, 로그 URL allowlist와 별도 전역 URL 후속 결정, 연구·최종 승인 계약(`PD-UX-001/002`는 계속 blocked-input).
 
+[url-state-classification-draft.md](01-product/url-state-classification-draft.md) — URL-state census 377 record 의 부류별 분류 초안(`PD-UX-002` 승인 회의 입력물이며 승인이 아니다). owner 결정 5문항·권고 3분류·census 가 상태를 못 읽은 56건.
+
 ## 02-architecture — 설계
 
 | 문서 | 내용 |
