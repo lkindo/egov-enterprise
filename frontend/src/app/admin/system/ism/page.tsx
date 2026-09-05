@@ -7,7 +7,8 @@ import { SITE_IDENTITY } from '@/config/site-identity';
 
 export const metadata = {
   title: `약식결재 및 승인 관리 | ${SITE_IDENTITY.frameworkName}`,
-  description: '시스템에서 발생하는 약식 결재 요청을 승인 또는 반려 처리합니다',
+  // [2026-09-06 DEC-OPS-039] 실제 조회는 결재자 본인 기준(type=received)이다 — 결재함(/approvals)과 같은 개인 결재함임을 말한다.
+  description: '내가 결재자로 지정된 약식 결재 요청을 승인 또는 반려합니다 (결재함과 같은 개인 결재함)',
 };
 
 /**
