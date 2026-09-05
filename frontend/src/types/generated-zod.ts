@@ -1000,6 +1000,16 @@ export const LoginRequestSchema = z.object({
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
 // ==========================================================================
+// ApprovalDraftRequest Schema
+// ==========================================================================
+export const ApprovalDraftRequestSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+});
+export type ApprovalDraftRequest = z.infer<typeof ApprovalDraftRequestSchema>;
+
+// ==========================================================================
 // UserDto Schema
 // ==========================================================================
 export const UserDtoSchema = z.object({
@@ -2404,6 +2414,32 @@ export const CurrentUserResponseSchema = z.object({
   email: z.string().optional(),
 });
 export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
+
+// ==========================================================================
+// ApiResponseListCommonCodeDto Schema
+// ==========================================================================
+export const ApiResponseListCommonCodeDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => CommonCodeDtoSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListCommonCodeDto = z.infer<typeof ApiResponseListCommonCodeDtoSchema>;
+
+// ==========================================================================
+// CommonCodeDto Schema
+// ==========================================================================
+export const CommonCodeDtoSchema = z.object({
+  cdId: z.string().min(0).max(20),
+  dtlCd: z.string().min(0).max(12),
+  dtlCdNm: z.string().min(0).max(100),
+  dtlCdExpln: z.string().min(0).max(4000).optional(),
+  useYn: z.string().min(0).max(1),
+});
+export type CommonCodeDto = z.infer<typeof CommonCodeDtoSchema>;
 
 // ==========================================================================
 // ApiResponseListMyPageContentDto Schema
@@ -5703,6 +5739,18 @@ export const LoginRequestResponseSchema = z.object({
   otpCode: z.number().int().optional().nullable(),
 });
 
+export const ApprovalDraftRequestRequestSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+});
+
+export const ApprovalDraftRequestResponseSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional().nullable(),
+});
+
 export const UserDtoRequestSchema = z.object({
   userId: z.string().min(4).max(20).regex(new RegExp("^[a-zA-Z0-9_]+$")),
   userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
@@ -7701,6 +7749,42 @@ export const CurrentUserResponseResponseSchema = z.object({
   role: z.string().optional().nullable(),
   userSe: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
+});
+
+export const ApiResponseListCommonCodeDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => CommonCodeDtoRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseListCommonCodeDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => CommonCodeDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CommonCodeDtoRequestSchema = z.object({
+  cdId: z.string().min(0).max(20),
+  dtlCd: z.string().min(0).max(12),
+  dtlCdNm: z.string().min(0).max(100),
+  dtlCdExpln: z.string().min(0).max(4000).optional(),
+  useYn: z.string().min(0).max(1),
+});
+
+export const CommonCodeDtoResponseSchema = z.object({
+  cdId: z.string().min(0).max(20),
+  dtlCd: z.string().min(0).max(12),
+  dtlCdNm: z.string().min(0).max(100),
+  dtlCdExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.string().min(0).max(1),
 });
 
 export const ApiResponseListMyPageContentDtoRequestSchema = z.object({

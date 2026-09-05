@@ -86,7 +86,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   const generatedIds = [...generated.matchAll(/^export const ([A-Za-z_$][\w$]*)Operation =/gm)]
     .map((match) => match[1]);
 
-  assert.equal(operations.length, 367);
+  // [2026-09-05 결재 도메인 완결] createApproval·getProcessed·getTaskTypes 3개 신설 — 367 -> 370.
+  assert.equal(operations.length, 370);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

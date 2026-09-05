@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { ApprovalStepper } from './ApprovalStepper';
-import Link from 'next/link';
+import { ApprovalDraftDialog } from './ApprovalDraftDialog';
 import {
   approvalMutationOptions,
   approvalQueryOptions,
@@ -30,9 +30,24 @@ import {
 
 const EMPTY_APPROVALS: InformalSanctionDto[] = [];
 
+/**
+ * 탭 이름은 실제 질의 축을 말한다.
+ *
+ * [2026-09-05] 종전 두 번째 탭은 라벨이 "처리 이력" 이면서 `/approvals/my` — 즉 **내가 올린
+ * 결재(신청자 기준)** 를 불렀다. 결재자가 승인·반려한 문서를 다시 볼 탭은 없었고, 신청자는 자기
+ * 신청서를 엉뚱한 이름 아래서 찾아야 했다. 서버가 처리한 결재만 주는 `/approvals/processed` 를
+ * 신설해 분리한다.
+ */
 const TAB_LABELS: Record<ApprovalTab, string> = {
   PENDING: '대기 중인 결재',
-  HISTORY: '결재 처리 이력',
+  SUBMITTED: '내가 올린 결재',
+  PROCESSED: '내가 처리한 결재',
+};
+
+const EMPTY_MESSAGES: Record<ApprovalTab, string> = {
+  PENDING: '대기 중인 결재가 없습니다.',
+  SUBMITTED: '올린 결재가 없습니다. 오른쪽 위 \'새 결재 기안\' 으로 상신할 수 있습니다.',
+  PROCESSED: '승인하거나 반려한 결재가 없습니다.',
 };
 
 const APPROVAL_DECISION_LABELS = {
@@ -100,6 +115,7 @@ export default function ApprovalHubClient() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<ApprovalTab>('PENDING');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isDraftOpen, setDraftOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [pendingAction, setPendingAction] = useState<SanctionStatusCode | null>(null);
   const pendingActionRef = useRef(false);
@@ -132,6 +148,14 @@ export default function ApprovalHubClient() {
     setActiveTab(tab);
     // 다른 대기열의 문서 식별자를 들고 넘어가면 첫 항목이 아니라 빈 상세가 남는다.
     setSelectedItemId(null);
+    setRejectReason('');
+    decisionValidation.setFormErrors({}, false);
+  };
+
+  /** 상신 직후에는 방금 올린 문서가 보이는 '내가 올린 결재' 로 옮겨 저장됐음을 눈으로 확인시킨다. */
+  const handleDraftCreated = (ifmlAtrzSn: number) => {
+    setActiveTab('SUBMITTED');
+    setSelectedItemId(String(ifmlAtrzSn));
     setRejectReason('');
     decisionValidation.setFormErrors({}, false);
   };
@@ -222,9 +246,10 @@ export default function ApprovalHubClient() {
   ].filter(Boolean).join(' ');
 
   return (
+    <>
     <MasterDetailPage
       title="결재 허브"
-      description="대기 결재를 승인·반려하고 처리 이력을 조회합니다."
+      description="결재를 올리고, 나에게 온 결재를 승인·반려하며, 올린 결재와 처리한 결재를 조회합니다."
       breadcrumbItems={[{ label: '업무지원' }, { label: '전자결재' }]}
       actions={(
         <>
@@ -238,11 +263,14 @@ export default function ApprovalHubClient() {
             <RefreshCcw aria-hidden="true" className={cn(isFetching && 'animate-spin')} />
             새로고침
           </Button>
-          <Button asChild type="button">
-            <Link href="/approvals/draft">
-              <Plus aria-hidden="true" />
-              새 결재 기안
-            </Link>
+          {/*
+            [2026-09-05] 종전에는 `/approvals/draft` 로 가는 링크였다. 그 화면은 하드코딩 양식 목업이라
+            상신을 저장하지 않았고(demo-isolated 승인), demo 밖 프로필에서는 사라진 라우트였다.
+            상신은 같은 화면의 다이얼로그가 실제 API 로 수행한다 — 페이지 이동이 없으므로 button 이다.
+          */}
+          <Button type="button" onClick={() => setDraftOpen(true)}>
+            <Plus aria-hidden="true" />
+            새 결재 기안
           </Button>
         </>
       )}
@@ -262,13 +290,9 @@ export default function ApprovalHubClient() {
             </Button>
           ))}
           {/*
-            '결재 문서 보관함'은 종전에 별도 탭으로 있었지만 조회 함수가 처리 이력과 같아
-            **같은 데이터를 다른 이름으로** 보여줬다(ApprovalUserService 에 보관함 조회가 없다).
-            없는 구분을 있는 것처럼 두지 않고, 사유를 밝혀 비활성으로 남긴다.
+            종전의 비활성 보관함 버튼은 걷었다. 그것이 가리키던 "처리한 문서를 다시 보는 곳" 은
+            이제 세 번째 탭이 실제 API(/approvals/processed)로 제공한다(G10 — 죽은 컨트롤 금지).
           */}
-          <Button type="button" size="sm" variant="outline" disabled title="보관함 조회 API가 아직 없어 사용할 수 없습니다">
-            결재 문서 보관함
-          </Button>
         </div>
       )}
       masterTitle={TAB_LABELS[activeTab]}
@@ -293,9 +317,7 @@ export default function ApprovalHubClient() {
             </div>
           ) : list.length === 0 ? (
             <div role="status" className="rounded-md border border-dashed border-border p-6 text-center">
-              <p className="text-sm font-semibold text-foreground">
-                {activeTab === 'PENDING' ? '대기 중인 결재가 없습니다.' : '처리한 결재 이력이 없습니다.'}
-              </p>
+              <p className="text-sm font-semibold text-foreground">{EMPTY_MESSAGES[activeTab]}</p>
             </div>
           ) : (
             <ul aria-label={`${TAB_LABELS[activeTab]} 목록`} className="space-y-2">
@@ -455,5 +477,14 @@ export default function ApprovalHubClient() {
         </div>
       ) : undefined}
     />
+    {/* 열릴 때만 마운트한다 — 닫았다 다시 열면 폼이 빈 상태로 시작한다. */}
+    {isDraftOpen ? (
+      <ApprovalDraftDialog
+        isOpen
+        onClose={() => setDraftOpen(false)}
+        onCreated={handleDraftCreated}
+      />
+    ) : null}
+    </>
   );
 }

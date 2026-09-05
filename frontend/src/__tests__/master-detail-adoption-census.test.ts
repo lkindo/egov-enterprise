@@ -84,19 +84,30 @@ describe('A2 master-detail adoption census', () => {
     expect(client).toContain('title="결재 허브"');
     expect(client).toContain('새 결재 기안');
     // 이름만 고정하면 **역할이 바뀐 것**을 놓친다(2026-08-24 CI 실측: 기안 버튼이 button -> link 로
-    // 바뀌어 e2e 가 180초 타임아웃). 페이지 이동은 link 가 옳으므로 그 구조를 계약으로 못 박는다.
-    expect(client).toMatch(/<Button asChild[\s\S]*?<Link href="\/approvals\/draft">/);
+    // 바뀌어 e2e 가 180초 타임아웃). [2026-09-05] 상신은 같은 화면의 다이얼로그가 실제 API 로
+    // 수행하므로 페이지 이동이 없다 — 이제는 button 이 옳은 역할이고, 목업 라우트로 가는 링크가
+    // 되살아나면 red 다.
+    expect(client).toMatch(/<Button type="button" onClick=\{\(\) => setDraftOpen\(true\)\}>/);
+    expect(client).not.toMatch(/<Link href="\/approvals\/draft">/);
+    expect(client).toMatch(/isDraftOpen \? \(\s*<ApprovalDraftDialog\b/);
     // 표가 아니라 compact 마스터 목록이다 — 6열 표를 좁은 마스터 폭에 두지 않는다.
     expect(client).not.toMatch(/from\s+['"]@\/app\/components\/ui\/standard-data-table['"]/);
   });
 
-  it('결재함은 없는 보관함 구분을 살아 있는 탭으로 위장하지 않는다', () => {
+  it('결재함 탭은 실제 질의 축을 이름으로 말하고 죽은 보관함 컨트롤을 두지 않는다', () => {
     const client = source('src/app/approvals/ApprovalHubClient.tsx');
+    const queries = source('src/queries/approval-query-options.ts');
 
-    // 보관함 조회 API 가 없어 종전 ARCHIVE 탭은 처리 이력과 같은 데이터를 다른 이름으로 보여줬다.
-    // 사유를 밝힌 비활성 컨트롤로만 남긴다(ADR-0003 위장 금지 · 카탈로그 G10).
+    // 종전 ARCHIVE 탭은 처리 이력과 같은 데이터를 다른 이름으로 보여줬고, 그 뒤 '결재 처리 이력' 탭은
+    // 신청자 기준(/approvals/my)을 불렀다. [2026-09-05] 세 탭이 각각 자기 축의 API 를 부른다 —
+    // 대기(pending)·내가 올린(my)·내가 처리한(processed). 비활성 보관함 버튼은 G10 에 따라 걷었다.
     expect(client).not.toMatch(/setActiveTab\('ARCHIVE'\)/);
-    expect(client).toMatch(/disabled title="보관함 조회 API가 아직 없어 사용할 수 없습니다"/);
+    expect(client).not.toContain('결재 문서 보관함');
+    expect(client).not.toContain('결재 처리 이력');
+    expect(client).toContain("SUBMITTED: '내가 올린 결재'");
+    expect(client).toContain("PROCESSED: '내가 처리한 결재'");
+    expect(queries).toMatch(/case 'SUBMITTED':\s*return approvalUserService\.getMyHistory\(params\)/);
+    expect(queries).toMatch(/case 'PROCESSED':\s*return approvalUserService\.getProcessed\(params\)/);
   });
 
   it('/admin/system/common-code의 STANDARD만 전체 A2 페이지 셸을 사용하고 두 A1 탭은 보존한다', () => {

@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "ce1a19fb9e9c5441580a0c31b60bac7437c33d1e039470c8565842bbe805f31b"
+    "inventoryHash": "a542007ce9b0a3c06056e6d635ecfd2f7595269b199de921e98cabc28e0ce41e"
   },
   "summary": {
-    "sourceFileCount": 516,
-    "records": 368,
-    "syntaxOccurrences": 433,
-    "ambiguousRecords": 347,
-    "unverifiedRecords": 368,
+    "sourceFileCount": 517,
+    "records": 369,
+    "syntaxOccurrences": 434,
+    "ambiguousRecords": 348,
+    "unverifiedRecords": 369,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 47,
+      "form-producer": 48,
       "navigation-producer": 156,
       "page-redirect": 5,
       "query-builder": 23,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 360,
+      "navigation": 361,
       "request-telemetry": 8
     }
   },
@@ -11944,24 +11944,24 @@
       }
     },
     {
-      "id": "URL-8FDA032AA0C2B4",
+      "id": "URL-1DF2A2530A633C",
       "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/approvals/ApprovalHubClient.tsx",
-      "producerFile": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
+      "producerFile": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
       "consumerFile": null,
       "routePattern": "/approvals",
-      "targetCandidate": "/approvals/draft",
+      "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/approvals/draft",
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -11976,7 +11976,45 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+        "source": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-0735D31295472C",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
+      "producerFile": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/approvals/draft",
+      "targetCandidate": "/approvals",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/approvals",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
         "detector": "href-navigation",
         "occurrenceCount": 1
       }
