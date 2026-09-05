@@ -355,7 +355,8 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
     });
 
     it('수정은 컬렉션 경로가 아니라 반드시 단건 경로로 나간다', async () => {
-      const payload: CommunityPayload = { useYn: 'N' };
+      // [2026-09-06 DEC-OPS-037] cmntyNm 은 서버 @NotBlank 라 생성 요청 계약에서 필수다 — 이름 없는 수정 본문은 런타임 계약 검증이 거부한다.
+      const payload: CommunityPayload = { cmntyNm: '폐쇄할 커뮤니티', useYn: 'N' };
 
       await communityAdminService.updateCommunity(7, payload);
 
