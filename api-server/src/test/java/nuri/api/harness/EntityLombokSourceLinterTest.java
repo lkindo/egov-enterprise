@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * 영속 엔티티의 SOURCE-retention Lombok 애노테이션 게이트 — 백엔드 헌법 제3조 3항 (a).
+ * 영속 엔티티의 SOURCE-retention Lombok 애노테이션 게이트 — 백엔드 헌법 제5조 3항 (a).
  *
  * <p>{@code @Builder}, {@code @SuperBuilder}, {@code @AllArgsConstructor}는 바이트코드에 남지 않아
  * ArchUnit으로 검사할 수 없다. 따라서 두 비즈니스 모듈의 Java 원문에서 {@code @Entity} 선언의
@@ -74,7 +74,7 @@ class EntityLombokSourceLinterTest {
                     + "건 — 하한(" + ENTITY_COUNT_FLOORS.get("total") + ") 미만, roots=" + countsByRoot);
         }
         if (!violations.isEmpty()) {
-            fail("백엔드 헌법 제3조 3항 (a) 위반 — 엔티티 클래스의 Lombok 생성자/빌더 금지:\n - "
+            fail("백엔드 헌법 제5조 3항 (a) 위반 — 엔티티 클래스의 Lombok 생성자/빌더 금지:\n - "
                     + String.join("\n - ", violations)
                     + "\n정적 create(...) 메서드의 @Builder와 명시적 non-public 생성자를 사용하십시오."
                     + "\n스캔=" + countsByRoot);
