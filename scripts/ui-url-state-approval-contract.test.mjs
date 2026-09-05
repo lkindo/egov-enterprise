@@ -208,7 +208,10 @@ test('면제 계산이 공허하지 않다 — 합성 승인으로 red 를 증�
   미승인 상태를 동결한다 — 이 목록을 줄이려면 근거와 함께 이 배열을 고쳐야 하고, 그 diff 가
   "무엇을 새로 승인했는가" 를 드러낸다.
 */
-const APPROVED_AS_OF_2026_09_05 = ['presentation-state', 'control-flag'];
+// resource-identifier 는 같은 날 늦게 추가됐다 — 승인 조건("열거 억제 부재 + 객체 가드 목록 확인")이
+// 미판정 3건(만족도·커뮤니티 상세 = 결함 수정 PR #548, 부서업무 = 문서화된 제품 결정)의 판정으로
+// 충족된 뒤다. 이 배열을 늘리는 diff 가 "무엇을 새로 승인했는가" 를 드러낸다.
+const APPROVED_AS_OF_2026_09_05 = ['presentation-state', 'control-flag', 'resource-identifier'];
 
 test('승인된 부류는 명시 목록과 정확히 일치한다 — 조용히 늘지 않는다', () => {
   const approved = overlay.classes
