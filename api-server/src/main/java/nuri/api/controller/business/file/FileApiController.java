@@ -53,4 +53,23 @@ public class FileApiController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
+
+    /**
+     * 첨부 단건 삭제.
+     *
+     * <p>[2026-09-05 신설] 종전에는 서비스 계층의 {@code deleteFile} 만 있고 HTTP 노출도 화면 버튼도 없어
+     * 한 번 올린 첨부를 사용자가 되돌릴 방법이 없었다(프런트 {@code FileService.ts} 는 405 를 만나던
+     * 메서드를 2026-08-05 에 제거하며 "인가와 함께 먼저 설계할 것" 을 남겼다). 인가는 열람 정책과 별개의
+     * 삭제 판정({@code FileAccessPolicy#assertDeletable})이 서비스 계층에서 집행한다 — 업로더 본인·참조 행
+     * 소유자·(개인 귀속이 아닌 첨부의) 관리자만 지울 수 있고, 공유 열람 근거는 삭제 근거가 아니다.
+     */
+    @Operation(summary = "파일 삭제", description = "첨부파일 한 건을 삭제합니다. 업로더 본인, 참조 행의 소유자, 또는 개인 귀속이 아닌 첨부의 관리자만 삭제할 수 있습니다.")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    @DeleteMapping("/{atchFileSn}/{fileSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteFile(
+            @PathVariable Long atchFileSn,
+            @PathVariable Integer fileSn) throws IOException {
+        fileService.deleteFile(atchFileSn, fileSn);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

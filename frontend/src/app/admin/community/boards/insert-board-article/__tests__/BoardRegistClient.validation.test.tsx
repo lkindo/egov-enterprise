@@ -59,6 +59,17 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));
 
+// 첨부 삭제 확인 모달·파일 서비스·업로더는 attachment 계약(BoardRegistClient.attachment.test.tsx)의 관심사다.
+vi.mock('@/app/components/ui/confirm-modal', () => ({
+  useConfirm: () => vi.fn().mockResolvedValue(true),
+}));
+vi.mock('@/services/foundation/file/FileService', () => ({
+  fileService: { getFileList: vi.fn().mockResolvedValue([]), deleteFile: vi.fn() },
+}));
+vi.mock('@/app/components/ui/standard-file-uploader', () => ({
+  StandardFileUploader: () => <input type="file" aria-label="파일 첨부 선택" />,
+}));
+
 function renderSubject() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(

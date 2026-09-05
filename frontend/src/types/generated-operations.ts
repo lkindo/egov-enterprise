@@ -5576,6 +5576,23 @@ export const downloadFileOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const deleteFileOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteFile",
+  method: "delete",
+  path: "/api/v1/files/{atchFileSn}/{fileSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "atchFileSn": z.number().int(), "fileSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const downloadFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   id: "downloadFile_1",
   method: "get",
@@ -5589,6 +5606,23 @@ export const downloadFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: null,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteFile_1",
+  method: "delete",
+  path: "/api/v1/admin/system/files/{atchFileSn}/{fileSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "atchFileSn": z.number().int(), "fileSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -5610,6 +5644,23 @@ export const downloadFile_2Operation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const deleteFile_2Operation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteFile_2",
+  method: "delete",
+  path: "/api/v1/admin/content/files/{atchFileSn}/{fileSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "atchFileSn": z.number().int(), "fileSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const downloadFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
   id: "downloadFile_3",
   method: "get",
@@ -5623,6 +5674,23 @@ export const downloadFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: null,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteFile_3",
+  method: "delete",
+  path: "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "atchFileSn": z.number().int(), "fileSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

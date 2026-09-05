@@ -265,6 +265,83 @@ class FileAccessPolicyTest {
         }
     }
 
+    // ------------------------------------------------------------------ 삭제 판정
+
+    /**
+     * 🗑 삭제 판정 표 — {@link FileAccessPolicy#assertDeletable}.
+     *
+     * <p>열람 표와의 차이는 단 하나, <b>공유 근거가 삭제를 열지 않는다</b>는 점이다. 그 대조군을
+     * 반드시 함께 단언한다 — 그것이 없으면 "열람 정책을 그대로 재사용" 한 구현도 통과한다.
+     */
+    @Nested
+    @DisplayName("삭제 판정")
+    class Deletion {
+
+        @Test
+        @DisplayName("업로더 본인은 참조 행이 없어도 지운다 — 글 저장 전 잘못 올린 파일 되돌리기")
+        void uploaderCanDeleteOwnOrphanUpload() {
+            authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
+
+            assertThatCode(() -> policy(grantsNone()).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("참조 행의 소유자는 지운다")
+        void ownerOfReferencingRowCanDelete() {
+            authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+
+            assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(false, true, true))
+                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("🚨 공유 근거만 있는 타인은 읽을 수는 있어도 지우지 못한다 — 열람 정책 재사용 방지")
+        void sharedReaderCannotDelete() {
+            authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+            AttachmentReferenceResolver.Grants sharedOnly = new AttachmentReferenceResolver.Grants(true, false, false);
+
+            assertThatCode(() -> policy(sharedOnly).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .doesNotThrowAnyException();
+            assertThatThrownBy(() -> policy(sharedOnly).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                    .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        }
+
+        @Test
+        @DisplayName("관리자는 개인 귀속 참조원이 없을 때 지운다")
+        void adminCanDeleteWhenNoPersonalReference() {
+            authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
+
+            assertThatCode(() -> policy(grantsNone()).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("🚨 관리자도 개인 귀속 첨부는 지우지 못한다 — 열람과 같은 프라이버시 가드(H3)")
+        void adminCannotDeletePersonalAttachment() {
+            authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
+
+            assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, false, true))
+                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class);
+        }
+
+        @Test
+        @DisplayName("근거 없는 타인과 미인증 주체는 거부한다")
+        void unrelatedAndUnauthenticatedAreDenied() {
+            authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+            assertThatThrownBy(() -> policy(grantsNone()).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class);
+
+            SecurityContextHolder.clearContext();
+            assertThatThrownBy(() -> policy(grantsNone()).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class);
+        }
+    }
+
     // ------------------------------------------------------------------ 유틸
 
     private FileAccessPolicy policy(AttachmentReferenceResolver.Grants grants) {

@@ -81,4 +81,52 @@ public class FileAccessPolicy {
                 atchFileSn, loginId, admin, grants.personalReference());
         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
     }
+
+    /**
+     * 현재 인증 주체가 이 첨부를 <b>삭제</b>할 수 있는지 검증한다.
+     *
+     * <p>[열람과 다른 점] <b>공유 근거는 삭제 근거가 아니다.</b> 비밀글이 아닌 게시글의 첨부는 인증
+     * 사용자 누구나 읽지만, 그 사실이 남의 첨부를 지울 권리를 주지는 않는다. 판정 표:
+     * <ol>
+     *   <li><b>업로더 본인</b>({@code frst_rgtr_id} = loginId) → 허용. 잘못 올린 파일을 글 저장 전에 되돌리는 경로다.</li>
+     *   <li><b>소유 근거</b> — 참조 행의 소유자·당사자(작성자 등) → 허용.</li>
+     *   <li><b>관리자</b>(ADMIN/SYSTEM) → 허용. 단 개인 귀속(PERSONAL) 참조원이 있으면 열람과 같이 불허(H3).</li>
+     *   <li>그 외 → <b>403</b>. 참조원을 모르는 첨부는 지우지 않는다(fail-closed).</li>
+     * </ol>
+     *
+     * @param master 대상 첨부 마스터(존재 검증은 호출부에서 이미 수행)
+     * @throws BusinessException ACCESS_DENIED(403) — 삭제 근거가 없을 때
+     */
+    public void assertDeletable(FileMaster master) {
+        Long atchFileSn = master.getAtchFileSn();
+        String loginId = SecurityUtil.getCurrentLoginId().orElse(null);
+        String esntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
+
+        if (loginId == null && esntlId == null) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+
+        // 1. 업로더 본인.
+        if (loginId != null && loginId.equals(master.getFrstRgtrId())) {
+            return;
+        }
+
+        AttachmentReferenceResolver.Grants grants = referenceResolver.resolve(atchFileSn, loginId, esntlId);
+
+        // 2. 소유 근거만 — 공유 근거(sharedGrant)는 의도적으로 보지 않는다.
+        if (grants.ownerGrant()) {
+            return;
+        }
+
+        // 3. 관리자 — 개인 귀속 참조원이 없을 때만.
+        boolean admin = SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN)
+                || SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM);
+        if (admin && !grants.personalReference()) {
+            return;
+        }
+
+        log.warn("[FileAccess] 첨부 삭제 거부 — atchFileSn={} loginId={} admin={} ownerGrant={} personalRef={}",
+                atchFileSn, loginId, admin, grants.ownerGrant(), grants.personalReference());
+        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+    }
 }

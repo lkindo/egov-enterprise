@@ -838,7 +838,7 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
 
   it('게시 기간을 집행하지 않으면서 노출을 제어한다고 말하지 않는다', () => {
     const write = stripComments(
-      readSrc('app/admin/community/boards/write/CommunityBoardsWriteClient.tsx'),
+      readSrc('app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'),
     );
     expect(write, '작성 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('pstBgngYmd');
     expect(write).toContain('노출 여부를 자동으로 바꾸지는 않습니다');

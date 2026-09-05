@@ -127,7 +127,11 @@ test('proxy shell access is measured separately from unresolved capability roles
   // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
   //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
   //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.
-  assert.equal(analysis.result.summary.effectiveAliases, 17);
+  // [2026-09-05 DEC-OPS-034] 17 → 19. 게시글 작성 화면 3종을 insert-board-article 하나로 수렴하면서
+  //   /admin/community/boards/write 와 /admin/community/boards/[id] 가 page-redirect 별칭이 됐다.
+  //   별칭이 **늘어나는** 방향이지만 은폐가 아니다 — 같은 일을 하는 화면을 하나로 모은 결과이며,
+  //   두 라우트의 disposition 은 overlay 에서 consolidate-to-canonical 로 함께 제안됐다.
+  assert.equal(analysis.result.summary.effectiveAliases, 19);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(
