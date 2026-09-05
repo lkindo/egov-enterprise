@@ -9,7 +9,8 @@ import { ProgramForm } from '@/components/admin/system/ProgramForm';
 import { DepartmentForm } from '@/components/admin/user/DepartmentForm';
 import { UserManageForm } from '@/components/admin/user/UserManageForm';
 import { DeptJobForm } from '@/components/business/deptJob/DeptJobForm';
-import { ReportCreateForm } from '@/components/business/report/ReportCreateForm';
+import { ReportCreateForm, reportFormSchema } from '@/components/business/report/ReportCreateForm';
+import { WorkReportDtoRequestSchema } from '@/types/generated-zod';
 
 const mocks = vi.hoisted(() => ({
   createProgram: vi.fn(),
@@ -181,7 +182,7 @@ const cases: ContractCase[] = [
     ),
     submitName: /보고 등록/,
     firstFieldName: /보고 제목/,
-    maxLength: '200',
+    maxLength: '100',
     renderValid: (onSubmit) => (
       <ReportCreateForm
         defaultYmd="20260826"
@@ -200,6 +201,25 @@ describe('shared useAppForm visual validation contract', () => {
     vi.clearAllMocks();
     mocks.getDeptJobBoxes.mockResolvedValue({ list: [] });
     mocks.searchAssignableUsers.mockResolvedValue([]);
+  });
+
+  it('ReportCreateForm은 업무보고 제목의 물리 100자 상한을 넘기지 않는다', () => {
+    expect(reportFormSchema.safeParse({ rptTtl: '가'.repeat(100), rptYmd: '20260826' }).success).toBe(true);
+    expect(reportFormSchema.safeParse({ rptTtl: '가'.repeat(101), rptYmd: '20260826' }).success).toBe(false);
+  });
+
+  it('ReportCreateForm은 생성 계약과 함께 보고 내용 4,000자 상한을 지킨다', () => {
+    const atLimit = { rptTtl: '보고', rptYmd: '20260826', rptCn: '가'.repeat(4000) };
+    const overLimit = { ...atLimit, rptCn: '가'.repeat(4001) };
+    expect(WorkReportDtoRequestSchema.safeParse(atLimit).success).toBe(true);
+    expect(WorkReportDtoRequestSchema.safeParse(overLimit).success).toBe(false);
+    expect(reportFormSchema.safeParse(atLimit).success).toBe(true);
+    expect(reportFormSchema.safeParse(overLimit).success).toBe(false);
+
+    renderWithClient(
+      <ReportCreateForm defaultYmd="20260826" onSubmit={vi.fn()} onCancel={vi.fn()} />,
+    );
+    expect(screen.getByRole('textbox', { name: /보고 내용/ })).toHaveAttribute('maxlength', '4000');
   });
 
   it.each(cases)('$name: invalid submit은 write 없이 시각 summary와 첫 field로 연결된다', async (entry) => {

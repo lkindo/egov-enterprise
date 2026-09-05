@@ -17,7 +17,8 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { useToast } from '@/app/components/ui/toast';
 import { z } from 'zod';
-import { MemoReportDtoSchema } from '@/types/generated-zod';
+import { MemoReportDtoRequestSchema, MemoReportDtoSchema } from '@/types/generated-zod';
+import { getTodayYmd } from '@/lib/date/today-ymd';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
@@ -39,10 +40,19 @@ import {
  * 참여자를 판정한다). 사람이 타이핑할 수 있는 값이 아니라 UserPicker 가 채운다 — 폼 필드로
  * 두는 이유는 "받는 사람 없이 등록" 을 다른 필드와 같은 오류 요약·포커스 경로로 잡기 위해서다.
  */
-const memoComposeSchema = MemoReportDtoSchema.pick({ rptTtl: true, rptCn: true, rptrId: true }).extend({
-  rptTtl: z.string().trim().min(1, '제목을 입력해 주세요.').max(200, '제목은 200자까지 입력할 수 있습니다.'),
-  rptCn: z.string().trim().min(1, '보고 내용을 입력해 주세요.').max(4000, '보고 내용은 4,000자까지 입력할 수 있습니다.'),
-  rptrId: z.string().trim().min(1, '받는 사람을 선택해 주세요.'),
+const memoComposeSchema = MemoReportDtoRequestSchema.pick({ rptTtl: true, rptCn: true, rptrId: true }).extend({
+  rptTtl: z.string().trim()
+    .min(1, '제목을 입력해 주세요.')
+    .max(100, '제목은 100자까지 입력할 수 있습니다.')
+    .pipe(MemoReportDtoRequestSchema.shape.rptTtl),
+  rptCn: z.string().trim()
+    .min(1, '보고 내용을 입력해 주세요.')
+    .max(4000, '보고 내용은 4,000자까지 입력할 수 있습니다.')
+    .pipe(MemoReportDtoRequestSchema.shape.rptCn.unwrap()),
+  rptrId: z.string().trim()
+    .min(1, '받는 사람을 선택해 주세요.')
+    .max(20, '받는 사람 식별자는 20자까지 허용됩니다.')
+    .pipe(MemoReportDtoRequestSchema.shape.rptrId),
 });
 
 const memoInstructionSchema = MemoReportDtoSchema.pick({ drctnMttr: true }).extend({
@@ -154,7 +164,7 @@ export default function MemoReportManagementClient() {
         rptCn: values.rptCn,
         rptrId: values.rptrId,
         // 보고 일자는 서버가 요구하는 값이라 화면이 오늘로 채운다(사용자가 고를 축이 아니다).
-        memoRptYmd: new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+        memoRptYmd: getTodayYmd(),
       });
       toast('보고를 등록했습니다.', 'success');
       setComposeOpen(false);
@@ -271,14 +281,18 @@ export default function MemoReportManagementClient() {
     {
       header: '작성자',
       accessor: (report) => (
-        <span className="text-xs font-bold text-muted-foreground tracking-tight">{report.wrterNm}</span>
+        <span className="text-xs font-bold text-muted-foreground tracking-tight">
+          {report.wrterNm || report.userId || '-'}
+        </span>
       ),
       className: 'w-32'
     },
     {
       header: '수신자',
       accessor: (report) => (
-        <span className="text-xs font-bold text-muted-foreground tracking-tight">{report.rptrNm}</span>
+        <span className="text-xs font-bold text-muted-foreground tracking-tight">
+          {report.rptrNm || report.rptrId || '-'}
+        </span>
       ),
       className: 'w-32'
     },
@@ -512,7 +526,7 @@ export default function MemoReportManagementClient() {
                 <FormItem className="space-y-2">
                   <FormLabel className="text-sm font-bold text-foreground">제목</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={200} placeholder="보고 제목" />
+                    <Input {...field} maxLength={100} placeholder="보고 제목" />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-destructive" />
                 </FormItem>

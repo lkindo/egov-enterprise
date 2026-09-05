@@ -1,5 +1,6 @@
 package nuri.api.harness;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,7 +21,9 @@ import nuri.business.domain.code.CommonCodeCategory;
 import nuri.business.domain.code.CommonCodeGroup;
 import nuri.business.domain.group.GroupManage;
 import nuri.business.domain.mypage.MyPageContent;
+import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.operation.ExternalHr;
+import nuri.business.domain.report.WorkReport;
 import nuri.business.domain.scrap.Scrap;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.community.Community;
@@ -39,7 +42,9 @@ import nuri.business.service.code.dto.CmmnCodeDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.business.service.department.dto.DeptManageDto;
 import nuri.business.service.group.dto.GroupManageDto;
+import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.business.service.operation.dto.ExternalHrDto;
+import nuri.business.service.report.dto.WorkReportDto;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.popup.dto.PopupDto;
@@ -78,13 +83,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>DTO는 Entity의 전수 복제본이 아니라 투영이므로 이름이 같은 모든 필드를 기계적으로 비교하면
  * 응답 전용·파생 필드까지 입력 제약으로 오인한다. 대신 실제 {@code @RequestBody}로 저장되는 고위험
- * 관리자 입력의 직접 저장 필드만 명시적으로 묶는다. 이 표적은 다음 다섯 구간을 한 번에 보호한다.
+ * 관리자 입력의 직접 저장 필드만 명시적으로 묶는다. 이 표적은 다음 여섯 구간을 한 번에 보호한다.
  *
  * <ol>
  *   <li>Entity {@code @Column(length)}보다 DTO {@code @Size(max)}가 크거나 빠지지 않았는가</li>
  *   <li>문자열 상태 코드가 런타임 {@code @Pattern}과 OpenAPI {@code allowableValues}로 제한되는가</li>
  *   <li>명시적으로 동결한 필수 필드가 런타임 제약과 OpenAPI required 양쪽에 남아 있는가</li>
  *   <li>중첩 입력 DTO에 {@code @Valid}와 OpenAPI item schema가 함께 연결되는가</li>
+ *   <li>서버 소유·응답 전용 필드가 Jackson과 OpenAPI에서 함께 read-only인가</li>
  *   <li>같은 maxLength·enum·required가 커밋된 {@code api-docs.json}까지 전파됐는가</li>
  * </ol>
  *
@@ -147,7 +153,11 @@ class InputContractMirrorLinterTest {
                     List.of("userId", "nm", "emlAddr", "homeTelno", "mblTelno", "ofcTelno", "faxNo")),
             new LengthBinding(ExternalHr.class, ExternalHrDto.class,
                     List.of("otsdHrId", "gndrCd", "otsdHrNm", "crTypeCd", "ogdpInstNm",
-                            "brdtYmd", "areaNo", "mdTelno", "endTelno", "emlAddr")));
+                            "brdtYmd", "areaNo", "mdTelno", "endTelno", "emlAddr")),
+            new LengthBinding(MemoReport.class, MemoReportDto.class,
+                    List.of("rptTtl", "memoRptYmd", "rptrId", "rptCn")),
+            new LengthBinding(WorkReport.class, WorkReportDto.class,
+                    List.of("rptTtl", "rptCn", "rptSeCd", "rptYmd")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
@@ -211,12 +221,23 @@ class InputContractMirrorLinterTest {
             requiredNotBlank(AddressBookUserDto.class, "userId"),
             new RequiredBinding(ExternalHrDto.class, List.of(
                     requiredField("evntSn", NotNull.class),
-                    requiredField("otsdHrId", NotBlank.class))));
+                    requiredField("otsdHrId", NotBlank.class))),
+            requiredNotBlank(MemoReportDto.class, "rptTtl", "rptrId"),
+            requiredNotBlank(WorkReportDto.class, "rptTtl"));
 
-    private static final int MIN_LENGTH_FIELDS = 99;
+    /** 요청에서 신뢰하지 않고 서버가 생성·주입·파생하는 필드의 방향성 기준선. */
+    private static final List<ReadOnlyBinding> READ_ONLY_BINDINGS = List.of(
+            new ReadOnlyBinding(MemoReportDto.class,
+                    List.of("memoRptSn", "userId", "wrterNm", "rptrNm", "drctnMttr",
+                            "drctnMttrRegDt", "rptrInqDt", "crtDt")),
+            new ReadOnlyBinding(WorkReportDto.class,
+                    List.of("rptpSn", "userId", "userNm", "rptSttsCd", "rptTypeCd")));
+
+    private static final int MIN_LENGTH_FIELDS = 107;
     private static final int MIN_ENUM_FIELDS = 16;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
-    private static final int MIN_REQUIRED_FIELDS = 33;
+    private static final int MIN_REQUIRED_FIELDS = 36;
+    private static final int MIN_READ_ONLY_FIELDS = 13;
 
     @Test
     @DisplayName("입력 DTO 길이와 enum 제약이 Entity 저장 계약을 넘지 않는다")
@@ -455,6 +476,51 @@ class InputContractMirrorLinterTest {
         log.info("✅ 입력 필수 계약: {} DTO, {}필드.", REQUIRED_BINDINGS.size(), requiredFieldCount);
     }
 
+    @Test
+    @DisplayName("서버 소유 필드는 요청 역직렬화와 OpenAPI에서 함께 read-only다")
+    void serverOwnedFieldsRemainReadOnlyAtRuntimeAndInOpenApi() throws IOException {
+        int readOnlyFieldCount = READ_ONLY_BINDINGS.stream().mapToInt(binding -> binding.fields().size()).sum();
+        if (readOnlyFieldCount < MIN_READ_ONLY_FIELDS) {
+            fail("게이트 무결성 파손: read-only 표적이 하한보다 적습니다 (readOnly="
+                    + readOnlyFieldCount + ").");
+        }
+
+        JsonNode schemas = new ObjectMapper().readTree(HarnessSourceIndex.read(resolveApiDocs()))
+                .path("components").path("schemas");
+        List<String> violations = new ArrayList<>();
+        for (ReadOnlyBinding binding : READ_ONLY_BINDINGS) {
+            Set<String> uniqueFields = new LinkedHashSet<>(binding.fields());
+            if (uniqueFields.size() != binding.fields().size()) {
+                violations.add("read-only binding 필드 중복: " + binding.dtoType().getSimpleName()
+                        + " " + binding.fields());
+            }
+            for (String fieldName : binding.fields()) {
+                Field dtoField = declaredField(binding.dtoType(), fieldName, violations, "DTO");
+                if (dtoField == null) {
+                    continue;
+                }
+                JsonProperty jsonProperty = dtoField.getAnnotation(JsonProperty.class);
+                if (jsonProperty == null || jsonProperty.access() != JsonProperty.Access.READ_ONLY) {
+                    violations.add(binding.dtoType().getSimpleName() + "." + fieldName
+                            + " — @JsonProperty(READ_ONLY)가 없어 요청 값이 바인딩될 수 있습니다");
+                }
+                Schema schemaAnnotation = dtoField.getAnnotation(Schema.class);
+                if (schemaAnnotation == null || schemaAnnotation.accessMode() != Schema.AccessMode.READ_ONLY) {
+                    violations.add(binding.dtoType().getSimpleName() + "." + fieldName
+                            + " — @Schema(READ_ONLY)가 없어 생성 요청 계약에 노출됩니다");
+                }
+                JsonNode property = openApiProperty(schemas, binding.dtoType(), fieldName, violations);
+                if (property != null && !property.path("readOnly").asBoolean(false)) {
+                    violations.add(binding.dtoType().getSimpleName() + "." + fieldName
+                            + " — OpenAPI readOnly=true가 아닙니다");
+                }
+            }
+        }
+
+        failIfAny("[INPUT CONTRACT] 서버 소유 필드 방향성 불일치", violations);
+        log.info("✅ 서버 소유 입력 차단 계약: {} DTO, {}필드.", READ_ONLY_BINDINGS.size(), readOnlyFieldCount);
+    }
+
     private static Field declaredField(Class<?> type, String name, List<String> violations, String layer) {
         try {
             return type.getDeclaredField(name);
@@ -590,6 +656,9 @@ class InputContractMirrorLinterTest {
     }
 
     private record RequiredBinding(Class<?> dtoType, List<RequiredField> fields) {
+    }
+
+    private record ReadOnlyBinding(Class<?> dtoType, List<String> fields) {
     }
 
     private record RequiredField(String field, Class<? extends Annotation> constraint, Set<String> groups) {

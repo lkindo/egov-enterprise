@@ -1,5 +1,7 @@
 package nuri.business.service.report.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -9,9 +11,16 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class WorkReportDto {
+    @Schema(nullable = true, types = {"integer", "null"}, format = "int64",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long rptpSn;
+    @NotBlank
+    @Size(max = 100)
     private String rptTtl;
+    @Size(max = 4000)
     private String rptCn;
+    @Size(max = 12)
     private String rptSeCd;
     /**
      * 작성자 로그인 ID.
@@ -21,6 +30,8 @@ public class WorkReportDto {
      * 로그인 ID 가 1자인 경우는 없으므로 종전 값이면 요청 본문에 이 필드를 실은 순간 400 이었다
      * (지금은 서버가 인증 주체로 채우므로 잠재 결함에 머물러 있었다).
      */
+    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Size(max = 20)
     private String userId;
 
@@ -30,12 +41,18 @@ public class WorkReportDto {
      * <p>종전에는 목록의 '작성자' 열이 {@code userId} 원문(로그인 ID)을 그대로 보여 줬다.
      * 사람 이름이 아니라 계정 문자열이라, 누가 쓴 보고인지 화면만 보고는 알 수 없었다.
      */
+    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String userNm;
     private Long atchFileSn;
+    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Size(max = 12)
     private String rptSttsCd;
     @Size(max = 8)
     private String rptYmd;
+    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String rptTypeCd;
 
 }

@@ -49,9 +49,8 @@ public class WorkReportApiController {
     @Operation(summary = "작업보고 등록")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createWorkReport(@Valid @RequestBody WorkReportDto dto) {
-        // 작성자는 서버가 인증 주체(loginId)로 고정한다 — 요청 본문의 userId 는 신뢰하지 않는다.
-        workReportService.createWorkReport(
-                nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("anonymous"), dto);
+        // 작성자는 서비스가 인증 주체(loginId)로 fail-closed 고정한다 — 요청 값은 신뢰하지 않는다.
+        workReportService.createWorkReport(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

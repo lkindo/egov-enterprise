@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
@@ -18,6 +19,10 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -105,24 +110,87 @@ class MemoReportApiControllerTest {
     @Test
     @DisplayName("메모보고 등록 - 성공")
     void createMemoReport_success() throws Exception {
-        MemoReportDto dto = MemoReportDto.builder().rptTtl("Subject").build();
         when(memoReportService.createMemoReport(eq("testUser"), any())).thenReturn(2L);
         mockMvc.perform(post("/api/v1/memo-reports")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
+                .content("""
+                        {
+                          "memoRptSn": 999,
+                          "rptTtl": "Subject",
+                          "memoRptYmd": "20260906",
+                          "userId": "forged-writer",
+                          "wrterNm": "forged-writer-name",
+                          "rptrId": "USER",
+                          "rptrNm": "forged-recipient-name",
+                          "rptCn": "Content",
+                          "drctnMttr": "forged-instruction",
+                          "drctnMttrRegDt": "2026-09-06T01:00:00",
+                          "rptrInqDt": "2026-09-06T02:00:00",
+                          "crtDt": "2026-09-06T03:00:00"
+                        }
+                        """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value(2));
+
+        ArgumentCaptor<MemoReportDto> dto = ArgumentCaptor.forClass(MemoReportDto.class);
+        verify(memoReportService).createMemoReport(eq("testUser"), dto.capture());
+        assertEquals("Subject", dto.getValue().getRptTtl());
+        assertEquals("USER", dto.getValue().getRptrId());
+        assertNull(dto.getValue().getMemoRptSn());
+        assertNull(dto.getValue().getUserId());
+        assertNull(dto.getValue().getWrterNm());
+        assertNull(dto.getValue().getRptrNm());
+        assertNull(dto.getValue().getDrctnMttr());
+        assertNull(dto.getValue().getDrctnMttrRegDt());
+        assertNull(dto.getValue().getRptrInqDt());
+        assertNull(dto.getValue().getCrtDt());
+    }
+
+    @Test
+    @DisplayName("메모보고 등록은 직접 저장 문자열의 필수·물리 길이 계약을 검증한다")
+    void createMemoReport_rejectsInvalidStorageContract() throws Exception {
+        List<Map<String, Object>> invalidBodies = List.of(
+                Map.of("rptTtl", " ", "memoRptYmd", "20260906", "rptrId", "USER", "rptCn", "내용"),
+                Map.of("rptTtl", "제목", "memoRptYmd", "20260906", "rptrId", " ", "rptCn", "내용"),
+                Map.of("rptTtl", "가".repeat(101), "memoRptYmd", "20260906", "rptrId", "USER", "rptCn", "내용"),
+                Map.of("rptTtl", "제목", "memoRptYmd", "202609061", "rptrId", "USER", "rptCn", "내용"),
+                Map.of("rptTtl", "제목", "memoRptYmd", "20260906", "rptrId", "U".repeat(21), "rptCn", "내용"),
+                Map.of("rptTtl", "제목", "memoRptYmd", "20260906", "rptrId", "USER", "rptCn", "가".repeat(4001)));
+
+        for (Map<String, Object> body : invalidBodies) {
+            mockMvc.perform(post("/api/v1/memo-reports")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        verifyNoInteractions(memoReportService);
     }
 
     @Test
     @DisplayName("메모보고 수정 - 성공")
     void updateMemoReport_success() throws Exception {
-        MemoReportDto dto = MemoReportDto.builder().rptTtl("Update").build();
+        MemoReportDto dto = MemoReportDto.builder().rptTtl("Update").rptrId("USER").build();
         mockMvc.perform(put("/api/v1/memo-reports/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
         verify(memoReportService).updateMemoReport(eq(1L), eq("testUser"), any());
+    }
+
+    @Test
+    @DisplayName("메모보고 수정도 직접 저장 문자열 계약을 우회하지 않는다")
+    void updateMemoReport_rejectsInvalidStorageContract() throws Exception {
+        mockMvc.perform(put("/api/v1/memo-reports/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "rptTtl", "제목",
+                                "memoRptYmd", "20260906",
+                                "rptrId", "USER",
+                                "rptCn", "가".repeat(4001)))))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(memoReportService);
     }
 
     @Test

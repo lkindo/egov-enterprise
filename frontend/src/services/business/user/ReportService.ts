@@ -1,7 +1,7 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
-import type { components } from '@/types/generated-api';
 import { AxiosRequestConfig } from 'axios';
+import type { z } from 'zod';
 import {
   createWorkReportOperation,
   deleteWorkReportOperation,
@@ -9,11 +9,13 @@ import {
   getWorkReportOperation,
   updateWorkReportOperation,
 } from '@/types/generated-operations';
-
-type WorkReportDto = components['schemas']['WorkReportDto'];
+import { WorkReportDtoRequestSchema, WorkReportDtoResponseSchema } from '@/types/generated-zod';
 
 /** 화면에서 리소스 경로에 쓰는 자동 생성 일련번호가 존재하는 조회 결과 타입. */
-export type WorkReport = WorkReportDto & Required<Pick<WorkReportDto, 'rptpSn'>>;
+export type WorkReport = z.output<typeof WorkReportDtoResponseSchema> & { rptpSn: number };
+
+/** 업무보고 등록·수정 입력은 응답 DTO가 아니라 생성된 요청 계약을 따른다. */
+export type WorkReportInput = z.input<typeof WorkReportDtoRequestSchema>;
 
 /**
  * 보고 관리 서비스 (User)
@@ -59,14 +61,14 @@ class ReportService extends ApiService {
   /**
    * 보고 등록
    */
-  async createReport(data: Partial<WorkReport>, config?: AxiosRequestConfig): Promise<void> {
+  async createReport(data: WorkReportInput, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(createWorkReportOperation, { body: data, config });
   }
 
   /**
    * 보고 수정 — 작성자 본인 또는 관리자만 가능하다(서버에서 검증).
    */
-  async updateReport(rptpSn: number, data: Partial<WorkReport>, config?: AxiosRequestConfig): Promise<void> {
+  async updateReport(rptpSn: number, data: WorkReportInput, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updateWorkReportOperation, {
       path: { rptpSn },
       body: data,

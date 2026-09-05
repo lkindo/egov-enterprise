@@ -54,11 +54,15 @@ public class WorkReport extends BaseEntity implements Serializable {
         return new WorkReport(rptpSn, rptTtl, rptCn, atchFileSn, rptSeCd, userId, rptSttsCd, rptYmd);
     }
 
-    public void update(String rptTtl, String rptCn, Long atchFileSn, String rptSeCd) {
+    public void update(String rptTtl, String rptCn, Long atchFileSn, String rptSeCd, String rptYmd) {
         this.rptTtl = rptTtl;
         this.rptCn = rptCn;
         this.atchFileSn = atchFileSn;
         this.rptSeCd = rptSeCd;
+        // 기존 클라이언트가 날짜를 생략하면 보존하되, 명시한 날짜는 성공 응답과 함께 실제 반영한다.
+        if (rptYmd != null) {
+            this.rptYmd = rptYmd;
+        }
     }
 
 

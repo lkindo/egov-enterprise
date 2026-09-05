@@ -33533,34 +33533,56 @@
         "type": "object",
         "properties": {
           "rptpSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "rptTtl": {
-            "type": "string"
-          },
-          "rptCn": {
-            "type": "string"
-          },
-          "rptSeCd": {
-            "type": "string"
-          },
-          "userId": {
             "type": "string",
-            "maxLength": 20,
+            "maxLength": 100,
             "minLength": 0
           },
+          "rptCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "rptSeCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "readOnly": true
+          },
           "userNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
           },
           "rptSttsCd": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 12,
-            "minLength": 0
+            "minLength": 0,
+            "readOnly": true
           },
           "rptYmd": {
             "type": "string",
@@ -33568,9 +33590,16 @@
             "minLength": 0
           },
           "rptTypeCd": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           }
-        }
+        },
+        "required": [
+          "rptTtl"
+        ]
       },
       "ApiResponseVoid": {
         "type": "object",
@@ -33959,39 +33988,63 @@
         "description": "메모보고 정보",
         "properties": {
           "memoRptSn": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "description": "메모보고일련번호"
+            "description": "메모보고일련번호",
+            "readOnly": true
           },
           "rptTtl": {
             "type": "string",
-            "description": "보고제목"
-          },
-          "memoRptYmd": {
-            "type": "string",
-            "description": "보고일자"
-          },
-          "userId": {
-            "type": "string",
-            "description": "작성자아이디"
-          },
-          "wrterNm": {
-            "type": "string",
-            "description": "작성자명",
+            "description": "보고제목",
             "maxLength": 100,
             "minLength": 0
           },
+          "memoRptYmd": {
+            "type": "string",
+            "description": "보고일자",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자아이디",
+            "readOnly": true
+          },
+          "wrterNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자명",
+            "maxLength": 100,
+            "minLength": 0,
+            "readOnly": true
+          },
           "rptrId": {
             "type": "string",
-            "description": "보고대상자아이디"
+            "description": "보고대상자아이디",
+            "maxLength": 20,
+            "minLength": 0
           },
           "rptrNm": {
-            "type": "string",
-            "description": "보고대상자명"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "보고대상자명",
+            "readOnly": true
           },
           "rptCn": {
             "type": "string",
-            "description": "보고내용"
+            "description": "보고내용",
+            "maxLength": 4000,
+            "minLength": 0
           },
           "atchFileSn": {
             "type": "integer",
@@ -33999,25 +34052,45 @@
             "description": "첨부파일아이디"
           },
           "drctnMttr": {
-            "type": "string",
-            "description": "지시사항내용"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "지시사항내용",
+            "readOnly": true
           },
           "drctnMttrRegDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "지시사항등록일시"
+            "description": "지시사항등록일시",
+            "readOnly": true
           },
           "rptrInqDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "보고대상자조회일시"
+            "description": "보고대상자조회일시",
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "생성일시"
+            "description": "생성일시",
+            "readOnly": true
           }
-        }
+        },
+        "required": [
+          "rptTtl",
+          "rptrId"
+        ]
       },
       "InformalSanctionDto": {
         "type": "object",
