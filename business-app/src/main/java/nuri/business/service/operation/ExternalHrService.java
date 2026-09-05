@@ -1,4 +1,8 @@
 package nuri.business.service.operation;
+import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.business.security.util.SecurityUtil;
+import nuri.business.domain.operation.ExternalHrId;
 
 import nuri.business.domain.operation.ExternalHr;
 import nuri.business.domain.operation.ExternalHrRepository;
@@ -48,6 +52,31 @@ public class ExternalHrService {
                 .lastMdfrId(dto.getLastMdfrId())
                 .build();
         return convertToDto(externalHrRepository.save(hr));
+    }
+
+    /**
+     * 외부인사 수정 — 식별자(evntSn·otsdHrId)는 바꾸지 않는다(2026-09-05 DEC-OPS-036).
+     * 수정자는 요청 본문이 아니라 인증 주체에서 온다(클라이언트가 스스로를 다른 사람이라 주장할 수 없게).
+     */
+    @Transactional
+    public ExternalHrDto updateExternalHr(Long evntSn, String otsdHrId, ExternalHrDto dto) {
+        ExternalHr hr = findRequired(evntSn, otsdHrId);
+        hr.update(dto.getGndrCd(), dto.getOtsdHrNm(), dto.getCrTypeCd(), dto.getOgdpInstNm(), dto.getBrdtYmd(),
+                dto.getAreaNo(), dto.getMdTelno(), dto.getEndTelno(), dto.getEmlAddr(),
+                SecurityUtil.getCurrentLoginId().orElse(dto.getLastMdfrId()));
+        return convertToDto(hr);
+    }
+
+    /** 외부인사 삭제. 없는 대상은 RESOURCE_NOT_FOUND — 조용히 성공으로 끝내지 않는다. */
+    @Transactional
+    public void deleteExternalHr(Long evntSn, String otsdHrId) {
+        externalHrRepository.delete(findRequired(evntSn, otsdHrId));
+    }
+
+    private ExternalHr findRequired(Long evntSn, String otsdHrId) {
+        return externalHrRepository
+                .findById(new ExternalHrId(Objects.requireNonNull(evntSn), Objects.requireNonNull(otsdHrId)))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     private ExternalHrDto convertToDto(ExternalHr hr) {

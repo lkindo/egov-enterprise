@@ -7,7 +7,10 @@ import TemplateAdminClient, { templateFormSchema } from '../TemplateAdminClient'
 
 const mocks = vi.hoisted(() => ({
   createTemplate: vi.fn(),
+  updateTemplate: vi.fn(),
+  deleteTemplate: vi.fn(),
   getTemplateList: vi.fn(),
+  confirm: vi.fn(),
   toast: vi.fn(),
 }));
 
@@ -23,16 +26,23 @@ vi.mock('@/services/business/user/MenuService', () => ({
 vi.mock('@/services/foundation/system/TemplateAdminService', () => ({
   templateAdminService: {
     createTemplate: mocks.createTemplate,
+    updateTemplate: mocks.updateTemplate,
+    deleteTemplate: mocks.deleteTemplate,
     getTemplateList: mocks.getTemplateList,
   },
+}));
+
+vi.mock('@/app/components/ui/confirm-modal', () => ({
+  useConfirm: () => mocks.confirm,
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));
 
-function renderClient() {
-  const templates: never[] = [];
+type TemplateRow = { tmpltId: string; tmpltNm: string; tmpltSeCd: string; tmpltPath: string; useYn: string };
+
+function renderClient(templates: TemplateRow[] = []) {
   const templatesPromise = Object.assign(Promise.resolve(templates), {
     status: 'fulfilled' as const,
     value: templates,
@@ -174,5 +184,79 @@ describe('TemplateAdminClient validation', () => {
     // [2026-08-29] tmpltId 는 PK 이자 NOT NULL 이다 — 비었거나 길면 등록이 DB 에서 죽는다.
     expect(templateFormSchema.safeParse({ ...valid, tmpltId: '   ' }).success).toBe(false);
     expect(templateFormSchema.safeParse({ ...valid, tmpltId: 'T'.repeat(21) }).success).toBe(false);
+  });
+});
+
+/**
+ * [2026-09-05 DEC-OPS-036] 정정 경로 — 종전에는 등록·조회만 가능했다(감사 D11-02).
+ * 수정은 같은 다이얼로그를 재사용하되 템플릿 ID(PK)를 잠그고 update 를 경로 ID 로 부른다.
+ * 삭제는 확인 후 한 번만 부르고 pending 동안 disabled·aria-busy, 실패는 토스트다.
+ */
+describe('TemplateAdminClient 수정·삭제', () => {
+  const ROW: TemplateRow = { tmpltId: 'TMPLT_1', tmpltNm: '공지 템플릿', tmpltSeCd: 'TMPT01', tmpltPath: '/t/notice.html', useYn: 'Y' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getTemplateList.mockResolvedValue([ROW]);
+    mocks.updateTemplate.mockResolvedValue({ ...ROW, tmpltNm: '새 이름' });
+    mocks.deleteTemplate.mockResolvedValue(undefined);
+    mocks.confirm.mockResolvedValue(true);
+  });
+
+  it('수정을 누르면 값이 채워진 다이얼로그가 열리고 템플릿 ID 는 잠기며, 승인은 update 를 경로 ID 로 부른다', async () => {
+    const user = userEvent.setup();
+    renderClient([ROW]);
+
+    await user.click(await screen.findByRole('button', { name: '공지 템플릿 수정' }));
+    const dialog = await screen.findByRole('dialog');
+    const scope = within(dialog);
+    expect(scope.getByRole('textbox', { name: '템플릿 ID' })).toHaveValue('TMPLT_1');
+    expect(scope.getByRole('textbox', { name: '템플릿 ID' })).toBeDisabled();
+    expect(scope.getByRole('textbox', { name: '템플릿 명칭' })).toHaveValue('공지 템플릿');
+
+    fireEvent.change(scope.getByRole('textbox', { name: '템플릿 명칭' }), { target: { value: '새 이름' } });
+    await user.click(scope.getByRole('button', { name: '수정 승인' }));
+
+    await waitFor(() => expect(mocks.updateTemplate).toHaveBeenCalledTimes(1));
+    expect(mocks.updateTemplate).toHaveBeenCalledWith('TMPLT_1', expect.objectContaining({ tmpltNm: '새 이름', tmpltPath: '/t/notice.html' }));
+    expect(mocks.createTemplate).not.toHaveBeenCalled();
+    expect(mocks.toast).toHaveBeenCalledWith('템플릿을 수정했습니다.', 'success');
+    // 저장 뒤 목록을 서버에서 다시 읽는다.
+    await waitFor(() => expect(mocks.getTemplateList).toHaveBeenCalledTimes(1));
+  });
+
+  it('삭제는 확인 후 delete 를 한 번만 부르고, pending 동안 disabled·aria-busy 이며, 실패는 토스트로 드러낸다', async () => {
+    let rejectDelete!: (reason?: unknown) => void;
+    mocks.deleteTemplate.mockReturnValue(new Promise<void>((_, reject) => { rejectDelete = reject; }));
+    renderClient([ROW]);
+    const remove = await screen.findByRole('button', { name: '공지 템플릿 삭제' });
+
+    fireEvent.click(remove);
+    fireEvent.click(remove);
+
+    await waitFor(() => expect(mocks.deleteTemplate).toHaveBeenCalledTimes(1));
+    expect(mocks.deleteTemplate).toHaveBeenCalledWith('TMPLT_1');
+    expect(mocks.confirm).toHaveBeenCalledTimes(1);
+    expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ variant: 'destructive' }));
+    const busy = screen.getByRole('button', { name: '공지 템플릿 삭제 중' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+
+    // act() 로 감싸 거부하면 이 화면에서는 뒤따르는 waitFor 가 돌아오지 않는다(실측) — 거부 후 DOM 복귀를 findBy 로 기다린다.
+    rejectDelete(new Error('템플릿 삭제 권한이 없습니다.'));
+
+    expect(await screen.findByRole('button', { name: '공지 템플릿 삭제' })).not.toBeDisabled();
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('템플릿 삭제 권한이 없습니다.', 'error'));
+    // 실패한 삭제는 목록에서 사라지지 않는다.
+    expect(screen.getByText('공지 템플릿')).toBeInTheDocument();
+  });
+
+  it('확인을 취소하면 delete 를 부르지 않는다', async () => {
+    mocks.confirm.mockResolvedValueOnce(false);
+    renderClient([ROW]);
+    fireEvent.click(await screen.findByRole('button', { name: '공지 템플릿 삭제' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.deleteTemplate).not.toHaveBeenCalled();
   });
 });

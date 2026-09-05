@@ -5,6 +5,10 @@ import type { components, operations } from '@/types/generated-api';
 import {
   createExternalHrOperation,
   createRewardOperation,
+  deleteExternalHrOperation,
+  deleteRewardOperation,
+  updateExternalHrOperation,
+  updateRewardOperation,
   getAllExternalHrOperation,
   getAllRewardsOperation,
 } from '@/types/generated-operations';
@@ -67,6 +71,26 @@ class OperationAdminService extends ApiService {
 
   async createReward(data: Reward, config?: AxiosRequestConfig): Promise<Reward> {
     return this.executeGenerated(createRewardOperation, { body: data, config });
+  }
+
+  /*
+   * [2026-09-05 DEC-OPS-036] 정정 경로 — 종전에는 외부인사·포상 모두 등록만 되고 고칠 수 없었다(감사 D11-01).
+   * 외부인사 식별자는 복합키(evntSn·otsdHrId)라 경로에 둘 다 싣는다.
+   */
+  async updateExternalHr(evntSn: number, otsdHrId: string, data: ExternalHr, config?: AxiosRequestConfig): Promise<ExternalHr> {
+    return this.executeGenerated(updateExternalHrOperation, { path: { evntSn, otsdHrId }, body: data, config });
+  }
+
+  async deleteExternalHr(evntSn: number, otsdHrId: string, config?: AxiosRequestConfig): Promise<void> {
+    await this.executeGenerated(deleteExternalHrOperation, { path: { evntSn, otsdHrId }, config });
+  }
+
+  async updateReward(rwrdSn: number, data: Reward, config?: AxiosRequestConfig): Promise<Reward> {
+    return this.executeGenerated(updateRewardOperation, { path: { rwrdSn }, body: data, config });
+  }
+
+  async deleteReward(rwrdSn: number, config?: AxiosRequestConfig): Promise<void> {
+    await this.executeGenerated(deleteRewardOperation, { path: { rwrdSn }, config });
   }
 }
 

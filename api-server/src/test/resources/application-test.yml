@@ -19,7 +19,13 @@ spring:
       matching-strategy: ant_path_matcher
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      # [2026-09-06] create-drop → create. 이 프로파일의 H2 는 JVM 전체가 공유하는 단일 in-memory DB(DB_CLOSE_DELAY=-1)이고
+      #   테스트 컨텍스트 캐시는 8개 상한이라, 캐시에서 축출된 JPA 컨텍스트가 닫히며 **공유 DB 의 테이블을 drop** 했다.
+      #   그 뒤 아직 캐시에 살아 있는 다른 컨텍스트(BaseSecurityTest 하위 3클래스가 공유)가 그 테이블을 읽으면 42S02 다
+      #   (CI run 33975652970: PrivilegeEscalationVulnerabilityTest 2건, 단독 실행은 green — 순서 의존). 새 @WebMvcTest 클래스
+      #   하나가 축출 순서를 밀면 재발하는 구조라 상한을 올리는 대신 종료 시 drop 자체를 없앤다. create 는 컨텍스트 생성 시
+      #   drop+create 만 하므로 스키마는 JVM 이 끝날 때까지 남고, 데이터 격리는 종전과 같이 각 테스트의 setUp 책임이다.
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:

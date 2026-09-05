@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 58,
-    "candidateCount": 135
+    "secondaryActionBoundaries": 61,
+    "candidateCount": 138
   },
   "entries": [
     {
@@ -60,6 +60,26 @@
       "testEvidence": [
         "frontend/src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/templates/TemplateAdminClient.tsx#TemplateAdminClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/templates/TemplateAdminClient.tsx",
+      "owner": "TemplateAdminClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "templateAdminService.deleteTemplate"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx"
       ]
     },
     {
@@ -721,6 +741,26 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx#ExternalHrClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
+      "owner": "ExternalHrClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "operationAdminService.deleteExternalHr"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx"
+      ]
+    },
+    {
       "key": "native-form:frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx#MemoReportManagementClient[1]",
       "kind": "native-form",
       "file": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
@@ -769,6 +809,26 @@
       "testEvidence": [
         "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/operation/rewards/RewardManageClient.tsx#RewardManageClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
+      "owner": "RewardManageClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "operationAdminService.deleteReward"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx"
       ]
     },
     {

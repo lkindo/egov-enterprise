@@ -1366,6 +1366,57 @@ export const updateAbsenceOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const selectTmplatInfoDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "selectTmplatInfoDetail",
+  method: "get",
+  path: "/api/v1/admin/system/templates/{tmpltId}",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "tmpltId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => TemplateDtoResponseSchema),
+  envelopeSchema: ApiResponseTemplateDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const updateTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "updateTmplatInfo",
+  method: "put",
+  path: "/api/v1/admin/system/templates/{tmpltId}",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "tmpltId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: TemplateDtoRequestSchema.strict(),
+  responseSchema: z.lazy(() => TemplateDtoResponseSchema),
+  envelopeSchema: ApiResponseTemplateDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteTmplatInfo",
+  method: "delete",
+  path: "/api/v1/admin/system/templates/{tmpltId}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "tmpltId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getRespondentOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getRespondent",
   method: "get",
@@ -2650,6 +2701,74 @@ export const deleteAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "authrtCd": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const updateRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "updateReward",
+  method: "put",
+  path: "/api/v1/admin/operation/rewards/{rwrdSn}",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "rwrdSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: RewardManageDtoRequestSchema.strict(),
+  responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
+  envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteReward",
+  method: "delete",
+  path: "/api/v1/admin/operation/rewards/{rwrdSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "rwrdSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const updateExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "updateExternalHr",
+  method: "put",
+  path: "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "evntSn": z.number().int(), "otsdHrId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: ExternalHrDtoRequestSchema.strict(),
+  responseSchema: z.lazy(() => ExternalHrDtoResponseSchema),
+  envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteExternalHr",
+  method: "delete",
+  path: "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "evntSn": z.number().int(), "otsdHrId": z.string() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,
@@ -6031,23 +6150,6 @@ export const getAbsencesOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => UserAbsenceDtoResponseSchema)),
   envelopeSchema: ApiResponseListUserAbsenceDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const selectTmplatInfoDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "selectTmplatInfoDetail",
-  method: "get",
-  path: "/api/v1/admin/system/templates/{tmpltId}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "tmpltId": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => TemplateDtoResponseSchema),
-  envelopeSchema: ApiResponseTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

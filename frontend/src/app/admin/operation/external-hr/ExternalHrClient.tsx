@@ -10,7 +10,9 @@ import { operationAdminService, type ExternalHr } from '@/services/foundation/op
 import { eventService } from '@/services/foundation/operation/eventService';
 import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
-import { Plus, ShieldCheck, RefreshCcw } from 'lucide-react';
+import { Loader2, Pencil, Plus, RefreshCcw, ShieldCheck, Trash2 } from 'lucide-react';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { z } from 'zod';
@@ -49,6 +51,18 @@ export const externalHrSchema = ExternalHrDtoSchema.extend({
 });
 
 type ExternalHrFormValues = z.infer<typeof externalHrSchema>;
+
+const EMPTY_FORM: ExternalHrFormValues = {
+  evntSn: 0,
+  otsdHrId: '',
+  otsdHrNm: '',
+  ogdpInstNm: '',
+  areaNo: '',
+  mdTelno: '',
+  endTelno: '',
+  emlAddr: '',
+  brdtYmd: '',
+};
 
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -102,24 +116,71 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const registerSubmitLock = useRef(false);
+  const confirm = useConfirm();
+  /**
+   * 수정 대상. null 이면 등록 모달이다.
+   * [2026-09-05 DEC-OPS-036] 종전에는 등록만 되고 고칠 수 없었다(감사 D11-01) — 같은 폼을 두 모드로 쓴다.
+   * 식별자(소속 행사·외부인사 ID)는 복합키라 수정 모드에서 잠근다.
+   */
+  const [editing, setEditing] = useState<ExternalHr | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const deletePendingRef = useRef(false);
 
   const form = useAppForm(externalHrSchema, {
-    defaultValues: {
-      evntSn: 0,
-      otsdHrId: '',
-      otsdHrNm: '',
-      ogdpInstNm: '',
-      areaNo: '',
-      mdTelno: '',
-      endTelno: '',
-      emlAddr: '',
-      brdtYmd: '',
-    }
+    defaultValues: EMPTY_FORM,
   });
 
   const closeRegisterModal = () => {
     if (registerSubmitLock.current) return;
     setIsModalOpen(false);
+    setEditing(null);
+  };
+
+  const openCreate = () => {
+    setEditing(null);
+    form.reset(EMPTY_FORM);
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (item: ExternalHr) => {
+    setEditing(item);
+    form.reset({
+      evntSn: item.evntSn,
+      otsdHrId: item.otsdHrId,
+      otsdHrNm: item.otsdHrNm ?? '',
+      ogdpInstNm: item.ogdpInstNm ?? '',
+      areaNo: item.areaNo ?? '',
+      mdTelno: item.mdTelno ?? '',
+      endTelno: item.endTelno ?? '',
+      emlAddr: item.emlAddr ?? '',
+      brdtYmd: item.brdtYmd ?? '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const rowKey = (item: ExternalHr) => `${item.evntSn}:${item.otsdHrId}`;
+
+  const handleDelete = async (item: ExternalHr) => {
+    if (deletePendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletingKey(rowKey(item));
+    try {
+      const ok = await confirm({
+        title: '외부인사 삭제',
+        message: `'${item.otsdHrNm || item.otsdHrId}' 정보를 삭제합니다. 삭제한 정보는 복구할 수 없습니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+      await operationAdminService.deleteExternalHr(item.evntSn, item.otsdHrId);
+      toast('외부인사 정보를 삭제했습니다.', 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin-external-hr'] });
+    } catch (error) {
+      toast(extractErrorMessage(error, '외부인사 삭제에 실패했습니다.'), 'error');
+    } finally {
+      deletePendingRef.current = false;
+      setDeletingKey(null);
+    }
   };
 
   /**
@@ -159,16 +220,24 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       //   'STANDARD' 는 어떤 Flyway 시드에도 없는 값이었다. 두 컬럼 모두 nullable 이고
       //   (ExternalHr 엔티티 @Column(length=12), DTO 는 @Size 만) 저장소 어디에서도 읽지 않는다.
       //   묻지 않은 개인정보를 지어내 저장하지 않는다 — 값이 없으면 보내지 않는다.
-      await operationAdminService.createExternalHr({ ...values });
-      toast('성공적으로 등록되었습니다.', 'success');
+      if (editing) {
+        // 식별자는 경로로만 간다 — 본문의 evntSn·otsdHrId 는 서버가 무시한다.
+        await operationAdminService.updateExternalHr(editing.evntSn, editing.otsdHrId, { ...values });
+        toast('외부인사 정보를 수정했습니다.', 'success');
+      } else {
+        await operationAdminService.createExternalHr({ ...values });
+        toast('성공적으로 등록되었습니다.', 'success');
+      }
+      const wasEditing = editing !== null;
       setIsModalOpen(false);
-      form.reset();
-      // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
-      if (page !== 1) setPage(1);
+      setEditing(null);
+      form.reset(EMPTY_FORM);
+      // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다(수정은 현재 페이지에 남긴다)
+      if (!wasEditing && page !== 1) setPage(1);
       queryClient.invalidateQueries({ queryKey: ['admin-external-hr'] });
     } catch (error) {
       if (!form.applyServerErrors(error)) {
-        toast('등록 중 오류가 발생했습니다.', 'error');
+        toast(editing ? '수정 중 오류가 발생했습니다.' : '등록 중 오류가 발생했습니다.', 'error');
       }
     } finally {
       registerSubmitLock.current = false;
@@ -249,7 +318,43 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
         </span>
       ),
       className: 'w-32 text-right pr-8'
-    }
+    },
+    {
+      header: '관리',
+      className: 'text-right w-28',
+      accessor: (item) => {
+        const key = rowKey(item);
+        const isDeleting = deletingKey === key;
+        const label = item.otsdHrNm || item.otsdHrId;
+        return (
+          <div className="flex items-center justify-end gap-1 pr-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={deletingKey !== null || registerLoading}
+              aria-label={`${label} 수정`}
+              onClick={() => openEdit(item)}
+              className="w-10 h-10 rounded-lg hover:bg-muted transition-colors"
+            >
+              <Pencil size={16} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={deletingKey !== null}
+              aria-busy={isDeleting}
+              aria-label={isDeleting ? `${label} 삭제 중` : `${label} 삭제`}
+              onClick={() => { void handleDelete(item); }}
+              className="w-10 h-10 rounded-lg hover:bg-destructive/10 hover:text-destructive-emphasis transition-colors"
+            >
+              {isDeleting
+                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                : <Trash2 size={16} aria-hidden="true" />}
+            </Button>
+          </div>
+        );
+      },
+    },
   ];
 
   return (
@@ -272,7 +377,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <RefreshCcw size={16} aria-hidden="true" />
             새로고침
           </Button>
-          <Button size="sm" onClick={() => setIsModalOpen(true)} className="gap-2">
+          <Button size="sm" onClick={openCreate} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 인사 등록
           </Button>
         </>
@@ -309,7 +414,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       <StandardModal
         isOpen={isModalOpen}
         onClose={closeRegisterModal}
-        title="외부 인사 정보 등록"
+        title={editing ? '외부 인사 정보 수정' : '외부 인사 정보 등록'}
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
@@ -329,7 +434,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
               className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
               <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" aria-hidden="true" />
-              {registerLoading ? '등록 중…' : '최종 등록'}
+              {registerLoading ? (editing ? '저장 중…' : '등록 중…') : (editing ? '수정 저장' : '최종 등록')}
             </Button>
           </div>
         }
@@ -375,8 +480,9 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                     <select
                       {...field}
                       value={field.value || ''}
+                      disabled={editing !== null}
                       onChange={(event) => field.onChange(event.target.value ? Number(event.target.value) : 0)}
-                      className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm"
+                      className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm disabled:opacity-60"
                     >
                       <option value="">— 행사를 선택하세요 —</option>
                       {eventOptions.map((event) => (
@@ -407,10 +513,14 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                     <Input
                       {...field}
                       maxLength={20}
+                      disabled={editing !== null}
                       placeholder="HR-2026-001"
-                      className="h-11 rounded-lg bg-muted border-border"
+                      className="h-11 rounded-lg bg-muted border-border disabled:opacity-60"
                     />
                   </FormControl>
+                  {editing ? (
+                    <p className="text-xs text-muted-foreground">소속 행사와 외부인사 ID 는 식별자라 바꿀 수 없습니다. 바꾸려면 삭제 후 다시 등록하세요.</p>
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}
@@ -495,7 +605,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">이메일</FormLabel>
                   <FormControl>
-                    <Input {...field} type="email" maxLength={50} placeholder="example@domain.com" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} type="email" maxLength={320} placeholder="example@domain.com" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -36,6 +36,8 @@ import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
+import nuri.business.domain.operation.ExternalHr;
+import nuri.business.service.operation.dto.ExternalHrDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -113,6 +115,10 @@ class InputContractMirrorLinterTest {
             //   실패**했다. 길이·필수를 요청 단계에서 요구하게 하고 그 대응을 여기서 동결한다.
             new LengthBinding(Template.class, TemplateDto.class,
                     List.of("tmpltId", "tmpltNm", "tmpltSeCd", "tmpltPath", "useYn")),
+            // [2026-09-05 DEC-OPS-036] 외부인사 편입 — 수정 경로를 열며 gndrCd(30→12)·emlAddr(50→320) 불일치를 잡았다.
+            new LengthBinding(ExternalHr.class, ExternalHrDto.class,
+                    List.of("otsdHrId", "gndrCd", "otsdHrNm", "crTypeCd", "ogdpInstNm", "brdtYmd", "areaNo",
+                            "mdTelno", "endTelno", "emlAddr")),
             new LengthBinding(Sms.class, SmsDto.class, List.of("sndngTelno", "sndngCn")),
             new LengthBinding(SmsRecptnId.class, SmsRecptnDto.class, List.of("rcptnTelno")));
 

@@ -1,4 +1,9 @@
 package nuri.api.controller.foundation.controller.system.template;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.TmplatInfoService;
@@ -87,5 +92,32 @@ class TemplateApiControllerTest extends ControllerTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(payload)))
                 .andExpect(status().isBadRequest());
+    }
+
+    // [2026-09-05 DEC-OPS-036] 수정·삭제 경로.
+    @Test
+    @WithMockCustomUser(role = "ADMIN")
+    @DisplayName("템플릿 수정 — 경로의 ID 와 본문을 서비스에 위임한다")
+    void updateTmplatInfoTest() throws Exception {
+        given(tmplatInfoService.updateTmplatInfo(eq("T1"), any(TemplateDto.class)))
+                .willReturn(TemplateDto.builder().tmpltId("T1").tmpltNm("Renamed").tmpltSeCd("TMPT01").tmpltPath("/t.html").useYn("Y").build());
+
+        mockMvc.perform(put("/api/v1/admin/system/templates/T1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tmpltId\":\"T1\", \"tmpltNm\":\"Renamed\","
+                                + " \"tmpltSeCd\":\"TMPT01\", \"tmpltPath\":\"/t.html\", \"useYn\":\"Y\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.tmpltNm").value("Renamed"));
+    }
+
+    @Test
+    @WithMockCustomUser(role = "ADMIN")
+    @DisplayName("템플릿 삭제")
+    void deleteTmplatInfoTest() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/system/templates/T1").with(csrf()))
+                .andExpect(status().isOk());
+
+        verify(tmplatInfoService).deleteTmplatInfo("T1");
     }
 }
