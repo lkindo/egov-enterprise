@@ -6,6 +6,7 @@ const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.S
 import { VirtualScrollList } from './virtual-scroll-list';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { Search,  User } from 'lucide-react';
+import { logErrorSafely } from '@/lib/safe-error-log';
 ;
 
 interface UserPickerProps {
@@ -34,7 +35,7 @@ export function UserPicker({
  const res = await userSearchService.searchAssignableUsers(keyword.trim());
  setResults(res);
  } catch (error) {
- console.error('Search failed', error);
+ logErrorSafely('Search failed', error);
  } finally {
  setLoading(false);
  }

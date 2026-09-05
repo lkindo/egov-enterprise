@@ -5,6 +5,7 @@ import { NOTICE_BOARD_ID } from '@/config/board-ids';
 import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
 import { getPostsOperation } from '@/types/generated-operations';
+import { logErrorSafely } from '@/lib/safe-error-log';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -93,7 +94,7 @@ export const getInitialBoardData = async (params: {
     // 401 오류는 인증이 필요한 상태이므로 시스템 에러 대신 로그인 페이지로 리다이렉트
     const response = isRecord(error) && isRecord(error.response) ? error.response : null;
     if (response?.status === 401) redirect('/login');
-    console.error('BoardListServer: Failed to fetch board list', error);
+    logErrorSafely('BoardListServer: Failed to fetch board list', error);
     const responseData = response && isRecord(response.data) ? response.data : null;
     const fetchError = typeof responseData?.message === 'string'
       ? responseData.message

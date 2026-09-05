@@ -55,7 +55,23 @@ export default function AdminError({
               icon={<Shield size={18} />}
               label="로그인"
               onClick={() => {
-                window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                /*
+                  ⚠ [2026-09-05] `+ window.location.search` 를 걷었다.
+
+                  이 값은 **소비되지 않는다.** `LoginClient` 의 `resolveInternalRedirect` 가
+                  `parsed.pathname` 만 반환하므로(:47) 쿼리는 로그인 후 이동에 쓰이지 않는다.
+                  그런데도 실어 보내면 주소창·브라우저 히스토리·북마크에 남는다 —
+                  **기능적 목적이 0 인 순수 노출**이었다.
+
+                  무엇이 실렸나: 이 화면은 /admin 전역 에러 바운더리라 어느 목록에서 터지든
+                  그 목록의 쿼리를 그대로 나른다. 게시판 목록의 `searchCnd=2`(작성자) +
+                  `searchWrd` 조합이면 **사람 이름**이 `/login` URL 에 실린다. `/login` 은
+                  인증 게이트가 면제된 경로다.
+
+                  형제 producer 는 이미 pathname 만 쓴다 — `lib/api/client.ts:208`.
+                  이 파일만 비대칭이었다.
+                */
+                window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
               }}
             />
             <ActionButton icon={<Home size={18} />} label="메인으로" href="/" />
