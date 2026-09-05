@@ -241,7 +241,7 @@ export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 // ==========================================================================
 export const DeptJobBoxDtoSchema = z.object({
   deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
+  deptTaskBoxNm: z.string().min(0).max(100),
   deptId: z.string().min(0).max(20).optional(),
   deptNm: z.string().optional(),
   sortOrdr: z.number().int().optional(),
@@ -858,7 +858,7 @@ export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
 // ==========================================================================
 export const CommunityDtoSchema = z.object({
   cmntySn: z.number().int().optional(),
-  cmntyNm: z.string().min(0).max(100).optional(),
+  cmntyNm: z.string().min(0).max(100),
   cmntyIntroCn: z.string().min(0).max(4000).optional(),
   regSeCd: z.string().min(0).max(12).optional(),
   regSeCdNm: z.string().optional(),
@@ -4640,7 +4640,7 @@ export const DeptJobDtoResponseSchema = z.object({
 
 export const DeptJobBoxDtoRequestSchema = z.object({
   deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
+  deptTaskBoxNm: z.string().min(0).max(100),
   deptId: z.string().min(0).max(20).optional(),
   deptNm: z.string().optional(),
   sortOrdr: z.number().int().optional(),
@@ -4652,7 +4652,7 @@ export const DeptJobBoxDtoRequestSchema = z.object({
 
 export const DeptJobBoxDtoResponseSchema = z.object({
   deptTaskBoxSn: z.number().int().optional().nullable(),
-  deptTaskBoxNm: z.string().optional().nullable(),
+  deptTaskBoxNm: z.string().min(0).max(100),
   deptId: z.string().min(0).max(20).optional().nullable(),
   deptNm: z.string().optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),
@@ -5556,7 +5556,7 @@ export const EventInfoDtoResponseSchema = z.object({
 
 export const CommunityDtoRequestSchema = z.object({
   cmntySn: z.number().int().optional(),
-  cmntyNm: z.string().min(0).max(100).optional(),
+  cmntyNm: z.string().min(0).max(100),
   cmntyIntroCn: z.string().min(0).max(4000).optional(),
   regSeCd: z.string().min(0).max(12).optional(),
   regSeCdNm: z.string().optional(),
@@ -5570,7 +5570,7 @@ export const CommunityDtoRequestSchema = z.object({
 
 export const CommunityDtoResponseSchema = z.object({
   cmntySn: z.number().int().optional().nullable(),
-  cmntyNm: z.string().min(0).max(100).optional().nullable(),
+  cmntyNm: z.string().min(0).max(100),
   cmntyIntroCn: z.string().min(0).max(4000).optional().nullable(),
   regSeCd: z.string().min(0).max(12).optional().nullable(),
   regSeCdNm: z.string().optional().nullable(),

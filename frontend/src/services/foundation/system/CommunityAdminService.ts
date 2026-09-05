@@ -12,7 +12,7 @@ import {
   updateCommunityOperation,
 } from '@/types/generated-operations';
 
-interface Community {
+export interface Community {
   cmntySn: number;
   cmntyNm: string;
   cmntyIntrcn: string;

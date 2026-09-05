@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { FolderCog, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -28,6 +28,9 @@ import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { DeptJobBoxManageDialog } from '@/components/business/deptJob/DeptJobBoxManageDialog';
 
 interface WorkHubClientProps {
   defaultTab?: string;
@@ -92,6 +95,11 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   const [reportAction, setReportAction] = useState<{ type: 'save' | 'delete'; id?: number } | null>(null);
   const [scheduleAction, setScheduleAction] = useState<{ type: 'save' | 'delete'; id?: number } | null>(null);
   const confirm = useConfirm();
+  const { user } = useAuth();
+  // [2026-09-06 DEC-OPS-037] 업무함 CRUD 는 서버가 @AdminOrSystem 이다. 표시 판정은 라우트 게이트와 같은 역할 집합
+  //   (DEC-OPS-023 ②)을 쓴다 — 표시일 뿐 인가가 아니며, 관리자가 아니면 버튼 자체를 그리지 않는다(죽은 버튼 금지, G10).
+  const canManageBoxes = isAdministrativeRole(user?.role);
+  const [boxManageOpen, setBoxManageOpen] = useState(false);
   const { toast } = useToast();
 
   // URL 의 tab 쿼리와 탭 상태를 동기화한다.
@@ -505,11 +513,18 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           {/* 탭마다 '등록'의 대상이 다르다. 일정·보고는 다이얼로그로 받고,
               업무는 전용 등록 화면이 이미 있어 그리로 보낸다. */}
           {activeTab === 'job' ? (
-            <Button asChild size="sm">
-              <Link href="/smart-toolkit/dept-job/create">
-                <Plus size={16} aria-hidden="true" /> 업무 등록
-              </Link>
-            </Button>
+            <>
+              {canManageBoxes && (
+                <Button size="sm" variant="outline" onClick={() => setBoxManageOpen(true)}>
+                  <FolderCog size={16} aria-hidden="true" /> 업무함 관리
+                </Button>
+              )}
+              <Button asChild size="sm">
+                <Link href="/smart-toolkit/dept-job/create">
+                  <Plus size={16} aria-hidden="true" /> 업무 등록
+                </Link>
+              </Button>
+            </>
           ) : (
             <Button
               size="sm"
@@ -709,6 +724,10 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           isPending={reportAction?.type === 'save'}
         />
       </StandardModal>
+      {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
+      {canManageBoxes && boxManageOpen && (
+        <DeptJobBoxManageDialog isOpen onClose={() => setBoxManageOpen(false)} />
+      )}
     </>
   );
 }
