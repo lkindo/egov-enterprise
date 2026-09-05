@@ -96,6 +96,30 @@ public class CommunityService {
                         CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
     }
 
+    /**
+     * 일반 사용자용 커뮤니티 상세 — 사용 중(useYn='Y')이고 정식 등록(regSeCd='REGC01')인 것만.
+     *
+     * <p>[2026-09-05] 2026-09-02 커밋(7ec5e25fd)이 <b>목록</b>에서 같은 결함을 고쳤다 — 관리자·사용자
+     * 컨트롤러가 같은 메서드를 불러 논리 삭제된 커뮤니티가 사용자에게 보였고, 사용자용
+     * {@link #getActiveCommunityList} 를 분리했다. 그런데 <b>상세는 손대지 않아</b> 사용자 상세가
+     * 여전히 {@link #getCommunity}(무필터 findById) 를 불렀다. cmntySn 을 직접 지정하면 관리자가
+     * '삭제' 한 커뮤니티가 그대로 열리고, 응답에 개설자 loginId({@code frstRgtrId})가 실린다.
+     *
+     * <p><b>{@link #getCommunity} 안에 필터를 넣지 않은 이유</b>는 목록 때와 같다(H3) — 관리자 상세
+     * ({@code admin/.../CommunityApiController}) 도 같은 메서드를 쓰며, 관리자가 중지된 커뮤니티를
+     * 되살리거나 정리하려면 그것을 열 수 있어야 한다. 사용자 경로만 이 메서드로 갈아 끼운다.
+     *
+     * <p>없는 것과 감춰진 것을 구분하지 않고 둘 다 {@code RESOURCE_NOT_FOUND} 로 답한다 —
+     * 존재 여부 자체가 정보가 되지 않게 하기 위해서다.
+     */
+    public CommunityDto getActiveCommunity(Long cmntySn) {
+        return communityRepository.findById(Objects.requireNonNull(cmntySn))
+                .filter(community -> "Y".equals(community.getUseYn()) && "REGC01".equals(community.getRegSeCd()))
+                .map(CommunityDto::from)
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
+    }
+
     @Transactional
     public CommunityDto createCommunity(String userId, CommunityDto dto) {
         Community community = Community.builder()

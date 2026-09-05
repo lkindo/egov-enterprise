@@ -47,16 +47,36 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.list[0].cmntySn").value(101));
     }
 
+    /**
+     * [2026-09-05] 사용자 상세는 {@code getActiveCommunity} 를 불러야 한다. 종전에는 관리자 상세와
+     * 같은 무필터 {@code getCommunity} 를 불러 논리 삭제된 커뮤니티가 cmntySn 직접 지정으로 열렸다.
+     * 어느 메서드를 부르는지가 곧 인가 의미라, 호출 대상을 양방향으로 고정한다.
+     */
     @Test
-    @DisplayName("커뮤니티 상세 조회 성공")
+    @DisplayName("커뮤니티 상세 조회 성공 — 사용자용 활성 조회 메서드를 통해서만")
     void getCommunity_Success() throws Exception {
-        given(communityService.getCommunity(anyLong())).willReturn(CommunityDto.builder().cmntySn(101L).build());
+        given(communityService.getActiveCommunity(anyLong())).willReturn(CommunityDto.builder().cmntySn(101L).build());
 
         mockMvc.perform(get("/api/v1/communities/101")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.cmntySn").value(101));
+
+        // 관리자용 무필터 메서드로 새면 논리 삭제된 커뮤니티가 다시 열린다.
+        org.mockito.Mockito.verify(communityService, org.mockito.Mockito.never()).getCommunity(anyLong());
+    }
+
+    @Test
+    @DisplayName("🔒 논리 삭제된 커뮤니티는 사용자 상세에서 404 다 — 존재 여부를 드러내지 않는다")
+    void getCommunity_hiddenIsNotFound() throws Exception {
+        given(communityService.getActiveCommunity(101L)).willThrow(
+                new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND));
+
+        mockMvc.perform(get("/api/v1/communities/101")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 
     @Test
