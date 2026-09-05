@@ -28,11 +28,12 @@ import {
 } from '@/app/actions/userActions';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
 
-const { mockToast, mockConfirm, mockUserFormError, mockDeptFormError } = vi.hoisted(() => ({
+const { mockToast, mockConfirm, mockUserFormError, mockDeptFormError, mockPasswordFormError } = vi.hoisted(() => ({
   mockToast: vi.fn(),
   mockConfirm: vi.fn(),
   mockUserFormError: vi.fn(),
   mockDeptFormError: vi.fn(),
+  mockPasswordFormError: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -217,7 +218,25 @@ vi.mock('@/services/foundation/system/UserAdminService', () => ({
     createUser: vi.fn(),
     updateUser: vi.fn(),
     deleteUser: vi.fn(),
+    updatePassword: vi.fn(),
   },
+}));
+// 초기화 폼은 자기 테스트(AdminPasswordResetForm.test.tsx)가 있다. 여기서는 허브 배선만 본다.
+vi.mock('@/components/admin/user/AdminPasswordResetForm', () => ({
+  AdminPasswordResetForm: ({ targetLabel, onSubmit, onCancel, isPending, externalBusy }: any) => (
+    <div>
+      <div data-testid="password-form-target">{targetLabel}</div>
+      <button
+        type="button"
+        aria-busy={isPending || undefined}
+        disabled={isPending || externalBusy}
+        onClick={() => { void onSubmit('NewPassword1!').catch(mockPasswordFormError); }}
+      >
+        {isPending ? 'password-form-submit-pending' : 'password-form-submit'}
+      </button>
+      <button type="button" disabled={isPending || externalBusy} onClick={onCancel}>password-form-cancel</button>
+    </div>
+  ),
 }));
 vi.mock('@/services/foundation/system/DeptAdminService', () => ({
   deptAdminService: {
@@ -577,10 +596,14 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(userAdminService.deleteUser).toHaveBeenCalledTimes(1));
     expect(userAdminService.deleteUser).toHaveBeenCalledWith('user1');
+    // 삭제가 진행 중이면 자식 폼(사용자 수정·비밀번호 초기화)의 쓰기는 일어나지 않는다.
+    expect(userAdminService.updatePassword).not.toHaveBeenCalled();
+    expect(userAdminService.updateUser).not.toHaveBeenCalled();
     const busy = screen.getByRole('button', { name: '사용자 삭제 중…' });
     expect(busy).toBeDisabled();
     expect(busy).toHaveAttribute('aria-busy', 'true');
     expect(formSubmit).toBeDisabled();
+    expect(screen.getByRole('button', { name: '비밀번호 초기화' })).toBeDisabled();
     expect(formSubmit).not.toHaveAttribute('aria-busy');
     expect(formCancel).toBeDisabled();
     screen.getAllByRole('button', { name: /정보 수정/ }).forEach((button) => expect(button).toBeDisabled());
@@ -807,5 +830,72 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('권한을 변경했습니다.', 'success'));
     expect(screen.queryByText('사용자 권한 일괄 변경')).not.toBeInTheDocument();
+  });
+
+  /**
+   * [2026-09-05] 비밀번호 초기화 배선. API 와 서비스 메서드는 있었지만 호출부가 0건이었다.
+   * 대상 식별은 삭제와 같은 축(selectedItemId = 목록 행의 userId)이다.
+   */
+  it('비밀번호 초기화 form submit은 parent action을 잠그고 서버 오류 뒤 모달 상태를 복구한다', async () => {
+    const serverError = {
+      response: { data: { errors: [{ field: 'newPassword', message: '최근 사용한 비밀번호입니다.' }] } },
+    };
+    const pending = deferred<void>();
+    vi.mocked(userAdminService.updatePassword).mockReturnValueOnce(pending.promise as any);
+    await selectFirstRow();
+
+    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: '비밀번호 초기화' })).toBeInTheDocument();
+    expect(screen.getByTestId('password-form-target')).toHaveTextContent('홍길동(user1)');
+    const submit = within(dialog).getByRole('button', { name: 'password-form-submit' });
+    const cancel = within(dialog).getByRole('button', { name: 'password-form-cancel' });
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(userAdminService.updatePassword).toHaveBeenCalledTimes(1));
+    expect(userAdminService.updatePassword).toHaveBeenCalledWith('user1', { newPassword: 'NewPassword1!' });
+    const busy = within(dialog).getByRole('button', { name: 'password-form-submit-pending' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    expect(cancel).toBeDisabled();
+    // 초기화가 진행 중이면 같은 화면의 삭제·일괄 작업도 잠긴다.
+    expect(screen.getByRole('button', { name: '사용자 삭제' })).toBeDisabled();
+    const bulkDelete = screen.getByRole('button', { name: 'bulk-일괄 삭제' });
+    expect(bulkDelete).toBeDisabled();
+    act(() => {
+      bulkDelete.click();
+      cancel.click();
+      within(dialog).getByRole('button', { name: 'modal-close' }).click();
+    });
+    expect(bulkDeleteUsersAction).not.toHaveBeenCalled();
+    expect(userAdminService.deleteUser).not.toHaveBeenCalled();
+    expect(dialog).toBeInTheDocument();
+
+    await act(async () => pending.reject(serverError));
+
+    // 실패는 폼이 소유한다 — 허브는 error 토스트를 띄우지 않고 모달·선택 상태를 유지한다.
+    await waitFor(() => expect(mockPasswordFormError).toHaveBeenCalledWith(serverError));
+    expect(mockToast).not.toHaveBeenCalledWith(expect.any(String), 'error');
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '홍길동' })).toBeVisible();
+    expect(within(dialog).getByRole('button', { name: 'password-form-submit' })).toBeEnabled();
+    expect(cancel).toBeEnabled();
+    expect(screen.getByRole('button', { name: '사용자 삭제' })).toBeEnabled();
+  });
+
+  it('비밀번호 초기화 성공을 안내하고 모달을 닫는다', async () => {
+    vi.mocked(userAdminService.updatePassword).mockResolvedValueOnce(undefined);
+    await selectFirstRow();
+
+    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'password-form-submit' }));
+
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith(
+      expect.stringContaining("'홍길동' 사용자의 비밀번호를 초기화했습니다"), 'success',
+    ));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

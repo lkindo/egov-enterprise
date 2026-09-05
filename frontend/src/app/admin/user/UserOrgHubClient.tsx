@@ -30,7 +30,8 @@ import { type LucideIcon,
   SearchSlash,
   Info,
   Save,
-  GripVertical } from 'lucide-react';
+  GripVertical,
+  KeyRound } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -61,6 +62,7 @@ import {
 import { StandardModal } from '@/app/components/ui/standard-modal';
 
 import { UserManageForm, UserFormValues } from '@/components/admin/user/UserManageForm';
+import { AdminPasswordResetForm } from '@/components/admin/user/AdminPasswordResetForm';
 import { DepartmentForm, DeptFormValues } from '@/components/admin/user/DepartmentForm';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import {
@@ -99,6 +101,7 @@ const DEPT_LIST_SIZE = 1000;
 type UserOrgWriteOperation =
   | 'user-form'
   | 'dept-form'
+  | 'password-reset'
   | 'delete-user'
   | 'delete-dept'
   | 'bulk-delete'
@@ -346,6 +349,7 @@ export default function UserOrgHubClient({
   }, [defaultTab, router, startTransition]);
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
 
@@ -393,6 +397,35 @@ export default function UserOrgHubClient({
     if (actionRequestRef.current) return;
     setFormMode('edit');
     setIsDeptModalOpen(true);
+  };
+
+  /**
+   * [2026-09-05] 관리자 비밀번호 초기화. API(`PATCH /admin/system/users/{userId}/password`)와
+   * `userAdminService.updatePassword` 는 있었지만 호출부가 0건이라, 비밀번호를 잊은 사용자를
+   * UI 안에서 구제할 경로가 없었다(로그인 화면에는 비밀번호 찾기가 없다).
+   */
+  const handleOpenPasswordReset = () => {
+    if (actionRequestRef.current || !selectedItemId) return;
+    setIsPasswordModalOpen(true);
+  };
+
+  const handleClosePasswordModal = () => {
+    if (actionRequestRef.current) return;
+    setIsPasswordModalOpen(false);
+  };
+
+  /** 서버 호출 실패는 그대로 throw 한다 — 폼이 필드 오류 매핑·입력 보존·안내를 소유한다. */
+  const onPasswordResetSubmit = async (newPassword: string) => {
+    const operation = 'password-reset' as const;
+    if (!selectedItemId || !beginNonFormAction(operation)) return;
+    try {
+      await userAdminService.updatePassword(selectedItemId as string, { newPassword });
+      const targetName = (selectedItem as UserManage)?.userNm ?? String(selectedItemId);
+      toast(`'${targetName}' 사용자의 비밀번호를 초기화했습니다. 새 비밀번호를 사용자에게 직접 전달해 주세요.`, 'success');
+      setIsPasswordModalOpen(false);
+    } finally {
+      finishNonFormAction(operation);
+    }
   };
 
   const handleCloseUserModal = () => {
@@ -1233,6 +1266,16 @@ export default function UserOrgHubClient({
                       {/* 실제 동작은 계정 삭제다. '접근 차단'은 무엇을 하는지 오인시킨다. */}
                       {activeWriteOperation === 'delete-user' ? '사용자 삭제 중…' : '사용자 삭제'}
                     </button>
+                    {/* 비밀번호 초기화 — 종전에는 API 만 있고 이 화면 어디에도 진입점이 없었다. */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleOpenPasswordReset}
+                      disabled={isSaving}
+                      className="flex-1 h-10 rounded-xl font-semibold text-xs"
+                    >
+                      <KeyRound size={16} aria-hidden="true" /> 비밀번호 초기화
+                    </Button>
                     {/* 수정은 편집 다이얼로그에서 저장한다. 종전에는 onClick 이 없는 死버튼이라 눌러도 아무 일도 없었다. */}
                     <Button
                       onClick={handleOpenUserEdit}
@@ -1285,6 +1328,23 @@ export default function UserOrgHubClient({
           onCancel={handleCloseUserModal}
           isPending={activeWriteOperation === 'user-form'}
           externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'user-form'}
+        />
+      </StandardModal>
+
+      <StandardModal
+        isOpen={isPasswordModalOpen}
+        onClose={handleClosePasswordModal}
+        title="비밀번호 초기화"
+        maxWidth="md"
+      >
+        {/* 열릴 때마다 빈 폼으로 시작하도록 대상별 key 를 준다. */}
+        <AdminPasswordResetForm
+          key={`password-reset-${String(selectedItemId ?? '')}`}
+          targetLabel={`${(selectedItem as UserManage)?.userNm ?? ''}${selectedItemId ? `(${String(selectedItemId)})` : ''}`.trim() || String(selectedItemId ?? '')}
+          onSubmit={onPasswordResetSubmit}
+          onCancel={handleClosePasswordModal}
+          isPending={activeWriteOperation === 'password-reset'}
+          externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'password-reset'}
         />
       </StandardModal>
 
