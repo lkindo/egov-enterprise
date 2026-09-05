@@ -193,6 +193,45 @@ class InformalSanctionServiceTest {
     }
 
     @Test
+    @DisplayName("목록 항목도 상세처럼 업무 구분 코드명을 해석한다 — 세 탭이 코드 원문(E2ETASK)을 제목으로 보여 주던 결함")
+    void listsResolveTaskTypeNamesLikeDetail() {
+        Pageable pageable = PageRequest.of(0, 10);
+        InformalSanction pending = InformalSanction.builder()
+                .ifmlAtrzSn(1L).aplcntId("user1").aprvrId("admin").taskSeCd("E2ETASK")
+                .aprvYn(SanctionStatus.REQUESTED.getCode()).build();
+        InformalSanction unknownCode = InformalSanction.builder()
+                .ifmlAtrzSn(2L).aplcntId("user1").aprvrId("admin").taskSeCd("GONE")
+                .aprvYn(SanctionStatus.REQUESTED.getCode()).build();
+        given(informalSanctionRepository.findByAprvrIdAndAprvYn(eq("admin"), eq("A"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(pending, unknownCode)));
+        given(informalSanctionRepository.findByAplcntId("user1", pageable))
+                .willReturn(new PageImpl<>(List.of(pending)));
+        given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of(
+                new nuri.business.service.code.dto.CommonCodeDto("COM075", "E2ETASK", "E2E 업무", null, "Y")));
+
+        Page<InformalSanctionDto> pendingPage = informalSanctionService.getPendingApprovalList("admin", pageable);
+        Page<InformalSanctionDto> submittedPage = informalSanctionService.getInformalSanctionList("user1", pageable);
+
+        assertThat(pendingPage.getContent().get(0).getTaskSeNm()).isEqualTo("E2E 업무");
+        // 그룹에 없는 코드는 상세 조회와 같이 빈 문자열이다 — 화면이 코드로 폴백한다.
+        assertThat(pendingPage.getContent().get(1).getTaskSeNm()).isEmpty();
+        assertThat(submittedPage.getContent().get(0).getTaskSeNm()).isEqualTo("E2E 업무");
+        // 페이지당 그룹 조회 1회 — 항목마다 조회하지 않는다.
+        verify(commonCodeService, times(2)).getCodesByGroup("COM075");
+    }
+
+    @Test
+    @DisplayName("빈 목록은 코드 그룹을 조회하지 않는다")
+    void emptyListSkipsTaskTypeLookup() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(informalSanctionRepository.findByAprvrIdAndAprvYn(eq("admin"), eq("A"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of()));
+
+        assertThat(informalSanctionService.getPendingApprovalList("admin", pageable).getContent()).isEmpty();
+        verify(commonCodeService, never()).getCodesByGroup(any());
+    }
+
+    @Test
     @DisplayName("업무 구분 선택지는 COM075 사용 중 상세코드이며, 없으면 빈 목록을 그대로 돌려준다")
     void getTaskTypesReadsCom075WithoutInventing() {
         given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of());
