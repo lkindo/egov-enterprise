@@ -18,6 +18,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -81,6 +82,21 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
                                 .build())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("부서 업무함 등록 — 이름이 비면 400 (DEC-OPS-037 제품 규칙)")
+    @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
+    void createDeptJobBox_BlankName_BadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/dept-jobs/boxes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(DeptJobBoxDto.builder()
+                                .deptTaskBoxNm("   ")
+                                .deptId("D1")
+                                .build())))
+                .andExpect(status().isBadRequest());
+        then(egovDeptJobBoxService).shouldHaveNoInteractions();
     }
 
     @Test

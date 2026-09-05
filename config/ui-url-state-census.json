@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "c13959815a5f8b0cf12a6191a1ed086cf2407199407e8e3b9abb5e87b7768cca"
+    "inventoryHash": "042bae970f15976a6fe1026bedc30d1ffdd26288b863bae2f3de559e3d35e6fd"
   },
   "summary": {
-    "sourceFileCount": 518,
-    "records": 371,
-    "syntaxOccurrences": 436,
-    "ambiguousRecords": 348,
-    "unverifiedRecords": 371,
+    "sourceFileCount": 520,
+    "records": 373,
+    "syntaxOccurrences": 438,
+    "ambiguousRecords": 350,
+    "unverifiedRecords": 373,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 49,
+      "form-producer": 51,
       "navigation-producer": 155,
       "page-redirect": 7,
       "query-builder": 23,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 363,
+      "navigation": 365,
       "request-telemetry": 8
     }
   },
@@ -15436,6 +15436,84 @@
       },
       "evidence": {
         "source": "frontend/src/components/admin/user/UserManageForm.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-7C944A7B4D997B",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+      "producerFile": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-C99EDA577B5363",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
+      "producerFile": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }

@@ -24,6 +24,7 @@ import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { isQnaSolved } from '@/services/business/user/help/HelpUserService';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { CommunityManageDialog } from '@/components/business/community/CommunityManageDialog';
 
 // --- Types ---
 type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
@@ -45,6 +46,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  //   사라진다**. proxy 의 /admin 게이트는 4종을 전부 통과시키므로, 라우트는 열어 주는데
  //   화면만 막히는 비대칭이 된다 — DEC-OPS-023 ②가 계약으로 막으려던 형태다.
  const isAdmin = isAdministrativeRole(user?.role);
+ // [2026-09-06 DEC-OPS-037] 커뮤니티 생성·수정·폐쇄(감사 D07-01). 관리자이고 커뮤니티 탭일 때만 버튼을 그린다.
+ const [communityManageOpen, setCommunityManageOpen] = useState(false);
  const [searchQuery, setSearchQuery] = useState('');
  // 타이핑 한 글자마다 서버 요청이 나가던 것을 300ms 디바운스한다.
  // 입력 컨트롤에는 원본 상태를 바인딩해야 입력 지연이 생기지 않는다.
@@ -181,6 +184,15 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  className="h-12 md:h-11 px-4 md:px-8 rounded-lg border-2 border-border bg-card text-foreground font-bold tracking-tight text-xs hover:bg-muted hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
  >
  <Settings2 className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-180 transition-transform text-primary" /> 게시판 관리
+ </Button>
+ )}
+ {isAdmin && activeCategory === 'COMMUNITY' && (
+ <Button
+ onClick={() => setCommunityManageOpen(true)}
+ variant="outline"
+ className="h-12 md:h-11 px-4 md:px-8 rounded-lg border-2 border-border bg-card text-foreground font-bold tracking-tight text-xs hover:bg-muted transition-all gap-2 md:gap-3 whitespace-nowrap"
+ >
+ <Users className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] text-primary" aria-hidden="true" /> 커뮤니티 관리
  </Button>
  )}
  <Button
@@ -420,6 +432,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </HubSectionCard>
  </div>
  </motion.div>
+ {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
+ {isAdmin && communityManageOpen && (
+ <CommunityManageDialog isOpen onClose={() => setCommunityManageOpen(false)} />
+ )}
  </motion.div>
  );
 }

@@ -35379,7 +35379,9 @@
             "format": "int64"
           },
           "deptTaskBoxNm": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
           },
           "deptId": {
             "type": "string",
@@ -35407,7 +35409,10 @@
             "type": "string",
             "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "deptTaskBoxNm"
+        ]
       },
       "CommentDto": {
         "type": "object",
@@ -37518,6 +37523,7 @@
           }
         },
         "required": [
+          "cmntyNm",
           "useYn"
         ]
       },

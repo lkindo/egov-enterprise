@@ -5060,7 +5060,7 @@ export interface components {
         DeptJobBoxDto: {
             /** Format: int64 */
             deptTaskBoxSn?: number;
-            deptTaskBoxNm?: string;
+            deptTaskBoxNm: string;
             deptId?: string;
             deptNm?: string;
             /** Format: int64 */
@@ -5970,7 +5970,7 @@ export interface components {
         CommunityDto: {
             /** Format: int64 */
             cmntySn?: number;
-            cmntyNm?: string;
+            cmntyNm: string;
             cmntyIntroCn?: string;
             regSeCd?: string;
             regSeCdNm?: string;
