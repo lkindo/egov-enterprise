@@ -4,15 +4,30 @@
 [ -n "$SKIP_HOOKS" ] && exit 0
 set -e
 
-# stdin의 모든 push ref 범위를 합쳐 변경 파일을 과소 추정하지 않는다.
+# stdin의 모든 object-bearing push ref 범위를 합쳐 변경 파일을 과소 추정하지 않는다.
+# remote ref 삭제는 local object를 전송하지 않으므로 변경 범위에서 제외한다.
+ZERO_OID="0000000000000000000000000000000000000000"
+DELETION_REFS=0
+OBJECT_REFS=0
 RANGES=""
 while read local_ref local_sha remote_ref remote_sha; do
-  if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+  if [ "$local_sha" = "$ZERO_OID" ]; then
+    DELETION_REFS=$((DELETION_REFS + 1))
+    continue
+  fi
+
+  OBJECT_REFS=$((OBJECT_REFS + 1))
+  if [ "$remote_sha" = "$ZERO_OID" ]; then
     RANGES="$RANGES origin/main..$local_sha"
   else
     RANGES="$RANGES $remote_sha..$local_sha"
   fi
 done
+
+if [ "$DELETION_REFS" -gt 0 ] && [ "$OBJECT_REFS" -eq 0 ]; then
+  echo "[pre-push] remote branch/tag 삭제만 감지됨 — 전송할 object가 없어 로컬 검증을 생략합니다."
+  exit 0
+fi
 
 # IDE/GUI처럼 stdin 범위가 없는 경우 upstream 또는 origin/main 전체 차이를 사용한다.
 # 불확실하면 fast-pass를 포기하는 방향으로만 폴백한다.
