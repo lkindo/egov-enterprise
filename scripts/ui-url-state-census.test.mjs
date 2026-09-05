@@ -388,10 +388,25 @@ test('폼 가로채기는 증명된 경우에만 판정한다', () => {
   );
 
   // 아래 둘은 **판정하지 않는다**. 모르는 것을 안전하다고 말하지 않는다.
+  // 같은 파일에 정의가 있으면 따라가 판정한다.
   assert.deepEqual(
-    scan('export const B = () => <form onSubmit={submitSurvey}><input name="q" /></form>;'),
+    scan('const submitSurvey = (e) => { e.preventDefault(); save(); };\nexport const B = () => <form onSubmit={submitSurvey}><input name="q" /></form>;'),
+    ['intercepted-submit'],
+    '같은 파일의 named handler 는 정의를 따라가 preventDefault 를 확인한다',
+  );
+
+  // 정의가 이 파일에 없으면(prop 으로 받은 핸들러) 판정하지 않는다.
+  assert.deepEqual(
+    scan('export const B2 = ({ onSearch }) => <form onSubmit={onSearch}><input name="q" /></form>;'),
     ['implicit-or-computed-method'],
-    '이름만 넘긴 핸들러는 정의를 따라가야 하므로 판정 불가다',
+    'prop 으로 받은 핸들러는 정의가 파일 밖이라 판정할 수 없다',
+  );
+
+  // 정의는 있는데 preventDefault 가 없으면 판정하지 않는다 — 네이티브 제출이 일어난다.
+  assert.deepEqual(
+    scan('const submitLoose = (e) => { save(e); };\nexport const B3 = () => <form onSubmit={submitLoose}><input name="q" /></form>;'),
+    ['implicit-or-computed-method'],
+    'preventDefault 가 없는 named handler 는 네이티브 GET 제출을 막지 못한다',
   );
   assert.deepEqual(
     scan('export const D = () => <form noValidate><input name="q" /></form>;'),

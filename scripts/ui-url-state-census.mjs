@@ -407,11 +407,37 @@ function expressionTarget(tokens) {
  * 그 함수 정의를 따라가야 하는데, 이 스캐너는 파일 하나를 토큰으로만 훑으므로 따라갈 수 없다.
  * 모르는 것을 안전하다고 말하지 않는다.
  */
-function submitInterception(tokens) {
+function submitInterception(tokens, allTokens) {
   const values = tokens.map((token) => token.value);
   if (values.includes('preventDefault')) return 'prevent-default';
   const handleSubmitIndex = values.indexOf('handleSubmit');
   if (handleSubmitIndex !== -1 && values[handleSubmitIndex + 1] === '(') return 'react-hook-form-handle-submit';
+
+  /*
+    [2026-09-05] 이름만 넘긴 핸들러(`onSubmit={submitCompose}`)를 **같은 파일 안에서만** 따라간다.
+
+    실측: 미판정 폼 27개 중 20개가 이 형태이고 정의가 같은 파일에 있다. 남은 7개는 대부분
+    **prop 으로 받은 핸들러**(`onSearch`·`onSubmit`)라 정의가 이 파일에 없다 — 그것들은
+    판정하지 않는다. 파일을 넘어가 추적하지 않는 것이 이 스캐너의 경계다.
+  */
+  if (values.length !== 1 || !/^[A-Za-z_$][\w$]*$/u.test(values[0]) || !allTokens) return null;
+  const name = values[0];
+
+  for (let index = 0; index < allTokens.length - 1; index += 1) {
+    const isDefinition = (allTokens[index].value === 'const' || allTokens[index].value === 'function')
+      && allTokens[index + 1]?.value === name;
+    if (!isDefinition) continue;
+
+    // 정의 뒤 첫 본문 블록을 찾아 그 안에서만 확인한다. 블록을 못 찾으면 판정하지 않는다.
+    for (let cursor = index + 2; cursor < allTokens.length && cursor < index + 60; cursor += 1) {
+      if (allTokens[cursor].value !== '{') continue;
+      const close = findClosing(allTokens, cursor, '{', '}');
+      if (close < 0) break;
+      const body = allTokens.slice(cursor + 1, close).map((token) => token.value);
+      return body.includes('preventDefault') ? 'named-handler-prevent-default' : null;
+    }
+    return null;
+  }
   return null;
 }
 
@@ -789,7 +815,7 @@ export function scanUrlStateSource(source, options = {}) {
         }
         if (tokens[cursor].value === 'onSubmit' && tokens[cursor + 1]?.value === '=' && tokens[cursor + 2]?.value === '{') {
           const close = findClosing(tokens, cursor + 2, '{', '}');
-          if (close >= 0) interception = submitInterception(tokens.slice(cursor + 3, close));
+          if (close >= 0) interception = submitInterception(tokens.slice(cursor + 3, close), tokens);
         }
         cursor += 1;
       }
