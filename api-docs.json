@@ -37267,7 +37267,8 @@
               "maxItems": 100
             },
             "maxItems": 100,
-            "minItems": 0
+            "minItems": 0,
+            "writeOnly": true
           },
           "sndngResultCode": {
             "type": "string",

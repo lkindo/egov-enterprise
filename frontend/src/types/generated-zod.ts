@@ -5694,7 +5694,6 @@ export const SentMailDtoResponseSchema = z.object({
   emailCn: z.string().optional().nullable(),
   dsptchPerson: z.string().optional().nullable(),
   recptnPerson: z.string().min(0).max(100).optional().nullable(),
-  recipients: z.array(z.lazy(() => MailRecipientDtoResponseSchema)).min(0).max(100).optional().nullable(),
   sndngResultCode: z.string().optional().nullable(),
   sndngDe: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),

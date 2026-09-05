@@ -100,7 +100,11 @@ class PrivacyAccessCensusLinterTest {
             "UserApiController#getMe", "인증 주체 본인의 프로필 조회",
             "AddressBookApiController#getAddressBooks", "목록 매퍼가 구성원 연락처를 채우지 않는 소유자 범위 조회",
             "SmsApiController#getSmsList", "읽기 매퍼가 수신자 목록을 빈 배열로 고정",
-            "SmsApiController#getSms", "읽기 매퍼가 수신자 목록을 빈 배열로 고정");
+            "SmsApiController#getSms", "읽기 매퍼가 수신자 목록을 빈 배열로 고정",
+            // [2026-09-05 DEC-OPS-035] recipients(esntlId|emlAddr) 는 발송 요청 전용이다 — JsonProperty WRITE_ONLY 로
+            //   직렬화에서 제외되고 읽기 매퍼(SentMailDto.from)도 채우지 않는다. 문자와 같은 구조의 예외다.
+            "MailApiController#getSentMails", "recipients 는 발송 요청 전용(WRITE_ONLY) — 읽기 매퍼가 채우지 않아 응답에 실리지 않음",
+            "MailApiController#getSentMail", "recipients 는 발송 요청 전용(WRITE_ONLY) — 읽기 매퍼가 채우지 않아 응답에 실리지 않음");
 
     @Test
     @DisplayName("🔒 @PrivacyAccess 부착 지점이 선언 census 와 정확히 일치한다")
