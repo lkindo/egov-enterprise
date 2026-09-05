@@ -269,7 +269,8 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
           <form
             id="community-manage-form"
             noValidate
-            onSubmit={form.handleSubmit(onSubmit)}
+            // 렌더 시점이 아니라 이벤트 시점에 handleSubmit 을 만든다 — onSubmit 이 읽는 동기 잠금 ref 를 렌더에서 읽지 않는다(react-hooks/refs).
+            onSubmit={(event) => { void form.handleSubmit(onSubmit)(event); }}
             className="space-y-4"
             aria-label={editing ? '커뮤니티 수정' : '커뮤니티 등록'}
           >
