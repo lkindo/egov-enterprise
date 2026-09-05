@@ -298,4 +298,61 @@ class CommunityServiceImplTest {
                 "아무도 처리하지 않는 상태를 '처리 중'이라고 부르면 안 된다");
         verify(communityUserRepository, org.mockito.Mockito.never()).save(any());
     }
+
+    /**
+     * 🔒 <b>상세도 목록과 같은 규칙 — 사용자에게는 감추고, 관리자에게는 보인다.</b>
+     *
+     * <p>[2026-09-05] 7ec5e25fd 가 목록에서 고친 결함(관리자·사용자가 같은 메서드 → 논리 삭제된
+     * 커뮤니티가 사용자에게 노출)이 <b>상세에는 그대로 남아 있었다.</b> 사용자 상세가 무필터
+     * {@code getCommunity} 를 불러 cmntySn 직접 지정으로 열렸고 개설자 loginId 가 실렸다.
+     *
+     * <p>목록 때와 같은 이유로 {@code getCommunity} 에 필터를 넣지 않고 사용자용
+     * {@code getActiveCommunity} 를 분리했다 — 관리자는 중지된 커뮤니티를 되살리려면 열 수 있어야
+     * 한다(H3). 그래서 두 방향을 함께 고정한다: 사용자 메서드는 감추고, 관리자 메서드는 그대로.
+     */
+    @Test
+    @DisplayName("🔒 사용자 상세는 논리 삭제(useYn='N')된 커뮤니티를 없는 것으로 답한다")
+    void getActiveCommunity_hidesLogicallyDeleted() {
+        Community deleted = Community.builder().cmntySn(101L).cmntyNm("중지됨").regSeCd("REGC01").useYn("N").build();
+        given(communityRepository.findById(101L)).willReturn(Optional.of(deleted));
+
+        nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> communityService.getActiveCommunity(101L));
+
+        // 없는 것과 감춰진 것을 구분하지 않는다 — 존재 여부 자체가 정보가 되면 안 된다.
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, thrown.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("🔒 사용자 상세는 정식 등록(REGC01)이 아닌 커뮤니티도 없는 것으로 답한다")
+    void getActiveCommunity_hidesNonRegisteredKind() {
+        Community other = Community.builder().cmntySn(102L).cmntyNm("임시").regSeCd("REGC02").useYn("Y").build();
+        given(communityRepository.findById(102L)).willReturn(Optional.of(other));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> communityService.getActiveCommunity(102L));
+    }
+
+    @Test
+    @DisplayName("사용 중인 정식 커뮤니티는 사용자 상세로 정상 조회된다 — 필터가 과잉이면 여기가 red")
+    void getActiveCommunity_returnsActiveRegistered() {
+        Community active = Community.builder().cmntySn(103L).cmntyNm("활성").regSeCd("REGC01").useYn("Y").build();
+        given(communityRepository.findById(103L)).willReturn(Optional.of(active));
+
+        assertThat(communityService.getActiveCommunity(103L).getCmntySn()).isEqualTo(103L);
+    }
+
+    @Test
+    @DisplayName("관리자 상세(getCommunity)는 논리 삭제된 커뮤니티도 그대로 연다 — 되살리기 경로 보존")
+    void getCommunity_keepsLogicallyDeletedForAdmin() {
+        Community deleted = Community.builder().cmntySn(101L).cmntyNm("중지됨").regSeCd("REGC01").useYn("N").build();
+        given(communityRepository.findById(101L)).willReturn(Optional.of(deleted));
+
+        // 이 단언이 깨지면 누군가 getCommunity 안에 필터를 넣은 것이다 — 그러면 관리자가 중지된
+        // 커뮤니티를 되살릴 수 없게 된다. 사용자 경로는 getActiveCommunity 로 분리돼 있다.
+        assertThat(communityService.getCommunity(101L).getCmntySn()).isEqualTo(101L);
+    }
 }

@@ -39,11 +39,16 @@ public class CommunityUserApiController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
-    @Operation(summary = "커뮤니티 상세 조회", description = "특정 커뮤니티의 상세 정보를 조회합니다.")
+    /**
+     * [2026-09-05] 목록(위 {@code getActiveCommunityList})과 같은 규칙을 상세에도 적용한다.
+     * 종전에는 관리자 상세와 같은 {@code getCommunity} 를 불러, 논리 삭제된 커뮤니티가 cmntySn
+     * 직접 지정으로 열리고 개설자 loginId 가 실렸다. 관리자 경로는 그대로 두고 여기만 갈아 끼운다.
+     */
+    @Operation(summary = "커뮤니티 상세 조회", description = "사용 중인 커뮤니티의 상세 정보를 조회합니다.")
     @GetMapping("/{cmntySn}")
     public ResponseEntity<ApiResponse<CommunityDto>> getCommunity(
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
-        return ResponseEntity.ok(ApiResponse.success(communityService.getCommunity(cmntySn)));
+        return ResponseEntity.ok(ApiResponse.success(communityService.getActiveCommunity(cmntySn)));
     }
 
     @Operation(summary = "커뮤니티 가입 신청", description = "사용자가 특정 커뮤니티에 가입을 신청합니다.")
