@@ -7,7 +7,7 @@ import { Form, FormControl, FormErrorSummary, FormField, FormItem, FormLabel, Fo
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { WorkReportDtoSchema } from '@/types/generated-zod';
+import { WorkReportDtoRequestSchema } from '@/types/generated-zod';
 import { cn } from '@/lib/utils';
 
 /**
@@ -16,13 +16,21 @@ import { cn } from '@/lib/utils';
  * rptYmd 는 물리 컬럼이 varchar(8) 이라 'yyyyMMdd' 로 고정한다.
  * userId 는 보내지 않는다 — 작성자는 서버가 인증 주체로 채운다.
  */
-export const reportFormSchema = WorkReportDtoSchema.extend({
-    rptTtl: z.string().min(1, '보고 제목을 입력하세요.').max(200),
-    rptYmd: z.string().length(8, '보고 일자를 선택하세요.'),
+export const reportFormSchema = WorkReportDtoRequestSchema.extend({
+    rptTtl: z.string().trim()
+        .min(1, '보고 제목을 입력하세요.')
+        .max(100, '보고 제목은 최대 100자까지 입력할 수 있습니다.')
+        .pipe(WorkReportDtoRequestSchema.shape.rptTtl),
+    rptYmd: z.string().length(8, '보고 일자를 선택하세요.')
+        .pipe(WorkReportDtoRequestSchema.shape.rptYmd.unwrap()),
     atchFileSn: z.number().nullable().optional().transform(v => v === null ? undefined : v),
 });
 
 export type ReportFormValues = z.infer<typeof reportFormSchema>;
+
+type NullableReportFormValues = {
+    [Field in keyof ReportFormValues]?: ReportFormValues[Field] | null;
+};
 
 const ymdToInput = (ymd?: string) =>
     ymd && ymd.length >= 8 ? `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}` : '';
@@ -31,7 +39,7 @@ const inputToYmd = (value: string) => value.replace(/-/g, '');
 interface ReportCreateFormProps {
     defaultYmd: string;
     /** 수정 모드일 때 기존 값. */
-    initialData?: Partial<ReportFormValues>;
+    initialData?: NullableReportFormValues;
     mode?: 'create' | 'edit';
     onSubmit: (data: ReportFormValues) => Promise<void>;
     onCancel: () => void;
@@ -49,8 +57,8 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
             rptCn: initialData?.rptCn ?? '',
             rptYmd: initialData?.rptYmd ?? defaultYmd,
             // 수정 시 폼에 없는 필드를 빠뜨리면 서버 update 가 null 로 덮어쓴다.
-            rptSeCd: initialData?.rptSeCd,
-            atchFileSn: initialData?.atchFileSn,
+            rptSeCd: initialData?.rptSeCd ?? undefined,
+            atchFileSn: initialData?.atchFileSn ?? undefined,
         },
     });
 
@@ -95,7 +103,7 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                                 <Input
                                     {...field}
                                     value={field.value ?? ''}
-                                    maxLength={200}
+                                    maxLength={100}
                                     className={cn('h-11 rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
                                     placeholder="예: 7월 3주차 업무 보고"
                                 />
@@ -128,12 +136,19 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                 <FormField
                     control={form.control}
                     name="rptCn"
-                    render={({ field }) => (
+                    render={({ field, fieldState }) => (
                         <FormItem>
                             <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">보고 내용</FormLabel>
                             <FormControl>
-                                <Textarea {...field} value={field.value ?? ''} className="rounded-lg min-h-[120px]" placeholder="주요 업무 내용과 진행 상황" />
+                                <Textarea
+                                    {...field}
+                                    value={field.value ?? ''}
+                                    maxLength={4000}
+                                    className={cn('rounded-lg min-h-[120px]', fieldState.error && 'border-destructive')}
+                                    placeholder="주요 업무 내용과 진행 상황"
+                                />
                             </FormControl>
+                            <FormMessage className="text-xs font-bold text-destructive mt-1 ml-1" />
                         </FormItem>
                     )}
                 />

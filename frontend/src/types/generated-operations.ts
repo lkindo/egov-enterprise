@@ -472,7 +472,7 @@ export const updateWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
   responseForbiddenPaths: [],
 });
 
@@ -727,7 +727,7 @@ export const updateMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -2838,7 +2838,7 @@ export const createWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
   responseForbiddenPaths: [],
 });
 
@@ -3093,7 +3093,7 @@ export const createMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"]],
   responseForbiddenPaths: [],
 });
 

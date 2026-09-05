@@ -4625,17 +4625,17 @@ export interface components {
     schemas: {
         WorkReportDto: {
             /** Format: int64 */
-            rptpSn?: number;
-            rptTtl?: string;
+            readonly rptpSn?: number | null;
+            rptTtl: string;
             rptCn?: string;
             rptSeCd?: string;
-            userId?: string;
-            userNm?: string;
+            readonly userId?: string | null;
+            readonly userNm?: string | null;
             /** Format: int64 */
             atchFileSn?: number;
-            rptSttsCd?: string;
+            readonly rptSttsCd?: string | null;
             rptYmd?: string;
-            rptTypeCd?: string;
+            readonly rptTypeCd?: string | null;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -4776,19 +4776,19 @@ export interface components {
              * Format: int64
              * @description 메모보고일련번호
              */
-            memoRptSn?: number;
+            readonly memoRptSn?: number | null;
             /** @description 보고제목 */
-            rptTtl?: string;
+            rptTtl: string;
             /** @description 보고일자 */
             memoRptYmd?: string;
             /** @description 작성자아이디 */
-            userId?: string;
+            readonly userId?: string | null;
             /** @description 작성자명 */
-            wrterNm?: string;
+            readonly wrterNm?: string | null;
             /** @description 보고대상자아이디 */
-            rptrId?: string;
+            rptrId: string;
             /** @description 보고대상자명 */
-            rptrNm?: string;
+            readonly rptrNm?: string | null;
             /** @description 보고내용 */
             rptCn?: string;
             /**
@@ -4797,22 +4797,22 @@ export interface components {
              */
             atchFileSn?: number;
             /** @description 지시사항내용 */
-            drctnMttr?: string;
+            readonly drctnMttr?: string | null;
             /**
              * Format: date-time
              * @description 지시사항등록일시
              */
-            drctnMttrRegDt?: string;
+            readonly drctnMttrRegDt?: string | null;
             /**
              * Format: date-time
              * @description 보고대상자조회일시
              */
-            rptrInqDt?: string;
+            readonly rptrInqDt?: string | null;
             /**
              * Format: date-time
              * @description 생성일시
              */
-            crtDt?: string;
+            readonly crtDt?: string | null;
         };
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {

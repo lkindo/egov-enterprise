@@ -2488,6 +2488,20 @@
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "WorkReportService#currentLoginId",
+      "source": "business-app/src/main/java/nuri/business/service/report/WorkReportService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": [
+        ".orElse(\"anonymous\")",
+        ".orElse(\"SYSTEM\")"
+      ]
     }
   ]
 }

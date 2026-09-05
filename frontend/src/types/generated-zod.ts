@@ -9,16 +9,16 @@ import { z } from 'zod';
 // WorkReportDto Schema
 // ==========================================================================
 export const WorkReportDtoSchema = z.object({
-  rptpSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  rptCn: z.string().optional(),
-  rptSeCd: z.string().optional(),
-  userId: z.string().min(0).max(20).optional(),
-  userNm: z.string().optional(),
+  rptpSn: z.number().int().optional().nullable(),
+  rptTtl: z.string().min(0).max(100),
+  rptCn: z.string().min(0).max(4000).optional(),
+  rptSeCd: z.string().min(0).max(12).optional(),
+  userId: z.string().min(0).max(20).optional().nullable(),
+  userNm: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional(),
-  rptSttsCd: z.string().min(0).max(12).optional(),
+  rptSttsCd: z.string().min(0).max(12).optional().nullable(),
   rptYmd: z.string().min(0).max(8).optional(),
-  rptTypeCd: z.string().optional(),
+  rptTypeCd: z.string().optional().nullable(),
 });
 export type WorkReportDto = z.infer<typeof WorkReportDtoSchema>;
 
@@ -150,19 +150,19 @@ export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 // MemoReportDto Schema
 // ==========================================================================
 export const MemoReportDtoSchema = z.object({
-  memoRptSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  memoRptYmd: z.string().optional(),
-  userId: z.string().optional(),
-  wrterNm: z.string().min(0).max(100).optional(),
-  rptrId: z.string().optional(),
-  rptrNm: z.string().optional(),
-  rptCn: z.string().optional(),
+  memoRptSn: z.number().int().optional().nullable(),
+  rptTtl: z.string().min(0).max(100),
+  memoRptYmd: z.string().min(0).max(8).optional(),
+  userId: z.string().optional().nullable(),
+  wrterNm: z.string().min(0).max(100).optional().nullable(),
+  rptrId: z.string().min(0).max(20),
+  rptrNm: z.string().optional().nullable(),
+  rptCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
-  drctnMttr: z.string().optional(),
-  drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  drctnMttr: z.string().optional().nullable(),
+  drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
@@ -4241,23 +4241,18 @@ export const PageResponseAddressBookUserDtoSchema = z.object({
 export type PageResponseAddressBookUserDto = z.infer<typeof PageResponseAddressBookUserDtoSchema>;
 
 export const WorkReportDtoRequestSchema = z.object({
-  rptpSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  rptCn: z.string().optional(),
-  rptSeCd: z.string().optional(),
-  userId: z.string().min(0).max(20).optional(),
-  userNm: z.string().optional(),
+  rptTtl: z.string().min(0).max(100),
+  rptCn: z.string().min(0).max(4000).optional(),
+  rptSeCd: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
-  rptSttsCd: z.string().min(0).max(12).optional(),
   rptYmd: z.string().min(0).max(8).optional(),
-  rptTypeCd: z.string().optional(),
 });
 
 export const WorkReportDtoResponseSchema = z.object({
   rptpSn: z.number().int().optional().nullable(),
-  rptTtl: z.string().optional().nullable(),
-  rptCn: z.string().optional().nullable(),
-  rptSeCd: z.string().optional().nullable(),
+  rptTtl: z.string().min(0).max(100),
+  rptCn: z.string().min(0).max(4000).optional().nullable(),
+  rptSeCd: z.string().min(0).max(12).optional().nullable(),
   userId: z.string().min(0).max(20).optional().nullable(),
   userNm: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
@@ -4451,30 +4446,22 @@ export const OnlinePollManageDtoResponseSchema = z.object({
 });
 
 export const MemoReportDtoRequestSchema = z.object({
-  memoRptSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  memoRptYmd: z.string().optional(),
-  userId: z.string().optional(),
-  wrterNm: z.string().min(0).max(100).optional(),
-  rptrId: z.string().optional(),
-  rptrNm: z.string().optional(),
-  rptCn: z.string().optional(),
+  rptTtl: z.string().min(0).max(100),
+  memoRptYmd: z.string().min(0).max(8).optional(),
+  rptrId: z.string().min(0).max(20),
+  rptCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
-  drctnMttr: z.string().optional(),
-  drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 
 export const MemoReportDtoResponseSchema = z.object({
   memoRptSn: z.number().int().optional().nullable(),
-  rptTtl: z.string().optional().nullable(),
-  memoRptYmd: z.string().optional().nullable(),
+  rptTtl: z.string().min(0).max(100),
+  memoRptYmd: z.string().min(0).max(8).optional().nullable(),
   userId: z.string().optional().nullable(),
   wrterNm: z.string().min(0).max(100).optional().nullable(),
-  rptrId: z.string().optional().nullable(),
+  rptrId: z.string().min(0).max(20),
   rptrNm: z.string().optional().nullable(),
-  rptCn: z.string().optional().nullable(),
+  rptCn: z.string().min(0).max(4000).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
   drctnMttr: z.string().optional().nullable(),
   drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
