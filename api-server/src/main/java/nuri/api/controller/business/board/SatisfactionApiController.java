@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import nuri.api.controller.business.board.dto.SatisfactionAverageResponse;
 import nuri.business.security.util.SecurityUtil;
+import nuri.business.service.board.BoardService;
 import nuri.business.service.board.SatisfactionService;
 import nuri.business.service.board.dto.SatisfactionDto;
 import nuri.foundation.core.response.ApiResponse;
@@ -48,12 +49,32 @@ import java.util.List;
 public class SatisfactionApiController {
 
     private final SatisfactionService satisfactionService;
+    private final BoardService boardService;
+
+    /*
+      [2026-09-05] 게시글 가시성 가드를 조회·등록 경로에 추가했다.
+
+      ⚠ 종전에는 이 클래스의 javadoc 이 "실질 소유권 판정은 서비스가 다시 한다" 고 약속했지만,
+        서비스가 실제로 하는 소유권 검사는 **수정·삭제 경로뿐**이었다. 조회 두 개와 등록은
+        `useYn='Y'` 만 걸렀다. 그 결과 인증 사용자면 누구나 pstSn 을 순차 열거해 **비밀글의
+        만족도 자유서술(dgstfnCn)과 평가자 이름(userNm)** 을 읽을 수 있었다 — RateLimitFilter
+        기본 용량이 IP·분당 10,000 이라 열거는 레이트로도 억제되지 않는다.
+
+        형제 자원인 댓글(`/api/v1/comments`, 같은 비-admin 경로)은 같은 (bbsId, pstSn) 으로
+        `boardService.assertCommentAccess` 를 불러 활성 글 + 비밀글이면 owner-or-admin 을
+        요구한다. 만족도만 그 검사를 빠뜨린 비대칭이었고, 의도라는 근거(DEC·주석·테스트)를
+        찾지 못했다. 같은 헬퍼를 재사용해 두 자원의 인가 의미를 맞춘다.
+
+        부작용: 활성 글 요구가 추가되므로 삭제·비활성 글의 만족도 조회는 이제 404 다.
+        삭제된 글의 평가를 별도로 읽어야 할 경로가 없음을 확인했다.
+    */
 
     @Operation(summary = "만족도 목록", description = "해당 게시글의 사용 중(use_yn='Y') 만족도만 반환한다.")
     @Authenticated
     @GetMapping
     public ResponseEntity<ApiResponse<List<SatisfactionDto>>> getList(
             @PathVariable String bbsId, @PathVariable Long pstSn) {
+        boardService.assertCommentAccess(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(satisfactionService.getSatisfactionList(bbsId, pstSn)));
     }
 
@@ -65,6 +86,7 @@ public class SatisfactionApiController {
             @PathVariable String bbsId, @PathVariable Long pstSn) {
         // ⚠ null 을 0.0 으로 바꾸지 않는다. 종전에는 Map.of 가 null 값을 담지 못해 그럴 수밖에
         //   없었고, 그 결과 "아무도 평가하지 않음" 과 "모두 최하점" 이 화면에서 같아졌다.
+        boardService.assertCommentAccess(bbsId, pstSn);
         Double average = satisfactionService.getAverageSatisfaction(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(SatisfactionAverageResponse.of(average)));
     }
@@ -78,6 +100,8 @@ public class SatisfactionApiController {
         // 경로를 정본으로 삼는다 — 본문이 다른 게시글을 가리켜도 경로가 이긴다.
         dto.setBbsId(bbsId);
         dto.setPstSn(pstSn);
+        // 댓글 등록(CommentApiController:47)과 같은 자리에서 같은 검사를 한다 — 볼 수 없는 글에 평가를 남길 수 없다.
+        boardService.assertCommentAccess(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(satisfactionService.createSatisfaction(currentUserId(), dto)));
     }
 

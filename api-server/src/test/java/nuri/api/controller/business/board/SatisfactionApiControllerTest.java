@@ -1,6 +1,9 @@
 package nuri.api.controller.business.board;
 
+import nuri.business.service.board.BoardService;
 import nuri.business.service.board.SatisfactionService;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.service.board.dto.SatisfactionDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.security.annotation.AdminOnly;
@@ -25,6 +28,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -41,6 +46,10 @@ class SatisfactionApiControllerTest {
 
     @Mock
     private SatisfactionService satisfactionService;
+
+    // [2026-09-05] 게시글 가시성 가드. 기본 mock 은 아무것도 던지지 않으므로 기존 테스트는 그대로 통과한다.
+    @Mock
+    private BoardService boardService;
 
     @InjectMocks
     private SatisfactionApiController controller;
@@ -172,5 +181,71 @@ class SatisfactionApiControllerTest {
 
         // 일반 삭제 경로로 새면 비밀번호 검증을 우회하게 된다.
         verify(satisfactionService).deleteByModerator(any(Long.class), any());
+    }
+
+    /**
+     * 🔒 <b>게시글 가시성 가드 — 볼 수 없는 글의 만족도는 읽을 수도 남길 수도 없다.</b>
+     *
+     * <p>[2026-09-05] 종전에는 조회 두 개와 등록이 {@code useYn='Y'} 만 걸렀다. 인증 사용자면 누구나
+     * pstSn 을 순차 열거해 <b>비밀글의 자유서술과 평가자 이름</b>을 읽을 수 있었다. 형제 자원인
+     * 댓글은 같은 {@code assertCommentAccess} 로 막고 있었고 만족도만 빠져 있던 비대칭이다.
+     *
+     * <p>⚠ 가드가 <b>서비스 호출보다 먼저</b> 돌아야 한다. 순서가 뒤집히면 403 은 나지만 조회는
+     * 이미 실행돼 로그·캐시에 흔적이 남는다. {@code never()} 로 그 순서까지 고정한다.
+     */
+    @Test
+    @DisplayName("🔒 볼 수 없는 글의 만족도 목록은 403 이고 서비스에 닿지 않는다")
+    void listOnInaccessiblePostIsForbiddenBeforeService() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(boardService).assertCommentAccess("BBS_01", 99L);
+
+        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/99/satisfactions"))
+                .andExpect(status().isForbidden());
+
+        verify(satisfactionService, never()).getSatisfactionList(anyString(), anyLong());
+    }
+
+    @Test
+    @DisplayName("🔒 볼 수 없는 글의 만족도 평균도 403 이다 — 집계값도 글의 존재를 드러낸다")
+    void averageOnInaccessiblePostIsForbidden() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(boardService).assertCommentAccess("BBS_01", 99L);
+
+        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/99/satisfactions/average"))
+                .andExpect(status().isForbidden());
+
+        verify(satisfactionService, never()).getAverageSatisfaction(anyString(), anyLong());
+    }
+
+    @Test
+    @DisplayName("🔒 볼 수 없는 글에는 만족도를 남길 수 없다 — 댓글 등록과 같은 자리의 같은 검사")
+    void createOnInaccessiblePostIsForbiddenBeforeService() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(boardService).assertCommentAccess("BBS_01", 99L);
+
+        mockMvc.perform(post("/api/v1/boards/BBS_01/posts/99/satisfactions")
+                        .contentType("application/json")
+                        .content("{\"dgstfnScr\":5,\"useYn\":\"Y\"}"))
+                .andExpect(status().isForbidden());
+
+        verify(satisfactionService, never()).createSatisfaction(any(), any());
+    }
+
+    @Test
+    @DisplayName("볼 수 있는 글은 조회·평균·등록 모두 가드를 지나 정상 처리된다 — 가드가 과잉이면 여기가 red")
+    void accessiblePostPassesGuardOnAllThreePaths() throws Exception {
+        when(satisfactionService.getSatisfactionList("BBS_01", 1L)).thenReturn(List.of());
+        when(satisfactionService.getAverageSatisfaction("BBS_01", 1L)).thenReturn(4.0);
+        when(satisfactionService.createSatisfaction(any(), any())).thenReturn(7L);
+
+        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/1/satisfactions")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/1/satisfactions/average")).andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/boards/BBS_01/posts/1/satisfactions")
+                        .contentType("application/json")
+                        .content("{\"dgstfnScr\":5,\"useYn\":\"Y\"}"))
+                .andExpect(status().isOk());
+
+        // 세 경로 전부 가드를 지났음을 호출 횟수로 고정한다 — 하나라도 빠지면 그 경로가 다시 열린 것이다.
+        verify(boardService, org.mockito.Mockito.times(3)).assertCommentAccess("BBS_01", 1L);
     }
 }
