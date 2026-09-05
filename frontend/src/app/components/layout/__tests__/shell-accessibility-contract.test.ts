@@ -242,7 +242,8 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'help', 'page.tsx'],
       ['admin', 'help', 'faq', 'page.tsx'],
       ['admin', 'help', 'qna', 'page.tsx'],
-      ['admin', 'notifications', 'page.tsx'],
+      // [2026-09-06 DEC-OPS-038] admin/notifications/page.tsx 는 목록에서 뺐다 — ?view= 상태가 사라져 useSearchParams 도
+      //   route-local Suspense 도 없어졌고, h1 은 PageHeader 가 최종 화면에서 그린다(fallback 자체가 존재하지 않는다).
       ['admin', 'operation', 'events', 'page.tsx'],
       ['admin', 'operation', 'external-hr', 'page.tsx'],
       ['admin', 'operation', 'memo-reports', 'page.tsx'],
