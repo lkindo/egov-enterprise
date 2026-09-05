@@ -298,7 +298,6 @@ export const SatisfactionDtoSchema = z.object({
   dgstfnScr: z.number().int().optional(),
   userId: z.string().optional(),
   userNm: z.string().optional(),
-  pswd: z.string().optional(),
   useYn: z.string().min(0).max(1),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
@@ -4672,7 +4671,6 @@ export const SatisfactionDtoRequestSchema = z.object({
   dgstfnScr: z.number().int().optional(),
   userId: z.string().optional(),
   userNm: z.string().optional(),
-  pswd: z.string().optional(),
   useYn: z.string().min(0).max(1),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });

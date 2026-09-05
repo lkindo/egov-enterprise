@@ -2,6 +2,7 @@ package nuri.api.config;
 
 import nuri.api.interceptor.OperationalAuditInterceptor;
 import nuri.business.security.iam.EgovAuthenticationProvider;
+import nuri.foundation.security.filter.CredentialRequestTargetFilter;
 import nuri.foundation.security.jwt.JwtAuthenticationFilter;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -241,6 +242,8 @@ public class ApiSecurityConfig {
                                                 .referrerPolicy(referrer -> referrer.policy(
                                                                 org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                                 .authenticationProvider(egovAuthenticationProvider)
+                                .addFilterBefore(new CredentialRequestTargetFilter(),
+                                                org.springframework.web.filter.CorsFilter.class)
                                 .addFilterBefore(new nuri.foundation.security.filter.OriginValidationFilter(allowedOrigins),
                                                 UsernamePasswordAuthenticationFilter.class)
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
@@ -295,7 +298,9 @@ public class ApiSecurityConfig {
                                                 .authenticationEntryPoint(
                                                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                                 .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .addFilterBefore(new CredentialRequestTargetFilter(),
+                                                org.springframework.web.filter.CorsFilter.class);
                 return http.build();
         }
 

@@ -1,15 +1,21 @@
 {
   "title": "API & Backend Architecture Constitution",
-  "summary": "egov-enterprise 프로젝트의 백엔드 아키텍처 및 API 설계 원칙입니다. 계층 간 격리, 도메인 무결성, 보안 및 회복탄력성 규칙을 포함합니다.",
+  "summary": "egov-enterprise 프로젝트의 백엔드 아키텍처 및 API 설계 원칙입니다. 계층 간 격리, 도메인 무결성, request-target 자격증명 금지, 보안 및 회복탄력성 규칙을 포함합니다.",
   "category": "Architecture",
   "tags": ["Backend", "API", "Java", "SpringBoot", "Constitution"],
   "updatedAt": "2026-09-05T00:00:00Z",
   "references": [
     "AGENTS.md",
     "docs/02-architecture/domain-resilience.md",
+    "docs/02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md",
     "docs/03-guides/api-documentation-guide.md",
     "docs/03-guides/identity-model-guide.md",
     "config/governance/gates.json",
+    "foundation/src/main/java/nuri/foundation/security/filter/CredentialRequestTargetPolicy.java",
+    "foundation/src/main/java/nuri/foundation/security/filter/CredentialRequestTargetFilter.java",
+    "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
+    "business-core/src/main/java/nuri/business/security/config/SecurityConfig.java",
+    "api-server/src/test/java/nuri/openapi/OpenApiDocumentationTest.java",
     "api-server/src/test/java/nuri/api/harness/EntityLombokSourceLinterTest.java",
     "business-core/src/testFixtures/java/nuri/business/architecture/EntityConventionRules.java"
   ]

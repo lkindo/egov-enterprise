@@ -41,9 +41,6 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @Column(length = 4000)
     private String dgstfnCn;
 
-    @Column(length = 256)
-    private String pswd;
-
     @Column(length = 1)
     private String useYn;
 
@@ -54,13 +51,12 @@ public class Satisfaction extends BaseEntity implements Serializable {
     private String userNm;
 
     private Satisfaction(Long dgstfnSn, String bbsId, Long pstSn, Integer dgstfnScr, String dgstfnCn,
-            String pswd, String useYn, String userId, String userNm) {
+            String useYn, String userId, String userNm) {
         this.dgstfnSn = dgstfnSn;
         this.bbsId = bbsId;
         this.pstSn = pstSn;
         this.dgstfnScr = dgstfnScr;
         this.dgstfnCn = dgstfnCn;
-        this.pswd = pswd;
         this.useYn = useYn != null ? useYn : "Y"; // 기존 @Builder.Default("Y") 재현
         this.userId = userId;
         this.userNm = userNm;
@@ -71,16 +67,13 @@ public class Satisfaction extends BaseEntity implements Serializable {
      */
     @Builder
     public static Satisfaction create(Long dgstfnSn, String bbsId, Long pstSn, Integer dgstfnScr,
-            String dgstfnCn, String pswd, String useYn, String userId, String userNm) {
-        return new Satisfaction(dgstfnSn, bbsId, pstSn, dgstfnScr, dgstfnCn, pswd, useYn, userId, userNm);
+            String dgstfnCn, String useYn, String userId, String userNm) {
+        return new Satisfaction(dgstfnSn, bbsId, pstSn, dgstfnScr, dgstfnCn, useYn, userId, userNm);
     }
 
-    public void update(Integer dgstfnScr, String dgstfnCn, String password) {
+    public void update(Integer dgstfnScr, String dgstfnCn) {
         this.dgstfnScr = dgstfnScr;
         this.dgstfnCn = dgstfnCn;
-        if (password != null && !password.isEmpty()) {
-            this.pswd = password;
-        }
     }
 
     public void delete() {
