@@ -1054,7 +1054,7 @@ reviewBy: 분류 초안 완성 시
 - `/search?q`, `/admin/community/boards/select-board-list`와 `/admin/community/[id]`의 `searchCnd`·`searchWrd`만 exact route/key binding으로 승인한다. 승인 registry의 `search-input` selector는 이 3개 route binding·5개 census record와 정확히 일치한다.
 - 검색·페이지·정렬 변경은 해당 화면의 allowlist로 재조립하고 unknown query를 전파하지 않으며, 같은 화면에서는 `replace`를 우선한다.
 - 로그 검색어를 주소창에 넣지 않는 현행과 same-origin binary GET `searchKeyword` 전달의 의도된 비대칭을 보존한다.
-- 허용 검색어가 client log·analytics·오류 로그 payload에 복제되지 않고, 프런트엔드 내비게이션의 자격증명형 전용 URL key나 새 search surface fixture가 즉시 red임을 계약으로 증명한다. 자유 입력 값의 의미를 완전 판별하는 DLP나 저장소 전체 API query 검사로 과장하지 않으며, 만족도 삭제 API의 기존 `pswd` query는 `GAP-SEC-002`로 별도 추적한다.
+- 허용 검색어가 client log·analytics·오류 로그 payload에 복제되지 않고, 프런트엔드 내비게이션의 자격증명형 전용 URL key나 새 search surface fixture가 즉시 red임을 계약으로 증명한다. 자유 입력 값의 의미를 완전 판별하는 DLP나 저장소 전체 API query 검사로 과장하지 않는다. 만족도 삭제 API의 별도 `pswd` query와 익명 비밀번호 소유 증명은 2026-09-05 [ADR-0011](../02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md)이 퇴역을 결정했으며, 백엔드 request-target의 자격증명 재유입은 별도 계약이 차단한다.
 - URL·브라우저 이력·북마크·다운로드 기록과 저장소 밖 proxy/WAF/CDN 로그 잔존을 accepted risk로 기록하며, 배포자는 자기 보존 정책에 따라 허용 범위를 좁힐 수 있다.
 - URL을 인증·역할·소유권 근거로 사용하지 않고 결과와 상세 객체의 인가를 서버가 집행한다.
 

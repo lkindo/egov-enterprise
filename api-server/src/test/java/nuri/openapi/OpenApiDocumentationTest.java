@@ -1,6 +1,7 @@
 package nuri.openapi;
 
 import nuri.api.support.ApiHttpIntegrationTest;
+import nuri.foundation.security.filter.CredentialRequestTargetPolicy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.hamcrest.Matchers.hasItem;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * OpenAPI 문서화 테스트
@@ -29,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class OpenApiDocumentationTest {
 
+  private static final java.util.Set<String> HTTP_METHODS = java.util.Set.of(
+      "get", "put", "post", "delete", "options", "head", "patch", "trace");
   @Autowired
   private MockMvc mockMvc;
 
@@ -334,6 +338,206 @@ class OpenApiDocumentationTest {
     assertThat(schema.path("properties").has("pendingApprovalCount")).isTrue();
     assertThat(schema.path("properties").has("extensions")).isFalse();
     assertThat(required).contains("taskList", "notiList", "pendingApprovalCount");
+  }
+
+  @Test
+  @DisplayName("자격증명·소유 증명 값은 OpenAPI path/query request-target에 존재하지 않는다")
+  void credentialValues_areAbsentFromEveryRequestTarget() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode document = objectMapper.readTree(content);
+
+    CredentialRequestTargetScan scan = scanCredentialRequestTargets(document);
+
+    assertThat(scan.operationCount())
+        .as("빈 OpenAPI 문서라서 자격증명 검사가 공허하게 통과하면 안 된다")
+        .isGreaterThan(100);
+    assertThat(scan.queryParameterCount())
+        .as("query parameter 모집단이 사라져 검사가 공허하게 통과하면 안 된다")
+        .isGreaterThan(100);
+    assertThat(scan.pathParameterCount())
+        .as("path parameter 모집단이 사라져 검사가 공허하게 통과하면 안 된다")
+        .isGreaterThan(100);
+    assertThat(scan.violations())
+        .as("request-target(path/query)은 브라우저·프록시·access log에 남으므로 자격증명을 둘 수 없다")
+        .isEmpty();
+  }
+
+  @Test
+  @DisplayName("만족도 공개 DTO와 삭제 계약에는 익명 비밀번호 증명 surface가 없다")
+  void satisfactionPasswordProofSurface_isRetired() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode document = objectMapper.readTree(content);
+
+    com.fasterxml.jackson.databind.JsonNode schema =
+        document.path("components").path("schemas").path("SatisfactionDto");
+    com.fasterxml.jackson.databind.JsonNode delete = document.path("paths")
+        .path("/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}")
+        .path("delete");
+
+    assertThat(schema.isObject()).isTrue();
+    assertThat(schema.path("properties").has("pswd")).isFalse();
+    assertThat(delete.isObject()).isTrue();
+    assertThat(delete.path("parameters").valueStream()
+        .map(parameter -> resolveLocalReference(document, parameter))
+        .filter(parameter -> "query".equals(parameter.path("in").asText()))
+        .map(parameter -> parameter.path("name").asText())
+        .toList()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("자격증명 request-target 게이트는 합성 pswd/token 위반을 red로 분류한다")
+  void credentialRequestTargetGate_rejectsSyntheticViolations() throws Exception {
+    com.fasterxml.jackson.databind.JsonNode synthetic = objectMapper.readTree("""
+        {
+          "openapi": "3.0.1",
+          "paths": {
+            "/synthetic/{access_token}": {
+              "parameters": [
+                {"name": "access_token", "in": "path", "required": true}
+              ],
+              "get": {
+                "parameters": [
+                  {"name": "X-Auth-Token", "in": "header"}
+                ]
+              }
+            },
+            "/synthetic-delete": {
+              "delete": {
+                "parameters": [{"$ref": "#/components/parameters/PasswordProof"}],
+                "requestBody": {
+                  "content": {"application/json": {"schema": {"properties": {"password": {"type": "string"}}}}}
+                }
+              }
+            }
+          },
+          "components": {
+            "parameters": {
+              "PasswordProof": {"$ref": "#/components/parameters/PasswordProofDefinition"},
+              "PasswordProofDefinition": {"name": "pswd", "in": "query"}
+            }
+          }
+        }
+        """);
+
+    CredentialRequestTargetScan scan = scanCredentialRequestTargets(synthetic);
+
+    assertThat(scan.operationCount()).isEqualTo(2);
+    assertThat(scan.requestTargetParameterCount()).isEqualTo(2);
+    assertThat(scan.queryParameterCount()).isEqualTo(1);
+    assertThat(scan.pathParameterCount()).isEqualTo(1);
+    assertThat(scan.violations()).containsExactly(
+        "DELETE /synthetic-delete query:pswd",
+        "GET /synthetic/{access_token} path:access_token");
+  }
+
+  @Test
+  @DisplayName("자격증명 request-target 게이트는 해석할 수 없는 parameter ref를 fail-closed 한다")
+  void credentialRequestTargetGate_rejectsUnresolvedReferences() throws Exception {
+    com.fasterxml.jackson.databind.JsonNode synthetic = objectMapper.readTree("""
+        {
+          "openapi": "3.0.1",
+          "paths": {
+            "/synthetic": {
+              "get": {
+                "parameters": [{"$ref": "#/components/parameters/Missing"}]
+              }
+            }
+          }
+        }
+        """);
+
+    assertThatThrownBy(() -> scanCredentialRequestTargets(synthetic))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("OpenAPI parameter ref");
+  }
+
+  private static CredentialRequestTargetScan scanCredentialRequestTargets(
+      com.fasterxml.jackson.databind.JsonNode document) {
+    java.util.List<String> violations = new java.util.ArrayList<>();
+    int[] requestTargetCounts = new int[3];
+    int operationCount = 0;
+    java.util.Iterator<java.util.Map.Entry<String, com.fasterxml.jackson.databind.JsonNode>> paths =
+        document.path("paths").properties().iterator();
+    while (paths.hasNext()) {
+      java.util.Map.Entry<String, com.fasterxml.jackson.databind.JsonNode> pathEntry = paths.next();
+      String path = pathEntry.getKey();
+      com.fasterxml.jackson.databind.JsonNode pathItem = pathEntry.getValue();
+      for (String method : HTTP_METHODS) {
+        com.fasterxml.jackson.databind.JsonNode operation = pathItem.path(method);
+        if (!operation.isObject()) {
+          continue;
+        }
+        operationCount++;
+        collectCredentialParameters(
+            document, path, method, pathItem.path("parameters"), violations, requestTargetCounts);
+        collectCredentialParameters(
+            document, path, method, operation.path("parameters"), violations, requestTargetCounts);
+      }
+    }
+    violations.sort(String::compareTo);
+    return new CredentialRequestTargetScan(
+        operationCount,
+        requestTargetCounts[0],
+        requestTargetCounts[1],
+        requestTargetCounts[2],
+        java.util.List.copyOf(violations));
+  }
+
+  private static void collectCredentialParameters(
+      com.fasterxml.jackson.databind.JsonNode document,
+      String path,
+      String method,
+      com.fasterxml.jackson.databind.JsonNode parameters,
+      java.util.List<String> violations,
+      int[] requestTargetCounts) {
+    if (!parameters.isArray()) {
+      return;
+    }
+    for (com.fasterxml.jackson.databind.JsonNode unresolved : parameters) {
+      com.fasterxml.jackson.databind.JsonNode parameter = resolveLocalReference(document, unresolved);
+      String location = parameter.path("in").asText();
+      String name = parameter.path("name").asText();
+      if ("query".equals(location) || "path".equals(location)) {
+        requestTargetCounts[0]++;
+        requestTargetCounts["query".equals(location) ? 1 : 2]++;
+      }
+      if (("path".equals(location) || "query".equals(location))
+          && CredentialRequestTargetPolicy.isForbiddenName(name)) {
+        violations.add(method.toUpperCase(java.util.Locale.ROOT) + " " + path + " " + location + ":" + name);
+      }
+    }
+  }
+
+  private static com.fasterxml.jackson.databind.JsonNode resolveLocalReference(
+      com.fasterxml.jackson.databind.JsonNode document,
+      com.fasterxml.jackson.databind.JsonNode candidate) {
+    java.util.Set<String> visited = new java.util.HashSet<>();
+    com.fasterxml.jackson.databind.JsonNode resolved = candidate;
+    while (resolved.has("$ref")) {
+      String reference = resolved.path("$ref").asText();
+      if (!reference.startsWith("#/") || !visited.add(reference)) {
+        throw new IllegalArgumentException("OpenAPI parameter ref is external or cyclic: " + reference);
+      }
+      resolved = document.at(reference.substring(1));
+      if (resolved.isMissingNode()) {
+        throw new IllegalArgumentException("OpenAPI parameter ref cannot be resolved: " + reference);
+      }
+    }
+    return resolved;
+  }
+
+  private record CredentialRequestTargetScan(
+      int operationCount,
+      int requestTargetParameterCount,
+      int queryParameterCount,
+      int pathParameterCount,
+      java.util.List<String> violations) {
   }
 
   private static boolean isNullableSchema(com.fasterxml.jackson.databind.JsonNode schema) {

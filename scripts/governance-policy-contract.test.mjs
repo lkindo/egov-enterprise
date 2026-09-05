@@ -45,12 +45,18 @@ const expectedGotchaReferences = [
 ].sort();
 const expectedConstitutionReferences = [
   'AGENTS.md',
+  'api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java',
   'api-server/src/test/java/nuri/api/harness/EntityLombokSourceLinterTest.java',
+  'api-server/src/test/java/nuri/openapi/OpenApiDocumentationTest.java',
+  'business-core/src/main/java/nuri/business/security/config/SecurityConfig.java',
   'business-core/src/testFixtures/java/nuri/business/architecture/EntityConventionRules.java',
   'config/governance/gates.json',
+  'docs/02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md',
   'docs/02-architecture/domain-resilience.md',
   'docs/03-guides/api-documentation-guide.md',
   'docs/03-guides/identity-model-guide.md',
+  'foundation/src/main/java/nuri/foundation/security/filter/CredentialRequestTargetFilter.java',
+  'foundation/src/main/java/nuri/foundation/security/filter/CredentialRequestTargetPolicy.java',
 ].sort();
 
 function read(relativePath) {

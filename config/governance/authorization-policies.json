@@ -18,7 +18,6 @@
     "SELF_WITH_CREDENTIAL": "Principal-bound self service plus current credential proof.",
     "STRICT_OWNER": "Resource owner/participant only; administrator bypass is forbidden by the service guard.",
     "OWNER_OR_ADMIN": "Resource owner or ADMIN/SYSTEM service guard.",
-    "OWNER_OR_ADMIN_OR_CREDENTIAL": "Owner/admin, or the resource credential branch defined by the service.",
     "PARTICIPANT_OR_ADMIN": "Named resource participant or ADMIN/SYSTEM.",
     "REACHABILITY_WITH_PRIVACY": "Owner/shared reachability; ADMIN/SYSTEM cannot bypass personal-reference privacy.",
     "ADMIN_OR_SYSTEM": "ADMIN or SYSTEM through method security, DB URL authorization, or service guard.",
@@ -1075,7 +1074,7 @@
       "method": "DELETE",
       "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
       "handler": "nuri.api.controller.business.board.SatisfactionApiController#delete",
-      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED",
       "guardRef": "SatisfactionService#assertCanModify"
@@ -1084,7 +1083,7 @@
       "method": "PUT",
       "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
       "handler": "nuri.api.controller.business.board.SatisfactionApiController#update",
-      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED",
       "guardRef": "SatisfactionService#assertCanModify"
@@ -2404,14 +2403,31 @@
     {
       "target": "SatisfactionService#assertCanModify",
       "source": "business-app/src/main/java/nuri/business/service/board/SatisfactionService.java",
-      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "policy": "OWNER_OR_ADMIN",
       "denyReferences": 1,
       "requiredTokens": [
-        "SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId())",
-        "passwordEncoder.matches(pswd, entity.getPswd())",
-        "CommonErrorCode.HANDLE_ACCESS_DENIED"
+        "!StringUtils.hasText(entity.getFrstRgtrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);",
+        "SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId())"
       ],
-      "forbiddenTokens": []
+      "forbiddenTokens": [
+        "passwordEncoder",
+        "entity.getPswd()"
+      ]
+    },
+    {
+      "target": "SatisfactionService#currentLoginId",
+      "source": "business-app/src/main/java/nuri/business/service/board/SatisfactionService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": [
+        "passwordEncoder",
+        "getPswd()"
+      ]
     },
     {
       "target": "UserService#changePassword",

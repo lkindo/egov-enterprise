@@ -108,6 +108,25 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
     }
 
     @Test
+    @DisplayName("자격증명 query 이름은 컨트롤러 도달 전에 400으로 차단한다")
+    void credentialQueryNameRejectedByActiveSecurityChain() throws Exception {
+        String marker = "DO-NOT-ECHO-active-chain-3b8e";
+
+        var result = mockMvc.perform(get("/api/v1/health").queryParam("pswd", marker))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertThat(result.getResponse().getContentAsString()).doesNotContain(marker);
+    }
+
+    @Test
+    @DisplayName("legacy 체인도 자격증명 query 이름을 400으로 차단한다")
+    void credentialQueryNameRejectedByLegacySecurityChain() throws Exception {
+        mockMvc.perform(get("/").queryParam("pswd", "legacy-chain-marker"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @WithMockCustomUser(role = "USER")
     @DisplayName("일반 사용자 권한 - 관리자 API 접근 - 403 반환")
     void forbiddenAccessTest() throws Exception {

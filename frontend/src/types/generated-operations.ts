@@ -1165,7 +1165,7 @@ export const deleteOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int(), "dgstfnSn": z.number().int() }).strict(),
-  querySchema: z.object({ "pswd": z.string().optional() }).strict(),
+  querySchema: null,
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
@@ -3476,7 +3476,7 @@ export const getListOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseSchema: z.array(z.lazy(() => SatisfactionDtoResponseSchema)),
   envelopeSchema: ApiResponseListSatisfactionDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [["*","pswd"]],
+  responseForbiddenPaths: [],
 });
 
 export const createOperation = /*#__PURE__*/ defineGeneratedOperation({

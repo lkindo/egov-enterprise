@@ -1,5 +1,6 @@
 package nuri.business.security.config;
 
+import nuri.foundation.security.filter.CredentialRequestTargetFilter;
 import nuri.foundation.security.filter.OriginValidationFilter;
 import nuri.foundation.security.jwt.JwtAuthenticationFilter;
 import nuri.foundation.security.jwt.JwtTokenProvider;
@@ -71,6 +72,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/menus/**").permitAll()
                                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                                 .anyRequest().authenticated())
+                                .addFilterBefore(new CredentialRequestTargetFilter(),
+                                                org.springframework.web.filter.CorsFilter.class)
                                 .addFilterBefore(new OriginValidationFilter(java.util.List.of("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8080")),
                                                 UsernamePasswordAuthenticationFilter.class)
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),  

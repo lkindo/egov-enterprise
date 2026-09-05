@@ -161,7 +161,6 @@ class SecurityAuthAnnotationLinterTest {
             "SELF_WITH_CREDENTIAL",
             "STRICT_OWNER",
             "OWNER_OR_ADMIN",
-            "OWNER_OR_ADMIN_OR_CREDENTIAL",
             "PARTICIPANT_OR_ADMIN",
             "REACHABILITY_WITH_PRIVACY",
             "ADMIN_OR_SYSTEM",
@@ -172,7 +171,6 @@ class SecurityAuthAnnotationLinterTest {
             "SELF_WITH_CREDENTIAL",
             "STRICT_OWNER",
             "OWNER_OR_ADMIN",
-            "OWNER_OR_ADMIN_OR_CREDENTIAL",
             "PARTICIPANT_OR_ADMIN",
             "REACHABILITY_WITH_PRIVACY");
     private static final Pattern GUARD_CALL = Pattern.compile(

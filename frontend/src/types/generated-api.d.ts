@@ -392,13 +392,13 @@ export interface paths {
         get?: never;
         /**
          * 만족도 수정
-         * @description 본문의 pswd 는 소유 증명용 자격이며 저장된 비밀번호를 바꾸지 않는다.
+         * @description 인증된 작성자 또는 관리자만 수정할 수 있다.
          */
         put: operations["update"];
         post?: never;
         /**
          * 만족도 삭제
-         * @description 논리 삭제. 소유자 또는 익명 작성 비밀번호가 필요하다.
+         * @description 논리 삭제. 인증된 작성자 또는 관리자만 삭제할 수 있다.
          */
         delete: operations["delete"];
         options?: never;
@@ -3545,7 +3545,7 @@ export interface paths {
         };
         /**
          * 커뮤니티 상세 조회
-         * @description 특정 커뮤니티의 상세 정보를 조회합니다.
+         * @description 사용 중인 커뮤니티의 상세 정보를 조회합니다.
          */
         get: operations["getCommunity_1"];
         put?: never;
@@ -4991,7 +4991,6 @@ export interface components {
             dgstfnScr?: number;
             userId?: string;
             userNm?: string;
-            pswd?: string;
             useYn: string;
             /** Format: date-time */
             crtDt?: string;
@@ -11968,9 +11967,7 @@ export interface operations {
     };
     delete: {
         parameters: {
-            query?: {
-                pswd?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 bbsId: string;
