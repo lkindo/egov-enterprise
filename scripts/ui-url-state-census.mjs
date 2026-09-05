@@ -391,6 +391,30 @@ function expressionTarget(tokens) {
   return { computed: true, target: null };
 }
 
+/**
+ * `onSubmit` 핸들러가 **네이티브 제출을 확실히 막는가**.
+ *
+ * ⚠ [2026-09-05] `onSubmit` 이 있다는 사실만으로는 부족하다 — 핸들러가 `preventDefault` 를
+ *   부르지 않으면 브라우저는 그대로 GET 제출을 하고 **폼 필드가 전부 주소창에 실린다.**
+ *   그래서 두 가지 중 하나가 토큰에서 보일 때만 참으로 판정한다.
+ *
+ *   1. 핸들러 안에 `preventDefault` 가 직접 있다 — 인라인 화살표 함수의 지배적 관용구다
+ *   2. `handleSubmit(...)` 로 감싸져 있다 — react-hook-form 의 `handleSubmit` 은 자기 안에서
+ *      항상 `preventDefault` 를 호출한다(라이브러리 계약). `form.handleSubmit(onSubmit)` ·
+ *      `handleSubmit(onSubmit)` 두 형태를 인정한다.
+ *
+ * 그 밖에는 **판정하지 않는다**(null 반환). 이름만 넘긴 핸들러(`onSubmit={submitCompose}`)는
+ * 그 함수 정의를 따라가야 하는데, 이 스캐너는 파일 하나를 토큰으로만 훑으므로 따라갈 수 없다.
+ * 모르는 것을 안전하다고 말하지 않는다.
+ */
+function submitInterception(tokens) {
+  const values = tokens.map((token) => token.value);
+  if (values.includes('preventDefault')) return 'prevent-default';
+  const handleSubmitIndex = values.indexOf('handleSubmit');
+  if (handleSubmitIndex !== -1 && values[handleSubmitIndex + 1] === '(') return 'react-hook-form-handle-submit';
+  return null;
+}
+
 function methodCallOpen(tokens, methodIndex) {
   if (tokens[methodIndex + 1]?.value === '(') return methodIndex + 1;
   if (tokens[methodIndex + 1]?.value !== '<') return -1;
@@ -754,6 +778,7 @@ export function scanUrlStateSource(source, options = {}) {
       let cursor = index + 2;
       let braceDepth = 0;
       let method = null;
+      let interception = null;
       while (cursor < tokens.length) {
         if (tokens[cursor].value === '{') braceDepth += 1;
         else if (tokens[cursor].value === '}') braceDepth -= 1;
@@ -762,16 +787,38 @@ export function scanUrlStateSource(source, options = {}) {
           const methodToken = tokens[cursor + 2]?.value === '{' ? tokens[cursor + 3] : tokens[cursor + 2];
           method = methodToken?.type === 'string' ? methodToken.value.toLowerCase() : '<computed>';
         }
+        if (tokens[cursor].value === 'onSubmit' && tokens[cursor + 1]?.value === '=' && tokens[cursor + 2]?.value === '{') {
+          const close = findClosing(tokens, cursor + 2, '{', '}');
+          if (close >= 0) interception = submitInterception(tokens.slice(cursor + 3, close));
+        }
         cursor += 1;
       }
+      /*
+        [2026-09-05] 가로채기가 **증명된** 폼을 따로 판정한다.
+
+        종전에는 `method` 만 보고 명시적 GET 이 아니면 전부 `implicit-or-computed-method` 로
+        묶었다. 그런데 실측상 이 저장소의 `<form>` 51개 중 50개가 `onSubmit` 을 갖고 있고,
+        그중 대다수가 `preventDefault` 또는 react-hook-form 의 `handleSubmit` 으로 네이티브
+        제출을 확실히 막는다. 그 폼들은 **주소창에 아무것도 싣지 않는다** — 그런데도 46건이
+        "검토 필요" 로 남아 정작 판정이 필요한 record 를 가리고 있었다.
+
+        ⚠ 명시적 `method="get"` 은 가로채기 여부와 무관하게 종전 판정을 유지한다. 그 폼은
+          제출이 뚫리면 필드를 URL 에 싣겠다고 **스스로 선언**한 것이므로, 핸들러가 막고 있다는
+          사실이 그 선언을 지우지 않는다.
+      */
+      const intercepted = method !== 'get' && interception !== null;
       if (method === null || method === 'get' || method === '<computed>') records.push(makeRecord(context, {
-        ambiguityReasons: method === 'get' ? [] : ['form-method-or-interception-unresolved'],
+        ambiguityReasons: method === 'get' || intercepted ? [] : ['form-method-or-interception-unresolved'],
         currentBehavior: method === 'get'
           ? 'Form explicitly serializes successful named controls into a GET navigation URL.'
-          : 'Form has no statically explicit GET/POST contract; submit interception and URL effects require review.',
+          : intercepted
+            ? `Form submission is intercepted before native navigation (${interception}); no URL state is emitted.`
+            : 'Form has no statically explicit GET/POST contract; submit interception and URL effects require review.',
         detector: 'jsx-form',
         kind: 'form-producer',
-        operation: method === 'get' ? 'explicit-get' : 'implicit-or-computed-method',
+        operation: method === 'get'
+          ? 'explicit-get'
+          : intercepted ? 'intercepted-submit' : 'implicit-or-computed-method',
         stateNames: method === 'get' ? ['<form-field-population>'] : [],
         surface: 'navigation',
       }));
@@ -1154,6 +1201,51 @@ function readApprovedStateItemNames(repoRoot, census) {
   return names;
 }
 
+/**
+ * 이 record 가 **분류할 URL 상태를 갖지 않음이 확인됐는가**.
+ *
+ * ⚠ [2026-09-05] 만료 면제 규칙이 `stateItems.length > 0` 을 요구해, `/admin/system/audit` 로 가는
+ *   평범한 링크처럼 **애초에 분류할 것이 없는 record 가 어떤 승인으로도 면제되지 않았다.**
+ *   369건 중 그런 record 가 절반 가까이였다. 만료 red 를 그 record 들이 채우면 정작 판정이
+ *   필요한 record 가 묻힌다.
+ *
+ *   `length > 0` 조건 자체는 정당했다 — 빈 배열에 `every` 는 참이라 그것 없이는 **stateItem 을
+ *   추출하지 못한 record 가 전부 조용히 면제**된다. 문제는 "상태가 없다" 와 "상태를 못 읽었다" 를
+ *   구분하지 못한 것이다. census 는 그 둘을 구분할 신호를 갖고 있다.
+ *
+ * **면제하려면 다섯 가지가 모두 성립해야 한다.** 하나라도 어긋나면 상태가 있을 수 있다는 뜻이다.
+ *   1. `targetCandidate` 가 해소됐다 — null 이면 detector 가 타깃을 읽지 못한 것이다
+ *   2. 쿼리 구분자가 없다 — `?`·`&` 가 있으면 쿼리 상태를 나른다
+ *   3. 경로에 `[computed]` 가 없다 — 해소하지 못한 보간은 **이름 없는 record locator** 다
+ *      (실측: `/admin/survey/manage/[computed]`, `/survey/response/[computed]` 등)
+ *   4. `riskSignals` 가 비어 있다 — 미해소 위험 신호가 붙은 record 는 판정 대상이다
+ *   5. 프래그먼트가 없다 — `#` 뒤도 주소창에 남는다
+ *
+ * ⚠ 이 함수를 넓히면 만료 신호가 줄어든다. 조건을 완화하기 전에 **그 record 가 정말 URL 에
+ *   아무것도 싣지 않는지** 실물로 확인하라. 계약이 부정 케이스를 고정한다.
+ */
+function hasNoClassifiableUrlState(record) {
+  if ((record?.stateItems ?? []).length > 0) return false;
+
+  /*
+    [2026-09-05] 제출이 가로채인 폼은 주소창에 아무것도 싣지 않는다. 이 record 는 이동 타깃이
+    없으므로(폼은 navigate 하지 않는다) 아래 targetCandidate 조건으로는 영원히 통과하지 못한다.
+
+    판정 근거는 detector 가 `submitInterception` 으로 **증명한** 것뿐이다 —
+    `preventDefault` 직접 호출 또는 react-hook-form `handleSubmit` 래핑. 이름만 넘긴 핸들러는
+    판정하지 않으므로 여기 오지 않는다.
+  */
+  if (record?.kind === 'form-producer' && record?.operation === 'intercepted-submit') return true;
+
+  const target = record?.targetCandidate;
+  if (typeof target !== 'string' || target === '') return false;
+  if (/[?&#]/u.test(target)) return false;
+  if (target.includes('[computed]')) return false;
+  if ((record?.riskSignals ?? []).length > 0) return false;
+
+  return true;
+}
+
 /** Validate fail-closed semantics independently from the generated snapshot comparison. */
 export function validateUrlStateCensus(census, options = {}) {
   const repoRoot = resolve(options.repoRoot ?? DEFAULT_REPO_ROOT);
@@ -1215,13 +1307,17 @@ export function validateUrlStateCensus(census, options = {}) {
         승인되지 않은 항목이 섞여 있으면 그 record 는 그대로 만료된다 —
         **부분 승인이 전체 면제가 되지 않는다.**
 
-        stateItem 이 없는 record 는 면제 대상이 아니다(빈 집합에 every 는 참이라 조용히 전부
-        면제될 수 있다. 그 함정을 막으려고 length 를 먼저 본다).
+        stateItem 이 없는 record 는 **원칙적으로** 면제 대상이 아니다 — 빈 집합에 every 는 참이라
+        그 조건 없이는 상태를 추출하지 못한 record 가 전부 조용히 면제된다.
+
+        [2026-09-05] 다만 그중 **분류할 상태가 없음이 확인된** record 는 예외다. 판정 기준은
+        `hasNoClassifiableUrlState` 가 다섯 조건으로 좁게 정의한다. 승인과 무관하게 면제되는데,
+        승인할 대상 자체가 없기 때문이다.
       */
       const items = record.stateItems ?? [];
       const fullyApproved = items.length > 0 && items.every((item) => approvedStateItemNames.has(item?.name));
 
-      if (!fullyApproved) {
+      if (!fullyApproved && !hasNoClassifiableUrlState(record)) {
         errors.push(`${label}: review horizon expired on ${record.review.reviewBy} — 사유와 함께 DEFAULT_REVIEW_BY 를 연장하고 --write 로 재생성하거나, `
           + '승인 오버레이(config/ui-url-state-approval.json)에서 이 record 의 stateItem 부류를 근거와 함께 승인하세요. '
           + '이 census 는 기계 생성물이라 "재검토 완료" 를 여기에 직접 기록할 수 없습니다 — 문법이 스스로를 승인하지 못하게 하는 의도된 제약입니다.');

@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "6e52cf16cab688ba1701b9e02ee708279f4beb4918e771b62544fe412a150d6a"
+    "inventoryHash": "518823d24d4e357a4d3ac034ffcca35bb9ae81efc24fb73ac12e5952c1d8809f"
   },
   "summary": {
     "sourceFileCount": 514,
-    "records": 369,
+    "records": 370,
     "syntaxOccurrences": 430,
-    "ambiguousRecords": 349,
-    "unverifiedRecords": 369,
+    "ambiguousRecords": 350,
+    "unverifiedRecords": 370,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -40,7 +40,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 47,
+      "form-producer": 48,
       "navigation-producer": 157,
       "page-redirect": 5,
       "query-builder": 23,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 361,
+      "navigation": 362,
       "request-telemetry": 8
     }
   },
@@ -3311,20 +3311,19 @@
       }
     },
     {
-      "id": "URL-4ECD49210FE0CF",
+      "id": "URL-AB443286D98021",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/boards/insert-board-article",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -3487,20 +3486,19 @@
       }
     },
     {
-      "id": "URL-1FFBA6AED63D8A",
+      "id": "URL-B59298E55B4C6A",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/boards/maker",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -4869,20 +4867,19 @@
       }
     },
     {
-      "id": "URL-6A82ED76609D70",
+      "id": "URL-3AEBF970ABC234",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/boards/write",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -6111,20 +6108,19 @@
       }
     },
     {
-      "id": "URL-D45B2A3109722A",
+      "id": "URL-CF3C4836B90C26",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
       "producerFile": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/operation/external-hr",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -6796,20 +6792,19 @@
       }
     },
     {
-      "id": "URL-3C8D8CBAB29676",
+      "id": "URL-BA945871EEDB81",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
       "producerFile": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/operation/rewards",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -6835,20 +6830,19 @@
       }
     },
     {
-      "id": "URL-8722C24263F049",
+      "id": "URL-7FB4D816E80E2D",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
       "producerFile": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/patterns",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -7295,20 +7289,19 @@
       }
     },
     {
-      "id": "URL-9CAD59EBAAB35B",
+      "id": "URL-2C0491A898393C",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/security/login-policy",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -7607,24 +7600,61 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 3
+        "occurrenceCount": 1
       }
     },
     {
-      "id": "URL-36CCA339F1BB69",
+      "id": "URL-604FE8092DF0FE",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "producerFile": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/survey",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 2
+      }
+    },
+    {
+      "id": "URL-19C1B924A7E624",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
       "producerFile": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
       "consumerFile": null,
       "routePattern": "/admin/survey",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -8979,20 +9009,19 @@
       }
     },
     {
-      "id": "URL-79EE795C3655F8",
+      "id": "URL-7A219C6DADE614",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/codes/administ/AdministCodeClient.tsx",
       "producerFile": "frontend/src/app/admin/system/codes/administ/AdministCodeClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/codes/administ",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -9504,20 +9533,19 @@
       }
     },
     {
-      "id": "URL-FE1B7E226242B5",
+      "id": "URL-DAA79851E8D252",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
       "producerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/hpcm",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -10133,20 +10161,19 @@
       }
     },
     {
-      "id": "URL-99805DCC423D68",
+      "id": "URL-9378BBB706E249",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/menus",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -10458,20 +10485,19 @@
       }
     },
     {
-      "id": "URL-C4C2B23BFC2144",
+      "id": "URL-519E0633F5FFCF",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/policies/PolicyAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/system/policies/PolicyAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/policies",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -11247,20 +11273,19 @@
       }
     },
     {
-      "id": "URL-D14A0B284B5B99",
+      "id": "URL-5CA57A07FEFF52",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/uss/ion/sms",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -11519,20 +11544,19 @@
       }
     },
     {
-      "id": "URL-4EF1E2BF428FEF",
+      "id": "URL-F32262E8E3E07B",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/uss/olh/online-manual",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -12670,20 +12694,19 @@
       }
     },
     {
-      "id": "URL-E389C1DB2A1A7D",
+      "id": "URL-9129812E0C1EA4",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/components/patterns/keyword-filter.tsx",
       "producerFile": "frontend/src/app/components/patterns/keyword-filter.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -13350,20 +13373,19 @@
       }
     },
     {
-      "id": "URL-C3D38F6A7A9BC8",
+      "id": "URL-D620D3704A48B2",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
       "producerFile": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
       "consumerFile": null,
       "routePattern": "/cop/sms/selectSmsList",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -15213,20 +15235,19 @@
       }
     },
     {
-      "id": "URL-8798F4CF6298DA",
+      "id": "URL-AB14804C5A665D",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/security/AuthorForm.tsx",
       "producerFile": "frontend/src/components/admin/security/AuthorForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15253,20 +15274,19 @@
       }
     },
     {
-      "id": "URL-C620B524AA8E16",
+      "id": "URL-1CB73363CF614B",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/system/NetworkForm.tsx",
       "producerFile": "frontend/src/components/admin/system/NetworkForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15333,20 +15353,19 @@
       }
     },
     {
-      "id": "URL-FEB30AB7AB9AE6",
+      "id": "URL-45AE900BA86C8C",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/user/DepartmentForm.tsx",
       "producerFile": "frontend/src/components/admin/user/DepartmentForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15373,20 +15392,19 @@
       }
     },
     {
-      "id": "URL-D1F4AAB7664E88",
+      "id": "URL-41E67BD673F611",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/user/UserManageForm.tsx",
       "producerFile": "frontend/src/components/admin/user/UserManageForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15413,20 +15431,19 @@
       }
     },
     {
-      "id": "URL-22A7AEF74171FA",
+      "id": "URL-CFC6B5F51DD4A3",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/business/deptJob/DeptJobForm.tsx",
       "producerFile": "frontend/src/components/business/deptJob/DeptJobForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15572,20 +15589,19 @@
       }
     },
     {
-      "id": "URL-601DE6040651DF",
+      "id": "URL-514D28CCE204E5",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/features/satisfaction/SatisfactionSection.tsx",
       "producerFile": "frontend/src/components/features/satisfaction/SatisfactionSection.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
