@@ -8,6 +8,13 @@ const CONTRACT_ASSET = 'scripts/playwright-auth-artifact-contract.test.mjs';
 const requireFromFrontend = createRequire(new URL('../frontend/package.json', import.meta.url));
 const ts = requireFromFrontend('typescript');
 
+function readAuthSetupSource() {
+  return readFileSync(
+    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
+    'utf8',
+  ).replace(/\r\n/gu, '\n');
+}
+
 function callExpressions(sourceFile, functionName) {
   const calls = [];
   const visit = (node) => {
@@ -281,18 +288,12 @@ function governanceAssetErrors(source) {
 }
 
 test('Playwright authentication storage state is written with a POSIX-private lifecycle', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   assert.deepEqual(authArtifactContractErrors(source), []);
 });
 
 test('the contract turns red when private modes are weakened', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const unsafeFixture = source
     .replace('const PRIVATE_DIRECTORY_MODE = 0o700;', 'const PRIVATE_DIRECTORY_MODE = 0o755;')
     .replace('const PRIVATE_FILE_MODE = 0o600;', 'const PRIVATE_FILE_MODE = 0o644;');
@@ -304,10 +305,7 @@ test('the contract turns red when private modes are weakened', () => {
 });
 
 test('the contract turns red when credentials are written before descriptor tightening', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const fchmod = 'fs.fchmodSync(descriptor, PRIVATE_FILE_MODE);';
   const write = 'fs.writeFileSync(descriptor, serializedState, { encoding: \'utf8\' });';
   const unsafeFixture = source
@@ -321,10 +319,7 @@ test('the contract turns red when credentials are written before descriptor tigh
 });
 
 test('the contract turns red when the post-write permission repair is removed', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const unsafeFixture = source.replace(
     'fs.chmodSync(authFilePath, PRIVATE_FILE_MODE);',
     '/* post-write permission repair removed */',
@@ -337,10 +332,7 @@ test('the contract turns red when the post-write permission repair is removed', 
 });
 
 test('the contract turns red when a credential identifier is interpolated into output', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const unsafeFixture = `${source}\nconsole.log(\`authenticated \${id}\`);`;
 
   assert.ok(
@@ -350,10 +342,7 @@ test('the contract turns red when a credential identifier is interpolated into o
 });
 
 test('the contract turns red when fixture cookie transport attributes are weakened', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const insecureFixture = source.replace('secure: true', 'secure: false');
   const laxFixture = source.replace("sameSite: 'Strict'", "sameSite: 'Lax'");
   const readableFixture = source.replace('httpOnly: true', 'httpOnly: false');
@@ -376,10 +365,7 @@ test('the contract turns red when fixture cookie transport attributes are weaken
 });
 
 test('the contract turns red when a mutable state is inserted before the private writer', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const mutableFixture = source
     .replace('    writePrivateStorageState(authFilePath, {', '    const mutableState = {')
     .replace(
@@ -395,10 +381,7 @@ test('the contract turns red when a mutable state is inserted before the private
 });
 
 test('the contract turns red when spread properties override the verified cookie state', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const cookieOverride = source.replace(
     'secure: true, sameSite:',
     'secure: true, ...JSON.parse(\'{"secure":false}\'), sameSite:',
@@ -421,10 +404,7 @@ test('the contract turns red when spread properties override the verified cookie
 });
 
 test('the contract turns red when the private writer binding is shadowed', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const callStart = source.indexOf('    writePrivateStorageState(authFilePath, {');
   assert.ok(callStart >= 0, 'writer call fixture must be found');
   const shadowedFixture = `${source.slice(0, callStart)}    const writePrivateStorageState = (_path: string, _state: unknown) => {};\n${source.slice(callStart)}`;
@@ -436,10 +416,7 @@ test('the contract turns red when the private writer binding is shadowed', () =>
 });
 
 test('commented or dead-string writer code cannot satisfy the executable fixture contract', () => {
-  const source = readFileSync(
-    new URL('../frontend/e2e/auth.setup.ts', import.meta.url),
-    'utf8',
-  );
+  const source = readAuthSetupSource();
   const callStart = source.indexOf('    writePrivateStorageState(authFilePath, {');
   const callEnd = source.indexOf('\n    console.log', callStart);
   assert.ok(callStart >= 0 && callEnd > callStart, 'writer call fixture must be found');
