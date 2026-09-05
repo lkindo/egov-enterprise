@@ -86,4 +86,23 @@ public class ExternalHr {
         this.lastMdfrId = lastMdfrId;
         this.mdfcnDt = LocalDateTime.now();
     }
+
+    /**
+     * 식별자(evntSn·otsdHrId)를 제외한 정보를 갱신한다(2026-09-05 DEC-OPS-036 — 종전에는 등록만 되고
+     * 고칠 수 없었다). 이 엔티티는 BaseEntity 감사를 쓰지 않는 수동 감사 필드라 여기서 수정자·수정일을 찍는다.
+     */
+    public void update(String gndrCd, String otsdHrNm, String crTypeCd, String ogdpInstNm, String brdtYmd,
+                       String areaNo, String mdTelno, String endTelno, String emlAddr, String lastMdfrId) {
+        this.gndrCd = gndrCd;
+        this.otsdHrNm = otsdHrNm;
+        this.crTypeCd = crTypeCd;
+        this.ogdpInstNm = ogdpInstNm;
+        this.brdtYmd = brdtYmd;
+        this.areaNo = areaNo;
+        this.mdTelno = mdTelno;
+        this.endTelno = endTelno;
+        this.emlAddr = emlAddr;
+        this.lastMdfrId = lastMdfrId;
+        this.mdfcnDt = LocalDateTime.now();
+    }
 }

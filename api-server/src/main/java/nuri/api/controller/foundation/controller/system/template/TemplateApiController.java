@@ -42,4 +42,20 @@ public class TemplateApiController {
         tmplatInfoService.insertTmplatInfo(tmplatInfo);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    /* [2026-09-05 DEC-OPS-036] 수정·삭제 신설 — 종전에는 등록·조회만 가능했다(감사 D11-02). */
+    @Operation(summary = "템플릿 수정", description = "템플릿 정보를 수정합니다. 템플릿 ID 는 바꾸지 않습니다.")
+    @PutMapping("/{tmpltId}")
+    public ResponseEntity<ApiResponse<TemplateDto>> updateTmplatInfo(
+            @PathVariable("tmpltId") String tmpltId,
+            @Valid @RequestBody TemplateDto tmplatInfo) {
+        return ResponseEntity.ok(ApiResponse.success(tmplatInfoService.updateTmplatInfo(tmpltId, tmplatInfo)));
+    }
+
+    @Operation(summary = "템플릿 삭제", description = "템플릿을 삭제합니다.")
+    @DeleteMapping("/{tmpltId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTmplatInfo(@PathVariable("tmpltId") String tmpltId) {
+        tmplatInfoService.deleteTmplatInfo(tmpltId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

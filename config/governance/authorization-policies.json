@@ -133,6 +133,22 @@
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+      "handler": "nuri.api.controller.business.operation.ExternalHrApiController#deleteExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+      "handler": "nuri.api.controller.business.operation.ExternalHrApiController#updateExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/operation/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
@@ -152,6 +168,22 @@
       "method": "POST",
       "path": "/api/v1/admin/operation/rewards",
       "handler": "nuri.api.controller.business.operation.RewardManageApiController#createReward",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operation/rewards/{rwrdSn}",
+      "handler": "nuri.api.controller.business.operation.RewardManageApiController#deleteReward",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/rewards/{rwrdSn}",
+      "handler": "nuri.api.controller.business.operation.RewardManageApiController#updateReward",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
@@ -878,6 +910,22 @@
       "method": "POST",
       "path": "/api/v1/admin/system/templates",
       "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/templates/{tmpltId}",
+      "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#deleteTmplatInfo",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/templates/{tmpltId}",
+      "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#updateTmplatInfo",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"

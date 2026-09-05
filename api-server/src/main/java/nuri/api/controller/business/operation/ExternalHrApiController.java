@@ -39,4 +39,26 @@ public class ExternalHrApiController {
     public ResponseEntity<ApiResponse<ExternalHrDto>> createExternalHr(@Valid @RequestBody ExternalHrDto dto) {
         return ResponseEntity.ok(ApiResponse.success(externalHrService.createExternalHr(dto)));
     }
+
+    /*
+     * [2026-09-05 DEC-OPS-036] 수정·삭제 신설. 종전에는 GET·POST 뿐이라 이름 오타 하나도 정정할 수 없었다(감사 D11-01).
+     * 식별자는 복합키(evnt_sn, otsd_hr_id)라 경로에 둘 다 싣는다.
+     */
+    @Operation(summary = "외부인사 수정", description = "외부인사 정보를 수정한다. 식별자(evntSn·otsdHrId)는 바꾸지 않는다.")
+    @PutMapping("/{evntSn}/{otsdHrId}")
+    public ResponseEntity<ApiResponse<ExternalHrDto>> updateExternalHr(
+            @PathVariable Long evntSn,
+            @PathVariable String otsdHrId,
+            @Valid @RequestBody ExternalHrDto dto) {
+        return ResponseEntity.ok(ApiResponse.success(externalHrService.updateExternalHr(evntSn, otsdHrId, dto)));
+    }
+
+    @Operation(summary = "외부인사 삭제", description = "외부인사 정보를 삭제한다.")
+    @DeleteMapping("/{evntSn}/{otsdHrId}")
+    public ResponseEntity<ApiResponse<Void>> deleteExternalHr(
+            @PathVariable Long evntSn,
+            @PathVariable String otsdHrId) {
+        externalHrService.deleteExternalHr(evntSn, otsdHrId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

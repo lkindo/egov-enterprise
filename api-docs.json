@@ -151,12 +151,12 @@
       "description": "커뮤니티 사용자 API"
     },
     {
-      "name": "Note",
-      "description": "쪽지 관리 API"
-    },
-    {
       "name": "Template",
       "description": "템플릿 관리 API (Admin)"
+    },
+    {
+      "name": "Note",
+      "description": "쪽지 관리 API"
     },
     {
       "name": "User Absence",
@@ -4900,6 +4900,258 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system/templates/{tmpltId}": {
+      "get": {
+        "tags": [
+          "Template"
+        ],
+        "summary": "템플릿 상세 조회",
+        "description": "특정 템플릿의 상세 정보를 조회합니다.",
+        "operationId": "selectTmplatInfoDetail",
+        "parameters": [
+          {
+            "name": "tmpltId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTemplateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Template"
+        ],
+        "summary": "템플릿 수정",
+        "description": "템플릿 정보를 수정합니다. 템플릿 ID 는 바꾸지 않습니다.",
+        "operationId": "updateTmplatInfo",
+        "parameters": [
+          {
+            "name": "tmpltId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTemplateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Template"
+        ],
+        "summary": "템플릿 삭제",
+        "description": "템플릿을 삭제합니다.",
+        "operationId": "deleteTmplatInfo",
+        "parameters": [
+          {
+            "name": "tmpltId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -11357,6 +11609,370 @@
         "parameters": [
           {
             "name": "authrtCd",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/operation/rewards/{rwrdSn}": {
+      "put": {
+        "tags": [
+          "RewardManage"
+        ],
+        "summary": "포상 수정",
+        "description": "포상 정보(수상자·코드·일자·명칭·공적 내용)를 수정한다.",
+        "operationId": "updateReward",
+        "parameters": [
+          {
+            "name": "rwrdSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewardManageDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRewardManageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "RewardManage"
+        ],
+        "summary": "포상 삭제",
+        "description": "포상 정보를 삭제한다.",
+        "operationId": "deleteReward",
+        "parameters": [
+          {
+            "name": "rwrdSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}": {
+      "put": {
+        "tags": [
+          "ExternalHr"
+        ],
+        "summary": "외부인사 수정",
+        "description": "외부인사 정보를 수정한다. 식별자(evntSn·otsdHrId)는 바꾸지 않는다.",
+        "operationId": "updateExternalHr",
+        "parameters": [
+          {
+            "name": "evntSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "otsdHrId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalHrDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseExternalHrDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ExternalHr"
+        ],
+        "summary": "외부인사 삭제",
+        "description": "외부인사 정보를 삭제한다.",
+        "operationId": "deleteExternalHr",
+        "parameters": [
+          {
+            "name": "evntSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "otsdHrId",
             "in": "path",
             "required": true,
             "schema": {
@@ -29091,88 +29707,6 @@
         }
       }
     },
-    "/api/v1/admin/system/templates/{tmpltId}": {
-      "get": {
-        "tags": [
-          "Template"
-        ],
-        "summary": "템플릿 상세 조회",
-        "description": "특정 템플릿의 상세 정보를 조회합니다.",
-        "operationId": "selectTmplatInfoDetail",
-        "parameters": [
-          {
-            "name": "tmpltId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseTemplateDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "대상을 찾을 수 없음 (code: C003/C007)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/system/survey-responses": {
       "get": {
         "tags": [
@@ -35211,6 +35745,81 @@
           "userId"
         ]
       },
+      "TemplateDto": {
+        "type": "object",
+        "properties": {
+          "tmpltId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "tmpltNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "tmpltPath": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "tmpltSeCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "useYn": {
+            "type": "string",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "frstRgtrId": {
+            "type": "string"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "tmpltId",
+          "tmpltNm",
+          "tmpltPath",
+          "tmpltSeCd",
+          "useYn"
+        ]
+      },
+      "ApiResponseTemplateDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TemplateDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
       "SurveyRespondentDto": {
         "type": "object",
         "description": "설문 응답자 DTO",
@@ -36532,6 +37141,220 @@
           "authrtNm"
         ]
       },
+      "RewardManageDto": {
+        "type": "object",
+        "properties": {
+          "rwrdSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rwardwnrId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "rwardCode": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "rwardDe": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "rwardNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "pblenCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "sanctnerId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "confmAt": {
+            "type": "string",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "sanctnDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "returnResn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ifmlAtrzSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "frstRgtrId": {
+            "type": "string"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastMdfrId": {
+            "type": "string"
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseRewardManageDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RewardManageDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "ExternalHrDto": {
+        "type": "object",
+        "properties": {
+          "evntSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "otsdHrId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "gndrCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "otsdHrNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "crTypeCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "ogdpInstNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "brdtYmd": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "areaNo": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "mdTelno": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "endTelno": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "emlAddr": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 0
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "frstRgtrId": {
+            "type": "string"
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastMdfrId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "evntSn",
+          "otsdHrId"
+        ]
+      },
+      "ApiResponseExternalHrDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ExternalHrDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
       "EventInfoDto": {
         "type": "object",
         "description": "행사 정보 상세 DTO",
@@ -37614,50 +38437,6 @@
           "scrtyDcsnTrgtId"
         ]
       },
-      "TemplateDto": {
-        "type": "object",
-        "properties": {
-          "tmpltId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "tmpltNm": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "tmpltPath": {
-            "type": "string",
-            "maxLength": 1000,
-            "minLength": 0
-          },
-          "tmpltSeCd": {
-            "type": "string",
-            "maxLength": 12,
-            "minLength": 0
-          },
-          "useYn": {
-            "type": "string",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "frstRgtrId": {
-            "type": "string"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "tmpltId",
-          "tmpltNm",
-          "tmpltPath",
-          "tmpltSeCd",
-          "useYn"
-        ]
-      },
       "DeptAuthorBatchRequest": {
         "type": "object",
         "description": "부서별 권한 일괄 할당 요청",
@@ -38007,204 +38786,6 @@
           "rsltMsg": {
             "type": "string",
             "description": "결과 메시지"
-          }
-        }
-      },
-      "RewardManageDto": {
-        "type": "object",
-        "properties": {
-          "rwrdSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "rwardwnrId": {
-            "type": "string"
-          },
-          "rwardCode": {
-            "type": "string"
-          },
-          "rwardDe": {
-            "type": "string"
-          },
-          "rwardNm": {
-            "type": "string"
-          },
-          "pblenCn": {
-            "type": "string"
-          },
-          "sanctnerId": {
-            "type": "string"
-          },
-          "confmAt": {
-            "type": "string"
-          },
-          "sanctnDt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "returnResn": {
-            "type": "string"
-          },
-          "atchFileSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "ifmlAtrzSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "frstRgtrId": {
-            "type": "string"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "lastMdfrId": {
-            "type": "string"
-          },
-          "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "ApiResponseRewardManageDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/RewardManageDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "ExternalHrDto": {
-        "type": "object",
-        "properties": {
-          "evntSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "otsdHrId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "gndrCd": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
-          },
-          "otsdHrNm": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "crTypeCd": {
-            "type": "string",
-            "maxLength": 12,
-            "minLength": 0
-          },
-          "ogdpInstNm": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "brdtYmd": {
-            "type": "string",
-            "maxLength": 8,
-            "minLength": 0
-          },
-          "areaNo": {
-            "type": "string",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "mdTelno": {
-            "type": "string",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "endTelno": {
-            "type": "string",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "emlAddr": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 0
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "frstRgtrId": {
-            "type": "string"
-          },
-          "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "lastMdfrId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "evntSn",
-          "otsdHrId"
-        ]
-      },
-      "ApiResponseExternalHrDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/ExternalHrDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
           }
         }
       },
@@ -41445,37 +42026,6 @@
             "items": {
               "$ref": "#/components/schemas/TemplateDto"
             }
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "ApiResponseTemplateDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/TemplateDto"
           },
           "timestamp": {
             "type": "string",
