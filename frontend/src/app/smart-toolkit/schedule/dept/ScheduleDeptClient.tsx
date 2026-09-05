@@ -29,6 +29,7 @@ import { Loader2, Pencil,  Trash2,  Plus } from "lucide-react";
 import { getDeptScheduleList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
 import { toast } from 'sonner';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
@@ -80,6 +81,7 @@ export default function ScheduleDeptClient() {
     const savingRef = useRef(false);
     const [deletingScheduleSn, setDeletingScheduleSn] = useState<number | null>(null);
     const deletePendingRef = useRef(false);
+    const confirm = useConfirm();
     const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
     const [formData, setFormData] = useState<Partial<DeptSchedule>>({
         schdlNm: '',
@@ -149,7 +151,14 @@ export default function ScheduleDeptClient() {
         deletePendingRef.current = true;
         setDeletingScheduleSn(schdlSn);
         try {
-            if (!confirm('정말 삭제하시겠습니까?')) return;
+            // [2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달.
+            const ok = await confirm({
+                title: '일정 삭제',
+                message: '이 일정을 삭제하시겠습니까? 삭제한 일정은 복구할 수 없습니다.',
+                confirmText: '삭제',
+                variant: 'destructive',
+            });
+            if (!ok) return;
             await deleteDeptSchedule(schdlSn);
             await fetchList();
         } catch {

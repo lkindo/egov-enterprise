@@ -45,6 +45,20 @@
   줄이는 안전장치이지, 인수처가 12개월만 설정해도 항상 적법하다는 판정기가 아니다.
 - 삭제 술어와 index는 현재 repository·Flyway가 정본이다. 문서에 복사한 SQL을 임의 실행하지 않는다.
 
+## 알림 보존 (2026-09-06, DEC-OPS-038)
+
+`tb_user_noti`(앱 내 알림)는 로그가 아니라 사용자 통지이며 법정 보존 의무가 없다. 종전에는 사용자 탈퇴 때만 일괄 정리돼
+읽은 알림도 영구 누적됐다(감사 D09-06). 로그와 같은 모양의 파기 경로를 두되 **기본 비활성**이다.
+
+| 데이터 | 현재 처리 | 설정·제약 | 운영 확인 사항 |
+|---|---|---|---|
+| `tb_user_noti` (`read_yn='Y'`) | 만료 배치 파기(선택) | `nuri.notification.retention.enabled` 기본 `false`, `read-months` 기본 `0` — 1 미만이면 켜져 있어도 삭제하지 않는다 | 보존 개월 수치는 인수처 결정(PD-NOTE-002). 읽지 않은 알림은 대상이 아니다 |
+
+정본 구현: [`NotificationRetentionScheduler`](../../business-app/src/main/java/nuri/business/service/notification/NotificationRetentionScheduler.java),
+[`NotificationRepository#deleteReadBefore`](../../business-app/src/main/java/nuri/business/domain/notification/NotificationRepository.java),
+[`application.yml`](../../api-server/src/main/resources/application.yml)의 `nuri.notification.retention.*`.
+기본 cron 은 매일 04:30 Asia/Seoul(로그 파기 04:00 뒤)이고 `nuri.notification.retention.cron` 으로 바꿀 수 있다.
+
 ## 운영 적용·점검
 
 ### 1. 배포 전

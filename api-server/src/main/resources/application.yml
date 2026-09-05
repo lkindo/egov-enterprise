@@ -128,6 +128,13 @@ nuri:
   notification:
     sender:
       tel: ${NOTIFICATION_SENDER_TEL:}
+    # [2026-09-06 DEC-OPS-038] 읽은 알림 보존·정리. tb_user_noti 는 사용자 탈퇴 때만 정리돼 읽은 알림도 영구 누적된다(감사 D09-06).
+    #   보존 개월 수치는 인수처 결정(PD-NOTE-002)이라 기본 비활성이며, 켜져 있어도 read-months 가 1 미만이면 삭제하지 않는다
+    #   (미설정 상태의 전량파기 방지 — 스케줄러 하한 가드). 읽지 않은 알림은 대상이 아니다.
+    retention:
+      enabled: ${NOTIFICATION_RETENTION_ENABLED:false}
+      cron: "0 30 4 * * *"      # 매일 04:30 (Asia/Seoul) — 로그 파기(04:00) 뒤
+      read-months: ${NOTIFICATION_RETENTION_READ_MONTHS:0}
 
   log:
     retention:

@@ -4,12 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SurveyResponseClient from '../SurveyResponseClient';
 
 const mocks = vi.hoisted(() => ({
+  confirm: vi.fn(),
   deleteResponse: vi.fn(),
   getResponses: vi.fn(),
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
 }));
 
+// [2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달(모듈 mock).
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/lib/api/survey', () => ({
   deleteQustnrRespondInfo: (...args: unknown[]) => mocks.deleteResponse(...args),
   getQustnrRespondInfoList: (...args: unknown[]) => mocks.getResponses(...args),
@@ -39,7 +42,7 @@ describe('SurveyResponseClient destructive boundary', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('confirm', vi.fn(() => true));
+    mocks.confirm.mockResolvedValue(true);
     mocks.getResponses.mockResolvedValue({
       list: [{
         srvyRspnsSn: 7,
@@ -103,13 +106,14 @@ describe('SurveyResponseClient destructive boundary', () => {
     const remove = await screen.findByRole('button', { name: '홍길동 응답 삭제' });
     const otherRemove = screen.getByRole('button', { name: '김영희 응답 삭제' });
     let reentered = false;
-    vi.stubGlobal('confirm', vi.fn(() => {
+    // 확인 모달이 열린 동안(응답 대기 중) 다른 행을 눌러도 동기 잠금이 막는다.
+    mocks.confirm.mockImplementation(async () => {
       if (!reentered) {
         reentered = true;
         otherRemove.click();
       }
       return true;
-    }));
+    });
 
     act(() => remove.click());
 

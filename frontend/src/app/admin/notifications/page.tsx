@@ -1,12 +1,6 @@
-import { Suspense } from 'react';
 import NotificationsClient from './NotificationsClient';
 
+// [2026-09-06 DEC-OPS-038] 뷰 상태(?view=)가 사라져 useSearchParams 도, 그를 위한 Suspense 경계도 필요 없다.
 export default function Page() {
-  // 뷰 상태를 URL(?view=)에서 파생시키므로 useSearchParams 를 사용한다.
-  // 정적 렌더 경계에서 CSR bailout 이 나지 않도록 Suspense 로 감싼다.
-  return (
-    <Suspense fallback={<div className="h-[60vh] animate-pulse rounded-lg bg-muted"><h1 className="sr-only">알림 센터를 불러오는 중</h1></div>}>
-      <NotificationsClient />
-    </Suspense>
-  );
+  return <NotificationsClient />;
 }

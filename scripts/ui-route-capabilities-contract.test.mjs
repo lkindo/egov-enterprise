@@ -257,13 +257,13 @@ test('direct demo routes disclose static data before interaction and disable uns
   assert.match(forms, /<Button\b[^>]*\bdisabled\b[^>]*>(?:(?!<\/Button>)[\s\S])*?새 워크플로우 생성(?:(?!<\/Button>)[\s\S])*?<\/Button>/);
 });
 
-test('notification stream separates API failure from empty and dispatch is an explicit local demo', () => {
+test('notification stream separates API failure from empty and the dispatch demo stays removed', () => {
   const hub = fs.readFileSync(
     path.join(ROOT, 'frontend', 'src', 'app', 'components', 'ui', 'smart-notification-hub.tsx'),
     'utf8',
   );
-  const sender = fs.readFileSync(
-    path.join(ROOT, 'frontend', 'src', 'app', 'components', 'ui', 'notification-sender.tsx'),
+  const client = fs.readFileSync(
+    path.join(ROOT, 'frontend', 'src', 'app', 'admin', 'notifications', 'NotificationsClient.tsx'),
     'utf8',
   );
 
@@ -272,10 +272,19 @@ test('notification stream separates API failure from empty and dispatch is an ex
   assert.match(hub, /onClick=\{refresh\}/);
   assert.doesNotMatch(hub, /98\.2%|value="ACTIVE"/);
 
-  assert.match(sender, /로컬 미리보기 데모입니다/);
-  assert.match(sender, /실제 수신자 조회·AI 생성·전송·예약을 수행하지 않습니다/);
-  assert.match(sender, /<Button\b[^>]*\bdisabled\b[^>]*>(?:(?!<\/Button>)[\s\S])*?메시지 일괄 발송(?:(?!<\/Button>)[\s\S])*?<\/Button>/);
-  assert.doesNotMatch(sender, /무결성 검증 통과|안전하게 보호되고 있습니다/);
+  // [2026-09-06 DEC-OPS-038] '발송 미리보기 (데모)' 뷰와 히어로 블록을 걷었다(감사 D09-05). 종전 계약은 데모가
+  // "스스로 데모라고 말하는지" 를 봤지만, 이제는 데모 자체와 그 진입(?view=dispatch)·장식 히어로가 없어야 한다.
+  assert.ok(
+    !fs.existsSync(path.join(ROOT, 'frontend', 'src', 'app', 'components', 'ui', 'notification-sender.tsx')),
+    'notification-sender.tsx 가 되살아났다 — 발송은 수신자 해석·인가 설계 없이 데모로 돌아오지 않는다',
+  );
+  // 주석은 걷어낸 이유를 기록하므로 검사 대상이 아니다 — 코드만 본다.
+  const clientCode = client.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  assert.doesNotMatch(clientCode, /view=dispatch|NotificationSender|useSearchParams|<Bell\b[^>]*size=\{260\}/);
+  assert.match(client, /<SmartNotificationHub \/>/);
+  const notification = currentAnalysis().manifest.routes.find(({ route }) => route === '/admin/notifications');
+  assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch-preview'), false);
+  assert.deepEqual(notification.supportedActions, ['local-search', 'tab-filter']);
 });
 
 test('empty, missing, and duplicate route populations fail closed', () => {
@@ -384,7 +393,8 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
 
   const falseLive = structuredClone(analysis.manifest);
   const notification = falseLive.routes.find(({ route }) => route === '/admin/notifications');
-  const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch-preview');
+  // [2026-09-06 DEC-OPS-038] dispatch-preview 데모는 걷었다 — 같은 라우트의 다른 demo capability(health-metrics)로 false-live 를 검사한다.
+  const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.health-metrics');
   dispatch.status = 'live';
   notification.status = 'partial';
   assert.match(

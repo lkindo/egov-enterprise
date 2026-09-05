@@ -10,6 +10,7 @@ import { CommentVO } from '@/types/business/comment';
 import { format } from 'date-fns';
 import { createComment, deleteComment, updateComment } from '@/app/actions/commentActions';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import {
@@ -39,6 +40,7 @@ import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 export default function CommentSection({ pstSn, bbsId, initialComments }: CommentSectionProps) {
   const [, startTransition] = useTransition();
   const { toast } = useToast();
+  const confirm = useConfirm();
   const { user } = useAuth();
 
   /**
@@ -153,7 +155,14 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
   const handleDelete = async (id: number) => {
     if (deletePendingRef.current || editPendingRef.current || createPendingRef.current) return;
     deletePendingRef.current = true;
-    if (!confirm('댓글을 삭제하시겠습니까?')) {
+    // [2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달. 확인은 transition 밖(onClick)에서 먼저 받는다.
+    const ok = await confirm({
+      title: '댓글 삭제',
+      message: '댓글을 삭제하시겠습니까? 삭제한 댓글은 복구할 수 없습니다.',
+      confirmText: '삭제',
+      variant: 'destructive',
+    });
+    if (!ok) {
       deletePendingRef.current = false;
       return;
     }

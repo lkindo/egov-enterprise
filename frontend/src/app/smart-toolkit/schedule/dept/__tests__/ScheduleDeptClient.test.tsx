@@ -18,6 +18,8 @@ vi.mock('@/services/business/schedule/deptScheduleService', () => ({
   deleteDeptSchedule: harness.deleteDeptSchedule,
 }));
 
+// [2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달(모듈 mock).
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => harness.confirm }));
 vi.mock('sonner', () => ({
   toast: { error: harness.toastError, success: vi.fn() },
 }));
@@ -29,8 +31,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     vi.clearAllMocks();
     harness.getDeptScheduleList.mockResolvedValue({ list: [] });
     harness.createDeptSchedule.mockResolvedValue(undefined);
-    harness.confirm.mockReturnValue(true);
-    vi.stubGlobal('confirm', harness.confirm);
+    harness.confirm.mockResolvedValue(true);
     harness.deleteDeptSchedule.mockResolvedValue(undefined);
     harness.updateDeptSchedule.mockResolvedValue(undefined);
   });
@@ -215,8 +216,9 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
       fireEvent.click(remove);
     });
 
+    // 확인이 비동기(모달)라 sink 호출은 다음 틱이다 — 그래도 두 번째 클릭은 동기 잠금이 막아 confirm 도 sink 도 1회다.
+    await waitFor(() => expect(harness.deleteDeptSchedule).toHaveBeenCalledTimes(1));
     expect(harness.confirm).toHaveBeenCalledTimes(1);
-    expect(harness.deleteDeptSchedule).toHaveBeenCalledTimes(1);
     expect(remove).toBeDisabled();
     expect(remove).toHaveAttribute('aria-busy', 'true');
     expect(remove).toHaveAccessibleName('보존할 일정 삭제 중');
