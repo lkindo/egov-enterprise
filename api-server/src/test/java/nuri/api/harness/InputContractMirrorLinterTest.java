@@ -20,6 +20,7 @@ import nuri.business.domain.code.CommonCodeCategory;
 import nuri.business.domain.code.CommonCodeGroup;
 import nuri.business.domain.group.GroupManage;
 import nuri.business.domain.mypage.MyPageContent;
+import nuri.business.domain.operation.ExternalHr;
 import nuri.business.domain.scrap.Scrap;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.community.Community;
@@ -38,6 +39,7 @@ import nuri.business.service.code.dto.CmmnCodeDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.business.service.department.dto.DeptManageDto;
 import nuri.business.service.group.dto.GroupManageDto;
+import nuri.business.service.operation.dto.ExternalHrDto;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.popup.dto.PopupDto;
@@ -133,7 +135,8 @@ class InputContractMirrorLinterTest {
             new LengthBinding(Sms.class, SmsDto.class, List.of("sndngTelno", "sndngCn")),
             new LengthBinding(SmsRecptnId.class, SmsRecptnDto.class, List.of("rcptnTelno")),
             // [GAP-CONTRACT-001] 실제 서비스가 요청값을 직접 저장하는 필드만 묶는다.
-            // ID·감사 필드와 서버가 인증 주체에서 주입하는 작성자 필드는 의도적으로 제외한다.
+            // 서버 생성 ID·감사 필드와 인증 주체에서 주입하는 작성자 필드는 의도적으로 제외한다.
+            // ExternalHr.otsdHrId처럼 요청자가 공급해야 하는 복합 PK는 저장 입력이므로 포함한다.
             new LengthBinding(MyPageContent.class, MyPageContentDto.class,
                     List.of("cntntsNm", "cntcUrl", "cntntsUseYn", "cntntsLinkUrl", "cntntsDc")),
             new LengthBinding(Scrap.class, ScrapDto.class,
@@ -141,7 +144,10 @@ class InputContractMirrorLinterTest {
             new LengthBinding(AddressBook.class, AddressBookDto.class,
                     List.of("adbkNm", "rlsScopeCd", "trgetOgnzId", "useYn")),
             new LengthBinding(AddressBookUser.class, AddressBookUserDto.class,
-                    List.of("userId", "nm", "emlAddr", "homeTelno", "mblTelno", "ofcTelno", "faxNo")));
+                    List.of("userId", "nm", "emlAddr", "homeTelno", "mblTelno", "ofcTelno", "faxNo")),
+            new LengthBinding(ExternalHr.class, ExternalHrDto.class,
+                    List.of("otsdHrId", "gndrCd", "otsdHrNm", "crTypeCd", "ogdpInstNm",
+                            "brdtYmd", "areaNo", "mdTelno", "endTelno", "emlAddr")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
@@ -202,12 +208,15 @@ class InputContractMirrorLinterTest {
             new RequiredBinding(MyPageContentDto.class, List.of()),
             requiredNotBlank(ScrapDto.class, "useYn"),
             requiredNotBlank(AddressBookDto.class, "adbkNm", "rlsScopeCd"),
-            requiredNotBlank(AddressBookUserDto.class, "userId"));
+            requiredNotBlank(AddressBookUserDto.class, "userId"),
+            new RequiredBinding(ExternalHrDto.class, List.of(
+                    requiredField("evntSn", NotNull.class),
+                    requiredField("otsdHrId", NotBlank.class))));
 
-    private static final int MIN_LENGTH_FIELDS = 89;
+    private static final int MIN_LENGTH_FIELDS = 99;
     private static final int MIN_ENUM_FIELDS = 16;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
-    private static final int MIN_REQUIRED_FIELDS = 31;
+    private static final int MIN_REQUIRED_FIELDS = 33;
 
     @Test
     @DisplayName("입력 DTO 길이와 enum 제약이 Entity 저장 계약을 넘지 않는다")

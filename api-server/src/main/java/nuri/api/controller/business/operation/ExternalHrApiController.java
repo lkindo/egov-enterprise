@@ -1,11 +1,14 @@
 package nuri.api.controller.business.operation;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.business.service.operation.ExternalHrService;
 import nuri.business.service.operation.dto.ExternalHrDto;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,15 @@ public class ExternalHrApiController {
     }
 
     @Operation(summary = "외부인사 등록", description = "외부인사 정보를 등록한다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                    description = "등록 성공", useReturnTypeSchema = true),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409",
+                    description = "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(ref = "#/components/schemas/ApiResponseVoid")))
+    })
+    @AdminOrSystem
     @PostMapping
     public ResponseEntity<ApiResponse<ExternalHrDto>> createExternalHr(@Valid @RequestBody ExternalHrDto dto) {
         return ResponseEntity.ok(ApiResponse.success(externalHrService.createExternalHr(dto)));

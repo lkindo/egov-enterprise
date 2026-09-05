@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 const client = vi.hoisted(() => ({
   get: vi.fn(),
@@ -12,7 +12,11 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
+import {
+  operationAdminService,
+  type ExternalHrCreateInput,
+} from '@/services/foundation/operation/OperationAdminService';
+import { createExternalHrOperation } from '@/types/generated-operations';
 import { smsAdminService } from '@/services/foundation/operation/SmsAdminService';
 import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
 import { manualAdminService } from '@/services/foundation/user/ManualAdminService';
@@ -72,6 +76,32 @@ describe('foundation ordinary generated boundary wave4', () => {
       method: 'post',
       data: reward,
     });
+  });
+
+  it('external HR creation rejects all server-owned audit fields before transport', async () => {
+    type ServerOwnedAuditField = Extract<
+      keyof ExternalHrCreateInput,
+      'crtDt' | 'frstRgtrId' | 'mdfcnDt' | 'lastMdfrId'
+    >;
+    expectTypeOf<ServerOwnedAuditField>().toEqualTypeOf<never>();
+    expectTypeOf<Parameters<typeof operationAdminService.createExternalHr>[0]>()
+      .toEqualTypeOf<ExternalHrCreateInput>();
+
+    expect(createExternalHrOperation.requestForbiddenPaths).toStrictEqual([
+      ['crtDt'],
+      ['frstRgtrId'],
+      ['mdfcnDt'],
+      ['lastMdfrId'],
+    ]);
+
+    for (const field of ['crtDt', 'frstRgtrId', 'mdfcnDt', 'lastMdfrId']) {
+      await expect(operationAdminService.createExternalHr({
+        evntSn: 1,
+        otsdHrId: 'OUTSIDE_1',
+        [field]: 'forged-audit-value',
+      } as never)).rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+    }
+    expect(client.requestRaw).not.toHaveBeenCalled();
   });
 
   it('SMS send exposes the generated numeric response directly', async () => {

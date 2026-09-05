@@ -6393,11 +6393,11 @@ export interface components {
             endTelno?: string;
             emlAddr?: string;
             /** Format: date-time */
-            crtDt?: string;
-            frstRgtrId?: string;
+            readonly crtDt?: string | null;
+            readonly frstRgtrId?: string | null;
             /** Format: date-time */
-            mdfcnDt?: string;
-            lastMdfrId?: string;
+            readonly mdfcnDt?: string | null;
+            readonly lastMdfrId?: string | null;
         };
         ApiResponseExternalHrDto: {
             success?: boolean;
@@ -26235,7 +26235,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 등록 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -26264,6 +26264,15 @@ export interface operations {
             };
             /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

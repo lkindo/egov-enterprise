@@ -341,6 +341,32 @@ class OpenApiDocumentationTest {
   }
 
   @Test
+  @DisplayName("외부인사 중복 등록의 409 오류 봉투를 OpenAPI에 문서화한다")
+  void externalHrDuplicateConflict_isDocumented() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    com.fasterxml.jackson.databind.JsonNode document = objectMapper.readTree(content);
+    com.fasterxml.jackson.databind.JsonNode responses = document
+        .path("paths").path("/api/v1/admin/operation/external-hr").path("post")
+        .path("responses");
+    com.fasterxml.jackson.databind.JsonNode success = responses.path("200");
+    com.fasterxml.jackson.databind.JsonNode conflict = responses.path("409");
+
+    assertThat(success.path("content").path("application/json")
+        .path("schema").path("$ref").asText())
+        .isEqualTo("#/components/schemas/ApiResponseExternalHrDto");
+    assertThat(document.path("components").path("schemas")
+        .path("ApiResponseExternalHrDto").isObject()).isTrue();
+    assertThat(conflict.isObject()).isTrue();
+    assertThat(conflict.path("description").asText()).contains("중복");
+    assertThat(conflict.path("content").path("application/json")
+        .path("schema").path("$ref").asText())
+        .isEqualTo("#/components/schemas/ApiResponseVoid");
+  }
+
+  @Test
   @DisplayName("자격증명·소유 증명 값은 OpenAPI path/query request-target에 존재하지 않는다")
   void credentialValues_areAbsentFromEveryRequestTarget() throws Exception {
     String content = mockMvc.perform(get("/v3/api-docs")
