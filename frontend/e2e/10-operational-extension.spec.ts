@@ -1,6 +1,5 @@
 import { test, expect } from './fixtures/base-test';
-import fs from 'fs';
-import path from 'path';
+import { getAdminBearerToken } from './utils/admin-token';
 
 test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -28,9 +27,9 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
      */
     test('Operational: Reward edit and delete round-trip', async ({ operationalPage, request }) => {
         const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
-        const authData = JSON.parse(fs.readFileSync(path.join(__dirname, 'playwright', '.auth', 'admin.json'), 'utf-8'));
-        const adminToken: string | undefined = authData.cookies.find((c: { name: string; value: string }) => c.name === 'accessToken')?.value;
-        expect(adminToken, 'admin accessToken 이 storageState 에 있어야 한다').toBeTruthy();
+        // [2026-09-06] storageState 는 frontend/playwright/.auth 에 있다(auth.setup 의 path.resolve 기준 = cwd frontend).
+        //   __dirname(frontend/e2e) 기준 경로는 CI 에서 ENOENT 였다(run 33977944030) — 공용 헬퍼가 정본 경로를 안다.
+        const adminToken = getAdminBearerToken();
         const headers = { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' };
 
         const stamp = Date.now();
