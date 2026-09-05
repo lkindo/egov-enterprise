@@ -151,19 +151,45 @@ describe('ApprovalHubClient handleAction pending contract', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: '내가 올린 결재' }));
     await screen.findByText('내가 올린 건');
-    expect(mocks.getMyHistory).toHaveBeenCalledWith({ page: 0, size: 50 });
+    expect(mocks.getMyHistory).toHaveBeenCalledWith({ page: 0, size: 20 });
     // 신청자 탭에서는 승인·반려 버튼이 없다 — 결재자만 확정한다.
     expect(screen.queryByRole('button', { name: '결재 승인' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: '내가 처리한 결재' }));
     await screen.findByText('내가 처리한 건');
-    expect(mocks.getProcessed).toHaveBeenCalledWith({ page: 0, size: 50 });
+    expect(mocks.getProcessed).toHaveBeenCalledWith({ page: 0, size: 20 });
     expect(screen.getByText('승인 완료')).toBeInTheDocument();
 
     expect(screen.queryByRole('dialog', { name: '새 결재 기안' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '새 결재 기안' }));
     expect(screen.getByRole('dialog', { name: '새 결재 기안' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '새 결재 기안' })).not.toBeInTheDocument();
+  });
+
+  /**
+   * [2026-09-05] 종전에는 `{ page: 0, size: 50 }` 한 페이지만 받고 페이저가 없어 51번째 문서부터
+   * 도달 불가였다. 페이지를 넘기면 서버 페이지가 바뀌고 이전 페이지의 선택은 해제된다.
+   */
+  it('목록이 한 페이지를 넘으면 페이저로 다음 페이지를 조회하고 stale 선택을 해제한다', async () => {
+    const secondPageItem = { ...pendingApproval, ifmlAtrzSn: 99, taskSeNm: '두 번째 페이지 건' };
+    mocks.getPending.mockImplementation(async ({ page }: { page: number }) => (
+      page === 0
+        ? { list: [pendingApproval], total: 45 }
+        : { list: [secondPageItem], total: 45 }
+    ));
+    renderClient();
+
+    await screen.findByText('휴가 신청');
+    expect(mocks.getPending).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(screen.getByRole('button', { name: '결재 승인' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('link', { name: '2' }));
+
+    await screen.findByText('두 번째 페이지 건');
+    expect(mocks.getPending).toHaveBeenCalledWith({ page: 1, size: 20 });
+    expect(screen.queryByText('휴가 신청')).not.toBeInTheDocument();
+    // 페이지가 바뀌면 이전 선택(#73)은 stale 이므로 상세는 새 페이지 첫 항목으로 간다.
+    expect(screen.getByRole('button', { name: /두 번째 페이지 건 #99 상세 열기/ })).toHaveAttribute('aria-current', 'true');
   });
 
   it('공백 반려 사유는 요약과 inline 오류로 연결하고 첫 오류 입력에 초점을 둔다', async () => {
