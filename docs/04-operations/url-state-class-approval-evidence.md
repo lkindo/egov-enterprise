@@ -64,7 +64,7 @@
 그것은 **발견된 위험이 아니라 이름 화이트리스트 부작용**이다(`CANDIDATE_VIEW_STATE_NAMES` 에
 `orderBy`·`startDate`·`endDate` 가 없을 뿐). 나머지와 뭉뚱그리지 말고 위 4·5 근거로 개별 판단하라.
 
-### 2.2 `resource-identifier` (stateItem 46) — 조건부 승인 권고
+### 2.2 `resource-identifier` (stateItem 46) — **승인됨 (2026-09-05)**
 
 `bbsId` · `pstSn` · `nttId` · `srvySn` · `groupId` · `[id]`
 
@@ -77,16 +77,41 @@
    2026-09-04 운영(OCI) 실측에서 메뉴 84행 중 쿼리 보유 12행, distinct 키는 `tab` 1종이었다. **[직접 확인 — 이전 세션]**
 3. 접근 통제는 URL 이 아니라 서비스 계층이 한다. **[조사]**
 
-⚠ **서명 전에 반드시 확인할 것 둘.**
+### 2.2.1 승인 조건 검증 결과 (2026-09-05) — **승인됨**
 
-- **열거 억제가 없다.** 조사에 따르면 `RateLimitFilter` 기본 용량이 IP 당 분당 10,000 이라
-  순차 IDENTITY 를 훑어도 차단되지 않는다. 즉 이 부류의 안전성은 전적으로 **객체 가드가
-  있는가** 에 달려 있다. **[조사 — 미검증]**
-- 조사가 "객체 가드 없음" 으로 지목한 목록에 **의도된 설계가 섞여 있다.** `SurveyService#getSurvey`
-  는 가드가 없는 것이 맞지만 컨트롤러에 `@Authenticated` 가 붙어 있고 **DEC-OPS-010 이 설문 열람을
-  인증 사용자에게 개방하기로 결정**한 것이다. **[직접 확인 — 오판 정정]**
-  나머지 항목(`DeptJobService`·`CommunityService`·`OnlinePollService`·`SurveyResultService`)도
-  같은 방식으로 **결정 이력을 먼저 확인**한 뒤 판단하라.
+조건은 "열거 억제 부재와 객체 가드 목록 확인" 이었다. 둘 다 검증했다.
+
+**열거 억제는 없다.** `RateLimitFilter.java:63` 의 기본 용량이 IP·분당 10,000 이다. **[직접 확인]**
+따라서 이 부류의 안전성은 전적으로 객체 가드에 달려 있고, 그 목록을 다음과 같이 확인했다.
+
+**가드 목록은 이미 두 겹으로 존재한다 — 종전 서술 "읽기 census 없음" 은 틀렸다.**
+- `SecurityAuthAnnotationLinterTest` 가 GET 인가 표면(route gate + `@PreAuthorize`)을 **해시로
+  동결**한다. GET 이 늘거나 게이트가 바뀌면 red 다. **[직접 확인]**
+- `authorization-policies.json` `serviceGuardPolicies` 에 **읽기 객체 가드 7건**이 등재돼 있다 —
+  `getAddressBook`·`getPostDetail`·`getScrap`·`getSchedule`·`getSentMail`·`getWorkReport`·
+  `getMemoReportList`. **[직접 확인 — 종전 "0건" 은 잘못된 필드를 본 측정 오류]**
+
+**식별자 6종이 도달하는 읽기 엔드포인트 29개 중 26개는 가드가 확인됐다** — 게시판은 비밀글
+owner-or-admin + 활성 게시판 술어, 주소록·스크랩은 PII IDOR 가드, 공통코드·투표·설문응답은
+`/api/v1/admin/**` URL 게이트, 설문 열람 3종은 **DEC-OPS-010 의 의도된 개방**. **[조사 + 3건 직접 확인]**
+
+**미판정 3건의 판정** — 인가 의미 변경(H3)이라 "가드가 없다" 만으로 결함이라 부르지 않고,
+**형제 자원이 무엇을 하는가**와 **결정 이력이 무엇을 말하는가**로 갈랐다.
+
+| 대상 | 판정 | 근거 | 처리 |
+|---|---|---|---|
+| 만족도 목록·평균·등록 | **결함** | 형제(댓글)는 `assertCommentAccess` 로 비밀글을 막는데 만족도만 `useYn` 만 거름. 문서가 약속한 "서비스 소유권 재검증" 이 조회에 없음 | **PR #548 에서 수정** |
+| 커뮤니티 사용자 상세 | **결함** | 7ec5e25fd 가 목록에 적용한 논리("관리자는 전체를 봐야 하므로 사용자용 분리")가 상세에 글자 그대로 적용되는데 상세만 빠짐 | **PR #548 에서 수정** |
+| 부서업무 상세 | **제품 결정** | 컨트롤러가 `'dept' 만 전체 열람으로 해석`, `미지정 시 전체가 나오면 [위험]하므로 기본값 mine` 이라 **스스로 문서화**. `deptId` 를 호출자가 고르게 한 설계라 타 부서 열람이 의도. 미지정 시 전체 노출이 의도인지는 어떤 DEC 도 말하지 않음 | **손대지 않음 — owner 결정으로 남김** |
+
+**`[id]` 세그먼트 검증** — 10 라우트 중 6곳이 `Number.isSafeInteger` 로 검증하고 2곳
+(`admin/community/[id]`·`boards/[id]`)은 세그먼트를 읽지 않는다. 검증 없이 읽는 2곳은
+`scraps/selectScrapDetail/[id]` 와 `dept-job/selectDeptJobDetail/[id]`(내부 경로 redirect 통로)이며
+둘 다 뒤에 소유자 가드 또는 정본 경로의 가드가 있다. **[직접 확인]**
+
+⚠ **서명하지 않은 초안 문장** — 초안 §2.2 는 `srvySn` 을 "이 부류에서 유일한 사용자 타이핑,
+`type="number" min={1}`" 이라 적었으나, 2026-09-05 grep 에서 `srvySn` 을 타이핑하는 입력 요소가
+**0건**이었다. 확인되지 않은 문장은 승인 근거에 넣지 않았다.
 
 ### 2.3 `search-input` (stateItem 5) — **보류 권고**
 

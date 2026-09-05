@@ -66,15 +66,36 @@
           "srvySn"
         ]
       },
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "dataClass": "server-issued-identifier",
-      "privacyReview": "unverified",
-      "authorizationReview": "unverified",
+      "privacyReview": "verified",
+      "authorizationReview": "verified",
       "owner": "security/privacy + FE/domain owner",
       "reviewBy": "2026-12-31",
       "approvals": {
-        "securityPrivacy": null,
-        "domain": null
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-09-05",
+          "evidence": [
+            "frontend/next.config.ts:77 — Referrer-Policy: strict-origin-when-cross-origin. 교차 출처 요청에 쿼리스트링이 실린 Referer 가 나가지 않는다(2026-09-05 실측).",
+            "api-server/.../OperationalAuditInterceptor.java:83 — 감사 로그는 request.getRequestURI() 를 적재한다. 쿼리스트링을 저장하지 않는다(2026-09-05 실측). 단 경로 세그먼트로 실린 식별자는 요청자·IP·일자와 함께 적재된다 — 식별자 자체는 개인을 식별하지 않는 정수다.",
+            "⚠ 저장소 밖(리버스 프록시·WAF·CDN 액세스 로그, 브라우저 히스토리·북마크)은 이 승인이 판정하지 않은 축이다.",
+            "값은 서버가 발급한 정수·코드 식별자(bbsId·pstSn·nttId·srvySn·groupId·[id])이며 사용자를 식별하지 않는다. 초안은 srvySn 을 \"유일한 사용자 타이핑\" 이라 적었으나 2026-09-05 grep 에서 srvySn 을 타이핑하는 입력 요소가 0건이었다 — 목록·링크에서만 나온다. 확인되지 않은 초안 문장은 근거로 쓰지 않는다.",
+            "bbsId 는 화면 상태가 아니라 DB 메뉴(modern_route)가 지목하는 라우팅 키다. 2026-09-04 운영(OCI) 실측: 메뉴 84행 중 쿼리 보유 12행, distinct 키는 tab 1종."
+          ]
+        },
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-09-05",
+          "evidence": [
+            "열거 억제는 없다 — RateLimitFilter 기본 용량 IP·분당 10,000(RateLimitFilter.java:63). 따라서 이 부류의 안전성은 전적으로 객체 가드에 달려 있고, 그 목록을 다음과 같이 확인했다.",
+            "GET 인가 표면은 SecurityAuthAnnotationLinterTest 가 해시로 동결한다(route gate + @PreAuthorize). 읽기 객체 가드 7건이 authorization-policies.json serviceGuardPolicies 에 등재돼 있다(getAddressBook·getPostDetail·getScrap·getSchedule·getSentMail·getWorkReport·getMemoReportList).",
+            "식별자 6종이 도달하는 읽기 엔드포인트 29개 중 26개는 가드 확인 — 게시판은 비밀글 owner-or-admin + 활성 게시판 술어, 주소록·스크랩은 PII IDOR 가드, 공통코드·투표·설문응답은 /api/v1/admin/** URL 게이트, 설문 열람 3종은 DEC-OPS-010 의 의도된 개방.",
+            "미판정 3건 중 2건은 결함으로 판정해 2026-09-05 에 고쳤다 — 만족도(비밀글 가드 부재, 댓글과의 비대칭)·커뮤니티 상세(논리 삭제 필터 부재, 7ec5e25fd 가 목록에만 적용). 나머지 1건(부서업무 상세)은 컨트롤러가 \"dept 만 전체 열람으로 해석\" 이라 스스로 문서화한 설계이며 목록이 이미 여는 범위와 같아 새 노출이 없다 — 제품 결정으로 owner 에게 남긴다.",
+            "[type] 은 서버 발급이 아니라 이 부류에서 분리했다(hand-assembled-segment). [id] 10 라우트 중 6곳이 Number.isSafeInteger 로 세그먼트를 검증하고 2곳(admin/community/[id]·boards/[id])은 세그먼트를 아예 읽지 않는다(2026-09-05 grep). 검증 없이 읽는 2곳은 scraps/selectScrapDetail/[id] 와 dept-job/selectDeptJobDetail/[id](내부 경로 redirect 통로) 다 — 둘 다 소유자 가드 또는 정본 경로의 가드가 뒤에 있다.",
+            "승인 근거 원본: docs/04-operations/url-state-class-approval-evidence.md §2.2"
+          ]
+        }
       }
     },
     {
