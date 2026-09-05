@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "a542007ce9b0a3c06056e6d635ecfd2f7595269b199de921e98cabc28e0ce41e"
+    "inventoryHash": "72da3e9d5cdc58158fcf0cd9c28d07861e5e56c0921cc9c5ae47fdca685168af"
   },
   "summary": {
-    "sourceFileCount": 518,
-    "records": 369,
-    "syntaxOccurrences": 434,
-    "ambiguousRecords": 348,
-    "unverifiedRecords": 369,
+    "sourceFileCount": 519,
+    "records": 370,
+    "syntaxOccurrences": 435,
+    "ambiguousRecords": 349,
+    "unverifiedRecords": 370,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 48,
+      "form-producer": 49,
       "navigation-producer": 156,
       "page-redirect": 5,
       "query-builder": 23,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 361,
+      "navigation": 362,
       "request-telemetry": 8
     }
   },
@@ -15268,6 +15268,45 @@
       },
       "evidence": {
         "source": "frontend/src/components/admin/system/ProgramForm.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-F01DFE55EC6CED",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
+      "producerFile": "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }

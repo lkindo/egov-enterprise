@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 54,
-    "nativeFormFiles": 48,
+    "nativeFormOccurrences": 55,
+    "nativeFormFiles": 49,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 22,
     "secondaryActionBoundaries": 57,
-    "candidateCount": 134
+    "candidateCount": 135
   },
   "entries": [
     {
@@ -280,7 +280,7 @@
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "composed-child-form-validation",
-      "schemaSource": "composed:DepartmentForm+UserManageForm+organization-actions",
+      "schemaSource": "composed:AdminPasswordResetForm+DepartmentForm+UserManageForm+organization-actions",
       "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
       "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
       "pendingGuard": "composed-child-submit-and-action-locks",
@@ -300,6 +300,22 @@
           "writeSinks": [
             "userAdminService.createUser",
             "userAdminService.updateUser"
+          ]
+        },
+        {
+          "actionHandlers": [
+            "bulkAction:일괄 삭제",
+            "handleBulkDeptMove",
+            "handleBulkRoleUpdate",
+            "handleBulkStatusUpdate",
+            "handleDeleteDept",
+            "handleDeleteUser",
+            "handleSaveDeptHierarchy"
+          ],
+          "component": "AdminPasswordResetForm",
+          "handler": "onPasswordResetSubmit",
+          "writeSinks": [
+            "userAdminService.updatePassword"
           ]
         },
         {
@@ -1304,6 +1320,23 @@
         "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
         "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/admin/user/AdminPasswordResetForm.tsx#AdminPasswordResetForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
+      "owner": "AdminPasswordResetForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:adminPasswordResetSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/admin/user/__tests__/AdminPasswordResetForm.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
     {
