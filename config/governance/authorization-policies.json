@@ -120,8 +120,9 @@
       "path": "/api/v1/admin/operation/external-hr",
       "handler": "nuri.api.controller.business.operation.ExternalHrApiController#createExternalHr",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "ExternalHrService#createExternalHr"
     },
     {
       "method": "POST",
@@ -1920,6 +1921,17 @@
       ]
     },
     {
+      "target": "ExternalHrService#createExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
       "target": "InformalSanctionService#confirmInformalSanction",
       "policy": "STRICT_OWNER",
       "mechanisms": [
@@ -2306,6 +2318,20 @@
     }
   ],
   "manualGuardPolicies": [
+    {
+      "target": "ExternalHrService#currentLoginId",
+      "source": "business-app/src/main/java/nuri/business/service/operation/ExternalHrService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": [
+        ".orElse(\"SYSTEM\")",
+        ".orElse(\"anonymous\")"
+      ]
+    },
     {
       "target": "FileAccessPolicy#assertReadable",
       "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",

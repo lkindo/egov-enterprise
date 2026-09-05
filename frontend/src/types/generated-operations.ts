@@ -4889,7 +4889,7 @@ export const createExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: ExternalHrDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => ExternalHrDtoResponseSchema),
   envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["crtDt"],["frstRgtrId"],["mdfcnDt"],["lastMdfrId"]],
   responseForbiddenPaths: [],
 });
 

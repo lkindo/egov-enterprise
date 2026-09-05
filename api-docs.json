@@ -23362,11 +23362,21 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "등록 성공",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseExternalHrDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
                 }
               }
             }
@@ -37480,7 +37490,7 @@
           },
           "gndrCd": {
             "type": "string",
-            "maxLength": 30,
+            "maxLength": 12,
             "minLength": 0
           },
           "otsdHrNm": {
@@ -37524,18 +37534,34 @@
             "minLength": 0
           },
           "crtDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "lastMdfrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           }
         },
         "required": [

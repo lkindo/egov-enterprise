@@ -1,8 +1,12 @@
 package nuri.business.service.operation;
 
 import nuri.business.domain.operation.ExternalHr;
+import nuri.business.domain.operation.ExternalHrId;
 import nuri.business.domain.operation.ExternalHrRepository;
+import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.operation.dto.ExternalHrDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +36,12 @@ public class ExternalHrService {
 
     @Transactional
     public ExternalHrDto createExternalHr(ExternalHrDto dto) {
+        SecurityUtil.assertAdmin();
+        String actorLoginId = currentLoginId();
+        ExternalHrId id = new ExternalHrId(dto.getEvntSn(), dto.getOtsdHrId());
+        if (externalHrRepository.existsById(id)) {
+            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 등록된 외부인사입니다.");
+        }
         ExternalHr hr = ExternalHr.builder()
                 .evntSn(dto.getEvntSn())
                 .otsdHrId(dto.getOtsdHrId())
@@ -44,10 +54,15 @@ public class ExternalHrService {
                 .mdTelno(dto.getMdTelno())
                 .endTelno(dto.getEndTelno())
                 .emlAddr(dto.getEmlAddr())
-                .frstRgtrId(dto.getFrstRgtrId())
-                .lastMdfrId(dto.getLastMdfrId())
+                .frstRgtrId(actorLoginId)
+                .lastMdfrId(actorLoginId)
                 .build();
         return convertToDto(externalHrRepository.save(hr));
+    }
+
+    private String currentLoginId() {
+        return SecurityUtil.getCurrentLoginId()
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
     }
 
     private ExternalHrDto convertToDto(ExternalHr hr) {

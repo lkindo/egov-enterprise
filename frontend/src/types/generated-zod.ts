@@ -1194,7 +1194,7 @@ export type ApiResponseRewardManageDto = z.infer<typeof ApiResponseRewardManageD
 export const ExternalHrDtoSchema = z.object({
   evntSn: z.number().int(),
   otsdHrId: z.string().min(0).max(20),
-  gndrCd: z.string().min(0).max(30).optional(),
+  gndrCd: z.string().min(0).max(12).optional(),
   otsdHrNm: z.string().min(0).max(100).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
   ogdpInstNm: z.string().min(0).max(100).optional(),
@@ -1203,10 +1203,10 @@ export const ExternalHrDtoSchema = z.object({
   mdTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
   emlAddr: z.string().min(0).max(50).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  frstRgtrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
 });
 export type ExternalHrDto = z.infer<typeof ExternalHrDtoSchema>;
 
@@ -5993,7 +5993,7 @@ export const ApiResponseRewardManageDtoResponseSchema = z.object({
 export const ExternalHrDtoRequestSchema = z.object({
   evntSn: z.number().int(),
   otsdHrId: z.string().min(0).max(20),
-  gndrCd: z.string().min(0).max(30).optional(),
+  gndrCd: z.string().min(0).max(12).optional(),
   otsdHrNm: z.string().min(0).max(100).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
   ogdpInstNm: z.string().min(0).max(100).optional(),
@@ -6002,16 +6002,12 @@ export const ExternalHrDtoRequestSchema = z.object({
   mdTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
   emlAddr: z.string().min(0).max(50).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  frstRgtrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
 });
 
 export const ExternalHrDtoResponseSchema = z.object({
   evntSn: z.number().int(),
   otsdHrId: z.string().min(0).max(20),
-  gndrCd: z.string().min(0).max(30).optional().nullable(),
+  gndrCd: z.string().min(0).max(12).optional().nullable(),
   otsdHrNm: z.string().min(0).max(100).optional().nullable(),
   crTypeCd: z.string().min(0).max(12).optional().nullable(),
   ogdpInstNm: z.string().min(0).max(100).optional().nullable(),
