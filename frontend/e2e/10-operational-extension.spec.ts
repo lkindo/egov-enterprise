@@ -51,7 +51,10 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
 
         await operationalPage.deleteReward(renamed);
         await operationalPage.searchRewards(renamed);
-        await expect(operationalPage.page.getByText(renamed)).toHaveCount(0);
+        // 표의 '결과 없음' 문구는 검색어를 그대로 싣는다(G15: "<검색어>"에 대한 검색 결과가 없습니다).
+        //   부분 일치 getByText 는 그 문구에 걸려 count 1 이었다(CI run 33980097374) — 이름 셀은 정확 일치로만 센다.
+        await expect(operationalPage.page.getByText(/에 대한 검색 결과가 없습니다/)).toBeVisible();
+        await expect(operationalPage.page.getByText(renamed, { exact: true })).toHaveCount(0);
     });
 
     test('Operational: External HR Information Management', async ({ operationalPage }) => {
