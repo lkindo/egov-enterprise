@@ -1,10 +1,12 @@
 {
   "title": "Lombok @SuperBuilder Shadowing Gotchas",
-  "summary": "Lombok @SuperBuilder를 상속하는 수동 빌더 구현 시 발생하는 필드 섀도잉(Shadowing) 버그와 방지 대책을 정의합니다. 엔티티 상속 구조에서의 빌더 확장 표준 패턴을 제시합니다.",
+  "summary": "Lombok 수동 빌더 구현에서 발생하는 필드 섀도잉(Shadowing) 버그와 방지 대책을 정의합니다. 허용된 빌더 확장의 상태 위임 패턴을 제시합니다.",
   "category": "Development Gotchas",
   "tags": ["Lombok", "SuperBuilder", "Java", "Design Pattern", "Gotchas"],
-  "updatedAt": "2026-05-22T20:55:00Z",
+  "updatedAt": "2026-09-05T00:00:00Z",
   "references": [
-    "business-suite/src/main/java/nuri/business/domain/notification/Notification.java"
+    ".agent/knowledge/backend-api-constitution/artifacts/constitution.md",
+    "api-server/src/test/java/nuri/api/harness/EntityLombokSourceLinterTest.java",
+    "business-core/src/testFixtures/java/nuri/business/architecture/EntityConventionRules.java"
   ]
 }
