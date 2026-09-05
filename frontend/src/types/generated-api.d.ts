@@ -6130,6 +6130,13 @@ export interface components {
             /** @description 수신 구분 (1: 수신, 2: 참조) */
             recptnSe: string;
         };
+        /** @description 메일 수신자 — esntlId(사용자) 또는 emlAddr(이메일 주소) 중 하나 */
+        MailRecipientDto: {
+            /** @description 사용자 고유 ID(esntlId). 지정하면 서버가 등록된 이메일 주소를 해석한다 */
+            esntlId?: string;
+            /** @description 이메일 주소(직접 입력·주소록). esntlId 와 함께 쓰지 않는다 */
+            emlAddr?: string;
+        };
         /** @description Description */
         SentMailDto: {
             /**
@@ -6143,8 +6150,9 @@ export interface components {
             emailCn?: string;
             /** @description Description */
             dsptchPerson?: string;
-            /** @description Description */
+            /** @description 수신자 주소 문자열(종전 계약). recipients 를 쓰면 비워도 된다 */
             recptnPerson?: string;
+            recipients?: components["schemas"]["MailRecipientDto"][];
             /** @description Description */
             sndngResultCode?: string;
             /** @description Description */
@@ -6423,8 +6431,10 @@ export interface components {
              * @description SMS 전송 일련번호
              */
             smsTrsmSn?: number;
-            /** @description 수신 번호 */
-            rcptnTelno: string;
+            /** @description 수신 번호. esntlId 를 지정하면 생략한다 */
+            rcptnTelno?: string;
+            /** @description 수신자 사용자 고유 ID(esntlId). 지정하면 서버가 등록된 휴대전화 번호를 해석한다 */
+            esntlId?: string;
             /** @description 결과 코드 (P:대기, S:성공, F:실패) */
             rsltCd?: string;
             /** @description 결과 메시지 */

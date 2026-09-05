@@ -14,7 +14,10 @@ import { Send,
   Plus,
   Phone,
   Calendar,
-  AlertTriangle } from 'lucide-react';
+  AlertTriangle,
+  Users,
+  X } from 'lucide-react';
+import { RecipientPicker, recipientKey, type RecipientSelection } from '@/app/components/ui/recipient-picker';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +52,26 @@ const smsValidationLabels: Record<string, string> = {
   sndngCn: '메시지 내용',
 };
 
+/**
+ * 작성 다이얼로그의 폼 스키마. 공유 `smsSchema` 는 수신 번호 1건 필수 축(다른 화면)을 그대로 두고,
+ * 이 화면만 **수신 번호 직접 입력 또는 수신자 찾기(사용자·주소록)** 중 하나면 되도록 번호를 선택 항목으로
+ * 낮춘다(2026-09-05 DEC-OPS-035). "둘 다 없음" 은 제출 핸들러가 수신 번호 필드 오류로 드러낸다.
+ */
+const smsComposeSchema = smsSchema.extend({
+  rcptnTelno: z.string()
+    .trim()
+    .max(13, '수신 번호는 최대 13자까지 입력할 수 있습니다.')
+    .regex(/^[0-9-]*$/, '수신 번호는 숫자와 하이픈만 입력해 주세요.'),
+});
+
+/** 요청당 수신자 상한 — 백엔드 SmsDto.MAX_RECIPIENTS_PER_REQUEST 와 같다. */
+const MAX_SMS_RECIPIENTS = 100;
+
+/** 화면 선택을 발송 요청의 수신자 항목으로 옮긴다. 사용자는 esntlId 만, 명함·직접 입력은 번호만 싣는다. */
+function toSmsRecipient(recipient: RecipientSelection): { esntlId?: string; rcptnTelno?: string } {
+  return recipient.kind === 'user' ? { esntlId: recipient.esntlId } : { rcptnTelno: recipient.phone };
+}
+
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -74,6 +97,9 @@ export default function SmsAdminClient({
   const [isSending, setIsSending] = useState(false);
   const sendPendingRef = useRef(false);
   const [isSendOpen, setIsSendOpen] = useState(false);
+  /** 수신자 찾기·직접 추가로 모은 수신자. 수신 번호 입력란의 값은 제출 시점에 여기에 합쳐진다. */
+  const [recipients, setRecipients] = useState<RecipientSelection[]>([]);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   /**
    * 검색 축. 서버가 해석하는 값은 둘뿐이다 — '0' 수신전화번호(rcptnTelno), '1' 전송내용(sndngCn).
@@ -120,7 +146,7 @@ export default function SmsAdminClient({
   const totalCount = data?.total ?? 0;
 
   // Send SMS Form
-  const form = useAppForm(smsSchema, {
+  const form = useAppForm(smsComposeSchema, {
     defaultValues: {
       sndngTelno: '02-1234-5678', // 발신번호 (기본값)
       rcptnTelno: '',
@@ -128,18 +154,66 @@ export default function SmsAdminClient({
     }
   });
 
-  const handleSend = async (values: z.infer<typeof smsSchema>) => {
+  /** 선택을 합친다 — 같은 사람·같은 번호(recipientKey)는 한 번만. */
+  const mergeRecipients = (incoming: RecipientSelection[]) => {
+    setRecipients((previous) => {
+      const seen = new Set(previous.map(recipientKey));
+      const merged = [...previous];
+      for (const recipient of incoming) {
+        const key = recipientKey(recipient);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(recipient);
+      }
+      return merged;
+    });
+    form.clearErrors('rcptnTelno');
+  };
+
+  /** 수신 번호 입력란의 값을 수신자 목록으로 옮긴다(형식은 스키마와 같은 규칙). */
+  const handleAddNumber = () => {
+    const value = form.getValues('rcptnTelno').trim();
+    if (!value) return;
+    const parsed = smsComposeSchema.shape.rcptnTelno.safeParse(value);
+    if (!parsed.success) {
+      form.setError('rcptnTelno', { message: parsed.error.issues[0]?.message ?? '수신 번호를 확인해 주세요.' });
+      form.setFocus('rcptnTelno');
+      return;
+    }
+    mergeRecipients([{ kind: 'contact', name: parsed.data, phone: parsed.data }]);
+    form.setValue('rcptnTelno', '');
+  };
+
+  const handleSend = async (values: z.infer<typeof smsComposeSchema>) => {
     if (sendPendingRef.current) return;
+    // 입력란에 남은 번호는 '추가' 를 누르지 않았어도 수신자로 친다 — 종전(번호 1건 화면)의 습관을 그대로 받는다.
+    const typed = values.rcptnTelno.trim();
+    const effective: RecipientSelection[] = typed
+      ? (() => {
+          const extra: RecipientSelection = { kind: 'contact', name: typed, phone: typed };
+          return recipients.some((r) => recipientKey(r) === recipientKey(extra)) ? recipients : [...recipients, extra];
+        })()
+      : recipients;
+    if (effective.length === 0) {
+      form.setError('rcptnTelno', { message: '수신 번호를 입력하거나 ‘수신자 찾기’로 수신자를 골라 주세요.' });
+      form.setFocus('rcptnTelno');
+      return;
+    }
+    if (effective.length > MAX_SMS_RECIPIENTS) {
+      form.setError('rcptnTelno', { message: `수신자는 한 번에 최대 ${MAX_SMS_RECIPIENTS}명까지 보낼 수 있습니다.` });
+      return;
+    }
     sendPendingRef.current = true;
     setIsSending(true);
     try {
       // 백엔드 SmsDto 는 최상위 rcptnTelno 를 받지 않는다 — 수신자는 recipients 배열로 전달해야
       // SmsService 가 수신자 행을 만들고 비동기 발송을 기동한다. 종전에는 top-level 로 보내
       // ignoreUnknown 에 의해 조용히 버려졌고, 수신자 0명인 발송 이력만 남았다.
+      // [2026-09-05 DEC-OPS-035] 사용자 수신자는 esntlId 만 싣고 서버가 휴대전화 번호를 해석한다.
       await smsAdminService.sendSms({
         sndngTelno: values.sndngTelno,
         sndngCn: values.sndngCn,
-        recipients: [{ rcptnTelno: values.rcptnTelno }],
+        recipients: effective.map(toSmsRecipient),
       });
       /*
        * 종전 문구 '문자 메시지를 발송했습니다.' 는 사실이 아니었다. 이 응답은 **접수**일 뿐이고
@@ -151,6 +225,7 @@ export default function SmsAdminClient({
       toast('발송 요청을 접수했습니다. 전달 결과는 목록의 ‘수신자 결과’에서 확인하세요.', 'info');
       setIsSendOpen(false);
       form.reset();
+      setRecipients([]);
       refetch();
     } catch (err) {
       if (!form.applyServerErrors(err)) {
@@ -164,6 +239,7 @@ export default function SmsAdminClient({
 
   const handleOpenSend = () => {
     form.reset();
+    setRecipients([]);
     setIsSendOpen(true);
   };
 
@@ -408,25 +484,76 @@ export default function SmsAdminClient({
                 <FormField
                   control={form.control}
                   name="rcptnTelno"
-                  required
+                  required={recipients.length === 0}
                   render={({ field }) => (
                     <FormItem className="space-y-4">
                       <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-2 flex items-center gap-3">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full" aria-hidden="true" />
                         수신 번호
                       </FormLabel>
-                      <div className="relative group">
-                        <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} aria-hidden="true" />
-                        <FormControl>
-                          <Input
-                            {...field}
-                            inputMode="tel"
-                            maxLength={20}
-                            placeholder="010-0000-0000"
-                            className="h-11 pl-16 pr-8 rounded-lg border-none bg-muted text-xl font-bold tabular-nums focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-wider"
-                          />
-                        </FormControl>
+                      {recipients.length > 0 && (
+                        <ul aria-label="선택한 수신자" className="flex flex-wrap gap-2">
+                          {recipients.map((recipient) => {
+                            const key = recipientKey(recipient);
+                            return (
+                              <li
+                                key={key}
+                                data-testid="sms-recipient-chip"
+                                data-recipient-kind={recipient.kind}
+                                className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-lg bg-muted text-xs font-bold"
+                              >
+                                <span>{recipient.name}</span>
+                                {recipient.kind === 'user' && (
+                                  <span className="text-[10px] text-muted-foreground">{recipient.deptNm || '사용자'}</span>
+                                )}
+                                <button
+                                  type="button"
+                                  aria-label={`${recipient.name} 수신자 제외`}
+                                  onClick={() => setRecipients((prev) => prev.filter((r) => recipientKey(r) !== key))}
+                                  className="w-5 h-5 rounded-md flex items-center justify-center hover:bg-destructive/10"
+                                >
+                                  <X size={12} aria-hidden="true" />
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      <div className="flex gap-2">
+                        <div className="relative group flex-1">
+                          <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} aria-hidden="true" />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              inputMode="tel"
+                              maxLength={20}
+                              placeholder="010-0000-0000"
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault();
+                                  handleAddNumber();
+                                }
+                              }}
+                              className="h-11 pl-16 pr-8 rounded-lg border-none bg-muted text-xl font-bold tabular-nums focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-wider"
+                            />
+                          </FormControl>
+                        </div>
+                        <Button type="button" variant="outline" onClick={handleAddNumber} className="h-11 px-4 rounded-lg shrink-0" aria-label="수신 번호 추가">
+                          <Plus size={16} aria-hidden="true" /> 추가
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          data-testid="sms-recipient-picker-btn"
+                          onClick={() => setIsPickerOpen(true)}
+                          className="h-11 px-4 rounded-lg shrink-0 gap-2"
+                        >
+                          <Users size={16} aria-hidden="true" /> 수신자 찾기
+                        </Button>
                       </div>
+                      <p className="text-xs text-muted-foreground ml-2">
+                        사용자를 고르면 등록된 휴대전화 번호로 보냅니다(번호는 화면에 표시되지 않습니다). 여러 명이면 수신자별 결과가 따로 남습니다.
+                      </p>
                       <FormMessage className="text-xs font-bold" />
                     </FormItem>
                   )}
@@ -482,6 +609,15 @@ export default function SmsAdminClient({
           </Form>
         </DialogContent>
       </Dialog>
+
+      {isPickerOpen && (
+        <RecipientPicker
+          isOpen={isPickerOpen}
+          channel="sms"
+          onClose={() => setIsPickerOpen(false)}
+          onConfirm={mergeRecipients}
+        />
+      )}
 
       {/* 수신자별 전달 결과 — 발송 이력 목록에는 rsltCd 가 없어 여기서만 실제 결과를 볼 수 있다. */}
       {recipientTarget !== null && (

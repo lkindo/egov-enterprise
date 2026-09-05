@@ -3114,7 +3114,7 @@ export const getSentMailsOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseSchema: z.lazy(() => PageResponseSentMailDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseSentMailDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["list","*","recipients"]],
 });
 
 export const sendMailOperation = /*#__PURE__*/ defineGeneratedOperation({
@@ -5522,7 +5522,7 @@ export const getSentMailOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseSchema: z.lazy(() => SentMailDtoResponseSchema),
   envelopeSchema: ApiResponseSentMailDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["recipients"]],
 });
 
 export const deleteMailOperation = /*#__PURE__*/ defineGeneratedOperation({

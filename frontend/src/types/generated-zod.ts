@@ -938,6 +938,15 @@ export const NoteRecipientDtoSchema = z.object({
 export type NoteRecipientDto = z.infer<typeof NoteRecipientDtoSchema>;
 
 // ==========================================================================
+// MailRecipientDto Schema
+// ==========================================================================
+export const MailRecipientDtoSchema = z.object({
+  esntlId: z.string().min(0).max(20).optional(),
+  emlAddr: z.string().min(0).max(320).optional(),
+});
+export type MailRecipientDto = z.infer<typeof MailRecipientDtoSchema>;
+
+// ==========================================================================
 // SentMailDto Schema
 // ==========================================================================
 export const SentMailDtoSchema = z.object({
@@ -945,7 +954,8 @@ export const SentMailDtoSchema = z.object({
   sj: z.string().optional(),
   emailCn: z.string().optional(),
   dsptchPerson: z.string().optional(),
-  recptnPerson: z.string().optional(),
+  recptnPerson: z.string().min(0).max(100).optional(),
+  recipients: z.array(z.lazy(() => MailRecipientDtoSchema)).min(0).max(100).optional(),
   sndngResultCode: z.string().optional(),
   sndngDe: z.string().optional(),
   atchFileSn: z.number().int().optional(),
@@ -1156,7 +1166,8 @@ export type SmsDto = z.infer<typeof SmsDtoSchema>;
 // ==========================================================================
 export const SmsRecptnDtoSchema = z.object({
   smsTrsmSn: z.number().int().optional(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
+  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional(),
+  esntlId: z.string().min(0).max(20).optional(),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),
 });
@@ -5655,12 +5666,23 @@ export const NoteRecipientDtoResponseSchema = z.object({
   recptnSe: z.string().min(0).max(12),
 });
 
+export const MailRecipientDtoRequestSchema = z.object({
+  esntlId: z.string().min(0).max(20).optional(),
+  emlAddr: z.string().min(0).max(320).optional(),
+});
+
+export const MailRecipientDtoResponseSchema = z.object({
+  esntlId: z.string().min(0).max(20).optional().nullable(),
+  emlAddr: z.string().min(0).max(320).optional().nullable(),
+});
+
 export const SentMailDtoRequestSchema = z.object({
   emlDsptchSn: z.number().int().optional(),
   sj: z.string().optional(),
   emailCn: z.string().optional(),
   dsptchPerson: z.string().optional(),
-  recptnPerson: z.string().optional(),
+  recptnPerson: z.string().min(0).max(100).optional(),
+  recipients: z.array(z.lazy(() => MailRecipientDtoRequestSchema.strict())).min(0).max(100).optional(),
   sndngResultCode: z.string().optional(),
   sndngDe: z.string().optional(),
   atchFileSn: z.number().int().optional(),
@@ -5671,7 +5693,7 @@ export const SentMailDtoResponseSchema = z.object({
   sj: z.string().optional().nullable(),
   emailCn: z.string().optional().nullable(),
   dsptchPerson: z.string().optional().nullable(),
-  recptnPerson: z.string().optional().nullable(),
+  recptnPerson: z.string().min(0).max(100).optional().nullable(),
   sndngResultCode: z.string().optional().nullable(),
   sndngDe: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
@@ -5970,14 +5992,16 @@ export const SmsDtoResponseSchema = z.object({
 
 export const SmsRecptnDtoRequestSchema = z.object({
   smsTrsmSn: z.number().int().optional(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
+  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional(),
+  esntlId: z.string().min(0).max(20).optional(),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),
 });
 
 export const SmsRecptnDtoResponseSchema = z.object({
   smsTrsmSn: z.number().int().optional().nullable(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
+  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional().nullable(),
+  esntlId: z.string().min(0).max(20).optional().nullable(),
   rsltCd: z.string().optional().nullable(),
   rsltMsg: z.string().optional().nullable(),
 });
