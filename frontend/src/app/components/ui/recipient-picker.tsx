@@ -3,12 +3,18 @@
 import React, { useCallback, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { BookUser, Search, User } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { addressbookUserService, type AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
 import type { NameCard } from '@/types/business/addressbook';
 import { logErrorSafely } from '@/lib/safe-error-log';
+
+/**
+ * 행 선택은 네이티브 checkbox 다(일정 등록 폼과 같은 패턴). Radix `Checkbox`(components/ui/checkbox)를 쓰지 않는 이유는
+ * 취향이 아니라 실측이다 — 그 모듈은 표(StandardDataTable)의 공용 청크 한 곳에만 있었는데, 피커가 같은 모듈을 끌자
+ * Turbopack 이 라우트 청크 49개에 각각 복제해 gzip 합계가 +82KB 가 됐다(2026-09-05 base↔head 청크 대조, CI run 33971686861).
+ */
+const SELECT_CHECKBOX_CLASS = 'h-4 w-4 shrink-0 accent-primary disabled:cursor-not-allowed disabled:opacity-50';
 
 const StandardModal = dynamic(() => import('./standard-modal').then((mod) => mod.StandardModal), { ssr: false });
 
@@ -249,10 +255,12 @@ export function RecipientPicker({
                   const checkboxId = `recipient-user-${user.esntlId}`;
                   return (
                     <li key={key} className="flex items-center gap-3 px-4 py-3">
-                      <Checkbox
+                      <input
+                        type="checkbox"
                         id={checkboxId}
+                        className={SELECT_CHECKBOX_CLASS}
                         checked={selected.has(key)}
-                        onCheckedChange={(checked) => toggle(recipient, checked === true)}
+                        onChange={(event) => toggle(recipient, event.target.checked)}
                         aria-label={`${recipient.name} 선택`}
                       />
                       <label htmlFor={checkboxId} className="flex-1 cursor-pointer">
@@ -317,11 +325,13 @@ export function RecipientPicker({
                   const checkboxId = `recipient-card-${card.adbkMbrSn ?? index}`;
                   return (
                     <li key={checkboxId} className="flex items-center gap-3 px-4 py-3">
-                      <Checkbox
+                      <input
+                        type="checkbox"
                         id={checkboxId}
+                        className={SELECT_CHECKBOX_CLASS}
                         checked={selected.has(key)}
                         disabled={!contact}
-                        onCheckedChange={(checked) => toggle(recipient, checked === true)}
+                        onChange={(event) => toggle(recipient, event.target.checked)}
                         aria-label={`${card.nm} 선택`}
                       />
                       <label htmlFor={checkboxId} className={`flex-1 ${contact ? 'cursor-pointer' : 'opacity-60'}`}>

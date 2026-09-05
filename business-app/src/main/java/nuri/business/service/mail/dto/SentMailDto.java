@@ -37,9 +37,12 @@ public class SentMailDto {
      * {@code recptnPerson} 과 함께 오면 둘 다 발송한다(중복 주소는 한 번만).
      */
     @io.swagger.v3.oas.annotations.media.ArraySchema(
-            arraySchema = @Schema(description = "수신자 목록 — 사용자(esntlId) 또는 주소(emlAddr)"),
+            arraySchema = @Schema(description = "수신자 목록 — 사용자(esntlId) 또는 주소(emlAddr). 발송 요청 전용(응답에는 실리지 않는다)",
+                    accessMode = Schema.AccessMode.WRITE_ONLY),
             schema = @Schema(implementation = MailRecipientDto.class),
             maxItems = 100)
+    // 요청 전용 — 읽기 매퍼가 채우지 않으며 직렬화에서도 제외한다(개인정보 응답 census 의 명시 예외 근거).
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     @jakarta.validation.Valid
     @Size(max = 100)
     @Builder.Default
