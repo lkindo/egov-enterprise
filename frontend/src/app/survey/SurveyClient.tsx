@@ -7,8 +7,10 @@ import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
 import { Survey } from '@/types/business/survey';
 import { useToast } from '@/app/components/ui/toast';
+import { Badge } from '@/components/ui/badge';
+import { todayStorageYmd } from '@/lib/format-date';
+import { SURVEY_STATUS_LABEL, displaySurveyYmd, getSurveyStatus } from '@/lib/survey-status';
 import { Calendar, ArrowRight } from 'lucide-react';
-;
 
 export default function SurveyClient() {
   const router = useRouter();
@@ -16,6 +18,8 @@ export default function SurveyClient() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Survey[]>([]);
   const [total, setTotal] = useState<number | undefined>(undefined);
+  // 목록은 클라이언트에서 불러오므로 기준일이 SSR 마크업에 실리지 않는다.
+  const [today] = useState(() => todayStorageYmd());
 
   useEffect(() => {
     async function loadData() {
@@ -46,11 +50,29 @@ export default function SurveyClient() {
     {
       header: '참여 기간',
       accessor: (item: Survey) => (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Calendar size={12} />
-          {item.srvyBgngYmd} ~ {item.srvyEndYmd}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
+          <Calendar size={12} aria-hidden="true" />
+          {displaySurveyYmd(item.srvyBgngYmd) || '시작일 없음'} ~ {displaySurveyYmd(item.srvyEndYmd) || '종료일 없음'}
         </div>
       )
+    },
+    {
+      /*
+       * [2026-09-05] 기간만 보여 주고 상태를 말하지 않아 종료된 설문도 '참여할 수 있는 설문' 처럼
+       * 보였다. 판정은 서버(SurveyResultService.assertWithinPeriod)와 같은 규칙이다.
+       */
+      header: '상태',
+      accessor: (item: Survey) => {
+        const status = getSurveyStatus(item, today);
+        return (
+          <Badge
+            variant={status === 'active' ? 'success' : status === 'closed' ? 'secondary' : 'outline'}
+            className="text-xs font-bold"
+          >
+            {SURVEY_STATUS_LABEL[status]}
+          </Badge>
+        );
+      }
     },
     {
       header: '',
@@ -78,7 +100,7 @@ export default function SurveyClient() {
     */
     <WorkListPage
       title="온라인 설문 조사"
-      description="참여할 수 있는 설문을 확인합니다."
+      description="진행 중인 설문에 응답하고, 종료된 설문은 결과 통계를 확인합니다."
       breadcrumbItems={[{ label: '업무지원' }, { label: '설문조사' }]}
       totalCount={total}
     >
@@ -88,7 +110,11 @@ export default function SurveyClient() {
         data={data}
         loading={loading}
         onRowClick={(item) => router.push(`/survey/${item.srvySn}`)}
-        rowActionLabel={(item) => `${item.srvyTtl || `${item.srvySn}번`} 설문 응답 열기`}
+        rowActionLabel={(item) => (
+          getSurveyStatus(item, today) === 'active'
+            ? `${item.srvyTtl || `${item.srvySn}번`} 설문 응답 열기`
+            : `${item.srvyTtl || `${item.srvySn}번`} 설문 결과 보기`
+        )}
         emptyMessage="등록된 설문 조사가 없습니다."
       />
     </WorkListPage>
