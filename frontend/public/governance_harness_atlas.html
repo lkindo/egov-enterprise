@@ -2148,7 +2148,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="status-card">
             <span class="badge badge-warning">PARTIAL EVIDENCE</span>
             <h3>테스트·CI</h3>
-            <p>테스트 소스 81개·<code>@Test</code> 400건을 루트 <code>backend-build</code>가 실행합니다. PostgreSQL Testcontainers 일부 경로가 있지만 실제 source vendor 전수·cutover 증거는 아닙니다.</p>
+            <p>테스트 소스 82개·<code>@Test</code> 403건을 루트 <code>backend-build</code>가 실행합니다. PostgreSQL Testcontainers 일부 경로가 있지만 실제 source vendor 전수·cutover 증거는 아닙니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-success">FAIL-CLOSED</span>
@@ -2158,7 +2158,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="status-card">
             <span class="badge badge-error">PRODUCTION GAP</span>
             <h3>운영 준비도</h3>
-            <p>실제 YAML의 <code>endpointId</code> 소실 결함, target JDBC location/instance 미결속, DB 권한 수준 source read-only, 실 PostgreSQL·Oracle·Tibero E2E, 결과 artifact, upsert·CDC와 cutover/rollback이 남아 있습니다.</p>
+            <p>실제 YAML의 <code>endpointId</code> 보존 결함은 회귀 테스트와 함께 해소했습니다. target JDBC location/instance 미결속, DB 권한 수준 source read-only, 실 PostgreSQL·Oracle·Tibero E2E, 결과 artifact, upsert·CDC와 cutover/rollback은 여전히 남아 있습니다.</p>
           </article>
         </div>
 
@@ -2243,7 +2243,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <tr>
                   <td>3. 승인 계획</td>
                   <td>inventory 전 객체 disposition, endpoint/driver/scope/mapping/target/implementation digest 결속</td>
-                  <td>실제 YAML의 <code>endpointId</code> 보존 결함을 먼저 수정하고 owner review로 모든 객체와 visibility blocker를 판정</td>
+                  <td>실제 YAML의 <code>endpointId</code> 보존 회귀는 통과했다. owner review로 모든 객체와 visibility blocker를 판정</td>
                   <td><span class="badge badge-error">BLOCKED</span></td>
                 </tr>
                 <tr>
@@ -2267,13 +2267,13 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="glass-card">
             <h3 class="glow-header">현행 CI 증거</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">
-              루트 <code>./gradlew build</code>가 81개 Java 테스트 소스의 <code>@Test</code> 400건을 실행하고 JaCoCo에 포함합니다. required <code>mutation-test</code>에는 transform과 validate/verify 범위가 있으나 workflow·adapter·JDBC·실 DB cutover 전체를 보증하지 않습니다. PostgreSQL Testcontainers도 runtime schema와 generated identity의 제한된 경로입니다.
+              루트 <code>./gradlew build</code>가 82개 Java 테스트 소스의 <code>@Test</code> 403건을 실행하고 JaCoCo에 포함합니다. required <code>mutation-test</code>에는 transform과 validate/verify 범위가 있으나 workflow·adapter·JDBC·실 DB cutover 전체를 보증하지 않습니다. PostgreSQL Testcontainers도 runtime schema와 generated identity의 제한된 경로입니다.
             </p>
           </article>
           <article class="glass-card">
             <h3 class="glow-header">권장 강화 순서</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">
-              <strong>P1</strong> MappingLoader의 <code>endpointId</code> 보존 + 실제 YAML workflow 회귀, target JDBC location/instance 결속, 지원 vendor/version·최소권한 source read-only rehearsal, canonical 결과 artifact와 부분 성공 reconciliation → <strong>P2</strong> LOB/문자셋·운영 규모, 제한적 upsert·증분/CDC·cutover/rollback 순입니다. target은 PostgreSQL-only이고 비데이터 객체 DDL은 현재 프로젝트 Flyway가 소유합니다.
+              <strong>P1</strong> target JDBC location/instance 결속, 지원 vendor/version·최소권한 source read-only rehearsal, canonical 결과 artifact와 부분 성공 reconciliation → <strong>P2</strong> LOB/문자셋·운영 규모, 제한적 upsert·증분/CDC·cutover/rollback 순입니다. <code>endpointId</code> loader 보존과 실제 YAML <code>discover</code> 회귀는 2026-09-05에 완료했습니다. target은 PostgreSQL-only이고 비데이터 객체 DDL은 현재 프로젝트 Flyway가 소유합니다.
             </p>
           </article>
         </div>
@@ -2282,6 +2282,8 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <strong>근거:</strong>
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md" target="_blank" rel="noopener noreferrer">설계·로드맵</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/tree/main/migration-tool" target="_blank" rel="noopener noreferrer">구현 모듈</a> ·
+          <a href="https://github.com/lkindo/egov-enterprise/blob/main/migration-tool/src/main/java/nuri/migration/model/MappingLoader.java" target="_blank" rel="noopener noreferrer">endpoint loader</a> ·
+          <a href="https://github.com/lkindo/egov-enterprise/blob/main/migration-tool/src/test/java/nuri/migration/model/MappingLoaderEndpointBindingTest.java" target="_blank" rel="noopener noreferrer">endpoint 보존 회귀</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/migration-tool/src/main/java/nuri/migration/MigrationWorkflowRunner.java" target="_blank" rel="noopener noreferrer">승인형 CLI 오케스트레이션</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/.github/workflows/ci.yml" target="_blank" rel="noopener noreferrer">CI/mutation 연결</a>
         </div>
@@ -2377,8 +2379,8 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>승인형 discover/plan/validate/load, 44종 discovery·visibility, source endpoint/driver/scope·mapping·target schema·implementation 결속, typed identity와 chunk data-keymap-checkpoint 원자성·durable resume가 구현됐다. 다만 MappingLoader가 YAML <code>endpointId</code>를 소실해 실제 workflow가 차단되고, target JDBC location/instance는 결속되지 않으며 vendor adapter는 실 DB 증거가 부족하고 target DBMS는 PostgreSQL-only다.</td>
-                  <td><code>endpointId</code> 보존과 실제 YAML E2E, credential-redacted target location binding을 먼저 추가한다. 이어 최소권한 source 계정과 PostgreSQL·Oracle·Tibero E2E를 포함한 vendor rehearsal, canonical 결과 artifact, 부분 성공/commit ambiguity reconciliation, backup·cutover/rollback을 증명하고 필요 시 staging 기반 upsert와 CDC를 별도 설계한다.</td>
+                  <td>승인형 discover/plan/validate/load, 44종 discovery·visibility, source endpoint/driver/scope·mapping·target schema·implementation 결속, typed identity와 chunk data-keymap-checkpoint 원자성·durable resume가 구현됐다. MappingLoader의 source/target <code>endpointId</code> 보존과 실제 YAML <code>discover</code> 회귀도 추가됐다. 다만 target JDBC location/instance는 결속되지 않으며 vendor adapter는 실 DB 증거가 부족하고 target DBMS는 PostgreSQL-only다.</td>
+                  <td>credential-redacted target location/instance binding을 먼저 추가한다. 이어 최소권한 source 계정과 PostgreSQL·Oracle·Tibero E2E를 포함한 vendor rehearsal, canonical 결과 artifact, 부분 성공/commit ambiguity reconciliation, backup·cutover/rollback을 증명하고 필요 시 staging 기반 upsert와 CDC를 별도 설계한다.</td>
                   <td><strong>불필요</strong> — 문서·도구·하네스 현행화</td>
                 </tr>
                 <tr>
@@ -2626,7 +2628,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 8,
         title: "Legacy ETL 정확성·이관 안전성",
-        desc: "migration-tool은 discover→plan→validate→load 승인형 CLI, 44종 객체·visibility inventory, source endpoint/driver/scope와 mapping·PostgreSQL target fingerprint·실행 구현 결속, typed/composite/generated identity 및 chunk data-keymap-checkpoint 원자성과 durable checksum resume를 구현했습니다. 다만 MappingLoader의 endpointId 소실, target JDBC location/instance 미결속, vendor 실 DB·운영 권한 증거, 결과 artifact, upsert·CDC와 cutover/rollback은 아직 PARTIAL입니다.",
+        desc: "migration-tool은 discover→plan→validate→load 승인형 CLI, 44종 객체·visibility inventory, source endpoint/driver/scope와 mapping·PostgreSQL target fingerprint·실행 구현 결속, typed/composite/generated identity 및 chunk data-keymap-checkpoint 원자성과 durable checksum resume를 구현했습니다. MappingLoader의 source/target endpointId 보존과 실제 YAML discover 회귀도 추가했습니다. 다만 target JDBC location/instance 미결속, vendor 실 DB·운영 권한 증거, 결과 artifact, upsert·CDC와 cutover/rollback은 아직 PARTIAL입니다.",
         badge1: "Data Migration", badge2: "Fail-closed Core", badge3: "Production Partial", type1: "cyan", type2: "success", type3: "warning",
         impl: "migration-tool/src/test · ci.yml migration-transform/migration-validate-verify · :migration-tool:test",
         doc: "Legacy migration design", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md",

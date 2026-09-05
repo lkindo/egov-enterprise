@@ -74,7 +74,8 @@ public class MappingLoader {
                 resolveValue(config.url()),
                 resolveValue(config.username()),
                 resolvePassword(config.password()),
-                resolveValue(config.driver()));
+                resolveValue(config.driver()),
+                resolveValue(config.endpointId()));
     }
 
     private String resolvePassword(String value) {

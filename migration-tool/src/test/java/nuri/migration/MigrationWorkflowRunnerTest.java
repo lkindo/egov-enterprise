@@ -215,6 +215,50 @@ class MigrationWorkflowRunnerTest {
     }
 
     @Test
+    void discoverLoadsEndpointBindingsFromRealYamlAndWritesInventory() throws Exception {
+        MappingLoader realLoader = new MappingLoader(Map.of(
+                "SOURCE_DB_URL", mapping.source().url(),
+                "SOURCE_DB_USER", mapping.source().username(),
+                "SOURCE_DB_PASSWORD", mapping.source().password(),
+                "SOURCE_ENDPOINT_ID", mapping.source().endpointId(),
+                "TARGET_DB_URL", mapping.target().url(),
+                "TARGET_DB_USER", mapping.target().username(),
+                "TARGET_DB_PASSWORD", mapping.target().password(),
+                "TARGET_ENDPOINT_ID", mapping.target().endpointId()
+        )::get);
+        Files.writeString(mappingPath, """
+                source:
+                  url: ${SOURCE_DB_URL}
+                  username: ${SOURCE_DB_USER}
+                  password: ${SOURCE_DB_PASSWORD}
+                  driver: driver
+                  endpointId: ${SOURCE_ENDPOINT_ID}
+                target:
+                  url: ${TARGET_DB_URL}
+                  username: ${TARGET_DB_USER}
+                  password: ${TARGET_DB_PASSWORD}
+                  driver: driver
+                  endpointId: ${TARGET_ENDPOINT_ID}
+                tables: []
+                """);
+        MigrationWorkflowRunner realLoaderRunner = new MigrationWorkflowRunner(
+                realLoader, validator, executor, verifier, introspector,
+                new SourceAdapterRegistry(List.of(adapter)), files, inventoryCodec, planCodec,
+                planner, new WorkflowReviewLoader(), fingerprinter, sourceEndpoints, transformers);
+        Path inventory = temp.resolve("real-yaml-inventory.json");
+
+        realLoaderRunner.run(args(
+                "--command=discover", "--mapping=" + mappingPath, "--inventory=" + inventory));
+
+        ArgumentCaptor<DbConfig> sourceConfig = ArgumentCaptor.forClass(DbConfig.class);
+        verify(sourceEndpoints).open(sourceConfig.capture(), anyList(), nullable(String.class));
+        assertThat(sourceConfig.getValue().endpointId()).isEqualTo(mapping.source().endpointId());
+        assertThat(inventoryCodec.readEnvelope(files.readUtf8(inventory)).sourceEndpointBinding()
+                .matches(sourceConfig.getValue())).isTrue();
+        assertThat(inventory).exists();
+    }
+
+    @Test
     void blockingPreflightStopsBeforeDiscoveryOrArtifactWrite() throws Exception {
         Path inventory = temp.resolve("blocked-inventory.json");
         given(adapter.preflight(eq(sourceConnection), any(DiscoveryRequest.class)))
