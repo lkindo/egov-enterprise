@@ -1,5 +1,6 @@
 package nuri.business.domain.notification;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,4 +33,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Notification n WHERE n.rcvrId IN :rcvrIds")
     int deleteByRcvrIdIn(@Param("rcvrIds") List<String> rcvrIds);
+
+    /**
+     * [2026-09-06 DEC-OPS-038] 읽은 알림 보존·정리 — cutoff 이전에 생성된 read_yn='Y' 행만 지운다.
+     * 읽지 않은 알림은 시간만으로 지우지 않는다. 호출자는 NotificationRetentionScheduler 뿐이다(기본 비활성).
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Notification n WHERE n.readYn = 'Y' AND n.crtDt < :cutoff")
+    int deleteReadBefore(@Param("cutoff") LocalDateTime cutoff);
 }

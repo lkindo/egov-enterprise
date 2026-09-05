@@ -17,6 +17,9 @@ import {
 
 // Mock dependencies
 vi.mock('@/app/actions/commentActions');
+// [2026-09-06 DEC-OPS-038] 네이티브 confirm 이 useConfirm 모달로 바뀌었다 — 모듈 mock 으로 응답을 준다.
+const confirmHarness = vi.hoisted(() => ({ confirm: vi.fn() }));
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => confirmHarness.confirm }));
 vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
@@ -255,7 +258,7 @@ describe('CommentSection Component', () => {
     vi.mocked(commentActions.deleteComment).mockReturnValueOnce(new Promise((_, reject) => {
       rejectDelete = reject;
     }));
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    confirmHarness.confirm.mockResolvedValue(true);
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
     const remove = screen.getByTestId('comment-delete-button');
 
@@ -280,7 +283,7 @@ describe('CommentSection Component', () => {
   it('handles comment deletion', async () => {
     vi.mocked(commentActions.deleteComment).mockResolvedValue({ success: true, message: '성공' });
     
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    confirmHarness.confirm.mockResolvedValue(true);
 
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
@@ -289,7 +292,7 @@ describe('CommentSection Component', () => {
     const deleteButton = screen.getByTestId('comment-delete-button');
     fireEvent.click(deleteButton);
 
-    expect(confirmSpy).toHaveBeenCalled();
+    expect(confirmHarness.confirm).toHaveBeenCalled();
     await waitFor(() => {
       expect(commentActions.deleteComment).toHaveBeenCalled();
     });
