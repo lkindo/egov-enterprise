@@ -2319,6 +2319,21 @@
   ],
   "manualGuardPolicies": [
     {
+      "target": "DeptJobService#currentEsntlIdOrDeny",
+      "source": "business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "SecurityUtil.getCurrentEsntlId()",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        ".orElse(\"anonymous\")",
+        ".orElse(\"SYSTEM\")"
+      ]
+    },
+    {
       "target": "ExternalHrService#currentLoginId",
       "source": "business-app/src/main/java/nuri/business/service/operation/ExternalHrService.java",
       "policy": "AUTHENTICATED",
@@ -2330,6 +2345,22 @@
       "forbiddenTokens": [
         ".orElse(\"SYSTEM\")",
         ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "FileAccessPolicy#assertAttachable",
+      "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "loginId.equals(master.getFrstRgtrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "grants.ownerGrant()",
+        "grants.sharedGrant()"
       ]
     },
     {

@@ -6,10 +6,14 @@ import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobRepository;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
+import nuri.business.domain.file.FileMaster;
+import nuri.business.domain.file.FileMasterRepository;
 import nuri.business.domain.organization.OrganizationManageRepository;
 import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.service.file.FileAccessPolicy;
 import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.service.deptjob.dto.DeptJobMapper;
+import nuri.business.security.util.SecurityUtil;
 import nuri.business.domain.deptjob.QDeptJob;
 import com.querydsl.core.BooleanBuilder;
 
@@ -18,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,18 +34,24 @@ public class DeptJobService extends BaseAbstractService {
     private final UserRepository userRepository;
     private final OrganizationManageRepository organizationManageRepository;
     private final DeptJobMapper deptJobMapper;
+    private final FileMasterRepository fileMasterRepository;
+    private final FileAccessPolicy fileAccessPolicy;
 
     public DeptJobService(DeptJobRepository deptJobRepository,
             DeptJobBoxRepository deptJobBoxRepository,
             UserRepository userRepository,
             OrganizationManageRepository organizationManageRepository,
-            DeptJobMapper deptJobMapper) {
+            DeptJobMapper deptJobMapper,
+            FileMasterRepository fileMasterRepository,
+            FileAccessPolicy fileAccessPolicy) {
         this.deptJobRepository = required(deptJobRepository, "DeptJobRepository 는 null 일 수 없습니다");
         this.deptJobBoxRepository = required(deptJobBoxRepository, "DeptJobBoxRepository 는 null 일 수 없습니다");
         this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
         this.organizationManageRepository = required(organizationManageRepository,
                 "OrganizationManageRepository 는 null 일 수 없습니다");
         this.deptJobMapper = required(deptJobMapper, "DeptJobMapper 는 null 일 수 없습니다");
+        this.fileMasterRepository = required(fileMasterRepository, "FileMasterRepository 는 null 일 수 없습니다");
+        this.fileAccessPolicy = required(fileAccessPolicy, "FileAccessPolicy 는 null 일 수 없습니다");
     }
 
     /**
@@ -120,12 +131,17 @@ public class DeptJobService extends BaseAbstractService {
     }
 
     @Transactional
-    public Long createDeptJob(String userId, DeptJobDto dto) {
+    public Long createDeptJob(DeptJobDto dto) {
+        String creatorEsntlId = currentEsntlIdOrDeny();
+        assertAttachmentIsAttachable(dto.getAtchFileSn());
+
         // [담당자 기본값] 등록 폼에 담당자 지정 UI 가 아직 없다. 미지정 시 등록자를 담당자로 둔다
         //   (null 로 두면 목록의 담당자 칸이 비고 검색조건 '담당자ID'가 무의미해진다).
         //   축은 이 컨트롤러의 형제 메서드들과 동일하게 esntlId 다. 담당자 지정 UI 가 생기면
         //   그때 사용자 선택 값을 그대로 받는다.
-        String picId = (dto.getPicId() != null && !dto.getPicId().isBlank()) ? dto.getPicId() : userId;
+        String picId = (dto.getPicId() != null && !dto.getPicId().isBlank())
+                ? dto.getPicId()
+                : creatorEsntlId;
 
         DeptJob deptJob = DeptJob.builder()
                 .deptTaskBoxSn(dto.getDeptTaskBoxSn())
@@ -146,6 +162,11 @@ public class DeptJobService extends BaseAbstractService {
         // 소유권 검증(IDOR 방어): 담당자 본인 또는 관리자만 수정 가능.
         // URL 의 id 만으로 남의 업무를 고칠 수 없게 한다.
         assertPicOrAdmin(deptJob);
+
+        if (dto.getAtchFileSn() != null
+                && !Objects.equals(dto.getAtchFileSn(), deptJob.getAtchFileSn())) {
+            assertAttachmentIsAttachable(dto.getAtchFileSn());
+        }
 
         // [담당자 보존] dto.picId 가 비어 오면 기존 담당자를 유지한다.
         //   update() 는 전달값을 그대로 덮어쓰므로, 담당자 필드를 보내지 않는 폼이 저장을 한 번만 해도
@@ -207,6 +228,26 @@ public class DeptJobService extends BaseAbstractService {
         }
 
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(picId);
+    }
+
+    /** 인증된 CustomUserDetails에서만 생성 actor의 esntlId를 취한다. */
+    private String currentEsntlIdOrDeny() {
+        String loginId = SecurityUtil.getCurrentLoginId().orElse(null);
+        String esntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
+        if (loginId == null || loginId.isBlank() || esntlId == null || esntlId.isBlank()) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+        return esntlId;
+    }
+
+    /** 공유 업무에 연결하기 전에 첨부의 존재와 재게시 권한을 확인한다. */
+    private void assertAttachmentIsAttachable(Long atchFileSn) {
+        if (atchFileSn == null) {
+            return;
+        }
+        FileMaster master = fileMasterRepository.findById(atchFileSn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        fileAccessPolicy.assertAttachable(master);
     }
 
     private DeptJobDto toDto(DeptJob entity) {

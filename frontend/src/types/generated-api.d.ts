@@ -4903,40 +4903,40 @@ export interface components {
         };
         DeptJobDto: {
             /** Format: int64 */
-            deptTaskSn?: number;
+            readonly deptTaskSn?: number | null;
             /** Format: int64 */
             deptTaskBoxSn?: number;
-            deptTaskBoxNm?: string;
-            deptId?: string;
-            deptNm?: string;
+            readonly deptTaskBoxNm?: string | null;
+            readonly deptId?: string | null;
+            readonly deptNm?: string | null;
             deptTaskNm?: string;
             deptTaskCn?: string;
             picId?: string;
-            picNm?: string;
+            readonly picNm?: string | null;
             prrtyRnk?: string;
             /** Format: int64 */
             atchFileSn?: number;
-            frstRgtrId?: string;
+            readonly frstRgtrId?: string | null;
             /** Format: date-time */
-            crtDt?: string;
-            lastMdfrId?: string;
+            readonly crtDt?: string | null;
+            readonly lastMdfrId?: string | null;
             /** Format: date-time */
-            mdfcnDt?: string;
+            readonly mdfcnDt?: string | null;
         };
         DeptJobBoxDto: {
             /** Format: int64 */
-            deptTaskBoxSn?: number;
+            readonly deptTaskBoxSn?: number | null;
             deptTaskBoxNm?: string;
             deptId?: string;
-            deptNm?: string;
+            readonly deptNm?: string | null;
             /** Format: int64 */
             sortOrdr?: number;
-            frstRgtrId?: string;
+            readonly frstRgtrId?: string | null;
             /** Format: date-time */
-            crtDt?: string;
-            lastMdfrId?: string;
+            readonly crtDt?: string | null;
+            readonly lastMdfrId?: string | null;
             /** Format: date-time */
-            mdfcnDt?: string;
+            readonly mdfcnDt?: string | null;
         };
         CommentDto: {
             /** Format: int64 */

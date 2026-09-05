@@ -1,8 +1,12 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
-import { DeptJobVO, DeptJobBxVO } from '@/types/business/deptJob';
+import {
+  type DeptJobBoxInput,
+  type DeptJobBxVO,
+  type DeptJobInput,
+  type DeptJobVO,
+} from '@/types/business/deptJob';
 import { AxiosRequestConfig } from 'axios';
-import type { GeneratedOperationRequest } from '@/types/generated-operations';
 import {
   createDeptJobBoxOperation,
   createDeptJobOperation,
@@ -61,9 +65,9 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무함 등록
    */
-  async createDeptJobBox(data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<number> {
+  async createDeptJobBox(data: DeptJobBoxInput, config?: AxiosRequestConfig): Promise<number> {
     return this.executeGenerated(createDeptJobBoxOperation, {
-      body: data as GeneratedOperationRequest<'createDeptJobBox'>,
+      body: data,
       config,
     });
   }
@@ -71,10 +75,10 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무함 수정
    */
-  async updateDeptJobBox(deptTaskBoxSn: number, data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<void> {
+  async updateDeptJobBox(deptTaskBoxSn: number, data: DeptJobBoxInput, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updateDeptJobBoxOperation, {
       path: { deptTaskBoxSn },
-      body: data as GeneratedOperationRequest<'updateDeptJobBox'>,
+      body: data,
       config,
     });
   }
@@ -150,10 +154,10 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무 등록
    */
-  async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<number> {
+  async createDeptJob(data: DeptJobInput, config?: AxiosRequestConfig): Promise<number> {
     // 서버가 채번한 식별자를 돌려준다(등록 직후 상세로 이동하기 위해 필요).
     return this.executeGenerated(createDeptJobOperation, {
-      body: data as GeneratedOperationRequest<'createDeptJob'>,
+      body: data,
       config,
     });
   }
@@ -161,10 +165,10 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무 수정
    */
-  async updateDeptJob(deptTaskSn: number, data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
+  async updateDeptJob(deptTaskSn: number, data: DeptJobInput, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updateDeptJobOperation, {
       path: { deptTaskSn },
-      body: data as GeneratedOperationRequest<'updateDeptJob'>,
+      body: data,
       config,
     });
   }

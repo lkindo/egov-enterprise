@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
   invalidateQueries: vi.fn(),
+  jobResponse: {} as Record<string, unknown>,
 }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -28,7 +29,7 @@ vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: () => ({
-    data: { deptTaskSn: 7, deptTaskNm: '기존 업무', deptTaskCn: '작성 중인 내용' },
+    data: mocks.jobResponse,
     isLoading: false,
     isError: false,
   }),
@@ -53,8 +54,10 @@ import DeptJobDetailClient from './DeptJobDetailClient';
 describe('DeptJobDetailClient server validation ownership', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.jobResponse = { deptTaskSn: 7, deptTaskNm: '기존 업무', deptTaskCn: '작성 중인 내용' };
     mocks.confirm.mockResolvedValue(true);
     mocks.deleteDeptJob.mockResolvedValue(undefined);
+    mocks.updateDeptJob.mockResolvedValue(undefined);
   });
 
   it('DeptJobForm 제출은 부모 수정 sink를 한 번만 호출하고 pending·필드 오류 뒤 편집 값을 보존한다', async () => {
@@ -108,6 +111,49 @@ describe('DeptJobDetailClient server validation ownership', () => {
     ));
     expect(taskName).toHaveValue('일반 오류 보존 업무');
     expect(screen.getByRole('button', { name: '수정 저장' })).toBeEnabled();
+  });
+
+  it('nullable 응답을 빈 폼 값으로 정규화하고 서버 소유 필드 없이 수정한다', async () => {
+    mocks.jobResponse = {
+      deptTaskSn: 7,
+      deptTaskBoxSn: null,
+      deptTaskBoxNm: null,
+      deptId: null,
+      deptNm: null,
+      deptTaskNm: null,
+      deptTaskCn: null,
+      picId: null,
+      picNm: null,
+      prrtyRnk: null,
+      atchFileSn: null,
+      frstRgtrId: null,
+      crtDt: null,
+      lastMdfrId: null,
+      mdfcnDt: null,
+    };
+    render(<DeptJobDetailClient deptTaskSn={7} />);
+    fireEvent.click(screen.getByRole('button', { name: /수정/ }));
+
+    const taskName = screen.getByRole('textbox', { name: /업무명/ });
+    expect(taskName).toHaveValue('');
+    expect(screen.getByRole('textbox', { name: /업무 내용/ })).toHaveValue('');
+
+    fireEvent.change(taskName, { target: { value: '정규화된 업무' } });
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => expect(mocks.updateDeptJob).toHaveBeenCalledWith(7, {
+      deptTaskBoxSn: undefined,
+      deptTaskNm: '정규화된 업무',
+      deptTaskCn: '',
+      picId: undefined,
+      prrtyRnk: '2',
+      atchFileSn: undefined,
+    }));
+    const submitted = mocks.updateDeptJob.mock.calls[0]?.[1];
+    expect(submitted).not.toHaveProperty('deptTaskSn');
+    expect(submitted).not.toHaveProperty('deptTaskBoxNm');
+    expect(submitted).not.toHaveProperty('picNm');
+    expect(submitted).not.toHaveProperty('frstRgtrId');
   });
 
   it('삭제는 confirm 전에 동기 선점하고 실패 후 상세 화면과 재시도 상태를 유지한다', async () => {

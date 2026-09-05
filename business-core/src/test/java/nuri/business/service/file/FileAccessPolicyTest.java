@@ -160,6 +160,62 @@ class FileAccessPolicyTest {
                 .isInstanceOf(BusinessException.class);
     }
 
+    // ----------------------------------------------------------- 연결(재게시)
+
+    @Test
+    @DisplayName("업로더 본인은 미첨부 파일을 업무에 연결할 수 있다")
+    void uploaderCanAttachOwnUpload() {
+        authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
+
+        assertThatCode(() -> policy(grantsNone()).assertAttachable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("기존 참조 행의 소유자라도 원 업로더가 아니면 재게시할 수 없다")
+    void referenceOwnerCannotAttachForeignUpload() {
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, true, true))
+                .assertAttachable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("공유 콘텐츠를 읽을 수 있다는 사실만으로 파일을 재게시할 수 없다")
+    void sharedReaderCannotAttach() {
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, false, false))
+                .assertAttachable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("관리자도 타인이 업로드한 파일을 공유 자원에 재게시할 수 없다")
+    void adminCannotAttachForeignUpload() {
+        authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
+
+        assertThatThrownBy(() -> policy(grantsNone()).assertAttachable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("미인증 주체는 업로더 표시나 참조 근거와 무관하게 파일을 연결할 수 없다")
+    void unauthenticatedCannotAttach() {
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, true, false))
+                .assertAttachable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
     // ------------------------------------------------------------- 레지스트리
 
     @Nested
