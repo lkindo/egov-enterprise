@@ -982,7 +982,7 @@ export const updateDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -1033,7 +1033,7 @@ export const updateDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: DeptJobBoxDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskBoxSn"],["deptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -3373,7 +3373,7 @@ export const createDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -3407,7 +3407,7 @@ export const createDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: DeptJobBoxDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskBoxSn"],["deptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 

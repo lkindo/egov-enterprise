@@ -218,21 +218,21 @@ export type HpcmDto = z.infer<typeof HpcmDtoSchema>;
 // DeptJobDto Schema
 // ==========================================================================
 export const DeptJobDtoSchema = z.object({
-  deptTaskSn: z.number().int().optional(),
+  deptTaskSn: z.number().int().optional().nullable(),
   deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
-  deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
-  deptTaskNm: z.string().optional(),
-  deptTaskCn: z.string().optional(),
-  picId: z.string().optional(),
-  picNm: z.string().optional(),
-  prrtyRnk: z.string().optional(),
+  deptTaskBoxNm: z.string().optional().nullable(),
+  deptId: z.string().min(0).max(20).optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  deptTaskNm: z.string().min(0).max(100).optional(),
+  deptTaskCn: z.string().min(0).max(4000).optional(),
+  picId: z.string().min(0).max(20).optional(),
+  picNm: z.string().optional().nullable(),
+  prrtyRnk: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 
@@ -240,15 +240,15 @@ export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 // DeptJobBoxDto Schema
 // ==========================================================================
 export const DeptJobBoxDtoSchema = z.object({
-  deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
+  deptTaskBoxSn: z.number().int().optional().nullable(),
+  deptTaskBoxNm: z.string().min(0).max(100).optional(),
   deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
+  deptNm: z.string().optional().nullable(),
   sortOrdr: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 export type DeptJobBoxDto = z.infer<typeof DeptJobBoxDtoSchema>;
 
@@ -4542,21 +4542,12 @@ export const HpcmDtoResponseSchema = z.object({
 });
 
 export const DeptJobDtoRequestSchema = z.object({
-  deptTaskSn: z.number().int().optional(),
   deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
-  deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
-  deptTaskNm: z.string().optional(),
-  deptTaskCn: z.string().optional(),
-  picId: z.string().optional(),
-  picNm: z.string().optional(),
-  prrtyRnk: z.string().optional(),
+  deptTaskNm: z.string().min(0).max(100).optional(),
+  deptTaskCn: z.string().min(0).max(4000).optional(),
+  picId: z.string().min(0).max(20).optional(),
+  prrtyRnk: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 
 export const DeptJobDtoResponseSchema = z.object({
@@ -4565,11 +4556,11 @@ export const DeptJobDtoResponseSchema = z.object({
   deptTaskBoxNm: z.string().optional().nullable(),
   deptId: z.string().min(0).max(20).optional().nullable(),
   deptNm: z.string().optional().nullable(),
-  deptTaskNm: z.string().optional().nullable(),
-  deptTaskCn: z.string().optional().nullable(),
-  picId: z.string().optional().nullable(),
+  deptTaskNm: z.string().min(0).max(100).optional().nullable(),
+  deptTaskCn: z.string().min(0).max(4000).optional().nullable(),
+  picId: z.string().min(0).max(20).optional().nullable(),
   picNm: z.string().optional().nullable(),
-  prrtyRnk: z.string().optional().nullable(),
+  prrtyRnk: z.string().min(0).max(12).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
@@ -4578,20 +4569,14 @@ export const DeptJobDtoResponseSchema = z.object({
 });
 
 export const DeptJobBoxDtoRequestSchema = z.object({
-  deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
+  deptTaskBoxNm: z.string().min(0).max(100).optional(),
   deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
   sortOrdr: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 
 export const DeptJobBoxDtoResponseSchema = z.object({
   deptTaskBoxSn: z.number().int().optional().nullable(),
-  deptTaskBoxNm: z.string().optional().nullable(),
+  deptTaskBoxNm: z.string().min(0).max(100).optional().nullable(),
   deptId: z.string().min(0).max(20).optional().nullable(),
   deptNm: z.string().optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),

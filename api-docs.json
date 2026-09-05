@@ -23371,16 +23371,6 @@
               }
             }
           },
-          "409": {
-            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -23403,6 +23393,16 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34272,56 +34272,100 @@
         "type": "object",
         "properties": {
           "deptTaskSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "deptTaskBoxSn": {
             "type": "integer",
             "format": "int64"
           },
           "deptTaskBoxNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "deptId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "readOnly": true
+          },
+          "deptNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "deptTaskNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "deptTaskCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "picId": {
             "type": "string",
             "maxLength": 20,
             "minLength": 0
           },
-          "deptNm": {
-            "type": "string"
-          },
-          "deptTaskNm": {
-            "type": "string"
-          },
-          "deptTaskCn": {
-            "type": "string"
-          },
-          "picId": {
-            "type": "string"
-          },
           "picNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "prrtyRnk": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
           },
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "lastMdfrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           }
         }
       },
@@ -34329,11 +34373,17 @@
         "type": "object",
         "properties": {
           "deptTaskBoxSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "deptTaskBoxNm": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
           },
           "deptId": {
             "type": "string",
@@ -34341,25 +34391,45 @@
             "minLength": 0
           },
           "deptNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "sortOrdr": {
             "type": "integer",
             "format": "int64"
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "lastMdfrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           }
         }
       },

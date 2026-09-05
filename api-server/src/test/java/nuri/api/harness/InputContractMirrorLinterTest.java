@@ -19,6 +19,8 @@ import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.code.CommonCode;
 import nuri.business.domain.code.CommonCodeCategory;
 import nuri.business.domain.code.CommonCodeGroup;
+import nuri.business.domain.deptjob.DeptJob;
+import nuri.business.domain.deptjob.DeptJobBox;
 import nuri.business.domain.group.GroupManage;
 import nuri.business.domain.mypage.MyPageContent;
 import nuri.business.domain.memoreport.MemoReport;
@@ -41,6 +43,8 @@ import nuri.business.service.code.dto.CmmnClCodeDto;
 import nuri.business.service.code.dto.CmmnCodeDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.business.service.department.dto.DeptManageDto;
+import nuri.business.service.deptjob.dto.DeptJobBoxDto;
+import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.service.group.dto.GroupManageDto;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.business.service.operation.dto.ExternalHrDto;
@@ -157,7 +161,11 @@ class InputContractMirrorLinterTest {
             new LengthBinding(MemoReport.class, MemoReportDto.class,
                     List.of("rptTtl", "memoRptYmd", "rptrId", "rptCn")),
             new LengthBinding(WorkReport.class, WorkReportDto.class,
-                    List.of("rptTtl", "rptCn", "rptSeCd", "rptYmd")));
+                    List.of("rptTtl", "rptCn", "rptSeCd", "rptYmd")),
+            new LengthBinding(DeptJobBox.class, DeptJobBoxDto.class,
+                    List.of("deptTaskBoxNm", "deptId")),
+            new LengthBinding(DeptJob.class, DeptJobDto.class,
+                    List.of("deptTaskNm", "deptTaskCn", "picId", "prrtyRnk")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
@@ -223,7 +231,9 @@ class InputContractMirrorLinterTest {
                     requiredField("evntSn", NotNull.class),
                     requiredField("otsdHrId", NotBlank.class))),
             requiredNotBlank(MemoReportDto.class, "rptTtl", "rptrId"),
-            requiredNotBlank(WorkReportDto.class, "rptTtl"));
+            requiredNotBlank(WorkReportDto.class, "rptTtl"),
+            new RequiredBinding(DeptJobBoxDto.class, List.of()),
+            new RequiredBinding(DeptJobDto.class, List.of()));
 
     /** 요청에서 신뢰하지 않고 서버가 생성·주입·파생하는 필드의 방향성 기준선. */
     private static final List<ReadOnlyBinding> READ_ONLY_BINDINGS = List.of(
@@ -231,13 +241,18 @@ class InputContractMirrorLinterTest {
                     List.of("memoRptSn", "userId", "wrterNm", "rptrNm", "drctnMttr",
                             "drctnMttrRegDt", "rptrInqDt", "crtDt")),
             new ReadOnlyBinding(WorkReportDto.class,
-                    List.of("rptpSn", "userId", "userNm", "rptSttsCd", "rptTypeCd")));
+                    List.of("rptpSn", "userId", "userNm", "rptSttsCd", "rptTypeCd")),
+            new ReadOnlyBinding(DeptJobBoxDto.class,
+                    List.of("deptTaskBoxSn", "deptNm", "frstRgtrId", "crtDt", "lastMdfrId", "mdfcnDt")),
+            new ReadOnlyBinding(DeptJobDto.class,
+                    List.of("deptTaskSn", "deptTaskBoxNm", "deptId", "deptNm", "picNm",
+                            "frstRgtrId", "crtDt", "lastMdfrId", "mdfcnDt")));
 
-    private static final int MIN_LENGTH_FIELDS = 107;
+    private static final int MIN_LENGTH_FIELDS = 113;
     private static final int MIN_ENUM_FIELDS = 16;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
     private static final int MIN_REQUIRED_FIELDS = 36;
-    private static final int MIN_READ_ONLY_FIELDS = 13;
+    private static final int MIN_READ_ONLY_FIELDS = 28;
 
     @Test
     @DisplayName("입력 DTO 길이와 enum 제약이 Entity 저장 계약을 넘지 않는다")

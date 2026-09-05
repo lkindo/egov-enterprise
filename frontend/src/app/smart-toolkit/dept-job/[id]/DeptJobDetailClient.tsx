@@ -189,7 +189,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                     {isEditing ? (
                         <DeptJobForm
                             mode="edit"
-                            initialData={job as Partial<DeptJobFormValues>}
+                            initialData={job}
                             onSubmit={handleUpdate}
                             onCancel={() => setEditing(false)}
                             isPending={activeAction === 'update'}

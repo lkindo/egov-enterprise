@@ -151,10 +151,8 @@ public class DeptJobApiController {
     @Operation(summary = "부서 업무 등록", description = "새로운 부서 업무를 등록합니다. 식별자는 서버가 채번합니다.")
     @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> createDeptJob(
-            @LoginUser CustomUserDetails userDetails,
-            @Valid @RequestBody DeptJobDto dto) {
-        Long newSn = deptJobService.createDeptJob(userDetails.getEsntlId(), dto);
+    public ResponseEntity<ApiResponse<Long>> createDeptJob(@Valid @RequestBody DeptJobDto dto) {
+        Long newSn = deptJobService.createDeptJob(dto);
         return ResponseEntity.ok(ApiResponse.success(newSn));
     }
 
