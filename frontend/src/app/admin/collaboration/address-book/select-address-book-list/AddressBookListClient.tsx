@@ -13,6 +13,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import type { AddressBookInitialData } from './AddressBookListServer';
+import { logErrorSafely } from '@/lib/safe-error-log';
 
 const DEFAULT_PAGE_UNIT = 10;
 
@@ -66,7 +67,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  setTotalPages(response.totalPage || 0);
  setFetchError(null);
  } catch (error) {
- console.error('Failed to fetch address books', error);
+ logErrorSafely('Failed to fetch address books', error);
  setFetchError(error instanceof Error ? error : new Error('주소록 목록을 불러오지 못했습니다.'));
  } finally {
  setLoading(false);
