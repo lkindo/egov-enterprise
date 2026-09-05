@@ -1,7 +1,8 @@
 import OnlinePollAdminClient from './OnlinePollAdminClient';
 
 export const metadata = {
-  title: '온라인 설문 관리 | 설문 관리',
+  // [2026-09-06 DEC-OPS-039] '설문' 이름으로 두 제품(문항형 설문조사·단일 선택 투표)이 있었다(감사 D12-02) — 투표는 투표라고 부른다.
+  title: '온라인 투표 관리 | 설문 관리',
 };
 
 /**

@@ -1437,7 +1437,7 @@
   {
    "route": "/admin/system/ism",
    "reviewState": "proposed",
-   "disposition": "retain-canonical",
+   "disposition": "consolidate-to-canonical",
    "authorizationReview": "unverified",
    "privacyReview": "unverified",
    "effectiveMenuExposureReview": "unverified",

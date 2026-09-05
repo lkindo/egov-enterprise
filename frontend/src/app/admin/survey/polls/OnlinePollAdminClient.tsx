@@ -242,9 +242,9 @@ export default function OnlinePollAdminClient() {
 
  return (
  <WorkListPage
- title="온라인 설문 관리"
- description="전사 사용자 피드백 설문을 조회·등록하고 참여 현황을 확인합니다."
- breadcrumbItems={[{ label: '설문조사' }, { label: '온라인 설문 관리' }]}
+ title="온라인 투표 관리"
+ description="항목 하나를 고르는 온라인 투표를 조회·등록하고 참여 현황을 확인합니다. 문항형 설문조사는 설문 허브에서 관리합니다."
+ breadcrumbItems={[{ label: '설문조사' }, { label: '온라인 투표 관리' }]}
  filterStateKey="survey-polls"
  totalCount={isError ? undefined : totalCount}
  actions={
@@ -295,7 +295,7 @@ export default function OnlinePollAdminClient() {
  }
  >
  <StandardDataTable
- accessibleLabel="온라인 설문 목록"
+ accessibleLabel="온라인 투표 목록"
  columns={columns}
  data={polls}
  loading={isLoading}
@@ -303,7 +303,7 @@ export default function OnlinePollAdminClient() {
  error={isError ? error : null}
  onRetry={() => void refetch()}
  keyField="pollSn"
- emptyMessage={emptyResultMessage(keyword, '등록된 온라인 설문이 없습니다.')}
+ emptyMessage={emptyResultMessage(keyword, '등록된 온라인 투표가 없습니다.')}
  className="border-none bg-transparent"
  pagination={{
  currentPage: page + 1,

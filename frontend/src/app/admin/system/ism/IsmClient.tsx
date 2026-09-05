@@ -200,7 +200,7 @@ export default function IsmClient({
  return (
  <HubStatusBadge 
  status={status} 
- labels={{ 활성: '승인됨', DISABLED: '반려됨', INACTIVE: '결재 대기' }} 
+ labels={{ 활성: '승인 완료', DISABLED: '반려됨', INACTIVE: '대기 중' }} 
  />
  );
  },
@@ -230,7 +230,7 @@ export default function IsmClient({
  return (
  <WorkListPage
  title="약식 결재 관리"
- description="규격화되지 않은 비정형 결재 요청을 조회하고 승인·반려합니다."
+ description="내가 결재자로 지정된 약식 결재 요청을 조회하고 승인·반려합니다 — 결재함(/approvals)의 대기함과 같은 목록입니다."
  breadcrumbItems={[{ label: '시스템관리' }, { label: '약식결재' }]}
  totalCount={listError ? undefined : ismList.length}
  actions={
@@ -291,10 +291,11 @@ export default function IsmClient({
  type="button"
  onClick={form.handleSubmit((v) => onFormSubmit(v, SANCTION_STATUS.APPROVED))}
  aria-describedby="ism-approve-note"
+ /* [2026-09-06 DEC-OPS-039] 단일 단계 결재에 '최종' 은 없는 단계를 암시했다(감사 D08-05). 결재함(/approvals)과 같은 동사 '승인'/'반려' 를 쓴다. */
  disabled={loading}
  className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-2 hover:bg-primary transition-all active:scale-95 group"
  >
- <CheckCircle2 size={18} strokeWidth={3} aria-hidden="true" className="text-primary group-hover:rotate-12 transition-transform" /> {loading ? '처리 중…' : '최종 승인'}
+ <CheckCircle2 size={18} strokeWidth={3} aria-hidden="true" className="text-primary group-hover:rotate-12 transition-transform" /> {loading ? '처리 중…' : '승인'}
  </Button>
  </div>
  }
