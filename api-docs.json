@@ -33724,13 +33724,19 @@
             "minLength": 0
           },
           "scrapExpln": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
           },
           "useYn": {
             "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
             "minLength": 0,
-            "pattern": "[YN]"
+            "pattern": "^(?:Y|N)$"
           },
           "userId": {
             "type": "string",
@@ -34489,16 +34495,29 @@
             "minLength": 0
           },
           "cntcUrl": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           },
           "cntntsUseYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "cntntsLinkUrl": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           },
           "cntntsDc": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           }
         }
       },
@@ -36113,17 +36132,28 @@
           "rlsScopeCd": {
             "type": "string",
             "description": "공개 범위 코드",
-            "example": "PUB"
+            "example": "PUB",
+            "maxLength": 12,
+            "minLength": 0
           },
           "trgetOgnzId": {
             "type": "string",
             "description": "대상 조직 ID",
-            "example": "ORGNZT_0000000000001"
+            "example": "ORGNZT_0000000000001",
+            "maxLength": 20,
+            "minLength": 0
           },
           "useYn": {
             "type": "string",
             "description": "사용 여부",
-            "example": "Y"
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "example": "Y",
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "wrterId": {
             "type": "string",

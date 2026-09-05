@@ -31,7 +31,7 @@ git config core.hooksPath .githooks
 
 ### 입력 의미 계약 게이트
 
-`InputContractMirrorLinterTest`가 등록된 관리자 입력 DTO의 문자열 길이와 Y/N enum을 Entity 저장 상한 및 `api-docs.json`과 대조한다. 대상 목록과 필드 수는 테스트 소스가 정본이다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다.
+`InputContractMirrorLinterTest`가 등록된 입력 DTO의 문자열 길이·Y/N enum·필수 제약 종류와 validation group을 Entity 저장 상한 및 `api-docs.json`과 대조하고, 중첩 DTO의 cascade·null item 거절·item schema 연결도 확인한다. 대상 목록과 필드 수는 테스트 소스가 정본이며 검사 본문은 baseline full-source hash로 보호된다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 등록된 길이·enum·required/nullability·중첩 schema의 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다. `@NotBlank`의 공백 의미 보존과 root controller validation reachability 전수 검사는 아직 이 게이트 범위가 아니다.
 
 ### 대표 거버넌스 하네스
 
