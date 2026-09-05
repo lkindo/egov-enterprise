@@ -12,7 +12,7 @@
 - full JSON 282개와 mutation diagnostic JSON 8개의 privacy 검사 통과
 - frontend 1,453 tests, backend 표적 90 tests, production build·bundle·컴파일 통과
 
-그러나 [scenario manifest](../../config/ui-quality-scenarios.json)는 계속 `unmeasured`이고 8개 시나리오는 `partial-automated-evidence`다. durable 정책 승인과 r12 automated-only summary의 사람 검토·tracked commit·clean-checkout readback·원격 병합·required CI는 마쳤지만 수동 접근성 증거 48건이 남았고, r12에는 execution-captured protocol hash도 없다. G0/G1 승인과 release 환경 입력 역시 열려 있다. 자동 결과의 상세 provenance는 [baseline protocol §13](ui-ux-baseline-protocol.md#13-현재-상태와-bounded-blockers)에 둔다.
+그러나 [scenario manifest](../../config/ui-quality-scenarios.json)는 계속 `unmeasured`이고 8개 시나리오는 `partial-automated-evidence`다. durable 정책 승인과 r12 automated-only summary의 사람 검토·tracked commit·clean-checkout readback·원격 병합·required CI는 마쳤지만 수동 접근성 증거 48건이 남았고, r12에는 execution-captured protocol hash도 없다. [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md)의 reference-default IA 승인은 유효하지만 G0, 기관 채택 시 G1 재검증, route별 disposition 개별 승인과 release 환경 입력은 열려 있다. 자동 결과의 상세 provenance는 [baseline protocol §13](ui-ux-baseline-protocol.md#13-현재-상태와-bounded-blockers)에 둔다.
 
 이 런북은 새 완료 증거가 아니다. 각 단계의 실제 결과가 기대값과 일치하고 정본에 반영될 때만 다음 단계로 간다.
 
@@ -40,7 +40,7 @@
 | 4 | UA-04 | r12 자동 artifact의 compact summary 후보를 검증하고 tracked index로 결속 | `DONE` | 2026-08-22 원격 병합·required CI·post-merge CI 완료 |
 | 5 | UA-05 | execution-captured protocol hash를 가진 새 authoritative run과 수동 접근성 48건을 combined summary로 발행 | `DEFERRED` (DEC-OPS-012) | 수동 접근성 평가자·승인된 Windows 기록 환경 확보 시 재개. 구현물(launch 실행기·combined v2 계약)은 그대로 보존돼 있어 재개에 추가 구현이 필요 없다 |
 | 6 | UA-06 | G0 제품·사용자 연구·브랜드/KRDS 입력 승인 | `LOCKED` | 지정 product/UX owner 확보 |
-| 7 | UA-07 | G1 live menu·역할 노출·119+2 route disposition 최종 승인 | `LOCKED` | UA-06 및 live read-only evidence 확보 |
+| 7 | UA-07 | 기관 채택 G1 재검증과 미승인 route disposition의 개별 승인 | `LOCKED` | 단계 완료는 UA-06과 기관 live evidence 필요. ADR-0007에 따른 route별 owner PR review는 이 잠금과 별개로 먼저 누적 가능 |
 | 8 | UA-08 | release build/runtime 변수와 배포 owner handoff 검증 | `LOCKED` | 배포 환경의 실제 URL 확정 |
 | 9 | UA-09 | 변경 inventory 검토, commit·PR, 현재 required CI 5종 실행 | `LOCKED` | 앞 단계 정본 변경 완료 및 commit/push 승인 |
 | 10 | UA-10 | 최종 Genuine completion 감사와 r12/과거 Docker 자원 처분 | `LOCKED` | UA-01~09 및 새 authoritative run의 current indexed combined summary 검증 완료 |
@@ -308,21 +308,23 @@ UA-06은 이 current indexed combined summary의 committed clean-checkout readba
 - 실제 사용자군과 우선 top task
 - 현재 기본 profile이 아닌 승인된 브랜드/KRDS version·scope·mapping·예외
 - 독립 holdout card-sort/tree-test 대상, 표본, 성공 기준과 결과
-- ADR-0004 잠정 방향을 유지·수정·거부할 판정
+- 기관 채택 맥락에서 ADR-0007 reference-default IA를 출발 가설로 유지·축소·변경할 판정
 
-ADR-0004는 `Accepted — provisional direction only`다. 이 단계 결과 없이 final IA로 승격하거나 KRDS 정렬·준수를 주장하지 않는다.
+ADR-0007은 ADR-0004의 hybrid 방향을 공통 base의 **reference-default IA로 승인**했고 잠정 지위를 끝냈다. 이 승인을 미승인으로 되돌리지 않는다. 다만 사용자 연구 없는 accepted risk는 남으며, 기관 채택 시 위 입력과 실사용자·실메뉴·실권한으로 원 G1을 재수행한다. 그 결과 없이 기관 적합 IA나 KRDS 정렬·준수를 주장하지 않는다.
 
-## 10. UA-07 — G1 live IA·권한 승인
+## 10. UA-07 — 기관 채택 G1 재검증·route별 처분 승인
 
-live target의 read-only evidence로 다음을 확인한다.
+기관 채택 시 live target의 read-only evidence로 다음을 확인한다. 참조 구현 단계에서는 같은 항목 중
+현재 코드·정적 menu로 확인 가능한 근거와 owner PR review를 사용해 route별 disposition만 개별 승인한다.
 
 - menu 구조와 active/nondeleted 상태
 - authority assignment와 역할별 effective menu exposure
-- 119 routes + 2 aliases의 exact keep/merge/redirect/remove disposition
+- 현행 disposition overlay exact population의 route별 keep/merge/redirect/remove 판정과 개별 승인 상태
 - route별 owner, authorization, privacy, profile, canonical URL
 - exact label/group/order/visibility와 rollback 기준
+- URL-state privacy 검토에서는 앱이 자격증명·token·고유식별정보·고위험 개인정보·응답 본문 용도의 전용 URL field/state를 설계하거나 일반 검색창에서 입력을 요구·유도하지 않는지 확인한다. 자유 입력값의 의미를 완전 탐지할 수 없어 사용자가 예상 밖 값을 붙여넣을 가능성은 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 이름 차단이지 DLP가 아니다.
 
-현재 overlay는 `state=proposed`, `acceptedDecision=null`, menu/generator consumer disabled다. live evidence와 domain/security/privacy 승인이 없는 값을 임의로 채우지 않는다.
+현재 disposition overlay는 `state=proposed`, `acceptedDecision=null`인 비규범 route별 검토 장치이며 6개 route만 `approved`, 114개는 `proposed`다. 이 상태는 ADR-0007의 reference-default IA 승인을 취소하지 않지만, 미승인 route의 menu/generator 소비는 계속 막는다. live evidence와 domain/security/privacy 승인 없이 route별 값을 임의로 채우지 않는다.
 
 ## 11. UA-08 — release 변수와 runtime handoff
 
@@ -353,7 +355,7 @@ PR에서 필요한 안정 context는 다음 5개다.
 
 - manual accessibility 48/48가 승인되고 execution-captured protocol hash를 가진 새 authoritative 자동 증거와 같은 current indexed versioned compact combined summary에 결속됨
 - combined summary의 canonical SHA-256·committed Git blob identity와 tracked index가 clean checkout에서 검증되고 이전 r12 automated-only digest를 historical predecessor로 `supersedes`함
-- G0/G1 final acceptance와 119+2 disposition이 승인됨
+- G0와 기관 채택 G1 재검증이 해당 배포 범위에서 승인되고, 소비 대상 route의 disposition이 개별 승인됨
 - release build/runtime handoff가 실제 환경에서 검증됨
 - 현재 PR required CI 5종이 모두 green
 - unresolved 보안 자격 수명주기 조치가 닫힘

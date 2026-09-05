@@ -1,5 +1,9 @@
 # URL-state 분류 초안 (승인 회의 입력물)
 
+> **역사적 snapshot — 현재 규범 아님:** 이 문서는 2026-09-04 승인 회의에 제공된 입력물을 당시 표현 그대로 보존한다. 2026-09-05 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)이 화면별 exact route/query-key allowlist 아래 성명·사번·계정명 등 일반 개인정보성 업무 검색어의 URL 사용을 승인했다. [현재 부류 registry](../../config/ui-url-state-approval.json)는 `class-governed`·`non-normative-url-state-class-registry`인 비규범 컨테이너이지 전체 승인이 아니다. `presentation-state`·`resource-identifier`·`search-input`·`control-flag`가 각자 승인 기록을 가지며 `search-input`만 class-level `decisionRef`로 ADR-0009에 결속한다. `opaque`·`path-intent`·`hand-assembled-segment` 3개 부류는 계속 미해결이다. 앱은 자격증명·세션 비밀·인증/복구 token·고위험 개인정보·응답/업무 본문용 전용 URL state를 만들거나 입력을 유도하지 않는다. 일반 자유 검색어에 예상 밖 값이 들어올 가능성은 내용 기반으로 완전 판별할 수 없는 잔여 위험이며, 허용 검색어도 client log·analytics·오류 로그 payload에 복제하지 않는다. URL은 인가 증거가 아니다.
+>
+> 아래 record 수, census authority/decision metadata와 Q1의 전면 금지 검토안은 작성 당시 증거다. 현재 생성 census와 ADR-0009를 대신하지 않으며, 결정 이력을 보존하기 위해 본문을 소급 재작성하지 않았다.
+
 > **작성일**: 2026-09-04 · **대상 census**: [config/ui-url-state-census.json](../../config/ui-url-state-census.json) (`asOf: 2026-08-21`, 377 record · 216 state item)
 > **선행 결정**: [PD-UX-002](../04-operations/pending-decisions.md) — "분류 초안이 선행돼야 승인 회의가 성립한다"
 

@@ -28,9 +28,9 @@
 
 [ui-ux-modernization-brief.md](01-product/ui-ux-modernization-brief.md) — 참조 구현·재사용 base의 adopter/end-user 분리 제품 brief와 사용자 연구 protocol(승인 전 Draft).
 
-[information-architecture.md](01-product/information-architecture.md) — ADR-0004의 hybrid 잠정 방향, 119 route disposition, 로그 URL allowlist와 별도 전역 URL 후속 결정, 연구·최종 승인 계약(`PD-UX-001/002`는 계속 blocked-input).
+[information-architecture.md](01-product/information-architecture.md) — ADR-0007의 참조-기본 IA와 route disposition 경계. 개인정보성 업무 검색어의 현행 URL 정책은 ADR-0009가 규율한다. 별도의 비규범 `class-governed` 컨테이너에는 4개 부류의 독립 승인 기록과 3개 미해결 부류가 있다.
 
-[url-state-classification-draft.md](01-product/url-state-classification-draft.md) — URL-state census 377 record 의 부류별 분류 초안(`PD-UX-002` 승인 회의 입력물이며 승인이 아니다). owner 결정 5문항·권고 3분류·census 가 상태를 못 읽은 56건.
+[url-state-classification-draft.md](01-product/url-state-classification-draft.md) — ADR-0009 이전 URL-state 분류의 **역사적 결정 입력물**. 검색어 절대 금지·보류 제안은 현행 정책이 아니다.
 
 ## 02-architecture — 설계
 
@@ -43,7 +43,7 @@
 | [ui-ux-modernization-plan.md](02-architecture/ui-ux-modernization-plan.md) | Claude 원안의 적대적 재검토와 사용자 과업 중심 UI/UX 전면 현대화 실행 계획 |
 | [erp-transformation-master-plan.html](02-architecture/erp-transformation-master-plan.html) | 공통 프레임워크 × ERP·공공 업무시스템 전환 6단계 마스터플랜(2026-08-23, 결정 D1~D10 포함) |
 | [work-screen-grammar-catalog.md](02-architecture/work-screen-grammar-catalog.md) | 포털형→업무형 전환의 화면 문법 SSOT — 공통 규칙 G1~G15·archetype 8종·밀도 계약(globals.css 결속) |
-| [url-state-approval-overlay-design.md](02-architecture/url-state-approval-overlay-design.md) | **설계 제안(pre-decision)** — URL-state census 가 재검토 완료를 기록할 수단. 생성물은 스스로를 승인할 수 없으므로 사람이 쓰는 오버레이를 둔다(disposition overlay 선례) |
+| [url-state-approval-overlay-design.md](02-architecture/url-state-approval-overlay-design.md) | 비규범 `class-governed` URL-state 부류 컨테이너의 설계·운영 계약 — 4개 부류의 독립 승인 기록을 관리하며 `search-input`만 ADR-0009에 결속 |
 | [domain-resilience.md](02-architecture/domain-resilience.md) | 도메인 보안 및 회복탄력성 |
 | [jpa-performance-guardrail.md](02-architecture/jpa-performance-guardrail.md) | JPA N+1 쿼리 가드레일 |
 | [zero-downtime-migration.md](02-architecture/zero-downtime-migration.md) | 무중단 배포 4단계 이행 및 DDL 린터 |
@@ -74,6 +74,8 @@
 | [ADR-0005](02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | UI 품질 증거를 버전형 compact summary와 tracked index로 보존 |
 | [ADR-0006](02-architecture/decisions/ADR-0006-css-only-responsive-table.md) | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환 |
 | [ADR-0007](02-architecture/decisions/ADR-0007-reference-default-ia-approval.md) | 하이브리드 IA를 참조-기본 IA로 승인, 증거 요건은 채택 시점 재검증으로 이전 |
+| [ADR-0008](02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md) | 다중 소스 DB를 PostgreSQL 표준 스키마로 옮기는 승인형 오프라인 마이그레이션 워크플로 |
+| [ADR-0009](02-architecture/decisions/ADR-0009-controlled-url-search-state.md) | 화면별 exact 계약 아래 일반 개인정보가 포함될 수 있는 업무 검색어의 URL 사용을 허용 |
 
 ## 03-guides — 개발 지침
 
@@ -102,7 +104,7 @@
 |---|---|
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
-| [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | **owner 서명용 준비 자료** — URL-state 부류별 승인 근거. 승인이 아니며, `search-input` 은 보류를 권고한다 |
+| [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |
 | [ui-quality-assisted-accessibility.md](04-operations/ui-quality-assisted-accessibility.md) | 수동 접근성 평가를 대체하지 않는 keyboard·viewport·forced-colors·reduced-motion 자동 보조 증거 |
 | [ui-ux-modernization-user-action-runbook.md](04-operations/ui-ux-modernization-user-action-runbook.md) | 자동화 완료 후 사용자·제품·운영 책임자가 남은 작업을 한 단계씩 검증·승인하는 마감 런북 |
@@ -113,7 +115,7 @@
 | [performance-optimization-guide.md](04-operations/performance-optimization-guide.md) | 성능 최적화 |
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
-| [url-state-privacy-classification-draft.md](04-operations/url-state-privacy-classification-draft.md) | URL 상태 census 523건의 프라이버시 분류 **초안** — `PD-UX-002` 승인 회의 입력물(승인 아님) |
+| [url-state-privacy-classification-draft.md](04-operations/url-state-privacy-classification-draft.md) | ADR-0009 이전 URL-state 프라이버시 분류의 **역사적 초안** — 현행 검색 정책은 ADR-0009, 부류별 검토 상태는 비규범 `class-governed` 컨테이너를 확인 |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
 

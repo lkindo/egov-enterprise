@@ -121,14 +121,14 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  }, [searchParams]);
 
  /*
-   [2026-09-04] 목록 URL 조립을 이 헬퍼 하나로 모았다(PD-UX-002 Q2).
+   [2026-09-04] 목록 URL 조립을 이 헬퍼 하나로 모았다(DEC-OPS-029 Q2, ADR-0009).
 
    종전에는 네 곳(조회·페이지 이동·이전달·다음달)이 각자
    `new URLSearchParams(searchParams.toString())` 로 **들어온 쿼리를 이름을 묻지 않고 전부 복사**한
    뒤 자기 키만 덮어썼다. 그 관용구는 모르는 파라미터까지 이동마다 재발행하는 캐리어다.
 
-   왜 지금 바꿨나 — Q1 결정이 무게를 바꿨다. Q1 은 "URL 에 실리는 검색어를 전부 유지" 로
-   결정됐고, 이 화면의 `searchCnd=2`(작성자) + `searchWrd` 조합은 **URL 에 사람 이름을 싣는다**.
+   왜 지금 바꿨나 — Q1과 ADR-0009는 업무 검색어를 화면별 allowlist 아래 URL에 허용했다.
+   이 화면의 `searchCnd=2`(작성자) + `searchWrd` 조합은 **URL 에 사람 이름을 싣는다**.
    copy-all 은 그 값의 증폭기였다.
 
    ⚠ `bbsId` 는 화면이 만든 값이 아니라 **DB 메뉴(`modern_route`)가 `?bbsId=` 로 지목하는
@@ -152,9 +152,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  };
 
  /*
-   [2026-09-04] `router.push` → `router.replace`(조회·페이지·월 이동 전부).
+  [2026-09-04] `router.push` → `router.replace`(조회·두 초기화·페이지·월 이동 전부).
    이것들은 새 화면이 아니라 같은 목록의 조건 변경이다. push 를 쓰면 조작할 때마다 히스토리
-   항목이 쌓이고, Q1 결정으로 그 항목마다 **사람 이름이 남는다**. 이 저장소의 다른 목록 화면은
+   항목이 쌓이고, 허용된 검색어의 사본마다 **사람 이름이 남는다**. 이 저장소의 다른 목록 화면은
    이미 replace 를 쓰며 사유를 적어 두었다(`admin/system/logs/use-log-url-state.ts:10`
    "히스토리를 오염시키지 않고"). 이 화면만 예외였다.
    대가: 뒤로가기가 이전 조건으로 돌아가지 않고 목록을 벗어난다 — 로그 화면과 같은 동작이다.
@@ -367,7 +367,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                <p className="text-sm font-medium text-muted-foreground">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
                <button
                  onClick={() => {
-                   router.push(`${pathname}?bbsId=${bbsId}`);
+                  router.replace(`${pathname}?bbsId=${bbsId}`);
                  }}
                  className="mt-4 px-6 py-2.5 bg-surface-inverse text-surface-inverse-foreground font-bold text-sm rounded-xl hover:bg-surface-inverse/90 transition-all active:scale-95 flex items-center gap-2 mx-auto"
                  aria-label="필터 초기화"

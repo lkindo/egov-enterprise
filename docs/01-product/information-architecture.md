@@ -1,33 +1,37 @@
 # 정보구조·URL·민감 상태 의사결정 패키지
 
-- **Status:** Provisional direction selected — [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md); exact IA·`PD-UX-001/002`·G1은 `blocked-input`
-- **Document owner:** product/UX — 담당자 미지정
-- **Decision owners:** `PD-UX-001` product/IA owner, `PD-UX-002` security/privacy owner — 담당자 미지정
-- **Global URL follow-up:** 기존 `PD-UX-002`는 로그 검색 범위이므로 전역 locator·redirect·login intent 계약은 별도 결정이 필요함
+- **Status:** IA는 [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md)에 따라 하이브리드 구조를 참조-기본(reference-default)으로 승인했다. 기관 채택 시 실메뉴·권한·사용자·AT 증거로 다시 검증해야 하며, URL 검색 정책은 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)로 부분 개정됐다.
+- **Document owner:** product/UX — lkindo (DEC-OPS-013)
+- **Decision owners:** `PD-UX-001` product/IA owner, `PD-UX-002` security/privacy owner — lkindo (DEC-OPS-013)
+- **Current URL-state:** 비규범 registry는 `class-governed`; `presentation-state`·`resource-identifier`·`search-input`·`control-flag` 4개 부류가 각각 승인됐고, `search-input`만 ADR-0009에 결속된다. `opaque`·`path-intent`·`hand-assembled-segment` 3개 부류는 미해결이다.
+- **Global URL remainder:** 범위가 축소된 `PD-UX-002`가 위 3개 미해결 부류를 추적한다. 외부 telemetry·보존 경계는 배포자별 재검토 대상이며, ADR-0009는 이 잔여 범위를 일괄 승인하지 않는다.
 - **Required reviewers:** domain owners, frontend architecture, accessibility, DB/menu operator — 담당자 미지정
 - **Route evidence reviewBy:** 2026-10-31 — 현재 route manifest의 bounded exception 기한
 - **Decision reviewBy:** 미정 — 제품 소유자와 대상 배포 맥락이 지정될 때 정한다
 - **Last evidence review:** 2026-08-21
+- **Last policy alignment:** 2026-09-05 — ADR-0007의 참조-기본 지위, ADR-0009 및 class-level URL-state registry
 
-> 이 문서는 승인자가 판단할 수 있는 선택지·권고안·연구·검증·rollback 계약을 제공한다. [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md)는 하이브리드를 prototype/research의 잠정 방향으로만 채택했다. 목표 메뉴 트리, 실제 사용자 선호, live 메뉴 중복·고아 수, route disposition, URL 개인정보 정책이 승인됐다는 기록이 아니며, 이 문서와 ADR-0004만으로 [pending decisions](../04-operations/pending-decisions.md)의 `PD-UX-001/002` 상태나 G1을 바꾸지 않는다.
+> 이 문서는 승인자가 판단할 수 있는 선택지·권고안·연구·검증·rollback 계약을 제공한다. [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md)는 구조 근거를 남기고, ADR-0007은 그 잠정 지위를 참조-기본 범위에서 종료했다. 실제 사용자 선호와 live 메뉴·권한·AT 증거는 기관 채택 시 다시 검증하며 route disposition은 계속 개별 승인한다. URL 개인정보 정책 중 **일반 개인정보성 업무 검색어**는 ADR-0009가 정확한 화면·키 계약 아래 승인했으며, 나머지 URL-state 세 부류는 계속 미해결이다.
 
-> **Scope guard:** `PD-UX-002`의 현재 registry 문구는 “로그 검색 조건”에 한정된다. 이 문서가 발견한 전역 route query, dynamic locator, redirect, login intent 위험은 그 좁은 승인을 빌려 닫지 않는다. 최적안은 로그 결정은 `PD-UX-002`로 유지하고, 전역 계약은 제품 소유자가 별도 pending decision(후보 ID `PD-UX-003`)을 실제 등록·승인하는 것이다. 이 문서는 해당 ID를 생성하거나 승인하지 않는다.
+> **Scope guard:** ADR-0009는 사용자가 명시적으로 입력한 업무 검색어의 조건부 URL 사용과 registry의 `search-input` 부류만 다룬다. 나머지 세 승인 부류에는 각각의 기존 승인 근거가 있으며 ADR-0009가 이를 소유하지 않는다. 앱은 자격증명·인증/복구 token·주민등록번호 등 고유식별정보·금융/건강/생체정보·응답/업무 본문용 전용 URL state를 만들거나 일반 검색창에서 입력을 요구·유도하지 않는다. 다만 자유 입력에 사용자가 예상 밖 값을 넣을 가능성은 클라이언트가 완전 판별할 수 없는 잔여 위험이며 고위험 용도 승인이 아니다. 허용 검색어도 client log·analytics·오류 로그 payload에 복제하지 않으며, URL은 인가 증거가 아니다. `opaque`·`path-intent`·`hand-assembled-segment`는 범위가 축소된 `PD-UX-002`에 남고, 외부 proxy/WAF/CDN 보존 경계는 배포자별 재검토 대상으로 남는다.
+
+> **역사 기록 경계:** 2026-08-23 워크숍, 당시 `PD-UX-002` 제안과 미등록 follow-up 기록은 그 시점의 판단 근거를 보존한다. 해당 구간의 전면 금지·`deferred`·미등록 문구는 ADR-0009 이전 snapshot이며 현재 규범으로 사용하지 않는다.
 
 ## 1. 결론부터: 권고안과 현재 차단선
 
 ### 1.1 최적 권고안
 
-**과업 중심 기본 내비게이션 + 명시적인 관리 센터를 결합한 하이브리드 IA**를 prototype, card sort와 tree test의 잠정 방향으로 채택한다. 이 범위는 ADR-0004가 정본이며 최종 제품 IA 승인이 아니다.
+**과업 중심 기본 내비게이션 + 명시적인 관리 센터를 결합한 하이브리드 IA**를 참조-기본 구조로 사용한다. ADR-0007이 참조 구현의 기본값을 승인했으며, card sort와 tree test는 기관 채택 시 그 기관 맥락에서 다시 수행한다.
 
 1. 일반 사용자의 기본 탐색은 `나의 업무`, `소통·지식`, `참여`처럼 사용자가 얻으려는 결과를 중심으로 구성한다.
 2. 사람·권한·콘텐츠 운영·시스템 설정·감사처럼 권한과 실패 비용이 높은 기능은 `관리 센터` 아래에 명시적으로 격리한다.
 3. 첫 이행에서는 기존 URL을 유지한다. URL과 메뉴의 `label`, `group`, `order`, `visibility`를 분리해 IA 검증 결과를 적용한다.
 4. alias는 북마크·외부 딥링크 호환용으로만 유지하고 메뉴·검색·breadcrumb는 canonical terminal route를 가리킨다.
-5. URL 상태는 **비민감 + 공유 가치 + 새로고침 복원 가치**를 모두 만족하는 화면별 allowlist만 허용한다. 기본 허용 후보는 유한 enum인 탭/카테고리와 유효 범위가 제한된 페이지 번호뿐이다.
-6. 개인정보, IP, 자유 검색어, 로그·설문 응답, 사용자·조직·사건·레코드 식별자는 URL과 analytics에서 금지한다. 현재 동적 `[id]` 경로는 이 원칙의 자동 승인 예외가 아니라 별도 검토 대상이다.
+5. URL 상태는 화면별 exact route/query-key allowlist로 관리한다. 현재 승인 부류는 `presentation-state`·`resource-identifier`·`search-input`·`control-flag`이며, 새 route/key나 미해결 부류를 이름 유사성만으로 확장하지 않는다.
+6. 성명·사번·계정명 등 일반 개인정보가 포함될 수 있는 **사용자 입력 업무 검색어**는 ADR-0009의 정확한 화면·키 계약과 잔여 위험 수용 아래 URL에 둘 수 있다. 앱은 자격증명·세션 비밀·인증/복구 token·주민등록번호 등 고유식별정보·금융/건강/생체정보·응답/업무 본문용 URL field를 만들거나 일반 검색창에서 해당 입력을 요구·유도하지 않는다. 자유 입력에 예상 밖 값이 들어올 가능성은 accepted residual risk로 남긴다. 허용 검색어도 client log·analytics·오류 로그 payload에 복제하지 않고, 서버가 결과·객체 인가를 다시 집행한다.
 7. open card sort로 사용자 용어를 찾고, closed sort와 role-filtered tree test로 제안 구조를 검증한 뒤에만 목표 트리를 확정한다.
 
-이 안은 현재 경로를 일괄 개명하는 안보다 rollback이 쉽고, 역할별 포털을 완전히 분리하는 안보다 교차 역할 과업의 단절이 적다. 잠정 방향 선택은 완료됐지만 exact label/tree/role/route disposition의 승인 결과는 아니다.
+이 안은 현재 경로를 일괄 개명하는 안보다 rollback이 쉽고, 역할별 포털을 완전히 분리하는 안보다 교차 역할 과업의 단절이 적다. 참조-기본 구조 승인은 완료됐지만 기관별 label/tree/role 검증이나 route disposition의 일괄 승인 결과는 아니다.
 
 ### 1.2 지금 안전하게 확정할 수 없는 것
 
@@ -43,7 +47,8 @@
 | route·redirect·proxy·capability evidence 재계측 | 메뉴 DB/Flyway 변경 또는 실행 가능한 메뉴 SQL 생성 |
 | live read-only menu 구조 census 재시도와 authority/effective-menu census 설계 | generator가 menu parent/order/role을 추론하도록 변경 |
 | 연구 모집·스크립트·synthetic task 준비 | route 일괄 개명·삭제·redirect sunset |
-| ADR-0004 범위의 제안 트리 prototype과 card-sort/tree-test | `PD-UX-001/002` 상태 변경, full overlay acceptance 또는 final IA ADR 생성 |
+| ADR-0007 참조-기본 구조의 제안 트리 prototype과 채택 기관용 card-sort/tree-test 준비 | 채택 기관의 G1 검증 완료 주장, full navigation overlay 일괄 acceptance 또는 승인되지 않은 route의 consumer 활성화 |
+| ADR-0009와 class registry의 `search-input`에 등재된 정확한 route/key의 URL 검색·복원 | 승인 없이 새 검색 route/key, 고위험 용도의 전용 URL field/state 또는 미해결 URL-state 부류를 허용 목록에 추가 |
 | 명백한 개인정보 누출 결함의 별도 보안 수정 | 승인되지 않은 analytics·세션 녹화 도입 |
 
 ## 2. 근거 계층과 용어
@@ -60,8 +65,8 @@
 | authority-menu assignment | live `tb_menu_crt_dtl`을 읽는 별도 assignment census | JWT coarse role 또는 실제 사용자 노출과 동일시하지 않는다. |
 | effective 사용자 메뉴 | 사용자-authority 매핑과 실제 menu service projection + route manifest | 현재 구현·실행 artifact가 없다. migration이나 authority row만으로 대체하지 않는다. |
 | 제품·연구 범위 | [UI/UX modernization brief](ui-ux-modernization-brief.md) | adopter와 end user, top-task 가설, 개인정보 연구 경계를 상속한다. |
-| 상태·URL 규범 | [frontend UX constitution](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md), [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) | 비민감 allowlist, 과업·증거 우선, 접근성·진실성의 상위 원칙이다. |
-| 잠정 방향·보류 결정 | [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md), [pending-decisions.md](../04-operations/pending-decisions.md) | ADR-0004는 검증 방향만 선택한다. exact route/menu 승인 근거와 별도 final acceptance 전에는 `PD-UX-001/002`를 닫지 않는다. |
+| 상태·URL 규범 | [frontend UX constitution](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md), [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md), [URL-state class registry](../../config/ui-url-state-approval.json) | ADR-0009가 ADR-0003 §Decision 5의 검색어 절대 금지 부분을 대체한다. 정확한 route/key와 고위험 용도의 전용 URL state·입력 유도 금지 경계는 `search-input` 기록에서, 다른 부류의 승인은 각 class 근거에서 확인한다. |
+| IA 결정·보류 범위 | [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md), [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md), [pending-decisions.md](../04-operations/pending-decisions.md) | ADR-0007이 참조-기본 범위의 잠정 지위를 종료했다. 기관 채택 G1 재검증과 route별 disposition 승인은 별개이며, URL-state의 현재 승인과 remainder는 class registry와 `search-input`의 ADR-0009에서 따로 판정한다. |
 
 ### 2.2 필드를 혼동하지 않는 읽기 규칙
 
@@ -185,7 +190,7 @@ source가 여럿이라는 사실은 live 메뉴 중복의 증거가 아니다. �
 | 업무 사용자/승인자 | 요청 작성→승인/반려→상태 확인 | `/approvals`, `/approvals/draft` | authenticated | 두 route 모두 현재 route 상태가 partial이다. 지원 action과 역할별 다음 단계를 먼저 확인한다. |
 | 사용자 관리자 | 사용자를 찾고 상태·조직·권한을 안전하게 변경 | `/admin/user/manage`, `/admin/user/departments`, `/admin/user/absences`, `/admin/security/*` | admin-system | 사람 관리와 RBAC가 여러 group에 분산됐다. 고위험 mutation은 대상·결과·rollback task로 시험한다. |
 | 콘텐츠/참여 관리자 | 게시판·템플릿·설문을 만들고 공개 범위 확인 | `/admin/community/boards/master`, `/admin/community/boards/maker`, `/admin/community/templates`, `/admin/survey/hub`, `/admin/survey/manage/*` | admin-system | hub alias와 child route의 label·현재 위치·back contract를 검증한다. |
-| 감사·개인정보 담당 | synthetic 사건을 최소 조건으로 찾아 근거 확인 | `/admin/system/logs`, `/admin/system/logs/{system,login,user,web,privacy}` | admin-system | 현재 URL에는 page와 category만 동기화하고 검색어는 memory에 둔다. unknown query 보존 gap과 민감 API 검색도 검토한다. |
+| 감사·개인정보 담당 | synthetic 사건을 최소 조건으로 찾아 근거 확인 | `/admin/system/logs`, `/admin/system/logs/{system,login,user,web,privacy}` | admin-system | 현재 주소창에는 page와 category만 동기화하고 검색어는 memory에 둔다. binary GET 다운로드의 `searchKeyword` 전달과 외부 로그 보존은 별도 경계로 검토한다. |
 | 운영 담당 | 시스템 상태·정책·네트워크 신호의 출처와 미가용 상태 판단 | `/admin/system/monitoring/hub`, `/admin/system/network`, `/admin/system/policies`, `/admin/stats/*` | admin-system | network route는 unavailable이며 운영 계측 source가 없다. 가짜 정상 수치를 IA 우선순위에 쓰지 않는다. |
 | 업무 설계 관리자 | 승인/워크플로 정의와 실행 상태 관리 | `/admin/workflow`, `/admin/sanctn/forms` | admin-system | 현재 demo/partial capability가 섞여 있다. `관리 센터` 정식 메뉴가 아니라 demo 격리 후보로 연구한다. |
 | framework adopter | profile 선택·생성·검증·운영 인수 | 제품 UI route 없음; 문서·CLI·manifest | 해당 없음 | end-user sitemap에 억지로 넣지 않는다. adopter IA는 docs/CLI 여정으로 별도 연구한다. |
@@ -220,11 +225,11 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 
 **보완:** 메뉴 eligibility는 route 파일 존재가 아니라 역할별 primary capability의 evidence 수준과 상태를 사용한다. demo는 demo profile 또는 명시된 sandbox에 격리한다.
 
-### 5.5 현재 URL helper는 검색어를 보호하지만 strict allowlist는 아니다
+### 5.5 로그 URL helper는 화면별 strict allowlist를 적용한다
 
-[use-log-url-state.ts](../../frontend/src/app/admin/system/logs/use-log-url-state.ts)는 검색어를 로컬 상태에 두고 `page`, `cat`을 URL과 동기화한다. 이는 안전한 방향이지만 `new URLSearchParams(searchParams.toString())`로 **알 수 없는 기존 query를 그대로 보존**한다. 현재 테스트도 `keep=1` 보존을 계약으로 둔다.
+[use-log-url-state.ts](../../frontend/src/app/admin/system/logs/use-log-url-state.ts)는 검색어를 로컬 상태에 두고 빈 `URLSearchParams`에서 승인된 `page`, `cat`만 다시 조립한다. 따라서 기존 주소의 `searchKeyword`, `keep` 같은 알 수 없는 query는 다음 상태 변경 때 제거된다. 계약 테스트는 이 제거와 정상 `page`·`cat` 복원을 함께 고정한다.
 
-**보완:** `PD-UX-002`가 strict allowlist를 승인하면 unknown·forbidden query를 제거하는 parser/serializer와 red test로 계약을 바꿔야 한다. 승인 전에는 현재 코드를 조용히 변경하지 않는다.
+**경계:** ADR-0009는 로그 검색어를 주소창에 넣도록 강제하지 않는다. 주소창 검색어의 로컬 상태와 same-origin binary GET 다운로드의 `searchKeyword` 전달은 의도된 비대칭이며, 새 query나 다운로드 operation을 추가하려면 exact allowlist와 red 계약을 함께 갱신한다.
 
 ### 5.6 로그인 복귀 query가 dynamic record path를 복제할 수 있다
 
@@ -238,7 +243,7 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 
 | 현재 route/producer | 현재 URL 값 | 제안 정책과의 차이 |
 |---|---|---|
-| `/search`와 global command | `q` 자유 검색어 | free text 금지안과 충돌; role별 검색 source도 partial/unavailable/demo가 혼재 |
+| `/search`와 global command | `q` 자유 검색어 | ADR-0009 승인 경로다. `/search?q` exact binding과 서버 인가·결과 진실성은 유지하며 role별 검색 source의 partial/unavailable/demo 상태는 별도 과제다. |
 | board detail | `bbsId`, `pstSn`/`nttId` | board·post record locator가 query에 있음 |
 | board list | `bbsId`, `searchWrd`, `startDate`, `endDate`, search/sort/page 계열 | ID·free text·조사 기간이 한 URL에 혼재 |
 | address-book list | `searchWrd` | 이름·조직·연락처 검색 가능성이 있는 free text consumer |
@@ -251,13 +256,13 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 
 ### 5.8 config redirect가 임의 query를 자동 제거하지 않는다
 
-현재 설치된 Next 16 redirect 구현을 직접 확인하면 initial URL query와 destination query를 merge하고 destination 값이 같은 이름만 덮어쓴다. 따라서 `/admin/survey/manage?keyword=...&tab=evil` 같은 요청은 target의 `tab=manage`는 고쳐도 알 수 없는 `keyword`는 보존할 수 있다. 이 동작은 [next.config.ts](../../frontend/next.config.ts)의 15개 config redirect(implementation source 13 + page-less alias 2) 모두에 적용될 수 있다.
+현재 설치된 Next 16 redirect 구현을 직접 확인하면 initial URL query와 destination query를 merge하고 destination 값이 같은 이름만 덮어쓴다. 따라서 `/admin/survey/manage?keyword=...&tab=evil` 같은 요청은 target의 `tab=manage`는 고쳐도 알 수 없는 `keyword`는 보존할 수 있다. 이 동작은 [next.config.ts](../../frontend/next.config.ts)에 대해 현재 생성 census가 집계한 config redirect 전수에 적용될 수 있다. 정확한 개수는 재생성 artifact를 정본으로 사용한다.
 
 또한 page-less board alias 2개는 현재 `permanent=true`지만 외부 소비자와 지원 기간은 아직 미검증이다. 이는 장기 호환이 틀렸다는 증거는 아니나, 이 문서의 “근거가 있는 경우만 permanent” 제안 조건을 현재 증명하지 못한다.
 
 **보완:** static config redirect만으로 unknown query sanitization이 된다고 가정하지 않는다. alias별 middleware/route redirect sanitizer 또는 target canonicalizer를 설계하고 15개 전부에 forbidden·repeated·encoded query negative test를 둔다. 현 permanent alias는 소비자·지원 정책을 확인할 때까지 기존 호환 동작으로 표시하되 새 영구 승인의 근거로 재사용하지 않는다.
 
-## 6. IA 대안 비교와 잠정 방향
+## 6. IA 대안 비교와 결정 근거
 
 ### 6.1 평가 기준
 
@@ -307,7 +312,7 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 
 **판정:** 강한 조직 분리가 검증된 파생 제품에는 적합할 수 있으나 공통 reference 기본값으로는 경직된다.
 
-### 6.4 대안 C — 과업 중심 기본 IA + 관리 센터 분리 (ADR-0004 잠정 방향)
+### 6.4 대안 C — 과업 중심 기본 IA + 관리 센터 분리 (ADR-0004 구조 근거, ADR-0007 참조-기본 승인)
 
 일반 과업은 결과 중심으로 묶고, 권한·위험이 높은 운영 capability는 하나의 관리 센터 안에서 다시 task group으로 나눈다. 역할은 node visibility를 제한하지만 URL과 capability authorization은 별도다.
 
@@ -350,16 +355,16 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 - 개인화로 메뉴 위치가 흔들릴 수 있다 → 같은 역할/profile에서는 order를 안정적으로 유지하고 최근 항목은 보조 영역으로만 둔다.
 - 조직마다 mental model이 다르다 → core label을 진리로 고정하지 않고 approved profile overlay로 제공한다.
 
-### 6.5 최종 IA 승인 조건
+### 6.5 기관 채택 시 IA 재검증 조건
 
-ADR-0004의 잠정 방향을 exact target tree와 실행 가능한 route disposition으로 최종 승격하려면 다음이 모두 필요하다.
+ADR-0007은 이 구조를 참조-기본으로 승인했지만 기관별 exact target tree와 실행 가능한 route disposition을 채택하려면 다음을 그 기관의 증거로 다시 확인한다.
 
 1. live menu 구조 census, `tb_menu_crt_dtl` authority assignment, synthetic sample-user effective menu 검증이 성공하고 manifest join 결과가 exact release SHA에 고정된다.
 2. 각 critical role의 open sort에서 공통 label/cluster 후보와 반례를 기록한다.
 3. 대안 A/B/C의 closed sort/tree test에서 대안 C가 critical task 성공·첫 선택·노출 오류 면에서 승인 threshold를 만족하고 baseline보다 악화되지 않는다.
 4. 119개 implementation route와 2개 external alias의 disposition이 승인된다.
 5. security/privacy가 role visibility와 URL allowlist를 승인한다.
-6. ADR-0004와 구분되는 final acceptance record가 URL 안정성, nav node 분리, alias·history·rollback과 승인 evidence hash를 기록한다.
+6. ADR-0007의 참조-기본 승인과 구분되는 기관별 acceptance record가 URL 안정성, nav node 분리, alias·history·rollback과 승인 evidence hash를 기록한다.
 
 ## 7. 제안 IA 데이터 계약
 
@@ -527,11 +532,11 @@ evidence: []
 3. `externalAliases.source` 2개와 정확히 같은 별도 alias overlay/test
 4. missing, duplicate, extra, invalid disposition, unverified authorization/privacy를 재현하는 red fixture
 5. overlay state가 `proposed`일 때 menu/generator 소비를 fail-closed로 게이트하는 binding test — 2026-08-24 D5 2단계부터 무조건 차단이 아니라 ADR-0007 §Decision 4 게이트다: acceptanceEvidence 4축 전부가 측정 hash 또는 ADR-0007 deferral로 기록되고, owner PR 리뷰로 개별 `approved`된 record가 최소 1건 존재하며, 실행 소비자가 entrypoints에 등록된 경우에만 소비를 열 수 있다(미등록 실행 소비·무approved 소비·미기록 증거는 red)
-6. final approval metadata와 ADR-0004와 구분되는 final acceptance record가 없으면 `accepted`로 전이하지 못하는 fail-closed test
+6. 기관별 approval metadata와 ADR-0007의 참조-기본 승인과 구분되는 adoption acceptance record가 없으면 해당 기관 범위를 `accepted`로 전이하지 못하는 fail-closed test
 
-현재 실행 증거는 [disposition proposal](../../config/ui-navigation-disposition-proposal.json), [JSON schema](../../config/ui-navigation-disposition.schema.json), [contract](../../scripts/ui-navigation-disposition-contract.mjs), [contract test](../../scripts/ui-navigation-disposition-contract.test.mjs)에 있다. overlay는 CRLF/LF만 LF로 정규화한 manifest UTF-8 SHA-256과 route/alias key만 참조하고 shell·role·menu·target metadata를 복제하지 않는다. external alias의 target/permanent 같은 관측 metadata는 review view에서 hash가 고정된 manifest와 join하며 overlay에 재기록하지 않는다. 119개 route와 2개 external alias의 record는 전건 disposition 초안이 기입된 `proposed`에서 출발했고, 2026-08-23 웨이브 1에서 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)만 owner PR 리뷰(ADR-0007 §Decision 4, DEC-OPS-013 채널)로 `approved`가 됐다. 잔여 113건의 review 축은 `unverified`, approval은 `null`이다. route owner/reviewBy는 manifest의 bounded review 역할과 2026-10-31을, alias는 `product/IA + domain owner`와 같은 reviewBy를 갖지만 담당자 지정이나 승인을 뜻하지 않는다. menu/generator binding은 현재 disabled이며, D5 2단계(2026-08-24)부터 위 5항의 ADR-0007 게이트를 통과하는 별도 PR로만 enable할 수 있다. 같은 단계에서 `acceptanceEvidence` 4축(research·liveMenu·authorityAssignment·effectiveMenu)은 ADR-0007 §Decision 3에 따라 기관 채택 시점의 재검증 의무로 이전됐음을 ADR-0007 본문 hash에 결속된 deferral 레코드로 기록했다 — 이는 측정 완료 주장도 면제도 아니며, accepted-risk(사용자 연구 없는 승인)를 그대로 승계한다. 이는 잠정 검증 방향과 승인 전 completeness 장치, 그리고 개별 record 승인의 진행을 뜻할 뿐 overlay 전체의 accepted 전이나 채택 기관 G1을 승인했다는 뜻이 아니다.
+현재 실행 증거는 [disposition proposal](../../config/ui-navigation-disposition-proposal.json), [JSON schema](../../config/ui-navigation-disposition.schema.json), [contract](../../scripts/ui-navigation-disposition-contract.mjs), [contract test](../../scripts/ui-navigation-disposition-contract.test.mjs)에 있다. overlay는 CRLF/LF만 LF로 정규화한 manifest UTF-8 SHA-256과 route/alias key만 참조하고 shell·role·menu·target metadata를 복제하지 않는다. external alias의 target/permanent 같은 관측 metadata는 review view에서 hash가 고정된 manifest와 join하며 overlay에 재기록하지 않는다. 119개 route와 2개 external alias의 record는 전건 disposition 초안이 기입된 `proposed`에서 출발했고, 2026-08-23 웨이브 1에서 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)만 owner PR 리뷰(ADR-0007 §Decision 4, DEC-OPS-013 채널)로 `approved`가 됐다. 잔여 113건의 review 축은 `unverified`, approval은 `null`이다. route owner/reviewBy는 manifest의 bounded review 역할과 2026-10-31을, alias는 `product/IA + domain owner`와 같은 reviewBy를 갖지만 담당자 지정이나 승인을 뜻하지 않는다. menu/generator binding은 현재 disabled이며, D5 2단계(2026-08-24)부터 위 5항의 ADR-0007 게이트를 통과하는 별도 PR로만 enable할 수 있다. 같은 단계에서 `acceptanceEvidence` 4축(research·liveMenu·authorityAssignment·effectiveMenu)은 ADR-0007 §Decision 3에 따라 기관 채택 시점의 재검증 의무로 이전됐음을 ADR-0007 본문 hash에 결속된 deferral 레코드로 기록했다 — 이는 측정 완료 주장도 면제도 아니며, accepted-risk(사용자 연구 없는 승인)를 그대로 승계한다. 이는 참조-기본 승인과 개별 record 승인의 진행을 뜻할 뿐 overlay 전체의 accepted 전이나 채택 기관 G1을 승인했다는 뜻이 아니다.
 
-최종 acceptance record는 manifest hash, proposed overlay hash, research evidence hash와 contract 결과를 참조한다. ADR-0004는 자체 hash로 잠정 방향에만 결속된다. 최종 승인 뒤 Wave IA-0은 이 최초 증거를 “새로 만드는” 단계가 아니라 accepted state와 실제 consumer binding을 추가하는 단계다.
+기관별 acceptance record는 manifest hash, proposed overlay hash, research evidence hash와 contract 결과를 참조한다. ADR-0007은 참조-기본 구조와 사용자 연구 없는 accepted risk를 소유한다. 기관별 승인 뒤 Wave IA-0은 이 증거를 “새로 만드는” 단계가 아니라 해당 기관의 accepted state와 실제 consumer binding을 추가하는 단계다.
 
 ### 8.5 승인 순서
 
@@ -547,7 +552,7 @@ evidence: []
 10. **accessibility review:** tree depth, keyboard/focus, visible/accessibility label, cognitive load와 AT task를 검토한다.
 11. **연구 검증:** 승인 후보 tree를 open sort → closed sort → tree test 순으로 시험하고 반례와 segment 차이를 기록한다.
 12. **exact completeness gate:** pre-decision contract로 119개 source route와 2개 external alias가 각각 exactly once인지 검사한다. `blocked-review`는 active/user-visible route의 authorization, privacy, effective menu exposure에 허용하지 않는다. 비활성·demo 격리 route의 비보안 label/profile만 owner+reviewBy 예외가 가능하다.
-13. **결정:** 제품 소유자가 범위·profile·연구 결과·예외를 승인하고, security/privacy owner가 로그 URL과 별도 전역 URL 결정의 각 scope를 승인한다.
+13. **결정:** 제품 소유자가 범위·profile·연구 결과·예외를 승인하고, security/privacy owner가 ADR-0009의 검색 경계와 축소된 URL-state remainder의 각 scope를 승인한다.
 14. **정본 갱신:** ADR-0004와 구분되는 final acceptance record와 route manifest를 먼저 갱신한 뒤에만 해당 pending decision 행을 제거한다. menu/generator 구현은 그 이후 별도 변경으로 한다.
 
 ### 8.6 exact completeness 불변식
@@ -579,7 +584,7 @@ evidence: []
 
 ## 9. redirect·deep-link·query·back/history 계약
 
-이 절은 `PD-UX-001`의 route/alias 계약과 별도 전역 URL follow-up의 **제안안**이다. 로그 전용 `PD-UX-002` 승인만으로 이 절 전체를 accepted로 만들지 않는다.
+이 절은 `PD-UX-001`의 route/alias 계약과 URL-state remainder의 **제안안**이다. ADR-0009의 검색 상태 승인만으로 redirect·login intent·`opaque`·`path-intent`·`hand-assembled-segment` 전체를 accepted로 만들지 않는다.
 
 ### 9.1 canonical과 alias
 
@@ -608,7 +613,7 @@ evidence: []
 
 - 메뉴·목록→상세·목록→작성처럼 **과업 단계가 바뀌는 이동**은 history에 남는 navigation을 사용한다.
 - 같은 화면의 page/tab/sort처럼 **복원 가능한 view state**는 기본적으로 `replace`를 사용해 Back stack을 오염시키지 않는다. tree test에서 tab 자체가 독립 과업으로 판정되면 route 또는 `push` 전환을 별도 결정한다.
-- 자유 검색어·민감 filter 변화는 URL/history에 넣지 않는다. 검색 결과 상세로 이동했다 돌아오면 승인된 memory/server state와 focus anchor로 복원한다.
+- ADR-0009의 exact route/key allowlist에 든 업무 검색어는 같은 화면에서 `replace`로 URL/history에 반영할 수 있다. 앱이 민감 filter나 고위험 용도의 전용 입력을 설계할 때는 URL이 아니라 memory/server state를 사용하고, 상세에서 돌아올 때 승인된 상태와 focus anchor를 복원한다. 일반 자유 검색어에 사용자가 예상 밖 값을 직접 넣는 경우는 내용 기반으로 완전 판별할 수 없는 잔여 위험이다.
 - alias redirect와 로그인 성공 후 복귀는 login/alias 중간 주소를 history에 반복 남기지 않는다.
 - Back으로 목록에 돌아올 때 page/tab, scroll anchor, 이전 trigger focus를 복원한다. 삭제된 항목이면 가장 가까운 합리적 heading/row로 이동하고 알림을 제공한다.
 - modal/sheet open을 URL에 넣는 것은 독립 deep-link 가치가 승인된 경우만 허용한다. 그렇지 않으면 로컬 상태와 focus return을 사용한다.
@@ -623,23 +628,28 @@ evidence: []
 - dynamic `[id]`의 정상/encoding/invalid boundary
 - Back 1회로 alias가 아니라 이전 과업으로 복귀
 - refresh 후 canonical URL·선택 상태 유지
-- 15개 config redirect에서 forbidden·unknown·repeated·encoded query가 전후 제거됨; Next 기본 merge 동작을 그대로 통과시키는 fixture는 red
+- 현재 census의 config redirect 전수에서 forbidden·unknown·repeated·encoded query가 전후 제거됨; Next 기본 merge 동작을 그대로 통과시키는 fixture는 red
 - 5개 page redirect도 source query·dynamic encoding의 allowlist 교집합만 전달
 - login intent가 `/api`, `/ws`, `/login` loop, admin-only target, query, fragment, dynamic record locator, protocol-relative/backslash/double-encoded 입력을 거부
 - role별 401/403/allowed가 empty와 구분됨
 
-## 10. 로그 `PD-UX-002`와 전역 URL·개인정보 follow-up
+## 10. ADR-0009 검색 정책과 URL-state remainder
+
+> **현재 결정 (2026-09-05):** [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)이 `/search?q`, `/admin/community/boards/select-board-list` 및 `/admin/community/[id]`의 `searchCnd`·`searchWrd`를 exact binding으로 승인했다. class-governed 비규범 registry에서 `search-input`만 ADR-0009에 결속되며 이 3개 route binding·5개 census record에만 적용된다. 로그 화면이 검색어를 주소창에 동기화하지 않는 선택과 same-origin binary GET의 `searchKeyword` 전달도 함께 유지한다. 이 허용은 client log·analytics 복제나 서버 인가 생략을 뜻하지 않으며, 외부 URL 기록 위험은 accepted risk다.
+>
+> **역사 기록:** 아래에서 “2026-08-23 당시 제안”으로 표시한 3조건 기본안, 로그 Phase 1과 denylist는 ADR-0009 이전 승인 입력물이다. 결정 이력을 보존하기 위해 당시 문구를 소급 재작성하지 않으며 현재 검색 정책 판단에는 ADR-0009와 class registry의 `search-input` 기록을 사용한다.
 
 ### 10.1 decision scope를 분리한다
 
 | Decision | 현재 registry 범위 | 이 문서의 제안 | 상태 |
 |---|---|---|---|
-| `PD-UX-002` | 로그 검색 조건을 URL에 얼마나 보존할지 | log hub/list의 category·page·search/filter 계약만 승인 | `blocked-input`; 변경 없음 |
-| 전역 URL/privacy follow-up | 아직 pending registry에 없음 | 모든 route query, dynamic locator, redirect, login intent, API query와 analytics 계약 | 후보 `PD-UX-003`; **미등록·미승인** |
+| `ADR-0009` | 일반 개인정보가 포함될 수 있는 사용자 입력 업무 검색어 | 3개 exact route binding의 `q`·`searchCnd`·`searchWrd`, 별도 binary GET `searchKeyword` | `accepted` |
+| URL-state class registry | 생성 census의 부류별 승인 | `presentation-state`·`resource-identifier`·`search-input`·`control-flag` | `class-governed` — 4개 부류가 각각 승인, `search-input`만 ADR-0009 결속 |
+| 전역 URL/privacy remainder | 범위가 축소된 `PD-UX-002` | `opaque`·`path-intent`·`hand-assembled-segment`, 외부 telemetry/보존 경계 | `partially-accepted` — 3개 부류 미해결 |
 
-제품 소유자가 전역 범위를 실제로 승인하려면 새 pending decision을 등록하고 owner·영향·재개 조건을 정한다. `PD-UX-002` 문구를 확장하는 대안도 가능하지만, 로그 결정과 전역 locator migration의 rollback 경계가 달라 별도 ID를 권고한다.
+ADR-0009의 검색 허용을 미해결 세 부류의 포괄 승인으로 재사용하지 않는다. 새 route/key 또는 remainder를 승인하려면 owner·영향·accepted risk와 회귀 계약을 같은 변경 세트에 기록한다.
 
-### 10.2 세 가지 조건을 모두 만족해야 한다
+### 10.2 2026-08-23 당시 제안 — 세 가지 조건을 모두 만족해야 한다
 
 URL에 둘 상태 `s`는 다음 세 질문이 모두 `yes`일 때만 허용한다.
 
@@ -649,7 +659,7 @@ URL에 둘 상태 `s`는 다음 세 질문이 모두 `yes`일 때만 허용한�
 
 하나라도 `no` 또는 `unknown`이면 URL에 두지 않는다. 단순 구현 편의, cache key, API가 GET이라는 이유는 허용 근거가 아니다.
 
-### 10.3 `PD-UX-002` 로그 Phase 1 제안 allowlist
+### 10.3 2026-08-23 당시 `PD-UX-002` 로그 Phase 1 제안 allowlist
 
 이 표는 승인할 기본안이다. route별 값 enum과 상한을 코드 계약으로 고정하기 전에는 채택된 정책이 아니다.
 
@@ -661,18 +671,21 @@ URL에 둘 상태 `s`는 다음 세 질문이 모두 `yes`일 때만 허용한�
 
 현재 로그 구현에서 실제 URL state는 `cat`과 `page`다. `sort`, `dir`은 구현됐다는 뜻이 아니라 승인 후 사용할 수 있는 후보 계약이다. 자유 검색어, 사용자/IP/record ID, exact incident filter는 로그 URL에서 허용하지 않는다.
 
-### 10.4 전역 follow-up allowlist 후보
+### 10.4 현재 승인과 전역 remainder
 
-| Scope | 후보 상태 | 조건 |
+| Class | 상태 | 정확한 범위/경계 |
 |---|---|---|
-| approved hub `tab` | route별 compile-time enum | label 자체가 비민감하고 공유·복원 가치가 있을 때만 |
-| non-sensitive list `page/sort/dir` | bounded integer와 공개 enum | record/filter 의미를 드러내지 않고 default canonicalization이 있을 때만 |
-| login return intent | raw URL 대신 server/session-bound canonical route ID | query·fragment·dynamic locator 제거, role 확인, 짧은 수명·1회 소비, loop 금지 |
-| public content locator | 별도 public slug 또는 공개 locator | 개인정보·존재 확인 위험이 없고 공개 resource임을 domain/privacy가 승인 |
+| `presentation-state` | 승인 | `page`·`tab`·`view`·`orderBy`·`startDate`·`endDate`; 값 검증과 기본값 정규화는 화면 계약을 따른다. |
+| `resource-identifier` | 승인 | `[id]`·`bbsId`·`groupId`·`nttId`·`pstSn`·`srvySn`; URL은 인가 증거가 아니며 서버 객체 가드를 유지한다. |
+| `search-input` | 승인 | `/search?q`, 두 community route의 `searchCnd`·`searchWrd`; 3개 route binding·5개 census record에 한정하고 client log·analytics에 복제하지 않는다. |
+| `control-flag` | 승인 | `auth_error`·`expired`; 정확한 의미와 소비자는 registry 근거를 따른다. |
+| `opaque` | 미해결 | 계산/폼/raw URL/source-query 등 정적으로 닫히지 않은 값. 검색 허용으로 승격하지 않는다. |
+| `path-intent` | 미해결 | `redirect`; login 복귀와 권한·loop·raw query 전달을 별도 판정한다. |
+| `hand-assembled-segment` | 미해결 | `[type]`; 조립·검증·canonicalization 계약을 별도 판정한다. |
 
-이 표는 `PD-UX-002`의 일부가 아니며 새 전역 decision 없이는 구현 승인 근거가 아니다.
+정확한 record와 source 결속은 승인 registry가 정본이다. 이름이 같거나 비슷하다는 이유만으로 새 route/key를 위 승인에 포함하지 않는다.
 
-### 10.5 명시적 denylist
+### 10.5 2026-08-23 당시 제안 — 명시적 denylist
 
 다음 값은 이름을 바꾸거나 hash/base64로 포장해도 URL, client log, analytics payload에 두지 않는다.
 
@@ -699,18 +712,18 @@ hash, base64, UUID 또는 “opaque”라는 이름만으로 비민감해지지 
 
 ### 10.6 전체 URL producer/consumer census
 
-전역 decision 전에 기계적으로 다음 두 모집단을 만든다.
+미해결 부류의 후속 결정 전에 기계적으로 다음 두 모집단을 유지한다.
 
 1. **Navigation URL:** filesystem dynamic segment, server/client search param consumer, `Link/href`, router/history/location, GET form, config/page/proxy redirect, login intent.
 2. **Request/telemetry URL:** API client GET query, RSC/server fetch query, referrer, CDN/proxy/app/access log, analytics/client error payload.
 
 각 record는 route/request pattern, producer file, consumer file, param/segment, data class, current behavior, proposed allow/deny/exception, canonicalization, authorization boundary, owner, reviewBy와 evidence를 가진다. parser failure, computed URL, unresolved producer는 `ambiguous`로 fail-closed하며 zero population을 허용하지 않는다. current divergence 표는 seed fixture일 뿐 census 전체 모집단이 아니다.
 
-2026-08-21 현재 정적 구문 모집단은 [generated URL-state census](../../config/ui-url-state-census.json)가 보존하고, [generator/check](../../scripts/ui-url-state-census.mjs)와 [semantic/red contract](../../scripts/ui-url-state-census.test.mjs)가 현재 소스와 exact-match한다. 이 자산은 filesystem dynamic route 11개, Next config redirect 15개, page-only redirect 5개와 query/navigation/request/form/login-intent 관찰점을 분리하고 unknown query copy 및 repeated·encoded 입력 위험을 명시한다. 다만 모든 record의 privacy class, canonical status, capability role, object authorization과 승인 상태는 `unverified`·`decisionSafe=false`다. CDN/proxy/app access log와 외부 analytics retention은 저장소 정적 검사 범위 밖이므로 이 자산은 IA-OI-08의 **구문 census 부분만** 충족하며 전역 정책이나 sanitizer 승인 근거가 아니다.
+현재 정적 구문 모집단은 [generated URL-state census](../../config/ui-url-state-census.json)가 보존하고, [generator/check](../../scripts/ui-url-state-census.mjs)와 [semantic/red contract](../../scripts/ui-url-state-census.test.mjs)가 현재 소스와 exact-match한다. 생성 census 자체는 정책 원본이 아니며 개별 record의 구문상 `unverified`와 `decisionSafe=false`를 유지한다. 사람의 판정은 hash-bound [class registry](../../config/ui-url-state-approval.json)가 별도로 소유한다. registry 자체는 `class-governed`인 비규범 컨테이너이고 네 부류가 각 근거로 승인됐다. 그중 `search-input`만 ADR-0009에 결속되며, `opaque`·`path-intent`·`hand-assembled-segment` 3개는 미해결이다. CDN/proxy/WAF/app access log와 외부 analytics retention은 저장소 정적 검사의 관측 밖이며, ADR-0009는 승인된 검색어의 URL 잔존 위험을 수용하되 파생 제품이 허용 범위를 좁힐 수 있게 한다.
 
 ### 10.7 strict parser/serializer 계약
 
-승인 후 각 화면은 하나의 typed schema가 parse와 serialize를 함께 소유해야 한다.
+부류와 화면이 승인되면 하나의 typed schema가 parse와 serialize를 함께 소유해야 한다.
 
 1. schema에 없는 param은 읽지 않고 canonical URL에서 제거한다.
 2. 허용 이름도 값 enum·형식·길이·중복 개수·상한을 검증한다.
@@ -721,7 +734,7 @@ hash, base64, UUID 또는 “opaque”라는 이름만으로 비민감해지지 
 7. 오류 telemetry에는 raw param/value를 남기지 않고 `forbidden_param_removed` 같은 coarse code만 기록한다.
 8. SSR/RSC와 client hydration이 같은 parser를 사용해 초기 tab/page가 뒤집히지 않게 한다.
 
-현재 `use-log-url-state`의 unknown query 보존 테스트는 `PD-UX-002` 승인 시 의도적으로 red가 되어야 한다. 그 뒤 unknown 제거, 검색어 비보존, 정상 `cat/page` 복원, Back/refresh를 함께 green으로 만든다. 전역 parser는 별도 decision과 census 전에는 이 log 승인을 근거로 일괄 변경하지 않는다.
+ADR-0009가 승인한 게시판과 공용 검색 경로는 선언한 key만 재조립해 unknown query 전파를 차단한다. 로그 화면도 검색어를 로컬 상태에 둔 채 `page`·`cat`만 다시 조립하고 기존 unknown query를 제거한다. 현재 census에는 승인 검색 route 밖의 `copy-existing-query` record 17건이 남아 있으며 모두 `opaque` remainder다. 이 국소 계약을 근거로 그 반복·encoded·unknown query 경로를 일괄 승인하거나 전역 parser를 기계적으로 변경하지 않는다.
 
 ### 10.8 analytics 최소화
 
@@ -741,7 +754,7 @@ hash, base64, UUID 또는 “opaque”라는 이름만으로 비민감해지지 
 3. role별 tree가 다를 때도 cross-role handoff 목적지를 예측할 수 있는가?
 4. alias/hub/tab 구조가 같은 결과의 중복처럼 보이는가, 독립 capability로 이해되는가?
 5. keyboard, screen reader, zoom/touch 환경에서 같은 정보 scent와 현재 위치를 얻는가?
-6. 민감 검색 상태가 공유되지 않는 이유와 안전한 공유 대안을 이해할 수 있는가?
+6. 개인정보성 업무 검색어가 URL에 남는 accepted risk와 exact allowlist 경계를 이해하고, 더 민감한 상태에는 안전한 비공유 대안을 선택할 수 있는가?
 
 ### 11.2 participant cohort와 표본
 
@@ -882,14 +895,14 @@ UX, domain, security/privacy, accessibility reviewer가 독립적으로 cognitiv
 | live menu 구조 + authority assignment + effective synthetic menu | I | C | I | R | C | C | I | A/R |
 | 119 route capability/disposition | I | A | C | R | R | C | C | C |
 | card sort/tree test 설계·수행 | C | A | R | C | C | C | C | I |
-| `PD-UX-002` 로그 URL/privacy allowlist | C | C | C | R | C | A | C | I |
+| ADR-0009 검색 URL 경계와 URL-state remainder | C | C | C | R | C | A | C | I |
 | 전역 URL producer/consumer census와 후속 decision | C | C | I | R | R | A | C | I |
 | accessible navigation acceptance | I | C | R | R | C | C | A | I |
 | ADR 작성·기술 계약 | A | R | C | R | C | C | C | I |
 | menu/nav 구현 go/no-go | A | R | C | R | C | C | C | R |
 | rollback 발동 | A | C | I | R | C | C | C | R |
 
-`PD-UX-001`과 전체 현대화 go/no-go가 같은 사람일 수 있지만, 실제 승인 기록에는 각 결정의 accountable person과 범위를 따로 쓴다. `PD-UX-002`는 security/privacy owner가 로그 범위의 최종 책임을 가진다. 전역 URL follow-up은 새 pending decision이 실제 등록된 뒤 별도 scope와 accountable owner를 기록하며, 제품 편의를 이유로 denylist를 완화하지 않는다.
+`PD-UX-001`과 전체 현대화 go/no-go가 같은 사람일 수 있지만, 실제 승인 기록에는 각 결정의 accountable person과 범위를 따로 쓴다. ADR-0009의 검색 경계와 범위가 축소된 `PD-UX-002` remainder는 security/privacy owner가 최종 책임을 가진다. 새 부류나 route/key를 승인할 때는 별도 scope와 accountable owner를 기록하며, 제품 편의를 이유로 금지 경계를 완화하지 않는다.
 
 ## 13. open input와 reviewBy
 
@@ -897,20 +910,20 @@ UX, domain, security/privacy, accessibility reviewer가 독립적으로 cognitiv
 
 > **지명 기록 (2026-08-23, DEC-OPS-013)** — 단독 운영 기간의 세 owner 역할(Product owner·IA owner·Security/Privacy owner)은 저장소 소유자 **lkindo** 로 지명됐다. 승인 채널은 이 저장소의 PR 리뷰다.
 >
-> **워크숍 기록 (2026-08-23, ADR-0007)** — 같은 날 G1 decision workshop 이 개최돼 **T0 가 성립**했다. 결과는 [§14.3](#143-2026-08-23-g1-decision-workshop-기록): PD-UX-001 은 **참조-기본 범위로 accepted**(사용자 연구 없는 승인임을 accepted-risk 로 영구 기록), PD-UX-002 는 deferred. live census·연구·AT 증거 요건은 **기관 채택 시점의 재검증 의무로 이전**됐으므로, 아래 표에서 해당 입력들의 T0 기준 SLA 는 adoption-triggered 로 읽는다. route 별 disposition 은 일괄 승인되지 않았고 owner PR 리뷰로 개별 승인한다.
+> **워크숍 기록 (2026-08-23, ADR-0007)** — 같은 날 G1 decision workshop 이 개최돼 **T0 가 성립**했다. 당시 결과는 [§14.3](#143-2026-08-23-g1-decision-workshop-기록): PD-UX-001 은 **참조-기본 범위로 accepted**(사용자 연구 없는 승인임을 accepted-risk 로 영구 기록), PD-UX-002 는 deferred였다. 검색어 판단은 2026-09-05 ADR-0009로 해소됐고 현재 PD-UX-002에는 미승인 세 부류만 남는다. live census·연구·AT 증거 요건은 **기관 채택 시점의 재검증 의무로 이전**됐으므로, 아래 표에서 해당 입력들의 T0 기준 SLA 는 adoption-triggered 로 읽는다. route 별 disposition 은 일괄 승인되지 않았고 owner PR 리뷰로 개별 승인한다.
 
 | ID | 필요한 입력 | 상태 | Owner | reviewBy/SLA | 차단 범위 |
 |---|---|---|---|---|---|
 | IA-OI-01 | 대상 기관/파생 제품/profile과 critical role | `received 2026-08-23 (참조 범위)` — 대상 제품 = 참조 구현 자체(ADR-0007). 기관별 입력은 채택 시점 재입력 | Product owner | T0 → adoption-triggered | 카드 set·목표 tree |
 | IA-OI-02 | IA/product owner 실명과 승인 채널 | `received 2026-08-23` — lkindo, 채널=저장소 PR 리뷰(위 지명 기록). T0 는 워크숍 개최로 성립 | Product owner | T0 | `PD-UX-001` 전체 |
-| IA-OI-03 | security/privacy owner와 로그 URL 분류 승인 | `partial 2026-08-23` — owner 는 lkindo 로 지명됨. 로그 URL 분류 **승인은 계속 blocked-input** | Product owner | T0 | `PD-UX-002` 전체 |
-| IA-OI-03B | 전역 URL/privacy pending decision의 등록 여부·scope·owner | `blocked-input` | Product owner + security/privacy | G1 전 | redirect·login·locator·전역 parser |
+| IA-OI-03 | security/privacy owner와 로그 URL 분류 승인 | `resolved 2026-09-05 for search-input` — ADR-0009가 로그 주소창 검색어의 로컬 상태 유지와 binary GET `searchKeyword` 허용을 함께 승인 | Product owner | 완료 | 검색어 경계 |
+| IA-OI-03B | 전역 URL/privacy remainder의 scope·owner | `partially-accepted` — class registry에서 4개 부류가 각각 승인됐고 ADR-0009는 `search-input`만 소유; `opaque`·`path-intent`·`hand-assembled-segment` 미해결 | Product owner + security/privacy | 후속 승인 전 | redirect·login·계산/조립 상태·외부 telemetry |
 | IA-OI-04 | live DB 접속과 `tb_menu_info` 구조 census artifact | `blocked-external` | DB/menu operator | T0+5 영업일 | duplicate/orphan 구조 후보 |
 | IA-OI-04B | `tb_menu_crt_dtl` authority assignment + effective synthetic-user menu와 manifest join | `blocked-input` | DB/menu operator + FE architecture | T0+10 영업일 | 역할별 menu exposure·G1 |
 | IA-OI-05 | 119 route의 capability role·owner·상태 | `open` | FE architecture + domain owners | manifest reviewBy 2026-10-31 이내, G1 전 | disposition·visibility |
 | IA-OI-06 | adopter/end-user 모집·동의·보상 | `blocked-input` | Product owner + UX | T0+10 영업일 | card sort/tree test |
 | IA-OI-07 | current IA baseline task/tree | `blocked-input` | UX researcher | 첫 tree test 전 | regression 판정 |
-| IA-OI-08 | [generated URL-state census](../../config/ui-url-state-census.json)의 privacy·canonical·role/object authorization 분류와 외부 telemetry 검증 | `proposed` — 정적 구문 census 완료, 분류·승인은 `blocked-input` | Security/privacy + FE/domain | G1 전 | query·dynamic locator·redirect·login intent |
+| IA-OI-08 | [generated URL-state census](../../config/ui-url-state-census.json)의 privacy·canonical·role/object authorization 분류와 외부 telemetry 검증 | `class-governed` — 4개 부류가 각각 승인되고 `search-input`만 ADR-0009 결속, 3개 부류 미해결; 승인 검색어의 외부 URL 잔존은 accepted risk이나 배포자별 재검토 필요 | Security/privacy + FE/domain | remainder 승인 전 | `opaque`·`path-intent`·`hand-assembled-segment` |
 | IA-OI-09 | external alias 소비자·지원 기간 | `blocked-input` | Product/domain owner | disposition 승인 전 | permanent/sunset 결정 |
 | IA-OI-10 | 지원 browser/device/AT와 accommodation | `blocked-input` | Accessibility owner | 모집 전 | accessible findability gate |
 | IA-OI-11 | 비규범 119+2 disposition overlay schema와 exact/red/binding test | hybrid 잠정 방향은 hash-bound, overlay는 `proposed` — final 승인은 `blocked-input`. 웨이브 1(2026-08-23): 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)을 owner PR 리뷰로 개별 `approved` 전이, 잔여 113건 `proposed`(ADR-0007 §Decision 4 채널) | FE architecture + product/IA | decision workshop 전 | 승인 completeness evidence |
@@ -954,6 +967,8 @@ finalAcceptanceRecord: <ADR-0004와 구분되는 final acceptance record link; o
 원시 사용자 session, 녹화, free text, DB dump를 decision log에 붙이지 않는다. aggregate evidence와 보존 위치/삭제일만 연결한다.
 
 ### 14.2 최종 승인 제안 문구 — exact IA에는 아직 accepted 아님
+
+> **역사 기록:** 이 절의 `PD-UX-002` 전면 금지안과 다음 절의 2026-08-23 `deferred`/미등록 기록은 ADR-0009 이전 workshop snapshot이다. 당시 결정을 소급 변경하지 않으며, 현재 URL 검색 규범과 승인 상태는 ADR-0009 및 class registry의 `search-input` 기록을 따른다.
 
 **`PD-UX-001` 제안 — ADR-0004가 방향만 잠정 채택**
 
@@ -1012,11 +1027,11 @@ reviewBy: 분류 초안 완성 시
 
 각 문구에 승인자·날짜·scope·예외·근거가 붙고 final acceptance record가 생성되기 전에는 해당 pending decision 상태를 변경하지 않는다. ADR-0004는 이 조건을 대신하지 않는다. 전역 제안은 pending ID 등록 전에는 승인 대상으로도 취급하지 않는다.
 
-### 14.3 헌법 개정 판단
+### 14.4 2026-09-05 헌법 개정 결과
 
-현재 [frontend UX constitution](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)의 제1조는 중대한 IA 변경에 사용자·과업·baseline·검증을 요구하고, 제4조는 비민감 URL allowlist와 민감 상태 격리를 이미 규정한다. 접근성·상태 진실성 규범도 이 패키지의 상위 원칙을 제공한다.
+현재 [frontend UX constitution](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)의 제1조는 중대한 IA 변경에 사용자·과업·baseline·검증을 요구한다. 제4조는 2026-09-05 사용자 승인과 ADR-0009에 따라 개정돼, exact route/query-key allowlist 아래 일반 개인정보성 업무 검색어를 URL에 둘 수 있도록 한다.
 
-따라서 **Task 1.1을 위해 추가 헌법 개정을 권고하지 않는다.** route disposition schema, label tree, query enum, history 동작은 배포 맥락에 따라 바뀌는 실행 계약이므로 이 문서와 final acceptance record/테스트가 소유하는 편이 정본 중복을 줄인다. 연구 결과가 “canonical route와 nav node의 분리를 모든 프로젝트에 영구 강제해야 한다”는 새 불변식을 입증할 때만 별도 헌법 개정안을 제안한다.
+개정은 모든 자유 입력의 포괄 허용이 아니다. 자격증명·세션 비밀·인증/복구 token·고유식별정보·금융/건강/생체정보·응답/업무 본문용 전용 URL state와 입력 유도 금지, client log·analytics 비복제, 서버 인가 재검증과 외부 URL 기록의 accepted risk가 같은 조항에 결속된다. 자유 입력의 내용을 완전 판별한다는 DLP 보장은 없으며 예상 밖 고위험 입력 가능성도 잔여 위험이다. route disposition schema는 해당 내비게이션 계약이, 검색 exact selector는 ADR-0009·class registry의 `search-input` 기록·계약 테스트가 소유한다.
 
 ## 15. 승인 수용 기준
 
@@ -1034,21 +1049,22 @@ reviewBy: 분류 초안 완성 시
 - interactive prototype/실제품 AT task에서 접근성 blocker, HTML/RSC/API forbidden exposure, critical dead-end가 0이다.
 - 제품/IA owner와 제품 소유자의 명시 승인 및 ADR-0004와 구분되는 final acceptance record가 있다.
 
-### 15.2 `PD-UX-002` acceptance
+### 15.2 ADR-0009 검색 상태 acceptance
 
-- log route별 typed allowlist와 denylist가 승인돼 parser/serializer의 단일 정본이 있다.
-- log의 unknown param, repeated/invalid `cat/page`, free text, PII, IP, response, record ID, exact 조사 filter fixture가 red→제거/거부 green으로 증명된다.
-- 정상 `cat/page`의 refresh/share/canonicalization이 실행 검증된다.
-- log URL뿐 아니라 client log, analytics, referrer와 backend GET 검색 노출까지 data flow를 검토한다.
-- 로그 검색어·민감 filter의 memory/POST 대체가 refresh·Back·상세 복귀에서 안전하게 작동한다.
-- privacy/security owner의 **로그 scope** 명시 승인, 예외·reviewBy·sunset과 accepted ADR이 있다.
+- `/search?q`, `/admin/community/boards/select-board-list`와 `/admin/community/[id]`의 `searchCnd`·`searchWrd`만 exact route/key binding으로 승인한다. 승인 registry의 `search-input` selector는 이 3개 route binding·5개 census record와 정확히 일치한다.
+- 검색·페이지·정렬 변경은 해당 화면의 allowlist로 재조립하고 unknown query를 전파하지 않으며, 같은 화면에서는 `replace`를 우선한다.
+- 로그 검색어를 주소창에 넣지 않는 현행과 same-origin binary GET `searchKeyword` 전달의 의도된 비대칭을 보존한다.
+- 허용 검색어가 client log·analytics·오류 로그 payload에 복제되지 않고, 프런트엔드 내비게이션의 자격증명형 전용 URL key나 새 search surface fixture가 즉시 red임을 계약으로 증명한다. 자유 입력 값의 의미를 완전 판별하는 DLP나 저장소 전체 API query 검사로 과장하지 않으며, 만족도 삭제 API의 기존 `pswd` query는 `GAP-SEC-002`로 별도 추적한다.
+- URL·브라우저 이력·북마크·다운로드 기록과 저장소 밖 proxy/WAF/CDN 로그 잔존을 accepted risk로 기록하며, 배포자는 자기 보존 정책에 따라 허용 범위를 좁힐 수 있다.
+- URL을 인증·역할·소유권 근거로 사용하지 않고 결과와 상세 객체의 인가를 서버가 집행한다.
 
-### 15.3 전역 URL/privacy follow-up acceptance
+### 15.3 전역 URL/privacy remainder acceptance
 
-- pending decision ID, scope, accountable owner와 영향 범위가 실제 registry에 등록된다.
+- 범위가 축소된 `PD-UX-002` remainder의 scope, accountable owner와 영향 범위가 승인 기록에 결속된다.
+- `opaque`·`path-intent`·`hand-assembled-segment` 각각을 승인·거부·대체 중 하나로 판정하고, ADR-0009의 검색 허용으로 자동 승격하지 않는다.
 - navigation URL과 request/telemetry URL producer/consumer census가 non-empty exact population과 unresolved parser failure를 fail-closed로 검증한다.
-- 11개 dynamic route와 정적 query consumers/producers, 15개 config redirect, 5개 page redirect, proxy/login intent가 모두 disposition된다.
-- 15개 config redirect의 Next query merge를 재현하는 negative fixture가 red이고 sanitizer/canonicalizer 뒤 forbidden·unknown·repeated·encoded query가 0이다.
+- 생성 census의 현재 exact population에 든 dynamic route, config/page redirect, 정적 query producer/consumer와 proxy/login intent가 모두 disposition된다. 수치는 재생성 artifact에서 확인하고 문서 숫자로 동결하지 않는다.
+- 현재 census의 config redirect 전수에서 Next query merge를 재현하는 negative fixture가 red이고 sanitizer/canonicalizer 뒤 forbidden·unknown·repeated·encoded query가 0이다.
 - login intent는 canonical role-allowed target만 복원하고 API/WS/login loop, admin escalation, query/fragment/dynamic locator와 encoding 우회를 거부한다.
 - locator 유형별 authorization, TTL/referrer/cache/log, Back/refresh/share 계약이 승인된다. hash/base64/opaque만으로 민감도 승격은 없다.
 - unauthorized capability ID·label·count와 forbidden 값이 HTML/RSC/API/referrer/CDN·proxy·app log/analytics에서 0이다.
@@ -1058,12 +1074,14 @@ reviewBy: 분류 초안 완성 시
 
 | Gate | 상태 | 이유 |
 |---|---|---|
-| provisional architecture direction | `accepted-provisional-direction` | ADR-0004가 대안 C를 prototype/research 기본값으로 선택했으며 URL·consumer·route disposition은 바꾸지 않음 |
+| reference-default architecture | `accepted` | ADR-0007이 ADR-0004의 잠정 지위를 참조-기본 범위에서 종료했다. 기관 채택 시 연구·live menu·권한·AT 재검증 의무는 유지된다. |
 | decision package 완결성 | 내부 초안 완료 | 선택지·잠정 방향·절차·privacy·research·RACI·rollback이 정의됨 |
-| `PD-UX-001` | `blocked-input` | 잠정 방향 외 exact tree의 owner, menu authority/effective exposure, holdout 연구, 119+2 승인 없음 |
-| `PD-UX-002` | `blocked-input` | log privacy owner와 `cat/page` allowlist 승인 없음 |
-| 전역 URL/privacy follow-up | 미등록 `blocked-input` | 정적 구문 census는 생성됐지만 pending ID·owner·privacy/authorization 분류·외부 telemetry·locator/redirect/login runtime 계약과 승인 없음 |
-| G1 | 미통과 | manifest 119/119 decision-safe false, menu exposure unverified |
+| `PD-UX-001` remainder | `open (범위 축소)` | 참조-기본 IA는 승인됐지만 exact label/group/order/visibility와 119+2 route disposition은 개별 승인 대상이다. |
+| URL search policy | `accepted` | ADR-0009가 3개 exact route binding·5개 census record의 `q`·`searchCnd`·`searchWrd`와 별도 binary GET `searchKeyword` 경계를 승인 |
+| URL-state class registry | `class-governed` (4/7 classes individually approved) | 비규범 컨테이너이며 `search-input`만 ADR-0009에 결속된다. |
+| 전역 URL/privacy remainder | `blocked-input` | `opaque`·`path-intent`·`hand-assembled-segment`와 배포 환경의 외부 telemetry/보존 경계 미해결 |
+| reference-default G1 | `accepted` | ADR-0007이 참조 구현 범위에서 승인했다. |
+| institution-adoption G1 | 미수행 | manifest 119/119 decision-safe false와 menu exposure unverified를 해당 기관의 실증으로 재검증해야 한다. |
 | menu/generator migration | 금지 | IA와 URL 결정 및 ADR 전에는 실행하지 않음 |
 
 ## 16. 구현 wave와 rollback
@@ -1114,10 +1132,10 @@ URL migration, menu data migration, visual component migration은 rollback 경�
 
 ### Security/privacy owner
 
-- [ ] `PD-UX-002`의 로그 scope와 `비민감 + 공유 가치 + 복원 가치` 3조건을 승인했다.
-- [ ] 로그의 PII/IP/free text/response/record ID denylist와 `cat/page` allowlist를 승인했다.
-- [ ] 전역 URL follow-up은 별도 pending ID·owner·scope가 생기기 전 승인하지 않았다.
-- [ ] 전역 decision이 등록됐다면 query/dynamic locator/login intent/redirect/referrer/server log/analytics census를 검토했다.
+- [x] ADR-0009의 일반 개인정보성 업무 검색어 exact route/key allowlist와 외부 URL 기록 accepted risk를 승인했다.
+- [x] 허용 검색어의 client log·analytics·오류 로그 payload 비복제, 고위험 용도의 전용 URL state·입력 유도 금지와 자유 입력의 내용 판별 한계를 승인했다.
+- [x] 로그 주소창 검색어의 로컬 상태 유지와 binary GET `searchKeyword` 허용의 비대칭을 승인했다.
+- [ ] `opaque`·`path-intent`·`hand-assembled-segment` remainder와 query/dynamic locator/login intent/redirect/referrer/server log/analytics census를 검토했다.
 - [ ] external SaaS의 vendor-generated IP/device telemetry, DPA/region/subprocessor/삭제 계약을 검토했다.
 - [ ] strict allowlist red test와 incident containment·legal/forensic 보존·provider deletion/negative retest를 승인했다.
 
@@ -1139,4 +1157,4 @@ URL migration, menu data migration, visual component migration은 rollback 경�
 
 ---
 
-*현재 상태: ADR-0004로 hybrid를 검증용 잠정 방향으로 선택 · overlay는 계속 `proposed`, `acceptedDecision=null` · 119+2 review와 `PD-UX-001/002`는 `blocked-input` · 전역 URL 후속 결정은 미등록 `blocked-input` · menu/generator consumer 변경 없음*
+*현재 상태: ADR-0007로 hybrid를 참조-기본 IA로 승인하되 기관 채택 시 재검증 · navigation disposition overlay는 계속 `proposed`, `acceptedDecision=null`이며 119+2 review는 별도 진행 · URL-state registry는 비규범 `class-governed` 컨테이너이고 4개 부류가 각각 승인/3개 부류 미해결, `search-input`만 ADR-0009 결속 · menu/generator consumer 변경 없음*

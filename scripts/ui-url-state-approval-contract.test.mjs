@@ -1,9 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import Ajv2020 from 'ajv/dist/2020.js';
+
+import {
+  approvedStateItemSelectors,
+  isUrlStateItemApproved,
+  validateUrlStateCensus,
+} from './ui-url-state-census.mjs';
 
 /**
  * URL-state 분류 승인 오버레이 계약.
@@ -25,11 +32,62 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
 
 const OVERLAY_PATH = join(ROOT, 'config', 'ui-url-state-approval.json');
+const SCHEMA_PATH = join(ROOT, 'config', 'ui-url-state-approval.schema.json');
 const CENSUS_PATH = join(ROOT, 'config', 'ui-url-state-census.json');
 
 const overlay = JSON.parse(readFileSync(OVERLAY_PATH, 'utf8'));
+const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
 const censusRaw = readFileSync(CENSUS_PATH, 'utf8');
 const census = JSON.parse(censusRaw);
+const DECISION_TIME = Date.parse('2026-09-05T00:00:00.000Z');
+
+const SEARCH_INPUT_NAMES = ['q', 'searchCnd', 'searchWrd'];
+const SEARCH_INPUT_RECORD_IDS = [
+  'URL-204665E3AB9C4A',
+  'URL-3E36A25946033C',
+  'URL-A13AC14823B70F',
+  'URL-E28F88902ADC75',
+  'URL-E910532B42785F',
+];
+const SEARCH_PRODUCER_FILES = [
+  'frontend/src/app/components/ui/global-command-center.tsx',
+  'frontend/src/app/search/SearchClient.tsx',
+];
+const SEARCH_ROUTE_KEY_BINDINGS = [
+  {
+    routePattern: '/search',
+    stateItemNames: ['q'],
+    sources: [
+      'frontend/src/app/components/ui/global-command-center.tsx',
+      'frontend/src/app/search/SearchClient.tsx',
+      'frontend/src/app/search/SearchResultsSlot.tsx',
+    ],
+  },
+  {
+    routePattern: '/admin/community/[id]',
+    stateItemNames: ['searchCnd', 'searchWrd'],
+    sources: [
+      'frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx',
+      'frontend/src/lib/hooks/use-search-state.ts',
+    ],
+  },
+  {
+    routePattern: '/admin/community/boards/select-board-list',
+    stateItemNames: ['searchCnd', 'searchWrd'],
+    sources: [
+      'frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx',
+      'frontend/src/app/admin/community/boards/select-board-list/page.tsx',
+    ],
+  },
+];
+
+function sourceFiles(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return sourceFiles(path);
+    return /\.[cm]?[jt]sx?$/u.test(entry.name) ? [path] : [];
+  });
+}
 
 /** 생성물은 LF, Windows 체크아웃은 CRLF 일 수 있다. 정본을 LF 로 정규화해 해시한다. */
 function canonicalSha256(text) {
@@ -47,21 +105,57 @@ function stateItemCounts(source) {
 }
 
 /** 설계안 §4.2 — 모든 stateItem 이 approved class 에 덮인 record 만 만료를 면제받는다. */
-function recordsExemptFromExpiry(overlayDoc, censusDoc) {
-  const approvedNames = new Set(
-    (overlayDoc.classes ?? [])
-      .filter((cls) => cls.reviewState === 'approved')
-      .flatMap((cls) => cls.selector?.stateItemNames ?? []),
-  );
+function recordsExemptFromExpiry(overlayDoc, censusDoc, nowMs = DECISION_TIME) {
+  const selectors = approvedStateItemSelectors(overlayDoc, censusDoc, nowMs);
   return (censusDoc.records ?? []).filter((record) => {
     const items = record.stateItems ?? [];
-    return items.length > 0 && items.every((item) => approvedNames.has(item.name));
+    return items.length > 0 && items.every((item) => isUrlStateItemApproved(record, item, selectors));
   });
 }
 
-test('오버레이는 census 의 특정 버전에 결속된다 — 승인이 낡은 생성물을 가리킬 수 없다', () => {
+function searchInputContractErrors(overlayDoc) {
+  const cls = (overlayDoc.classes ?? []).find(({ classId }) => classId === 'search-input');
+  if (!cls) return ['search-input class is missing'];
+  const errors = [];
+  if (cls.decisionRef !== 'docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md') {
+    errors.push('search-input must remain bound to ADR-0009');
+  }
+  if (cls.reviewState !== 'approved') errors.push('search-input must remain approved');
+  if (cls.dataClass !== 'user-typed-free-text') errors.push('search-input dataClass drifted');
+  if (cls.privacyReview !== 'accepted-risk') errors.push('search-input privacy decision must remain accepted-risk');
+  if (cls.authorizationReview !== 'not-applicable') errors.push('URL transport must not claim authorization review');
+  if (JSON.stringify([...(cls.selector?.stateItemNames ?? [])].sort()) !== JSON.stringify(SEARCH_INPUT_NAMES)) {
+    errors.push('search-input names are not the exact ADR-0009 allowlist');
+  }
+  if (JSON.stringify([...(cls.selector?.recordIds ?? [])].sort()) !== JSON.stringify(SEARCH_INPUT_RECORD_IDS)) {
+    errors.push('search-input records are not the exact ADR-0009 surface');
+  }
+  if (JSON.stringify(cls.selector?.routeKeyBindings) !== JSON.stringify(SEARCH_ROUTE_KEY_BINDINGS)) {
+    errors.push('search-input route/key bindings are not the exact ADR-0009 surface');
+  }
+  return errors;
+}
+
+test('오버레이는 선언된 JSON Schema를 실제로 통과한다', () => {
+  const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
+  assert.equal(validate(overlay), true, JSON.stringify(validate.errors, null, 2));
+
+  const misplacedDecision = structuredClone(overlay);
+  misplacedDecision.classes.find(({ classId }) => classId === 'presentation-state').decisionRef =
+    'docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md';
+  assert.equal(validate(misplacedDecision), false, 'ADR-0009 decisionRef는 search-input 밖에 둘 수 없어야 한다');
+  assert.equal(
+    approvedStateItemSelectors(misplacedDecision, census, DECISION_TIME).length,
+    0,
+    '잘못 귀속된 decisionRef를 실제 matcher가 승인으로 열면 안 된다',
+  );
+});
+
+test('class registry는 census 특정 버전에 결속되고 search 결정은 class가 소유한다', () => {
   assert.equal(overlay.schemaVersion, 1);
-  assert.equal(overlay.authority, 'non-normative-pre-decision-evidence');
+  assert.equal(overlay.state, 'class-governed');
+  assert.equal(overlay.authority, 'non-normative-url-state-class-registry');
+  assert.equal(Object.hasOwn(overlay, 'decisionRef'), false, 'ADR-0009가 검색어 외 기존 승인까지 소유하면 안 된다');
   assert.equal(overlay.schemaRef, 'config/ui-url-state-approval.schema.json');
   assert.equal(overlay.manifestRef.path, 'config/ui-url-state-census.json');
 
@@ -135,7 +229,6 @@ test('census 가 판정하지 못한 항목은 승인 대상이 아니다', () =
 });
 
 test('부분 승인이 전체 면제가 되지 않는다', () => {
-  // 현재는 approved 가 0개이므로 면제 record 도 0이어야 한다.
   const approvedClasses = overlay.classes.filter((cls) => cls.reviewState === 'approved');
   const exempt = recordsExemptFromExpiry(overlay, census);
 
@@ -145,10 +238,10 @@ test('부분 승인이 전체 면제가 되지 않는다', () => {
   }
 
   // 승인이 생긴 뒤에도: 덮이지 않은 stateItem 이 하나라도 있는 record 는 면제되지 않는다.
-  const approvedNames = new Set(approvedClasses.flatMap((cls) => cls.selector.stateItemNames));
+  const selectors = approvedStateItemSelectors(overlay, census, DECISION_TIME);
   for (const record of exempt) {
     assert.ok(
-      (record.stateItems ?? []).every((item) => approvedNames.has(item.name)),
+      (record.stateItems ?? []).every((item) => isUrlStateItemApproved(record, item, selectors)),
       `${record.id}: 승인되지 않은 stateItem 을 가진 record 가 면제됐다`,
     );
   }
@@ -211,7 +304,7 @@ test('면제 계산이 공허하지 않다 — 합성 승인으로 red 를 증�
 // resource-identifier 는 같은 날 늦게 추가됐다 — 승인 조건("열거 억제 부재 + 객체 가드 목록 확인")이
 // 미판정 3건(만족도·커뮤니티 상세 = 결함 수정 PR #548, 부서업무 = 문서화된 제품 결정)의 판정으로
 // 충족된 뒤다. 이 배열을 늘리는 diff 가 "무엇을 새로 승인했는가" 를 드러낸다.
-const APPROVED_AS_OF_2026_09_05 = ['presentation-state', 'control-flag', 'resource-identifier'];
+const APPROVED_AS_OF_2026_09_05 = ['presentation-state', 'control-flag', 'resource-identifier', 'search-input'];
 
 test('승인된 부류는 명시 목록과 정확히 일치한다 — 조용히 늘지 않는다', () => {
   const approved = overlay.classes
@@ -228,11 +321,131 @@ test('승인된 부류는 명시 목록과 정확히 일치한다 — 조용히 
   // 승인하지 않기로 판정한 부류는 그 사유가 살아 있어야 한다.
   const byId = Object.fromEntries(overlay.classes.map((cls) => [cls.classId, cls]));
   assert.equal(byId.opaque?.reviewState, 'blocked-input', 'census 미판정 항목은 승인 대상이 아니다');
-  assert.equal(
-    byId['search-input']?.reviewState, 'proposed',
-    '프록시·WAF 쿼리 로깅이 미확보인 동안 검색어 부류는 승인하지 않는다',
-  );
   for (const id of ['path-intent', 'hand-assembled-segment']) {
     assert.equal(byId[id]?.dataClass, 'indeterminate', `${id}: 어휘 확장 전에는 판정하지 않는다`);
   }
+});
+
+test('ADR-0009 검색어 승인은 현재 5개 record와 3개 key에만 한정된다', () => {
+  assert.deepEqual(searchInputContractErrors(overlay), []);
+
+  const withoutSearch = structuredClone(overlay);
+  withoutSearch.classes.find(({ classId }) => classId === 'search-input').reviewState = 'proposed';
+  assert.equal(
+    recordsExemptFromExpiry(overlay, census).length - recordsExemptFromExpiry(withoutSearch, census).length,
+    5,
+    '검색어 승인으로 면제되는 현재 surface 수가 달라졌다',
+  );
+});
+
+test('/search?q producer는 명시된 두 구현으로 고정되고 값은 인코딩된다', () => {
+  const frontendRoot = join(ROOT, 'frontend', 'src');
+  const producers = sourceFiles(frontendRoot)
+    .filter((path) => {
+      const source = readFileSync(path, 'utf8');
+      return source.includes('/search?q') || source.includes('action="/search"');
+    })
+    .map((path) => path.slice(ROOT.length + 1).replaceAll('\\', '/'))
+    .sort();
+  assert.deepEqual(producers, SEARCH_PRODUCER_FILES, '새 검색 URL producer는 ADR-0009 allowlist 검토 없이 추가할 수 없다');
+
+  const commandCenter = readFileSync(join(ROOT, SEARCH_PRODUCER_FILES[0]), 'utf8');
+  assert.match(commandCenter, /url:\s*`\/search\?q=\$\{encodeURIComponent\(search\)\}`/u);
+
+  const searchForm = readFileSync(join(ROOT, SEARCH_PRODUCER_FILES[1]), 'utf8');
+  assert.match(searchForm, /<form\s+action="\/search"\s+method="get"[\s\S]{0,800}?name="q"/u);
+});
+
+test('/admin/community/[id]는 호출 화면의 key만 재조립하고 same-view replace를 쓴다', () => {
+  const hookUsers = sourceFiles(join(ROOT, 'frontend', 'src'))
+    .filter((path) => !path.replaceAll('\\', '/').includes('/__tests__/'))
+    .filter((path) => readFileSync(path, 'utf8').includes('useSearchState({'))
+    .map((path) => path.slice(ROOT.length + 1).replaceAll('\\', '/'))
+    .sort();
+  assert.deepEqual(hookUsers, ['frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx']);
+
+  const hook = readFileSync(join(ROOT, 'frontend/src/lib/hooks/use-search-state.ts'), 'utf8');
+  assert.match(hook, /const params = new URLSearchParams\(\)/u);
+  assert.doesNotMatch(hook, /new URLSearchParams\(searchParams\.toString\(\)\)/u);
+  assert.match(hook, /Object\.keys\(initialValues\)/u);
+  assert.match(hook, /router\.replace/u);
+
+  const owner = readFileSync(join(ROOT, hookUsers[0]), 'utf8');
+  const declaration = owner.match(/useSearchState\(\{([\s\S]*?)\}\)/u);
+  assert.ok(declaration, 'useSearchState 호출부의 key 계약을 읽을 수 없습니다.');
+  const names = [...declaration[1].matchAll(/^\s*([A-Za-z][A-Za-z0-9]*):/gmu)].map((match) => match[1]).sort();
+  assert.deepEqual(names, ['bbsId', 'page', 'searchCnd', 'searchWrd']);
+});
+
+test('자격증명 key나 새 free-text search surface로 검색어 승인이 조용히 넓어지지 않는다', () => {
+  const credentialExpansion = structuredClone(overlay);
+  credentialExpansion.classes.find(({ classId }) => classId === 'search-input').selector.stateItemNames.push('token');
+  assert.match(searchInputContractErrors(credentialExpansion).join('\n'), /exact ADR-0009 allowlist/);
+
+  const future = structuredClone(census);
+  const synthetic = structuredClone(future.records.find((record) => record.id === 'URL-E28F88902ADC75'));
+  synthetic.id = 'URL-FFFFFFFFFFFFFF';
+  synthetic.source = '<memory>';
+  synthetic.producerFile = null;
+  synthetic.consumerFile = '<memory>';
+  future.records.push(synthetic);
+  const alternateName = structuredClone(synthetic);
+  alternateName.id = 'URL-EEEEEEEEEEEEEE';
+  alternateName.stateItems = alternateName.stateItems.map((state) => ({
+    ...state,
+    name: state.name === 'q' ? 'keyword' : state.name,
+  }));
+  future.records.push(alternateName);
+
+  const matchingOverlay = structuredClone(overlay);
+  matchingOverlay.manifestRef.sha256 = canonicalSha256(`${JSON.stringify(future, null, 2)}\n`);
+  const exemptIds = new Set(recordsExemptFromExpiry(matchingOverlay, future).map(({ id }) => id));
+  assert.equal(exemptIds.has(synthetic.id), false, '같은 q 이름을 쓰는 새 route가 record 승인 없이 면제됐다');
+  assert.equal(exemptIds.has(alternateName.id), false, '다른 free-text 이름을 쓰는 새 route가 승인 없이 면제됐다');
+  assert.match(
+    validateUrlStateCensus(future, {
+      repoRoot: ROOT,
+      nowMs: DECISION_TIME,
+      approvalOverlay: matchingOverlay,
+    }).join('\n'),
+    /URL-FFFFFFFFFFFFFF\/q: URL search state is outside the exact approved route\/record allowlist/i,
+    '새 q surface는 reviewBy 전에도 production validator를 즉시 red로 만들어야 한다',
+  );
+  assert.match(
+    validateUrlStateCensus(future, {
+      repoRoot: ROOT,
+      nowMs: DECISION_TIME,
+      approvalOverlay: matchingOverlay,
+    }).join('\n'),
+    /URL-EEEEEEEEEEEEEE\/keyword: URL search state is outside the exact approved route\/record allowlist/i,
+    '다른 free-text key도 reviewBy 전 production validator를 즉시 red로 만들어야 한다',
+  );
+
+  for (const [field, value] of [
+    ['dataClass', 'typo'],
+    ['privacyReview', 'verified'],
+    ['authorizationReview', 'verified'],
+    ['decisionRef', 'docs/02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md'],
+  ]) {
+    const invalidReview = structuredClone(overlay);
+    invalidReview.classes.find(({ classId }) => classId === 'search-input')[field] = value;
+    assert.equal(
+      approvedStateItemSelectors(invalidReview, census, DECISION_TIME).length,
+      0,
+      `${field} 형식이나 accepted-risk 경계가 틀렸는데 실제 matcher가 승인을 열었다`,
+    );
+  }
+
+  const missingDecision = structuredClone(overlay);
+  delete missingDecision.classes.find(({ classId }) => classId === 'search-input').decisionRef;
+  assert.equal(
+    approvedStateItemSelectors(missingDecision, census, DECISION_TIME).length,
+    0,
+    'ADR-0009 decisionRef가 없는데 실제 matcher가 검색 승인을 열었다',
+  );
+});
+
+test('승인 class의 reviewBy가 지나면 만료 면제가 다시 닫힌다', () => {
+  const afterReview = Date.parse('2027-01-01T00:00:00.000Z');
+  assert.equal(recordsExemptFromExpiry(overlay, census, afterReview).length, 0);
 });

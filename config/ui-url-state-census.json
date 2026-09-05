@@ -1,12 +1,16 @@
 {
   "schemaVersion": 1,
   "asOf": "2026-08-21",
-  "authority": "generated-pre-decision-census-not-policy",
+  "authority": "generated-url-state-census-not-policy",
   "decision": {
-    "proposedId": "PD-UX-003",
-    "registryStatus": "not-registered",
-    "approvalStatus": "blocked-input",
-    "accountableOwner": "unassigned",
+    "searchPolicyAcceptedRef": "docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md",
+    "unresolvedClasses": [
+      "path-intent",
+      "hand-assembled-segment",
+      "opaque"
+    ],
+    "classRegistryStatus": "class-governed",
+    "accountableOwner": "repository-owner",
     "decisionSafe": false
   },
   "sourceScope": {
@@ -23,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "ea0b09f12164fad7919c24a4d03af5362cbf152fbc275564a45cc69a33904a8f"
+    "inventoryHash": "ce1a19fb9e9c5441580a0c31b60bac7437c33d1e039470c8565842bbe805f31b"
   },
   "summary": {
     "sourceFileCount": 515,
-    "records": 369,
-    "syntaxOccurrences": 430,
-    "ambiguousRecords": 349,
-    "unverifiedRecords": 369,
+    "records": 368,
+    "syntaxOccurrences": 433,
+    "ambiguousRecords": 347,
+    "unverifiedRecords": 368,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -41,16 +45,16 @@
       "config-redirect": 14,
       "dynamic-segment": 11,
       "form-producer": 47,
-      "navigation-producer": 157,
+      "navigation-producer": 156,
       "page-redirect": 5,
       "query-builder": 23,
-      "query-consumer": 58,
-      "query-producer": 46,
+      "query-consumer": 59,
+      "query-producer": 45,
       "request-query-producer": 1,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 361,
+      "navigation": 360,
       "request-telemetry": 8
     }
   },
@@ -3770,56 +3774,6 @@
       }
     },
     {
-      "id": "URL-A59A4FD1C9B747",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": "[computed]?bbsId=[computed]",
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        }
-      ],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "[computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-EB6D68F9C4A76B",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -3918,7 +3872,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 1
+        "occurrenceCount": 2
       }
     },
     {
@@ -9872,37 +9826,20 @@
       }
     },
     {
-      "id": "URL-B9CF6C4BE7F14A",
+      "id": "URL-DE7CD1066C9B6F",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "construct-query",
       "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
       "producerFile": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
       "consumerFile": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
       "routePattern": "/admin/system/logs",
       "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<unknown-source-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -9921,7 +9858,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
         "detector": "url-search-params-constructor",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
       }
     },
     {
@@ -9971,7 +9908,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
         "detector": "url-search-param-method",
-        "occurrenceCount": 2
+        "occurrenceCount": 4
       }
     },
     {
@@ -10071,7 +10008,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
         "detector": "url-search-param-method",
-        "occurrenceCount": 2
+        "occurrenceCount": 4
       }
     },
     {
@@ -15793,31 +15730,18 @@
       }
     },
     {
-      "id": "URL-181213A79006A3",
+      "id": "URL-C03A6CA6A5E039",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
+      "operation": "router.replace",
       "source": "frontend/src/lib/hooks/use-search-state.ts",
       "producerFile": "frontend/src/lib/hooks/use-search-state.ts",
       "consumerFile": null,
       "routePattern": "unresolved",
-      "targetCandidate": "[computed]?[computed]",
-      "stateItems": [
-        {
-          "name": "<computed>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
+      "targetCandidate": null,
+      "stateItems": [],
       "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [
-        "computed-query-value-or-name"
-      ],
+      "riskSignals": [],
       "ambiguityReasons": [
         "computed-navigation-target",
         "producer-consumer-join-unresolved",
@@ -15825,7 +15749,7 @@
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "[computed]",
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -15846,36 +15770,20 @@
       }
     },
     {
-      "id": "URL-387D9A0FEAAB89",
+      "id": "URL-7957E64D84E535",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "construct-query",
       "source": "frontend/src/lib/hooks/use-search-state.ts",
       "producerFile": "frontend/src/lib/hooks/use-search-state.ts",
       "consumerFile": "frontend/src/lib/hooks/use-search-state.ts",
       "routePattern": "unresolved",
       "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<unknown-source-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
       "ambiguityReasons": [
-        "route-context-unresolved",
-        "unknown-source-query-copied"
+        "route-context-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -15900,10 +15808,10 @@
       }
     },
     {
-      "id": "URL-8C9E9599F523F2",
+      "id": "URL-6F9E29FCEA4F47",
       "surface": "navigation",
       "kind": "query-consumer",
-      "operation": "has",
+      "operation": "get",
       "source": "frontend/src/lib/hooks/use-search-state.ts",
       "producerFile": null,
       "consumerFile": "frontend/src/lib/hooks/use-search-state.ts",
@@ -15911,17 +15819,20 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "page",
+          "name": "<computed>",
           "dataClass": "unverified",
-          "recommendation": "candidate-allow",
+          "recommendation": "deny-until-reviewed",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": []
+          "riskSignals": [
+            "computed-or-aggregate-state"
+          ]
         }
       ],
-      "currentBehavior": "URL search parameter is consumed with has().",
+      "currentBehavior": "URL search parameter is consumed with get().",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-query-key",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15948,31 +15859,28 @@
       }
     },
     {
-      "id": "URL-35141C7BE2DC4A",
+      "id": "URL-8C9E9599F523F2",
       "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
+      "kind": "query-consumer",
+      "operation": "has",
       "source": "frontend/src/lib/hooks/use-search-state.ts",
-      "producerFile": "frontend/src/lib/hooks/use-search-state.ts",
-      "consumerFile": null,
+      "producerFile": null,
+      "consumerFile": "frontend/src/lib/hooks/use-search-state.ts",
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<computed>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
+      "currentBehavior": "URL search parameter is consumed with has().",
       "riskSignals": [],
       "ambiguityReasons": [
-        "computed-query-key",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],

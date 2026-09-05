@@ -12,8 +12,8 @@ import { logErrorSafely, summarizeError } from '../safe-error-log';
  *   있다 — 게시판 목록의 `searchWrd`(작성자 검색이면 사람 이름), 사용자 선택기의 임직원 성명
  *   부분일치, 주소록 검색어.
  *
- *   PD-UX-002 의 `search-input` 부류는 "저장소 밖 로깅 미확보" 때문에 승인 보류인데,
- *   정작 **저장소 안에 같은 유출 경로가 있었다**(2026-09-05 실측).
+ *   ADR-0009의 URL 허용은 로그·분석 허용이 아니다. 이 계약은 **저장소 안의 같은 유출 경로를
+ *   계속 차단한다**(2026-09-05 실측).
  */
 describe('summarizeError — 요청 파라미터를 담지 않는다', () => {
   const axiosLike = {
@@ -67,15 +67,19 @@ describe('summarizeError — 요청 파라미터를 담지 않는다', () => {
 });
 
 /**
- * ⚠ 검색어를 나르는 네 파일이 다시 원본 오류를 로그로 넘기지 못하게 고정한다.
+ * ⚠ 검색어나 Bearer 자격을 나르는 일곱 파일이 다시 원본 오류를 로그로 넘기지 못하게 고정한다.
  *   전면 금지가 아니라 **이 목록만** 고정한다 — 나머지 로그 지점은 사용자 입력을 담지 않아
  *   같은 근거가 없다(AGENTS H4: 같은 문법이 같은 의미를 뜻하지 않는다).
  */
 describe('검색어를 나르는 호출부는 안전 로깅을 쓴다', () => {
   const ROOT = resolve(__dirname, '..', '..');
+  const RAW_CONSOLE_CALL = /console\.(?:error|warn|info|log|debug)\s*\(/u;
   const SITES = [
     'app/admin/community/boards/select-board-list/BoardListServer.ts',
     'app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx',
+    'app/admin/collaboration/address-book/select-address-book-list/AddressBookListServer.ts',
+    'app/admin/system/codes/institution/page.tsx',
+    'app/admin/system/codes/administ/page.tsx',
     'app/components/ui/user-picker.tsx',
     'app/components/ui/code-picker.tsx',
   ];
@@ -86,7 +90,11 @@ describe('검색어를 나르는 호출부는 안전 로깅을 쓴다', () => {
       .replace(/\/\/.*$/gmu, ' ');
 
     expect(source).toMatch(/logErrorSafely\(/u);
-    // console.error(msg, error) 형태가 남아 있으면 안 된다.
-    expect(source).not.toMatch(/console\.error\([^)]*,\s*(?:error|err|e)\s*\)/u);
+    // 변수명·인자 형태로 우회하지 못하게 이 민감 호출부에서는 raw console 자체를 금지한다.
+    expect(source).not.toMatch(RAW_CONSOLE_CALL);
+  });
+
+  it('원본 오류 변수명을 바꿔도 raw console 우회가 되지 않는다', () => {
+    expect(RAW_CONSOLE_CALL.test("catch (failure) { console.warn('failed', failure); }")).toBe(true);
   });
 });

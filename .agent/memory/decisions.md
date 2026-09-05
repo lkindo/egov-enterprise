@@ -5,8 +5,8 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-08-31
-verified_against: 1c8f7724e23ab81b0eb6cba99a87fa796cdc85e4
+verified_at: 2026-09-05
+verified_against: 22b79d1ffbeff90af8b1f0c5d306c5e796ec4689
 canonical_sources:
   - ../../AGENTS.md
   - ../../docs/02-architecture/decisions/README.md
@@ -40,6 +40,7 @@ refresh_triggers:
 | ADR-0006 | accepted | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환한다. 같은 데이터를 두 벌 렌더해 `hidden`/`md:hidden`으로 한쪽만 보이거나, `matchMedia`·`useSyncExternalStore`·`next/dynamic ssr:false` 로 본문 데이터 표현을 분기하지 않는다. | nonce CSP 때문에 전 페이지가 force-dynamic 이라 SSR HTML 이 사용자가 보는 첫 화면이다. 훅 방식은 49개 화면에 새 하이드레이션 경계를 만들고, 이중 렌더는 accessor 를 2회 실행해 소비자가 만든 testid·aria-label 을 2벌로 복제한다(CI run 32555133776 strict mode violation). | [ADR-0006](../../docs/02-architecture/decisions/ADR-0006-css-only-responsive-table.md) | 2026-08-22 | - |
 | ADR-0007 | accepted | 2026-08-23 G1 워크숍(참석: lkindo, 세 owner 역할)에서 하이브리드 IA를 참조-기본(reference-default) IA로 승인하고, 연구·live DB census·AT 증거 요건은 기관 채택 시점의 재검증 의무로 이전한다. route별 disposition은 일괄 승인되지 않으며 owner PR 리뷰로 개별 승인한다. PD-UX-002는 보류 유지. | 참조 구현에는 운영 DB도 실사용자도 구조적으로 존재하지 않아 원 G1 요건이 영구 미충족이었다. 사용자 연구 없는 승인임은 accepted-risk로 영구 기록하며, 파생 제품도 그 한계를 승계한다. | [ADR-0007](../../docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md) | 2026-08-23 | - |
 | ADR-0008 | accepted | `migration-tool`은 PostgreSQL·Oracle·Tibero·MySQL·MariaDB·SQL Server 소스를 inventory·plan·승인 artifact와 digest에 결속해 Flyway 소유 PostgreSQL 표준 스키마로 적재하는 독립 offline `bootJar`로 유지한다. | 소스별 객체 누락과 미검증 자동화를 fail-closed로 드러내면서 온라인 앱과 타깃 스키마 소유권을 침범하지 않는 재현 가능한 승인 경계를 만들기 위해서다. | [ADR-0008](../../docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md) | 2026-08-31 | - |
+| ADR-0009 | accepted | 업무상 개인정보가 포함될 수 있는 사용자 검색어는 화면별 route·query allowlist와 로그 비복제 조건 아래 URL에 둘 수 있다. 앱은 자격증명·고위험 개인정보·응답 원문용 URL state를 설계하거나 검색창에서 입력을 유도하지 않으며, 자유 입력에 예상 밖 값이 들어올 가능성은 잔여 위험이다. | GET·SSR·공유·새로고침 복원과 streaming download를 보존하면서 무제한 query 전파와 로그 노출을 차단하기 위해서다. | [ADR-0009](../../docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md) | 2026-09-05 | ADR-0003 §5의 검색어 절대 금지 부분 |
 
 ## 운영 결정 index
 
