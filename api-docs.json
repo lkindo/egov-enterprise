@@ -37215,6 +37215,24 @@
           "recptnSe"
         ]
       },
+      "MailRecipientDto": {
+        "type": "object",
+        "description": "메일 수신자 — esntlId(사용자) 또는 emlAddr(이메일 주소) 중 하나",
+        "properties": {
+          "esntlId": {
+            "type": "string",
+            "description": "사용자 고유 ID(esntlId). 지정하면 서버가 등록된 이메일 주소를 해석한다",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "emlAddr": {
+            "type": "string",
+            "description": "이메일 주소(직접 입력·주소록). esntlId 와 함께 쓰지 않는다",
+            "maxLength": 320,
+            "minLength": 0
+          }
+        }
+      },
       "SentMailDto": {
         "type": "object",
         "description": "Description",
@@ -37238,7 +37256,18 @@
           },
           "recptnPerson": {
             "type": "string",
-            "description": "Description"
+            "description": "수신자 주소 문자열(종전 계약). recipients 를 쓰면 비워도 된다",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailRecipientDto",
+              "maxItems": 100
+            },
+            "maxItems": 100,
+            "minItems": 0
           },
           "sndngResultCode": {
             "type": "string",
@@ -37960,10 +37989,16 @@
           },
           "rcptnTelno": {
             "type": "string",
-            "description": "수신 번호",
+            "description": "수신 번호. esntlId 를 지정하면 생략한다",
             "maxLength": 13,
             "minLength": 1,
             "pattern": "^[0-9-]+$"
+          },
+          "esntlId": {
+            "type": "string",
+            "description": "수신자 사용자 고유 ID(esntlId). 지정하면 서버가 등록된 휴대전화 번호를 해석한다",
+            "maxLength": 20,
+            "minLength": 0
           },
           "rsltCd": {
             "type": "string",
@@ -37973,10 +38008,7 @@
             "type": "string",
             "description": "결과 메시지"
           }
-        },
-        "required": [
-          "rcptnTelno"
-        ]
+        }
       },
       "RewardManageDto": {
         "type": "object",

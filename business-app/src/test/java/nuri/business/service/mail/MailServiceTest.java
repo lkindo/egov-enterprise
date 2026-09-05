@@ -2,7 +2,9 @@ package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
+import nuri.business.service.mail.dto.MailRecipientDto;
 import nuri.business.service.mail.dto.SentMailDto;
+import nuri.business.service.user.UserContactService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +45,9 @@ class MailServiceTest {
 
     @Mock
     private MailAsyncProcessor mailAsyncProcessor;
+
+    @Mock
+    private UserContactService userContactService;
 
     /**
      * 발송메일 조회는 발신자 스코프(IDOR 차단)를 타므로 SecurityContext 가 필요하다.
@@ -225,6 +230,97 @@ class MailServiceTest {
         Long emlDsptchSn = mailService.sendMail("user1", dto);
 
         verify(mailAsyncProcessor).markResult(emlDsptchSn, "F");
+    }
+
+    /*
+     * [2026-09-05 DEC-OPS-035] 수신자 피커 공용화 — recipients(esntlId|emlAddr) 계약.
+     */
+    @Test
+    @DisplayName("수신자 목록은 사용자(esntlId)를 서버가 이메일로 해석하고, 수신자마다 발송 이력 1건을 만든다")
+    void sendMail_recipients_resolveUsersAndDispatchPerRecipient() {
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .recipients(List.of(
+                        MailRecipientDto.builder().esntlId("USR_A").build(),
+                        MailRecipientDto.builder().emlAddr("direct@example.com").build(),
+                        MailRecipientDto.builder().esntlId("USR_B").build()))
+                .build();
+        given(userContactService.resolve(List.of("USR_A", "USR_B"))).willReturn(List.of(
+                new UserContactService.UserContact("USR_A", "갑", "gap@example.com", null),
+                new UserContactService.UserContact("USR_B", "을", "eul@example.com", null)));
+        java.util.concurrent.atomic.AtomicLong serial = new java.util.concurrent.atomic.AtomicLong(10L);
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willAnswer(inv -> SentMail.builder().emlDsptchSn(serial.incrementAndGet()).build());
+
+        Long first = mailService.sendMail("admin", dto);
+
+        assertThat(first).isEqualTo(11L);
+        org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
+        verify(sentMailRepository, times(3)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(SentMail::getRcvrNm)
+                .containsExactly("gap@example.com", "direct@example.com", "eul@example.com");
+        verify(mailAsyncProcessor).processSending(eq(11L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("gap@example.com"));
+        verify(mailAsyncProcessor).processSending(eq(12L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("direct@example.com"));
+        verify(mailAsyncProcessor).processSending(eq(13L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("eul@example.com"));
+    }
+
+    @Test
+    @DisplayName("🚨 등록된 이메일이 없는 사용자가 있으면 이름을 밝히고 전체를 거부한다 — 부분 발송 금지")
+    void sendMail_recipients_rejectsUserWithoutEmail() {
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .recipients(List.of(
+                        MailRecipientDto.builder().esntlId("USR_A").build(),
+                        MailRecipientDto.builder().esntlId("USR_NOMAIL").build()))
+                .build();
+        given(userContactService.resolve(List.of("USR_A", "USR_NOMAIL"))).willReturn(List.of(
+                new UserContactService.UserContact("USR_A", "갑", "gap@example.com", null),
+                new UserContactService.UserContact("USR_NOMAIL", "병", null, "01011112222")));
+
+        assertThatThrownBy(() -> mailService.sendMail("admin", dto))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessageContaining("병");
+        verify(sentMailRepository, never()).save(any(SentMail.class));
+        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("수신자가 하나도 없거나(둘 다 비움) 한 항목에 사용자와 주소를 함께 주면 거부한다")
+    void sendMail_recipients_rejectsEmptyOrAmbiguous() {
+        SentMailDto none = SentMailDto.builder().sj("S").emailCn("C").build();
+        assertThatThrownBy(() -> mailService.sendMail("admin", none))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessageContaining("수신자를 한 명 이상");
+
+        SentMailDto ambiguous = SentMailDto.builder().sj("S").emailCn("C")
+                .recipients(List.of(MailRecipientDto.builder().esntlId("USR_A").emlAddr("a@b.c").build()))
+                .build();
+        assertThatThrownBy(() -> mailService.sendMail("admin", ambiguous))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessageContaining("중 하나");
+        verify(sentMailRepository, never()).save(any(SentMail.class));
+    }
+
+    @Test
+    @DisplayName("같은 주소는 한 번만 보내고, 종전 recptnPerson 도 함께 오면 그 주소로 1건 더 보낸다")
+    void sendMail_recipients_deduplicatesAndKeepsLegacyField() {
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .recptnPerson("legacy@example.com")
+                .recipients(List.of(
+                        MailRecipientDto.builder().emlAddr("dup@example.com").build(),
+                        MailRecipientDto.builder().emlAddr("dup@example.com").build()))
+                .build();
+        given(userContactService.resolve(List.of())).willReturn(List.of());
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(1L).build());
+
+        mailService.sendMail("admin", dto);
+
+        org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
+        verify(sentMailRepository, times(2)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(SentMail::getRcvrNm)
+                .containsExactly("dup@example.com", "legacy@example.com");
     }
 
     @Test
