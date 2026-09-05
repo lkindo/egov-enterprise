@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +32,8 @@ public class InformalSanctionService {
 
     public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, Pageable pageable) {
         requireParticipantId(aplcntId);
-        return informalSanctionRepository.findByAplcntId(aplcntId, Objects.requireNonNull(pageable))
-                .map(this::convertToDto);
+        return toDtoPageWithTaskNames(
+                informalSanctionRepository.findByAplcntId(aplcntId, Objects.requireNonNull(pageable)));
     }
 
     /**
@@ -42,9 +44,8 @@ public class InformalSanctionService {
      * 하나이며, 그 계약은 전체를 뜻한다.
      */
     public Page<InformalSanctionDto> getReceivedInformalSanctionList(String aprvrId, Pageable pageable) {
-        return informalSanctionRepository
-                .findByAprvrId(Objects.requireNonNull(aprvrId), Objects.requireNonNull(pageable))
-                .map(this::convertToDto);
+        return toDtoPageWithTaskNames(informalSanctionRepository
+                .findByAprvrId(Objects.requireNonNull(aprvrId), Objects.requireNonNull(pageable)));
     }
 
     /**
@@ -62,12 +63,11 @@ public class InformalSanctionService {
      * 그것까지 대기 전용으로 바꾸면 처리 이력을 볼 창구가 사라진다(H3 — 도메인 의미 보존).
      */
     public Page<InformalSanctionDto> getPendingApprovalList(String aprvrId, Pageable pageable) {
-        return informalSanctionRepository
+        return toDtoPageWithTaskNames(informalSanctionRepository
                 .findByAprvrIdAndAprvYn(
                         Objects.requireNonNull(aprvrId),
                         SanctionStatus.REQUESTED.getCode(),
-                        Objects.requireNonNull(pageable))
-                .map(this::convertToDto);
+                        Objects.requireNonNull(pageable)));
     }
 
     /**
@@ -80,12 +80,40 @@ public class InformalSanctionService {
      * 대기 건까지 섞여 있어 '처리한 것' 을 약속하는 화면에는 쓸 수 없다.
      */
     public Page<InformalSanctionDto> getProcessedApprovalList(String aprvrId, Pageable pageable) {
-        return informalSanctionRepository
+        return toDtoPageWithTaskNames(informalSanctionRepository
                 .findByAprvrIdAndAprvYnIn(
                         Objects.requireNonNull(aprvrId),
                         PROCESSED_STATUS_CODES,
-                        Objects.requireNonNull(pageable))
-                .map(this::convertToDto);
+                        Objects.requireNonNull(pageable)));
+    }
+
+    /**
+     * 목록 페이지를 DTO 로 바꾸면서 업무 구분 <b>코드명</b>을 채운다.
+     *
+     * <p><b>왜 — 2026-09-05 CI 실측(run 33967804841).</b> {@code InformalSanctionMapper} 는 {@code taskSeNm}
+     * 을 ignore 하고(엔티티에 대응 컬럼이 없다) 상세 조회({@link #getInformalSanction})만 코드명을 채웠다.
+     * 그래서 결재함 세 탭의 항목은 전부 코드 원문({@code E2ETASK} 같은 COM075 상세코드)을 제목으로 보여 줬다 —
+     * 화면은 {@code taskSeNm || taskSeCd} 폴백이라 조용히 코드가 노출됐고, e2e 는 업무 이름으로 항목을 찾다
+     * 실패했다. 페이지당 코드 그룹 조회 1회로 이름을 붙인다(빈 페이지는 조회하지 않는다). 그룹에 없는
+     * 코드는 빈 문자열 — 상세 조회와 같은 규약이며 화면이 코드로 폴백한다.
+     */
+    private Page<InformalSanctionDto> toDtoPageWithTaskNames(Page<InformalSanction> page) {
+        if (page.isEmpty()) {
+            return page.map(this::convertToDto);
+        }
+        Map<String, String> taskNames = taskTypeNames();
+        return page.map(entity -> {
+            InformalSanctionDto dto = convertToDto(entity);
+            dto.setTaskSeNm(taskNames.getOrDefault(dto.getTaskSeCd(), ""));
+            return dto;
+        });
+    }
+
+    /** COM075 상세코드 → 코드명. 같은 코드가 중복되면 앞선 것을 쓴다(조회 순서 = 정렬 순서). */
+    private Map<String, String> taskTypeNames() {
+        return commonCodeService.getCodesByGroup(TASK_TYPE_CODE_GROUP).stream()
+                .filter(code -> code.dtlCd() != null)
+                .collect(Collectors.toMap(CommonCodeDto::dtlCd, code -> code.dtlCdNm() == null ? "" : code.dtlCdNm(), (first, second) -> first));
     }
 
     /**
@@ -113,11 +141,8 @@ public class InformalSanctionService {
 
         InformalSanctionDto dto = convertToDto(entity);
 
-        // 코드명 설정
-        List<CommonCodeDto> jobCodes = commonCodeService.getCodesByGroup(TASK_TYPE_CODE_GROUP);
-        dto.setTaskSeNm(jobCodes.stream()
-                .filter(c -> c.dtlCd().equals(dto.getTaskSeCd()))
-                .findFirst().map(c -> c.dtlCdNm()).orElse(""));
+        // 코드명 설정 — 목록과 같은 해석 규약(taskTypeNames).
+        dto.setTaskSeNm(taskTypeNames().getOrDefault(dto.getTaskSeCd(), ""));
 
         return dto;
     }
