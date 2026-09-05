@@ -1,6 +1,5 @@
 import { test, expect } from './fixtures/base-test';
 import { getAdminBearerToken } from './utils/admin-token';
-import path from 'path';
 
 test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
