@@ -1832,17 +1832,17 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <tr>
                   <td><span class="badge badge-success">L0 (Trivial)</span></td>
                   <td>오타·주석·CSS 등 저위험 미세 수정</td>
-                  <td>Fast-Track: 약식 Audit와 범위 비례 Verification. 별도 승인 없이 실행 가능</td>
+                  <td>Fast-Track: 약식 Audit와 범위 비례 Verification. 별도 승인 없이 실행 가능하되 AGENTS 안전 경계에는 Fast-Track 금지</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">L1 (Standard)</span></td>
                   <td>단일 파일/모듈 로직·문서 변경, 기능 추가, 버그 수정</td>
-                  <td>Standard: Dispatch·Audit·Verification. 포괄 승인이 없으면 Task Specification 승인 후 실행</td>
+                  <td>Standard: Dispatch·Audit·Verification. 현재 요청·포괄 승인에 변경 권한이 있으면 재승인 없이 실행하고, 새 범위만 추가 승인</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-error">L2 (Critical)</span></td>
                   <td>멀티 모듈 변동, DB 스키마 수정(DDL), 보안 코어 변경</td>
-                  <td>Strict-SOP 전 단계. 안전 경계의 파괴적·외부 변경은 포괄 승인과 별개로 개별 명시 승인</td>
+                  <td>Strict-SOP 전 단계. 안전 경계의 파괴적·외부 변경은 정확한 대상·영향을 현재 요청에서 명시 승인해야 실행</td>
                 </tr>
               </tbody>
             </table>
