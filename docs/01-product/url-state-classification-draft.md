@@ -106,7 +106,7 @@ PD-UX-002 의 기본 검토안("페이지·탭 등 비민감 상태만 URL 에 �
 > **읽는 사람이 '중복이니 지워도 된다'로 오독하기 쉽다.** 실측하면 두 화면 다 살아 있다.
 >
 > **`/admin/community/boards/[id]` 는 상세 화면이 아니라 '새 게시글 작성' 폼이다.**
-> [CommunityBoardsDetailClient.tsx](../../frontend/src/app/admin/community/boards/%5Bid%5D/CommunityBoardsDetailClient.tsx)
+> CommunityBoardsDetailClient.tsx — 2026-09-05 DEC-OPS-034 로 정본 작성 화면(`insert-board-article`)에 수렴돼 **삭제됨**(라우트 `boards/[id]` 는 page-redirect 로 남음). 아래 서술은 삭제 전 실측 기록이다.
 > 가 `fileAdminService.uploadFiles → atchFileSn → boardUserService.createPost` 로 **첨부 업로드를
 > 실제로 배선**하고 있고, 파일 주석은 과거 "첨부가 전송되지 않고 사라지던" 결함을 고친 이력을 남긴다.
 > 이 파일은 또한 저장소에서 **`StandardEditor` 의 유일한 소비자**이며(컴포넌트·테스트 제외 grep 1건),
@@ -125,7 +125,7 @@ PD-UX-002 의 기본 검토안("페이지·탭 등 비민감 상태만 URL 에 �
 
 주요 인용: [BoardMakerWizard.tsx:269](../../frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx) 가 생성 시 `modernRoute` 에 `?bbsId=` 를 써 넣는다 · [V2_2__seed_framework_data.sql:288](../../api-server/src/main/resources/db/migration/V2_2__seed_framework_data.sql) 시드 메뉴도 동일 형태 · [DynamicBreadcrumb.tsx:45](../../frontend/src/app/components/layout/DynamicBreadcrumb.tsx) 가 메뉴 route 의 `bbsId` 로 현재 메뉴를 역탐색 · [AddressBookService.java:45-48](../../business-app/src/main/java/nuri/business/service/addressbook/AddressBookService.java) "[IDOR] 소유자/관리자만 열람(PII)" · [next.config.ts:77](../../frontend/next.config.ts) `Referrer-Policy: strict-origin-when-cross-origin`.
 
-> ⚠ `bbsId` 는 순수 server-id 가 아니다 — [CommunityBoardsWriteClient.tsx:144](../../frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx) 에 `maxLength=20` 자유 텍스트 '게시판 식별자' 입력이 있고 저장 성공 시 그 값이 URL 로 들어간다. 값 도메인이 게시판 코드라 실질 위험은 낮지만 "리소스 식별자는 전부 서버가 만든다"는 가정에는 예외가 있다.
+> ⚠ `bbsId` 는 순수 server-id 가 아니다 — CommunityBoardsWriteClient.tsx:144(2026-09-05 DEC-OPS-034 로 삭제 — 정본 `BoardRegistClient` 는 게시판 식별자를 자유 입력받지 않고 URL `?bbsId=` 로만 받는다) 에 `maxLength=20` 자유 텍스트 '게시판 식별자' 입력이 있고 저장 성공 시 그 값이 URL 로 들어간다. 값 도메인이 게시판 코드라 실질 위험은 낮지만 "리소스 식별자는 전부 서버가 만든다"는 가정에는 예외가 있다.
 
 > ⚠ 부서업무 상세 읽기(`DeptJobService.getDeptJob`)에는 소유 가드가 없다(쓰기 경로에만 있다). 다만 같은 도메인 목록 API 가 조건 없이 전량을 반환하므로 상세 읽기가 목록보다 넓은 노출을 만들지 않는다 — **id 를 URL 밖으로 옮겨도 전혀 완화되지 않는 축**이라 URL-state 결함으로 계상하지 않았다.
 

@@ -27,26 +27,26 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "72da3e9d5cdc58158fcf0cd9c28d07861e5e56c0921cc9c5ae47fdca685168af"
+    "inventoryHash": "603f46fa1f1d0fbb923dc2ab3cdd4414b1f48e857499c902b3aa98518536f838"
   },
   "summary": {
-    "sourceFileCount": 519,
+    "sourceFileCount": 517,
     "records": 370,
     "syntaxOccurrences": 435,
-    "ambiguousRecords": 349,
+    "ambiguousRecords": 347,
     "unverifiedRecords": 370,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
       "configRedirects": 14,
-      "pageRedirects": 5
+      "pageRedirects": 7
     },
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 49,
-      "navigation-producer": 156,
-      "page-redirect": 5,
+      "form-producer": 48,
+      "navigation-producer": 155,
+      "page-redirect": 7,
       "query-builder": 23,
       "query-consumer": 59,
       "query-producer": 45,
@@ -2440,7 +2440,7 @@
       }
     },
     {
-      "id": "URL-3A5BA2353CA816",
+      "id": "URL-2F484353438EEA",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "jsx-href",
@@ -2448,16 +2448,28 @@
       "producerFile": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/[id]",
-      "targetCandidate": "/admin/community/boards/write",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "targetCandidate": "/admin/community/boards/insert-board-article?bbsId=[computed]",
+      "stateItems": [
+        {
+          "name": "bbsId",
+          "dataClass": "unverified",
+          "recommendation": "deny",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "record-locator-name-signal"
+          ]
+        }
+      ],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-navigation-target",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/community/boards/write",
+        "routeCandidate": "/admin/community/boards/insert-board-article",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -2651,7 +2663,7 @@
       }
     },
     {
-      "id": "URL-8226E7FA7096C4",
+      "id": "URL-82C4174FCE519E",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "router.push",
@@ -2659,16 +2671,28 @@
       "producerFile": "frontend/src/app/admin/community/board/CommunityBoardClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/board",
-      "targetCandidate": "/admin/community/boards/write",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "targetCandidate": "/admin/community/boards/insert-board-article?bbsId=[computed]",
+      "stateItems": [
+        {
+          "name": "bbsId",
+          "dataClass": "unverified",
+          "recommendation": "deny",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "record-locator-name-signal"
+          ]
+        }
+      ],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-navigation-target",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/community/boards/write",
+        "routeCandidate": "/admin/community/boards/insert-board-article",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -2738,82 +2762,6 @@
       }
     },
     {
-      "id": "URL-F4A5F6A197CE16",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "href-field",
-      "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/[id]",
-      "targetCandidate": "/admin/community/boards",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/community/boards",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-356C8A26F01706",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/[id]",
-      "targetCandidate": "/admin/community/boards",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/community/boards",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-B2646326350E73",
       "surface": "navigation",
       "kind": "dynamic-segment",
@@ -2863,6 +2811,82 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
         "detector": "filesystem-route-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-082EDC14DCCDDB",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards/[id]",
+      "targetCandidate": "/admin/community/boards/insert-board-article",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/community/boards/insert-board-article",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-27A21514DBE8D8",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "consumerFile": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "routePattern": "/admin/community/boards/[id]",
+      "targetCandidate": "/admin/community/boards/insert-board-article",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/community/boards/insert-board-article",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
@@ -4815,24 +4839,24 @@
       }
     },
     {
-      "id": "URL-3AEBF970ABC234",
+      "id": "URL-4EBE56D8D2B9DC",
       "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/write/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/boards/write",
-      "targetCandidate": null,
+      "targetCandidate": "/admin/community/boards/insert-board-article",
       "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": null,
+        "routeCandidate": "/admin/community/boards/insert-board-article",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -4847,42 +4871,30 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-        "detector": "jsx-form",
+        "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+        "detector": "server-redirect-call",
         "occurrenceCount": 1
       }
     },
     {
-      "id": "URL-78F90AE0779D04",
+      "id": "URL-4C7ED3A2DC55AC",
       "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-      "consumerFile": null,
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/write/page.tsx",
+      "consumerFile": "frontend/src/app/admin/community/boards/write/page.tsx",
       "routePattern": "/admin/community/boards/write",
-      "targetCandidate": "/admin/community/boards/select-board-list?bbsId=[computed]",
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        }
+      "targetCandidate": "/admin/community/boards/insert-board-article",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
       ],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
-        "routeCandidate": "/admin/community/boards/select-board-list",
+        "routeCandidate": "/admin/community/boards/insert-board-article",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -4897,8 +4909,8 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-        "detector": "router-navigation",
+        "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },

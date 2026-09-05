@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 370,
-    "generatedDescriptorCount": 370
+    "openApiOperationCount": 374,
+    "generatedDescriptorCount": 374
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 361,
-    "eligible": 347,
+    "total": 362,
+    "eligible": 348,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 347,
+      "generated": 348,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "3e424e53c5997857650fb0fb36029f464726f38121534060677b855b5d1a4e5d",
+  "inventoryHash": "0b62ed60d3c9d09ee757537a637302cfbd76e7e39912b2217a1c660c8776208f",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -2348,7 +2348,7 @@
       "file": "frontend/src/services/foundation/file/FileService.ts",
       "owner": "FileService.uploadFiles",
       "ordinal": 1,
-      "line": 38,
+      "line": 39,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -2365,7 +2365,7 @@
       "file": "frontend/src/services/foundation/file/FileService.ts",
       "owner": "FileService.getFileList",
       "ordinal": 1,
-      "line": 50,
+      "line": 51,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -2382,7 +2382,7 @@
       "file": "frontend/src/services/foundation/file/FileService.ts",
       "owner": "FileService.fetchBlob",
       "ordinal": 1,
-      "line": 100,
+      "line": 101,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -2394,6 +2394,23 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "378438626a90a92000c6"
+    },
+    {
+      "file": "frontend/src/services/foundation/file/FileService.ts",
+      "owner": "FileService.deleteFile",
+      "ordinal": 1,
+      "line": 117,
+      "column": 11,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "delete",
+      "target": "/api/v1/files/{atchFileSn}/{fileSn}",
+      "operationId": "deleteFile",
+      "descriptorName": "deleteFileOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "fcd969a7564b53c9ac68"
     },
     {
       "file": "frontend/src/services/foundation/operation/eventService.ts",

@@ -17,8 +17,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
+
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -94,5 +100,27 @@ class FileApiControllerTest extends ControllerTestSupport {
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test.txt\""))
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(content));
+    }
+
+    @Test
+    @DisplayName("파일 단건 삭제 성공 — 서비스에 (atchFileSn, fileSn) 그대로 위임한다")
+    void deleteFile_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/files/101/2")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        verify(fileService).deleteFile(101L, 2);
+    }
+
+    @Test
+    @DisplayName("🔒 삭제 판정이 거부하면 403 으로 드러난다 — 서비스 계층 인가가 HTTP 경계까지 전파됨")
+    void deleteFile_deniedByPolicy_isForbidden() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(fileService).deleteFile(101L, 2);
+
+        mockMvc.perform(delete("/api/v1/files/101/2")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
     }
 }

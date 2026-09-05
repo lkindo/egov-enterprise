@@ -1261,9 +1261,12 @@
       "menuExposure": "unverified",
       "decisionSafe": false,
       "routing": {
-        "kind": "page"
+        "kind": "page-redirect",
+        "target": "/admin/community/boards/insert-board-article"
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/community/boards/insert-board-article"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
@@ -1714,9 +1717,12 @@
       "menuExposure": "unverified",
       "decisionSafe": false,
       "routing": {
-        "kind": "page"
+        "kind": "page-redirect",
+        "target": "/admin/community/boards/insert-board-article"
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/community/boards/insert-board-article"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {

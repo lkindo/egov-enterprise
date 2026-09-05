@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "e674cf4568e0ab429f6b3b5dab4523b1b6d41bc1085363e219e3e86cc348787c"
+    "sha256": "8ee409d9874928a78266587dc5c755ace1ab7154eea16b8f47791a21da400e0e"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -381,7 +381,7 @@
     {
       "route": "/admin/community/boards/[id]",
       "reviewState": "proposed",
-      "disposition": "non-menu-child",
+      "disposition": "consolidate-to-canonical",
       "authorizationReview": "unverified",
       "privacyReview": "unverified",
       "effectiveMenuExposureReview": "unverified",
@@ -489,7 +489,7 @@
     {
       "route": "/admin/community/boards/write",
       "reviewState": "proposed",
-      "disposition": "non-menu-child",
+      "disposition": "consolidate-to-canonical",
       "authorizationReview": "unverified",
       "privacyReview": "unverified",
       "effectiveMenuExposureReview": "unverified",

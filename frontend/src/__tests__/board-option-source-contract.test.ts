@@ -36,7 +36,6 @@ const UNSEEDED_CONSTANTS = [
 /** 사용자가 게시판을 고르거나, 게시판 없이 진입하면 기본값이 필요한 화면들. */
 const BOARD_CHOICE_SCREENS = [
   'app/admin/community/board/CommunityBoardClient.tsx',
-  'app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx',
   'app/admin/community/[id]/CommunityDetailClient.tsx',
   'app/admin/community/boards/select-board-list/page.tsx',
   'app/admin/help/KnowledgeHubClient.tsx',
@@ -63,8 +62,10 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
     expect(violations).toEqual([]);
   });
 
-  it('게시판을 고르게 하는 세 화면은 useBoardOptions 로 목록을 받는다', () => {
-    const selectScreens = BOARD_CHOICE_SCREENS.slice(0, 3);
+  it('게시판을 고르게 하는 두 화면은 useBoardOptions 로 목록을 받는다', () => {
+    // [2026-09-05 DEC-OPS-034] 종전 세 화면 중 boards/[id] 작성 폼은 정본 작성 화면으로 수렴돼 삭제됐다.
+    //   BOARD_CHOICE_SCREENS 의 앞 두 항목만 select 화면이다(select-board-list/page.tsx 는 서버 기본값 화면).
+    const selectScreens = BOARD_CHOICE_SCREENS.slice(0, 2);
     for (const screen of selectScreens) {
       const code = stripComments(read(screen));
       expect(code, `${screen} 가 게시판 목록을 서버에서 받지 않는다`).toContain('useBoardOptions');
@@ -84,7 +85,7 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
 
   it('훅은 관리자에게만 관리자 전용 API 를 호출한다 — 일반 사용자에게 403 으로 선택지를 비우지 않는다', () => {
     /*
-     * 이 훅을 쓰는 세 화면은 proxy.ts 의 USER_ACCESSIBLE_ADMIN_PATHS('/admin/community')로
+     * 이 훅을 쓰는 화면들은 proxy.ts 의 USER_ACCESSIBLE_ADMIN_PATHS('/admin/community')로
      * **일반 사용자에게 열려 있다.** 그런데 게시판 마스터 목록은 /api/v1/admin/** 아래에 있고
      * ApiSecurityConfig 가 그 경로를 ROLE_ADMIN·ROLE_SYSTEM 으로 강제한다. 역할을 보지 않고
      * 조회하면 일반 사용자에게 403 이 떨어져 선택지가 통째로 비고, "죽은 게시판이 섞여 있다"가

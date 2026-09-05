@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 55,
-    "nativeFormFiles": 49,
+    "nativeFormOccurrences": 54,
+    "nativeFormFiles": 48,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 22,
-    "secondaryActionBoundaries": 57,
-    "candidateCount": 135
+    "formlessWriteBoundaries": 21,
+    "secondaryActionBoundaries": 58,
+    "candidateCount": 134
   },
   "entries": [
     {
@@ -26,23 +26,6 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/collaboration/mail-history/__tests__/MailHistoryHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "formless-write:frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx#CommunityBoardsDetailClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "owner": "CommunityBoardsDetailClient",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useManualFormValidation-zod",
-      "schemaSource": "generated-or-derived:communityBoardCreateSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/community/boards/__tests__/CommunityBoardsDetailClient.attachment.test.tsx",
-        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
     {
@@ -653,6 +636,26 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx#BoardRegistClient.handleDeleteAttachment[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
+      "owner": "BoardRegistClient",
+      "handler": "handleDeleteAttachment",
+      "writeSinks": [
+        "fileService.deleteFile"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/insert-board-article/__tests__/BoardRegistClient.attachment.test.tsx"
+      ]
+    },
+    {
       "key": "native-form:frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx#BoardMakerWizard[1]",
       "kind": "native-form",
       "file": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
@@ -682,23 +685,6 @@
       "serverErrors": "not-applicable",
       "pendingGuard": "not-applicable",
       "testEvidence": []
-    },
-    {
-      "key": "native-form:frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx#CommunityBoardsWriteClient[1]",
-      "kind": "native-form",
-      "file": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-      "owner": "CommunityBoardsWriteClient",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useAppForm-zod",
-      "schemaSource": "generated-or-derived:communityBoardSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/community/boards/write/__tests__/CommunityBoardsWriteClient.validation.test.tsx",
-        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
-      ]
     },
     {
       "key": "native-form:frontend/src/app/admin/operation/events/EventManagementClient.tsx#EventManagementClient[1]",

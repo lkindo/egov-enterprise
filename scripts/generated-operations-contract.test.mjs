@@ -87,7 +87,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
     .map((match) => match[1]);
 
   // [2026-09-05 결재 도메인 완결] createApproval·getProcessed·getTaskTypes 3개 신설 — 367 -> 370.
-  assert.equal(operations.length, 370);
+  // [2026-09-05 첨부 삭제 경로] deleteFile 4개(기본 + admin 별칭 3) 신설 — 370 -> 374.
+  assert.equal(operations.length, 374);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

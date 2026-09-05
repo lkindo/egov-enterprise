@@ -77,7 +77,7 @@ function CommunityBoardContent() {
  </div>
  <div className="flex items-center gap-4">
  <button
- onClick={() => router.push('/admin/community/boards/write')}
+ onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}`)}
  className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3 group"
  >
  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" aria-hidden="true" /> 새 게시글

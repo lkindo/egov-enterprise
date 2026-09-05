@@ -93,6 +93,14 @@
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/content/files/{atchFileSn}/{fileSn}",
+      "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/operation/events",
       "handler": "nuri.api.controller.business.operation.EventApiController#createEvent",
@@ -128,6 +136,14 @@
       "method": "POST",
       "path": "/api/v1/admin/operation/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}",
+      "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
@@ -430,6 +446,14 @@
       "method": "POST",
       "path": "/api/v1/admin/system/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/files/{atchFileSn}/{fileSn}",
+      "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
@@ -1196,6 +1220,15 @@
       "policy": "AUTHENTICATED",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/files/{atchFileSn}/{fileSn}",
+      "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+      "policy": "REACHABILITY_WITH_PRIVACY",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "FileAccessPolicy#assertDeletable"
     },
     {
       "method": "POST",
@@ -2328,6 +2361,22 @@
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "FileAccessPolicy#assertDeletable",
+      "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
+      "policy": "REACHABILITY_WITH_PRIVACY",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "SecurityUtil.getCurrentEsntlId()",
+        "if (grants.ownerGrant())",
+        "admin && !grants.personalReference()",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        "grants.sharedGrant()"
+      ]
     },
     {
       "target": "MailService#resolveSenderScope",
