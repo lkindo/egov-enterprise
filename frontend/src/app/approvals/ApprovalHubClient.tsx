@@ -19,6 +19,7 @@ import {
   type SanctionStatusCode,
 } from '@/services/business/user/approval/ApprovalUserService';
 import { Badge } from '@/components/ui/badge';
+import { PagePagination } from '@/components/common/PagePagination';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { ApprovalStepper } from './ApprovalStepper';
 import { ApprovalDraftDialog } from './ApprovalDraftDialog';
@@ -29,6 +30,14 @@ import {
 } from '@/queries/approval-query-options';
 
 const EMPTY_APPROVALS: InformalSanctionDto[] = [];
+
+/**
+ * 마스터 목록 페이지 크기.
+ *
+ * [2026-09-05] 종전에는 `{ page: 0, size: 50 }` 한 페이지만 받고 페이저가 없어 51번째 문서부터
+ * 화면에서 도달할 수 없었다. 페이지 상태는 URL 에 싣지 않는다(승인된 URL-state 부류가 아니다).
+ */
+const PAGE_SIZE = 20;
 
 /**
  * 탭 이름은 실제 질의 축을 말한다.
@@ -114,6 +123,7 @@ export default function ApprovalHubClient() {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<ApprovalTab>('PENDING');
+  const [page, setPage] = useState(1);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDraftOpen, setDraftOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -127,18 +137,18 @@ export default function ApprovalHubClient() {
   });
 
   const { data: approvalData, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery(
-    approvalQueryOptions.list(activeTab, { page: 0, size: 50 }),
+    approvalQueryOptions.list(activeTab, { page: page - 1, size: PAGE_SIZE }),
   );
   const confirmMutation = useMutation(approvalMutationOptions.confirm(queryClient));
 
   const list = approvalData?.list || EMPTY_APPROVALS;
   /*
-    [2026-08-29] '총 N건' 이 전체가 아니라 **불러온 한 페이지의 길이**였다.
-    조회는 size: 50 으로 한 페이지만 받으므로, 대기 건이 50 을 넘으면 '총 50건' 에서 멈춘 채
-    더 이상 늘지 않는다 — 결재 대기가 쌓일수록 그 숫자가 실제와 벌어지는데 화면은 '총' 이라고
-    말한다. 서버 응답에는 전체 건수가 이미 들어 있다(PageResponse.total).
+    [2026-08-29] '총 N건' 이 전체가 아니라 **불러온 한 페이지의 길이**였다. 서버 응답에는 전체
+    건수가 이미 들어 있다(PageResponse.total). [2026-09-05] 페이저를 붙여 나머지 페이지에도
+    도달할 수 있게 했다.
   */
   const total = approvalData?.total ?? list.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const selectedItem = useMemo(() =>
     list.find(item => sanctionKey(item) === selectedItemId) || (list.length > 0 ? list[0] : null)
   , [list, selectedItemId]);
@@ -146,15 +156,25 @@ export default function ApprovalHubClient() {
 
   const handleTabChange = (tab: ApprovalTab) => {
     setActiveTab(tab);
+    setPage(1);
     // 다른 대기열의 문서 식별자를 들고 넘어가면 첫 항목이 아니라 빈 상세가 남는다.
     setSelectedItemId(null);
     setRejectReason('');
     decisionValidation.setFormErrors({}, false);
   };
 
-  /** 상신 직후에는 방금 올린 문서가 보이는 '내가 올린 결재' 로 옮겨 저장됐음을 눈으로 확인시킨다. */
+  /** 페이지를 넘기면 이전 페이지의 선택은 stale 이므로 해제한다(메일 이력 A2 와 같은 규칙). */
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    setSelectedItemId(null);
+    setRejectReason('');
+    decisionValidation.setFormErrors({}, false);
+  };
+
+  /** 상신 직후에는 방금 올린 문서가 보이는 '내가 올린 결재' 첫 페이지로 옮겨 저장됐음을 눈으로 확인시킨다. */
   const handleDraftCreated = (ifmlAtrzSn: number) => {
     setActiveTab('SUBMITTED');
+    setPage(1);
     setSelectedItemId(String(ifmlAtrzSn));
     setRejectReason('');
     decisionValidation.setFormErrors({}, false);
@@ -297,8 +317,8 @@ export default function ApprovalHubClient() {
       )}
       masterTitle={TAB_LABELS[activeTab]}
       masterDescription={
-        list.length < total
-          ? `전체 ${total.toLocaleString()}건 중 ${list.length.toLocaleString()}건 표시`
+        totalPages > 1
+          ? `총 ${total.toLocaleString()}건 · ${page}/${totalPages} 페이지`
           : `총 ${total.toLocaleString()}건`
       }
       master={(
@@ -364,6 +384,15 @@ export default function ApprovalHubClient() {
                 );
               })}
             </ul>
+          )}
+
+          {!isLoading && !approvalsError && totalPages > 1 && (
+            <PagePagination
+              total={total}
+              page={page}
+              size={PAGE_SIZE}
+              onPageChange={handlePageChange}
+            />
           )}
         </div>
       )}
