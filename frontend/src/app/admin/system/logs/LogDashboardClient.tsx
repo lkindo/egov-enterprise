@@ -37,6 +37,11 @@ type IntegratedLogRow =
   & { prcsTm?: SysLog['prcsTm'] | WebLog['prcsTm'] };
 
 const CATEGORY_IDS = logCategories.map((c) => c.id);
+/** 기본 SYS는 query에서 생략하고, root dashboard의 비기본 category만 page 변경 때 보존한다. */
+const PAGE_PRESERVED_PARAMS = [{
+  name: 'cat',
+  allowedValues: CATEGORY_IDS.filter((id) => id !== 'SYS'),
+}] as const;
 /** 카테고리 전환 시 페이지 번호를 URL 에서 함께 제거한다(3페이지에서 탭 전환 시 빈 화면 방지) */
 const TAB_RESET_PARAMS = ['page'] as const;
 
@@ -78,7 +83,7 @@ export default function LogDashboardClient({
     paramName: 'cat',
     resetParams: TAB_RESET_PARAMS,
   });
-  const [page, setPage] = usePageParam();
+  const [page, setPage] = usePageParam('page', PAGE_PRESERVED_PARAMS);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedLog, setSelectedLog] = useState<{

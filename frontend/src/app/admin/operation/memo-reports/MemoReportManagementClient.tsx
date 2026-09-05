@@ -191,7 +191,7 @@ export default function MemoReportManagementClient() {
   });
 
   // 탭·페이지는 URL 파생값이다(공유·새로고침·뒤로가기 복원 + 사이드바 활성 유지).
-  // 검색어는 개인정보 노출 우려로 URL 에 싣지 않는다(감사 D-13).
+  // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
   const tabParam = searchParams.get('tab');
   const requestedTab = TABS.find((t) => t === tabParam) ?? 'RECEIVED';
   const activeTab: ReportTab = requestedTab === 'ALL' && !isAdmin ? 'RECEIVED' : requestedTab;

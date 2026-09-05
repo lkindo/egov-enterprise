@@ -136,7 +136,7 @@ export default function EventManagementClient() {
   const searchParams = useSearchParams();
 
   // 페이지 번호는 URL 파생값이다(공유·새로고침·뒤로가기 복원).
-  // 검색어는 개인정보 노출 우려로 URL 에 싣지 않는다(감사 D-13).
+  // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
   const setPage = useCallback((next: number) => {
     const params = new URLSearchParams(searchParams.toString());

@@ -25,6 +25,7 @@ function CommunityDetailContent() {
     const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const { options: boardOptions } = useBoardOptions();
 
+    // ADR-0009: 이 route의 searchWrd/searchCnd는 업무 검색 URL allowlist에 포함된다.
     const { values, setSearchValues } = useSearchState({
         bbsId: DEFAULT_BBS_ID,
         searchWrd: '',

@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Building2 } from 'lucide-react';
 import { SITE_IDENTITY } from '@/config/site-identity';
+import { logErrorSafely } from '@/lib/safe-error-log';
 
 export const metadata = {
   title: `기관코드 관리 | ${SITE_IDENTITY.frameworkName}`,
@@ -31,7 +32,7 @@ export default async function InstitutionCodePage() {
     if (status === 401) {
       redirect('/login?expired=true&redirect=/admin/system/codes/institution');
     }
-    console.error('Failed to fetch initial institution codes:', error);
+    logErrorSafely('Failed to fetch initial institution codes:', error);
   }
 
   return (

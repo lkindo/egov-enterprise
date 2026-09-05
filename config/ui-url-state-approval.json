@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "state": "proposed",
-  "authority": "non-normative-pre-decision-evidence",
+  "state": "class-governed",
+  "authority": "non-normative-url-state-class-registry",
   "schemaRef": "config/ui-url-state-approval.schema.json",
   "manifestRef": {
     "path": "config/ui-url-state-census.json",
-    "sha256": "800ce5cc63ed377cfaf7535747e83780773ceabb338e3e52ae60fae6d9b0aeeb"
+    "sha256": "40280eadd71eb83f150cb5f2bf0a86e9cb15194b2afe2442e080165edda7c9c4"
   },
   "classes": [
     {
@@ -100,23 +100,77 @@
     },
     {
       "classId": "search-input",
-      "description": "사용자가 타이핑한 자유 입력 검색어. Q1(2026-09-04 owner 결정)이 URL 유지를 확정했으나 그것은 \"주소창에 실린다\" 는 사실의 승인이지 데이터 등급 판정이 아니다.",
+      "decisionRef": "docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md",
+      "description": "사용자가 검색 화면에 타이핑한 업무 검색어. 성명·사번·계정명 등 일반 개인정보가 포함될 수 있다는 잔여 위험을 수용하되 ADR-0009의 정확한 화면·키 계약에 한정한다.",
       "selector": {
         "stateItemNames": [
           "q",
           "searchCnd",
           "searchWrd"
+        ],
+        "recordIds": [
+          "URL-204665E3AB9C4A",
+          "URL-3E36A25946033C",
+          "URL-A13AC14823B70F",
+          "URL-E28F88902ADC75",
+          "URL-E910532B42785F"
+        ],
+        "routeKeyBindings": [
+          {
+            "routePattern": "/search",
+            "stateItemNames": ["q"],
+            "sources": [
+              "frontend/src/app/components/ui/global-command-center.tsx",
+              "frontend/src/app/search/SearchClient.tsx",
+              "frontend/src/app/search/SearchResultsSlot.tsx"
+            ]
+          },
+          {
+            "routePattern": "/admin/community/[id]",
+            "stateItemNames": ["searchCnd", "searchWrd"],
+            "sources": [
+              "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
+              "frontend/src/lib/hooks/use-search-state.ts"
+            ]
+          },
+          {
+            "routePattern": "/admin/community/boards/select-board-list",
+            "stateItemNames": ["searchCnd", "searchWrd"],
+            "sources": [
+              "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
+              "frontend/src/app/admin/community/boards/select-board-list/page.tsx"
+            ]
+          }
         ]
       },
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "dataClass": "user-typed-free-text",
-      "privacyReview": "unverified",
-      "authorizationReview": "unverified",
+      "privacyReview": "accepted-risk",
+      "authorizationReview": "not-applicable",
       "owner": "security/privacy + FE/domain owner",
       "reviewBy": "2026-12-31",
       "approvals": {
-        "securityPrivacy": null,
-        "domain": null
+        "securityPrivacy": {
+          "reviewer": "lkindo (ADR-0009)",
+          "reviewedAt": "2026-09-05",
+          "evidence": [
+            "ADR-0009는 일반 개인정보가 포함될 수 있는 업무 검색어의 URL 사용을 명시적으로 허용하고, 브라우저 이력·북마크·same-origin referrer·외부 프록시/WAF/CDN 로그의 잔여 위험을 accepted risk로 기록한다.",
+            "허용 범위는 /search의 q, 두 커뮤니티 화면의 searchCnd·searchWrd에 한정한다. 해소된 census record 5건과 producer를 포함한 routeKeyBindings를 함께 고정하므로 같은 이름을 쓰는 새 route는 자동 승인되지 않는다.",
+            "frontend/src/lib/safe-error-log.ts는 URL·query params·원본 오류 객체를 로그 payload에 포함하지 않고, 저장소에는 서드파티 분석 수집기가 없다. URL 허용을 클라이언트 로그·분석 허용으로 확대하지 않는다.",
+            "자격증명·세션 비밀·인증 및 복구 토큰·고유식별정보·금융·건강·생체정보·응답 원문을 의미하는 전용 URL state는 이 selector 밖이며 앱이 입력을 요구·유도하지 않는다. 자유 검색어에 사용자가 예상 밖 값을 직접 넣을 가능성은 내용 기반으로 완전 판별할 수 없는 accepted residual risk다.",
+            "승인 근거 원본: docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md 및 docs/04-operations/url-state-class-approval-evidence.md §2.3"
+          ]
+        },
+        "domain": {
+          "reviewer": "lkindo (ADR-0009)",
+          "reviewedAt": "2026-09-05",
+          "evidence": [
+            "/search?q는 Server Component와 SearchResultsSlot이 같은 검색을 복원하고, 게시판 searchCnd·searchWrd는 LIST_PARAM_KEYS allowlist와 router.replace를 사용한다.",
+            "URL 값은 인가 증거가 아니다. 검색 결과·상세 객체의 인증·역할·소유권 검사는 서버가 계속 집행한다.",
+            "로그 목록 검색어를 주소창에 동기화하지 않는 현재 선택과 same-origin binary GET의 searchKeyword 전달은 별도 경계 계약으로 유지한다.",
+            "승인 근거 원본: docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md 및 scripts/log-search-url-boundary-contract.test.mjs"
+          ]
+        }
       }
     },
     {
@@ -183,7 +237,7 @@
     },
     {
       "classId": "path-intent",
-      "description": "redirect — 로그인 후 되돌아갈 내부 경로. 값 도메인이 코드에 열거돼 있지 않고 미들웨어 matcher 가 통과시키는 라우트 전체다. 경로에 박힌 동적 세그먼트(record locator)가 그대로 주소창에 남으며, producer 하나(admin/error.tsx)는 이전 화면의 쿼리스트링까지 함께 싣는다.",
+      "description": "redirect — 로그인 후 되돌아갈 내부 경로. 값 도메인이 코드에 열거돼 있지 않고 미들웨어 matcher 가 통과시키는 라우트 전체다. 경로에 박힌 동적 세그먼트(record locator)가 그대로 주소창에 남는다. admin/error.tsx는 2026-09-05에 pathname만 전달하도록 좁혔지만, 현재 census의 다른 redirect record는 별도 판정 전이다.",
       "selector": {
         "stateItemNames": [
           "redirect"

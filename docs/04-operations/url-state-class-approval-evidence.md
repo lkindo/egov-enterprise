@@ -1,17 +1,19 @@
-# URL-state 부류 승인 근거 (owner 서명용 준비 자료)
+# URL-state 부류 승인 근거와 현재 판정
 
-> **지위**: 승인이 아니다. owner 가 `config/ui-url-state-approval.json` 의 `approvals` 를 채울 때
-> 그대로 쓸 수 있도록 **근거를 모아 둔 것**이다. 서명은 owner 의 행위다.
+> **지위**: 2026-09-05 owner 판정의 근거 기록. [`config/ui-url-state-approval.json`](../../config/ui-url-state-approval.json)은
+> `class-governed` 상태의 **비규범 부류 컨테이너**이며 top-level 승인이나 단일 결정의 권위를 주장하지
+> 않는다. 네 부류가 각각 `approved` 검토 기록을 가지고, `search-input`만 class-level `decisionRef`로
+> [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)에 결속한다.
 >
-> 준비 2026-09-05 · 대상 census 370 record / 부류 7개
+> 확인 2026-09-05 · 대상 census 368 record / 부류 7개 · 승인 4개 / 미해결 3개
 >
-> ⚠ 아래 근거 중 **[직접 확인]** 표시는 이 문서를 쓰며 명령으로 재현한 것이고,
-> **[조사]** 는 병렬 조사에서 나와 교차 검증하지 않은 것이다. 서명 전에 후자를 다시 확인하라.
+> 아래 **[직접 확인]**은 명령으로 재현한 근거이고 **[조사]**는 승인 당시 조사 기록이다.
+> 재승인 시 현재 코드·설정과 외부 운영 토폴로지를 다시 확인한다.
 
 ## 0. 승인이 무엇을 여는가
 
-`reviewState` 를 `approved` 로 올리고 `approvals` 두 축을 채우면, **그 부류의 stateItem 만
-가진 record** 가 `reviewBy` 만료에서 면제된다. 다른 부류가 섞인 record 는 그대로 만료된다
+`reviewState`가 `approved`이고 `approvals` 두 축이 완결되면, **그 부류의 stateItem만 가진
+record**가 `reviewBy` 만료에서 면제된다. 다른 부류가 섞인 record는 그대로 만료된다
 (부분 승인 누수 금지). 계약이 요구하는 것은 셋이다.
 
 | 필드 | 요구 |
@@ -20,10 +22,9 @@
 | `reviewedAt` | ISO 날짜 |
 | `evidence` | **비어 있지 않은** 문자열 배열 |
 
-⚠ 승인을 채우면 `ui-url-state-approval-contract.test.mjs` 의 마지막 테스트
-("오버레이는 승인을 선언하지 않은 상태로 시작한다")가 **의도적으로 red** 가 된다.
-그 테스트를 명시적으로 제거하는 것이 정상 절차이며, 그 커밋이 "여기서부터 승인이 존재한다" 를
-이력에 남긴다.
+계약은 승인된 부류 목록을 exact하게 동결하고, manifest 해시·비규범 top-level authority·부류별 근거·
+selector가 어긋나면 fail-closed한다. `decisionRef`는 `search-input`에만 요구하며 다른 부류나 top-level로
+번지면 red다. 새 이름이나 route는 기존 승인에 조용히 편입되지 않는다.
 
 ## 1. 모든 부류에 공통으로 적용되는 사실
 
@@ -41,7 +42,7 @@
 
 ## 2. 부류별
 
-### 2.1 `presentation-state` (stateItem 80) — 승인 권고
+### 2.1 `presentation-state` (stateItem 80) — **승인됨 (2026-09-05)**
 
 `page` · `tab` · `view` · `orderBy` · `startDate` · `endDate`
 
@@ -113,29 +114,51 @@ owner-or-admin + 활성 게시판 술어, 주소록·스크랩은 PII IDOR 가�
 `type="number" min={1}`" 이라 적었으나, 2026-09-05 grep 에서 `srvySn` 을 타이핑하는 입력 요소가
 **0건**이었다. 확인되지 않은 문장은 승인 근거에 넣지 않았다.
 
-### 2.3 `search-input` (stateItem 5) — **보류 권고**
+### 2.3 `search-input` (stateItem 5) — **accepted-risk 승인됨 (2026-09-05)**
 
 `q` · `searchWrd` · `searchCnd`
 
-**승인하지 말 것을 권고한다.**
+ADR-0009는 성명·사번·계정명 등 일반 개인정보를 포함할 수 있는 업무 검색어를 URL에 두는 잔여
+위험을 명시적으로 수용했다. `privacyReview: accepted-risk`는 외부 노출 가능성이 없다는 뜻이
+아니라, 검색 복원·공유·SSR 이점과 다음 제한을 함께 승인했다는 뜻이다.
 
-이유:
+1. 허용 키는 `q`, `searchCnd`, `searchWrd`뿐이며 unknown query를 일괄 전달하지 않는다.
+2. 자격증명·쿠키·세션 비밀·인증/복구 토큰·주민등록번호 등 고유식별정보·금융·건강·생체정보·
+   응답 원문을 의미하는 전용 URL field/state를 만들거나 일반 검색창에서 그런 입력을 요구·유도하지 않는다.
+3. 검색어를 클라이언트 로그·분석 이벤트·오류 로그 payload에 복제하지 않는다.
+4. URL은 인가 증거가 아니며 서버가 인증·역할·객체 소유권을 계속 판정한다.
+5. 브라우저 이력·북마크, same-origin referrer, 저장소 밖 프록시·WAF·CDN 로그의 잔여 위험을
+   알고 수용한다. 파생 제품은 운영 환경에 따라 더 좁은 정책을 택할 수 있다.
 
-1. **프록시·WAF·CDN 의 쿼리스트링 로깅 여부가 미확보다.** 이 축 없이 `privacyReview=verified` 를
-   선언하면 **"모르는 것" 을 "안전한 것" 으로 바꾸는 것**이고, 그것은 `opaque` 부류에 대해
-   이 오버레이가 막고 있는 조작과 같은 방향이다.
-2. `q` 는 **설계상 임직원 성명을 담는다** — `/search` 가 "게시글 제목, 임직원 성명, 메뉴 이름을
-   찾습니다" 라고 고지하고 백엔드도 성명 부분일치 조회를 한다. `searchCnd=2` + `searchWrd`
-   조합도 마찬가지다. **[조사]**
-3. 브라우저 히스토리·북마크는 구조적으로 남고 저장소가 지울 수 없다.
+자유 입력의 의미는 클라이언트가 완전 판별할 수 없다. 따라서 사용자가 일반 검색창에 예상 밖의
+자격증명·고위험 값을 직접 붙여 넣을 가능성도 accepted residual risk에 포함되며, 아래
+`credential-name-signal` 검사는 전용 URL **key**의 신설만 차단한다. 이는 고위험 검색 용도의
+승인이나 내용 기반 DLP 보장이 아니다.
 
-⚠ **보류 비용은 record 5건뿐이다.** 그 5건은 전부 순수 `search-input` 이라 다른 부류와 섞이지
-않으므로, 보류해도 다른 부류의 승인을 막지 않는다. **[직접 확인]**
+이 census와 승인은 프런트엔드 내비게이션·검색 상태의 범위다. 만족도 삭제 API에 남은
+`pswd` query 계약은 이 승인의 근거가 아니며 [GAP-SEC-002](../../.agent/memory/known-gaps.md)에서
+별도 이전 대상으로 추적한다. 따라서 이 증거를 저장소 전체 자격증명 URL 0건으로 해석하지 않는다.
 
-⚠ Q1(2026-09-04 owner 결정)이 "URL 유지" 를 확정한 것과 모순되지 않는다. Q1 은 **"주소창에
-실린다" 는 사실의 승인**이지 데이터 등급 판정이 아니다.
+승인 selector는 다음 **census recordId 5건**을 exact하게 고정한다.
 
-### 2.4 `control-flag` (stateItem 8) — 승인 권고
+- `URL-204665E3AB9C4A`
+- `URL-3E36A25946033C`
+- `URL-A13AC14823B70F`
+- `URL-E28F88902ADC75`
+- `URL-E910532B42785F`
+
+route-key binding도 다음 **3건**으로 제한한다.
+
+| route | 키 | 구현 근거 |
+|---|---|---|
+| `/search` | `q` | server/client 검색 결과 복원 |
+| `/admin/community/[id]` | `searchCnd`, `searchWrd` | `useSearchState` exact allowlist + `replace` |
+| `/admin/community/boards/select-board-list` | `searchCnd`, `searchWrd` | `LIST_PARAM_KEYS` exact allowlist + `replace` |
+
+같은 키를 쓰는 새 route는 자동 승인되지 않는다. 로그 목록이 검색어를 주소창에 동기화하지 않는
+현행도 유지한다. 허용은 모든 화면에 URL 상태를 강제하는 의무가 아니다.
+
+### 2.4 `control-flag` (stateItem 8) — **승인됨 (2026-09-05)**
 
 `expired` · `auth_error`
 
@@ -158,56 +181,46 @@ owner-or-admin + 활성 게시판 술어, 주소록·스크랩은 PII IDOR 가�
 ("내부 경로 intent", "사람이 조립한 세그먼트"). **어휘 확장 자체가 별도 판단**이므로 그 결정
 전에는 승인하지 않는다.
 
-`redirect` 의 위험은 별도로 기록해 둔다 — producer 하나(`admin/error.tsx`)가
-`pathname + search` 를 통째로 실어 **이전 화면의 검색어를 로그인 URL 로 나른다**. **[조사]**
+`admin/error.tsx`는 2026-09-05에 `window.location.search` 전달을 제거해 로그인 URL에는
+`pathname`만 싣는다. 따라서 이전 화면 검색어의 불필요한 복제 경로는 닫혔다. 다만 census의
+`path-intent` 6건(페이지 redirect 4건과 proxy/LoginClient의 로그인 복귀 producer·consumer)은
+허용 목적지·역할·loop·query merge 경계를 아직 하나의 typed 계약으로 닫지 않았으므로 승인하지
+않는다. **[직접 확인]**
 
-### 2.6 `opaque` (61) — 승인 불가
+### 2.6 `opaque` (58) — 승인 불가
 
 `reviewState: blocked-input` 으로 고정돼 있고 계약이 강제한다. census 가 "이게 뭔지 모르겠다"
 고 표시한 것을 "안전하다" 로 승인하면 그것이 바로 이 오버레이가 막으려는 조작이다.
 
-## 3. 승인해도 만료는 완전히 해소되지 않는다
+## 3. 현재 승인 영향과 남은 경계
 
-| | 만료 시 red |
-|---|---|
-| 현재 | 259 |
-| `search-input` 제외 3개 부류 승인 | 약 137 |
-| 4개 부류 전부 승인 | 132 |
+2026-09-05 네 부류의 독립 승인 기록 직후 생성 census를 기준으로 한 실측은 다음과 같다.
 
-### ⚠ 2026-09-05 정정 — 이 절의 종전 서술 두 곳이 틀렸다
+| 지표 | 값 |
+|---|---:|
+| census record | 368 |
+| 승인 부류 | 4 |
+| 승인 selector로 완전히 덮인 state-bearing record | 119 |
+| 그중 `search-input` 승인으로 추가된 record | 5 |
+| 2027-01-01 시계에서 `reviewBy` 재승인 없이 발생하는 만료 red | 258 |
 
-**정정 1 — "detector 를 더 파도 줄지 않는다" 는 전체로는 거짓이다.**
-`opaque` 61건의 정확한 배분은 이렇다.
+`119`는 승인 selector의 완전 포괄 record 수이고 `258`은 미래 시계의 만료 오류 수이므로 단순 합계로
+census 총수를 계산하는 지표가 아니다. 종전 설계 단계의 가상 만료 수치는 과거 스냅샷이며 현행
+만료 영향으로 사용하지 않는다.
 
-| 무엇이 필요한가 | 건수 |
-|---|---|
-| detector 만으로 닫힘 | **≥20 (33%)** |
-| **코드 형태 변경**이 있어야 닫힘 | **27 (44%)** — copy-all `<unknown-source-query>` 19 + 그 downstream 8 |
-| owner 정책 판단이 유일한 경로 | 14 (23%) — `next.config` redirect. Next 에 per-redirect 쿼리 차단 knob 이 없다 |
-| 기타 | 2 (그중 1건은 주소창이 아니라 axios `paramsSerializer` — 범위 오탐) |
+승인되지 않은 부류는 `path-intent`, `hand-assembled-segment`, `opaque` 세 개다.
 
-"원리적으로 닿지 않는다" 가 참인 것은 마지막 14건뿐이다. 27건은 무한이라서가 아니라
-**copy-all 을 선택해서** 무한해진 것이다.
+- `path-intent`: 내부 경로 의도에 맞는 데이터 분류와 query 보존 경계를 정한다.
+- `hand-assembled-segment`: 허용 값·인코딩·traversal 방지 계약을 만든다.
+- `opaque`: 합성 마커를 실제 키·경로로 해소하도록 detector나 코드 형태를 개선한다. 의미를 모르는
+  상태에서 승인하지 않는다.
 
-**정정 2 — "allowlist 헬퍼로 모으면 정적으로 키 이름이 드러난다" 는 형태에 따라 반대로 간다.**
-현재 detector 는 `.set(key, …)`·`.get(key)` 의 키가 **인라인 단일 문자열 리터럴**이 아니면
-무조건 `<computed>` 로 떨어뜨린다. 그래서 2026-09-04 Q2 에서 만든 **루프형** `buildListParams`
-(`for (const key of LIST_PARAM_KEYS)`)는 copy-all 을 없앴는데도 opaque 를 **60 → 61 로 올렸다.**
-
-즉 권고는 "헬퍼로 모아라" 가 아니라 **"키를 리터럴로 열거하는 헬퍼로 모아라"** 다.
-루프형으로 19개 파일에 확장하면 opaque 가 오히려 는다.
-
----
-
-따라서 **승인은 만료 해결책이 아니다.** 2026-12-31 에는 다음 중 하나가 필요하다.
-
-1. 기한 연장(사유 필수)
-2. detector 개선 — ≥20건, 저장소 안에서 가능
-3. copy-all 27건을 **리터럴 키 열거 헬퍼**로 이행 — 형태 선택이 결과를 뒤집으므로 위 정정 2 를 먼저 읽어라
-4. `next.config` redirect 14건의 쿼리 정책 — owner 판단
+따라서 승인 자체는 만료 해결책이 아니다. 2026-12-31 전에 현재 코드와 운영 토폴로지를 재검증해
+근거 있는 재승인·기한 갱신을 하거나, 남은 세 부류를 실제로 해소해야 한다.
 
 ## 관련
 
 - [승인 오버레이 설계](../02-architecture/url-state-approval-overlay-design.md)
+- [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)
 - [URL-state 분류 초안](../01-product/url-state-classification-draft.md)
 - [PD-UX-002](pending-decisions.md)

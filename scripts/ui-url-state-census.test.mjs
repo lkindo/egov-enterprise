@@ -88,6 +88,13 @@ test('current URL-state census exactly covers critical route and URL producer po
   assert.ok(actual.summary.byKind['query-producer'] > 0);
   assert.ok(actual.summary.byKind['request-query-producer'] > 0);
   assert.ok(actual.summary.byKind['form-producer'] > 0);
+  assert.deepEqual(
+    actual.records.flatMap(({ id, stateItems }) => stateItems
+      .filter(({ riskSignals }) => riskSignals.includes('credential-name-signal'))
+      .map(({ name }) => `${id}/${name}`)),
+    [],
+    '현재 URL-state 모집단에 credential-like key가 생기면 즉시 검토해야 한다',
+  );
 
   const login = actual.criticalFlows.find(({ id }) => id === 'login-return-intent');
   assert.equal(login.producerRecordIds.length, 1);
@@ -98,6 +105,27 @@ test('current URL-state census exactly covers critical route and URL producer po
     && review.decisionSafe === false
     && canonical.status === 'unverified'
   )));
+});
+
+test('a non-search census drift does not deadlock candidate generation on the existing search allowlist', () => {
+  const candidate = buildUrlStateCensus({ repoRoot });
+  const nonSearch = candidate.records.find(({ stateItems }) => stateItems.every(({ riskSignals }) => (
+    !riskSignals.includes('free-text-name-signal')
+    && !riskSignals.includes('credential-name-signal')
+  )));
+  assert.ok(nonSearch, '비검색 census drift를 만들 record가 필요하다');
+
+  nonSearch.currentBehavior = `${nonSearch.currentBehavior} Synthetic non-search evidence drift.`;
+  refreshHash(candidate);
+
+  assert.deepEqual(
+    validateUrlStateCensus(candidate, {
+      repoRoot,
+      nowMs: Date.parse('2026-09-05T00:00:00.000Z'),
+    }),
+    [],
+    'manifest hash가 달라졌다는 이유만으로 기존 exact 검색 record까지 미승인 처리하면 --write가 막힌다',
+  );
 });
 
 // [2026-08-31 신설] validateUrlStateCensus 는 기본이 실시간 시계다(위 테스트가 그 경로로
@@ -219,6 +247,36 @@ test('unknown query copy demonstrably preserves repeated and encoded forbidden-n
   assert.deepEqual(copied.getAll('token'), ['first', 'second', 'encoded']);
   assert.equal(copied.get('%74oken'), 'double');
   assert.equal(copied.toString(), source.toString());
+});
+
+test('credential-like URL keys, including the repository pswd spelling, are immediate red', () => {
+  const census = buildUrlStateCensus({ repoRoot });
+
+  for (const credentialName of ['token', 'pswd']) {
+    const scanned = scanUrlStateSource(`const value = searchParams.get('${credentialName}');`, {
+      file: 'probe.tsx',
+      routePattern: '/probe',
+      shellAccessEvidence: 'authenticated',
+    });
+    const detected = scanned.records
+      .flatMap(({ stateItems }) => stateItems)
+      .find(({ name }) => name === credentialName);
+    assert.ok(detected?.riskSignals.includes('credential-name-signal'), `${credentialName} detector가 credential 신호를 놓쳤다`);
+
+    const tampered = structuredClone(census);
+    const record = tampered.records.find(({ stateItems }) => stateItems.length > 0);
+    assert.ok(record, 'credential red를 주입할 state-bearing record가 필요하다');
+    record.stateItems[0] = { ...record.stateItems[0], ...detected };
+    refreshHash(tampered);
+
+    assert.match(
+      validateUrlStateCensus(tampered, {
+        repoRoot,
+        nowMs: Date.parse('2026-09-05T00:00:00.000Z'),
+      }).join('\n'),
+      /credential-like URL state is forbidden and cannot wait for class review/i,
+    );
+  }
 });
 
 test('typed HTTP GET query objects are inventoried without promoting ordinary Map.get calls', () => {

@@ -77,7 +77,7 @@ export const getInitialBoardData = async (params: {
         config: axiosConfig,
       }),
       boardAdminService.getBoardMaster(bbsId, axiosConfig).catch((err: unknown) => {
-        console.warn('BoardListServer: Failed to fetch board master info', err);
+        logErrorSafely('BoardListServer: Failed to fetch board master info', err);
         return null;
       }),
     ]);

@@ -169,7 +169,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     : defaultTab;
 
   // [P1-7] 페이지도 URL 파생값으로 둔다 → 공유·새로고침·뒤로가기가 조회 위치까지 복원한다.
-  //        (검색어는 개인정보 노출 우려로 URL 에 싣지 않는다 — 감사 D-13 절충안)
+  //        ADR-0009는 URL 사용을 의무화하지 않으므로 검색어는 이 화면의 로컬 상태로 유지한다.
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
 
   const [isPending, startTransition] = useTransition();

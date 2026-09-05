@@ -1,5 +1,9 @@
 # URL 상태 프라이버시 분류 초안 — PD-UX-002 승인 회의 입력물
 
+> **역사적 snapshot — 현재 규범 아님:** 이 문서는 2026-08-23 워크숍의 선행 입력물을 당시 표현과 수치로 보존한다. 2026-09-05 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)이 화면별 exact route/query-key allowlist 아래 일반 개인정보성 업무 검색어를 URL에 둘 수 있도록 승인했다. [현재 부류 registry](../../config/ui-url-state-approval.json)는 `class-governed`·`non-normative-url-state-class-registry`인 비규범 컨테이너이지 전체 승인이 아니다. `presentation-state`·`resource-identifier`·`search-input`·`control-flag`가 각자 승인 기록을 가지며 `search-input`만 class-level `decisionRef`로 ADR-0009에 결속한다. `opaque`·`path-intent`·`hand-assembled-segment` 3개 부류는 계속 미해결이다. 앱은 자격증명·세션 비밀·인증/복구 token·고위험 개인정보·응답/업무 본문용 전용 URL state를 만들거나 입력을 유도하지 않는다. 일반 자유 검색어에 예상 밖 값이 들어올 가능성은 내용 기반으로 완전 판별할 수 없는 잔여 위험이다. 허용 검색어는 client log·analytics·오류 로그 payload에 복제하지 않으며 URL은 인가 증거가 아니다.
+>
+> 아래의 523-record 수치, `draft-blocked-input`, 검색어 전면 금지안과 미등록 follow-up 문구는 그 시점의 제안·증거다. 현재 생성 census와 ADR-0009를 대신하지 않으며, 결정 이력을 보존하기 위해 본문을 소급 재작성하지 않았다.
+
 > - **상태: `draft-blocked-input` — 승인 아님.** 이 문서는 어떤 allowlist/denylist도 확정하지 않으며, 구현 변경의 승인 근거가 아니다.
 > - **용도:** `PD-UX-002` 승인 회의의 입력물. [IA 문서 §14.3](../01-product/information-architecture.md) 워크숍에서 "census 523 record의 프라이버시 분류 초안 작성을 별도 태스크로 선행한다"고 기록된 그 선행 태스크의 산출물이다.
 > - **작성:** 2026-08-23
