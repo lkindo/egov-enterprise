@@ -4683,7 +4683,8 @@ export interface components {
             scrapNm?: string;
             scrapUrl?: string;
             scrapExpln?: string;
-            useYn: string;
+            /** @enum {string} */
+            useYn: "Y" | "N";
             userId?: string;
             frstRgtrId?: string;
             /** Format: date-time */
@@ -5010,7 +5011,8 @@ export interface components {
             contsSn?: number;
             cntntsNm?: string;
             cntcUrl?: string;
-            cntntsUseYn?: string;
+            /** @enum {string} */
+            cntntsUseYn?: "Y" | "N";
             cntntsLinkUrl?: string;
             cntntsDc?: string;
         };
@@ -5788,8 +5790,9 @@ export interface components {
             /**
              * @description 사용 여부
              * @example Y
+             * @enum {string}
              */
-            useYn?: string;
+            useYn?: "Y" | "N";
             /**
              * @description 작성자 ID
              * @example USRCNFRM_00000000001

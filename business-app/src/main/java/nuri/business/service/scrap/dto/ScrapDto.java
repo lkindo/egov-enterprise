@@ -1,5 +1,6 @@
 package nuri.business.service.scrap.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 import lombok.Builder;
@@ -26,11 +27,13 @@ public class ScrapDto {
     private String scrapNm;
     @Size(max = 1000)
     private String scrapUrl;
+    @Size(max = 4000)
     private String scrapExpln;
     /** 사용여부. DB 체크제약(ck_tb_bbs_scrap_use_yn: 'Y'/'N')을 DTO 에 미러링한다. */
     @Size(max = 1)
     @NotBlank
-    @Pattern(regexp = "[YN]", message = "사용여부는 Y 또는 N 이어야 합니다.")
+    @Pattern(regexp = "^(?:Y|N)$", message = "사용여부는 Y 또는 N 이어야 합니다.")
+    @Schema(allowableValues = {"Y", "N"})
     private String useYn;
     /**
      * 소유자(=frstRgtrId=loginId). <b>응답 전용 파생 필드</b>로, 요청 본문에서는 받지 않는다.
