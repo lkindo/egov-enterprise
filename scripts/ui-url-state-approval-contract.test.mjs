@@ -161,9 +161,15 @@ test('면제 계산이 공허하지 않다 — 합성 승인으로 red 를 증�
       합성 오버레이로 (가) 승인하면 실제로 면제되고 (나) 한 부류만 승인하면 섞인 record 는
       면제되지 않음을 함께 증명한다. 저장소에 가짜 승인을 남기지 않으려고 메모리에서만 만든다.
   */
+  /*
+    ⚠ [2026-09-05] 실물 오버레이를 복제한 뒤 **한 부류만 올리는** 방식이었는데, 실제 승인이
+      생기자(presentation-state·control-flag) 복제본에 그 승인이 함께 실려 "다른 부류의
+      stateItem 을 가졌는데 면제됐다" 로 red 가 됐다. 테스트가 틀린 것이지 면제가 샌 것이 아니다.
+      합성 시나리오는 **전체 승인 집합을 통제**해야 한다 — 전부 내린 뒤 하나만 올린다.
+  */
   const presentationOnly = structuredClone(overlay);
   for (const cls of presentationOnly.classes) {
-    if (cls.classId === 'presentation-state') cls.reviewState = 'approved';
+    cls.reviewState = cls.classId === 'presentation-state' ? 'approved' : 'proposed';
   }
 
   const exempt = recordsExemptFromExpiry(presentationOnly, census);
@@ -192,16 +198,38 @@ test('면제 계산이 공허하지 않다 — 합성 승인으로 red 를 증�
   }
 });
 
-test('오버레이는 승인을 선언하지 않은 상태로 시작한다 — 이 커밋은 자리를 만들 뿐이다', () => {
-  /*
-    이 테스트는 승인이 생기면 **의도적으로 red 가 된다.** 그때 이 테스트를 지우는 것이 정상 절차다.
-    승인을 채우는 것은 owner 의 행위이고, 그 커밋이 이 단언을 함께 걷어내며 "여기서부터 승인이
-    존재한다" 를 이력에 남긴다. 자동화가 조용히 승인을 만들어 넣는 경로를 막는다.
-  */
-  for (const cls of overlay.classes) {
-    assert.notEqual(cls.reviewState, 'approved', `${cls.classId}: 승인이 생겼다면 이 테스트를 명시적으로 제거하라`);
-    for (const [axis, approval] of Object.entries(cls.approvals)) {
-      assert.equal(approval, null, `${cls.classId}.${axis}: 승인이 생겼다면 이 테스트를 명시적으로 제거하라`);
-    }
+/*
+  [2026-09-05] 종전의 "오버레이는 승인을 선언하지 않은 상태로 시작한다" 를 **이것으로 교체**했다.
+
+  그 테스트는 승인이 생기면 의도적으로 red 가 되도록 설계됐고, 설계 문서가 "명시적으로 제거하는
+  커밋이 여기서부터 승인이 존재한다를 이력에 남긴다" 로 절차를 적어 두었다. 이 커밋이 그 지점이다.
+
+  그러나 그냥 지우면 **자동화가 조용히 승인을 늘리는 경로**가 열린다. 그래서 남은 부류의
+  미승인 상태를 동결한다 — 이 목록을 줄이려면 근거와 함께 이 배열을 고쳐야 하고, 그 diff 가
+  "무엇을 새로 승인했는가" 를 드러낸다.
+*/
+const APPROVED_AS_OF_2026_09_05 = ['presentation-state', 'control-flag'];
+
+test('승인된 부류는 명시 목록과 정확히 일치한다 — 조용히 늘지 않는다', () => {
+  const approved = overlay.classes
+    .filter((cls) => cls.reviewState === 'approved')
+    .map((cls) => cls.classId)
+    .sort();
+
+  assert.deepEqual(
+    approved,
+    [...APPROVED_AS_OF_2026_09_05].sort(),
+    '승인 부류가 바뀌었다면 근거와 함께 이 목록을 같은 변경에서 고쳐라',
+  );
+
+  // 승인하지 않기로 판정한 부류는 그 사유가 살아 있어야 한다.
+  const byId = Object.fromEntries(overlay.classes.map((cls) => [cls.classId, cls]));
+  assert.equal(byId.opaque?.reviewState, 'blocked-input', 'census 미판정 항목은 승인 대상이 아니다');
+  assert.equal(
+    byId['search-input']?.reviewState, 'proposed',
+    '프록시·WAF 쿼리 로깅이 미확보인 동안 검색어 부류는 승인하지 않는다',
+  );
+  for (const id of ['path-intent', 'hand-assembled-segment']) {
+    assert.equal(byId[id]?.dataClass, 'indeterminate', `${id}: 어휘 확장 전에는 판정하지 않는다`);
   }
 });

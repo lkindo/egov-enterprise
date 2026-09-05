@@ -299,3 +299,139 @@ test('empty populations and lexical parser failures are fail-closed', () => {
   const lexical = tokenizeUrlStateSource("const bad = 'unterminated", '<memory>');
   assert.ok(lexical.issues.some(({ code }) => code === 'UNTERMINATED_STRING'));
 });
+
+/*
+  [2026-09-05 신설] "분류할 상태가 없음" 면제의 경계를 고정한다.
+
+  ⚠ 이 면제는 만료 신호를 **줄인다.** 그래서 넓어지는 방향을 계약으로 막는다 —
+    조건 하나를 빼면 상태를 나르는 record 가 조용히 면제되고, 그때 red 는 사라지지만
+    위험은 남는다(H2 가 막는 바로 그 형태다).
+
+  경계는 실측에서 나왔다. 후보 89건 중 18건이 아래 사유로 제외됐다:
+    · 경로에 `[computed]` — `/admin/survey/manage/[computed]` 처럼 **이름 없는 record locator**
+    · riskSignals 보유 — `source-query-policy-unverified` 등 미해소 신호
+    · 프래그먼트 — `#main-content`
+*/
+test('분류할 상태가 없다는 판정은 다섯 조건을 모두 만족할 때만 성립한다', () => {
+  const census = buildUrlStateCensus({ repoRoot });
+  const expired = Date.parse(`${census.records[0].review.reviewBy}T23:59:59.999Z`) + 1;
+  const errorsFor = (record) => {
+    const single = { ...census, records: [record] };
+    return validateUrlStateCensus(single, { repoRoot, nowMs: expired })
+      .filter((error) => error.includes('review horizon expired'));
+  };
+
+  const exemptable = census.records.find((r) => (r.stateItems ?? []).length === 0
+    && typeof r.targetCandidate === 'string'
+    && !/[?&#]/u.test(r.targetCandidate)
+    && !r.targetCandidate.includes('[computed]')
+    && (r.riskSignals ?? []).length === 0);
+  assert.ok(exemptable, '면제 가능한 record 표본을 찾지 못했다 — 이 테스트가 공허해졌다');
+  assert.deepEqual(errorsFor(exemptable), [], '조건을 모두 만족하는 record 는 면제돼야 한다');
+
+  // 조건을 하나씩 깨면 다시 만료돼야 한다. 하나라도 통과하면 면제가 넓어진 것이다.
+  const breakers = [
+    ['타깃 미해소', { targetCandidate: null }],
+    ['쿼리 보유', { targetCandidate: '/admin/x?tab=a' }],
+    ['경로에 [computed]', { targetCandidate: '/admin/survey/manage/[computed]' }],
+    ['프래그먼트', { targetCandidate: '/admin/x#section' }],
+    ['미해소 위험 신호', { riskSignals: ['source-query-policy-unverified'] }],
+    ['stateItem 보유', { stateItems: [{ name: 'q', dataClass: 'unverified', recommendation: 'deny', approvalStatus: 'unverified', exception: 'none-proposed', riskSignals: [] }] }],
+  ];
+  for (const [why, patch] of breakers) {
+    const tampered = { ...structuredClone(exemptable), ...patch };
+    assert.notDeepEqual(errorsFor(tampered), [], `${why}: 면제되면 안 된다`);
+  }
+});
+
+test('면제가 공허하지 않다 — 실제로 만료 수를 줄인다', () => {
+  /*
+    위 테스트는 단일 record 로 경계만 본다. 그것만으로는 면제가 **전체에서 아무것도 걸러내지
+    않아도** green 이다. 모집단 수준에서 실제 감소를 확인한다.
+  */
+  const census = buildUrlStateCensus({ repoRoot });
+  const expired = Date.parse(`${census.records[0].review.reviewBy}T23:59:59.999Z`) + 1;
+  const expiredCount = validateUrlStateCensus(census, { repoRoot, nowMs: expired })
+    .filter((error) => error.includes('review horizon expired')).length;
+
+  assert.ok(expiredCount > 0, '전부 면제되면 만료 게이트가 죽은 것이다');
+  assert.ok(
+    expiredCount < census.records.length,
+    '아무것도 면제되지 않으면 이 규칙이 동작하지 않는 것이다',
+  );
+});
+
+/*
+  [2026-09-05 신설] 폼 제출 가로채기 판정.
+
+  ⚠ 이 판정은 record 를 만료 면제로 보낸다. 그래서 **넓어지는 방향**을 막는다 —
+    `onSubmit` 이 있다는 사실만으로 판정하면, 핸들러가 `preventDefault` 를 부르지 않는 폼이
+    면제되고 그 폼은 **제출 시 필드를 전부 주소창에 싣는다.**
+
+  판정은 두 증거에만 근거한다: 핸들러 안의 직접 `preventDefault`, 또는 react-hook-form 의
+  `handleSubmit(...)` 래핑(라이브러리가 항상 preventDefault 한다).
+*/
+test('폼 가로채기는 증명된 경우에만 판정한다', () => {
+  const scan = (source) => scanUrlStateSource(source, { file: 'probe.tsx' })
+    .records.filter((record) => record.kind === 'form-producer')
+    .map((record) => record.operation);
+
+  assert.deepEqual(
+    scan('export const A = () => <form onSubmit={(e) => { e.preventDefault(); }}><input name="q" /></form>;'),
+    ['intercepted-submit'],
+    '인라인 preventDefault 는 가로채기가 증명된다',
+  );
+  assert.deepEqual(
+    scan('export const C = () => <form onSubmit={form.handleSubmit(onSubmit)}><input name="q" /></form>;'),
+    ['intercepted-submit'],
+    'react-hook-form handleSubmit 은 항상 preventDefault 한다',
+  );
+
+  // 아래 둘은 **판정하지 않는다**. 모르는 것을 안전하다고 말하지 않는다.
+  // 같은 파일에 정의가 있으면 따라가 판정한다.
+  assert.deepEqual(
+    scan('const submitSurvey = (e) => { e.preventDefault(); save(); };\nexport const B = () => <form onSubmit={submitSurvey}><input name="q" /></form>;'),
+    ['intercepted-submit'],
+    '같은 파일의 named handler 는 정의를 따라가 preventDefault 를 확인한다',
+  );
+
+  // 정의가 이 파일에 없으면(prop 으로 받은 핸들러) 판정하지 않는다.
+  assert.deepEqual(
+    scan('export const B2 = ({ onSearch }) => <form onSubmit={onSearch}><input name="q" /></form>;'),
+    ['implicit-or-computed-method'],
+    'prop 으로 받은 핸들러는 정의가 파일 밖이라 판정할 수 없다',
+  );
+
+  // 정의는 있는데 preventDefault 가 없으면 판정하지 않는다 — 네이티브 제출이 일어난다.
+  assert.deepEqual(
+    scan('const submitLoose = (e) => { save(e); };\nexport const B3 = () => <form onSubmit={submitLoose}><input name="q" /></form>;'),
+    ['implicit-or-computed-method'],
+    'preventDefault 가 없는 named handler 는 네이티브 GET 제출을 막지 못한다',
+  );
+  assert.deepEqual(
+    scan('export const D = () => <form noValidate><input name="q" /></form>;'),
+    ['implicit-or-computed-method'],
+    'onSubmit 이 없으면 네이티브 GET 제출이 일어난다',
+  );
+
+  // 명시적 method="get" 은 가로채기와 무관하게 종전 판정을 유지한다 —
+  // 그 폼은 필드를 URL 에 싣겠다고 스스로 선언했다.
+  assert.deepEqual(
+    scan('export const E = () => <form method="get" onSubmit={(e) => { e.preventDefault(); }}><input name="q" /></form>;'),
+    ['explicit-get'],
+    'method=get 선언은 핸들러가 막고 있다는 사실로 지워지지 않는다',
+  );
+});
+
+test('가로채기 판정이 실제 모집단에서 공허하지 않다', () => {
+  const census = buildUrlStateCensus({ repoRoot });
+  const forms = census.records.filter((record) => record.kind === 'form-producer');
+  const intercepted = forms.filter((record) => record.operation === 'intercepted-submit');
+  const unresolved = forms.filter((record) => record.operation === 'implicit-or-computed-method');
+
+  assert.ok(intercepted.length > 0, '가로채기가 하나도 판정되지 않으면 이 detector 가 죽은 것이다');
+  assert.ok(
+    unresolved.length > 0,
+    '전부 가로채기로 판정되면 판정이 느슨해진 것이다 — 이름만 넘긴 핸들러와 onSubmit 부재가 남아 있어야 한다',
+  );
+});

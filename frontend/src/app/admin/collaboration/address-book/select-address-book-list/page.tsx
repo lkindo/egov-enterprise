@@ -27,14 +27,24 @@ function AddressBookListSkeleton() {
   );
 }
 
-export default async function AddressBookListPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const params = await searchParams;
-  const parsedPage = parseInt((params.pageNo as string) || '1', 10);
-  const pageNo = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+export default async function AddressBookListPage() {
+  /*
+    [2026-09-05] `?pageNo=` 읽기를 걷었다 — 바로 아래 `searchWrd` 와 **정확히 같은 상황**이다.
+
+    URL 에 그 값을 싣는 코드가 저장소에 없다(producer 0건). 이 화면의 페이지 이동은
+    `router.push`/`replace` 가 아니라 `AddressBookListClient` 의 `fetchList` 직접 호출로
+    처리되고, 그 컴포넌트에는 `router`·`history`·`window.location` 이 한 줄도 없다.
+    시드 메뉴(`modern_route`)에도 `pageNo` 참조가 없음을 확인했다.
+
+    ⚠ PD-UX-002 승인 오버레이 작업에서 이 이름을 **승인 대상으로 올릴 뻔했다.** 그러나
+      저장소가 발행한 적 없는 값에 데이터 등급을 매기는 것은 판정이 아니라 기록의 낭비이고,
+      같은 파일이 이미 `searchWrd` 를 승인이 아니라 **삭제**로 처리한 선례가 있다. 같은 처리를 한다.
+
+    ⚠ 되살리려면 producer 를 함께 만들어야 한다. 그때는 이름도 다시 정해야 한다 —
+      `page` 는 이 화면에서 이미 다른 의미로 점유돼 있다(아래 Spring Pageable 0-base).
+      URL 키만 `page` 로 바꾸면 한 화면에서 두 기준이 공존한다.
+  */
+  const pageNo = 1;
 
   /*
     [2026-09-04] `?searchWrd=` 읽기를 걷었다 — **URL 에 그 값을 싣는 코드가 저장소에 없었다.**

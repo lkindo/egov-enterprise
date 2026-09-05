@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-url-state-approval.schema.json",
   "manifestRef": {
     "path": "config/ui-url-state-census.json",
-    "sha256": "5cdc541b8defceba067b0fdf8721c6b26f2265b5fcc4eae63a062aa2da4f7c29"
+    "sha256": "1379e1d8ccb9e89d987f51fe02f8dc27405354c571518091d183e58a5c03683b"
   },
   "classes": [
     {
@@ -16,21 +16,41 @@
           "endDate",
           "orderBy",
           "page",
-          "pageNo",
           "startDate",
           "tab",
           "view"
         ]
       },
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "dataClass": "non-sensitive-presentation",
-      "privacyReview": "unverified",
-      "authorizationReview": "unverified",
+      "privacyReview": "verified",
+      "authorizationReview": "not-applicable",
       "owner": "security/privacy + FE/domain owner",
       "reviewBy": "2026-12-31",
       "approvals": {
-        "securityPrivacy": null,
-        "domain": null
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-09-05",
+          "evidence": [
+            "frontend/next.config.ts:77 — Referrer-Policy: strict-origin-when-cross-origin. 교차 출처 요청에 쿼리스트링이 실린 Referer 가 나가지 않는다(2026-09-05 실측).",
+            "frontend/src — Sentry·GA·PostHog·Datadog 등 서드파티 텔레메트리 0건(2026-09-05 grep 실측). 값이 외부 수집기로 나가는 저장소 내 경로가 없다.",
+            "api-server/.../OperationalAuditInterceptor.java:83 — 감사 로그는 request.getRequestURI() 를 적재한다. 쿼리스트링을 저장하지 않는다(2026-09-05 실측).",
+            "⚠ 저장소 밖(리버스 프록시·WAF·CDN 액세스 로그, 브라우저 히스토리·북마크)은 이 승인이 판정하지 않은 축이다. census limitations 가 그 한계를 명시한다.",
+            "page·tab·view 는 값이 사용자를 식별하지 않는 화면 표현 상태다. tab 소비자는 닫힌 열거형에 대조하고 불일치를 기본 탭으로 내리므로, \"존재하지만 못 보는 탭\" 과 \"존재하지 않는 탭\" 이 화면상 구분되지 않는다 — 열거 오라클이 성립하지 않는다.",
+            "orderBy 는 URL 에 컬럼명을 싣지 않는다. 화면이 제공하는 값은 추상 토큰 3종(date·views·comments)이고 서버가 화이트리스트 switch 로 Q-클래스 경로에 매핑한다. 스키마 정보가 주소창에 노출되지 않는다.",
+            "startDate·endDate 는 화면에서 타이핑할 수 없다(Popover 안 Calendar). 2026-09-05 에 URL 읽기 경로의 검증 부재를 고쳐 왕복 검증(fromQueryDate)을 넣었다 — 종전에는 ?startDate=bogus 가 SSR 을 죽였다."
+          ]
+        },
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-09-05",
+          "evidence": [
+            "이 부류의 6 record 에 census 가 붙인 deny-until-reviewed 는 발견된 위험이 아니라 이름 화이트리스트 부작용이다 — scripts/ui-url-state-census.mjs 의 CANDIDATE_VIEW_STATE_NAMES 에 orderBy·startDate·endDate 가 없을 뿐이다. 그 사실을 확인하고 위 개별 근거로 판단했다.",
+            "이 부류가 걸쳐 있는 route 는 전부 /admin 아래이며 proxy.ts 의 인증·역할 게이트 뒤에서만 발행된다.",
+            "page 소비자는 정수 변환 후 하한을 클램프한다 — 임의 문자열이 값으로 살아남는 경로가 없다.",
+            "승인 근거 원본: docs/04-operations/url-state-class-approval-evidence.md §2.1"
+          ]
+        }
       }
     },
     {
@@ -39,7 +59,6 @@
       "selector": {
         "stateItemNames": [
           "[id]",
-          "[type]",
           "bbsId",
           "groupId",
           "nttId",
@@ -81,23 +100,41 @@
     },
     {
       "classId": "control-flag",
-      "description": "열거형 제어 플래그 — 세션 만료·권한 부족 안내·로그인 후 복귀 지점. 값 도메인이 코드에 고정돼 있다.",
+      "description": "열거형 제어 플래그 — 세션 만료 안내와 권한 부족 되돌림. producer·consumer 양쪽이 리터럴 상수를 정확 일치 비교하므로 값 도메인이 실제로 코드에 고정돼 있다.",
       "selector": {
         "stateItemNames": [
           "auth_error",
-          "expired",
-          "redirect"
+          "expired"
         ]
       },
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "dataClass": "enumerated-control-flag",
-      "privacyReview": "unverified",
-      "authorizationReview": "unverified",
+      "privacyReview": "verified",
+      "authorizationReview": "not-applicable",
       "owner": "security/privacy + FE/domain owner",
       "reviewBy": "2026-12-31",
       "approvals": {
-        "securityPrivacy": null,
-        "domain": null
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-09-05",
+          "evidence": [
+            "frontend/next.config.ts:77 — Referrer-Policy: strict-origin-when-cross-origin. 교차 출처 요청에 쿼리스트링이 실린 Referer 가 나가지 않는다(2026-09-05 실측).",
+            "frontend/src — Sentry·GA·PostHog·Datadog 등 서드파티 텔레메트리 0건(2026-09-05 grep 실측). 값이 외부 수집기로 나가는 저장소 내 경로가 없다.",
+            "api-server/.../OperationalAuditInterceptor.java:83 — 감사 로그는 request.getRequestURI() 를 적재한다. 쿼리스트링을 저장하지 않는다(2026-09-05 실측).",
+            "⚠ 저장소 밖(리버스 프록시·WAF·CDN 액세스 로그, 브라우저 히스토리·북마크)은 이 승인이 판정하지 않은 축이다. census limitations 가 그 한계를 명시한다.",
+            "expired·auth_error 는 개인을 식별하지 않는다 — 세션이 끊겼다는 사실과 권한이 부족했다는 사실뿐이다.",
+            "두 값의 소비처(로그인 만료 안내·홈 권한 안내)는 막힌 자원의 이름을 말하지 않는다. 그 축은 계약이 고정한다(frontend/src/app/__tests__/dashboard-auth-error.test.tsx)."
+          ]
+        },
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-09-05",
+          "evidence": [
+            "producer·consumer 양쪽이 리터럴 상수를 정확 일치 비교한다 — expired=true / === \"true\", auth_error=unauthorized / === \"unauthorized\". 값 도메인이 실제로 코드에 고정돼 있다.",
+            "redirect 는 2026-09-05 에 이 부류에서 분리했다(path-intent). 그 값 도메인은 미들웨어 matcher 가 통과시키는 라우트 전체라 enumerated 가 거짓이기 때문이다.",
+            "승인 근거 원본: docs/04-operations/url-state-class-approval-evidence.md §2.4"
+          ]
+        }
       }
     },
     {
@@ -113,6 +150,44 @@
         ]
       },
       "reviewState": "blocked-input",
+      "dataClass": "indeterminate",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    },
+    {
+      "classId": "path-intent",
+      "description": "redirect — 로그인 후 되돌아갈 내부 경로. 값 도메인이 코드에 열거돼 있지 않고 미들웨어 matcher 가 통과시키는 라우트 전체다. 경로에 박힌 동적 세그먼트(record locator)가 그대로 주소창에 남으며, producer 하나(admin/error.tsx)는 이전 화면의 쿼리스트링까지 함께 싣는다.",
+      "selector": {
+        "stateItemNames": [
+          "redirect"
+        ]
+      },
+      "reviewState": "proposed",
+      "dataClass": "indeterminate",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
+    },
+    {
+      "classId": "hand-assembled-segment",
+      "description": "[type] — 서버가 발급하지 않고 producer 도 0건이라 사람이 조립한 URL 로만 들어온다. census 가 double-encoded-segment·slash-or-traversal-injection·record-locator-unverified 세 위험 신호를 미해소로 달아 두었다.",
+      "selector": {
+        "stateItemNames": [
+          "[type]"
+        ]
+      },
+      "reviewState": "proposed",
       "dataClass": "indeterminate",
       "privacyReview": "unverified",
       "authorizationReview": "unverified",
