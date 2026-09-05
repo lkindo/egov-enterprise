@@ -1474,7 +1474,7 @@
             <code data-required-context="secret-scan">secret-scan</code> ·
             <code data-required-context="e2e-test">e2e-test</code> ·
             <code data-required-context="mutation-test">mutation-test</code>
-            <br><small>내부 실행은 duration-balanced E2E 3 shard입니다. 원격 ruleset은 2026-08-20 이 manifest로 전환됐고 <code>npm run verify:ops</code>가 context 5개·review 정책·force-push/삭제 보호의 exact-match를 실측합니다.</small>
+            <br><small>내부 실행은 duration-balanced E2E 2 shard입니다. 원격 ruleset은 2026-08-20 이 manifest로 전환됐고 <code>npm run verify:ops</code>가 context 5개·review 정책·force-push/삭제 보호의 exact-match를 실측합니다.</small>
           </p>
           <p style="color: var(--text-muted); line-height: 1.7; margin-top: 0.6rem;">
             <strong>Dependency controls:</strong> PR Gradle graph는 read-only producer가 artifact를 만들고 checkout/run 없는 trusted <code>workflow_run</code>이 제출합니다. <code>secret-scan</code>은 base/head snapshot을 최대 600초 fail-closed 확인한 뒤 신규 runtime High 이상을 review합니다. 프론트 감사는 <code>pnpm audit --json</code> 단일 조회로 Critical 전체와 운영 High를 차단하고 개발 전용 High만 warning으로 남기며 형식·네트워크 오류는 실패 처리합니다.
@@ -1699,7 +1699,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               <tbody>
                 <tr><td>pre-push 훅</td><td><span class="badge badge-warning">LOCAL BLOCK</span></td><td>공용 규칙·메모리 계약과 문서 링크 검사를 항상 먼저 실행합니다. docs-only는 두 경량 계약 후 fast-pass하고 Atlas 변경은 전용 계약도 추가합니다. 소스 범위는 재사용 base census · Java compile · 앱/E2E tsc · ESLint · 불변식 · codegen · 하네스 테스트를 실행하지만 <code>--no-verify</code>/<code>SKIP_HOOKS</code>/<code>SKIP_HARNESS</code>로 우회 가능하므로 병합 권위는 CI입니다.</td></tr>
                 <tr><td><code>localGate</code></td><td><span class="badge badge-error">HARD</span></td><td>하네스·실 PostgreSQL schema validation·JaCoCo를 포함하지만 pre-push의 모든 정적 검사를 포함하지는 않습니다.</td></tr>
-                <tr><td>CI required</td><td><span class="badge badge-primary">5 STABLE</span></td><td><code>backend-build</code> · <code>frontend-build</code> · <code>secret-scan</code> · <code>e2e-test</code> · <code>mutation-test</code>. 조건부 heavy job은 내부 <code>*-scope</code>로 분리하고 네 aggregate는 항상 완료되므로 docs-only SHA도 릴리스가 소비할 성공 증거를 남깁니다. E2E 내부 3 shard는 구현 세부사항이고 mutation은 <code>STRICT_MUTATION=true</code>, 75% 하드 게이트입니다.</td></tr>
+                <tr><td>CI required</td><td><span class="badge badge-primary">5 STABLE</span></td><td><code>backend-build</code> · <code>frontend-build</code> · <code>secret-scan</code> · <code>e2e-test</code> · <code>mutation-test</code>. 조건부 heavy job은 내부 <code>*-scope</code>로 분리하고 네 aggregate는 항상 완료되므로 docs-only SHA도 릴리스가 소비할 성공 증거를 남깁니다. E2E 내부 2 shard는 구현 세부사항이고 mutation은 <code>STRICT_MUTATION=true</code>, 75% 하드 게이트입니다.</td></tr>
                 <tr><td>원격 branch policy</td><td><span class="badge badge-success">정합</span></td><td>2026-08-20 기준 원격 ruleset이 위 required 5개·strict 최신 브랜치·force-push/삭제 차단과 exact-match하고, review 정책은 단독 운영 결정값(DEC-OPS-009: approval 0·code-owner/last-push/thread-resolution 비활성)에 양방향 동결돼 있습니다. <code>npm run verify:ops</code>가 이 전부를 원격 실측으로 대조하며, reviewer 확보 시 후속 DEC로 상향합니다.</td></tr>
               </tbody>
             </table>
@@ -2531,7 +2531,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           "Zod 생성물 drift는 codegen:verify:zod hard gate",
           "디자인 토큰 ESLint는 CI·pre-push에서 실행되지만 규칙 severity는 warning",
           "E2E expected-error는 spec·channel·URL/status·횟수·만료를 갖는 ledger이며 미등록 오류는 실패 처리",
-          "고정 waitForTimeout은 0건으로 ratchet되고 duration profile이 내부 3 shard를 균형화하며 안정 required context e2e-test로 집계"
+          "고정 waitForTimeout은 0건으로 ratchet되고 duration profile이 내부 2 shard를 균형화하며 안정 required context e2e-test로 집계"
         ]
       }
     ];
@@ -2619,7 +2619,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 7,
         title: "Playwright E2E·런타임 접근성",
-        desc: "내부 3 shard는 최근 spec duration profile로 테스트를 균형 분배하고 안정 required context e2e-test 하나로 집계합니다. 고정 waitForTimeout은 0건으로 ratchet되고 미사용 self-healing/layout fixture와 POM은 제거됐습니다. expected-error는 spec·channel·URL/status·횟수·만료 ledger로 제한하며 cleanup/coverage 자식 실패도 전파합니다.",
+        desc: "내부 2 shard는 최근 spec duration profile로 테스트를 균형 분배하고 안정 required context e2e-test 하나로 집계합니다. 고정 waitForTimeout은 0건으로 ratchet되고 미사용 self-healing/layout fixture와 POM은 제거됐습니다. expected-error는 spec·channel·URL/status·횟수·만료 ledger로 제한하며 cleanup/coverage 자식 실패도 전파합니다.",
         badge1: "E2E", badge2: "CI Hard", badge3: "Fail-closed", type1: "cyan", type2: "success", type3: "success",
         impl: "frontend/e2e · shard-duration-profile.json · e2e-shard-plan.mjs · ci.yml e2e matrix",
         doc: "E2E guide", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/e2e-test-guide.md",

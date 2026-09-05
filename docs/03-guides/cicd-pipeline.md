@@ -37,7 +37,7 @@ push/PR / workflow_dispatch
         ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
         ├─ mutation-scope (mutation=true, registry의 PIT 스코프 병렬)
         │   └─ mutation-test (항상 완료되는 안정 required aggregate)
-        └─ e2e-tests (e2e=true, backend/frontend 결과 확인 후 내부 3 shard)
+        └─ e2e-tests (e2e=true, backend/frontend 결과 확인 후 내부 2 shard)
             ├─ 실행시간 profile 기반 명시적 spec 분배
             ├─ e2e-merge-reports (비필수 리포트 병합)
             └─ e2e-test (항상 완료되는 안정 required aggregate)
@@ -168,13 +168,13 @@ pnpm run test:coverage
 
 ### Playwright Sharding
 
-`1/3`·`2/3`·`3/3`은 내부 실행 job label이다. 브랜치 보호에는 shard 개수와 무관한 안정 context `e2e-test` 하나만 노출한다. 실제 spec 배정은 Playwright의 개수 기반 `--shard`가 아니라 [실행시간 profile](../../frontend/e2e/shard-duration-profile.json)을 [planner](../../scripts/e2e-shard-plan.mjs)가 LPT 방식으로 균형 분배한다. 새·삭제 spec, 잘못된 source 증거, 누락·중복 또는 15% 초과 예상 편차는 운영 계약이 실패 처리한다.
+`1/2`·`2/2`은 내부 실행 job label이다. 브랜치 보호에는 shard 개수와 무관한 안정 context `e2e-test` 하나만 노출한다. 실제 spec 배정은 Playwright의 개수 기반 `--shard`가 아니라 [실행시간 profile](../../frontend/e2e/shard-duration-profile.json)을 [planner](../../scripts/e2e-shard-plan.mjs)가 LPT 방식으로 균형 분배한다. 새·삭제 spec, 잘못된 source 증거, 누락·중복 또는 15% 초과 예상 편차는 운영 계약이 실패 처리한다.
 
 ```yaml
 strategy:
   fail-fast: false
   matrix:
-    shard: [1/3, 2/3, 3/3]
+    shard: [1/2, 2/2]
 ```
 
 ### 실행 흐름
@@ -197,15 +197,15 @@ strategy:
    pnpm run build
    pnpm run start:3001 &
    pnpm exec wait-on http://127.0.0.1:3001/login
-   mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard 1/3)
+   mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard 1/2)
    pnpm exec playwright test --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line
    ```
 
 ### 리포트 병합
 
-- **스펙 구성**: `01-core-base` ~ `25-deptjob-workreport-journey` 26개 스펙 파일로 테스트가 정의되어 있다(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E).
+- **스펙 구성**: planner의 재귀 spec discovery와 duration profile exact census가 현재 실행 모집단의 정본이다. 계층 정의는 [testing-guide.md](./testing-guide.md) §E2E를 따른다.
 - **Playwright projects 는 2개다**: `setup`(`*.setup.ts`)과 `full-suite`(`*.spec.ts`, `dependencies: [setup]`). 스펙 파일 수와 Playwright project 수를 혼동하지 않고, 현재 값은 `frontend/playwright.config.ts`에서 확인한다.
-- **Sharding (병렬 실행)**: 내부 3개 job은 비용 병렬화를 위한 구현 세부사항이고 required context는 `e2e-test` 하나다. spec별 최근 성공 실행시간이 바뀌면 profile의 source 증거와 `durationsMs`를 함께 갱신한다. 단순 파일 수 균등이나 수동 목록은 사용하지 않는다.
+- **Sharding (병렬 실행)**: 내부 2개 job은 비용 병렬화를 위한 구현 세부사항이고 required context는 `e2e-test` 하나다. spec별 최근 성공 실행시간이 바뀌면 profile의 source 증거와 `durationsMs`를 함께 갱신한다. 단순 파일 수 균등이나 수동 목록은 사용하지 않는다.
 
 #### 병합 리포트 생성 (`ci.yml`)
 

@@ -12,6 +12,33 @@ import {
   validateDurationProfile,
 } from './e2e-shard-plan.mjs';
 
+function loadAuthoritativeE2eShardCoordinates() {
+  const manifest = JSON.parse(fs.readFileSync('.github/required-checks.json', 'utf8'));
+  const e2eCheck = manifest.requiredChecks.find(check => check.context === 'e2e-test');
+  return e2eCheck?.aggregate?.sourceMatrix?.values ?? [];
+}
+
+function parsePlaywrightWorkerTopology(configSource) {
+  const assignments = [...configSource.matchAll(
+    /^\s*workers:\s*process\.env\.CI\s*\?\s*(\d+)\s*:\s*(\d+)\s*,?\s*$/gm,
+  )];
+  assert.equal(assignments.length, 1, 'playwright.config.ts must have exactly one CI/local workers ternary');
+  return {
+    ci: Number(assignments[0][1]),
+    local: Number(assignments[0][2]),
+  };
+}
+
+function assertWorkerTopology({ configSource, profileWorkers, guideSource, shardCount }) {
+  const workers = parsePlaywrightWorkerTopology(configSource);
+  assert.equal(workers.ci, profileWorkers, 'CI Playwright workers must match duration-profile evidence');
+  assert.ok(guideSource.includes(`| **Workers** | ${workers.local} | ${workers.ci} |`));
+  assert.ok(guideSource.includes(`로컬은 공유 DB 안정성을 위해 ${workers.local} 유지`));
+  assert.ok(guideSource.includes(`CI는 2026-09-01 실측으로 ${workers.ci}`));
+  assert.ok(guideSource.includes(`추가 병렬성은 실행시간 기반 ${shardCount}-shard로 확보`));
+  return workers;
+}
+
 test('duration profile covers every Playwright spec exactly once', () => {
   const profile = loadDurationProfile();
   assert.deepEqual(validateDurationProfile(profile), []);
@@ -24,10 +51,13 @@ test('duration profile source commit exists in this repository and is an ancesto
   execFileSync('git', ['merge-base', '--is-ancestor', profile.source.commit, 'HEAD'], { stdio: 'ignore' });
 });
 
-test('three duration-balanced shards are deterministic and stay within 15 percent', () => {
+test('the authoritative shard duration plan is deterministic and stays within 15 percent', () => {
   const profile = loadDurationProfile();
-  const first = buildDurationBalancedPlan(profile, 3);
-  const second = buildDurationBalancedPlan(profile, 3);
+  const coordinates = loadAuthoritativeE2eShardCoordinates();
+  const shardCount = coordinates.length;
+  const first = buildDurationBalancedPlan(profile, shardCount);
+  const second = buildDurationBalancedPlan(profile, shardCount);
+  assert.equal(first.length, coordinates.length, 'planner shard count must match the required-check matrix');
   assert.deepEqual(first, second);
 
   const assigned = first.flatMap(shard => shard.specs).sort();
@@ -36,6 +66,64 @@ test('three duration-balanced shards are deterministic and stay within 15 percen
 
   const totals = first.map(shard => shard.estimatedMs);
   assert.ok(Math.max(...totals) / Math.min(...totals) <= 1.15, JSON.stringify(first, null, 2));
+});
+
+test('current E2E documentation matches the authoritative shard matrix and worker count', () => {
+  const coordinates = loadAuthoritativeE2eShardCoordinates();
+  const shardCount = coordinates.length;
+  const labels = coordinates.map(coordinate => `\`${coordinate}\``).join('·');
+  const matrix = `shard: [${coordinates.join(', ')}]`;
+  const profile = loadDurationProfile();
+
+  const pipelineGuide = fs.readFileSync('docs/03-guides/cicd-pipeline.md', 'utf8');
+  assert.ok(pipelineGuide.includes(`내부 ${shardCount} shard`));
+  assert.ok(pipelineGuide.includes(`${labels}은 내부 실행 job label`));
+  assert.ok(pipelineGuide.includes(matrix));
+  assert.ok(pipelineGuide.includes(`--shard ${coordinates[0]}`));
+  assert.ok(pipelineGuide.includes(`내부 ${shardCount}개 job은 비용 병렬화를 위한 구현 세부사항`));
+
+  const e2eGuide = fs.readFileSync('docs/03-guides/e2e-test-guide.md', 'utf8');
+  const playwrightConfig = fs.readFileSync('frontend/playwright.config.ts', 'utf8');
+  assertWorkerTopology({
+    configSource: playwrightConfig,
+    profileWorkers: profile.source.workers,
+    guideSource: e2eGuide,
+    shardCount,
+  });
+  assert.ok(e2eGuide.includes(`CI의 ${labels}은 내부 실행 job label`));
+
+  const buildGradle = fs.readFileSync('build.gradle', 'utf8');
+  assert.ok(buildGradle.includes('e2e-tests 전체 shard가 통째로 skip 됩니다.'));
+  assert.doesNotMatch(buildGradle, /e2e-tests \d+샤드/);
+
+  const atlas = fs.readFileSync('frontend/public/governance_harness_atlas.html', 'utf8');
+  const currentAtlasClaims = [
+    `내부 실행은 duration-balanced E2E ${shardCount} shard입니다.`,
+    `E2E 내부 ${shardCount} shard는 구현 세부사항이고`,
+    `duration profile이 내부 ${shardCount} shard를 균형화하며`,
+    `desc: "내부 ${shardCount} shard는 최근 spec duration profile로`,
+  ];
+  for (const claim of currentAtlasClaims) {
+    assert.ok(atlas.includes(claim), `Atlas current claim is missing: ${claim}`);
+  }
+});
+
+test('worker topology contract rejects synthetic Playwright config drift', () => {
+  const profile = loadDurationProfile();
+  const guideSource = fs.readFileSync('docs/03-guides/e2e-test-guide.md', 'utf8');
+  const driftedConfig = `export default defineConfig({
+    workers: process.env.CI ? 3 : 1,
+  });`;
+
+  assert.throws(
+    () => assertWorkerTopology({
+      configSource: driftedConfig,
+      profileWorkers: profile.source.workers,
+      guideSource,
+      shardCount: loadAuthoritativeE2eShardCoordinates().length,
+    }),
+    /CI Playwright workers must match duration-profile evidence/,
+  );
 });
 
 test('missing, stale, or weakened duration evidence fails closed', () => {
