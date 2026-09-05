@@ -116,6 +116,8 @@ class InformalSanctionServiceTest {
         InformalSanctionDto dto = InformalSanctionDto.builder()
                 .taskSeCd("C1")
                 .build();
+        given(commonCodeService.getCodesByGroup("COM075"))
+                .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
         given(informalSanctionRepository.save(any(InformalSanction.class)))
                 .willReturn(InformalSanction.builder().ifmlAtrzSn(1L).build());
 
@@ -124,6 +126,23 @@ class InformalSanctionServiceTest {
 
         // Then
         verify(informalSanctionRepository).save(any(InformalSanction.class));
+    }
+
+    /**
+     * [2026-09-05] 업무 구분은 COM075 에 등록된 코드여야 한다. 등록되지 않은 코드로 저장되면 목록·상세·
+     * 알림이 원시 코드를 노출하고, 그룹이 비어 있을 때 임의 값이 들어가면 PD-DB-003 을 우회한다.
+     */
+    @Test
+    @DisplayName("등록되지 않은 업무 구분 코드로는 결재를 만들 수 없다")
+    void registerRejectsUnknownTaskType() {
+        InformalSanctionDto dto = InformalSanctionDto.builder().taskSeCd("ZZ").aprvrId("boss").build();
+        given(commonCodeService.getCodesByGroup("COM075"))
+                .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+
+        assertThatThrownBy(() -> informalSanctionService.registerInformalSanction(dto))
+                .isInstanceOf(BusinessException.class);
+
+        verify(informalSanctionRepository, never()).save(any(InformalSanction.class));
     }
 
     @Test
@@ -146,5 +165,79 @@ class InformalSanctionServiceTest {
         // Then
         assertThat(sanction.getAprvYn()).isEqualTo(SanctionStatus.APPROVED.getCode());
         verify(eventPublisher, times(1)).publishEvent(any(Object.class));
+    }
+
+    /**
+     * [2026-09-05] 결재함의 '처리 이력' 탭이 신청자 기준 목록을 부르고 있었다. 결재자가
+     * 처리한 건은 결재자 축 + 승인·반려 상태로만 좁혀야 한다 — 대기(A)가 섞이면 '처리한 것'
+     * 이라는 화면의 약속이 깨진다.
+     */
+    @Test
+    @DisplayName("처리한 결재 목록은 결재자 기준으로 승인·반려 상태만 조회한다")
+    void getProcessedApprovalListQueriesApproverWithProcessedStatuses() {
+        Pageable pageable = PageRequest.of(0, 10);
+        InformalSanction approved = InformalSanction.builder()
+                .ifmlAtrzSn(1L).aplcntId("user1").aprvrId("admin")
+                .aprvYn(SanctionStatus.APPROVED.getCode()).build();
+        given(informalSanctionRepository.findByAprvrIdAndAprvYnIn(
+                eq("admin"), eq(List.of("C", "R")), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(approved)));
+
+        Page<InformalSanctionDto> result = informalSanctionService.getProcessedApprovalList("admin", pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getAprvYn()).isEqualTo("C");
+        verify(informalSanctionRepository).findByAprvrIdAndAprvYnIn(eq("admin"), eq(List.of("C", "R")), eq(pageable));
+        verify(informalSanctionRepository, never()).findByAprvrId(any(), any());
+        verify(informalSanctionRepository, never()).findByAplcntId(any(), any());
+    }
+
+    @Test
+    @DisplayName("목록 항목도 상세처럼 업무 구분 코드명을 해석한다 — 세 탭이 코드 원문(E2ETASK)을 제목으로 보여 주던 결함")
+    void listsResolveTaskTypeNamesLikeDetail() {
+        Pageable pageable = PageRequest.of(0, 10);
+        InformalSanction pending = InformalSanction.builder()
+                .ifmlAtrzSn(1L).aplcntId("user1").aprvrId("admin").taskSeCd("E2ETASK")
+                .aprvYn(SanctionStatus.REQUESTED.getCode()).build();
+        InformalSanction unknownCode = InformalSanction.builder()
+                .ifmlAtrzSn(2L).aplcntId("user1").aprvrId("admin").taskSeCd("GONE")
+                .aprvYn(SanctionStatus.REQUESTED.getCode()).build();
+        given(informalSanctionRepository.findByAprvrIdAndAprvYn(eq("admin"), eq("A"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(pending, unknownCode)));
+        given(informalSanctionRepository.findByAplcntId("user1", pageable))
+                .willReturn(new PageImpl<>(List.of(pending)));
+        given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of(
+                new nuri.business.service.code.dto.CommonCodeDto("COM075", "E2ETASK", "E2E 업무", null, "Y")));
+
+        Page<InformalSanctionDto> pendingPage = informalSanctionService.getPendingApprovalList("admin", pageable);
+        Page<InformalSanctionDto> submittedPage = informalSanctionService.getInformalSanctionList("user1", pageable);
+
+        assertThat(pendingPage.getContent().get(0).getTaskSeNm()).isEqualTo("E2E 업무");
+        // 그룹에 없는 코드는 상세 조회와 같이 빈 문자열이다 — 화면이 코드로 폴백한다.
+        assertThat(pendingPage.getContent().get(1).getTaskSeNm()).isEmpty();
+        assertThat(submittedPage.getContent().get(0).getTaskSeNm()).isEqualTo("E2E 업무");
+        // 페이지당 그룹 조회 1회 — 항목마다 조회하지 않는다.
+        verify(commonCodeService, times(2)).getCodesByGroup("COM075");
+    }
+
+    @Test
+    @DisplayName("빈 목록은 코드 그룹을 조회하지 않는다")
+    void emptyListSkipsTaskTypeLookup() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(informalSanctionRepository.findByAprvrIdAndAprvYn(eq("admin"), eq("A"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of()));
+
+        assertThat(informalSanctionService.getPendingApprovalList("admin", pageable).getContent()).isEmpty();
+        verify(commonCodeService, never()).getCodesByGroup(any());
+    }
+
+    @Test
+    @DisplayName("업무 구분 선택지는 COM075 사용 중 상세코드이며, 없으면 빈 목록을 그대로 돌려준다")
+    void getTaskTypesReadsCom075WithoutInventing() {
+        given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of());
+
+        assertThat(informalSanctionService.getTaskTypes()).isEmpty();
+
+        verify(commonCodeService).getCodesByGroup("COM075");
     }
 }

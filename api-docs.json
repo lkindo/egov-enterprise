@@ -16161,6 +16161,78 @@
         }
       }
     },
+    "/api/v1/approvals": {
+      "post": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Create Approval Draft",
+        "description": "현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다.",
+        "operationId": "createApproval",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLong"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/workspace/mypage/contents": {
       "get": {
         "tags": [
@@ -27412,7 +27484,7 @@
           "Community User"
         ],
         "summary": "커뮤니티 상세 조회",
-        "description": "특정 커뮤니티의 상세 정보를 조회합니다.",
+        "description": "사용 중인 커뮤니티의 상세 정보를 조회합니다.",
         "operationId": "getCommunity_1",
         "parameters": [
           {
@@ -28242,6 +28314,166 @@
         }
       }
     },
+    "/api/v1/approvals/task-types": {
+      "get": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Get Approval Task Types",
+        "description": "기안 시 고르는 업무 구분(공통코드 COM075 의 사용 중 상세코드)입니다. 등록된 코드가 없으면 빈 목록입니다.",
+        "operationId": "getTaskTypes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListCommonCodeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/processed": {
+      "get": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Get Approvals I Processed",
+        "description": "결재자 본인이 이미 **승인·반려한** 결재만 조회합니다. 대기 건은 /pending 입니다.",
+        "operationId": "getProcessed",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseInformalSanctionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/approvals/pending": {
       "get": {
         "tags": [
@@ -28345,7 +28577,8 @@
         "tags": [
           "Approval"
         ],
-        "summary": "Get My Approval History",
+        "summary": "Get My Submitted Approvals",
+        "description": "내가 신청자인 결재 목록입니다(대기·승인·반려 전부). 결재자로서 처리한 이력은 /processed 입니다.",
         "operationId": "getMyHistory",
         "parameters": [
           {
@@ -36767,6 +37000,33 @@
           "userId"
         ]
       },
+      "ApprovalDraftRequest": {
+        "type": "object",
+        "description": "전자결재 기안 요청 — 신청자는 현재 사용자로 고정된다",
+        "properties": {
+          "taskSeCd": {
+            "type": "string",
+            "description": "업무 구분 코드(공통코드 COM075 의 사용 중 상세코드)",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "aprvrId": {
+            "type": "string",
+            "description": "결재자 esntlId(사용자 검색이 돌려주는 식별자)",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "reqYmd": {
+            "type": "string",
+            "description": "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다",
+            "pattern": "^\\d{8}$"
+          }
+        },
+        "required": [
+          "aprvrId",
+          "taskSeCd"
+        ]
+      },
       "UserDto": {
         "type": "object",
         "properties": {
@@ -40442,6 +40702,82 @@
             "type": "string"
           }
         }
+      },
+      "ApiResponseListCommonCodeDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommonCodeDto"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "CommonCodeDto": {
+        "type": "object",
+        "description": "공통코드 DTO",
+        "properties": {
+          "cdId": {
+            "type": "string",
+            "description": "코드그룹 ID",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "dtlCd": {
+            "type": "string",
+            "description": "코드",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "dtlCdNm": {
+            "type": "string",
+            "description": "코드명",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "dtlCdExpln": {
+            "type": "string",
+            "description": "코드설명",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "useYn": {
+            "type": "string",
+            "description": "사용여부",
+            "maxLength": 1,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "cdId",
+          "dtlCd",
+          "dtlCdNm",
+          "useYn"
+        ]
       },
       "ApiResponseListMyPageContentDto": {
         "type": "object",

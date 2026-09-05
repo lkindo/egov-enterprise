@@ -142,7 +142,11 @@ class SecurityAuthAnnotationLinterTest {
             // 조회 창구다(종전 배너는 하드코딩이라 파생 제품에서 반대로 거짓말했다).
             // 변경이 이 한 줄뿐임을 실측으로 확인했다 — 이 행을 제거하면 직전 해시 cd681f2a… 가
             // 정확히 재현된다. endpoint 수 175 -> 176.
-            "6e3763bbceee080c7dc467bde31ec48d960315cf6e2dbe187212cf4655e6bb2d";
+            // [2026-09-05 결재 도메인 완결] GET /api/v1/approvals/{processed,task-types} 2행 추가 —
+            // 둘 다 DEFAULT_AUTHENTICATED|isAuthenticated() 로 같은 컨트롤러의 기존 GET(pending·my)과
+            // **같은 인가 축**이다. processed 는 결재자 본인 esntlId 로 좁힌 조회이고 task-types 는
+            // 공통코드 COM075 의 사용 중 상세코드(관리 데이터 아님)라 완화가 아니다(H3). endpoint 수 176 -> 178.
+            "7b41064c2b68c37a24f31947ed4d216690f9609dc7174a9424bc0ad5915ffe61";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

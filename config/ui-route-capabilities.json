@@ -6985,7 +6985,9 @@
       "dataSource": "mixed",
       "supportedActions": [
         "confirm",
+        "create",
         "list",
+        "refresh",
         "reject",
         "select-detail"
       ],
@@ -7012,20 +7014,22 @@
           "dataSource": "approvals-api",
           "actions": [
             "confirm",
+            "create",
             "list",
+            "refresh",
             "reject",
             "select-detail"
           ],
           "unsupportedVisibleActions": [
-            "archive-filter",
-            "refresh",
             "server-search"
           ],
           "actorScope": "AUTHENTICATED",
-          "visibleLabel": "결재 목록·승인·반려",
+          "visibleLabel": "결재 기안·목록·승인·반려",
           "primaryTask": true,
-          "evidenceLevel": "E2",
+          "evidenceLevel": "E3",
           "evidence": [
+            "frontend/e2e/11-enterprise-workflow.spec.ts",
+            "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
             "frontend/src/app/approvals/ApprovalHubClient.tsx",
             "frontend/src/app/approvals/page.tsx",
             "frontend/src/services/business/user/approval/ApprovalUserService.ts"
@@ -7137,11 +7141,10 @@
             "submit"
           ],
           "actorScope": "AUTHENTICATED",
-          "visibleLabel": "결재 상신",
+          "visibleLabel": "결재 상신(목업 — 실제 상신은 /approvals)",
           "primaryTask": true,
-          "evidenceLevel": "E3",
+          "evidenceLevel": "E1",
           "evidence": [
-            "frontend/e2e/11-enterprise-workflow.spec.ts",
             "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
             "frontend/src/app/approvals/draft/page.tsx"
           ],

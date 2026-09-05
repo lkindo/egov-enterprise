@@ -122,6 +122,13 @@ nuri:
   mail:
     from: ${MAIL_FROM:${spring.mail.username:no-reply@egov.local}}
 
+  # 결재 상태 변경 같은 시스템 발신 문자의 발신 번호. 종전에는 코드에 '02-1234-5678' 이 박혀 있어
+  # 실 게이트웨이에서 거부·오귀속될 값이었다. 비어 있으면 문자 채널을 건너뛰고(앱 내 알림·메일은
+  # 그대로 발송) warn 로그를 남긴다 — 가짜 번호로 발송을 흉내 내지 않는다.
+  notification:
+    sender:
+      tel: ${NOTIFICATION_SENDER_TEL:}
+
   log:
     retention:
       enabled: ${LOG_RETENTION_ENABLED:true}

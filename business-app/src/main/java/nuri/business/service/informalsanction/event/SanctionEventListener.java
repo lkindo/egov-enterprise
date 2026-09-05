@@ -29,14 +29,26 @@ public class SanctionEventListener {
      */
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    /**
+     * 시스템 발신 문자의 발신 번호({@code nuri.notification.sender.tel}).
+     *
+     * <p>종전에는 {@code "02-1234-5678"} 리터럴이 코드에 박혀 있었다 — 실 게이트웨이가 거부하거나
+     * 엉뚱한 번호로 귀속될 값이다. 비어 있으면 문자 채널을 <b>건너뛴다</b>(앱 내 알림·메일은 그대로).
+     * 가짜 번호로 발송을 흉내 내는 것보다 안 보내고 warn 을 남기는 쪽이 정직하다.
+     */
+    private final String smsSenderTel;
+
     public SanctionEventListener(nuri.business.service.user.UserService userService,
                                 nuri.business.service.sms.SmsService smsService,
                                 nuri.business.service.mail.MailService mailService,
-                                org.springframework.context.ApplicationEventPublisher eventPublisher) {
+                                org.springframework.context.ApplicationEventPublisher eventPublisher,
+                                @org.springframework.beans.factory.annotation.Value("${nuri.notification.sender.tel:}")
+                                String smsSenderTel) {
         this.userService = userService;
         this.smsService = smsService;
         this.mailService = mailService;
         this.eventPublisher = eventPublisher;
+        this.smsSenderTel = smsSenderTel == null ? "" : smsSenderTel.trim();
     }
 
     // 발행 자체가 커밋 후 이뤄지도록 발행부(confirmInformalSanction)에서 TransactionUtils.runAfterCommit 로 감싼다.
@@ -59,9 +71,11 @@ public class SanctionEventListener {
 
         nuri.business.service.user.dto.UserDto user = findApplicant(event);
         if (user != null) {
+            // [2026-09-05] 종전 본문은 `%s` 에 상태 enum 을 넣어 사용자가 "APPROVED 되었습니다" 를 받았고,
+            //   승인에도 '사유: 없음' 이 붙었다. enum 의 한국어 설명을 쓰고 사유는 반려에만 싣는다.
             String message = boundChannelContent(String.format(
-                    "[eGov Enterprise] 귀하의 결재(ID:%s)가 %s 되었습니다. 사유: %s",
-                    event.getInformalSanctionSn(), event.getNewStatus(), reasonOrDefault(event)));
+                    "[eGov Enterprise] 귀하의 결재(번호 %s)가 %s되었습니다.%s",
+                    event.getInformalSanctionSn(), statusLabel(event), reasonSuffix(event)));
             sendSms(event, actorId, user, message);
             sendMail(event, actorId, user, message);
         }
@@ -89,9 +103,14 @@ public class SanctionEventListener {
         if (!org.springframework.util.StringUtils.hasText(user.mblTelno())) {
             return;
         }
+        if (smsSenderTel.isEmpty()) {
+            log.warn("SMS notification skipped — nuri.notification.sender.tel is not configured: sanctionSn={}, status={}",
+                    event.getInformalSanctionSn(), event.getNewStatus());
+            return;
+        }
         try {
             nuri.business.service.sms.dto.SmsDto smsDto = nuri.business.service.sms.dto.SmsDto.builder()
-                    .sndngTelno("02-1234-5678") // 대표번호
+                    .sndngTelno(smsSenderTel)
                     .sndngCn(message)
                     .recipients(java.util.List.of(nuri.business.service.sms.dto.SmsRecptnDto.builder()
                             .rcptnTelno(user.mblTelno())
@@ -112,8 +131,9 @@ public class SanctionEventListener {
             return;
         }
         try {
+            // SMTP From 과 발신자 표시명은 MailService 가 설정(nuri.mail.from)과 요청자에서 정한다 —
+            // 여기서 주소를 지어내지 않는다(종전 'admin@egov.enterprise' 리터럴은 어디에도 쓰이지 않았다).
             nuri.business.service.mail.dto.SentMailDto mailDto = nuri.business.service.mail.dto.SentMailDto.builder()
-                    .dsptchPerson("admin@egov.enterprise")
                     .sj("[eGov] 결재 상태 변경 알림")
                     .emailCn(message)
                     .recptnPerson(user.emlAddr())
@@ -145,8 +165,8 @@ public class SanctionEventListener {
             eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(
                     event.getApplicantId(),
                     "결재 상태 변경",
-                    boundChannelContent(String.format("결재(ID:%s)가 %s 되었습니다. 사유: %s",
-                            event.getInformalSanctionSn(), event.getNewStatus(), reasonOrDefault(event))),
+                    boundChannelContent(String.format("결재(번호 %s)가 %s되었습니다.%s",
+                            event.getInformalSanctionSn(), statusLabel(event), reasonSuffix(event))),
                     "/approvals"));
         } catch (Exception e) {
             log.error("Failed to request in-app notification: sanctionSn={}, status={}, exceptionType={}",
@@ -156,6 +176,18 @@ public class SanctionEventListener {
 
     private static String reasonOrDefault(SanctionStatusChangedEvent event) {
         return org.springframework.util.StringUtils.hasText(event.getReason()) ? event.getReason() : "없음";
+    }
+
+    /** 사용자에게 보이는 상태 이름 — enum 상수명(APPROVED)이 아니라 한국어 설명(승인)이다. */
+    private static String statusLabel(SanctionStatusChangedEvent event) {
+        return event.getNewStatus() == null ? "처리" : event.getNewStatus().getDescription();
+    }
+
+    /** 사유 절은 반려에만 붙인다. 승인 본문에 '사유: 없음' 을 달지 않는다. */
+    private static String reasonSuffix(SanctionStatusChangedEvent event) {
+        return event.getNewStatus() == nuri.business.domain.informalsanction.SanctionStatus.REJECTED
+                ? " 반려 사유: " + reasonOrDefault(event)
+                : "";
     }
 
     /** 접두어를 포함해 완성된 채널 본문을 자르며 UTF-16 surrogate pair는 분리하지 않는다. */

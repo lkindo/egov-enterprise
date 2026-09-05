@@ -971,6 +971,14 @@
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
+      "method": "POST",
+      "path": "/api/v1/approvals",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApproval",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
       "method": "PUT",
       "path": "/api/v1/approvals/{id}/confirm",
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#confirm",

@@ -40,6 +40,7 @@ import {
   ApiResponseInternetSvcGuidanceDtoResponseSchema,
   ApiResponseListBannerDtoResponseSchema,
   ApiResponseListBoardSearchItemResponseResponseSchema,
+  ApiResponseListCommonCodeDtoResponseSchema,
   ApiResponseListCommunityDtoResponseSchema,
   ApiResponseListDeptManageDtoResponseSchema,
   ApiResponseListFileDtoResponseSchema,
@@ -150,6 +151,7 @@ import {
   ApiResponseVoidResponseSchema,
   ApiResponseWorkReportDtoResponseSchema,
   ApprovalConfirmRequestRequestSchema,
+  ApprovalDraftRequestRequestSchema,
   AttachmentIntegrityReportResponseSchema,
   AuthorManageDtoRequestSchema,
   AuthorManageDtoResponseSchema,
@@ -174,6 +176,7 @@ import {
   CmmnDetailCodeDtoRequestSchema,
   CmmnDetailCodeDtoResponseSchema,
   CommentDtoRequestSchema,
+  CommonCodeDtoResponseSchema,
   CommunityDtoRequestSchema,
   CommunityDtoResponseSchema,
   CurrentUserResponseResponseSchema,
@@ -3601,6 +3604,23 @@ export const loginOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const createApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "createApproval",
+  method: "post",
+  path: "/api/v1/approvals",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: ApprovalDraftRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getContentsOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getContents",
   method: "get",
@@ -5858,6 +5878,40 @@ export const getCurrentUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.lazy(() => CurrentUserResponseResponseSchema),
   envelopeSchema: ApiResponseCurrentUserResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getTaskTypesOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getTaskTypes",
+  method: "get",
+  path: "/api/v1/approvals/task-types",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.array(z.lazy(() => CommonCodeDtoResponseSchema)),
+  envelopeSchema: ApiResponseListCommonCodeDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getProcessedOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getProcessed",
+  method: "get",
+  path: "/api/v1/approvals/processed",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

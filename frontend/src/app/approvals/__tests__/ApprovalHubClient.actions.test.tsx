@@ -6,9 +6,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   confirmMutation: vi.fn(),
+  createDraft: vi.fn(),
   getMyHistory: vi.fn(),
   getPending: vi.fn(),
+  getProcessed: vi.fn(),
+  getTaskTypes: vi.fn(),
   toast: vi.fn(),
+}));
+
+// 기안 다이얼로그는 자기 테스트(ApprovalDraftDialog.test.tsx)가 있다. 여기서는 열림 상태만 본다.
+vi.mock('../ApprovalDraftDialog', () => ({
+  ApprovalDraftDialog: ({ isOpen }: { isOpen: boolean }) => (
+    isOpen ? <div role="dialog" aria-label="새 결재 기안">기안 다이얼로그</div> : null
+  ),
 }));
 
 vi.mock('next/link', () => ({
@@ -34,8 +44,11 @@ vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
   isSanctionPending: (value?: string) => value === 'A',
   approvalUserService: {
     confirm: mocks.confirmMutation,
+    createDraft: mocks.createDraft,
     getMyHistory: mocks.getMyHistory,
     getPending: mocks.getPending,
+    getProcessed: mocks.getProcessed,
+    getTaskTypes: mocks.getTaskTypes,
   },
 }));
 
@@ -114,7 +127,43 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     mocks.confirm.mockResolvedValue(true);
     mocks.confirmMutation.mockResolvedValue(undefined);
     mocks.getMyHistory.mockResolvedValue({ list: [], total: 0 });
+    mocks.getProcessed.mockResolvedValue({ list: [], total: 0 });
+    mocks.getTaskTypes.mockResolvedValue([]);
     mocks.getPending.mockResolvedValue({ list: [pendingApproval], total: 1 });
+  });
+
+  /**
+   * [2026-09-05] 종전 '결재 처리 이력' 탭은 신청자 기준(getMyHistory)을 불렀다. 탭 세 개가 각각
+   * 이름이 약속하는 서비스를 부르고, '새 결재 기안' 은 페이지 이동이 아니라 다이얼로그를 연다.
+   */
+  it('세 탭이 각각 이름이 약속하는 목록을 부르고 기안 버튼은 다이얼로그를 연다', async () => {
+    mocks.getMyHistory.mockResolvedValue({
+      list: [{ ...pendingApproval, ifmlAtrzSn: 74, taskSeNm: '내가 올린 건' }], total: 1,
+    });
+    mocks.getProcessed.mockResolvedValue({
+      list: [{ ...pendingApproval, ifmlAtrzSn: 75, aprvYn: 'C', taskSeNm: '내가 처리한 건' }], total: 1,
+    });
+    renderClient();
+
+    await screen.findByText('휴가 신청');
+    expect(mocks.getPending).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: '결재 문서 보관함' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: '내가 올린 결재' }));
+    await screen.findByText('내가 올린 건');
+    expect(mocks.getMyHistory).toHaveBeenCalledWith({ page: 0, size: 50 });
+    // 신청자 탭에서는 승인·반려 버튼이 없다 — 결재자만 확정한다.
+    expect(screen.queryByRole('button', { name: '결재 승인' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: '내가 처리한 결재' }));
+    await screen.findByText('내가 처리한 건');
+    expect(mocks.getProcessed).toHaveBeenCalledWith({ page: 0, size: 50 });
+    expect(screen.getByText('승인 완료')).toBeInTheDocument();
+
+    expect(screen.queryByRole('dialog', { name: '새 결재 기안' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '새 결재 기안' }));
+    expect(screen.getByRole('dialog', { name: '새 결재 기안' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '새 결재 기안' })).not.toBeInTheDocument();
   });
 
   it('공백 반려 사유는 요약과 inline 오류로 연결하고 첫 오류 입력에 초점을 둔다', async () => {
