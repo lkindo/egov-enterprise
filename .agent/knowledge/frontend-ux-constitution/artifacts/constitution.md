@@ -32,8 +32,8 @@
 3. **고위험·대용량 상태**: 애플리케이션은 자격증명, 세션 비밀, 인증·복구 토큰, 주민등록번호 등 고유식별정보, 금융·건강·생체 등 고위험 개인정보, 응답 데이터와 업무 본문을 의미하는 전용 field/state를 URL 또는 JavaScript 접근 가능 영속 저장소에 두도록 설계하지 않으며, 허용된 일반 검색창에서 해당 값을 요구하거나 입력하도록 유도하지 않는다. 자유 입력의 의미를 클라이언트가 완전 판별할 수는 없으므로 사용자가 예상 밖의 고위험 값을 검색어에 직접 넣을 가능성은 잔여 위험이며 고위험 용도의 승인이 아니다. 제2항에 따라 허용한 검색어는 클라이언트 로그·분석 이벤트·오류 로그 payload에 복제하지 않고, URL·브라우저 이력·북마크·다운로드 기록과 배포 환경의 프록시 로그에 남을 수 있다는 잔여 위험을 문서화한다. 배포 프로젝트는 입력 안내·검증·보존·접근 정책에 따라 허용 범위를 더 좁히거나 비URL 검색으로 대체할 수 있다.
 4. **클라이언트 UI 상태**: 컴포넌트 로컬 상태를 우선하고 여러 독립 하위 트리가 공유하는 테마·shell 상태 등에는 Context를 사용할 수 있다. 외부 전역 상태 라이브러리는 실제 복잡성과 별도 채택 결정이 있을 때만 도입한다.
 5. **초기 데이터 전략**: 인증된 초기 핵심 데이터는 TTFB, 최초 데이터 표시, loading 노출 시간, 중복 요청, route JavaScript와 캐시 회복을 비교해 이익이 있을 때 서버 prefetch 및 hydration을 사용한다. 상호작용 후 필요하거나 비핵심인 데이터는 client fetch를 사용할 수 있으며, 임의의 hydration 개수 quota를 두지 않는다. Server Component에서 클라이언트 훅을 직접 호출하지 않는다.
-6. **인증 세션 보안 모델 (Authentication Session Security)**: 인증 토큰의 저장·전송·검증은 다음 규범을 예외 없이 준수하여 URL·클라이언트 저장소로의 자격증명 누출을 차단한다.
-   - **① 토큰 저장소 격리**: `accessToken`은 `HttpOnly` + `Secure` + `SameSite` 속성을 부여한 쿠키에만 저장하며, `localStorage`·`sessionStorage` 등 JavaScript로 접근 가능한 저장소에 토큰을 보관하는 것을 엄격히 금지한다(XSS를 통한 토큰 탈취 차단).
+6. **인증 세션 보안 모델 (Authentication Session Security)**: 프론트엔드가 소유하는 `accessToken`의 저장·전송·검증은 다음 규범을 준수하여 URL·클라이언트 저장소로의 자격증명 누출을 차단한다. 속성 예외는 아래 ①에 명시한 명시적 평문 local loopback 개발·검증의 `Secure` 미설정뿐이며 다른 환경으로 확대하지 않는다.
+   - **① 토큰 저장소 격리**: `accessToken`은 모든 환경에서 `HttpOnly` + `SameSite=Strict`인 쿠키에만 저장한다. `Secure`는 기본값이자 운영·preview·staging·공유 개발 등 배포 환경의 필수 속성이다. `development`·`test` 실행이 서버 전용 opt-in을 명시하고 내부 URL, 원 요청 `Host`, forwarding protocol·host·접속자 주소가 모두 단일 평문 local loopback(`localhost`, `127.0.0.1`, `[::1]`)으로 일치할 때만 생략할 수 있으며, 증거가 누락·모호하면 `Secure`를 유지한다. `localStorage`·`sessionStorage` 등 JavaScript로 접근 가능한 저장소에 토큰을 보관하는 것을 엄격히 금지한다(XSS를 통한 토큰 탈취 차단).
    - **② Same-Origin 프록시 경유**: 브라우저에서 백엔드로의 모든 API 호출은 동일 출처(same-origin) 프록시(클라이언트 `baseURL='/api/v1'` + `next.config.ts`의 `rewrites`)를 경유하며, 토큰은 미들웨어(`frontend/src/proxy.ts`)가 `Authorization: Bearer` 헤더로 주입한다. 브라우저 코드가 토큰 문자열을 직접 읽어 헤더에 싣지 않는다.
    - **③ 미들웨어 서명 검증(심층 방어)**: 페이지 접근 게이트인 미들웨어(`frontend/src/proxy.ts`)는 `accessToken` JWT의 HMAC 서명과 만료(`exp`)를 Web Crypto(`crypto.subtle.verify`)로 실제 검증하되, `alg`는 화이트리스트(`HS256`/`HS384`/`HS512`)로만 매핑하여 `alg=none` 및 대칭·비대칭 혼동(confusion) 공격을 차단한다. 미들웨어 검증은 위조 토큰의 관리자 UI 셸 열람을 막는 심층 방어 계층이며, 토큰의 authoritative(최종 권위) 재검증은 백엔드가 수행한다.
 
@@ -133,4 +133,4 @@
 ## 제9장 부칙 (Supplementary Provisions)
 
 ### 제17조 (시행일)
-본 헌법은 공포된 즉시 효력을 발생하며, 모든 프론트엔드 개발 및 UI 개선 작업의 최상위 지침으로 적용된다. 2026-08-20 개정은 사용자 명시 승인과 `ADR-0003`에 근거한다. 2026-09-05 제4조 개정은 사용자 명시 승인과 `ADR-0009`에 근거하며, 개인정보성 검색어의 URL 허용 범위와 잔여 위험을 화면별 계약으로 제한한다. 구체 구현·평가 절차는 해당 ADR과 연결된 architecture·testing·design-token 가이드가 소유한다.
+본 헌법은 공포된 즉시 효력을 발생하며, 모든 프론트엔드 개발 및 UI 개선 작업의 최상위 지침으로 적용된다. 2026-08-20 개정은 사용자 명시 승인과 `ADR-0003`에 근거한다. 2026-09-05 제4조 URL-state 개정은 사용자 명시 승인과 `ADR-0009`에 근거하며, 개인정보성 검색어의 URL 허용 범위와 잔여 위험을 화면별 계약으로 제한한다. 같은 날 인증 세션 개정은 사용자가 승인한 헌법·하네스 개선 계획과 `ADR-0010`에 근거하며, `Secure` 미설정을 명시적으로 opt-in한 평문 local loopback 개발·검증으로 제한한다. 구체 구현·평가 절차는 해당 ADR과 연결된 architecture·testing·design-token·security 가이드가 소유한다.

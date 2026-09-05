@@ -6,7 +6,7 @@ authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-09-05
-verified_against: 22b79d1ffbeff90af8b1f0c5d306c5e796ec4689
+verified_against: 02ddf334e6267e9fb3fafd7be928fd8e3e2ce09b
 canonical_sources:
   - ../../AGENTS.md
   - ../../docs/02-architecture/decisions/README.md
@@ -41,6 +41,7 @@ refresh_triggers:
 | ADR-0007 | accepted | 2026-08-23 G1 워크숍(참석: lkindo, 세 owner 역할)에서 하이브리드 IA를 참조-기본(reference-default) IA로 승인하고, 연구·live DB census·AT 증거 요건은 기관 채택 시점의 재검증 의무로 이전한다. route별 disposition은 일괄 승인되지 않으며 owner PR 리뷰로 개별 승인한다. PD-UX-002는 보류 유지. | 참조 구현에는 운영 DB도 실사용자도 구조적으로 존재하지 않아 원 G1 요건이 영구 미충족이었다. 사용자 연구 없는 승인임은 accepted-risk로 영구 기록하며, 파생 제품도 그 한계를 승계한다. | [ADR-0007](../../docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md) | 2026-08-23 | - |
 | ADR-0008 | accepted | `migration-tool`은 PostgreSQL·Oracle·Tibero·MySQL·MariaDB·SQL Server 소스를 inventory·plan·승인 artifact와 digest에 결속해 Flyway 소유 PostgreSQL 표준 스키마로 적재하는 독립 offline `bootJar`로 유지한다. | 소스별 객체 누락과 미검증 자동화를 fail-closed로 드러내면서 온라인 앱과 타깃 스키마 소유권을 침범하지 않는 재현 가능한 승인 경계를 만들기 위해서다. | [ADR-0008](../../docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md) | 2026-08-31 | - |
 | ADR-0009 | accepted | 업무상 개인정보가 포함될 수 있는 사용자 검색어는 화면별 route·query allowlist와 로그 비복제 조건 아래 URL에 둘 수 있다. 앱은 자격증명·고위험 개인정보·응답 원문용 URL state를 설계하거나 검색창에서 입력을 유도하지 않으며, 자유 입력에 예상 밖 값이 들어올 가능성은 잔여 위험이다. | GET·SSR·공유·새로고침 복원과 streaming download를 보존하면서 무제한 query 전파와 로그 노출을 차단하기 위해서다. | [ADR-0009](../../docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md) | 2026-09-05 | ADR-0003 §5의 검색어 절대 금지 부분 |
+| ADR-0010 | accepted | 프론트엔드 `accessToken`·`session_exp` 쿠키의 `Secure`는 기본·배포 필수 속성으로 유지하고, 명시적으로 opt-in한 평문 HTTP local loopback 개발·검증에만 미설정을 허용한다. `accessToken`의 `HttpOnly`와 두 쿠키의 `SameSite=Strict`는 환경과 관계없이 유지한다. | 로컬 HTTP 흐름을 보존하면서 production 여부나 내부 URL만으로 공유 개발·preview·staging까지 예외가 넓어지는 것을 막고, 로그인·재발급을 같은 실행 계약에 결속하기 위해서다. | [ADR-0010](../../docs/02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md) | 2026-09-05 | - |
 
 ## 운영 결정 index
 

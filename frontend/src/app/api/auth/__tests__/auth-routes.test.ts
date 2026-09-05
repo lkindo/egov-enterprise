@@ -75,10 +75,29 @@ function setCookie(response: Response, name: string): ParsedCookie | null {
   return { value: pair.slice(name.length + 1), attrs };
 }
 
-function postRequest(path: string, body?: unknown, headers: Record<string, string> = {}): NextRequest {
-  return new NextRequest(`http://localhost:3001${path}`, {
+function postRequest(
+  path: string,
+  body?: unknown,
+  headers: Record<string, string> = {},
+  origin = 'http://localhost:3001',
+): NextRequest {
+  const requestOrigin = new URL(origin);
+  const forwardedClient = requestOrigin.hostname === '[::1]'
+    ? '::1'
+    : requestOrigin.hostname === 'localhost'
+      ? '127.0.0.1'
+      : requestOrigin.hostname;
+
+  return new NextRequest(`${origin}${path}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', ...headers },
+    headers: {
+      'content-type': 'application/json',
+      host: requestOrigin.host,
+      'x-forwarded-host': requestOrigin.host,
+      'x-forwarded-proto': requestOrigin.protocol.slice(0, -1),
+      'x-forwarded-for': forwardedClient,
+      ...headers,
+    },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 }
@@ -90,12 +109,123 @@ function axiosError(status: number, data: unknown) {
   });
 }
 
+type SessionRouteName = 'login' | 'reissue';
+
+async function issueSessionThroughRoute(
+  routeName: SessionRouteName,
+  origin: string,
+  headers: Record<string, string> = {},
+): Promise<Response> {
+  const token = tokenWithExp(inOneHour());
+  mockedPost.mockResolvedValue({
+    status: 200,
+    data: successEnvelope(routeName === 'login'
+      ? { accessToken: token, role: 'ROLE_USER' }
+      : { accessToken: token }),
+    headers: {},
+  });
+
+  if (routeName === 'login') {
+    return login(postRequest(
+      '/api/auth/login',
+      { userId: 'u', password: 'p' },
+      headers,
+      origin,
+    ));
+  }
+
+  return reissue(postRequest(
+    '/api/auth/reissue',
+    undefined,
+    { cookie: 'refreshToken=rt', ...headers },
+    origin,
+  ));
+}
+
+function expectSessionCookiePolicy(response: Response, expectedSecure: boolean): void {
+  const accessToken = setCookie(response, 'accessToken');
+  const sessionExpiry = setCookie(response, 'session_exp');
+
+  expect(accessToken, 'accessToken 쿠키 미설정').not.toBeNull();
+  expect(sessionExpiry, 'session_exp 쿠키 미설정').not.toBeNull();
+  expect(accessToken?.attrs.has('httponly')).toBe(true);
+  expect(sessionExpiry?.attrs.has('httponly')).toBe(false);
+
+  for (const cookie of [accessToken, sessionExpiry]) {
+    expect(cookie?.attrs.get('samesite')?.toLowerCase()).toBe('strict');
+    expect(cookie?.attrs.get('path')).toBe('/');
+    expect(cookie?.attrs.has('secure')).toBe(expectedSecure);
+  }
+}
+
 beforeEach(() => {
   mockedPost.mockReset();
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
+});
+
+describe.each(['login', 'reissue'] as const)('%s Route Handler의 세션 쿠키 전송 정책', (routeName) => {
+  it.each([
+    {
+      caseName: 'production은 HTTP loopback 요청이어도 Secure를 강제한다',
+      nodeEnv: 'production',
+      origin: 'http://localhost:3001',
+      allowInsecureLoopback: true,
+      headers: {},
+      expectedSecure: true,
+    },
+    {
+      caseName: 'development의 명시적 HTTP loopback에서만 Secure를 생략한다',
+      nodeEnv: 'development',
+      origin: 'http://localhost:3001',
+      allowInsecureLoopback: true,
+      headers: {},
+      expectedSecure: false,
+    },
+    {
+      caseName: 'development라도 opt-in이 없으면 Secure를 강제한다',
+      nodeEnv: 'development',
+      origin: 'http://localhost:3001',
+      allowInsecureLoopback: false,
+      headers: {},
+      expectedSecure: true,
+    },
+    {
+      caseName: 'Next 내부 URL이 localhost여도 원 요청 host가 외부면 Secure를 강제한다',
+      nodeEnv: 'development',
+      origin: 'http://localhost:3001',
+      allowInsecureLoopback: true,
+      headers: {
+        host: '192.0.2.10:3001',
+        'x-forwarded-host': '192.0.2.10:3001',
+        'x-forwarded-for': '192.0.2.20',
+      },
+      expectedSecure: true,
+    },
+  ])('$caseName', async ({
+    nodeEnv,
+    origin,
+    allowInsecureLoopback,
+    headers,
+    expectedSecure,
+  }) => {
+    vi.stubEnv('NODE_ENV', nodeEnv);
+    vi.stubEnv(
+      'ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE',
+      allowInsecureLoopback ? 'true' : 'false',
+    );
+
+    const response = await issueSessionThroughRoute(
+      routeName,
+      origin,
+      headers as Record<string, string>,
+    );
+
+    expectSessionCookiePolicy(response, expectedSecure);
+  });
 });
 
 describe('POST /api/auth/login', () => {

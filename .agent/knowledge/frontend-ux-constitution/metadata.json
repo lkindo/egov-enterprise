@@ -1,16 +1,18 @@
 {
   "title": "Frontend Design & UX Constitution",
-  "summary": "egov-enterprise 프로젝트의 사용자 과업 중심 UI/UX, 브랜드 중립 프로필, WCAG 2.2 접근성 및 프론트엔드 아키텍처 원칙입니다.",
+  "summary": "egov-enterprise 프로젝트의 사용자 과업 중심 UI/UX, 브랜드 중립 프로필, WCAG 2.2 접근성, 인증 세션 보안 및 프론트엔드 아키텍처 원칙입니다.",
   "category": "Design",
-  "tags": ["Frontend", "UX", "Accessibility", "WCAG22", "DesignSystem", "Profiles"],
+  "tags": ["Frontend", "UX", "Accessibility", "WCAG22", "DesignSystem", "Profiles", "Security", "Authentication"],
   "updatedAt": "2026-09-05T00:00:00Z",
   "references": [
     "AGENTS.md",
     "docs/02-architecture/frontend-design-system.md",
     "docs/02-architecture/frontend-architecture.md",
     "docs/03-guides/design-tokens.md",
+    "docs/03-guides/security-hardening-playbook.md",
     "docs/02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md",
     "docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md",
+    "docs/02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md",
     "docs/02-architecture/ui-ux-modernization-plan.md"
   ]
 }
