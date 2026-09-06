@@ -21,8 +21,9 @@ import java.util.stream.Collectors;
  * 그 매핑은 {@code AttachmentSourceRegistryLinterTest} 로 검증한다. 따라서 base projection에서 기능이
  * 빠지면 해당 참조원도 함께 빠져 존재하지 않는 테이블을 조회하지 않는다.
  *
- * <p><b>[fail-closed]</b> 조회 실패(테이블 부재·권한 등)는 <b>열람 근거 없음 + 개인 참조 존재</b>로
- * 취급한다. 즉 실패는 관리자 우회까지 막는 쪽으로 기운다 — 인가 판정에서 모르는 것은 허용이 아니다.
+ * <p><b>[fail-closed]</b> 조회 실패(테이블 부재·권한 등)는 별도 실패 상태로 집계한다.
+ * 이미 다른 참조원에서 소유·공유 근거를 확인했더라도 실패 상태가 그 근거보다 우선한다 —
+ * 인가 판정에서 모르는 것은 허용이 아니다.
  */
 @Slf4j
 @Component
@@ -55,6 +56,8 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         boolean shared = false;
         boolean owner = false;
         boolean personal = false;
+        boolean personalOwner = false;
+        boolean resolutionFailed = false;
 
         for (AttachmentSource source : sources) {
             if (source.sensitivity() == AttachmentSource.Sensitivity.DERIVED) {
@@ -65,14 +68,16 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 SourceHit hit = query(source, atchFileSn, loginId, esntlId);
                 shared |= hit.shared();
                 owner |= hit.owner();
-                personal |= hit.referenced() && source.sensitivity() == AttachmentSource.Sensitivity.PERSONAL;
+                boolean personalSource = source.sensitivity() == AttachmentSource.Sensitivity.PERSONAL;
+                personal |= hit.referenced() && personalSource;
+                personalOwner |= hit.owner() && personalSource;
             } catch (DataAccessException ex) {
                 log.error("[FileAccess] 참조원 조회 실패 — fail-closed 로 처리한다. source={} table={} atchFileSn={}",
                         source, source.table(), atchFileSn, ex);
-                personal = true;
+                resolutionFailed = true;
             }
         }
-        return new Grants(shared, owner, personal);
+        return new Grants(shared, owner, personal, personalOwner, resolutionFailed);
     }
 
     private SourceHit query(AttachmentSource source, Long atchFileSn, String loginId, String esntlId) {

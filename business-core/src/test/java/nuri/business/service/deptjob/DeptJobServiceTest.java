@@ -5,11 +5,9 @@ import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobBox;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
 import nuri.business.domain.deptjob.DeptJobRepository;
-import nuri.business.domain.file.FileMaster;
-import nuri.business.domain.file.FileMasterRepository;
 import nuri.business.domain.organization.OrganizationManage;
 import nuri.business.domain.organization.OrganizationManageRepository;
-import nuri.business.service.file.FileAccessPolicy;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.service.deptjob.dto.DeptJobMapper;
 import nuri.business.service.deptjob.dto.DeptJobMapperImpl;
@@ -62,10 +60,7 @@ class DeptJobServiceTest {
     private OrganizationManageRepository organizationManageRepository;
 
     @Mock
-    private FileMasterRepository fileMasterRepository;
-
-    @Mock
-    private FileAccessPolicy fileAccessPolicy;
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     // 실제 MapStruct 생성 구현(DeptJobMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
     @Spy
@@ -311,8 +306,6 @@ class DeptJobServiceTest {
     @DisplayName("부서업무 생성 - 첨부는 저장 전에 연결 권한을 검증한다")
     void createDeptJob_checksAttachmentBeforeSave() {
         authenticateAs("tester", "USR_TESTER");
-        FileMaster master = new FileMaster(202L);
-        when(fileMasterRepository.findById(202L)).thenReturn(Optional.of(master));
         when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("첨부 업무");
@@ -320,8 +313,8 @@ class DeptJobServiceTest {
 
         deptJobService.createDeptJob(dto);
 
-        InOrder order = inOrder(fileAccessPolicy, deptJobRepository);
-        order.verify(fileAccessPolicy).assertAttachable(master);
+        InOrder order = inOrder(attachmentAssignmentPolicy, deptJobRepository);
+        order.verify(attachmentAssignmentPolicy).assertAssignable(202L);
         order.verify(deptJobRepository).save(any(DeptJob.class));
     }
 
@@ -329,10 +322,8 @@ class DeptJobServiceTest {
     @DisplayName("부서업무 생성 - 연결 권한이 없는 첨부는 업무를 저장하지 않는다")
     void createDeptJob_rejectsUnattachableFile() {
         authenticateAs("tester", "USR_TESTER");
-        FileMaster master = new FileMaster(202L);
-        when(fileMasterRepository.findById(202L)).thenReturn(Optional.of(master));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(fileAccessPolicy).assertAttachable(master);
+                .when(attachmentAssignmentPolicy).assertAssignable(202L);
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("타인 첨부 연결 시도");
         dto.setAtchFileSn(202L);
@@ -348,7 +339,8 @@ class DeptJobServiceTest {
     @DisplayName("부서업무 생성 - 존재하지 않는 첨부는 404로 거부한다")
     void createDeptJob_rejectsMissingFile() {
         authenticateAs("tester", "USR_TESTER");
-        when(fileMasterRepository.findById(404L)).thenReturn(Optional.empty());
+        doThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND))
+                .when(attachmentAssignmentPolicy).assertAssignable(404L);
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("없는 첨부 업무");
         dto.setAtchFileSn(404L);
@@ -357,7 +349,6 @@ class DeptJobServiceTest {
                 () -> deptJobService.createDeptJob(dto));
 
         assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, error.getErrorCode());
-        verify(fileAccessPolicy, never()).assertAttachable(any());
         verify(deptJobRepository, never()).save(any());
     }
 
@@ -366,10 +357,8 @@ class DeptJobServiceTest {
     void updateDeptJob_rejectsUnattachableReplacement() {
         authenticateAs("tester", "USER1");
         when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
-        FileMaster master = new FileMaster(202L);
-        when(fileMasterRepository.findById(202L)).thenReturn(Optional.of(master));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(fileAccessPolicy).assertAttachable(master);
+                .when(attachmentAssignmentPolicy).assertAssignable(202L);
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("바뀌면 안 되는 제목");
         dto.setAtchFileSn(202L);
@@ -391,7 +380,7 @@ class DeptJobServiceTest {
 
         deptJobService.updateDeptJob(1L, dto);
 
-        verifyNoInteractions(fileMasterRepository, fileAccessPolicy);
+        verifyNoInteractions(attachmentAssignmentPolicy);
         assertEquals(101L, deptJob.getAtchFileSn());
     }
 

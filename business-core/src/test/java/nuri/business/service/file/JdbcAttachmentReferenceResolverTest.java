@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,6 +40,10 @@ class JdbcAttachmentReferenceResolverTest {
     private static final String LOGIN_ID = "webmaster";
     private static final String ESNTL_ID = "USR_0000000000000001";
 
+    private record SourceCounts(long refCnt, long sharedCnt, long ownerCnt) {
+        private static final SourceCounts NONE = new SourceCounts(0, 0, 0);
+    }
+
     /** 조립된 SQL 과 파라미터를 포착하면서, 지정한 카운트를 돌려주는 목 JdbcTemplate. */
     private static final class CapturingJdbc {
         final JdbcTemplate template = mock(JdbcTemplate.class);
@@ -46,18 +51,24 @@ class JdbcAttachmentReferenceResolverTest {
         final List<Object[]> params = new ArrayList<>();
 
         CapturingJdbc(long refCnt, long sharedCnt, long ownerCnt) {
+            this(source -> new SourceCounts(refCnt, sharedCnt, ownerCnt));
+        }
+
+        CapturingJdbc(Function<AttachmentSource, SourceCounts> countsBySource) {
             when(template.queryForObject(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), any(Object[].class)))
                     .thenAnswer(invocation -> {
                         sqls.add(invocation.getArgument(0));
+                        AttachmentSource source = sourceForSql(invocation.getArgument(0));
+                        SourceCounts counts = countsBySource.apply(source);
                         RowMapper<?> mapper = invocation.getArgument(1);
                         // Mockito 는 varargs 를 위치 인자로 평탄화한다 — getArgument(2) 는 배열이 아니라
                         // 첫 번째 가변인자다. 개수가 참조원마다 다르므로 원본 배열에서 잘라 낸다.
                         Object[] all = invocation.getArguments();
                         params.add(java.util.Arrays.copyOfRange(all, 2, all.length));
                         ResultSet rs = mock(ResultSet.class);
-                        when(rs.getLong("ref_cnt")).thenReturn(refCnt);
-                        when(rs.getLong("shared_cnt")).thenReturn(sharedCnt);
-                        when(rs.getLong("owner_cnt")).thenReturn(ownerCnt);
+                        when(rs.getLong("ref_cnt")).thenReturn(counts.refCnt());
+                        when(rs.getLong("shared_cnt")).thenReturn(counts.sharedCnt());
+                        when(rs.getLong("owner_cnt")).thenReturn(counts.ownerCnt());
                         return mapper.mapRow(rs, 1);
                     });
         }
@@ -189,6 +200,42 @@ class JdbcAttachmentReferenceResolverTest {
     }
 
     @Test
+    @DisplayName("공유 참조의 소유 근거는 개인 귀속 소유 근거로 승격되지 않는다")
+    void sharedOwnerIsNotAggregatedAsPersonalOwner() {
+        CapturingJdbc jdbc = new CapturingJdbc(source -> {
+            if (source == AttachmentSource.BOARD) {
+                return new SourceCounts(1, 1, 1);
+            }
+            if (source == AttachmentSource.NOTE) {
+                return new SourceCounts(1, 0, 0);
+            }
+            return SourceCounts.NONE;
+        });
+
+        AttachmentReferenceResolver.Grants grants =
+                jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+
+        assertThat(grants.ownerGrant()).isTrue();
+        assertThat(grants.personalReference()).isTrue();
+        assertThat(grants.personalOwnerGrant()).isFalse();
+    }
+
+    @Test
+    @DisplayName("개인 귀속 참조의 당사자는 personalOwnerGrant 로 따로 집계된다")
+    void personalOwnerIsAggregatedSeparately() {
+        CapturingJdbc jdbc = new CapturingJdbc(source -> source == AttachmentSource.NOTE
+                ? new SourceCounts(1, 0, 1)
+                : SourceCounts.NONE);
+
+        AttachmentReferenceResolver.Grants grants =
+                jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+
+        assertThat(grants.ownerGrant()).isTrue();
+        assertThat(grants.personalReference()).isTrue();
+        assertThat(grants.personalOwnerGrant()).isTrue();
+    }
+
+    @Test
     @DisplayName("참조 행이 하나도 없으면 어떤 근거도 서지 않는다 — 고아 첨부")
     void noRowsMeansNoGrants() {
         AttachmentReferenceResolver.Grants grants =
@@ -196,9 +243,11 @@ class JdbcAttachmentReferenceResolverTest {
 
         assertThat(grants.sharedGrant()).isFalse();
         assertThat(grants.ownerGrant()).isFalse();
+        assertThat(grants.personalOwnerGrant()).isFalse();
         assertThat(grants.personalReference())
                 .as("참조가 없으면 관리자 우회를 막을 이유도 없다")
                 .isFalse();
+        assertThat(grants.resolutionFailed()).isFalse();
     }
 
     @Test
@@ -213,9 +262,31 @@ class JdbcAttachmentReferenceResolverTest {
 
         assertThat(grants.sharedGrant()).isFalse();
         assertThat(grants.ownerGrant()).isFalse();
-        assertThat(grants.personalReference())
-                .as("인가 판정에서 '모르는 것' 은 허용이 아니다 — 실패는 관리자 우회까지 막는 쪽으로 기운다")
+        assertThat(grants.personalReference()).isFalse();
+        assertThat(grants.resolutionFailed())
+                .as("인가 판정에서 '모르는 것' 은 허용이 아니다 — 별도 실패 신호로 전부 닫는다")
                 .isTrue();
+    }
+
+    @Test
+    @DisplayName("한 참조원 실패는 다른 참조원에서 먼저 확인한 소유·공유 근거를 무효화할 신호로 남는다")
+    void anySourceFailureIsRememberedAlongsideKnownGrants() {
+        CapturingJdbc jdbc = new CapturingJdbc(source -> {
+            if (source == AttachmentSource.BOARD) {
+                return new SourceCounts(1, 1, 1);
+            }
+            if (source == AttachmentSource.NOTE) {
+                throw new QueryTimeoutException("note lookup timed out");
+            }
+            return SourceCounts.NONE;
+        });
+
+        AttachmentReferenceResolver.Grants grants =
+                jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+
+        assertThat(grants.sharedGrant()).isTrue();
+        assertThat(grants.ownerGrant()).isTrue();
+        assertThat(grants.resolutionFailed()).isTrue();
     }
 
     @Test
@@ -271,7 +342,7 @@ class JdbcAttachmentReferenceResolverTest {
         AttachmentReferenceResolver.Grants grants =
                 resolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
-        assertThat(grants.personalReference()).isTrue();
+        assertThat(grants.resolutionFailed()).isTrue();
     }
 
     @Test
@@ -304,5 +375,12 @@ class JdbcAttachmentReferenceResolverTest {
     private static JdbcAttachmentReferenceResolver resolver(JdbcTemplate template) {
         AttachmentSourceContributor allSources = () -> Arrays.asList(AttachmentSource.values());
         return new JdbcAttachmentReferenceResolver(template, List.of(allSources));
+    }
+
+    private static AttachmentSource sourceForSql(String sql) {
+        return Arrays.stream(AttachmentSource.values())
+                .filter(source -> sql.contains(" FROM " + source.table() + " "))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("등록되지 않은 참조원 SQL: " + sql));
     }
 }

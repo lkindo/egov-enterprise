@@ -1,24 +1,38 @@
 package nuri.api.schema;
 
+import nuri.business.domain.program.ProgramRepository;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.springframework.data.jpa.repository.Query;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@DisplayName("메뉴 BIGINT 수동 PK → IDENTITY 생성전략 보정")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@DisplayName("메뉴 IDENTITY 및 자동 Program 준비 PostgreSQL 계약")
 class MenuIdentityMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     private static final long LEGACY_ROOT_SN = 800_000_000L;
 
     @Test
+    @Order(1)
     @DisplayName("기존 계층·권한을 보존하고 레거시 ROOT 정리 후 충돌 없는 번호를 자동 발급한다")
     void addsIdentityAndPreservesMenuRelationships() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.75")).migrate();
@@ -108,6 +122,91 @@ class MenuIdentityMigrationIntegrationTest extends SharedPostgresMigrationTestSu
             assertThat(singleLong(statement,
                     "SELECT count(*) FROM tb_menu_crt_dtl WHERE menu_sn=" + generatedChildSn))
                     .isEqualTo(1L);
+        }
+    }
+
+    @Test
+    @Order(2)
+    @DisplayName("같은 Program을 동시에 최초 준비해도 PK 충돌 없이 한 행만 생성한다")
+    void concurrentProgramProvisioningIsAtomic() throws Exception {
+        flyway(null).migrate();
+
+        var method = ProgramRepository.class.getMethod(
+                "insertIfAbsent", String.class, String.class, String.class, String.class, String.class);
+        Query query = method.getAnnotation(Query.class);
+        assertThat(query).isNotNull();
+        assertThat(query.nativeQuery()).isTrue();
+        assertThat(query.value()).contains("ON CONFLICT ON CONSTRAINT pk_tb_prgrm_lst DO NOTHING");
+
+        String jdbcSql = query.value()
+                .replace(":prgrmFileNm", "?")
+                .replace(":prgrmKornNm", "?")
+                .replace(":url", "?")
+                .replace(":prgrmStrgPath", "?")
+                .replace(":auditActor", "?");
+        String programFileName = "E2E_CONCURRENT_PROGRAM";
+
+        try (Connection connection = openConnection();
+             PreparedStatement delete = connection.prepareStatement(
+                     "DELETE FROM tb_prgrm_lst WHERE prgrm_file_nm = ?")) {
+            delete.setString(1, programFileName);
+            delete.executeUpdate();
+        }
+
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<Integer> first = executor.submit(() -> insertProgram(jdbcSql, programFileName, ready, start));
+            Future<Integer> second = executor.submit(() -> insertProgram(jdbcSql, programFileName, ready, start));
+
+            boolean bothReady = ready.await(10, TimeUnit.SECONDS);
+            start.countDown();
+            assertThat(bothReady).as("두 독립 transaction이 동시에 insert를 시작할 준비").isTrue();
+
+            assertThat(List.of(
+                    first.get(30, TimeUnit.SECONDS),
+                    second.get(30, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(0, 1);
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+        }
+
+        try (Connection connection = openConnection();
+             PreparedStatement select = connection.prepareStatement("""
+                     SELECT frst_rgtr_id, last_mdfr_id
+                       FROM tb_prgrm_lst
+                      WHERE prgrm_file_nm = ?
+                     """)) {
+            select.setString(1, programFileName);
+            try (ResultSet result = select.executeQuery()) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString(1)).isEqualTo("admin");
+                assertThat(result.getString(2)).isEqualTo("admin");
+                assertThat(result.next()).isFalse();
+            }
+        }
+    }
+
+    private int insertProgram(String sql, String programFileName,
+            CountDownLatch ready, CountDownLatch start) throws Exception {
+        try (Connection connection = openConnection();
+             PreparedStatement insert = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
+            insert.setString(1, programFileName);
+            insert.setString(2, "동시 생성 프로그램");
+            insert.setString(3, "/e2e/concurrent-program");
+            insert.setString(4, "/auto-generated");
+            insert.setString(5, "admin");
+            insert.setString(6, "admin");
+            ready.countDown();
+            if (!start.await(10, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("동시 insert 시작 신호를 기다리는 중 timeout");
+            }
+            int inserted = insert.executeUpdate();
+            connection.commit();
+            return inserted;
         }
     }
 

@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.BusinessException;
 
 import nuri.business.domain.operation.RewardManage;
 import nuri.business.domain.operation.RewardManageRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.operation.dto.RewardManageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ import java.util.Objects;
 public class RewardManageService {
 
     private final RewardManageRepository rewardManageRepository;
+    private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     /**
      * 포상 목록 조회(페이징). 포상명(name)이 주어지면 부분일치 검색한다.
@@ -34,6 +36,10 @@ public class RewardManageService {
 
     @Transactional
     public RewardManageDto createReward(RewardManageDto dto) {
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
         RewardManage reward = RewardManage.builder()
                 .rwrdUserId(dto.getRwardwnrId())
                 .rwrdCd(dto.getRwardCode())
@@ -44,7 +50,7 @@ public class RewardManageService {
                 .confmYn(dto.getConfmAt())
                 .aprvDt(dto.getSanctnDt())
                 .rtnRsnCn(dto.getReturnResn())
-                .atchFileSn(dto.getAtchFileSn())
+                .atchFileSn(atchFileSn)
                 .ifmlAtrzSn(dto.getIfmlAtrzSn())
                 .build();
         // 감사 필드는 빌더 대신 세터로 이월(insert 시 auditing 이 덮으며, merge 시 값 보존)
