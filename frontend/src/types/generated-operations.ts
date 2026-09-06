@@ -1147,6 +1147,26 @@ export const deletePostOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const updatePostWithFilesOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "updatePostWithFiles",
+  method: "put",
+  path: "/api/v1/boards/{bbsId}/posts/{pstSn}/with-files",
+  requestKind: "multipart",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: [{"name":"board","required":true,"multiple":false,"mediaType":"application/json","schemaRef":"#/components/schemas/BoardSaveRequest"},{"name":"file","required":false,"multiple":true,"mediaType":"application/octet-stream","schemaRef":null}],
+  pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: z.object({
+  "board": z.lazy(() => BoardSaveRequestRequestSchema.strict()),
+  "file": z.array(z.custom<Blob>((value) => typeof Blob !== 'undefined' && value instanceof Blob)).optional()
+}).strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const updateOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "update",
   method: "put",
@@ -1173,60 +1193,6 @@ export const deleteOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int(), "dgstfnSn": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const getBbsDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "getBbsDetail",
-  method: "get",
-  path: "/api/v1/bbs/{bbsId}/posts/{pstSn}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => BoardDtoResponseSchema),
-  envelopeSchema: ApiResponseBoardDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [["pswd"]],
-});
-
-export const updateBbsPostOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "updateBbsPost",
-  method: "put",
-  path: "/api/v1/bbs/{bbsId}/posts/{pstSn}",
-  requestKind: "multipart",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: [{"name":"board","required":true,"multiple":false,"mediaType":"application/json","schemaRef":"#/components/schemas/BoardSaveRequest"},{"name":"file","required":false,"multiple":true,"mediaType":"application/octet-stream","schemaRef":null}],
-  pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: z.object({
-  "board": z.lazy(() => BoardSaveRequestRequestSchema.strict()),
-  "file": z.array(z.custom<Blob>((value) => typeof Blob !== 'undefined' && value instanceof Blob)).optional()
-}).strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const deleteBbsPostOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "deleteBbsPost",
-  method: "delete",
-  path: "/api/v1/bbs/{bbsId}/posts/{pstSn}",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,
@@ -3623,6 +3589,26 @@ export const createOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const createPostWithFilesOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "createPostWithFiles",
+  method: "post",
+  path: "/api/v1/boards/{bbsId}/posts/with-files",
+  requestKind: "multipart",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: [{"name":"board","required":true,"multiple":false,"mediaType":"application/json","schemaRef":"#/components/schemas/BoardSaveRequest"},{"name":"file","required":false,"multiple":true,"mediaType":"application/octet-stream","schemaRef":null}],
+  pathSchema: z.object({ "bbsId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: z.object({
+  "board": z.lazy(() => BoardSaveRequestRequestSchema.strict()),
+  "file": z.array(z.custom<Blob>((value) => typeof Blob !== 'undefined' && value instanceof Blob)).optional()
+}).strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const createPostOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "createPost",
   method: "post",
@@ -3634,43 +3620,6 @@ export const createPostOperation = /*#__PURE__*/ defineGeneratedOperation({
   pathSchema: null,
   querySchema: null,
   requestSchema: BoardSaveRequestRequestSchema.strict(),
-  responseSchema: z.number().int(),
-  envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const getBbsListOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "getBbsList",
-  method: "get",
-  path: "/api/v1/bbs/{bbsId}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "bbsId": z.string() }).strict(),
-  querySchema: z.object({ "searchCnd": z.string().optional(), "searchWrd": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseBoardDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseBoardDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [["list","*","pswd"]],
-});
-
-export const createBbsPostOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "createBbsPost",
-  method: "post",
-  path: "/api/v1/bbs/{bbsId}",
-  requestKind: "multipart",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: [{"name":"board","required":true,"multiple":false,"mediaType":"application/json","schemaRef":"#/components/schemas/BoardSaveRequest"},{"name":"file","required":false,"multiple":true,"mediaType":"application/octet-stream","schemaRef":null}],
-  pathSchema: z.object({ "bbsId": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: z.object({
-  "board": z.lazy(() => BoardSaveRequestRequestSchema.strict()),
-  "file": z.array(z.custom<Blob>((value) => typeof Blob !== 'undefined' && value instanceof Blob)).optional()
-}).strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],

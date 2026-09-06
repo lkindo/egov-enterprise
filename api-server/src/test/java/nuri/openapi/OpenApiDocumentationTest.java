@@ -251,7 +251,7 @@ class OpenApiDocumentationTest {
         .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
     com.fasterxml.jackson.databind.JsonNode operation =
         new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
-            .path("paths").path("/api/v1/bbs/{bbsId}").path("post");
+            .path("paths").path("/api/v1/boards/{bbsId}/posts/with-files").path("post");
     com.fasterxml.jackson.databind.JsonNode mediaTypes = operation.path("requestBody").path("content");
 
     assertThat(mediaTypes.has("multipart/form-data")).isTrue();

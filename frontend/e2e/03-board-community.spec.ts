@@ -71,8 +71,8 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 const responseHandler = async (response: import('@playwright/test').Response) => {
                     const url = response.url();
                     const method = response.request().method();
-                    // Intercept both old and new API paths
-                    if (method === 'POST' && (url.includes('/api/v1/boards/posts') || url.includes('/api/v1/bbs'))) {
+                    // 게시글 등록은 첨부 유무로 JSON 과 multipart 두 경로로 갈린다(DEC-OPS-044).
+                    if (method === 'POST' && (url.includes('/api/v1/boards/posts') || url.includes('/posts/with-files'))) {
                         try {
                             const body = await response.json();
                             const pstSn = body?.data;

@@ -8,11 +8,11 @@ import {
 import { revalidatePath } from 'next/cache';
 import { QNA_BOARD_ID } from '@/config/board-ids';
 import {
-  createBbsPostOperation,
+  createPostWithFilesOperation,
   createPostOperation,
   deletePostOperation,
   likePostOperation,
-  updateBbsPostOperation,
+  updatePostWithFilesOperation,
   updatePostOperation,
 } from '@/types/generated-operations';
 
@@ -107,13 +107,13 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       const uploadFiles = files.filter((file) => file && file.size > 0);
       
       if (isEdit) {
-        response = await executeGeneratedMultipartOperation(updateBbsPostOperation, {
+        response = await executeGeneratedMultipartOperation(updatePostWithFilesOperation, {
           path: { bbsId, pstSn: Number(pstSn) },
           body: { board: articleData, file: uploadFiles },
           config: axiosConfig,
         });
       } else {
-        response = await executeGeneratedMultipartOperation(createBbsPostOperation, {
+        response = await executeGeneratedMultipartOperation(createPostWithFilesOperation, {
           path: { bbsId },
           body: { board: articleData, file: uploadFiles },
           config: axiosConfig,

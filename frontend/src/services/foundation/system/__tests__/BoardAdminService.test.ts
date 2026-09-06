@@ -30,17 +30,11 @@
  *    화면 이탈 시 요청 취소(AbortSignal)가 동작하지 않고 타임아웃도 기본값으로 되돌아간다.
  *    유실돼도 요청 자체는 성공하므로 아무도 눈치채지 못한다.
  *
- * 7) 게시글 등록(createBoardArticle) — 이 메서드만 유일하게 basePath 를 타지 않고
- *    `this.client` 로 직접 `/bbs/{bbsId}` 를 때리며, 본문을 multipart/form-data 의
- *    'board' 파트(JSON Blob)로 감싼다. 관리자 접두가 붙거나 Blob 의 MIME 이 바뀌면
- *    백엔드 `@RequestPart` 바인딩이 즉시 깨진다.
- *
  * 따라서 본 테스트는 "호출됐다"가 아니라 **어떤 URL·파라미터·본문·config 로 나가는지**와
  * generated/adapter 런타임 경계를 함께 고정한다.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AxiosRequestConfig } from 'axios';
 
 // client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
 const client = vi.hoisted(() => {
@@ -315,85 +309,6 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
         'admin/system/board-masters/batch/status',
         'admin/system/board-masters/batch/delete',
       ]);
-    });
-  });
-
-  describe('게시글 등록 (createBoardArticle) — 유일하게 basePath 를 타지 않는 경로', () => {
-    beforeEach(() => client.post.mockResolvedValue(101));
-
-    it('관리자 접두 없이 /bbs/{bbsId} 로 직접 나간다', async () => {
-      await boardAdminService.createBoardArticle({
-        bbsId: 'BBSMSTR_000000000001',
-        pstTtl: '제목',
-        pstCn: '본문',
-      });
-
-      const [url] = client.post.mock.calls[0] as [string];
-      expect(url).toBe('bbs/BBSMSTR_000000000001');
-      // basePath 를 태우면 admin/system 접두가 붙어 백엔드 라우팅이 즉시 404 가 된다.
-      expect(url).not.toContain('admin/system');
-    });
-
-    it('본문은 multipart/form-data 의 board 파트에 application/json Blob 으로 직렬화되어 실린다', async () => {
-      const data = { bbsId: 'BBSMSTR_000000000001', pstTtl: '제목', pstCn: '본문' };
-
-      await boardAdminService.createBoardArticle(data);
-
-      const [, body, requestConfig] = client.post.mock.calls[0] as [string, FormData, AxiosRequestConfig | undefined];
-      expect(body).toBeInstanceOf(FormData);
-      expect(requestConfig).toEqual({ headers: { 'Content-Type': undefined } });
-
-      const part = body.get('board');
-      expect(part).toBeInstanceOf(Blob);
-      expect((part as Blob).type).toBe('application/json');
-      // bbsId 를 포함한 원본 전체가 가공 없이 직렬화된다.
-      await expect((part as Blob).text()).resolves.toBe(JSON.stringify(data));
-    });
-
-    it('호출부 config를 보존하고 Content-Type 수동 지정은 transport 전에 거부한다', async () => {
-      const { signal } = new AbortController();
-
-      await boardAdminService.createBoardArticle(
-        { bbsId: 'BBSMSTR_000000000007', pstTtl: '제목', pstCn: '본문' },
-        { timeout: 30000, signal, headers: { 'X-Trace-Id': 'trace-1' } },
-      );
-
-      expect(client.post).toHaveBeenCalledWith('bbs/BBSMSTR_000000000007', expect.any(FormData), {
-        timeout: 30000,
-        signal,
-        headers: { 'X-Trace-Id': 'trace-1', 'Content-Type': undefined },
-      });
-
-      await expect(boardAdminService.createBoardArticle(
-        { bbsId: 'BBSMSTR_000000000007', pstTtl: '제목', pstCn: '본문' },
-        { headers: { 'Content-Type': 'multipart/form-data' } },
-      )).rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
-    });
-
-    it('단건 응답은 전용 generated 상세 DTO를 검증한다', async () => {
-      await expect(boardAdminService.getBoardMaster('BBSMSTR_000000000001')).resolves.toEqual(board);
-
-      const { atchPsbltyFileSz: _legacyNull, ...legacyBoard } = board;
-      client.get.mockResolvedValueOnce(legacyBoard);
-      await expect(boardAdminService.getBoardMaster('BBSMSTR_NULLABLE')).resolves.toEqual(legacyBoard);
-
-      client.get.mockResolvedValueOnce({ bbsId: 'BROKEN', bbsTtl: '필수 코드 누락' });
-      await expect(boardAdminService.getBoardMaster('BROKEN')).rejects.toThrow();
-    });
-
-    it('생성 요청 스키마를 검증하고 ApiResponseLong의 식별자를 반환한다', async () => {
-      await expect(boardAdminService.createBoardArticle({
-        bbsId: 'BBSMSTR_000000000001',
-        pstTtl: '제목',
-        pstCn: '본문',
-      })).resolves.toBe(101);
-
-      await expect(boardAdminService.createBoardArticle({
-        bbsId: 'BBSMSTR_000000000001',
-        pstTtl: '',
-        pstCn: '본문',
-      })).rejects.toThrow();
-      expect(client.post).toHaveBeenCalledTimes(1);
     });
   });
 

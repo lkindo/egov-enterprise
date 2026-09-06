@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 381,
-    "generatedDescriptorCount": 381
+    "openApiOperationCount": 378,
+    "generatedDescriptorCount": 378
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 369,
-    "eligible": 355,
+    "total": 368,
+    "eligible": 354,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 355,
+      "generated": 354,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "8d4fefc8aba77fee589082599a035601b56d3ca11c677da079acc59be465a6a3",
+  "inventoryHash": "654990b6cbfc591e73fd7282151fcc7675265b5b14efc80d481979c4ae0fe97b",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -59,12 +59,12 @@
       "transport": "generated-executor",
       "callee": "executeGeneratedMultipartOperation",
       "method": "put",
-      "target": "/api/v1/bbs/{bbsId}/posts/{pstSn}",
-      "operationId": "updateBbsPost",
-      "descriptorName": "updateBbsPostOperation",
+      "target": "/api/v1/boards/{bbsId}/posts/{pstSn}/with-files",
+      "operationId": "updatePostWithFiles",
+      "descriptorName": "updatePostWithFilesOperation",
       "mappingStatus": "generated-operation",
       "specialCase": null,
-      "id": "733810f231ece58bb1e3"
+      "id": "762ad87b56555493a58a"
     },
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -76,12 +76,12 @@
       "transport": "generated-executor",
       "callee": "executeGeneratedMultipartOperation",
       "method": "post",
-      "target": "/api/v1/bbs/{bbsId}",
-      "operationId": "createBbsPost",
-      "descriptorName": "createBbsPostOperation",
+      "target": "/api/v1/boards/{bbsId}/posts/with-files",
+      "operationId": "createPostWithFiles",
+      "descriptorName": "createPostWithFilesOperation",
       "mappingStatus": "generated-operation",
       "specialCase": null,
-      "id": "56dfbb9864e18a29495e"
+      "id": "40b742200165bdfcab28"
     },
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -3385,7 +3385,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.getBoardMasterList",
       "ordinal": 1,
-      "line": 52,
+      "line": 49,
       "column": 32,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3402,7 +3402,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.getBoardMaster",
       "ordinal": 1,
-      "line": 67,
+      "line": 64,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3419,7 +3419,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.createBoardMaster",
       "ordinal": 1,
-      "line": 75,
+      "line": 72,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3436,7 +3436,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.updateBoardMaster",
       "ordinal": 1,
-      "line": 83,
+      "line": 80,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3453,7 +3453,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.deleteBoardMaster",
       "ordinal": 1,
-      "line": 93,
+      "line": 90,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3470,7 +3470,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.isBoardMasterDeletable",
       "ordinal": 1,
-      "line": 101,
+      "line": 98,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3487,7 +3487,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.deleteBoardMasterPhysically",
       "ordinal": 1,
-      "line": 109,
+      "line": 106,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3504,7 +3504,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.batchUpdateBoardMasterStatus",
       "ordinal": 1,
-      "line": 118,
+      "line": 115,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3521,7 +3521,7 @@
       "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
       "owner": "BoardAdminService.batchDeleteBoardMastersPhysically",
       "ordinal": 1,
-      "line": 127,
+      "line": 124,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -3533,23 +3533,6 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "4bb3082b87456cb80356"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/BoardAdminService.ts",
-      "owner": "BoardAdminService.createBoardArticle",
-      "ordinal": 1,
-      "line": 138,
-      "column": 16,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGeneratedMultipart",
-      "method": "post",
-      "target": "/api/v1/bbs/{bbsId}",
-      "operationId": "createBbsPost",
-      "descriptorName": "createBbsPostOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "f056b8720aad011c74b6"
     },
     {
       "file": "frontend/src/services/foundation/system/CodeAdminService.ts",
