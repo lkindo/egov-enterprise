@@ -5,9 +5,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
-import { Check, X, User, Calendar, Info, Plus, RefreshCcw } from 'lucide-react';
+import { Check, X, User, Calendar, Info, Plus, RefreshCcw, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -140,6 +140,7 @@ export default function ApprovalHubClient() {
     approvalQueryOptions.list(activeTab, { page: page - 1, size: PAGE_SIZE }),
   );
   const confirmMutation = useMutation(approvalMutationOptions.confirm(queryClient));
+  const cancelMutation = useMutation(approvalMutationOptions.cancel(queryClient));
 
   const list = approvalData?.list || EMPTY_APPROVALS;
   /*
@@ -230,6 +231,30 @@ export default function ApprovalHubClient() {
     }
   };
 
+  const handleCancelDraft = async (item: InformalSanctionDto) => {
+    if (!item.ifmlAtrzSn || isActionPending) return;
+    const ok = await confirm({
+      title: '기안 취소',
+      message: '이 결재 기안을 취소(철회)하시겠습니까? 취소 후에는 복구할 수 없습니다.',
+      confirmText: '기안 취소',
+      variant: 'destructive',
+    });
+    if (!ok) return;
+
+    pendingActionRef.current = true;
+    setPendingAction(SANCTION_STATUS.REJECTED);
+    try {
+      await cancelMutation.mutateAsync(item.ifmlAtrzSn);
+      toast('결재 기안이 취소되었습니다.', 'success');
+      setSelectedItemId(null);
+    } catch (error) {
+      toast(extractErrorMessage(error, '기안 취소에 실패했습니다.'), 'error');
+    } finally {
+      pendingActionRef.current = false;
+      setPendingAction(null);
+    }
+  };
+
   /**
    * 결재 단계는 서버가 내려준 필드로만 구성한다.
    * 종전에는 존재하지 않는 중간 결재자('이순신 과장')와 '최종 승인' 단계를 화면에서
@@ -258,6 +283,8 @@ export default function ApprovalHubClient() {
   // 서버는 신청 상태('A')만 확정을 받는다. 종전 조건(=== 'R')은 값 자체가 없어 영구 false 였고,
   // 설령 값이 있었어도 'R'(반려)에만 승인 버튼을 띄우는 뒤집힌 게이트였다.
   const canDecide = activeTab === 'PENDING' && isSanctionPending(selectedItem?.aprvYn);
+  // 내가 올린 결재 중 대기(신청) 상태인 건은 기안자가 스스로 취소(철회)할 수 있다.
+  const canCancel = activeTab === 'SUBMITTED' && isSanctionPending(selectedItem?.aprvYn);
   const isActionPending = pendingAction !== null;
   const rejectReasonFieldProps = decisionValidation.fieldProps('reason');
   const rejectReasonDescribedBy = [
@@ -423,6 +450,16 @@ export default function ApprovalHubClient() {
             <X aria-hidden="true" /> 결재 반려
           </Button>
         </>
+      ) : canCancel && selectedItem ? (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isActionPending || cancelMutation.isPending}
+          aria-busy={cancelMutation.isPending || undefined}
+          onClick={() => { void handleCancelDraft(selectedItem); }}
+        >
+          <Trash2 aria-hidden="true" /> 기안 취소
+        </Button>
       ) : undefined}
       emptyDetailTitle="결재 문서를 선택하세요"
       emptyDetailDescription="왼쪽 목록에서 문서를 고르면 결재선과 처리 의견이 표시됩니다."

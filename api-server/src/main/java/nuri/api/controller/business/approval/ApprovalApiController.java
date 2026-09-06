@@ -106,4 +106,14 @@ public class ApprovalApiController {
         approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    @Operation(summary = "Cancel My Approval Draft",
+            description = "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다.")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> cancelApproval(
+            @LoginUser CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        approvalService.deleteInformalSanction(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

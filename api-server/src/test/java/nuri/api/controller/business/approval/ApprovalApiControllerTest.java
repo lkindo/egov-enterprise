@@ -169,4 +169,16 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
 
         verifyNoInteractions(approvalService);
     }
+
+    @Test
+    @WithMockCustomUser(username = "applicant", esntlId = "APPLICANT_ESNTL")
+    @DisplayName("신청자 본인은 대기 중인 결재를 DELETE로 취소할 수 있다")
+    void cancelsApprovalDraft() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/approvals/42")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        verify(approvalService).deleteInformalSanction(42L);
+    }
 }
+

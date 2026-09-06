@@ -138,6 +138,13 @@ class ApprovalUserService extends UserService {
       body: request,
     });
   }
+
+  /**
+   * 내가 올린 결재 취소(철회). 대기(신청) 중인 건만 취소 가능.
+   */
+  async cancelDraft(ifmlAtrzSn: number): Promise<void> {
+    await this.delete<void>(`/${ifmlAtrzSn}`);
+  }
 }
 
 export const approvalUserService = new ApprovalUserService();
