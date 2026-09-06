@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
@@ -51,6 +53,8 @@ export default function NotePage() {
    */
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  // [2026-09-06 감사 D09-01 후속] 서버는 제목·내용 부분일치(searchWrd)를 받는데 페이징만 붙어 있었다. 로컬 상태다(URL 미승인).
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [total, setTotal] = useState(0);
 
   const [isWriteModalOpen, setWriteOpen] = useState(false);
@@ -80,7 +84,9 @@ export default function NotePage() {
     setListError(null);
     setNotes([]);
     try {
-      const query = { page: page - 1, size: pageSize };
+      const query = searchKeyword
+        ? { page: page - 1, size: pageSize, searchWrd: searchKeyword }
+        : { page: page - 1, size: pageSize };
       const res = await (requestedTab === 'received'
         ? noteService.getReceivedNotes(query)
         : noteService.getSentNotes(query));
@@ -96,7 +102,7 @@ export default function NotePage() {
     } finally {
       if (requestId === listRequestRef.current && requestedTab === tabRef.current) setLoading(false);
     }
-  }, [toast, page, pageSize]);
+  }, [toast, page, pageSize, searchKeyword]);
 
   useEffect(() => {
     void loadNotes(tab);
@@ -125,6 +131,17 @@ export default function NotePage() {
     setLoading(true);
     closeDetailModal();
     setTab(nextTab);
+  };
+
+  const handleSearch = (keyword: string) => {
+    const applied = keyword.trim();
+    if (applied === searchKeyword) {
+      void loadNotes();
+      return;
+    }
+    // 3페이지에서 검색해 빈 화면이 되는 것을 막는다.
+    if (page !== 1) setPage(1);
+    setSearchKeyword(applied);
   };
 
   const handleSend = async () => {
@@ -330,6 +347,14 @@ export default function NotePage() {
       description="받은 쪽지와 보낸 쪽지를 조회하고 새 쪽지를 보냅니다."
       breadcrumbItems={[{ label: '협업지원' }, { label: '쪽지관리' }]}
       totalCount={total}
+      filter={
+        <KeywordFilter
+          label="제목·내용"
+          placeholder="제목 또는 내용으로 검색"
+          value={searchKeyword}
+          onSearch={handleSearch}
+        />
+      }
       actions={
         <>
           {/* 종전 좌측의 '쪽지 커뮤니케이션 아키텍처' 장식 카드(120px 배경 아이콘)는 제거했다 —
@@ -372,7 +397,7 @@ export default function NotePage() {
         onRetry={() => { void loadNotes(); }}
         onRowClick={handleDetail}
         rowActionLabel={(item) => `${item.noteSj || `${item.noteSn}번`} 쪽지 열기`}
-        emptyMessage={tab === 'received' ? "받은 쪽지가 없습니다." : "보낸 쪽지가 없습니다."}
+        emptyMessage={emptyResultMessage(searchKeyword, tab === 'received' ? '받은 쪽지가 없습니다.' : '보낸 쪽지가 없습니다.')}
         pagination={{
           currentPage: page,
           totalPages: Math.max(1, Math.ceil(total / pageSize)),
