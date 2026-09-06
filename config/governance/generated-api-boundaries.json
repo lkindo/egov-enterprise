@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 378,
-    "generatedDescriptorCount": 378
+    "openApiOperationCount": 379,
+    "generatedDescriptorCount": 379
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 368,
-    "eligible": 354,
+    "total": 369,
+    "eligible": 355,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 354,
+      "generated": 355,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "654990b6cbfc591e73fd7282151fcc7675265b5b14efc80d481979c4ae0fe97b",
+  "inventoryHash": "7664cdabd1139b230149c97c962d1787df1e303abd56a9dc2971b4db0705dff7",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -1260,7 +1260,7 @@
       "file": "frontend/src/services/business/user/approval/ApprovalUserService.ts",
       "owner": "ApprovalUserService.getPending",
       "ordinal": 1,
-      "line": 72,
+      "line": 73,
       "column": 28,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1277,7 +1277,7 @@
       "file": "frontend/src/services/business/user/approval/ApprovalUserService.ts",
       "owner": "ApprovalUserService.getMyHistory",
       "ordinal": 1,
-      "line": 81,
+      "line": 82,
       "column": 28,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1294,7 +1294,7 @@
       "file": "frontend/src/services/business/user/approval/ApprovalUserService.ts",
       "owner": "ApprovalUserService.getProcessed",
       "ordinal": 1,
-      "line": 87,
+      "line": 88,
       "column": 28,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1311,7 +1311,7 @@
       "file": "frontend/src/services/business/user/approval/ApprovalUserService.ts",
       "owner": "ApprovalUserService.getTaskTypes",
       "ordinal": 1,
-      "line": 96,
+      "line": 97,
       "column": 28,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1328,7 +1328,7 @@
       "file": "frontend/src/services/business/user/approval/ApprovalUserService.ts",
       "owner": "ApprovalUserService.createDraft",
       "ordinal": 1,
-      "line": 111,
+      "line": 112,
       "column": 28,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1345,7 +1345,7 @@
       "file": "frontend/src/services/business/user/approval/ApprovalUserService.ts",
       "owner": "ApprovalUserService.confirm",
       "ordinal": 1,
-      "line": 136,
+      "line": 137,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1357,6 +1357,23 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "38b8c3a4c8a3775b683b"
+    },
+    {
+      "file": "frontend/src/services/business/user/approval/ApprovalUserService.ts",
+      "owner": "ApprovalUserService.cancelDraft",
+      "ordinal": 1,
+      "line": 148,
+      "column": 12,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "delete",
+      "target": "/api/v1/approvals/{id}",
+      "operationId": "cancelApproval",
+      "descriptorName": "cancelApprovalOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "32b2ea69412241bb2eae"
     },
     {
       "file": "frontend/src/services/business/user/BannerService.ts",

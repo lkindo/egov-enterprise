@@ -81,4 +81,12 @@ export const approvalMutationOptions = {
       return ifmlAtrzSn;
     },
   }),
+  /** 기안 취소(철회). 성공하면 목록 factory key 를 무효화한다. */
+  cancel: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async (ifmlAtrzSn: number) => {
+      await approvalUserService.cancelDraft(ifmlAtrzSn);
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
+    },
+  }),
 };
+

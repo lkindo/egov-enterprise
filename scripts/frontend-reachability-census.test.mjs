@@ -58,16 +58,23 @@ test('current repository keeps the known live chain and user hub split explicit'
   assert.ok(census.summary.population > 0);
   assert.equal(census.summary.issueCount, 0);
 
+  // [2026-09-07] 쪽지 작성이 UserPicker → RecipientPicker 로 옮겨가면서 이 체인의 **진입점**이
+  // 바뀌었다. UserPicker 자체는 죽지 않았다 — 메모보고와 결재 기안 다이얼로그가 계속 렌더한다.
+  // 이 단언이 지키는 것은 "가상 리스트가 실제 라우트에서 도달 가능하다" 이지 특정 진입점이 아니므로,
+  // 진입점 변경은 체인을 갱신해 기록하고 도달 불가로의 회귀만 red 로 남긴다.
   const virtualList = byFile(census, 'frontend/src/app/components/ui/virtual-scroll-list.tsx');
   assert.equal(virtualList.deletionClass, 'runtime-reachable');
   assert.deepEqual(
     virtualList.evidencePaths.runtime.nodes,
     [
-      'frontend/src/app/note/page.tsx',
+      'frontend/src/app/admin/operation/memo-reports/page.tsx',
+      'frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx',
       'frontend/src/app/components/ui/user-picker.tsx',
       'frontend/src/app/components/ui/virtual-scroll-list.tsx',
     ],
   );
+  // UserPicker 가 소비자를 모두 잃으면 위 체인이 통째로 사라지므로, 그 자체의 도달성도 못 박는다.
+  assert.equal(byFile(census, 'frontend/src/app/components/ui/user-picker.tsx').deletionClass, 'runtime-reachable');
 
   // [2026-08-23 m-2] test-only 로 분류돼 있던 manage/UserManageClient.tsx 는 전용 테스트와 함께
   // 삭제됐다 — 실제 라우트가 렌더하는 것은 아래 UserOrgHubClient 다. 재유입은 census 에 다시 잡힌다.

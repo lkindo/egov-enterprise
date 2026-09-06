@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { FolderCog, Plus } from 'lucide-react';
+import { FolderCog, Plus, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -525,13 +525,34 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
                 </Link>
               </Button>
             </>
+          ) : activeTab === 'report' ? (
+            <>
+              {/* [게이트] '/admin/operation' 은 USER_ACCESSIBLE_ADMIN_PATHS 에 없어 일반 사용자는
+                  라우트에서 홈으로 튕긴다(`/?auth_error=unauthorized`). 라우트 게이트와 같은 역할
+                  집합으로만 노출한다 — 라우트는 막는데 화면만 보이는 비대칭은 조용히 죽는
+                  결함이다(DEC-OPS-023 ②). */}
+              {canManageBoxes && (
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/admin/operation/memo-reports">
+                    <FileText size={16} aria-hidden="true" /> 메모보고 관리
+                  </Link>
+                </Button>
+              )}
+              <Button
+                size="sm"
+                disabled={reportAction !== null}
+                onClick={() => setReportModalOpen(true)}
+              >
+                <Plus size={16} aria-hidden="true" /> 보고 등록
+              </Button>
+            </>
           ) : (
             <Button
               size="sm"
-              disabled={activeTab === 'calendar' ? scheduleAction !== null : reportAction !== null}
-              onClick={activeTab === 'calendar' ? () => setScheduleModalOpen(true) : () => setReportModalOpen(true)}
+              disabled={scheduleAction !== null}
+              onClick={() => setScheduleModalOpen(true)}
             >
-              <Plus size={16} aria-hidden="true" /> {activeTab === 'calendar' ? '일정 등록' : '보고 등록'}
+              <Plus size={16} aria-hidden="true" /> 일정 등록
             </Button>
           )}
         </div>

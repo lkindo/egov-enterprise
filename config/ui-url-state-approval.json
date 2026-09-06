@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-url-state-approval.schema.json",
   "manifestRef": {
     "path": "config/ui-url-state-census.json",
-    "sha256": "221b228d3625e6bfbee579a6437c7fff257d587ac578e8634c0784859abf7b58"
+    "sha256": "2202fbc1b8c6d91008f1aa505e103c5c8af0454e30c7e5fcd2669d6d40ad11fd"
   },
   "classes": [
     {
@@ -118,7 +118,9 @@
         "routeKeyBindings": [
           {
             "routePattern": "/search",
-            "stateItemNames": ["q"],
+            "stateItemNames": [
+              "q"
+            ],
             "sources": [
               "frontend/src/app/components/ui/global-command-center.tsx",
               "frontend/src/app/search/SearchClient.tsx",
@@ -127,7 +129,10 @@
           },
           {
             "routePattern": "/admin/community/[id]",
-            "stateItemNames": ["searchCnd", "searchWrd"],
+            "stateItemNames": [
+              "searchCnd",
+              "searchWrd"
+            ],
             "sources": [
               "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
               "frontend/src/lib/hooks/use-search-state.ts"
@@ -135,7 +140,10 @@
           },
           {
             "routePattern": "/admin/community/boards/select-board-list",
-            "stateItemNames": ["searchCnd", "searchWrd"],
+            "stateItemNames": [
+              "searchCnd",
+              "searchWrd"
+            ],
             "sources": [
               "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
               "frontend/src/app/admin/community/boards/select-board-list/page.tsx"

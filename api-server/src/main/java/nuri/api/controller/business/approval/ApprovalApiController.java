@@ -106,4 +106,23 @@ public class ApprovalApiController {
         approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    /**
+     * 기안 취소(철회).
+     *
+     * <p><b>주체 결속은 이 핸들러가 아니라 서비스가 한다.</b>
+     * {@link nuri.business.service.informalsanction.InformalSanctionService#deleteInformalSanction}
+     * 이 {@code assertOwnerByEsntlId(aplcntId)} 로 신청자 본인만 허용하고(관리자도 우회 못 한다),
+     * {@code aprvYn = "A"}(신청) 상태에서만 지운다. 그래서 여기서 {@code @LoginUser} 를 받아
+     * 쓰지 않는 채로 두지 않는다 — 받아 두면 핸들러가 소유권을 판정하는 것처럼 읽히는데
+     * 실제로는 아무것도 하지 않아, 다음 사람이 서비스 가드를 지워도 눈치채지 못한다.
+     */
+    @Operation(summary = "Cancel My Approval Draft",
+            description = "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. "
+                    + "신청자 본인만 가능하며 관리자도 대리 취소할 수 없습니다.")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> cancelApproval(@PathVariable Long id) {
+        approvalService.deleteInformalSanction(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

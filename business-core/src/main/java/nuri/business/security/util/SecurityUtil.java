@@ -158,6 +158,15 @@ public class SecurityUtil {
     }
 
     /**
+     * 현재 인증 주체가 관리자(ADMIN 또는 SYSTEM) 권한을 보유하고 있는지 여부를 반환한다.
+     *
+     * @return 관리자 권한 보유 시 {@code true}, 그렇지 않으면 {@code false}
+     */
+    public static boolean isAdmin() {
+        return hasRole(AuthorityConstants.ROLE_ADMIN) || hasRole(AuthorityConstants.ROLE_SYSTEM);
+    }
+
+    /**
      * 관리자(ADMIN/SYSTEM) 전용 자원에 대한 서비스 레이어 2차 인가 가드.
      * 컨트롤러의 {@code @PreAuthorize}(1차)와 짝을 이루는 이중 검증(백엔드 헌법 제8조)이다.
      * 소유 모델이 없는 공유 관리 자원(예: 부서 업무함)의 쓰기 경로에서 사용한다.
@@ -165,7 +174,7 @@ public class SecurityUtil {
      * @throws BusinessException ACCESS_DENIED — 현재 주체가 ADMIN/SYSTEM 이 아닐 때
      */
     public static void assertAdmin() {
-        if (!hasRole(AuthorityConstants.ROLE_ADMIN) && !hasRole(AuthorityConstants.ROLE_SYSTEM)) {
+        if (!isAdmin()) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
     }

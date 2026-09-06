@@ -4,6 +4,7 @@ import { ApprovalConfirmRequestSchema, ApprovalDraftRequestSchema } from '@/type
 import { z } from 'zod';
 import type { components } from '@/types/generated-api';
 import {
+  cancelApprovalOperation,
   confirmOperation,
   createApprovalOperation,
   getMyHistoryOperation,
@@ -136,6 +137,16 @@ class ApprovalUserService extends UserService {
     return this.executeGenerated(confirmOperation, {
       path: { id: ifmlAtrzSn },
       body: request,
+    });
+  }
+
+  /**
+   * 내가 올린 결재 취소(철회). 대기(신청) 중인 건만 취소 가능하며, 신청자 본인만 할 수 있다
+   * (서버 {@code InformalSanctionService#deleteInformalSanction} 의 소유자·상태 가드).
+   */
+  async cancelDraft(ifmlAtrzSn: number): Promise<void> {
+    return this.executeGenerated(cancelApprovalOperation, {
+      path: { id: ifmlAtrzSn },
     });
   }
 }

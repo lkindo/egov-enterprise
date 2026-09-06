@@ -43,8 +43,8 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
   const router = useRouter();
   const { toast } = useToast();
 
-  /** 문항별 선택 항목. key = srvyQstnSn, value = srvyArtclSn. */
-  const [selected, setSelected] = useState<Record<number, number>>({});
+  /** 문항별 선택 항목 목록. key = srvyQstnSn, value = srvyArtclSn[]. 복수선택(maxChcCnt > 1) 지원 */
+  const [selected, setSelected] = useState<Record<number, number[]>>({});
   /** '기타' 항목을 고른 문항의 자유 입력. key = srvyQstnSn. */
   const [etcText, setEtcText] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,8 +87,36 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
   const isOpen = surveyStatus === 'active';
 
   const questionList = useMemo(() => questions ?? [], [questions]);
-  const answeredCount = Object.keys(selected).length;
+  const answeredCount = Object.values(selected).filter((items) => items.length > 0).length;
   const canSubmit = isOpen && answeredCount > 0 && !isSubmitting && !isSubmitted;
+
+  const handleSelectOption = (question: SurveyQuestion, articleSn: number) => {
+    const maxChoice = question.maxChcCnt ?? 1;
+    const currentList = selected[question.srvyQstnSn] ?? [];
+    setSubmitError(null);
+
+    if (maxChoice <= 1) {
+      setSelected((prev) => ({ ...prev, [question.srvyQstnSn]: [articleSn] }));
+      return;
+    }
+
+    // 복수 선택 지원
+    if (currentList.includes(articleSn)) {
+      setSelected((prev) => ({
+        ...prev,
+        [question.srvyQstnSn]: currentList.filter((sn) => sn !== articleSn),
+      }));
+    } else {
+      if (currentList.length >= maxChoice) {
+        toast(`최대 ${maxChoice}개까지 선택할 수 있습니다.`, 'info');
+        return;
+      }
+      setSelected((prev) => ({
+        ...prev,
+        [question.srvyQstnSn]: [...currentList, articleSn],
+      }));
+    }
+  };
 
   const handleSubmit = async () => {
     if (submitPendingRef.current || !canSubmit) return;
@@ -98,14 +126,20 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
 
     try {
       const payload: SurveyResponseSubmit = {
-        answers: Object.entries(selected).map(([questionSn, articleSn]) => {
+        answers: Object.entries(selected).flatMap(([questionSn, articleSns]) => {
           const srvyQstnSn = Number(questionSn);
+          const question = questionList.find((q) => q.srvyQstnSn === srvyQstnSn);
           const etc = etcText[srvyQstnSn]?.trim();
-          return {
-            srvyQstnSn,
-            srvyArtclSn: articleSn,
-            ...(etc ? { etcAnsCn: etc } : {}),
-          };
+
+          return articleSns.map((articleSn) => {
+            const item = question?.items?.find((it) => it.srvyArtclSn === articleSn);
+            const isEtc = item?.etcAnsYn === 'Y';
+            return {
+              srvyQstnSn,
+              srvyArtclSn: articleSn,
+              ...(isEtc && etc ? { etcAnsCn: etc } : {}),
+            };
+          });
         }),
       };
 
@@ -190,16 +224,25 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
             {questionList.map((question, index) => {
               const items = question.items ?? [];
               const groupName = `survey-question-${question.srvyQstnSn}`;
-              const chosen = selected[question.srvyQstnSn];
-              const chosenItem = items.find((item) => item.srvyArtclSn === chosen);
-              const showEtcInput = chosenItem?.etcAnsYn === 'Y';
+              const chosenList = selected[question.srvyQstnSn] ?? [];
+              const isMultiple = (question.maxChcCnt ?? 1) > 1;
+              const hasEtcChosen = items.some(
+                (item) => chosenList.includes(item.srvyArtclSn) && item.etcAnsYn === 'Y'
+              );
 
               return (
                 <li key={question.srvyQstnSn} className="rounded-lg border border-border p-6">
                   {/* 기간 밖·판정 불가면 입력을 잠근다 — 골라 놓고 제출에서 거부당하는 경험을 만들지 않는다. */}
                   <fieldset disabled={isSubmitted || !isOpen}>
-                    <legend className="mb-4 text-sm font-bold text-foreground">
-                      {index + 1}. {question.qstnCn}
+                    <legend className="mb-4 text-sm font-bold text-foreground flex flex-wrap items-center gap-2">
+                      <span>
+                        {index + 1}. {question.qstnCn}
+                      </span>
+                      {isMultiple && (
+                        <Badge variant="secondary" className="text-xs font-normal">
+                          복수 선택 가능 (최대 {question.maxChcCnt}개)
+                        </Badge>
+                      )}
                     </legend>
 
                     {items.length === 0 ? (
@@ -207,8 +250,9 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
                     ) : (
                       <div className="space-y-2">
                         {items.map((item) => {
-                          // 라벨을 감싸기만 하면 일부 보조기술이 이름을 읽지 못한다 — htmlFor 로 명시 연결한다.
                           const optionId = `${groupName}-${item.srvyArtclSn}`;
+                          const isChecked = chosenList.includes(item.srvyArtclSn);
+
                           return (
                             <div
                               key={item.srvyArtclSn}
@@ -216,27 +260,24 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
                             >
                               <input
                                 id={optionId}
-                                type="radio"
+                                type={isMultiple ? 'checkbox' : 'radio'}
                                 name={groupName}
                                 value={item.srvyArtclSn}
-                                // htmlFor 로 라벨을 연결하지만 정적 분석이 템플릿 리터럴 id 를 따라가지
-                                // 못한다. 이름을 컨트롤 자신에도 실어 두면 어느 경로로 읽어도 같은 이름이다.
                                 aria-label={item.artclCn}
-                                checked={chosen === item.srvyArtclSn}
-                                onChange={() => {
-                                  setSelected((prev) => ({ ...prev, [question.srvyQstnSn]: item.srvyArtclSn }));
-                                  setSubmitError(null);
-                                }}
+                                checked={isChecked}
+                                onChange={() => handleSelectOption(question, item.srvyArtclSn)}
                                 className="size-4"
                               />
-                              <label htmlFor={optionId} className="cursor-pointer">{item.artclCn}</label>
+                              <label htmlFor={optionId} className="cursor-pointer">
+                                {item.artclCn}
+                              </label>
                             </div>
                           );
                         })}
                       </div>
                     )}
 
-                    {showEtcInput && (
+                    {hasEtcChosen && (
                       <div className="mt-3 space-y-1.5">
                         <label
                           htmlFor={`${groupName}-etc`}

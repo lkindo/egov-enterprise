@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   confirm: vi.fn(),
+  createScrap: vi.fn(),
   deleteArticle: vi.fn(),
   invalidateQueries: vi.fn(),
   likePost: vi.fn(),
@@ -29,6 +30,9 @@ vi.mock('@/services/business/user/board/BoardUserService', () => ({
   boardUserService: { likePost: mocks.likePost },
 }));
 vi.mock('@/app/actions/boardActions', () => ({ deleteBoardArticle: mocks.deleteArticle }));
+vi.mock('@/services/business/user/ScrapService', () => ({
+  scrapService: { createScrap: mocks.createScrap },
+}));
 vi.mock('@/services/business/knowledge/knowledgeService', () => ({ knowledgeService: { getArticle: vi.fn() } }));
 vi.mock('@/services/foundation/file/FileService', () => ({
   fileService: { getFileList: vi.fn(), downloadFile: vi.fn() },
@@ -37,11 +41,16 @@ vi.mock('@/components/features/comment/CommentSection', () => ({ default: () => 
 vi.mock('@/components/features/satisfaction/SatisfactionSection', () => ({ default: () => <div data-testid="satisfaction" /> }));
 vi.mock('@tanstack/react-query', () => ({
   queryOptions: <T,>(options: T) => options,
+  mutationOptions: <T,>(options: T) => options,
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: ({ initialData }: { initialData?: unknown }) => ({
     data: initialData,
     isError: false,
     refetch: vi.fn(),
+  }),
+  useMutation: (options?: { mutationFn?: (args: unknown) => Promise<unknown> }) => ({
+    mutateAsync: vi.fn().mockImplementation(async (args) => options?.mutationFn ? options.mutationFn(args) : undefined),
+    isPending: false,
   }),
 }));
 
@@ -84,6 +93,62 @@ describe('BoardDetailClient action pending contract', () => {
     mocks.confirm.mockResolvedValue(true);
     mocks.deleteArticle.mockResolvedValue({ success: true });
     mocks.likePost.mockResolvedValue(undefined);
+    mocks.createScrap.mockResolvedValue(1);
+  });
+
+  /**
+   * 스크랩은 되돌릴 수 없는 생성은 아니지만 (사용자, URL) 유일성 제약이 서버·스키마에 없어
+   * 누를 때마다 보관함 행이 하나씩 는다. 저장에 성공하면 이 화면에서 다시 누르지 못하게 잠근다.
+   */
+  it('스크랩은 같은 tick 중복을 막고 pending 상태와 실패 사유를 드러낸다', async () => {
+    // 지역 이름은 census 가 세는 write sink(createScrapMutation.mutateAsync)와 같은 이름으로 둔다.
+    const createScrapMutation = mocks.createScrap;
+    let rejectScrap!: (reason?: unknown) => void;
+    createScrapMutation.mockReturnValueOnce(new Promise((_, reject) => {
+      rejectScrap = reject;
+    }));
+    await renderDetail();
+    const scrap = await screen.findByRole('button', { name: '게시글 스크랩' });
+
+    act(() => {
+      fireEvent.click(scrap);
+      fireEvent.click(scrap);
+    });
+
+    await waitFor(() => expect(createScrapMutation).toHaveBeenCalledTimes(1));
+    expect(createScrapMutation).toHaveBeenCalledWith(expect.objectContaining({
+      scrapNm: '보존할 게시글',
+      // 스크랩 URL 은 목록에서 내부 링크로 되살아나야 하므로 앱의 정본 경로 형태로 저장한다.
+      scrapUrl: '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31',
+      useYn: 'Y',
+    }));
+    expect(scrap).toBeDisabled();
+    expect(scrap).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: '게시글 추천' })).toBeDisabled();
+
+    rejectScrap(new Error('스크랩 저장소를 사용할 수 없습니다.'));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '스크랩 저장소를 사용할 수 없습니다.',
+      'error',
+    ));
+    expect(scrap).toBeEnabled();
+  });
+
+  /**
+   * 서버·스키마에 (사용자, URL) 유일성 제약이 없어 누를 때마다 보관함 행이 하나씩 는다.
+   * 저장에 성공하면 이 화면에서 다시 누르지 못하게 잠근다(새로고침하면 풀린다).
+   */
+  it('스크랩에 성공하면 버튼이 잠기고 다시 눌러도 저장하지 않는다', async () => {
+    await renderDetail();
+    fireEvent.click(await screen.findByRole('button', { name: '게시글 스크랩' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('게시글을 스크랩 보관함에 저장했습니다.', 'success'));
+    const scrapped = await screen.findByRole('button', { name: '게시글 스크랩됨' });
+    expect(scrapped).toBeDisabled();
+
+    fireEvent.click(scrapped);
+    expect(mocks.createScrap).toHaveBeenCalledTimes(1);
   });
 
   it('추천을 같은 tick에 한 번만 보내고 실패 시 낙관 값을 되돌린 뒤 재시도 상태를 남긴다', async () => {

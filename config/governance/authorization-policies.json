@@ -1064,6 +1064,15 @@
       "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/approvals/{id}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#cancelApproval",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "InformalSanctionService#deleteInformalSanction"
+    },
+    {
       "method": "PUT",
       "path": "/api/v1/approvals/{id}/confirm",
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#confirm",

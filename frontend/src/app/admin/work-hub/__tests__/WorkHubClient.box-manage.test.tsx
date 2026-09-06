@@ -26,6 +26,7 @@ vi.mock('next/link', () => ({
 vi.mock('lucide-react', () => ({
   Plus: () => <span aria-hidden="true" />,
   FolderCog: () => <span aria-hidden="true" />,
+  FileText: () => <span aria-hidden="true" />,
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),

@@ -27,7 +27,10 @@ vi.mock('next/link', () => ({
   default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a {...props}>{children}</a>,
 }));
 
-vi.mock('lucide-react', () => ({ Plus: () => <span aria-hidden="true" /> }));
+vi.mock('lucide-react', () => ({
+  Plus: () => <span aria-hidden="true" />,
+  FileText: () => <span aria-hidden="true" />,
+}));
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),

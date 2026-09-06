@@ -330,10 +330,18 @@ export default function MailHistoryHubClient() {
             </div>
           </dl>
 
+          {/*
+            [DEC-OPS-022] 이 화면은 메일 본문·첨부를 표시하지 않는다.
+            목록은 관리자에게 전 사용자의 발신 이력을 내려주는데(MailService#getSentMailList 는
+            ADMIN/SYSTEM 이면 소유자 필터를 걸지 않는다), 같은 저장소가 발신 메일 첨부를
+            `AttachmentSource.SENT_MAIL = PERSONAL` 로 분류해 **관리자의 열람을 명시적으로 거부**한다
+            (FileAccessPolicy §5). 본문만 열면 첨부 정책이 지키는 프라이버시 경계를 옆으로 돌아가게 된다.
+            본문이 필요하면 발신자 본인의 메일함에서 연다.
+          */}
           <div className="rounded-md border border-border p-4">
             <p className="text-sm font-semibold text-foreground">본문 표시 안내</p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              이 화면에서는 메일 본문을 표시하지 않습니다.
+              이 화면에서는 메일 본문과 첨부를 표시하지 않습니다. 발신 결과와 수신자만 확인할 수 있습니다.
             </p>
           </div>
         </div>
