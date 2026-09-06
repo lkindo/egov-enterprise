@@ -156,7 +156,13 @@ class SecurityAuthAnnotationLinterTest {
             //   hasAnyRole('ADMIN','SYSTEM') 메서드 인가를 더한 것(같은 컨트롤러의 다른 GET 은 URL 게이트만) —
             //   완화가 아니라 강화다. /api/v1/communities/{cmntySn}/membership 은 다른 사용자용 GET 과 같은
             //   DEFAULT_AUTHENTICATED|isAuthenticated() 이며 principal 자신의 행만 돌려준다(H3).
-            "4a0b73f1b3a5ab980bc465970bc8650fbf64a694538dfa93b8b05362806e1f32";
+            // [2026-09-06 DEC-OPS-044 게시글 API 표면 정리] GET 2행 **제거** — endpoint 수 178 -> 176.
+            //   GET /api/v1/bbs/{bbsId} 와 /api/v1/bbs/{bbsId}/posts/{pstSn} 은 /api/v1/boards 의 같은
+            //   BoardService 메서드(getBoardPosts·getPostDetail)를 부르는 순수 복제였고 프런트 소비자가
+            //   0건이었다. 남는 /api/v1/boards 의 읽기는 종전과 같은 DEFAULT_AUTHENTICATED|isAuthenticated()
+            //   이므로 공개 전환·완화가 아니라 표면 축소다(H3). 옮겨 온 multipart 쓰기 2본은 읽기가 아니라
+            //   이 census 에 잡히지 않는다.
+            "f4a6574544f1fb44f41ddd91cb6bd68a492cf38ba93e1eee510836ab327f8489";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

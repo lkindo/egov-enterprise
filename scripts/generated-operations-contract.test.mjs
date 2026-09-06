@@ -93,7 +93,12 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   //   (getPolls_1·getPoll_1·insertPoll·vote_1) — 같은 OnlinePollService 를 감싸는 /api/v1/polls 의 부분집합이었다. 380 -> 376.
   // [2026-09-06 DEC-OPS-042 관리자 알림 발송] POST /api/v1/admin/notifications/dispatch 1개 신설 — 376 -> 377.
   // [2026-09-06 커뮤니티 멤버십(DEC-OPS-043)] getMembers·approveMember·rejectMember·getMyMembership 4개 신설 — 377 -> 381.
-  assert.equal(operations.length, 381);
+  // [2026-09-06 DEC-OPS-044 게시글 API 표면 정리] BbsApiController(/api/v1/bbs) 제거 — 381 -> 378.
+  //   목록·상세·삭제 3본(getBbsList·getBbsDetail·deleteBbsPost)은 /api/v1/boards 와 같은 BoardService
+  //   메서드를 부르는 순수 복제였고 프런트 소비자가 0건이라 지웠다(순 -3). 첨부를 붙일 수 있는 유일한
+  //   쓰기 경로였던 multipart 2본은 이름만 바꿔 같은 네임스페이스로 옮겼다
+  //   (createBbsPost -> createPostWithFiles, updateBbsPost -> updatePostWithFiles) — 표면 수는 불변.
+  assert.equal(operations.length, 378);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

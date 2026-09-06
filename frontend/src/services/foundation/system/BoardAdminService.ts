@@ -5,10 +5,8 @@ import type { components, operations } from '@/types/generated-api';
 import {
     BoardMasterBatchDeleteRequestSchema,
     BoardMasterBatchStatusRequestSchema,
-    BoardSaveRequestSchema,
 } from '@/types/generated-zod';
 import {
-    createBbsPostOperation,
     createBoardMasterOperation,
     deleteBoardMasterOperation,
     deleteBoardMasterPhysicallyOperation,
@@ -24,7 +22,6 @@ export type BoardMaster = components['schemas']['BoardMasterDto'];
 export type BoardMasterListParams = NonNullable<
     operations['getBoardMasterList']['parameters']['query']
 >;
-export type BoardArticleCreateRequest = components['schemas']['BoardSaveRequest'];
 
 export type BoardMasterDetail = components['schemas']['BoardMasterDetailResponse'];
 export type BoardMasterSummary = components['schemas']['BoardMasterSummaryResponse'];
@@ -126,18 +123,6 @@ class BoardAdminService extends AdminService {
         const request = BoardMasterBatchDeleteBoundarySchema.parse({ bbsIds });
         return this.executeGenerated(deleteBoardMastersInBatchOperation, {
             body: request,
-            config,
-        });
-    }
-
-    /** 게시글 등록 (Article) */
-    async createBoardArticle(data: BoardArticleCreateRequest, config?: AxiosRequestConfig): Promise<number> {
-        const request = BoardSaveRequestSchema.parse(data);
-
-        // bbsId를 경로 파라미터로 사용 (/api/v1/bbs/{bbsId})
-        return this.executeGeneratedMultipart(createBbsPostOperation, {
-            path: { bbsId: request.bbsId },
-            body: { board: request },
             config,
         });
     }

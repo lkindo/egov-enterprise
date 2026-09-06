@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { server as mockServer } from '@/mocks/server';
 import {
-  createBbsPostOperation,
+  createPostWithFilesOperation,
   uploadFilesOperation,
 } from '@/types/generated-operations';
 
@@ -26,7 +26,7 @@ describe('generated multipart Axios transport contract', () => {
   });
 
   it('generated descriptor가 BBS JSON/file part와 files upload part를 exact하게 소유한다', () => {
-    expect(createBbsPostOperation.multipartParts).toEqual([
+    expect(createPostWithFilesOperation.multipartParts).toEqual([
       {
         name: 'board',
         required: true,
@@ -54,9 +54,9 @@ describe('generated multipart Axios transport contract', () => {
   });
 
   it.each([
-    ['누락된 board part', createBbsPostOperation, { file: [new File(['x'], 'x.txt')] }],
-    ['잘못된 board part 이름', createBbsPostOperation, { article: validBoard }],
-    ['OpenAPI와 불일치하는 board JSON', createBbsPostOperation, {
+    ['누락된 board part', createPostWithFilesOperation, { file: [new File(['x'], 'x.txt')] }],
+    ['잘못된 board part 이름', createPostWithFilesOperation, { article: validBoard }],
+    ['OpenAPI와 불일치하는 board JSON', createPostWithFilesOperation, {
       board: { bbsId: 'BBS_001', pstCn: '내용' },
     }],
     ['잘못된 files part 이름', uploadFilesOperation, {
@@ -67,7 +67,7 @@ describe('generated multipart Axios transport contract', () => {
       files: new File(['x'], 'x.txt'),
     }],
     ['files part의 binary가 아닌 값', uploadFilesOperation, { files: ['not-a-blob'] }],
-    ['복수 file part의 단일값', createBbsPostOperation, {
+    ['복수 file part의 단일값', createPostWithFilesOperation, {
       board: validBoard,
       file: new File(['x'], 'x.txt'),
     }],
@@ -75,7 +75,7 @@ describe('generated multipart Axios transport contract', () => {
     const { executeGeneratedMultipartOperation } = await import('@/lib/api/generated-api-client');
 
     await expect(executeGeneratedMultipartOperation(descriptor as never, {
-      path: descriptor === createBbsPostOperation ? { bbsId: 'BBS_001' } : undefined,
+      path: descriptor === createPostWithFilesOperation ? { bbsId: 'BBS_001' } : undefined,
       body,
     } as never)).rejects.toThrow(
       '생성 API multipart 요청이 OpenAPI part 계약과 일치하지 않습니다.',
@@ -121,11 +121,11 @@ describe('generated multipart Axios transport contract', () => {
     try {
       const { port } = server.address() as AddressInfo;
       process.env.BACKEND_API_URL = `http://127.0.0.1:${port}/api/v1`;
-      mockServer.use(http.post(`http://127.0.0.1:${port}/api/v1/bbs/BBS_001`, () => passthrough()));
+      mockServer.use(http.post(`http://127.0.0.1:${port}/api/v1/boards/BBS_001/posts/with-files`, () => passthrough()));
       vi.resetModules();
       const { executeGeneratedMultipartOperation } = await import('@/lib/api/generated-api-client');
 
-      await expect(executeGeneratedMultipartOperation(createBbsPostOperation, {
+      await expect(executeGeneratedMultipartOperation(createPostWithFilesOperation, {
         path: { bbsId: 'BBS_001' },
         body: {
           board: validBoard,

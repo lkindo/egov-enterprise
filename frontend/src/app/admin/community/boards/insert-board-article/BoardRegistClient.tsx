@@ -146,7 +146,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   /*
    * [2026-09-05 DEC-OPS-034] 첨부는 두 갈래다.
    *  - 새 파일: 저장 시 서버 액션 FormData 의 `files` 로 실어 보낸다. 서버 액션은 이미 그 키를 읽어
-   *    multipart(`/bbs/{bbsId}`)로 넘기고 있었지만 이 화면에는 파일 입력이 없어 한 번도 실린 적이 없었다.
+   *    multipart(`/boards/{bbsId}/posts/with-files`)로 넘기고 있었지만 이 화면에는 파일 입력이 없어 한 번도 실린 적이 없었다.
    *  - 기존 파일(수정 모드): 목록을 보여 주고 건별로 지운다. 삭제 인가는 서버(FileAccessPolicy#assertDeletable)
    *    가 판정하므로 화면은 결과만 정직하게 보여 준다 — 거부(403)는 토스트로 드러낸다.
    */

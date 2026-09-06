@@ -1098,25 +1098,16 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/bbs/{bbsId}",
-      "handler": "nuri.api.controller.business.board.BbsApiController#createBbsPost",
+      "path": "/api/v1/boards/{bbsId}/posts/with-files",
+      "handler": "nuri.api.controller.business.board.BoardApiController#createPostWithFiles",
       "policy": "AUTHENTICATED",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
-      "method": "DELETE",
-      "path": "/api/v1/bbs/{bbsId}/posts/{pstSn}",
-      "handler": "nuri.api.controller.business.board.BbsApiController#deleteBbsPost",
-      "policy": "OWNER_OR_ADMIN",
-      "methodSecurity": "isAuthenticated()",
-      "routeGate": "DEFAULT_AUTHENTICATED",
-      "guardRef": "BoardService#deletePost"
-    },
-    {
       "method": "PUT",
-      "path": "/api/v1/bbs/{bbsId}/posts/{pstSn}",
-      "handler": "nuri.api.controller.business.board.BbsApiController#updateBbsPost",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/with-files",
+      "handler": "nuri.api.controller.business.board.BoardApiController#updatePostWithFiles",
       "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED",

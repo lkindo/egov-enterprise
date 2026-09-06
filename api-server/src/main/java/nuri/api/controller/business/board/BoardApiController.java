@@ -17,10 +17,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
 
 @Tag(name = "Board", description = "게시판 관리 API")
 @nuri.foundation.security.annotation.Authenticated
@@ -109,7 +114,7 @@ public class BoardApiController {
         return ResponseEntity.ok(ApiResponse.success(boardService.getPostDetail(bbsId, pstSn)));
     }
 
-    @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다.")
+    @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다. 첨부를 함께 올리려면 /{bbsId}/posts/with-files 를 사용합니다.")
     @PostMapping("/posts")
     public ResponseEntity<ApiResponse<Long>> createPost(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -117,7 +122,30 @@ public class BoardApiController {
         return ResponseEntity.ok(ApiResponse.success(boardService.createPost(userDetails.getUsername(), request)));
     }
 
-    @Operation(summary = "게시글 수정", description = "기존 게시글 정보를 수정합니다.")
+    /**
+     * 첨부를 함께 올리는 게시글 등록.
+     *
+     * <p>[2026-09-06 DEC-OPS-044] 종전에는 {@code /api/v1/bbs/{bbsId}} 였고 태그가 "Board Legacy" 였다.
+     * 그러나 이 경로는 레거시가 아니라 <b>첨부를 붙일 수 있는 유일한 등록 경로</b>이고 정본 작성 화면이
+     * 실제로 이것을 부른다. 이름이 사실과 달랐으므로 같은 {@code /api/v1/boards} 네임스페이스로 옮겼다.
+     * 첨부를 함께 보내는 쓰기는 등록·수정 모두 경로 끝이 {@code /with-files} 다. JSON 등록만 {@code bbsId} 를
+     * 본문으로 받는 비대칭이 남지만, 소비자 이행 비용 때문에 이번 범위에서 정리하지 않는다.
+     */
+    @Operation(summary = "게시글 등록(첨부 포함)", description = "게시글과 첨부 파일을 함께 등록합니다.")
+    @PostMapping(value = "/{bbsId}/posts/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Long>> createPostWithFiles(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
+            @RequestPart("board") BoardSaveRequest request,
+            @RequestPart(value = "file", required = false) List<MultipartFile> files) throws IOException {
+        String userId = userDetails.getUsername();
+        Long pstSn = (files != null && !files.isEmpty())
+                ? boardService.createPostWithFiles(userId, request, files)
+                : boardService.createPost(userId, request);
+        return ResponseEntity.ok(ApiResponse.success(pstSn));
+    }
+
+    @Operation(summary = "게시글 수정", description = "기존 게시글 정보를 수정합니다. 첨부를 함께 올리려면 같은 경로에 /with-files 를 붙입니다.")
     @PutMapping("/{bbsId}/posts/{pstSn}")
     public ResponseEntity<ApiResponse<Void>> updatePost(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -125,6 +153,30 @@ public class BoardApiController {
             @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn,
             @Valid @RequestBody BoardSaveRequest request) {
         boardService.updatePost(bbsId, pstSn, request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
+     * 첨부를 함께 올리는 게시글 수정 — {@code /api/v1/bbs/{bbsId}/posts/{pstSn}} 에서 옮겨 왔다.
+     *
+     * <p>[2026-09-06 DEC-OPS-044] JSON 수정과 같은 URL 에 {@code consumes} 만 다르게 두는 안은 실측으로 폐기했다 —
+     * springdoc 이 두 핸들러를 <b>하나의 operation 으로 병합</b>해 requestBody 에 두 미디어 타입을 싣고,
+     * 생성기(codegen-zod)가 "must declare exactly one requestBody content type" 로 fail-closed 한다.
+     * 그래서 첨부 동반 쓰기는 경로 끝의 {@code /with-files} 로 구분한다(등록·수정 대칭).
+     */
+    @Operation(summary = "게시글 수정(첨부 포함)", description = "게시글 정보와 새 첨부 파일을 함께 수정합니다.")
+    @PutMapping(value = "/{bbsId}/posts/{pstSn}/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Void>> updatePostWithFiles(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn,
+            @RequestPart("board") BoardSaveRequest request,
+            @RequestPart(value = "file", required = false) List<MultipartFile> files) throws IOException {
+        if (files != null && !files.isEmpty()) {
+            boardService.updatePostWithFiles(bbsId, pstSn, request, files);
+        } else {
+            boardService.updatePost(bbsId, pstSn, request);
+        }
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
