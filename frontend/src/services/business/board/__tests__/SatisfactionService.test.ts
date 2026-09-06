@@ -17,16 +17,14 @@
  *     픽스처로 자리까지 고정한다.
  *  4. `encodeURIComponent` — bbsId 는 외부에서 들어오는 문자열이다. 인코딩이 빠지면
  *     `../` 나 `?` 가 경로 구조를 바꿔 다른 리소스를 때린다.
- *  5. `pswd` 조건부 params — 익명 작성분의 소유 증명이다. 빈 문자열을 `pswd=` 로 실어
- *     보내면 백엔드가 "빈 비밀번호로 대조" 하는 상황이 되므로, falsy 는 params 자체를
- *     보내지 않아야 한다. 이 분기는 삼항 한 줄이라 리팩터링 때 가장 먼저 뭉개진다.
- *  6. 요청 본문 — create 에 실리는 payload 는 서비스가 손대지 않고 그대로 전달해야 한다
- *     (pswd 를 흘려 지우거나 필드를 주입하면 익명 삭제가 영영 불가능해진다).
+ *  5. 삭제 query 부재 — 만족도 소유권은 인증 owner/admin 으로만 판정하므로 자격증명이나
+ *     소유 증명 값을 params/query 로 다시 만들면 안 된다.
+ *  6. 요청 본문 — create 에 실리는 공개 DTO 를 서비스가 손대지 않고 그대로 전달해야 한다.
  *
  * [의도적으로 고정하지 않는 것]
  * 이 서비스는 AxiosRequestConfig 를 받는 매개변수를 노출하지 않는다(ApiService 상속이
- * 아니라 client 직호출이다). 따라서 config 전달 계약은 remove 의 `params` 한 곳뿐이며,
- * 페이징 파라미터 변환(page -> pageIndex)도 ApiService 경유가 아니라 적용되지 않는다.
+ * 아니라 생성 operation 실행 경계다). 별도 config 전달 계약이나 페이징 파라미터 변환
+ * (page -> pageIndex)은 이 서비스에 적용되지 않는다.
  * 없는 메서드를 지어내지 않기 위해 그 둘은 테스트하지 않는다.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -54,7 +52,7 @@ const client = vi.hoisted(() => {
       if (method === 'post') {
         data = await post(url, request.data);
       } else if (method === 'delete') {
-        data = await remove(url, { params: request.params });
+        data = await remove(url, request.params === undefined ? undefined : { params: request.params });
       }
 
       return { success: true, code: 'S000', message: '성공', data };
@@ -101,12 +99,10 @@ describe('satisfactionService 경로 조립 계약', () => {
     });
     client.requestRaw
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: 101 })
-      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined });
 
     await satisfactionService.average(BBS_ID, PST_SN);
     await satisfactionService.create(BBS_ID, PST_SN, { useYn: 'Y', dgstfnScr: 5 });
-    await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN, 'secret1234');
     await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN);
 
     expect(client.getRaw).toHaveBeenCalledWith(
@@ -122,12 +118,6 @@ describe('satisfactionService 경로 조립 계약', () => {
       [{
         url: 'boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
         method: 'delete',
-        params: { pswd: 'secret1234' },
-      }],
-      [{
-        url: 'boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
-        method: 'delete',
-        params: {},
       }],
     ]);
   });
@@ -176,7 +166,7 @@ describe('satisfactionService 경로 조립 계약', () => {
     // 두 숫자가 뒤바뀌면 다른 자원을 지운다. 자리까지 통째로 고정한다.
     expect(client.delete).toHaveBeenCalledWith(
       '/boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
-      { params: {} },
+      undefined,
     );
     expect(client.delete).not.toHaveBeenCalledWith(
       `${BASE}/${PST_SN}`,
@@ -239,44 +229,28 @@ describe('satisfactionService 경로 변수 인코딩', () => {
 
     expect(client.delete).toHaveBeenCalledWith(
       '/boards/BBSMSTR_000000000001/posts/1234567890123/satisfactions/7',
-      { params: {} },
+      undefined,
     );
   });
 });
 
-describe('satisfactionService 삭제 시 비밀번호 파라미터 분기', () => {
+describe('satisfactionService 삭제 request-target 계약', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('비밀번호를 주면 쿼리 파라미터 pswd 로 실어 보낸다', async () => {
-    client.delete.mockResolvedValueOnce(undefined);
-
-    await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN, 'secret1234');
-
-    expect(client.delete).toHaveBeenCalledWith(
-      '/boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
-      { params: { pswd: 'secret1234' } },
-    );
-  });
-
-  it('비밀번호를 생략하면 빈 query만 전달해 로그인 작성분의 소유자/관리자 판정 경로를 탄다', async () => {
-    client.delete.mockResolvedValueOnce(undefined);
+  it('삭제는 path만 전달하고 query/params/body를 만들지 않는다', async () => {
+    client.requestRaw.mockResolvedValueOnce({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: undefined,
+    });
 
     await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN);
 
-    const config = client.delete.mock.calls[0][1] as { params?: unknown };
-    expect(config.params).toEqual({});
-  });
-
-  it('빈 문자열 비밀번호는 pswd= 로 전송하지 않고 params 를 생략한다', async () => {
-    client.delete.mockResolvedValueOnce(undefined);
-
-    await satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN, '');
-
-    // 빈 값을 실어 보내면 백엔드가 "빈 비밀번호로 대조" 하는 상황이 된다.
-    expect(client.delete).toHaveBeenCalledWith(
-      '/boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
-      { params: {} },
-    );
+    expect(client.requestRaw).toHaveBeenCalledWith({
+      url: 'boards/BBSMSTR_000000000001/posts/42/satisfactions/7',
+      method: 'delete',
+    });
   });
 });
 
@@ -290,13 +264,12 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
       dgstfnCn: '도움이 되었습니다',
       dgstfnScr: 4,
       userNm: '홍길동',
-      pswd: 'anonymous-proof',
     };
     const snapshot = { ...body };
 
     await satisfactionService.create(BBS_ID, PST_SN, body);
 
-    // 참조 동일성 — 얕은 복사·필드 주입·pswd 제거가 끼어들면 익명 삭제가 불가능해진다.
+    // 참조 동일성 — 얕은 복사나 필드 주입이 끼어들지 않음을 고정한다.
     expect(client.post.mock.calls[0][1]).toEqual(body);
     expect(body).toEqual(snapshot);
   });
@@ -324,10 +297,10 @@ describe('satisfactionService 요청 본문과 응답 전달', () => {
   });
 
   it('client 오류는 삼키지 않고 호출부로 전파한다', async () => {
-    client.delete.mockRejectedValueOnce(new Error('비밀번호가 일치하지 않습니다.'));
+    client.delete.mockRejectedValueOnce(new Error('삭제 권한이 없습니다.'));
 
     await expect(
-      satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN, 'wrong'),
-    ).rejects.toThrow('비밀번호가 일치하지 않습니다.');
+      satisfactionService.remove(BBS_ID, PST_SN, DGSTFN_SN),
+    ).rejects.toThrow('삭제 권한이 없습니다.');
   });
 });

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
-import * as z from 'zod';
+import type { z } from 'zod';
 import {
     Form,
     FormControl,
@@ -22,7 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { DeptJobDtoSchema } from '@/types/generated-zod';
+import { DeptJobDtoRequestSchema, DeptJobDtoResponseSchema } from '@/types/generated-zod';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { useQuery } from '@tanstack/react-query';
@@ -36,16 +36,29 @@ import { cn } from '@/lib/utils';
  * (create/, insertDeptJob/, selectDeptJobDetail/[id]/ — 마지막 것은 경로가 '상세'인데 내용은 등록 폼이었다).
  * 등록과 수정이 같은 필드를 다루므로 한 컴포넌트로 합치고 mode 로만 구분한다.
  */
-export const deptJobFormSchema = DeptJobDtoSchema.extend({
-    deptTaskNm: z.string().min(1, '업무명을 입력하세요.').max(100, '업무명은 100자를 넘을 수 없습니다.'),
+export const deptJobFormSchema = DeptJobDtoRequestSchema.extend({
+    deptTaskNm: DeptJobDtoRequestSchema.shape.deptTaskNm
+        .unwrap()
+        .min(1, '업무명을 입력하세요.')
+        .max(100, '업무명은 100자를 넘을 수 없습니다.'),
     // dept_task_cn 은 varchar(4000). 필수는 아니지만 상한은 스키마로 막는다.
-    deptTaskCn: z.string().max(4000, '업무 내용은 4000자를 넘을 수 없습니다.').optional(),
-    deptTaskBoxSn: z.number().nullable().optional().transform(v => v === null ? undefined : v),
-    atchFileSn: z.number().nullable().optional().transform(v => v === null ? undefined : v),
-    picId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
+    deptTaskCn: DeptJobDtoRequestSchema.shape.deptTaskCn
+        .unwrap()
+        .max(4000, '업무 내용은 4000자를 넘을 수 없습니다.')
+        .optional(),
+    deptTaskBoxSn: DeptJobDtoRequestSchema.shape.deptTaskBoxSn
+        .nullable()
+        .transform(v => v === null ? undefined : v),
+    atchFileSn: DeptJobDtoRequestSchema.shape.atchFileSn
+        .nullable()
+        .transform(v => v === null ? undefined : v),
+    picId: DeptJobDtoRequestSchema.shape.picId
+        .nullable()
+        .transform(v => v === null ? undefined : v),
 });
 
-export type DeptJobFormValues = z.infer<typeof deptJobFormSchema>;
+export type DeptJobFormValues = z.output<typeof deptJobFormSchema>;
+export type DeptJobFormInitialData = Partial<z.output<typeof DeptJobDtoResponseSchema>>;
 
 /** 우선순위 코드 ↔ 표시. 등록/수정/목록이 같은 표를 쓰도록 여기서 단일 정의한다. */
 export const PRIORITY_OPTIONS = [
@@ -62,7 +75,7 @@ export const PRIORITY_LABEL: Record<string, string> = {
 
 interface DeptJobFormProps {
     mode?: 'create' | 'edit';
-    initialData?: Partial<DeptJobFormValues>;
+    initialData?: DeptJobFormInitialData;
     onSubmit: (data: DeptJobFormValues) => Promise<void>;
     onCancel: () => void;
     /** 합성 화면이 소유하는 mutation 잠금. 부모의 저장/삭제 상호 배제를 실제 폼 제어에 전달한다. */
@@ -121,14 +134,14 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
             prrtyRnk: initialData?.prrtyRnk ?? '2',
             // 업무함은 서버에서 nullable 이다. 수정 시 기존 값을 잃지 않도록 폼에 실어 왕복시킨다
             // (보내지 않으면 update 가 null 로 덮어써 소속이 소리 없이 사라진다).
-            deptTaskBoxSn: initialData?.deptTaskBoxSn,
+            deptTaskBoxSn: initialData?.deptTaskBoxSn ?? undefined,
             // 담당자. 업무함과 마찬가지로 nullable 이므로 수정 시 기존 값을 폼에 실어 왕복시킨다
             // (보내지 않으면 update 가 null 로 덮어써 담당자가 소리 없이 사라진다).
             // 등록 시 미지정으로 두면 서버가 등록자를 담당자로 채운다 — 그 동작을 유지하기 위해
             // 빈 문자열이 아니라 undefined 로 둔다(서버는 blank 도 미지정으로 보지만 수정 경로에서는
             // 빈 문자열이 그대로 저장되므로 축을 맞춘다).
-            picId: initialData?.picId,
-            atchFileSn: initialData?.atchFileSn,
+            picId: initialData?.picId ?? undefined,
+            atchFileSn: initialData?.atchFileSn ?? undefined,
         },
     });
 

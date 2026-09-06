@@ -1,6 +1,7 @@
 import { ApiService } from '@/services/core/ApiService';
 import type { PageResponse } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
+import type { z } from 'zod';
 import type { components, operations } from '@/types/generated-api';
 import {
   createExternalHrOperation,
@@ -12,9 +13,13 @@ import {
   getAllExternalHrOperation,
   getAllRewardsOperation,
 } from '@/types/generated-operations';
+import { ExternalHrDtoRequestSchema } from '@/types/generated-zod';
 
 /** 외부인사정보: OpenAPI ExternalHrDto를 단일 원본으로 사용한다. */
 export type ExternalHr = components['schemas']['ExternalHrDto'];
+
+/** 외부인사 등록 입력: OpenAPI readOnly 감사 필드는 요청 타입에서도 제외한다. */
+export type ExternalHrCreateInput = z.input<typeof ExternalHrDtoRequestSchema>;
 
 /** 포상정보: OpenAPI RewardManageDto를 단일 원본으로 사용한다. */
 export type Reward = components['schemas']['RewardManageDto'];
@@ -57,7 +62,7 @@ class OperationAdminService extends ApiService {
     return requireOperationPage(response);
   }
 
-  async createExternalHr(data: ExternalHr, config?: AxiosRequestConfig): Promise<ExternalHr> {
+  async createExternalHr(data: ExternalHrCreateInput, config?: AxiosRequestConfig): Promise<ExternalHr> {
     return this.executeGenerated(createExternalHrOperation, { body: data, config });
   }
 

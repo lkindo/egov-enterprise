@@ -129,4 +129,27 @@ public class FileAccessPolicy {
                 atchFileSn, loginId, admin, grants.ownerGrant(), grants.personalReference());
         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
     }
+
+    /**
+     * 현재 인증 주체가 이 첨부를 다른 업무 자원에 연결할 수 있는지 검증한다.
+     *
+     * <p>열람 가능성과 재게시 가능성은 다르다. 공유 게시물의 첨부나 기존 참조의 당사자는 파일을 읽을 수
+     * 있지만, 그 사실만으로 동일 파일을 새 공유 자원에 연결하도록 허용하면 개인 귀속 첨부의 접근 범위를
+     * 넓힐 수 있다. 따라서 새 참조 생성은 원 업로더에게만 허용하며 소유·공유 참조와 관리자 역할은 연결
+     * 근거로 사용하지 않는다.
+     *
+     * @param master 대상 첨부 마스터(존재 검증은 호출부에서 이미 수행)
+     * @throws BusinessException ACCESS_DENIED(403) — 연결 권한이 없을 때
+     */
+    public void assertAttachable(FileMaster master) {
+        Long atchFileSn = master.getAtchFileSn();
+        String loginId = SecurityUtil.getCurrentLoginId().orElse(null);
+
+        if (loginId != null && loginId.equals(master.getFrstRgtrId())) {
+            return;
+        }
+
+        log.warn("[FileAccess] 첨부 연결 거부 — atchFileSn={}", atchFileSn);
+        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+    }
 }

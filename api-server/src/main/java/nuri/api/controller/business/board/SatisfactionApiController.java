@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import nuri.api.controller.business.board.dto.SatisfactionAverageResponse;
-import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.SatisfactionService;
 import nuri.business.service.board.dto.SatisfactionDto;
@@ -20,13 +19,8 @@ import java.util.List;
 /**
  * 게시글 만족도 API.
  *
- * <p>[D-8 이행] {@link SatisfactionService} 는 11개 메서드가 완성돼 있었으나 <b>참조하는 클래스가
- * 단위 테스트뿐</b>이었다 — 컨트롤러가 없어 도메인 전체가 도달 불가였다.
- * D-1({@code UserLogRepositoryImpl})·D-4({@code SurveyRespondentService})에 이은 <b>세 번째 사례</b>다.
- *
- * <p><b>⚠ 배선 전에 서비스의 인가 결함 3건을 먼저 고쳤다</b>(같은 커밋) — 삭제·수정이 비밀번호를
- * 검사하지 않았고 비밀번호가 평문으로 저장됐다. 결함을 그대로 둔 채 노출했다면 ID만 알면
- * 누구나 남의 만족도를 지울 수 있는 엔드포인트가 됐다.
+ * <p>익명 만족도 비밀번호 계약은 지원하지 않는다. 모든 일반 쓰기는 인증 사용자 전용이며,
+ * 수정·삭제의 실질 owner-or-admin 판정은 서비스가 감사 작성자 기준으로 다시 수행한다.
  *
  * <p><b>경로를 게시글 하위로 중첩</b>했다({@code /boards/{bbsId}/posts/{pstSn}/satisfactions}).
  * 만족도는 게시글에 종속된 자원이고, 경로가 조회 범위를 강제하면 서비스가 범위를 놓쳐도
@@ -102,29 +96,27 @@ public class SatisfactionApiController {
         dto.setPstSn(pstSn);
         // 댓글 등록(CommentApiController:47)과 같은 자리에서 같은 검사를 한다 — 볼 수 없는 글에 평가를 남길 수 없다.
         boardService.assertCommentAccess(bbsId, pstSn);
-        return ResponseEntity.ok(ApiResponse.success(satisfactionService.createSatisfaction(currentUserId(), dto)));
+        return ResponseEntity.ok(ApiResponse.success(satisfactionService.createSatisfaction(dto)));
     }
 
-    @Operation(summary = "만족도 수정",
-            description = "본문의 pswd 는 소유 증명용 자격이며 저장된 비밀번호를 바꾸지 않는다.")
+    @Operation(summary = "만족도 수정", description = "인증된 작성자 또는 관리자만 수정할 수 있다.")
     @Authenticated
     @PutMapping("/{dgstfnSn}")
     public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable String bbsId, @PathVariable Long pstSn,
             @PathVariable Long dgstfnSn, @Valid @RequestBody SatisfactionDto dto) {
         dto.setDgstfnSn(dgstfnSn);
-        satisfactionService.updateSatisfaction(currentUserId(), dto);
+        satisfactionService.updateSatisfaction(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "만족도 삭제", description = "논리 삭제. 소유자 또는 익명 작성 비밀번호가 필요하다.")
+    @Operation(summary = "만족도 삭제", description = "논리 삭제. 인증된 작성자 또는 관리자만 삭제할 수 있다.")
     @Authenticated
     @DeleteMapping("/{dgstfnSn}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable String bbsId, @PathVariable Long pstSn,
-            @PathVariable Long dgstfnSn,
-            @RequestParam(required = false) String pswd) {
-        satisfactionService.deleteSatisfaction(dgstfnSn, currentUserId(), pswd);
+            @PathVariable Long dgstfnSn) {
+        satisfactionService.deleteSatisfaction(dgstfnSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -134,20 +126,7 @@ public class SatisfactionApiController {
     @DeleteMapping("/{dgstfnSn}/moderate")
     public ResponseEntity<ApiResponse<Void>> moderate(
             @PathVariable String bbsId, @PathVariable Long pstSn, @PathVariable Long dgstfnSn) {
-        satisfactionService.deleteByModerator(dgstfnSn, currentUserId());
+        satisfactionService.deleteByModerator(dgstfnSn);
         return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    /**
-     * 서비스는 {@code null} 을 익명 작성으로 해석한다.
-     *
-     * <p><b>⚠ 이 배포에서 익명 경로는 현재 도달 불가다.</b> 전역 {@code anyRequest().authenticated()}
-     * 와 위 {@code @Authenticated} 때문에 인증 없이는 여기까지 오지 않는다. 즉 {@code frstRgtrId} 가
-     * 항상 채워지고 서비스의 비밀번호 분기는 실행되지 않는다. 그럼에도 비밀번호 경로를 남긴 이유는
-     * {@code pswd} 컬럼과 DTO 필드가 실재하고, 익명 게시를 여는 순간 <b>그 경로가 유일한 소유 증명</b>이
-     * 되기 때문이다 — 그때 가서 급히 만들면 지금 고친 결함(검증 없는 삭제)을 되풀이하기 쉽다.
-     */
-    private String currentUserId() {
-        return SecurityUtil.getCurrentLoginId().orElse(null);
     }
 }

@@ -216,7 +216,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         await reportService.updateReport(editingReport.rptpSn, values);
         toast('업무 보고가 수정되었습니다.', 'success');
       } else {
-        await reportService.createReport(values as Parameters<typeof reportService.createReport>[0]);
+        await reportService.createReport(values);
         toast('업무 보고가 등록되었습니다.', 'success');
       }
       setReportModalOpen(false);

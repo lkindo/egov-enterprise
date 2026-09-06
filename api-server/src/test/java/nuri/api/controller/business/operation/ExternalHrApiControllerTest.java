@@ -9,8 +9,12 @@ import nuri.business.service.operation.ExternalHrService;
 import nuri.business.service.operation.dto.ExternalHrDto;
 import nuri.business.support.ControllerTestSupport;
 import nuri.foundation.core.annotation.PrivacyAccess;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.security.annotation.AdminOrSystem;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
@@ -93,6 +97,50 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("등록 요청의 서버 소유 감사 필드는 역직렬화하지 않는다")
+    void createExternalHr_DropsServerOwnedAuditFields() throws Exception {
+        given(externalHrService.createExternalHr(any(ExternalHrDto.class))).willReturn(new ExternalHrDto());
+
+        mockMvc.perform(post("/api/v1/admin/operation/external-hr")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "evntSn": 1,
+                                  "otsdHrId": "HR001",
+                                  "crtDt": "2026-09-06T00:00:00",
+                                  "frstRgtrId": "forged_creator",
+                                  "mdfcnDt": "2026-09-06T00:00:00",
+                                  "lastMdfrId": "forged_modifier"
+                                }
+                                """)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<ExternalHrDto> captor = ArgumentCaptor.forClass(ExternalHrDto.class);
+        org.mockito.Mockito.verify(externalHrService).createExternalHr(captor.capture());
+        assertThat(captor.getValue().getCrtDt()).isNull();
+        assertThat(captor.getValue().getFrstRgtrId()).isNull();
+        assertThat(captor.getValue().getMdfcnDt()).isNull();
+        assertThat(captor.getValue().getLastMdfrId()).isNull();
+    }
+
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("같은 행사와 외부인사 ID의 중복 등록은 409로 응답한다")
+    void createExternalHr_ReturnsConflictForDuplicateCompositeId() throws Exception {
+        given(externalHrService.createExternalHr(any(ExternalHrDto.class)))
+                .willThrow(new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE));
+
+        mockMvc.perform(post("/api/v1/admin/operation/external-hr")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"evntSn\":1,\"otsdHrId\":\"HR001\"}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value(CommonErrorCode.DUPLICATE_RESOURCE.getCode()));
+    }
+
     /**
      * 필수 필드가 빠진 등록은 서비스에 도달하지 않고 400 이어야 한다. 서비스까지 흘러가면
      * 행사 번호 없는 외부인사 행이 만들어져 이후 조회에서 소속을 잃는다.
@@ -104,6 +152,20 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(post("/api/v1/admin/operation/external-hr")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"otsdHrNm\":\"홍길동\"}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verify(externalHrService, org.mockito.Mockito.never())
+                .createExternalHr(any(ExternalHrDto.class));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("성별 코드가 저장 상한 12자를 넘으면 서비스에 도달하지 않는다")
+    void createExternalHr_rejectsOversizedGenderCode() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/operation/external-hr")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"evntSn\":1,\"otsdHrId\":\"HR001\",\"gndrCd\":\"1234567890123\"}")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
@@ -138,9 +200,11 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
     @Test
     @DisplayName("등록은 개인정보 조회 증적 대상이 아니다")
     void createIsNotPrivacyAccess() throws NoSuchMethodException {
-        assertThat(ExternalHrApiController.class.getMethod("createExternalHr", ExternalHrDto.class)
-                .isAnnotationPresent(PrivacyAccess.class))
-                .isFalse();
+        Method handler = ExternalHrApiController.class.getMethod("createExternalHr", ExternalHrDto.class);
+        assertThat(handler.isAnnotationPresent(PrivacyAccess.class)).isFalse();
+        assertThat(handler.isAnnotationPresent(AdminOrSystem.class))
+                .as("외부인사 등록은 URL RBAC와 별개로 메서드에서도 ADMIN/SYSTEM을 재확인한다")
+                .isTrue();
     }
 
     // [2026-09-05 DEC-OPS-036] 수정·삭제 경로(복합키는 경로에 둘 다 싣는다).

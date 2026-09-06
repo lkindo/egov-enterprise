@@ -95,7 +95,9 @@ public class SecurityUtil {
      */
     public static Optional<String> getCurrentLoginId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
             return Optional.ofNullable(userDetails.getLoginId());
         }
         return Optional.empty();

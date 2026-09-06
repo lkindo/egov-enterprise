@@ -6,6 +6,8 @@ import nuri.business.service.board.dto.SatisfactionDto;
 import nuri.business.service.board.dto.SatisfactionMapper;
 import nuri.business.service.board.dto.SatisfactionMapperImpl;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,9 +16,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,13 +38,8 @@ class SatisfactionServiceTest {
     @Mock
     private SatisfactionRepository satisfactionRepository;
 
-    // 실제 MapStruct 생성 구현을 @InjectMocks 생성자에 주입 (매핑 동작 실검증)
     @Spy
     private SatisfactionMapper satisfactionMapper = new SatisfactionMapperImpl();
-
-    // 목이 아니라 실제 인코더다 — encode/matches 왕복이 진짜로 성립하는지 봐야 한다.
-    @Spy
-    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @InjectMocks
     private SatisfactionService satisfactionService;
@@ -50,119 +49,211 @@ class SatisfactionServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    /** 익명 작성분(작성자 없음 + 비밀번호 있음)을 만든다. */
-    private Satisfaction anonymousEntity(String rawPassword) {
-        return Satisfaction.builder()
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private static void authenticateAs(String loginId, String role) {
+        CustomUserDetails principal = CustomUserDetails.builder()
+                .userId(loginId)
+                .esntlId("ESNTL_" + loginId)
+                .userNm(loginId)
+                .password("unused")
+                .roleName(role)
+                .authorCode("ROLE_" + role)
+                .lockAt("N")
+                .build();
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(new UsernamePasswordAuthenticationToken(
+                principal, null, principal.getAuthorities()));
+        SecurityContextHolder.setContext(context);
+    }
+
+    private static Satisfaction satisfactionOwnedBy(String ownerLoginId) {
+        Satisfaction entity = Satisfaction.builder()
                 .dgstfnSn(10L)
-                .pswd(new BCryptPasswordEncoder().encode(rawPassword))
+                .dgstfnScr(5)
+                .dgstfnCn("원본")
+                .build();
+        entity.setFrstRgtrId(ownerLoginId);
+        return entity;
+    }
+
+    private static SatisfactionDto updateDto() {
+        return SatisfactionDto.builder()
+                .dgstfnSn(10L)
+                .dgstfnScr(4)
+                .dgstfnCn("수정")
                 .build();
     }
 
     // ---------- 등록 ----------
 
     @Test
-    @DisplayName("등록 - 비밀번호는 평문으로 저장되지 않는다")
-    void createHashesPassword() {
+    @DisplayName("등록 - 인증 사용자만 저장할 수 있다")
+    void createRequiresAuthenticatedUser() {
         SatisfactionDto dto = SatisfactionDto.builder()
-                .bbsId("BBS_01").pstSn(1L).dgstfnScr(5).dgstfnCn("Good").pswd("secret").build();
-        given(satisfactionRepository.save(any(Satisfaction.class)))
-                .willAnswer(inv -> inv.getArgument(0));
+                .bbsId("BBS_01").pstSn(1L).dgstfnScr(5).dgstfnCn("Good").build();
 
-        satisfactionService.createSatisfaction("user1", dto);
-
-        ArgumentCaptor<Satisfaction> captor = ArgumentCaptor.forClass(Satisfaction.class);
-        verify(satisfactionRepository).save(captor.capture());
-        String stored = captor.getValue().getPswd();
-        assertThat(stored).as("평문이 그대로 저장되면 안 된다").isNotEqualTo("secret");
-        assertThat(new BCryptPasswordEncoder().matches("secret", stored))
-                .as("해시가 원문과 왕복 검증돼야 한다").isTrue();
-    }
-
-    /** 익명 작성분은 비밀번호가 유일한 소유 증명이다 — 없으면 아무도 수정·삭제할 수 없게 된다. */
-    @Test
-    @DisplayName("등록 - 익명 작성인데 비밀번호가 없으면 거부한다")
-    void createRejectsAnonymousWithoutPassword() {
-        SatisfactionDto dto = SatisfactionDto.builder()
-                .bbsId("BBS_01").pstSn(1L).dgstfnScr(5).build();
-
-        assertThatThrownBy(() -> satisfactionService.createSatisfaction(null, dto))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("비밀번호가 필요합니다");
+        assertThatThrownBy(() -> satisfactionService.createSatisfaction(dto))
+                .isInstanceOf(BusinessException.class);
         verify(satisfactionRepository, never()).save(any());
     }
 
-    // ---------- 수정·삭제 인가 (회귀 가드) ----------
-
-    /**
-     * 🔒 <b>이 테스트가 종전 결함을 막는다.</b> 원래 {@code deleteSatisfaction} 은 {@code pswd} 를
-     * 파라미터로 받고도 <b>검사하지 않았다</b> — ID만 알면 누구나 남의 만족도를 지울 수 있었다.
-     * (그리고 옛 테스트는 비밀번호 없는 엔티티에 임의 값을 넘겨 성공하는 것을 정답으로 못 박고 있었다.)
-     */
     @Test
-    @DisplayName("🔒 삭제 - 비밀번호가 틀리면 거부한다")
-    void deleteRejectsWrongPassword() {
-        Satisfaction entity = anonymousEntity("secret");
-        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
+    @DisplayName("등록 - principal이 있어도 인증되지 않은 SecurityContext는 거부한다")
+    void createRejectsUnauthenticatedPrincipal() {
+        CustomUserDetails principal = CustomUserDetails.builder()
+                .userId("untrusted")
+                .esntlId("ESNTL_untrusted")
+                .userNm("untrusted")
+                .password("unused")
+                .roleName("USER")
+                .authorCode("ROLE_USER")
+                .lockAt("N")
+                .build();
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(new UsernamePasswordAuthenticationToken(principal, null));
+        SecurityContextHolder.setContext(context);
+        SatisfactionDto dto = SatisfactionDto.builder()
+                .bbsId("BBS_01").pstSn(1L).dgstfnScr(5).dgstfnCn("Good").build();
 
-        assertThatThrownBy(() -> satisfactionService.deleteSatisfaction(10L, "attacker", "wrong"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("본인 확인");
-        assertThat(entity.getUseYn()).as("거부됐으면 논리삭제 플래그가 바뀌면 안 된다").isNotEqualTo("N");
+        assertThatThrownBy(() -> satisfactionService.createSatisfaction(dto))
+                .isInstanceOf(BusinessException.class);
+        verify(satisfactionRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("🔒 삭제 - 비밀번호를 아예 주지 않으면 거부한다")
-    void deleteRejectsMissingPassword() {
-        Satisfaction entity = anonymousEntity("secret");
+    @DisplayName("등록 - 인증된 요청은 익명 자격증명 없이 저장한다")
+    void createAuthenticatedSatisfaction() {
+        authenticateAs("user1", "USER");
+        SatisfactionDto dto = SatisfactionDto.builder()
+                .bbsId("BBS_01").pstSn(1L).dgstfnScr(5).dgstfnCn("Good").build();
+        given(satisfactionRepository.save(any(Satisfaction.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        satisfactionService.createSatisfaction(dto);
+
+        ArgumentCaptor<Satisfaction> captor = ArgumentCaptor.forClass(Satisfaction.class);
+        verify(satisfactionRepository).save(captor.capture());
+        assertThat(captor.getValue().getBbsId()).isEqualTo("BBS_01");
+        assertThat(captor.getValue().getPstSn()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("익명 비밀번호 DTO·서비스 표면은 퇴역한다")
+    void anonymousPasswordSurfaceIsRetired() {
+        assertThat(Arrays.stream(SatisfactionDto.class.getDeclaredFields())
+                .map(java.lang.reflect.Field::getName))
+                .doesNotContain("pswd");
+        assertThat(Arrays.stream(SatisfactionService.class.getDeclaredMethods())
+                .map(java.lang.reflect.Method::getName))
+                .doesNotContain("checkPassword");
+    }
+
+    // ---------- 수정·삭제 인가 ----------
+
+    @Test
+    @DisplayName("수정 - 소유자는 자기 만족도를 수정할 수 있다")
+    void updateAcceptsOwner() {
+        authenticateAs("owner", "USER");
+        Satisfaction entity = satisfactionOwnedBy("owner");
         given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
 
-        assertThatThrownBy(() -> satisfactionService.deleteSatisfaction(10L, "attacker", null))
+        satisfactionService.updateSatisfaction(updateDto());
+
+        assertThat(entity.getDgstfnScr()).isEqualTo(4);
+        assertThat(entity.getDgstfnCn()).isEqualTo("수정");
+        assertThat(entity.getLastMdfrId()).isEqualTo("owner");
+    }
+
+    @Test
+    @DisplayName("🔒 수정 - 타인은 만족도를 수정할 수 없다")
+    void updateRejectsNonOwner() {
+        authenticateAs("attacker", "USER");
+        Satisfaction entity = satisfactionOwnedBy("owner");
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> satisfactionService.updateSatisfaction(updateDto()))
+                .isInstanceOf(BusinessException.class);
+        assertThat(entity.getDgstfnScr()).isEqualTo(5);
+        assertThat(entity.getDgstfnCn()).isEqualTo("원본");
+    }
+
+    @Test
+    @DisplayName("삭제 - 소유자는 자기 만족도를 논리 삭제할 수 있다")
+    void deleteAcceptsOwner() {
+        authenticateAs("owner", "USER");
+        Satisfaction entity = satisfactionOwnedBy("owner");
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
+
+        satisfactionService.deleteSatisfaction(10L);
+
+        assertThat(entity.getUseYn()).isEqualTo("N");
+        assertThat(entity.getLastMdfrId()).isEqualTo("owner");
+    }
+
+    @Test
+    @DisplayName("삭제 - 관리자는 작성자가 있는 만족도를 대리 삭제할 수 있다")
+    void deleteAcceptsAdminForOwnedRow() {
+        authenticateAs("admin", "ADMIN");
+        Satisfaction entity = satisfactionOwnedBy("owner");
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
+
+        satisfactionService.deleteSatisfaction(10L);
+
+        assertThat(entity.getUseYn()).isEqualTo("N");
+        assertThat(entity.getLastMdfrId()).isEqualTo("admin");
+    }
+
+    @Test
+    @DisplayName("🔒 삭제 - 타인은 비밀번호 없이도 남의 만족도를 삭제할 수 없다")
+    void deleteRejectsNonOwner() {
+        authenticateAs("attacker", "USER");
+        Satisfaction entity = satisfactionOwnedBy("owner");
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> satisfactionService.deleteSatisfaction(10L))
                 .isInstanceOf(BusinessException.class);
         assertThat(entity.getUseYn()).isNotEqualTo("N");
     }
 
     @Test
-    @DisplayName("삭제 - 비밀번호가 맞으면 논리 삭제된다")
-    void deleteAcceptsCorrectPassword() {
-        Satisfaction entity = anonymousEntity("secret");
-        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
+    @DisplayName("🔒 작성자 없는 레거시 행은 관리자도 일반 수정·삭제할 수 없다")
+    void ownerlessLegacyRowRejectsGeneralAdminMutation() {
+        authenticateAs("admin", "ADMIN");
+        Satisfaction ownerless = Satisfaction.builder().dgstfnSn(10L).dgstfnScr(5).build();
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(ownerless));
 
-        satisfactionService.deleteSatisfaction(10L, "user1", "secret");
-
-        assertThat(entity.getUseYn()).isEqualTo("N");
-        assertThat(entity.getLastMdfrId()).isEqualTo("user1");
-    }
-
-    /** 🔒 수정도 같은 결함이 있었다 — 점수·내용을 아무나 바꿀 수 있었다. */
-    @Test
-    @DisplayName("🔒 수정 - 비밀번호가 틀리면 점수가 바뀌지 않는다")
-    void updateRejectsWrongPassword() {
-        Satisfaction entity = anonymousEntity("secret");
-        entity.update(5, "원본", null);
-        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
-        SatisfactionDto dto = SatisfactionDto.builder()
-                .dgstfnSn(10L).dgstfnScr(1).dgstfnCn("변조").pswd("wrong").build();
-
-        assertThatThrownBy(() -> satisfactionService.updateSatisfaction("attacker", dto))
+        assertThatThrownBy(() -> satisfactionService.updateSatisfaction(updateDto()))
                 .isInstanceOf(BusinessException.class);
-        assertThat(entity.getDgstfnScr()).as("거부됐으면 원본이 유지돼야 한다").isEqualTo(5);
-        assertThat(entity.getDgstfnCn()).isEqualTo("원본");
+        assertThatThrownBy(() -> satisfactionService.deleteSatisfaction(10L))
+                .isInstanceOf(BusinessException.class);
+        assertThat(ownerless.getUseYn()).isNotEqualTo("N");
     }
 
     @Test
-    @DisplayName("수정 - 비밀번호가 맞으면 반영되고, 저장된 비밀번호는 바뀌지 않는다")
-    void updateAcceptsCorrectPasswordAndKeepsStoredPassword() {
-        Satisfaction entity = anonymousEntity("secret");
-        String originalHash = entity.getPswd();
-        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
-        SatisfactionDto dto = SatisfactionDto.builder()
-                .dgstfnSn(10L).dgstfnScr(4).dgstfnCn("Updated").pswd("secret").build();
+    @DisplayName("작성자 없는 레거시 행은 관리자 moderation 경로로만 삭제한다")
+    void ownerlessLegacyRowAllowsAdminModeration() {
+        authenticateAs("admin", "ADMIN");
+        Satisfaction ownerless = Satisfaction.builder().dgstfnSn(10L).build();
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(ownerless));
 
-        satisfactionService.updateSatisfaction("user1", dto);
+        satisfactionService.deleteByModerator(10L);
 
-        assertThat(entity.getDgstfnScr()).isEqualTo(4);
-        // dto.pswd 는 '자격 증명'이지 '새 비밀번호'가 아니다 — 겸용하면 둘을 구분할 수 없다.
-        assertThat(entity.getPswd()).as("자격 증명이 새 비밀번호로 덮어써지면 안 된다").isEqualTo(originalHash);
+        assertThat(ownerless.getUseYn()).isEqualTo("N");
+        assertThat(ownerless.getLastMdfrId()).isEqualTo("admin");
+    }
+
+    @Test
+    @DisplayName("🔒 일반 사용자는 moderation 경로를 호출할 수 없다")
+    void moderationRejectsNonAdmin() {
+        authenticateAs("owner", "USER");
+
+        assertThatThrownBy(() -> satisfactionService.deleteByModerator(10L))
+                .isInstanceOf(BusinessException.class);
+        verify(satisfactionRepository, never()).findById(any());
     }
 
     // ---------- 조회 ----------
@@ -186,7 +277,7 @@ class SatisfactionServiceTest {
 
     @Test
     @DisplayName("만족도 상세 조회 성공")
-    void getSatisfaction_Success() {
+    void getSatisfactionSuccess() {
         given(satisfactionRepository.findById(10L))
                 .willReturn(Optional.of(Satisfaction.builder().dgstfnSn(10L).build()));
 
@@ -195,7 +286,7 @@ class SatisfactionServiceTest {
 
     @Test
     @DisplayName("만족도 상세 조회 실패 - 리소스 없음")
-    void getSatisfaction_NotFound() {
+    void getSatisfactionNotFound() {
         given(satisfactionRepository.findById(10L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> satisfactionService.getSatisfaction(10L))
@@ -204,36 +295,21 @@ class SatisfactionServiceTest {
 
     @Test
     @DisplayName("만족도 수정 실패 - 리소스 없음")
-    void updateSatisfaction_NotFound() {
-        SatisfactionDto dto = SatisfactionDto.builder().dgstfnSn(10L).build();
+    void updateSatisfactionNotFound() {
+        authenticateAs("user1", "USER");
         given(satisfactionRepository.findById(10L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> satisfactionService.updateSatisfaction("user1", dto))
+        assertThatThrownBy(() -> satisfactionService.updateSatisfaction(updateDto()))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
     @DisplayName("만족도 삭제 실패 - 리소스 없음")
-    void deleteSatisfaction_NotFound() {
+    void deleteSatisfactionNotFound() {
+        authenticateAs("user1", "USER");
         given(satisfactionRepository.findById(10L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> satisfactionService.deleteSatisfaction(10L, "user1", "pwd"))
+        assertThatThrownBy(() -> satisfactionService.deleteSatisfaction(10L))
                 .isInstanceOf(BusinessException.class);
-    }
-
-    /** 해시 비교로 바뀌었으므로 평문 비교 시절의 기대값(문자열 동일성)은 더 이상 통하지 않는다. */
-    @Test
-    @DisplayName("비밀번호 확인 - 해시 비교로 일치/불일치/없음을 판정한다")
-    void checkPassword() {
-        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(anonymousEntity("secret")));
-        given(satisfactionRepository.findById(11L)).willReturn(Optional.empty());
-        given(satisfactionRepository.findById(12L))
-                .willReturn(Optional.of(Satisfaction.builder().dgstfnSn(12L).build())); // 비밀번호 없음
-
-        assertThat(satisfactionService.checkPassword(10L, "secret")).isTrue();
-        assertThat(satisfactionService.checkPassword(10L, "wrong")).isFalse();
-        assertThat(satisfactionService.checkPassword(11L, "any")).isFalse();
-        assertThat(satisfactionService.checkPassword(12L, "any"))
-                .as("저장된 비밀번호가 없으면 어떤 입력도 통과시키면 안 된다").isFalse();
     }
 }

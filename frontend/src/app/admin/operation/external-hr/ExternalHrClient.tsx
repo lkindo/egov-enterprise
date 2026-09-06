@@ -34,19 +34,19 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
   loading: () => null,
 });
 
-import { ExternalHrDtoSchema } from '@/types/generated-zod';
+import { ExternalHrDtoRequestSchema } from '@/types/generated-zod';
 
-export const externalHrSchema = ExternalHrDtoSchema.extend({
+export const externalHrSchema = ExternalHrDtoRequestSchema.extend({
   // [2026-08-28] 문구를 실제 조작에 맞춘다 — 이제 목록에서 고른다.
-  evntSn: ExternalHrDtoSchema.shape.evntSn.int().positive('소속 행사를 선택해 주세요.'),
-  otsdHrId: ExternalHrDtoSchema.shape.otsdHrId.min(1, '외부인사 ID를 입력하세요.'),
-  otsdHrNm: ExternalHrDtoSchema.shape.otsdHrNm.unwrap().min(1, '성명을 입력하세요.'),
-  ogdpInstNm: ExternalHrDtoSchema.shape.ogdpInstNm.unwrap().min(1, '소속기관을 입력하세요.'),
-  areaNo: ExternalHrDtoSchema.shape.areaNo.unwrap().min(1, '지역번호를 입력하세요.'),
-  mdTelno: ExternalHrDtoSchema.shape.mdTelno.unwrap().min(1, '국번을 입력하세요.'),
-  endTelno: ExternalHrDtoSchema.shape.endTelno.unwrap().min(1, '종번을 입력하세요.'),
-  emlAddr: ExternalHrDtoSchema.shape.emlAddr.unwrap().min(1, '이메일을 입력하세요.').email(),
-  brdtYmd: ExternalHrDtoSchema.shape.brdtYmd.unwrap()
+  evntSn: ExternalHrDtoRequestSchema.shape.evntSn.int().positive('소속 행사를 선택해 주세요.'),
+  otsdHrId: ExternalHrDtoRequestSchema.shape.otsdHrId.min(1, '외부인사 ID를 입력하세요.'),
+  otsdHrNm: ExternalHrDtoRequestSchema.shape.otsdHrNm.unwrap().min(1, '성명을 입력하세요.'),
+  ogdpInstNm: ExternalHrDtoRequestSchema.shape.ogdpInstNm.unwrap().min(1, '소속기관을 입력하세요.'),
+  areaNo: ExternalHrDtoRequestSchema.shape.areaNo.unwrap().min(1, '지역번호를 입력하세요.'),
+  mdTelno: ExternalHrDtoRequestSchema.shape.mdTelno.unwrap().min(1, '국번을 입력하세요.'),
+  endTelno: ExternalHrDtoRequestSchema.shape.endTelno.unwrap().min(1, '종번을 입력하세요.'),
+  emlAddr: ExternalHrDtoRequestSchema.shape.emlAddr.unwrap().min(1, '이메일을 입력하세요.').email(),
+  brdtYmd: ExternalHrDtoRequestSchema.shape.brdtYmd.unwrap()
     .length(8, '생년월일 8자리를 입력하세요(예: 19900101).'),
 });
 

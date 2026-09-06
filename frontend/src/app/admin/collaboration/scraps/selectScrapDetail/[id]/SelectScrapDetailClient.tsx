@@ -26,7 +26,7 @@ interface ScrapForm {
   scrapNm: string;
   scrapUrl: string;
   scrapExpln: string;
-  useYn: string;
+  useYn: 'Y' | 'N';
 }
 
 const LIST_PATH = '/admin/collaboration/scraps/selectScrapList';

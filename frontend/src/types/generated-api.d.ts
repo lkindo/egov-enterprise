@@ -392,13 +392,13 @@ export interface paths {
         get?: never;
         /**
          * 만족도 수정
-         * @description 본문의 pswd 는 소유 증명용 자격이며 저장된 비밀번호를 바꾸지 않는다.
+         * @description 인증된 작성자 또는 관리자만 수정할 수 있다.
          */
         put: operations["update"];
         post?: never;
         /**
          * 만족도 삭제
-         * @description 논리 삭제. 소유자 또는 익명 작성 비밀번호가 필요하다.
+         * @description 논리 삭제. 인증된 작성자 또는 관리자만 삭제할 수 있다.
          */
         delete: operations["delete"];
         options?: never;
@@ -4760,17 +4760,17 @@ export interface components {
     schemas: {
         WorkReportDto: {
             /** Format: int64 */
-            rptpSn?: number;
-            rptTtl?: string;
+            readonly rptpSn?: number | null;
+            rptTtl: string;
             rptCn?: string;
             rptSeCd?: string;
-            userId?: string;
-            userNm?: string;
+            readonly userId?: string | null;
+            readonly userNm?: string | null;
             /** Format: int64 */
             atchFileSn?: number;
-            rptSttsCd?: string;
+            readonly rptSttsCd?: string | null;
             rptYmd?: string;
-            rptTypeCd?: string;
+            readonly rptTypeCd?: string | null;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -4818,7 +4818,8 @@ export interface components {
             scrapNm?: string;
             scrapUrl?: string;
             scrapExpln?: string;
-            useYn: string;
+            /** @enum {string} */
+            useYn: "Y" | "N";
             userId?: string;
             frstRgtrId?: string;
             /** Format: date-time */
@@ -4910,19 +4911,19 @@ export interface components {
              * Format: int64
              * @description 메모보고일련번호
              */
-            memoRptSn?: number;
+            readonly memoRptSn?: number | null;
             /** @description 보고제목 */
-            rptTtl?: string;
+            rptTtl: string;
             /** @description 보고일자 */
             memoRptYmd?: string;
             /** @description 작성자아이디 */
-            userId?: string;
+            readonly userId?: string | null;
             /** @description 작성자명 */
-            wrterNm?: string;
+            readonly wrterNm?: string | null;
             /** @description 보고대상자아이디 */
-            rptrId?: string;
+            rptrId: string;
             /** @description 보고대상자명 */
-            rptrNm?: string;
+            readonly rptrNm?: string | null;
             /** @description 보고내용 */
             rptCn?: string;
             /**
@@ -4931,22 +4932,22 @@ export interface components {
              */
             atchFileSn?: number;
             /** @description 지시사항내용 */
-            drctnMttr?: string;
+            readonly drctnMttr?: string | null;
             /**
              * Format: date-time
              * @description 지시사항등록일시
              */
-            drctnMttrRegDt?: string;
+            readonly drctnMttrRegDt?: string | null;
             /**
              * Format: date-time
              * @description 보고대상자조회일시
              */
-            rptrInqDt?: string;
+            readonly rptrInqDt?: string | null;
             /**
              * Format: date-time
              * @description 생성일시
              */
-            crtDt?: string;
+            readonly crtDt?: string | null;
         };
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {
@@ -5037,40 +5038,40 @@ export interface components {
         };
         DeptJobDto: {
             /** Format: int64 */
-            deptTaskSn?: number;
+            readonly deptTaskSn?: number | null;
             /** Format: int64 */
             deptTaskBoxSn?: number;
-            deptTaskBoxNm?: string;
-            deptId?: string;
-            deptNm?: string;
+            readonly deptTaskBoxNm?: string | null;
+            readonly deptId?: string | null;
+            readonly deptNm?: string | null;
             deptTaskNm?: string;
             deptTaskCn?: string;
             picId?: string;
-            picNm?: string;
+            readonly picNm?: string | null;
             prrtyRnk?: string;
             /** Format: int64 */
             atchFileSn?: number;
-            frstRgtrId?: string;
+            readonly frstRgtrId?: string | null;
             /** Format: date-time */
-            crtDt?: string;
-            lastMdfrId?: string;
+            readonly crtDt?: string | null;
+            readonly lastMdfrId?: string | null;
             /** Format: date-time */
-            mdfcnDt?: string;
+            readonly mdfcnDt?: string | null;
         };
         DeptJobBoxDto: {
             /** Format: int64 */
-            deptTaskBoxSn?: number;
+            readonly deptTaskBoxSn?: number | null;
             deptTaskBoxNm: string;
             deptId?: string;
-            deptNm?: string;
+            readonly deptNm?: string | null;
             /** Format: int64 */
             sortOrdr?: number;
-            frstRgtrId?: string;
+            readonly frstRgtrId?: string | null;
             /** Format: date-time */
-            crtDt?: string;
-            lastMdfrId?: string;
+            readonly crtDt?: string | null;
+            readonly lastMdfrId?: string | null;
             /** Format: date-time */
-            mdfcnDt?: string;
+            readonly mdfcnDt?: string | null;
         };
         CommentDto: {
             /** Format: int64 */
@@ -5126,7 +5127,6 @@ export interface components {
             dgstfnScr?: number;
             userId?: string;
             userNm?: string;
-            pswd?: string;
             useYn: string;
             /** Format: date-time */
             crtDt?: string;
@@ -5146,7 +5146,8 @@ export interface components {
             contsSn?: number;
             cntntsNm?: string;
             cntcUrl?: string;
-            cntntsUseYn?: string;
+            /** @enum {string} */
+            cntntsUseYn?: "Y" | "N";
             cntntsLinkUrl?: string;
             cntntsDc?: string;
         };
@@ -5865,11 +5866,11 @@ export interface components {
             endTelno?: string;
             emlAddr?: string;
             /** Format: date-time */
-            crtDt?: string;
-            frstRgtrId?: string;
+            readonly crtDt?: string | null;
+            readonly frstRgtrId?: string | null;
             /** Format: date-time */
-            mdfcnDt?: string;
-            lastMdfrId?: string;
+            readonly mdfcnDt?: string | null;
+            readonly lastMdfrId?: string | null;
         };
         ApiResponseExternalHrDto: {
             success?: boolean;
@@ -6011,8 +6012,9 @@ export interface components {
             /**
              * @description 사용 여부
              * @example Y
+             * @enum {string}
              */
-            useYn?: string;
+            useYn?: "Y" | "N";
             /**
              * @description 작성자 ID
              * @example USRCNFRM_00000000001
@@ -12146,9 +12148,7 @@ export interface operations {
     };
     delete: {
         parameters: {
-            query?: {
-                pswd?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 bbsId: string;
@@ -26956,7 +26956,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
+            /** @description 등록 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -26985,6 +26985,15 @@ export interface operations {
             };
             /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

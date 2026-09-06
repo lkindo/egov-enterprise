@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +14,14 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @IdClass(ExternalHrId.class)
-public class ExternalHr {
+public class ExternalHr implements Persistable<ExternalHrId> {
+
+    /**
+     * 할당형 복합키도 생성 시 {@code persist}를 사용한다. 기본 {@code save} 판정에 맡기면
+     * non-null ID가 기존 행으로 오인되어 같은 키의 등록 요청이 {@code merge}로 덮어써진다.
+     */
+    @Transient
+    private boolean newEntity = true;
 
     @Id
     // 행사 숫자 FK는 복합키 식별자이자 하단 연관관계와 동일 물리 컬럼을 공유한다.
@@ -64,6 +72,22 @@ public class ExternalHr {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "evnt_sn", insertable = false, updatable = false)
     private EventInfo event;
+
+    @Override
+    public ExternalHrId getId() {
+        return new ExternalHrId(evntSn, otsdHrId);
+    }
+
+    @Override
+    public boolean isNew() {
+        return newEntity;
+    }
+
+    @PostLoad
+    @PostPersist
+    void markNotNew() {
+        this.newEntity = false;
+    }
 
     @Builder
     public ExternalHr(Long evntSn, String otsdHrId, String gndrCd, String otsdHrNm,

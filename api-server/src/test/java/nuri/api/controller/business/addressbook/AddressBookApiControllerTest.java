@@ -21,6 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -86,6 +87,44 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
                 .content("{\"adbkNm\":\"My Address Book\", \"rlsScopeCd\":\"PUBLIC\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("주소록 등록은 중첩 구성원의 필수 사용자 ID를 검증한다")
+    void createAddressBook_RejectsInvalidNestedMember() throws Exception {
+        mockMvc.perform(post("/api/v1/address-books")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "adbkNm": "My Address Book",
+                          "rlsScopeCd": "PUBLIC",
+                          "adbkMan": [{"userId": ""}]
+                        }
+                        """)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(addressBookService);
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("주소록 등록은 null 구성원을 검증 단계에서 거절한다")
+    void createAddressBook_RejectsNullNestedMember() throws Exception {
+        mockMvc.perform(post("/api/v1/address-books")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "adbkNm": "My Address Book",
+                          "rlsScopeCd": "PUBLIC",
+                          "adbkMan": [null]
+                        }
+                        """)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(addressBookService);
     }
 
     @Test

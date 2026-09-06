@@ -3776,7 +3776,7 @@
           "Satisfaction"
         ],
         "summary": "만족도 수정",
-        "description": "본문의 pswd 는 소유 증명용 자격이며 저장된 비밀번호를 바꾸지 않는다.",
+        "description": "인증된 작성자 또는 관리자만 수정할 수 있다.",
         "operationId": "update",
         "parameters": [
           {
@@ -3884,7 +3884,7 @@
           "Satisfaction"
         ],
         "summary": "만족도 삭제",
-        "description": "논리 삭제. 소유자 또는 익명 작성 비밀번호가 필요하다.",
+        "description": "논리 삭제. 인증된 작성자 또는 관리자만 삭제할 수 있다.",
         "operationId": "delete",
         "parameters": [
           {
@@ -3911,14 +3911,6 @@
             "schema": {
               "type": "integer",
               "format": "int64"
-            }
-          },
-          {
-            "name": "pswd",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -24058,7 +24050,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "등록 성공",
             "content": {
               "application/json": {
                 "schema": {
@@ -24089,6 +24081,16 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34658,34 +34660,56 @@
         "type": "object",
         "properties": {
           "rptpSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "rptTtl": {
-            "type": "string"
-          },
-          "rptCn": {
-            "type": "string"
-          },
-          "rptSeCd": {
-            "type": "string"
-          },
-          "userId": {
             "type": "string",
-            "maxLength": 20,
+            "maxLength": 100,
             "minLength": 0
           },
+          "rptCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "rptSeCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "readOnly": true
+          },
           "userNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
           },
           "rptSttsCd": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 12,
-            "minLength": 0
+            "minLength": 0,
+            "readOnly": true
           },
           "rptYmd": {
             "type": "string",
@@ -34693,9 +34717,16 @@
             "minLength": 0
           },
           "rptTypeCd": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           }
-        }
+        },
+        "required": [
+          "rptTtl"
+        ]
       },
       "ApiResponseVoid": {
         "type": "object",
@@ -34859,13 +34890,19 @@
             "minLength": 0
           },
           "scrapExpln": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
           },
           "useYn": {
             "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
             "minLength": 0,
-            "pattern": "[YN]"
+            "pattern": "^(?:Y|N)$"
           },
           "userId": {
             "type": "string",
@@ -35078,39 +35115,63 @@
         "description": "메모보고 정보",
         "properties": {
           "memoRptSn": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "description": "메모보고일련번호"
+            "description": "메모보고일련번호",
+            "readOnly": true
           },
           "rptTtl": {
             "type": "string",
-            "description": "보고제목"
-          },
-          "memoRptYmd": {
-            "type": "string",
-            "description": "보고일자"
-          },
-          "userId": {
-            "type": "string",
-            "description": "작성자아이디"
-          },
-          "wrterNm": {
-            "type": "string",
-            "description": "작성자명",
+            "description": "보고제목",
             "maxLength": 100,
             "minLength": 0
           },
+          "memoRptYmd": {
+            "type": "string",
+            "description": "보고일자",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자아이디",
+            "readOnly": true
+          },
+          "wrterNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자명",
+            "maxLength": 100,
+            "minLength": 0,
+            "readOnly": true
+          },
           "rptrId": {
             "type": "string",
-            "description": "보고대상자아이디"
+            "description": "보고대상자아이디",
+            "maxLength": 20,
+            "minLength": 0
           },
           "rptrNm": {
-            "type": "string",
-            "description": "보고대상자명"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "보고대상자명",
+            "readOnly": true
           },
           "rptCn": {
             "type": "string",
-            "description": "보고내용"
+            "description": "보고내용",
+            "maxLength": 4000,
+            "minLength": 0
           },
           "atchFileSn": {
             "type": "integer",
@@ -35118,25 +35179,45 @@
             "description": "첨부파일아이디"
           },
           "drctnMttr": {
-            "type": "string",
-            "description": "지시사항내용"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "지시사항내용",
+            "readOnly": true
           },
           "drctnMttrRegDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "지시사항등록일시"
+            "description": "지시사항등록일시",
+            "readOnly": true
           },
           "rptrInqDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "보고대상자조회일시"
+            "description": "보고대상자조회일시",
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "생성일시"
+            "description": "생성일시",
+            "readOnly": true
           }
-        }
+        },
+        "required": [
+          "rptTtl",
+          "rptrId"
+        ]
       },
       "InformalSanctionDto": {
         "type": "object",
@@ -35318,56 +35399,100 @@
         "type": "object",
         "properties": {
           "deptTaskSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "deptTaskBoxSn": {
             "type": "integer",
             "format": "int64"
           },
           "deptTaskBoxNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "deptId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "readOnly": true
+          },
+          "deptNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "deptTaskNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "deptTaskCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "picId": {
             "type": "string",
             "maxLength": 20,
             "minLength": 0
           },
-          "deptNm": {
-            "type": "string"
-          },
-          "deptTaskNm": {
-            "type": "string"
-          },
-          "deptTaskCn": {
-            "type": "string"
-          },
-          "picId": {
-            "type": "string"
-          },
           "picNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "prrtyRnk": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
           },
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "lastMdfrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           }
         }
       },
@@ -35375,8 +35500,12 @@
         "type": "object",
         "properties": {
           "deptTaskBoxSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "deptTaskBoxNm": {
             "type": "string",
@@ -35389,25 +35518,45 @@
             "minLength": 0
           },
           "deptNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "sortOrdr": {
             "type": "integer",
             "format": "int64"
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "lastMdfrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           }
         },
         "required": [
@@ -35576,10 +35725,6 @@
           "userNm": {
             "type": "string"
           },
-          "pswd": {
-            "type": "string",
-            "writeOnly": true
-          },
           "useYn": {
             "type": "string",
             "maxLength": 1,
@@ -35633,16 +35778,29 @@
             "minLength": 0
           },
           "cntcUrl": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           },
           "cntntsUseYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "cntntsLinkUrl": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           },
           "cntntsDc": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           }
         }
       },
@@ -37310,18 +37468,34 @@
             "minLength": 0
           },
           "crtDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "lastMdfrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           }
         },
         "required": [
@@ -37547,17 +37721,28 @@
           "rlsScopeCd": {
             "type": "string",
             "description": "공개 범위 코드",
-            "example": "PUB"
+            "example": "PUB",
+            "maxLength": 12,
+            "minLength": 0
           },
           "trgetOgnzId": {
             "type": "string",
             "description": "대상 조직 ID",
-            "example": "ORGNZT_0000000000001"
+            "example": "ORGNZT_0000000000001",
+            "maxLength": 20,
+            "minLength": 0
           },
           "useYn": {
             "type": "string",
             "description": "사용 여부",
-            "example": "Y"
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "example": "Y",
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "wrterId": {
             "type": "string",

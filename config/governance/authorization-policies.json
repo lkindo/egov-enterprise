@@ -18,7 +18,6 @@
     "SELF_WITH_CREDENTIAL": "Principal-bound self service plus current credential proof.",
     "STRICT_OWNER": "Resource owner/participant only; administrator bypass is forbidden by the service guard.",
     "OWNER_OR_ADMIN": "Resource owner or ADMIN/SYSTEM service guard.",
-    "OWNER_OR_ADMIN_OR_CREDENTIAL": "Owner/admin, or the resource credential branch defined by the service.",
     "PARTICIPANT_OR_ADMIN": "Named resource participant or ADMIN/SYSTEM.",
     "REACHABILITY_WITH_PRIVACY": "Owner/shared reachability; ADMIN/SYSTEM cannot bypass personal-reference privacy.",
     "ADMIN_OR_SYSTEM": "ADMIN or SYSTEM through method security, DB URL authorization, or service guard.",
@@ -129,24 +128,27 @@
       "path": "/api/v1/admin/operation/external-hr",
       "handler": "nuri.api.controller.business.operation.ExternalHrApiController#createExternalHr",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "ExternalHrService#createExternalHr"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
       "handler": "nuri.api.controller.business.operation.ExternalHrApiController#deleteExternalHr",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "ExternalHrService#deleteExternalHr"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
       "handler": "nuri.api.controller.business.operation.ExternalHrApiController#updateExternalHr",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "ExternalHrService#updateExternalHr"
     },
     {
       "method": "POST",
@@ -1155,7 +1157,7 @@
       "method": "DELETE",
       "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
       "handler": "nuri.api.controller.business.board.SatisfactionApiController#delete",
-      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED",
       "guardRef": "SatisfactionService#assertCanModify"
@@ -1164,7 +1166,7 @@
       "method": "PUT",
       "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
       "handler": "nuri.api.controller.business.board.SatisfactionApiController#update",
-      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED",
       "guardRef": "SatisfactionService#assertCanModify"
@@ -2010,6 +2012,39 @@
       ]
     },
     {
+      "target": "ExternalHrService#createExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "ExternalHrService#deleteExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "ExternalHrService#updateExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
       "target": "InformalSanctionService#confirmInformalSanction",
       "policy": "STRICT_OWNER",
       "mechanisms": [
@@ -2397,6 +2432,51 @@
   ],
   "manualGuardPolicies": [
     {
+      "target": "DeptJobService#currentEsntlIdOrDeny",
+      "source": "business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "SecurityUtil.getCurrentEsntlId()",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        ".orElse(\"anonymous\")",
+        ".orElse(\"SYSTEM\")"
+      ]
+    },
+    {
+      "target": "ExternalHrService#currentLoginId",
+      "source": "business-app/src/main/java/nuri/business/service/operation/ExternalHrService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": [
+        ".orElse(\"SYSTEM\")",
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "FileAccessPolicy#assertAttachable",
+      "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "loginId.equals(master.getFrstRgtrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "grants.ownerGrant()",
+        "grants.sharedGrant()"
+      ]
+    },
+    {
       "target": "FileAccessPolicy#assertReadable",
       "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
       "policy": "REACHABILITY_WITH_PRIVACY",
@@ -2509,14 +2589,31 @@
     {
       "target": "SatisfactionService#assertCanModify",
       "source": "business-app/src/main/java/nuri/business/service/board/SatisfactionService.java",
-      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "policy": "OWNER_OR_ADMIN",
       "denyReferences": 1,
       "requiredTokens": [
-        "SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId())",
-        "passwordEncoder.matches(pswd, entity.getPswd())",
-        "CommonErrorCode.HANDLE_ACCESS_DENIED"
+        "!StringUtils.hasText(entity.getFrstRgtrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);",
+        "SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId())"
       ],
-      "forbiddenTokens": []
+      "forbiddenTokens": [
+        "passwordEncoder",
+        "entity.getPswd()"
+      ]
+    },
+    {
+      "target": "SatisfactionService#currentLoginId",
+      "source": "business-app/src/main/java/nuri/business/service/board/SatisfactionService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": [
+        "passwordEncoder",
+        "getPswd()"
+      ]
     },
     {
       "target": "UserService#changePassword",
@@ -2551,6 +2648,20 @@
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "WorkReportService#currentLoginId",
+      "source": "business-app/src/main/java/nuri/business/service/report/WorkReportService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": [
+        ".orElse(\"anonymous\")",
+        ".orElse(\"SYSTEM\")"
+      ]
     }
   ]
 }

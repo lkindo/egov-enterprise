@@ -109,14 +109,16 @@ class HarnessBaselineIntegrityTest {
             "@ArchTag(\"architecture-gate\")");
 
     /**
-     * 소스 전체 해시 대상 — ArchUnit 계열 파일.
+     * 소스 전체 해시 대상 — ArchUnit 계열과 판정 본문 자체가 계약인 표적 게이트.
      * <p>[2026-08-31 신설] ArchUnit 의 규칙과 allowlist({@code DomainIsolationTest.ignoreDependency(...)},
      * {@code JpaArchitectureRules} 의 LAZY 규칙 등)는 {@code static final} 상수가 아니라 메서드 체인에
      * 산다 — 상수 해시만으로는 allowlist 를 한 줄 늘려도 매니페스트에 아무것도 남지 않는다. 이 계열은
      * 주석 제거·개행 정규화 후 소스 전체를 해시해, 규칙 본문의 어떤 완화도 diff 두 곳에 드러나게 한다.
+     * {@code InputContractMirrorLinterTest}도 required·nested 판정이 메서드 본문에 있으므로 같은 경계를 쓴다.
      */
     private static final Pattern ARCH_RULE_FILE = Pattern.compile(
-            "(?:ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\\w*)\\.java$");
+            "(?:InputContractMirrorLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules"
+                    + "|Archunit\\w*)\\.java$");
 
     /** 소스 전체 해시 키 접미 — {@code <module>/<Class>.__sourceHash} */
     private static final String SOURCE_HASH_SUFFIX = ".__sourceHash";
@@ -225,7 +227,7 @@ class HarnessBaselineIntegrityTest {
             for (Map.Entry<String, String> e : extractConstants(code).entrySet()) {
                 actual.put(className + "." + e.getKey(), e.getValue());
             }
-            // ArchUnit 계열은 규칙·allowlist 가 상수 밖(메서드 체인)에 살므로 소스 전체를 동결한다.
+            // ArchUnit·표적 의미 게이트는 규칙이 상수 밖(메서드 본문)에 살므로 소스 전체를 동결한다.
             if (ARCH_RULE_FILE.matcher(src.getFileName().toString()).find()) {
                 actual.put(className + SOURCE_HASH_SUFFIX, sha256Short(code.replace("\r\n", "\n")));
             }

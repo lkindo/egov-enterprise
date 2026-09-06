@@ -135,9 +135,11 @@ ADR-0009는 성명·사번·계정명 등 일반 개인정보를 포함할 수 �
 `credential-name-signal` 검사는 전용 URL **key**의 신설만 차단한다. 이는 고위험 검색 용도의
 승인이나 내용 기반 DLP 보장이 아니다.
 
-이 census와 승인은 프런트엔드 내비게이션·검색 상태의 범위다. 만족도 삭제 API에 남은
-`pswd` query 계약은 이 승인의 근거가 아니며 [GAP-SEC-002](../../.agent/memory/known-gaps.md)에서
-별도 이전 대상으로 추적한다. 따라서 이 증거를 저장소 전체 자격증명 URL 0건으로 해석하지 않는다.
+이 census와 승인은 프런트엔드 내비게이션·검색 상태의 범위다. 당시 별도 API 계약이었던 만족도
+삭제 `pswd` query는 이 승인의 근거가 아니며, 2026-09-05
+[ADR-0011](../02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md)이 익명
+비밀번호 증명과 함께 퇴역을 결정했다. 따라서 이 증거 자체를 저장소 전체 자격증명 URL 0건의
+근거로 확대해석하지 않고, 백엔드 request-target 계약은 별도 게이트로 검증한다.
 
 승인 selector는 다음 **census recordId 5건**을 exact하게 고정한다.
 

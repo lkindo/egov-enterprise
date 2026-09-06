@@ -15,3 +15,4 @@
 | [ADR-0008](ADR-0008-multi-source-approved-migration-workflow.md) | 다중 소스 DB→PostgreSQL 승인형 오프라인 마이그레이션 워크플로 | Accepted |
 | [ADR-0009](ADR-0009-controlled-url-search-state.md) | 화면별 계약 아래 개인정보성 검색어의 URL 사용을 허용 | Accepted |
 | [ADR-0010](ADR-0010-frontend-session-cookie-secure-policy.md) | 프론트엔드 세션 쿠키의 Secure 예외를 명시적 평문 loopback으로 제한 | Accepted |
+| [ADR-0011](ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 익명 만족도와 비밀번호 소유 증명을 퇴역하고 수정·삭제를 인증 owner/admin으로 제한 | Accepted |

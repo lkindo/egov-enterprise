@@ -475,7 +475,7 @@ export const updateWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
   responseForbiddenPaths: [],
 });
 
@@ -730,7 +730,7 @@ export const updateMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -985,7 +985,7 @@ export const updateDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -1036,7 +1036,7 @@ export const updateDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: DeptJobBoxDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskBoxSn"],["deptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -1168,7 +1168,7 @@ export const deleteOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int(), "dgstfnSn": z.number().int() }).strict(),
-  querySchema: z.object({ "pswd": z.string().optional() }).strict(),
+  querySchema: null,
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
@@ -2756,7 +2756,7 @@ export const updateExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: ExternalHrDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => ExternalHrDtoResponseSchema),
   envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["crtDt"],["frstRgtrId"],["mdfcnDt"],["lastMdfrId"]],
   responseForbiddenPaths: [],
 });
 
@@ -2960,7 +2960,7 @@ export const createWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
   responseForbiddenPaths: [],
 });
 
@@ -3215,7 +3215,7 @@ export const createMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -3495,7 +3495,7 @@ export const createDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -3529,7 +3529,7 @@ export const createDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: DeptJobBoxDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskBoxSn"],["deptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -3598,7 +3598,7 @@ export const getListOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseSchema: z.array(z.lazy(() => SatisfactionDtoResponseSchema)),
   envelopeSchema: ApiResponseListSatisfactionDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [["*","pswd"]],
+  responseForbiddenPaths: [],
 });
 
 export const createOperation = /*#__PURE__*/ defineGeneratedOperation({
@@ -5028,7 +5028,7 @@ export const createExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: ExternalHrDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => ExternalHrDtoResponseSchema),
   envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["crtDt"],["frstRgtrId"],["mdfcnDt"],["lastMdfrId"]],
   responseForbiddenPaths: [],
 });
 

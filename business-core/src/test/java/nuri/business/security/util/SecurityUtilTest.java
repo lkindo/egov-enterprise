@@ -124,6 +124,20 @@ class SecurityUtilTest {
     }
 
     @Test
+    @DisplayName("getCurrentLoginId - 미인증 CustomUserDetails principal은 반환하지 않는다")
+    void getCurrentLoginId_unauthenticatedPrincipal_returnsEmpty() {
+        CustomUserDetails principal = CustomUserDetails.builder()
+                .userId("loginA").esntlId("ESNTL_loginA").userNm("loginA")
+                .password("pw").roleName("USER").build();
+        Authentication authentication = UsernamePasswordAuthenticationToken.unauthenticated(principal, null);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+
+        assertThat(SecurityUtil.getCurrentLoginId()).isEmpty();
+    }
+
+    @Test
     @DisplayName("assertOwnerOrAdmin - 소유자(loginId 일치)는 통과")
     void assertOwnerOrAdmin_owner_passes() {
         authenticateAs("loginA");
