@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ReportPage } from '@/app/components/patterns/report-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
-import { onlinePollAdminService, type OnlinePollDto } from '@/services/foundation/system/OnlinePollAdminService';
+import { pollUserService } from '@/services/business/user/poll/PollUserService';
+import type { OnlinePollDto } from '@/types/business/poll';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
@@ -33,7 +34,7 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
   // 종전 화면은 사용자 API 를 호출하고 '응답 수' 칸에 리터럴 0 을 찍고 있었다 — 거짓 지표(P1-5).
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin-survey-stats', page, debouncedKeyword],
-    queryFn: () => onlinePollAdminService.getPollList({ keyword: debouncedKeyword, page, size: PAGE_SIZE }),
+    queryFn: () => pollUserService.getPollList({ searchKeyword: debouncedKeyword, page, size: PAGE_SIZE }),
   });
 
   const polls: OnlinePollDto[] = data?.list || [];

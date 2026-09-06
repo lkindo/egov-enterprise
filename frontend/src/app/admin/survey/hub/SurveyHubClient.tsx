@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, BarChart3, Users, Plus, Layers, Activity, AlertTriangle, RefreshCcw, ListChecks, LayoutTemplate, Users2 } from "lucide-react";
+import { LayoutGrid, BarChart3, Users, Plus, Layers, Activity, AlertTriangle, RefreshCcw, ListChecks, LayoutTemplate, Users2, Vote } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
@@ -210,6 +211,14 @@ export function SurveyHubClient() {
  <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
  </TabsList>
  </div>
+ {/* [2026-09-06 DEC-OPS-041] 온라인 투표(항목 하나 고르기)는 문항형 설문조사와 다른 제품이라 허브 탭이 아니라
+     별도 화면으로 안내한다(감사 D12-02 — 종전에는 허브 어디에도 투표로 가는 길이 없었다). */}
+ <Link
+   href="/admin/survey/polls"
+   className="inline-flex items-center gap-2 px-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+ >
+   <Vote size={16} aria-hidden="true" /> 온라인 투표 관리로 이동
+ </Link>
 
  <div className="mt-10">
  <AnimatePresence mode="wait">

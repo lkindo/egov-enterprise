@@ -17,8 +17,8 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
-vi.mock('@/services/foundation/system/OnlinePollAdminService', () => ({
-  onlinePollAdminService: {
+vi.mock('@/services/business/user/poll/PollUserService', () => ({
+  pollUserService: {
     getPollList: mocks.list,
     createPoll: mocks.create,
   },

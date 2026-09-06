@@ -89,7 +89,9 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // [2026-09-05 결재 도메인 완결] createApproval·getProcessed·getTaskTypes 3개 신설 — 367 -> 370.
   // [2026-09-05 첨부 삭제 경로] deleteFile 4개(기본 + admin 별칭 3) 신설 — 370 -> 374.
   // [2026-09-05 운영 정정 경로] 외부인사·포상·템플릿 PUT/DELETE 6개 신설 — 374 -> 380.
-  assert.equal(operations.length, 380);
+  // [2026-09-06 DEC-OPS-041 투표 컨트롤러 통합] OnlinePollApiController(/api/v1/admin/system/polls) 4개 제거
+  //   (getPolls_1·getPoll_1·insertPoll·vote_1) — 같은 OnlinePollService 를 감싸는 /api/v1/polls 의 부분집합이었다. 380 -> 376.
+  assert.equal(operations.length, 376);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

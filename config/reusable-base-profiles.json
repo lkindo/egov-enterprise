@@ -125,7 +125,6 @@
           "src/lib/api/survey.ts",
           "src/services/business/user/poll",
           "src/services/foundation/survey",
-          "src/services/foundation/system/OnlinePollAdminService.ts",
           "src/services/foundation/system/SurveyAdminService.ts",
           "src/types/business/poll.ts",
           "src/types/business/survey.ts"

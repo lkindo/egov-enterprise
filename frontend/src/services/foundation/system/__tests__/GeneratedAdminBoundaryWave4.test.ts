@@ -11,7 +11,6 @@ import { boardAdminService, type BoardMaster } from '../BoardAdminService';
 import { hpcmAdminService } from '../HpcmAdminService';
 import { loginPolicyAdminService } from '../LoginPolicyAdminService';
 import { networkAdminService } from '../NetworkAdminService';
-import { onlinePollAdminService } from '../OnlinePollAdminService';
 import { popupAdminService } from '../PopupAdminService';
 import { programAdminService } from '../ProgramAdminService';
 
@@ -31,7 +30,6 @@ const board: BoardMaster = {
 };
 const popup = { popupSn: 2, popupTtlNm: '점검 안내' };
 const hpcm = { hlpSn: 3, hlpSeCd: '001', hlpDfn: '정의', hlpExpln: '설명' };
-const poll = { pollSn: 4, pollNm: '만족도 조사' };
 
 describe('generated admin boundary wave 4', () => {
   beforeEach(() => {
@@ -41,7 +39,6 @@ describe('generated admin boundary wave 4', () => {
       if (url.includes('programs/')) return Promise.resolve(successEnvelope({}));
       if (url.includes('popups/')) return Promise.resolve(successEnvelope(popup));
       if (url.includes('help/hpcm/')) return Promise.resolve(successEnvelope(hpcm));
-      if (url.includes('polls/')) return Promise.resolve(successEnvelope(poll));
       if (url.includes('login-policies/')) {
         return Promise.resolve(successEnvelope({ userId: 'USER01' }));
       }
@@ -80,17 +77,6 @@ describe('generated admin boundary wave 4', () => {
     await hpcmAdminService.updateHpcm(3, hpcm);
     await hpcmAdminService.deleteHpcm(3);
 
-    await onlinePollAdminService.getPollList({ keyword: '만족도', page: 0, size: 10 });
-    await onlinePollAdminService.getPoll(4);
-    await onlinePollAdminService.createPoll({
-      pollNm: '만족도 조사',
-      pollBgngYmd: '20260801',
-      pollEndYmd: '20260831',
-      pollKndCd: '001',
-      pollDsuseYn: 'N',
-    });
-    await onlinePollAdminService.vote(4, 8);
-
     await networkAdminService.getNetworks({ page: 0, size: 100 });
     await networkAdminService.createNetwork({ manageIem: '라우터' });
     await networkAdminService.updateNetwork('N1', { manageIem: '코어 라우터' });
@@ -109,8 +95,10 @@ describe('generated admin boundary wave 4', () => {
     await boardAdminService.batchUpdateBoardMasterStatus(['BBSMSTR_1'], 'N');
     await boardAdminService.batchDeleteBoardMastersPhysically(['BBSMSTR_1']);
 
-    expect(client.getRaw).toHaveBeenCalledTimes(12);
-    expect(client.requestRaw).toHaveBeenCalledTimes(22);
+    // [2026-09-06 DEC-OPS-041] 12/22 → 10/20: 중복 관리 컨트롤러(/admin/system/polls)와 OnlinePollAdminService 가 제거됐다
+    //   (목록·상세 GET 2, 등록·투표 POST 2). 투표 관리 화면은 /api/v1/polls(PollUserService, business 경계 테스트)를 쓴다.
+    expect(client.getRaw).toHaveBeenCalledTimes(10);
+    expect(client.requestRaw).toHaveBeenCalledTimes(20);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/programs', {
       params: { pageIndex: 2, pageUnit: 20, searchKeyword: '메뉴' },
     });
@@ -119,11 +107,6 @@ describe('generated admin boundary wave 4', () => {
     });
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/login-policies', {
       params: { pageIndex: 1, pageUnit: 20, searchKeyword: '홍길동' },
-    });
-    expect(client.requestRaw).toHaveBeenCalledWith({
-      url: 'admin/system/polls/4/vote',
-      method: 'post',
-      params: { pollArtclSn: 8 },
     });
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'admin/system/login-policies/USER01',

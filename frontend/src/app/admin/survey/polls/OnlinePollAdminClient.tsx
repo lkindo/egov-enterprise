@@ -6,7 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { onlinePollAdminService, type OnlinePollDto } from '@/services/foundation/system/OnlinePollAdminService';
+// [2026-09-06 DEC-OPS-041] 관리 화면도 /api/v1/polls 를 쓴다 — 같은 서비스를 감싸던 /admin/system/polls 컨트롤러는 제거됐다.
+import { pollUserService } from '@/services/business/user/poll/PollUserService';
+import type { OnlinePollDto } from '@/types/business/poll';
 import {
  Vote,
  Plus,
@@ -88,7 +90,7 @@ export default function OnlinePollAdminClient() {
 
  const { data, isLoading, isError, error, refetch } = useQuery({
  queryKey: ['admin-online-polls', page, debouncedKeyword, pageSize],
- queryFn: () => onlinePollAdminService.getPollList({ keyword: debouncedKeyword, page, size: pageSize }),
+ queryFn: () => pollUserService.getPollList({ searchKeyword: debouncedKeyword, page, size: pageSize }),
  });
 
  const polls: OnlinePollDto[] = data?.list || [];
@@ -153,7 +155,7 @@ export default function OnlinePollAdminClient() {
  savingRef.current = true;
  setIsSaving(true);
  try {
- await onlinePollAdminService.createPoll(validated);
+ await pollUserService.createPoll(validated);
  success('새 설문을 등록했습니다.');
  setIsAddOpen(false);
  setNewPoll(emptyPoll());
