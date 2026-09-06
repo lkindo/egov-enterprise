@@ -19,7 +19,7 @@ import nuri.business.domain.notification.NotificationRepository;
  * <p>[2026-09-06 DEC-OPS-038] 알림은 사용자 탈퇴 때만 일괄 정리되고({@code NotificationUserDeletionCleanupListener})
  * 읽은 알림도 영구 누적됐다(감사 D09-06). 로그 5종의 {@code LogRetentionScheduler} 와 같은 모양으로 파기 경로를
  * 두되, <b>기본 비활성</b>({@code nuri.notification.retention.enabled=false})이다 — 보존 개월 수치는 인수처가
- * 정하는 결정(PD-NOTE-002)이지 코드가 지어낼 값이 아니다.
+ * 정하는 결정(PD-NOTE-003)이지 코드가 지어낼 값이 아니다.
  *
  * <p>안전 가드: {@code read-months} 가 {@value #MIN_MONTHS} 미만(미설정 0·음수)이면 켜져 있어도 삭제하지 않고
  * WARN 만 남긴다. 미설정 상태에서 cutoff 가 '지금' 이 되어 읽은 알림이 전량 파기되는 사고를 코드 레벨에서 막는다.

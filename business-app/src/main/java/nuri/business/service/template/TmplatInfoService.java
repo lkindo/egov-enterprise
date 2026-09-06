@@ -7,9 +7,12 @@ import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.dto.TemplateMapper;
+import nuri.foundation.core.template.TemplateReferenceContributor;
 
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,10 +25,14 @@ public class TmplatInfoService extends BaseAbstractService {
 
     private final TemplateRepository templateRepository;
     private final TemplateMapper templateMapper;
+    /** 템플릿을 참조하는 도메인(게시판·블로그)이 등록한 참조 건수 포트. 참조 도메인이 projection 에서 빠지면 비어 있다. */
+    private final List<TemplateReferenceContributor> referenceContributors;
 
-    public TmplatInfoService(TemplateRepository templateRepository, TemplateMapper templateMapper) {
+    public TmplatInfoService(TemplateRepository templateRepository, TemplateMapper templateMapper,
+                             @Nullable List<TemplateReferenceContributor> referenceContributors) {
         this.templateRepository = required(templateRepository, "TemplateRepository 는 null 일 수 없습니다");
         this.templateMapper = required(templateMapper, "TemplateMapper 는 null 일 수 없습니다");
+        this.referenceContributors = referenceContributors == null ? List.of() : List.copyOf(referenceContributors);
     }
 
     public List<TemplateDto> selectTmplatInfoList() {
@@ -64,13 +71,30 @@ public class TmplatInfoService extends BaseAbstractService {
 
     /**
      * 템플릿 삭제. 없는 대상은 RESOURCE_NOT_FOUND 다 — 종전 {@code deleteById} 는 없는 ID 도 조용히 성공했다.
-     * ⚠ tb_bbs_master.tmplt_id·tb_blog_info.tmplt_id 는 물리 FK 없이 문자열로 참조한다(V2_0). 참조 중인 템플릿을
-     *   지워도 DB 는 막지 않으며 게시판은 서식 ID 만 남긴다 — 참조 차단은 board/blog 도메인 결합이 필요해 이번 범위 밖이다.
+     * tb_bbs_master.tmplt_id·tb_blog_info.tmplt_id 는 물리 FK 없이 문자열로 참조한다(V2_0) — DB 는 막지 않으므로
+     * 참조 도메인이 등록한 {@link TemplateReferenceContributor} 로 건수를 물어 하나라도 있으면 RESOURCE_IN_USE(409) 로
+     * 거부한다(2026-09-06 감사 D11-02 후속). 게시판·블로그 도메인을 직접 import 하지 않는 이유는 GAP-ARCH-001 결합 동결이다.
      */
     @Transactional
     public void deleteTmplatInfo(String tmplatId) {
         Template template = templateRepository.findById(required(tmplatId, "템플릿 ID 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertNotReferenced(template.getTmpltId());
         templateRepository.delete(template);
+    }
+
+    private void assertNotReferenced(String tmpltId) {
+        List<String> inUse = new ArrayList<>();
+        for (TemplateReferenceContributor contributor : referenceContributors) {
+            long count = contributor.countReferences(tmpltId);
+            if (count > 0) {
+                inUse.add(contributor.sourceLabel() + " " + count + "건");
+            }
+        }
+        if (!inUse.isEmpty()) {
+            throw new BusinessException(
+                    String.join(", ", inUse) + "이 이 템플릿을 사용 중이라 삭제할 수 없습니다. 참조를 먼저 다른 템플릿으로 바꿔 주세요.",
+                    CommonErrorCode.RESOURCE_IN_USE);
+        }
     }
 }

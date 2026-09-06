@@ -2,6 +2,9 @@ package nuri.api.controller.foundation.controller.system.template;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.mockito.Mockito.verify;
+import static org.mockito.BDDMockito.willThrow;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -119,5 +122,19 @@ class TemplateApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk());
 
         verify(tmplatInfoService).deleteTmplatInfo("T1");
+    }
+
+    // [2026-09-06 감사 D11-02 후속] 참조 중 삭제는 409 — 사유 문구가 그대로 화면 토스트가 된다.
+    @Test
+    @WithMockCustomUser(role = "ADMIN")
+    @DisplayName("게시판·블로그가 참조 중인 템플릿의 삭제는 409 와 사유로 거절한다")
+    void deleteTmplatInfo_inUse() throws Exception {
+        willThrow(new BusinessException("게시판 2건이 이 템플릿을 사용 중이라 삭제할 수 없습니다.", CommonErrorCode.RESOURCE_IN_USE))
+                .given(tmplatInfoService).deleteTmplatInfo("T1");
+
+        mockMvc.perform(delete("/api/v1/admin/system/templates/T1").with(csrf()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("게시판 2건이 이 템플릿을 사용 중이라 삭제할 수 없습니다."));
     }
 }
