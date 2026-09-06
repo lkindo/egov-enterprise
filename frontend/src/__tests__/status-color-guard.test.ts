@@ -127,7 +127,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [2026-09-05 DEC-OPS-034] 528 → 522. 게시글 작성 화면 3종을 정본 하나로 수렴하면서 삭제된
 //   CommunityBoardsWriteClient(text-rose-500 등 6건)의 하드코딩이 사라졌다 — 개선분 확정(하향).
 // [2026-09-06 DEC-OPS-038] 522 → 521: 알림 발송 데모(notification-sender.tsx)를 걷으며 그 안의 status 팔레트 하드코딩 1건이 사라졌다.
-const BASELINE = 521;
+// [2026-09-06 DEC-OPS-040] 521 → 512: 약식 결재 화면(IsmClient.tsx)이 /approvals 로 통합돼 사라지며 그 안의 status 팔레트 하드코딩 9건이 사라졌다 — 개선분 확정(하향).
+const BASELINE = 512;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
