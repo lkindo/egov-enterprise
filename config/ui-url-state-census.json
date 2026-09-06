@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "6a22d881310ce21c67350ae2b9857fe0c955775798f91e9fbc992e97cabdf6ba"
+    "inventoryHash": "a8d9028cff7246274047f72a3b9897b0f16e23140a686be8609db63bc986d57c"
   },
   "summary": {
-    "sourceFileCount": 519,
-    "records": 368,
-    "syntaxOccurrences": 433,
-    "ambiguousRecords": 345,
-    "unverifiedRecords": 368,
+    "sourceFileCount": 521,
+    "records": 369,
+    "syntaxOccurrences": 434,
+    "ambiguousRecords": 346,
+    "unverifiedRecords": 369,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 51,
+      "form-producer": 52,
       "navigation-producer": 154,
       "page-redirect": 7,
       "query-builder": 22,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 360,
+      "navigation": 361,
       "request-telemetry": 8
     }
   },
@@ -5559,6 +5559,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
         "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-4EB657FE7CE758",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+      "producerFile": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/notifications",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },

@@ -2050,6 +2050,7 @@
    "dataSource": "mixed",
    "supportedActions": [
     "local-search",
+    "send",
     "tab-filter"
    ],
    "profileOwners": [
@@ -2093,6 +2094,31 @@
       "frontend/src/app/admin/notifications/page.tsx",
       "frontend/src/app/components/ui/smart-notification-hub.tsx",
       "frontend/src/lib/hooks/use-notifications.ts"
+     ],
+     "decisionSafe": false,
+     "lastVerifiedAt": "2026-08-21",
+     "owner": "product/UX + domain owner"
+    },
+    {
+     "id": "notifications.dispatch",
+     "status": "partial",
+     "candidateStatus": "live",
+     "dataSource": "admin-notifications-dispatch-api",
+     "actions": [
+      "send"
+     ],
+     "unsupportedVisibleActions": [],
+     "actorScope": "ADMIN|SYSTEM",
+     "visibleLabel": "알림 보내기",
+     "primaryTask": false,
+     "evidenceLevel": "E3",
+     "evidence": [
+      "api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java",
+      "api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java",
+      "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+      "frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx",
+      "frontend/src/app/admin/notifications/page.tsx",
+      "frontend/src/services/foundation/system/NotificationAdminService.ts"
      ],
      "decisionSafe": false,
      "lastVerifiedAt": "2026-08-21",

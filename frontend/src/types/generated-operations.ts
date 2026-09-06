@@ -221,6 +221,7 @@ import {
   NetworkDtoRequestSchema,
   NoteDtoRequestSchema,
   NoteDtoResponseSchema,
+  NotificationDispatchRequestRequestSchema,
   NotificationDtoRequestSchema,
   NotificationDtoResponseSchema,
   OnlineManualDtoRequestSchema,
@@ -5062,6 +5063,23 @@ export const createEventOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: EventInfoDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const dispatchNotificationsOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "dispatchNotifications",
+  method: "post",
+  path: "/api/v1/admin/notifications/dispatch",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: NotificationDispatchRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });

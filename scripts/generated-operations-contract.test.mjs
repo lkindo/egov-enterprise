@@ -89,7 +89,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // [2026-09-05 결재 도메인 완결] createApproval·getProcessed·getTaskTypes 3개 신설 — 367 -> 370.
   // [2026-09-05 첨부 삭제 경로] deleteFile 4개(기본 + admin 별칭 3) 신설 — 370 -> 374.
   // [2026-09-05 운영 정정 경로] 외부인사·포상·템플릿 PUT/DELETE 6개 신설 — 374 -> 380.
-  assert.equal(operations.length, 380);
+  // [2026-09-06 DEC-OPS-042 관리자 알림 발송] POST /api/v1/admin/notifications/dispatch 1개 신설 — 380 -> 381.
+  assert.equal(operations.length, 381);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

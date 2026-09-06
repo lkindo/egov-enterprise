@@ -2780,6 +2780,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/notifications/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 관리자 알림 발송
+         * @description 선택한 사용자들에게 같은 제목·내용의 앱 내 알림을 만듭니다. 수신자가 하나라도 존재하지 않으면 전체를 거부합니다.
+         */
+        post: operations["dispatchNotifications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/content/community": {
         parameters: {
             query?: never;
@@ -6574,6 +6594,22 @@ export interface components {
             rsltCd?: string;
             /** @description 결과 메시지 */
             rsltMsg?: string;
+        };
+        /** @description 관리자 알림 발송 요청 */
+        NotificationDispatchRequest: {
+            /** @description 수신자 목록(사용자 고유 ID). 하나라도 존재하지 않으면 전체를 거부한다. */
+            recipients: components["schemas"]["Recipient"][];
+            /** @description 알림 제목 */
+            notiTtlNm: string;
+            /** @description 알림 내용 */
+            notiCn: string;
+            /** @description 알림을 눌렀을 때 이동할 앱 내 경로(선택) */
+            linkUrl?: string;
+        };
+        /** @description 알림 수신자 */
+        Recipient: {
+            /** @description 수신자 고유 ID(esntlId) */
+            esntlId: string;
         };
         ApiResponseCommunityDto: {
             success?: boolean;
@@ -27118,6 +27154,75 @@ export interface operations {
             };
             /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    dispatchNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationDispatchRequest"];
+            };
+        };
+        responses: {
+            /** @description 발송 성공 — 만든 알림 수 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseInteger"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 수신자로 지정한 사용자가 존재하지 않음 — 부분 발송 없이 전체 거부 (code: C002) */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

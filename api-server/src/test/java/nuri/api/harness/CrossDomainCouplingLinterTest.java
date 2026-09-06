@@ -93,8 +93,12 @@ class CrossDomainCouplingLinterTest {
      * ({@code UserContactService}) 신설 — 메일·문자 발송이 수신자를 esntlId 로 받아 서버가 연락처를
      * 해석한다. 사용자 검색 응답은 개인정보를 담지 않으므로(의도) 화면이 주소를 알 수 없고, 해석은 코어
      * 사용자 도메인만 할 수 있다. 결과는 발송에만 쓰고 응답으로 내보내지 않는다(H3).
+     *
+     * <p>[2026-09-06 DEC-OPS-042] 26 → 27. {@code notification → user}({@code UserContactService}) 신설 —
+     * 관리자 알림 발송이 수신자를 esntlId 로 받아 존재를 확인한다(메일·문자와 같은 축, 부분 발송 금지).
+     * 해석 결과는 알림 행 생성에만 쓰고 응답으로 내보내지 않는다(H3).
      */
-    private static final int APP_TO_CORE_COUPLING = 26;
+    private static final int APP_TO_CORE_COUPLING = 27;
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(교차 edge 실측 30건 대비 여유). */
     private static final int CROSS_DOMAIN_REFERENCE_FLOOR = 25;
