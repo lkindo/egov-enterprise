@@ -59,6 +59,15 @@
 [`application.yml`](../../api-server/src/main/resources/application.yml)의 `nuri.notification.retention.*`.
 기본 cron 은 매일 04:30 Asia/Seoul(로그 파기 04:00 뒤)이고 `nuri.notification.retention.cron` 으로 바꿀 수 있다.
 
+켜는 방법(2026-09-06 DEC-OPS-045): 운영 배포는 `docker-compose.prod.yml` 이 `NOTIFICATION_RETENTION_ENABLED` 와
+`NOTIFICATION_RETENTION_READ_MONTHS` 를 컨테이너에 전달하므로 호스트 환경이나 `.env` 에 둘을 함께 준다.
+종전에는 이 전달 경로가 없어 값을 넣어도 컨테이너에 닿지 않았다 — 즉 보존 개월을 정해도 켤 수 없었다.
+`read-months` 가 1 미만이면 켜져 있어도 삭제하지 않으므로 두 값을 함께 주어야 실제로 동작한다.
+
+⚠ 규모가 커지면 파기 술어(`read_yn='Y' AND crt_dt < :cutoff`)가 full scan 이 된다 — `tb_user_noti` 에는
+현재 `ix_tb_user_noti_rcvr_id` 하나뿐이고 이 술어용 인덱스가 없다. 인덱스 신설은 DB 스키마 변경이라
+보존 개월 결정과 함께 판단한다([V2_20](../../api-server/src/main/resources/db/migration/V2_20__add_log_retention_index.sql) 선례).
+
 ## 운영 적용·점검
 
 ### 1. 배포 전
