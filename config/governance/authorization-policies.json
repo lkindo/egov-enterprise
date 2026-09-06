@@ -686,22 +686,6 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/admin/system/polls",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.OnlinePollApiController#insertPoll",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/polls/{pollSn}/vote",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.OnlinePollApiController#vote",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "POST",
       "path": "/api/v1/admin/system/popups",
       "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#createPopup",
       "policy": "ADMIN_OR_SYSTEM",
