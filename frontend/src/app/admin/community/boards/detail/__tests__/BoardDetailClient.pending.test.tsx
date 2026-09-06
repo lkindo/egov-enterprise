@@ -37,11 +37,16 @@ vi.mock('@/components/features/comment/CommentSection', () => ({ default: () => 
 vi.mock('@/components/features/satisfaction/SatisfactionSection', () => ({ default: () => <div data-testid="satisfaction" /> }));
 vi.mock('@tanstack/react-query', () => ({
   queryOptions: <T,>(options: T) => options,
+  mutationOptions: <T,>(options: T) => options,
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: ({ initialData }: { initialData?: unknown }) => ({
     data: initialData,
     isError: false,
     refetch: vi.fn(),
+  }),
+  useMutation: (options?: { mutationFn?: (args: unknown) => Promise<unknown> }) => ({
+    mutateAsync: vi.fn().mockImplementation(async (args) => options?.mutationFn ? options.mutationFn(args) : undefined),
+    isPending: false,
   }),
 }));
 

@@ -2,13 +2,13 @@
 
 import React, { use, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Edit3, Trash2,
   Download,
   Calendar, Eye, User,
   FileText, Quote, AlertTriangle,
-  Package, ThumbsUp
+  Package, ThumbsUp, Bookmark
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ import { fileService } from '@/services/foundation/file/FileService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 import type { BoardMasterDetail } from '@/services/foundation/system/BoardAdminService';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
+import { scrapMutationOptions } from '@/queries/scrap-query-options';
 import CommentSection from '@/components/features/comment/CommentSection';
 import SatisfactionSection from '@/components/features/satisfaction/SatisfactionSection';
 
@@ -111,11 +112,13 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
   const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
 
+  const createScrapMutation = useMutation(scrapMutationOptions.create(queryClient));
+
   // 게시글 추천(좋아요) — 낙관적 UI: 클릭 즉시 카운트 증가 후 서버 반영(실패 시 롤백)
   const [likeDelta, setLikeDelta] = useState(0);
-  // React state 반영 전 같은 tick의 추천/삭제 재진입까지 막기 위해 ref를 먼저 선점한다.
+  // React state 반영 전 같은 tick의 추천/삭제/스크랩 재진입까지 막기 위해 ref를 먼저 선점한다.
   const actionPendingRef = React.useRef(false);
-  const [activeAction, setActiveAction] = useState<'like' | 'delete' | null>(null);
+  const [activeAction, setActiveAction] = useState<'like' | 'delete' | 'scrap' | null>(null);
   const handleLike = async () => {
     if (actionPendingRef.current || !bbsId || !hasValidPstSn) return;
     actionPendingRef.current = true;
@@ -126,6 +129,28 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     } catch {
       setLikeDelta((d) => d - 1);
       toast('추천 처리 중 오류가 발생했습니다.', 'error');
+    } finally {
+      actionPendingRef.current = false;
+      setActiveAction(null);
+    }
+  };
+
+  const handleScrap = async () => {
+    if (actionPendingRef.current || !bbsId || !hasValidPstSn || !article) return;
+    actionPendingRef.current = true;
+    setActiveAction('scrap');
+    try {
+      const currentPath = `/board/${bbsId}/${pstSn}`;
+      const title = article.pstTtl || article.knoNm || '게시글 스크랩';
+      await createScrapMutation.mutateAsync({
+        scrapNm: title,
+        scrapUrl: currentPath,
+        scrapExpln: `${masterInfo?.bbsTtl || '게시판'} - ${title}`,
+        useYn: 'Y',
+      });
+      toast('게시글을 스크랩 보관함에 저장했습니다.', 'success');
+    } catch {
+      toast('스크랩 저장 중 오류가 발생했습니다.', 'error');
     } finally {
       actionPendingRef.current = false;
       setActiveAction(null);
@@ -284,6 +309,16 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
           >
             <ThumbsUp size={20} className="text-primary" /> 추천 {(article.likeCnt ?? 0) + likeDelta}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleScrap}
+            disabled={activeAction !== null}
+            aria-busy={activeAction === 'scrap' || undefined}
+            aria-label={activeAction === 'scrap' ? '게시글 스크랩 보관 중' : '게시글 스크랩'}
+            className="h-14 px-8 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+          >
+            <Bookmark size={20} className="text-amber-500" /> 스크랩
           </Button>
           {/*
             감사 P1-9: native confirm() → useConfirm(변형 destructive).
