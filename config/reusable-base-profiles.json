@@ -182,6 +182,7 @@
           "src/app/admin/system/banner",
           "src/app/admin/system/hpcm",
           "src/app/admin/system/ism",
+          "src/app/admin/system/layout",
           "src/app/admin/uss/olh",
           "src/app/admin/work-hub",
           "src/app/admin/workflow",

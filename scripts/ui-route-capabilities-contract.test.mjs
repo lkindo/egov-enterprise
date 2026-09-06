@@ -122,8 +122,10 @@ test('proxy shell access is measured separately from unresolved capability roles
   assert.equal(sourceShellCounts.authenticated?.length, 49);
   assert.equal(sourceShellCounts['admin-system']?.length, 70);
   assert.equal(effectiveShellCounts.public?.length, 1);
-  assert.equal(effectiveShellCounts.authenticated?.length, 48);
-  assert.equal(effectiveShellCounts['admin-system']?.length, 71);
+  // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
+  //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.
+  assert.equal(effectiveShellCounts.authenticated?.length, 49);
+  assert.equal(effectiveShellCounts['admin-system']?.length, 70);
   // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
   //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
   //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.
@@ -131,7 +133,9 @@ test('proxy shell access is measured separately from unresolved capability roles
   //   /admin/community/boards/write 와 /admin/community/boards/[id] 가 page-redirect 별칭이 됐다.
   //   별칭이 **늘어나는** 방향이지만 은폐가 아니다 — 같은 일을 하는 화면을 하나로 모은 결과이며,
   //   두 라우트의 disposition 은 overlay 에서 consolidate-to-canonical 로 함께 제안됐다.
-  assert.equal(analysis.result.summary.effectiveAliases, 19);
+  // [2026-09-06 DEC-OPS-040] 19 → 23. 감사 잔여 overlay 제안을 owner 승인으로 확정하며 /admin/system/ism · /admin/community ·
+  //   /admin/community/boards · /admin/system/monitoring 이 정본으로의 page-redirect 별칭이 됐다.
+  assert.equal(analysis.result.summary.effectiveAliases, 23);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(

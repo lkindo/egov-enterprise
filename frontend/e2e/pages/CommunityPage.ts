@@ -5,7 +5,9 @@ export class CommunityPage {
 
     async goto() {
         console.log('>>> [Community] Navigating to Community Matrix');
-        await this.page.goto('/admin/community');
+        // [2026-09-06 DEC-OPS-040] /admin/community 는 /admin/help?tab=COMMUNITY 로의 page-redirect 별칭이 됐다
+        //   (같은 KnowledgeHubClient COMMUNITY 탭을 중복 렌더하던 주소). 정본으로 직접 들어간다.
+        await this.page.goto('/admin/help?tab=COMMUNITY');
         // [2026-07-27 정정] 제목에서 '엔터프라이즈' 접두어가 제거됐다(브랜딩 정리 잔재). 실제 렌더는
         // KnowledgeHubClient 의 '지식 매트릭스' 이며, /admin/community 는 이 클라이언트를 그대로 렌더한다.
         await expect(this.page.getByRole('heading', { name: /지식 매트릭스/i })).toBeVisible({ timeout: 15000 });

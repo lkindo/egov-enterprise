@@ -24,7 +24,9 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  * 값을 바꿀 때는 소스를 먼저 고치고 **실측 red 를 확인한 뒤** 상수를 갱신한다.
  * ADOPTERS 상향과 DIRECT_ONLY 하향만 정상 경로다(AGENTS H2).
  */
-const ADOPTERS = 40;
+// [2026-09-06 DEC-OPS-040] 40 → 39: /admin/system/ism(IsmClient)이 /approvals 로 통합돼 화면이 사라졌다 — 되돌리기가 아니라
+//   같은 개인 결재함 두 화면을 하나로 모은 결과다(DEC-OPS-039 제안의 owner 승인). 정본 /approvals 는 A2 MasterDetailPage 소비자다.
+const ADOPTERS = 39;
 const DIRECT_ONLY = 4;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';

@@ -7,10 +7,11 @@ import { test, expect } from './fixtures/base-test';
 test.describe('Tier 18: Business Extensions & Identity Governance', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
-    test('ISM: Informal Sanction Lifecycle', async ({ businessPage }) => {
+    // [2026-09-06 DEC-OPS-040] /admin/system/ism 은 /approvals 로 통합됐다(DEC-OPS-039 제안의 owner 승인).
+    //   결재 완주(상신→대기함→승인→처리함)는 11-enterprise-workflow 가 검증하므로 여기서는 별칭이 정본
+    //   결재 허브에 도달하는지만 본다.
+    test('ISM alias redirects to the approval hub', async ({ businessPage }) => {
         await businessPage.gotoIsm();
-        await businessPage.verifyIsmMetrics();
-        await businessPage.approveFirstPendingSanction();
     });
 
     // [2026-07-17] LSM(간부일정) 도메인 제거 — 0행·계약파손·사경화 실측(A그룹 leader b). 케이스 삭제.

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { administCodeSchema } from '@/app/admin/system/codes/administ/AdministCodeClient';
 import { bannerSchema, popupSchema } from '@/app/admin/system/banner/BannerAdminClient';
-import { ismSchema } from '@/app/admin/system/ism/IsmClient';
 import { authorSchema } from '@/components/admin/security/AuthorForm';
 import { programFormSchema } from '@/components/admin/system/ProgramForm';
 import { createUserSchema, userSchema } from '@/components/admin/user/UserManageForm';
@@ -87,12 +86,8 @@ describe('generated DTO constraints stay attached to form schemas', () => {
     expect(administCodeSchema.safeParse({ ...validCode, useYn: 'YN' }).success).toBe(false);
   });
 
-  it('keeps sanction max lengths while making rejection reason required', () => {
-    expect(ismSchema.safeParse({ rjctRsnCn: '가'.repeat(4001) }).success).toBe(false);
-    expect(ismSchema.safeParse({ taskSeCd: 'A'.repeat(13), rjctRsnCn: '반려 사유' }).success).toBe(false);
-    expect(ismSchema.safeParse({ aplcntId: 'A'.repeat(21), rjctRsnCn: '반려 사유' }).success).toBe(false);
-    expect(ismSchema.safeParse({ aprvrId: 'A'.repeat(21), rjctRsnCn: '반려 사유' }).success).toBe(false);
-  });
+  // [2026-09-06 DEC-OPS-040] 약식 결재 화면(IsmClient·ismSchema)은 /approvals 로 통합돼 사라졌다. 결재 반려 사유의
+  //   길이·필수 계약은 정본 결재 허브의 계약 테스트(frontend/src/app/approvals/__tests__)가 맡는다.
 
   it('keeps banner and popup generated string lengths', () => {
     expect(bannerSchema.safeParse({
