@@ -1781,7 +1781,7 @@ export interface paths {
         put?: never;
         /**
          * 커뮤니티 가입 신청
-         * @description 사용자가 특정 커뮤니티에 가입을 신청합니다.
+         * @description 사용자가 특정 커뮤니티에 가입을 신청합니다. 관리자가 승인하면 회원이 됩니다.
          */
         post: operations["joinCommunity"];
         delete?: never;
@@ -2973,6 +2973,26 @@ export interface paths {
         patch: operations["moveUsersToDept"];
         trace?: never;
     };
+    "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 커뮤니티 가입 신청 승인
+         * @description 가입 신청 상태(REQUESTED)인 사용자를 회원으로 승인합니다. 신청 상태가 아니면 400 입니다.
+         */
+        patch: operations["approveMember"];
+        trace?: never;
+    };
     "/api/v1/users/search": {
         parameters: {
             query?: never;
@@ -3645,6 +3665,26 @@ export interface paths {
          * @description 사용 중인 커뮤니티의 상세 정보를 조회합니다.
          */
         get: operations["getCommunity_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/communities/{cmntySn}/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 내 커뮤니티 멤버십 상태
+         * @description 현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER)를 조회합니다.
+         */
+        get: operations["getMyMembership"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4588,6 +4628,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/content/community/{cmntySn}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 커뮤니티 회원·가입 신청 목록
+         * @description 커뮤니티의 회원과 가입 신청을 페이징 조회합니다. status 를 주면 그 상태만(REQUESTED=가입 신청, APPROVED=회원). 이름은 사용자 도메인에서 해석하며 연락처는 싣지 않습니다.
+         */
+        get: operations["getMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/content/community/portlet": {
         parameters: {
             query?: never;
@@ -4700,6 +4760,26 @@ export interface paths {
          * @description 행을 물리 삭제합니다. 활성 게시판이거나 게시글이 남아 있으면 거부됩니다(서비스 레이어 재검증).
          */
         delete: operations["deleteBoardMasterPhysically"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/community/{cmntySn}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 커뮤니티 가입 신청 반려
+         * @description 가입 신청 상태(REQUESTED)인 행을 삭제합니다. 사용자는 다시 신청할 수 있습니다. 이미 회원인 행은 반려 대상이 아니라 400 입니다(탈퇴 처리는 별도).
+         */
+        delete: operations["rejectMember"];
         options?: never;
         head?: never;
         patch?: never;
@@ -7379,6 +7459,32 @@ export interface components {
             /** Format: int32 */
             totalPage?: number;
         };
+        ApiResponseCommunityMembershipDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["CommunityMembershipDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 현재 사용자의 커뮤니티 멤버십 상태 */
+        CommunityMembershipDto: {
+            /**
+             * Format: int64
+             * @description 커뮤니티 일련번호
+             */
+            cmntySn?: number;
+            /**
+             * @description 멤버십 상태
+             * @enum {string}
+             */
+            status?: "NONE" | "REQUESTED" | "MEMBER" | "UNKNOWN";
+            /** @description 가입(신청)일자 yyyyMMdd — 행이 없으면 null */
+            joinYmd?: string;
+        };
         ApiResponsePageResponseCommentDto: {
             success?: boolean;
             /** Format: int32 */
@@ -9170,6 +9276,53 @@ export interface components {
             undecidable: number;
             orphanSamples: string[];
             healthy?: boolean;
+        };
+        ApiResponsePageResponseCommunityMemberDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseCommunityMemberDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 커뮤니티 회원·가입 신청 */
+        CommunityMemberDto: {
+            /**
+             * Format: int64
+             * @description 커뮤니티 일련번호
+             */
+            cmntySn?: number;
+            /** @description 사용자 식별자(esntlId) */
+            userId?: string;
+            /** @description 사용자 이름 — 사용자를 찾지 못하면 null */
+            userNm?: string;
+            /**
+             * @description 멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원). 어휘 밖 코드는 null
+             * @enum {string}
+             */
+            status?: "REQUESTED" | "APPROVED";
+            /** @description 원본 상태 코드(mbr_stts_cd) */
+            mbrSttsCd?: string;
+            /** @description 관리자 여부(Y/N) */
+            mngrYn?: string;
+            /** @description 가입(신청)일자 yyyyMMdd */
+            joinYmd?: string;
+            /** @description 사용 여부(Y/N) */
+            useYn?: string;
+        };
+        PageResponseCommunityMemberDto: {
+            list?: components["schemas"]["CommunityMemberDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
         };
         ApiResponseListCommunityDto: {
             success?: boolean;
@@ -27796,6 +27949,76 @@ export interface operations {
             };
         };
     };
+    approveMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
+                /** @description 사용자 식별자(esntlId) */
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     searchAssignableUsers: {
         parameters: {
             query?: {
@@ -30149,6 +30372,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseCommunityDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getMyMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseCommunityMembershipDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -33407,6 +33698,83 @@ export interface operations {
             };
         };
     };
+    getMembers: {
+        parameters: {
+            query?: {
+                /** @description 멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체 */
+                status?: "REQUESTED" | "APPROVED";
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path: {
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseCommunityMemberDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getCommunityPortlet: {
         parameters: {
             query?: never;
@@ -33739,6 +34107,76 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    rejectMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
+                /** @description 사용자 식별자(esntlId) */
+                userId: string;
             };
             cookie?: never;
         };

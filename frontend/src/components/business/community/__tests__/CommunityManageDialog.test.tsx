@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   updateCommunity: vi.fn(),
   deleteCommunity: vi.fn(),
   getTemplateList: vi.fn(),
+  getMembers: vi.fn(),
   confirm: vi.fn(),
   toast: vi.fn(),
 }));
@@ -49,6 +50,9 @@ vi.mock('@/services/foundation/system/CommunityAdminService', () => ({
     createCommunity: mocks.createCommunity,
     updateCommunity: mocks.updateCommunity,
     deleteCommunity: mocks.deleteCommunity,
+    getMembers: mocks.getMembers,
+    approveMember: vi.fn(),
+    rejectMember: vi.fn(),
   },
 }));
 vi.mock('@/services/foundation/system/TemplateAdminService', () => ({
@@ -79,7 +83,25 @@ describe('CommunityManageDialog', () => {
     mocks.createCommunity.mockResolvedValue({ cmntySn: 13 });
     mocks.updateCommunity.mockResolvedValue(undefined);
     mocks.deleteCommunity.mockResolvedValue(undefined);
+    mocks.getMembers.mockResolvedValue({ list: [], total: 0, page: 0, size: 20, totalPage: 1 });
     mocks.confirm.mockResolvedValue(true);
+  });
+
+  // [2026-09-06 DEC-OPS-043] 행의 '회원 관리' 가 같은 다이얼로그 안에서 회원 패널로 바꿔 끼우고, 돌아오면 목록·폼이 복원된다.
+  it('회원 관리 버튼은 그 커뮤니티의 회원 패널을 열고, 돌아오면 목록으로 복원된다', async () => {
+    const user = userEvent.setup();
+    renderDialog();
+    const list = await screen.findByRole('list', { name: '커뮤니티 목록' });
+    await user.click(within(list).getByRole('button', { name: '독서 모임 회원 관리' }));
+
+    expect(await screen.findByRole('heading', { name: '독서 모임 회원 관리' })).toBeInTheDocument();
+    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'REQUESTED', page: 0, size: 20 }));
+    expect(screen.queryByRole('list', { name: '커뮤니티 목록' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: '커뮤니티 등록' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '커뮤니티 목록으로' }));
+    expect(await screen.findByRole('list', { name: '커뮤니티 목록' })).toBeInTheDocument();
+    expect(screen.getByRole('form', { name: '커뮤니티 등록' })).toBeInTheDocument();
   });
 
   it('사용 여부를 드러내고, 이미 폐쇄된 커뮤니티는 다시 폐쇄할 수 없다', async () => {

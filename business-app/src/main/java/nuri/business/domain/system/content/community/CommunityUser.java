@@ -46,8 +46,13 @@ public class CommunityUser extends BaseEntity implements Serializable {
         return new CommunityUser(id, mngrYn, joinYmd, whdwlYmd, mbrSttsCd, useYn);
     }
 
+    /** 가입 신청 → 회원. 상태 어휘는 {@link CommunityMemberStatus} 가 정본이다(DEC-OPS-043). */
     public void approve() {
-        this.mbrSttsCd = "P"; // Example status for approved
+        this.mbrSttsCd = CommunityMemberStatus.APPROVED.code();
+    }
+
+    public boolean isRequested() {
+        return CommunityMemberStatus.REQUESTED.matches(this.mbrSttsCd);
     }
 
     public void withdraw() {

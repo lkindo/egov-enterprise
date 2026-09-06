@@ -275,10 +275,18 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
   });
 
   it('회원 수 API 가 여전히 없다 — 생기면 이 계약을 갱신하고 값을 되살려야 한다', () => {
-    const controller = readRepo(
+    const controller = stripComments(readRepo(
       'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java',
-    );
-    expect(stripComments(controller)).not.toContain('members');
+    ));
+    /*
+     * [2026-09-06 DEC-OPS-043] 사용자 API 에 **내 멤버십 상태**(/{cmntySn}/membership — principal 자신의 행 하나)가
+     * 생겼다. 그것은 회원 수도 회원 목록도 아니다 — 회원 수·목록을 사용자에게 내려주는 경로는 여전히 없으므로
+     * 화면은 회원 수를 계속 지어내지 않는다. 종전의 부분 문자열 검사('members')는 'membership' 까지 잡아
+     * 실제 절차를 막았으므로 매핑 경로·필드 이름으로 정밀화한다.
+     */
+    expect(controller).toContain('/{cmntySn}/membership');
+    expect(controller).not.toMatch(/"\/\{cmntySn\}\/members"/);
+    expect(controller).not.toMatch(/memberCount|mbrCnt|getMembers\(/);
   });
 });
 

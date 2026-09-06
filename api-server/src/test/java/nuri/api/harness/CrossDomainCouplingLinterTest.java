@@ -102,8 +102,11 @@ class CrossDomainCouplingLinterTest {
      * <p>[2026-09-06 DEC-OPS-042] 33 → 34. {@code notification → user}({@code UserContactService}) 신설 —
      * 관리자 알림 발송이 수신자를 esntlId 로 받아 존재를 확인한다(메일·문자와 같은 축, 부분 발송 금지).
      * 해석 결과는 알림 행 생성에만 쓰고 응답으로 내보내지 않는다(H3).
+     * <p>[2026-09-06 DEC-OPS-043] 34 → 35. {@code community → user}({@code UserRepository#findByEsntlIdIn}) 신설 —
+     * 관리자 회원·가입 신청 목록이 esntlId 로 저장된 회원의 <b>이름</b>을 보여 주기 위해서다. 이름만 싣고 연락처는
+     * 내보내지 않으며, 찾지 못한 사용자는 null 로 둔다(고아 행 하나가 목록 전체를 죽이지 않게).
      */
-    private static final int APP_TO_CORE_COUPLING = 34;
+    private static final int APP_TO_CORE_COUPLING = 35;
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(교차 edge 실측 37건 대비 여유). */
     private static final int CROSS_DOMAIN_REFERENCE_FLOOR = 25;

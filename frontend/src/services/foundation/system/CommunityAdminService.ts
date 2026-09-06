@@ -3,12 +3,15 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { components, operations } from '@/types/generated-api';
 import {
+  approveMemberOperation,
   createCommunityOperation,
   deleteCommunityOperation,
   getCommunitiesOperation,
   getCommunityOperation,
   getCommunityPortletOperation,
+  getMembersOperation,
   type GeneratedOperationRequest,
+  rejectMemberOperation,
   updateCommunityOperation,
 } from '@/types/generated-operations';
 
@@ -23,6 +26,61 @@ export interface Community {
 }
 
 type CommunityWire = components['schemas']['CommunityDto'];
+type CommunityMemberWire = components['schemas']['CommunityMemberDto'];
+type MemberListQuery = NonNullable<operations['getMembers']['parameters']['query']>;
+
+/** 서버가 내려주는 멤버십 상태 어휘. 어휘 밖 코드는 status 가 비고 mbrSttsCd 원문만 온다. */
+export type CommunityMemberStatus = NonNullable<CommunityMemberWire['status']>;
+export type CommunityMemberStatusFilter = CommunityMemberStatus | 'ALL';
+
+/** 관리자용 회원·가입 신청 행. userId 는 로그인 ID 가 아니라 esntlId 다(tb_cmnty_user_map.user_id). */
+export interface CommunityMember {
+  cmntySn: number;
+  userId: string;
+  userNm: string | null;
+  status: CommunityMemberStatus | null;
+  mbrSttsCd: string;
+  mngrYn: string;
+  joinYmd: string | null;
+  useYn: string;
+}
+
+function fromCommunityMember(value: CommunityMemberWire): CommunityMember {
+  if (typeof value.cmntySn !== 'number' || typeof value.userId !== 'string') {
+    throw new Error('커뮤니티 회원 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    cmntySn: value.cmntySn,
+    userId: value.userId,
+    userNm: value.userNm ?? null,
+    status: value.status ?? null,
+    mbrSttsCd: value.mbrSttsCd ?? '',
+    mngrYn: value.mngrYn ?? 'N',
+    joinYmd: value.joinYmd ?? null,
+    useYn: value.useYn ?? 'Y',
+  };
+}
+
+function requireMemberPage(
+  response: components['schemas']['PageResponseCommunityMemberDto'],
+): PageResponse<CommunityMember> {
+  if (
+    !Array.isArray(response.list)
+    || typeof response.total !== 'number'
+    || typeof response.page !== 'number'
+    || typeof response.size !== 'number'
+    || typeof response.totalPage !== 'number'
+  ) {
+    throw new Error('커뮤니티 회원 페이지 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    list: response.list.map(fromCommunityMember),
+    total: response.total,
+    page: response.page,
+    size: response.size,
+    totalPage: response.totalPage,
+  };
+}
 type CommunityListQuery = NonNullable<operations['getCommunities']['parameters']['query']>;
 
 function toCommunityListQuery(params?: SearchParams): CommunityListQuery {
@@ -155,6 +213,33 @@ class CommunityAdminService extends AdminService {
   }
 
   /** ы由우슜 목록 조회 */
+  // ─── 멤버십 (2026-09-06 DEC-OPS-043) ────────────────────────────────────────────────────────
+
+  /** 회원·가입 신청 목록. status 를 생략하면 전체. */
+  async getMembers(
+    cmntySn: number,
+    params: { status?: CommunityMemberStatus; page?: number; size?: number } = {},
+    config?: AxiosRequestConfig,
+  ): Promise<PageResponse<CommunityMember>> {
+    const query: MemberListQuery = {
+      ...(params.status === undefined ? {} : { status: params.status }),
+      ...(params.page === undefined ? {} : { page: params.page }),
+      ...(params.size === undefined ? {} : { size: params.size }),
+    };
+    const response = await this.executeGenerated(getMembersOperation, { path: { cmntySn }, query, config });
+    return requireMemberPage(response);
+  }
+
+  /** 가입 신청 승인 — 신청(REQUESTED) 행만 회원이 된다. */
+  async approveMember(cmntySn: number, userId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(approveMemberOperation, { path: { cmntySn, userId }, config });
+  }
+
+  /** 가입 신청 반려 — 신청 행을 지운다(사용자는 다시 신청할 수 있다). 회원 행은 대상이 아니다. */
+  async rejectMember(cmntySn: number, userId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(rejectMemberOperation, { path: { cmntySn, userId }, config });
+  }
+
   async getCommunityPortlet(config?: AxiosRequestConfig): Promise<Community[]> {
     const response = await this.executeGenerated(getCommunityPortletOperation, { config });
     return response.map(fromCommunity);

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ export default function CommunityDetailHubClient({
 }) {
 
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const joinPendingRef = React.useRef(false);
   const [isJoining, setJoining] = React.useState(false);
 
@@ -42,21 +43,36 @@ export default function CommunityDetailHubClient({
   });
 
   /**
+   * [2026-09-06 DEC-OPS-043] 내 멤버십 상태. 승인 절차가 생겼으므로(관리자 '커뮤니티 관리 → 회원 관리') 화면이
+   * 신청 뒤 상태를 말할 수 있다 — NONE 이면 신청 버튼, REQUESTED 면 '승인 대기', MEMBER 면 '회원'.
+   * 아직 모르는 동안(로딩·조회 실패)은 버튼을 연다: 서버가 중복·비활성을 409 로 막으므로 열어 두는 쪽이 안전하고,
+   * 조회 실패 하나로 가입 경로를 닫지 않기 위해서다.
+   */
+  const { data: membership } = useQuery({
+    queryKey: ['community-membership', cmntySn],
+    queryFn: () => communityUserService.getMyMembership(cmntySn),
+  });
+  const membershipStatus = membership?.status;
+
+  /**
    * 커뮤니티 가입 신청.
    *
    * 서버는 상태 위반을 구분해 돌려준다 — 비활성 커뮤니티는 409(RESOURCE_IN_USE),
    * 이미 가입/신청 중이면 409(DUPLICATE_RESOURCE). 그래서 성공·실패를 같은 문구로 뭉개지 않고
    * 서버 메시지를 그대로 보여 준다(A3 금지 항목과 같은 규율).
    *
-   * [2026-08-28] 성공 문구에서 '관리자 승인 후 이용할 수 있습니다' 를 뺐다. **그 승인 절차가
-   * 존재하지 않는다.** 가입은 `mbrSttsCd='A'`(Requested) 행을 만드는데, 이 값을 읽거나 다른
-   * 상태로 옮기는 코드가 저장소 전체에 없다 — 승인 엔드포인트도, 승인 화면도, 회원 목록
-   * API 도 없다(`CommunityUserRepository.findByIdCmntySn` 호출자 0건). 오지 않을 승인을
-   * 기다리라고 말하면 사용자는 자기 신청이 누락된 줄 알고 다시 누른다(그러면 409 다).
+   * [2026-08-28] 성공 문구에서 '관리자 승인 후 이용할 수 있습니다' 를 뺐었다 — 당시에는 그 승인 절차가
+   * 존재하지 않았다(가입이 만드는 `mbrSttsCd='A'` 를 읽거나 옮기는 코드가 0건).
+   * [2026-09-06 DEC-OPS-043] 승인·반려 API 와 관리자 화면이 생겨 이제는 사실이다 — 문구를 되살리되
+   * 화면이 실제로 하는 일만 말한다(관리자가 승인하면 회원이 된다). 회원이 되어도 열리는 기능은 아직 없으므로
+   * '이용할 수 있다' 고는 말하지 않는다.
    */
   const joinMutation = useMutation({
     mutationFn: () => communityUserService.joinCommunity(cmntySn),
-    onSuccess: () => toast('가입을 신청했습니다.', 'success'),
+    onSuccess: () => {
+      toast('가입을 신청했습니다. 관리자가 승인하면 회원이 됩니다.', 'success');
+      void queryClient.invalidateQueries({ queryKey: ['community-membership', cmntySn] });
+    },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : '';
       toast(message || '가입 신청 중 오류가 발생했습니다.', 'error');
@@ -92,16 +108,30 @@ export default function CommunityDetailHubClient({
                   <ChevronLeft size={16} aria-hidden="true" /> 목록으로 돌아가기
                 </Link>
               </Button>
-              <Button
-                size="sm"
-                onClick={() => { void handleJoin(); }}
-                disabled={isJoining}
-                aria-busy={isJoining || undefined}
-                aria-label={isJoining ? '커뮤니티 가입 신청 중' : '커뮤니티 가입 신청'}
-              >
-                <UserPlus size={16} aria-hidden="true" />
-                {isJoining ? '신청 중…' : '커뮤니티 가입 신청'}
-              </Button>
+              {membershipStatus === 'REQUESTED' ? (
+                <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-warning/10 px-3 text-xs font-bold text-warning-emphasis">
+                  <UserPlus size={16} aria-hidden="true" /> 가입 승인 대기 중
+                </span>
+              ) : membershipStatus === 'MEMBER' ? (
+                <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-success/10 px-3 text-xs font-bold text-success-emphasis">
+                  <ShieldCheck size={16} aria-hidden="true" /> 회원
+                </span>
+              ) : membershipStatus === 'UNKNOWN' ? (
+                <span role="status" className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-muted px-3 text-xs font-bold text-muted-foreground">
+                  멤버십 상태 확인 필요
+                </span>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => { void handleJoin(); }}
+                  disabled={isJoining}
+                  aria-busy={isJoining || undefined}
+                  aria-label={isJoining ? '커뮤니티 가입 신청 중' : '커뮤니티 가입 신청'}
+                >
+                  <UserPlus size={16} aria-hidden="true" />
+                  {isJoining ? '신청 중…' : '커뮤니티 가입 신청'}
+                </Button>
+              )}
             </div>
           }
         />
@@ -190,13 +220,20 @@ export default function CommunityDetailHubClient({
                 <div className="space-y-4">
                   {/*
                     [2026-08-28] '_ SECURITY POLICY / 가입 승인 필요 / 내부 임직원 전용' 을 걷어냈다.
-                    세 문장 다 근거가 없다 — 승인 절차는 존재하지 않고(위 joinMutation 주석 참조),
-                    '내부 임직원 전용' 을 집행하는 게이트도 없다(가입 API 는 인증 사용자면 통과한다).
-                    보안 정책을 표방하면서 실제로는 아무것도 집행하지 않는 패널이었다.
+                    당시에는 승인 절차가 없었고, '내부 임직원 전용' 을 집행하는 게이트도 없었다(가입 API 는
+                    인증 사용자면 통과한다 — 지금도 그렇다).
+                    [2026-09-06 DEC-OPS-043] 승인 절차가 생겼다(관리자 '커뮤니티 관리 → 회원 관리'). 화면은
+                    실제 절차만 말한다 — 임직원 전용 같은 집행되지 않는 정책은 여전히 표방하지 않는다.
                   */}
                   <h4 className="text-2xl font-bold tracking-tight leading-tight">가입 신청</h4>
                   <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">
-                    신청은 기록되지만 승인 처리 화면은 아직 없습니다.<br />진행 상태는 운영 담당자에게 문의하세요.
+                    {membershipStatus === 'MEMBER'
+                      ? '이 커뮤니티의 회원입니다.'
+                      : membershipStatus === 'REQUESTED'
+                        ? '가입 신청이 접수되었습니다. 관리자가 승인하면 회원이 됩니다.'
+                        : '신청하면 관리자가 검토해 승인하거나 반려합니다.'}
+                    <br />
+                    커뮤니티별 게시글 등 회원 전용 기능은 아직 제공되지 않습니다.
                   </p>
                 </div>
                 {/*
