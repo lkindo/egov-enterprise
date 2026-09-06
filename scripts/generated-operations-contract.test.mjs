@@ -98,7 +98,11 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   //   메서드를 부르는 순수 복제였고 프런트 소비자가 0건이라 지웠다(순 -3). 첨부를 붙일 수 있는 유일한
   //   쓰기 경로였던 multipart 2본은 이름만 바꿔 같은 네임스페이스로 옮겼다
   //   (createBbsPost -> createPostWithFiles, updateBbsPost -> updatePostWithFiles) — 표면 수는 불변.
-  assert.equal(operations.length, 378);
+  // [2026-09-07 DEC-OPS-046 결재 기안 취소] DELETE /api/v1/approvals/{id}(cancelApproval) 1개 신설 — 378 -> 379.
+  //   같은 InformalSanctionService#deleteInformalSanction 을 부르는 /informal-sanctions 계열과 공존하지만,
+  //   /approvals 가 결재 도메인의 정본 네임스페이스이고(DEC-OPS-030·039·040) 인가 의미는 그 서비스 가드가
+  //   집행한다(assertOwnerByEsntlId + "A" 상태 — 관리자도 우회 못 한다).
+  assert.equal(operations.length, 379);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 
