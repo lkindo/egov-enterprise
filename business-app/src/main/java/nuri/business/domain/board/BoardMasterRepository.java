@@ -23,6 +23,9 @@ public interface BoardMasterRepository extends JpaRepository<BoardMaster, String
     @Transactional
     void deleteById(@NonNull String bbsId);
 
+    /** 템플릿 삭제 차단용 참조 건수 — tmplt_id 는 물리 FK 없는 문자열 참조다(2026-09-06 감사 D11-02 후속). */
+    long countByTmpltId(String tmpltId);
+
     /**
      * 게시판 마스터 행을 비관적 쓰기 락으로 조회한다.
      * createPost(sort_ordr)/replyPost(ans_sn) 의 MAX+1 채번을 게시판 단위로 직렬화하여
