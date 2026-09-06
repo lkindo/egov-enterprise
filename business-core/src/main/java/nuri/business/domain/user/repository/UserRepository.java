@@ -59,6 +59,9 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
      */
     List<User> findByUserIdIn(java.util.Collection<String> userIds);
 
+    /** 발송 채널의 수신자 연락처 해석용(UserContactService). esntlId 축 일괄 조회. */
+    List<User> findByEsntlIdIn(java.util.Collection<String> esntlIds);
+
     List<User> findByRole(Role role);
 
     List<User> findByOgnzIdAndRole(String ognzId, Role role);

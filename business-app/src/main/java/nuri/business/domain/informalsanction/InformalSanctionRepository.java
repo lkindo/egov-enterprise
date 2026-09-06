@@ -18,6 +18,9 @@ public interface InformalSanctionRepository extends JpaRepository<InformalSancti
 
     Page<InformalSanction> findByAprvrIdAndAprvYn(String aprvrId, String aprvYn, Pageable pageable);
 
+    /** 결재자 기준, 상태가 주어진 집합 안에 있는 건 — 처리 완료(승인·반려) 목록에 쓴다. */
+    Page<InformalSanction> findByAprvrIdAndAprvYnIn(String aprvrId, java.util.Collection<String> aprvYns, Pageable pageable);
+
     @Query("SELECT s FROM InformalSanction s WHERE s.ifmlAtrzSn = :id "
             + "AND (s.aplcntId = :participantId OR s.aprvrId = :participantId)")
     Optional<InformalSanction> findByIdAndParticipant(

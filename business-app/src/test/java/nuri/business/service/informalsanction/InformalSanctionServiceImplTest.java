@@ -176,9 +176,11 @@ class InformalSanctionServiceImplTest {
         InformalSanctionDto dto = new InformalSanctionDto();
         dto.setTaskSeCd("CD1");
         dto.setAplcntId("APP1");
+        // 업무 구분은 COM075 에 등록된 코드여야 저장된다(2026-09-05).
+        given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of(new CommonCodeDto("COM075", "CD1", "TaskName", "", "Y")));
         given(informalSanctionRepository.save(any(InformalSanction.class)))
                 .willReturn(InformalSanction.builder().ifmlAtrzSn(1L).build());
-        
+
         informalSanctionService.registerInformalSanction(dto);
 
         verify(informalSanctionRepository, times(1)).save(any(InformalSanction.class));

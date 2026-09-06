@@ -60,6 +60,34 @@ public class ExternalHrService {
         return convertToDto(externalHrRepository.save(hr));
     }
 
+    /**
+     * 외부인사 수정 — 식별자(evntSn·otsdHrId)는 바꾸지 않는다(2026-09-05 DEC-OPS-036).
+     * 등록과 같은 ADMIN/SYSTEM 서비스 경계를 지나며, 수정자는 요청 본문이 아니라 인증 주체에서 fail-closed 로
+     * 해석한다({@link #currentLoginId()}) — 클라이언트가 스스로를 다른 사람이라 주장할 수 없다.
+     */
+    @Transactional
+    public ExternalHrDto updateExternalHr(Long evntSn, String otsdHrId, ExternalHrDto dto) {
+        SecurityUtil.assertAdmin();
+        String actorLoginId = currentLoginId();
+        ExternalHr hr = findRequired(evntSn, otsdHrId);
+        hr.update(dto.getGndrCd(), dto.getOtsdHrNm(), dto.getCrTypeCd(), dto.getOgdpInstNm(), dto.getBrdtYmd(),
+                dto.getAreaNo(), dto.getMdTelno(), dto.getEndTelno(), dto.getEmlAddr(), actorLoginId);
+        return convertToDto(hr);
+    }
+
+    /** 외부인사 삭제. 없는 대상은 RESOURCE_NOT_FOUND — 조용히 성공으로 끝내지 않는다. 등록·수정과 같은 관리자 경계다. */
+    @Transactional
+    public void deleteExternalHr(Long evntSn, String otsdHrId) {
+        SecurityUtil.assertAdmin();
+        externalHrRepository.delete(findRequired(evntSn, otsdHrId));
+    }
+
+    private ExternalHr findRequired(Long evntSn, String otsdHrId) {
+        return externalHrRepository
+                .findById(new ExternalHrId(Objects.requireNonNull(evntSn), Objects.requireNonNull(otsdHrId)))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+    }
+
     private String currentLoginId() {
         return SecurityUtil.getCurrentLoginId()
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));

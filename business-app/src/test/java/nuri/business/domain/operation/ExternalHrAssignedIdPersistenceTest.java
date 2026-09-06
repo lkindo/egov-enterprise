@@ -76,4 +76,35 @@ class ExternalHrAssignedIdPersistenceTest {
         assertThat(persisted.getFrstRgtrId()).isEqualTo("original_creator");
         assertThat(persisted.getLastMdfrId()).isEqualTo("original_modifier");
     }
+
+    /**
+     * [2026-09-06 병합 검토] {@code Persistable}(#568)과 조회-후-삭제 경로(#562, {@code ExternalHrService#deleteExternalHr})가
+     * 이 병합에서 처음 결합됐다. {@code SimpleJpaRepository#delete}는 {@code isNew()}가 참이면 <b>조용히 아무것도 하지 않으므로</b>,
+     * {@code @PostLoad}가 신규 표시를 내리지 않으면 관리자 삭제가 200 success 로 응답하면서 행은 남는다. 단위 테스트(mock)는
+     * 이 축을 볼 수 없어 실행 증거를 여기 남긴다.
+     */
+    @Test
+    @DisplayName("조회로 얻은 엔티티는 isNew 가 아니므로 delete 가 무시되지 않고 실제로 행을 지운다")
+    void loadedEntityIsActuallyDeleted() {
+        EventInfo event = eventInfoRepository.saveAndFlush(EventInfo.builder()
+                .evntNm("Persistence delete boundary event")
+                .build());
+        ExternalHrId id = new ExternalHrId(event.getEvntSn(), "HR_DELETE");
+        externalHrRepository.saveAndFlush(ExternalHr.builder()
+                .evntSn(event.getEvntSn())
+                .otsdHrId("HR_DELETE")
+                .otsdHrNm("To be deleted")
+                .frstRgtrId("creator")
+                .lastMdfrId("modifier")
+                .build());
+
+        ExternalHr loaded = externalHrRepository.findById(id).orElseThrow();
+        assertThat(loaded.isNew())
+                .as("@PostLoad 가 신규 표시를 내려야 SimpleJpaRepository#delete 가 삭제를 건너뛰지 않는다")
+                .isFalse();
+
+        externalHrRepository.delete(loaded);
+
+        assertThat(externalHrRepository.existsById(id)).isFalse();
+    }
 }

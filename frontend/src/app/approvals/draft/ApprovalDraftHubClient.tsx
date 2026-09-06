@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useToast } from '@/app/components/ui/toast';
 
 type DraftStep = 'CATALOG' | 'DETAILS';
@@ -87,7 +88,7 @@ export default function ApprovalDraftHubClient() {
   //   구현(백엔드 결재 API 연동)은 이 화면의 하드코딩 양식 4종(F01~F04)을 실제 결재 도메인
   //   필드로 매핑하는 설계가 선행돼야 하므로 별도 과제다. 그때까지는 **성공을 흉내 내지 않는다**.
   const handleSubmit = () => {
-    toast('이 화면은 아직 상신을 저장하지 않습니다. 작성한 내용은 전송되지 않았습니다.', 'error');
+    toast('이 양식 화면은 상신을 저장하지 않습니다. 실제 상신은 결재 허브의 \'새 결재 기안\'에서 하세요.', 'error');
   };
 
   // 폭 위임: 화면 자체 max-w-[1200px] 캡을 제거하고 루트 레이아웃의 --page-max-w 토큰에
@@ -247,10 +248,11 @@ export default function ApprovalDraftHubClient() {
                       살려 두면 결국 같은 오해가 남으므로, 클릭 자체를 막는다. */}
                   <div className="px-10 pt-6">
                     <div className="rounded-lg border border-warning/40 bg-warning/10 px-6 py-5">
-                      <p className="text-sm font-bold text-foreground">상신 기능은 아직 연결되지 않았습니다.</p>
+                      <p className="text-sm font-bold text-foreground">이 양식 화면은 상신을 저장하지 않는 데모입니다.</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        이 화면은 양식 작성까지만 제공하며, 작성한 내용은 서버에 저장되지 않습니다.
-                        현재 이 제품에는 결재를 상신할 수 있는 다른 화면도 없습니다.
+                        작성한 내용은 서버에 저장되지 않습니다. 실제 결재 상신은
+                        {' '}<Link href="/approvals" className="font-bold underline underline-offset-4">결재 허브</Link>의
+                        {' '}&lsquo;새 결재 기안&rsquo;에서 할 수 있습니다.
                       </p>
                     </div>
                   </div>

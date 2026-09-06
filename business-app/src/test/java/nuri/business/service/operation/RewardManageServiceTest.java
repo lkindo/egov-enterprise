@@ -1,4 +1,9 @@
 package nuri.business.service.operation;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import nuri.foundation.core.exception.BusinessException;
+import java.util.Optional;
 
 import nuri.business.domain.operation.RewardManage;
 import nuri.business.domain.operation.RewardManageRepository;
@@ -76,5 +81,47 @@ class RewardManageServiceTest {
 
         // Then
         assertThat(result.getRwrdSn()).isEqualTo(2L);
+    }
+
+    // [2026-09-05 DEC-OPS-036] 수정·삭제 경로 — 종전에는 등록만 되고 고칠 수 없었다.
+    @Test
+    @DisplayName("포상 수정 — 화면이 편집하는 다섯 필드를 갱신하고 식별자는 유지한다")
+    void updateReward_Success() {
+        RewardManage entity = RewardManage.builder().rwrdSn(7L).rwrdUserId("U1").rwrdCd("R01")
+                .rwrdYmd("20260101").rwrdNm("Old").cntrbCn("old").build();
+        given(rewardManageRepository.findById(7L)).willReturn(Optional.of(entity));
+        RewardManageDto dto = RewardManageDto.builder().rwrdSn(999L).rwardwnrId("U2").rwardCode("R02")
+                .rwardDe("20260202").rwardNm("New").pblenCn("new").build();
+
+        RewardManageDto result = rewardManageService.updateReward(7L, dto);
+
+        assertThat(result.getRwrdSn()).isEqualTo(7L);
+        assertThat(result.getRwardwnrId()).isEqualTo("U2");
+        assertThat(result.getRwardCode()).isEqualTo("R02");
+        assertThat(result.getRwardDe()).isEqualTo("20260202");
+        assertThat(result.getRwardNm()).isEqualTo("New");
+        assertThat(result.getPblenCn()).isEqualTo("new");
+    }
+
+    @Test
+    @DisplayName("포상 삭제")
+    void deleteReward_Success() {
+        RewardManage entity = RewardManage.builder().rwrdSn(7L).rwrdNm("Old").build();
+        given(rewardManageRepository.findById(7L)).willReturn(Optional.of(entity));
+
+        rewardManageService.deleteReward(7L);
+
+        verify(rewardManageRepository).delete(entity);
+    }
+
+    @Test
+    @DisplayName("없는 포상의 수정·삭제는 RESOURCE_NOT_FOUND")
+    void updateOrDelete_NotFound() {
+        given(rewardManageRepository.findById(9L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> rewardManageService.updateReward(9L, RewardManageDto.builder().build()))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> rewardManageService.deleteReward(9L)).isInstanceOf(BusinessException.class);
+        verify(rewardManageRepository, never()).delete(any(RewardManage.class));
     }
 }

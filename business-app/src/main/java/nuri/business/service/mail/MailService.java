@@ -5,7 +5,15 @@ import java.util.Objects;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
+import nuri.business.service.mail.dto.MailRecipientDto;
 import nuri.business.service.mail.dto.SentMailDto;
+import nuri.business.service.user.UserContactService;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,6 +32,8 @@ public class MailService {
 
     private final SentMailRepository sentMailRepository;
     private final MailAsyncProcessor mailAsyncProcessor;
+    /** esntlId → 이메일 해석(코어). 결과는 발송에만 쓰고 응답으로 내보내지 않는다. */
+    private final UserContactService userContactService;
 
     /**
      * 발송에 쓰는 시스템 메일 주소(SMTP {@code From}).
@@ -84,14 +94,85 @@ public class MailService {
     @Transactional
     public Long sendMail(String userId, SentMailDto dto) {
         log.info("Mail dispatch requested");
+        List<String> addresses = resolveRecipientAddresses(dto);
 
+        Long firstDispatchSn = null;
+        for (String address : addresses) {
+            Long emlDsptchSn = dispatchOne(userId, dto, address);
+            if (firstDispatchSn == null) {
+                firstDispatchSn = emlDsptchSn;
+            }
+        }
+        log.info("Mail request registered successfully: {} dispatch(es), first serial number: {}",
+                addresses.size(), firstDispatchSn);
+        return firstDispatchSn;
+    }
+
+    /**
+     * 수신 주소 목록을 확정한다 — 요청 순서 보존, 같은 주소는 한 번만.
+     *
+     * <p>[2026-09-05 DEC-OPS-035] {@code recipients} 의 사용자(esntlId)는 코어 {@link UserContactService} 로
+     * 이메일을 해석한다. 등록된 이메일이 없는 사용자가 하나라도 있으면 <b>이름을 밝히고 전체를 거부</b>한다 —
+     * 일부만 보낸 뒤 "발송 요청되었습니다" 로 끝나는 것이 가장 나쁜 결과다. 종전 계약인
+     * {@code recptnPerson}(주소 문자열 1건)은 그대로 받으며 발송 1건이 된다.
+     */
+    private List<String> resolveRecipientAddresses(SentMailDto dto) {
+        List<MailRecipientDto> recipients = dto.getRecipients() == null ? List.of() : dto.getRecipients();
+        List<String> esntlIds = new ArrayList<>();
+        for (MailRecipientDto recipient : recipients) {
+            boolean hasUser = hasText(recipient.getEsntlId());
+            boolean hasAddress = hasText(recipient.getEmlAddr());
+            if (hasUser == hasAddress) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "수신자는 사용자 또는 이메일 주소 중 하나로 지정해야 합니다.");
+            }
+            if (hasUser) {
+                esntlIds.add(recipient.getEsntlId().trim());
+            }
+        }
+        Map<String, UserContactService.UserContact> contacts = userContactService.resolve(esntlIds).stream()
+                .collect(Collectors.toMap(UserContactService.UserContact::esntlId, Function.identity(),
+                        (first, second) -> first));
+
+        LinkedHashSet<String> addresses = new LinkedHashSet<>();
+        for (MailRecipientDto recipient : recipients) {
+            if (hasText(recipient.getEsntlId())) {
+                UserContactService.UserContact contact = contacts.get(recipient.getEsntlId().trim());
+                if (contact == null || contact.emlAddr() == null) {
+                    String name = contact == null ? recipient.getEsntlId().trim() : contact.userNm();
+                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                            "'" + name + "' 님은 등록된 이메일 주소가 없어 메일을 보낼 수 없습니다.");
+                }
+                addresses.add(contact.emlAddr());
+            } else {
+                addresses.add(recipient.getEmlAddr().trim());
+            }
+        }
+        if (hasText(dto.getRecptnPerson())) {
+            addresses.add(dto.getRecptnPerson().trim());
+        }
+        if (addresses.isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "수신자를 한 명 이상 지정해 주세요.");
+        }
+        return new ArrayList<>(addresses);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    /**
+     * 수신 주소 1건 = 발송 이력 1건. 수신자 칸({@code tb_eml_dsptch.rcvr_nm}, 100자)에 주소를 남기고
+     * 커밋 후 비동기 발송을 기동한다.
+     */
+    private Long dispatchOne(String userId, SentMailDto dto, String recptnPerson) {
         // 발신자 이력은 **인증 주체**에서 온다. 요청 본문의 dsptchPerson 은 화면이 채우지 않아 늘 null 이었고,
         // 채운다 해도 클라이언트가 스스로를 다른 사람이라 주장할 수 있는 축이다(게시글이 이미 같은 규칙을 쓴다).
         SentMail sentMail = Objects.requireNonNull(SentMail.builder()
                 .emlTtl(dto.getSj())
                 .emlCn(dto.getEmailCn())
                 .sndptyNm(resolveSenderName(userId, dto))
-                .rcvrNm(dto.getRecptnPerson())
+                .rcvrNm(recptnPerson.length() > 100 ? recptnPerson.substring(0, 100) : recptnPerson)
                 .dsptchRsltCd("P") // Pending
                 .atchFileSn(dto.getAtchFileSn())
                 .build());
@@ -106,7 +187,6 @@ public class MailService {
         final String emailCn = dto.getEmailCn();
         // SMTP From 은 설정된 시스템 주소다. 요청 본문에서 오지 않으므로 null 이 될 수 없다.
         final String dsptchPerson = systemSenderAddress;
-        final String recptnPerson = dto.getRecptnPerson();
         nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
             try {
                 mailAsyncProcessor.processSending(emlDsptchSn, subject, emailCn, dsptchPerson, recptnPerson);
@@ -118,8 +198,6 @@ public class MailService {
                 mailAsyncProcessor.markResult(emlDsptchSn, "F");
             }
         });
-
-        log.info("Mail request registered successfully for dispatch serial number: {}", emlDsptchSn);
         return emlDsptchSn;
     }
 

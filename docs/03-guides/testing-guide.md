@@ -205,7 +205,7 @@ manifest의 현재 baseline 상태는 `unmeasured`이며 Playwright 성능값이
 
 | 경로 | 구성 | 증명하는 것 | 증명하지 못하는 것 |
 |---|---|---|---|
-| 빠른 단위·통합 테스트 | 모듈별 `application-test.yml`, 주로 H2 `create-drop` | 서비스·리포지토리·웹 계약과 테스트 격리 | 운영 PostgreSQL 물리 스키마와 Flyway 정합성 |
+| 빠른 단위·통합 테스트 | 모듈별 `application-test.yml`, 주로 H2 `create`(api-server; 공유 in-memory DB 를 컨텍스트 종료가 drop 하지 않도록 2026-09-06 에 `create-drop` 에서 전환) | 서비스·리포지토리·웹 계약과 테스트 격리 | 운영 PostgreSQL 물리 스키마와 Flyway 정합성 |
 | 스키마 검증 | `api-server/src/test/resources/application-tc.yml`, PostgreSQL 17 Testcontainers + Flyway + `ddl-auto: validate` | 빈 PostgreSQL에 현재 migration 전량 적용, Entity↔물리 스키마 정합 | 운영 데이터 내용과 실제 배포 cutover |
 
 H2는 빠른 피드백 수단이지 물리 스키마 증거가 아니다. Entity·DDL·PK 전략 변경은 Docker가 가능한 환경에서 다음 전용 task를 실행한다.
@@ -375,7 +375,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 ## 스키마 정합성 전용 게이트
 
-모듈의 일반 `application-test.yml`은 주로 H2 `create-drop`을 사용하므로 Entity 정의로 테스트 스키마를 만들며, 운영 PostgreSQL과 Flyway의 물리 정합성을 증명하지 못한다. 스키마 증거는 `api-server`의 `tc` 프로필과 `schemaValidationTest`가 소유한다.
+모듈의 일반 `application-test.yml`은 주로 H2 `create`(또는 `create-drop`)를 사용하므로 Entity 정의로 테스트 스키마를 만들며, 운영 PostgreSQL과 Flyway의 물리 정합성을 증명하지 못한다. 스키마 증거는 `api-server`의 `tc` 프로필과 `schemaValidationTest`가 소유한다.
 
 ### 1. 로컬·CI 실행
 

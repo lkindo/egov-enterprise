@@ -91,6 +91,8 @@ vi.mock('@/services/business/user/ReportService', () => ({
   },
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+// [2026-09-06 DEC-OPS-037] WorkHubClient 가 관리자 판정(useAuth)을 읽는다 — 이 스펙은 일정 오류 소유권만 보므로 비관리자로 고정한다.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: 'ROLE_USER' } }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/business/schedule/deptScheduleService', () => ({
   getDeptScheduleMonthList: vi.fn(),

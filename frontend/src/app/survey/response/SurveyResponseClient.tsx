@@ -32,6 +32,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 
 export default function SurveyResponseClient() {
   const [pageNo, setPageNo] = useState(1);
@@ -39,6 +40,7 @@ export default function SurveyResponseClient() {
   const [deletingResponseId, setDeletingResponseId] = useState<number | null>(null);
   const deletingResponseIdRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   // ⚠ `as any` 를 걷어냈다. 종전에는 이 한 줄이 타입 검사를 통째로 무력화해서
   //   ① 백엔드가 `PageResponse{list,total,...}` 를 주는데 화면이 `content`/`totalElements`
@@ -81,10 +83,17 @@ export default function SurveyResponseClient() {
     setPageNo(1);
   };
 
-  const handleDelete = (srvyRspnsSn: number, name: string) => {
+  const handleDelete = async (srvyRspnsSn: number, name: string) => {
     if (deletingResponseIdRef.current !== null) return;
     deletingResponseIdRef.current = srvyRspnsSn;
-    if (!confirm(`${name}님의 응답을 삭제하시겠습니까?`)) {
+    // [2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달. 동기 잠금(ref)은 확인 대기 중에도 유지된다.
+    const ok = await confirm({
+      title: '응답 삭제',
+      message: `${name}님의 응답을 삭제하시겠습니까? 삭제한 응답은 복구할 수 없습니다.`,
+      confirmText: '삭제',
+      variant: 'destructive',
+    });
+    if (!ok) {
       deletingResponseIdRef.current = null;
       return;
     }
@@ -198,7 +207,7 @@ export default function SurveyResponseClient() {
                             aria-busy={deletingResponseId === item.srvyRspnsSn || undefined}
                             disabled={deletingResponseId !== null}
                             className="h-8 w-8 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10"
-                            onClick={() => handleDelete(item.srvyRspnsSn, item.rspnsNm)}
+                            onClick={() => { void handleDelete(item.srvyRspnsSn, item.rspnsNm); }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

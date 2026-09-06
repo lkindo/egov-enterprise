@@ -37,4 +37,20 @@ public class RewardManageApiController {
     public ResponseEntity<ApiResponse<RewardManageDto>> createReward(@Valid @RequestBody RewardManageDto dto) {
         return ResponseEntity.ok(ApiResponse.success(rewardManageService.createReward(dto)));
     }
+
+    /* [2026-09-05 DEC-OPS-036] 수정·삭제 신설 — 종전에는 GET·POST 뿐이었다(감사 D11-01). */
+    @Operation(summary = "포상 수정", description = "포상 정보(수상자·코드·일자·명칭·공적 내용)를 수정한다.")
+    @PutMapping("/{rwrdSn}")
+    public ResponseEntity<ApiResponse<RewardManageDto>> updateReward(
+            @PathVariable Long rwrdSn,
+            @Valid @RequestBody RewardManageDto dto) {
+        return ResponseEntity.ok(ApiResponse.success(rewardManageService.updateReward(rwrdSn, dto)));
+    }
+
+    @Operation(summary = "포상 삭제", description = "포상 정보를 삭제한다.")
+    @DeleteMapping("/{rwrdSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteReward(@PathVariable Long rwrdSn) {
+        rewardManageService.deleteReward(rwrdSn);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

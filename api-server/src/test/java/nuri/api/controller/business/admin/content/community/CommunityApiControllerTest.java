@@ -26,6 +26,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -110,6 +112,21 @@ class CommunityApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.cmntySn").value(101));
+    }
+
+    @Test
+    @DisplayName("커뮤니티 생성 — 이름이 비면 400 (DEC-OPS-037 제품 규칙)")
+    void createCommunity_BlankName_BadRequest() throws Exception {
+        CommunityDto requestDto = new CommunityDto();
+        requestDto.setCmntyNm("  ");
+        requestDto.setUseYn("Y");
+
+        mockMvc.perform(post("/api/v1/admin/content/community")
+                        .with(SecurityMockMvcRequestPostProcessors.user("user"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest());
+        verify(communityService, never()).createCommunity(anyString(), any(CommunityDto.class));
     }
 
     @Test

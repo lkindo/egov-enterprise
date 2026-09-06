@@ -54,7 +54,8 @@ export const smsSchema = SmsDtoSchema.pick({ sndngTelno: true, sndngCn: true }).
     .min(1, '수신 번호를 입력해 주세요.')
     .max(13, '수신 번호는 최대 13자까지 입력할 수 있습니다.')
     .regex(/^[0-9-]+$/, '수신 번호는 숫자와 하이픈만 입력해 주세요.')
-    .pipe(SmsRecptnDtoSchema.shape.rcptnTelno),
+    // [2026-09-05] 생성 스키마의 rcptnTelno 는 optional 이 됐다(esntlId 수신자 허용). 이 화면 축은 여전히 번호 1건 필수라 안쪽 계약에 결속한다.
+    .pipe(SmsRecptnDtoSchema.shape.rcptnTelno.unwrap()),
   sndngCn: z.string()
     .trim()
     .min(1, '메시지 내용을 입력해 주세요.')

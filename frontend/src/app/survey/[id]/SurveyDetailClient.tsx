@@ -5,11 +5,19 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
-import type { SurveyQuestion, SurveyResponseSubmit } from '@/types/business/survey';
+import type { Survey, SurveyQuestion, SurveyResponseSubmit } from '@/types/business/survey';
+import { todayStorageYmd } from '@/lib/format-date';
+import {
+  SURVEY_STATUS_LABEL,
+  describeSurveyAvailability,
+  displaySurveyYmd,
+  getSurveyStatus,
+} from '@/lib/survey-status';
 import { SurveyStatsPanel } from '../components/SurveyStatsPanel';
 
 /**
@@ -58,9 +66,29 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
     queryFn: () => surveyAdminService.getQuestions(srvySn),
   });
 
+  /*
+   * [2026-09-05] 설문 자체(제목·기간)를 함께 읽는다. 종전에는 제목 대신 일련번호를 보여 줬고,
+   * 기간을 보지 않아 종료된 설문에도 제출 버튼이 열려 있었다 — 서버도 기간을 검사하지 않아
+   * 응답이 실제로 저장됐다. 판정 규칙은 서버(SurveyResultService.assertWithinPeriod)와 같다.
+   */
+  const {
+    data: survey,
+    isLoading: isSurveyLoading,
+    isError: isSurveyError,
+  } = useQuery<Survey>({
+    queryKey: ['survey', srvySn],
+    queryFn: () => surveyAdminService.getSurvey(srvySn),
+  });
+  // 기준일은 마운트 시점에 한 번 고정한다. 설문 데이터는 클라이언트에서만 도착하므로 이 값이
+  // SSR 마크업에 실리지 않는다(하이드레이션 무관).
+  const [today] = useState(() => todayStorageYmd());
+  const surveyStatus = survey ? getSurveyStatus(survey, today) : null;
+  const availability = survey ? describeSurveyAvailability(survey, today) : null;
+  const isOpen = surveyStatus === 'active';
+
   const questionList = useMemo(() => questions ?? [], [questions]);
   const answeredCount = Object.keys(selected).length;
-  const canSubmit = answeredCount > 0 && !isSubmitting && !isSubmitted;
+  const canSubmit = isOpen && answeredCount > 0 && !isSubmitting && !isSubmitted;
 
   const handleSubmit = async () => {
     if (submitPendingRef.current || !canSubmit) return;
@@ -104,14 +132,44 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
         <Button variant="ghost" size="icon" aria-label="뒤로 가기" onClick={() => router.push('/survey')}>
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Button>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold tracking-tight">설문 응답</h1>
-          <p className="text-muted-foreground mt-1 font-mono text-sm">{srvySn}</p>
+          {/* 종전에는 제목 자리에 일련번호만 있었다 — 사용자는 어떤 설문인지 번호로 알 수 없다. */}
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            {isSurveyLoading ? (
+              <span>설문 정보를 불러오는 중입니다.</span>
+            ) : isSurveyError || !survey ? (
+              <span className="text-destructive-emphasis">설문 정보를 불러오지 못했습니다.</span>
+            ) : (
+              <>
+                <span className="font-semibold text-foreground">{survey.srvyTtl || `${srvySn}번 설문`}</span>
+                {surveyStatus ? (
+                  <Badge
+                    variant={surveyStatus === 'active' ? 'success' : surveyStatus === 'closed' ? 'secondary' : 'outline'}
+                    className="text-xs font-bold"
+                  >
+                    {SURVEY_STATUS_LABEL[surveyStatus]}
+                  </Badge>
+                ) : null}
+                {survey.srvyBgngYmd || survey.srvyEndYmd ? (
+                  <span className="tabular-nums">
+                    {displaySurveyYmd(survey.srvyBgngYmd) || '시작일 없음'} ~ {displaySurveyYmd(survey.srvyEndYmd) || '종료일 없음'}
+                  </span>
+                ) : null}
+              </>
+            )}
+          </p>
         </div>
       </div>
 
       <section aria-labelledby="survey-response-heading" className="space-y-4">
         <h2 id="survey-response-heading" className="text-lg font-semibold text-foreground">문항</h2>
+
+        {availability ? (
+          <p role="status" className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm font-medium text-foreground">
+            {availability}
+          </p>
+        ) : null}
 
         {isLoading ? (
           <p className="text-sm text-muted-foreground">문항을 불러오는 중입니다…</p>
@@ -138,7 +196,8 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
 
               return (
                 <li key={question.srvyQstnSn} className="rounded-lg border border-border p-6">
-                  <fieldset disabled={isSubmitted}>
+                  {/* 기간 밖·판정 불가면 입력을 잠근다 — 골라 놓고 제출에서 거부당하는 경험을 만들지 않는다. */}
+                  <fieldset disabled={isSubmitted || !isOpen}>
                     <legend className="mb-4 text-sm font-bold text-foreground">
                       {index + 1}. {question.qstnCn}
                     </legend>
@@ -210,7 +269,7 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
           </p>
         )}
 
-        {questionList.length > 0 && (
+        {questionList.length > 0 && isOpen && (
           <div className="flex items-center gap-4">
             <Button
               type="button"

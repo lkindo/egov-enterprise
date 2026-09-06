@@ -6,6 +6,10 @@ import type { components, operations } from '@/types/generated-api';
 import {
   createExternalHrOperation,
   createRewardOperation,
+  deleteExternalHrOperation,
+  deleteRewardOperation,
+  updateExternalHrOperation,
+  updateRewardOperation,
   getAllExternalHrOperation,
   getAllRewardsOperation,
 } from '@/types/generated-operations';
@@ -14,8 +18,10 @@ import { ExternalHrDtoRequestSchema } from '@/types/generated-zod';
 /** 외부인사정보: OpenAPI ExternalHrDto를 단일 원본으로 사용한다. */
 export type ExternalHr = components['schemas']['ExternalHrDto'];
 
-/** 외부인사 등록 입력: OpenAPI readOnly 감사 필드는 요청 타입에서도 제외한다. */
-export type ExternalHrCreateInput = z.input<typeof ExternalHrDtoRequestSchema>;
+/** 외부인사 요청 입력(등록·수정 공통): OpenAPI readOnly 감사 필드는 요청 타입에서도 제외한다. */
+export type ExternalHrRequestInput = z.input<typeof ExternalHrDtoRequestSchema>;
+/** 등록 입력 — 수정과 같은 요청 계약이다({@link ExternalHrRequestInput}). */
+export type ExternalHrCreateInput = ExternalHrRequestInput;
 
 /** 포상정보: OpenAPI RewardManageDto를 단일 원본으로 사용한다. */
 export type Reward = components['schemas']['RewardManageDto'];
@@ -72,6 +78,26 @@ class OperationAdminService extends ApiService {
 
   async createReward(data: Reward, config?: AxiosRequestConfig): Promise<Reward> {
     return this.executeGenerated(createRewardOperation, { body: data, config });
+  }
+
+  /*
+   * [2026-09-05 DEC-OPS-036] 정정 경로 — 종전에는 외부인사·포상 모두 등록만 되고 고칠 수 없었다(감사 D11-01).
+   * 외부인사 식별자는 복합키(evntSn·otsdHrId)라 경로에 둘 다 싣는다.
+   */
+  async updateExternalHr(evntSn: number, otsdHrId: string, data: ExternalHrRequestInput, config?: AxiosRequestConfig): Promise<ExternalHr> {
+    return this.executeGenerated(updateExternalHrOperation, { path: { evntSn, otsdHrId }, body: data, config });
+  }
+
+  async deleteExternalHr(evntSn: number, otsdHrId: string, config?: AxiosRequestConfig): Promise<void> {
+    await this.executeGenerated(deleteExternalHrOperation, { path: { evntSn, otsdHrId }, config });
+  }
+
+  async updateReward(rwrdSn: number, data: Reward, config?: AxiosRequestConfig): Promise<Reward> {
+    return this.executeGenerated(updateRewardOperation, { path: { rwrdSn }, body: data, config });
+  }
+
+  async deleteReward(rwrdSn: number, config?: AxiosRequestConfig): Promise<void> {
+    await this.executeGenerated(deleteRewardOperation, { path: { rwrdSn }, config });
   }
 }
 

@@ -76,7 +76,7 @@ describe('약식 결재 — 사유가 필요한 쪽과 아닌 쪽', () => {
     render(<IsmClient initialData={{ list: [pendingSanction] }} />);
     openModal();
 
-    fireEvent.click(screen.getByRole('button', { name: /최종 승인/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^승인$/ }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     expect(mocks.confirm.mock.calls[0][0]).toBe(7);
@@ -87,7 +87,7 @@ describe('약식 결재 — 사유가 필요한 쪽과 아닌 쪽', () => {
     render(<IsmClient initialData={{ list: [pendingSanction] }} />);
     openModal();
 
-    const note = screen.getByRole('button', { name: /최종 승인/ }).getAttribute('aria-describedby');
+    const note = screen.getByRole('button', { name: /^승인$/ }).getAttribute('aria-describedby');
     expect(note).toBeTruthy();
     expect(document.getElementById(note!)).toHaveTextContent('승인할 때는 사유가 저장되지 않습니다');
   });

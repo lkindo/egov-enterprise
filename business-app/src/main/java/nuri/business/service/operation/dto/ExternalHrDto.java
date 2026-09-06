@@ -23,6 +23,7 @@ public class ExternalHrDto {
     @NotBlank
     @Size(max = 20)
     private String otsdHrId;
+    // [2026-09-05] 물리 컬럼 length=12 와 정합(InputContractMirrorLinter 표적 편입).
     @Size(max = 12)
     private String gndrCd;
     @Size(max = 100)
@@ -39,7 +40,8 @@ public class ExternalHrDto {
     private String mdTelno;
     @Size(max = 4)
     private String endTelno;
-    @Size(max = 50)
+    // [2026-09-05] 물리 컬럼 length=320 와 정합. 종전 50 은 컬럼보다 좁은 임의 제한이었다.
+    @Size(max = 320)
     private String emlAddr;
 
     @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)

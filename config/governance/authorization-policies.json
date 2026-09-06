@@ -92,6 +92,14 @@
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/content/files/{atchFileSn}/{fileSn}",
+      "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/operation/events",
       "handler": "nuri.api.controller.business.operation.EventApiController#createEvent",
@@ -125,6 +133,24 @@
       "guardRef": "ExternalHrService#createExternalHr"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+      "handler": "nuri.api.controller.business.operation.ExternalHrApiController#deleteExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "ExternalHrService#deleteExternalHr"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+      "handler": "nuri.api.controller.business.operation.ExternalHrApiController#updateExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "ExternalHrService#updateExternalHr"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/operation/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
@@ -133,9 +159,33 @@
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}",
+      "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/operation/rewards",
       "handler": "nuri.api.controller.business.operation.RewardManageApiController#createReward",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operation/rewards/{rwrdSn}",
+      "handler": "nuri.api.controller.business.operation.RewardManageApiController#deleteReward",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/rewards/{rwrdSn}",
+      "handler": "nuri.api.controller.business.operation.RewardManageApiController#updateReward",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
@@ -430,6 +480,14 @@
       "method": "POST",
       "path": "/api/v1/admin/system/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/files/{atchFileSn}/{fileSn}",
+      "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
@@ -859,6 +917,22 @@
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/templates/{tmpltId}",
+      "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#deleteTmplatInfo",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/templates/{tmpltId}",
+      "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#updateTmplatInfo",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
       "method": "PUT",
       "path": "/api/v1/admin/system/user-absences/{emplyrId}",
       "handler": "nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#updateAbsence",
@@ -969,6 +1043,14 @@
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApproval",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "PUT",
@@ -1188,6 +1270,15 @@
       "policy": "AUTHENTICATED",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/files/{atchFileSn}/{fileSn}",
+      "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+      "policy": "REACHABILITY_WITH_PRIVACY",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "FileAccessPolicy#assertDeletable"
     },
     {
       "method": "POST",
@@ -1932,6 +2023,28 @@
       ]
     },
     {
+      "target": "ExternalHrService#deleteExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "ExternalHrService#updateExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
       "target": "InformalSanctionService#confirmInformalSanction",
       "policy": "STRICT_OWNER",
       "mechanisms": [
@@ -2376,6 +2489,22 @@
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "FileAccessPolicy#assertDeletable",
+      "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
+      "policy": "REACHABILITY_WITH_PRIVACY",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "SecurityUtil.getCurrentEsntlId()",
+        "if (grants.ownerGrant())",
+        "admin && !grants.personalReference()",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        "grants.sharedGrant()"
+      ]
     },
     {
       "target": "MailService#resolveSenderScope",

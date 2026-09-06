@@ -2,7 +2,9 @@
 
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, RefreshCcw, ShieldCheck } from 'lucide-react';
+import { Loader2, Pencil, Plus, RefreshCcw, ShieldCheck, Trash2 } from 'lucide-react';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -40,6 +42,14 @@ export const rewardSchema = RewardManageDtoSchema.extend({
 
 type RewardFormValues = z.infer<typeof rewardSchema>;
 
+const EMPTY_FORM: RewardFormValues = {
+  rwardNm: '',
+  rwardwnrId: '',
+  rwardCode: '',
+  rwardDe: '',
+  pblenCn: '',
+};
+
 export default function RewardManageClient({ initialPage }: { initialPage: PageResponse<Reward> }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -49,20 +59,61 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const [registerLoading, setRegisterLoading] = useState(false);
   const registerSubmitLock = useRef(false);
   const [size, setSize] = useState(initialPage?.size || 10);
+  const confirm = useConfirm();
+  /** 수정 대상. null 이면 등록 모달이다(2026-09-05 DEC-OPS-036 — 종전에는 등록만 되고 고칠 수 없었다, 감사 D11-01). */
+  const [editing, setEditing] = useState<Reward | null>(null);
+  const [deletingSn, setDeletingSn] = useState<number | null>(null);
+  const deletePendingRef = useRef(false);
 
   const form = useAppForm(rewardSchema, {
-    defaultValues: {
-      rwardNm: '',
-      rwardwnrId: '',
-      rwardCode: '',
-      rwardDe: '',
-      pblenCn: '',
-    }
+    defaultValues: EMPTY_FORM,
   });
 
   const closeRegisterModal = () => {
     if (registerSubmitLock.current) return;
     setIsModalOpen(false);
+    setEditing(null);
+  };
+
+  const openCreate = () => {
+    setEditing(null);
+    form.reset(EMPTY_FORM);
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (item: Reward) => {
+    setEditing(item);
+    form.reset({
+      rwardNm: item.rwardNm ?? '',
+      rwardwnrId: item.rwardwnrId ?? '',
+      rwardCode: item.rwardCode ?? '',
+      rwardDe: item.rwardDe ?? '',
+      pblenCn: item.pblenCn ?? '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (item: Reward) => {
+    if (deletePendingRef.current || item.rwrdSn === undefined) return;
+    deletePendingRef.current = true;
+    setDeletingSn(item.rwrdSn);
+    try {
+      const ok = await confirm({
+        title: '포상 기록 삭제',
+        message: `'${item.rwardNm}' 포상 기록을 삭제합니다. 삭제한 기록은 복구할 수 없습니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+      await operationAdminService.deleteReward(item.rwrdSn);
+      toast('포상 기록을 삭제했습니다.', 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
+    } catch (error) {
+      toast(extractErrorMessage(error, '포상 기록 삭제에 실패했습니다.'), 'error');
+    } finally {
+      deletePendingRef.current = false;
+      setDeletingSn(null);
+    }
   };
 
   /*
@@ -101,17 +152,24 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
        *   보내봐야 버려지고, 코드만 "시스템이 등록했다"는 오해를 남긴다.
        * confmAt:'N'(대기)은 남긴다 — 서버가 그 값을 confmYn 으로 저장하고 목록이 그대로 읽는다.
        */
-      const submitData = { ...values, confmAt: 'N' };
-      await operationAdminService.createReward(submitData);
-      toast('포상 기록이 성공적으로 등록되었습니다.', 'success');
+      if (editing && editing.rwrdSn !== undefined) {
+        // 수정은 화면이 편집하는 다섯 필드만 보낸다 — 승인 상태(confmAt)는 여기서 건드리지 않는다.
+        await operationAdminService.updateReward(editing.rwrdSn, { ...values });
+        toast('포상 기록을 수정했습니다.', 'success');
+      } else {
+        const submitData = { ...values, confmAt: 'N' };
+        await operationAdminService.createReward(submitData);
+        toast('포상 기록이 성공적으로 등록되었습니다.', 'success');
+        // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
+        setPage(1);
+      }
       setIsModalOpen(false);
-      form.reset();
-      // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
-      setPage(1);
+      setEditing(null);
+      form.reset(EMPTY_FORM);
       queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
     } catch (error) {
       if (!form.applyServerErrors(error)) {
-        toast('포상 기록 등록 중 오류가 발생했습니다.', 'error');
+        toast(editing ? '포상 기록 수정 중 오류가 발생했습니다.' : '포상 기록 등록 중 오류가 발생했습니다.', 'error');
       }
     } finally {
       registerSubmitLock.current = false;
@@ -163,6 +221,40 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     //   (전 저장소 grep 실측). 그래서 두 열은 전 건 영구 '대기중'·빈칸이었고, 결재자는 무엇을
     //   눌러야 할지 알 수 없고 등록자는 왜 안 넘어가는지 알 수 없었다.
     //   열이 존재하는 것 자체가 없는 절차를 약속한다. 승인 기능을 만들 때 함께 되살린다.
+    {
+      header: '관리',
+      className: 'text-right w-28',
+      accessor: (item) => {
+        const isDeleting = deletingSn !== null && deletingSn === item.rwrdSn;
+        return (
+          <div className="flex items-center justify-end gap-1 pr-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={deletingSn !== null || registerLoading}
+              aria-label={`${item.rwardNm} 수정`}
+              onClick={() => openEdit(item)}
+              className="w-10 h-10 rounded-lg hover:bg-muted transition-colors"
+            >
+              <Pencil size={16} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={deletingSn !== null}
+              aria-busy={isDeleting}
+              aria-label={isDeleting ? `${item.rwardNm} 삭제 중` : `${item.rwardNm} 삭제`}
+              onClick={() => { void handleDelete(item); }}
+              className="w-10 h-10 rounded-lg hover:bg-destructive/10 hover:text-destructive-emphasis transition-colors"
+            >
+              {isDeleting
+                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                : <Trash2 size={16} aria-hidden="true" />}
+            </Button>
+          </div>
+        );
+      },
+    },
   ];
 
   // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음' 이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
@@ -185,7 +277,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             <RefreshCcw size={16} aria-hidden="true" />
             새로고침
           </Button>
-          <Button size="sm" onClick={() => setIsModalOpen(true)} className="gap-2">
+          <Button size="sm" onClick={openCreate} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 포상 기록 등록
           </Button>
         </>
@@ -221,7 +313,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       <StandardModal
         isOpen={isModalOpen}
         onClose={closeRegisterModal}
-        title="포상 기록 등록"
+        title={editing ? '포상 기록 수정' : '포상 기록 등록'}
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
@@ -240,8 +332,8 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               disabled={registerLoading || form.formState.isSubmitting}
               className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
-              <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" />
-              {registerLoading ? '등록 중…' : '최종 등록'}
+              <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" aria-hidden="true" />
+              {registerLoading ? (editing ? '저장 중…' : '등록 중…') : (editing ? '수정 저장' : '최종 등록')}
             </Button>
           </div>
         }

@@ -79,7 +79,8 @@ test('current URL-state census exactly covers critical route and URL producer po
     filesystemRoutes: FILESYSTEM_ROUTE_COUNT,
     dynamicRoutePatterns: 11,
     configRedirects: 14,
-    pageRedirects: 5,
+    // [2026-09-05 DEC-OPS-034] 5 → 7: boards/write · boards/[id] 가 insert-board-article 로의 page-redirect 가 됐다.
+    pageRedirects: 7,
   });
   assert.equal(actual.summary.records, actual.records.length);
   assert.equal(actual.summary.unverifiedRecords, actual.records.length);

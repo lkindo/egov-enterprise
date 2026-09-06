@@ -1,4 +1,8 @@
 package nuri.api.controller.business.operation;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.eq;
 
 import nuri.business.security.annotation.WithMockCustomUser;
 import nuri.business.service.operation.ExternalHrService;
@@ -201,5 +205,33 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
         assertThat(handler.isAnnotationPresent(AdminOrSystem.class))
                 .as("외부인사 등록은 URL RBAC와 별개로 메서드에서도 ADMIN/SYSTEM을 재확인한다")
                 .isTrue();
+    }
+
+    // [2026-09-05 DEC-OPS-036] 수정·삭제 경로(복합키는 경로에 둘 다 싣는다).
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("외부인사를 수정한다 — 경로의 복합키와 본문을 그대로 서비스에 위임한다")
+    void updateExternalHr_succeeds() throws Exception {
+        given(externalHrService.updateExternalHr(eq(1L), eq("HR001"), any(ExternalHrDto.class))).willReturn(new ExternalHrDto());
+
+        mockMvc.perform(put("/api/v1/admin/operation/external-hr/1/HR001")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"evntSn\":1,\"otsdHrId\":\"HR001\",\"otsdHrNm\":\"홍길동\",\"gndrCd\":\"F\"}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        verify(externalHrService).updateExternalHr(eq(1L), eq("HR001"), any(ExternalHrDto.class));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("외부인사를 삭제한다")
+    void deleteExternalHr_succeeds() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/operation/external-hr/1/HR001").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        verify(externalHrService).deleteExternalHr(1L, "HR001");
     }
 }

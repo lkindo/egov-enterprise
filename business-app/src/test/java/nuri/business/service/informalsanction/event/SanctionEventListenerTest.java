@@ -12,7 +12,6 @@ import nuri.business.service.user.dto.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
@@ -43,8 +42,16 @@ class SanctionEventListenerTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    @InjectMocks
+    /** 발신 번호는 설정 주입이라 @InjectMocks 가 채울 수 없다 — 값을 준 생성자로 직접 만든다. */
+    private static final String SENDER_TEL = "0212340000";
+
     private SanctionEventListener sanctionEventListener;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        sanctionEventListener = new SanctionEventListener(
+                userService, smsService, mailService, eventPublisher, SENDER_TEL);
+    }
 
     @Test
     @DisplayName("결재 상태 변경 시 SMS 및 메일 알림 발송 테스트")
@@ -70,8 +77,59 @@ class SanctionEventListenerTest {
         //   이 리스너는 @Async 라 SecurityContext 가 없고(TaskDecorator 는 프로덕션에서 의도적 no-op),
         //   그래서 종전에는 실제로 승인/반려한 사람이 발송 이력에서 사라졌다.
         //   전파(Composite 데코레이터) 대신 손해가 확정된 이 지점만 봉합한다.
-        verify(smsService).sendSms(eq("SANCTIONER_001"), any(SmsDto.class));
+        org.mockito.ArgumentCaptor<SmsDto> smsCaptor = org.mockito.ArgumentCaptor.forClass(SmsDto.class);
+        org.mockito.ArgumentCaptor<SentMailDto> mailCaptor = org.mockito.ArgumentCaptor.forClass(SentMailDto.class);
+        verify(smsService).sendSms(eq("SANCTIONER_001"), smsCaptor.capture());
+        verify(mailService).sendMail(eq("SANCTIONER_001"), mailCaptor.capture());
+
+        // 발신 번호는 설정값이다 — 코드에 박힌 대표번호가 아니다.
+        assertThat(smsCaptor.getValue().getSndngTelno()).isEqualTo(SENDER_TEL);
+        // [2026-09-05] 사용자에게 가는 본문에 enum 상수명(APPROVED)과 내부 ID 표기가 실리지 않고,
+        //   승인에는 사유 절이 붙지 않는다.
+        assertThat(smsCaptor.getValue().getSndngCn())
+                .contains("결재(번호 1)가 승인되었습니다.")
+                .doesNotContain("APPROVED")
+                .doesNotContain("ID:")
+                .doesNotContain("사유");
+        assertThat(mailCaptor.getValue().getEmailCn()).isEqualTo(smsCaptor.getValue().getSndngCn());
+        // SMTP From 은 MailService 가 설정에서 정한다 — 리스너가 주소를 지어내지 않는다.
+        assertThat(mailCaptor.getValue().getDsptchPerson()).isNull();
+    }
+
+    @Test
+    @DisplayName("반려 본문은 한국어 상태명과 반려 사유를 싣는다")
+    void rejectionMessageCarriesKoreanStatusAndReason() {
+        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
+                3L, "USER_001", "SANCTIONER_001",
+                nuri.business.domain.informalsanction.SanctionStatus.REJECTED, "예산 코드 누락");
+        given(userService.getUserById("USER_001")).willReturn(UserDto.builder()
+                .userId("USER_001").userNm("홍길동").mblTelno("01011112222").emlAddr("hong@egov.com").build());
+
+        sanctionEventListener.handleStatusChanged(event);
+
+        org.mockito.ArgumentCaptor<SmsDto> smsCaptor = org.mockito.ArgumentCaptor.forClass(SmsDto.class);
+        verify(smsService).sendSms(eq("SANCTIONER_001"), smsCaptor.capture());
+        assertThat(smsCaptor.getValue().getSndngCn())
+                .contains("결재(번호 3)가 반려되었습니다. 반려 사유: 예산 코드 누락")
+                .doesNotContain("REJECTED");
+    }
+
+    @Test
+    @DisplayName("발신 번호가 설정되지 않으면 문자만 건너뛰고 메일·앱 내 알림은 발송한다")
+    void skipsSmsWhenSenderTelIsNotConfigured() {
+        SanctionEventListener unconfigured = new SanctionEventListener(
+                userService, smsService, mailService, eventPublisher, " ");
+        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
+                4L, "USER_001", "SANCTIONER_001",
+                nuri.business.domain.informalsanction.SanctionStatus.APPROVED, null);
+        given(userService.getUserById("USER_001")).willReturn(UserDto.builder()
+                .userId("USER_001").userNm("홍길동").mblTelno("01011112222").emlAddr("hong@egov.com").build());
+
+        unconfigured.handleStatusChanged(event);
+
+        verify(smsService, never()).sendSms(anyString(), any());
         verify(mailService).sendMail(eq("SANCTIONER_001"), any(SentMailDto.class));
+        verify(eventPublisher).publishEvent(any(nuri.foundation.core.event.NotificationRequestedEvent.class));
     }
 
     @Test
@@ -220,7 +278,7 @@ class SanctionEventListenerTest {
                 .endsWith("가");
         assertThat(appCaptor.getValue().content())
                 .hasSize(4_000)
-                .startsWith("결재(ID:10)")
+                .startsWith("결재(번호 10)")
                 .endsWith("가");
     }
 

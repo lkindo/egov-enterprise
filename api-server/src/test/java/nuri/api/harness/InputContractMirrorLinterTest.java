@@ -155,6 +155,7 @@ class InputContractMirrorLinterTest {
                     List.of("adbkNm", "rlsScopeCd", "trgetOgnzId", "useYn")),
             new LengthBinding(AddressBookUser.class, AddressBookUserDto.class,
                     List.of("userId", "nm", "emlAddr", "homeTelno", "mblTelno", "ofcTelno", "faxNo")),
+            // [2026-09-05 DEC-OPS-036 · 2026-09-06 병합] 외부인사 편입 시 gndrCd(30→12)·emlAddr(50→320) 불일치를 잡았다.
             new LengthBinding(ExternalHr.class, ExternalHrDto.class,
                     List.of("otsdHrId", "gndrCd", "otsdHrNm", "crTypeCd", "ogdpInstNm",
                             "brdtYmd", "areaNo", "mdTelno", "endTelno", "emlAddr")),
@@ -199,7 +200,8 @@ class InputContractMirrorLinterTest {
     private static final List<RequiredBinding> REQUIRED_BINDINGS = List.of(
             requiredNotBlank(BannerDto.class, "bnrNm"),
             requiredNotBlank(PopupDto.class, "popupTtlNm"),
-            requiredNotBlank(CommunityDto.class, "useYn"),
+            // [2026-09-06 DEC-OPS-037] 이름 없는 커뮤니티는 목록·선택지에서 빈칸이 되므로 제품 규칙으로 필수다.
+            requiredNotBlank(CommunityDto.class, "cmntyNm", "useYn"),
             new RequiredBinding(UserDto.class, List.of(
                     requiredField("pswd", NotBlank.class, UserValidationGroups.OnCreate.class),
                     requiredField("userId", NotBlank.class),
@@ -222,7 +224,8 @@ class InputContractMirrorLinterTest {
                     requiredField("recipients", NotEmpty.class),
                     requiredField("sndngCn", NotBlank.class),
                     requiredField("sndngTelno", NotBlank.class))),
-            requiredNotBlank(SmsRecptnDto.class, "rcptnTelno"),
+            // [2026-09-05 DEC-OPS-035] 수신자는 esntlId 또는 rcptnTelno 중 하나라 필드 단위 필수가 없다(서비스가 해석).
+            new RequiredBinding(SmsRecptnDto.class, List.of()),
             new RequiredBinding(MyPageContentDto.class, List.of()),
             requiredNotBlank(ScrapDto.class, "useYn"),
             requiredNotBlank(AddressBookDto.class, "adbkNm", "rlsScopeCd"),
@@ -232,7 +235,8 @@ class InputContractMirrorLinterTest {
                     requiredField("otsdHrId", NotBlank.class))),
             requiredNotBlank(MemoReportDto.class, "rptTtl", "rptrId"),
             requiredNotBlank(WorkReportDto.class, "rptTtl"),
-            new RequiredBinding(DeptJobBoxDto.class, List.of()),
+            // [2026-09-06 DEC-OPS-037] 이름 없는 업무함은 업무 등록 폼 선택지에서 빈칸이 되므로 제품 규칙으로 필수다.
+            requiredNotBlank(DeptJobBoxDto.class, "deptTaskBoxNm"),
             new RequiredBinding(DeptJobDto.class, List.of()));
 
     /** 요청에서 신뢰하지 않고 서버가 생성·주입·파생하는 필드의 방향성 기준선. */
@@ -251,7 +255,8 @@ class InputContractMirrorLinterTest {
     private static final int MIN_LENGTH_FIELDS = 113;
     private static final int MIN_ENUM_FIELDS = 16;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
-    private static final int MIN_REQUIRED_FIELDS = 36;
+    // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
+    private static final int MIN_REQUIRED_FIELDS = 37;
     private static final int MIN_READ_ONLY_FIELDS = 28;
 
     @Test

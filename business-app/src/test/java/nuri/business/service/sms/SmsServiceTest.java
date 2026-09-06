@@ -12,6 +12,7 @@ import nuri.business.service.sms.dto.SmsMapper;
 import nuri.business.service.sms.dto.SmsMapperImpl;
 import nuri.business.service.sms.dto.SmsRecptnMapper;
 import nuri.business.service.sms.dto.SmsRecptnMapperImpl;
+import nuri.business.service.user.UserContactService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ class SmsServiceTest {
     @Mock
     private SmsSender smsSender;
 
+    @Mock
+    private UserContactService userContactService;
+
     // 실제 MapStruct 생성 구현체를 주입해 필드 변환 커버리지를 그대로 유지한다 (mock 대체 아님).
     private final SmsMapper smsMapper = new SmsMapperImpl();
     private final SmsRecptnMapper smsRecptnMapper = new SmsRecptnMapperImpl();
@@ -58,7 +62,7 @@ class SmsServiceTest {
     @BeforeEach
     void setUp() {
         smsService = new SmsService(smsRepository, smsRecptnRepository, smsAsyncProcessor,
-                smsMapper, smsRecptnMapper, smsSender);
+                smsMapper, smsRecptnMapper, smsSender, userContactService);
         lenient().when(smsRepository.save(any(Sms.class))).thenAnswer(invocation -> {
             Sms saved = invocation.getArgument(0);
             ReflectionTestUtils.setField(saved, "smsTrsmSn", 101L);
@@ -145,6 +149,66 @@ class SmsServiceTest {
         Long smsTrsmSn = smsService.sendSms("user01", dto);
 
         verify(smsAsyncProcessor).markBatchRejected(smsTrsmSn);
+    }
+
+    /*
+     * [2026-09-05 DEC-OPS-035] 수신자 피커 공용화 — recipients(esntlId|rcptnTelno) 계약.
+     */
+    @Test
+    @DisplayName("사용자(esntlId) 수신자는 서버가 휴대전화 번호로 해석해 수신자 행을 만든다 — 번호 직접 입력과 섞어도 순서 보존")
+    void sendSms_resolvesUserRecipientsToPhoneNumbers() {
+        SmsDto dto = SmsDto.builder()
+                .sndngTelno("01011112222").sndngCn("Hello")
+                .recipients(List.of(
+                        SmsRecptnDto.builder().esntlId("USR_A").build(),
+                        SmsRecptnDto.builder().rcptnTelno("01099998888").build()))
+                .build();
+        when(userContactService.resolve(List.of("USR_A"))).thenReturn(List.of(
+                new UserContactService.UserContact("USR_A", "갑", null, "01033334444")));
+        when(smsRecptnRepository.save(any(SmsRecptn.class))).thenAnswer(i -> i.getArgument(0));
+
+        smsService.sendSms("user01", dto);
+
+        org.mockito.ArgumentCaptor<SmsRecptn> saved = org.mockito.ArgumentCaptor.forClass(SmsRecptn.class);
+        verify(smsRecptnRepository, times(2)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(SmsRecptn::getRcptnTelno)
+                .containsExactly("01033334444", "01099998888");
+        verify(smsAsyncProcessor).processSending(eq(101L), eq("01011112222"), eq("Hello"));
+    }
+
+    @Test
+    @DisplayName("🚨 등록된 휴대전화 번호가 없는 사용자가 있으면 이름을 밝히고 전체를 거부한다 — 발송 헤더도 남기지 않는다")
+    void sendSms_rejectsUserWithoutPhoneBeforeSavingHeader() {
+        SmsDto dto = SmsDto.builder()
+                .sndngTelno("01011112222").sndngCn("Hello")
+                .recipients(List.of(SmsRecptnDto.builder().esntlId("USR_NOPHONE").build()))
+                .build();
+        when(userContactService.resolve(List.of("USR_NOPHONE"))).thenReturn(List.of(
+                new UserContactService.UserContact("USR_NOPHONE", "병", "b@example.com", null)));
+
+        assertThatThrownBy(() -> smsService.sendSms("user01", dto))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("병");
+        verify(smsRepository, never()).save(any(Sms.class));
+        verify(smsRecptnRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("한 수신자 항목에 사용자와 번호가 둘 다 있거나 둘 다 없으면 거부한다")
+    void sendSms_rejectsAmbiguousRecipient() {
+        SmsDto both = SmsDto.builder().sndngTelno("01011112222").sndngCn("Hello")
+                .recipients(List.of(SmsRecptnDto.builder().esntlId("USR_A").rcptnTelno("01099998888").build()))
+                .build();
+        assertThatThrownBy(() -> smsService.sendSms("user01", both))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("중 하나");
+
+        SmsDto neither = SmsDto.builder().sndngTelno("01011112222").sndngCn("Hello")
+                .recipients(List.of(SmsRecptnDto.builder().build()))
+                .build();
+        assertThatThrownBy(() -> smsService.sendSms("user01", neither))
+                .isInstanceOf(BusinessException.class);
+        verify(smsRepository, never()).save(any(Sms.class));
     }
 
     @Test

@@ -21,6 +21,7 @@ import SurveyDetailClient from '../[id]/SurveyDetailClient';
 
 const mocks = vi.hoisted(() => ({
   getQuestions: vi.fn(),
+  getSurvey: vi.fn(),
   submitAnswers: vi.fn(),
   toast: vi.fn(),
   push: vi.fn(),
@@ -31,9 +32,19 @@ vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.to
 vi.mock('@/services/foundation/survey/SurveyAdminService', () => ({
   surveyAdminService: {
     getQuestions: mocks.getQuestions,
+    getSurvey: mocks.getSurvey,
     submitAnswers: mocks.submitAnswers,
   },
 }));
+
+/** 기간이 넓게 열린 설문 — 오늘이 언제든 안에 든다. */
+const OPEN_SURVEY = {
+  srvySn: 1,
+  srvyTtl: '서비스 만족도 조사',
+  srvyBgngYmd: '20000101',
+  srvyEndYmd: '29991231',
+  srvyTmpltSn: 1,
+};
 vi.mock('../components/SurveyStatsPanel', () => ({
   SurveyStatsPanel: () => <div data-testid="survey-stats-panel" />,
 }));
@@ -69,6 +80,7 @@ describe('설문 응답 제출', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getQuestions.mockResolvedValue(QUESTIONS);
+    mocks.getSurvey.mockResolvedValue(OPEN_SURVEY);
     mocks.submitAnswers.mockResolvedValue(1);
   });
 
@@ -78,6 +90,44 @@ describe('설문 응답 제출', () => {
     expect(await screen.findByRole('radio', { name: '만족' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '기타' })).toBeInTheDocument();
     expect(screen.getByText('서비스에 만족하십니까?', { exact: false })).toBeInTheDocument();
+    // 종전에는 제목 자리에 일련번호만 있었다.
+    expect(await screen.findByText('서비스 만족도 조사')).toBeInTheDocument();
+    expect(screen.getByText('진행중')).toBeInTheDocument();
+  });
+
+  /**
+   * [2026-09-05] 기간 가드. 종전에는 "하나 이상 골랐는가" 만 보고 제출을 열어 종료된 설문에도
+   * 응답이 저장됐다(서버도 기간을 보지 않았다). 서버와 같은 규칙으로 화면이 먼저 막는다.
+   */
+  it('종료된 설문은 사유를 보여 주고 입력과 제출을 잠근다 — 통계는 그대로 볼 수 있다', async () => {
+    mocks.getSurvey.mockResolvedValue({ ...OPEN_SURVEY, srvyBgngYmd: '20000101', srvyEndYmd: '20000131' });
+    renderClient();
+
+    const notice = await screen.findByRole('status');
+    expect(notice).toHaveTextContent('이미 종료된 설문입니다. (2000-01-31 종료)');
+    expect(screen.getByText('종료')).toBeInTheDocument();
+    expect(await screen.findByRole('radio', { name: '만족' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '응답 제출' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('survey-stats-panel')).toBeInTheDocument();
+    expect(mocks.submitAnswers).not.toHaveBeenCalled();
+  });
+
+  it('시작 전 설문은 시작일을 알려 주고 제출을 열지 않는다', async () => {
+    mocks.getSurvey.mockResolvedValue({ ...OPEN_SURVEY, srvyBgngYmd: '29990101', srvyEndYmd: '29991231' });
+    renderClient();
+
+    expect(await screen.findByRole('status')).toHaveTextContent('2999-01-01부터 응답할 수 있습니다.');
+    expect(screen.getByText('예정')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '응답 제출' })).not.toBeInTheDocument();
+  });
+
+  it('기간 경계가 비어 있으면 열린 설문으로 보고 제출을 허용한다', async () => {
+    mocks.getSurvey.mockResolvedValue({ ...OPEN_SURVEY, srvyBgngYmd: null, srvyEndYmd: null });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('radio', { name: '만족' }));
+    expect(screen.getByRole('button', { name: '응답 제출' })).toBeEnabled();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('아무것도 고르지 않으면 제출할 수 없다', async () => {

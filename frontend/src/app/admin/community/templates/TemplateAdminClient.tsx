@@ -10,7 +10,11 @@ import { Layout,
  RefreshCcw,  
  CheckCircle2, 
  XCircle, 
- Code } from 'lucide-react';
+ Code,
+ Loader2,
+ Pencil,
+ Trash2 } from 'lucide-react';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +65,14 @@ export const templateFormSchema = TemplateDtoSchema.pick({
  useYn: TemplateDtoSchema.shape.useYn.pipe(z.enum(['Y', 'N'])),
 });
 
+const EMPTY_TEMPLATE: TmplatInfo = {
+ tmpltId: '',
+ tmpltNm: '',
+ tmpltSeCd: 'TMPT01',
+ tmpltPath: '',
+ useYn: 'Y'
+};
+
 const templateValidationLabels = {
  tmpltId: '템플릿 ID',
  tmpltNm: '템플릿 명칭',
@@ -84,13 +96,15 @@ export default function TemplateAdminClient({
  const [loadError, setLoadError] = useState<Error | null>(null);
  const [templates, setTemplates] = useState(initialTemplates);
  const [isAddOpen, setIsAddOpen] = useState(false);
- const [newTemplate, setNewTemplate] = useState<TmplatInfo>({
- tmpltId: '',
- tmpltNm: '',
- tmpltSeCd: 'TMPT01',
- tmpltPath: '',
- useYn: 'Y'
- });
+ const [newTemplate, setNewTemplate] = useState<TmplatInfo>(EMPTY_TEMPLATE);
+ /**
+  * 수정 대상 ID. null 이면 등록 다이얼로그다.
+  * [2026-09-05 DEC-OPS-036] 종전에는 등록·조회만 가능했다(감사 D11-02). 템플릿 ID 는 PK 라 수정 모드에서 잠근다.
+  */
+ const [editingId, setEditingId] = useState<string | null>(null);
+ const [deletingId, setDeletingId] = useState<string | null>(null);
+ const deletePendingRef = useRef(false);
+ const confirm = useConfirm();
  const validation = useManualFormValidation(templateFormSchema, { labels: templateValidationLabels });
 
  const handleRefresh = async () => {
@@ -115,14 +129,20 @@ export default function TemplateAdminClient({
  addPendingRef.current = true;
  setIsAdding(true);
  try {
+ if (editingId) {
+ await templateAdminService.updateTemplate(editingId, validated);
+ toast('템플릿을 수정했습니다.', 'success');
+ } else {
  await templateAdminService.createTemplate(validated);
  toast('새 템플릿을 등록했습니다.', 'success');
+ }
  setIsAddOpen(false);
+ setEditingId(null);
  await handleRefresh();
  } catch (err: unknown) {
  const fieldErrors = extractFieldErrors(err);
  if (fieldErrors) validation.setFormErrors(fieldErrors);
- else toast(extractErrorMessage(err, '템플릿 등록에 실패했습니다.'), 'error');
+ else toast(extractErrorMessage(err, editingId ? '템플릿 수정에 실패했습니다.' : '템플릿 등록에 실패했습니다.'), 'error');
  } finally {
  addPendingRef.current = false;
  setIsAdding(false);
@@ -131,12 +151,45 @@ export default function TemplateAdminClient({
 
  const handleOpenAdd = () => {
  validation.setFormErrors({}, false);
+ setEditingId(null);
+ setNewTemplate(EMPTY_TEMPLATE);
  setIsAddOpen(true);
+ };
+
+ const handleOpenEdit = (item: TmplatInfo) => {
+ validation.setFormErrors({}, false);
+ setEditingId(item.tmpltId);
+ setNewTemplate({ tmpltId: item.tmpltId, tmpltNm: item.tmpltNm, tmpltSeCd: item.tmpltSeCd, tmpltPath: item.tmpltPath, useYn: item.useYn });
+ setIsAddOpen(true);
+ };
+
+ const handleDelete = async (item: TmplatInfo) => {
+ if (deletePendingRef.current) return;
+ deletePendingRef.current = true;
+ setDeletingId(item.tmpltId);
+ try {
+ const ok = await confirm({
+ title: '템플릿 삭제',
+ message: `'${item.tmpltNm}' 템플릿을 삭제합니다. 이 템플릿을 가리키는 게시판은 서식 ID 만 남깁니다. 삭제한 템플릿은 복구할 수 없습니다.`,
+ confirmText: '삭제',
+ variant: 'destructive',
+ });
+ if (!ok) return;
+ await templateAdminService.deleteTemplate(item.tmpltId);
+ toast('템플릿을 삭제했습니다.', 'success');
+ await handleRefresh();
+ } catch (err: unknown) {
+ toast(extractErrorMessage(err, '템플릿 삭제에 실패했습니다.'), 'error');
+ } finally {
+ deletePendingRef.current = false;
+ setDeletingId(null);
+ }
  };
 
  const handleAddOpenChange = (open: boolean) => {
  if (!open && addPendingRef.current) return;
  setIsAddOpen(open);
+ if (!open) setEditingId(null);
  };
 
  const columns = [
@@ -185,6 +238,40 @@ export default function TemplateAdminClient({
  <span className="text-xs font-bold tracking-tight ">{item.useYn === 'Y' ? '활성' : '비활성'}</span>
  </div>
  )
+ },
+ {
+ header: '관리',
+ className: 'text-right w-28',
+ accessor: (item: TmplatInfo) => {
+ const isDeleting = deletingId === item.tmpltId;
+ return (
+ <div className="flex items-center justify-end gap-1 pr-2">
+ <Button
+ variant="ghost"
+ size="icon"
+ disabled={deletingId !== null || isAdding}
+ aria-label={`${item.tmpltNm} 수정`}
+ onClick={() => handleOpenEdit(item)}
+ className="w-10 h-10 rounded-lg hover:bg-muted transition-colors"
+ >
+ <Pencil size={16} aria-hidden="true" />
+ </Button>
+ <Button
+ variant="ghost"
+ size="icon"
+ disabled={deletingId !== null}
+ aria-busy={isDeleting}
+ aria-label={isDeleting ? `${item.tmpltNm} 삭제 중` : `${item.tmpltNm} 삭제`}
+ onClick={() => { void handleDelete(item); }}
+ className="w-10 h-10 rounded-lg hover:bg-destructive/10 hover:text-destructive-emphasis transition-colors"
+ >
+ {isDeleting
+ ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+ : <Trash2 size={16} aria-hidden="true" />}
+ </Button>
+ </div>
+ );
+ }
  }
  ];
 
@@ -230,9 +317,9 @@ export default function TemplateAdminClient({
  <div className="w-16 h-11 bg-primary text-white rounded-lg flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
  <Plus size={28} />
  </div>
- <DialogTitle className="text-3xl font-bold text-foreground tracking-tighter text-center">신규 블루프린트 등록</DialogTitle>
+ <DialogTitle className="text-3xl font-bold text-foreground tracking-tighter text-center">{editingId ? '템플릿 수정' : '신규 블루프린트 등록'}</DialogTitle>
  <DialogDescription className="text-center font-bold text-muted-foreground text-sm">
- 시스템에 새로운 UI/UX 구조를 정의합니다.
+ {editingId ? '템플릿 ID 는 바꿀 수 없습니다. 명칭·카테고리·경로·상태를 고칩니다.' : '시스템에 새로운 UI/UX 구조를 정의합니다.'}
  </DialogDescription>
  </DialogHeader>
 
@@ -255,7 +342,8 @@ export default function TemplateAdminClient({
  }}
  required
  maxLength={20}
- className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ disabled={editingId !== null}
+ className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner disabled:opacity-60"
  />
  {validation.errors.tmpltId ? <p {...validation.messageProps('tmpltId')} className="text-xs font-bold text-destructive-emphasis ml-2" /> : null}
  </div>
@@ -357,11 +445,11 @@ export default function TemplateAdminClient({
  onClick={handleAdd}
  disabled={loading || isAdding}
  aria-busy={isAdding || undefined}
- aria-label={isAdding ? '템플릿 등록 중' : '등록 승인'}
+ aria-label={isAdding ? (editingId ? '템플릿 수정 중' : '템플릿 등록 중') : (editingId ? '수정 승인' : '등록 승인')}
  className="h-11 px-14 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
  >
  {isAdding ? <RefreshCcw size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
- {isAdding ? '등록 중...' : '등록 승인'}
+ {isAdding ? (editingId ? '수정 중...' : '등록 중...') : (editingId ? '수정 승인' : '등록 승인')}
  </Button>
  </DialogFooter>
  </DialogContent>

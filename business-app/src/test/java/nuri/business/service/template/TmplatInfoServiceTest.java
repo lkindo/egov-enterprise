@@ -119,12 +119,42 @@ class TmplatInfoServiceTest {
     }
 
     @Test
-    @DisplayName("템플릿 삭제")
+    @DisplayName("템플릿 삭제 — 존재하는 대상을 찾아 지운다(종전 deleteById 는 없는 ID 도 조용히 성공했다)")
     void deleteTmplatInfo() {
-        // when
+        Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
+        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
+
         tmplatInfoService.deleteTmplatInfo("TMPLT_001");
 
-        // then
-        verify(templateRepository, times(1)).deleteById("TMPLT_001");
+        verify(templateRepository, times(1)).delete(template);
+        verify(templateRepository, never()).deleteById(anyString());
+    }
+
+    // [2026-09-05 DEC-OPS-036] 수정 경로 신설 — 종전에는 등록·조회만 가능했다.
+    @Test
+    @DisplayName("템플릿 수정 — ID 는 두고 명칭·구분·경로·사용여부를 갱신한다")
+    void updateTmplatInfo() {
+        Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("Old").tmpltSeCd("TMPT01").tmpltPath("/old").useYn("Y").build();
+        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
+        TemplateDto dto = TemplateDto.builder().tmpltId("IGNORED").tmpltNm("New").tmpltSeCd("TMPT02").tmpltPath("/new").useYn("N").build();
+
+        TemplateDto result = tmplatInfoService.updateTmplatInfo("TMPLT_001", dto);
+
+        assertThat(result.getTmpltId()).isEqualTo("TMPLT_001");
+        assertThat(result.getTmpltNm()).isEqualTo("New");
+        assertThat(result.getTmpltSeCd()).isEqualTo("TMPT02");
+        assertThat(result.getTmpltPath()).isEqualTo("/new");
+        assertThat(result.getUseYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("없는 템플릿의 수정·삭제는 RESOURCE_NOT_FOUND")
+    void updateOrDeleteTmplatInfo_NotFound() {
+        when(templateRepository.findById("NONE")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tmplatInfoService.updateTmplatInfo("NONE", TemplateDto.builder().tmpltNm("x").build()))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> tmplatInfoService.deleteTmplatInfo("NONE")).isInstanceOf(BusinessException.class);
+        verify(templateRepository, never()).delete(any(Template.class));
     }
 }

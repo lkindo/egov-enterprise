@@ -83,9 +83,9 @@ public class SurveyResultService {
     @Transactional
     public int submitResponse(Long srvySn, SurveyResponseSubmitDto dto) {
         Objects.requireNonNull(srvySn);
-        if (!infoRepository.existsById(srvySn)) {
-            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
-        }
+        SurveyInfo survey = infoRepository.findById(srvySn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertWithinPeriod(survey);
 
         String submitter = SecurityUtil.getCurrentLoginId()
                 .orElseThrow(() -> new BusinessException("로그인이 필요합니다.", CommonErrorCode.UNAUTHORIZED));
@@ -126,6 +126,47 @@ public class SurveyResultService {
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 채운다 — 위 중복 검사와 같은 값이어야 한다.
         resultRepository.saveAll(rows);
         return rows.size();
+    }
+
+    /**
+     * 설문 기간 밖의 응답을 막는다.
+     *
+     * <p>[2026-09-05] 종전에는 존재·중복만 검사해 <b>종료된 설문·시작 전 설문에도 응답이 저장</b>됐고
+     * 통계가 오염됐다. 등록·수정은 {@code validateSurveyDates} 로 기간을 검사하면서 제출은 기간을 보지
+     * 않았고, 같은 도메인의 투표({@code OnlinePollService.vote})는 시작 전·종료 후를 막고 있었다.
+     *
+     * <p>경계가 비어 있으면 그쪽은 열려 있다(시작일 없음 = 즉시, 종료일 없음 = 무기한). 값이 있는데
+     * 8자리 날짜가 아니면 판정 불가이므로 <b>열지 않는다</b> — 화면의 {@code survey-status} 판정과 같다.
+     */
+    private void assertWithinPeriod(SurveyInfo survey) {
+        String today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        String begin = normalizeStorageYmd(survey.getSrvyBgngYmd());
+        String end = normalizeStorageYmd(survey.getSrvyEndYmd());
+        if (begin != null && today.compareTo(begin) < 0) {
+            throw new BusinessException("아직 시작되지 않은 설문입니다. " + displayYmd(begin) + "부터 응답할 수 있습니다.",
+                    CommonErrorCode.INVALID_STATE);
+        }
+        if (end != null && today.compareTo(end) > 0) {
+            throw new BusinessException("이미 종료된 설문입니다. (" + displayYmd(end) + " 종료)",
+                    CommonErrorCode.INVALID_STATE);
+        }
+    }
+
+    private static String normalizeStorageYmd(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String digits = value.replace("-", "").trim();
+        if (!digits.matches("\\d{8}")) {
+            throw new BusinessException("설문 기간 정보를 확인할 수 없어 응답할 수 없습니다.",
+                    CommonErrorCode.INVALID_STATE);
+        }
+        return digits;
+    }
+
+    private static String displayYmd(String ymd) {
+        return ymd.substring(0, 4) + "-" + ymd.substring(4, 6) + "-" + ymd.substring(6, 8);
     }
 
     /**

@@ -87,9 +87,11 @@ const KNOWN_ROUTE_CAPABILITIES = {
   ],
   '/approvals': [
     {
-      id: 'approvals.pending-history', status: 'partial', candidateStatus: 'live', dataSource: 'approvals-api', actions: ['list', 'select-detail', 'confirm', 'reject'],
-      unsupportedVisibleActions: ['archive-filter', 'server-search', 'refresh'], actorScope: 'AUTHENTICATED', visibleLabel: '결재 목록·승인·반려', primaryTask: true,
-      evidenceLevel: 'E2', evidence: ['frontend/src/app/approvals/ApprovalHubClient.tsx', 'frontend/src/services/business/user/approval/ApprovalUserService.ts'],
+      // [2026-09-05] 기안 다이얼로그(POST /approvals)·처리한 결재 탭(GET /approvals/processed)·새로고침이
+      // 실제 API 로 배선됐다. 종전 unsupported 였던 archive-filter 는 '내가 처리한 결재' 탭이 대신한다.
+      id: 'approvals.pending-history', status: 'partial', candidateStatus: 'live', dataSource: 'approvals-api', actions: ['list', 'select-detail', 'confirm', 'reject', 'create', 'refresh'],
+      unsupportedVisibleActions: ['server-search'], actorScope: 'AUTHENTICATED', visibleLabel: '결재 기안·목록·승인·반려', primaryTask: true,
+      evidenceLevel: 'E3', evidence: ['frontend/src/app/approvals/ApprovalHubClient.tsx', 'frontend/src/app/approvals/ApprovalDraftDialog.tsx', 'frontend/src/services/business/user/approval/ApprovalUserService.ts', 'frontend/e2e/11-enterprise-workflow.spec.ts'],
     },
     {
       id: 'approvals.visualization-metrics', status: 'demo', dataSource: 'hardcoded-metrics', actions: [],
@@ -104,9 +106,11 @@ const KNOWN_ROUTE_CAPABILITIES = {
       evidenceLevel: 'E1', evidence: ['frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx'],
     },
     {
+      // [2026-09-05] 실제 상신은 /approvals 의 기안 다이얼로그가 수행한다. 이 목업 화면의 비활성 상신 버튼은
+      // 남아 있지만 e2e 11 이 더 이상 이 화면을 검증하지 않으므로 증거 수준을 E1 로 낮춘다.
       id: 'draft.submit', status: 'unavailable', dataSource: 'none', actions: [],
-      unsupportedVisibleActions: ['submit'], actorScope: 'AUTHENTICATED', visibleLabel: '결재 상신', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx', 'frontend/e2e/11-enterprise-workflow.spec.ts'],
+      unsupportedVisibleActions: ['submit'], actorScope: 'AUTHENTICATED', visibleLabel: '결재 상신(목업 — 실제 상신은 /approvals)', primaryTask: true,
+      evidenceLevel: 'E1', evidence: ['frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx'],
     },
   ],
   '/admin/survey/polls/manage': [
