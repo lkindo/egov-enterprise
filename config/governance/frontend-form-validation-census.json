@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 65,
-    "candidateCount": 144
+    "secondaryActionBoundaries": 67,
+    "candidateCount": 146
   },
   "entries": [
     {
@@ -1606,6 +1606,26 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handleScrap[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
+      "owner": "BoardDetailClient",
+      "handler": "handleScrap",
+      "writeSinks": [
+        "createScrapMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/detail/__tests__/BoardDetailClient.pending.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx#BoardRegistClient.handleDeleteAttachment[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
@@ -2556,6 +2576,26 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/workspace/my-page/__tests__/WorkspaceMyPageClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/approvals/ApprovalHubClient.tsx#ApprovalHubClient.handleCancelDraft[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "owner": "ApprovalHubClient",
+      "handler": "handleCancelDraft",
+      "writeSinks": [
+        "cancelMutation.mutateAsync"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx"
       ]
     },
     {

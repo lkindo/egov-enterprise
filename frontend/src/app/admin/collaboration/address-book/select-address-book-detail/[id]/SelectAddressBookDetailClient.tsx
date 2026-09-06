@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, ArrowLeft, Save, Trash2, AlertTriangle, Loader2, Mail, Phone } from "lucide-react";
+import { Users, ArrowLeft, Save, Trash2, AlertTriangle, Loader2, Phone } from "lucide-react";
 import Link from 'next/link';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
@@ -242,7 +242,11 @@ const SelectAddressBookDetailClient = () => {
                                                     <th scope="col" className="text-left font-bold px-6 py-3">성명</th>
                                                     <th scope="col" className="text-left font-bold px-6 py-3">이메일</th>
                                                     <th scope="col" className="text-left font-bold px-6 py-3">연락처</th>
-                                                    <th scope="col" className="text-center font-bold px-6 py-3 w-32">빠른 소통</th>
+                                                    {/* [ADR-0009 / PD-UX-002] 메일 퀵액션은 두지 않는다 — 수신자를 미리 채우려면
+                                                        임직원 이메일을 주소창(그리고 same-origin Referer)에 실어야 하는데, 그 신규
+                                                        query producer 는 URL-state census 의 승인 경계 밖이다. 메일 작성 화면의
+                                                        '수신자 찾기 → 주소록' 탭이 같은 선택을 URL 없이 수행한다. */}
+                                                    <th scope="col" className="text-center font-bold px-6 py-3 w-24">전화</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border">
@@ -253,20 +257,6 @@ const SelectAddressBookDetailClient = () => {
                                                         <td className="px-6 py-3 text-muted-foreground tabular-nums">{member.mblTelno || '-'}</td>
                                                         <td className="px-6 py-3 text-center">
                                                             <div className="flex items-center justify-center gap-2">
-                                                                {member.emlAddr ? (
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="outline"
-                                                                        size="icon"
-                                                                        className="h-8 w-8 text-hub-blue hover:bg-hub-blue/10"
-                                                                        aria-label={`${member.nm || '구성원'}에게 메일 발송`}
-                                                                        onClick={() => {
-                                                                            router.push(`/admin/collaboration/mail-send?recipient=${encodeURIComponent(member.emlAddr!)}`);
-                                                                        }}
-                                                                    >
-                                                                        <Mail size={14} />
-                                                                    </Button>
-                                                                ) : null}
                                                                 {member.mblTelno ? (
                                                                     <a
                                                                         href={`tel:${member.mblTelno.replace(/[^0-9+]/g, '')}`}

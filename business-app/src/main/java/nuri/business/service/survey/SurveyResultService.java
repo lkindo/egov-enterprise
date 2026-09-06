@@ -111,17 +111,25 @@ public class SurveyResultService {
             }
         }
 
-        // 문항별 선택 수 검증 (maxChcCnt 초과 차단)
+        // 문항별 선택 수 검증.
+        //
+        // ⚠ maxChcCnt 가 NULL·0·음수면 "무제한" 이 아니라 **단일선택**이다. 컬럼이 nullable 이라
+        //   기존 문항 대부분이 NULL 인데, 화면(SurveyDetailClient)은 `question.maxChcCnt ?? 1` 로
+        //   그 문항을 라디오로 그린다. 서버만 무제한으로 열어 두면 화면이 하나만 고르게 하는 문항에
+        //   조작된 요청이 임의 개수를 밀어 넣을 수 있어, 화면이 약속한 계약과 서버가 집행하는 계약이
+        //   어긋난다. 판정 규칙을 화면과 같은 자리에 맞춘다.
         Map<Long, Long> countsByQuestion = dto.answers().stream()
                 .collect(Collectors.groupingBy(SurveyResponseSubmitDto.Answer::srvyQstnSn, Collectors.counting()));
         for (Map.Entry<Long, Long> entry : countsByQuestion.entrySet()) {
             SurveyQuestion q = questions.get(entry.getKey());
-            if (q != null && q.getMaxChcCnt() != null && q.getMaxChcCnt() > 0) {
-                if (entry.getValue() > q.getMaxChcCnt()) {
-                    throw new BusinessException(
-                            "문항의 최대 선택 개수를 초과했습니다 (최대 " + q.getMaxChcCnt() + "개): " + q.getQstnCn(),
-                            CommonErrorCode.INVALID_INPUT_VALUE);
-                }
+            if (q == null) {
+                continue; // 소속 문항 검증은 아래 저장 루프가 담당한다(같은 오류를 두 번 말하지 않는다).
+            }
+            int maxChoice = (q.getMaxChcCnt() == null || q.getMaxChcCnt() <= 0) ? 1 : q.getMaxChcCnt();
+            if (entry.getValue() > maxChoice) {
+                throw new BusinessException(
+                        "문항의 최대 선택 개수를 초과했습니다 (최대 " + maxChoice + "개): " + q.getQstnCn(),
+                        CommonErrorCode.INVALID_INPUT_VALUE);
             }
         }
 

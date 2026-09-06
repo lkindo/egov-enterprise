@@ -26,18 +26,21 @@ export function parseScrapUrl(url: string | undefined): { isInternal: boolean; r
     const trimmed = url.trim();
     if (!trimmed || /[\r\n\t]/.test(trimmed)) return null;
 
-    // eGov 레거시 게시판 URL 변환 (파라미터 인코딩 및 주입 방어)
-    const bbsMatch = trimmed.match(/[?&]bbsId=([^&#\s]+)/i)?.[1];
-    const nttMatch = trimmed.match(/[?&](?:pstSn|nttId)=([^&#\s]+)/i)?.[1];
-    if (bbsMatch && nttMatch) {
-        return {
-            isInternal: true,
-            resolvedHref: `/admin/community/boards/detail?bbsId=${encodeURIComponent(bbsMatch)}&pstSn=${encodeURIComponent(nttMatch)}`,
-        };
-    }
-
     // 내부 상대 경로 (/...) — 프로토콜 상대 경로(//, /\) 및 오픈 리다이렉트 차단
+    //
+    // ⚠ 레거시 변환은 **내부 경로에만** 적용한다. 스킴 검증보다 먼저 bbsId/nttId 를 찾으면
+    //   `https://example.com/x?bbsId=A&nttId=1` 같은 외부 주소가 호스트를 잃고 내부 게시글
+    //   경로로 바뀌어, 목록에 보이는 글자와 실제 이동 목적지가 달라진다.
     if (trimmed.startsWith('/') && !/^\/[\\/]/.test(trimmed)) {
+        // eGov 레거시 게시판 경로(/cop/bbs/selectArticleDetail.do?bbsId=...&nttId=...) → 표준 경로
+        const bbsMatch = trimmed.match(/[?&]bbsId=([^&#\s]+)/i)?.[1];
+        const nttMatch = trimmed.match(/[?&](?:pstSn|nttId)=([^&#\s]+)/i)?.[1];
+        if (bbsMatch && nttMatch) {
+            return {
+                isInternal: true,
+                resolvedHref: `/admin/community/boards/detail?bbsId=${encodeURIComponent(bbsMatch)}&pstSn=${encodeURIComponent(nttMatch)}`,
+            };
+        }
         return {
             isInternal: true,
             resolvedHref: trimmed,

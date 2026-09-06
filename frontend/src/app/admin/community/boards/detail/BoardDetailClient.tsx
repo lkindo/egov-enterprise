@@ -22,6 +22,7 @@ import { knowledgeService, KnowledgeDto } from '@/services/business/knowledge/kn
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { fileService } from '@/services/foundation/file/FileService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import type { BoardMasterDetail } from '@/services/foundation/system/BoardAdminService';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import { scrapMutationOptions } from '@/queries/scrap-query-options';
@@ -135,22 +136,30 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     }
   };
 
+  // 저장에 성공하면 같은 화면에서 다시 누르지 못하게 잠근다. 서버·스키마에 (사용자, URL) 유일성
+  // 제약이 없어 누를 때마다 보관함 행이 하나씩 늘기 때문이다. 새로고침하면 풀리므로 "이번 방문에서
+  // 저장했다" 이상은 주장하지 않는다 — 중복 제거를 서버 계약처럼 말하지 않기 위해서다.
+  const [isScrapped, setScrapped] = useState(false);
+
   const handleScrap = async () => {
-    if (actionPendingRef.current || !bbsId || !hasValidPstSn || !article) return;
+    if (actionPendingRef.current || isScrapped || !bbsId || !hasValidPstSn || !article) return;
     actionPendingRef.current = true;
     setActiveAction('scrap');
     try {
       const currentPath = `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`;
-      const title = article.pstTtl || article.knoNm || '게시글 스크랩';
+      // scrapNm 은 물리 컬럼 varchar(100). 지식 항목명(knoNm)처럼 더 긴 값이 올 수 있어 잘라 보낸다
+      // — 넘기면 서버가 400 을 주는데, 스크랩은 사용자가 길이를 조절할 수 있는 입력이 아니다.
+      const title = (article.pstTtl || article.knoNm || '게시글 스크랩').slice(0, 100);
       await createScrapMutation.mutateAsync({
         scrapNm: title,
         scrapUrl: currentPath,
-        scrapExpln: `${masterInfo?.bbsTtl || '게시판'} - ${title}`,
+        scrapExpln: `${masterInfo?.bbsTtl || '게시판'} - ${title}`.slice(0, 4000),
         useYn: 'Y',
       });
+      setScrapped(true);
       toast('게시글을 스크랩 보관함에 저장했습니다.', 'success');
-    } catch {
-      toast('스크랩 저장 중 오류가 발생했습니다.', 'error');
+    } catch (error) {
+      toast(extractErrorMessage(error, '스크랩 저장 중 오류가 발생했습니다.'), 'error');
     } finally {
       actionPendingRef.current = false;
       setActiveAction(null);
@@ -313,12 +322,12 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <Button
             variant="outline"
             onClick={handleScrap}
-            disabled={activeAction !== null}
+            disabled={activeAction !== null || isScrapped}
             aria-busy={activeAction === 'scrap' || undefined}
-            aria-label={activeAction === 'scrap' ? '게시글 스크랩 보관 중' : '게시글 스크랩'}
+            aria-label={activeAction === 'scrap' ? '게시글 스크랩 보관 중' : isScrapped ? '게시글 스크랩됨' : '게시글 스크랩'}
             className="h-14 px-8 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
           >
-            <Bookmark size={20} className="text-amber-500" /> 스크랩
+            <Bookmark size={20} className="text-primary" /> {isScrapped ? '스크랩됨' : '스크랩'}
           </Button>
           {/*
             감사 P1-9: native confirm() → useConfirm(변형 destructive).

@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import * as z from 'zod';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Send,
   ArrowLeft,
@@ -75,25 +75,12 @@ function toRequestRecipient(recipient: RecipientSelection): z.infer<typeof MailR
 
 export default function MailSendHubClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
   const [recipientSearch, setRecipientSearch] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<RecipientSelection[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-
-  const initialRecipient = searchParams.get('recipient') || searchParams.get('to');
-  React.useEffect(() => {
-    if (initialRecipient && EMAIL_PATTERN.test(initialRecipient.trim())) {
-      const email = initialRecipient.trim();
-      setSelectedRecipients((previous) => {
-        if (previous.some((r) => r.kind === 'contact' && r.email === email)) return previous;
-        return [...previous, { kind: 'contact', name: email, email }];
-      });
-      validation.clearError('recipients');
-    }
-  }, [initialRecipient]);
 
   const [currentTime, setCurrentTime] = useState<string>('');
 

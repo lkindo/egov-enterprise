@@ -119,25 +119,138 @@ class OnlinePollServiceTest {
         assertThat(result.getPollArticles()).hasSize(1);
     }
 
+    // ---------- 득표수 은닉 (2026-09-07) ----------
+    //
+    // 규칙: 진행 중 + 관리자 아님 + 미참여 일 때만 숨기고, 숨김은 0 이 아니라 null 이다.
+    // 0 은 "아무도 안 골랐다" 는 사실 주장이라 은닉을 0 으로 쓰면 화면이 거짓말한다(GAP-API-001 선례).
+    // 종료된 투표는 미참여자도 결과를 볼 수 있어야 하므로 숨기지 않는다.
+
+    /** SecurityUtil static 을 로그인 사용자·관리자 여부로 고정한다. */
+    private static org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> mockSecurity(String loginId, boolean admin) {
+        org.mockito.MockedStatic<nuri.business.security.util.SecurityUtil> mocked =
+                mockStatic(nuri.business.security.util.SecurityUtil.class);
+        mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(Optional.ofNullable(loginId));
+        mocked.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(admin);
+        return mocked;
+    }
+
+    private OnlinePollManage openPoll() {
+        return OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
+    }
+
+    /**
+     * 기간 판정 기준일('yyyyMMdd', Asia/Seoul).
+     *
+     * <p>build.gradle 은 CI 패리티를 위해 테스트 JVM 을 <b>UTC</b> 로 고정한다. 반면 이 도메인의
+     * 기간 판정은 설문(SurveyResultService)과 같은 Asia/Seoul 이다 — 테스트가 JVM 기본 시간대로
+     * 기준일을 만들면 00:00~09:00 KST 구간에서만 하루가 어긋나 붉어지는 시한폭탄이 된다.
+     */
+    private static String seoulToday(int plusDays) {
+        return java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).plusDays(plusDays)
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+    }
+
     @Test
-    @DisplayName("설문 상세 조회 - 미투표 일반 사용자에게는 득표수를 숨기고 hasVoted는 false")
+    @DisplayName("설문 상세 조회 - 진행 중 미투표 일반 사용자에게는 득표수를 null 로 숨기고 hasVoted는 false")
     void getPoll_HidesVoteCountsForUnvotedUser() {
-        OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
+        OnlinePollManage entity = openPoll();
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollManage(entity).pollArtclNm("Item 1").build();
+        given(pollItemRepository.findByPollManagePollSn(1L)).willReturn(List.of(item));
+        given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
+
+        try (var ignored = mockSecurity("user1", false)) {
+            OnlinePollManageDto result = onlinePollService.getPoll(1L);
+
+            assertThat(result.getPollSn()).isEqualTo(1L);
+            assertThat(result.getHasVoted()).isFalse();
+            assertThat(result.getPollArticles().get(0).getPollIemCo()).isNull();
+        }
+    }
+
+    @Test
+    @DisplayName("설문 상세 조회 - 이미 투표한 사용자에게는 실제 득표수를 보여 준다")
+    void getPoll_ShowsVoteCountsForVotedUser() {
+        OnlinePollManage entity = openPoll();
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollManage(entity).pollArtclNm("Item 1").build();
+        given(pollItemRepository.findByPollManagePollSn(1L)).willReturn(List.of(item));
+        given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(1L);
+
+        try (var ignored = mockSecurity("user1", false)) {
+            OnlinePollManageDto result = onlinePollService.getPoll(1L);
+
+            assertThat(result.getHasVoted()).isTrue();
+            assertThat(result.getPollArticles().get(0).getPollIemCo()).isEqualTo(42L);
+        }
+    }
+
+    @Test
+    @DisplayName("설문 상세 조회 - 관리자는 미투표여도 득표수를 보고, hasVoted 는 사실대로 false 다")
+    void getPoll_ShowsVoteCountsForAdmin() {
+        OnlinePollManage entity = openPoll();
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollManage(entity).pollArtclNm("Item 1").build();
+        given(pollItemRepository.findByPollManagePollSn(1L)).willReturn(List.of(item));
+        given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "admin1")).willReturn(0L);
+
+        try (var ignored = mockSecurity("admin1", true)) {
+            OnlinePollManageDto result = onlinePollService.getPoll(1L);
+
+            assertThat(result.getHasVoted()).isFalse();
+            assertThat(result.getPollArticles().get(0).getPollIemCo()).isEqualTo(42L);
+        }
+    }
+
+    @Test
+    @DisplayName("설문 상세 조회 - 종료된 투표는 미참여자에게도 결과를 공개한다")
+    void getPoll_ShowsVoteCountsAfterPollEnded() {
+        OnlinePollManage entity = OnlinePollManage.builder()
+                .pollSn(1L).pollNm("Poll 1").pollBgngYmd("20200101").pollEndYmd("20200102").build();
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollManage(entity).pollArtclNm("Item 1").build();
+        given(pollItemRepository.findByPollManagePollSn(1L)).willReturn(List.of(item));
+        given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
+
+        try (var ignored = mockSecurity("user1", false)) {
+            OnlinePollManageDto result = onlinePollService.getPoll(1L);
+
+            assertThat(result.getPollArticles().get(0).getPollIemCo()).isEqualTo(42L);
+        }
+    }
+
+    @Test
+    @DisplayName("🔒 항목 목록 조회 - 투표 화면이 실제로 쓰는 경로에도 같은 은닉이 걸린다")
+    void getPollItemList_HidesVoteCountsForUnvotedUser() {
+        OnlinePollManage entity = openPoll();
         given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
 
         OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollManage(entity).pollArtclNm("Item 1").build();
         given(pollItemRepository.findByPollManagePollSn(1L)).willReturn(List.of(item));
         given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
 
-        OnlinePollManageDto result = onlinePollService.getPoll(1L);
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
+        try (var ignored = mockSecurity("user1", false)) {
+            assertThat(onlinePollService.getPollItemList(1L).get(0).getPollIemCo()).isNull();
+        }
 
-        assertThat(result.getPollSn()).isEqualTo(1L);
-        assertThat(result.getHasVoted()).isFalse();
-        assertThat(result.getPollArticles().get(0).getPollIemCo()).isEqualTo(0L);
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(1L);
+        try (var ignored = mockSecurity("user1", false)) {
+            assertThat(onlinePollService.getPollItemList(1L).get(0).getPollIemCo()).isEqualTo(42L);
+        }
     }
 
     @Test
-    @DisplayName("설문 목록 조회 - 미투표 일반 사용자에게는 목록 내 모든 항목 득표수를 숨기고 hasVoted는 false")
+    @DisplayName("설문 목록 조회 - 진행 중 미투표 일반 사용자에게는 목록 내 항목 득표수를 null 로 숨긴다")
     void getPollList_HidesVoteCountsForUnvotedUser() {
         OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Item 1").build();
         OnlinePollManage entity = OnlinePollManage.builder()
@@ -145,13 +258,35 @@ class OnlinePollServiceTest {
         Page<OnlinePollManage> page = new org.springframework.data.domain.PageImpl<>(List.of(entity));
         given(pollManageRepository.findAll(any(Pageable.class))).willReturn(page);
         given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
+        given(pollResultRepository.findVotedPollSnsByLoginId(List.of(1L), "user1")).willReturn(List.of());
 
-        Page<OnlinePollManageDto> result = onlinePollService.getPollList("", Pageable.unpaged());
+        try (var ignored = mockSecurity("user1", false)) {
+            Page<OnlinePollManageDto> result = onlinePollService.getPollList("", Pageable.unpaged());
 
-        assertThat(result.getContent()).hasSize(1);
-        OnlinePollManageDto pollDto = result.getContent().get(0);
-        assertThat(pollDto.getHasVoted()).isFalse();
-        assertThat(pollDto.getPollArticles().get(0).getPollIemCo()).isEqualTo(0L);
+            assertThat(result.getContent()).hasSize(1);
+            OnlinePollManageDto pollDto = result.getContent().get(0);
+            assertThat(pollDto.getHasVoted()).isFalse();
+            assertThat(pollDto.getPollArticles().get(0).getPollIemCo()).isNull();
+        }
+    }
+
+    @Test
+    @DisplayName("설문 목록 조회 - 관리자에게도 hasVoted 는 사실대로 채우고 득표수는 숨기지 않는다")
+    void getPollList_KeepsHasVotedTruthfulForAdmin() {
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Item 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder()
+                .pollSn(1L).pollNm("Poll 1").pollArticles(List.of(item)).build();
+        given(pollManageRepository.findAll(any(Pageable.class)))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of(entity)));
+        given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
+        given(pollResultRepository.findVotedPollSnsByLoginId(List.of(1L), "admin1")).willReturn(List.of(1L));
+
+        try (var ignored = mockSecurity("admin1", true)) {
+            OnlinePollManageDto pollDto = onlinePollService.getPollList("", Pageable.unpaged()).getContent().get(0);
+
+            assertThat(pollDto.getHasVoted()).isTrue();
+            assertThat(pollDto.getPollArticles().get(0).getPollIemCo()).isEqualTo(42L);
+        }
     }
 
     @Test
@@ -310,7 +445,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 성공")
     void vote_Success() {
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = seoulToday(0);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -332,7 +467,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (선택 항목이 다른 설문 소속)")
     void vote_Fail_ArticleBelongsToDifferentPoll() {
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = seoulToday(0);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -351,7 +486,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 성공 (긴 유저 ID → frst_rgtr_id 20자 절단)")
     void vote_Success_LongUserId() {
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = seoulToday(0);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -381,7 +516,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (기간 전)")
     void vote_Fail_BeforeStart() {
-        String tomorrow = java.time.LocalDate.now().plusDays(1).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String tomorrow = seoulToday(1);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -395,7 +530,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (기간 후)")
     void vote_Fail_AfterEnd() {
-        String yesterday = java.time.LocalDate.now().minusDays(1).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String yesterday = seoulToday(-1);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -409,7 +544,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (중복 투표)")
     void vote_Fail_Duplicate() {
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = seoulToday(0);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -429,7 +564,7 @@ class OnlinePollServiceTest {
     void vote_Fail_ConcurrentDuplicate_ConstraintViolation() {
         // 동시 요청 경합(TOCTOU): pre-check 는 0(통과)이지만 saveAndFlush 에서 (poll_sn, frst_rgtr_id)
         // 유니크 제약(V2_4)이 두 번째 INSERT 를 거부한다. 서비스는 이를 멱등하게 "이미 참여"로 변환해야 한다.
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = seoulToday(0);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -451,7 +586,7 @@ class OnlinePollServiceTest {
     void vote_NonDuplicateIntegrityError_Propagates() {
         // 이중투표 유니크 제약(uk_tb_onln_poll_rslt_poll_voter) 이외의 무결성 오류(예: value too long)는
         // "이미 참여" 로 은폐되면 안 된다 → 원 예외가 그대로 전파되어야 한다(catch 한정 뮤턴트 킬).
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = seoulToday(0);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -541,7 +676,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("vote - 사용자 ID가 없는 경우 익명 ID 생성")
     void vote_Anonymous() {
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = seoulToday(0);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")
@@ -657,7 +792,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 오늘과 날짜가 정확히 일치하는 경우")
     void vote_Success_ExactToday() {
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = seoulToday(0);
         OnlinePollManage entity = OnlinePollManage.builder()
                 .pollSn(1L)
                 .pollDsuseYn("N")

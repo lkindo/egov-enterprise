@@ -174,38 +174,43 @@ export default function NotePage() {
     }
   };
 
+  /**
+   * 선택된 수신자 목록을 폼 제출 값으로 옮긴다.
+   *
+   * ⚠ setState 업데이터 안에서 다른 setState 를 부르지 않는다. 업데이터는 순수해야 하며
+   *   StrictMode 는 이를 두 번 실행한다 — 그 안에서 다른 상태를 밀면 갱신이 중복·유실될 수 있다.
+   */
+  const applyRecipients = (next: { esntlId: string; name: string }[]) => {
+    setRecipients(next);
+    setFormData((current) => ({
+      ...current,
+      rcverId: next.map((r) => r.esntlId).join(','),
+      rcverNm: next.map((r) => r.name).join(', '),
+    }));
+  };
+
   const handleConfirmRecipients = (selectedList: RecipientSelection[]) => {
     const userRecipients = selectedList
       .filter((r): r is Extract<RecipientSelection, { kind: 'user' }> => r.kind === 'user')
       .map((r) => ({ esntlId: r.esntlId, name: r.name }));
 
-    setRecipients((prev) => {
-      const existingIds = new Set(prev.map((r) => r.esntlId));
-      const newItems = userRecipients.filter((r) => !existingIds.has(r.esntlId));
-      const merged = [...prev, ...newItems];
-      const rcverId = merged.map((r) => r.esntlId).join(',');
-      const rcverNm = merged.map((r) => r.name).join(', ');
-      setFormData((current) => ({ ...current, rcverId, rcverNm }));
-      return merged;
-    });
+    const existingIds = new Set(recipients.map((r) => r.esntlId));
+    applyRecipients([...recipients, ...userRecipients.filter((r) => !existingIds.has(r.esntlId))]);
     validation.clearError('rcverId');
     setPickerOpen(false);
   };
 
   const removeRecipient = (esntlId: string) => {
-    setRecipients((prev) => {
-      const next = prev.filter((r) => r.esntlId !== esntlId);
-      const rcverId = next.map((r) => r.esntlId).join(',');
-      const rcverNm = next.map((r) => r.name).join(', ');
-      setFormData((current) => ({ ...current, rcverId, rcverNm }));
-      return next;
-    });
+    applyRecipients(recipients.filter((r) => r.esntlId !== esntlId));
   };
 
   const closeWriteModal = () => {
     if (sendingRef.current) return;
     setWriteOpen(false);
+    // 칩(recipients)과 제출 값(formData.rcverId)은 같은 사실의 두 표현이다. 한쪽만 비우면
+    // 다시 열었을 때 "수신자 없음" 으로 보이는데 숨은 rcverId 로 이전 수신자에게 발송된다.
     setRecipients([]);
+    setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
     validation.setFormErrors({}, false);
   };
 

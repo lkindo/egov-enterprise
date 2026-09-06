@@ -99,9 +99,13 @@ const DELETION_CLASSES = new Set([
 ]);
 
 export const CURRENT_REPOSITORY_ASSERTIONS = Object.freeze({
+  // [2026-09-07] 쪽지 작성이 UserPicker → RecipientPicker 로 옮겨가 이 체인의 진입점이 바뀌었다.
+  // UserPicker 는 죽지 않았다 — 메모보고 관리와 결재 기안 다이얼로그가 계속 렌더한다. 이 단언이
+  // 지키는 것은 "가상 리스트가 실제 라우트에서 도달 가능하다" 이므로 진입점만 갱신한다.
   runtimeChains: [
     [
-      'frontend/src/app/note/page.tsx',
+      'frontend/src/app/admin/operation/memo-reports/page.tsx',
+      'frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx',
       'frontend/src/app/components/ui/user-picker.tsx',
       'frontend/src/app/components/ui/virtual-scroll-list.tsx',
     ],

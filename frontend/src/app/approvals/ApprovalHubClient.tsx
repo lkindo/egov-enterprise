@@ -239,7 +239,7 @@ export default function ApprovalHubClient() {
     try {
       const ok = await confirm({
         title: '기안 취소',
-        message: '이 결재 기안을 취소(철회)하시겠습니까? 취소 후에는 복구할 수 없습니다.',
+        message: `[#${item.ifmlAtrzSn}] 기안을 취소(철회)하시겠습니까? 취소 후에는 복구할 수 없습니다.`,
         confirmText: '기안 취소',
         variant: 'destructive',
       });
@@ -248,6 +248,11 @@ export default function ApprovalHubClient() {
       await cancelMutation.mutateAsync(item.ifmlAtrzSn);
       toast('결재 기안이 취소되었습니다.', 'success');
       setSelectedItemId(null);
+      // 마지막 페이지의 마지막 건을 지우면 그 페이지가 비어 페이저까지 사라지고
+      // '올린 결재가 없습니다' 라는 거짓 빈 상태에 갇힌다 — 한 페이지 앞으로 물린다.
+      if (list.length === 1 && page > 1) {
+        setPage(page - 1);
+      }
     } catch (error) {
       toast(extractErrorMessage(error, '기안 취소에 실패했습니다.'), 'error');
     } finally {

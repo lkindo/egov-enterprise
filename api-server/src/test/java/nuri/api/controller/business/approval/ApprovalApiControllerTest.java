@@ -181,4 +181,3 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
         verify(approvalService).deleteInformalSanction(42L);
     }
 }
-

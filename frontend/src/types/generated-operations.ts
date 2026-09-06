@@ -6839,6 +6839,23 @@ export const moderateOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const cancelApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "cancelApproval",
+  method: "delete",
+  path: "/api/v1/approvals/{id}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const deleteBoardMasterPhysicallyOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "deleteBoardMasterPhysically",
   method: "delete",

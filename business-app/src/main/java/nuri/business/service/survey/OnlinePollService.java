@@ -69,8 +69,11 @@ public class OnlinePollService {
 
         String currentLoginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(null);
         boolean isAdmin = nuri.business.security.util.SecurityUtil.isAdmin();
+
+        // hasVoted 는 '내가 참여했는가' 이므로 관리자에게도 사실대로 채운다. 관리자 여부는
+        // 득표수 은닉에만 쓰인다 — 두 축을 묶으면 관리자의 hasVoted 가 항상 false 인 거짓이 된다.
         Set<Long> votedPollSns = new HashSet<>();
-        if (currentLoginId != null && !isAdmin) {
+        if (currentLoginId != null) {
             List<Long> pollSns = dtoPage.getContent().stream()
                     .map(OnlinePollManageDto::getPollSn)
                     .filter(Objects::nonNull)
@@ -80,12 +83,15 @@ public class OnlinePollService {
             }
         }
 
+        String today = today();
+        Map<Long, OnlinePollManage> entityByPollSn = new HashMap<>();
+        entities.getContent().forEach(entity -> entityByPollSn.put(entity.getPollSn(), entity));
+
         for (OnlinePollManageDto dto : dtoPage.getContent()) {
             boolean hasVoted = votedPollSns.contains(dto.getPollSn());
             dto.setHasVoted(hasVoted);
-            // [밴드웨건 효과 방지] 관리자가 아니고 아직 투표하지 않은 사용자에게는 각 항목의 득표수를 숨긴다.
-            if (!isAdmin && !hasVoted && dto.getPollArticles() != null) {
-                dto.getPollArticles().forEach(item -> item.setPollIemCo(0L));
+            if (hidesVoteCounts(entityByPollSn.get(dto.getPollSn()), hasVoted, isAdmin, today)) {
+                maskVoteCounts(dto.getPollArticles());
             }
         }
 
@@ -116,15 +122,12 @@ public class OnlinePollService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         OnlinePollManageDto dto = OnlinePollManageDto.from(entity);
 
-        String currentLoginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(null);
-        boolean isAdmin = nuri.business.security.util.SecurityUtil.isAdmin();
-        boolean hasVoted = currentLoginId != null && pollResultRepository.countByPollSnAndFrstRegisterId(pollSn, currentLoginId) > 0;
+        boolean hasVoted = hasVoted(pollSn);
         dto.setHasVoted(hasVoted);
 
-        List<OnlinePollArticleDto> items = getPollItemList(pollSn);
-        // [밴드웨건 효과 방지] 관리자가 아니고 아직 투표하지 않은 사용자에게는 각 항목의 득표수를 숨긴다.
-        if (!isAdmin && !hasVoted) {
-            items.forEach(item -> item.setPollIemCo(0L));
+        List<OnlinePollArticleDto> items = loadPollItems(pollSn);
+        if (hidesVoteCounts(entity, hasVoted, nuri.business.security.util.SecurityUtil.isAdmin(), today())) {
+            maskVoteCounts(items);
         }
         dto.setPollArticles(items);
         return dto;
@@ -209,12 +212,81 @@ public class OnlinePollService {
         pollManageRepository.deleteById(Objects.requireNonNull(pollSn));
     }
 
+    /**
+     * 항목 목록 공개 조회. <b>득표수 은닉이 여기에도 걸린다.</b>
+     *
+     * <p>[2026-09-07] 종전에는 목록·상세에만 은닉을 걸고 이 경로는 원본 득표수를 그대로 돌려줬다.
+     * 그런데 사용자가 실제로 투표하는 화면({@code /admin/survey/polls/participate})이 항목을 읽는
+     * 유일한 경로가 바로 이 엔드포인트({@code GET /api/v1/polls/{pollSn}/items})다 — 즉 은닉이
+     * 걸리는 경로에는 소비자가 없고, 소비자가 있는 경로에는 은닉이 없었다.
+     */
     public List<OnlinePollArticleDto> getPollItemList(Long pollSn) {
+        List<OnlinePollArticleDto> items = loadPollItems(pollSn);
+        boolean hasVoted = hasVoted(pollSn);
+        OnlinePollManage poll = pollManageRepository.findById(Objects.requireNonNull(pollSn)).orElse(null);
+        if (hidesVoteCounts(poll, hasVoted, nuri.business.security.util.SecurityUtil.isAdmin(), today())) {
+            maskVoteCounts(items);
+        }
+        return items;
+    }
+
+    /** 은닉 없이 항목+득표수를 읽는 내부 로더. 공개 경로는 반드시 {@link #getPollItemList} 를 쓴다. */
+    private List<OnlinePollArticleDto> loadPollItems(Long pollSn) {
         List<OnlinePollArticleDto> items = pollItemRepository.findByPollManagePollSn(Objects.requireNonNull(pollSn)).stream()
                 .map(onlinePollArticleMapper::toDto)
                 .collect(Collectors.toList());
         applyItemVoteCounts(items);
         return items;
+    }
+
+    /** 현재 인증 주체가 이 투표에 이미 참여했는가. 미인증이면 false. */
+    private boolean hasVoted(Long pollSn) {
+        return nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .map(loginId -> pollResultRepository.countByPollSnAndFrstRegisterId(pollSn, loginId) > 0)
+                .orElse(false);
+    }
+
+    /**
+     * [밴드웨건 효과 방지] 득표수를 숨길지 판정한다 — <b>진행 중</b>이고, 관리자가 아니며,
+     * 아직 참여하지 않았을 때만 숨긴다.
+     *
+     * <p><b>종료·폐기·시작 전 투표는 숨기지 않는다.</b> 끝난 투표의 결과는 참여하지 않은 사람도
+     * 볼 수 있어야 한다 — 여기서 숨기면 미참여자가 결과를 영영 못 보는 회귀가 된다.
+     * 기간 판정은 {@link #vote} 와 같은 규칙·같은 시간대(Asia/Seoul)를 쓴다.
+     *
+     * @param poll 대상 투표(조회 실패 시 {@code null} — 판정 불가이므로 숨기지 않는다)
+     */
+    private boolean hidesVoteCounts(OnlinePollManage poll, boolean hasVoted, boolean isAdmin, String today) {
+        if (isAdmin || hasVoted || poll == null) {
+            return false;
+        }
+        if ("Y".equals(poll.getPollDsuseYn())) {
+            return false;
+        }
+        boolean notStarted = poll.getPollBgngYmd() != null && poll.getPollBgngYmd().compareTo(today) > 0;
+        boolean ended = poll.getPollEndYmd() != null && poll.getPollEndYmd().compareTo(today) < 0;
+        return !notStarted && !ended;
+    }
+
+    /**
+     * 득표수를 <b>{@code null}</b> 로 지운다 — 0 이 아니다.
+     *
+     * <p>0 은 "아무도 고르지 않았다" 는 사실 주장이라, 은닉을 0 으로 표현하면 화면이
+     * 전원 0표라고 <b>거짓말</b>하게 된다(만족도 평균이 '평가 없음'을 0.0 으로 뭉개던
+     * GAP-API-001 과 같은 모양). {@code null} 은 "말하지 않았다" 이며, 응답 zod 계약이
+     * non-required 응답 필드를 nullable 로 받는다(DEC-OPS-028).
+     */
+    private void maskVoteCounts(List<OnlinePollArticleDto> items) {
+        if (items == null) {
+            return;
+        }
+        items.forEach(item -> item.setPollIemCo(null));
+    }
+
+    /** 기간 판정 기준일(Asia/Seoul). 설문(SurveyResultService)과 같은 시간대를 쓴다. */
+    private static String today() {
+        return java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
     }
 
     @Transactional
@@ -262,7 +334,7 @@ public class OnlinePollService {
             throw new BusinessException("종료되었거나 폐기된 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
-        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String today = today();
         if (poll.getPollBgngYmd() != null && poll.getPollBgngYmd().compareTo(today) > 0) {
             throw new BusinessException("설문 시작 전입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }

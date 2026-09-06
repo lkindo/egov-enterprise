@@ -316,6 +316,35 @@ class SurveyResultServiceTest {
         verify(resultRepository, never()).saveAll(any());
     }
 
+    @Test
+    @DisplayName("🔒 제출 - maxChcCnt 가 NULL 이면 단일선택으로 강제한다 (화면이 라디오로 그리는 문항)")
+    void submitTreatsNullMaxChoiceAsSingleChoice() {
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
+        // maxChcCnt 미지정 = 물리 컬럼 NULL. 화면은 `maxChcCnt ?? 1` 로 라디오를 그린다.
+        SurveyQuestion nullMaxQuestion = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).qstnSn(1L).qstnCn("최대 선택 미지정 질문")
+                .qstnTypeCd("1").build();
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
+                .willReturn(List.of(nullMaxQuestion));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+                .willReturn(List.of(article(401L, 301L, "항목1"), article(402L, 301L, "항목2")));
+
+        SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동", List.of(
+                new SurveyResponseSubmitDto.Answer(301L, 401L, null, null),
+                new SurveyResponseSubmitDto.Answer(301L, 402L, null, null)));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(java.util.Optional.of("user1"));
+
+            assertThatThrownBy(() -> service.submitResponse(201L, dto))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("최대 1개");
+        }
+        verify(resultRepository, never()).saveAll(any());
+    }
+
     // ---------- 기간 가드 (2026-09-05) ----------
     //
     // 종전에는 존재·중복만 검사해 종료된 설문·시작 전 설문에도 응답이 저장됐다. 같은 도메인의

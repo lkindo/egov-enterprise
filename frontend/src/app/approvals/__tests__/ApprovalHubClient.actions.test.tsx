@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  cancelDraft: vi.fn(),
   confirm: vi.fn(),
   confirmMutation: vi.fn(),
   createDraft: vi.fn(),
@@ -43,6 +44,7 @@ vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
   },
   isSanctionPending: (value?: string) => value === 'A',
   approvalUserService: {
+    cancelDraft: mocks.cancelDraft,
     confirm: mocks.confirmMutation,
     createDraft: mocks.createDraft,
     getMyHistory: mocks.getMyHistory,
@@ -125,6 +127,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.confirm.mockResolvedValue(true);
+    mocks.cancelDraft.mockResolvedValue(undefined);
     mocks.confirmMutation.mockResolvedValue(undefined);
     mocks.getMyHistory.mockResolvedValue({ list: [], total: 0 });
     mocks.getProcessed.mockResolvedValue({ list: [], total: 0 });
@@ -260,6 +263,79 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     expect(screen.getByText('휴가 신청')).toBeInTheDocument();
     expect(approve).toBeEnabled();
     expect(approve).not.toHaveAttribute('aria-busy');
+  });
+
+  /**
+   * 기안 취소(철회) — 되돌릴 수 없는 동작이므로 확인 → 동기 선점 → 실패 노출을 모두 지킨다.
+   *
+   * 서버는 신청자 본인 + 대기('A') 상태만 허용한다(InformalSanctionService#deleteInformalSanction).
+   * 화면도 같은 조건에서만 버튼을 띄운다 — '내가 올린 결재' 탭 + 대기 상태.
+   */
+  it('기안 취소는 내가 올린 대기 건에만 뜨고, 대상 문서 번호를 밝힌 확인 뒤 철회한다', async () => {
+    mocks.getMyHistory.mockResolvedValue({ list: [{ ...pendingApproval, ifmlAtrzSn: 74 }], total: 1 });
+    renderClient();
+
+    // 결재 대기함(결재자 시점)에는 기안 취소가 없다 — 남의 기안을 철회할 수 없다.
+    await screen.findByText('휴가 신청');
+    expect(screen.queryByRole('button', { name: '기안 취소' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: '내가 올린 결재' }));
+    const cancel = await screen.findByRole('button', { name: '기안 취소' });
+    fireEvent.click(cancel);
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm.mock.calls[0][0].message).toContain('#74');
+    expect(mocks.confirm.mock.calls[0][0].variant).toBe('destructive');
+    await waitFor(() => expect(mocks.cancelDraft).toHaveBeenCalledWith(74));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('결재 기안이 취소되었습니다.', 'success'));
+  });
+
+  it('기안 취소는 확인 대기 중에도 재진입을 막고 pending 상태·실패 사유를 드러낸다', async () => {
+    mocks.getMyHistory.mockResolvedValue({ list: [{ ...pendingApproval, ifmlAtrzSn: 74 }], total: 1 });
+    // 지역 이름은 census 가 세는 write sink(cancelMutation.mutateAsync)와 같은 이름으로 둔다.
+    const cancelMutation = mocks.cancelDraft;
+    const pending = deferred<void>();
+    cancelMutation.mockReturnValueOnce(pending.promise);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('tab', { name: '내가 올린 결재' }));
+    const cancel = await screen.findByRole('button', { name: '기안 취소' });
+
+    act(() => {
+      fireEvent.click(cancel);
+      fireEvent.click(cancel);
+    });
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(cancelMutation).toHaveBeenCalledTimes(1));
+    expect(cancel).toBeDisabled();
+    expect(cancel).toHaveAttribute('aria-busy', 'true');
+
+    // 서버가 이유를 말하면(예: '신청 상태인 경우에만 삭제할 수 있습니다.') 그대로 드러낸다 —
+    // 고정 문구로 덮으면 사용자가 왜 실패했는지 알 수 없다.
+    await act(async () => {
+      pending.reject(new Error('신청 상태인 경우에만 삭제할 수 있습니다.'));
+    });
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '신청 상태인 경우에만 삭제할 수 있습니다.',
+      'error',
+    ));
+    expect(cancel).toBeEnabled();
+  });
+
+  it('확인 대화에서 취소하면 아무것도 지우지 않고 잠금을 푼다', async () => {
+    mocks.getMyHistory.mockResolvedValue({ list: [{ ...pendingApproval, ifmlAtrzSn: 74 }], total: 1 });
+    mocks.confirm.mockResolvedValue(false);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('tab', { name: '내가 올린 결재' }));
+    const cancel = await screen.findByRole('button', { name: '기안 취소' });
+    fireEvent.click(cancel);
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.cancelDraft).not.toHaveBeenCalled();
+    await waitFor(() => expect(cancel).toBeEnabled());
   });
 
   it('결재 반려는 중복 실행을 막고 실패 뒤 입력 사유를 보존한다', async () => {

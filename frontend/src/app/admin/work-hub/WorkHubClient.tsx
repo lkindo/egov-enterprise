@@ -527,11 +527,17 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             </>
           ) : activeTab === 'report' ? (
             <>
-              <Button asChild size="sm" variant="outline">
-                <Link href="/admin/operation/memo-reports">
-                  <FileText size={16} aria-hidden="true" /> 메모보고 관리
-                </Link>
-              </Button>
+              {/* [게이트] '/admin/operation' 은 USER_ACCESSIBLE_ADMIN_PATHS 에 없어 일반 사용자는
+                  라우트에서 홈으로 튕긴다(`/?auth_error=unauthorized`). 라우트 게이트와 같은 역할
+                  집합으로만 노출한다 — 라우트는 막는데 화면만 보이는 비대칭은 조용히 죽는
+                  결함이다(DEC-OPS-023 ②). */}
+              {canManageBoxes && (
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/admin/operation/memo-reports">
+                    <FileText size={16} aria-hidden="true" /> 메모보고 관리
+                  </Link>
+                </Button>
+              )}
               <Button
                 size="sm"
                 disabled={reportAction !== null}

@@ -143,6 +143,7 @@ export const OnlinePollManageDtoSchema = z.object({
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoSchema)).optional(),
+  hasVoted: z.boolean().optional(),
 });
 export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 
@@ -4561,6 +4562,7 @@ export const OnlinePollManageDtoRequestSchema = z.object({
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoRequestSchema.strict())).optional(),
+  hasVoted: z.boolean().optional(),
 });
 
 export const OnlinePollManageDtoResponseSchema = z.object({
@@ -4574,6 +4576,7 @@ export const OnlinePollManageDtoResponseSchema = z.object({
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional().nullable(),
+  hasVoted: z.boolean().optional().nullable(),
 });
 
 export const MemoReportDtoRequestSchema = z.object({
