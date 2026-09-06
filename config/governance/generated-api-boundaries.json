@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 376,
-    "generatedDescriptorCount": 376
+    "openApiOperationCount": 377,
+    "generatedDescriptorCount": 377
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 364,
-    "eligible": 350,
+    "total": 365,
+    "eligible": 351,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 350,
+      "generated": 351,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "be8177e6117100e634d9c303ef15e1b8fa5ffbf89858f9501cbe97db2858f6ce",
+  "inventoryHash": "b7e895be9f21297b8056685fc82b23cd9315ea443d58625398ed320786270f9b",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -4910,6 +4910,23 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "48f7ac6c6e3981e9bee0"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/NotificationAdminService.ts",
+      "owner": "NotificationAdminService.dispatch",
+      "ordinal": 1,
+      "line": 22,
+      "column": 12,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "post",
+      "target": "/api/v1/admin/notifications/dispatch",
+      "operationId": "dispatchNotifications",
+      "descriptorName": "dispatchNotificationsOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "0a9180b83b7d7cf3e92d"
     },
     {
       "file": "frontend/src/services/foundation/system/PolicyAdminService.ts",

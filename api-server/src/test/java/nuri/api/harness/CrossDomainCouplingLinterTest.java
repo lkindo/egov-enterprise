@@ -98,8 +98,12 @@ class CrossDomainCouplingLinterTest {
      * WorkReportService, ScheduleService, BannerService, PopupService가 사용하면서 7개 file edge가
      * 추가됐다. BoardService의 file edge는 기존 FileService 참조로 이미 census에 포함돼 있었다.
      * 숫자를 올릴 때는 신설 edge와 사유를 함께 남긴다.
+     *
+     * <p>[2026-09-06 DEC-OPS-042] 33 → 34. {@code notification → user}({@code UserContactService}) 신설 —
+     * 관리자 알림 발송이 수신자를 esntlId 로 받아 존재를 확인한다(메일·문자와 같은 축, 부분 발송 금지).
+     * 해석 결과는 알림 행 생성에만 쓰고 응답으로 내보내지 않는다(H3).
      */
-    private static final int APP_TO_CORE_COUPLING = 33;
+    private static final int APP_TO_CORE_COUPLING = 34;
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(교차 edge 실측 37건 대비 여유). */
     private static final int CROSS_DOMAIN_REFERENCE_FLOOR = 25;
