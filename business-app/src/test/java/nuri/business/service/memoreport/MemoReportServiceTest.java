@@ -2,7 +2,10 @@ package nuri.business.service.memoreport;
 
 import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.memoreport.MemoReportRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.memoreport.dto.MemoReportDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +38,9 @@ class MemoReportServiceTest {
 
     @Mock
     private MemoReportRepository memoReportRepository;
+
+    @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     @org.mockito.Spy
     nuri.business.service.memoreport.dto.MemoReportMapper memoReportMapper = new nuri.business.service.memoreport.dto.MemoReportMapperImpl();
@@ -186,6 +192,7 @@ class MemoReportServiceTest {
                 .rptTtl("Subject")
                 .rptrId("reportr1")
                 .memoRptYmd("20240501")
+                .atchFileSn(101L)
                 .build();
         given(memoReportRepository.save(any(MemoReport.class)))
                 .willReturn(MemoReport.builder().memoRptSn(2L).build());
@@ -195,7 +202,29 @@ class MemoReportServiceTest {
 
         // then
         assertThat(memoRptSn).isEqualTo(2L);
-        verify(memoReportRepository).save(any(MemoReport.class));
+        org.mockito.ArgumentCaptor<MemoReport> saved = org.mockito.ArgumentCaptor.forClass(MemoReport.class);
+        verify(memoReportRepository).save(saved.capture());
+        assertThat(saved.getValue().getAtchFileSn()).isEqualTo(101L);
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+    }
+
+    @Test
+    @DisplayName("메모보고 생성 - 첨부 할당 거부 시 저장하지 않는다")
+    void createMemoReport_deniedAttachmentDoesNotSave() {
+        MemoReportDto dto = MemoReportDto.builder()
+                .rptTtl("Subject")
+                .rptrId("reporter")
+                .atchFileSn(101L)
+                .build();
+        org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> memoReportService.createMemoReport("user1", dto))
+                .isInstanceOf(BusinessException.class);
+
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+        org.mockito.Mockito.verifyNoInteractions(memoReportRepository);
     }
 
     @Test
@@ -222,6 +251,62 @@ class MemoReportServiceTest {
         assertThat(existingEntity.getRptTtl()).isEqualTo("Updated Subject");
         assertThat(existingEntity.getMemoRptYmd()).isEqualTo("20240502");
         assertThat(existingEntity.getRptCn()).isEqualTo("Updated Content");
+    }
+
+    @Test
+    @DisplayName("메모보고 수정 - 새 첨부 할당 거부 시 기존 엔티티를 변경하지 않는다")
+    void updateMemoReport_deniedAttachmentDoesNotMutate() {
+        MemoReport existing = MemoReport.builder()
+                .memoRptSn(1L)
+                .rptTtl("Old Subject")
+                .rptCn("Old Content")
+                .rptrId("old-reporter")
+                .atchFileSn(100L)
+                .build();
+        MemoReportDto request = MemoReportDto.builder()
+                .rptTtl("New Subject")
+                .rptCn("New Content")
+                .rptrId("new-reporter")
+                .atchFileSn(101L)
+                .build();
+        given(memoReportRepository.findById(1L)).willReturn(Optional.of(existing));
+        org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> memoReportService.updateMemoReport(1L, "user1", request))
+                .isInstanceOf(BusinessException.class);
+
+        assertThat(existing.getRptTtl()).isEqualTo("Old Subject");
+        assertThat(existing.getRptCn()).isEqualTo("Old Content");
+        assertThat(existing.getRptrId()).isEqualTo("old-reporter");
+        assertThat(existing.getAtchFileSn()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("메모보고 수정 - 동일 첨부 유지와 null 분리는 재할당 검증을 하지 않는다")
+    void updateMemoReport_sameOrDetachedAttachmentSkipsAssignmentCheck() {
+        MemoReport existing = MemoReport.builder()
+                .memoRptSn(1L)
+                .rptTtl("Old")
+                .rptrId("reporter")
+                .atchFileSn(100L)
+                .build();
+        given(memoReportRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        memoReportService.updateMemoReport(1L, "user1", MemoReportDto.builder()
+                .rptTtl("Same")
+                .rptrId("reporter")
+                .atchFileSn(100L)
+                .build());
+        memoReportService.updateMemoReport(1L, "user1", MemoReportDto.builder()
+                .rptTtl("Detached")
+                .rptrId("reporter")
+                .atchFileSn(null)
+                .build());
+
+        org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
+        assertThat(existing.getAtchFileSn()).isNull();
     }
 
     @Test

@@ -3,6 +3,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.memoreport.MemoReportRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.business.service.memoreport.dto.MemoReportMapper;
 import nuri.foundation.core.exception.BusinessException;
@@ -22,6 +23,7 @@ public class MemoReportService {
 
     private final MemoReportRepository memoReportRepository;
     private final MemoReportMapper memoReportMapper;
+    private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     /**
      * 조직 전체 메모보고 목록 — <b>관리자 전용</b>.
@@ -101,13 +103,17 @@ public class MemoReportService {
 
     @Transactional
     public Long createMemoReport(String userId, MemoReportDto dto) {
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
         MemoReport entity = MemoReport.builder()
                 .rptTtl(dto.getRptTtl())
                 .memoRptYmd(dto.getMemoRptYmd())
                 .userId(userId)
                 .rptrId(dto.getRptrId())
                 .rptCn(dto.getRptCn())
-                .atchFileSn(dto.getAtchFileSn())
+                .atchFileSn(atchFileSn)
                 .build();
         return memoReportRepository.save(entity).getMemoRptSn();
     }
@@ -117,8 +123,12 @@ public class MemoReportService {
         MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(memoRptSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 작성자/관리자만 수정
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
         entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
-                dto.getRptCn(), dto.getAtchFileSn());
+                dto.getRptCn(), atchFileSn);
         entity.setLastMdfrId(userId);
     }
 

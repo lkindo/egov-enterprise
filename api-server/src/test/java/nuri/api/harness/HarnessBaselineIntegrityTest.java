@@ -115,9 +115,11 @@ class HarnessBaselineIntegrityTest {
      * 산다 — 상수 해시만으로는 allowlist 를 한 줄 늘려도 매니페스트에 아무것도 남지 않는다. 이 계열은
      * 주석 제거·개행 정규화 후 소스 전체를 해시해, 규칙 본문의 어떤 완화도 diff 두 곳에 드러나게 한다.
      * {@code InputContractMirrorLinterTest}도 required·nested 판정이 메서드 본문에 있으므로 같은 경계를 쓴다.
+     * {@code AttachmentSourceRegistryLinterTest}의 writer 소스 발견·가드 순서 판정도 본문이
+     * 실질 계약이므로 전체 해시로 보호한다.
      */
     private static final Pattern ARCH_RULE_FILE = Pattern.compile(
-            "(?:InputContractMirrorLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules"
+            "(?:AttachmentSourceRegistryLinterTest|InputContractMirrorLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules"
                     + "|Archunit\\w*)\\.java$");
 
     /** 소스 전체 해시 키 접미 — {@code <module>/<Class>.__sourceHash} */

@@ -6,11 +6,9 @@ import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobRepository;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
-import nuri.business.domain.file.FileMaster;
-import nuri.business.domain.file.FileMasterRepository;
 import nuri.business.domain.organization.OrganizationManageRepository;
 import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.service.file.FileAccessPolicy;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.service.deptjob.dto.DeptJobMapper;
 import nuri.business.security.util.SecurityUtil;
@@ -34,24 +32,22 @@ public class DeptJobService extends BaseAbstractService {
     private final UserRepository userRepository;
     private final OrganizationManageRepository organizationManageRepository;
     private final DeptJobMapper deptJobMapper;
-    private final FileMasterRepository fileMasterRepository;
-    private final FileAccessPolicy fileAccessPolicy;
+    private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     public DeptJobService(DeptJobRepository deptJobRepository,
             DeptJobBoxRepository deptJobBoxRepository,
             UserRepository userRepository,
             OrganizationManageRepository organizationManageRepository,
             DeptJobMapper deptJobMapper,
-            FileMasterRepository fileMasterRepository,
-            FileAccessPolicy fileAccessPolicy) {
+            AttachmentAssignmentPolicy attachmentAssignmentPolicy) {
         this.deptJobRepository = required(deptJobRepository, "DeptJobRepository 는 null 일 수 없습니다");
         this.deptJobBoxRepository = required(deptJobBoxRepository, "DeptJobBoxRepository 는 null 일 수 없습니다");
         this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
         this.organizationManageRepository = required(organizationManageRepository,
                 "OrganizationManageRepository 는 null 일 수 없습니다");
         this.deptJobMapper = required(deptJobMapper, "DeptJobMapper 는 null 일 수 없습니다");
-        this.fileMasterRepository = required(fileMasterRepository, "FileMasterRepository 는 null 일 수 없습니다");
-        this.fileAccessPolicy = required(fileAccessPolicy, "FileAccessPolicy 는 null 일 수 없습니다");
+        this.attachmentAssignmentPolicy = required(attachmentAssignmentPolicy,
+                "AttachmentAssignmentPolicy 는 null 일 수 없습니다");
     }
 
     /**
@@ -133,7 +129,7 @@ public class DeptJobService extends BaseAbstractService {
     @Transactional
     public Long createDeptJob(DeptJobDto dto) {
         String creatorEsntlId = currentEsntlIdOrDeny();
-        assertAttachmentIsAttachable(dto.getAtchFileSn());
+        assertAttachmentIsAssignable(dto.getAtchFileSn());
 
         // [담당자 기본값] 등록 폼에 담당자 지정 UI 가 아직 없다. 미지정 시 등록자를 담당자로 둔다
         //   (null 로 두면 목록의 담당자 칸이 비고 검색조건 '담당자ID'가 무의미해진다).
@@ -165,7 +161,7 @@ public class DeptJobService extends BaseAbstractService {
 
         if (dto.getAtchFileSn() != null
                 && !Objects.equals(dto.getAtchFileSn(), deptJob.getAtchFileSn())) {
-            assertAttachmentIsAttachable(dto.getAtchFileSn());
+            assertAttachmentIsAssignable(dto.getAtchFileSn());
         }
 
         // [담당자 보존] dto.picId 가 비어 오면 기존 담당자를 유지한다.
@@ -241,13 +237,11 @@ public class DeptJobService extends BaseAbstractService {
     }
 
     /** 공유 업무에 연결하기 전에 첨부의 존재와 재게시 권한을 확인한다. */
-    private void assertAttachmentIsAttachable(Long atchFileSn) {
+    private void assertAttachmentIsAssignable(Long atchFileSn) {
         if (atchFileSn == null) {
             return;
         }
-        FileMaster master = fileMasterRepository.findById(atchFileSn)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        fileAccessPolicy.assertAttachable(master);
+        attachmentAssignmentPolicy.assertAssignable(atchFileSn);
     }
 
     private DeptJobDto toDto(DeptJob entity) {

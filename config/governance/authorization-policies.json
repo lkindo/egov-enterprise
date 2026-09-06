@@ -1127,7 +1127,7 @@
       "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED",
-      "guardRef": "BoardService#updatePost"
+      "guardRef": "BoardService#findOwnedPost"
     },
     {
       "method": "POST",
@@ -1153,7 +1153,7 @@
       "policy": "OWNER_OR_ADMIN",
       "methodSecurity": "isAuthenticated()",
       "routeGate": "DEFAULT_AUTHENTICATED",
-      "guardRef": "BoardService#updatePost"
+      "guardRef": "BoardService#findOwnedPost"
     },
     {
       "method": "PATCH",
@@ -1838,7 +1838,7 @@
       ]
     },
     {
-      "target": "BoardService#updatePost",
+      "target": "BoardService#findOwnedPost",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
         {
@@ -2483,6 +2483,21 @@
   ],
   "manualGuardPolicies": [
     {
+      "target": "AttachmentAssignmentPolicy#assertAssignable",
+      "source": "business-core/src/main/java/nuri/business/service/file/AttachmentAssignmentPolicy.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "fileMasterRepository.findById(atchFileSn)",
+        "CommonErrorCode.RESOURCE_NOT_FOUND",
+        "fileAccessPolicy.assertAttachable(master)"
+      ],
+      "forbiddenTokens": [
+        "fileAccessPolicy.assertReadable(",
+        "SecurityUtil.hasRole("
+      ]
+    },
+    {
       "target": "DeptJobService#currentEsntlIdOrDeny",
       "source": "business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java",
       "policy": "AUTHENTICATED",
@@ -2531,30 +2546,38 @@
       "target": "FileAccessPolicy#assertReadable",
       "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
       "policy": "REACHABILITY_WITH_PRIVACY",
-      "denyReferences": 2,
+      "denyReferences": 3,
       "requiredTokens": [
         "SecurityUtil.getCurrentLoginId()",
         "SecurityUtil.getCurrentEsntlId()",
-        "grants.ownerGrant() || grants.sharedGrant()",
+        "if (grants.resolutionFailed())",
+        "if (grants.personalReference())",
+        "if (grants.personalOwnerGrant())",
+        "grants.ownerGrant() || (grants.sharedGrant() && !grants.personalReference())",
         "admin && !grants.personalReference()",
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
       ],
-      "forbiddenTokens": []
+      "forbiddenTokens": [
+        "grants.ownerGrant() || grants.sharedGrant()"
+      ]
     },
     {
       "target": "FileAccessPolicy#assertDeletable",
       "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
       "policy": "REACHABILITY_WITH_PRIVACY",
-      "denyReferences": 2,
+      "denyReferences": 3,
       "requiredTokens": [
         "SecurityUtil.getCurrentLoginId()",
         "SecurityUtil.getCurrentEsntlId()",
-        "if (grants.ownerGrant())",
+        "if (grants.resolutionFailed())",
+        "grants.personalReference() && grants.personalOwnerGrant()",
+        "!grants.personalReference() && grants.ownerGrant()",
         "admin && !grants.personalReference()",
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
       ],
       "forbiddenTokens": [
-        "grants.sharedGrant()"
+        "grants.sharedGrant()",
+        "if (grants.ownerGrant())"
       ]
     },
     {

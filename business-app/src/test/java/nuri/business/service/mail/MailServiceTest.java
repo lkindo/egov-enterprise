@@ -2,9 +2,12 @@ package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.mail.dto.MailRecipientDto;
 import nuri.business.service.mail.dto.SentMailDto;
 import nuri.business.service.user.UserContactService;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,6 +51,9 @@ class MailServiceTest {
 
     @Mock
     private UserContactService userContactService;
+
+    @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     /**
      * 발송메일 조회는 발신자 스코프(IDOR 차단)를 타므로 SecurityContext 가 필요하다.
@@ -127,6 +133,7 @@ class MailServiceTest {
                 .emailCn("Content")
                 .dsptchPerson("sender@test.com")
                 .recptnPerson("receiver@test.com")
+                .atchFileSn(101L)
                 .build();
 
         given(sentMailRepository.save(any(SentMail.class)))
@@ -135,8 +142,30 @@ class MailServiceTest {
         Long emlDsptchSn = mailService.sendMail("user1", dto);
 
         assertThat(emlDsptchSn).isEqualTo(1L);
-        verify(sentMailRepository).save(any(SentMail.class));
+        org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
+        verify(sentMailRepository).save(saved.capture());
+        assertThat(saved.getValue().getAtchFileSn()).isEqualTo(101L);
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
         verify(mailAsyncProcessor).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("메일 발송 - 타인의 첨부 할당이 거부되면 발송 이력을 저장하지 않는다")
+    void sendMail_deniedAttachmentDoesNotPersistOrDispatch() {
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject")
+                .emailCn("Content")
+                .recptnPerson("receiver@test.com")
+                .atchFileSn(101L)
+                .build();
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        assertThatThrownBy(() -> mailService.sendMail("user1", dto))
+                .isInstanceOf(BusinessException.class);
+
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+        verifyNoInteractions(sentMailRepository, mailAsyncProcessor);
     }
 
     @Test

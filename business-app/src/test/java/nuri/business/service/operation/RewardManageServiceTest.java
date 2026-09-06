@@ -7,7 +7,10 @@ import java.util.Optional;
 
 import nuri.business.domain.operation.RewardManage;
 import nuri.business.domain.operation.RewardManageRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.operation.dto.RewardManageDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +34,9 @@ class RewardManageServiceTest {
 
     @Mock
     private RewardManageRepository rewardManageRepository;
+
+    @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     @InjectMocks
     private RewardManageService rewardManageService;
@@ -72,7 +78,10 @@ class RewardManageServiceTest {
     @DisplayName("포상 등록")
     void createReward_Success() {
         // Given
-        RewardManageDto dto = RewardManageDto.builder().rwardNm("New Reward").build();
+        RewardManageDto dto = RewardManageDto.builder()
+                .rwardNm("New Reward")
+                .atchFileSn(101L)
+                .build();
         RewardManage savedEntity = RewardManage.builder().rwrdSn(2L).rwrdNm("New Reward").build();
         given(rewardManageRepository.save(any(RewardManage.class))).willReturn(savedEntity);
 
@@ -81,6 +90,29 @@ class RewardManageServiceTest {
 
         // Then
         assertThat(result.getRwrdSn()).isEqualTo(2L);
+        org.mockito.ArgumentCaptor<RewardManage> saved =
+                org.mockito.ArgumentCaptor.forClass(RewardManage.class);
+        org.mockito.Mockito.verify(rewardManageRepository).save(saved.capture());
+        assertThat(saved.getValue().getAtchFileSn()).isEqualTo(101L);
+        org.mockito.Mockito.verify(attachmentAssignmentPolicy).assertAssignable(101L);
+    }
+
+    @Test
+    @DisplayName("포상 등록 - 첨부 할당 거부 시 저장하지 않는다")
+    void createReward_deniedAttachmentDoesNotSave() {
+        RewardManageDto dto = RewardManageDto.builder()
+                .rwardNm("New Reward")
+                .atchFileSn(101L)
+                .build();
+        org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> rewardManageService.createReward(dto))
+                .isInstanceOf(BusinessException.class);
+
+        org.mockito.Mockito.verify(attachmentAssignmentPolicy).assertAssignable(101L);
+        org.mockito.Mockito.verifyNoInteractions(rewardManageRepository);
     }
 
     // [2026-09-05 DEC-OPS-036] 수정·삭제 경로 — 종전에는 등록만 되고 고칠 수 없었다.
