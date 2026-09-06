@@ -526,7 +526,7 @@ export interface paths {
         post?: never;
         /**
          * 템플릿 삭제
-         * @description 템플릿을 삭제합니다.
+         * @description 템플릿을 삭제합니다. 게시판·블로그가 참조 중인 템플릿은 삭제하지 않습니다(409).
          */
         delete: operations["deleteTmplatInfo"];
         options?: never;
@@ -13077,7 +13077,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description 삭제 성공 */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13115,6 +13115,15 @@ export interface operations {
             };
             /** @description 대상을 찾을 수 없음 (code: C003/C007) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 게시판·블로그가 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014) */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

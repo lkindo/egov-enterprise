@@ -27,26 +27,26 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "a8a4a4af8e3338d7418a68d8be8f49a255f8aa8117be808b4cdb17fb778f71ac"
+    "inventoryHash": "5a71d183e8c53d3a7866d3fa407c375e87a82928353c4412f90e069cfccdd770"
   },
   "summary": {
-    "sourceFileCount": 518,
-    "records": 369,
-    "syntaxOccurrences": 434,
-    "ambiguousRecords": 346,
-    "unverifiedRecords": 369,
+    "sourceFileCount": 517,
+    "records": 376,
+    "syntaxOccurrences": 441,
+    "ambiguousRecords": 349,
+    "unverifiedRecords": 376,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
       "configRedirects": 14,
-      "pageRedirects": 7
+      "pageRedirects": 11
     },
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 51,
-      "navigation-producer": 155,
-      "page-redirect": 7,
+      "form-producer": 50,
+      "navigation-producer": 159,
+      "page-redirect": 11,
       "query-builder": 22,
       "query-consumer": 58,
       "query-producer": 43,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 361,
+      "navigation": 368,
       "request-telemetry": 8
     }
   },
@@ -3710,6 +3710,100 @@
       }
     },
     {
+      "id": "URL-1F9B8771699302",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards",
+      "targetCandidate": "/admin/help?tab=COMMUNITY",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/help",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-5F7D7E513EAE1A",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/page.tsx",
+      "consumerFile": "frontend/src/app/admin/community/boards/page.tsx",
+      "routePattern": "/admin/community/boards",
+      "targetCandidate": "/admin/help?tab=COMMUNITY",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/help",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/page.tsx",
+        "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-27FD16A057E471",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -4910,6 +5004,100 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+        "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-45057FDB499A91",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community",
+      "targetCandidate": "/admin/help?tab=COMMUNITY",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/help",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-CF99198403C68A",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/page.tsx",
+      "consumerFile": "frontend/src/app/admin/community/page.tsx",
+      "routePattern": "/admin/community",
+      "targetCandidate": "/admin/help?tab=COMMUNITY",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/help",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/page.tsx",
         "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
@@ -9527,29 +9715,28 @@
       }
     },
     {
-      "id": "URL-D99C7EF073333C",
+      "id": "URL-EC9210CAF1A268",
       "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
-      "source": "frontend/src/app/admin/system/ism/IsmClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/ism/IsmClient.tsx",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/ism/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/ism/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/ism",
-      "targetCandidate": null,
+      "targetCandidate": "/approvals",
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": null,
+        "routeCandidate": "/approvals",
         "status": "unverified"
       },
       "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
+        "shellAccessEvidence": "authenticated",
         "capabilityRoles": "unverified",
         "objectAuthorization": "unverified"
       },
@@ -9560,8 +9747,46 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/system/ism/IsmClient.tsx",
-        "detector": "jsx-form",
+        "source": "frontend/src/app/admin/system/ism/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-1D7C91AFEA1D8A",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/ism/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/ism/page.tsx",
+      "consumerFile": "frontend/src/app/admin/system/ism/page.tsx",
+      "routePattern": "/admin/system/ism",
+      "targetCandidate": "/approvals",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/approvals",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/ism/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
@@ -10187,6 +10412,82 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
         "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-4A8CFAE4C5ECDD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/monitoring",
+      "targetCandidate": "/admin/system/monitoring/hub",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/monitoring/hub",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/monitoring/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-C7644754277BE6",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "consumerFile": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "routePattern": "/admin/system/monitoring",
+      "targetCandidate": "/admin/system/monitoring/hub",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/system/monitoring/hub",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/monitoring/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },

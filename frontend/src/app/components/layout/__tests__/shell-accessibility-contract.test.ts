@@ -253,7 +253,7 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'system', 'audit', 'page.tsx'],
       ['admin', 'system', 'banner', 'page.tsx'],
       ['admin', 'system', 'common-code', 'page.tsx'],
-      ['admin', 'system', 'ism', 'page.tsx'],
+      // [2026-09-06 DEC-OPS-040] admin/system/ism/page.tsx 는 /approvals 로의 page-redirect 가 되어 route-local fallback 이 없다.
       ['admin', 'system', 'logs', 'page.tsx'],
       ['admin', 'system', 'logs', 'login', 'page.tsx'],
       ['admin', 'system', 'logs', 'privacy', 'page.tsx'],

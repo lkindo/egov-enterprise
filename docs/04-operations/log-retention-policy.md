@@ -52,7 +52,7 @@
 
 | 데이터 | 현재 처리 | 설정·제약 | 운영 확인 사항 |
 |---|---|---|---|
-| `tb_user_noti` (`read_yn='Y'`) | 만료 배치 파기(선택) | `nuri.notification.retention.enabled` 기본 `false`, `read-months` 기본 `0` — 1 미만이면 켜져 있어도 삭제하지 않는다 | 보존 개월 수치는 인수처 결정(PD-NOTE-002). 읽지 않은 알림은 대상이 아니다 |
+| `tb_user_noti` (`read_yn='Y'`) | 만료 배치 파기(선택) | `nuri.notification.retention.enabled` 기본 `false`, `read-months` 기본 `0` — 1 미만이면 켜져 있어도 삭제하지 않는다 | 보존 개월 수치는 인수처 결정(PD-NOTE-003). 읽지 않은 알림은 대상이 아니다 |
 
 정본 구현: [`NotificationRetentionScheduler`](../../business-app/src/main/java/nuri/business/service/notification/NotificationRetentionScheduler.java),
 [`NotificationRepository#deleteReadBefore`](../../business-app/src/main/java/nuri/business/domain/notification/NotificationRepository.java),

@@ -20,8 +20,8 @@ vi.mock('next/dynamic', () => ({
 }));
 
 vi.mock('@/app/components/patterns/work-list-page', () => ({
-  WorkListPage: ({ actions, children }: { actions: React.ReactNode; children: React.ReactNode }) => (
-    <main>{actions}{children}</main>
+  WorkListPage: ({ actions, filter, children }: { actions: React.ReactNode; filter?: React.ReactNode; children: React.ReactNode }) => (
+    <main>{actions}{filter}{children}</main>
   ),
 }));
 
@@ -117,6 +117,19 @@ describe('NotePage validation contract', () => {
     fireEvent.click(screen.getByRole('button', { name: /타겟 검색/ }));
     fireEvent.click(screen.getByRole('button', { name: '홍길동 선택' }));
   }
+
+  // [2026-09-06 감사 D09-01 후속] 검색어는 서버 searchWrd 로 가고(제목·내용 부분일치), 빈 결과 문구는 검색어를 싣는다(G15).
+  it('검색어를 적용하면 1페이지부터 searchWrd 로 조회하고 빈 결과 문구가 검색어를 싣는다', async () => {
+    render(<NotePage />);
+    await waitFor(() => expect(mocks.getReceivedNotes).toHaveBeenCalledWith({ page: 0, size: 20 }));
+
+    fireEvent.change(screen.getByRole('textbox', { name: '제목·내용' }), { target: { value: ' 회의 ' } });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+    await waitFor(() => expect(mocks.getReceivedNotes).toHaveBeenLastCalledWith({ page: 0, size: 20, searchWrd: '회의' }));
+    expect(await screen.findByText('"회의"에 대한 검색 결과가 없습니다.')).toBeInTheDocument();
+    expect(mocks.getSentNotes).not.toHaveBeenCalled();
+  });
 
   it('필수 수신자가 없으면 write 없이 검색 버튼으로 이동해 수정 방법을 안내한다', async () => {
     openComposer();

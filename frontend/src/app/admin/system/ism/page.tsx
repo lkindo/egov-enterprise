@@ -1,67 +1,17 @@
-import { Suspense } from 'react';
-import { cookies } from 'next/headers';
-import { ismAdminService, InformalSanctionDto } from '@/services/foundation/system/IsmAdminService';
-import IsmClient from './IsmClient';
-import { selectFieldsList } from '@/lib/utils/serialization';
-import { SITE_IDENTITY } from '@/config/site-identity';
-
-export const metadata = {
-  title: `약식결재 및 승인 관리 | ${SITE_IDENTITY.frameworkName}`,
-  // [2026-09-06 DEC-OPS-039] 실제 조회는 결재자 본인 기준(type=received)이다 — 결재함(/approvals)과 같은 개인 결재함임을 말한다.
-  description: '내가 결재자로 지정된 약식 결재 요청을 승인 또는 반려합니다 (결재함과 같은 개인 결재함)',
-};
+import { redirect } from 'next/navigation';
 
 /**
- * 서버 페치 실패 메시지 추출.
- * 실패를 빈 배열로 삼키면 화면이 "결재 건이 0건"이라고 거짓말한다(감사 P1-1).
- * 따라서 사유를 클라이언트로 내려 StandardDataTable 의 error/onRetry 로 노출한다.
+ * `/admin/system/ism` 은 정본 결재 허브(`/approvals`)로 보낸다.
+ *
+ * [2026-09-06 DEC-OPS-040] 이 화면은 "시스템에서 발생하는 약식 결재 요청" 이라고 설명했지만 실제 조회는
+ * 결재자 본인 기준(`type=received`)이고 승인도 본인만 가능해 `/approvals` 와 같은 개인 결재함이었다
+ * (감사 D08-05, DEC-OPS-039 가 consolidate-to-canonical 로 제안 → owner 승인). 같은 일을 하는 두 화면이
+ * 두 어휘('최종 승인' vs '결재 승인')로 갈려 있던 것을 정본 하나로 모은다.
+ *
+ * 라우트를 지우지 않고 보내는 이유는 `/admin/community/boards/write` 와 같다 — 메뉴(tb_menu_info)와 문자열
+ * URL 참조는 정적 분석으로 잡히지 않아 물리 삭제에 오삭제 전례가 있다(V2_30). 메뉴 행은 그대로 두고 별칭이
+ * 리다이렉트로 흡수한다.
  */
-function toFetchErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  return '약식 결재 목록을 불러오지 못했습니다.';
-}
-
-export default async function InformalSanctionPage() {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('accessToken')?.value;
-  const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-  let list: InformalSanctionDto[] = [];
-  let fetchError: string | null = null;
-
-  try {
-    const rawData = await ismAdminService.getPendingList({ page: 0, size: 50 }, axiosConfig);
-    list = rawData?.list ?? [];
-  } catch (error) {
-    fetchError = toFetchErrorMessage(error);
-  }
-
-  // [Server Serialization Optimization]
-  // 키 목록은 생성 DTO(InformalSanctionDto)의 실제 필드명과 일치해야 한다.
-  // (과거 로컬 인터페이스 기준의 존재하지 않는 키만 나열해 전 행이 {} 로 비던 결함 수정)
-  const optimizedContent = selectFieldsList(list, [
-    'ifmlAtrzSn', 'taskSeCd', 'taskSeNm', 'aplcntId', 'aplcntNm', 'aprvrId', 'aprvYn', 'reqYmd', 'rjctRsnCn'
-  ] as (keyof InformalSanctionDto)[]);
-
-  return (
-    <Suspense fallback={<IsmLoading />}>
-      <IsmClient
-        initialData={{ list: optimizedContent as InformalSanctionDto[] }}
-        fetchError={fetchError}
-      />
-    </Suspense>
-  );
-}
-
-function IsmLoading() {
-  return (
-    <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-20">
-      <h1 className="sr-only">약식 결재 관리를 불러오는 중</h1>
-      <div className="h-11 w-1/3 bg-muted rounded-lg" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[1, 2, 3].map(i => <div key={i} className="h-44 bg-muted rounded-lg" />)}
-      </div>
-      <div className="h-[600px] bg-muted rounded-lg" />
-    </div>
-  );
+export default function InformalSanctionRedirectPage() {
+  redirect('/approvals');
 }
