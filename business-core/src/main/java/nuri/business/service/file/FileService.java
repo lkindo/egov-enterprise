@@ -133,6 +133,9 @@ public class FileService extends BaseAbstractService {
                 .findByFileMasterAtchFileSnAndAtchFileSeq(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"),
                         required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [인가] 삭제는 열람보다 위험하다 — 공유 근거로는 지울 수 없고, 관리자도 개인 귀속 첨부는 지우지 못한다.
+        //   HTTP 로 처음 노출되는 경로(2026-09-05 DELETE /files/{atchFileSn}/{fileSn})이므로 저장소를 건드리기 전에 판정한다.
+        accessPolicy.assertDeletable(detail.getFileMaster());
 
         storageService.delete(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
                 required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"));
@@ -159,6 +162,10 @@ public class FileService extends BaseAbstractService {
     public void updateFiles(Long atchFileSn, List<MultipartFile> files) throws IOException {
         FileMaster master = fileMasterRepository.findById(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+
+        // 기존 업무 참조를 읽을 수 있다는 사실만으로 파일 그룹 자체를 변경할 수는 없다.
+        // 원 업로더 확인을 상세 조회·물리 저장보다 먼저 수행해 거부된 요청의 부작용을 막는다.
+        accessPolicy.assertAttachable(master);
 
         Integer maxSn = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
                 .mapToInt(detail -> detail.getAtchFileSeq())

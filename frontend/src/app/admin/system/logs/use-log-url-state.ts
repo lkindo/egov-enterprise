@@ -3,6 +3,22 @@
 import { useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
+function allowedParams(searchParams: { get(name: string): string | null }, names: readonly string[]): URLSearchParams {
+  const params = new URLSearchParams();
+  for (const name of names) {
+    const value = searchParams.get(name);
+    if (value) params.set(name, value);
+  }
+  return params;
+}
+
+type PreservedUrlParam = Readonly<{
+  name: string;
+  allowedValues: readonly string[];
+}>;
+
+const NO_PRESERVED_URL_PARAMS: readonly PreservedUrlParam[] = [];
+
 /**
  * 로그·감사 화면의 목록 상태를 URL 쿼리와 동기화하는 훅 모음.
  *
@@ -10,11 +26,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
  * `router.replace(..., { scroll: false })` 를 쓰므로 히스토리를 오염시키지 않고
  * 페이지 이동 시 스크롤이 위로 튀지 않는다.
  *
- * ⚠ 검색어는 의도적으로 URL 에 반영하지 않는다.
- *   로그 검색어에는 사번·이름 등 개인정보가 실릴 수 있다. 검색어는 각 화면의 로컬 상태로만 유지한다.
+ * ⚠ 검색어는 이 화면의 선택에 따라 URL 에 반영하지 않는다.
+ *   ADR-0009는 개인정보성 업무 검색어를 허용하지만 모든 화면의 동기화를 강제하지 않는다.
+ *   로그 검색어는 각 화면의 로컬 상태로만 유지한다.
  *
  * <p><b>[2026-09-04 owner 결정 — 보류 해제]</b> 종전 이 주석은 "제품 결정 보류 항목" 이라고 적었다.
- * PD-UX-002 의 Q1(사용자가 타이핑한 검색어를 URL 에 실을 것인가)이 owner 판단으로 종결됐다:
+ * DEC-OPS-029의 Q1은 ADR-0009로 상위 규범과 정합화됐다:
  * <b>현재 URL 에 실리는 검색어 14건은 전부 유지하고, 이 화면들이 주소창에 싣지 않는 현행도 유지한다.</b>
  * 즉 화면마다 판단이 다른 상태 그 자체가 승인된 결과다.
  *
@@ -38,7 +55,10 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
  * 1-base 페이지 번호를 `?page=` 와 동기화한다.
  * 1페이지는 파라미터를 제거해 기본 URL 을 깨끗하게 유지한다.
  */
-export function usePageParam(paramName = 'page'): [number, (page: number) => void] {
+export function usePageParam(
+  paramName = 'page',
+  preservedParams: readonly PreservedUrlParam[] = NO_PRESERVED_URL_PARAMS,
+): [number, (page: number) => void] {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,13 +68,17 @@ export function usePageParam(paramName = 'page'): [number, (page: number) => voi
 
   const setPage = useCallback(
     (next: number) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = allowedParams(searchParams, [paramName]);
+      for (const { name, allowedValues } of preservedParams) {
+        const value = searchParams.get(name);
+        if (value && allowedValues.includes(value)) params.set(name, value);
+      }
       if (!Number.isFinite(next) || next <= 1) params.delete(paramName);
       else params.set(paramName, String(Math.floor(next)));
       const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
     },
-    [paramName, pathname, router, searchParams],
+    [paramName, pathname, preservedParams, router, searchParams],
   );
 
   return [page, setPage];
@@ -86,7 +110,7 @@ export function useTabParam<T extends string>(
 
   const setTab = useCallback(
     (next: T) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = allowedParams(searchParams, [paramName, ...(resetParams ?? [])]);
       if (next === fallback) params.delete(paramName);
       else params.set(paramName, next);
       resetParams?.forEach((key) => params.delete(key));

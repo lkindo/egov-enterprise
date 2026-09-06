@@ -3,6 +3,7 @@
 > **상위 헌법**: 본 아키텍처는 [프론트엔드 디자인 및 UX 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)(17조)의 논리적 지배를 받는다.
 > **시각 규범**: 디자인 토큰 및 컬러 시스템은 [frontend-design-system.md](./frontend-design-system.md)를 참조한다.
 > **현대화 결정**: 사용자 과업·프로필·접근성·데이터 소유권은 [ADR-0003](./decisions/ADR-0003-frontend-ux-modernization-principles.md)을 따른다.
+> **URL 검색 상태 결정**: 개인정보성 업무 검색어의 제한적 URL 허용은 [ADR-0009](./decisions/ADR-0009-controlled-url-search-state.md)를 따른다.
 
 ## 🚀 Overview
 본 프로젝트의 프론트엔드는 **Next.js 16.2.12 계열(App Router)**과 **React 19.2 계열**을 사용한다. 정확한 설치 버전은 `frontend/package.json`과 lockfile을 기준으로 판단한다.
@@ -33,7 +34,8 @@ flowchart LR
 ### 2. Hub & Spoke Pattern (Orchestration)
 복잡한 비즈니스 모듈은 단일 진입점인 `HubClient`를 통해 하위 기능을 오케스트레이션합니다.
 - **URL State**: 헌법에 따라 `?tab=...` 등 쿼리 스트링을 사용하여 현재 활성화된 기능을 식별하고 SSR과의 연동성을 확보합니다.
-- **URL Privacy**: page/sort/tab처럼 공유 가치가 있는 비민감 상태만 URL allowlist에 둔다. 민감 식별자·검색어는 넣지 않는다.
+- **URL Privacy**: page/sort/tab뿐 아니라 성명·사번·계정명 등이 포함될 수 있는 일반 업무 검색어도 화면별 route/query key allowlist 안에서는 URL에 둘 수 있다. 선언하지 않은 query는 재전파하지 않고 같은 화면의 조건 변경은 `replace`를 우선하며, 해당 값을 client log·analytics·오류 로그 payload에 복제하지 않는다. 이 허용은 URL 동기화 의무가 아니며 파생 제품은 범위를 더 좁힐 수 있다.
+- **URL 금지 경계**: 앱은 자격증명, cookie·session 비밀, 인증·복구 token, 주민등록번호 등 고유식별정보, 금융·건강·생체 등 고위험 개인정보, 응답 데이터와 업무 본문을 의미하는 전용 URL field/state를 설계하거나 일반 검색창에서 입력을 요구·유도하지 않는다. 자유 검색어에 사용자가 예상 밖 값을 직접 넣는 경우를 클라이언트가 완전 판별할 수 없다는 점과 URL·browser history·외부 proxy/WAF/CDN log 잔존 가능성은 ADR-0009의 accepted residual risk이며, 고위험 용도 승인이나 인가 증거가 아니다.
 - **Lazy Loading**: route JavaScript, 최초 표시, CLS, 접근 가능한 대체 표현을 측정해 지연 로딩 여부와 SSR 사용을 결정한다. `ssr: false`를 고중량 컴포넌트의 무조건적 기본값으로 두지 않는다.
 
 ### 3. Service Layer & Data Fetching
@@ -68,4 +70,4 @@ src/
 ```
 
 ---
-*Verified against `frontend/package.json`, current proxy structure, and ADR-0003: 2026-08-20*
+*Verified against `frontend/package.json`, current proxy structure, ADR-0003, and ADR-0009: 2026-09-05*

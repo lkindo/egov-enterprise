@@ -30,7 +30,7 @@ sequenceDiagram
 ```
 
 ### 1.1 쿠키 세션 & 헤더 바인딩 핵심 메커니즘
-- **Access Token 관리**: Next.js 로그인·재발급 Route Handler가 access JWT를 `HttpOnly`, `SameSite=Strict`, 운영 `Secure` 쿠키로 설정하고 응답 본문에는 토큰을 노출하지 않는다. 브라우저 코드가 `localStorage`나 JavaScript로 읽을 수 있는 쿠키에 access token을 저장해서는 안 된다.
+- **Access Token 관리**: Next.js 로그인·재발급 Route Handler가 access JWT를 항상 `HttpOnly`, `SameSite=Strict` 쿠키로 설정하고 응답 본문에는 토큰을 노출하지 않는다. `Secure`는 기본값이자 운영·preview·staging·공유 개발 등 배포 환경의 필수 속성이다. 서버 전용 `ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE=true` opt-in과 실행 모드·내부 URL·원 요청 및 forwarding 헤더가 모두 단일 평문 local loopback을 증명할 때만 생략할 수 있다. 공유 환경에서는 opt-in을 설정하지 않으며, non-loopback HTTP에서 로그인이 동작하지 않으면 TLS 또는 접근 토폴로지를 고치고 예외를 넓히지 않는다. 브라우저 코드가 `localStorage`나 JavaScript로 읽을 수 있는 쿠키에 access token을 저장해서는 안 된다. 정확한 결정 경계는 [ADR-0010](../02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md)이 소유한다.
 - **클라이언트 전파**: 브라우저 요청은 `withCredentials`로 같은 출처 프록시에 쿠키를 보내며 `frontend/src/proxy.ts`가 `/api/v1`·`/actuator`·`/ws` 요청에 Bearer 헤더를 주입한다. SSR 경로는 서버의 `cookies()`로 토큰을 읽어 백엔드 요청 헤더에 싣는다. 백엔드가 서명과 최종 인가를 authoritative하게 재검증한다.
 - **CORS & Credentials 주의사항**: 이종 origin에서 자격증명 요청을 허용할 때는 `allowedOrigins=*`를 사용하지 않고 활성 프로필의 `cors.allowed-origins`에 실제 origin을 명시한다. 기본 브라우저 경로는 same-origin Next.js proxy이며, 개발 포트도 문서가 아니라 현재 설정에서 확인한다. 인증 cookie의 SameSite 정책을 완화하려면 실제 배포 토폴로지와 CSRF 영향을 별도 검토한다.
 
@@ -258,5 +258,5 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 ```
 
 ---
-*Last reviewed against current sources: 2026-08-19.*
+*Last reviewed against current sources: 2026-09-05.*
 *Governed by: OWASP Hardening & Zero-Trust Security Playbook / Security Auth Linter Harness*

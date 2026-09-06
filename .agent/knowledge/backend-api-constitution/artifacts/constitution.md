@@ -36,7 +36,7 @@
 ### 제5조 (도메인 캡슐화)
 1. 비즈니스 규칙과 상태 전이 로직은 가급적 엔티티(Entity) 내부에 캡슐화하여 도메인 모델의 자율성을 보장한다.
 2. 서비스 레이어는 트랜잭션 경계 관리와 계층 간 흐름 제어에 집중한다.
-3. **엔티티 빌더·생성자 규범 (Phase 5.2 빌더 규범)**: 영속 엔티티(`@Entity`)는 Lombok `@SuperBuilder` 상속 필드 섀도잉(빌드는 성공하나 런타임에 값이 유실되는 결함)을 원천 차단하기 위해 다음을 준수한다. — **(a)** 클래스 레벨 `@SuperBuilder`/`@Builder`/`@AllArgsConstructor` 선언을 금지하고, 빌더는 정적 팩토리(`create(...)`)에 `@Builder` 를 배치한다. **(b)** 수동 빌더 클래스 내부에 인스턴스 필드를 선언하지 않고 Lombok 이 생성한 빌더 메서드로 위임 체이닝한다(`this.field(value)` 형태 — 로컬 필드 대입 금지). **(c)** 엔티티 기본 생성자는 non-public(`@NoArgsConstructor(access = PROTECTED)`)으로 선언하여 JPA 프록시 보장 및 무분별한 외부 인스턴스화를 방지한다. **집행**: 규칙(c)는 `EntityConventionArchTest`(business-core·business-app, ArchUnit)가 회귀 차단하며, 규칙(a)·(b)는 Lombok 애노테이션이 `RetentionPolicy.SOURCE` 라 바이트코드에 흔적이 남지 않아 ArchUnit 으로 탐지 불가하므로 코드리뷰·Checkstyle 로 보완한다. (상세 메커니즘·골든 패턴: `.agent/knowledge/lombok-superbuilder-shadowing`)
+3. **엔티티 빌더·생성자 규범 (Phase 5.2 빌더 규범)**: 영속 엔티티(`@Entity`)는 Lombok `@SuperBuilder` 상속 필드 섀도잉(빌드는 성공하나 런타임에 값이 유실되는 결함)을 원천 차단하기 위해 다음을 준수한다. — **(a)** 클래스 레벨 `@SuperBuilder`/`@Builder`/`@AllArgsConstructor` 선언을 금지하고, 빌더는 정적 팩토리(`create(...)`)에 `@Builder` 를 배치한다. **(b)** 수동 빌더 클래스 내부에 인스턴스 필드를 선언하지 않고 Lombok 이 생성한 빌더 메서드로 위임 체이닝한다(`this.field(value)` 형태 — 로컬 필드 대입 금지). **(c)** 엔티티 기본 생성자는 non-public(`@NoArgsConstructor(access = PROTECTED)`)으로 선언하여 JPA 프록시 보장 및 무분별한 외부 인스턴스화를 방지한다. **집행**: 규칙(a)는 [GH-ENTITY-LOMBOK-SOURCE](../../../../api-server/src/test/java/nuri/api/harness/EntityLombokSourceLinterTest.java)가 `business-core`·`business-app`의 `@Entity` 원문을 전수 검사하여 회귀 차단하고, 규칙(c)는 [ARCH-BUSINESS-CORE-ENTITY-CONVENTION](../../../../business-core/src/test/java/nuri/business/architecture/EntityConventionArchTest.java)과 [ARCH-BUSINESS-APP-ENTITY-CONVENTION](../../../../business-app/src/test/java/nuri/business/architecture/EntityConventionArchTest.java)이 차단한다. 규칙(b)의 Lombok 생성 빌더 내부 상태와 수동 편의 메서드 위임 의미는 현재 기계 게이트가 완전히 증명하지 못하므로 코드리뷰와 실제 `build()` 결과 단위 테스트로 보완한다. (상세 메커니즘·골든 패턴: `.agent/knowledge/lombok-superbuilder-shadowing`)
 
 ---
 
@@ -76,6 +76,7 @@
 ### 제11조 (인증 정보 보호 및 OWASP 준수)
 1. `.env` 파일과 설정 파일에 비밀번호, API Key 등 민감 정보를 하드코딩하지 않는다. 반드시 환경변수를 사용한다.
 2. 백엔드 빌드 시 `failBuildOnCVSS=7` 설정에 따라 보안 취약점이 발견되면 수정을 우선한다.
+3. 비밀번호, 세션 비밀, 인증·복구 토큰, 일회용 코드와 소유 증명용 비밀은 HTTP path 또는 query parameter 등 URL request-target로 받거나 전달하지 않는다. 인증된 주체와 서버측 권한 검증으로 대체할 수 없는 별도 비밀 증명이 실제로 필요하면 독립적인 제품·위협 검토를 먼저 거쳐 보호된 request body의 전용 DTO로 설계한다. 백엔드 진입 경계는 금지된 credential-like query 이름을 발견하면 값을 읽거나 로그하지 않고 `400 Bad Request`로 거부하며, 정적 API 계약은 같은 계열의 path·query endpoint 선언을 차단한다. 이 방어는 애플리케이션 앞단의 proxy·WAF·container가 이미 받은 request-target의 로그 잔존 가능성을 제거하지 않으므로 배포 계층의 query redaction·보존·접근 통제를 별도로 적용한다. 일반 개인정보성 업무 검색어를 제한적으로 허용하는 ADR-0009를 이 예외의 근거로 사용할 수 없다. 첫 적용인 만족도는 ADR-0011에 따라 익명 비밀번호 증명을 퇴역하고 수정·삭제를 인증 owner-or-admin과 서비스 계층 재검증으로 제한한다.
 
 ---
 

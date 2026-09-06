@@ -7,6 +7,7 @@ import { VirtualScrollList } from './virtual-scroll-list';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import { CmmnCode, CmmnDetailCode } from '@/types/foundation/system';
 import { ChevronLeft, ChevronRight, Search, Tag } from 'lucide-react';
+import { logErrorSafely } from '@/lib/safe-error-log';
 
 /**
  * CodePicker 선택 결과 — 상세코드는 그룹 문맥 없이는 의미가 없으므로
@@ -84,7 +85,7 @@ export function CodePicker({
       setGroups(list.filter(Boolean));
       setGroupsSearched(true);
     } catch (error) {
-      console.error('공통코드 그룹 검색 실패', error);
+      logErrorSafely('공통코드 그룹 검색 실패', error);
       setGroups([]);
       setGroupsSearched(true);
       setGroupsError(true);
@@ -109,7 +110,7 @@ export function CodePicker({
         }));
       setCodes(rows.filter(item => item && item.cdId === group.cdId));
     } catch (error) {
-      console.error('상세코드 목록 조회 실패', error);
+      logErrorSafely('상세코드 목록 조회 실패', error);
       setCodes([]);
       setCodesError(true);
     } finally {

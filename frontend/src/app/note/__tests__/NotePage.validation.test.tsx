@@ -20,13 +20,13 @@ vi.mock('next/dynamic', () => ({
 }));
 
 vi.mock('@/app/components/patterns/work-list-page', () => ({
-  WorkListPage: ({ actions, children }: { actions: React.ReactNode; children: React.ReactNode }) => (
-    <main>{actions}{children}</main>
+  WorkListPage: ({ actions, filter, children }: { actions: React.ReactNode; filter?: React.ReactNode; children: React.ReactNode }) => (
+    <main>{actions}{filter}{children}</main>
   ),
 }));
 
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data, loading, error, onRetry, onRowClick, rowActionLabel, emptyMessage }: any) => {
+  StandardDataTable: ({ columns, data, loading, error, onRetry, onRowClick, rowActionLabel, emptyMessage, pagination }: any) => {
     if (loading) return <div role="status">쪽지 목록을 불러오는 중입니다.</div>;
     if (error) return (
       <div role="alert">
@@ -50,6 +50,13 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
             )}
           </div>
         ))}
+        {pagination && pagination.totalPages > 1 && (
+          <nav aria-label="쪽지 페이지">
+            <span>{`${pagination.currentPage}/${pagination.totalPages} 페이지`}</span>
+            <button type="button" onClick={() => pagination.onPageChange(pagination.currentPage + 1)}>다음 페이지</button>
+            <button type="button" onClick={() => pagination.onPageSizeChange(50)}>페이지당 50건</button>
+          </nav>
+        )}
       </div>
     );
   },
@@ -110,6 +117,19 @@ describe('NotePage validation contract', () => {
     fireEvent.click(screen.getByRole('button', { name: /타겟 검색/ }));
     fireEvent.click(screen.getByRole('button', { name: '홍길동 선택' }));
   }
+
+  // [2026-09-06 감사 D09-01 후속] 검색어는 서버 searchWrd 로 가고(제목·내용 부분일치), 빈 결과 문구는 검색어를 싣는다(G15).
+  it('검색어를 적용하면 1페이지부터 searchWrd 로 조회하고 빈 결과 문구가 검색어를 싣는다', async () => {
+    render(<NotePage />);
+    await waitFor(() => expect(mocks.getReceivedNotes).toHaveBeenCalledWith({ page: 0, size: 20 }));
+
+    fireEvent.change(screen.getByRole('textbox', { name: '제목·내용' }), { target: { value: ' 회의 ' } });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+    await waitFor(() => expect(mocks.getReceivedNotes).toHaveBeenLastCalledWith({ page: 0, size: 20, searchWrd: '회의' }));
+    expect(await screen.findByText('"회의"에 대한 검색 결과가 없습니다.')).toBeInTheDocument();
+    expect(mocks.getSentNotes).not.toHaveBeenCalled();
+  });
 
   it('필수 수신자가 없으면 write 없이 검색 버튼으로 이동해 수정 방법을 안내한다', async () => {
     openComposer();
@@ -365,5 +385,47 @@ describe('NotePage validation contract', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('쪽지 목록을 불러오지 못했습니다.');
     expect(screen.queryByText('받은 쪽지 잔상')).not.toBeInTheDocument();
     expect(screen.queryByText('보낸 쪽지가 없습니다.')).not.toBeInTheDocument();
+  });
+
+  /**
+   * [2026-09-05] 종전에는 `{ page: 0, size: 100 }` 한 번만 조회하고 페이저가 없어 101번째 쪽지부터
+   * 도달 불가였다. 서버 페이지 계약(page 0-base·size)과 탭 전환 시 1페이지 복귀를 고정한다.
+   */
+  it('받은 쪽지가 한 페이지를 넘으면 서버 페이지로 넘기고 탭을 바꾸면 1페이지로 돌아간다', async () => {
+    const noteAt = (sn: number, subject: string) => ({
+      noteSn: sn,
+      noteRcptnSn: sn * 10,
+      noteSj: subject,
+      noteCn: '본문',
+      dsptchUserId: 'sender',
+      rcverId: 'receiver',
+      openYn: 'N',
+      crtDt: '2026-09-05',
+    });
+    mocks.getReceivedNotes.mockImplementation(async ({ page }: { page: number }) => (
+      page === 0
+        ? { list: [noteAt(1, '첫 페이지 쪽지')], total: 45 }
+        : { list: [noteAt(2, '둘째 페이지 쪽지')], total: 45 }
+    ));
+    render(<NotePage />);
+
+    expect(await screen.findByText('첫 페이지 쪽지')).toBeInTheDocument();
+    expect(mocks.getReceivedNotes).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(screen.getByText('1/3 페이지')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
+
+    expect(await screen.findByText('둘째 페이지 쪽지')).toBeInTheDocument();
+    expect(mocks.getReceivedNotes).toHaveBeenCalledWith({ page: 1, size: 20 });
+    expect(screen.queryByText('첫 페이지 쪽지')).not.toBeInTheDocument();
+    expect(screen.getByText('2/3 페이지')).toBeInTheDocument();
+
+    // 페이지당 건수를 바꾸면 1페이지부터 다시 조회한다.
+    fireEvent.click(screen.getByRole('button', { name: '페이지당 50건' }));
+    await waitFor(() => expect(mocks.getReceivedNotes).toHaveBeenCalledWith({ page: 0, size: 50 }));
+
+    // 탭을 바꾸면 이전 탭의 페이지 위치를 끌고 가지 않는다.
+    fireEvent.click(screen.getByRole('tab', { name: '보낸 쪽지함' }));
+    await waitFor(() => expect(mocks.getSentNotes).toHaveBeenCalledWith({ page: 0, size: 50 }));
   });
 });

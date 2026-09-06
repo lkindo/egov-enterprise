@@ -17,7 +17,8 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
  * <p><b>중요:</b> 클래스 레벨 {@code @SuperBuilder}/{@code @Builder} 금지(규칙 a)는 ArchUnit 으로
  * 강제할 수 없다. Lombok 애노테이션은 {@code RetentionPolicy.SOURCE} 라 컴파일된 바이트코드에 흔적이
  * 남지 않으므로, 바이트코드 분석 기반의 ArchUnit 은 이를 탐지할 수 없기 때문이다.
- * 규칙(a) 의 회귀 차단은 소스 레벨 도구(Checkstyle 정규식 등) 또는 코드리뷰로 보완한다.
+ * 규칙(a) 의 회귀 차단은 {@code EntityLombokSourceLinterTest} 가 소스 레벨에서 담당한다.
+ * 규칙(b) 의 수동 빌더 위임 의미는 현재 코드리뷰로 보완한다.
  *
  * <p>실행은 각 모듈의 {@code EntityConventionArchTest} 가 담당한다.
  * 자세한 이유는 {@link LayeredArchitectureRules} 참조.

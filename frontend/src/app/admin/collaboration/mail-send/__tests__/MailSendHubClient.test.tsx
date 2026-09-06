@@ -23,6 +23,32 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));
 
+// 피커 자체의 계약은 recipient-picker.test.tsx 가 본다. 여기서는 "피커가 돌려준 선택을 화면이 어떻게 싣는가" 만 본다.
+vi.mock('@/app/components/ui/recipient-picker', async () => {
+  const actual = await vi.importActual<typeof import('@/app/components/ui/recipient-picker')>('@/app/components/ui/recipient-picker');
+  return {
+    ...actual,
+    RecipientPicker: ({ onConfirm, onClose }: { onConfirm: (r: unknown[]) => void; onClose: () => void }) => (
+      <div role="dialog" aria-label="수신자 찾기">
+        <button
+          type="button"
+          onClick={() => {
+            onConfirm([
+              { kind: 'user', esntlId: 'USR_A', name: '김갑', deptNm: '총무과' },
+              { kind: 'contact', name: '박외부', email: 'park@partner.example' },
+              // 이미 직접 입력한 주소와 같은 명함 — 한 번만 담겨야 한다.
+              { kind: 'contact', name: 'receiver', email: 'receiver@example.com' },
+            ]);
+            onClose();
+          }}
+        >
+          피커 선택 확정
+        </button>
+      </div>
+    ),
+  };
+});
+
 async function enterValidMail(user: ReturnType<typeof userEvent.setup>) {
   const recipient = screen.getByRole('textbox', { name: '수신자 선택' });
   await user.type(recipient, 'receiver@example.com');
@@ -42,15 +68,14 @@ describe('MailSendHubClient validation', () => {
   });
 
   /**
-   * [2026-08-29] 이메일이 아닌 값을 수신자로 받지 않는다.
+   * [2026-08-29 → 2026-09-05] 직접 입력은 여전히 이메일 주소만 받는다.
    *
-   * 서버에는 ID 를 메일 주소로 바꿔 주는 경로가 없다 — MailService 가 recptnPerson 을 손대지
-   * 않고 MailAsyncProcessor 가 `emailSender.send(..., recptnPerson)` 의 수신 주소로 그대로
-   * 쓴다. 종전 화면은 아무 문자열이나 받아 `recipient.email || recipient.id` 로 원시 ID 를
-   * 실어 보냈고, 발송이 @Async 라 화면에는 '발송 요청되었습니다' 만 남았다. 사용자는 갔다고
-   * 믿는데 그 주소로는 갈 수 없다.
+   * 직접 입력 값은 서버가 그대로 SMTP 수신 주소로 쓴다(MailRecipientDto.emlAddr). ID 로 사람을 찾는
+   * 경로는 이제 '수신자 찾기'(사용자 검색·주소록)이며 그쪽은 esntlId 를 실어 서버가 주소를 해석한다.
+   * 종전 화면은 아무 문자열이나 받아 원시 ID 를 주소로 실어 보냈고, 발송이 @Async 라 화면에는
+   * '발송 요청되었습니다' 만 남았다 — 그 결함이 되살아나지 않게 형식 강제를 유지한다.
    */
-  it('이메일이 아닌 수신자를 추가하지 않고, 주소를 찾아 주지 못한다고 알린다', async () => {
+  it('이메일이 아닌 값을 직접 입력하면 추가하지 않고, 이름으로 찾는 경로를 안내한다', async () => {
     const user = userEvent.setup();
     render(<MailSendHubClient />);
 
@@ -58,20 +83,68 @@ describe('MailSendHubClient validation', () => {
     await user.type(recipient, 'kim01');
     await user.click(screen.getByRole('button', { name: /추가/ }));
 
-    expect(await screen.findAllByText(/ID 로 주소를 찾지 못합니다/)).not.toHaveLength(0);
+    expect(await screen.findAllByText(/이메일 주소 형식이 아닙니다.*수신자 찾기/)).not.toHaveLength(0);
     expect(screen.queryByText('1명 선택됨')).toBeNull();
   });
 
-  it('발송 payload 에 이메일 주소만 싣는다', async () => {
+  it('직접 입력한 주소는 recipients[].emlAddr 로 싣고, 종전 recptnPerson 은 보내지 않는다', async () => {
     const user = userEvent.setup();
     render(<MailSendHubClient />);
     await enterValidMail(user);
 
     await user.click(screen.getByRole('button', { name: /메일 발송/ }));
 
-    await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledWith(
-      expect.objectContaining({ recptnPerson: 'receiver@example.com' }),
-    ));
+    await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(1));
+    const payload = mocks.sendMail.mock.calls[0][0];
+    expect(payload.recipients).toEqual([{ emlAddr: 'receiver@example.com' }]);
+    expect(payload).not.toHaveProperty('recptnPerson');
+  });
+
+  /**
+   * [2026-09-05 DEC-OPS-035] 수신자 찾기 — 사용자는 esntlId 만, 명함은 주소만 싣는다. 같은 주소는 한 번만.
+   * 사용자의 주소는 화면이 알지 못하므로 payload 어디에도 이메일이 아닌 식별자 외의 값이 실리면 안 된다.
+   */
+  it('수신자 찾기로 고른 사용자는 esntlId 만, 명함은 주소만 싣고 중복 주소는 한 번만 담는다', async () => {
+    const user = userEvent.setup();
+    render(<MailSendHubClient />);
+    await enterValidMail(user);
+
+    await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
+    await user.click(await screen.findByRole('button', { name: '피커 선택 확정' }));
+
+    expect(screen.getByText('3명 선택됨')).toBeInTheDocument();
+    const badges = screen.getAllByTestId('selected-recipient-badge');
+    expect(badges.map((badge) => badge.getAttribute('data-recipient-kind'))).toEqual(['contact', 'user', 'contact']);
+    expect(screen.getByText('김갑')).toBeInTheDocument();
+    // 사용자 항목은 소속만 보이고 이메일은 어디에도 보이지 않는다.
+    expect(screen.getByText('총무과')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /메일 발송/ }));
+
+    await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(1));
+    expect(mocks.sendMail.mock.calls[0][0].recipients).toEqual([
+      { emlAddr: 'receiver@example.com' },
+      { esntlId: 'USR_A' },
+      { emlAddr: 'park@partner.example' },
+    ]);
+  });
+
+  it('선택한 사용자를 제외하면 payload 에서도 빠진다', async () => {
+    const user = userEvent.setup();
+    render(<MailSendHubClient />);
+    await enterValidMail(user);
+    await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
+    await user.click(await screen.findByRole('button', { name: '피커 선택 확정' }));
+
+    await user.click(screen.getByRole('button', { name: '김갑 수신자 제외' }));
+    expect(screen.getByText('2명 선택됨')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /메일 발송/ }));
+    await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(1));
+    expect(mocks.sendMail.mock.calls[0][0].recipients).toEqual([
+      { emlAddr: 'receiver@example.com' },
+      { emlAddr: 'park@partner.example' },
+    ]);
   });
 
   it('제목 max+1을 write sink로 보내지 않고 제목 입력으로 이동한다', async () => {

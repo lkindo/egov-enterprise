@@ -16,6 +16,10 @@ vi.mock('next/navigation', () => ({
 import { usePageParam, useTabParam } from '../use-log-url-state';
 
 const CATEGORIES = ['SYS', 'LGN', 'USR', 'WEB'] as const;
+const PAGE_PRESERVED_PARAMS = [{
+  name: 'cat',
+  allowedValues: ['LGN', 'USR', 'WEB'],
+}] as const;
 
 describe('log URL state', () => {
   beforeEach(() => {
@@ -35,20 +39,39 @@ describe('log URL state', () => {
     expect(invalid.result.current[0]).toBe(1);
   });
 
-  it('removes page=1 while preserving unrelated query parameters', () => {
-    navigation.query = 'cat=WEB&page=4&keep=1';
-    const { result } = renderHook(() => usePageParam());
+  it('removes page=1, preserves the approved category, and drops unknown query parameters', () => {
+    navigation.query = 'cat=WEB&page=4&searchKeyword=person-name&keep=1';
+    const { result } = renderHook(() => usePageParam('page', PAGE_PRESERVED_PARAMS));
 
     act(() => result.current[1](1));
 
     expect(navigation.replace).toHaveBeenCalledWith(
-      '/admin/system/logs?cat=WEB&keep=1',
+      '/admin/system/logs?cat=WEB',
       { scroll: false },
     );
   });
 
+  it.each(['UNKNOWN', 'SYS'])('drops invalid or default root category %s when changing page', (category) => {
+    navigation.query = `cat=${category}&page=1&searchKeyword=person-name`;
+    const { result } = renderHook(() => usePageParam('page', PAGE_PRESERVED_PARAMS));
+
+    act(() => result.current[1](2));
+
+    expect(navigation.replace).toHaveBeenCalledWith('/admin/system/logs?page=2', { scroll: false });
+  });
+
+  it('does not carry root-only cat into a nested log route', () => {
+    navigation.pathname = '/admin/system/logs/privacy';
+    navigation.query = 'cat=WEB&page=1&searchKeyword=person-name';
+    const { result } = renderHook(() => usePageParam());
+
+    act(() => result.current[1](2));
+
+    expect(navigation.replace).toHaveBeenCalledWith('/admin/system/logs/privacy?page=2', { scroll: false });
+  });
+
   it('falls back from an unknown category and resets page when a valid tab is selected', () => {
-    navigation.query = 'cat=UNKNOWN&page=3&keep=1';
+    navigation.query = 'cat=UNKNOWN&page=3&searchKeyword=person-name&keep=1';
     const { result } = renderHook(() =>
       useTabParam(CATEGORIES, 'SYS', { paramName: 'cat', resetParams: ['page'] }),
     );
@@ -58,13 +81,13 @@ describe('log URL state', () => {
     act(() => result.current[1]('LGN'));
 
     expect(navigation.replace).toHaveBeenCalledWith(
-      '/admin/system/logs?cat=LGN&keep=1',
+      '/admin/system/logs?cat=LGN',
       { scroll: false },
     );
   });
 
   it('keeps the default category out of the URL and resets page', () => {
-    navigation.query = 'cat=LGN&page=2&keep=1';
+    navigation.query = 'cat=LGN&page=2&searchKeyword=person-name&keep=1';
     const { result } = renderHook(() =>
       useTabParam(CATEGORIES, 'SYS', { paramName: 'cat', resetParams: ['page'] }),
     );
@@ -72,7 +95,7 @@ describe('log URL state', () => {
     act(() => result.current[1]('SYS'));
 
     expect(navigation.replace).toHaveBeenCalledWith(
-      '/admin/system/logs?keep=1',
+      '/admin/system/logs',
       { scroll: false },
     );
   });

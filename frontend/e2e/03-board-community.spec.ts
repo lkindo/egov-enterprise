@@ -316,12 +316,14 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             await expect.poll(serverComments, { timeout: 15000, message: 'UI 수정이 서버에 반영되어야 한다' })
                 .toContain(edited);
 
-            // ── 삭제 (네이티브 confirm 을 쓴다 — 클릭 전에 핸들러를 걸어야 한다)
-            page.once('dialog', (dialog) => dialog.accept());
+            // ── 삭제 ([2026-09-06 DEC-OPS-038] 네이티브 confirm → useConfirm 모달. 모달의 '삭제' 를 누른다 — 228행과 같은 패턴)
             const deleteBtn = page.getByTestId('comment-delete-button').first();
             await expect(deleteBtn).toBeEnabled({ timeout: 15000 });
             await deleteBtn.hover();
             await deleteBtn.click({ force: true });
+            const deleteConfirm = page.getByRole('dialog').filter({ hasText: '댓글 삭제' });
+            await expect(deleteConfirm).toBeVisible({ timeout: 15000 });
+            await deleteConfirm.getByRole('button', { name: '삭제', exact: true }).click();
 
             await expect(
                 page.locator('p.whitespace-pre-wrap').filter({ hasText: edited }),

@@ -21,6 +21,29 @@ export class OperationalExtensionPage {
         await this.page.waitForLoadState('networkidle');
     }
 
+    /** [2026-09-05 DEC-OPS-036] 행 액션 — 수정 모달을 열어 포상 명칭을 바꾼다. */
+    async renameReward(currentName: string, nextName: string) {
+        console.log(`>>> Renaming reward: ${currentName} -> ${nextName}`);
+        await this.page.getByRole('button', { name: `${currentName} 수정` }).first().click();
+        const modal = this.page.getByRole('dialog', { name: '포상 기록 수정' });
+        await expect(modal).toBeVisible();
+        const nameInput = modal.getByRole('textbox', { name: /^포상 명칭/ });
+        await expect(nameInput).toHaveValue(currentName);
+        await nameInput.fill(nextName);
+        await modal.getByRole('button', { name: '수정 저장' }).click();
+        await expect(modal).toBeHidden();
+    }
+
+    /** [2026-09-05 DEC-OPS-036] 행 액션 — 확인 모달을 거쳐 포상을 삭제한다. */
+    async deleteReward(name: string) {
+        console.log(`>>> Deleting reward: ${name}`);
+        await this.page.getByRole('button', { name: `${name} 삭제` }).first().click();
+        const confirmDialog = this.page.getByRole('dialog').filter({ hasText: '포상 기록 삭제' });
+        await expect(confirmDialog).toBeVisible();
+        await confirmDialog.getByRole('button', { name: '삭제', exact: true }).click();
+        await expect(confirmDialog).toBeHidden();
+    }
+
     // External HR Management
     async gotoExternalHr() {
         console.log('>>> Navigating to External HR Management');

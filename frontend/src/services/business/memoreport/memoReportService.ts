@@ -1,5 +1,4 @@
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
-import type { components } from '@/types/generated-api';
 import {
   createMemoReportOperation,
   deleteMemoReportOperation,
@@ -10,8 +9,14 @@ import {
   updateDrctMatterOperation,
   updateMemoReportOperation,
 } from '@/types/generated-operations';
-import { MemoInstructionRequestSchema } from '@/types/generated-zod';
+import {
+  MemoInstructionRequestSchema,
+  MemoReportDtoRequestSchema,
+  MemoReportDtoResponseSchema,
+} from '@/types/generated-zod';
 import { z } from 'zod';
+
+export type MemoReportInput = z.input<typeof MemoReportDtoRequestSchema>;
 
 const MemoInstructionBoundarySchema = MemoInstructionRequestSchema.superRefine((request, context) => {
   if (!request.drctnMttr.trim()) {
@@ -23,20 +28,7 @@ const MemoInstructionBoundarySchema = MemoInstructionRequestSchema.superRefine((
   }
 });
 
-export interface MemoReportInfo {
-  memoRptSn: number;
-  rptTtl: string;
-  rptCn: string;
-  userId: string;
-  wrterNm: string;
-  rptrId: string;
-  rptrNm: string;
-  memoRptYmd: string;
-  drctnMttr?: string;
-  drctnMttrRegDt?: string;
-  rptrInqDt?: string;
-  crtDt: string;
-}
+export type MemoReportInfo = z.output<typeof MemoReportDtoResponseSchema> & { memoRptSn: number };
 
 export interface PageResponse<T> {
   list: T[];
@@ -60,15 +52,15 @@ export const memoReportService = {
     return executeGeneratedOperation(getMemoReportOperation, { path: { memoRptSn } }) as
       Promise<MemoReportInfo>;
   },
-  createMemoReport: async (data: Partial<MemoReportInfo>) => {
+  createMemoReport: async (data: MemoReportInput) => {
     return executeGeneratedOperation(createMemoReportOperation, {
-      body: data as components['schemas']['MemoReportDto'],
+      body: data,
     });
   },
-  updateMemoReport: async (memoRptSn: number, data: Partial<MemoReportInfo>) => {
+  updateMemoReport: async (memoRptSn: number, data: MemoReportInput) => {
     return executeGeneratedOperation(updateMemoReportOperation, {
       path: { memoRptSn },
-      body: data as components['schemas']['MemoReportDto'],
+      body: data,
     });
   },
   updateDrctMatter: async (memoRptSn: number, drctnMttr: string) => {

@@ -44,7 +44,7 @@ Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 �
 - **Target**: mapping이 참조하는 PostgreSQL table·column·PK metadata와 DB product/version을 fingerprint한다.
 - **Review**: 선택적 `review.yml`은 inventory·target·mapping·execution contract 네 digest에 결속되고, 객체 stable ID별 disposition과 검토 여부를 선언한다.
 
-> **현재 차단 결함:** `MappingLoader.resolveDbConfig()`가 환경 변수 치환 뒤 `DbConfig`를 4-인자 생성자로 재구성해 YAML에서 읽은 `endpointId`를 보존하지 않는다. Workflow runner는 source/target `endpointId`를 의무화하므로, 실제 파일 기반 `discover`는 현재 이 게이트에서 차단된다. Workflow 단위 테스트는 loader를 mock해 이 연결 결함을 탐지하지 못한다. 이 결함이 수정되기 전에는 아래 실행 예시를 운영 가능한 경로로 간주하지 않는다.
+> **첫 차단 요소 해소(2026-09-05):** [`MappingLoader.resolveDbConfig()`](../../migration-tool/src/main/java/nuri/migration/model/MappingLoader.java)는 환경 변수 치환 뒤에도 source/target `endpointId`를 보존한다. [`MappingLoaderEndpointBindingTest`](../../migration-tool/src/test/java/nuri/migration/model/MappingLoaderEndpointBindingTest.java)는 literal·환경 변수 `endpointId`를, [`MigrationWorkflowRunnerTest`](../../migration-tool/src/test/java/nuri/migration/MigrationWorkflowRunnerTest.java)는 실제 YAML 파일을 읽는 `discover` 경로와 inventory의 source endpoint binding을 회귀 검증한다. 이는 파일 loader 연결 결함을 닫은 증거이며 실제 DB rehearsal이나 production cutover 준비 완료를 뜻하지 않는다.
 
 ## Source adapter와 discovery 범위
 
@@ -144,7 +144,7 @@ Target에는 migration-tool 전용 Flyway가 `migration_control` schema와 다�
 
 ## 실행 예시
 
-아래 예시는 endpoint 보존 결함이 수정되고, 승인된 비운영 rehearsal 환경과 SELECT-only source 계정이 준비된 뒤에만 사용한다. `plan`과 `load`에는 `discover`와 같은 adapter/catalog/schema/object-kind/system-object scope를 반복해야 한다.
+아래 예시의 실제 YAML `endpointId` loader 경로는 회귀 테스트로 고정돼 있다. 다만 명령은 승인된 비운영 rehearsal 환경과 SELECT-only source 계정이 준비된 뒤에만 사용한다. `plan`과 `load`에는 `discover`와 같은 adapter/catalog/schema/object-kind/system-object scope를 반복해야 한다.
 
 ```powershell
 ./gradlew :migration-tool:bootRun --args="--command=discover --mapping=mapping.yml --inventory=inventory.json --source-adapter=postgresql-pg-catalog --schemas=legacy"
@@ -161,7 +161,7 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 
 다음 항목이 닫히기 전에는 plan의 `commitReady=true`나 load의 PASS를 운영 이관 승인으로 사용하지 않는다.
 
-1. `MappingLoader`가 source/target `endpointId`를 보존하는 회귀 테스트와 실제 YAML workflow E2E를 추가한다.
+1. **완료(2026-09-05):** `MappingLoader`가 source/target `endpointId`를 보존하도록 수정하고, [loader 회귀](../../migration-tool/src/test/java/nuri/migration/model/MappingLoaderEndpointBindingTest.java)와 [실제 YAML `discover` 회귀](../../migration-tool/src/test/java/nuri/migration/MigrationWorkflowRunnerTest.java)를 추가했다.
 2. target PostgreSQL은 현재 `endpointId` 라벨과 product/version·schema fingerprint만 결속한다. credential을 제거한 JDBC location/instance identity도 artifact에 결속해, 같은 `endpointId`와 동일 schema를 가진 다른 PostgreSQL로 URL이 바뀌어도 load가 통과할 수 있는 공백을 닫는다.
 3. PostgreSQL source/target과 Oracle·Tibero·MySQL·MariaDB·SQL Server adapter를 지원 버전·실제 driver·최소권한 계정으로 검증한다. 현재 vendor query 정의와 H2/mock 테스트는 실 DB 증거가 아니다.
 4. charset/collation/timezone, quoted identifier, LOB와 vendor-specific type, 대용량 스트리밍을 익명화된 대표 데이터로 rehearsal한다.
@@ -179,7 +179,7 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 ./gradlew :migration-tool:test
 ```
 
-현재 test inventory는 Java 테스트 소스 **81개**, `@Test` **400건**이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target fingerprint와 strict 종료를 검증한다. PostgreSQL Testcontainers 테스트는 migration runtime schema와 generated identity 경로를 확인하지만 Docker가 없으면 비활성화되며, source vendor 전수 workflow·운영 규모·권한·cutover/rollback 증거는 아니다.
+현재 test inventory는 Java 테스트 소스 **82개**, `@Test` **403건**이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target fingerprint와 strict 종료를 검증한다. PostgreSQL Testcontainers 테스트는 migration runtime schema와 generated identity 경로를 확인하지만 Docker가 없으면 비활성화되며, source vendor 전수 workflow·운영 규모·권한·cutover/rollback 증거는 아니다.
 
 ---
-*Verified against current `migration-tool` implementation at `1c8f7724e` and GAP-MIG-001: 2026-08-31*
+*Verified against the current `MappingLoader`, real-YAML workflow regression, and GAP-MIG-001: 2026-09-05*

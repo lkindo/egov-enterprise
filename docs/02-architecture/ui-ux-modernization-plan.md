@@ -1,6 +1,10 @@
 # eGov Enterprise UI/UX 전면 현대화 적대적 재검토 및 실행 계획
 
 > **실행 에이전트:** 이 문서는 `docs/03-guides/orchestration-protocol.md`에 따라 한 작업 패키지씩 실행한다. 현재 문서는 구현 완료 보고가 아니라, 2026-08-20 Claude 원안을 대체하는 권고 계획이다.
+>
+> **2026-09-05 URL 정책 갱신:** [ADR-0009](decisions/ADR-0009-controlled-url-search-state.md)가 개인정보성 업무 검색어의 통제된 URL 사용을 승인했다. 아래 2026-08-20 검토 기록 중 “자유 검색어·식별자 URL 제외”와 `PD-UX-002` 승인 대기 문구는 당시 상태를 설명하는 역사로만 읽고, 현행 구현·검증에는 ADR-0009와 프런트엔드 헌법 제4조를 적용한다.
+>
+> **2026-09-05 IA 상태 갱신:** [ADR-0007](decisions/ADR-0007-reference-default-ia-approval.md)이 ADR-0004의 hybrid 방향을 reference-default IA로 승인해 공통 base에서 “잠정” 지위를 끝냈다. route별 disposition은 일괄 승인되지 않았으며 owner PR review로 개별 승인한다. 기관 채택 시에는 실사용자·실메뉴·실권한으로 원 G1을 다시 수행한다. 아래 2026-08-20의 ADR-0004 잠정·승인 대기 서술은 역사적 검토 문맥으로만 읽는다.
 
 **목표:** 코드 정리 여부가 아니라 실제 사용자와 프레임워크 채택자가 더 안전하고 빠르게 핵심 과업을 완료했음을 증명하는 UI/UX 현대화를 수행한다.
 
@@ -8,7 +12,7 @@
 
 **기술 스택:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, TanStack Query 5, React Hook Form/Zod, Vitest/Testing Library, Playwright, axe-core, Spring Boot API, Flyway.
 
-**상태:** Recommended · 기반 계약·긴급 접근성 수리·컴포넌트 경계 2개 배치 로컬 구현 · 원안 그대로의 착수는 거부 · G0/G1 미통과로 theme·파일럿·대규모 이식 보류
+**상태:** Recommended · ADR-0007 reference-default IA 승인 · 기반 계약·긴급 접근성 수리·컴포넌트 경계 2개 배치 로컬 구현 · 원안 그대로의 착수는 거부 · G0와 기관 채택 G1 미통과 및 route별 disposition 미완결로 theme·파일럿·대규모 이식 보류
 
 **검토일:** 2026-08-20
 
@@ -52,7 +56,7 @@
 | 테마 plumbing·시각 재설계 | Gate 0 후 진행 | KRDS 적용 수준·브랜드 프로필·접근성 목표가 먼저 고정될 것 |
 | 명백한 보안·접근성·콘텐츠 진실성 결함 수리 | 즉시 진행 가능 | IA·브랜드·권한 의미를 바꾸지 않는 최소 수리만 허용하며 D2/G2 진척으로 계산하지 않을 것 |
 | 대규모 컴포넌트 이동·템플릿 확정 | 보류 | 최소 3개 상이한 파일럿과 reachability 증거가 필요 |
-| 관리자 웨이브 이식 | 보류 | IA 승인, 사용자 성과 baseline, 파일럿 gate 통과 필요 |
+| 관리자 웨이브 이식 | 보류 | 해당 route disposition 개별 승인, 기관 채택 시 IA 재검증, 사용자 성과 baseline, 파일럿 gate 통과 필요 |
 | 화면 생성기·메뉴 산출물 | 강한 보류 | 안정된 3개 이상 예시, 인가 분류, DB 별도 승인 경계 필요 |
 
 ### 1.3 원안 요소별 처리
@@ -162,7 +166,7 @@
 ### 3.4 제품·여정 기준선
 
 - `docs/01-product/README.md`는 현재 활성 PRD가 없다고 명시한다.
-- `PD-UX-001`은 목표 메뉴 트리와 IA 소유자 승인을 대기한다. 원안은 이를 별건으로 미루면서 그보다 먼저 생성기와 메뉴 SQL을 만들려 한다.
+- `PD-UX-001`의 reference-default IA 방향은 ADR-0007로 승인됐고, exact label/group/order/visibility와 route별 disposition의 개별 owner 승인이 남았다. 원안은 이 경계를 별건으로 미루면서 그보다 먼저 생성기와 메뉴 SQL을 만들려 했다.
 - 설문 E2E의 “Admin Create → User Participate”에서 사용자 투표는 UI가 아니라 API로 직접 수행된다. 이 green은 참여 화면의 사용 가능성을 증명하지 않는다.
 - 배너/팝업, FAQ, 설문, 결재는 관리자 설정과 일반 사용자 경험이 이어지는 종단간 흐름이다. admin 화면만 이식하면 여정이 반쪽으로 남는다.
 - `/admin/workflow`는 코드 주석상 백엔드 미연동 정적 데모이고 `24`, `156`, `99.9%`, `LOW` 같은 고정 지표를 운영 데이터처럼 표시한다.
@@ -171,12 +175,12 @@
 
 ### 3.5 2026-08-21 로컬 구현 delta
 
-다음은 승인 없이 안전하게 수행할 수 있었던 기반 계약과 긴급 수리의 현재 디스크 상태다. 이는 사용자 연구·IA 승인·실사용 baseline을 대신하지 않으며, G0/G1 또는 전체 현대화 완료를 뜻하지 않는다. 아래 pre-Gate 보안·접근성·콘텐츠 진실성 수리와 호환 경계 정리는 D2 착수나 G2 진척으로 계산하지 않는다.
+다음은 승인 없이 안전하게 수행할 수 있었던 기반 계약과 긴급 수리의 현재 디스크 상태다. 이는 사용자 연구·기관 채택 시 IA 재검증·route별 disposition 승인·실사용 baseline을 대신하지 않으며, G0·기관 채택 G1 또는 전체 현대화 완료를 뜻하지 않는다. 아래 pre-Gate 보안·접근성·콘텐츠 진실성 수리와 호환 경계 정리는 D2 착수나 G2 진척으로 계산하지 않는다.
 
 | 영역 | 현재 로컬 상태 | 검증/한계 |
 |---|---|---|
 | route truth | filesystem route 119개와 redirect-only alias 2개를 manifest로 고정했다. route status는 `live` 0, `partial` 9, `unavailable` 2, `unverified` 108이다. | 구조 exactness와 일부 실행 계약만 확인했다. 역할·메뉴·제품 소유권은 승인 전이며 `decisionSafe=false`다. |
-| IA direction | [ADR-0004](decisions/ADR-0004-provisional-hybrid-information-architecture.md)가 과업 중심 기본 내비게이션과 명시적 관리 센터를 prototype/research의 잠정 방향으로 선택했다. | overlay는 계속 `proposed`, `acceptedDecision=null`이고 119+2 disposition·live menu/role/privacy·사용자 연구가 미확인이라 `PD-UX-001`과 G1은 미통과다. |
+| IA direction | [ADR-0007](decisions/ADR-0007-reference-default-ia-approval.md)이 ADR-0004의 과업 중심 기본 내비게이션+명시적 관리 센터를 reference-default IA로 승인했다. 사용자 연구 없는 승인은 accepted risk이며 공통 base에서 잠정 지위는 끝났다. | disposition overlay는 `proposed`, `acceptedDecision=null`이고 route별 처분은 일괄 승인되지 않았다. 승인된 route만 menu/generator가 소비할 수 있으며, 기관 채택 시 live menu/role과 실제 사용자 증거로 원 G1을 재수행한다. |
 | reachability | 2026-08-21 15:45 KST 현재 [census 생성기](../../scripts/frontend-reachability-census.mjs) 재실측은 620개 source를 `runtime=452`, `test-only=164`, `ambiguous=1`, `safe-candidate=3`으로 분류했다. | 소스 변경에 따라 변하는 시점값이며 삭제 승인이 아니다. 현재값은 `node scripts/frontend-reachability-census.mjs --check`로 다시 확인한다. 실제 사용 중인 virtual list와 orphan client의 차이는 계약으로 고정했다. |
 | 색상 guard | 두 기존 래칫을 101 + 774로 낮췄다. | 의미가 같은 색상만 토큰으로 이식한 결과이며 baseline 완화가 아니다. 전체 시각 품질이나 대비 준수를 뜻하지 않는다. |
 | 표·heading | `StandardDataTable`의 가짜/nested row button을 제거했고, `PageHeader`를 server-safe하게 만들고 `HubHeader` heading level 계약을 추가했다. 119 route의 실제 렌더·loading·error 분기 heading을 감사했다. | redirect/alias는 렌더 heading 모집단이 아니다. 수동 AT/zoom 증거는 여전히 외부 입력이다. |
@@ -190,7 +194,7 @@
 
 위 r12는 현재 자동 증거의 정본이고 r11 이하 실행은 역사다. r8의 focus assertion 실패 6건, axe violation case 14건(violation 16건), 4px overflow 2건과 r9의 mutation prerequisite 36건은 r12에서 각각 자동 finding 0·case-bound executed evidence 36건으로 관측됐지만 과거 artifact를 수기 수정하지 않는다. r12의 full JSON 282개와 별도 diagnostic JSON 8개 원본은 privacy 검사를 통과했어도 계속 ignored/untracked `ephemeral-ignored`이며, UA-04는 그 원본을 복제하지 않은 automated-only compact summary만 durable historical evidence로 발행했다. execution-captured protocol hash와 manual 48건이 닫히기 전에는 `measured` 또는 전체 현대화 완료로 승격하지 않는다.
 
-현재 G0/G1 입력은 **phase-advancement blocker**다. 활성 제품 책임자·top-task 연구, role/capability 승인, live effective-menu/authority 증거, KRDS profile·브랜드 결정이 없으므로 theme 확정·파일럿·대규모 route wave·generator/menu 변경은 계속 보류한다. 다만 이것만으로 실행 루프 전체의 terminal blocker를 선고하지 않는다. 승인 없이 안전한 내부 수리·계약 보강·현재 디스크 최종 검증을 먼저 소진한 뒤, 남은 항목을 실행 계약의 `Genuine blocker` 조건으로 다시 감사한다.
+현재 reference-default IA 승인은 유효하지만, G0 입력·기관 채택 G1 재검증·미승인 route disposition은 **phase-advancement blocker**다. 활성 제품 책임자·top-task 연구, role/capability 승인, live effective-menu/authority 증거, KRDS profile·브랜드 결정이 없으므로 theme 확정·파일럿·대규모 route wave와 미승인 route의 generator/menu 변경은 계속 보류한다. 다만 이것만으로 실행 루프 전체의 terminal blocker를 선고하지 않는다. 승인 없이 안전한 내부 수리·계약 보강·현재 디스크 최종 검증을 먼저 소진한 뒤, 남은 항목을 실행 계약의 `Genuine blocker` 조건으로 다시 감사한다.
 
 ---
 
@@ -217,7 +221,7 @@
 
 **필수 보완:**
 
-- `PD-UX-001`을 생성기보다 앞선 Decision Gate로 승격한다.
+- `PD-UX-001`의 남은 route별 disposition 승인을 해당 route의 generator/menu 소비보다 앞선 fail-closed Gate로 유지한다.
 - URL 안정성과 메뉴 IA를 분리한다. URL을 유지하면서 label/group/order/visibility를 바꿀 수 있다.
 - 119 route를 `유지 | 이동 | 별칭 | 통합 | 숨김 | demo | 폐기`로 분류한다.
 - 역할×top-task×진입 경로 행렬, 카드 소팅, tree test, 첫 클릭 테스트를 수행한다.
@@ -368,9 +372,10 @@ caseId = route + role + dataState + interactionState + brandProfile + colorMode 
 - 한국어 우선 ADR에 따라 action은 “동사+대상”, 오류는 “상태/원인 또는 조건/다음 행동/입력 보존/참조 코드” 구조를 사용한다.
 - hover-only tooltip에 필수 정보를 두지 않는다.
 - field-level 데이터 분류, URL allowlist, 역할×필드×action visibility를 만든다.
-- 민감 식별자·검색어·응답 데이터는 URL, browser log, analytics payload, screenshot fixture에 남기지 않는다.
+- 성명·사번·계정명 등이 포함될 수 있는 일반 업무 검색어는 [ADR-0009](decisions/ADR-0009-controlled-url-search-state.md)의 화면별 route/query key allowlist 안에서만 URL에 둘 수 있다. unknown query를 재전파하지 않고 same-view 변경은 `replace`를 우선하며 client log·analytics·오류 로그 payload에 복제하지 않는다. 이 허용은 화면별 URL 동기화 의무가 아니다.
+- 앱은 자격증명, cookie·session 비밀, 인증·복구 token, 주민등록번호 등 고유식별정보, 금융·건강·생체 등 고위험 개인정보, 응답 데이터와 업무 본문을 위한 전용 URL field/state를 설계하지 않고 일반 검색창에서 그런 입력을 요구·유도하지 않는다. 자유 입력값의 의미를 완전 탐지할 수 없으므로 사용자의 예상 밖 붙여넣기는 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 이름을 차단하는 장치이지 값 DLP가 아니다.
 
-**수용 기준:** 승인 예외 외 사용자 가시 영어 UI 0, 설명 없는 내부 용어 0, label 대신 placeholder만 사용한 입력 0, 민감 field의 URL/log/analytics 노출 0.
+**수용 기준:** 승인 예외 외 사용자 가시 영어 UI 0, 설명 없는 내부 용어 0, label 대신 placeholder만 사용한 입력 0, 허용 검색어의 unknown-query 재전파·client log·analytics 복제 0, 고위험 용도의 전용 URL field/state와 일반 검색창 입력 요구·유도 0. 이 기준은 자유 입력값 DLP를 보장한다는 뜻이 아니다.
 
 ### F-14 — 기술 proxy 지표가 UX 성과로 오인됨 (High)
 
@@ -470,7 +475,7 @@ frontend/src/
 ```mermaid
 flowchart LR
     G0["Decision Gate 0\n제품·헌법·표준"] --> D0["D0 발견·기준선"]
-    D0 --> G1{"IA·성과 baseline\n승인?"}
+    D0 --> G1{"reference-default+route 승인\n또는 기관 채택 G1?"}
     G1 -- No --> D0
     G1 -- Yes --> D1["D1 IA·콘텐츠·상태 계약"]
     D1 --> D2["D2 토큰·컴포넌트 기반"]
@@ -489,7 +494,7 @@ flowchart LR
 | Gate | 승인 질문 | 통과하지 못하면 |
 |---|---|---|
 | G0 | 어떤 사용자·과업·프로필·표준을 위해 무엇을 바꾸는가? | visual/theme/IA 구현 금지. census·조사와 의미 불변의 명백한 보안·접근성·진실성 결함 수리만 허용; 이 수리는 D2/G2 진척으로 계산하지 않음 |
-| G1 | 목표 IA, 민감 상태, 성공 baseline, route 진실 상태가 승인됐는가? | generator와 대규모 route migration 금지 |
+| G1 | 공통 base는 ADR-0007 reference-default와 해당 route disposition이 승인됐는가? 기관 채택은 목표 IA, 민감 상태, 성공 baseline, route 진실 상태를 다시 승인했는가? | 미승인 route의 generator/menu 소비와 기관별 대규모 route migration 금지 |
 | G2 | profile×mode에서 component contract, 접근성, CSS budget, rollback이 증명됐는가? | production pilot 금지 |
 | G3 | 최소 3개 상이한 수직 pilot이 사용자·기능·접근성·모바일·성능에서 악화가 없는가? | template API와 mass wave 확정 금지 |
 | Wave gate | 해당 여정이 end-to-end로 완료되고 required CI가 현재 SHA에서 green인가? | 다음 wave 진입 금지 |
@@ -677,21 +682,23 @@ pnpm -C frontend exec playwright test e2e/01-core-base.spec.ts e2e/04-quality-re
 
 **Files:**
 
-- Create: `docs/01-product/information-architecture.md`
-- Create: ADR-0004와 구분되는 final acceptance record when exact URL/IA contract is approved
-- Modify: `docs/04-operations/pending-decisions.md` only when `PD-UX-001/002` are actually decided
+- Existing: `docs/01-product/information-architecture.md`
+- Accepted reference-default IA record: `docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md`
+- Accepted URL search record: `docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md`
+- Modify: route별 disposition overlay와 승인 기록; 기관 채택 시 별도 G1 acceptance record
+- Modify: `docs/04-operations/pending-decisions.md` when `PD-UX-001`의 잔여 route 범위가 바뀌거나 ADR-0009의 route/key 범위가 바뀐다
 - Modify: route capability manifest
 
 **Steps:**
 
-1. role×task×route matrix와 current menu census를 작성한다.
-2. open card sort로 사용자 용어, closed card sort/tree test로 목표 구조를 검증한다.
+1. reference-default에서는 route별 disposition과 정적 menu 근거를 검토하고, 기관 채택 시 role×task×route matrix와 live menu census를 다시 작성한다.
+2. 기관 채택 시 open card sort로 사용자 용어, closed card sort/tree test로 목표 구조를 검증한다.
 3. URL 유지와 navigation label/group/order 변경을 별도 결정한다.
-4. URL parameter allowlist를 `비민감·공유 가치·복원 가치` 기준으로 만든다.
-5. 사용자 식별자, IP, 자유 검색어, 응답 데이터는 URL과 analytics에서 제외한다.
-6. 119 route disposition과 redirect/deep-link/back contract를 승인한다.
+4. URL parameter는 화면별 route/query key allowlist로 관리한다. 현재 주소창 검색 승인은 `/search?q`, `/admin/community/boards/select-board-list` 및 `/admin/community/[id]`의 `searchCnd`·`searchWrd`다.
+5. 허용된 일반 업무 검색어는 caller가 선언한 key만 재조립하고 unknown query를 버리며 same-view 변경에 `replace`를 사용한다. client log·analytics에는 복제하지 않는다. 앱은 자격증명·token·고유식별정보·고위험 개인정보·응답 본문 용도의 전용 URL field/state를 설계하거나 일반 검색창에서 입력을 요구·유도하지 않는다. 자유 입력값의 예상 밖 붙여넣기는 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 차단이지 DLP가 아니다. 허용은 다른 화면의 URL 동기화를 의무화하지 않는다.
+6. 119 route와 2 alias의 disposition 및 redirect/deep-link/back contract를 owner PR review로 route별 개별 승인한다.
 
-**Acceptance Criteria:** `PD-UX-001/002`의 상태 변경은 승인 근거와 ADR-0004와 구분되는 final acceptance record를 가진다. IA 승인 전 generator/menu 변경은 없다.
+**Acceptance Criteria:** ADR-0007의 reference-default IA 승인을 유지하되 미승인 route는 menu/generator가 소비하지 않는다. 기관 채택 시 원 G1을 재수행하고, route별 disposition은 개별 승인 근거를 가진다. URL 검색 상태는 ADR-0009와 exact allowlist 계약을 따르며 새 route/key는 승인 기록과 회귀 계약 없이 추가하지 않는다. `PD-UX-002`의 검색어 판단은 이 결정으로 닫혔고 나머지 세 부류는 축소된 범위로 계속 추적한다.
 
 **Verify:**
 
@@ -1054,7 +1061,7 @@ priority = (task value × frequency × failure cost × accessibility risk × rea
 | 과업 | completion rate | P0 동일 protocol baseline 후 target 확정 | 통계·정성상 유의한 악화 또는 치명 실패 |
 | 효율 | median completion time | 숙련도·device 분리 | 반복 평가에서 지속 악화 |
 | 오류 | critical error / recovery rate | 과업별 분리 | 데이터 유실, 중복 제출, 회복 불가 1건이라도 발생 |
-| 탐색 | first-click/tree-test success | IA 승인 전 측정 | 승인 baseline 하회 |
+| 탐색 | first-click/tree-test success | 기관 채택 목표 IA 승인 전 측정 | 승인 baseline 하회 |
 | 폼 | first-submit success, field error, recovery | mutating form만 모집단 | 입력 유실·오류 원인 불명 증가 |
 | 신뢰 | fake/unknown metric count | 목표 0 | live surface에 출처 없는 지표 노출 |
 | 모바일 | top-task action parity | desktop 대비 명시 | 핵심 action 누락/접근 불가 |
@@ -1196,7 +1203,7 @@ required CI에 연결되지 않은 local hook은 빠른 feedback이지 병합 �
 
 | ID | 위험 | 가능성/영향 | 조기 신호 | 완화 | Rollback |
 |---|---|---|---|---|---|
-| R1 | 잘못된 IA 고착 | 높음/높음 | generator가 목표 sitemap 전 생성 | G1 선행, route disposition | generator/menu 작업 철회 |
+| R1 | 잘못된 IA 고착 | 높음/높음 | generator가 미승인 route 또는 기관별 목표 sitemap보다 먼저 생성 | ADR-0007 + route별 승인, 기관 채택 G1 재검증 | generator/menu 작업 철회 |
 | R2 | live 파일 오삭제 | 중간/높음 | raw grep만으로 dead 판정 | route reachability + build | compatibility shim 복원 |
 | R3 | component mega-abstraction | 높음/높음 | prop/slot 급증, domain import | 3 production consumers rule | scaffold 제거, local composition 복귀 |
 | R4 | 접근성 false confidence | 높음/높음 | axe count만 보고 완료 | manual AT + complete process | release 보류 |
@@ -1298,14 +1305,14 @@ pnpm -C frontend run bundle:check
 
 ---
 
-## 17. 아직 필요한 제품 결정
+## 17. 제품 결정 상태
 
 | Decision | 기본 권고 | 결정자 | Deadline/Blocking |
 |---|---|---|---|
 | KRDS profile | 공공 배포는 `krds-aligned` 기본, standard claim은 매핑 전수 충족 시만 | product/design owner | D2 blocker |
 | Premium profile | 민간/참조 demo용 opt-in, 정부 identity 기본 off | product owner | D2 blocker |
-| IA | 기존 URL은 우선 보존하되 메뉴·label·group은 사용자 검증 후 재편 | IA owner | generator/wave blocker |
-| URL search state | page/sort/tab 등 비민감 allowlist만 공유; 자유 검색어·식별자는 ephemeral/server | security+product | log/security wave blocker |
+| IA | **Accepted — ADR-0007 reference-default.** 기존 URL을 우선 보존하고 route별 disposition은 owner PR review로 개별 승인한다. 기관 채택 시 실사용자·실메뉴·실권한으로 원 G1을 재수행한다. | IA owner | 미승인 route의 generator/menu 소비와 기관별 wave blocker |
+| URL search state | **Accepted — ADR-0009.** 일반 업무 개인정보 검색어는 exact route/key allowlist, unknown-query 차단, same-view `replace`, log·analytics 비복제와 accepted risk 아래 허용한다. 허용은 의무가 아니다. 앱은 자격증명·token·고유식별정보·고위험 개인정보·응답 본문 용도의 전용 URL field/state를 설계하거나 일반 검색창에서 입력을 요구·유도하지 않는다. 자유 입력값의 예상 밖 붙여넣기는 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 차단이지 DLP가 아니다. | security+product | base 정책 해소; 새 route/key·파생 제품 예외만 별도 결정 |
 | User research access | 실제 사용자 모집 우선; 불가하면 UX claim 축소 | sponsor/product | G1 blocker |
 | Analytics/RUM | 개인정보 없는 schema 승인 전 외부 SaaS/원시 query 수집 금지 | privacy/security | field metric blocker |
 | Component catalog | 실행되는 internal lab 우선; 비개발자 공유 요구 확정 시 Vite Storybook ADR 검토 | design-system owner | D2/D4 decision |

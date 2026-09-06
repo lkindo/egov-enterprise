@@ -1,12 +1,16 @@
 {
   "schemaVersion": 1,
   "asOf": "2026-08-21",
-  "authority": "generated-pre-decision-census-not-policy",
+  "authority": "generated-url-state-census-not-policy",
   "decision": {
-    "proposedId": "PD-UX-003",
-    "registryStatus": "not-registered",
-    "approvalStatus": "blocked-input",
-    "accountableOwner": "unassigned",
+    "searchPolicyAcceptedRef": "docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md",
+    "unresolvedClasses": [
+      "path-intent",
+      "hand-assembled-segment",
+      "opaque"
+    ],
+    "classRegistryStatus": "class-governed",
+    "accountableOwner": "repository-owner",
     "decisionSafe": false
   },
   "sourceScope": {
@@ -23,34 +27,34 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "174f1ca5e7ffa21e9ace9895cc357658fa43903a16c23093688bab34593b7371"
+    "inventoryHash": "16e91ffbc56952167c3d6bc6563c40e6b606c0286913420897717ffd60ca22de"
   },
   "summary": {
-    "sourceFileCount": 514,
-    "records": 370,
-    "syntaxOccurrences": 435,
+    "sourceFileCount": 520,
+    "records": 377,
+    "syntaxOccurrences": 442,
     "ambiguousRecords": 350,
-    "unverifiedRecords": 370,
+    "unverifiedRecords": 377,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
       "configRedirects": 14,
-      "pageRedirects": 5
+      "pageRedirects": 11
     },
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 47,
-      "navigation-producer": 157,
-      "page-redirect": 5,
-      "query-builder": 23,
-      "query-consumer": 59,
-      "query-producer": 46,
+      "form-producer": 51,
+      "navigation-producer": 159,
+      "page-redirect": 11,
+      "query-builder": 22,
+      "query-consumer": 58,
+      "query-producer": 43,
       "request-query-producer": 1,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 362,
+      "navigation": 369,
       "request-telemetry": 8
     }
   },
@@ -1021,20 +1025,19 @@
       }
     },
     {
-      "id": "URL-1A89A8B9B1A433",
+      "id": "URL-F5CC030931D714",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
       "producerFile": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/address-book/insert-address-book",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -1227,20 +1230,19 @@
       }
     },
     {
-      "id": "URL-0309E257779B49",
+      "id": "URL-9B4BA46D7FECEC",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
       "producerFile": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/address-book/select-address-book-detail/[id]",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -1383,20 +1385,19 @@
       }
     },
     {
-      "id": "URL-7FC34DF1195582",
+      "id": "URL-97F589D9D24A72",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
       "producerFile": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/address-book/select-address-book-list",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -1533,53 +1534,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListServer.ts",
         "detector": "server-redirect-call",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-30D70184B9F627",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "read",
-      "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-      "routePattern": "/admin/collaboration/address-book/select-address-book-list",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "pageNo",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Server page reads a named URL search parameter property.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
-        "detector": "server-search-param-property",
         "occurrenceCount": 1
       }
     },
@@ -2050,20 +2004,19 @@
       }
     },
     {
-      "id": "URL-C7B68CC475B164",
+      "id": "URL-E08D5C4EBC0D0A",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx",
       "producerFile": "frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/mail-send",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -2127,20 +2080,19 @@
       }
     },
     {
-      "id": "URL-B7B60E4B0A0A4F",
+      "id": "URL-BCF5084E312D09",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
       "producerFile": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/scraps/insertScrap",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -2257,20 +2209,19 @@
       }
     },
     {
-      "id": "URL-DA86E40965870C",
+      "id": "URL-87B5063988D901",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
       "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/scraps/selectScrapDetail/[id]",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -2489,7 +2440,7 @@
       }
     },
     {
-      "id": "URL-3A5BA2353CA816",
+      "id": "URL-2F484353438EEA",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "jsx-href",
@@ -2497,16 +2448,28 @@
       "producerFile": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/[id]",
-      "targetCandidate": "/admin/community/boards/write",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "targetCandidate": "/admin/community/boards/insert-board-article?bbsId=[computed]",
+      "stateItems": [
+        {
+          "name": "bbsId",
+          "dataClass": "unverified",
+          "recommendation": "deny",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "record-locator-name-signal"
+          ]
+        }
+      ],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-navigation-target",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/community/boards/write",
+        "routeCandidate": "/admin/community/boards/insert-board-article",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -2700,7 +2663,7 @@
       }
     },
     {
-      "id": "URL-8226E7FA7096C4",
+      "id": "URL-82C4174FCE519E",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "router.push",
@@ -2708,16 +2671,28 @@
       "producerFile": "frontend/src/app/admin/community/board/CommunityBoardClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/board",
-      "targetCandidate": "/admin/community/boards/write",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "targetCandidate": "/admin/community/boards/insert-board-article?bbsId=[computed]",
+      "stateItems": [
+        {
+          "name": "bbsId",
+          "dataClass": "unverified",
+          "recommendation": "deny",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "record-locator-name-signal"
+          ]
+        }
+      ],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-navigation-target",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/community/boards/write",
+        "routeCandidate": "/admin/community/boards/insert-board-article",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -2787,82 +2762,6 @@
       }
     },
     {
-      "id": "URL-F4A5F6A197CE16",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "href-field",
-      "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/[id]",
-      "targetCandidate": "/admin/community/boards",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/community/boards",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-356C8A26F01706",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/[id]",
-      "targetCandidate": "/admin/community/boards",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/community/boards",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-B2646326350E73",
       "surface": "navigation",
       "kind": "dynamic-segment",
@@ -2912,6 +2811,82 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
         "detector": "filesystem-route-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-082EDC14DCCDDB",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards/[id]",
+      "targetCandidate": "/admin/community/boards/insert-board-article",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/community/boards/insert-board-article",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-27A21514DBE8D8",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "consumerFile": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+      "routePattern": "/admin/community/boards/[id]",
+      "targetCandidate": "/admin/community/boards/insert-board-article",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/community/boards/insert-board-article",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/[id]/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
@@ -3358,20 +3333,19 @@
       }
     },
     {
-      "id": "URL-4ECD49210FE0CF",
+      "id": "URL-AB443286D98021",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/boards/insert-board-article",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -3534,20 +3508,19 @@
       }
     },
     {
-      "id": "URL-1FFBA6AED63D8A",
+      "id": "URL-B59298E55B4C6A",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
       "producerFile": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/boards/maker",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -3737,6 +3710,100 @@
       }
     },
     {
+      "id": "URL-1F9B8771699302",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards",
+      "targetCandidate": "/admin/help?tab=COMMUNITY",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/help",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-5F7D7E513EAE1A",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/page.tsx",
+      "consumerFile": "frontend/src/app/admin/community/boards/page.tsx",
+      "routePattern": "/admin/community/boards",
+      "targetCandidate": "/admin/help?tab=COMMUNITY",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/help",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/page.tsx",
+        "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-27FD16A057E471",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -3821,56 +3888,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-A59A4FD1C9B747",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": "[computed]?bbsId=[computed]",
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        }
-      ],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "[computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
-        "detector": "router-navigation",
         "occurrenceCount": 1
       }
     },
@@ -3973,7 +3990,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 1
+        "occurrenceCount": 2
       }
     },
     {
@@ -4155,7 +4172,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 5
+        "occurrenceCount": 3
       }
     },
     {
@@ -4392,7 +4409,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 5
+        "occurrenceCount": 3
       }
     },
     {
@@ -4916,25 +4933,24 @@
       }
     },
     {
-      "id": "URL-6A82ED76609D70",
+      "id": "URL-4EBE56D8D2B9DC",
       "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
-      "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/write/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/boards/write",
-      "targetCandidate": null,
+      "targetCandidate": "/admin/community/boards/insert-board-article",
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": null,
+        "routeCandidate": "/admin/community/boards/insert-board-article",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -4949,42 +4965,30 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-        "detector": "jsx-form",
+        "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+        "detector": "server-redirect-call",
         "occurrenceCount": 1
       }
     },
     {
-      "id": "URL-78F90AE0779D04",
+      "id": "URL-4C7ED3A2DC55AC",
       "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-      "consumerFile": null,
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/write/page.tsx",
+      "consumerFile": "frontend/src/app/admin/community/boards/write/page.tsx",
       "routePattern": "/admin/community/boards/write",
-      "targetCandidate": "/admin/community/boards/select-board-list?bbsId=[computed]",
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        }
+      "targetCandidate": "/admin/community/boards/insert-board-article",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
       ],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
-        "routeCandidate": "/admin/community/boards/select-board-list",
+        "routeCandidate": "/admin/community/boards/insert-board-article",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -4999,8 +5003,102 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
-        "detector": "router-navigation",
+        "source": "frontend/src/app/admin/community/boards/write/page.tsx",
+        "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-45057FDB499A91",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community",
+      "targetCandidate": "/admin/help?tab=COMMUNITY",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/help",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-CF99198403C68A",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/community/page.tsx",
+      "producerFile": "frontend/src/app/admin/community/page.tsx",
+      "consumerFile": "frontend/src/app/admin/community/page.tsx",
+      "routePattern": "/admin/community",
+      "targetCandidate": "/admin/help?tab=COMMUNITY",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/help",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
@@ -5653,118 +5751,17 @@
       }
     },
     {
-      "id": "URL-B151A7AE9E4640",
+      "id": "URL-4EB657FE7CE758",
       "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.replace",
-      "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "producerFile": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+      "producerFile": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
       "consumerFile": null,
       "routePattern": "/admin/notifications",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-E6991570BB2AD2",
-      "surface": "navigation",
-      "kind": "query-builder",
-      "operation": "copy-existing-query",
-      "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "producerFile": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "consumerFile": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "routePattern": "/admin/notifications",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<unknown-source-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-        "detector": "url-search-params-constructor",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-61BAEEE1A8E021",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "get",
-      "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "routePattern": "/admin/notifications",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "view",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is consumed with get().",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
         "producer-consumer-join-unresolved"
@@ -5786,120 +5783,25 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-        "detector": "url-search-param-method",
+        "source": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
     {
-      "id": "URL-181BE201A00DCC",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "producerFile": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/notifications",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "view",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-B56C6EE51FC462",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "producerFile": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/notifications",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "view",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/notifications/NotificationsClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-12D0F6883E6D64",
+      "id": "URL-7ED1C57535938A",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
       "producerFile": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/operation/events",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -6158,20 +6060,19 @@
       }
     },
     {
-      "id": "URL-D45B2A3109722A",
+      "id": "URL-CF3C4836B90C26",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
       "producerFile": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/operation/external-hr",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -6843,20 +6744,19 @@
       }
     },
     {
-      "id": "URL-3C8D8CBAB29676",
+      "id": "URL-BA945871EEDB81",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
       "producerFile": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/operation/rewards",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -6882,20 +6782,19 @@
       }
     },
     {
-      "id": "URL-8722C24263F049",
+      "id": "URL-7FB4D816E80E2D",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
       "producerFile": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/patterns",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -7342,20 +7241,19 @@
       }
     },
     {
-      "id": "URL-9CAD59EBAAB35B",
+      "id": "URL-2C0491A898393C",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/security/login-policy",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -7619,20 +7517,19 @@
       }
     },
     {
-      "id": "URL-62BA1470E8CFFE",
+      "id": "URL-604FE8092DF0FE",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
       "producerFile": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
       "consumerFile": null,
       "routePattern": "/admin/survey",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -7658,20 +7555,19 @@
       }
     },
     {
-      "id": "URL-36CCA339F1BB69",
+      "id": "URL-19C1B924A7E624",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
       "producerFile": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
       "consumerFile": null,
       "routePattern": "/admin/survey",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -7693,6 +7589,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-DA09490FC8E2FD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/survey/hub",
+      "targetCandidate": "/admin/survey/polls",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/survey/polls",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },
@@ -8637,20 +8571,19 @@
       }
     },
     {
-      "id": "URL-93B09CBDE6D0E4",
+      "id": "URL-C94CE846214C40",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/banner",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -9026,20 +8959,19 @@
       }
     },
     {
-      "id": "URL-79EE795C3655F8",
+      "id": "URL-7A219C6DADE614",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/codes/administ/AdministCodeClient.tsx",
       "producerFile": "frontend/src/app/admin/system/codes/administ/AdministCodeClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/codes/administ",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -9217,20 +9149,19 @@
       }
     },
     {
-      "id": "URL-11BC38057A8001",
+      "id": "URL-B4F4045FEE0768",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
       "producerFile": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/common-code",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -9551,20 +9482,19 @@
       }
     },
     {
-      "id": "URL-FE1B7E226242B5",
+      "id": "URL-DAA79851E8D252",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
       "producerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/hpcm",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -9823,29 +9753,28 @@
       }
     },
     {
-      "id": "URL-D99C7EF073333C",
+      "id": "URL-EC9210CAF1A268",
       "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
-      "source": "frontend/src/app/admin/system/ism/IsmClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/ism/IsmClient.tsx",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/ism/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/ism/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/ism",
-      "targetCandidate": null,
+      "targetCandidate": "/approvals",
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": null,
+        "routeCandidate": "/approvals",
         "status": "unverified"
       },
       "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
+        "shellAccessEvidence": "authenticated",
         "capabilityRoles": "unverified",
         "objectAuthorization": "unverified"
       },
@@ -9856,8 +9785,46 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/system/ism/IsmClient.tsx",
-        "detector": "jsx-form",
+        "source": "frontend/src/app/admin/system/ism/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-1D7C91AFEA1D8A",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/ism/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/ism/page.tsx",
+      "consumerFile": "frontend/src/app/admin/system/ism/page.tsx",
+      "routePattern": "/admin/system/ism",
+      "targetCandidate": "/approvals",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/approvals",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/ism/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
@@ -9939,37 +9906,20 @@
       }
     },
     {
-      "id": "URL-B9CF6C4BE7F14A",
+      "id": "URL-DE7CD1066C9B6F",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "construct-query",
       "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
       "producerFile": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
       "consumerFile": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
       "routePattern": "/admin/system/logs",
       "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<unknown-source-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": null,
         "status": "unverified"
@@ -9988,7 +9938,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
         "detector": "url-search-params-constructor",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
       }
     },
     {
@@ -10038,7 +9988,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
         "detector": "url-search-param-method",
-        "occurrenceCount": 2
+        "occurrenceCount": 4
       }
     },
     {
@@ -10138,7 +10088,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/logs/use-log-url-state.ts",
         "detector": "url-search-param-method",
-        "occurrenceCount": 2
+        "occurrenceCount": 4
       }
     },
     {
@@ -10180,20 +10130,19 @@
       }
     },
     {
-      "id": "URL-99805DCC423D68",
+      "id": "URL-9378BBB706E249",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/menus",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -10505,20 +10454,95 @@
       }
     },
     {
-      "id": "URL-C4C2B23BFC2144",
+      "id": "URL-4A8CFAE4C5ECDD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/monitoring",
+      "targetCandidate": "/admin/system/monitoring/hub",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/monitoring/hub",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/monitoring/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-C7644754277BE6",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "consumerFile": "frontend/src/app/admin/system/monitoring/page.tsx",
+      "routePattern": "/admin/system/monitoring",
+      "targetCandidate": "/admin/system/monitoring/hub",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/system/monitoring/hub",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/monitoring/page.tsx",
+        "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-519E0633F5FFCF",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/system/policies/PolicyAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/system/policies/PolicyAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/policies",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -11294,20 +11318,19 @@
       }
     },
     {
-      "id": "URL-D14A0B284B5B99",
+      "id": "URL-5CA57A07FEFF52",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/uss/ion/sms",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -11566,20 +11589,19 @@
       }
     },
     {
-      "id": "URL-4EF1E2BF428FEF",
+      "id": "URL-F32262E8E3E07B",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
       "producerFile": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/uss/olh/online-manual",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -12078,24 +12100,24 @@
       }
     },
     {
-      "id": "URL-8FDA032AA0C2B4",
+      "id": "URL-1DF2A2530A633C",
       "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/approvals/ApprovalHubClient.tsx",
-      "producerFile": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
+      "producerFile": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
       "consumerFile": null,
       "routePattern": "/approvals",
-      "targetCandidate": "/approvals/draft",
+      "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/approvals/draft",
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -12110,7 +12132,45 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+        "source": "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-0735D31295472C",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
+      "producerFile": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/approvals/draft",
+      "targetCandidate": "/approvals",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/approvals",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
         "detector": "href-navigation",
         "occurrenceCount": 1
       }
@@ -12717,20 +12777,19 @@
       }
     },
     {
-      "id": "URL-E389C1DB2A1A7D",
+      "id": "URL-9129812E0C1EA4",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/components/patterns/keyword-filter.tsx",
       "producerFile": "frontend/src/app/components/patterns/keyword-filter.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -12797,20 +12856,19 @@
       }
     },
     {
-      "id": "URL-1BA06D3AA9C4F5",
+      "id": "URL-98FC0606CA997C",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/components/ui/code-picker.tsx",
       "producerFile": "frontend/src/app/components/ui/code-picker.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -12912,6 +12970,45 @@
       "evidence": {
         "source": "frontend/src/app/components/ui/global-command-center.tsx",
         "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-93A0DED3A49D7E",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/components/ui/recipient-picker.tsx",
+      "producerFile": "frontend/src/app/components/ui/recipient-picker.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/ui/recipient-picker.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
@@ -13018,20 +13115,19 @@
       }
     },
     {
-      "id": "URL-57E91620277032",
+      "id": "URL-7FB3360CCEBFAB",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/components/ui/standard-data-table.tsx",
       "producerFile": "frontend/src/app/components/ui/standard-data-table.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -13149,20 +13245,19 @@
       }
     },
     {
-      "id": "URL-E2FAAE1F06BD46",
+      "id": "URL-E0FA91A5D7A937",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/components/ui/standard-search-filter.tsx",
       "producerFile": "frontend/src/app/components/ui/standard-search-filter.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -13189,20 +13284,19 @@
       }
     },
     {
-      "id": "URL-FA0AA80D4F3D1A",
+      "id": "URL-2DE2A17937ED7E",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/components/ui/user-picker.tsx",
       "producerFile": "frontend/src/app/components/ui/user-picker.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -13397,20 +13491,19 @@
       }
     },
     {
-      "id": "URL-C3D38F6A7A9BC8",
+      "id": "URL-D620D3704A48B2",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
       "producerFile": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
       "consumerFile": null,
       "routePattern": "/cop/sms/selectSmsList",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -13682,20 +13775,19 @@
       }
     },
     {
-      "id": "URL-72B121028A7136",
+      "id": "URL-B5F403F23CA8B7",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/login/LoginClient.tsx",
       "producerFile": "frontend/src/app/login/LoginClient.tsx",
       "consumerFile": null,
       "routePattern": "/login",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -14888,20 +14980,19 @@
       }
     },
     {
-      "id": "URL-AF12C7701A110D",
+      "id": "URL-5B4274871A5EA0",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
       "producerFile": "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
       "consumerFile": null,
       "routePattern": "/survey/stats",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -15260,20 +15351,19 @@
       }
     },
     {
-      "id": "URL-8798F4CF6298DA",
+      "id": "URL-AB14804C5A665D",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/security/AuthorForm.tsx",
       "producerFile": "frontend/src/components/admin/security/AuthorForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15300,20 +15390,19 @@
       }
     },
     {
-      "id": "URL-C620B524AA8E16",
+      "id": "URL-1CB73363CF614B",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/system/NetworkForm.tsx",
       "producerFile": "frontend/src/components/admin/system/NetworkForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15340,20 +15429,19 @@
       }
     },
     {
-      "id": "URL-D2210ABBF1A0E9",
+      "id": "URL-7290C773D4AD24",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/system/ProgramForm.tsx",
       "producerFile": "frontend/src/components/admin/system/ProgramForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15380,20 +15468,58 @@
       }
     },
     {
-      "id": "URL-FEB30AB7AB9AE6",
+      "id": "URL-F01DFE55EC6CED",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
+      "producerFile": "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-45AE900BA86C8C",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/user/DepartmentForm.tsx",
       "producerFile": "frontend/src/components/admin/user/DepartmentForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15420,20 +15546,19 @@
       }
     },
     {
-      "id": "URL-D1F4AAB7664E88",
+      "id": "URL-41E67BD673F611",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/admin/user/UserManageForm.tsx",
       "producerFile": "frontend/src/components/admin/user/UserManageForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15460,20 +15585,97 @@
       }
     },
     {
-      "id": "URL-22A7AEF74171FA",
+      "id": "URL-7C944A7B4D997B",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+      "producerFile": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-C99EDA577B5363",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
+      "producerFile": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-CFC6B5F51DD4A3",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/business/deptJob/DeptJobForm.tsx",
       "producerFile": "frontend/src/components/business/deptJob/DeptJobForm.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15619,20 +15821,19 @@
       }
     },
     {
-      "id": "URL-601DE6040651DF",
+      "id": "URL-514D28CCE204E5",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
+      "operation": "intercepted-submit",
       "source": "frontend/src/components/features/satisfaction/SatisfactionSection.tsx",
       "producerFile": "frontend/src/components/features/satisfaction/SatisfactionSection.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -15879,31 +16080,18 @@
       }
     },
     {
-      "id": "URL-181213A79006A3",
+      "id": "URL-C03A6CA6A5E039",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
+      "operation": "router.replace",
       "source": "frontend/src/lib/hooks/use-search-state.ts",
       "producerFile": "frontend/src/lib/hooks/use-search-state.ts",
       "consumerFile": null,
       "routePattern": "unresolved",
-      "targetCandidate": "[computed]?[computed]",
-      "stateItems": [
-        {
-          "name": "<computed>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
+      "targetCandidate": null,
+      "stateItems": [],
       "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [
-        "computed-query-value-or-name"
-      ],
+      "riskSignals": [],
       "ambiguityReasons": [
         "computed-navigation-target",
         "producer-consumer-join-unresolved",
@@ -15911,7 +16099,7 @@
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "[computed]",
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -15932,36 +16120,20 @@
       }
     },
     {
-      "id": "URL-387D9A0FEAAB89",
+      "id": "URL-7957E64D84E535",
       "surface": "navigation",
       "kind": "query-builder",
-      "operation": "copy-existing-query",
+      "operation": "construct-query",
       "source": "frontend/src/lib/hooks/use-search-state.ts",
       "producerFile": "frontend/src/lib/hooks/use-search-state.ts",
       "consumerFile": "frontend/src/lib/hooks/use-search-state.ts",
       "routePattern": "unresolved",
       "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<unknown-source-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
       "ambiguityReasons": [
-        "route-context-unresolved",
-        "unknown-source-query-copied"
+        "route-context-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -15986,10 +16158,10 @@
       }
     },
     {
-      "id": "URL-8C9E9599F523F2",
+      "id": "URL-6F9E29FCEA4F47",
       "surface": "navigation",
       "kind": "query-consumer",
-      "operation": "has",
+      "operation": "get",
       "source": "frontend/src/lib/hooks/use-search-state.ts",
       "producerFile": null,
       "consumerFile": "frontend/src/lib/hooks/use-search-state.ts",
@@ -15997,17 +16169,20 @@
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "page",
+          "name": "<computed>",
           "dataClass": "unverified",
-          "recommendation": "candidate-allow",
+          "recommendation": "deny-until-reviewed",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": []
+          "riskSignals": [
+            "computed-or-aggregate-state"
+          ]
         }
       ],
-      "currentBehavior": "URL search parameter is consumed with has().",
+      "currentBehavior": "URL search parameter is consumed with get().",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-query-key",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
@@ -16034,31 +16209,28 @@
       }
     },
     {
-      "id": "URL-35141C7BE2DC4A",
+      "id": "URL-8C9E9599F523F2",
       "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
+      "kind": "query-consumer",
+      "operation": "has",
       "source": "frontend/src/lib/hooks/use-search-state.ts",
-      "producerFile": "frontend/src/lib/hooks/use-search-state.ts",
-      "consumerFile": null,
+      "producerFile": null,
+      "consumerFile": "frontend/src/lib/hooks/use-search-state.ts",
       "routePattern": "unresolved",
       "targetCandidate": null,
       "stateItems": [
         {
-          "name": "<computed>",
+          "name": "page",
           "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
+          "recommendation": "candidate-allow",
           "approvalStatus": "unverified",
           "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
+          "riskSignals": []
         }
       ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
+      "currentBehavior": "URL search parameter is consumed with has().",
       "riskSignals": [],
       "ambiguityReasons": [
-        "computed-query-key",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],

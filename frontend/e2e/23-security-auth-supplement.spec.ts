@@ -126,11 +126,17 @@ test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double
         await expect(page).toHaveURL(/\/admin/, { timeout: 20000 });
         await expect(page).not.toHaveURL(/\/login/);
 
-        // Route Handler 가 accessToken 을 HttpOnly 쿠키로 심었는지 확인(브라우저 JS 로는 못 읽는 쿠키).
+        // Route Handler가 accessToken을 제품 쿠키 속성으로 심었는지 확인한다.
+        // required CI는 production build/start이므로 Secure도 직접 증명한다. 로컬 next dev의
+        // 평문 loopback 예외에서는 Secure를 요구하지 않는다.
         const cookies = await context.cookies();
         const at = cookies.find((c) => c.name === 'accessToken');
         expect(at, 'accessToken 쿠키 미설정').toBeTruthy();
         expect(at?.httpOnly, 'accessToken 이 HttpOnly 가 아님').toBe(true);
+        expect(at?.sameSite, 'accessToken 이 SameSite=Strict 가 아님').toBe('Strict');
+        if (process.env.CI === 'true') {
+            expect(at?.secure, 'production CI의 accessToken 에 Secure가 없음').toBe(true);
+        }
     });
 });
 
@@ -611,7 +617,7 @@ test.describe('Tier 23-E7: Token reissue', () => {
             '재발급 토큰이 응답 바디로 노출됐다 — HttpOnly 쿠키 전용 설계가 되돌아갔다',
         ).toBeFalsy();
 
-        // ② accessToken 이 HttpOnly 쿠키로 재설정돼야 한다.
+        // ② accessToken 이 HttpOnly·SameSite=Strict 쿠키로 재설정돼야 한다.
         //    Playwright 는 다중 Set-Cookie 를 개행으로 합쳐 준다.
         const setCookie = res.headers()['set-cookie'] ?? '';
         const accessCookieLine = setCookie
@@ -620,6 +626,12 @@ test.describe('Tier 23-E7: Token reissue', () => {
         expect(accessCookieLine, 'accessToken 쿠키가 재설정되지 않았다').toBeTruthy();
         expect(accessCookieLine, 'accessToken 이 HttpOnly 가 아니다 — JS 로 읽히면 탈취 표면이 열린다')
             .toMatch(/HttpOnly/i);
+        expect(accessCookieLine, 'accessToken 이 SameSite=Strict 가 아니다')
+            .toMatch(/SameSite=Strict/i);
+        if (process.env.CI === 'true') {
+            expect(accessCookieLine, 'production CI의 재발급 accessToken 에 Secure가 없다')
+                .toMatch(/(?:^|;)\s*Secure(?:;|$)/i);
+        }
 
         // ③ 발급된 토큰이 **실제로 쓸 수 있어야** 한다 — 여기까지 봐야 "재발급됐다"가 의미를 갖는다.
         //    (200 만 보고 통과시키면 빈 토큰을 심어도 그린이다.)

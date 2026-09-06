@@ -45,7 +45,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   제거로 2건 감소(사전 red 실측: 64 != 66).
 // [하향 래칫 2026-08-25(3)] 조직 권한 일괄 관리 A2 이행 — slate-100/slate-200 하드코딩
 //   3건이 셸의 빈 상태·토큰 문구로 수렴하며 제거(사전 red 실측: 61 != 64).
-const BASELINE = 61;
+// [하향 래칫 2026-09-05] DEC-OPS-034 작성 화면 수렴으로 삭제된 CommunityBoardsWriteClient 의 bg-slate-900 1건 제거 → 61→60.
+const BASELINE = 60;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

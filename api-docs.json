@@ -51,12 +51,12 @@
       "description": "온라인 설문 API"
     },
     {
-      "name": "SystemLog",
-      "description": "시스템 로그 관리 API (Admin)"
-    },
-    {
       "name": "File",
       "description": "파일 관리 API"
+    },
+    {
+      "name": "SystemLog",
+      "description": "시스템 로그 관리 API (Admin)"
     },
     {
       "name": "Satisfaction",
@@ -151,12 +151,12 @@
       "description": "커뮤니티 사용자 API"
     },
     {
-      "name": "Note",
-      "description": "쪽지 관리 API"
-    },
-    {
       "name": "Template",
       "description": "템플릿 관리 API (Admin)"
+    },
+    {
+      "name": "Note",
+      "description": "쪽지 관리 API"
     },
     {
       "name": "User Absence",
@@ -197,10 +197,6 @@
     {
       "name": "Debug",
       "description": "시스템 디버깅용 API"
-    },
-    {
-      "name": "OnlinePoll",
-      "description": "온라인 투표 관리 API (Admin)"
     },
     {
       "name": "SurveySubmission",
@@ -3776,7 +3772,7 @@
           "Satisfaction"
         ],
         "summary": "만족도 수정",
-        "description": "본문의 pswd 는 소유 증명용 자격이며 저장된 비밀번호를 바꾸지 않는다.",
+        "description": "인증된 작성자 또는 관리자만 수정할 수 있다.",
         "operationId": "update",
         "parameters": [
           {
@@ -3884,7 +3880,7 @@
           "Satisfaction"
         ],
         "summary": "만족도 삭제",
-        "description": "논리 삭제. 소유자 또는 익명 작성 비밀번호가 필요하다.",
+        "description": "논리 삭제. 인증된 작성자 또는 관리자만 삭제할 수 있다.",
         "operationId": "delete",
         "parameters": [
           {
@@ -3911,14 +3907,6 @@
             "schema": {
               "type": "integer",
               "format": "int64"
-            }
-          },
-          {
-            "name": "pswd",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -4943,6 +4931,268 @@
           },
           "404": {
             "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system/templates/{tmpltId}": {
+      "get": {
+        "tags": [
+          "Template"
+        ],
+        "summary": "템플릿 상세 조회",
+        "description": "특정 템플릿의 상세 정보를 조회합니다.",
+        "operationId": "selectTmplatInfoDetail",
+        "parameters": [
+          {
+            "name": "tmpltId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTemplateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Template"
+        ],
+        "summary": "템플릿 수정",
+        "description": "템플릿 정보를 수정합니다. 템플릿 ID 는 바꾸지 않습니다.",
+        "operationId": "updateTmplatInfo",
+        "parameters": [
+          {
+            "name": "tmpltId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseTemplateDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Template"
+        ],
+        "summary": "템플릿 삭제",
+        "description": "템플릿을 삭제합니다. 게시판·블로그가 참조 중인 템플릿은 삭제하지 않습니다(409).",
+        "operationId": "deleteTmplatInfo",
+        "parameters": [
+          {
+            "name": "tmpltId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "게시판·블로그가 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
             "content": {
               "application/json": {
                 "schema": {
@@ -11428,6 +11678,370 @@
         }
       }
     },
+    "/api/v1/admin/operation/rewards/{rwrdSn}": {
+      "put": {
+        "tags": [
+          "RewardManage"
+        ],
+        "summary": "포상 수정",
+        "description": "포상 정보(수상자·코드·일자·명칭·공적 내용)를 수정한다.",
+        "operationId": "updateReward",
+        "parameters": [
+          {
+            "name": "rwrdSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewardManageDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRewardManageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "RewardManage"
+        ],
+        "summary": "포상 삭제",
+        "description": "포상 정보를 삭제한다.",
+        "operationId": "deleteReward",
+        "parameters": [
+          {
+            "name": "rwrdSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}": {
+      "put": {
+        "tags": [
+          "ExternalHr"
+        ],
+        "summary": "외부인사 수정",
+        "description": "외부인사 정보를 수정한다. 식별자(evntSn·otsdHrId)는 바꾸지 않는다.",
+        "operationId": "updateExternalHr",
+        "parameters": [
+          {
+            "name": "evntSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "otsdHrId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalHrDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseExternalHrDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ExternalHr"
+        ],
+        "summary": "외부인사 삭제",
+        "description": "외부인사 정보를 삭제한다.",
+        "operationId": "deleteExternalHr",
+        "parameters": [
+          {
+            "name": "evntSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "otsdHrId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/operation/events/{evntSn}": {
       "get": {
         "tags": [
@@ -15265,7 +15879,7 @@
           "Community User"
         ],
         "summary": "커뮤니티 가입 신청",
-        "description": "사용자가 특정 커뮤니티에 가입을 신청합니다.",
+        "description": "사용자가 특정 커뮤니티에 가입을 신청합니다. 관리자가 승인하면 회원이 됩니다.",
         "operationId": "joinCommunity",
         "parameters": [
           {
@@ -16140,6 +16754,78 @@
           },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals": {
+      "post": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Create Approval Draft",
+        "description": "현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다.",
+        "operationId": "createApproval",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLong"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19143,271 +19829,6 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/system/polls": {
-      "get": {
-        "tags": [
-          "OnlinePoll"
-        ],
-        "summary": "온라인 설문 목록 페이징 조회",
-        "operationId": "getPolls_1",
-        "parameters": [
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "description": "Zero-based page index (0..N)",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 0,
-              "minimum": 0
-            }
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "description": "The size of the page to be returned",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 10,
-              "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseOnlinePollManageDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "OnlinePoll"
-        ],
-        "summary": "온라인 설문 등록",
-        "operationId": "insertPoll",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OnlinePollManageDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/system/polls/{pollSn}/vote": {
-      "post": {
-        "tags": [
-          "OnlinePoll"
-        ],
-        "summary": "온라인 설문 투표 처리",
-        "operationId": "vote_1",
-        "parameters": [
-          {
-            "name": "pollSn",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "pollArtclSn",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "대상을 찾을 수 없음 (code: C003/C007)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23370,7 +23791,7 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "등록 성공",
             "content": {
               "application/json": {
                 "schema": {
@@ -23401,6 +23822,16 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23577,6 +24008,88 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/dispatch": {
+      "post": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "관리자 알림 발송",
+        "description": "선택한 사용자들에게 같은 제목·내용의 앱 내 알림을 만듭니다. 수신자가 하나라도 존재하지 않으면 전체를 거부합니다.",
+        "operationId": "dispatchNotifications",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationDispatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "발송 성공 — 만든 알림 수",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInteger"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "수신자로 지정한 사용자가 존재하지 않음 — 부분 발송 없이 전체 거부 (code: C002)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24649,6 +25162,99 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve": {
+      "patch": {
+        "tags": [
+          "Community"
+        ],
+        "summary": "커뮤니티 가입 신청 승인",
+        "description": "가입 신청 상태(REQUESTED)인 사용자를 회원으로 승인합니다. 신청 상태가 아니면 400 입니다.",
+        "operationId": "approveMember",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "사용자 식별자(esntlId)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26617,6 +27223,96 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "File"
+        ],
+        "summary": "파일 삭제",
+        "description": "첨부파일 한 건을 삭제합니다. 업로더 본인, 참조 행의 소유자, 또는 개인 귀속이 아닌 첨부의 관리자만 삭제할 수 있습니다.",
+        "operationId": "deleteFile",
+        "parameters": [
+          {
+            "name": "atchFileSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "fileSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/admin/system/files/{atchFileSn}/{fileSn}": {
@@ -26655,6 +27351,96 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "File"
+        ],
+        "summary": "파일 삭제",
+        "description": "첨부파일 한 건을 삭제합니다. 업로더 본인, 참조 행의 소유자, 또는 개인 귀속이 아닌 첨부의 관리자만 삭제할 수 있습니다.",
+        "operationId": "deleteFile_1",
+        "parameters": [
+          {
+            "name": "atchFileSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "fileSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
                 }
               }
             }
@@ -26803,6 +27589,96 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "File"
+        ],
+        "summary": "파일 삭제",
+        "description": "첨부파일 한 건을 삭제합니다. 업로더 본인, 참조 행의 소유자, 또는 개인 귀속이 아닌 첨부의 관리자만 삭제할 수 있습니다.",
+        "operationId": "deleteFile_2",
+        "parameters": [
+          {
+            "name": "atchFileSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "fileSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}": {
@@ -26841,6 +27717,96 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "File"
+        ],
+        "summary": "파일 삭제",
+        "description": "첨부파일 한 건을 삭제합니다. 업로더 본인, 참조 행의 소유자, 또는 개인 귀속이 아닌 첨부의 관리자만 삭제할 수 있습니다.",
+        "operationId": "deleteFile_3",
+        "parameters": [
+          {
+            "name": "atchFileSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "fileSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
                 }
               }
             }
@@ -27412,7 +28378,7 @@
           "Community User"
         ],
         "summary": "커뮤니티 상세 조회",
-        "description": "특정 커뮤니티의 상세 정보를 조회합니다.",
+        "description": "사용 중인 커뮤니티의 상세 정보를 조회합니다.",
         "operationId": "getCommunity_1",
         "parameters": [
           {
@@ -27433,6 +28399,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseCommunityDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/communities/{cmntySn}/membership": {
+      "get": {
+        "tags": [
+          "Community User"
+        ],
+        "summary": "내 커뮤니티 멤버십 상태",
+        "description": "현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER)를 조회합니다.",
+        "operationId": "getMyMembership",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCommunityMembershipDto"
                 }
               }
             }
@@ -28242,6 +29292,166 @@
         }
       }
     },
+    "/api/v1/approvals/task-types": {
+      "get": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Get Approval Task Types",
+        "description": "기안 시 고르는 업무 구분(공통코드 COM075 의 사용 중 상세코드)입니다. 등록된 코드가 없으면 빈 목록입니다.",
+        "operationId": "getTaskTypes",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListCommonCodeDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/processed": {
+      "get": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Get Approvals I Processed",
+        "description": "결재자 본인이 이미 **승인·반려한** 결재만 조회합니다. 대기 건은 /pending 입니다.",
+        "operationId": "getProcessed",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseInformalSanctionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/approvals/pending": {
       "get": {
         "tags": [
@@ -28345,7 +29555,8 @@
         "tags": [
           "Approval"
         ],
-        "summary": "Get My Approval History",
+        "summary": "Get My Submitted Approvals",
+        "description": "내가 신청자인 결재 목록입니다(대기·승인·반려 전부). 결재자로서 처리한 이력은 /processed 입니다.",
         "operationId": "getMyHistory",
         "parameters": [
           {
@@ -28477,88 +29688,6 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/system/templates/{tmpltId}": {
-      "get": {
-        "tags": [
-          "Template"
-        ],
-        "summary": "템플릿 상세 조회",
-        "description": "특정 템플릿의 상세 정보를 조회합니다.",
-        "operationId": "selectTmplatInfoDetail",
-        "parameters": [
-          {
-            "name": "tmpltId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseTemplateDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "대상을 찾을 수 없음 (code: C003/C007)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29292,88 +30421,6 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/admin/system/polls/{pollSn}": {
-      "get": {
-        "tags": [
-          "OnlinePoll"
-        ],
-        "summary": "온라인 설문 상세 조회",
-        "operationId": "getPoll_1",
-        "parameters": [
-          {
-            "name": "pollSn",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseOnlinePollManageDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "대상을 찾을 수 없음 (code: C003/C007)",
             "content": {
               "application/json": {
                 "schema": {
@@ -32877,6 +33924,137 @@
         }
       }
     },
+    "/api/v1/admin/content/community/{cmntySn}/members": {
+      "get": {
+        "tags": [
+          "Community"
+        ],
+        "summary": "커뮤니티 회원·가입 신청 목록",
+        "description": "커뮤니티의 회원과 가입 신청을 페이징 조회합니다. status 를 주면 그 상태만(REQUESTED=가입 신청, APPROVED=회원). 이름은 사용자 도메인에서 해석하며 연락처는 싣지 않습니다.",
+        "operationId": "getMembers",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "REQUESTED",
+                "APPROVED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseCommunityMemberDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/content/community/portlet": {
       "get": {
         "tags": [
@@ -33442,6 +34620,99 @@
         }
       }
     },
+    "/api/v1/admin/content/community/{cmntySn}/members/{userId}": {
+      "delete": {
+        "tags": [
+          "Community"
+        ],
+        "summary": "커뮤니티 가입 신청 반려",
+        "description": "가입 신청 상태(REQUESTED)인 행을 삭제합니다. 사용자는 다시 신청할 수 있습니다. 이미 회원인 행은 반려 대상이 아니라 400 입니다(탈퇴 처리는 별도).",
+        "operationId": "rejectMember",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "사용자 식별자(esntlId)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/comments/{id}": {
       "delete": {
         "tags": [
@@ -33531,34 +34802,56 @@
         "type": "object",
         "properties": {
           "rptpSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "rptTtl": {
-            "type": "string"
-          },
-          "rptCn": {
-            "type": "string"
-          },
-          "rptSeCd": {
-            "type": "string"
-          },
-          "userId": {
             "type": "string",
-            "maxLength": 20,
+            "maxLength": 100,
             "minLength": 0
           },
+          "rptCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "rptSeCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "readOnly": true
+          },
           "userNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
           },
           "rptSttsCd": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 12,
-            "minLength": 0
+            "minLength": 0,
+            "readOnly": true
           },
           "rptYmd": {
             "type": "string",
@@ -33566,9 +34859,16 @@
             "minLength": 0
           },
           "rptTypeCd": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           }
-        }
+        },
+        "required": [
+          "rptTtl"
+        ]
       },
       "ApiResponseVoid": {
         "type": "object",
@@ -33732,13 +35032,19 @@
             "minLength": 0
           },
           "scrapExpln": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
           },
           "useYn": {
             "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
             "minLength": 0,
-            "pattern": "[YN]"
+            "pattern": "^(?:Y|N)$"
           },
           "userId": {
             "type": "string",
@@ -33951,39 +35257,63 @@
         "description": "메모보고 정보",
         "properties": {
           "memoRptSn": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "format": "int64",
-            "description": "메모보고일련번호"
+            "description": "메모보고일련번호",
+            "readOnly": true
           },
           "rptTtl": {
             "type": "string",
-            "description": "보고제목"
-          },
-          "memoRptYmd": {
-            "type": "string",
-            "description": "보고일자"
-          },
-          "userId": {
-            "type": "string",
-            "description": "작성자아이디"
-          },
-          "wrterNm": {
-            "type": "string",
-            "description": "작성자명",
+            "description": "보고제목",
             "maxLength": 100,
             "minLength": 0
           },
+          "memoRptYmd": {
+            "type": "string",
+            "description": "보고일자",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자아이디",
+            "readOnly": true
+          },
+          "wrterNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "작성자명",
+            "maxLength": 100,
+            "minLength": 0,
+            "readOnly": true
+          },
           "rptrId": {
             "type": "string",
-            "description": "보고대상자아이디"
+            "description": "보고대상자아이디",
+            "maxLength": 20,
+            "minLength": 0
           },
           "rptrNm": {
-            "type": "string",
-            "description": "보고대상자명"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "보고대상자명",
+            "readOnly": true
           },
           "rptCn": {
             "type": "string",
-            "description": "보고내용"
+            "description": "보고내용",
+            "maxLength": 4000,
+            "minLength": 0
           },
           "atchFileSn": {
             "type": "integer",
@@ -33991,25 +35321,45 @@
             "description": "첨부파일아이디"
           },
           "drctnMttr": {
-            "type": "string",
-            "description": "지시사항내용"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "지시사항내용",
+            "readOnly": true
           },
           "drctnMttrRegDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "지시사항등록일시"
+            "description": "지시사항등록일시",
+            "readOnly": true
           },
           "rptrInqDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "보고대상자조회일시"
+            "description": "보고대상자조회일시",
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time",
-            "description": "생성일시"
+            "description": "생성일시",
+            "readOnly": true
           }
-        }
+        },
+        "required": [
+          "rptTtl",
+          "rptrId"
+        ]
       },
       "InformalSanctionDto": {
         "type": "object",
@@ -34191,56 +35541,100 @@
         "type": "object",
         "properties": {
           "deptTaskSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "deptTaskBoxSn": {
             "type": "integer",
             "format": "int64"
           },
           "deptTaskBoxNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "deptId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "readOnly": true
+          },
+          "deptNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "deptTaskNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "deptTaskCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "picId": {
             "type": "string",
             "maxLength": 20,
             "minLength": 0
           },
-          "deptNm": {
-            "type": "string"
-          },
-          "deptTaskNm": {
-            "type": "string"
-          },
-          "deptTaskCn": {
-            "type": "string"
-          },
-          "picId": {
-            "type": "string"
-          },
           "picNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "prrtyRnk": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
           },
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "lastMdfrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           }
         }
       },
@@ -34248,11 +35642,17 @@
         "type": "object",
         "properties": {
           "deptTaskBoxSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
           "deptTaskBoxNm": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
           },
           "deptId": {
             "type": "string",
@@ -34260,27 +35660,50 @@
             "minLength": 0
           },
           "deptNm": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "sortOrdr": {
             "type": "integer",
             "format": "int64"
           },
           "frstRgtrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "crtDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           },
           "lastMdfrId": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
           "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           }
-        }
+        },
+        "required": [
+          "deptTaskBoxNm"
+        ]
       },
       "CommentDto": {
         "type": "object",
@@ -34444,10 +35867,6 @@
           "userNm": {
             "type": "string"
           },
-          "pswd": {
-            "type": "string",
-            "writeOnly": true
-          },
           "useYn": {
             "type": "string",
             "maxLength": 1,
@@ -34501,16 +35920,29 @@
             "minLength": 0
           },
           "cntcUrl": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           },
           "cntntsUseYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "cntntsLinkUrl": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           },
           "cntntsDc": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
           }
         }
       },
@@ -34617,6 +36049,81 @@
         "required": [
           "userId"
         ]
+      },
+      "TemplateDto": {
+        "type": "object",
+        "properties": {
+          "tmpltId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "tmpltNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "tmpltPath": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "tmpltSeCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "useYn": {
+            "type": "string",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "frstRgtrId": {
+            "type": "string"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "tmpltId",
+          "tmpltNm",
+          "tmpltPath",
+          "tmpltSeCd",
+          "useYn"
+        ]
+      },
+      "ApiResponseTemplateDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TemplateDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
       },
       "SurveyRespondentDto": {
         "type": "object",
@@ -35939,6 +37446,236 @@
           "authrtNm"
         ]
       },
+      "RewardManageDto": {
+        "type": "object",
+        "properties": {
+          "rwrdSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "rwardwnrId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "rwardCode": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "rwardDe": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "rwardNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "pblenCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "sanctnerId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "confmAt": {
+            "type": "string",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "sanctnDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "returnResn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ifmlAtrzSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "frstRgtrId": {
+            "type": "string"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastMdfrId": {
+            "type": "string"
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseRewardManageDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RewardManageDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "ExternalHrDto": {
+        "type": "object",
+        "properties": {
+          "evntSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "otsdHrId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "gndrCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "otsdHrNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "crTypeCd": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "ogdpInstNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "brdtYmd": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "areaNo": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "mdTelno": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "endTelno": {
+            "type": "string",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "emlAddr": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 0
+          },
+          "crtDt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          },
+          "frstRgtrId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "mdfcnDt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          },
+          "lastMdfrId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          }
+        },
+        "required": [
+          "evntSn",
+          "otsdHrId"
+        ]
+      },
+      "ApiResponseExternalHrDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ExternalHrDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
       "EventInfoDto": {
         "type": "object",
         "description": "행사 정보 상세 DTO",
@@ -36102,6 +37839,7 @@
           }
         },
         "required": [
+          "cmntyNm",
           "useYn"
         ]
       },
@@ -36125,17 +37863,28 @@
           "rlsScopeCd": {
             "type": "string",
             "description": "공개 범위 코드",
-            "example": "PUB"
+            "example": "PUB",
+            "maxLength": 12,
+            "minLength": 0
           },
           "trgetOgnzId": {
             "type": "string",
             "description": "대상 조직 ID",
-            "example": "ORGNZT_0000000000001"
+            "example": "ORGNZT_0000000000001",
+            "maxLength": 20,
+            "minLength": 0
           },
           "useYn": {
             "type": "string",
             "description": "사용 여부",
-            "example": "Y"
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "example": "Y",
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "wrterId": {
             "type": "string",
@@ -36622,6 +38371,24 @@
           "recptnSe"
         ]
       },
+      "MailRecipientDto": {
+        "type": "object",
+        "description": "메일 수신자 — esntlId(사용자) 또는 emlAddr(이메일 주소) 중 하나",
+        "properties": {
+          "esntlId": {
+            "type": "string",
+            "description": "사용자 고유 ID(esntlId). 지정하면 서버가 등록된 이메일 주소를 해석한다",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "emlAddr": {
+            "type": "string",
+            "description": "이메일 주소(직접 입력·주소록). esntlId 와 함께 쓰지 않는다",
+            "maxLength": 320,
+            "minLength": 0
+          }
+        }
+      },
       "SentMailDto": {
         "type": "object",
         "description": "Description",
@@ -36645,7 +38412,19 @@
           },
           "recptnPerson": {
             "type": "string",
-            "description": "Description"
+            "description": "수신자 주소 문자열(종전 계약). recipients 를 쓰면 비워도 된다",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MailRecipientDto",
+              "maxItems": 100
+            },
+            "maxItems": 100,
+            "minItems": 0,
+            "writeOnly": true
           },
           "sndngResultCode": {
             "type": "string",
@@ -36765,6 +38544,33 @@
         },
         "required": [
           "userId"
+        ]
+      },
+      "ApprovalDraftRequest": {
+        "type": "object",
+        "description": "전자결재 기안 요청 — 신청자는 현재 사용자로 고정된다",
+        "properties": {
+          "taskSeCd": {
+            "type": "string",
+            "description": "업무 구분 코드(공통코드 COM075 의 사용 중 상세코드)",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "aprvrId": {
+            "type": "string",
+            "description": "결재자 esntlId(사용자 검색이 돌려주는 식별자)",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "reqYmd": {
+            "type": "string",
+            "description": "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다",
+            "pattern": "^\\d{8}$"
+          }
+        },
+        "required": [
+          "aprvrId",
+          "taskSeCd"
         ]
       },
       "UserDto": {
@@ -36963,50 +38769,6 @@
         "required": [
           "authrtId",
           "scrtyDcsnTrgtId"
-        ]
-      },
-      "TemplateDto": {
-        "type": "object",
-        "properties": {
-          "tmpltId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "tmpltNm": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "tmpltPath": {
-            "type": "string",
-            "maxLength": 1000,
-            "minLength": 0
-          },
-          "tmpltSeCd": {
-            "type": "string",
-            "maxLength": 12,
-            "minLength": 0
-          },
-          "useYn": {
-            "type": "string",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "frstRgtrId": {
-            "type": "string"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "tmpltId",
-          "tmpltNm",
-          "tmpltPath",
-          "tmpltSeCd",
-          "useYn"
         ]
       },
       "DeptAuthorBatchRequest": {
@@ -37340,10 +39102,16 @@
           },
           "rcptnTelno": {
             "type": "string",
-            "description": "수신 번호",
+            "description": "수신 번호. esntlId 를 지정하면 생략한다",
             "maxLength": 13,
             "minLength": 1,
             "pattern": "^[0-9-]+$"
+          },
+          "esntlId": {
+            "type": "string",
+            "description": "수신자 사용자 고유 ID(esntlId). 지정하면 서버가 등록된 휴대전화 번호를 해석한다",
+            "maxLength": 20,
+            "minLength": 0
           },
           "rsltCd": {
             "type": "string",
@@ -37353,208 +39121,60 @@
             "type": "string",
             "description": "결과 메시지"
           }
+        }
+      },
+      "NotificationDispatchRequest": {
+        "type": "object",
+        "description": "관리자 알림 발송 요청",
+        "properties": {
+          "recipients": {
+            "type": "array",
+            "description": "수신자 목록(사용자 고유 ID). 하나라도 존재하지 않으면 전체를 거부한다.",
+            "items": {
+              "$ref": "#/components/schemas/Recipient"
+            },
+            "maxItems": 100,
+            "minItems": 0
+          },
+          "notiTtlNm": {
+            "type": "string",
+            "description": "알림 제목",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "notiCn": {
+            "type": "string",
+            "description": "알림 내용",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "linkUrl": {
+            "type": "string",
+            "description": "알림을 눌렀을 때 이동할 앱 내 경로(선택)",
+            "maxLength": 2000,
+            "minLength": 0
+          }
         },
         "required": [
-          "rcptnTelno"
+          "notiCn",
+          "notiTtlNm",
+          "recipients"
         ]
       },
-      "RewardManageDto": {
+      "Recipient": {
         "type": "object",
+        "description": "알림 수신자",
         "properties": {
-          "rwrdSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "rwardwnrId": {
-            "type": "string"
-          },
-          "rwardCode": {
-            "type": "string"
-          },
-          "rwardDe": {
-            "type": "string"
-          },
-          "rwardNm": {
-            "type": "string"
-          },
-          "pblenCn": {
-            "type": "string"
-          },
-          "sanctnerId": {
-            "type": "string"
-          },
-          "confmAt": {
-            "type": "string"
-          },
-          "sanctnDt": {
+          "esntlId": {
             "type": "string",
-            "format": "date-time"
-          },
-          "returnResn": {
-            "type": "string"
-          },
-          "atchFileSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "ifmlAtrzSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "frstRgtrId": {
-            "type": "string"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "lastMdfrId": {
-            "type": "string"
-          },
-          "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "ApiResponseRewardManageDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/RewardManageDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "ExternalHrDto": {
-        "type": "object",
-        "properties": {
-          "evntSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "otsdHrId": {
-            "type": "string",
+            "description": "수신자 고유 ID(esntlId)",
             "maxLength": 20,
             "minLength": 0
-          },
-          "gndrCd": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
-          },
-          "otsdHrNm": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "crTypeCd": {
-            "type": "string",
-            "maxLength": 12,
-            "minLength": 0
-          },
-          "ogdpInstNm": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "brdtYmd": {
-            "type": "string",
-            "maxLength": 8,
-            "minLength": 0
-          },
-          "areaNo": {
-            "type": "string",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "mdTelno": {
-            "type": "string",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "endTelno": {
-            "type": "string",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "emlAddr": {
-            "type": "string",
-            "maxLength": 50,
-            "minLength": 0
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "frstRgtrId": {
-            "type": "string"
-          },
-          "mdfcnDt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "lastMdfrId": {
-            "type": "string"
           }
         },
         "required": [
-          "evntSn",
-          "otsdHrId"
+          "esntlId"
         ]
-      },
-      "ApiResponseExternalHrDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/ExternalHrDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
       },
       "ApiResponseCommunityDto": {
         "type": "object",
@@ -39778,6 +41398,62 @@
           }
         }
       },
+      "ApiResponseCommunityMembershipDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CommunityMembershipDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "CommunityMembershipDto": {
+        "type": "object",
+        "description": "현재 사용자의 커뮤니티 멤버십 상태",
+        "properties": {
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "커뮤니티 일련번호"
+          },
+          "status": {
+            "type": "string",
+            "description": "멤버십 상태",
+            "enum": [
+              "NONE",
+              "REQUESTED",
+              "MEMBER",
+              "UNKNOWN"
+            ]
+          },
+          "joinYmd": {
+            "type": "string",
+            "description": "가입(신청)일자 yyyyMMdd — 행이 없으면 null"
+          }
+        }
+      },
       "ApiResponsePageResponseCommentDto": {
         "type": "object",
         "properties": {
@@ -40443,6 +42119,82 @@
           }
         }
       },
+      "ApiResponseListCommonCodeDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommonCodeDto"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "CommonCodeDto": {
+        "type": "object",
+        "description": "공통코드 DTO",
+        "properties": {
+          "cdId": {
+            "type": "string",
+            "description": "코드그룹 ID",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "dtlCd": {
+            "type": "string",
+            "description": "코드",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "dtlCdNm": {
+            "type": "string",
+            "description": "코드명",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "dtlCdExpln": {
+            "type": "string",
+            "description": "코드설명",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "useYn": {
+            "type": "string",
+            "description": "사용여부",
+            "maxLength": 1,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "cdId",
+          "dtlCd",
+          "dtlCdNm",
+          "useYn"
+        ]
+      },
       "ApiResponseListMyPageContentDto": {
         "type": "object",
         "properties": {
@@ -40717,37 +42469,6 @@
             "items": {
               "$ref": "#/components/schemas/TemplateDto"
             }
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "ApiResponseTemplateDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/TemplateDto"
           },
           "timestamp": {
             "type": "string",
@@ -44523,6 +46244,107 @@
           "storedFilesChecked",
           "undecidable"
         ]
+      },
+      "ApiResponsePageResponseCommunityMemberDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseCommunityMemberDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "CommunityMemberDto": {
+        "type": "object",
+        "description": "커뮤니티 회원·가입 신청",
+        "properties": {
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "커뮤니티 일련번호"
+          },
+          "userId": {
+            "type": "string",
+            "description": "사용자 식별자(esntlId)"
+          },
+          "userNm": {
+            "type": "string",
+            "description": "사용자 이름 — 사용자를 찾지 못하면 null"
+          },
+          "status": {
+            "type": "string",
+            "description": "멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원). 어휘 밖 코드는 null",
+            "enum": [
+              "REQUESTED",
+              "APPROVED"
+            ]
+          },
+          "mbrSttsCd": {
+            "type": "string",
+            "description": "원본 상태 코드(mbr_stts_cd)"
+          },
+          "mngrYn": {
+            "type": "string",
+            "description": "관리자 여부(Y/N)"
+          },
+          "joinYmd": {
+            "type": "string",
+            "description": "가입(신청)일자 yyyyMMdd"
+          },
+          "useYn": {
+            "type": "string",
+            "description": "사용 여부(Y/N)"
+          }
+        }
+      },
+      "PageResponseCommunityMemberDto": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityMemberDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPage": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "ApiResponseListCommunityDto": {
         "type": "object",

@@ -9,6 +9,7 @@ import nuri.business.domain.menu.MenuRepository;
 import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuDto;
+import nuri.business.security.audit.LoginUserAuditorAware;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -50,6 +51,9 @@ class MenuServiceTest {
     @Mock
     private nuri.business.service.program.dto.ProgramMapper programMapper;
 
+    @Mock
+    private LoginUserAuditorAware loginUserAuditorAware;
+
     @InjectMocks
     private MenuService menuService;
 
@@ -65,6 +69,7 @@ class MenuServiceTest {
         lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         lenient().doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
                 .when(authentication).getAuthorities();
+        lenient().when(loginUserAuditorAware.getCurrentAuditor()).thenReturn(Optional.of("admin"));
     }
 
     @AfterEach
@@ -356,14 +361,21 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("insertMenuManage - Program이 없어서 새로 생성하는 분기")
-    void insertMenuManage_ProgramNotExists() {
-        MenuDto dto = MenuDto.builder().menuNo(9_999_999L).prgrmFileNm("NewProgram").build();
-        when(programRepository.existsById("NewProgram")).thenReturn(false);
+    @DisplayName("insertMenuManage - Program 최초 생성 경합을 원자적 insert-if-absent로 닫는다")
+    void insertMenuManage_ProvisionsProgramAtomically() {
+        MenuDto dto = MenuDto.builder()
+                .menuNo(9_999_999L)
+                .menuNm("테스트 메뉴")
+                .prgrmFileNm("NewProgram")
+                .modernRoute("/test/new-program")
+                .build();
         
         menuService.insertMenuManage(dto);
         
-        verify(programRepository).save(any(Program.class));
+        verify(programRepository).insertIfAbsent(
+                "NewProgram", "자동생성메뉴(테스트 메뉴)", "/test/new-program", "/auto-generated", "admin");
+        verify(programRepository, never()).existsById(anyString());
+        verify(programRepository, never()).save(any(Program.class));
         ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
         verify(menuRepository).save(menuCaptor.capture());
         assertThat(menuCaptor.getValue().getMenuSn())

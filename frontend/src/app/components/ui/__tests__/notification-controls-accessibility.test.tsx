@@ -1,10 +1,7 @@
 import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { SmartNotificationHub } from '../smart-notification-hub';
-import { NotificationSender } from '../notification-sender';
 import { AppNotificationDrawer } from '../app-notification-drawer';
 
 const notificationsMock = vi.hoisted(() => ({
@@ -47,29 +44,7 @@ describe('notification controls accessibility', () => {
     expect(unread).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('발송 채널을 이름이 있는 native radio group으로 제공한다', () => {
-    render(<NotificationSender />);
-
-    const group = screen.getByRole('group', { name: '발송 채널 선택' });
-    const system = screen.getByRole('radio', { name: '시스템' });
-    const email = screen.getByRole('radio', { name: '이메일' });
-    expect(group).toContainElement(system);
-    expect(system).toBeChecked();
-
-    fireEvent.click(email);
-    expect(email).toBeChecked();
-    expect(system).not.toBeChecked();
-  });
-
-  it('알림 페이지의 hero heading은 h1 다음의 h2이다', () => {
-    const source = readFileSync(
-      path.resolve(process.cwd(), 'src/app/admin/notifications/NotificationsClient.tsx'),
-      'utf8',
-    );
-    expect(source).toMatch(/<h2[^>]*>[\s\S]*?통합 알림 모니터링/);
-    expect(source).not.toMatch(/<h3[^>]*>[\s\S]*?통합 알림 모니터링/);
-  });
-
+  // [2026-09-06 DEC-OPS-038] 발송 미리보기 데모(NotificationSender)와 알림 페이지 히어로 블록을 걷었다 — 두 스펙도 함께 제거.
   it('업무 링크가 있는 알림은 중첩 button이 아니며 Enter 탐색을 가로막지 않는다', () => {
     const onClose = vi.fn();
     const onMarkRead = vi.fn();

@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 /**
  * 🔒 FE 인증 하드닝 회귀 방지 게이트 — quality-score §2.F / FE auth 아키텍처.
  *
- * FE 인증은 (1) accessToken=HttpOnly·Secure·SameSite 쿠키 (2) localStorage 토큰 저장 금지
+ * FE 인증은 (1) accessToken=HttpOnly·SameSite=Strict 쿠키 + 운영/비-loopback Secure 강제
+ * (2) localStorage 토큰 저장 금지
  * (3) 미들웨어의 서명 JWT 검증(위조 userRole 쿠키 불신) (4) prod CSP 에 unsafe-eval 부재
  * 로 하드닝돼 있다. 이 저장소는 과거 fe-auth 변경이 로그인/보안을 파손·회귀시킨 이력이 있어,
  * 이 4대 불변식을 정적으로 못박아 <b>회귀를 배포 전에 차단</b>한다.
@@ -33,14 +34,101 @@ function collectSource(dir: string): string[] {
   return out;
 }
 
+type SessionCookieName = 'accessToken' | 'session_exp';
+
+function extractCookieOptions(source: string, cookieName: SessionCookieName): string | null {
+  const marker = new RegExp(`cookies\\.set\\(\\s*['"]${cookieName}['"]`, 'g');
+  const calls = [...source.matchAll(marker)];
+  if (calls.length !== 1 || calls[0].index === undefined) return null;
+
+  const optionsStart = source.indexOf('{', calls[0].index + calls[0][0].length);
+  if (optionsStart < 0) return null;
+
+  let depth = 0;
+  for (let index = optionsStart; index < source.length; index += 1) {
+    if (source[index] === '{') depth += 1;
+    if (source[index] === '}') {
+      depth -= 1;
+      if (depth === 0) return source.slice(optionsStart + 1, index);
+    }
+  }
+
+  return null;
+}
+
+function sessionCookiePolicyViolations(source: string): string[] {
+  const violations: string[] = [];
+  if (!/const secureCookie = shouldUseSecureSessionCookie\(\s*request,\s*process\.env\.NODE_ENV,\s*process\.env\.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE === 'true',\s*\);/u.test(source)) {
+    violations.push('secure-policy-call');
+  }
+
+  for (const [cookieName, expectedHttpOnly] of [
+    ['accessToken', true],
+    ['session_exp', false],
+  ] as const) {
+    const options = extractCookieOptions(source, cookieName);
+    if (options === null) {
+      violations.push(`${cookieName}.options`);
+      continue;
+    }
+    if (!new RegExp(`^\\s*httpOnly:\\s*${expectedHttpOnly},\\s*$`, 'm').test(options)) {
+      violations.push(`${cookieName}.httpOnly`);
+    }
+    if (!/^\s*secure:\s*secureCookie,\s*$/m.test(options)) {
+      violations.push(`${cookieName}.secure`);
+    }
+    if (!/^\s*sameSite:\s*'strict',\s*$/m.test(options)) {
+      violations.push(`${cookieName}.sameSite`);
+    }
+  }
+
+  return violations;
+}
+
 describe('🔒 FE 인증 하드닝 회귀 방지 게이트 (§2.F)', () => {
-  it('로그인 라우트: accessToken 은 HttpOnly·Secure·SameSite 쿠키로 설정된다', () => {
+  it.each([
+    ['로그인', 'src/app/api/auth/login/route.ts'],
+    ['재발급', 'src/app/api/auth/reissue/route.ts'],
+  ])('%s 라우트: accessToken·session_exp 속성이 공용 Secure 정책에 결속된다', (_, routePath) => {
+    const route = read(routePath);
+    expect(sessionCookiePolicyViolations(route)).toEqual([]);
+  });
+
+  it('쿠키 속성 게이트는 accessToken 블록의 secure:false와 SameSite 누락을 별도로 검출한다', () => {
+    for (const routePath of [
+      'src/app/api/auth/login/route.ts',
+      'src/app/api/auth/reissue/route.ts',
+    ]) {
+      const route = read(routePath);
+      const insecureAccessToken = route.replace('secure: secureCookie,', 'secure: false,');
+      const missingAccessTokenSameSite = route.replace("sameSite: 'strict',", '');
+
+      expect(sessionCookiePolicyViolations(insecureAccessToken), routePath)
+        .toContain('accessToken.secure');
+      expect(sessionCookiePolicyViolations(missingAccessTokenSameSite), routePath)
+        .toContain('accessToken.sameSite');
+    }
+  });
+
+  it('라우트의 명시적 local-loopback opt-in 또는 원 요청 판정이 빠지면 red가 된다', () => {
+    for (const routePath of [
+      'src/app/api/auth/login/route.ts',
+      'src/app/api/auth/reissue/route.ts',
+    ]) {
+      const route = read(routePath);
+      const urlOnlyPolicy = route.replace(
+        /shouldUseSecureSessionCookie\([\s\S]*?\);/u,
+        'shouldUseSecureSessionCookie(request.nextUrl, process.env.NODE_ENV);',
+      );
+
+      expect(urlOnlyPolicy, `${routePath} mutation must change source`).not.toBe(route);
+      expect(sessionCookiePolicyViolations(urlOnlyPolicy), routePath)
+        .toContain('secure-policy-call');
+    }
+  });
+
+  it('로그인 라우트는 응답 바디에 accessToken 을 싣지 않는다', () => {
     const login = read('src/app/api/auth/login/route.ts');
-    // accessToken 쿠키 설정 블록에 httpOnly:true 가 있어야 한다
-    expect(login, 'accessToken 쿠키 설정 부재').toMatch(/cookies\.set\(\s*['"]accessToken['"]/);
-    expect(login, 'httpOnly:true 회귀 — accessToken 이 JS 접근 가능해짐').toMatch(/httpOnly:\s*true/);
-    expect(login, 'sameSite 회귀').toMatch(/sameSite:\s*['"](strict|lax)['"]/);
-    expect(login, 'secure 플래그 회귀').toMatch(/secure:/);
     // 응답 바디에 accessToken 을 실어 반환하면 안 된다(role 만)
     expect(login, '응답 바디에 accessToken 노출 회귀').not.toMatch(/data:\s*\{[^}]*accessToken/);
   });

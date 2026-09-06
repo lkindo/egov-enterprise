@@ -82,6 +82,36 @@ function isWave1Approval(approval) {
     && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
 }
 
+// D5 웨이브 2 (2026-09-06, DEC-OPS-040): 2026-09-05 감사가 남긴 overlay 제안 11건을 owner 승인으로 확정했다
+// (사용자 위임 2026-09-06). consolidate 7건은 정본으로의 page-redirect(4건 신규 이행·3건은 이미 config redirect),
+// demo-isolated 1건(/admin/system/layout), DEC-OPS-034 의 boards/write·[id] 2건과 login-policy 1건은 승인 기록만이다.
+// 메뉴 노출 검토는 별칭이 리다이렉트로 흡수되는 consolidate 에서 'verified', demo 격리에서 'not-applicable' 이다.
+const WAVE2_APPROVED_ROUTES = [
+  '/admin/community',
+  '/admin/community/boards',
+  '/admin/community/boards/[id]',
+  '/admin/community/boards/write',
+  '/admin/observability',
+  '/admin/security/audit',
+  '/admin/system/audit',
+  '/admin/system/ism',
+  '/admin/system/layout',
+  '/admin/system/monitoring',
+  '/admin/user/login-policy',
+];
+const WAVE2_REVIEWER = 'lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)';
+const WAVE2_REVIEWED_AT = '2026-09-06';
+function isWave2Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE2_REVIEWER
+    && approval.reviewedAt === WAVE2_REVIEWED_AT
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+// overlay 는 manifest(파일시스템 스캔) 순서를 따르므로 승인 집합도 같은 정렬로 비교한다.
+const APPROVED_ROUTES = [...WAVE1_APPROVED_ROUTES, ...WAVE2_APPROVED_ROUTES].sort();
+
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
   assert.equal(overlay.state, 'proposed');
   assert.equal(overlay.acceptedDecision, null);
@@ -103,7 +133,7 @@ test('the recommended hybrid is selected only as a bounded provisional direction
   assert.ok(overlay.routes.every(({ reviewState }) => ['proposed', 'approved'].includes(reviewState)));
   assert.deepEqual(
     overlay.routes.filter(({ reviewState }) => reviewState === 'approved').map(({ route }) => route),
-    WAVE1_APPROVED_ROUTES,
+    APPROVED_ROUTES,
   );
   assert.deepEqual(
     overlay.externalAliases.filter(({ reviewState }) => reviewState === 'approved').map(({ source }) => source),
@@ -147,6 +177,16 @@ test('the proposed overlay drafts dispositions over the sparse 120 + 2 review po
         && record.capabilityReview === 'verified'
         && record.profileOwnershipReview === 'verified'
         && Object.values(record.approvals).every(isWave1Approval);
+    }
+    if (WAVE2_APPROVED_ROUTES.includes(record.route)) {
+      return shared
+        && record.reviewState === 'approved'
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && ['verified', 'not-applicable'].includes(record.effectiveMenuExposureReview)
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave2Approval);
     }
     return shared
       && record.reviewState === 'proposed'

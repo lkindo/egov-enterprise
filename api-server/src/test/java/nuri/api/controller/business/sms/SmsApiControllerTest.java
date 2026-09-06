@@ -101,4 +101,23 @@ class SmsApiControllerTest extends ControllerTestSupport {
 
         verifyNoInteractions(smsService);
     }
+
+    @Test
+    @WithMockCustomUser(role = "ADMIN")
+    @DisplayName("SMS 발송은 null 수신자를 검증 단계에서 거절")
+    void sendSmsRejectsNullRecipient() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/operation/sms")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "sndngTelno": "02-1234-5678",
+                                  "sndngCn": "test",
+                                  "recipients": [null]
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(smsService);
+    }
 }

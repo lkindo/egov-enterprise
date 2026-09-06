@@ -46,6 +46,19 @@ class SurveyResultServiceTest {
                 .srvyArtclSn(sn).srvyQstnSn(qstnSn).srvySn(201L).srvyTmpltSn(101L).artclSn(1L).artclCn(cn).build();
     }
 
+    /** 기간이 열려 있는 설문 — 경계가 넓어 오늘이 언제든 안에 든다. */
+    private static SurveyInfo openSurvey() {
+        return SurveyInfo.builder()
+                .srvySn(201L).srvyTtl("만족도 조사").srvyTmpltSn(101L)
+                .srvyBgngYmd("20000101").srvyEndYmd("29991231").build();
+    }
+
+    private static SurveyInfo surveyWithPeriod(String bgng, String end) {
+        return SurveyInfo.builder()
+                .srvySn(201L).srvyTtl("만족도 조사").srvyTmpltSn(101L)
+                .srvyBgngYmd(bgng).srvyEndYmd(end).build();
+    }
+
     private static SurveyResultRepository.ArticleCount count(Long artclSn, long cnt) {
         return new SurveyResultRepository.ArticleCount() {
             @Override public Long getSrvyArtclSn() { return artclSn; }
@@ -132,7 +145,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 다른 설문의 문항 ID 는 거부한다 (통계 오염 차단)")
     void submitRejectsForeignQuestion() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
         given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
@@ -156,7 +169,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 문항은 맞아도 항목이 다른 문항 소속이면 거부한다")
     void submitRejectsArticleFromAnotherQuestion() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "질문1", "1"), question(302L, "질문2", "1")));
@@ -180,7 +193,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 같은 사용자의 재제출은 거부한다")
     void submitRejectsDuplicate() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(true);
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
@@ -200,7 +213,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 로그인하지 않으면 거부한다 (제출자 식별이 감사 컬럼뿐이다)")
     void submitRequiresLogin() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
                 List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null)));
@@ -219,7 +232,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("제출 - 답변 N건이 응답 행 N개가 된다")
     void submitCreatesOneRowPerAnswer() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "질문1", "1"), question(302L, "질문2", "1")));
@@ -245,5 +258,83 @@ class SurveyResultServiceTest {
         assertThat(captor.getValue()).hasSize(2);
         // 템플릿 ID 는 요청이 아니라 문항에서 가져온다 — 클라이언트가 임의 값을 심지 못하게 한다.
         assertThat(captor.getValue()).allSatisfy(r -> assertThat(r.getSrvyTmpltSn()).isEqualTo(101L));
+    }
+
+    // ---------- 기간 가드 (2026-09-05) ----------
+    //
+    // 종전에는 존재·중복만 검사해 종료된 설문·시작 전 설문에도 응답이 저장됐다. 같은 도메인의
+    // 투표(OnlinePollService.vote)는 막고 있었다. 오늘 날짜에 의존하지 않도록 경계를 멀리 둔다.
+
+    private static SurveyResponseSubmitDto oneAnswer() {
+        return new SurveyResponseSubmitDto("홍길동",
+                List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null)));
+    }
+
+    @Test
+    @DisplayName("🔒 제출 - 종료된 설문에는 응답할 수 없다")
+    void submitRejectsClosedSurvey() {
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("20000101", "20000131")));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(java.util.Optional.of("user1"));
+
+            assertThatThrownBy(() -> service.submitResponse(201L, oneAnswer()))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("이미 종료된 설문입니다")
+                    .hasMessageContaining("2000-01-31");
+        }
+        verify(resultRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("🔒 제출 - 시작 전 설문에는 응답할 수 없다")
+    void submitRejectsScheduledSurvey() {
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("29990101", "29991231")));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(java.util.Optional.of("user1"));
+
+            assertThatThrownBy(() -> service.submitResponse(201L, oneAnswer()))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("아직 시작되지 않은 설문입니다")
+                    .hasMessageContaining("2999-01-01");
+        }
+        verify(resultRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("제출 - 비어 있는 기간 경계는 열린 것으로 본다 (기간 없는 설문은 계속 응답 가능)")
+    void submitAllowsUnboundedPeriod() {
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(surveyWithPeriod(null, null)));
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(false);
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문1", "1")));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+                .willReturn(List.of(article(401L, 301L, "예")));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(java.util.Optional.of("user1"));
+
+            assertThat(service.submitResponse(201L, oneAnswer())).isEqualTo(1);
+        }
+        verify(resultRepository).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("🔒 제출 - 기간 값이 8자리 날짜가 아니면 판정 불가이며 열지 않는다")
+    void submitRejectsMalformedPeriod() {
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("2026-09-", "20261231")));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(java.util.Optional.of("user1"));
+
+            assertThatThrownBy(() -> service.submitResponse(201L, oneAnswer()))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("설문 기간 정보를 확인할 수 없어");
+        }
+        verify(resultRepository, never()).saveAll(any());
     }
 }

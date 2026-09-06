@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Milestone } from 'lucide-react';
 import { SITE_IDENTITY } from '@/config/site-identity';
+import { logErrorSafely } from '@/lib/safe-error-log';
 
 export const metadata = {
   title: `행정코드 관리 | ${SITE_IDENTITY.frameworkName}`,
@@ -32,7 +33,7 @@ export default async function AdministCodePage() {
     if (status === 401) {
       redirect('/login?expired=true&redirect=/admin/system/codes/administ');
     }
-    console.error('Failed to fetch initial administ codes:', error);
+    logErrorSafely('Failed to fetch initial administ codes:', error);
   }
 
   return (

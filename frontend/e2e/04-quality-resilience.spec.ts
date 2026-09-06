@@ -106,9 +106,15 @@ test.describe('Tier 4: Quality & Resilience', () => {
             
             console.log('>>> Simulating crash (Refresh)');
             await page.reload();
-            
+
+            // [2026-09-05 DEC-OPS-034] 복구 확인이 native confirm() 에서 useConfirm 모달로 바뀌었다(감사 D06-03 선행 이행).
+            //   위 dialog 리스너는 더 이상 발화하지 않으며, 모달의 '복구' 를 눌러야 임시저장이 복원된다.
+            const restoreDialog = page.getByRole('dialog').filter({ hasText: '임시저장 데이터 복구' });
+            await expect(restoreDialog).toBeVisible({ timeout: 15000 });
+            await restoreDialog.getByRole('button', { name: '복구', exact: true }).click();
+            await expect(restoreDialog).toBeHidden();
+
             console.log('>>> Verifying restoration');
-            // The dialog should be automatically accepted by the listener
             await expect(page.locator('input[name="pstTtl"]')).toHaveValue(draftTitle, { timeout: 15000 });
             await expect(page.locator('.ProseMirror')).toContainText('auto-save verification');
         });

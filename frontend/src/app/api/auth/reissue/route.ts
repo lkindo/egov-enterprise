@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { getJwtExpiryMs, cookieMaxAgeSecondsFrom } from '@/lib/auth/jwt';
 import { authReissueResponseSchema } from '@/lib/auth/auth-bff-contract';
+import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
 import {
   parseGeneratedOperationRequest,
   parseGeneratedOperationResponse,
@@ -95,11 +96,15 @@ export async function POST(request: NextRequest) {
       const expMs = getJwtExpiryMs(accessToken);
       const maxAge = cookieMaxAgeSecondsFrom(expMs);
 
-      // 신규 accessToken 을 HttpOnly 쿠키로 재설정
-      const isProd = process.env.NODE_ENV === 'production';
+      // Secure=false 예외는 명시적으로 opt-in한 로컬 HTTP loopback에만 허용한다.
+      const secureCookie = shouldUseSecureSessionCookie(
+        request,
+        process.env.NODE_ENV,
+        process.env.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE === 'true',
+      );
       nextResponse.cookies.set('accessToken', accessToken, {
         httpOnly: true,
-        secure: isProd,
+        secure: secureCookie,
         sameSite: 'strict',
         path: '/',
         maxAge,
@@ -109,7 +114,7 @@ export async function POST(request: NextRequest) {
       if (expMs) {
         nextResponse.cookies.set('session_exp', String(expMs), {
           httpOnly: false,
-          secure: isProd,
+          secure: secureCookie,
           sameSite: 'strict',
           path: '/',
           maxAge,

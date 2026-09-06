@@ -9,16 +9,16 @@ import { z } from 'zod';
 // WorkReportDto Schema
 // ==========================================================================
 export const WorkReportDtoSchema = z.object({
-  rptpSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  rptCn: z.string().optional(),
-  rptSeCd: z.string().optional(),
-  userId: z.string().min(0).max(20).optional(),
-  userNm: z.string().optional(),
+  rptpSn: z.number().int().optional().nullable(),
+  rptTtl: z.string().min(0).max(100),
+  rptCn: z.string().min(0).max(4000).optional(),
+  rptSeCd: z.string().min(0).max(12).optional(),
+  userId: z.string().min(0).max(20).optional().nullable(),
+  userNm: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional(),
-  rptSttsCd: z.string().min(0).max(12).optional(),
+  rptSttsCd: z.string().min(0).max(12).optional().nullable(),
   rptYmd: z.string().min(0).max(8).optional(),
-  rptTypeCd: z.string().optional(),
+  rptTypeCd: z.string().optional().nullable(),
 });
 export type WorkReportDto = z.infer<typeof WorkReportDtoSchema>;
 
@@ -83,8 +83,8 @@ export const ScrapDtoSchema = z.object({
   pstSn: z.number().int().optional(),
   scrapNm: z.string().min(0).max(100).optional(),
   scrapUrl: z.string().min(0).max(1000).optional(),
-  scrapExpln: z.string().optional(),
-  useYn: z.string().min(0).max(1).regex(new RegExp("[YN]")),
+  scrapExpln: z.string().min(0).max(4000).optional(),
+  useYn: z.enum(["Y","N"]),
   userId: z.string().min(0).max(20).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
@@ -150,19 +150,19 @@ export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 // MemoReportDto Schema
 // ==========================================================================
 export const MemoReportDtoSchema = z.object({
-  memoRptSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  memoRptYmd: z.string().optional(),
-  userId: z.string().optional(),
-  wrterNm: z.string().min(0).max(100).optional(),
-  rptrId: z.string().optional(),
-  rptrNm: z.string().optional(),
-  rptCn: z.string().optional(),
+  memoRptSn: z.number().int().optional().nullable(),
+  rptTtl: z.string().min(0).max(100),
+  memoRptYmd: z.string().min(0).max(8).optional(),
+  userId: z.string().optional().nullable(),
+  wrterNm: z.string().min(0).max(100).optional().nullable(),
+  rptrId: z.string().min(0).max(20),
+  rptrNm: z.string().optional().nullable(),
+  rptCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
-  drctnMttr: z.string().optional(),
-  drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  drctnMttr: z.string().optional().nullable(),
+  drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
@@ -218,21 +218,21 @@ export type HpcmDto = z.infer<typeof HpcmDtoSchema>;
 // DeptJobDto Schema
 // ==========================================================================
 export const DeptJobDtoSchema = z.object({
-  deptTaskSn: z.number().int().optional(),
+  deptTaskSn: z.number().int().optional().nullable(),
   deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
-  deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
-  deptTaskNm: z.string().optional(),
-  deptTaskCn: z.string().optional(),
-  picId: z.string().optional(),
-  picNm: z.string().optional(),
-  prrtyRnk: z.string().optional(),
+  deptTaskBoxNm: z.string().optional().nullable(),
+  deptId: z.string().min(0).max(20).optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  deptTaskNm: z.string().min(0).max(100).optional(),
+  deptTaskCn: z.string().min(0).max(4000).optional(),
+  picId: z.string().min(0).max(20).optional(),
+  picNm: z.string().optional().nullable(),
+  prrtyRnk: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 
@@ -240,15 +240,15 @@ export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 // DeptJobBoxDto Schema
 // ==========================================================================
 export const DeptJobBoxDtoSchema = z.object({
-  deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
+  deptTaskBoxSn: z.number().int().optional().nullable(),
+  deptTaskBoxNm: z.string().min(0).max(100),
   deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
+  deptNm: z.string().optional().nullable(),
   sortOrdr: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 export type DeptJobBoxDto = z.infer<typeof DeptJobBoxDtoSchema>;
 
@@ -298,7 +298,6 @@ export const SatisfactionDtoSchema = z.object({
   dgstfnScr: z.number().int().optional(),
   userId: z.string().optional(),
   userNm: z.string().optional(),
-  pswd: z.string().optional(),
   useYn: z.string().min(0).max(1),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
@@ -319,10 +318,10 @@ export type ApprovalConfirmRequest = z.infer<typeof ApprovalConfirmRequestSchema
 export const MyPageContentDtoSchema = z.object({
   contsSn: z.number().int().optional(),
   cntntsNm: z.string().min(0).max(100).optional(),
-  cntcUrl: z.string().optional(),
-  cntntsUseYn: z.string().optional(),
-  cntntsLinkUrl: z.string().optional(),
-  cntntsDc: z.string().optional(),
+  cntcUrl: z.string().min(0).max(255).optional(),
+  cntntsUseYn: z.enum(["Y","N"]).optional(),
+  cntntsLinkUrl: z.string().min(0).max(255).optional(),
+  cntntsDc: z.string().min(0).max(255).optional(),
 });
 export type MyPageContentDto = z.infer<typeof MyPageContentDtoSchema>;
 
@@ -357,6 +356,34 @@ export const UserAbsenceDtoSchema = z.object({
   userAbsnYn: z.string().optional(),
 });
 export type UserAbsenceDto = z.infer<typeof UserAbsenceDtoSchema>;
+
+// ==========================================================================
+// TemplateDto Schema
+// ==========================================================================
+export const TemplateDtoSchema = z.object({
+  tmpltId: z.string().min(0).max(20),
+  tmpltNm: z.string().min(0).max(100),
+  tmpltPath: z.string().min(0).max(1000),
+  tmpltSeCd: z.string().min(0).max(12),
+  useYn: z.string().min(0).max(1),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+export type TemplateDto = z.infer<typeof TemplateDtoSchema>;
+
+// ==========================================================================
+// ApiResponseTemplateDto Schema
+// ==========================================================================
+export const ApiResponseTemplateDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => TemplateDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseTemplateDto = z.infer<typeof ApiResponseTemplateDtoSchema>;
 
 // ==========================================================================
 // SurveyRespondentDto Schema
@@ -730,6 +757,79 @@ export const AuthorManageDtoSchema = z.object({
 export type AuthorManageDto = z.infer<typeof AuthorManageDtoSchema>;
 
 // ==========================================================================
+// RewardManageDto Schema
+// ==========================================================================
+export const RewardManageDtoSchema = z.object({
+  rwrdSn: z.number().int().optional(),
+  rwardwnrId: z.string().min(0).max(20).optional(),
+  rwardCode: z.string().min(0).max(12).optional(),
+  rwardDe: z.string().min(0).max(8).optional(),
+  rwardNm: z.string().min(0).max(100).optional(),
+  pblenCn: z.string().min(0).max(4000).optional(),
+  sanctnerId: z.string().min(0).max(20).optional(),
+  confmAt: z.string().min(0).max(1).optional(),
+  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  returnResn: z.string().min(0).max(4000).optional(),
+  atchFileSn: z.number().int().optional(),
+  ifmlAtrzSn: z.number().int().optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  lastMdfrId: z.string().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+export type RewardManageDto = z.infer<typeof RewardManageDtoSchema>;
+
+// ==========================================================================
+// ApiResponseRewardManageDto Schema
+// ==========================================================================
+export const ApiResponseRewardManageDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => RewardManageDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseRewardManageDto = z.infer<typeof ApiResponseRewardManageDtoSchema>;
+
+// ==========================================================================
+// ExternalHrDto Schema
+// ==========================================================================
+export const ExternalHrDtoSchema = z.object({
+  evntSn: z.number().int(),
+  otsdHrId: z.string().min(0).max(20),
+  gndrCd: z.string().min(0).max(12).optional(),
+  otsdHrNm: z.string().min(0).max(100).optional(),
+  crTypeCd: z.string().min(0).max(12).optional(),
+  ogdpInstNm: z.string().min(0).max(100).optional(),
+  brdtYmd: z.string().min(0).max(8).optional(),
+  areaNo: z.string().min(0).max(4).optional(),
+  mdTelno: z.string().min(0).max(4).optional(),
+  endTelno: z.string().min(0).max(4).optional(),
+  emlAddr: z.string().min(0).max(320).optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+});
+export type ExternalHrDto = z.infer<typeof ExternalHrDtoSchema>;
+
+// ==========================================================================
+// ApiResponseExternalHrDto Schema
+// ==========================================================================
+export const ApiResponseExternalHrDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ExternalHrDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseExternalHrDto = z.infer<typeof ApiResponseExternalHrDtoSchema>;
+
+// ==========================================================================
 // EventInfoDto Schema
 // ==========================================================================
 export const EventInfoDtoSchema = z.object({
@@ -757,7 +857,7 @@ export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
 // ==========================================================================
 export const CommunityDtoSchema = z.object({
   cmntySn: z.number().int().optional(),
-  cmntyNm: z.string().min(0).max(100).optional(),
+  cmntyNm: z.string().min(0).max(100),
   cmntyIntroCn: z.string().min(0).max(4000).optional(),
   regSeCd: z.string().min(0).max(12).optional(),
   regSeCdNm: z.string().optional(),
@@ -776,9 +876,9 @@ export type CommunityDto = z.infer<typeof CommunityDtoSchema>;
 export const AddressBookDtoSchema = z.object({
   adbkSn: z.number().int().optional(),
   adbkNm: z.string().min(0).max(100),
-  rlsScopeCd: z.string(),
-  trgetOgnzId: z.string().optional(),
-  useYn: z.string().optional(),
+  rlsScopeCd: z.string().min(0).max(12),
+  trgetOgnzId: z.string().min(0).max(20).optional(),
+  useYn: z.enum(["Y","N"]).optional(),
   wrterId: z.string().optional(),
   adbkMan: z.array(z.lazy(() => AddressBookUserDtoSchema)).optional(),
   frstRgtrId: z.string().optional(),
@@ -938,6 +1038,15 @@ export const NoteRecipientDtoSchema = z.object({
 export type NoteRecipientDto = z.infer<typeof NoteRecipientDtoSchema>;
 
 // ==========================================================================
+// MailRecipientDto Schema
+// ==========================================================================
+export const MailRecipientDtoSchema = z.object({
+  esntlId: z.string().min(0).max(20).optional(),
+  emlAddr: z.string().min(0).max(320).optional(),
+});
+export type MailRecipientDto = z.infer<typeof MailRecipientDtoSchema>;
+
+// ==========================================================================
 // SentMailDto Schema
 // ==========================================================================
 export const SentMailDtoSchema = z.object({
@@ -945,7 +1054,8 @@ export const SentMailDtoSchema = z.object({
   sj: z.string().optional(),
   emailCn: z.string().optional(),
   dsptchPerson: z.string().optional(),
-  recptnPerson: z.string().optional(),
+  recptnPerson: z.string().min(0).max(100).optional(),
+  recipients: z.array(z.lazy(() => MailRecipientDtoSchema)).min(0).max(100).optional(),
   sndngResultCode: z.string().optional(),
   sndngDe: z.string().optional(),
   atchFileSn: z.number().int().optional(),
@@ -1000,6 +1110,16 @@ export const LoginRequestSchema = z.object({
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
 // ==========================================================================
+// ApprovalDraftRequest Schema
+// ==========================================================================
+export const ApprovalDraftRequestSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+});
+export type ApprovalDraftRequest = z.infer<typeof ApprovalDraftRequestSchema>;
+
+// ==========================================================================
 // UserDto Schema
 // ==========================================================================
 export const UserDtoSchema = z.object({
@@ -1046,20 +1166,6 @@ export const UserAuthorityDtoSchema = z.object({
   userNm: z.string().min(0).max(100).optional(),
 });
 export type UserAuthorityDto = z.infer<typeof UserAuthorityDtoSchema>;
-
-// ==========================================================================
-// TemplateDto Schema
-// ==========================================================================
-export const TemplateDtoSchema = z.object({
-  tmpltId: z.string().min(0).max(20),
-  tmpltNm: z.string().min(0).max(100),
-  tmpltPath: z.string().min(0).max(1000),
-  tmpltSeCd: z.string().min(0).max(12),
-  useYn: z.string().min(0).max(1),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-});
-export type TemplateDto = z.infer<typeof TemplateDtoSchema>;
 
 // ==========================================================================
 // DeptAuthorBatchRequest Schema
@@ -1146,84 +1252,31 @@ export type SmsDto = z.infer<typeof SmsDtoSchema>;
 // ==========================================================================
 export const SmsRecptnDtoSchema = z.object({
   smsTrsmSn: z.number().int().optional(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
+  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional(),
+  esntlId: z.string().min(0).max(20).optional(),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),
 });
 export type SmsRecptnDto = z.infer<typeof SmsRecptnDtoSchema>;
 
 // ==========================================================================
-// RewardManageDto Schema
+// NotificationDispatchRequest Schema
 // ==========================================================================
-export const RewardManageDtoSchema = z.object({
-  rwrdSn: z.number().int().optional(),
-  rwardwnrId: z.string().optional(),
-  rwardCode: z.string().optional(),
-  rwardDe: z.string().optional(),
-  rwardNm: z.string().optional(),
-  pblenCn: z.string().optional(),
-  sanctnerId: z.string().optional(),
-  confmAt: z.string().optional(),
-  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  returnResn: z.string().optional(),
-  atchFileSn: z.number().int().optional(),
-  ifmlAtrzSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+export const NotificationDispatchRequestSchema = z.object({
+  recipients: z.array(z.lazy(() => RecipientSchema)).min(0).max(100),
+  notiTtlNm: z.string().min(0).max(100),
+  notiCn: z.string().min(0).max(4000),
+  linkUrl: z.string().min(0).max(2000).optional(),
 });
-export type RewardManageDto = z.infer<typeof RewardManageDtoSchema>;
+export type NotificationDispatchRequest = z.infer<typeof NotificationDispatchRequestSchema>;
 
 // ==========================================================================
-// ApiResponseRewardManageDto Schema
+// Recipient Schema
 // ==========================================================================
-export const ApiResponseRewardManageDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => RewardManageDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+export const RecipientSchema = z.object({
+  esntlId: z.string().min(0).max(20),
 });
-export type ApiResponseRewardManageDto = z.infer<typeof ApiResponseRewardManageDtoSchema>;
-
-// ==========================================================================
-// ExternalHrDto Schema
-// ==========================================================================
-export const ExternalHrDtoSchema = z.object({
-  evntSn: z.number().int(),
-  otsdHrId: z.string().min(0).max(20),
-  gndrCd: z.string().min(0).max(30).optional(),
-  otsdHrNm: z.string().min(0).max(100).optional(),
-  crTypeCd: z.string().min(0).max(12).optional(),
-  ogdpInstNm: z.string().min(0).max(100).optional(),
-  brdtYmd: z.string().min(0).max(8).optional(),
-  areaNo: z.string().min(0).max(4).optional(),
-  mdTelno: z.string().min(0).max(4).optional(),
-  endTelno: z.string().min(0).max(4).optional(),
-  emlAddr: z.string().min(0).max(50).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  frstRgtrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-});
-export type ExternalHrDto = z.infer<typeof ExternalHrDtoSchema>;
-
-// ==========================================================================
-// ApiResponseExternalHrDto Schema
-// ==========================================================================
-export const ApiResponseExternalHrDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => ExternalHrDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseExternalHrDto = z.infer<typeof ApiResponseExternalHrDtoSchema>;
+export type Recipient = z.infer<typeof RecipientSchema>;
 
 // ==========================================================================
 // ApiResponseCommunityDto Schema
@@ -2142,6 +2195,30 @@ export const PageResponseCommunityDtoSchema = z.object({
 export type PageResponseCommunityDto = z.infer<typeof PageResponseCommunityDtoSchema>;
 
 // ==========================================================================
+// ApiResponseCommunityMembershipDto Schema
+// ==========================================================================
+export const ApiResponseCommunityMembershipDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CommunityMembershipDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseCommunityMembershipDto = z.infer<typeof ApiResponseCommunityMembershipDtoSchema>;
+
+// ==========================================================================
+// CommunityMembershipDto Schema
+// ==========================================================================
+export const CommunityMembershipDtoSchema = z.object({
+  cmntySn: z.number().int().optional(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional(),
+  joinYmd: z.string().optional(),
+});
+export type CommunityMembershipDto = z.infer<typeof CommunityMembershipDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseCommentDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseCommentDtoSchema = z.object({
@@ -2406,6 +2483,32 @@ export const CurrentUserResponseSchema = z.object({
 export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
 
 // ==========================================================================
+// ApiResponseListCommonCodeDto Schema
+// ==========================================================================
+export const ApiResponseListCommonCodeDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => CommonCodeDtoSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListCommonCodeDto = z.infer<typeof ApiResponseListCommonCodeDtoSchema>;
+
+// ==========================================================================
+// CommonCodeDto Schema
+// ==========================================================================
+export const CommonCodeDtoSchema = z.object({
+  cdId: z.string().min(0).max(20),
+  dtlCd: z.string().min(0).max(12),
+  dtlCdNm: z.string().min(0).max(100),
+  dtlCdExpln: z.string().min(0).max(4000).optional(),
+  useYn: z.string().min(0).max(1),
+});
+export type CommonCodeDto = z.infer<typeof CommonCodeDtoSchema>;
+
+// ==========================================================================
 // ApiResponseListMyPageContentDto Schema
 // ==========================================================================
 export const ApiResponseListMyPageContentDtoSchema = z.object({
@@ -2527,20 +2630,6 @@ export const ApiResponseListTemplateDtoSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListTemplateDto = z.infer<typeof ApiResponseListTemplateDtoSchema>;
-
-// ==========================================================================
-// ApiResponseTemplateDto Schema
-// ==========================================================================
-export const ApiResponseTemplateDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => TemplateDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseTemplateDto = z.infer<typeof ApiResponseTemplateDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseSurveyRespondentDto Schema
@@ -4162,6 +4251,47 @@ export const AttachmentIntegrityReportSchema = z.object({
 export type AttachmentIntegrityReport = z.infer<typeof AttachmentIntegrityReportSchema>;
 
 // ==========================================================================
+// ApiResponsePageResponseCommunityMemberDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseCommunityMemberDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponseCommunityMemberDto = z.infer<typeof ApiResponsePageResponseCommunityMemberDtoSchema>;
+
+// ==========================================================================
+// CommunityMemberDto Schema
+// ==========================================================================
+export const CommunityMemberDtoSchema = z.object({
+  cmntySn: z.number().int().optional(),
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  status: z.enum(["REQUESTED","APPROVED"]).optional(),
+  mbrSttsCd: z.string().optional(),
+  mngrYn: z.string().optional(),
+  joinYmd: z.string().optional(),
+  useYn: z.string().optional(),
+});
+export type CommunityMemberDto = z.infer<typeof CommunityMemberDtoSchema>;
+
+// ==========================================================================
+// PageResponseCommunityMemberDto Schema
+// ==========================================================================
+export const PageResponseCommunityMemberDtoSchema = z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoSchema)).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+export type PageResponseCommunityMemberDto = z.infer<typeof PageResponseCommunityMemberDtoSchema>;
+
+// ==========================================================================
 // ApiResponseListCommunityDto Schema
 // ==========================================================================
 export const ApiResponseListCommunityDtoSchema = z.object({
@@ -4242,23 +4372,18 @@ export const PageResponseAddressBookUserDtoSchema = z.object({
 export type PageResponseAddressBookUserDto = z.infer<typeof PageResponseAddressBookUserDtoSchema>;
 
 export const WorkReportDtoRequestSchema = z.object({
-  rptpSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  rptCn: z.string().optional(),
-  rptSeCd: z.string().optional(),
-  userId: z.string().min(0).max(20).optional(),
-  userNm: z.string().optional(),
+  rptTtl: z.string().min(0).max(100),
+  rptCn: z.string().min(0).max(4000).optional(),
+  rptSeCd: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
-  rptSttsCd: z.string().min(0).max(12).optional(),
   rptYmd: z.string().min(0).max(8).optional(),
-  rptTypeCd: z.string().optional(),
 });
 
 export const WorkReportDtoResponseSchema = z.object({
   rptpSn: z.number().int().optional().nullable(),
-  rptTtl: z.string().optional().nullable(),
-  rptCn: z.string().optional().nullable(),
-  rptSeCd: z.string().optional().nullable(),
+  rptTtl: z.string().min(0).max(100),
+  rptCn: z.string().min(0).max(4000).optional().nullable(),
+  rptSeCd: z.string().min(0).max(12).optional().nullable(),
   userId: z.string().min(0).max(20).optional().nullable(),
   userNm: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
@@ -4345,8 +4470,8 @@ export const ScrapDtoRequestSchema = z.object({
   pstSn: z.number().int().optional(),
   scrapNm: z.string().min(0).max(100).optional(),
   scrapUrl: z.string().min(0).max(1000).optional(),
-  scrapExpln: z.string().optional(),
-  useYn: z.string().min(0).max(1).regex(new RegExp("[YN]")),
+  scrapExpln: z.string().min(0).max(4000).optional(),
+  useYn: z.enum(["Y","N"]),
   userId: z.string().min(0).max(20).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
@@ -4358,8 +4483,8 @@ export const ScrapDtoResponseSchema = z.object({
   pstSn: z.number().int().optional().nullable(),
   scrapNm: z.string().min(0).max(100).optional().nullable(),
   scrapUrl: z.string().min(0).max(1000).optional().nullable(),
-  scrapExpln: z.string().optional().nullable(),
-  useYn: z.string().min(0).max(1).regex(new RegExp("[YN]")),
+  scrapExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.enum(["Y","N"]),
   userId: z.string().min(0).max(20).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
@@ -4452,30 +4577,22 @@ export const OnlinePollManageDtoResponseSchema = z.object({
 });
 
 export const MemoReportDtoRequestSchema = z.object({
-  memoRptSn: z.number().int().optional(),
-  rptTtl: z.string().optional(),
-  memoRptYmd: z.string().optional(),
-  userId: z.string().optional(),
-  wrterNm: z.string().min(0).max(100).optional(),
-  rptrId: z.string().optional(),
-  rptrNm: z.string().optional(),
-  rptCn: z.string().optional(),
+  rptTtl: z.string().min(0).max(100),
+  memoRptYmd: z.string().min(0).max(8).optional(),
+  rptrId: z.string().min(0).max(20),
+  rptCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
-  drctnMttr: z.string().optional(),
-  drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 
 export const MemoReportDtoResponseSchema = z.object({
   memoRptSn: z.number().int().optional().nullable(),
-  rptTtl: z.string().optional().nullable(),
-  memoRptYmd: z.string().optional().nullable(),
+  rptTtl: z.string().min(0).max(100),
+  memoRptYmd: z.string().min(0).max(8).optional().nullable(),
   userId: z.string().optional().nullable(),
   wrterNm: z.string().min(0).max(100).optional().nullable(),
-  rptrId: z.string().optional().nullable(),
+  rptrId: z.string().min(0).max(20),
   rptrNm: z.string().optional().nullable(),
-  rptCn: z.string().optional().nullable(),
+  rptCn: z.string().min(0).max(4000).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
   drctnMttr: z.string().optional().nullable(),
   drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
@@ -4556,21 +4673,12 @@ export const HpcmDtoResponseSchema = z.object({
 });
 
 export const DeptJobDtoRequestSchema = z.object({
-  deptTaskSn: z.number().int().optional(),
   deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
-  deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
-  deptTaskNm: z.string().optional(),
-  deptTaskCn: z.string().optional(),
-  picId: z.string().optional(),
-  picNm: z.string().optional(),
-  prrtyRnk: z.string().optional(),
+  deptTaskNm: z.string().min(0).max(100).optional(),
+  deptTaskCn: z.string().min(0).max(4000).optional(),
+  picId: z.string().min(0).max(20).optional(),
+  prrtyRnk: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 
 export const DeptJobDtoResponseSchema = z.object({
@@ -4579,11 +4687,11 @@ export const DeptJobDtoResponseSchema = z.object({
   deptTaskBoxNm: z.string().optional().nullable(),
   deptId: z.string().min(0).max(20).optional().nullable(),
   deptNm: z.string().optional().nullable(),
-  deptTaskNm: z.string().optional().nullable(),
-  deptTaskCn: z.string().optional().nullable(),
-  picId: z.string().optional().nullable(),
+  deptTaskNm: z.string().min(0).max(100).optional().nullable(),
+  deptTaskCn: z.string().min(0).max(4000).optional().nullable(),
+  picId: z.string().min(0).max(20).optional().nullable(),
   picNm: z.string().optional().nullable(),
-  prrtyRnk: z.string().optional().nullable(),
+  prrtyRnk: z.string().min(0).max(12).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
@@ -4592,20 +4700,14 @@ export const DeptJobDtoResponseSchema = z.object({
 });
 
 export const DeptJobBoxDtoRequestSchema = z.object({
-  deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional(),
+  deptTaskBoxNm: z.string().min(0).max(100),
   deptId: z.string().min(0).max(20).optional(),
-  deptNm: z.string().optional(),
   sortOrdr: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 
 export const DeptJobBoxDtoResponseSchema = z.object({
   deptTaskBoxSn: z.number().int().optional().nullable(),
-  deptTaskBoxNm: z.string().optional().nullable(),
+  deptTaskBoxNm: z.string().min(0).max(100),
   deptId: z.string().min(0).max(20).optional().nullable(),
   deptNm: z.string().optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),
@@ -4672,7 +4774,6 @@ export const SatisfactionDtoRequestSchema = z.object({
   dgstfnScr: z.number().int().optional(),
   userId: z.string().optional(),
   userNm: z.string().optional(),
-  pswd: z.string().optional(),
   useYn: z.string().min(0).max(1),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
@@ -4702,19 +4803,19 @@ export const ApprovalConfirmRequestResponseSchema = z.object({
 export const MyPageContentDtoRequestSchema = z.object({
   contsSn: z.number().int().optional(),
   cntntsNm: z.string().min(0).max(100).optional(),
-  cntcUrl: z.string().optional(),
-  cntntsUseYn: z.string().optional(),
-  cntntsLinkUrl: z.string().optional(),
-  cntntsDc: z.string().optional(),
+  cntcUrl: z.string().min(0).max(255).optional(),
+  cntntsUseYn: z.enum(["Y","N"]).optional(),
+  cntntsLinkUrl: z.string().min(0).max(255).optional(),
+  cntntsDc: z.string().min(0).max(255).optional(),
 });
 
 export const MyPageContentDtoResponseSchema = z.object({
   contsSn: z.number().int().optional().nullable(),
   cntntsNm: z.string().min(0).max(100).optional().nullable(),
-  cntcUrl: z.string().optional().nullable(),
-  cntntsUseYn: z.string().optional().nullable(),
-  cntntsLinkUrl: z.string().optional().nullable(),
-  cntntsDc: z.string().optional().nullable(),
+  cntcUrl: z.string().min(0).max(255).optional().nullable(),
+  cntntsUseYn: z.enum(["Y","N"]).optional().nullable(),
+  cntntsLinkUrl: z.string().min(0).max(255).optional().nullable(),
+  cntntsDc: z.string().min(0).max(255).optional().nullable(),
 });
 
 export const UserProfileUpdateRequestRequestSchema = z.object({
@@ -4763,6 +4864,46 @@ export const UserAbsenceDtoRequestSchema = z.object({
 export const UserAbsenceDtoResponseSchema = z.object({
   userId: z.string().min(0).max(20),
   userAbsnYn: z.string().optional().nullable(),
+});
+
+export const TemplateDtoRequestSchema = z.object({
+  tmpltId: z.string().min(0).max(20),
+  tmpltNm: z.string().min(0).max(100),
+  tmpltPath: z.string().min(0).max(1000),
+  tmpltSeCd: z.string().min(0).max(12),
+  useYn: z.string().min(0).max(1),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+
+export const TemplateDtoResponseSchema = z.object({
+  tmpltId: z.string().min(0).max(20),
+  tmpltNm: z.string().min(0).max(100),
+  tmpltPath: z.string().min(0).max(1000),
+  tmpltSeCd: z.string().min(0).max(12),
+  useYn: z.string().min(0).max(1),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+
+export const ApiResponseTemplateDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => TemplateDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseTemplateDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => TemplateDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const SurveyRespondentDtoRequestSchema = z.object({
@@ -5315,6 +5456,116 @@ export const AuthorManageDtoResponseSchema = z.object({
   authrtCrtYmd: z.string().optional().nullable(),
 });
 
+export const RewardManageDtoRequestSchema = z.object({
+  rwrdSn: z.number().int().optional(),
+  rwardwnrId: z.string().min(0).max(20).optional(),
+  rwardCode: z.string().min(0).max(12).optional(),
+  rwardDe: z.string().min(0).max(8).optional(),
+  rwardNm: z.string().min(0).max(100).optional(),
+  pblenCn: z.string().min(0).max(4000).optional(),
+  sanctnerId: z.string().min(0).max(20).optional(),
+  confmAt: z.string().min(0).max(1).optional(),
+  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  returnResn: z.string().min(0).max(4000).optional(),
+  atchFileSn: z.number().int().optional(),
+  ifmlAtrzSn: z.number().int().optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  lastMdfrId: z.string().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+
+export const RewardManageDtoResponseSchema = z.object({
+  rwrdSn: z.number().int().optional().nullable(),
+  rwardwnrId: z.string().min(0).max(20).optional().nullable(),
+  rwardCode: z.string().min(0).max(12).optional().nullable(),
+  rwardDe: z.string().min(0).max(8).optional().nullable(),
+  rwardNm: z.string().min(0).max(100).optional().nullable(),
+  pblenCn: z.string().min(0).max(4000).optional().nullable(),
+  sanctnerId: z.string().min(0).max(20).optional().nullable(),
+  confmAt: z.string().min(0).max(1).optional().nullable(),
+  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  returnResn: z.string().min(0).max(4000).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  ifmlAtrzSn: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+
+export const ApiResponseRewardManageDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => RewardManageDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseRewardManageDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => RewardManageDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const ExternalHrDtoRequestSchema = z.object({
+  evntSn: z.number().int(),
+  otsdHrId: z.string().min(0).max(20),
+  gndrCd: z.string().min(0).max(12).optional(),
+  otsdHrNm: z.string().min(0).max(100).optional(),
+  crTypeCd: z.string().min(0).max(12).optional(),
+  ogdpInstNm: z.string().min(0).max(100).optional(),
+  brdtYmd: z.string().min(0).max(8).optional(),
+  areaNo: z.string().min(0).max(4).optional(),
+  mdTelno: z.string().min(0).max(4).optional(),
+  endTelno: z.string().min(0).max(4).optional(),
+  emlAddr: z.string().min(0).max(320).optional(),
+});
+
+export const ExternalHrDtoResponseSchema = z.object({
+  evntSn: z.number().int(),
+  otsdHrId: z.string().min(0).max(20),
+  gndrCd: z.string().min(0).max(12).optional().nullable(),
+  otsdHrNm: z.string().min(0).max(100).optional().nullable(),
+  crTypeCd: z.string().min(0).max(12).optional().nullable(),
+  ogdpInstNm: z.string().min(0).max(100).optional().nullable(),
+  brdtYmd: z.string().min(0).max(8).optional().nullable(),
+  areaNo: z.string().min(0).max(4).optional().nullable(),
+  mdTelno: z.string().min(0).max(4).optional().nullable(),
+  endTelno: z.string().min(0).max(4).optional().nullable(),
+  emlAddr: z.string().min(0).max(320).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+});
+
+export const ApiResponseExternalHrDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ExternalHrDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseExternalHrDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ExternalHrDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
 export const EventInfoDtoRequestSchema = z.object({
   evntSn: z.number().int().optional(),
   evntNm: z.string().min(0).max(200).optional(),
@@ -5355,7 +5606,7 @@ export const EventInfoDtoResponseSchema = z.object({
 
 export const CommunityDtoRequestSchema = z.object({
   cmntySn: z.number().int().optional(),
-  cmntyNm: z.string().min(0).max(100).optional(),
+  cmntyNm: z.string().min(0).max(100),
   cmntyIntroCn: z.string().min(0).max(4000).optional(),
   regSeCd: z.string().min(0).max(12).optional(),
   regSeCdNm: z.string().optional(),
@@ -5369,7 +5620,7 @@ export const CommunityDtoRequestSchema = z.object({
 
 export const CommunityDtoResponseSchema = z.object({
   cmntySn: z.number().int().optional().nullable(),
-  cmntyNm: z.string().min(0).max(100).optional().nullable(),
+  cmntyNm: z.string().min(0).max(100),
   cmntyIntroCn: z.string().min(0).max(4000).optional().nullable(),
   regSeCd: z.string().min(0).max(12).optional().nullable(),
   regSeCdNm: z.string().optional().nullable(),
@@ -5384,9 +5635,9 @@ export const CommunityDtoResponseSchema = z.object({
 export const AddressBookDtoRequestSchema = z.object({
   adbkSn: z.number().int().optional(),
   adbkNm: z.string().min(0).max(100),
-  rlsScopeCd: z.string(),
-  trgetOgnzId: z.string().optional(),
-  useYn: z.string().optional(),
+  rlsScopeCd: z.string().min(0).max(12),
+  trgetOgnzId: z.string().min(0).max(20).optional(),
+  useYn: z.enum(["Y","N"]).optional(),
   wrterId: z.string().optional(),
   adbkMan: z.array(z.lazy(() => AddressBookUserDtoRequestSchema.strict())).optional(),
   frstRgtrId: z.string().optional(),
@@ -5398,9 +5649,9 @@ export const AddressBookDtoRequestSchema = z.object({
 export const AddressBookDtoResponseSchema = z.object({
   adbkSn: z.number().int().optional().nullable(),
   adbkNm: z.string().min(0).max(100),
-  rlsScopeCd: z.string(),
-  trgetOgnzId: z.string().optional().nullable(),
-  useYn: z.string().optional().nullable(),
+  rlsScopeCd: z.string().min(0).max(12),
+  trgetOgnzId: z.string().min(0).max(20).optional().nullable(),
+  useYn: z.enum(["Y","N"]).optional().nullable(),
   wrterId: z.string().optional().nullable(),
   adbkMan: z.array(z.lazy(() => AddressBookUserDtoResponseSchema)).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
@@ -5619,12 +5870,23 @@ export const NoteRecipientDtoResponseSchema = z.object({
   recptnSe: z.string().min(0).max(12),
 });
 
+export const MailRecipientDtoRequestSchema = z.object({
+  esntlId: z.string().min(0).max(20).optional(),
+  emlAddr: z.string().min(0).max(320).optional(),
+});
+
+export const MailRecipientDtoResponseSchema = z.object({
+  esntlId: z.string().min(0).max(20).optional().nullable(),
+  emlAddr: z.string().min(0).max(320).optional().nullable(),
+});
+
 export const SentMailDtoRequestSchema = z.object({
   emlDsptchSn: z.number().int().optional(),
   sj: z.string().optional(),
   emailCn: z.string().optional(),
   dsptchPerson: z.string().optional(),
-  recptnPerson: z.string().optional(),
+  recptnPerson: z.string().min(0).max(100).optional(),
+  recipients: z.array(z.lazy(() => MailRecipientDtoRequestSchema.strict())).min(0).max(100).optional(),
   sndngResultCode: z.string().optional(),
   sndngDe: z.string().optional(),
   atchFileSn: z.number().int().optional(),
@@ -5635,7 +5897,7 @@ export const SentMailDtoResponseSchema = z.object({
   sj: z.string().optional().nullable(),
   emailCn: z.string().optional().nullable(),
   dsptchPerson: z.string().optional().nullable(),
-  recptnPerson: z.string().optional().nullable(),
+  recptnPerson: z.string().min(0).max(100).optional().nullable(),
   sndngResultCode: z.string().optional().nullable(),
   sndngDe: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
@@ -5701,6 +5963,18 @@ export const LoginRequestResponseSchema = z.object({
   userId: z.string().min(0).max(20),
   password: z.string().optional().nullable(),
   otpCode: z.number().int().optional().nullable(),
+});
+
+export const ApprovalDraftRequestRequestSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+});
+
+export const ApprovalDraftRequestResponseSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional().nullable(),
 });
 
 export const UserDtoRequestSchema = z.object({
@@ -5778,26 +6052,6 @@ export const UserAuthorityDtoResponseSchema = z.object({
   authrtId: z.string().min(0).max(20),
   mbrTypeCd: z.string().min(0).max(12).optional().nullable(),
   userNm: z.string().min(0).max(100).optional().nullable(),
-});
-
-export const TemplateDtoRequestSchema = z.object({
-  tmpltId: z.string().min(0).max(20),
-  tmpltNm: z.string().min(0).max(100),
-  tmpltPath: z.string().min(0).max(1000),
-  tmpltSeCd: z.string().min(0).max(12),
-  useYn: z.string().min(0).max(1),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-});
-
-export const TemplateDtoResponseSchema = z.object({
-  tmpltId: z.string().min(0).max(20),
-  tmpltNm: z.string().min(0).max(100),
-  tmpltPath: z.string().min(0).max(1000),
-  tmpltSeCd: z.string().min(0).max(12),
-  useYn: z.string().min(0).max(1),
-  frstRgtrId: z.string().optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const DeptAuthorBatchRequestRequestSchema = z.object({
@@ -5922,130 +6176,40 @@ export const SmsDtoResponseSchema = z.object({
 
 export const SmsRecptnDtoRequestSchema = z.object({
   smsTrsmSn: z.number().int().optional(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
+  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional(),
+  esntlId: z.string().min(0).max(20).optional(),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),
 });
 
 export const SmsRecptnDtoResponseSchema = z.object({
   smsTrsmSn: z.number().int().optional().nullable(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
+  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional().nullable(),
+  esntlId: z.string().min(0).max(20).optional().nullable(),
   rsltCd: z.string().optional().nullable(),
   rsltMsg: z.string().optional().nullable(),
 });
 
-export const RewardManageDtoRequestSchema = z.object({
-  rwrdSn: z.number().int().optional(),
-  rwardwnrId: z.string().optional(),
-  rwardCode: z.string().optional(),
-  rwardDe: z.string().optional(),
-  rwardNm: z.string().optional(),
-  pblenCn: z.string().optional(),
-  sanctnerId: z.string().optional(),
-  confmAt: z.string().optional(),
-  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  returnResn: z.string().optional(),
-  atchFileSn: z.number().int().optional(),
-  ifmlAtrzSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+export const NotificationDispatchRequestRequestSchema = z.object({
+  recipients: z.array(z.lazy(() => RecipientRequestSchema.strict())).min(0).max(100),
+  notiTtlNm: z.string().min(0).max(100),
+  notiCn: z.string().min(0).max(4000),
+  linkUrl: z.string().min(0).max(2000).optional(),
 });
 
-export const RewardManageDtoResponseSchema = z.object({
-  rwrdSn: z.number().int().optional().nullable(),
-  rwardwnrId: z.string().optional().nullable(),
-  rwardCode: z.string().optional().nullable(),
-  rwardDe: z.string().optional().nullable(),
-  rwardNm: z.string().optional().nullable(),
-  pblenCn: z.string().optional().nullable(),
-  sanctnerId: z.string().optional().nullable(),
-  confmAt: z.string().optional().nullable(),
-  sanctnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  returnResn: z.string().optional().nullable(),
-  atchFileSn: z.number().int().optional().nullable(),
-  ifmlAtrzSn: z.number().int().optional().nullable(),
-  frstRgtrId: z.string().optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  lastMdfrId: z.string().optional().nullable(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+export const NotificationDispatchRequestResponseSchema = z.object({
+  recipients: z.array(z.lazy(() => RecipientResponseSchema)).min(0).max(100),
+  notiTtlNm: z.string().min(0).max(100),
+  notiCn: z.string().min(0).max(4000),
+  linkUrl: z.string().min(0).max(2000).optional().nullable(),
 });
 
-export const ApiResponseRewardManageDtoRequestSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => RewardManageDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+export const RecipientRequestSchema = z.object({
+  esntlId: z.string().min(0).max(20),
 });
 
-export const ApiResponseRewardManageDtoResponseSchema = z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => RewardManageDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-});
-
-export const ExternalHrDtoRequestSchema = z.object({
-  evntSn: z.number().int(),
-  otsdHrId: z.string().min(0).max(20),
-  gndrCd: z.string().min(0).max(30).optional(),
-  otsdHrNm: z.string().min(0).max(100).optional(),
-  crTypeCd: z.string().min(0).max(12).optional(),
-  ogdpInstNm: z.string().min(0).max(100).optional(),
-  brdtYmd: z.string().min(0).max(8).optional(),
-  areaNo: z.string().min(0).max(4).optional(),
-  mdTelno: z.string().min(0).max(4).optional(),
-  endTelno: z.string().min(0).max(4).optional(),
-  emlAddr: z.string().min(0).max(50).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  frstRgtrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-});
-
-export const ExternalHrDtoResponseSchema = z.object({
-  evntSn: z.number().int(),
-  otsdHrId: z.string().min(0).max(20),
-  gndrCd: z.string().min(0).max(30).optional().nullable(),
-  otsdHrNm: z.string().min(0).max(100).optional().nullable(),
-  crTypeCd: z.string().min(0).max(12).optional().nullable(),
-  ogdpInstNm: z.string().min(0).max(100).optional().nullable(),
-  brdtYmd: z.string().min(0).max(8).optional().nullable(),
-  areaNo: z.string().min(0).max(4).optional().nullable(),
-  mdTelno: z.string().min(0).max(4).optional().nullable(),
-  endTelno: z.string().min(0).max(4).optional().nullable(),
-  emlAddr: z.string().min(0).max(50).optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  frstRgtrId: z.string().optional().nullable(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  lastMdfrId: z.string().optional().nullable(),
-});
-
-export const ApiResponseExternalHrDtoRequestSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => ExternalHrDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-});
-
-export const ApiResponseExternalHrDtoResponseSchema = z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => ExternalHrDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+export const RecipientResponseSchema = z.object({
+  esntlId: z.string().min(0).max(20),
 });
 
 export const ApiResponseCommunityDtoRequestSchema = z.object({
@@ -7335,6 +7499,38 @@ export const PageResponseCommunityDtoResponseSchema = z.object({
   totalPage: z.number().int().optional().nullable(),
 });
 
+export const ApiResponseCommunityMembershipDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CommunityMembershipDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseCommunityMembershipDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CommunityMembershipDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CommunityMembershipDtoRequestSchema = z.object({
+  cmntySn: z.number().int().optional(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional(),
+  joinYmd: z.string().optional(),
+});
+
+export const CommunityMembershipDtoResponseSchema = z.object({
+  cmntySn: z.number().int().optional().nullable(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional().nullable(),
+  joinYmd: z.string().optional().nullable(),
+});
+
 export const ApiResponsePageResponseCommentDtoRequestSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -7703,6 +7899,42 @@ export const CurrentUserResponseResponseSchema = z.object({
   email: z.string().optional().nullable(),
 });
 
+export const ApiResponseListCommonCodeDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => CommonCodeDtoRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseListCommonCodeDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => CommonCodeDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CommonCodeDtoRequestSchema = z.object({
+  cdId: z.string().min(0).max(20),
+  dtlCd: z.string().min(0).max(12),
+  dtlCdNm: z.string().min(0).max(100),
+  dtlCdExpln: z.string().min(0).max(4000).optional(),
+  useYn: z.string().min(0).max(1),
+});
+
+export const CommonCodeDtoResponseSchema = z.object({
+  cdId: z.string().min(0).max(20),
+  dtlCd: z.string().min(0).max(12),
+  dtlCdNm: z.string().min(0).max(100),
+  dtlCdExpln: z.string().min(0).max(4000).optional().nullable(),
+  useYn: z.string().min(0).max(1),
+});
+
 export const ApiResponseListMyPageContentDtoRequestSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -7873,26 +8105,6 @@ export const ApiResponseListTemplateDtoResponseSchema = z.object({
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
   data: z.array(z.lazy(() => TemplateDtoResponseSchema)).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-});
-
-export const ApiResponseTemplateDtoRequestSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => TemplateDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-});
-
-export const ApiResponseTemplateDtoResponseSchema = z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => TemplateDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
@@ -10189,6 +10401,64 @@ export const AttachmentIntegrityReportResponseSchema = z.object({
   undecidable: z.number().int(),
   orphanSamples: z.array(z.string().optional().nullable()),
   healthy: z.boolean().optional().nullable(),
+});
+
+export const ApiResponsePageResponseCommunityMemberDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponsePageResponseCommunityMemberDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CommunityMemberDtoRequestSchema = z.object({
+  cmntySn: z.number().int().optional(),
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  status: z.enum(["REQUESTED","APPROVED"]).optional(),
+  mbrSttsCd: z.string().optional(),
+  mngrYn: z.string().optional(),
+  joinYmd: z.string().optional(),
+  useYn: z.string().optional(),
+});
+
+export const CommunityMemberDtoResponseSchema = z.object({
+  cmntySn: z.number().int().optional().nullable(),
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED"]).optional().nullable(),
+  mbrSttsCd: z.string().optional().nullable(),
+  mngrYn: z.string().optional().nullable(),
+  joinYmd: z.string().optional().nullable(),
+  useYn: z.string().optional().nullable(),
+});
+
+export const PageResponseCommunityMemberDtoRequestSchema = z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoRequestSchema.strict())).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+
+export const PageResponseCommunityMemberDtoResponseSchema = z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseListCommunityDtoRequestSchema = z.object({

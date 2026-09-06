@@ -17,7 +17,7 @@
 
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MemoReportManagementClient from '../MemoReportManagementClient';
 
 const mocks = vi.hoisted(() => ({
@@ -57,6 +57,7 @@ vi.mock('@/app/components/ui/user-picker', () => ({
         <button type="button" onClick={() => onSelect({ esntlId: 'USR_B', userNm: '박수신' })}>박수신 선택</button>
         {/* esntlId 가 없는 결과 — 조용히 담으면 아무도 열 수 없는 수신자가 된다. */}
         <button type="button" onClick={() => onSelect({ userNm: '식별자 없음' })}>식별자 없는 사용자 선택</button>
+        <button type="button" onClick={() => onSelect({ esntlId: 'U'.repeat(21), userNm: '긴 식별자' })}>긴 식별자 선택</button>
       </div>
     ) : null,
 }));
@@ -81,6 +82,10 @@ function renderClient() {
     </QueryClientProvider>,
   );
 }
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('메모보고 열람', () => {
   beforeEach(() => {
@@ -174,6 +179,18 @@ describe('메모보고 열람', () => {
     expect(await screen.findByText('열람됨')).toBeVisible();
     expect(screen.queryByText('수신확인')).not.toBeInTheDocument();
   });
+
+  it('이름 매핑이 비어도 작성자와 수신자 식별 축을 숨기지 않는다', async () => {
+    const page = { list: [{ ...ROW, wrterNm: null, rptrNm: null }], total: 1 };
+    mocks.getReceivedReports.mockResolvedValue(page);
+    mocks.getMyReports.mockResolvedValue(page);
+    mocks.getMemoReports.mockResolvedValue(page);
+
+    renderClient();
+
+    expect(await screen.findByText('USR_A')).toBeVisible();
+    expect(screen.getByText('USR_B')).toBeVisible();
+  });
 });
 
 /**
@@ -210,6 +227,9 @@ describe('메모보고 작성', () => {
   });
 
   it('제목·내용·받는 사람을 채우면 esntlId 로 등록된다', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    // UTC 9월 5일이지만 서울은 9월 6일이다. UTC 절단으로 전날 보고가 되면 안 된다.
+    vi.setSystemTime(new Date('2026-09-05T15:30:00.000Z'));
     renderClient();
     const form = await openCompose();
 
@@ -224,7 +244,24 @@ describe('메모보고 작성', () => {
       rptTtl: '4분기 계획',
       rptCn: '증설 예산이 필요합니다.',
       rptrId: 'USR_B',
+      memoRptYmd: '20260906',
     });
+  });
+
+  it('제목은 물리 100자 상한에서 화면과 제출 검증이 함께 닫힌다', async () => {
+    renderClient();
+    const form = await openCompose();
+    const title = form.getByLabelText('제목', { exact: false });
+
+    expect(title).toHaveAttribute('maxlength', '100');
+    fireEvent.change(title, { target: { value: '가'.repeat(101) } });
+    fireEvent.change(form.getByLabelText('내용', { exact: false }), { target: { value: '내용' } });
+    fireEvent.click(form.getByRole('button', { name: '받는 사람 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '박수신 선택' }));
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+
+    expect(await form.findByText('제목은 100자까지 입력할 수 있습니다.')).toBeVisible();
+    expect(mocks.createMemoReport).not.toHaveBeenCalled();
   });
 
   it('식별자를 확인할 수 없는 사용자는 수신자로 담지 않는다', async () => {
@@ -239,6 +276,20 @@ describe('메모보고 작성', () => {
     expect(shown.length).toBeGreaterThanOrEqual(1);
     // 담기지 않았으므로 여전히 선택된 사람이 없다.
     expect(form.getByText('선택된 사람이 없습니다.')).toBeVisible();
+  });
+
+  it('물리 20자 상한을 넘는 수신자 식별자는 네트워크 전에 거절한다', async () => {
+    renderClient();
+    const form = await openCompose();
+
+    fireEvent.change(form.getByLabelText('제목', { exact: false }), { target: { value: '제목' } });
+    fireEvent.change(form.getByLabelText('내용', { exact: false }), { target: { value: '내용' } });
+    fireEvent.click(form.getByRole('button', { name: '받는 사람 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '긴 식별자 선택' }));
+    fireEvent.click(form.getByRole('button', { name: '보고 등록' }));
+
+    expect(await form.findByText('받는 사람 식별자는 20자까지 허용됩니다.')).toBeVisible();
+    expect(mocks.createMemoReport).not.toHaveBeenCalled();
   });
 
   it('받는 사람 없이 등록하지 않는다', async () => {

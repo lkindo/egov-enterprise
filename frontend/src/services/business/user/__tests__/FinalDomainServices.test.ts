@@ -5,13 +5,19 @@ vi.mock('next/config', () => ({
   }),
 }));
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
 import { noteService } from '../NoteService';
 import { scrapService } from '../ScrapService';
 import { menuService } from '../MenuService';
 import { mailService } from '../../mail/MailService';
-import { reportService } from '../ReportService';
+import { reportService, type WorkReportInput } from '../ReportService';
+import { createWorkReportOperation, updateWorkReportOperation } from '@/types/generated-operations';
+import {
+ WorkReportDtoRequestSchema,
+ WorkReportDtoResponseSchema,
+ WorkReportDtoSchema,
+} from '@/types/generated-zod';
 
 vi.mock('@/lib/api/client', () => {
  const get = vi.fn();
@@ -79,6 +85,32 @@ describe('Final Domain Services', () => {
  ]);
  });
 
+ it('reportService rejects every server-owned report field before transport', async () => {
+ const serverOwnedFields = ['rptpSn', 'userId', 'userNm', 'rptSttsCd', 'rptTypeCd'] as const;
+ type ServerOwnedField = Extract<keyof WorkReportInput, (typeof serverOwnedFields)[number]>;
+ expectTypeOf<ServerOwnedField>().toEqualTypeOf<never>();
+
+ const forbiddenPaths = serverOwnedFields.map((field) => [field]);
+ expect(createWorkReportOperation.requestForbiddenPaths).toStrictEqual(forbiddenPaths);
+ expect(updateWorkReportOperation.requestForbiddenPaths).toStrictEqual(forbiddenPaths);
+ expect(Object.keys(WorkReportDtoRequestSchema.shape).sort()).toStrictEqual(
+ ['rptTtl', 'rptCn', 'rptSeCd', 'atchFileSn', 'rptYmd'].sort(),
+ );
+ expect(Object.keys(WorkReportDtoSchema.shape)).toEqual(expect.arrayContaining([...serverOwnedFields]));
+ expect(Object.keys(WorkReportDtoResponseSchema.shape).sort()).toStrictEqual(
+ Object.keys(WorkReportDtoSchema.shape).sort(),
+ );
+
+ for (const field of serverOwnedFields) {
+ const forged = { rptTtl: '보고', [field]: 'forged-value' };
+ await expect(reportService.createReport(forged as never))
+ .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+ await expect(reportService.updateReport(23, forged as never))
+ .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+ }
+ expect(vi.mocked(client.requestRaw)).not.toHaveBeenCalled();
+ });
+
  it('mailService validates list/detail/send/delete with generated operation descriptors', async () => {
  const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
  vi.mocked(client.getRaw)
@@ -111,7 +143,7 @@ describe('Final Domain Services', () => {
  const page = { list: [], total: 0, page: 1, size: 20, totalPage: 0 };
  vi.mocked(client.getRaw)
  .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: page })
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { rptpSn: 23 } });
+ .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { rptpSn: 23, rptTtl: '기존 보고' } });
  vi.mocked(client.requestRaw)
  .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined })
  .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined })
@@ -165,6 +197,7 @@ describe('Final Domain Services', () => {
  });
 
  it('reportService uses the numeric report serial number in resource paths', async () => {
+ vi.mocked(client.get).mockResolvedValueOnce({ rptpSn: 23, rptTtl: '기존 보고' });
  await reportService.getReport(23);
  expect(client.get).toHaveBeenCalledWith('work-reports/23', undefined);
  await reportService.updateReport(23, { rptTtl: '수정 보고' });

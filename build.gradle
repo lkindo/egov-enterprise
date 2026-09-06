@@ -499,7 +499,7 @@ tasks.register('frontendUnitTest') {
         def code = proc.waitFor()
         if (code != 0) {
             throw new GradleException("프런트엔드 단위 테스트 실패 (exit ${code}) — " +
-                    'CI 의 frontend-build 가 죽고 e2e-tests 3샤드가 통째로 skip 됩니다.')
+                    'CI 의 frontend-build 가 죽고 e2e-tests 전체 shard가 통째로 skip 됩니다.')
         }
     }
 }

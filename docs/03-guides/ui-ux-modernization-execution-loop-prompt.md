@@ -36,8 +36,9 @@
 5. `.agent/memory/known-gaps.md`
 6. `docs/02-architecture/ui-ux-modernization-plan.md`
 7. `docs/02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md`
-8. `.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md`
-9. 관련 백엔드·DB 헌법, accepted ADR, pending decision, 현재 코드·설정·DB 실측
+8. `docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md`
+9. `.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md`
+10. 관련 백엔드·DB 헌법, accepted ADR, pending decision, 현재 코드·설정·DB 실측
 
 저장소 밖의 과거 Claude 계획은 역사적 입력일 뿐 실행 권위가 아니다. 현대화 계획과 현재 디스크가 우선한다.
 </normative_sources>
@@ -155,7 +156,7 @@ LOOP:
 2. **Product evidence and Gate 0/G1 inputs**
    - Task 0.2 UX brief/PRD와 research protocol.
    - Task 0.5 사용성·접근성·반응형·성능 baseline protocol과 실행 가능한 내부 baseline.
-   - Task 1.1 IA/URL/privacy decision package.
+   - Task 1.1 IA decision package와 ADR-0009 URL/privacy allowlist 계약의 현행 일치.
    - Task 1.2 content/state contract.
    - 실제 사용자 결과나 IA owner 승인이 필요하면 자료와 최적 권고안을 완성한 뒤 승인 요청으로 분리한다.
 
@@ -190,7 +191,7 @@ LOOP:
 경미하고 가역적인 선택은 현재 코드 스타일과 계획의 기본 권고로 결정하고 진행하라. 다음은 임의로 확정하지 마라.
 
 - 목표 sitemap과 역할별 메뉴 tree.
-- 민감 로그 검색 상태의 정확한 URL allowlist.
+- ADR-0009의 승인 범위 밖 새 검색 route/query key와 파생 제품의 범위 확대. 현재 주소창 검색 승인은 `/search?q`, `/admin/community/boards/select-board-list` 및 `/admin/community/[id]`의 `searchCnd`·`searchWrd`다.
 - 정부 공식 identity를 활성화할 기관 자격과 콘텐츠.
 - 실제 사용자 모집 결과와 사용자 대표성.
 - analytics/RUM 외부 서비스와 개인정보 수집.
@@ -225,7 +226,8 @@ LOOP:
 - DB entity/DDL/menu identity 변경 전 live `information_schema`와 메타 표준을 read-only 조회한다.
 - owner-only, owner-or-admin, admin-only 의미를 helper 통일이나 generator 편의를 위해 바꾸지 않는다.
 - 민감 데이터·토큰·쿠키·개인키·원시 세션 로그를 출력·문서·fixture에 기록하지 않는다.
-- URL, client storage, logs, analytics에 민감 식별자·검색어·응답 데이터를 넣지 않는다.
+- 성명·사번·계정명 등이 포함될 수 있는 일반 업무 검색어는 ADR-0009의 화면별 route/query key allowlist 안에서 URL에 둘 수 있다. 호출 화면이 선언한 key만 재조립하고 unknown query는 버리며, same-view 변경은 `replace`를 우선한다. 이 허용은 다른 화면의 URL 동기화를 의무화하지 않는다.
+- 허용된 검색어도 client log·analytics·오류 로그 payload에 복제하지 않는다. 자격증명, cookie·session 비밀, 인증·복구 token, 주민등록번호 등 고유식별정보, 금융·건강·생체 등 고위험 개인정보, 응답 데이터와 업무 본문용 전용 URL field를 만들거나 일반 검색창에서 입력을 요구·유도하지 않는다. 자유 입력에 사용자가 예상 밖 값을 직접 넣을 가능성은 내용 기반으로 완전 판별할 수 없는 잔여 위험이며 고위험 용도 승인이 아니다.
 - native semantics를 우선하고 실제 keyboard/focus/AT 상태를 구현한다.
 - optimistic UI는 안전하고 가역적인 작업에만 적용한다.
 - browser/server data strategy는 route별 측정으로 결정하며 기술 quota를 만들지 않는다.

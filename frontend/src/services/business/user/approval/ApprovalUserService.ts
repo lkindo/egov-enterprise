@@ -1,13 +1,21 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
-import { ApprovalConfirmRequestSchema } from '@/types/generated-zod';
+import { ApprovalConfirmRequestSchema, ApprovalDraftRequestSchema } from '@/types/generated-zod';
 import { z } from 'zod';
 import type { components } from '@/types/generated-api';
 import {
   confirmOperation,
+  createApprovalOperation,
   getMyHistoryOperation,
   getPendingOperation,
+  getProcessedOperation,
+  getTaskTypesOperation,
 } from '@/types/generated-operations';
+
+/** 기안 시 고르는 업무 구분 — 서버가 COM075 에서 내려주는 공통코드 행. */
+export type ApprovalTaskType = components['schemas']['CommonCodeDto'];
+/** 기안 요청 본문. 신청자는 서버가 인증 주체로 채우므로 여기에 없다. */
+export type ApprovalDraftRequest = components['schemas']['ApprovalDraftRequest'];
 
 /**
  * 결재함(사용자) 서비스.
@@ -65,9 +73,46 @@ class ApprovalUserService extends UserService {
     return requireApprovalPage(response);
   }
 
+  /**
+   * 내가 <b>올린</b> 결재(신청자 기준). 서버 경로 이름(`/my`)과 종전 메서드명이 'history' 라
+   * 결재자로서 처리한 이력으로 읽혔지만, 실제 질의는 `findByAplcntId` 다. 처리한 이력은 {@link getProcessed}.
+   */
   async getMyHistory(params: { page?: number; size?: number }): Promise<PageResponse<InformalSanctionDto>> {
     const response = await this.executeGenerated(getMyHistoryOperation, { query: params });
     return requireApprovalPage(response);
+  }
+
+  /** 결재자 본인이 이미 승인·반려한 결재. 대기 건은 섞이지 않는다. */
+  async getProcessed(params: { page?: number; size?: number }): Promise<PageResponse<InformalSanctionDto>> {
+    const response = await this.executeGenerated(getProcessedOperation, { query: params });
+    return requireApprovalPage(response);
+  }
+
+  /**
+   * 기안 화면의 업무 구분 선택지. 공통코드 API 는 관리자 전용이라 결재 도메인이 자기 어휘를 내려준다.
+   * 등록된 코드가 없으면 빈 배열이다 — 화면은 그것을 "고를 것이 없다" 로 정직하게 보여야 한다.
+   */
+  async getTaskTypes(): Promise<ApprovalTaskType[]> {
+    const response = await this.executeGenerated(getTaskTypesOperation, {});
+    if (!Array.isArray(response)) {
+      throw new Error('업무 구분 응답이 목록 계약과 일치하지 않습니다.');
+    }
+    return response;
+  }
+
+  /**
+   * 결재 기안(상신). 신청자는 서버가 인증 주체로 고정한다.
+   *
+   * [2026-09-05] 종전에는 이 도메인에 상신 경로가 UI 어디에도 없었다 — `IsmAdminService.createInfrmlSanctn`
+   * 은 호출부 0건이었고, 기안 화면은 목업이었다. 결재함의 '새 결재 기안' 다이얼로그가 이 메서드를 부른다.
+   */
+  async createDraft(request: ApprovalDraftRequest): Promise<number> {
+    const body = ApprovalDraftRequestSchema.parse(request);
+    const response = await this.executeGenerated(createApprovalOperation, { body });
+    if (typeof response !== 'number') {
+      throw new Error('결재 상신 응답이 문서 번호 계약과 일치하지 않습니다.');
+    }
+    return response;
   }
 
   /**

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * Pre-decision URL-state producer/consumer census.
+ * URL-state producer/consumer census.
  *
  * This file discovers navigation and request URL surfaces. It is evidence for
- * an IA/privacy decision, not an allowlist and not a runtime sanitizer. Static
+ * URL-state decisions, not an allowlist and not a runtime sanitizer. Static
  * syntax never proves data sensitivity, object authorization, canonicality, or
  * role eligibility, so every discovered record remains fail-closed until the
- * accountable owners approve a separate global URL-state decision.
+ * accountable owners record class-level judgments in the separate registry and
+ * bind only decisions that actually have an applicable ADR.
  *
  * Node built-ins are used deliberately so the operational contract can run
  * before frontend dependencies are installed.
@@ -36,6 +37,10 @@ import {
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
 const DEFAULT_MANIFEST_PATH = join(DEFAULT_REPO_ROOT, 'config', 'ui-url-state-census.json');
+const CENSUS_AUTHORITY = 'generated-url-state-census-not-policy';
+const URL_STATE_DECISION_REF = 'docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md';
+const URL_STATE_OVERLAY_AUTHORITY = 'non-normative-url-state-class-registry';
+const URL_SEARCH_STATE_ITEM_NAMES = ['q', 'searchCnd', 'searchWrd'];
 /*
   [2026-09-04] 2026-10-31 → 2026-12-31 연장. **사유 없는 인상은 H2 위반이므로 여기에 남긴다.**
 
@@ -105,7 +110,8 @@ const IMPLEMENTED_LOCAL_NEGATIVE_CASES = new Set([
 
 const CANDIDATE_VIEW_STATE_NAMES = new Set(['cat', 'dir', 'page', 'sort', 'tab', 'view']);
 const CREDENTIAL_NAME_SIGNALS = new Set([
-  'accesstoken', 'authorization', 'cookie', 'csrf', 'jwt', 'otp', 'password', 'refreshtoken', 'token',
+  'accesstoken', 'authorization', 'cookie', 'csrf', 'jwt', 'otp', 'passwd', 'password', 'pswd', 'pwd',
+  'refreshtoken', 'token',
 ]);
 const FREE_TEXT_NAME_SIGNALS = new Set([
   'keyword', 'q', 'query', 'searchkeyword', 'searchwrd', 'text',
@@ -389,6 +395,56 @@ function expressionTarget(tokens) {
     };
   }
   return { computed: true, target: null };
+}
+
+/**
+ * `onSubmit` 핸들러가 **네이티브 제출을 확실히 막는가**.
+ *
+ * ⚠ [2026-09-05] `onSubmit` 이 있다는 사실만으로는 부족하다 — 핸들러가 `preventDefault` 를
+ *   부르지 않으면 브라우저는 그대로 GET 제출을 하고 **폼 필드가 전부 주소창에 실린다.**
+ *   그래서 두 가지 중 하나가 토큰에서 보일 때만 참으로 판정한다.
+ *
+ *   1. 핸들러 안에 `preventDefault` 가 직접 있다 — 인라인 화살표 함수의 지배적 관용구다
+ *   2. `handleSubmit(...)` 로 감싸져 있다 — react-hook-form 의 `handleSubmit` 은 자기 안에서
+ *      항상 `preventDefault` 를 호출한다(라이브러리 계약). `form.handleSubmit(onSubmit)` ·
+ *      `handleSubmit(onSubmit)` 두 형태를 인정한다.
+ *
+ * 그 밖에는 **판정하지 않는다**(null 반환). 이름만 넘긴 핸들러(`onSubmit={submitCompose}`)는
+ * 그 함수 정의를 따라가야 하는데, 이 스캐너는 파일 하나를 토큰으로만 훑으므로 따라갈 수 없다.
+ * 모르는 것을 안전하다고 말하지 않는다.
+ */
+function submitInterception(tokens, allTokens) {
+  const values = tokens.map((token) => token.value);
+  if (values.includes('preventDefault')) return 'prevent-default';
+  const handleSubmitIndex = values.indexOf('handleSubmit');
+  if (handleSubmitIndex !== -1 && values[handleSubmitIndex + 1] === '(') return 'react-hook-form-handle-submit';
+
+  /*
+    [2026-09-05] 이름만 넘긴 핸들러(`onSubmit={submitCompose}`)를 **같은 파일 안에서만** 따라간다.
+
+    실측: 미판정 폼 27개 중 20개가 이 형태이고 정의가 같은 파일에 있다. 남은 7개는 대부분
+    **prop 으로 받은 핸들러**(`onSearch`·`onSubmit`)라 정의가 이 파일에 없다 — 그것들은
+    판정하지 않는다. 파일을 넘어가 추적하지 않는 것이 이 스캐너의 경계다.
+  */
+  if (values.length !== 1 || !/^[A-Za-z_$][\w$]*$/u.test(values[0]) || !allTokens) return null;
+  const name = values[0];
+
+  for (let index = 0; index < allTokens.length - 1; index += 1) {
+    const isDefinition = (allTokens[index].value === 'const' || allTokens[index].value === 'function')
+      && allTokens[index + 1]?.value === name;
+    if (!isDefinition) continue;
+
+    // 정의 뒤 첫 본문 블록을 찾아 그 안에서만 확인한다. 블록을 못 찾으면 판정하지 않는다.
+    for (let cursor = index + 2; cursor < allTokens.length && cursor < index + 60; cursor += 1) {
+      if (allTokens[cursor].value !== '{') continue;
+      const close = findClosing(allTokens, cursor, '{', '}');
+      if (close < 0) break;
+      const body = allTokens.slice(cursor + 1, close).map((token) => token.value);
+      return body.includes('preventDefault') ? 'named-handler-prevent-default' : null;
+    }
+    return null;
+  }
+  return null;
 }
 
 function methodCallOpen(tokens, methodIndex) {
@@ -754,6 +810,7 @@ export function scanUrlStateSource(source, options = {}) {
       let cursor = index + 2;
       let braceDepth = 0;
       let method = null;
+      let interception = null;
       while (cursor < tokens.length) {
         if (tokens[cursor].value === '{') braceDepth += 1;
         else if (tokens[cursor].value === '}') braceDepth -= 1;
@@ -762,16 +819,38 @@ export function scanUrlStateSource(source, options = {}) {
           const methodToken = tokens[cursor + 2]?.value === '{' ? tokens[cursor + 3] : tokens[cursor + 2];
           method = methodToken?.type === 'string' ? methodToken.value.toLowerCase() : '<computed>';
         }
+        if (tokens[cursor].value === 'onSubmit' && tokens[cursor + 1]?.value === '=' && tokens[cursor + 2]?.value === '{') {
+          const close = findClosing(tokens, cursor + 2, '{', '}');
+          if (close >= 0) interception = submitInterception(tokens.slice(cursor + 3, close), tokens);
+        }
         cursor += 1;
       }
+      /*
+        [2026-09-05] 가로채기가 **증명된** 폼을 따로 판정한다.
+
+        종전에는 `method` 만 보고 명시적 GET 이 아니면 전부 `implicit-or-computed-method` 로
+        묶었다. 그런데 실측상 이 저장소의 `<form>` 51개 중 50개가 `onSubmit` 을 갖고 있고,
+        그중 대다수가 `preventDefault` 또는 react-hook-form 의 `handleSubmit` 으로 네이티브
+        제출을 확실히 막는다. 그 폼들은 **주소창에 아무것도 싣지 않는다** — 그런데도 46건이
+        "검토 필요" 로 남아 정작 판정이 필요한 record 를 가리고 있었다.
+
+        ⚠ 명시적 `method="get"` 은 가로채기 여부와 무관하게 종전 판정을 유지한다. 그 폼은
+          제출이 뚫리면 필드를 URL 에 싣겠다고 **스스로 선언**한 것이므로, 핸들러가 막고 있다는
+          사실이 그 선언을 지우지 않는다.
+      */
+      const intercepted = method !== 'get' && interception !== null;
       if (method === null || method === 'get' || method === '<computed>') records.push(makeRecord(context, {
-        ambiguityReasons: method === 'get' ? [] : ['form-method-or-interception-unresolved'],
+        ambiguityReasons: method === 'get' || intercepted ? [] : ['form-method-or-interception-unresolved'],
         currentBehavior: method === 'get'
           ? 'Form explicitly serializes successful named controls into a GET navigation URL.'
-          : 'Form has no statically explicit GET/POST contract; submit interception and URL effects require review.',
+          : intercepted
+            ? `Form submission is intercepted before native navigation (${interception}); no URL state is emitted.`
+            : 'Form has no statically explicit GET/POST contract; submit interception and URL effects require review.',
         detector: 'jsx-form',
         kind: 'form-producer',
-        operation: method === 'get' ? 'explicit-get' : 'implicit-or-computed-method',
+        operation: method === 'get'
+          ? 'explicit-get'
+          : intercepted ? 'intercepted-submit' : 'implicit-or-computed-method',
         stateNames: method === 'get' ? ['<form-field-population>'] : [],
         surface: 'navigation',
       }));
@@ -1079,12 +1158,12 @@ export function buildUrlStateCensus(options = {}) {
   return {
     schemaVersion: 1,
     asOf: routeManifestJson.asOf ?? '2026-08-21',
-    authority: 'generated-pre-decision-census-not-policy',
+    authority: CENSUS_AUTHORITY,
     decision: {
-      proposedId: 'PD-UX-003',
-      registryStatus: 'not-registered',
-      approvalStatus: 'blocked-input',
-      accountableOwner: 'unassigned',
+      searchPolicyAcceptedRef: URL_STATE_DECISION_REF,
+      unresolvedClasses: ['path-intent', 'hand-assembled-segment', 'opaque'],
+      classRegistryStatus: 'class-governed',
+      accountableOwner: 'repository-owner',
       decisionSafe: false,
     },
     sourceScope: {
@@ -1112,46 +1191,168 @@ function expectedSummary(records, summary) {
 }
 
 /**
- * 승인 오버레이가 인정한 stateItem 이름 집합을 읽는다.
+ * 승인 오버레이가 인정한 stateItem/record selector를 읽는다.
  *
  * ⚠ **이 census 는 여전히 스스로를 승인하지 못한다.** 아래 record 검증부의 7축 `unverified`
- *   강제는 그대로다. 오버레이는 그 값을 바꾸는 것이 아니라, "이 부류는 사람이 근거와 함께
- *   승인했다" 는 **별도 사실**을 만료 검사에만 전달한다.
+ *   강제는 그대로다. registry는 그 값을 바꾸는 것이 아니라, "이 부류는 사람이 근거와 함께
+ *   승인했다" 는 **별도 사실**을 만료 검사와 exact 검색 경계에 전달한다.
  *
  * fail-closed 규칙 셋 — 하나라도 어긋나면 **아무것도 승인되지 않은 것으로 본다.**
  *   1. 오버레이가 없으면 빈 집합(현재 상태에서 만료가 그대로 작동해야 한다)
  *   2. 파싱 실패·형식 이상도 빈 집합(깨진 오버레이가 면제를 만들면 안 된다)
- *   3. `manifestRef.sha256` 이 지금 census 와 다르면 빈 집합 — **승인은 자기가 본 census 에만
+ *   3. `manifestRef.sha256` 이 지금 census 와 다르면 빈 목록 — **승인은 자기가 본 census 에만
  *      유효하다.** census 가 재생성됐는데 오버레이가 그대로면 그 승인은 다른 문서에 대한 것이다.
+ *   4. 오버레이·승인축·만료일·selector가 불완전하면 빈 목록. 자유 입력은 exact recordIds 없이
+ *      이름만으로 승인할 수 없다.
  *
  * 계약은 scripts/ui-url-state-approval-contract.test.mjs 가 별도로 검사한다.
  */
-function readApprovedStateItemNames(repoRoot, census) {
-  const empty = new Set();
-  const overlayPath = join(repoRoot, 'config', 'ui-url-state-approval.json');
-  if (!existsSync(overlayPath)) return empty;
+function approvalCensusSha256(census) {
+  return createHash('sha256')
+    .update(`${JSON.stringify(census, null, 2)}\n`.replace(/\r\n?/gu, '\n'), 'utf8')
+    .digest('hex');
+}
 
-  let overlay;
-  try {
-    overlay = JSON.parse(readFileSync(overlayPath, 'utf8'));
-  } catch {
-    return empty;
-  }
+export function approvedStateItemSelectors(overlay, census, nowMs = Date.now()) {
+  const empty = [];
   if (!Array.isArray(overlay?.classes)) return empty;
+  if (Object.hasOwn(overlay, 'decisionRef')
+    || overlay.classes.some((cls) => cls?.classId !== 'search-input'
+      && Object.hasOwn(cls ?? {}, 'decisionRef'))) return empty;
+  if (overlay?.schemaVersion !== 1
+    || overlay?.state !== 'class-governed'
+    || overlay?.authority !== URL_STATE_OVERLAY_AUTHORITY
+    || overlay?.schemaRef !== 'config/ui-url-state-approval.schema.json'
+    || overlay?.manifestRef?.path !== 'config/ui-url-state-census.json') return empty;
 
   // census 본문 해시로 결속한다. 인자로 받은 census 객체를 정규화해 비교하므로,
   // 디스크의 파일이 아니라 **지금 검증 중인 문서**에 대한 승인인지 확인한다.
-  const expected = createHash('sha256')
-    .update(`${JSON.stringify(census, null, 2)}\n`.replace(/\r\n?/gu, '\n'), 'utf8')
-    .digest('hex');
+  const expected = approvalCensusSha256(census);
   if (overlay?.manifestRef?.sha256 !== expected) return empty;
 
-  const names = new Set();
+  const censusRecordIds = new Set((census.records ?? []).map((record) => record?.id));
+  const selectors = [];
   for (const cls of overlay.classes) {
     if (cls?.reviewState !== 'approved') continue;
-    for (const name of cls?.selector?.stateItemNames ?? []) names.add(name);
+    if (![
+      'non-sensitive-presentation',
+      'server-issued-identifier',
+      'user-typed-free-text',
+      'enumerated-control-flag',
+      'indeterminate',
+    ].includes(cls?.dataClass)
+      || !['verified', 'accepted-risk', 'not-applicable'].includes(cls?.privacyReview)
+      || !['verified', 'not-applicable'].includes(cls?.authorizationReview)) return empty;
+    if (cls.dataClass === 'user-typed-free-text'
+      && (cls.privacyReview !== 'accepted-risk' || cls.authorizationReview !== 'not-applicable')) return empty;
+    if (!isRealIsoDate(cls?.reviewBy)) return empty;
+    if (Date.parse(`${cls.reviewBy}T23:59:59.999Z`) < nowMs) continue;
+
+    const approvals = [cls?.approvals?.securityPrivacy, cls?.approvals?.domain];
+    if (approvals.some((approval) => !approval
+      || typeof approval.reviewer !== 'string'
+      || approval.reviewer.trim() === ''
+      || !isRealIsoDate(approval.reviewedAt)
+      || !Array.isArray(approval.evidence)
+      || approval.evidence.length === 0
+      || approval.evidence.some((item) => typeof item !== 'string' || item.trim() === ''))) return empty;
+
+    const stateItemNames = cls?.selector?.stateItemNames;
+    if (!Array.isArray(stateItemNames)
+      || stateItemNames.length === 0
+      || new Set(stateItemNames).size !== stateItemNames.length
+      || stateItemNames.some((name) => typeof name !== 'string' || name === '')) return empty;
+
+    const carriesSearchPolicy = cls?.classId === 'search-input'
+      || cls?.dataClass === 'user-typed-free-text'
+      || stateItemNames.some((name) => URL_SEARCH_STATE_ITEM_NAMES.includes(name));
+    if (carriesSearchPolicy
+      && (cls.classId !== 'search-input'
+        || cls.decisionRef !== URL_STATE_DECISION_REF
+        || cls.dataClass !== 'user-typed-free-text'
+        || cls.privacyReview !== 'accepted-risk'
+        || cls.authorizationReview !== 'not-applicable'
+        || JSON.stringify([...stateItemNames].sort()) !== JSON.stringify(URL_SEARCH_STATE_ITEM_NAMES))) return empty;
+
+    const declaredRecordIds = cls?.selector?.recordIds;
+    if (cls.dataClass === 'user-typed-free-text'
+      && (declaredRecordIds === undefined
+        || !Array.isArray(cls?.selector?.routeKeyBindings)
+        || cls.selector.routeKeyBindings.length === 0)) return empty;
+    if (declaredRecordIds !== undefined
+      && (!Array.isArray(declaredRecordIds)
+        || declaredRecordIds.length === 0
+        || new Set(declaredRecordIds).size !== declaredRecordIds.length
+        || declaredRecordIds.some((id) => !censusRecordIds.has(id)))) return empty;
+
+    selectors.push({
+      classId: cls.classId,
+      stateItemNames: new Set(stateItemNames),
+      recordIds: declaredRecordIds === undefined ? null : new Set(declaredRecordIds),
+    });
   }
-  return names;
+  return selectors;
+}
+
+export function isUrlStateItemApproved(record, item, selectors) {
+  return selectors.some((selector) => selector.stateItemNames.has(item?.name)
+    && (selector.recordIds === null || selector.recordIds.has(record?.id)));
+}
+
+function readStateApprovalOverlay(repoRoot) {
+  const overlayPath = join(repoRoot, 'config', 'ui-url-state-approval.json');
+  if (!existsSync(overlayPath)) return null;
+
+  try {
+    return JSON.parse(readFileSync(overlayPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 이 record 가 **분류할 URL 상태를 갖지 않음이 확인됐는가**.
+ *
+ * ⚠ [2026-09-05] 만료 면제 규칙이 `stateItems.length > 0` 을 요구해, `/admin/system/audit` 로 가는
+ *   평범한 링크처럼 **애초에 분류할 것이 없는 record 가 어떤 승인으로도 면제되지 않았다.**
+ *   369건 중 그런 record 가 절반 가까이였다. 만료 red 를 그 record 들이 채우면 정작 판정이
+ *   필요한 record 가 묻힌다.
+ *
+ *   `length > 0` 조건 자체는 정당했다 — 빈 배열에 `every` 는 참이라 그것 없이는 **stateItem 을
+ *   추출하지 못한 record 가 전부 조용히 면제**된다. 문제는 "상태가 없다" 와 "상태를 못 읽었다" 를
+ *   구분하지 못한 것이다. census 는 그 둘을 구분할 신호를 갖고 있다.
+ *
+ * **면제하려면 다섯 가지가 모두 성립해야 한다.** 하나라도 어긋나면 상태가 있을 수 있다는 뜻이다.
+ *   1. `targetCandidate` 가 해소됐다 — null 이면 detector 가 타깃을 읽지 못한 것이다
+ *   2. 쿼리 구분자가 없다 — `?`·`&` 가 있으면 쿼리 상태를 나른다
+ *   3. 경로에 `[computed]` 가 없다 — 해소하지 못한 보간은 **이름 없는 record locator** 다
+ *      (실측: `/admin/survey/manage/[computed]`, `/survey/response/[computed]` 등)
+ *   4. `riskSignals` 가 비어 있다 — 미해소 위험 신호가 붙은 record 는 판정 대상이다
+ *   5. 프래그먼트가 없다 — `#` 뒤도 주소창에 남는다
+ *
+ * ⚠ 이 함수를 넓히면 만료 신호가 줄어든다. 조건을 완화하기 전에 **그 record 가 정말 URL 에
+ *   아무것도 싣지 않는지** 실물로 확인하라. 계약이 부정 케이스를 고정한다.
+ */
+function hasNoClassifiableUrlState(record) {
+  if ((record?.stateItems ?? []).length > 0) return false;
+
+  /*
+    [2026-09-05] 제출이 가로채인 폼은 주소창에 아무것도 싣지 않는다. 이 record 는 이동 타깃이
+    없으므로(폼은 navigate 하지 않는다) 아래 targetCandidate 조건으로는 영원히 통과하지 못한다.
+
+    판정 근거는 detector 가 `submitInterception` 으로 **증명한** 것뿐이다 —
+    `preventDefault` 직접 호출 또는 react-hook-form `handleSubmit` 래핑. 이름만 넘긴 핸들러는
+    판정하지 않으므로 여기 오지 않는다.
+  */
+  if (record?.kind === 'form-producer' && record?.operation === 'intercepted-submit') return true;
+
+  const target = record?.targetCandidate;
+  if (typeof target !== 'string' || target === '') return false;
+  if (/[?&#]/u.test(target)) return false;
+  if (target.includes('[computed]')) return false;
+  if ((record?.riskSignals ?? []).length > 0) return false;
+
+  return true;
 }
 
 /** Validate fail-closed semantics independently from the generated snapshot comparison. */
@@ -1163,14 +1364,36 @@ export function validateUrlStateCensus(census, options = {}) {
   // 둘 다 diff 에 드러난다 — 조용한 연장은 불가능하다.
   const nowMs = options.nowMs ?? Date.now();
   const errors = [];
-  const approvedStateItemNames = readApprovedStateItemNames(repoRoot, census);
+  // approvalOverlay는 합성 census와 hash가 일치하는 overlay를 주입해 exact record 경계를
+  // 검증하기 위한 순수 테스트 seam이다. CLI/운영 경로는 항상 디스크 registry를 읽는다.
+  const approvalOverlay = options.approvalOverlay === undefined
+    ? readStateApprovalOverlay(repoRoot)
+    : options.approvalOverlay;
+  const approvalSelectors = approvalOverlay === null
+    ? []
+    : approvedStateItemSelectors(approvalOverlay, census, nowMs);
+  // 새 census 후보를 만들 때 전체 manifest hash가 바뀌어도 기존 exact 검색 record는 판정할 수
+  // 있어야 한다. 만료 면제는 위의 원래 hash-bound selector를 그대로 쓰고, 즉시 검색 경계만
+  // candidate hash로 재결속한 search-input class를 사용한다. 새 recordId/key는 여전히 red다.
+  const searchPolicySelectors = approvalOverlay === null
+    ? []
+    : approvedStateItemSelectors({
+      ...approvalOverlay,
+      manifestRef: {
+        ...approvalOverlay.manifestRef,
+        sha256: approvalCensusSha256(census),
+      },
+    }, census, nowMs).filter(({ classId }) => classId === 'search-input');
   if (census?.schemaVersion !== 1) errors.push('schemaVersion must be 1');
-  if (census?.authority !== 'generated-pre-decision-census-not-policy') errors.push('authority must remain non-normative');
-  if (census?.decision?.registryStatus !== 'not-registered') errors.push('global URL decision must remain not-registered');
-  if (census?.decision?.approvalStatus !== 'blocked-input' || census?.decision?.decisionSafe !== false) {
-    errors.push('global URL decision must remain blocked-input and decisionSafe=false');
+  if (census?.authority !== CENSUS_AUTHORITY) errors.push('authority must remain generated evidence, not policy');
+  if (census?.decision?.searchPolicyAcceptedRef !== URL_STATE_DECISION_REF
+    || JSON.stringify(census?.decision?.unresolvedClasses) !== JSON.stringify(['path-intent', 'hand-assembled-segment', 'opaque'])) {
+    errors.push('URL search policy must remain linked to ADR-0009 with an explicit unresolved remainder');
   }
-  if (census?.decision?.accountableOwner !== 'unassigned') errors.push('an owner cannot be fabricated by the census');
+  if (census?.decision?.classRegistryStatus !== 'class-governed' || census?.decision?.decisionSafe !== false) {
+    errors.push('generated census must remain class-governed and decisionSafe=false');
+  }
+  if (census?.decision?.accountableOwner !== 'repository-owner') errors.push('URL-state decision owner must remain explicit');
   if (!Array.isArray(census?.records) || census.records.length === 0) return [...errors, 'URL-state record population is empty'];
   const ids = new Set();
   for (const record of census.records) {
@@ -1205,8 +1428,8 @@ export function validateUrlStateCensus(census, options = {}) {
           내비게이션 disposition overlay 가 그 선례다(reviewState·approvals·ADR 해시 결속).
           경로 리터럴은 일부러 쓰지 않았다 — 위 :50 주석 참조.
 
-          그 오버레이는 아직 없다. 그래서 현재 코드가 실제로 허용하는 해소는 기한 연장 하나뿐이며,
-          문구도 그렇게 말한다. 없는 선택지를 안내하면 읽는 사람이 있지도 않은 경로를 찾는다.
+          별도 class registry가 승인된 부류만 면제하며 `search-input`만 ADR-0009에 결속된다.
+          registry 결속이나 class의 reviewBy·근거가 불완전하면 다시 fail-closed 한다.
       */
       /*
         [2026-09-05] 승인 오버레이가 덮은 record 는 만료에서 제외한다.
@@ -1215,13 +1438,18 @@ export function validateUrlStateCensus(census, options = {}) {
         승인되지 않은 항목이 섞여 있으면 그 record 는 그대로 만료된다 —
         **부분 승인이 전체 면제가 되지 않는다.**
 
-        stateItem 이 없는 record 는 면제 대상이 아니다(빈 집합에 every 는 참이라 조용히 전부
-        면제될 수 있다. 그 함정을 막으려고 length 를 먼저 본다).
+        stateItem 이 없는 record 는 **원칙적으로** 면제 대상이 아니다 — 빈 집합에 every 는 참이라
+        그 조건 없이는 상태를 추출하지 못한 record 가 전부 조용히 면제된다.
+
+        [2026-09-05] 다만 그중 **분류할 상태가 없음이 확인된** record 는 예외다. 판정 기준은
+        `hasNoClassifiableUrlState` 가 다섯 조건으로 좁게 정의한다. 승인과 무관하게 면제되는데,
+        승인할 대상 자체가 없기 때문이다.
       */
       const items = record.stateItems ?? [];
-      const fullyApproved = items.length > 0 && items.every((item) => approvedStateItemNames.has(item?.name));
+      const fullyApproved = items.length > 0
+        && items.every((item) => isUrlStateItemApproved(record, item, approvalSelectors));
 
-      if (!fullyApproved) {
+      if (!fullyApproved && !hasNoClassifiableUrlState(record)) {
         errors.push(`${label}: review horizon expired on ${record.review.reviewBy} — 사유와 함께 DEFAULT_REVIEW_BY 를 연장하고 --write 로 재생성하거나, `
           + '승인 오버레이(config/ui-url-state-approval.json)에서 이 record 의 stateItem 부류를 근거와 함께 승인하세요. '
           + '이 census 는 기계 생성물이라 "재검토 완료" 를 여기에 직접 기록할 수 없습니다 — 문법이 스스로를 승인하지 못하게 하는 의도된 제약입니다.');
@@ -1234,6 +1462,17 @@ export function validateUrlStateCensus(census, options = {}) {
     }
     if (record?.resolutionStatus === 'ambiguous' && (record?.ambiguityReasons?.length ?? 0) === 0) errors.push(`${label}: ambiguous record lacks reason`);
     for (const state of record?.stateItems ?? []) {
+      const requiresExactSearchApproval = URL_SEARCH_STATE_ITEM_NAMES.includes(state?.name)
+        || (record?.surface === 'navigation'
+          && Array.isArray(state?.riskSignals)
+          && state.riskSignals.includes('free-text-name-signal'));
+      if (requiresExactSearchApproval
+        && !isUrlStateItemApproved(record, state, searchPolicySelectors)) {
+        errors.push(`${label}/${state?.name}: URL search state is outside the exact approved route/record allowlist`);
+      }
+      if (Array.isArray(state?.riskSignals) && state.riskSignals.includes('credential-name-signal')) {
+        errors.push(`${label}/${state?.name}: credential-like URL state is forbidden and cannot wait for class review`);
+      }
       if (state?.dataClass !== 'unverified' || state?.approvalStatus !== 'unverified') errors.push(`${label}/${state?.name}: state classification must remain unverified`);
       if (!['candidate-allow', 'deny', 'deny-until-reviewed'].includes(state?.recommendation)) errors.push(`${label}/${state?.name}: invalid recommendation`);
       if (state?.exception !== 'none-proposed') errors.push(`${label}/${state?.name}: exception cannot be fabricated`);

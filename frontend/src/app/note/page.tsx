@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
@@ -44,6 +46,16 @@ export default function NotePage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [listError, setListError] = useState<Error | null>(null);
   const listRequestRef = useRef(0);
+  /*
+   * [2026-09-05] 종전에는 `{ page: 0, size: 20 }` 한 페이지만 받고 페이저가 없어 21번째 쪽지부터
+   * 영구히 도달 불가였다. 서버(NoteApiController)는 처음부터 Pageable 을 받는다.
+   * 페이지 상태는 URL 에 싣지 않는다 — 쪽지 페이지는 승인된 URL-state 부류가 아니다(헌법 제4조 2항).
+   */
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  // [2026-09-06 감사 D09-01 후속] 서버는 제목·내용 부분일치(searchWrd)를 받는데 페이징만 붙어 있었다. 로컬 상태다(URL 미승인).
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [total, setTotal] = useState(0);
 
   const [isWriteModalOpen, setWriteOpen] = useState(false);
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -72,12 +84,16 @@ export default function NotePage() {
     setListError(null);
     setNotes([]);
     try {
+      const query = searchKeyword
+        ? { page: page - 1, size: pageSize, searchWrd: searchKeyword }
+        : { page: page - 1, size: pageSize };
       const res = await (requestedTab === 'received'
-        ? noteService.getReceivedNotes({ page: 0, size: 20 })
-        : noteService.getSentNotes({ page: 0, size: 20 }));
+        ? noteService.getReceivedNotes(query)
+        : noteService.getSentNotes(query));
 
       if (requestId !== listRequestRef.current || requestedTab !== tabRef.current) return;
       setNotes(res.list || []);
+      setTotal(typeof res.total === 'number' ? res.total : (res.list?.length ?? 0));
     } catch {
       if (requestId !== listRequestRef.current || requestedTab !== tabRef.current) return;
       setListError(new Error('쪽지 목록을 불러오지 못했습니다.'));
@@ -86,7 +102,7 @@ export default function NotePage() {
     } finally {
       if (requestId === listRequestRef.current && requestedTab === tabRef.current) setLoading(false);
     }
-  }, [toast]);
+  }, [toast, page, pageSize, searchKeyword]);
 
   useEffect(() => {
     void loadNotes(tab);
@@ -109,10 +125,23 @@ export default function NotePage() {
     tabRef.current = nextTab;
     listRequestRef.current += 1;
     setNotes([]);
+    setTotal(0);
+    setPage(1);
     setListError(null);
     setLoading(true);
     closeDetailModal();
     setTab(nextTab);
+  };
+
+  const handleSearch = (keyword: string) => {
+    const applied = keyword.trim();
+    if (applied === searchKeyword) {
+      void loadNotes();
+      return;
+    }
+    // 3페이지에서 검색해 빈 화면이 되는 것을 막는다.
+    if (page !== 1) setPage(1);
+    setSearchKeyword(applied);
   };
 
   const handleSend = async () => {
@@ -317,7 +346,15 @@ export default function NotePage() {
       title="쪽지함"
       description="받은 쪽지와 보낸 쪽지를 조회하고 새 쪽지를 보냅니다."
       breadcrumbItems={[{ label: '협업지원' }, { label: '쪽지관리' }]}
-      totalCount={notes.length}
+      totalCount={total}
+      filter={
+        <KeywordFilter
+          label="제목·내용"
+          placeholder="제목 또는 내용으로 검색"
+          value={searchKeyword}
+          onSearch={handleSearch}
+        />
+      }
       actions={
         <>
           {/* 종전 좌측의 '쪽지 커뮤니케이션 아키텍처' 장식 카드(120px 배경 아이콘)는 제거했다 —
@@ -328,14 +365,14 @@ export default function NotePage() {
               onClick={() => handleTabChange('received')}
               icon={<Inbox size={16} aria-hidden="true" />}
               label="받은 쪽지함"
-              count={tab === 'received' ? notes.length : undefined}
+              count={tab === 'received' ? total : undefined}
             />
             <TabButton
               active={tab === 'sent'}
               onClick={() => handleTabChange('sent')}
               icon={<Send size={16} aria-hidden="true" />}
               label="보낸 쪽지함"
-              count={tab === 'sent' ? notes.length : undefined}
+              count={tab === 'sent' ? total : undefined}
             />
           </div>
           <Button
@@ -360,7 +397,15 @@ export default function NotePage() {
         onRetry={() => { void loadNotes(); }}
         onRowClick={handleDetail}
         rowActionLabel={(item) => `${item.noteSj || `${item.noteSn}번`} 쪽지 열기`}
-        emptyMessage={tab === 'received' ? "받은 쪽지가 없습니다." : "보낸 쪽지가 없습니다."}
+        emptyMessage={emptyResultMessage(searchKeyword, tab === 'received' ? '받은 쪽지가 없습니다.' : '보낸 쪽지가 없습니다.')}
+        pagination={{
+          currentPage: page,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+          onPageChange: setPage,
+          // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+          pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+        }}
       />
 
       <StandardModal

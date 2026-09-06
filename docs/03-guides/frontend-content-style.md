@@ -5,6 +5,7 @@
 - **Reviewers:** product/UX, domain owner, accessibility, security/privacy — 담당자 미지정
 - **Review by:** 2026-10-31
 - **Last evidence review:** 2026-08-21
+- **URL-state policy review:** 2026-09-05 — [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)
 - **Structured inventory:** [`config/frontend-visible-terms.json`](../../config/frontend-visible-terms.json)
 
 이 문서는 사용자에게 보이는 한국어 문구, action 이름, 상태, 오류, 날짜·시간·수치의 공통 계약이다. 코드 식별자나 API DTO 이름을 바꾸는 규칙이 아니며, 단어를 기계적으로 전역 치환하는 허가도 아니다. 현재는 파일럿 후보 7개 route의 정적 소스 census와 즉시 판정 가능한 진실성 수정만 포함한다. 콘텐츠 소유자 검토, 실제 role별 렌더 결과, 사용자 이해도 연구가 없으므로 전체 화면의 콘텐츠 품질이나 사용자 검증 완료를 주장하지 않는다.
@@ -12,7 +13,7 @@
 ## 1. 규칙의 우선순위와 범위
 
 1. [한국어 우선 ADR](../02-architecture/decisions/ADR-0002-korean-first-frontend.md)은 프런트엔드의 지원 언어를 한국어 하나로 정한다.
-2. [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)은 내부 구현 용어, 출처 없는 수치, 비동작 action을 실제 기능처럼 노출하지 못하게 한다.
+2. [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)은 내부 구현 용어, 출처 없는 수치, 비동작 action을 실제 기능처럼 노출하지 못하게 한다. 개인정보성 업무 검색어의 URL 경계는 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)를 따른다.
 3. [route capability manifest](../../config/ui-route-capabilities.json)는 route·role·기능 상태의 증거 경계다. 콘텐츠는 `demo`, `partial`, `unavailable`을 `live`처럼 바꿔 말할 수 없다.
 4. 이 문서는 사용자 언어와 표현 구조를 소유하고, 도메인 정책·인가·데이터 보존·법률 판단을 대신하지 않는다.
 
@@ -104,7 +105,7 @@
 - `알 수 없는 오류`만 표시하고 가능한 회복 action을 제공하지 않음.
 - 같은 mutation을 반복 클릭할 수 있게 두거나 실패 여부가 불명확한 상태에서 자동 재시도.
 
-서버 메시지를 그대로 보여 주지 않는다. 허용된 domain error code를 사용자 문구에 매핑하고, 알 수 없는 오류는 안전한 기본 문구로 수렴한다. 개인정보나 자유 입력을 console·URL·analytics에 기록하지 않는다.
+서버 메시지를 그대로 보여 주지 않는다. 허용된 domain error code를 사용자 문구에 매핑하고, 알 수 없는 오류는 안전한 기본 문구로 수렴한다. 개인정보나 자유 입력은 console·analytics·오류 로그 payload에 기록하지 않는다. URL은 예외적으로 ADR-0009의 화면별 route/query key allowlist에 든 일반 업무 검색어만 허용하며 unknown query를 재전파하지 않고 same-view 변경에 `replace`를 우선한다. 앱은 자격증명·token·고유식별정보·고위험 개인정보·응답 본문을 위한 URL field를 만들거나 일반 검색창에서 입력을 요구·유도하지 않는다. 자유 입력에 예상 밖 값이 들어올 가능성은 내용 기반으로 완전 차단할 수 없는 잔여 위험이며, 이를 다른 화면의 URL 동기화나 고위험 검색 용도의 승인으로 해석하지 않는다.
 
 ## 6. 날짜·시간·숫자·단위
 
@@ -123,13 +124,13 @@
 |---|---|---|
 | 긴 한국어 제목 | 공백 포함 100자 경계 | 잘림 표시, 전체 접근 경로, action 보존 |
 | 긴 연속 문자열 | 200자 synthetic ASCII | overflow/wrap, table·dialog 폭 |
-| URL | 300자 example.invalid 경로 | 양방향 스크롤 없이 wrap, URL에 민감 query 없음 |
+| URL | 300자 example.invalid 경로와 선택적 allowlisted synthetic 검색 query | 양방향 스크롤 없이 wrap, unknown query·금지 데이터 없음 |
 | 사용자 이름 | 짧은 1자/긴 40자 synthetic | avatar fallback, table/card/reflow |
 | 오류 | 상태+보존+다음 행동 3문장 | live announcement, focus, 320 CSS px |
 | 수치 | 0, 1, 9,999,999와 unknown | locale·단위·scope, unknown≠0 |
 | 날짜 | 월/연도 경계와 timezone 경계 | 정렬·표시·저장 변환 일치 |
 
-`example.invalid`, 비실존 ID, 생성된 이름만 사용한다. fixture에 실제 기관명, 이메일, 전화번호, IP, 검색어, 설문 응답, 토큰을 넣지 않는다.
+`example.invalid`, 비실존 ID, 생성된 이름만 사용한다. fixture에 실제 기관명, 이메일, 전화번호, IP, 실제 검색어, 설문 응답, 토큰을 넣지 않는다. URL 검색 계약을 시험할 때만 승인된 key와 synthetic 검색어를 사용한다.
 
 ## 8. 구조화 glossary와 census 운영
 
@@ -157,7 +158,7 @@
 - [ ] label과 accessible name이 일치하고 dynamic status가 발표된다.
 - [ ] 날짜·시간대·수치·단위·전체/현재 페이지 scope가 정확하다.
 - [ ] 긴 한국어·URL·최대 데이터가 200% text, 400% zoom/320 CSS px에서 action을 가리지 않는다.
-- [ ] URL, console, analytics, screenshot artifact에 민감 입력이 없다.
+- [ ] URL에는 allowlisted synthetic 일반 업무 검색어만 있고 unknown query 또는 자격증명·token·고유식별정보·고위험 개인정보·응답 본문용 전용 field가 없다. 테스트 입력이 그런 값을 흉내 내거나 요구하지 않으며, 허용 검색어도 console·analytics·오류 로그 payload·screenshot artifact에 복제되지 않는다.
 - [ ] content owner와 domain owner가 실제 role/state별 화면을 검토했다.
 
 ## 10. 승인·완료 경계

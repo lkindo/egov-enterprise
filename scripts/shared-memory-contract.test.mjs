@@ -68,6 +68,136 @@ function headingCount(text, heading) {
   return text.split(/\r?\n/).filter((line) => line === `## ${heading}`).length;
 }
 
+function markdownTableCells(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return [];
+  return trimmed.slice(1, -1).split('|').map((cell) => cell.trim());
+}
+
+function markdownSection(text, heading, nextHeading) {
+  const lines = text.split(/\r?\n/);
+  const startIndexes = lines.flatMap((line, index) => line === `## ${heading}` ? [index] : []);
+  assert.equal(startIndexes.length, 1, `'${heading}' section은 정확히 한 번 있어야 합니다.`);
+  const endIndex = lines.indexOf(`## ${nextHeading}`, startIndexes[0] + 1);
+  assert.ok(endIndex > startIndexes[0], `'${heading}' 다음에 '${nextHeading}' section이 있어야 합니다.`);
+  return lines.slice(startIndexes[0] + 1, endIndex).join('\n');
+}
+
+function markdownTableRows(text, expectedHeader) {
+  const lines = text.split(/\r?\n/);
+  const headerIndexes = lines.flatMap((line, index) => {
+    const cells = markdownTableCells(line);
+    return cells.length === expectedHeader.length
+      && cells.every((cell, cellIndex) => cell === expectedHeader[cellIndex])
+      ? [index]
+      : [];
+  });
+  assert.equal(headerIndexes.length, 1, `markdown table header가 정확히 한 번 있어야 합니다: ${expectedHeader.join(' | ')}`);
+
+  const headerIndex = headerIndexes[0];
+  const separator = markdownTableCells(lines[headerIndex + 1] ?? '');
+  assert.equal(separator.length, expectedHeader.length, 'markdown table separator 열 수가 header와 다릅니다.');
+  assert.ok(separator.every((cell) => /^:?-{3,}:?$/u.test(cell)), 'markdown table separator가 잘못됐습니다.');
+
+  const rows = [];
+  for (const line of lines.slice(headerIndex + 2)) {
+    const cells = markdownTableCells(line);
+    if (cells.length === 0) break;
+    assert.equal(cells.length, expectedHeader.length, 'markdown table data 열 수가 header와 다릅니다.');
+    rows.push(cells);
+  }
+  return rows;
+}
+
+function acceptedAdrIds(registry) {
+  const entries = markdownTableRows(registry, ['ADR', '결정', '상태']).map((cells) => {
+    const idCell = cells[0] ?? '';
+    const idMatch = idCell.match(/^\[(ADR-\d{4})\]\([^\r\n)]+\)$/u);
+    assert.ok(idMatch, `ADR registry ID는 exact markdown link여야 합니다: ${idCell}`);
+    return { id: idMatch[1], status: cells[2] ?? '' };
+  });
+  const allIds = entries.map(({ id }) => id);
+  assert.equal(allIds.length, new Set(allIds).size, `ADR registry에 중복 ID가 있습니다: ${allIds.join(', ')}`);
+  return entries.flatMap(({ id, status }) => /^Accepted(?:\s+—\s+\S.*)?$/u.test(status) ? [id] : []);
+}
+
+function decisionMemoryAdrIds(decisions) {
+  const acceptedSection = markdownSection(decisions, 'Accepted ADR index', '운영 결정 index');
+  const ids = markdownTableRows(
+    acceptedSection,
+    ['ID', '상태', '결정', '이유', '정본', '시행일', 'supersedes'],
+  ).map((cells) => {
+    assert.match(cells[0] ?? '', /^ADR-\d{4}$/u, 'Accepted ADR index에 잘못된 ADR ID가 있습니다.');
+    assert.equal(cells[1], 'accepted', `${cells[0]}: Accepted ADR index 상태는 exact accepted여야 합니다.`);
+    return cells[0];
+  });
+  assert.equal(ids.length, new Set(ids).size, `decisions memory에 중복 ADR ID가 있습니다: ${ids.join(', ')}`);
+  return ids;
+}
+
+function assertExactAdrSet(registryIds, memoryIds) {
+  const registrySet = new Set(registryIds);
+  const memorySet = new Set(memoryIds);
+  const missing = [...registrySet].filter((id) => !memorySet.has(id)).sort();
+  const ghost = [...memorySet].filter((id) => !registrySet.has(id)).sort();
+  assert.equal(
+    missing.length + ghost.length,
+    0,
+    `Accepted ADR exact-set 불일치: missing=[${missing.join(', ')}], ghost=[${ghost.join(', ')}]`,
+  );
+}
+
+function authoritativeE2eShardContract(requiredChecksText) {
+  const manifest = JSON.parse(requiredChecksText);
+  const e2eCheck = manifest.requiredChecks?.find(({ context }) => context === 'e2e-test');
+  assert.ok(e2eCheck, 'required-checks에 e2e-test context가 없습니다.');
+
+  const matrix = e2eCheck.aggregate?.sourceMatrix;
+  assert.equal(matrix?.key, 'shard', 'e2e-test sourceMatrix key는 shard여야 합니다.');
+  assert.equal(matrix?.completeCoordinates, true, 'e2e-test sourceMatrix는 completeCoordinates여야 합니다.');
+  assert.ok(Array.isArray(matrix?.values) && matrix.values.length > 0, 'e2e-test shard 좌표가 없습니다.');
+
+  const coordinates = matrix.values.map((value) => {
+    const match = String(value).match(/^(\d+)\/(\d+)$/u);
+    assert.ok(match, `e2e-test shard 좌표 형식이 잘못됐습니다: ${value}`);
+    return { index: Number(match[1]), total: Number(match[2]) };
+  });
+  const totals = new Set(coordinates.map(({ total }) => total));
+  assert.equal(totals.size, 1, 'e2e-test shard 좌표의 전체 shard 수가 서로 다릅니다.');
+  const count = coordinates[0].total;
+  assert.equal(coordinates.length, count, 'e2e-test sourceMatrix 좌표 수와 shard 분모가 다릅니다.');
+  assert.deepEqual(
+    coordinates.map(({ index }) => index).sort((left, right) => left - right),
+    Array.from({ length: count }, (_, index) => index + 1),
+    'e2e-test sourceMatrix shard 좌표가 연속 집합이 아닙니다.',
+  );
+  return { count, coordinates: matrix.values.map(String) };
+}
+
+function projectContextE2eShardContract(context) {
+  const rows = context.split(/\r?\n/).filter((line) => line.startsWith('| CTX-009 |'));
+  assert.equal(rows.length, 1, 'project-context의 CTX-009는 정확히 한 행이어야 합니다.');
+  const counts = [...rows[0].matchAll(/(\d+)개 shard/gu)].map((match) => Number(match[1]));
+  assert.equal(counts.length, 1, 'CTX-009는 E2E shard 수를 정확히 한 번 명시해야 합니다.');
+  const coordinates = [...rows[0].matchAll(/`(\d+\/\d+)`/gu)].map((match) => match[1]);
+  return { count: counts[0], coordinates };
+}
+
+function assertE2eShardContractMatches(context, requiredChecksText) {
+  const actual = projectContextE2eShardContract(context);
+  const expected = authoritativeE2eShardContract(requiredChecksText);
+  assert.equal(
+    actual.count,
+    expected.count,
+    'CTX-009의 E2E shard 수가 required-checks sourceMatrix와 다릅니다.',
+  );
+  assert.deepEqual(
+    actual.coordinates,
+    expected.coordinates,
+    'CTX-009의 E2E shard 좌표·순서가 required-checks sourceMatrix와 다릅니다.',
+  );
+}
+
 test('shared memory files have a stable schema and valid canonical sources', () => {
   const seenKinds = new Set();
 
@@ -182,14 +312,118 @@ test('project context covers every Gradle module', () => {
   assert.doesNotMatch(requiredRow, /e2e-tests \([1-9]\/[1-9]\)/u, '내부 shard를 required context로 기록하면 안 됩니다.');
 });
 
-test('decision memory indexes every accepted ADR', () => {
+test('project context E2E shard count and coordinates match the authoritative required-check matrix', () => {
+  assertE2eShardContractMatches(
+    readRepoFile('.agent/memory/project-context.md'),
+    readRepoFile('.github/required-checks.json'),
+  );
+});
+
+test('decision memory exactly indexes every plain and qualified Accepted ADR', () => {
   const registry = readRepoFile('docs/02-architecture/decisions/README.md');
-  const decisions = fs.readFileSync(path.join(memoryDir, 'decisions.md'), 'utf8');
-  const accepted = [...registry.matchAll(/\| \[?(ADR-\d{4})\]?[^\n]*\| Accepted \|/g)].map((match) => match[1]);
+  const decisions = readRepoFile('.agent/memory/decisions.md');
+  const accepted = acceptedAdrIds(registry);
   assert.ok(accepted.length > 0, 'Accepted ADR census가 0건입니다.');
-  for (const adr of accepted) {
-    assert.match(decisions, new RegExp(`\\| ${adr} \\| accepted \\|`, 'u'), `${adr}: decisions index에 없습니다.`);
-  }
+  assertExactAdrSet(accepted, decisionMemoryAdrIds(decisions));
+});
+
+test('memory truth bindings fail closed for synthetic shard and ADR drift', () => {
+  const requiredChecks = readRepoFile('.github/required-checks.json');
+  const context = readRepoFile('.agent/memory/project-context.md');
+  const currentShardCount = projectContextE2eShardContract(context).count;
+  const driftedContext = context.replace(
+    `${currentShardCount}개 shard`,
+    `${currentShardCount + 1}개 shard`,
+  );
+  assert.notEqual(driftedContext, context, '합성 CTX-009 shard mutation이 적용되지 않았습니다.');
+  assert.throws(
+    () => assertE2eShardContractMatches(driftedContext, requiredChecks),
+    /CTX-009의 E2E shard 수가 required-checks sourceMatrix와 다릅니다/u,
+  );
+
+  const authoritativeCoordinates = authoritativeE2eShardContract(requiredChecks).coordinates;
+  const wrongCoordinate = authoritativeCoordinates[0].replace(
+    /\/\d+$/u,
+    `/${authoritativeCoordinates.length + 1}`,
+  );
+  const coordinateDrift = context.replace(
+    `\`${authoritativeCoordinates[0]}\``,
+    `\`${wrongCoordinate}\``,
+  );
+  assert.notEqual(coordinateDrift, context, '합성 CTX-009 shard 좌표 mutation이 적용되지 않았습니다.');
+  assert.throws(
+    () => assertE2eShardContractMatches(coordinateDrift, requiredChecks),
+    /CTX-009의 E2E shard 좌표·순서가 required-checks sourceMatrix와 다릅니다/u,
+  );
+
+  const registry = readRepoFile('docs/02-architecture/decisions/README.md');
+  const decisions = readRepoFile('.agent/memory/decisions.md');
+  const registryIds = acceptedAdrIds(registry);
+  const removedId = registryIds[0];
+  const missingDecision = decisions.replace(
+    new RegExp(`^\\| ${removedId} \\|[^\\n]*(?:\\r?\\n|$)`, 'mu'),
+    '',
+  );
+  assert.notEqual(missingDecision, decisions, '합성 missing ADR mutation이 적용되지 않았습니다.');
+  assert.throws(
+    () => assertExactAdrSet(registryIds, decisionMemoryAdrIds(missingDecision)),
+    new RegExp(`missing=\\[${removedId}\\]`, 'u'),
+  );
+
+  const statusDrift = decisions.replace(
+    `| ${removedId} | accepted |`,
+    `| ${removedId} | superseded |`,
+  );
+  assert.notEqual(statusDrift, decisions, '합성 ADR status mutation이 적용되지 않았습니다.');
+  assert.throws(
+    () => decisionMemoryAdrIds(statusDrift),
+    /Accepted ADR index 상태는 exact accepted여야 합니다/u,
+  );
+
+  const ghostId = 'ADR-9999';
+  assert.ok(!registryIds.includes(ghostId), `${ghostId}는 합성 ghost ID로 사용할 수 없습니다.`);
+  const ghostDecision = decisions.replace(
+    /\r?\n\r?\n## 운영 결정 index/u,
+    `\n| ${ghostId} | accepted | synthetic ghost | synthetic reason | synthetic source | 2099-01-01 | - |\n\n## 운영 결정 index`,
+  );
+  assert.notEqual(ghostDecision, decisions, '합성 ghost ADR mutation이 Accepted ADR 구간에 적용되지 않았습니다.');
+  assert.throws(
+    () => assertExactAdrSet(registryIds, decisionMemoryAdrIds(ghostDecision)),
+    new RegExp(`ghost=\\[${ghostId}\\]`, 'u'),
+  );
+
+  const qualifiedRegistry = [
+    '| ADR | 결정 | 상태 |',
+    '|---|---|---|',
+    '| [ADR-9001](ADR-9001.md) | plain | Accepted |',
+    '| [ADR-9002](ADR-9002.md) | qualified | Accepted — provisional scope |',
+    '| [ADR-9003](ADR-9003.md) | pending | Proposed |',
+  ].join('\n');
+  const qualifiedIds = acceptedAdrIds(qualifiedRegistry);
+  assert.deepEqual(qualifiedIds, ['ADR-9001', 'ADR-9002']);
+  assert.throws(
+    () => assertExactAdrSet(qualifiedIds, ['ADR-9001']),
+    /missing=\[ADR-9002\]/u,
+  );
+
+  const malformedIdRegistry = qualifiedRegistry.replace(
+    '[ADR-9001](ADR-9001.md)',
+    '[ADR-9001-old](ADR-9001.md)',
+  );
+  assert.notEqual(malformedIdRegistry, qualifiedRegistry, '합성 malformed ADR ID mutation이 적용되지 않았습니다.');
+  assert.throws(
+    () => acceptedAdrIds(malformedIdRegistry),
+    /ADR registry ID는 exact markdown link여야 합니다/u,
+  );
+
+  const duplicateIdRegistry = [
+    qualifiedRegistry,
+    '| [ADR-9001](ADR-9001-duplicate.md) | duplicate proposed row | Proposed |',
+  ].join('\n');
+  assert.throws(
+    () => acceptedAdrIds(duplicateIdRegistry),
+    /ADR registry에 중복 ID가 있습니다/u,
+  );
 });
 
 test('memory registries use unique IDs and allowed gap states', () => {

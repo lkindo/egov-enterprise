@@ -55,6 +55,32 @@ export const toQueryDate = (date: Date) => {
   return `${date.getFullYear()}-${month}-${day}`;
 };
 
+/**
+ * `toQueryDate` 의 역함수. URL 에서 읽은 날짜를 **검증해서** 받는다.
+ *
+ * ⚠ [2026-09-05] 종전에는 `new Date(searchParams.get('startDate')!)` 로 검증 없이 받았다.
+ *   그런데 **`new Date('bogus')` 는 Invalid Date 를 돌려주고 그 값은 truthy 다.** 그래서
+ *   `startDate ? format(startDate, 'yyyy.MM.dd') : …` 의 참 가지로 들어가 date-fns 가
+ *   `RangeError: Invalid time value` 를 던졌다(설치본 4.4.0 실측).
+ *
+ *   이 저장소는 전 페이지가 force-dynamic SSR 이라(DEC-OPS-011) 그 예외는 브라우저가 아니라
+ *   **서버 렌더 단계에서 터진다.** 즉 `?startDate=bogus` 링크 하나로 화면이 통째로 죽었다.
+ *
+ * 형식이 어긋나면 **없는 것으로 취급한다.** 이 화면의 다른 URL 파라미터와 같은 규약이다
+ * (`page` 는 하한 클램프, `orderBy` 는 기본값 폴백). 잘못된 값 때문에 화면이 죽는 것보다
+ * 필터가 안 걸린 목록을 보여 주는 편이 낫고, 사용자는 기간을 다시 고르면 된다.
+ *
+ * 왕복 검증을 쓰는 이유 — `new Date('2026-02-30')` 은 3월 2일로 **조용히 굴러간다.**
+ * 문자열을 다시 만들어 대조해야 그 굴림을 잡는다.
+ */
+export const fromQueryDate = (raw: string | null | undefined): Date | undefined => {
+  if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return undefined;
+  const [year, month, day] = raw.split('-').map(Number);
+  // 로컬 자정으로 만든다 — toQueryDate 가 로컬 연·월·일을 쓰므로 대칭을 맞춘다.
+  const parsed = new Date(year, month - 1, day);
+  return Number.isFinite(parsed.getTime()) && toQueryDate(parsed) === raw ? parsed : undefined;
+};
+
 export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPromise: Promise<any>; params: any }) => {
  const initialData = use(dataPromise);
  const searchParams = useSearchParams();
@@ -82,27 +108,27 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const [searchCnd, setSearchCnd] = useState(searchParams.get('searchCnd') || "0");
  const [orderBy, setOrderBy] = useState(searchParams.get('orderBy') || "date");
 
- const [startDate, setStartDate] = useState<Date | undefined>(searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined);
- const [endDate, setEndDate] = useState<Date | undefined>(searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined);
+ const [startDate, setStartDate] = useState<Date | undefined>(fromQueryDate(searchParams.get('startDate')));
+ const [endDate, setEndDate] = useState<Date | undefined>(fromQueryDate(searchParams.get('endDate')));
 
  // URL 파라미터 변경 시 로컬 상태 동기화
  useEffect(() => {
    setSearchWrd(searchParams.get('searchWrd') || "");
    setSearchCnd(searchParams.get('searchCnd') || "0");
    setOrderBy(searchParams.get('orderBy') || "date");
-   setStartDate(searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined);
-   setEndDate(searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined);
+   setStartDate(fromQueryDate(searchParams.get('startDate')));
+   setEndDate(fromQueryDate(searchParams.get('endDate')));
  }, [searchParams]);
 
  /*
-   [2026-09-04] 목록 URL 조립을 이 헬퍼 하나로 모았다(PD-UX-002 Q2).
+   [2026-09-04] 목록 URL 조립을 이 헬퍼 하나로 모았다(DEC-OPS-029 Q2, ADR-0009).
 
    종전에는 네 곳(조회·페이지 이동·이전달·다음달)이 각자
    `new URLSearchParams(searchParams.toString())` 로 **들어온 쿼리를 이름을 묻지 않고 전부 복사**한
    뒤 자기 키만 덮어썼다. 그 관용구는 모르는 파라미터까지 이동마다 재발행하는 캐리어다.
 
-   왜 지금 바꿨나 — Q1 결정이 무게를 바꿨다. Q1 은 "URL 에 실리는 검색어를 전부 유지" 로
-   결정됐고, 이 화면의 `searchCnd=2`(작성자) + `searchWrd` 조합은 **URL 에 사람 이름을 싣는다**.
+   왜 지금 바꿨나 — Q1과 ADR-0009는 업무 검색어를 화면별 allowlist 아래 URL에 허용했다.
+   이 화면의 `searchCnd=2`(작성자) + `searchWrd` 조합은 **URL 에 사람 이름을 싣는다**.
    copy-all 은 그 값의 증폭기였다.
 
    ⚠ `bbsId` 는 화면이 만든 값이 아니라 **DB 메뉴(`modern_route`)가 `?bbsId=` 로 지목하는
@@ -126,9 +152,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  };
 
  /*
-   [2026-09-04] `router.push` → `router.replace`(조회·페이지·월 이동 전부).
+  [2026-09-04] `router.push` → `router.replace`(조회·두 초기화·페이지·월 이동 전부).
    이것들은 새 화면이 아니라 같은 목록의 조건 변경이다. push 를 쓰면 조작할 때마다 히스토리
-   항목이 쌓이고, Q1 결정으로 그 항목마다 **사람 이름이 남는다**. 이 저장소의 다른 목록 화면은
+   항목이 쌓이고, 허용된 검색어의 사본마다 **사람 이름이 남는다**. 이 저장소의 다른 목록 화면은
    이미 replace 를 쓰며 사유를 적어 두었다(`admin/system/logs/use-log-url-state.ts:10`
    "히스토리를 오염시키지 않고"). 이 화면만 예외였다.
    대가: 뒤로가기가 이전 조건으로 돌아가지 않고 목록을 벗어난다 — 로그 화면과 같은 동작이다.
@@ -172,8 +198,17 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const querySearchCnd = searchParams.get('searchCnd') || "0";
  const queryOrderBy = searchParams.get('orderBy') || "date";
  const queryPage = Number(searchParams.get('page')) || 1;
- const queryStartDate = searchParams.get('startDate');
- const queryEndDate = searchParams.get('endDate');
+ /*
+   [2026-09-05] 서버로 보내는 값도 **검증을 통과한 것만** 쓴다.
+
+   종전에는 화면 상태(startDate)와 조회 조건(queryStartDate)이 URL 을 각자 읽었다. 검증을
+   화면 쪽에만 넣으면 `?startDate=bogus` 에서 **필터 칩은 비어 있는데 조회는 400** 이 되어
+   사용자가 이유를 알 수 없는 상태가 된다. 한 번 검증해 두 경로가 같은 값을 쓴다.
+ */
+ const queryStartDateValue = fromQueryDate(searchParams.get('startDate'));
+ const queryEndDateValue = fromQueryDate(searchParams.get('endDate'));
+ const queryStartDate = queryStartDateValue ? toQueryDate(queryStartDateValue) : null;
+ const queryEndDate = queryEndDateValue ? toQueryDate(queryEndDateValue) : null;
 
  // 필터가 적용된 상태인지 확인 (SSR 캐시 무효화 판단용)
  const hasFilter = !!querySearchWrd || querySearchCnd !== '0' || queryOrderBy !== 'date' || !!queryStartDate || !!queryEndDate;
@@ -259,7 +294,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const totalPages = data?.totalPage || 0;
 
  // URL 파라미터로 캘린더 상태 관리
- const currentViewDate = queryStartDate ? new Date(queryStartDate) : new Date();
+ // 검증을 통과한 값만 쓴다 — 종전에는 여기서도 원문을 new Date 에 넣어, 잘못된 값이면
+ // getFullYear()/getMonth() 가 NaN 이 되어 이전달·다음달 이동이 `NaN-NaN-NaN` 을 URL 에 실었다.
+ const currentViewDate = queryStartDateValue ?? new Date();
  const handlePrevMonth = () => {
    const d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() - 1, 1);
    const params = buildListParams({ startDate: toQueryDate(d) });
@@ -330,7 +367,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
                <p className="text-sm font-medium text-muted-foreground">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
                <button
                  onClick={() => {
-                   router.push(`${pathname}?bbsId=${bbsId}`);
+                  router.replace(`${pathname}?bbsId=${bbsId}`);
                  }}
                  className="mt-4 px-6 py-2.5 bg-surface-inverse text-surface-inverse-foreground font-bold text-sm rounded-xl hover:bg-surface-inverse/90 transition-all active:scale-95 flex items-center gap-2 mx-auto"
                  aria-label="필터 초기화"

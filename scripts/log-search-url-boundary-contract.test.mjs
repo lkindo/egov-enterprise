@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 /*
-  [2026-09-04] PD-UX-002 Q1 결정의 회귀 방지 계약.
+  [2026-09-05] ADR-0009 및 DEC-OPS-029 Q1 결정의 회귀 방지 계약.
 
   owner 판단으로 "현재 URL 에 실리는 검색어를 전부 유지한다" 가 결정됐고, 그 결과 저장소에는
   **의도된 비대칭**이 남는다:
@@ -31,6 +31,13 @@ const EXPORT_HELPER = 'frontend/src/app/components/patterns/full-result-export.t
 
 /** 로그 목록 상태 훅이 URL 과 동기화하는 파라미터 이름. 검색어 계열은 여기 없어야 한다. */
 const SEARCH_PARAM_NAMES = ['searchKeyword', 'searchWrd', 'keyword', 'q'];
+const LOG_EXPORT_OPERATION_IDS = [
+  'exportLoginLogs',
+  'exportPrivacyLogs',
+  'exportSystemLogs',
+  'exportUserLogs',
+  'exportWebLogs',
+];
 
 test('로그 목록 상태 훅은 검색어를 URL 파라미터로 동기화하지 않는다', () => {
   const source = read(LOG_URL_STATE);
@@ -39,6 +46,11 @@ test('로그 목록 상태 훅은 검색어를 URL 파라미터로 동기화하�
   // 파일이 통째로 바뀌어 아무 것도 안 하게 되면 아래 부재 단언이 공허하게 통과한다.
   assert.match(source, /useSearchParams/u, `${LOG_URL_STATE} 이 더 이상 URL 을 읽지 않습니다 — 계약 전제가 깨졌습니다.`);
   assert.match(source, /router\.replace/u, `${LOG_URL_STATE} 이 더 이상 URL 을 쓰지 않습니다 — 계약 전제가 깨졌습니다.`);
+  assert.doesNotMatch(
+    source,
+    /new URLSearchParams\(searchParams\.toString\(\)\)/u,
+    `${LOG_URL_STATE} 이 들어온 query를 통째로 복사하면 수동 주입된 검색어도 다시 전파됩니다.`,
+  );
 
   const offenders = SEARCH_PARAM_NAMES.filter((name) => {
     // 주석은 이 결정을 설명하느라 이름을 언급한다 — 실제 파라미터 사용만 본다.
@@ -52,7 +64,7 @@ test('로그 목록 상태 훅은 검색어를 URL 파라미터로 동기화하�
   assert.deepEqual(
     offenders,
     [],
-    '로그 화면이 검색어를 URL 에 싣기 시작했습니다. 2026-09-04 owner 결정은 이 화면의 현행(주소창 미노출) 유지입니다.',
+    '로그 화면이 검색어를 URL 에 싣기 시작했습니다. ADR-0009는 허용을 의무화하지 않으며 이 화면은 주소창 미노출을 유지합니다.',
   );
 });
 
@@ -62,13 +74,13 @@ test('전체 결과 내보내기는 검색어를 다운로드 쿼리에 계속 �
   assert.match(
     source,
     /query\.searchKeyword\s*=\s*searchKeyword/u,
-    'export 의 searchKeyword 전달이 사라졌습니다. 2026-09-04 owner 결정은 유지이며, 제거하려면 POST + Blob 전환과 DEC-OPS-016 영향 확인이 선행입니다.',
+    'export 의 searchKeyword 전달이 사라졌습니다. ADR-0009 §Decision 3을 바꾸려면 POST + Blob 전환과 DEC-OPS-016 영향 확인이 선행입니다.',
   );
 
   // 결정 근거가 소스에 남아 있어야 다음 사람이 "왜 비대칭인가" 를 코드에서 읽는다.
   assert.match(
     source,
-    /PD-UX-002/u,
+    /ADR-0009/u,
     'export 경로에서 결정 근거 주석이 사라졌습니다 — 비대칭의 사유가 코드에서 사라지면 다음 감사가 같은 오독을 반복합니다.',
   );
 });
@@ -76,12 +88,20 @@ test('전체 결과 내보내기는 검색어를 다운로드 쿼리에 계속 �
 test('비대칭의 사유가 로그 훅 주석에 남아 있다', () => {
   const source = read(LOG_URL_STATE);
 
-  assert.match(source, /PD-UX-002/u, '로그 훅에서 결정 참조가 사라졌습니다.');
+  assert.match(source, /ADR-0009/u, '로그 훅에서 현재 규범인 ADR-0009 참조가 사라졌습니다.');
   assert.match(
     source,
     /경계\s*=\s*주소창|경계는 주소창/u,
     '경계 정의(주소창)가 주석에서 사라졌습니다 — 이 문장이 없으면 export 와의 비대칭이 다시 결함으로 읽힙니다.',
   );
+});
+
+test('검색어를 받는 binary GET은 승인된 로그 export 5종에만 한정된다', () => {
+  const source = read(EXPORT_HELPER);
+  const union = source.match(/type LogExportOperationId\s*=([\s\S]*?);\s*type LogExportOperation/u);
+  assert.ok(union, '로그 export operation의 닫힌 타입 집합이 사라졌습니다.');
+  const ids = [...union[1].matchAll(/'([^']+)'/gu)].map((match) => match[1]).sort();
+  assert.deepEqual(ids, LOG_EXPORT_OPERATION_IDS, 'searchKeyword download URL의 operation 범위가 조용히 변했습니다.');
 });
 
 test('결정을 되돌리는 편집은 재현 가능한 red 다', () => {
@@ -99,7 +119,7 @@ test('결정을 되돌리는 편집은 재현 가능한 red 다', () => {
 });
 
 /*
-  [2026-09-04] PD-UX-002 Q2 — 게시판 목록의 copy-all 캐리어 제거를 고정한다.
+  [2026-09-05] ADR-0009 및 DEC-OPS-029 Q2 — 게시판 목록의 copy-all 캐리어 제거를 고정한다.
 
   Q1 이 "URL 에 실리는 검색어를 전부 유지" 로 결정되면서, 이 화면의
   `searchCnd=2`(작성자) + `searchWrd` 조합은 URL 에 사람 이름을 싣는 것이 승인된 상태가 됐다.
@@ -139,7 +159,7 @@ test('게시판 목록 조회는 들어온 쿼리를 통째로 복사하지 않�
   assert.equal(
     /new URLSearchParams\(\s*searchParams(\.toString\(\))?\s*\)/u.test(code),
     false,
-    'copy-all 관용구가 돌아왔습니다. 들어온 쿼리를 이름을 묻지 않고 재발행하면 URL 에 실린 사람 이름이 이동마다 보존됩니다(PD-UX-002 Q2).',
+    'copy-all 관용구가 돌아왔습니다. 들어온 쿼리를 이름을 묻지 않고 재발행하면 URL 에 실린 사람 이름이 이동마다 보존됩니다(ADR-0009).',
   );
   assert.match(code, /new URLSearchParams\(\)/u, 'allowlist 재조립(빈 URLSearchParams)이 사라졌습니다.');
 });
@@ -170,18 +190,23 @@ test('게시판 목록 allowlist 는 이 라우트가 읽는 키 전수를 담�
 test('게시판 목록의 조건 변경은 히스토리를 쌓지 않는다', () => {
   const code = executableLines(read(BOARD_LIST_CLIENT));
 
-  // 조립된 쿼리를 push 로 내보내는 형태만 금지한다.
-  // 게시판 전환(`?bbsId=${bbsId}` 리터럴)은 다른 게시판으로 가는 내비게이션이라 push 가 정당하고,
-  // allowlist 밖 값을 나를 수도 없으므로 이 계약의 대상이 아니다.
+  // 이 client의 모든 URL 변경은 같은 게시판 목록의 조회·두 초기화·페이지·월 이동이다.
+  // `?bbsId=${bbsId}` 리터럴도 empty-result 필터 초기화이므로 새 화면 이동이 아니다.
   assert.equal(
-    /router\.push\(`\$\{pathname\}\?\$\{params\.toString\(\)\}`\)/u.test(code),
+    /router\.push\(/u.test(code),
     false,
     '조건 변경이 router.push 로 되돌아갔습니다. 조작마다 히스토리 항목이 쌓이고 Q1 결정으로 그 항목마다 사람 이름이 남습니다.',
   );
+  assert.match(
+    code,
+    /aria-label="필터 초기화"[\s\S]{0,500}?router\.replace\(`\$\{pathname\}\?bbsId=\$\{bbsId\}`\)|router\.replace\(`\$\{pathname\}\?bbsId=\$\{bbsId\}`\)[\s\S]{0,500}?aria-label="필터 초기화"/u,
+    'empty-result 필터 초기화가 same-view replace를 사용해야 합니다.',
+  );
 
   const replaces = code.match(/router\.replace\(/gu) ?? [];
-  assert.ok(
-    replaces.length >= 4,
-    `조건 변경 경로가 replace 를 쓰지 않습니다(현재 ${replaces.length}곳). 조회·초기화·페이지·이전달·다음달이 대상입니다.`,
+  assert.equal(
+    replaces.length,
+    6,
+    `조건 변경 경로가 replace 를 쓰지 않습니다(현재 ${replaces.length}곳). 조회·두 초기화·페이지·이전달·다음달이 대상입니다.`,
   );
 });

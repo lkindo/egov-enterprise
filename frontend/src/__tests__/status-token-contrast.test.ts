@@ -115,7 +115,7 @@ describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile
   );
 
   it('surface-inverse 위 상태 텍스트: --warning 이 고정 다크 서피스에서 4.5:1 이상이다', () => {
-    // WorkflowHubClient·notification-sender 가 실제로 쓰는 조합. surface-inverse 는
+    // WorkflowHubClient 가 실제로 쓰는 조합(notification-sender 는 2026-09-06 에 걷었다). surface-inverse 는
     // 모드와 무관하게 어두운 고정 서피스이므로 라이트 값 기준 한 번만 검사한다.
     const ratio = contrast(get(light, '--warning'), get(light, '--surface-inverse'));
     expect(

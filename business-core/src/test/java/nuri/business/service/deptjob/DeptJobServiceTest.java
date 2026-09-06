@@ -7,17 +7,22 @@ import nuri.business.domain.deptjob.DeptJobBoxRepository;
 import nuri.business.domain.deptjob.DeptJobRepository;
 import nuri.business.domain.organization.OrganizationManage;
 import nuri.business.domain.organization.OrganizationManageRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.service.deptjob.dto.DeptJobMapper;
 import nuri.business.service.deptjob.dto.DeptJobMapperImpl;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Spy;
@@ -25,8 +30,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,6 +58,9 @@ class DeptJobServiceTest {
 
     @Mock
     private OrganizationManageRepository organizationManageRepository;
+
+    @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     // 실제 MapStruct 생성 구현(DeptJobMapperImpl)을 spy 로 주입 — 수기 from() 과 동일 매핑 거동 보장
     @Spy
@@ -77,6 +89,23 @@ class DeptJobServiceTest {
                 .prrtyRnk("1")
                 .atchFileSn(101L)
                 .build();
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private static void authenticateAs(String loginId, String esntlId) {
+        CustomUserDetails principal = CustomUserDetails.builder()
+                .userId(loginId)
+                .esntlId(esntlId)
+                .userNm("tester")
+                .password("N/A")
+                .authorityCodes(List.of("ROLE_USER"))
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
 
     private void mockToDtoDependencies() {
@@ -178,8 +207,9 @@ class DeptJobServiceTest {
 
         DeptJob persisted = DeptJob.builder().deptTaskSn(2L).deptTaskNm("Test Job").build();
         when(deptJobRepository.save(any(DeptJob.class))).thenReturn(persisted);
+        authenticateAs("tester", "USR_TESTER");
 
-        Long result = deptJobService.createDeptJob("USR_TESTER", dto);
+        Long result = deptJobService.createDeptJob(dto);
 
         ArgumentCaptor<DeptJob> captor = ArgumentCaptor.forClass(DeptJob.class);
         verify(deptJobRepository, times(1)).save(captor.capture());
@@ -196,8 +226,9 @@ class DeptJobServiceTest {
         dto.setDeptTaskNm("담당자 미지정 업무");
 
         when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
+        authenticateAs("tester", "USR_TESTER");
 
-        deptJobService.createDeptJob("USR_TESTER", dto);
+        deptJobService.createDeptJob(dto);
 
         ArgumentCaptor<DeptJob> captor = ArgumentCaptor.forClass(DeptJob.class);
         verify(deptJobRepository).save(captor.capture());
@@ -212,12 +243,145 @@ class DeptJobServiceTest {
         dto.setPicId("USR_OTHER");
 
         when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
+        authenticateAs("tester", "USR_TESTER");
 
-        deptJobService.createDeptJob("USR_TESTER", dto);
+        deptJobService.createDeptJob(dto);
 
         ArgumentCaptor<DeptJob> captor = ArgumentCaptor.forClass(DeptJob.class);
         verify(deptJobRepository).save(captor.capture());
         assertEquals("USR_OTHER", captor.getValue().getPicId());
+    }
+
+    @Test
+    @DisplayName("부서업무 생성 - 인증 정보가 없으면 저장하지 않는다")
+    void createDeptJob_rejectsMissingAuthentication() {
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("인증 없는 업무");
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobService.createDeptJob(dto));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        verify(deptJobRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("부서업무 생성 - 인증되지 않은 CustomUserDetails token은 actor로 신뢰하지 않는다")
+    void createDeptJob_rejectsUnauthenticatedCustomPrincipal() {
+        CustomUserDetails principal = CustomUserDetails.builder()
+                .userId("tester")
+                .esntlId("USR_TESTER")
+                .userNm("tester")
+                .password("N/A")
+                .authorityCodes(List.of("ROLE_USER"))
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.unauthenticated(principal, "N/A"));
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("미인증 token 업무");
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobService.createDeptJob(dto));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        verify(deptJobRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("부서업무 생성 - CustomUserDetails가 아닌 문자열 principal은 actor로 신뢰하지 않는다")
+    void createDeptJob_rejectsStringPrincipal() {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "USR_STRING", "N/A", List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("문자열 principal 업무");
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobService.createDeptJob(dto));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        verify(deptJobRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("부서업무 생성 - 첨부는 저장 전에 연결 권한을 검증한다")
+    void createDeptJob_checksAttachmentBeforeSave() {
+        authenticateAs("tester", "USR_TESTER");
+        when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(inv -> inv.getArgument(0));
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("첨부 업무");
+        dto.setAtchFileSn(202L);
+
+        deptJobService.createDeptJob(dto);
+
+        InOrder order = inOrder(attachmentAssignmentPolicy, deptJobRepository);
+        order.verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        order.verify(deptJobRepository).save(any(DeptJob.class));
+    }
+
+    @Test
+    @DisplayName("부서업무 생성 - 연결 권한이 없는 첨부는 업무를 저장하지 않는다")
+    void createDeptJob_rejectsUnattachableFile() {
+        authenticateAs("tester", "USR_TESTER");
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(202L);
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("타인 첨부 연결 시도");
+        dto.setAtchFileSn(202L);
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobService.createDeptJob(dto));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        verify(deptJobRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("부서업무 생성 - 존재하지 않는 첨부는 404로 거부한다")
+    void createDeptJob_rejectsMissingFile() {
+        authenticateAs("tester", "USR_TESTER");
+        doThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND))
+                .when(attachmentAssignmentPolicy).assertAssignable(404L);
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("없는 첨부 업무");
+        dto.setAtchFileSn(404L);
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobService.createDeptJob(dto));
+
+        assertEquals(CommonErrorCode.RESOURCE_NOT_FOUND, error.getErrorCode());
+        verify(deptJobRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("부서업무 수정 - 새 첨부 연결이 거부되면 기존 업무를 바꾸지 않는다")
+    void updateDeptJob_rejectsUnattachableReplacement() {
+        authenticateAs("tester", "USER1");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(202L);
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("바뀌면 안 되는 제목");
+        dto.setAtchFileSn(202L);
+
+        assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, dto));
+
+        assertEquals("Test Job", deptJob.getDeptTaskNm());
+        assertEquals(101L, deptJob.getAtchFileSn());
+    }
+
+    @Test
+    @DisplayName("부서업무 수정 - 기존 첨부를 그대로 보내면 재연결 권한을 다시 요구하지 않는다")
+    void updateDeptJob_keepsExistingAttachmentWithoutReauthorization() {
+        authenticateAs("tester", "USER1");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("기존 첨부 유지");
+        dto.setAtchFileSn(101L);
+
+        deptJobService.updateDeptJob(1L, dto);
+
+        verifyNoInteractions(attachmentAssignmentPolicy);
+        assertEquals(101L, deptJob.getAtchFileSn());
     }
 
     @Test

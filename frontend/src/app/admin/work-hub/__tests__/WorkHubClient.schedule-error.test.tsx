@@ -91,6 +91,8 @@ vi.mock('@/services/business/user/ReportService', () => ({
   },
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+// [2026-09-06 DEC-OPS-037] WorkHubClient 가 관리자 판정(useAuth)을 읽는다 — 이 스펙은 일정 오류 소유권만 보므로 비관리자로 고정한다.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: 'ROLE_USER' } }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/business/schedule/deptScheduleService', () => ({
   getDeptScheduleMonthList: vi.fn(),
@@ -212,6 +214,34 @@ describe('WorkHubClient schedule error ownership', () => {
     expect(mocks.toast).not.toHaveBeenCalledWith(expect.any(String), 'error');
     expect(dialog).toBeVisible();
     expect(submit).not.toBeDisabled();
+  });
+
+  it('업무 보고 수정은 저장된 일자를 표시하고 변경한 yyyyMMdd 값을 전송한다', async () => {
+    mocks.tab = 'report';
+    mocks.reportRows = [{
+      rptpSn: 23,
+      rptTtl: '기존 보고',
+      rptCn: null,
+      rptSeCd: null,
+      atchFileSn: null,
+      rptYmd: '20260901',
+      userId: 'writer',
+    }];
+    const user = userEvent.setup();
+
+    render(<WorkHubClient defaultTab="report" initialYmd="20260906" />);
+    await user.click(screen.getByRole('button', { name: '기존 보고 보고 수정' }));
+    const dialog = screen.getByRole('dialog', { name: '업무 보고 수정' });
+    const reportDate = within(dialog).getByLabelText(/보고 일자/);
+    expect(reportDate).toHaveValue('2026-09-01');
+
+    fireEvent.change(reportDate, { target: { value: '2026-09-02' } });
+    await user.click(within(dialog).getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => expect(mocks.updateReport).toHaveBeenCalledWith(23, expect.objectContaining({
+      rptTtl: '기존 보고',
+      rptYmd: '20260902',
+    })));
   });
 
   it('보고 등록의 일반 오류는 폼에 안내하고 편집 중인 모달과 값을 유지한다', async () => {

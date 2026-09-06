@@ -102,13 +102,17 @@ async function authenticate(request: APIRequestContext, id: string, password: st
     }
 
     const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';
-    const domain = new URL(webUrl).hostname;
-    // 프로덕션 정합: accessToken 은 HttpOnly(브라우저 JS 미접근). userRole 쿠키·localStorage accessToken 은
-    // 어떤 프로덕션 코드도 소비하지 않는 죽은 잔재라 제거한다. egov_smart_tour_v1 은 투어 오버레이 억제용 살아있는 의존.
-    const storageState = {
+    const webOrigin = new URL(webUrl);
+    const domain = webOrigin.hostname;
+    // 이 storageState는 제품의 쿠키 발급 증거가 아닌 테스트 fixture다. 제품의 local-loopback
+    // 예외를 복제하지 않고 Secure·SameSite=Strict를 항상 사용한다. 실제 발급 정책은 Route Handler
+    // 런타임 테스트와 required CI의 UI login/reissue 검증이 소유한다.
+    // accessToken은 HttpOnly(브라우저 JS 미접근). userRole 쿠키·localStorage accessToken은
+    // 어떤 제품 코드도 소비하지 않는 죽은 잔재라 제거한다. egov_smart_tour_v1은 투어 오버레이 억제용 살아있는 의존.
+    writePrivateStorageState(authFilePath, {
         cookies: [
-            { name: 'accessToken', value: token, domain: domain, path: '/', expires: -1, httpOnly: true, secure: false, sameSite: 'Lax' as const },
-            { name: 'refreshToken', value: refreshToken, domain: domain, path: '/', expires: -1, httpOnly: true, secure: false, sameSite: 'Lax' as const }
+            { name: 'accessToken', value: token, domain: domain, path: '/', expires: -1, httpOnly: true, secure: true, sameSite: 'Strict' as const },
+            { name: 'refreshToken', value: refreshToken, domain: domain, path: '/', expires: -1, httpOnly: true, secure: true, sameSite: 'Strict' as const }
         ],
         origins: [
             {
@@ -118,9 +122,7 @@ async function authenticate(request: APIRequestContext, id: string, password: st
                 ]
             }
         ]
-    };
-
-    writePrivateStorageState(authFilePath, storageState);
+    });
     console.log('>>> SUCCESS: Authentication storage state generated.');
 }
 

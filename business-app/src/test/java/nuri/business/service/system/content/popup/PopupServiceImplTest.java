@@ -1,8 +1,10 @@
 package nuri.business.service.system.content.popup;
 
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.system.content.popup.Popup;
 import nuri.business.domain.system.content.popup.PopupDomainRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.system.content.popup.dto.PopupDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,9 @@ class PopupServiceImplTest {
 
     @Mock
     private PopupDomainRepository popupRepository;
+
+    @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     @InjectMocks
     private PopupService popupService;
@@ -150,6 +155,89 @@ class PopupServiceImplTest {
     }
 
     @Test
+    @DisplayName("팝업 등록 - canonical 및 legacy 내부 첨부 URL은 정확한 ID를 검증한다")
+    void createPopup_internalAttachmentUrlsAreValidated() {
+        given(popupRepository.save(any(Popup.class)))
+                .willReturn(Popup.builder().popupSn(1L).build());
+
+        popupService.createPopup("admin", PopupDto.builder()
+                .popupTtlNm("Canonical")
+                .fileUrl("/api/v1/files/101")
+                .build());
+        popupService.createPopup("admin", PopupDto.builder()
+                .popupTtlNm("Legacy")
+                .fileUrl("/api/v1/files/download?fileId=202")
+                .build());
+
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+        verify(attachmentAssignmentPolicy).assertAssignable(202L);
+    }
+
+    @Test
+    @DisplayName("팝업 등록 - 외부 URL과 일반 내부 자산 경로는 첨부 검증 대상이 아니다")
+    void createPopup_nonAttachmentUrlsRemainAllowed() {
+        given(popupRepository.save(any(Popup.class)))
+                .willReturn(Popup.builder().popupSn(1L).build());
+
+        popupService.createPopup("admin", PopupDto.builder()
+                .popupTtlNm("External")
+                .fileUrl("https://cdn.example.test/api/v1/files/101")
+                .build());
+        popupService.createPopup("admin", PopupDto.builder()
+                .popupTtlNm("Asset")
+                .fileUrl("/assets/popup.html")
+                .build());
+
+        verifyNoInteractions(attachmentAssignmentPolicy);
+        verify(popupRepository, times(2)).save(any(Popup.class));
+    }
+
+    @Test
+    @DisplayName("팝업 등록 - 내부 첨부 prefix를 쓴 비정상 URL은 fail-closed한다")
+    void createPopup_malformedInternalAttachmentUrlFailsClosed() {
+        List<String> malformed = List.of(
+                "/api/v1/files/",
+                "/api/v1/files/0",
+                "/api/v1/files/000101",
+                "/api/v1/files/101/extra",
+                "/api/v1/files/101?download=true",
+                "/api/v1/files/download?fileId=abc",
+                "/api/v1/files/download?fileId=0",
+                "/api/v1/files/download?fileId=000202",
+                "/api/v1/files/download?fileId=202&download=true",
+                "/api/v1/files/download?fileId=202#fragment",
+                "/api/v1/files/not-a-number",
+                "/api/v1/files/999999999999999999999999999999");
+
+        for (String fileUrl : malformed) {
+            assertThatThrownBy(() -> popupService.createPopup("admin", PopupDto.builder()
+                            .popupTtlNm("Malformed")
+                            .fileUrl(fileUrl)
+                            .build()))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(error -> ((BusinessException) error).getErrorCode())
+                    .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        verifyNoInteractions(attachmentAssignmentPolicy, popupRepository);
+    }
+
+    @Test
+    @DisplayName("팝업 등록 - 첨부 할당 거부 시 저장하지 않는다")
+    void createPopup_deniedAttachmentDoesNotSave() {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        assertThatThrownBy(() -> popupService.createPopup("admin", PopupDto.builder()
+                        .popupTtlNm("Denied")
+                        .fileUrl("/api/v1/files/101")
+                        .build()))
+                .isInstanceOf(BusinessException.class);
+
+        verifyNoInteractions(popupRepository);
+    }
+
+    @Test
     @DisplayName("팝업 수정 - 성공")
     void updatePopup_Success() {
         // given
@@ -175,6 +263,52 @@ class PopupServiceImplTest {
         assertThat(popup.getNtceBgnde()).isEqualTo(LocalDate.of(2026, 2, 1));
         assertThat(popup.getNtceEndde()).isEqualTo(LocalDate.of(2026, 2, 28));
         assertThat(popup.getLastMdfrId()).isEqualTo("updater");
+    }
+
+    @Test
+    @DisplayName("팝업 수정 - 같은 첨부 유지와 null 분리는 재할당 검증을 건너뛴다")
+    void updatePopup_sameOrDetachedAttachmentSkipsAssignmentCheck() {
+        Popup popup = Popup.builder()
+                .popupSn(1L)
+                .popupTtlNm("OLD")
+                .fileUrl("/api/v1/files/101")
+                .build();
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
+
+        popupService.updatePopup(1L, "updater", PopupDto.builder()
+                .popupTtlNm("NEW")
+                .fileUrl("/api/v1/files/download?fileId=101")
+                .build());
+        popupService.updatePopup(1L, "updater", PopupDto.builder()
+                .popupTtlNm("DETACHED")
+                .fileUrl(null)
+                .build());
+
+        verifyNoInteractions(attachmentAssignmentPolicy);
+        assertThat(popup.getFileUrl()).isNull();
+    }
+
+    @Test
+    @DisplayName("팝업 수정 - 새 내부 첨부 할당 거부 시 기존 엔티티를 변경하지 않는다")
+    void updatePopup_deniedChangedAttachmentDoesNotMutate() {
+        Popup popup = Popup.builder()
+                .popupSn(1L)
+                .popupTtlNm("OLD")
+                .fileUrl("/api/v1/files/100")
+                .build();
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        assertThatThrownBy(() -> popupService.updatePopup(1L, "updater", PopupDto.builder()
+                        .popupTtlNm("NEW")
+                        .fileUrl("/api/v1/files/101")
+                        .build()))
+                .isInstanceOf(BusinessException.class);
+
+        assertThat(popup.getPopupTtlNm()).isEqualTo("OLD");
+        assertThat(popup.getFileUrl()).isEqualTo("/api/v1/files/100");
+        assertThat(popup.getLastMdfrId()).isNull();
     }
 
     @Test

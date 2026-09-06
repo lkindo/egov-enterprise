@@ -6,7 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { onlinePollAdminService, type OnlinePollDto } from '@/services/foundation/system/OnlinePollAdminService';
+// [2026-09-06 DEC-OPS-041] 관리 화면도 /api/v1/polls 를 쓴다 — 같은 서비스를 감싸던 /admin/system/polls 컨트롤러는 제거됐다.
+import { pollUserService } from '@/services/business/user/poll/PollUserService';
+import type { OnlinePollDto } from '@/types/business/poll';
 import {
  Vote,
  Plus,
@@ -62,7 +64,7 @@ export default function OnlinePollAdminClient() {
  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
  // 페이지는 URL 파생값이다 — 공유·새로고침·뒤로가기에서 위치가 복원된다(P1-7).
- // 검색어는 개인정보 노출 우려로 URL 에 싣지 않는다(감사 D-13, 제품 보류 항목).
+ // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
  const pageParam = Number(searchParams.get('page') ?? '0');
  const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 0;
 
@@ -88,7 +90,7 @@ export default function OnlinePollAdminClient() {
 
  const { data, isLoading, isError, error, refetch } = useQuery({
  queryKey: ['admin-online-polls', page, debouncedKeyword, pageSize],
- queryFn: () => onlinePollAdminService.getPollList({ keyword: debouncedKeyword, page, size: pageSize }),
+ queryFn: () => pollUserService.getPollList({ searchKeyword: debouncedKeyword, page, size: pageSize }),
  });
 
  const polls: OnlinePollDto[] = data?.list || [];
@@ -153,7 +155,7 @@ export default function OnlinePollAdminClient() {
  savingRef.current = true;
  setIsSaving(true);
  try {
- await onlinePollAdminService.createPoll(validated);
+ await pollUserService.createPoll(validated);
  success('새 설문을 등록했습니다.');
  setIsAddOpen(false);
  setNewPoll(emptyPoll());
@@ -242,9 +244,9 @@ export default function OnlinePollAdminClient() {
 
  return (
  <WorkListPage
- title="온라인 설문 관리"
- description="전사 사용자 피드백 설문을 조회·등록하고 참여 현황을 확인합니다."
- breadcrumbItems={[{ label: '설문조사' }, { label: '온라인 설문 관리' }]}
+ title="온라인 투표 관리"
+ description="항목 하나를 고르는 온라인 투표를 조회·등록하고 참여 현황을 확인합니다. 문항형 설문조사는 설문 허브에서 관리합니다."
+ breadcrumbItems={[{ label: '설문조사' }, { label: '온라인 투표 관리' }]}
  filterStateKey="survey-polls"
  totalCount={isError ? undefined : totalCount}
  actions={
@@ -295,7 +297,7 @@ export default function OnlinePollAdminClient() {
  }
  >
  <StandardDataTable
- accessibleLabel="온라인 설문 목록"
+ accessibleLabel="온라인 투표 목록"
  columns={columns}
  data={polls}
  loading={isLoading}
@@ -303,7 +305,7 @@ export default function OnlinePollAdminClient() {
  error={isError ? error : null}
  onRetry={() => void refetch()}
  keyField="pollSn"
- emptyMessage={emptyResultMessage(keyword, '등록된 온라인 설문이 없습니다.')}
+ emptyMessage={emptyResultMessage(keyword, '등록된 온라인 투표가 없습니다.')}
  className="border-none bg-transparent"
  pagination={{
  currentPage: page + 1,

@@ -2,7 +2,9 @@ import { AxiosRequestConfig } from 'axios';
 import { AdminService } from '@/services/core/ApiService';
 import type { components } from '@/types/generated-api';
 import {
+  deleteTmplatInfoOperation,
   insertTmplatInfoOperation,
+  updateTmplatInfoOperation,
   selectTmplatInfoDetailOperation,
   selectTmplatInfoListOperation,
 } from '@/types/generated-operations';
@@ -38,6 +40,15 @@ class TemplateAdminService extends AdminService {
   /** 템플릿등록 */
   async createTemplate(tmplatInfo: TmplatInfo, config?: AxiosRequestConfig) {
     return this.executeGenerated(insertTmplatInfoOperation, { body: tmplatInfo, config });
+  }
+
+  /* [2026-09-05 DEC-OPS-036] 정정 경로 — 종전에는 등록·조회만 가능했다(감사 D11-02). ID 는 경로에 싣고 본문의 ID 는 무시된다. */
+  async updateTemplate(tmpltId: string, tmplatInfo: TmplatInfo, config?: AxiosRequestConfig) {
+    return this.executeGenerated(updateTmplatInfoOperation, { path: { tmpltId }, body: tmplatInfo, config });
+  }
+
+  async deleteTemplate(tmpltId: string, config?: AxiosRequestConfig): Promise<void> {
+    await this.executeGenerated(deleteTmplatInfoOperation, { path: { tmpltId }, config });
   }
 }
 

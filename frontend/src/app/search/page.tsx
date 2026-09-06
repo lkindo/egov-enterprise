@@ -24,10 +24,10 @@ import SearchResultsSlot from './SearchResultsSlot';
  * <p>회귀 방어: `__tests__/SearchClient.hydration.test.tsx` — 렌더 도중 `useSearchParams()` 를
  * 읽으면 red 가 된다.
  *
- * <p><b>[2026-09-04 owner 결정] 검색어 `?q=` 를 URL 에 유지한다</b>(PD-UX-002 Q1).
+ * <p><b>[2026-09-05 규범 확정] 검색어 `?q=` 를 URL 에 유지한다</b>(ADR-0009, DEC-OPS-029 Q1).
  * 이 화면은 "게시글 제목, 임직원 성명, 메뉴 이름을 찾습니다" 라고 고지하고 백엔드도
  * "성명 부분일치로 조회" 라고 명시한다 — 즉 <b>사람 이름 입력은 오용이 아니라 설계된 용도</b>이고,
- * 그 사실이 알려진 채 URL 유지가 승인됐다. URL 에서 빼려면 위 GET 폼 구조를 포기해야 하고,
+ * 그 사실과 브라우저·프록시 기록의 잔여 위험이 알려진 채 화면별 allowlist로 승인됐다. URL 에서 빼려면 위 GET 폼 구조를 포기해야 하고,
  * 그러면 JS 로드 전 동작 상실과 함께 이 주석이 기록한 React #418 계열이 다시 열린다.
  */
 export default function Page({

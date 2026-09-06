@@ -56,7 +56,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
    setSearchKeyword('');
    const params = new URLSearchParams(searchParams.toString());
    params.set('tab', tab);
-   // 검색어는 URL 에 싣지 않는다(개인정보 노출 우려 — 감사 D-13 보류 항목).
+   // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
  }, [pathname, router, searchParams]);
 

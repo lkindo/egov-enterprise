@@ -1,14 +1,15 @@
 package nuri.business.service.report;
-import nuri.foundation.core.exception.CommonErrorCode;
 
-import nuri.business.domain.report.WorkReport;
-import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.domain.report.WorkReportRepository;
-import nuri.business.service.report.dto.WorkReportDto;
-import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
+import nuri.business.domain.report.WorkReport;
+import nuri.business.domain.report.WorkReportRepository;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.security.AuthorityConstants;
 import nuri.business.security.util.SecurityUtil;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
+import nuri.business.service.report.dto.WorkReportDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,9 +31,15 @@ public class WorkReportService extends BaseAbstractService {
 
     private final WorkReportRepository workReportRepository;
     private final UserRepository userRepository;
+    private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     @Transactional
-    public void createWorkReport(String userId, WorkReportDto dto) {
+    public void createWorkReport(WorkReportDto dto) {
+        String actorLoginId = currentLoginId();
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
         WorkReport entity = WorkReport.builder()
                 .rptTtl(dto.getRptTtl())
                 .rptCn(dto.getRptCn())
@@ -40,8 +47,8 @@ public class WorkReportService extends BaseAbstractService {
                 .rptYmd(dto.getRptYmd())
                 // [작성자 고정] 종전에는 dto.getUserId() 를 그대로 복사해 ① 미전송 시 null 이 되고
                 //   ② 타인 명의로 위조할 수 있었다. 인증 주체로 고정한다(Schedule·Board 와 동일 패턴).
-                .userId(userId)
-                .atchFileSn(dto.getAtchFileSn())
+                .userId(actorLoginId)
+                .atchFileSn(atchFileSn)
                 .build();
         workReportRepository.save(entity);
     }
@@ -54,7 +61,11 @@ public class WorkReportService extends BaseAbstractService {
         // 소유권 검증(IDOR 방어): 작성자(frstRgtrId=loginId) 본인 또는 관리자만 수정 가능.
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
 
-        entity.update(dto.getRptTtl(), dto.getRptCn(), dto.getAtchFileSn(), dto.getRptSeCd());
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+        entity.update(dto.getRptTtl(), dto.getRptCn(), atchFileSn, dto.getRptSeCd(), dto.getRptYmd());
         // lastMdfrId 는 @LastModifiedBy 감사자가 loginId 로 기록한다.
         // 클라이언트 DTO 값(dto.getUserId())으로 세팅하면 감사자 위조가 되므로 수동 설정하지 않는다.
     }
@@ -162,9 +173,17 @@ public class WorkReportService extends BaseAbstractService {
                 .rptTtl(entity.getRptTtl())
                 .rptCn(entity.getRptCn())
                 .rptSeCd(entity.getRptSeCd())
+                .rptSttsCd(entity.getRptSttsCd())
+                .rptYmd(entity.getRptYmd())
                 .userId(entity.getUserId())
                 .userNm(authorName)
                 .atchFileSn(entity.getAtchFileSn())
                 .build();
+    }
+
+    /** 인증 주체의 loginId가 없으면 가짜 소유자를 만들지 않고 저장 전에 거부한다. */
+    private String currentLoginId() {
+        return SecurityUtil.getCurrentLoginId()
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
     }
 }

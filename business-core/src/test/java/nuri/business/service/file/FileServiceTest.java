@@ -327,12 +327,14 @@ class FileServiceTest {
     }
 
     @Test
-    @DisplayName("파일 단건 삭제")
+    @DisplayName("파일 단건 삭제 — 삭제 판정을 통과한 뒤 저장소와 행을 지운다")
     void deleteFile() throws IOException {
         // given
         Long atchFileSn = 123L;
         Integer fileSn = 1;
+        FileMaster master = new FileMaster(atchFileSn);
         FileDetail detail = FileDetail.builder()
+                .fileMaster(master)
                 .strgFileNm("stored.jpg")
                 .fileStrgPath("path")
                 .build();
@@ -343,8 +345,31 @@ class FileServiceTest {
         fileService.deleteFile(atchFileSn, fileSn);
 
         // then
+        verify(accessPolicy).assertDeletable(master);
         verify(storageService, times(1)).delete("stored.jpg", "path");
         verify(fileDetailRepository, times(1)).delete(detail);
+    }
+
+    @Test
+    @DisplayName("[인가] 삭제 판정이 거부하면 저장소도 행도 건드리지 않는다 — 거부가 실효적임을 증명")
+    void deleteFile_deniedByPolicy_doesNotTouchStorageOrRow() throws IOException {
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
+        FileDetail detail = FileDetail.builder()
+                .fileMaster(master)
+                .strgFileNm("stored.jpg")
+                .fileStrgPath("path")
+                .build();
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt()))
+                .willReturn(Optional.of(detail));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(accessPolicy).assertDeletable(master);
+
+        assertThatThrownBy(() -> fileService.deleteFile(atchFileSn, 1))
+                .isInstanceOf(BusinessException.class);
+
+        verify(storageService, never()).delete(anyString(), anyString());
+        verify(fileDetailRepository, never()).delete(any(FileDetail.class));
     }
 
     @Test
@@ -364,7 +389,26 @@ class FileServiceTest {
         fileService.updateFiles(atchFileSn, Collections.singletonList(newFile));
 
         // then
+        verify(accessPolicy).assertAttachable(master);
         verify(fileDetailRepository, times(1)).save(any(FileDetail.class));
+    }
+
+    @Test
+    @DisplayName("파일 수정 - 원 업로더가 아니면 상세 조회와 물리 저장 전에 거부한다")
+    void updateFiles_deniedAssignmentHasNoDetailOrStorageSideEffect() {
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(accessPolicy).assertAttachable(master);
+
+        assertThatThrownBy(() -> fileService.updateFiles(
+                atchFileSn, Collections.singletonList(validJpeg("new.jpg"))))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        verify(accessPolicy).assertAttachable(master);
+        verifyNoInteractions(fileDetailRepository, storageService);
     }
 
     @Test

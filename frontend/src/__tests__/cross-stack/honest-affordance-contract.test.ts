@@ -74,12 +74,33 @@ describe('포상: 없는 승인 절차를 약속하지 않는다', () => {
     expect(client).not.toContain("lastMdfrId: 'SYSTEM'");
   });
 
-  it('승인 갱신 경로가 실제로 없다 — 있는데도 열을 지웠다면 이 계약이 틀린 것이다', () => {
+  it('승인 상태를 바꾸는 갱신 경로가 실제로 없다 — 있는데도 열을 지웠다면 이 계약이 틀린 것이다', () => {
+    /*
+     * [2026-09-05 DEC-OPS-036] 포상에 PUT(수정)·DELETE 가 생겼다. 그러나 열을 지운 근거였던 "승인 상태를
+     * 바꾸는 경로가 없다" 는 그대로다 — PUT 은 화면이 편집하는 다섯 필드(수상자·코드·일자·명칭·공적)만
+     * 갱신하고 승인 필드(confmYn·aprvDt·atrzrId·rtnRsnCn)는 건드리지 않는다. 승인 기능을 만들 때 열을 되살린다.
+     */
     const controller = readRepo(
       'api-server/src/main/java/nuri/api/controller/business/operation/RewardManageApiController.java',
     );
-    expect(controller).not.toContain('@PutMapping');
+    expect(controller, '수정 경로가 사라졌다 — 감사 D11-01 정정 경로 회귀').toContain('@PutMapping');
     expect(controller).not.toContain('@PatchMapping');
+
+    const service = stripComments(readRepo(
+      'business-app/src/main/java/nuri/business/service/operation/RewardManageService.java',
+    ));
+    const updateStart = service.indexOf('public RewardManageDto updateReward(');
+    expect(updateStart, 'updateReward 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    const updateBody = service.slice(updateStart, service.indexOf('}', service.indexOf('reward.update(', updateStart)));
+    for (const approvalField in { confmAt: 1, sanctnDt: 1, sanctnerId: 1, returnResn: 1, confmYn: 1, aprvDt: 1 }) {
+      expect(updateBody, `updateReward 가 승인 필드(${approvalField})를 갱신한다 — 열을 되살리고 이 계약을 갱신하라`)
+        .not.toContain(approvalField);
+    }
+
+    const entity = stripComments(readRepo('business-app/src/main/java/nuri/business/domain/operation/RewardManage.java'));
+    const updateSignature = entity.slice(entity.indexOf('public void update('), entity.indexOf('{', entity.indexOf('public void update(')));
+    expect(updateSignature).not.toContain('confmYn');
+    expect(updateSignature).not.toContain('aprvDt');
   });
 });
 
@@ -254,10 +275,18 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
   });
 
   it('회원 수 API 가 여전히 없다 — 생기면 이 계약을 갱신하고 값을 되살려야 한다', () => {
-    const controller = readRepo(
+    const controller = stripComments(readRepo(
       'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java',
-    );
-    expect(stripComments(controller)).not.toContain('members');
+    ));
+    /*
+     * [2026-09-06 DEC-OPS-043] 사용자 API 에 **내 멤버십 상태**(/{cmntySn}/membership — principal 자신의 행 하나)가
+     * 생겼다. 그것은 회원 수도 회원 목록도 아니다 — 회원 수·목록을 사용자에게 내려주는 경로는 여전히 없으므로
+     * 화면은 회원 수를 계속 지어내지 않는다. 종전의 부분 문자열 검사('members')는 'membership' 까지 잡아
+     * 실제 절차를 막았으므로 매핑 경로·필드 이름으로 정밀화한다.
+     */
+    expect(controller).toContain('/{cmntySn}/membership');
+    expect(controller).not.toMatch(/"\/\{cmntySn\}\/members"/);
+    expect(controller).not.toMatch(/memberCount|mbrCnt|getMembers\(/);
   });
 });
 
@@ -838,7 +867,7 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
 
   it('게시 기간을 집행하지 않으면서 노출을 제어한다고 말하지 않는다', () => {
     const write = stripComments(
-      readSrc('app/admin/community/boards/write/CommunityBoardsWriteClient.tsx'),
+      readSrc('app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'),
     );
     expect(write, '작성 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('pstBgngYmd');
     expect(write).toContain('노출 여부를 자동으로 바꾸지는 않습니다');

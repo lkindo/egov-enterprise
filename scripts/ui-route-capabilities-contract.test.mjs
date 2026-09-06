@@ -122,12 +122,20 @@ test('proxy shell access is measured separately from unresolved capability roles
   assert.equal(sourceShellCounts.authenticated?.length, 49);
   assert.equal(sourceShellCounts['admin-system']?.length, 70);
   assert.equal(effectiveShellCounts.public?.length, 1);
-  assert.equal(effectiveShellCounts.authenticated?.length, 48);
-  assert.equal(effectiveShellCounts['admin-system']?.length, 71);
+  // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
+  //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.
+  assert.equal(effectiveShellCounts.authenticated?.length, 49);
+  assert.equal(effectiveShellCounts['admin-system']?.length, 70);
   // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
   //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
   //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.
-  assert.equal(analysis.result.summary.effectiveAliases, 17);
+  // [2026-09-05 DEC-OPS-034] 17 → 19. 게시글 작성 화면 3종을 insert-board-article 하나로 수렴하면서
+  //   /admin/community/boards/write 와 /admin/community/boards/[id] 가 page-redirect 별칭이 됐다.
+  //   별칭이 **늘어나는** 방향이지만 은폐가 아니다 — 같은 일을 하는 화면을 하나로 모은 결과이며,
+  //   두 라우트의 disposition 은 overlay 에서 consolidate-to-canonical 로 함께 제안됐다.
+  // [2026-09-06 DEC-OPS-040] 19 → 23. 감사 잔여 overlay 제안을 owner 승인으로 확정하며 /admin/system/ism · /admin/community ·
+  //   /admin/community/boards · /admin/system/monitoring 이 정본으로의 page-redirect 별칭이 됐다.
+  assert.equal(analysis.result.summary.effectiveAliases, 23);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(
@@ -253,13 +261,13 @@ test('direct demo routes disclose static data before interaction and disable uns
   assert.match(forms, /<Button\b[^>]*\bdisabled\b[^>]*>(?:(?!<\/Button>)[\s\S])*?새 워크플로우 생성(?:(?!<\/Button>)[\s\S])*?<\/Button>/);
 });
 
-test('notification stream separates API failure from empty and dispatch is an explicit local demo', () => {
+test('notification stream separates API failure from empty and the dispatch demo stays removed', () => {
   const hub = fs.readFileSync(
     path.join(ROOT, 'frontend', 'src', 'app', 'components', 'ui', 'smart-notification-hub.tsx'),
     'utf8',
   );
-  const sender = fs.readFileSync(
-    path.join(ROOT, 'frontend', 'src', 'app', 'components', 'ui', 'notification-sender.tsx'),
+  const client = fs.readFileSync(
+    path.join(ROOT, 'frontend', 'src', 'app', 'admin', 'notifications', 'NotificationsClient.tsx'),
     'utf8',
   );
 
@@ -268,10 +276,22 @@ test('notification stream separates API failure from empty and dispatch is an ex
   assert.match(hub, /onClick=\{refresh\}/);
   assert.doesNotMatch(hub, /98\.2%|value="ACTIVE"/);
 
-  assert.match(sender, /로컬 미리보기 데모입니다/);
-  assert.match(sender, /실제 수신자 조회·AI 생성·전송·예약을 수행하지 않습니다/);
-  assert.match(sender, /<Button\b[^>]*\bdisabled\b[^>]*>(?:(?!<\/Button>)[\s\S])*?메시지 일괄 발송(?:(?!<\/Button>)[\s\S])*?<\/Button>/);
-  assert.doesNotMatch(sender, /무결성 검증 통과|안전하게 보호되고 있습니다/);
+  // [2026-09-06 DEC-OPS-038] '발송 미리보기 (데모)' 뷰와 히어로 블록을 걷었다(감사 D09-05). 종전 계약은 데모가
+  // "스스로 데모라고 말하는지" 를 봤지만, 이제는 데모 자체와 그 진입(?view=dispatch)·장식 히어로가 없어야 한다.
+  assert.ok(
+    !fs.existsSync(path.join(ROOT, 'frontend', 'src', 'app', 'components', 'ui', 'notification-sender.tsx')),
+    'notification-sender.tsx 가 되살아났다 — 발송은 수신자 해석·인가 설계 없이 데모로 돌아오지 않는다',
+  );
+  // 주석은 걷어낸 이유를 기록하므로 검사 대상이 아니다 — 코드만 본다.
+  const clientCode = client.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  assert.doesNotMatch(clientCode, /view=dispatch|NotificationSender|useSearchParams|<Bell\b[^>]*size=\{260\}/);
+  assert.match(client, /<SmartNotificationHub \/>/);
+  const notification = currentAnalysis().manifest.routes.find(({ route }) => route === '/admin/notifications');
+  assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch-preview'), false);
+  // [2026-09-06 DEC-OPS-042] 'send' 는 데모의 부활이 아니라 실기능이다 — POST /api/v1/admin/notifications/dispatch
+  //   (ADMIN/SYSTEM, 수신자 esntlId 서버 해석)를 부르는 notifications.dispatch capability 다. 데모 preview 부재 검사는 그대로다.
+  assert.deepEqual(notification.supportedActions, ['local-search', 'send', 'tab-filter']);
+  assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch'), true);
 });
 
 test('empty, missing, and duplicate route populations fail closed', () => {
@@ -380,7 +400,8 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
 
   const falseLive = structuredClone(analysis.manifest);
   const notification = falseLive.routes.find(({ route }) => route === '/admin/notifications');
-  const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.dispatch-preview');
+  // [2026-09-06 DEC-OPS-038] dispatch-preview 데모는 걷었다 — 같은 라우트의 다른 demo capability(health-metrics)로 false-live 를 검사한다.
+  const dispatch = notification.capabilities.find(({ id }) => id === 'notifications.health-metrics');
   dispatch.status = 'live';
   notification.status = 'partial';
   assert.match(

@@ -11,6 +11,11 @@ import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
 import nuri.business.service.sms.dto.SmsMapper;
 import nuri.business.service.sms.dto.SmsRecptnMapper;
+import nuri.business.service.user.UserContactService;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +44,8 @@ public class SmsService {
     private final SmsMapper smsMapper;
     private final SmsRecptnMapper smsRecptnMapper;
     private final SmsSender smsSender;
+    /** esntlId → 휴대전화 번호 해석(코어). 결과는 발송에만 쓰고 응답으로 내보내지 않는다. */
+    private final UserContactService userContactService;
 
     /**
      * 이 배포에서 문자가 실제로 전달될 수 있는지 알린다.
@@ -74,6 +81,8 @@ public class SmsService {
     @Transactional
     public Long sendSms(String userId, @Valid SmsDto dto) {
         log.info("Sending SMS requested by user: {}, sender: {}", userId, nuri.foundation.core.util.PiiMaskUtil.phone(dto.getSndngTelno()));
+        // 수신 번호를 먼저 확정한다 — 해석이 실패하면 수신자 없는 발송 헤더가 남지 않아야 한다.
+        List<String> recipientNumbers = resolveRecipientNumbers(dto);
 
         Sms sms = Sms.builder()
                 .sndngTelno(dto.getSndngTelno())
@@ -84,13 +93,13 @@ public class SmsService {
         Long smsTrsmSn = Objects.requireNonNull(savedSms.getSmsTrsmSn(),
                 "DB must generate SMS transmission serial number");
 
-        if (dto.getRecipients() != null) {
+        if (!recipientNumbers.isEmpty()) {
             log.info("Registering {} recipients for SMS transmission serial number: {}",
-                    dto.getRecipients().size(), smsTrsmSn);
-            for (SmsRecptnDto recptnDto : dto.getRecipients()) {
+                    recipientNumbers.size(), smsTrsmSn);
+            for (String rcptnTelno : recipientNumbers) {
                 SmsRecptn recptn = SmsRecptn.builder()
                         .smsTrsmSn(smsTrsmSn)
-                        .rcptnTelno(recptnDto.getRcptnTelno())
+                        .rcptnTelno(rcptnTelno)
                         .rsltCd("P") // Pending
                         .build();
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
@@ -113,6 +122,52 @@ public class SmsService {
 
         log.info("SMS request registered successfully for transmission serial number: {}", smsTrsmSn);
         return smsTrsmSn;
+    }
+
+    /**
+     * 수신 번호 목록을 확정한다 — 요청 순서 보존, 같은 번호는 한 번만(수신자 PK 가 (전송번호, 수신번호)다).
+     *
+     * <p>[2026-09-05 DEC-OPS-035] 수신자는 번호 직접 입력({@code rcptnTelno}) 또는 사용자({@code esntlId}) 중
+     * 하나다. 사용자는 코어 {@link UserContactService} 로 휴대전화 번호를 해석하고, 등록 번호가 없는 사용자가
+     * 하나라도 있으면 <b>이름을 밝히고 전체를 거부</b>한다 — 일부만 접수된 발송이 가장 나쁜 결과다.
+     */
+    private List<String> resolveRecipientNumbers(SmsDto dto) {
+        List<SmsRecptnDto> recipients = dto.getRecipients() == null ? List.of() : dto.getRecipients();
+        List<String> esntlIds = new ArrayList<>();
+        for (SmsRecptnDto recipient : recipients) {
+            boolean hasUser = hasText(recipient.getEsntlId());
+            boolean hasNumber = hasText(recipient.getRcptnTelno());
+            if (hasUser == hasNumber) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "수신자는 사용자 또는 수신 번호 중 하나로 지정해야 합니다.");
+            }
+            if (hasUser) {
+                esntlIds.add(recipient.getEsntlId().trim());
+            }
+        }
+        Map<String, UserContactService.UserContact> contacts = userContactService.resolve(esntlIds).stream()
+                .collect(Collectors.toMap(UserContactService.UserContact::esntlId, Function.identity(),
+                        (first, second) -> first));
+
+        LinkedHashSet<String> numbers = new LinkedHashSet<>();
+        for (SmsRecptnDto recipient : recipients) {
+            if (hasText(recipient.getEsntlId())) {
+                UserContactService.UserContact contact = contacts.get(recipient.getEsntlId().trim());
+                if (contact == null || contact.mblTelno() == null) {
+                    String name = contact == null ? recipient.getEsntlId().trim() : contact.userNm();
+                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                            "'" + name + "' 님은 등록된 휴대전화 번호가 없어 문자를 보낼 수 없습니다.");
+                }
+                numbers.add(contact.mblTelno());
+            } else {
+                numbers.add(recipient.getRcptnTelno().trim());
+            }
+        }
+        return new ArrayList<>(numbers);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     public List<SmsRecptnDto> getSmsRecipients(Long smsTrsmSn) {

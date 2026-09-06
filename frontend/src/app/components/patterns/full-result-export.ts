@@ -64,7 +64,8 @@ export function requestFullExport({
   }
 
   /*
-    [2026-09-04 owner 결정] 검색어를 다운로드 URL 에 싣는 것은 **승인된 상태**다(PD-UX-002 Q1).
+    [2026-09-05 규범 확정] 검색어를 다운로드 URL 에 싣는 것은 **승인된 상태**다
+    (ADR-0009 §Decision 3, DEC-OPS-029 Q1).
 
     같은 화면의 목록 상태 훅(`admin/system/logs/use-log-url-state.ts`)은 검색어를 주소창에 싣지
     않는데, 여기서는 싣는다. 이 비대칭은 실수가 아니라 **경계가 주소창으로 정의됐기 때문**이다 —

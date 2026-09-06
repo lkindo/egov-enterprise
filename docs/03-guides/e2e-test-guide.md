@@ -51,7 +51,7 @@
 | 항목 | 로컬 | CI 환경 | 근거 |
 |------|------|---------|------|
 | **Retries** | 0 | **1** | 재시도 통과도 리포트에서 flaky 신호로 추적 |
-| **Workers** | 1 | 1 | 공유 DB 오염·OOM 방지. 병렬성은 `ci.yml`의 실행시간 기반 3-job 분배로만 확보 |
+| **Workers** | 1 | 2 | 로컬은 공유 DB 안정성을 위해 1 유지. CI는 2026-09-01 실측으로 2이며, 추가 병렬성은 실행시간 기반 2-shard로 확보 |
 | **Timeout** | **180,000ms (3분)** | 동일 | 특정 느린 경로는 전역 완화 대신 표적 timeout 사용 |
 | **Expect Timeout** | **20,000ms** | 동일 | 요소 부재 실패의 피드백 비용 제한 |
 
@@ -64,7 +64,7 @@
 
 특정 계층만 돌리려면 프로젝트를 추가하지 말고 **파일/제목으로 지정**한다. `full-suite` 이름은 CI와 스냅샷 파일명이 소비하므로 변경 전 소비자를 함께 확인한다.
 
-CI의 `1/3`·`2/3`·`3/3`은 내부 실행 job label이고 브랜치 보호 required context는 안정 이름 `e2e-test` 하나다. `frontend/e2e/shard-duration-profile.json`과 `scripts/e2e-shard-plan.mjs`가 최근 성공 run의 spec별 시간을 사용해 명시적 spec 집합을 배정한다. spec을 추가·삭제하거나 실행 분포가 달라지면 workflow run ID·commit·수집시각·runner·worker 수와 duration을 함께 갱신하고 `npm run test:operational-contracts`로 누락·중복·편차를 확인한다.
+CI의 `1/2`·`2/2`은 내부 실행 job label이고 브랜치 보호 required context는 안정 이름 `e2e-test` 하나다. `frontend/e2e/shard-duration-profile.json`과 `scripts/e2e-shard-plan.mjs`가 최근 성공 run의 spec별 시간을 사용해 명시적 spec 집합을 배정한다. spec을 추가·삭제하거나 실행 분포가 달라지면 workflow run ID·commit·수집시각·runner·worker 수와 duration을 함께 갱신하고 `npm run test:operational-contracts`로 누락·중복·편차를 확인한다.
 
 ---
 

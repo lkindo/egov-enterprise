@@ -6,6 +6,10 @@ import nuri.business.service.deptjob.dto.DeptJobBoxDto;
 import nuri.business.service.deptjob.dto.DeptJobDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -15,10 +19,13 @@ import nuri.business.security.annotation.WithMockCustomUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -84,6 +91,21 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     }
 
     @Test
+    @DisplayName("부서 업무함 등록 — 이름이 비면 400 (DEC-OPS-037 제품 규칙)")
+    @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
+    void createDeptJobBox_BlankName_BadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/dept-jobs/boxes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(DeptJobBoxDto.builder()
+                                .deptTaskBoxNm("   ")
+                                .deptId("D1")
+                                .build())))
+                .andExpect(status().isBadRequest());
+        then(egovDeptJobBoxService).shouldHaveNoInteractions();
+    }
+
+    @Test
     @DisplayName("부서 업무함 수정 성공 (ADMIN)")
     @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void updateDeptJobBox_Success() throws Exception {
@@ -121,13 +143,10 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     // ── 부서 업무(DeptJob) — 종전에는 컨트롤러에 매핑이 아예 없어 등록이 동작하지 않았다 ──
 
     @Test
-    @DisplayName("[회귀] 부서 업무 등록 — 루트 POST 매핑이 존재하고 인증 주체를 서비스로 넘긴다")
+    @DisplayName("[회귀] 부서 업무 등록 — 루트 POST 매핑이 존재하고 입력 DTO를 서비스에 전달한다")
     @WithMockCustomUser
     void createDeptJob_Success() throws Exception {
-        // @WithMockCustomUser 의 기본 esntlId 는 "user01" 이다. 이 값으로 스텁해야
-        // "컨트롤러가 인증 주체를 서비스로 넘긴다" 는 명제가 실제로 검증된다
-        // (형제 테스트들은 반환값을 단언하지 않아 축이 틀려도 드러나지 않았다).
-        given(deptJobService.createDeptJob(eq("user01"), any(DeptJobDto.class))).willReturn(2L);
+        given(deptJobService.createDeptJob(any(DeptJobDto.class))).willReturn(2L);
 
         mockMvc.perform(post("/api/v1/dept-jobs")
                         .with(csrf())
@@ -185,5 +204,132 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
 
         mockMvc.perform(delete("/api/v1/dept-jobs/1").with(csrf()))
                 .andExpect(status().isOk());
+    }
+
+    static Stream<Arguments> invalidDeptJobBoxBodies() {
+        return Stream.of(
+                Arguments.of("업무함명 101자", "{\"deptTaskBoxNm\":\"" + "가".repeat(101) + "\"}"),
+                Arguments.of("부서 ID 21자", "{\"deptId\":\"" + "D".repeat(21) + "\"}"));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("invalidDeptJobBoxBodies")
+    @DisplayName("부서 업무함 저장 문자열은 Entity 상한을 넘으면 400")
+    @WithMockCustomUser(role = "ADMIN")
+    void createDeptJobBox_rejectsOversizedFields(String ignored, String body) throws Exception {
+        mockMvc.perform(post("/api/v1/dept-jobs/boxes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(egovDeptJobBoxService);
+    }
+
+    static Stream<Arguments> invalidDeptJobBodies() {
+        return Stream.of(
+                Arguments.of("업무명 101자", "{\"deptTaskNm\":\"" + "가".repeat(101) + "\"}"),
+                Arguments.of("업무 내용 4001자", "{\"deptTaskCn\":\"" + "가".repeat(4001) + "\"}"),
+                Arguments.of("담당자 ID 21자", "{\"picId\":\"" + "U".repeat(21) + "\"}"),
+                Arguments.of("우선순위 13자", "{\"prrtyRnk\":\"" + "1".repeat(13) + "\"}"));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("invalidDeptJobBodies")
+    @DisplayName("부서 업무 저장 문자열은 Entity 상한을 넘으면 400")
+    @WithMockCustomUser
+    void createDeptJob_rejectsOversizedFields(String ignored, String body) throws Exception {
+        mockMvc.perform(post("/api/v1/dept-jobs")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(deptJobService);
+    }
+
+    @Test
+    @DisplayName("부서 업무 수정도 DTO 상한 검증을 통과해야 서비스에 도달한다")
+    @WithMockCustomUser
+    void updateDeptJob_rejectsOversizedContent() throws Exception {
+        mockMvc.perform(put("/api/v1/dept-jobs/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"deptTaskCn\":\"" + "가".repeat(4001) + "\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(deptJobService);
+    }
+
+    @Test
+    @DisplayName("부서 업무함 요청의 서버 소유 필드는 Jackson 경계에서 무시한다")
+    @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
+    void createDeptJobBox_ignoresForgedServerOwnedFields() throws Exception {
+        given(egovDeptJobBoxService.createDeptJobBox(eq("USR_001"), any(DeptJobBoxDto.class))).willReturn(2L);
+
+        mockMvc.perform(post("/api/v1/dept-jobs/boxes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "deptTaskBoxSn": 999,
+                                  "deptTaskBoxNm": "기획함",
+                                  "deptNm": "위조 부서명",
+                                  "frstRgtrId": "forged",
+                                  "crtDt": "2026-09-06T00:00:00",
+                                  "lastMdfrId": "forged",
+                                  "mdfcnDt": "2026-09-06T00:00:00"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<DeptJobBoxDto> captor = ArgumentCaptor.forClass(DeptJobBoxDto.class);
+        verify(egovDeptJobBoxService).createDeptJobBox(eq("USR_001"), captor.capture());
+        DeptJobBoxDto bound = captor.getValue();
+        assertNull(bound.getDeptTaskBoxSn());
+        assertNull(bound.getDeptNm());
+        assertNull(bound.getFrstRgtrId());
+        assertNull(bound.getCrtDt());
+        assertNull(bound.getLastMdfrId());
+        assertNull(bound.getMdfcnDt());
+    }
+
+    @Test
+    @DisplayName("부서 업무 요청의 서버 소유 필드는 Jackson 경계에서 무시한다")
+    @WithMockCustomUser
+    void createDeptJob_ignoresForgedServerOwnedFields() throws Exception {
+        given(deptJobService.createDeptJob(any(DeptJobDto.class))).willReturn(2L);
+
+        mockMvc.perform(post("/api/v1/dept-jobs")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "deptTaskSn": 999,
+                                  "deptTaskNm": "신규 업무",
+                                  "deptTaskBoxNm": "위조 업무함",
+                                  "deptId": "FORGED",
+                                  "deptNm": "위조 부서",
+                                  "picNm": "위조 담당자",
+                                  "frstRgtrId": "forged",
+                                  "crtDt": "2026-09-06T00:00:00",
+                                  "lastMdfrId": "forged",
+                                  "mdfcnDt": "2026-09-06T00:00:00"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<DeptJobDto> captor = ArgumentCaptor.forClass(DeptJobDto.class);
+        verify(deptJobService).createDeptJob(captor.capture());
+        DeptJobDto bound = captor.getValue();
+        assertNull(bound.getDeptTaskSn());
+        assertNull(bound.getDeptTaskBoxNm());
+        assertNull(bound.getDeptId());
+        assertNull(bound.getDeptNm());
+        assertNull(bound.getPicNm());
+        assertNull(bound.getFrstRgtrId());
+        assertNull(bound.getCrtDt());
+        assertNull(bound.getLastMdfrId());
+        assertNull(bound.getMdfcnDt());
     }
 }

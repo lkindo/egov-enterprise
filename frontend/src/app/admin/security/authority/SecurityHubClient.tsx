@@ -135,7 +135,7 @@ export default function SecurityHubClient({
   /**
    * 뷰 전환(토폴로지/매트릭스)과 역할 페이지는 URL 파생값이다.
    * 공유·새로고침·뒤로가기에서 화면 상태가 복원되고, 사이드바 활성 표시도 유지된다.
-   * (검색어는 URL 에 싣지 않는다 — 개인정보 노출 우려로 제품 보류 항목이다.)
+   * ADR-0009는 URL 사용을 의무화하지 않으므로 검색어는 이 화면의 로컬 상태로 유지한다.
    */
   const viewMode: 'TOPOLOGY' | 'MATRIX' = searchParams.get('view') === 'matrix' ? 'MATRIX' : 'TOPOLOGY';
   const rolePage = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);

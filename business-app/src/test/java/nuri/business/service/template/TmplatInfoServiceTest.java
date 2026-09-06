@@ -5,11 +5,11 @@ import nuri.business.domain.template.Template;
 import nuri.business.domain.template.TemplateRepository;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.dto.TemplateMapper;
+import nuri.foundation.core.template.TemplateReferenceContributor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -33,12 +33,19 @@ class TmplatInfoServiceTest {
     @Spy
     private TemplateMapper templateMapper = Mappers.getMapper(TemplateMapper.class);
 
-    @InjectMocks
+    // [2026-09-06 D11-02 후속] 참조 도메인이 등록하는 포트 — 게시판·블로그 두 참조원을 mock 으로 둔다.
+    @Mock
+    private TemplateReferenceContributor boardReferences;
+
+    @Mock
+    private TemplateReferenceContributor blogReferences;
+
     private TmplatInfoService tmplatInfoService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        tmplatInfoService = new TmplatInfoService(templateRepository, templateMapper, List.of(boardReferences, blogReferences));
     }
 
     @Test
@@ -119,12 +126,79 @@ class TmplatInfoServiceTest {
     }
 
     @Test
-    @DisplayName("템플릿 삭제")
+    @DisplayName("템플릿 삭제 — 존재하는 대상을 찾아 지운다(종전 deleteById 는 없는 ID 도 조용히 성공했다)")
     void deleteTmplatInfo() {
-        // when
+        Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
+        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
+
         tmplatInfoService.deleteTmplatInfo("TMPLT_001");
 
-        // then
-        verify(templateRepository, times(1)).deleteById("TMPLT_001");
+        verify(templateRepository, times(1)).delete(template);
+        verify(templateRepository, never()).deleteById(anyString());
+    }
+
+    // [2026-09-06 감사 D11-02 후속] 참조 차단 — tb_bbs_master·tb_blog_info 의 문자열 참조는 DB 가 막지 않는다.
+    @Test
+    @DisplayName("게시판·블로그가 참조 중인 템플릿은 RESOURCE_IN_USE(409) 로 거부하고 참조원·건수를 밝힌다")
+    void deleteTmplatInfo_blockedWhenReferenced() {
+        Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
+        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
+        when(boardReferences.sourceLabel()).thenReturn("게시판");
+        when(boardReferences.countReferences("TMPLT_001")).thenReturn(2L);
+        when(blogReferences.sourceLabel()).thenReturn("블로그");
+        when(blogReferences.countReferences("TMPLT_001")).thenReturn(1L);
+
+        assertThatThrownBy(() -> tmplatInfoService.deleteTmplatInfo("TMPLT_001"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE)
+                .hasMessageContaining("게시판 2건")
+                .hasMessageContaining("블로그 1건");
+        verify(templateRepository, never()).delete(any(Template.class));
+    }
+
+    @Test
+    @DisplayName("참조가 하나도 없으면 삭제하고, 참조원이 등록되지 않은 projection 에서도 삭제는 동작한다")
+    void deleteTmplatInfo_allowedWithoutReferences() {
+        Template template = Template.builder().tmpltId("TMPLT_002").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
+        when(templateRepository.findById("TMPLT_002")).thenReturn(Optional.of(template));
+        when(boardReferences.countReferences("TMPLT_002")).thenReturn(0L);
+        when(blogReferences.countReferences("TMPLT_002")).thenReturn(0L);
+
+        tmplatInfoService.deleteTmplatInfo("TMPLT_002");
+        verify(templateRepository).delete(template);
+
+        // 참조 도메인이 base projection 에서 빠진 경우(포트 미등록·null 주입) — 삭제 자체는 막지 않는다.
+        TmplatInfoService withoutContributors = new TmplatInfoService(templateRepository, templateMapper, null);
+        withoutContributors.deleteTmplatInfo("TMPLT_002");
+        verify(templateRepository, times(2)).delete(template);
+        verify(boardReferences, never()).sourceLabel();
+    }
+
+    // [2026-09-05 DEC-OPS-036] 수정 경로 신설 — 종전에는 등록·조회만 가능했다.
+    @Test
+    @DisplayName("템플릿 수정 — ID 는 두고 명칭·구분·경로·사용여부를 갱신한다")
+    void updateTmplatInfo() {
+        Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("Old").tmpltSeCd("TMPT01").tmpltPath("/old").useYn("Y").build();
+        when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
+        TemplateDto dto = TemplateDto.builder().tmpltId("IGNORED").tmpltNm("New").tmpltSeCd("TMPT02").tmpltPath("/new").useYn("N").build();
+
+        TemplateDto result = tmplatInfoService.updateTmplatInfo("TMPLT_001", dto);
+
+        assertThat(result.getTmpltId()).isEqualTo("TMPLT_001");
+        assertThat(result.getTmpltNm()).isEqualTo("New");
+        assertThat(result.getTmpltSeCd()).isEqualTo("TMPT02");
+        assertThat(result.getTmpltPath()).isEqualTo("/new");
+        assertThat(result.getUseYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("없는 템플릿의 수정·삭제는 RESOURCE_NOT_FOUND")
+    void updateOrDeleteTmplatInfo_NotFound() {
+        when(templateRepository.findById("NONE")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tmplatInfoService.updateTmplatInfo("NONE", TemplateDto.builder().tmpltNm("x").build()))
+                .isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> tmplatInfoService.deleteTmplatInfo("NONE")).isInstanceOf(BusinessException.class);
+        verify(templateRepository, never()).delete(any(Template.class));
     }
 }

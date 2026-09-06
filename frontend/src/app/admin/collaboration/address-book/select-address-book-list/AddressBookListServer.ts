@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import type { AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
+import { logErrorSafely } from '@/lib/safe-error-log';
 
 export interface AddressBookInitialData {
   list: AddressBook[];
@@ -59,7 +60,7 @@ export async function getInitialAddressBookData(params: {
     if (getHttpStatus(error) === 401) {
       redirect('/login');
     }
-    console.error('AddressBookListServer: Failed to fetch address books', error);
+    logErrorSafely('AddressBookListServer: Failed to fetch address books', error);
     return {
       list: [],
       total: 0,

@@ -24,6 +24,7 @@ import {
   ApiResponseCmmnCodeDtoResponseSchema,
   ApiResponseCmmnDetailCodeDtoResponseSchema,
   ApiResponseCommunityDtoResponseSchema,
+  ApiResponseCommunityMembershipDtoResponseSchema,
   ApiResponseCurrentUserResponseResponseSchema,
   ApiResponseDashboardResponseResponseSchema,
   ApiResponseDeptJobBoxDtoResponseSchema,
@@ -40,6 +41,7 @@ import {
   ApiResponseInternetSvcGuidanceDtoResponseSchema,
   ApiResponseListBannerDtoResponseSchema,
   ApiResponseListBoardSearchItemResponseResponseSchema,
+  ApiResponseListCommonCodeDtoResponseSchema,
   ApiResponseListCommunityDtoResponseSchema,
   ApiResponseListDeptManageDtoResponseSchema,
   ApiResponseListFileDtoResponseSchema,
@@ -82,6 +84,7 @@ import {
   ApiResponsePageResponseCmmnDetailCodeDtoResponseSchema,
   ApiResponsePageResponseCommentDtoResponseSchema,
   ApiResponsePageResponseCommunityDtoResponseSchema,
+  ApiResponsePageResponseCommunityMemberDtoResponseSchema,
   ApiResponsePageResponseDeptAuthorProjectionResponseSchema,
   ApiResponsePageResponseDeptJobBoxDtoResponseSchema,
   ApiResponsePageResponseDeptJobDtoResponseSchema,
@@ -150,6 +153,7 @@ import {
   ApiResponseVoidResponseSchema,
   ApiResponseWorkReportDtoResponseSchema,
   ApprovalConfirmRequestRequestSchema,
+  ApprovalDraftRequestRequestSchema,
   AttachmentIntegrityReportResponseSchema,
   AuthorManageDtoRequestSchema,
   AuthorManageDtoResponseSchema,
@@ -174,8 +178,10 @@ import {
   CmmnDetailCodeDtoRequestSchema,
   CmmnDetailCodeDtoResponseSchema,
   CommentDtoRequestSchema,
+  CommonCodeDtoResponseSchema,
   CommunityDtoRequestSchema,
   CommunityDtoResponseSchema,
+  CommunityMembershipDtoResponseSchema,
   CurrentUserResponseResponseSchema,
   DashboardResponseResponseSchema,
   DeptAuthorBatchRequestRequestSchema,
@@ -218,6 +224,7 @@ import {
   NetworkDtoRequestSchema,
   NoteDtoRequestSchema,
   NoteDtoResponseSchema,
+  NotificationDispatchRequestRequestSchema,
   NotificationDtoRequestSchema,
   NotificationDtoResponseSchema,
   OnlineManualDtoRequestSchema,
@@ -239,6 +246,7 @@ import {
   PageResponseCmmnDetailCodeDtoResponseSchema,
   PageResponseCommentDtoResponseSchema,
   PageResponseCommunityDtoResponseSchema,
+  PageResponseCommunityMemberDtoResponseSchema,
   PageResponseDeptAuthorProjectionResponseSchema,
   PageResponseDeptJobBoxDtoResponseSchema,
   PageResponseDeptJobDtoResponseSchema,
@@ -472,7 +480,7 @@ export const updateWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
   responseForbiddenPaths: [],
 });
 
@@ -727,7 +735,7 @@ export const updateMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -982,7 +990,7 @@ export const updateDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -1033,7 +1041,7 @@ export const updateDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: DeptJobBoxDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskBoxSn"],["deptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -1165,7 +1173,7 @@ export const deleteOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int(), "dgstfnSn": z.number().int() }).strict(),
-  querySchema: z.object({ "pswd": z.string().optional() }).strict(),
+  querySchema: null,
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
@@ -1357,6 +1365,57 @@ export const updateAbsenceOperation = /*#__PURE__*/ defineGeneratedOperation({
   pathSchema: z.object({ "emplyrId": z.string() }).strict(),
   querySchema: null,
   requestSchema: UserAbsenceDtoRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const selectTmplatInfoDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "selectTmplatInfoDetail",
+  method: "get",
+  path: "/api/v1/admin/system/templates/{tmpltId}",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "tmpltId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => TemplateDtoResponseSchema),
+  envelopeSchema: ApiResponseTemplateDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const updateTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "updateTmplatInfo",
+  method: "put",
+  path: "/api/v1/admin/system/templates/{tmpltId}",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "tmpltId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: TemplateDtoRequestSchema.strict(),
+  responseSchema: z.lazy(() => TemplateDtoResponseSchema),
+  envelopeSchema: ApiResponseTemplateDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteTmplatInfoOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteTmplatInfo",
+  method: "delete",
+  path: "/api/v1/admin/system/templates/{tmpltId}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "tmpltId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
@@ -2655,6 +2714,74 @@ export const deleteAuthorOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const updateRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "updateReward",
+  method: "put",
+  path: "/api/v1/admin/operation/rewards/{rwrdSn}",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "rwrdSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: RewardManageDtoRequestSchema.strict(),
+  responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
+  envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteRewardOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteReward",
+  method: "delete",
+  path: "/api/v1/admin/operation/rewards/{rwrdSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "rwrdSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const updateExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "updateExternalHr",
+  method: "put",
+  path: "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "evntSn": z.number().int(), "otsdHrId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: ExternalHrDtoRequestSchema.strict(),
+  responseSchema: z.lazy(() => ExternalHrDtoResponseSchema),
+  envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
+  requestForbiddenPaths: [["crtDt"],["frstRgtrId"],["mdfcnDt"],["lastMdfrId"]],
+  responseForbiddenPaths: [],
+});
+
+export const deleteExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteExternalHr",
+  method: "delete",
+  path: "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "evntSn": z.number().int(), "otsdHrId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getEventOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getEvent",
   method: "get",
@@ -2838,7 +2965,7 @@ export const createWorkReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
   responseForbiddenPaths: [],
 });
 
@@ -3093,7 +3220,7 @@ export const createMemoReportOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -3111,7 +3238,7 @@ export const getSentMailsOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseSchema: z.lazy(() => PageResponseSentMailDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseSentMailDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["list","*","recipients"]],
 });
 
 export const sendMailOperation = /*#__PURE__*/ defineGeneratedOperation({
@@ -3373,7 +3500,7 @@ export const createDeptJobOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: DeptJobDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -3407,7 +3534,7 @@ export const createDeptJobBoxOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: DeptJobBoxDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["deptTaskBoxSn"],["deptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -3476,7 +3603,7 @@ export const getListOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseSchema: z.array(z.lazy(() => SatisfactionDtoResponseSchema)),
   envelopeSchema: ApiResponseListSatisfactionDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [["*","pswd"]],
+  responseForbiddenPaths: [],
 });
 
 export const createOperation = /*#__PURE__*/ defineGeneratedOperation({
@@ -3597,6 +3724,23 @@ export const loginOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: LoginRequestRequestSchema.strict(),
   responseSchema: z.lazy(() => TokenResponseResponseSchema),
   envelopeSchema: ApiResponseTokenResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const createApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "createApproval",
+  method: "post",
+  path: "/api/v1/approvals",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: ApprovalDraftRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -4158,57 +4302,6 @@ export const createPopupOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: PopupDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const getPolls_1Operation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "getPolls_1",
-  method: "get",
-  path: "/api/v1/admin/system/polls",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseOnlinePollManageDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseOnlinePollManageDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const insertPollOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "insertPoll",
-  method: "post",
-  path: "/api/v1/admin/system/polls",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: OnlinePollManageDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const vote_1Operation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "vote_1",
-  method: "post",
-  path: "/api/v1/admin/system/polls/{pollSn}/vote",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "pollSn": z.number().int() }).strict(),
-  querySchema: z.object({ "pollArtclSn": z.number().int() }).strict(),
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -4889,7 +4982,7 @@ export const createExternalHrOperation = /*#__PURE__*/ defineGeneratedOperation(
   requestSchema: ExternalHrDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => ExternalHrDtoResponseSchema),
   envelopeSchema: ApiResponseExternalHrDtoResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["crtDt"],["frstRgtrId"],["mdfcnDt"],["lastMdfrId"]],
   responseForbiddenPaths: [],
 });
 
@@ -4923,6 +5016,23 @@ export const createEventOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: EventInfoDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const dispatchNotificationsOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "dispatchNotifications",
+  method: "post",
+  path: "/api/v1/admin/notifications/dispatch",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: NotificationDispatchRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -5125,6 +5235,23 @@ export const moveUsersToDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
   pathSchema: null,
   querySchema: null,
   requestSchema: BulkDeptMoveRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const approveMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "approveMember",
+  method: "patch",
+  path: "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int(), "userId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
@@ -5502,7 +5629,7 @@ export const getSentMailOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseSchema: z.lazy(() => SentMailDtoResponseSchema),
   envelopeSchema: ApiResponseSentMailDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
+  responseForbiddenPaths: [["recipients"]],
 });
 
 export const deleteMailOperation = /*#__PURE__*/ defineGeneratedOperation({
@@ -5556,6 +5683,23 @@ export const downloadFileOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const deleteFileOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteFile",
+  method: "delete",
+  path: "/api/v1/files/{atchFileSn}/{fileSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "atchFileSn": z.number().int(), "fileSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const downloadFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   id: "downloadFile_1",
   method: "get",
@@ -5569,6 +5713,23 @@ export const downloadFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: null,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteFile_1Operation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteFile_1",
+  method: "delete",
+  path: "/api/v1/admin/system/files/{atchFileSn}/{fileSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "atchFileSn": z.number().int(), "fileSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -5590,6 +5751,23 @@ export const downloadFile_2Operation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const deleteFile_2Operation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteFile_2",
+  method: "delete",
+  path: "/api/v1/admin/content/files/{atchFileSn}/{fileSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "atchFileSn": z.number().int(), "fileSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const downloadFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
   id: "downloadFile_3",
   method: "get",
@@ -5603,6 +5781,23 @@ export const downloadFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: null,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const deleteFile_3Operation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "deleteFile_3",
+  method: "delete",
+  path: "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "atchFileSn": z.number().int(), "fileSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -5722,6 +5917,23 @@ export const getCommunity_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.lazy(() => CommunityDtoResponseSchema),
   envelopeSchema: ApiResponseCommunityDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getMyMembershipOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getMyMembership",
+  method: "get",
+  path: "/api/v1/communities/{cmntySn}/membership",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => CommunityMembershipDtoResponseSchema),
+  envelopeSchema: ApiResponseCommunityMembershipDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -5862,6 +6074,40 @@ export const getCurrentUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const getTaskTypesOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getTaskTypes",
+  method: "get",
+  path: "/api/v1/approvals/task-types",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.array(z.lazy(() => CommonCodeDtoResponseSchema)),
+  envelopeSchema: ApiResponseListCommonCodeDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getProcessedOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getProcessed",
+  method: "get",
+  path: "/api/v1/approvals/processed",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getPendingOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getPending",
   method: "get",
@@ -5909,23 +6155,6 @@ export const getAbsencesOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => UserAbsenceDtoResponseSchema)),
   envelopeSchema: ApiResponseListUserAbsenceDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const selectTmplatInfoDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "selectTmplatInfoDetail",
-  method: "get",
-  path: "/api/v1/admin/system/templates/{tmpltId}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "tmpltId": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => TemplateDtoResponseSchema),
-  envelopeSchema: ApiResponseTemplateDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -6079,23 +6308,6 @@ export const getBbsStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => StatsDtoResponseSchema)),
   envelopeSchema: ApiResponseListStatsDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const getPoll_1Operation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "getPoll_1",
-  method: "get",
-  path: "/api/v1/admin/system/polls/{pollSn}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "pollSn": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => OnlinePollManageDtoResponseSchema),
-  envelopeSchema: ApiResponseOnlinePollManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -6576,6 +6788,23 @@ export const scanOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const getMembersOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getMembers",
+  method: "get",
+  path: "/api/v1/admin/content/community/{cmntySn}/members",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int() }).strict(),
+  querySchema: z.object({ "status": z.enum(["REQUESTED","APPROVED"]).optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseCommunityMemberDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseCommunityMemberDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getCommunityPortletOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getCommunityPortlet",
   method: "get",
@@ -6670,6 +6899,23 @@ export const deleteBoardMasterPhysicallyOperation = /*#__PURE__*/ defineGenerate
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const rejectMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "rejectMember",
+  method: "delete",
+  path: "/api/v1/admin/content/community/{cmntySn}/members/{userId}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int(), "userId": z.string() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,

@@ -6,8 +6,10 @@
 - **Technical reviewers:** frontend architecture, domain owner, security/privacy, accessibility — 담당자 미지정
 - **Review by:** G0 회의 전 날짜 지정 필요
 - **Last evidence review:** 2026-08-21
+- **IA decision review:** 2026-09-05 — [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md)
+- **URL-state decision review:** 2026-09-05 — [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)
 
-> 이 문서는 UI/UX 현대화를 위한 활성 제품 brief와 연구 프로토콜이다. 연구 결과, 사용자 승인, 기관별 요구사항 또는 출시 승인을 기록한 문서가 아니다. 현재 확인된 사실과 아직 검증하지 않은 가설을 분리하며, 제품 소유자의 승인과 실제 사용자 증거가 들어오기 전에는 G0/G1 통과나 “사용자 검증 완료”를 선언하지 않는다.
+> 이 문서는 UI/UX 현대화를 위한 활성 제품 brief와 연구 프로토콜이다. 연구 결과, 사용자 승인, 기관별 요구사항 또는 출시 승인을 기록한 문서가 아니다. 현재 확인된 사실과 아직 검증하지 않은 가설을 분리하며, 제품 소유자의 승인과 실제 사용자 증거가 들어오기 전에는 G0 또는 **기관 채택 시 원 G1** 통과나 “사용자 검증 완료”를 선언하지 않는다. 공통 base의 reference-default G1은 ADR-0007로 이미 승인됐으며 이를 기관별 검증 완료와 혼동하지 않는다.
 
 ## 1. Executive summary
 
@@ -22,10 +24,10 @@
 
 1. 제품 소유자와 대상 배포 맥락을 지정하고 G0 질문에 답한다.
 2. 역할별 맥락 조사와 현재 UI baseline을 수집한다.
-3. top task, 목표 IA, 민감 상태, 성공·rollback 기준을 제품 소유자가 승인해 G1을 통과한다.
+3. 기관 채택 시 top task, 목표 IA, 민감 상태, 성공·rollback 기준을 제품 소유자가 승인해 원 G1을 통과한다. 공통 base에서는 ADR-0007 reference-default와 route별 disposition 개별 승인 경계를 따른다.
 4. 주요 역할별 약 5명의 소규모 형성 평가(formative usability test)를 반복하고, 악화가 없는 파일럿만 확대한다.
 
-이 문서는 위 절차를 실행할 수 있을 만큼 내부적으로 완결된 초안이다. 다만 제품 소유자, 실제 연구 참여자, 개인정보 승인, 대상 기관과 배포 프로필이 미지정이므로 Task 0.2의 승인 조건은 아직 충족하지 않는다.
+이 문서는 위 절차를 실행할 수 있을 만큼 내부적으로 완결된 초안이다. 다만 제품 소유자, 실제 연구 참여자, 연구 데이터 개인정보 승인, 대상 기관과 배포 프로필이 미지정이므로 Task 0.2의 승인 조건은 아직 충족하지 않는다. 이는 ADR-0009의 제품 URL-state 정책 승인과 별개다.
 
 ## 2. 제품 정의와 경계
 
@@ -38,7 +40,7 @@
 | UI 언어 | 공통 프런트엔드는 한국어 우선 단일 언어 | [ADR-0002](../02-architecture/decisions/ADR-0002-korean-first-frontend.md). 파생 제품의 다국어 필요는 별도 제품 결정이다. |
 | UX 원칙 | 과업·신뢰 우선, 브랜드 중립, WCAG 2.2 A+AA 목표, 위험 기반 상태·복구 | [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md). 목표 선언만으로 준수를 뜻하지 않는다. |
 | UI 기능 상태 | route별로 `live`, `partial`, `demo`, `unavailable`, 미검증 상태를 분리하는 census 진행 중 | [capability manifest](../../config/ui-route-capabilities.json). 화면 존재나 API 문자열만으로 `live`를 확정하지 않는다. |
-| 미결정 제품 입력 | 목표 IA, 민감 검색 URL 정책, 계측 원천 등 | [pending decisions](../04-operations/pending-decisions.md). 해당 결정 전에는 구현이 제품 의도를 선결하면 안 된다. |
+| 미결정 제품 입력 | reference-default 안의 exact label/group/order/visibility와 route별 disposition, 기관 채택 시 목표 IA 재검증, 계측 원천, 대상 기관별 URL 허용 범위 축소 여부 등 | [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md), [pending decisions](../04-operations/pending-decisions.md). 공통 base의 IA 방향과 URL 검색 정책은 각각 ADR-0007·ADR-0009로 결정됐으며, 미승인 route나 기관별 입력을 구현이 선결하면 안 된다. |
 
 ### 2.2 제품 목표
 
@@ -73,7 +75,7 @@
 | E-04 | 현대화 원칙은 사용자 과업, 브랜드 중립, WCAG 2.2 목표, 상태 진실성, 측정 기반 데이터 소유권을 우선한다. | 미학 중심 성공 기준을 사용할 수 없다. | [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) |
 | E-05 | 현재 계획 검토에는 활성 PRD·인터뷰·사용 로그·지원 문의 분류·RUM이 없다고 기록돼 있다. | 실제 top task와 목표치는 미확정이다. | [현대화 계획 §2.2](../02-architecture/ui-ux-modernization-plan.md#22-증거의-한계) |
 | E-06 | route/capability manifest는 정확한 route 모집단과 상태를 관리하지만 미검증 필드가 남아 있다. | route 존재를 기능 완성 또는 사용 빈도의 증거로 사용할 수 없다. | [capability manifest](../../config/ui-route-capabilities.json) |
-| E-07 | ADR-0004가 hybrid를 prototype/research의 잠정 방향으로 선택했지만 exact 메뉴 IA와 민감 로그 검색어의 URL 보존 범위는 승인 대기 상태다. | G1 전에 119+2 disposition, live role/menu evidence, IA와 민감 상태 계약을 승인해야 한다. | [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md), [PD-UX-001/002](../04-operations/pending-decisions.md#거버넌스ux-결정) |
+| E-07 | ADR-0007이 ADR-0004의 hybrid 방향을 참조-기본 IA로 승인해 공통 base에서 잠정 지위를 끝냈다. 사용자 연구 없는 accepted risk는 남고, exact label/group/order/visibility와 route별 disposition은 개별 승인 대상이며 기관 채택 시 실사용자·실메뉴·실권한으로 G1을 다시 수행한다. 개인정보성 업무 검색어는 ADR-0009가 exact route/query allowlist와 accepted risk 아래 URL 사용을 승인했다. | reference-default를 미승인으로 되돌리지 않는다. 다만 미승인 route를 menu/generator가 소비하지 않고, 기관별 G1과 URL 검색의 unknown-query 차단·same-view `replace`·log/analytics 비복제를 검증한다. 앱은 고위험 용도의 전용 URL field/state를 설계하거나 일반 검색창에서 그런 입력을 요구·유도하지 않는다. 자유 입력값의 의미를 완전 탐지할 수 없으므로 예상 밖 붙여넣기는 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 이름 차단이지 DLP가 아니다. | [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md), [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md), [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md), [pending decisions](../04-operations/pending-decisions.md#거버넌스ux-결정) |
 
 ### 3.2 아직 검증하지 않은 가설
 
@@ -169,13 +171,15 @@
 
 **G0 통과 산출물:** 승인된 brief 버전, RACI 실명/연락 채널, 대상 profile·표준·역할, 연구 승인, open input 처분, 승인자·날짜. 현재는 이 중 담당자와 외부 입력이 없어 **미통과**다.
 
-### 6.2 G1 — IA·상태·baseline·성공 기준
+### 6.2 기관 채택 G1 — IA·상태·baseline·성공 기준
+
+ADR-0007의 reference-default G1 승인은 유지된다. 아래 질문과 산출물은 기관이 base를 채택할 때 실사용자·실메뉴·실권한으로 다시 수행하는 원 G1이며, 참조 구현의 route별 disposition은 이와 별도로 owner PR review를 통해 개별 승인한다.
 
 1. 역할별 top task 순위가 맥락 조사와 baseline으로 뒷받침되는가?
 2. 목표 IA와 메뉴 명칭이 실제 mental model, 권한, cross-role journey를 보존하는가?
 3. route별 `live | partial | demo | unavailable`과 supported action, actor scope가 승인됐는가?
 4. empty, filtered-zero, 권한 없음, offline, 부분 실패, 서버 오류, unavailable을 구분하는가?
-5. 민감 검색·필터·식별자의 URL/브라우저 저장/analytics 허용 목록이 승인됐는가?
+5. ADR-0009의 URL 검색 allowlist(`/search?q`, 게시판 두 route의 `searchCnd`·`searchWrd`)와 용도 경계를 지키는가? 앱이 자격증명·token·고유식별정보·고위험 개인정보·응답 본문을 위한 전용 URL field/state를 만들거나 일반 검색창에서 그런 입력을 요구·유도하지 않는가? 자유 입력값의 예상 밖 붙여넣기는 accepted residual risk이지 고위험 용도 승인이 아니며, credential-name gate는 값 DLP가 아니라 key 이름 차단임을 이해하는가? 파생 제품이 범위를 더 좁힐지, 새 route/key나 browser storage가 필요한지 별도 승인됐는가?
 6. baseline과 after가 같은 역할·task·데이터·환경·측정식으로 비교 가능한가?
 7. 파일럿 task, 표본, AT/device 범위, 성공/rollback threshold와 예외 승인자가 정해졌는가?
 8. 미해결 P0/P1 위험, unsupported action, 무출처 수치를 사용자에게 어떻게 정직하게 고지하는가?
@@ -327,7 +331,7 @@
 | 시작 상태 | `/login`, 로그아웃 상태 |
 | 참여자 prompt | “제공된 연구용 계정으로 로그인해 본인의 업무 시작점을 찾으십시오. 첫 입력은 일부러 잘못된 암호를 사용하고, 오류를 이해한 뒤 올바른 정보로 다시 시도하십시오.” |
 | 후속 prompt | 로그인 후 비민감 draft를 입력하는 중 세션 만료를 주입한다. “작업을 잃지 않는다고 판단되는 방법으로 다시 인증하고 계속하십시오.” |
-| 성공 | 오류가 어떤 필드/조치와 관련되는지 이해함; 올바른 역할 시작점 도달; 재인증 뒤 draft와 focus 맥락 보존; 비밀번호가 URL·화면 녹화 메모·analytics에 남지 않음 |
+| 성공 | 오류가 어떤 필드/조치와 관련되는지 이해함; 올바른 역할 시작점 도달; 재인증 뒤 draft와 focus 맥락 보존; 비밀번호 전용 입력을 URL query field/state로 설계·직렬화하지 않고 화면 녹화 메모·analytics에 복제하지 않음 |
 | 관찰 | label/오류 발화, password manager 허용, keyboard focus, 중복 제출, redirect 이해, 세션 만료 안내·회복 |
 | 중단 | 실제 자격증명 사용, token 노출, 계정 잠금 위험, 무한 redirect |
 
@@ -375,7 +379,7 @@
 | 시작 상태 | 관리자 home |
 | 참여자 prompt | “연구사용자의 오늘 실패 사건을 찾아 사건 종류, 시각, 결과를 확인하십시오. 업무에 필요한 최소 정보만 사용하고 어떤 값을 URL·다운로드에 남겨도 되는지 설명하십시오.” |
 | 변형 | 부분 API 실패, filtered-zero, 권한 없음 상태를 서로 다른 round에서 제시 |
-| 성공 | 올바른 사건 식별; empty와 error 구분; 민감 식별자·자유 검색어가 URL/analytics에 남지 않음; 상세 접근과 export가 역할 범위와 일치 |
+| 성공 | 올바른 사건 식별; empty와 error 구분; 로그 주소창 검색어를 로컬 상태로 유지하는 현행과 허용이 의무가 아닌 이유를 이해; 허용 검색어가 client log·analytics에 복제되지 않음; 앱이 자격증명·token·고유식별정보·고위험 개인정보·응답 본문을 위한 전용 URL field/state를 제공하거나 일반 검색창에서 입력을 요구·유도하지 않음; 자유 입력창의 예상 밖 붙여넣기는 accepted residual risk이며 고위험 용도 승인이 아니고 credential-name gate는 key 차단이지 DLP가 아님; 상세 접근과 export가 역할 범위와 일치 |
 | 관찰 | filter mental model, 시간대, redaction, row/detail 관계, focus, download 이름·내용, 재인증 필요성 |
 | 중단 | 실운영 로그 접근, 원본 IP·토큰·주민번호·실명 노출, 승인되지 않은 export |
 
@@ -594,8 +598,8 @@ Fallback은 명백한 결함 수정과 연구 준비에는 사용할 수 있지�
 | OI-03 | adopter/end-user 모집 접근과 보상 예산 | `blocked-input` | 제품 소유자 + UX lead | 미정—모집 전 | 사용자 연구·baseline |
 | OI-04 | 실제 역할·최근 task 빈도·지원 문의 또는 업무 절차 자료 | `blocked-input` | domain owner + 대상 기관 | 미정—R1 종료 전 | top-task 우선순위 |
 | OI-05 | target profile과 demo/partial 노출 정책 | `open` | 제품 소유자 + framework owner | 미정—G0 전 | 파일럿 route 선정 |
-| OI-06 | ADR-0004 잠정 hybrid 방향의 exact IA/menu tree | `blocked-input` (`PD-UX-001`; 방향만 잠정 선택) | IA/product owner | 미정—G1 전 | 대규모 navigation 변경 |
-| OI-07 | 로그 검색의 URL allowlist와 민감도 | `blocked-input` (`PD-UX-002`) | privacy/security + product | 미정—G1 전 | 로그 UX·analytics |
+| OI-06 | ADR-0007 reference-default 안의 exact label/group/order/visibility와 route별 disposition; 기관 채택 시 목표 IA 재검증 | `open` (범위 축소) — reference-default 방향은 승인됨. disposition은 owner PR review로 route별 개별 승인하며 기관별 실사용자·실메뉴·실권한 G1은 채택 시 수행 | IA/product owner | route별 소비 전; 기관 채택 G1 전 | 미승인 route의 menu/generator 소비와 기관별 대규모 navigation 변경 |
+| OI-07 | 개인정보성 업무 검색어의 URL allowlist와 민감도 | `closed` — 2026-09-05 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md). 로그 주소창은 현행 로컬 상태 유지; 새 route/key·파생 제품 확대는 별도 결정 | repository owner + security/privacy + frontend architecture | 2026-09-05 | 공통 base 정책 차단 해소 |
 | OI-08 | 적용 WCAG/KWCAG/KRDS 버전·claim과 기관 식별 자격 | `blocked-input` | accessibility + 제품/기관 owner | 미정—G0 전 | profile·준수 표현 |
 | OI-09 | 실제 지원 device/browser/AT matrix와 accommodation | `blocked-input` | accessibility owner + 대상 기관 IT | 미정—모집 전 | AT 표본·파일럿 gate |
 | OI-10 | consent, 녹화, 보존기간, 삭제 요청 채널 | `blocked-input` | privacy/security owner | 미정—첫 모집 전 | 모든 연구 데이터 수집 |
@@ -621,7 +625,7 @@ Fallback은 명백한 결함 수정과 연구 준비에는 사용할 수 있지�
 | 항목 | 값 |
 |---|---|
 | 제품 소유자 승인 | **없음** |
-| Security/privacy 승인 | **없음** |
+| 연구 프로토콜 Security/privacy 승인 | **없음** — ADR-0009의 제품 URL-state 승인은 별개 |
 | Accessibility 범위 승인 | **없음** |
 | G0 | **미통과** |
 | G1 | **원 정의 미통과** — 2026-08-23 [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md)이 참조-기본 범위로 재정의·승인(사용자 연구 없음 = accepted-risk). 기관 채택 시 원 정의 G1 재수행 의무 |

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 const client = vi.hoisted(() => ({
   getRaw: vi.fn(),
@@ -7,7 +7,13 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { memoReportService } from '../memoReportService';
+import { memoReportService, type MemoReportInput } from '../memoReportService';
+import { createMemoReportOperation, updateMemoReportOperation } from '@/types/generated-operations';
+import {
+  MemoReportDtoRequestSchema,
+  MemoReportDtoResponseSchema,
+  MemoReportDtoSchema,
+} from '@/types/generated-zod';
 
 describe('memoReportService generated instruction contract', () => {
   beforeEach(() => {
@@ -37,12 +43,13 @@ describe('memoReportService generated instruction contract', () => {
   });
 
   it('목록·상세·CRUD가 operation descriptor의 경로와 메서드로만 실행된다', async () => {
-    const report = { memoRptSn: 17, rptTtl: '보고', rptCn: '내용' };
+    const responseReport = { memoRptSn: 17, rptTtl: '보고', rptrId: 'USER', rptCn: '내용' };
+    const requestReport = { rptTtl: '보고', rptrId: 'USER', rptCn: '내용' };
     client.getRaw
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0 } })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0 } })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0 } })
-      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: report });
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: responseReport });
     client.requestRaw
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: 18 })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: null })
@@ -52,8 +59,8 @@ describe('memoReportService generated instruction contract', () => {
     await memoReportService.getMyReports({ page: 0, size: 10 });
     await memoReportService.getReceivedReports({ page: 0, size: 10 });
     await memoReportService.getMemoReport(17);
-    await memoReportService.createMemoReport(report);
-    await memoReportService.updateMemoReport(17, report);
+    await memoReportService.createMemoReport(requestReport);
+    await memoReportService.updateMemoReport(17, requestReport);
     await memoReportService.deleteMemoReport(17);
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'memo-reports', {
@@ -67,13 +74,48 @@ describe('memoReportService generated instruction contract', () => {
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(4, 'memo-reports/17', undefined);
     expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
-      url: 'memo-reports', method: 'post', data: report,
+      url: 'memo-reports', method: 'post', data: requestReport,
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(2, {
-      url: 'memo-reports/17', method: 'put', data: report,
+      url: 'memo-reports/17', method: 'put', data: requestReport,
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(3, {
       url: 'memo-reports/17', method: 'delete',
     });
+  });
+
+  it('서버 소유 필드는 생성 요청 타입과 transport 경계에서 모두 거부한다', async () => {
+    const serverOwnedFields = [
+      'memoRptSn',
+      'userId',
+      'wrterNm',
+      'rptrNm',
+      'drctnMttr',
+      'drctnMttrRegDt',
+      'rptrInqDt',
+      'crtDt',
+    ] as const;
+    type ServerOwnedField = Extract<keyof MemoReportInput, (typeof serverOwnedFields)[number]>;
+    expectTypeOf<ServerOwnedField>().toEqualTypeOf<never>();
+
+    const forbiddenPaths = serverOwnedFields.map((field) => [field]);
+    expect(createMemoReportOperation.requestForbiddenPaths).toStrictEqual(forbiddenPaths);
+    expect(updateMemoReportOperation.requestForbiddenPaths).toStrictEqual(forbiddenPaths);
+    expect(Object.keys(MemoReportDtoRequestSchema.shape).sort()).toStrictEqual(
+      ['rptTtl', 'memoRptYmd', 'rptrId', 'rptCn', 'atchFileSn'].sort(),
+    );
+    expect(Object.keys(MemoReportDtoSchema.shape)).toEqual(expect.arrayContaining([...serverOwnedFields]));
+    expect(Object.keys(MemoReportDtoResponseSchema.shape).sort()).toStrictEqual(
+      Object.keys(MemoReportDtoSchema.shape).sort(),
+    );
+
+    for (const field of serverOwnedFields) {
+      const forged = { rptTtl: '보고', rptrId: 'USER', [field]: 'forged-value' };
+      await expect(memoReportService.createMemoReport(forged as never))
+        .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+      await expect(memoReportService.updateMemoReport(17, forged as never))
+        .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+    }
+    expect(client.requestRaw).not.toHaveBeenCalled();
   });
 });

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -59,7 +60,7 @@ public class SmsDto {
     @NotEmpty
     @Size(min = 1, max = MAX_RECIPIENTS_PER_REQUEST)
     @Valid
-    private List<SmsRecptnDto> recipients = new java.util.ArrayList<>();
+    private List<@NotNull SmsRecptnDto> recipients = new java.util.ArrayList<>();
 
     @Schema(description = "검색 조건")
     private String searchCondition;

@@ -35,8 +35,8 @@ export default async function ProgramAdminPage({
     즉 producer 0건의 소비자 전용 잔존 경로였고 손으로 URL 을 만들지 않는 한 도달하지 않았다.
     시드 메뉴(`modern_route`)에도 `searchWrd` 참조가 없음을 확인했다.
 
-    PD-UX-002 Q1 은 "URL 에 실리는 검색어를 전부 유지" 로 결정됐는데, 이 값은 **실린 적이 없어**
-    그 결정의 대상이 아니다(Q4 죽은 표면). 되살리려면 producer 를 함께 만들어야 한다.
+    DEC-OPS-029 Q1과 ADR-0009는 명시된 현행 검색 URL만 유지·허용한다. 이 값은 **실린 적이 없어**
+    그 allowlist의 대상이 아니다(Q4 죽은 표면). 되살리려면 producer와 화면별 승인을 함께 추가해야 한다.
   */
   const searchWrd = '';
 

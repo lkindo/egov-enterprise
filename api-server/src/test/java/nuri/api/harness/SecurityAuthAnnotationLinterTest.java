@@ -142,7 +142,21 @@ class SecurityAuthAnnotationLinterTest {
             // 조회 창구다(종전 배너는 하드코딩이라 파생 제품에서 반대로 거짓말했다).
             // 변경이 이 한 줄뿐임을 실측으로 확인했다 — 이 행을 제거하면 직전 해시 cd681f2a… 가
             // 정확히 재현된다. endpoint 수 175 -> 176.
-            "6e3763bbceee080c7dc467bde31ec48d960315cf6e2dbe187212cf4655e6bb2d";
+            // [2026-09-05 결재 도메인 완결] GET /api/v1/approvals/{processed,task-types} 2행 추가 —
+            // 둘 다 DEFAULT_AUTHENTICATED|isAuthenticated() 로 같은 컨트롤러의 기존 GET(pending·my)과
+            // **같은 인가 축**이다. processed 는 결재자 본인 esntlId 로 좁힌 조회이고 task-types 는
+            // 공통코드 COM075 의 사용 중 상세코드(관리 데이터 아님)라 완화가 아니다(H3). endpoint 수 176 -> 178.
+            // [2026-09-06 DEC-OPS-041 투표 컨트롤러 통합] GET /api/v1/admin/system/polls{,/{pollSn}} 2행 **제거** —
+            // OnlinePollApiController 는 PollApiController(/api/v1/polls)의 부분집합으로 같은 OnlinePollService 를
+            // 감쌌다. 남는 /api/v1/polls 의 읽기는 종전과 같은 DEFAULT_AUTHENTICATED|isAuthenticated() 이고, 지운
+            // 2행은 RBAC_ADMIN_OR_SYSTEM 경로였으므로 공개 전환·완화가 아니라 표면 축소다(H3). 관리 화면은
+            // /polls 를 쓰며 등록·수정·삭제는 서비스 가드(assertAdmin)가 강제한다. endpoint 수 178 -> 176.
+            // [2026-09-06 DEC-OPS-043 커뮤니티 멤버십] GET 2행 추가 — endpoint 수 176 -> 178.
+            //   /api/v1/admin/content/community/{cmntySn}/members 는 RBAC_ADMIN_OR_SYSTEM 위에
+            //   hasAnyRole('ADMIN','SYSTEM') 메서드 인가를 더한 것(같은 컨트롤러의 다른 GET 은 URL 게이트만) —
+            //   완화가 아니라 강화다. /api/v1/communities/{cmntySn}/membership 은 다른 사용자용 GET 과 같은
+            //   DEFAULT_AUTHENTICATED|isAuthenticated() 이며 principal 자신의 행만 돌려준다(H3).
+            "4a0b73f1b3a5ab980bc465970bc8650fbf64a694538dfa93b8b05362806e1f32";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;
@@ -161,7 +175,6 @@ class SecurityAuthAnnotationLinterTest {
             "SELF_WITH_CREDENTIAL",
             "STRICT_OWNER",
             "OWNER_OR_ADMIN",
-            "OWNER_OR_ADMIN_OR_CREDENTIAL",
             "PARTICIPANT_OR_ADMIN",
             "REACHABILITY_WITH_PRIVACY",
             "ADMIN_OR_SYSTEM",
@@ -172,7 +185,6 @@ class SecurityAuthAnnotationLinterTest {
             "SELF_WITH_CREDENTIAL",
             "STRICT_OWNER",
             "OWNER_OR_ADMIN",
-            "OWNER_OR_ADMIN_OR_CREDENTIAL",
             "PARTICIPANT_OR_ADMIN",
             "REACHABILITY_WITH_PRIVACY");
     private static final Pattern GUARD_CALL = Pattern.compile(

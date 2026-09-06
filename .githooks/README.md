@@ -12,7 +12,7 @@ git config core.hooksPath .githooks
 | 훅 | 시점 | 동작 | 강도 |
 |----|------|------|------|
 | `pre-commit` | 커밋 | DTO/Controller/api-docs.json/생성타입 스테이징 시 `codegen:verify(:zod)` 드리프트 점검 | ⚠ 경고(비차단) |
-| `pre-push` | 푸시 | 운영 계약은 항상 실행. 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행한다. 소스 변경은 공용 fail-closed 분류기로 backend/frontend 영향만 선택하며, 알 수 없는 파일은 양쪽 전체를 실행한다. | ❌ 실행된 범위에서 차단 |
+| `pre-push` | 푸시 | remote branch/tag 삭제-only는 전송할 object가 없어 즉시 종료한다. 그 외 push에서는 운영 계약을 먼저 실행하고, 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행한다. 소스 변경은 공용 fail-closed 분류기로 backend/frontend 영향만 선택하며, 알 수 없는 파일은 양쪽 전체를 실행한다. 삭제와 일반 push가 섞이면 일반 push 범위는 그대로 검증한다. | ❌ 실행된 범위에서 차단 |
 
 현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 먼저 확인한 뒤 diff를 판정한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
 
@@ -31,7 +31,11 @@ git config core.hooksPath .githooks
 
 ### 입력 의미 계약 게이트
 
-`InputContractMirrorLinterTest`가 등록된 관리자 입력 DTO의 문자열 길이와 Y/N enum을 Entity 저장 상한 및 `api-docs.json`과 대조한다. 대상 목록과 필드 수는 테스트 소스가 정본이다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다.
+`InputContractMirrorLinterTest`가 등록된 입력 DTO의 문자열 길이·Y/N enum·필수 제약 종류와 validation group을 Entity 저장 상한 및 `api-docs.json`과 대조하고, 중첩 DTO의 cascade·null item 거절·item schema 연결과 서버 소유 필드의 Jackson/OpenAPI read-only 방향도 확인한다. 대상 목록과 필드 수는 테스트 소스가 정본이며 검사 본문은 baseline full-source hash로 보호된다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 등록된 길이·enum·required/nullability·중첩 schema·요청 방향의 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다. `@NotBlank`의 공백 의미 보존과 root controller validation reachability 전수 검사는 아직 이 게이트 범위가 아니다.
+
+### 첨부 할당 인가 게이트
+
+`AttachmentSourceRegistryLinterTest`는 `atchFileSn`을 가진 엔티티와 참조원 registry를 양방향으로 대조하는 기존 열람 도달성 검사에 더해, `business-core`·`business-app`의 프로덕션 서비스 계층에서 클라이언트가 선택한 첨부 assignment carrier를 exact census로 수집한다. 쓰기 경로는 `AttachmentAssignmentPolicy`의 원 업로더 가드가 엔티티·물리 파일 변경보다 먼저 오는지까지 검사하며, 미등록 writer·가드 삭제·가드 후행은 하네스를 red로 만든다. 파일 삭제 API처럼 새 업무 참조를 만들지 않는 경로는 이 census 범위가 아니다. 판정 본문은 baseline full-source hash로 보호된다.
 
 ### 대표 거버넌스 하네스
 
@@ -42,9 +46,12 @@ git config core.hooksPath .githooks
 | `ConfigSafetyLinterTest` | 배포 형상이 개발 기본값으로 재고착(actuator 확대 노출·prod jdbc-url 누락·프로파일 오버레이 소멸) |
 | `SecretLiteralLinterTest` | 배포 스크립트의 시크릿 리터럴 인라인·prod 플레이스홀더 기본값 부활 |
 | `HandlerReachesServiceLinterTest` | 저장 경로 없는 쓰기 핸들러가 200/success 반환(거짓 성공) |
+| `AttachmentSourceRegistryLinterTest` | 첨부 참조원 누락·미등록 writer·원 업로더 가드 삭제 및 저장 후행 |
 | `DockerfilePackageManagerLinterTest` | 배포 이미지가 CI 검증 트리와 다른 패키지 매니저로 빌드 |
 
 ### pre-push fast-pass 정책
+
+삭제-only push는 로컬 object가 없어 코드 검증 대상이 아니므로 운영 계약 실행 전에 종료한다. 삭제와 일반 ref update가 섞이면 삭제 ref만 범위에서 빼고 object를 전송하는 update를 정상 검증한다. stdin이 없거나 범위를 알 수 없는 경우의 fail-closed fallback은 그대로 유지한다.
 
 문서·이미지·폰트 등 **확실히 비코드인 확장자만** fast-pass하고 나머지는 소스 변경으로 간주한다. `.githooks/`, baseline manifest, Gradle 설정, wrapper, Dockerfile, 스크립트처럼 게이트를 바꿀 수 있는 파일은 확장자 유무와 관계없이 전체 소스 경로를 탄다. `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 통과한 경우에만 fast-pass한다.
 
