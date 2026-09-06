@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Plus, XCircle } from 'lucide-react';
+import { Loader2, Pencil, Plus, Users, XCircle } from 'lucide-react';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
@@ -24,6 +24,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { PagePagination } from '@/components/common/PagePagination';
 import { communityAdminService, type Community } from '@/services/foundation/system/CommunityAdminService';
+import { CommunityMembersPanel } from './CommunityMembersPanel';
 import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
 import { CommunityDtoSchema } from '@/types/generated-zod';
 
@@ -64,7 +65,10 @@ interface CommunityManageDialogProps {
  *
  * 서버의 DELETE 는 물리 삭제가 아니라 `useYn='N'` 논리 삭제다(Community.delete). 그래서 화면 동사는 '삭제' 가
  * 아니라 **'폐쇄'** 이고, 폐쇄된 커뮤니티는 이 목록에 '사용 안 함' 으로 남아 수정에서 다시 열 수 있다 —
- * 화면이 없는 일(영구 삭제)을 약속하지 않는다. 가입 승인 전이는 여전히 없다(GAP-CMTY-001, 별도 설계).
+ * 화면이 없는 일(영구 삭제)을 약속하지 않는다.
+ *
+ * [2026-09-06 DEC-OPS-043] 행마다 '회원' 버튼으로 {@link CommunityMembersPanel} 을 연다 — 가입 신청 승인·반려와
+ * 회원 목록(GAP-CMTY-001 의 dead write 를 읽는 첫 화면). 패널이 열린 동안 목록·폼은 감추고 footer 는 돌아가기만 둔다.
  */
 export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialogProps) {
   const queryClient = useQueryClient();
@@ -77,6 +81,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   // 이름의 'pending' 은 폼 검증 census 의 pending 상태 어휘(PENDING_STATE_NAME)에 맞춘 것이다 — 폐쇄 진행 중인 행.
   const [pendingCloseSn, setPendingCloseSn] = useState<number | null>(null);
   const closePendingRef = useRef(false);
+  const [membersOf, setMembersOf] = useState<Community | null>(null);
 
   const form = useAppForm(communitySchema, { defaultValues: EMPTY_FORM });
 
@@ -175,8 +180,26 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   const handleDialogClose = () => {
     if (submitLock.current) return;
     startCreate();
+    setMembersOf(null);
     onClose();
   };
+
+  if (membersOf) {
+    return (
+      <StandardModal
+        isOpen={isOpen}
+        onClose={handleDialogClose}
+        title="커뮤니티 관리"
+        footer={
+          <Button type="button" variant="outline" className="h-11 w-full" onClick={() => setMembersOf(null)}>
+            커뮤니티 목록으로
+          </Button>
+        }
+      >
+        <CommunityMembersPanel community={membersOf} onBack={() => setMembersOf(null)} />
+      </StandardModal>
+    );
+  }
 
   const editingLabel = editing ? `${editing.cmntyNm} 수정 중` : null;
 
@@ -242,6 +265,9 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                         {community.cmntyIntrcn || '소개 없음'}
                       </span>
                     </div>
+                    <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 회원 관리`} onClick={() => setMembersOf(community)} disabled={saving}>
+                      <Users size={16} aria-hidden="true" />
+                    </Button>
                     <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 수정`} onClick={() => startEdit(community)} disabled={saving}>
                       <Pencil size={16} aria-hidden="true" />
                     </Button>

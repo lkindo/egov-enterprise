@@ -157,6 +157,62 @@ class CommunityApiControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
+    // ─── 멤버십 (2026-09-06 DEC-OPS-043) ────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("회원·가입 신청 목록 — status 는 enum 이름으로 받아 서비스에 그대로 넘긴다")
+    void getMembers() throws Exception {
+        Page<nuri.business.service.system.content.community.dto.CommunityMemberDto> page = new PageImpl<>(
+                List.of(new nuri.business.service.system.content.community.dto.CommunityMemberDto(
+                        101L, "esntl-1", "홍길동",
+                        nuri.business.domain.system.content.community.CommunityMemberStatus.REQUESTED,
+                        "A", "N", "20260906", "Y")),
+                PageRequest.of(0, 20), 1);
+        when(communityService.getMembers(eq(101L),
+                eq(nuri.business.domain.system.content.community.CommunityMemberStatus.REQUESTED), any()))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/admin/content/community/101/members").param("status", "REQUESTED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].userId").value("esntl-1"))
+                .andExpect(jsonPath("$.data.list[0].userNm").value("홍길동"))
+                .andExpect(jsonPath("$.data.list[0].status").value("REQUESTED"));
+    }
+
+    @Test
+    @DisplayName("가입 승인 — PATCH …/members/{userId}/approve")
+    void approveMember() throws Exception {
+        mockMvc.perform(patch("/api/v1/admin/content/community/101/members/esntl-1/approve"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        verify(communityService).approveMember(101L, "esntl-1");
+    }
+
+    @Test
+    @DisplayName("가입 반려 — DELETE …/members/{userId}")
+    void rejectMember() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/content/community/101/members/esntl-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+        verify(communityService).rejectMember(101L, "esntl-1");
+    }
+
+    /**
+     * 🔒 멤버십 전이 3본은 URL 게이트 외에 메서드 인가(@AdminOrSystem)를 직접 든다. standalone MockMvc 는
+     * 메서드 보안을 집행하지 않으므로 애노테이션의 존재를 리플렉션으로 고정한다 — 제거되면 인가 완화다.
+     */
+    @Test
+    @DisplayName("🔒 멤버십 전이 핸들러는 @AdminOrSystem 을 직접 든다")
+    void membershipHandlersCarryMethodSecurity() throws Exception {
+        for (String name : List.of("getMembers", "approveMember", "rejectMember")) {
+            java.lang.reflect.Method handler = java.util.Arrays.stream(CommunityApiController.class.getDeclaredMethods())
+                    .filter(m -> m.getName().equals(name)).findFirst().orElseThrow();
+            org.junit.jupiter.api.Assertions.assertNotNull(
+                    handler.getAnnotation(nuri.foundation.security.annotation.AdminOrSystem.class),
+                    name + " 에 @AdminOrSystem 이 없다");
+        }
+    }
+
     @Test
     @DisplayName("포틀릿 커뮤니티 목록 조회")
     void getCommunityPortlet() throws Exception {

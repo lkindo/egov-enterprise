@@ -4,6 +4,7 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.content.community.CommunityService;
 import nuri.business.service.system.content.community.dto.CommunityDto;
+import nuri.business.service.system.content.community.dto.CommunityMembershipDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,7 +52,20 @@ public class CommunityUserApiController {
         return ResponseEntity.ok(ApiResponse.success(communityService.getActiveCommunity(cmntySn)));
     }
 
-    @Operation(summary = "커뮤니티 가입 신청", description = "사용자가 특정 커뮤니티에 가입을 신청합니다.")
+    /**
+     * [2026-09-06 DEC-OPS-043] 상세 화면이 가입 버튼의 상태(신청 가능·승인 대기·회원)를 정하는 근거.
+     * 자기 자신의 행만 돌려주며(principal = esntlId), 다른 사용자의 멤버십은 조회할 수 없다.
+     */
+    @Operation(summary = "내 커뮤니티 멤버십 상태", description = "현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER)를 조회합니다.")
+    @GetMapping("/{cmntySn}/membership")
+    public ResponseEntity<ApiResponse<CommunityMembershipDto>> getMyMembership(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
+        return ResponseEntity.ok(ApiResponse.success(
+                communityService.getMembership(cmntySn, userDetails.getUsername())));
+    }
+
+    @Operation(summary = "커뮤니티 가입 신청", description = "사용자가 특정 커뮤니티에 가입을 신청합니다. 관리자가 승인하면 회원이 됩니다.")
     @PostMapping("/{cmntySn}/join")
     public ResponseEntity<ApiResponse<Void>> joinCommunity(
             @AuthenticationPrincipal UserDetails userDetails,

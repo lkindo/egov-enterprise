@@ -355,4 +355,180 @@ class CommunityServiceImplTest {
         // 커뮤니티를 되살릴 수 없게 된다. 사용자 경로는 getActiveCommunity 로 분리돼 있다.
         assertThat(communityService.getCommunity(101L).getCmntySn()).isEqualTo(101L);
     }
+
+    // ─── 멤버십 전이 (2026-09-06 DEC-OPS-043, GAP-CMTY-001) ─────────────────────────────────────
+    //   종전에는 가입이 만드는 mbrSttsCd='A' 를 읽거나 옮기는 코드가 없었다. 여기서는 승인·반려가
+    //   '신청' 상태에서만 일어나고, 회원 행을 반려로 조용히 지우지 않으며, 관리자 아닌 주체는 세 경로
+    //   전부에서 거부됨을 고정한다.
+
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
+    @org.junit.jupiter.api.AfterEach
+    void clearSecurityContext() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    private static void authenticateWithRole(String role) {
+        org.springframework.security.core.context.SecurityContext context =
+                org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "principal", null,
+                List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority(role))));
+        org.springframework.security.core.context.SecurityContextHolder.setContext(context);
+    }
+
+    private static nuri.business.domain.system.content.community.CommunityUser membership(Long cmntySn, String userId, String status) {
+        return nuri.business.domain.system.content.community.CommunityUser.builder()
+                .id(new nuri.business.domain.system.content.community.CommunityUserId(cmntySn, userId))
+                .mbrSttsCd(status)
+                .mngrYn("N")
+                .joinYmd("20260906")
+                .useYn("Y")
+                .build();
+    }
+
+    @Test
+    @DisplayName("가입 승인 — 신청(A) 행만 회원(P)으로 옮긴다")
+    void approveMember_movesRequestedToApproved() {
+        authenticateWithRole("ROLE_ADMIN");
+        var member = membership(101L, "user1", "A");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+
+        communityService.approveMember(101L, "user1");
+
+        assertThat(member.getMbrSttsCd()).isEqualTo("P");
+        assertThat(member.isRequested()).isFalse();
+    }
+
+    @Test
+    @DisplayName("가입 승인 — 이미 회원이거나 어휘 밖 상태면 400(INVALID_STATE) 이고 상태를 바꾸지 않는다")
+    void approveMember_rejectsNonRequested() {
+        authenticateWithRole("ROLE_ADMIN");
+        var member = membership(101L, "user1", "P");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+
+        nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> communityService.approveMember(101L, "user1"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.INVALID_STATE, thrown.getErrorCode());
+        assertThat(member.getMbrSttsCd()).isEqualTo("P");
+    }
+
+    @Test
+    @DisplayName("가입 반려 — 신청(A) 행을 지워 다시 신청할 수 있게 한다")
+    void rejectMember_deletesRequestedRow() {
+        authenticateWithRole("ROLE_ADMIN");
+        var member = membership(101L, "user1", "A");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+
+        communityService.rejectMember(101L, "user1");
+
+        verify(communityUserRepository).delete(member);
+    }
+
+    @Test
+    @DisplayName("🔒 가입 반려는 회원(P) 행을 지우지 않는다 — 탈퇴 처리는 별도 절차다(H3)")
+    void rejectMember_doesNotDeleteApprovedMember() {
+        authenticateWithRole("ROLE_ADMIN");
+        var member = membership(101L, "user1", "P");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+
+        nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> communityService.rejectMember(101L, "user1"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.INVALID_STATE, thrown.getErrorCode());
+        verify(communityUserRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("멤버십 전이 — 없는 신청은 404")
+    void approveMember_notFound() {
+        authenticateWithRole("ROLE_ADMIN");
+        given(communityUserRepository.findById(any())).willReturn(Optional.empty());
+
+        nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> communityService.approveMember(101L, "nobody"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, thrown.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("🔒 목록·승인·반려는 관리자(ADMIN/SYSTEM) 전용 — 일반 사용자는 세 경로 전부 거부되고 아무것도 쓰지 않는다")
+    void membershipTransitions_requireAdmin() {
+        authenticateWithRole("ROLE_USER");
+        var member = membership(101L, "user1", "A");
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(member));
+        given(communityRepository.findById(101L)).willReturn(Optional.of(Community.builder().cmntySn(101L).useYn("Y").build()));
+
+        for (Runnable call : List.<Runnable>of(
+                () -> communityService.approveMember(101L, "user1"),
+                () -> communityService.rejectMember(101L, "user1"),
+                () -> communityService.getMembers(101L, null, PageRequest.of(0, 20)))) {
+            nuri.foundation.core.exception.BusinessException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                    nuri.foundation.core.exception.BusinessException.class, call::run);
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED, thrown.getErrorCode());
+        }
+        assertThat(member.getMbrSttsCd()).isEqualTo("A");
+        verify(communityUserRepository, never()).delete(any());
+        verify(communityUserRepository, never()).findByIdCmntySn(any(), any());
+    }
+
+    @Test
+    @DisplayName("내 멤버십 — 행이 없으면 NONE, 신청 행은 REQUESTED, 회원 행은 MEMBER, 어휘 밖 코드는 UNKNOWN")
+    void getMembership_mapsRowToStatus() {
+        given(communityUserRepository.findById(any())).willReturn(Optional.empty());
+        assertThat(communityService.getMembership(101L, "user1").status())
+                .isEqualTo(nuri.business.service.system.content.community.dto.CommunityMembershipDto.Status.NONE);
+
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(membership(101L, "user1", "A")));
+        var requested = communityService.getMembership(101L, "user1");
+        assertThat(requested.status())
+                .isEqualTo(nuri.business.service.system.content.community.dto.CommunityMembershipDto.Status.REQUESTED);
+        assertThat(requested.joinYmd()).isEqualTo("20260906");
+
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(membership(101L, "user1", "P")));
+        assertThat(communityService.getMembership(101L, "user1").status())
+                .isEqualTo(nuri.business.service.system.content.community.dto.CommunityMembershipDto.Status.MEMBER);
+
+        given(communityUserRepository.findById(any())).willReturn(Optional.of(membership(101L, "user1", "Z")));
+        assertThat(communityService.getMembership(101L, "user1").status())
+                .isEqualTo(nuri.business.service.system.content.community.dto.CommunityMembershipDto.Status.UNKNOWN);
+    }
+
+    @Test
+    @DisplayName("회원 목록 — esntlId 를 이름으로 해석하되 찾지 못한 사용자는 null 로 두고 목록을 죽이지 않는다; 상태 필터는 코드로 내려간다")
+    void getMembers_resolvesNamesLeniently() {
+        authenticateWithRole("ROLE_ADMIN");
+        given(communityRepository.findById(101L)).willReturn(Optional.of(Community.builder().cmntySn(101L).useYn("N").build()));
+        var requested = membership(101L, "esntl-1", "A");
+        var orphan = membership(101L, "esntl-gone", "P");
+        given(communityUserRepository.findByIdCmntySnAndMbrSttsCd(org.mockito.ArgumentMatchers.eq(101L),
+                org.mockito.ArgumentMatchers.eq("A"), any()))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of(requested, orphan)));
+        nuri.business.domain.user.entity.User user = org.mockito.Mockito.mock(nuri.business.domain.user.entity.User.class);
+        given(user.getEsntlId()).willReturn("esntl-1");
+        given(user.getUserNm()).willReturn("홍길동");
+        given(userRepository.findByEsntlIdIn(any())).willReturn(List.of(user));
+
+        var page = communityService.getMembers(101L,
+                nuri.business.domain.system.content.community.CommunityMemberStatus.REQUESTED, PageRequest.of(0, 20));
+
+        assertThat(page.getContent()).hasSize(2);
+        assertThat(page.getContent().get(0).userNm()).isEqualTo("홍길동");
+        assertThat(page.getContent().get(0).status())
+                .isEqualTo(nuri.business.domain.system.content.community.CommunityMemberStatus.REQUESTED);
+        assertThat(page.getContent().get(1).userNm()).isNull();
+        assertThat(page.getContent().get(1).status())
+                .isEqualTo(nuri.business.domain.system.content.community.CommunityMemberStatus.APPROVED);
+        // 폐쇄된(useYn='N') 커뮤니티의 회원도 관리자는 본다 — 정리·복구 경로 보존.
+        verify(communityUserRepository, never()).findByIdCmntySn(any(), any());
+    }
 }

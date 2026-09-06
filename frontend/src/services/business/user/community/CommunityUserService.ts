@@ -5,8 +5,16 @@ import type { components, operations } from '@/types/generated-api';
 import {
     getCommunities_1Operation,
     getCommunity_1Operation,
+    getMyMembershipOperation,
     joinCommunityOperation,
 } from '@/types/generated-operations';
+
+/** 현재 사용자의 커뮤니티 멤버십. NONE=신청 가능, REQUESTED=승인 대기, MEMBER=회원, UNKNOWN=어휘 밖 상태(신청 불가). */
+export type CommunityMembership = {
+    cmntySn: number;
+    status: NonNullable<components['schemas']['CommunityMembershipDto']['status']>;
+    joinYmd: string | null;
+};
 
 type CommunityListQuery = NonNullable<operations['getCommunities_1']['parameters']['query']>;
 
@@ -78,6 +86,19 @@ class CommunityUserService extends UserService {
         return this.executeGenerated(getCommunity_1Operation, {
             path: { cmntySn },
         }) as Promise<CommunityVO>;
+    }
+
+    /**
+     * 내 멤버십 상태 (2026-09-06 DEC-OPS-043) — 상세 화면이 가입 버튼의 상태를 정하는 근거.
+     */
+    async getMyMembership(cmntySn: number): Promise<CommunityMembership> {
+        const response = await this.executeGenerated(getMyMembershipOperation, {
+            path: { cmntySn },
+        });
+        if (typeof response.cmntySn !== 'number' || typeof response.status !== 'string') {
+            throw new Error('커뮤니티 멤버십 응답이 필수 계약과 일치하지 않습니다.');
+        }
+        return { cmntySn: response.cmntySn, status: response.status, joinYmd: response.joinYmd ?? null };
     }
 
     /**

@@ -151,7 +151,12 @@ class SecurityAuthAnnotationLinterTest {
             // 감쌌다. 남는 /api/v1/polls 의 읽기는 종전과 같은 DEFAULT_AUTHENTICATED|isAuthenticated() 이고, 지운
             // 2행은 RBAC_ADMIN_OR_SYSTEM 경로였으므로 공개 전환·완화가 아니라 표면 축소다(H3). 관리 화면은
             // /polls 를 쓰며 등록·수정·삭제는 서비스 가드(assertAdmin)가 강제한다. endpoint 수 178 -> 176.
-            "7623ad675af574c842a23896d8e837c4b10e0e138bc50ccb9f249120ecf4a518";
+            // [2026-09-06 DEC-OPS-043 커뮤니티 멤버십] GET 2행 추가 — endpoint 수 176 -> 178.
+            //   /api/v1/admin/content/community/{cmntySn}/members 는 RBAC_ADMIN_OR_SYSTEM 위에
+            //   hasAnyRole('ADMIN','SYSTEM') 메서드 인가를 더한 것(같은 컨트롤러의 다른 GET 은 URL 게이트만) —
+            //   완화가 아니라 강화다. /api/v1/communities/{cmntySn}/membership 은 다른 사용자용 GET 과 같은
+            //   DEFAULT_AUTHENTICATED|isAuthenticated() 이며 principal 자신의 행만 돌려준다(H3).
+            "4a0b73f1b3a5ab980bc465970bc8650fbf64a694538dfa93b8b05362806e1f32";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

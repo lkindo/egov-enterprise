@@ -92,7 +92,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // [2026-09-06 DEC-OPS-041 투표 컨트롤러 통합] OnlinePollApiController(/api/v1/admin/system/polls) 4개 제거
   //   (getPolls_1·getPoll_1·insertPoll·vote_1) — 같은 OnlinePollService 를 감싸는 /api/v1/polls 의 부분집합이었다. 380 -> 376.
   // [2026-09-06 DEC-OPS-042 관리자 알림 발송] POST /api/v1/admin/notifications/dispatch 1개 신설 — 376 -> 377.
-  assert.equal(operations.length, 377);
+  // [2026-09-06 커뮤니티 멤버십(DEC-OPS-043)] getMembers·approveMember·rejectMember·getMyMembership 4개 신설 — 377 -> 381.
+  assert.equal(operations.length, 381);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

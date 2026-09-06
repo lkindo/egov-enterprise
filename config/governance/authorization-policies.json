@@ -84,6 +84,24 @@
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/content/community/{cmntySn}/members/{userId}",
+      "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#rejectMember",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommunityService#rejectMember"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve",
+      "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#approveMember",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "CommunityService#approveMember"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/content/files",
       "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
@@ -1946,6 +1964,39 @@
     },
     {
       "target": "CommonCodeService#updateCmmnDetailCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommunityService#approveMember",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommunityService#getMembers",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "CommunityService#rejectMember",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
         {
