@@ -120,6 +120,23 @@ class OnlinePollServiceTest {
     }
 
     @Test
+    @DisplayName("설문 상세 조회 - 미투표 일반 사용자에게는 득표수를 숨기고 hasVoted는 false")
+    void getPoll_HidesVoteCountsForUnvotedUser() {
+        OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollManage(entity).pollArtclNm("Item 1").build();
+        given(pollItemRepository.findByPollManagePollSn(1L)).willReturn(List.of(item));
+        given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
+
+        OnlinePollManageDto result = onlinePollService.getPoll(1L);
+
+        assertThat(result.getPollSn()).isEqualTo(1L);
+        assertThat(result.getHasVoted()).isFalse();
+        assertThat(result.getPollArticles().get(0).getPollIemCo()).isEqualTo(0L);
+    }
+
+    @Test
     @DisplayName("설문 상세 조회 - 실패")
     void getPoll_Fail() {
         given(pollManageRepository.findById(99L)).willReturn(Optional.empty());

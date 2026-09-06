@@ -56,6 +56,9 @@ public class OnlinePollManageDto {
     @jakarta.validation.Valid  // 중첩 원소(@NotBlank pollArtclNm)를 컨트롤러 @Valid 로 캐스케이드 검증 → null 항목명 NPE(500) 대신 400
     private List<OnlinePollArticleDto> pollArticles;
 
+    @Schema(description = "현재 사용자의 투표 참여 여부")
+    private Boolean hasVoted;
+
     public static OnlinePollManageDto from(OnlinePollManage entity) {
         if (entity == null) return null;
         return OnlinePollManageDto.builder()

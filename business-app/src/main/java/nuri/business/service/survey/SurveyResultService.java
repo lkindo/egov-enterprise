@@ -101,6 +101,20 @@ public class SurveyResultService {
                 .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(questions.keySet()).stream()
                 .collect(Collectors.toMap(SurveyArticle::getSrvyArtclSn, Function.identity()));
 
+        // 문항별 선택 수 검증 (maxChcCnt 초과 차단)
+        Map<Long, Long> countsByQuestion = dto.answers().stream()
+                .collect(Collectors.groupingBy(SurveyResponseSubmitDto.Answer::srvyQstnSn, Collectors.counting()));
+        for (Map.Entry<Long, Long> entry : countsByQuestion.entrySet()) {
+            SurveyQuestion q = questions.get(entry.getKey());
+            if (q != null && q.getMaxChcCnt() != null && q.getMaxChcCnt() > 0) {
+                if (entry.getValue() > q.getMaxChcCnt()) {
+                    throw new BusinessException(
+                            "문항의 최대 선택 개수를 초과했습니다 (최대 " + q.getMaxChcCnt() + "개): " + q.getQstnCn(),
+                            CommonErrorCode.INVALID_INPUT_VALUE);
+                }
+            }
+        }
+
         List<SurveyResult> rows = new ArrayList<>();
         for (SurveyResponseSubmitDto.Answer a : dto.answers()) {
             SurveyQuestion q = questions.get(a.srvyQstnSn());

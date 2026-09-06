@@ -90,7 +90,18 @@ public class OnlinePollService {
         OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(pollSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         OnlinePollManageDto dto = OnlinePollManageDto.from(entity);
-        dto.setPollArticles(getPollItemList(pollSn));
+
+        String currentLoginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(null);
+        boolean isAdmin = nuri.business.security.util.SecurityUtil.isAdmin();
+        boolean hasVoted = currentLoginId != null && pollResultRepository.countByPollSnAndFrstRegisterId(pollSn, currentLoginId) > 0;
+        dto.setHasVoted(hasVoted);
+
+        List<OnlinePollArticleDto> items = getPollItemList(pollSn);
+        // [밴드웨건 효과 방지] 관리자가 아니고 아직 투표하지 않은 사용자에게는 각 항목의 득표수를 숨긴다.
+        if (!isAdmin && !hasVoted) {
+            items.forEach(item -> item.setPollIemCo(0L));
+        }
+        dto.setPollArticles(items);
         return dto;
     }
 
