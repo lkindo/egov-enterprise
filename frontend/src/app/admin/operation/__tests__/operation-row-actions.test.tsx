@@ -104,12 +104,10 @@ const HR = {
 };
 /**
  * 식별자만 있는 행 — API·이관으로 최소 필드만 들어오면 이 모습이다.
- * 서버 DTO·엔티티·물리 컬럼 어디에도 이 값들이 필수라는 선언이 없다(DEC-OPS-045).
+ * 서버 DTO·엔티티·물리 컬럼 어디에도 나머지 값이 필수라는 선언이 없다(DEC-OPS-045).
+ * 응답에서 값이 없는 필드는 Jackson 이 생략하므로 부재(undefined)로 온다 — 화면은 `?? ''` 로 받는다.
  */
-const SPARSE_HR = {
-  evntSn: 1, otsdHrId: 'HR-002', otsdHrNm: null, ogdpInstNm: null,
-  areaNo: null, mdTelno: null, endTelno: null, emlAddr: null, brdtYmd: null,
-};
+const SPARSE_HR = { evntSn: 1, otsdHrId: 'HR-002' };
 
 const REWARD = { rwrdSn: 7, rwardNm: '모범 사원상', rwardwnrId: 'USER-001', rwardCode: 'R01', rwardDe: '20260826', pblenCn: '공적 내용' };
 
