@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 63,
-    "candidateCount": 141
+    "secondaryActionBoundaries": 65,
+    "candidateCount": 143
   },
   "entries": [
     {
@@ -2792,6 +2792,46 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/components/business/community/__tests__/CommunityManageDialog.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/business/community/CommunityMembersPanel.tsx#CommunityMembersPanel.handleApprove[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/business/community/CommunityMembersPanel.tsx",
+      "owner": "CommunityMembersPanel",
+      "handler": "handleApprove",
+      "writeSinks": [
+        "communityAdminService.approveMember"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/business/community/CommunityMembersPanel.tsx#CommunityMembersPanel.handleReject[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/business/community/CommunityMembersPanel.tsx",
+      "owner": "CommunityMembersPanel",
+      "handler": "handleReject",
+      "writeSinks": [
+        "communityAdminService.rejectMember"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx"
       ]
     }
   ],

@@ -15883,7 +15883,7 @@
           "Community User"
         ],
         "summary": "커뮤니티 가입 신청",
-        "description": "사용자가 특정 커뮤니티에 가입을 신청합니다.",
+        "description": "사용자가 특정 커뮤니티에 가입을 신청합니다. 관리자가 승인하면 회원이 됩니다.",
         "operationId": "joinCommunity",
         "parameters": [
           {
@@ -25370,6 +25370,99 @@
         }
       }
     },
+    "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve": {
+      "patch": {
+        "tags": [
+          "Community"
+        ],
+        "summary": "커뮤니티 가입 신청 승인",
+        "description": "가입 신청 상태(REQUESTED)인 사용자를 회원으로 승인합니다. 신청 상태가 아니면 400 입니다.",
+        "operationId": "approveMember",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "사용자 식별자(esntlId)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/search": {
       "get": {
         "tags": [
@@ -28493,6 +28586,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseCommunityDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/communities/{cmntySn}/membership": {
+      "get": {
+        "tags": [
+          "Community User"
+        ],
+        "summary": "내 커뮤니티 멤버십 상태",
+        "description": "현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER)를 조회합니다.",
+        "operationId": "getMyMembership",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCommunityMembershipDto"
                 }
               }
             }
@@ -34016,6 +34193,137 @@
         }
       }
     },
+    "/api/v1/admin/content/community/{cmntySn}/members": {
+      "get": {
+        "tags": [
+          "Community"
+        ],
+        "summary": "커뮤니티 회원·가입 신청 목록",
+        "description": "커뮤니티의 회원과 가입 신청을 페이징 조회합니다. status 를 주면 그 상태만(REQUESTED=가입 신청, APPROVED=회원). 이름은 사용자 도메인에서 해석하며 연락처는 싣지 않습니다.",
+        "operationId": "getMembers",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "REQUESTED",
+                "APPROVED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseCommunityMemberDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/content/community/portlet": {
       "get": {
         "tags": [
@@ -34511,6 +34819,99 @@
           {
             "name": "bbsId",
             "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/content/community/{cmntySn}/members/{userId}": {
+      "delete": {
+        "tags": [
+          "Community"
+        ],
+        "summary": "커뮤니티 가입 신청 반려",
+        "description": "가입 신청 상태(REQUESTED)인 행을 삭제합니다. 사용자는 다시 신청할 수 있습니다. 이미 회원인 행은 반려 대상이 아니라 400 입니다(탈퇴 처리는 별도).",
+        "operationId": "rejectMember",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "사용자 식별자(esntlId)",
             "required": true,
             "schema": {
               "type": "string"
@@ -41213,6 +41614,62 @@
           }
         }
       },
+      "ApiResponseCommunityMembershipDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CommunityMembershipDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "CommunityMembershipDto": {
+        "type": "object",
+        "description": "현재 사용자의 커뮤니티 멤버십 상태",
+        "properties": {
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "커뮤니티 일련번호"
+          },
+          "status": {
+            "type": "string",
+            "description": "멤버십 상태",
+            "enum": [
+              "NONE",
+              "REQUESTED",
+              "MEMBER",
+              "UNKNOWN"
+            ]
+          },
+          "joinYmd": {
+            "type": "string",
+            "description": "가입(신청)일자 yyyyMMdd — 행이 없으면 null"
+          }
+        }
+      },
       "ApiResponsePageResponseCommentDto": {
         "type": "object",
         "properties": {
@@ -46003,6 +46460,107 @@
           "storedFilesChecked",
           "undecidable"
         ]
+      },
+      "ApiResponsePageResponseCommunityMemberDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseCommunityMemberDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "CommunityMemberDto": {
+        "type": "object",
+        "description": "커뮤니티 회원·가입 신청",
+        "properties": {
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "커뮤니티 일련번호"
+          },
+          "userId": {
+            "type": "string",
+            "description": "사용자 식별자(esntlId)"
+          },
+          "userNm": {
+            "type": "string",
+            "description": "사용자 이름 — 사용자를 찾지 못하면 null"
+          },
+          "status": {
+            "type": "string",
+            "description": "멤버십 상태 — REQUESTED(가입 신청)·APPROVED(회원). 어휘 밖 코드는 null",
+            "enum": [
+              "REQUESTED",
+              "APPROVED"
+            ]
+          },
+          "mbrSttsCd": {
+            "type": "string",
+            "description": "원본 상태 코드(mbr_stts_cd)"
+          },
+          "mngrYn": {
+            "type": "string",
+            "description": "관리자 여부(Y/N)"
+          },
+          "joinYmd": {
+            "type": "string",
+            "description": "가입(신청)일자 yyyyMMdd"
+          },
+          "useYn": {
+            "type": "string",
+            "description": "사용 여부(Y/N)"
+          }
+        }
+      },
+      "PageResponseCommunityMemberDto": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityMemberDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPage": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "ApiResponseListCommunityDto": {
         "type": "object",

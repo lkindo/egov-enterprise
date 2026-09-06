@@ -3,7 +3,13 @@ package nuri.business.service.system.content.community;
 import nuri.business.domain.system.content.community.Community;
 import nuri.business.domain.system.content.community.CommunityRepository;
 import nuri.business.domain.system.content.community.QCommunity;
+import nuri.business.domain.system.content.community.CommunityMemberStatus;
+import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.system.content.community.dto.CommunityDto;
+import nuri.business.service.system.content.community.dto.CommunityMemberDto;
+import nuri.business.service.system.content.community.dto.CommunityMembershipDto;
 import nuri.business.domain.system.content.community.CommunityUser;
 import nuri.business.domain.system.content.community.CommunityUserRepository;
 import nuri.business.domain.system.content.community.CommunityUserId;
@@ -14,10 +20,13 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -29,6 +38,13 @@ public class CommunityService {
     private final CommunityRepository communityRepository;
     private final CommunityUserRepository communityUserRepository;
     private final JPAQueryFactory queryFactory;
+    /**
+     * [2026-09-06 DEC-OPS-043] 회원 목록의 이름 해석용 — app→core 결합 +1(community → user).
+     * {@code tb_cmnty_user_map.user_id} 는 esntlId 라 화면이 이름을 알 수 없고, 사용자 검색 응답은 개인정보를
+     * 의도적으로 빼므로 해석은 코어 사용자 도메인만 할 수 있다(DEC-OPS-035 와 같은 이유). 이름만 싣고 연락처는
+     * 내보내지 않는다(H3).
+     */
+    private final UserRepository userRepository;
 
     /**
      * 관리자용 커뮤니티 목록 — 사용 중지(useYn='N')된 것까지 <b>전부</b> 보여 준다.
@@ -197,5 +213,88 @@ public class CommunityService {
                 .build();
 
         communityUserRepository.save(communityUser);
+    }
+
+    // ─── 멤버십 전이 (2026-09-06 DEC-OPS-043, GAP-CMTY-001) ───────────────────────────────────────
+    //   종전에는 가입이 만드는 mbrSttsCd='A' 를 읽거나 옮기는 코드가 저장소 전체에 없었다(dead write).
+    //   승인·반려는 시스템 관리자(ADMIN/SYSTEM) 전용이다 — mngrYn='Y' 를 부여하는 경로가 아직 없어
+    //   커뮤니티 운영자 위임은 이번 범위 밖이며, 회원 탈퇴·강제 탈퇴도 만들지 않는다(화면이 약속하지 않는다).
+
+    /**
+     * 관리자용 회원·가입 신청 목록. {@code status} 가 null 이면 전체.
+     *
+     * <p>관리자는 폐쇄된 커뮤니티의 회원도 볼 수 있어야 하므로(정리·복구) 무필터 {@code findById} 로 존재만 확인한다.
+     */
+    public Page<CommunityMemberDto> getMembers(Long cmntySn, CommunityMemberStatus status,
+            @org.springframework.lang.NonNull Pageable pageable) {
+        SecurityUtil.assertAdmin();
+        requireCommunity(cmntySn);
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Order.desc("joinYmd"), Sort.Order.asc("id.userId")));
+        Page<CommunityUser> page = status == null
+                ? communityUserRepository.findByIdCmntySn(Objects.requireNonNull(cmntySn), sorted)
+                : communityUserRepository.findByIdCmntySnAndMbrSttsCd(Objects.requireNonNull(cmntySn), status.code(), sorted);
+        Map<String, String> names = resolveUserNames(page.getContent());
+        return page.map(member -> CommunityMemberDto.from(member, names.get(member.getId().getUserId())));
+    }
+
+    /** 가입 신청 승인 — 신청 상태({@code A})인 행만 회원({@code P})으로 옮긴다. 그 외 상태는 400(INVALID_STATE). */
+    @Transactional
+    public void approveMember(Long cmntySn, String userId) {
+        SecurityUtil.assertAdmin();
+        CommunityUser member = requireMembership(cmntySn, userId);
+        if (!member.isRequested()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE, "가입 신청 상태가 아니어서 승인할 수 없습니다.");
+        }
+        member.approve();
+    }
+
+    /**
+     * 가입 신청 반려 — 신청 행을 지운다(사용자는 다시 신청할 수 있다). 이미 회원인 행은 반려 대상이 아니다 —
+     * 탈퇴 처리는 별도 절차이며 이 메서드가 회원을 조용히 지우지 않게 하기 위해서다(H3).
+     */
+    @Transactional
+    public void rejectMember(Long cmntySn, String userId) {
+        SecurityUtil.assertAdmin();
+        CommunityUser member = requireMembership(cmntySn, userId);
+        if (!member.isRequested()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE,
+                    "가입 신청 상태가 아니어서 반려할 수 없습니다. 회원 탈퇴 처리는 지원하지 않습니다.");
+        }
+        communityUserRepository.delete(member);
+    }
+
+    /** 현재 사용자({@code userId} = esntlId)의 멤버십 상태. 행이 없으면 NONE. */
+    public CommunityMembershipDto getMembership(Long cmntySn, String userId) {
+        return communityUserRepository.findById(new CommunityUserId(Objects.requireNonNull(cmntySn), userId))
+                .map(CommunityMembershipDto::from)
+                .orElseGet(() -> CommunityMembershipDto.none(cmntySn));
+    }
+
+    private Community requireCommunity(Long cmntySn) {
+        return communityRepository.findById(Objects.requireNonNull(cmntySn))
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
+    }
+
+    private CommunityUser requireMembership(Long cmntySn, String userId) {
+        return communityUserRepository.findById(new CommunityUserId(Objects.requireNonNull(cmntySn), userId))
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "가입 신청 내역을 찾을 수 없습니다."));
+    }
+
+    /** esntlId → 이름. 찾지 못한 사용자는 맵에 없다(호출부는 null 로 둔다). */
+    private Map<String, String> resolveUserNames(List<CommunityUser> members) {
+        List<String> esntlIds = members.stream()
+                .map(member -> member.getId().getUserId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (esntlIds.isEmpty()) {
+            return Map.of();
+        }
+        return userRepository.findByEsntlIdIn(esntlIds).stream()
+                .filter(user -> user.getEsntlId() != null && user.getUserNm() != null)
+                .collect(Collectors.toMap(User::getEsntlId, User::getUserNm, (first, second) -> first));
     }
 }

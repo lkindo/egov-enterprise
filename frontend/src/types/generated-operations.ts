@@ -24,6 +24,7 @@ import {
   ApiResponseCmmnCodeDtoResponseSchema,
   ApiResponseCmmnDetailCodeDtoResponseSchema,
   ApiResponseCommunityDtoResponseSchema,
+  ApiResponseCommunityMembershipDtoResponseSchema,
   ApiResponseCurrentUserResponseResponseSchema,
   ApiResponseDashboardResponseResponseSchema,
   ApiResponseDeptJobBoxDtoResponseSchema,
@@ -83,6 +84,7 @@ import {
   ApiResponsePageResponseCmmnDetailCodeDtoResponseSchema,
   ApiResponsePageResponseCommentDtoResponseSchema,
   ApiResponsePageResponseCommunityDtoResponseSchema,
+  ApiResponsePageResponseCommunityMemberDtoResponseSchema,
   ApiResponsePageResponseDeptAuthorProjectionResponseSchema,
   ApiResponsePageResponseDeptJobBoxDtoResponseSchema,
   ApiResponsePageResponseDeptJobDtoResponseSchema,
@@ -179,6 +181,7 @@ import {
   CommonCodeDtoResponseSchema,
   CommunityDtoRequestSchema,
   CommunityDtoResponseSchema,
+  CommunityMembershipDtoResponseSchema,
   CurrentUserResponseResponseSchema,
   DashboardResponseResponseSchema,
   DeptAuthorBatchRequestRequestSchema,
@@ -242,6 +245,7 @@ import {
   PageResponseCmmnDetailCodeDtoResponseSchema,
   PageResponseCommentDtoResponseSchema,
   PageResponseCommunityDtoResponseSchema,
+  PageResponseCommunityMemberDtoResponseSchema,
   PageResponseDeptAuthorProjectionResponseSchema,
   PageResponseDeptJobBoxDtoResponseSchema,
   PageResponseDeptJobDtoResponseSchema,
@@ -5270,6 +5274,23 @@ export const moveUsersToDeptOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const approveMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "approveMember",
+  method: "patch",
+  path: "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int(), "userId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const searchAssignableUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "searchAssignableUsers",
   method: "get",
@@ -5929,6 +5950,23 @@ export const getCommunity_1Operation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.lazy(() => CommunityDtoResponseSchema),
   envelopeSchema: ApiResponseCommunityDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const getMyMembershipOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getMyMembership",
+  method: "get",
+  path: "/api/v1/communities/{cmntySn}/membership",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => CommunityMembershipDtoResponseSchema),
+  envelopeSchema: ApiResponseCommunityMembershipDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -6800,6 +6838,23 @@ export const scanOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const getMembersOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getMembers",
+  method: "get",
+  path: "/api/v1/admin/content/community/{cmntySn}/members",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int() }).strict(),
+  querySchema: z.object({ "status": z.enum(["REQUESTED","APPROVED"]).optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseCommunityMemberDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseCommunityMemberDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getCommunityPortletOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getCommunityPortlet",
   method: "get",
@@ -6894,6 +6949,23 @@ export const deleteBoardMasterPhysicallyOperation = /*#__PURE__*/ defineGenerate
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const rejectMemberOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "rejectMember",
+  method: "delete",
+  path: "/api/v1/admin/content/community/{cmntySn}/members/{userId}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "cmntySn": z.number().int(), "userId": z.string() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,

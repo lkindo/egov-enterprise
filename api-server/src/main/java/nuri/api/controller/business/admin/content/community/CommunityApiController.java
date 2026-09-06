@@ -5,6 +5,9 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.content.community.CommunityService;
 import nuri.business.service.system.content.community.dto.CommunityDto;
+import nuri.business.service.system.content.community.dto.CommunityMemberDto;
+import nuri.business.domain.system.content.community.CommunityMemberStatus;
+import nuri.foundation.security.annotation.AdminOrSystem;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -69,6 +72,44 @@ public class CommunityApiController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
         communityService.deleteCommunity(cmntySn, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // ─── 멤버십 (2026-09-06 DEC-OPS-043) ──────────────────────────────────────────────────────────
+    //   가입 신청(mbrSttsCd='A')을 읽고 승인·반려로 옮기는 첫 경로다(GAP-CMTY-001). 이 컨트롤러의 다른 핸들러는
+    //   URL 게이트(/api/v1/admin/**)만 믿지만, 멤버십 전이는 사람의 소속을 바꾸는 쓰기라 메서드 인가와
+    //   서비스 2차 가드(SecurityUtil.assertAdmin)까지 함께 둔다(백엔드 헌법 제8조).
+
+    @Operation(summary = "커뮤니티 회원·가입 신청 목록",
+            description = "커뮤니티의 회원과 가입 신청을 페이징 조회합니다. status 를 주면 그 상태만(REQUESTED=가입 신청, APPROVED=회원). 이름은 사용자 도메인에서 해석하며 연락처는 싣지 않습니다.")
+    @AdminOrSystem
+    @GetMapping("/{cmntySn}/members")
+    public ResponseEntity<ApiResponse<PageResponse<CommunityMemberDto>>> getMembers(
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
+            @Parameter(description = "멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체")
+            @RequestParam(required = false) CommunityMemberStatus status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        Page<CommunityMemberDto> page = communityService.getMembers(cmntySn, status, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
+    }
+
+    @Operation(summary = "커뮤니티 가입 신청 승인", description = "가입 신청 상태(REQUESTED)인 사용자를 회원으로 승인합니다. 신청 상태가 아니면 400 입니다.")
+    @AdminOrSystem
+    @PatchMapping("/{cmntySn}/members/{userId}/approve")
+    public ResponseEntity<ApiResponse<Void>> approveMember(
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
+            @Parameter(description = "사용자 식별자(esntlId)") @PathVariable String userId) {
+        communityService.approveMember(cmntySn, userId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "커뮤니티 가입 신청 반려", description = "가입 신청 상태(REQUESTED)인 행을 삭제합니다. 사용자는 다시 신청할 수 있습니다. 이미 회원인 행은 반려 대상이 아니라 400 입니다(탈퇴 처리는 별도).")
+    @AdminOrSystem
+    @DeleteMapping("/{cmntySn}/members/{userId}")
+    public ResponseEntity<ApiResponse<Void>> rejectMember(
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
+            @Parameter(description = "사용자 식별자(esntlId)") @PathVariable String userId) {
+        communityService.rejectMember(cmntySn, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

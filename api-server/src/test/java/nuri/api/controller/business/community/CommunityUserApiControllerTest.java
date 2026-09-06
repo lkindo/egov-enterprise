@@ -79,6 +79,21 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isNotFound());
     }
 
+    /** [2026-09-06 DEC-OPS-043] 내 멤버십은 principal(esntlId) 축으로만 조회한다 — 경로에 다른 사용자를 지정할 수 없다. */
+    @Test
+    @WithMockCustomUser(username = "user01", esntlId = "user01")
+    @DisplayName("내 멤버십 상태 — principal 의 esntlId 로 조회한다")
+    void getMyMembership() throws Exception {
+        given(communityService.getMembership(101L, "user01")).willReturn(
+                new nuri.business.service.system.content.community.dto.CommunityMembershipDto(
+                        101L, nuri.business.service.system.content.community.dto.CommunityMembershipDto.Status.REQUESTED, "20260906"));
+
+        mockMvc.perform(get("/api/v1/communities/101/membership").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("REQUESTED"))
+                .andExpect(jsonPath("$.data.joinYmd").value("20260906"));
+    }
+
     @Test
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     @DisplayName("커뮤니티 가입 신청 성공")

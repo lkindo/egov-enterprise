@@ -2176,6 +2176,30 @@ export const PageResponseCommunityDtoSchema = z.object({
 export type PageResponseCommunityDto = z.infer<typeof PageResponseCommunityDtoSchema>;
 
 // ==========================================================================
+// ApiResponseCommunityMembershipDto Schema
+// ==========================================================================
+export const ApiResponseCommunityMembershipDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CommunityMembershipDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseCommunityMembershipDto = z.infer<typeof ApiResponseCommunityMembershipDtoSchema>;
+
+// ==========================================================================
+// CommunityMembershipDto Schema
+// ==========================================================================
+export const CommunityMembershipDtoSchema = z.object({
+  cmntySn: z.number().int().optional(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional(),
+  joinYmd: z.string().optional(),
+});
+export type CommunityMembershipDto = z.infer<typeof CommunityMembershipDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseCommentDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseCommentDtoSchema = z.object({
@@ -4206,6 +4230,47 @@ export const AttachmentIntegrityReportSchema = z.object({
   healthy: z.boolean().optional(),
 });
 export type AttachmentIntegrityReport = z.infer<typeof AttachmentIntegrityReportSchema>;
+
+// ==========================================================================
+// ApiResponsePageResponseCommunityMemberDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseCommunityMemberDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponseCommunityMemberDto = z.infer<typeof ApiResponsePageResponseCommunityMemberDtoSchema>;
+
+// ==========================================================================
+// CommunityMemberDto Schema
+// ==========================================================================
+export const CommunityMemberDtoSchema = z.object({
+  cmntySn: z.number().int().optional(),
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  status: z.enum(["REQUESTED","APPROVED"]).optional(),
+  mbrSttsCd: z.string().optional(),
+  mngrYn: z.string().optional(),
+  joinYmd: z.string().optional(),
+  useYn: z.string().optional(),
+});
+export type CommunityMemberDto = z.infer<typeof CommunityMemberDtoSchema>;
+
+// ==========================================================================
+// PageResponseCommunityMemberDto Schema
+// ==========================================================================
+export const PageResponseCommunityMemberDtoSchema = z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoSchema)).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+export type PageResponseCommunityMemberDto = z.infer<typeof PageResponseCommunityMemberDtoSchema>;
 
 // ==========================================================================
 // ApiResponseListCommunityDto Schema
@@ -7393,6 +7458,38 @@ export const PageResponseCommunityDtoResponseSchema = z.object({
   totalPage: z.number().int().optional().nullable(),
 });
 
+export const ApiResponseCommunityMembershipDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CommunityMembershipDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseCommunityMembershipDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CommunityMembershipDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CommunityMembershipDtoRequestSchema = z.object({
+  cmntySn: z.number().int().optional(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional(),
+  joinYmd: z.string().optional(),
+});
+
+export const CommunityMembershipDtoResponseSchema = z.object({
+  cmntySn: z.number().int().optional().nullable(),
+  status: z.enum(["NONE","REQUESTED","MEMBER","UNKNOWN"]).optional().nullable(),
+  joinYmd: z.string().optional().nullable(),
+});
+
 export const ApiResponsePageResponseCommentDtoRequestSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -10263,6 +10360,64 @@ export const AttachmentIntegrityReportResponseSchema = z.object({
   undecidable: z.number().int(),
   orphanSamples: z.array(z.string().optional().nullable()),
   healthy: z.boolean().optional().nullable(),
+});
+
+export const ApiResponsePageResponseCommunityMemberDtoRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponsePageResponseCommunityMemberDtoResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCommunityMemberDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CommunityMemberDtoRequestSchema = z.object({
+  cmntySn: z.number().int().optional(),
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  status: z.enum(["REQUESTED","APPROVED"]).optional(),
+  mbrSttsCd: z.string().optional(),
+  mngrYn: z.string().optional(),
+  joinYmd: z.string().optional(),
+  useYn: z.string().optional(),
+});
+
+export const CommunityMemberDtoResponseSchema = z.object({
+  cmntySn: z.number().int().optional().nullable(),
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["REQUESTED","APPROVED"]).optional().nullable(),
+  mbrSttsCd: z.string().optional().nullable(),
+  mngrYn: z.string().optional().nullable(),
+  joinYmd: z.string().optional().nullable(),
+  useYn: z.string().optional().nullable(),
+});
+
+export const PageResponseCommunityMemberDtoRequestSchema = z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoRequestSchema.strict())).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+
+export const PageResponseCommunityMemberDtoResponseSchema = z.object({
+  list: z.array(z.lazy(() => CommunityMemberDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 });
 
 export const ApiResponseListCommunityDtoRequestSchema = z.object({
