@@ -36,10 +36,25 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { ExternalHrDtoRequestSchema } from '@/types/generated-zod';
 
-export const externalHrSchema = ExternalHrDtoRequestSchema.extend({
+/** 식별자 축 — 등록·수정 공통. 복합키라 수정 모드에서는 입력이 잠긴다. */
+const identityShape = {
   // [2026-08-28] 문구를 실제 조작에 맞춘다 — 이제 목록에서 고른다.
   evntSn: ExternalHrDtoRequestSchema.shape.evntSn.int().positive('소속 행사를 선택해 주세요.'),
   otsdHrId: ExternalHrDtoRequestSchema.shape.otsdHrId.min(1, '외부인사 ID를 입력하세요.'),
+};
+
+/**
+ * 값이 있을 때만 형식을 본다 — 빈 값은 통과시킨다.
+ *
+ * 수정 모드에서 쓰는 완화 규칙이다. 형식 검사까지 풀면 잘못된 이메일·생년월일이 그대로 저장되므로
+ * 형식은 유지하고 "반드시 채워야 한다"만 뺀다.
+ */
+const formatOnly = (field: z.ZodString, check: (value: string) => boolean, message: string) =>
+  field.refine((value) => !value || check(value), message);
+
+/** 등록 폼 — 새 인사를 만들 때는 연락처·생년월일까지 갖춰 받는다. */
+export const externalHrSchema = ExternalHrDtoRequestSchema.extend({
+  ...identityShape,
   otsdHrNm: ExternalHrDtoRequestSchema.shape.otsdHrNm.unwrap().min(1, '성명을 입력하세요.'),
   ogdpInstNm: ExternalHrDtoRequestSchema.shape.ogdpInstNm.unwrap().min(1, '소속기관을 입력하세요.'),
   areaNo: ExternalHrDtoRequestSchema.shape.areaNo.unwrap().min(1, '지역번호를 입력하세요.'),
@@ -48,6 +63,32 @@ export const externalHrSchema = ExternalHrDtoRequestSchema.extend({
   emlAddr: ExternalHrDtoRequestSchema.shape.emlAddr.unwrap().min(1, '이메일을 입력하세요.').email(),
   brdtYmd: ExternalHrDtoRequestSchema.shape.brdtYmd.unwrap()
     .length(8, '생년월일 8자리를 입력하세요(예: 19900101).'),
+});
+
+/**
+ * 수정 폼 — 등록 규칙을 그대로 강제하지 않는다.
+ *
+ * [2026-09-06 DEC-OPS-045] 종전에는 등록·수정이 같은 스키마 하나를 썼다. 그런데 성명·소속기관·지역번호·
+ * 국번·종번·이메일·생년월일 7개는 <b>서버 어디에도 필수가 아니다</b> — 요청 DTO 에 `@NotBlank` 가 없고,
+ * 엔티티에 `nullable = false` 가 없으며, 물리 컬럼도 NULL 을 받는다. 즉 화면이 서버에 없는 규칙을 스스로
+ * 만들어 강제하고 있었고, 그 결과 API·이관으로 최소 필드만 들어온 행은 <b>이름 오타 하나를 고치려 해도
+ * 나머지 값을 지어내야</b> 저장됐다. 필수 해제는 화면을 사실에 맞추는 것이지 계약 완화가 아니다.
+ *
+ * 형식은 그대로 본다. 값을 지우는 것은 사용자의 의도로 받아들이며(PUT 은 전체 치환이다), 화면이 묻지 않는
+ * 성별·구분 코드만 기존 값을 되돌려 보내 NULL 덮어쓰기를 막는다.
+ */
+export const externalHrEditSchema = ExternalHrDtoRequestSchema.extend({
+  ...identityShape,
+  emlAddr: formatOnly(
+    ExternalHrDtoRequestSchema.shape.emlAddr.unwrap(),
+    (value) => z.string().email().safeParse(value).success,
+    '이메일 형식이 올바르지 않습니다.',
+  ),
+  brdtYmd: formatOnly(
+    ExternalHrDtoRequestSchema.shape.brdtYmd.unwrap(),
+    (value) => value.length === 8,
+    '생년월일 8자리를 입력하세요(예: 19900101).',
+  ),
 });
 
 type ExternalHrFormValues = z.infer<typeof externalHrSchema>;
@@ -126,7 +167,8 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const deletePendingRef = useRef(false);
 
-  const form = useAppForm(externalHrSchema, {
+  // 등록·수정이 요구하는 것이 다르므로 모드에 맞는 스키마를 준다(DEC-OPS-045).
+  const form = useAppForm(editing ? externalHrEditSchema : externalHrSchema, {
     defaultValues: EMPTY_FORM,
   });
 

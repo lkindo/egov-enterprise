@@ -102,6 +102,13 @@ const HR = {
   evntSn: 1, otsdHrId: 'HR-001', otsdHrNm: '홍길동', ogdpInstNm: '테스트 기관',
   areaNo: '02', mdTelno: '1234', endTelno: '5678', emlAddr: 'hong@example.com', brdtYmd: '19900101',
 };
+/**
+ * 식별자만 있는 행 — API·이관으로 최소 필드만 들어오면 이 모습이다.
+ * 서버 DTO·엔티티·물리 컬럼 어디에도 나머지 값이 필수라는 선언이 없다(DEC-OPS-045).
+ * 응답에서 값이 없는 필드는 Jackson 이 생략하므로 부재(undefined)로 온다 — 화면은 `?? ''` 로 받는다.
+ */
+const SPARSE_HR = { evntSn: 1, otsdHrId: 'HR-002' };
+
 const REWARD = { rwrdSn: 7, rwardNm: '모범 사원상', rwardwnrId: 'USER-001', rwardCode: 'R01', rwardDe: '20260826', pblenCn: '공적 내용' };
 
 function pageOf<T>(item: T) {
@@ -148,6 +155,58 @@ describe('ExternalHrClient 행 액션', () => {
     expect(mocks.updateExternalHr).toHaveBeenCalledWith(1, 'HR-001', expect.objectContaining({ otsdHrNm: '홍길순', emlAddr: 'hong@example.com' }));
     expect(mocks.createExternalHr).not.toHaveBeenCalled();
     expect(mocks.toast).toHaveBeenCalledWith('외부인사 정보를 수정했습니다.', 'success');
+  });
+
+  it('빈 칸이 많은 행도 이름만 고쳐 저장된다 — 등록 필수 규칙을 수정에 강제하지 않는다', async () => {
+    mocks.getExternalHrList.mockResolvedValue(pageOf(SPARSE_HR));
+    mocks.updateExternalHr.mockResolvedValue(SPARSE_HR);
+    renderWithClient(<ExternalHrClient initialPage={pageOf(SPARSE_HR)} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'HR-002 수정' }));
+    const modal = await screen.findByRole('region', { name: '외부 인사 정보 수정' });
+    const scope = within(modal);
+
+    // 소속기관·연락처·이메일·생년월일은 비어 있는 그대로 둔다.
+    fireEvent.change(scope.getByRole('textbox', { name: /^성명/ }), { target: { value: '김철수' } });
+    fireEvent.click(scope.getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => expect(mocks.updateExternalHr).toHaveBeenCalledTimes(1));
+    expect(mocks.updateExternalHr).toHaveBeenCalledWith(1, 'HR-002', expect.objectContaining({ otsdHrNm: '김철수' }));
+    expect(mocks.toast).toHaveBeenCalledWith('외부인사 정보를 수정했습니다.', 'success');
+  });
+
+  it('수정에서도 형식은 본다 — 이메일이 형식에 맞지 않으면 저장하지 않는다', async () => {
+    mocks.getExternalHrList.mockResolvedValue(pageOf(SPARSE_HR));
+    renderWithClient(<ExternalHrClient initialPage={pageOf(SPARSE_HR)} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'HR-002 수정' }));
+    const modal = await screen.findByRole('region', { name: '외부 인사 정보 수정' });
+    const scope = within(modal);
+
+    fireEvent.change(scope.getByRole('textbox', { name: /^이메일/ }), { target: { value: 'not-an-email' } });
+    fireEvent.click(scope.getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() =>
+      expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent(/입력 오류/));
+    expect(mocks.updateExternalHr).not.toHaveBeenCalled();
+  });
+
+  it('등록은 종전대로 필수를 요구한다 — 완화는 수정 모드에만 적용된다', async () => {
+    renderWithClient(<ExternalHrClient initialPage={pageOf(HR)} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /인사 등록/ }));
+    const modal = await screen.findByRole('region', { name: '외부 인사 정보 등록' });
+    const scope = within(modal);
+
+    await screen.findByRole('option', { name: '가을 워크숍' });
+    fireEvent.change(scope.getByRole('combobox', { name: /소속 행사/ }), { target: { value: '1' } });
+    fireEvent.change(scope.getByRole('textbox', { name: /외부인사 ID/ }), { target: { value: 'HR-003' } });
+    fireEvent.change(scope.getByRole('textbox', { name: /^성명/ }), { target: { value: '이영희' } });
+    fireEvent.click(scope.getByRole('button', { name: '최종 등록' }));
+
+    await waitFor(() =>
+      expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent(/입력 오류/));
+    expect(mocks.createExternalHr).not.toHaveBeenCalled();
   });
 
   it('삭제는 확인 후 delete 를 한 번만 부르고, pending 동안 disabled·aria-busy 이며, 실패는 토스트로 드러낸다', async () => {
