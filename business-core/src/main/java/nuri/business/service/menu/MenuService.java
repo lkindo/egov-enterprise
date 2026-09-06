@@ -12,6 +12,7 @@ import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.program.dto.ProgramDto;
+import nuri.business.security.audit.LoginUserAuditorAware;
 import nuri.business.security.util.SecurityUtil;
 import nuri.foundation.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,7 @@ public class MenuService {
     private final ProgramRepository programRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
     private final nuri.business.service.program.dto.ProgramMapper programMapper;
+    private final LoginUserAuditorAware loginUserAuditorAware;
 
     @PostConstruct
     @Transactional
@@ -314,18 +316,19 @@ public class MenuService {
     public void insertMenuManage(@NonNull MenuDto vo) {
         SecurityUtil.assertAdmin();
         // FE 가 "연결 프로그램 없음"을 빈 문자열로 보내므로 null 로 정규화한다.
-        // (정규화하지 않으면 아래 existsById("") 가 false 라 PK 가 빈 문자열인 쓰레기 Program 행이 생성된다)
+        // (정규화하지 않으면 원자 insert가 빈 문자열 PK의 쓰레기 Program 행을 생성한다)
         String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
 
-        if (prgrmFileNm != null && !programRepository.existsById(prgrmFileNm)) {
-            nuri.business.domain.program.Program p = nuri.business.domain.program.Program
-                    .builder()
-                    .prgrmFileNm(prgrmFileNm)
-                    .prgrmKornNm("자동생성메뉴(" + vo.getMenuNm() + ")")
-                    .url(vo.getModernRoute())
-                    .prgrmStrgPath("/auto-generated")
-                    .build();
-            programRepository.save(p);
+        if (prgrmFileNm != null) {
+            // 같은 프로그램을 참조하는 메뉴 두 건이 동시에 처음 생성되어도 PK 경합을 409로 노출하지 않는다.
+            // native insert에서도 JPA auditing과 같은 actor 값을 기록해 감사 의미를 보존한다.
+            String auditActor = loginUserAuditorAware.getCurrentAuditor().orElse("SYSTEM");
+            programRepository.insertIfAbsent(
+                    prgrmFileNm,
+                    "자동생성메뉴(" + vo.getMenuNm() + ")",
+                    vo.getModernRoute(),
+                    "/auto-generated",
+                    auditActor);
         }
 
         Menu menu = Menu.builder()
