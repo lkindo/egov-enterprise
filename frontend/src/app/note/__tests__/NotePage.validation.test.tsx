@@ -70,6 +70,14 @@ vi.mock('@/app/components/ui/user-picker', () => ({
   ) : null,
 }));
 
+vi.mock('@/app/components/ui/recipient-picker', () => ({
+  RecipientPicker: ({ isOpen, onConfirm }: any) => isOpen ? (
+    <button type="button" onClick={() => onConfirm([{ kind: 'user', esntlId: 'USER_1', name: '홍길동' }])}>
+      홍길동 선택
+    </button>
+  ) : null,
+}));
+
 vi.mock('@/services/business/user/NoteService', () => ({
   noteService: {
     getReceivedNotes: mocks.getReceivedNotes,

@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, ArrowLeft, Save, Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { Users, ArrowLeft, Save, Trash2, AlertTriangle, Loader2, Mail, Phone } from "lucide-react";
 import Link from 'next/link';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
@@ -242,6 +242,7 @@ const SelectAddressBookDetailClient = () => {
                                                     <th scope="col" className="text-left font-bold px-6 py-3">성명</th>
                                                     <th scope="col" className="text-left font-bold px-6 py-3">이메일</th>
                                                     <th scope="col" className="text-left font-bold px-6 py-3">연락처</th>
+                                                    <th scope="col" className="text-center font-bold px-6 py-3 w-32">빠른 소통</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border">
@@ -250,6 +251,33 @@ const SelectAddressBookDetailClient = () => {
                                                         <td className="px-6 py-3 font-bold text-foreground">{member.nm || '-'}</td>
                                                         <td className="px-6 py-3 text-muted-foreground">{member.emlAddr || '-'}</td>
                                                         <td className="px-6 py-3 text-muted-foreground tabular-nums">{member.mblTelno || '-'}</td>
+                                                        <td className="px-6 py-3 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                {member.emlAddr ? (
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 text-hub-blue hover:bg-hub-blue/10"
+                                                                        aria-label={`${member.nm || '구성원'}에게 메일 발송`}
+                                                                        onClick={() => {
+                                                                            router.push(`/admin/collaboration/mail-send?recipient=${encodeURIComponent(member.emlAddr!)}`);
+                                                                        }}
+                                                                    >
+                                                                        <Mail size={14} />
+                                                                    </Button>
+                                                                ) : null}
+                                                                {member.mblTelno ? (
+                                                                    <a
+                                                                        href={`tel:${member.mblTelno.replace(/[^0-9+]/g, '')}`}
+                                                                        aria-label={`${member.nm || '구성원'}에게 전화 연결 (${member.mblTelno})`}
+                                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                                                                    >
+                                                                        <Phone size={14} />
+                                                                    </a>
+                                                                ) : null}
+                                                            </div>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>

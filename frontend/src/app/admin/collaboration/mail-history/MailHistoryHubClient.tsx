@@ -3,7 +3,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, RefreshCcw, Search, Trash2, X } from 'lucide-react';
+import { Plus, RefreshCcw, Search, Trash2, X, FileText, Paperclip, Download } from 'lucide-react';
+import DOMPurify from 'isomorphic-dompurify';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PagePagination } from '@/components/common/PagePagination';
@@ -11,6 +12,7 @@ import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { mailService, type SentMail, MAIL_SEND_RESULT } from '@/services/business/mail/MailService';
+import { fileService } from '@/services/foundation/file/FileService';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { cn } from '@/lib/utils';
 
@@ -93,6 +95,13 @@ export default function MailHistoryHubClient() {
   const pageSuccess = mails.filter((mail) => mail.sndngResultCode === MAIL_SEND_RESULT.SUCCESS).length;
   const pagePending = mails.filter((mail) => mail.sndngResultCode === MAIL_SEND_RESULT.PENDING).length;
   const pageFailure = mails.filter((mail) => mail.sndngResultCode === MAIL_SEND_RESULT.FAILURE).length;
+
+  const atchFileSn = selectedMail?.atchFileSn;
+  const { data: attachments = [] } = useQuery({
+    queryKey: ['mail-attachments', atchFileSn],
+    queryFn: () => fileService.getFileList(atchFileSn!),
+    enabled: Boolean(atchFileSn && atchFileSn > 0),
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (emlDsptchSn: number) => mailService.deleteMail(emlDsptchSn),
@@ -330,12 +339,43 @@ export default function MailHistoryHubClient() {
             </div>
           </dl>
 
-          <div className="rounded-md border border-border p-4">
-            <p className="text-sm font-semibold text-foreground">본문 표시 안내</p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              이 화면에서는 메일 본문을 표시하지 않습니다.
-            </p>
+          <div className="rounded-md border border-border bg-card p-4 space-y-2">
+            <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+              <FileText size={14} /> 메일 본문
+            </h4>
+            {selectedMail.emailCn ? (
+              <div
+                className="prose prose-sm dark:prose-invert max-w-none text-foreground break-words text-sm leading-relaxed p-2 bg-muted/20 rounded border border-border/50"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedMail.emailCn) }}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">본문 내용이 없습니다.</p>
+            )}
           </div>
+
+          {attachments.length > 0 && (
+            <div className="rounded-md border border-border bg-card p-4 space-y-2">
+              <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Paperclip size={14} /> 첨부 파일 ({attachments.length}개)
+              </h4>
+              <ul className="divide-y divide-border">
+                {attachments.map((file) => (
+                  <li key={file.fileSn} className="py-2 flex items-center justify-between gap-3 text-sm">
+                    <span className="truncate text-foreground font-medium">{file.orignlFileNm}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 shrink-0 text-xs"
+                      onClick={() => void fileService.downloadFile(file.atchFileSn, file.fileSn, file.orignlFileNm)}
+                    >
+                      <Download size={13} /> 다운로드
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ) : undefined}
       emptyDetailTitle="발신 이력을 선택하세요"

@@ -139,7 +139,7 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
     expect(firstMail).toHaveAttribute('aria-current', 'true');
     expect(screen.getByRole('heading', { level: 2, name: '발신 상세' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: '월간 운영 보고' })).toBeInTheDocument();
-    expect(screen.queryByText('화면에 표시하면 안 되는 메일 본문')).toBeNull();
+    expect(screen.getByText('화면에 표시하면 안 되는 메일 본문')).toBeInTheDocument();
 
     fireEvent.keyDown(firstMail, { key: 'ArrowDown' });
     expect(secondMail).toHaveFocus();

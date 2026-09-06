@@ -8,15 +8,15 @@ import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField } from '@/app/components/ui/standard-form';
-import { UserPicker } from '@/app/components/ui/user-picker';
+import { RecipientPicker, type RecipientSelection } from '@/app/components/ui/recipient-picker';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Badge } from '@/components/ui/badge';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, User, Loader2 } from 'lucide-react';
+import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, User, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import type { UserSearchResult } from '@/services/business/user/UserSearchService';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
@@ -66,6 +66,7 @@ export default function NotePage() {
   const [detailError, setDetailError] = useState<Error | null>(null);
   const detailRequestRef = useRef(0);
   const [formData, setFormData] = useState({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
+  const [recipients, setRecipients] = useState<{ esntlId: string; name: string }[]>([]);
   const [isSending, setIsSending] = useState(false);
   const sendingRef = useRef(false);
   const [deletingRelationSn, setDeletingRelationSn] = useState<number | null>(null);
@@ -160,6 +161,7 @@ export default function NotePage() {
       toast('쪽지가 성공적으로 전송되었습니다.', 'success');
       setWriteOpen(false);
       setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
+      setRecipients([]);
       validation.setFormErrors({}, false);
       if (tab === 'sent' && tabRef.current === 'sent') void loadNotes('sent');
     } catch (error) {
@@ -172,14 +174,38 @@ export default function NotePage() {
     }
   };
 
-  const handleUserSelect = (user: UserSearchResult) => {
-    setFormData((current) => ({ ...current, rcverId: user.esntlId ?? '', rcverNm: user.userNm ?? '' }));
+  const handleConfirmRecipients = (selectedList: RecipientSelection[]) => {
+    const userRecipients = selectedList
+      .filter((r): r is Extract<RecipientSelection, { kind: 'user' }> => r.kind === 'user')
+      .map((r) => ({ esntlId: r.esntlId, name: r.name }));
+
+    setRecipients((prev) => {
+      const existingIds = new Set(prev.map((r) => r.esntlId));
+      const newItems = userRecipients.filter((r) => !existingIds.has(r.esntlId));
+      const merged = [...prev, ...newItems];
+      const rcverId = merged.map((r) => r.esntlId).join(',');
+      const rcverNm = merged.map((r) => r.name).join(', ');
+      setFormData((current) => ({ ...current, rcverId, rcverNm }));
+      return merged;
+    });
     validation.clearError('rcverId');
+    setPickerOpen(false);
+  };
+
+  const removeRecipient = (esntlId: string) => {
+    setRecipients((prev) => {
+      const next = prev.filter((r) => r.esntlId !== esntlId);
+      const rcverId = next.map((r) => r.esntlId).join(',');
+      const rcverNm = next.map((r) => r.name).join(', ');
+      setFormData((current) => ({ ...current, rcverId, rcverNm }));
+      return next;
+    });
   };
 
   const closeWriteModal = () => {
     if (sendingRef.current) return;
     setWriteOpen(false);
+    setRecipients([]);
     validation.setFormErrors({}, false);
   };
 
@@ -429,32 +455,61 @@ export default function NotePage() {
             onNavigate={validation.focusError}
           />
           <FormField htmlFor="rcverId" label="대상자 식별 (수신자)" required error={validation.errors.rcverId}>
-            <div className="flex gap-3">
-              <div className="relative flex-1 group">
-                <UserPlus size={18} className="absolute left-6 top-5 text-slate-300 group-hover:text-primary transition-colors" />
-                <input
-                  type="text"
-                  id="rcverId"
-                  aria-label="수신 대상자"
-                  aria-required="true"
-                  {...validation.fieldProps('rcverId')}
-                  value={formData.rcverId
-                    ? (formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : formData.rcverId)
-                    : ''}
-                  placeholder="대상자를 식별하십시오..."
-                  readOnly
-                  className="w-full h-11 pl-16 pr-6 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-muted transition-all font-mono"
-                />
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="relative flex-1 group">
+                  <UserPlus size={18} className="absolute left-6 top-3 text-slate-300 group-hover:text-primary transition-colors" />
+                  <input
+                    type="text"
+                    id="rcverId"
+                    aria-label="수신 대상자"
+                    aria-required="true"
+                    {...validation.fieldProps('rcverId')}
+                    value={formData.rcverId
+                      ? (formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : formData.rcverId)
+                      : ''}
+                    placeholder="대상자를 식별하십시오 (다중 선택 가능)..."
+                    readOnly
+                    className="w-full h-11 pl-16 pr-6 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-muted transition-all font-mono"
+                  />
+                </div>
+                <Button
+                  id="note-recipient-picker-button"
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  aria-invalid={validation.errors.rcverId ? 'true' : undefined}
+                  aria-describedby={validation.errors.rcverId ? 'rcverId-error' : undefined}
+                  className="h-11 px-8 bg-card border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-xl active:scale-95"
+                >
+                  <Search size={16} className="mr-2" /> 타겟 검색
+                </Button>
               </div>
-              <Button
-                id="note-recipient-picker-button"
-                onClick={() => setPickerOpen(true)}
-                aria-invalid={validation.errors.rcverId ? 'true' : undefined}
-                aria-describedby={validation.errors.rcverId ? 'rcverId-error' : undefined}
-                className="h-11 px-8 bg-card border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-xl active:scale-95"
-              >
-                <Search size={16} className="mr-2" /> 타겟 검색
-              </Button>
+
+              {recipients.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-muted/40 rounded-lg border border-border min-h-[44px] items-center">
+                  {recipients.map((rec) => (
+                    <Badge
+                      key={rec.esntlId}
+                      variant="secondary"
+                      className="px-3 py-1 text-xs font-semibold flex items-center gap-1.5 bg-card border border-border text-foreground shadow-sm"
+                    >
+                      <User size={12} className="text-muted-foreground" />
+                      <span>{rec.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeRecipient(rec.esntlId)}
+                        className="ml-1 text-muted-foreground hover:text-destructive focus:outline-none"
+                        aria-label={`${rec.name} 수신자 제거`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </Badge>
+                  ))}
+                  <span className="text-xs text-muted-foreground ml-2">
+                    총 {recipients.length}명 선택됨
+                  </span>
+                </div>
+              )}
             </div>
           </FormField>
           <FormField htmlFor="noteSj" label="시스템 제목" required error={validation.errors.noteSj}>
@@ -492,11 +547,15 @@ export default function NotePage() {
         </div>
       </StandardModal>
 
-      <UserPicker
-        isOpen={isPickerOpen}
-        onClose={() => setPickerOpen(false)}
-        onSelect={handleUserSelect}
-      />
+      {isPickerOpen && (
+        <RecipientPicker
+          isOpen={isPickerOpen}
+          onClose={() => setPickerOpen(false)}
+          channel="notification"
+          onConfirm={handleConfirmRecipients}
+          title="쪽지 수신자 선택"
+        />
+      )}
 
       <StandardModal
         isOpen={isDetailModalOpen}
