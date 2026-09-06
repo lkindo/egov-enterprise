@@ -154,6 +154,10 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       endTelno: item.endTelno ?? '',
       emlAddr: item.emlAddr ?? '',
       brdtYmd: item.brdtYmd ?? '',
+      // [2026-09-06] PUT 은 전체 치환이다 — 이 화면이 묻지 않는 성별·구분 코드는 기존 값을 그대로 되돌려 보내
+      //   수정이 그 값을 NULL 로 덮어쓰지 않게 한다. 값이 없으면 여전히 지어내지 않고 보내지 않는다.
+      ...(item.gndrCd ? { gndrCd: item.gndrCd } : {}),
+      ...(item.crTypeCd ? { crTypeCd: item.crTypeCd } : {}),
     });
     setIsModalOpen(true);
   };

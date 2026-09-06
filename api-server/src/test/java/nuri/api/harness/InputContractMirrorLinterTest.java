@@ -255,7 +255,8 @@ class InputContractMirrorLinterTest {
     private static final int MIN_LENGTH_FIELDS = 113;
     private static final int MIN_ENUM_FIELDS = 16;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
-    private static final int MIN_REQUIRED_FIELDS = 36;
+    // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
+    private static final int MIN_REQUIRED_FIELDS = 37;
     private static final int MIN_READ_ONLY_FIELDS = 28;
 
     @Test
