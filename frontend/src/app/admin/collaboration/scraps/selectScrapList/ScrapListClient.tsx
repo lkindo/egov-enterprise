@@ -32,7 +32,7 @@ export function parseScrapUrl(url: string | undefined): { isInternal: boolean; r
     if (bbsMatch && nttMatch) {
         return {
             isInternal: true,
-            resolvedHref: `/board/${bbsMatch}/${nttMatch}`,
+            resolvedHref: `/admin/community/boards/detail?bbsId=${bbsMatch}&pstSn=${nttMatch}`,
         };
     }
 

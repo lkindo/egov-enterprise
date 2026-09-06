@@ -1,5 +1,10 @@
+import { Suspense } from 'react';
 import MailSendHubClient from './MailSendHubClient';
 
 export default function MailSendPage() {
-  return <MailSendHubClient />;
+  return (
+    <Suspense fallback={null}>
+      <MailSendHubClient />
+    </Suspense>
+  );
 }

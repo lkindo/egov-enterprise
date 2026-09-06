@@ -140,7 +140,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     actionPendingRef.current = true;
     setActiveAction('scrap');
     try {
-      const currentPath = `/board/${bbsId}/${pstSn}`;
+      const currentPath = `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`;
       const title = article.pstTtl || article.knoNm || '게시글 스크랩';
       await createScrapMutation.mutateAsync({
         scrapNm: title,

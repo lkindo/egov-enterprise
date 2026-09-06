@@ -279,11 +279,39 @@ class SurveyResultServiceTest {
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
-                    .thenReturn(java.util.Optional.of("user1"));
+                .thenReturn(java.util.Optional.of("user1"));
 
             assertThatThrownBy(() -> service.submitResponse(201L, dto))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("문항의 최대 선택 개수를 초과했습니다");
+        }
+        verify(resultRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("🔒 제출 - 동일 문항 내 중복 항목을 제출하면 거부한다")
+    void submitRejectsDuplicateChoiceForSameQuestion() {
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
+        SurveyQuestion multiChoiceQuestion = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).qstnSn(1L).qstnCn("복수선택 질문")
+                .qstnTypeCd("1").maxChcCnt(3).build();
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
+                .willReturn(List.of(multiChoiceQuestion));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+                .willReturn(List.of(article(401L, 301L, "항목1")));
+
+        SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동", List.of(
+                new SurveyResponseSubmitDto.Answer(301L, 401L, null, null),
+                new SurveyResponseSubmitDto.Answer(301L, 401L, null, null)));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(java.util.Optional.of("user1"));
+
+            assertThatThrownBy(() -> service.submitResponse(201L, dto))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("동일한 항목을 중복 선택할 수 없습니다");
         }
         verify(resultRepository, never()).saveAll(any());
     }

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ back: mocks.back, push: mocks.push }),
+  useSearchParams: () => ({ get: vi.fn().mockReturnValue(null) }),
 }));
 
 vi.mock('@/services/business/mail/MailService', () => ({

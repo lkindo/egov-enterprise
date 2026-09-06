@@ -127,7 +127,7 @@ export default function ApprovalHubClient() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDraftOpen, setDraftOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
-  const [pendingAction, setPendingAction] = useState<SanctionStatusCode | null>(null);
+  const [pendingAction, setPendingAction] = useState<SanctionStatusCode | 'CANCEL' | null>(null);
   const pendingActionRef = useRef(false);
   const itemButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const rejectReasonRef = useRef<HTMLTextAreaElement>(null);
@@ -232,18 +232,19 @@ export default function ApprovalHubClient() {
   };
 
   const handleCancelDraft = async (item: InformalSanctionDto) => {
-    if (!item.ifmlAtrzSn || isActionPending) return;
-    const ok = await confirm({
-      title: '기안 취소',
-      message: '이 결재 기안을 취소(철회)하시겠습니까? 취소 후에는 복구할 수 없습니다.',
-      confirmText: '기안 취소',
-      variant: 'destructive',
-    });
-    if (!ok) return;
-
+    if (!item.ifmlAtrzSn || isActionPending || pendingActionRef.current) return;
     pendingActionRef.current = true;
-    setPendingAction(SANCTION_STATUS.REJECTED);
+    setPendingAction('CANCEL');
+
     try {
+      const ok = await confirm({
+        title: '기안 취소',
+        message: '이 결재 기안을 취소(철회)하시겠습니까? 취소 후에는 복구할 수 없습니다.',
+        confirmText: '기안 취소',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+
       await cancelMutation.mutateAsync(item.ifmlAtrzSn);
       toast('결재 기안이 취소되었습니다.', 'success');
       setSelectedItemId(null);
@@ -455,7 +456,7 @@ export default function ApprovalHubClient() {
           type="button"
           variant="outline"
           disabled={isActionPending || cancelMutation.isPending}
-          aria-busy={cancelMutation.isPending || undefined}
+          aria-busy={pendingAction === 'CANCEL' || cancelMutation.isPending || undefined}
           onClick={() => { void handleCancelDraft(selectedItem); }}
         >
           <Trash2 aria-hidden="true" /> 기안 취소

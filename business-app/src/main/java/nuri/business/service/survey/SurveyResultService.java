@@ -14,10 +14,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -100,6 +102,14 @@ public class SurveyResultService {
         Map<Long, SurveyArticle> articles = articleRepository
                 .findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(questions.keySet()).stream()
                 .collect(Collectors.toMap(SurveyArticle::getSrvyArtclSn, Function.identity()));
+
+        // 문항별 중복 항목 선택 방지
+        Set<String> seenAnswers = new HashSet<>();
+        for (SurveyResponseSubmitDto.Answer a : dto.answers()) {
+            if (!seenAnswers.add(a.srvyQstnSn() + ":" + a.srvyArtclSn())) {
+                throw new BusinessException("동일한 항목을 중복 선택할 수 없습니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+        }
 
         // 문항별 선택 수 검증 (maxChcCnt 초과 차단)
         Map<Long, Long> countsByQuestion = dto.answers().stream()
