@@ -42,6 +42,32 @@ export interface OnlinePollPartcptnVO {
   frstRgtrId?: string; // 사용자ID
 }
 
+/**
+ * 관리 화면(OnlinePollAdminClient·SurveyStatsClient)이 쓰는 투표 DTO 형태.
+ * [2026-09-06 DEC-OPS-041] 종전 OnlinePollAdminService 에 있던 인터페이스를 옮겼다 — 중복 컨트롤러
+ * (/api/v1/admin/system/polls)를 지우고 관리 화면도 /api/v1/polls(PollUserService)를 쓴다.
+ */
+export interface OnlinePollDto {
+  pollSn?: number;
+  pollNm: string;
+  /** 저장 포맷 'yyyyMMdd' (varchar(8) / @Size(max = 8)) — 10자 전송은 400 */
+  pollBgngYmd: string;
+  /** 저장 포맷 'yyyyMMdd' */
+  pollEndYmd: string;
+  pollKndCd: string;
+  pollDsuseYn: string;
+  pollAtmcDsuseYn?: string;
+  pollArticles?: OnlinePollItemDto[];
+  frstRgtrId?: string;
+  crtDt?: string;
+}
+
+export interface OnlinePollItemDto {
+  pollArtclSn?: number;
+  pollArtclNm: string;
+  pollIemCo?: number;
+}
+
 export interface PollSearchParams {
   page?: number;
   size?: number;

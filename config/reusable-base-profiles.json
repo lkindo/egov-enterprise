@@ -125,7 +125,6 @@
           "src/lib/api/survey.ts",
           "src/services/business/user/poll",
           "src/services/foundation/survey",
-          "src/services/foundation/system/OnlinePollAdminService.ts",
           "src/services/foundation/system/SurveyAdminService.ts",
           "src/types/business/poll.ts",
           "src/types/business/survey.ts"
@@ -182,6 +181,7 @@
           "src/app/admin/system/banner",
           "src/app/admin/system/hpcm",
           "src/app/admin/system/ism",
+          "src/app/admin/system/layout",
           "src/app/admin/uss/olh",
           "src/app/admin/work-hub",
           "src/app/admin/workflow",

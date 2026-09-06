@@ -80,7 +80,9 @@ test('current URL-state census exactly covers critical route and URL producer po
     dynamicRoutePatterns: 11,
     configRedirects: 14,
     // [2026-09-05 DEC-OPS-034] 5 → 7: boards/write · boards/[id] 가 insert-board-article 로의 page-redirect 가 됐다.
-    pageRedirects: 7,
+    // [2026-09-06 DEC-OPS-040] 7 → 11: /admin/system/ism → /approvals, /admin/community · /admin/community/boards →
+    //   /admin/help?tab=COMMUNITY, /admin/system/monitoring → /admin/system/monitoring/hub 가 page-redirect 가 됐다.
+    pageRedirects: 11,
   });
   assert.equal(actual.summary.records, actual.records.length);
   assert.equal(actual.summary.unverifiedRecords, actual.records.length);

@@ -5,6 +5,8 @@ import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.TmplatInfoService;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +54,15 @@ public class TemplateApiController {
         return ResponseEntity.ok(ApiResponse.success(tmplatInfoService.updateTmplatInfo(tmpltId, tmplatInfo)));
     }
 
-    @Operation(summary = "템플릿 삭제", description = "템플릿을 삭제합니다.")
+    @Operation(summary = "템플릿 삭제", description = "템플릿을 삭제합니다. 게시판·블로그가 참조 중인 템플릿은 삭제하지 않습니다(409).")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+                    description = "삭제 성공", useReturnTypeSchema = true),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409",
+                    description = "게시판·블로그가 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(ref = "#/components/schemas/ApiResponseVoid")))
+    })
     @DeleteMapping("/{tmpltId}")
     public ResponseEntity<ApiResponse<Void>> deleteTmplatInfo(@PathVariable("tmpltId") String tmpltId) {
         tmplatInfoService.deleteTmplatInfo(tmpltId);

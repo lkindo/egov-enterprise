@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 381,
-    "generatedDescriptorCount": 381
+    "openApiOperationCount": 377,
+    "generatedDescriptorCount": 377
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 369,
-    "eligible": 355,
+    "total": 365,
+    "eligible": 351,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 355,
+      "generated": 351,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "b0dc08add0512110e0303513b5398d9c9386aa44cbe8eda9514055d45a2aa102",
+  "inventoryHash": "b7e895be9f21297b8056685fc82b23cd9315ea443d58625398ed320786270f9b",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -4927,74 +4927,6 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "0a9180b83b7d7cf3e92d"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/OnlinePollAdminService.ts",
-      "owner": "OnlinePollAdminService.getPollList",
-      "ordinal": 1,
-      "line": 48,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "get",
-      "target": "/api/v1/admin/system/polls",
-      "operationId": "getPolls_1",
-      "descriptorName": "getPolls_1Operation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "b537aa07ecc4ede1c159"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/OnlinePollAdminService.ts",
-      "owner": "OnlinePollAdminService.getPoll",
-      "ordinal": 1,
-      "line": 56,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "get",
-      "target": "/api/v1/admin/system/polls/{pollSn}",
-      "operationId": "getPoll_1",
-      "descriptorName": "getPoll_1Operation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "025badffeb1b3a10db15"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/OnlinePollAdminService.ts",
-      "owner": "OnlinePollAdminService.createPoll",
-      "ordinal": 1,
-      "line": 64,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "post",
-      "target": "/api/v1/admin/system/polls",
-      "operationId": "insertPoll",
-      "descriptorName": "insertPollOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "060f4994f1cf01bf5f0f"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/OnlinePollAdminService.ts",
-      "owner": "OnlinePollAdminService.vote",
-      "ordinal": 1,
-      "line": 74,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "post",
-      "target": "/api/v1/admin/system/polls/{pollSn}/vote",
-      "operationId": "vote_1",
-      "descriptorName": "vote_1Operation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "e48b4de36d76e7962e10"
     },
     {
       "file": "frontend/src/services/foundation/system/PolicyAdminService.ts",

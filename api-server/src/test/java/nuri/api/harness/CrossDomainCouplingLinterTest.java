@@ -82,25 +82,30 @@ class CrossDomainCouplingLinterTest {
     private static final int APP_TO_APP_COUPLING = 4;
 
     /**
-     * app → core 결합 동결(2026-08-30 전수 타입 참조 실측 24건).
+     * app → core 결합 동결(2026-09-06 전수 타입 참조 실측 33건).
      *
      * <p>코어는 삭제 대상이 아니라 허용 가능하지만, '허용' 과 '미탐지' 를 구분하기 위해 동결한다.
      *
-     * <p>종전 9는 주입 필드만 센 값이었다. import/signature/event/FQN까지 넓힌 현재 edge 기준은 24다.
-     * 코어는 삭제 대상이 아니므로 허용 가능하지만 숫자를 올릴 때는 신설 edge와 사유를 함께 남긴다.
+     * <p>종전 9는 주입 필드만 센 값이었다. import/signature/event/FQN까지 넓힌 edge 기준은 24였다.
      *
      * <p>[2026-09-05 DEC-OPS-035] 24 → 26. {@code mail → user}·{@code sms → user}
      * ({@code UserContactService}) 신설 — 메일·문자 발송이 수신자를 esntlId 로 받아 서버가 연락처를
      * 해석한다. 사용자 검색 응답은 개인정보를 담지 않으므로(의도) 화면이 주소를 알 수 없고, 해석은 코어
      * 사용자 도메인만 할 수 있다. 결과는 발송에만 쓰고 응답으로 내보내지 않는다(H3).
      *
-     * <p>[2026-09-06 DEC-OPS-042] 26 → 27. {@code notification → user}({@code UserContactService}) 신설 —
+     * <p>[2026-09-06] 26 → 33. 첨부 재할당을 원 업로더로 제한하는 공통
+     * {@code AttachmentAssignmentPolicy}를 MailService, MemoReportService, RewardManageService,
+     * WorkReportService, ScheduleService, BannerService, PopupService가 사용하면서 7개 file edge가
+     * 추가됐다. BoardService의 file edge는 기존 FileService 참조로 이미 census에 포함돼 있었다.
+     * 숫자를 올릴 때는 신설 edge와 사유를 함께 남긴다.
+     *
+     * <p>[2026-09-06 DEC-OPS-042] 33 → 34. {@code notification → user}({@code UserContactService}) 신설 —
      * 관리자 알림 발송이 수신자를 esntlId 로 받아 존재를 확인한다(메일·문자와 같은 축, 부분 발송 금지).
      * 해석 결과는 알림 행 생성에만 쓰고 응답으로 내보내지 않는다(H3).
      */
-    private static final int APP_TO_CORE_COUPLING = 27;
+    private static final int APP_TO_CORE_COUPLING = 34;
 
-    /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(교차 edge 실측 30건 대비 여유). */
+    /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(교차 edge 실측 37건 대비 여유). */
     private static final int CROSS_DOMAIN_REFERENCE_FLOOR = 25;
 
     @Test

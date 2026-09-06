@@ -33,6 +33,10 @@ git config core.hooksPath .githooks
 
 `InputContractMirrorLinterTest`가 등록된 입력 DTO의 문자열 길이·Y/N enum·필수 제약 종류와 validation group을 Entity 저장 상한 및 `api-docs.json`과 대조하고, 중첩 DTO의 cascade·null item 거절·item schema 연결과 서버 소유 필드의 Jackson/OpenAPI read-only 방향도 확인한다. 대상 목록과 필드 수는 테스트 소스가 정본이며 검사 본문은 baseline full-source hash로 보호된다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 등록된 길이·enum·required/nullability·중첩 schema·요청 방향의 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다. `@NotBlank`의 공백 의미 보존과 root controller validation reachability 전수 검사는 아직 이 게이트 범위가 아니다.
 
+### 첨부 할당 인가 게이트
+
+`AttachmentSourceRegistryLinterTest`는 `atchFileSn`을 가진 엔티티와 참조원 registry를 양방향으로 대조하는 기존 열람 도달성 검사에 더해, `business-core`·`business-app`의 프로덕션 서비스 계층에서 클라이언트가 선택한 첨부 assignment carrier를 exact census로 수집한다. 쓰기 경로는 `AttachmentAssignmentPolicy`의 원 업로더 가드가 엔티티·물리 파일 변경보다 먼저 오는지까지 검사하며, 미등록 writer·가드 삭제·가드 후행은 하네스를 red로 만든다. 파일 삭제 API처럼 새 업무 참조를 만들지 않는 경로는 이 census 범위가 아니다. 판정 본문은 baseline full-source hash로 보호된다.
+
 ### 대표 거버넌스 하네스
 
 | 클래스 | 막는 회귀 |
@@ -42,6 +46,7 @@ git config core.hooksPath .githooks
 | `ConfigSafetyLinterTest` | 배포 형상이 개발 기본값으로 재고착(actuator 확대 노출·prod jdbc-url 누락·프로파일 오버레이 소멸) |
 | `SecretLiteralLinterTest` | 배포 스크립트의 시크릿 리터럴 인라인·prod 플레이스홀더 기본값 부활 |
 | `HandlerReachesServiceLinterTest` | 저장 경로 없는 쓰기 핸들러가 200/success 반환(거짓 성공) |
+| `AttachmentSourceRegistryLinterTest` | 첨부 참조원 누락·미등록 writer·원 업로더 가드 삭제 및 저장 후행 |
 | `DockerfilePackageManagerLinterTest` | 배포 이미지가 CI 검증 트리와 다른 패키지 매니저로 빌드 |
 
 ### pre-push fast-pass 정책

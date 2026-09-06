@@ -389,7 +389,26 @@ class FileServiceTest {
         fileService.updateFiles(atchFileSn, Collections.singletonList(newFile));
 
         // then
+        verify(accessPolicy).assertAttachable(master);
         verify(fileDetailRepository, times(1)).save(any(FileDetail.class));
+    }
+
+    @Test
+    @DisplayName("파일 수정 - 원 업로더가 아니면 상세 조회와 물리 저장 전에 거부한다")
+    void updateFiles_deniedAssignmentHasNoDetailOrStorageSideEffect() {
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(accessPolicy).assertAttachable(master);
+
+        assertThatThrownBy(() -> fileService.updateFiles(
+                atchFileSn, Collections.singletonList(validJpeg("new.jpg"))))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        verify(accessPolicy).assertAttachable(master);
+        verifyNoInteractions(fileDetailRepository, storageService);
     }
 
     @Test

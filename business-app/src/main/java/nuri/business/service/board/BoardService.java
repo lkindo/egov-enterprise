@@ -18,6 +18,7 @@ import nuri.business.service.board.dto.BoardMapper;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.foundation.core.event.PostCreatedEvent;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.file.FileService;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
@@ -50,6 +51,7 @@ public class BoardService extends BaseAbstractService {
         private final BoardMasterRepository boardMasterRepository;
         private final UserService userService;
         private final FileService fileService;
+        private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
         private final ApplicationEventPublisher eventPublisher;
         private final MeterRegistry meterRegistry;
         private final BoardViewCountService viewCountService;
@@ -66,6 +68,7 @@ public class BoardService extends BaseAbstractService {
                         BoardMasterRepository boardMasterRepository,
                         UserService userService,
                         FileService fileService,
+                        AttachmentAssignmentPolicy attachmentAssignmentPolicy,
                         ApplicationEventPublisher eventPublisher,
                         MeterRegistry meterRegistry,
                         BoardViewCountService viewCountService,
@@ -75,6 +78,8 @@ public class BoardService extends BaseAbstractService {
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
                 this.userService = required(userService, "userService 는 null 일 수 없습니다");
                 this.fileService = required(fileService, "fileService 는 null 일 수 없습니다");
+                this.attachmentAssignmentPolicy = required(attachmentAssignmentPolicy,
+                                "attachmentAssignmentPolicy 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "eventPublisher 는 null 일 수 없습니다");
                 this.meterRegistry = required(meterRegistry, "meterRegistry 는 null 일 수 없습니다");
                 this.viewCountService = required(viewCountService, "viewCountService 는 null 일 수 없습니다");
@@ -245,6 +250,9 @@ public class BoardService extends BaseAbstractService {
                         BoardMaster master = boardMasterRepository
                                         .findByIdWithPessimisticLock(request.bbsId())
                                         .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                        if (request.atchFileSn() != null) {
+                                attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
+                        }
 
                         // 사용자 정보 조회 (실패 시 익명 처리)
                         UserDto author = null;
@@ -327,6 +335,9 @@ public class BoardService extends BaseAbstractService {
                 Board parent = boardRepository
                                 .findById(parentSn)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+                if (request.atchFileSn() != null) {
+                        attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
+                }
 
                 // 사용자 정보 조회 (실패 시 익명 처리)
                 UserDto author = null;
@@ -487,12 +498,28 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
+                required(bbsId, "bbsId 는 null 일 수 없습니다");
+                Board board = findOwnedPost(pstSn);
+                updateOwnedPost(board, request, false);
+        }
+
+        /** 게시글 변경 및 파일 I/O보다 먼저 현재 주체의 게시글 소유권을 확정한다. */
+        private Board findOwnedPost(Long pstSn) {
                 Board board = boardRepository
                                 .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
                 nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(board.getUserId());
+                return board;
+        }
+
+        private void updateOwnedPost(Board board, BoardSaveRequest request, boolean attachmentAlreadyValidated) {
+                if (!attachmentAlreadyValidated
+                                && request.atchFileSn() != null
+                                && !java.util.Objects.equals(board.getAtchFileSn(), request.atchFileSn())) {
+                        attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
+                }
 
                 // [2026-08-27] 전용 파서를 걷어내고 createPost(:217)·replyPost 와 같은 헬퍼로 통일한다.
                 //   종전 블록은 LocalDateTime.parse 만 시도해 **'YYYY-MM-DD'(10자)를 파싱하지 못했다.**
@@ -534,11 +561,23 @@ public class BoardService extends BaseAbstractService {
         public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
+                required(bbsId, "bbsId 는 null 일 수 없습니다");
+                Board board = findOwnedPost(pstSn);
                 Long atchFileSn = request.atchFileSn();
+                boolean attachmentAlreadyValidated = false;
+
+                // 클라이언트가 기존 첨부 식별자를 골랐다면 물리 파일 변경보다 먼저 원 업로더인지 확인한다.
+                if (atchFileSn != null && !java.util.Objects.equals(board.getAtchFileSn(), atchFileSn)) {
+                        attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+                        attachmentAlreadyValidated = true;
+                }
 
                 if (files != null && !files.isEmpty()) {
                         if (atchFileSn == null) {
+                                // 게시글 소유권을 먼저 확인한 뒤 이 호출에서 새로 만든 첨부는
+                                // 클라이언트가 선택한 외부 식별자가 아니므로 재할당 조회가 필요 없다.
                                 atchFileSn = fileService.uploadFiles(files);
+                                attachmentAlreadyValidated = true;
                         } else {
                                 fileService.updateFiles(atchFileSn, files);
                         }
@@ -550,8 +589,7 @@ public class BoardService extends BaseAbstractService {
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
                                 request.scrtYn(), request.useYn(), request.pswd());
 
-                updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(pstSn, "pstSn 는 null 일 수 없습니다"),
-                                newRequest);
+                updateOwnedPost(board, newRequest, attachmentAlreadyValidated);
         }
 
         @Transactional

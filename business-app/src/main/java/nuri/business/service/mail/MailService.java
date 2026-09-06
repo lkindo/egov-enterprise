@@ -1,17 +1,19 @@
 package nuri.business.service.mail;
-import nuri.foundation.core.exception.CommonErrorCode;
 
-import java.util.Objects;
-import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.mail.dto.MailRecipientDto;
 import nuri.business.service.mail.dto.SentMailDto;
 import nuri.business.service.user.UserContactService;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
+
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class MailService {
     private final MailAsyncProcessor mailAsyncProcessor;
     /** esntlId → 이메일 해석(코어). 결과는 발송에만 쓰고 응답으로 내보내지 않는다. */
     private final UserContactService userContactService;
+    private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     /**
      * 발송에 쓰는 시스템 메일 주소(SMTP {@code From}).
@@ -166,6 +169,11 @@ public class MailService {
      * 커밋 후 비동기 발송을 기동한다.
      */
     private Long dispatchOne(String userId, SentMailDto dto, String recptnPerson) {
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+
         // 발신자 이력은 **인증 주체**에서 온다. 요청 본문의 dsptchPerson 은 화면이 채우지 않아 늘 null 이었고,
         // 채운다 해도 클라이언트가 스스로를 다른 사람이라 주장할 수 있는 축이다(게시글이 이미 같은 규칙을 쓴다).
         SentMail sentMail = Objects.requireNonNull(SentMail.builder()
@@ -174,7 +182,7 @@ public class MailService {
                 .sndptyNm(resolveSenderName(userId, dto))
                 .rcvrNm(recptnPerson.length() > 100 ? recptnPerson.substring(0, 100) : recptnPerson)
                 .dsptchRsltCd("P") // Pending
-                .atchFileSn(dto.getAtchFileSn())
+                .atchFileSn(atchFileSn)
                 .build());
 
         SentMail savedMail = sentMailRepository.save(Objects.requireNonNull(sentMail));

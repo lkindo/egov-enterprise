@@ -5,7 +5,7 @@
  "schemaRef": "config/ui-navigation-disposition.schema.json",
  "manifestRef": {
   "path": "config/ui-route-capabilities.json",
-  "sha256": "25f31007b381e3057e678f46e4b219c27e098ee509e346f52199e9d31a8cbb80"
+  "sha256": "8eeb56b8b45f570d04723ba6bca069b03e6573e948ed427d7d621c236c68b28b"
  },
  "provisionalDirection": {
   "status": "accepted-provisional-direction",
@@ -308,20 +308,47 @@
   },
   {
    "route": "/admin/community",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/src/app/admin/community/page.tsx — redirect('/admin/help?tab=COMMUNITY') (2026-09-06 이행); 종전에는 KnowledgeHubClient defaultTab=COMMUNITY 를 그대로 렌더",
+      "config/ui-route-capabilities.json routes[/admin/community] — routing.kind=page-redirect target=/admin/help?tab=COMMUNITY"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/community → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/community] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
@@ -362,38 +389,92 @@
   },
   {
    "route": "/admin/community/boards",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/src/app/admin/community/boards/page.tsx — redirect('/admin/help?tab=COMMUNITY') (2026-09-06 이행); 종전에는 KnowledgeHubClient defaultTab=COMMUNITY 를 그대로 렌더",
+      "config/ui-route-capabilities.json routes[/admin/community/boards] — routing.kind=page-redirect target=/admin/help?tab=COMMUNITY"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/community/boards → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/community/boards] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
    "route": "/admin/community/boards/[id]",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/src/app/admin/community/boards/[id]/page.tsx — redirect('/admin/community/boards/insert-board-article') (DEC-OPS-034)",
+      "config/ui-route-capabilities.json routes[/admin/community/boards/[id]] — routing.kind=page-redirect"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/community/boards/[id] → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/community/boards/[id]] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
@@ -488,20 +569,47 @@
   },
   {
    "route": "/admin/community/boards/write",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/src/app/admin/community/boards/write/page.tsx — redirect('/admin/community/boards/insert-board-article') (DEC-OPS-034)",
+      "config/ui-route-capabilities.json routes[/admin/community/boards/write] — routing.kind=page-redirect"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/community/boards/write → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/community/boards/write] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
@@ -596,20 +704,47 @@
   },
   {
    "route": "/admin/observability",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/next.config.ts — /admin/observability → /admin/system/monitoring/hub?tab=observability config redirect(2026-08)",
+      "frontend/e2e/pages/ObservabilityPage.ts — e2e 가 정본 허브 탭으로 직접 진입"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/observability → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/observability] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
@@ -814,20 +949,47 @@
   },
   {
    "route": "/admin/security/audit",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/next.config.ts — /admin/security/audit → /admin/system/monitoring/hub?tab=security config redirect(2026-08)",
+      "frontend/e2e/23-security-auth-supplement.spec.ts — 비관리자 차단 사슬이 리다이렉트 종착지에서 검증됨"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/security/audit → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/security/audit] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
@@ -1292,20 +1454,47 @@
   },
   {
    "route": "/admin/system/audit",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/next.config.ts — /admin/system/audit → /admin/system/monitoring/hub?tab=system config redirect(2026-08)",
+      "frontend/e2e/23-security-auth-supplement.spec.ts — /admin/system/audit 진입 사슬 검증"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/system/audit → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/system/audit] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
@@ -1436,38 +1625,93 @@
   },
   {
    "route": "/admin/system/ism",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/src/app/admin/system/ism/page.tsx — redirect('/approvals') page-redirect(2026-09-06 이행); IsmClient 삭제",
+      "config/ui-route-capabilities.json routes[/admin/system/ism] — routing.kind=page-redirect target=/approvals",
+      "DEC-OPS-039 — 조회·승인 모두 결재자 본인 기준으로 /approvals 와 같은 개인 결재함임을 실측"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/system/ism → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/system/ism] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
    "route": "/admin/system/layout",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "demo-isolated",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "not-applicable",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/reusable-base-profiles.json packs.demo.frontend.removePaths — src/app/admin/system/layout (demo 전용 투영)",
+      "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx — localStorage 전용 개인 설정, 서버 미저장 고지(DEC-OPS-038 ④)"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/system/layout → demo-isolated"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/system/layout] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
@@ -1616,20 +1860,47 @@
   },
   {
    "route": "/admin/system/monitoring",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/src/app/admin/system/monitoring/page.tsx — redirect('/admin/system/monitoring/hub') (2026-09-06 이행); 종전에는 hub 와 같은 MonitoringHubClient 를 중복 렌더",
+      "frontend/next.config.ts — audit·observability config redirect 의 목적지가 이미 /admin/system/monitoring/hub?tab=* 이다(정본)"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/system/monitoring → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/system/monitoring] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {
@@ -1788,20 +2059,47 @@
   },
   {
    "route": "/admin/user/login-policy",
-   "reviewState": "proposed",
+   "reviewState": "approved",
    "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
+   "authorizationReview": "verified",
+   "privacyReview": "verified",
+   "effectiveMenuExposureReview": "verified",
+   "capabilityReview": "verified",
+   "profileOwnershipReview": "verified",
    "owner": "product/UX + domain owner",
    "reviewBy": "2026-11-30",
    "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
+    "domain": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "frontend/next.config.ts — /admin/user/login-policy → /admin/user/indvdl-info-policy config redirect(2026-08-27 목적지 교정)",
+      "frontend/e2e/pages/OpsGovernancePage.ts — 목적지 교정 기록; DEC-OPS-024 가 /admin/security/login-policy 를 실제 로그인 정책 정본으로 복원"
+     ]
+    },
+    "productIa": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition 은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+      ".agent/memory/decisions.md DEC-OPS-040 — 2026-09-05 감사 잔여 overlay 제안 일괄 승인(사용자 위임 2026-09-06): /admin/user/login-policy → consolidate-to-canonical"
+     ]
+    },
+    "securityPrivacy": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "config/ui-route-capabilities.json routes[/admin/user/login-policy] — sourceShellAccess=shellAccess 유지; 처분은 화면을 신설하지 않고 정본 화면의 인가·프라이버시 경계(frontend/src/proxy.ts 게이트)를 그대로 쓴다",
+      "AGENTS.md Evidence guardrails H3 — 리다이렉트·투영 처분은 인가 의미를 넓히지 않는다(정본 라우트의 게이트가 적용)"
+     ]
+    },
+    "accessibility": {
+     "reviewer": "lkindo (사용자 위임 2026-09-06 · DEC-OPS-040)",
+     "reviewedAt": "2026-09-06",
+     "evidence": [
+      "리다이렉트·투영 처분은 새 UI 를 만들지 않는다 — 정본 화면의 접근성 계약(frontend/src/__tests__/work-screen-grammar-contract.test.ts 등 기존 계약)이 그대로 적용된다"
+     ]
+    }
    }
   },
   {

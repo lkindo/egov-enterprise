@@ -4,6 +4,7 @@ import nuri.business.domain.report.WorkReport;
 import nuri.business.domain.report.WorkReportRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -44,6 +45,9 @@ class WorkReportServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+
     @InjectMocks
     private WorkReportService workReportService;
 
@@ -72,6 +76,7 @@ class WorkReportServiceTest {
                 .rptTtl("주간보고")
                 .rptCn("내용")
                 .userId("user01")
+                .atchFileSn(101L)
                 .build();
 
         authenticateAs("user1", "ROLE_USER");
@@ -83,6 +88,25 @@ class WorkReportServiceTest {
         WorkReport saved = captor.getValue();
         org.assertj.core.api.Assertions.assertThat(saved.getRptpSn()).isNull();
         org.assertj.core.api.Assertions.assertThat(saved.getUserId()).isEqualTo("user1");
+        org.assertj.core.api.Assertions.assertThat(saved.getAtchFileSn()).isEqualTo(101L);
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+    }
+
+    @Test
+    @DisplayName("업무보고 등록 - 첨부 할당 거부 시 저장하지 않는다")
+    void registerWorkReport_deniedAttachmentDoesNotSave() {
+        authenticateAs("user1", "ROLE_USER");
+        WorkReportDto dto = WorkReportDto.builder()
+                .rptTtl("주간보고")
+                .atchFileSn(101L)
+                .build();
+        doThrow(new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        assertThrows(BusinessException.class, () -> workReportService.createWorkReport(dto));
+
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+        verifyNoInteractions(workReportRepository);
     }
 
     @Test
@@ -140,6 +164,51 @@ class WorkReportServiceTest {
 
         assertEquals("수정보고", report.getRptTtl());
         assertEquals("20260906", report.getRptYmd(), "수정 성공 뒤 보고 일자가 유실되면 안 된다");
+    }
+
+    @Test
+    @DisplayName("업무보고 수정 - 새 첨부 할당 거부 시 기존 엔티티를 변경하지 않는다")
+    void updateWorkReport_deniedAttachmentDoesNotMutate() {
+        WorkReport report = WorkReport.builder()
+                .rptpSn(1L)
+                .rptTtl("기존 보고")
+                .rptCn("기존 내용")
+                .atchFileSn(100L)
+                .build();
+        WorkReportDto request = WorkReportDto.builder()
+                .rptpSn(1L)
+                .rptTtl("변경 보고")
+                .rptCn("변경 내용")
+                .atchFileSn(101L)
+                .build();
+        when(workReportRepository.findById(1L)).thenReturn(Optional.of(report));
+        doThrow(new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            assertThrows(BusinessException.class, () -> workReportService.updateWorkReport(request));
+        }
+
+        assertEquals("기존 보고", report.getRptTtl());
+        assertEquals("기존 내용", report.getRptCn());
+        assertEquals(100L, report.getAtchFileSn());
+    }
+
+    @Test
+    @DisplayName("업무보고 수정 - 동일 첨부 유지와 null 분리는 재할당 검증을 하지 않는다")
+    void updateWorkReport_sameOrDetachedAttachmentSkipsAssignmentCheck() {
+        WorkReport report = WorkReport.builder().rptpSn(1L).rptTtl("기존").atchFileSn(100L).build();
+        when(workReportRepository.findById(1L)).thenReturn(Optional.of(report));
+
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            workReportService.updateWorkReport(WorkReportDto.builder()
+                    .rptpSn(1L).rptTtl("동일").atchFileSn(100L).build());
+            workReportService.updateWorkReport(WorkReportDto.builder()
+                    .rptpSn(1L).rptTtl("분리").atchFileSn(null).build());
+        }
+
+        verifyNoInteractions(attachmentAssignmentPolicy);
+        assertNull(report.getAtchFileSn());
     }
 
     @Test

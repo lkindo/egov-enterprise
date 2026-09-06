@@ -985,9 +985,12 @@
    "menuExposure": "unverified",
    "decisionSafe": false,
    "routing": {
-    "kind": "page"
+    "kind": "page-redirect",
+    "target": "/admin/help?tab=COMMUNITY"
    },
-   "observedPageRedirectCalls": [],
+   "observedPageRedirectCalls": [
+    "/admin/help?tab=COMMUNITY"
+   ],
    "owner": "product/UX + domain owner",
    "capabilities": [
     {
@@ -1191,9 +1194,12 @@
    "menuExposure": "unverified",
    "decisionSafe": false,
    "routing": {
-    "kind": "page"
+    "kind": "page-redirect",
+    "target": "/admin/help?tab=COMMUNITY"
    },
-   "observedPageRedirectCalls": [],
+   "observedPageRedirectCalls": [
+    "/admin/help?tab=COMMUNITY"
+   ],
    "owner": "product/UX + domain owner",
    "capabilities": [
     {
@@ -5133,11 +5139,11 @@
    "route": "/admin/system/ism",
    "source": "frontend/src/app/admin/system/ism/page.tsx",
    "sourceShellAccess": "admin-system",
-   "shellAccess": "admin-system",
+   "shellAccess": "authenticated",
    "roles": [
     "UNVERIFIED"
    ],
-   "surface": "admin-console",
+   "surface": "authenticated-workspace",
    "status": "unverified",
    "dataSource": "unverified",
    "supportedActions": [],
@@ -5152,9 +5158,12 @@
    "menuExposure": "unverified",
    "decisionSafe": false,
    "routing": {
-    "kind": "page"
+    "kind": "page-redirect",
+    "target": "/approvals"
    },
-   "observedPageRedirectCalls": [],
+   "observedPageRedirectCalls": [
+    "/approvals"
+   ],
    "owner": "product/UX + domain owner",
    "capabilities": [
     {
@@ -5213,8 +5222,6 @@
     "UNVERIFIED"
    ],
    "directProjectionProfiles": [
-    "collaboration",
-    "core",
     "demo"
    ],
    "journeys": [],
@@ -5852,9 +5859,12 @@
    "menuExposure": "unverified",
    "decisionSafe": false,
    "routing": {
-    "kind": "page"
+    "kind": "page-redirect",
+    "target": "/admin/system/monitoring/hub"
    },
-   "observedPageRedirectCalls": [],
+   "observedPageRedirectCalls": [
+    "/admin/system/monitoring/hub"
+   ],
    "owner": "product/UX + domain owner",
    "capabilities": [
     {
