@@ -19,16 +19,23 @@ public interface AttachmentReferenceResolver {
     Grants resolve(Long atchFileSn, String loginId, String esntlId);
 
     /**
-     * 참조원 조회 결과를 열람 근거 3종으로 압축한 값.
+     * 참조원 조회 결과를 열람 근거와 실패 상태로 압축한 값.
      *
-     * @param sharedGrant       공유 콘텐츠(비밀글 아님 등)로서 인증 사용자에게 열람 근거가 있는가
-     * @param ownerGrant        현재 사용자가 참조 행의 소유자·당사자인가
-     * @param personalReference 개인 귀속(PERSONAL) 참조원이 하나라도 있는가 — <b>관리자 우회를 차단</b>한다
+     * @param sharedGrant        공유 콘텐츠(비밀글 아님 등)로서 인증 사용자에게 열람 근거가 있는가
+     * @param ownerGrant         현재 사용자가 민감도와 무관하게 참조 행의 소유자·당사자인가
+     * @param personalReference  개인 귀속(PERSONAL) 참조원이 하나라도 있는가 — <b>관리자 우회를 차단</b>한다
+     * @param personalOwnerGrant 현재 사용자가 개인 귀속 참조 행의 소유자·당사자인가
+     * @param resolutionFailed   참조원 하나라도 조회에 실패했는가 — 다른 근거보다 우선해 <b>전부 거부</b>한다
      */
-    record Grants(boolean sharedGrant, boolean ownerGrant, boolean personalReference) {
+    record Grants(
+            boolean sharedGrant,
+            boolean ownerGrant,
+            boolean personalReference,
+            boolean personalOwnerGrant,
+            boolean resolutionFailed) {
 
         public static Grants none() {
-            return new Grants(false, false, false);
+            return new Grants(false, false, false, false, false);
         }
     }
 }

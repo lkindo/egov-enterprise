@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.banner.BannerRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import nuri.business.service.system.content.banner.dto.BannerMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class BannerService {
 
     private final BannerRepository bannerRepository;
     private final BannerMapper bannerMapper;
+    private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     public Page<BannerDto> getBannerList(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isEmpty()) {
@@ -39,6 +41,10 @@ public class BannerService {
 
     @Transactional
     public Long insertBanner(BannerDto dto) {
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
         Banner entity = Banner.builder()
                 .bnrNm(dto.getBnrNm())
                 .linkUrl(dto.getLinkUrl())
@@ -46,7 +52,7 @@ public class BannerService {
                 .bnrExpln(dto.getBnrExpln())
                 .sortOrdr(dto.getSortOrdr())
                 .rfltYn(dto.getRfltYn())
-                .atchFileSn(dto.getAtchFileSn())
+                .atchFileSn(atchFileSn)
                 .build();
         return bannerRepository.save(Objects.requireNonNull(entity)).getBnrSn();
     }
@@ -55,8 +61,12 @@ public class BannerService {
     public void updateBanner(BannerDto dto) {
         Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
         entity.update(dto.getBnrNm(), dto.getLinkUrl(), dto.getBnrImgNm(),
-                dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), dto.getAtchFileSn());
+                dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), atchFileSn);
     }
 
     @Transactional

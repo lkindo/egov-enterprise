@@ -1,8 +1,10 @@
 package nuri.business.service.system.content.banner;
 
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.banner.BannerRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import nuri.business.service.system.content.banner.dto.BannerMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,10 +37,16 @@ class BannerServiceTest {
     @Mock
     private BannerRepository bannerRepository;
 
+    @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+
     @BeforeEach
     void setUp() {
         // MapStruct 가 생성한 실제 매퍼 구현체를 주입하여 실 매핑 동작을 검증한다.
-        bannerService = new BannerService(bannerRepository, new BannerMapperImpl());
+        bannerService = new BannerService(
+                bannerRepository,
+                new BannerMapperImpl(),
+                attachmentAssignmentPolicy);
     }
 
     @Test
@@ -115,6 +123,7 @@ class BannerServiceTest {
                 .linkUrl("http://example.com")
                 .sortOrdr(1L)
                 .rfltYn("Y")
+                .atchFileSn(101L)
                 .build();
 
         Banner saved = Banner.builder().bnrSn(1L).bnrNm("New Banner").build();
@@ -124,8 +133,28 @@ class BannerServiceTest {
         Long result = bannerService.insertBanner(dto);
 
         // then
-        verify(bannerRepository, times(1)).save(any(Banner.class));
+        org.mockito.ArgumentCaptor<Banner> savedBanner = org.mockito.ArgumentCaptor.forClass(Banner.class);
+        verify(bannerRepository, times(1)).save(savedBanner.capture());
+        assertThat(savedBanner.getValue().getAtchFileSn()).isEqualTo(101L);
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
         assertThat(result).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("배너 생성 - 첨부 할당 거부 시 저장하지 않는다")
+    void insertBanner_deniedAttachmentDoesNotSave() {
+        BannerDto dto = BannerDto.builder()
+                .bnrNm("New Banner")
+                .atchFileSn(101L)
+                .build();
+        org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> bannerService.insertBanner(dto))
+                .isInstanceOf(BusinessException.class);
+
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+        org.mockito.Mockito.verifyNoInteractions(bannerRepository);
     }
 
     @Test
@@ -155,6 +184,52 @@ class BannerServiceTest {
         assertThat(existingBanner.getLinkUrl()).isEqualTo("http://updated.com");
         assertThat(existingBanner.getSortOrdr()).isEqualTo(2L);
         assertThat(existingBanner.getRfltYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("배너 수정 - 새 첨부 할당 거부 시 기존 엔티티를 변경하지 않는다")
+    void updateBanner_deniedAttachmentDoesNotMutate() {
+        Banner existing = Banner.builder()
+                .bnrSn(1L)
+                .bnrNm("Old Banner")
+                .linkUrl("https://old.example")
+                .atchFileSn(100L)
+                .build();
+        BannerDto request = BannerDto.builder()
+                .bnrSn(1L)
+                .bnrNm("New Banner")
+                .linkUrl("https://new.example")
+                .atchFileSn(101L)
+                .build();
+        given(bannerRepository.findById(1L)).willReturn(Optional.of(existing));
+        org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> bannerService.updateBanner(request))
+                .isInstanceOf(BusinessException.class);
+
+        assertThat(existing.getBnrNm()).isEqualTo("Old Banner");
+        assertThat(existing.getLinkUrl()).isEqualTo("https://old.example");
+        assertThat(existing.getAtchFileSn()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("배너 수정 - 동일 첨부 또는 null 보존은 재할당 검증을 하지 않는다")
+    void updateBanner_sameOrOmittedAttachmentSkipsAssignmentCheck() {
+        Banner existing = Banner.builder()
+                .bnrSn(1L)
+                .bnrNm("Old Banner")
+                .atchFileSn(100L)
+                .build();
+        given(bannerRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        bannerService.updateBanner(BannerDto.builder()
+                .bnrSn(1L).bnrNm("Same").atchFileSn(100L).build());
+        bannerService.updateBanner(BannerDto.builder()
+                .bnrSn(1L).bnrNm("Omitted").atchFileSn(null).build());
+
+        org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
+        assertThat(existing.getAtchFileSn()).isEqualTo(100L);
     }
 
     @Test

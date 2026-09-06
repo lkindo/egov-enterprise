@@ -59,11 +59,21 @@ class FileAccessPolicyTest {
     }
 
     @Test
-    @DisplayName("소유 근거(참조 행의 당사자)가 있으면 열람한다")
-    void ownerOfReferencingRowCanRead() {
+    @DisplayName("개인 귀속 참조 행의 당사자는 열람한다")
+    void ownerOfPersonalReferencingRowCanRead() {
         authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
 
-        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(false, true, true))
+        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(false, true, true, true, false))
+                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("개인 귀속 참조의 당사자는 공유 참조가 함께 있어도 열람한다")
+    void personalOwnerCanReadAttachmentWithMixedReferences() {
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+
+        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(true, true, true, true, false))
                 .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .doesNotThrowAnyException();
     }
@@ -73,8 +83,78 @@ class FileAccessPolicyTest {
     void sharedContentIsReadableByAnyAuthenticatedUser() {
         authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
 
-        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(true, false, false))
+        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(true, false, false, false, false))
                 .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("공유 근거와 개인 귀속 참조가 함께 있으면 무관한 사용자는 열람하지 못한다")
+    void sharedGrantDoesNotOverridePersonalReferencePrivacy() {
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, false, true, false, false))
+                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("공유 참조의 소유자여도 다른 개인 귀속 참조가 함께 있으면 열람하지 못한다")
+    void sharedSourceOwnerCannotOverrideForeignPersonalReference() {
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, true, true, false, false))
+                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("참조원 조회 실패는 이미 확인한 소유·공유 근거로 덮을 수 없다")
+    void resolutionFailureOverridesKnownOwnerAndSharedGrants() {
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, true, false, false, true))
+                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("관리자도 참조원 조회 실패를 우회하지 못한다")
+    void adminCannotOverrideResolutionFailure() {
+        authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
+
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, false, false, false, true))
+                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("업로더 본인은 공유·개인 참조가 함께 있어도 자기 첨부를 열람한다")
+    void uploaderCanReadOwnAttachmentWithMixedReferences() {
+        authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
+
+        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(true, false, true, false, true))
+                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("업로더 조기 허용은 참조원 장애와 무관하며 조회기조차 호출하지 않는다")
+    void uploaderEarlyGrantDoesNotResolveReferences() {
+        authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
+        FileAccessPolicy policy = new FileAccessPolicy((atchFileSn, loginId, esntlId) -> {
+            throw new AssertionError("업로더 조기 허용 뒤에는 참조원을 조회하면 안 된다");
+        });
+
+        assertThatCode(() -> policy.assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .doesNotThrowAnyException();
     }
 
@@ -105,7 +185,7 @@ class FileAccessPolicyTest {
     void adminCannotReadPersonalAttachment() {
         authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
 
-        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, false, true))
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, false, true, false, false))
                 .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .isInstanceOf(BusinessException.class);
     }
@@ -115,7 +195,7 @@ class FileAccessPolicyTest {
     void systemRoleCannotReadPersonalAttachment() {
         authenticate("sys", "USR_SYS", "ROLE_SYSTEM");
 
-        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, false, true))
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, false, true, false, false))
                 .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .isInstanceOf(BusinessException.class);
     }
@@ -133,7 +213,7 @@ class FileAccessPolicyTest {
         // 이 케이스가 없으면 미인증 판정(loginId·esntlId 모두 null)이 뒤쪽 fallthrough 거부와
         // 구분되지 않는다 — 실제로 2026-08-04 pitest 에서 그 조건의 negated-conditional 뮤테이션이
         // 살아남았다. 공유 근거가 있는 첨부(공개 게시글 등)는 그 분기를 지우면 **미인증자에게 열린다**.
-        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, false, false))
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, false, false, false, false))
                 .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .isInstanceOf(BusinessException.class)
                 .extracting(ex -> ((BusinessException) ex).getErrorCode())
@@ -176,7 +256,7 @@ class FileAccessPolicyTest {
     void referenceOwnerCannotAttachForeignUpload() {
         authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
 
-        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, true, true))
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, true, true, true, false))
                 .assertAttachable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .isInstanceOf(BusinessException.class)
                 .extracting(ex -> ((BusinessException) ex).getErrorCode())
@@ -188,7 +268,7 @@ class FileAccessPolicyTest {
     void sharedReaderCannotAttach() {
         authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
 
-        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, false, false))
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, false, false, false, false))
                 .assertAttachable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .isInstanceOf(BusinessException.class)
                 .extracting(ex -> ((BusinessException) ex).getErrorCode())
@@ -209,7 +289,7 @@ class FileAccessPolicyTest {
     @Test
     @DisplayName("미인증 주체는 업로더 표시나 참조 근거와 무관하게 파일을 연결할 수 없다")
     void unauthenticatedCannotAttach() {
-        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, true, false))
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, true, false, false, false))
                 .assertAttachable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .isInstanceOf(BusinessException.class)
                 .extracting(ex -> ((BusinessException) ex).getErrorCode())
@@ -347,7 +427,34 @@ class FileAccessPolicyTest {
         void ownerOfReferencingRowCanDelete() {
             authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
 
-            assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(false, true, true))
+            assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(
+                    false, true, false, false, false))
+                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("🚨 PERSONAL과 SHARED 참조가 섞이면 SHARED 소유자는 개인 첨부를 지우지 못한다")
+        void sharedOwnerCannotDeleteMixedPersonalAttachment() {
+            authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+            AttachmentReferenceResolver.Grants mixedButNotPersonalOwner =
+                    new AttachmentReferenceResolver.Grants(true, true, true, false, false);
+
+            assertThatThrownBy(() -> policy(mixedButNotPersonalOwner)
+                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                    .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        }
+
+        @Test
+        @DisplayName("PERSONAL과 SHARED 참조가 섞여도 개인 참조 당사자는 삭제할 수 있다")
+        void personalOwnerCanDeleteMixedPersonalAttachment() {
+            authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+            AttachmentReferenceResolver.Grants mixedPersonalOwner =
+                    new AttachmentReferenceResolver.Grants(true, true, true, true, false);
+
+            assertThatCode(() -> policy(mixedPersonalOwner)
                     .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                     .doesNotThrowAnyException();
         }
@@ -356,7 +463,8 @@ class FileAccessPolicyTest {
         @DisplayName("🚨 공유 근거만 있는 타인은 읽을 수는 있어도 지우지 못한다 — 열람 정책 재사용 방지")
         void sharedReaderCannotDelete() {
             authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
-            AttachmentReferenceResolver.Grants sharedOnly = new AttachmentReferenceResolver.Grants(true, false, false);
+            AttachmentReferenceResolver.Grants sharedOnly =
+                    new AttachmentReferenceResolver.Grants(true, false, false, false, false);
 
             assertThatCode(() -> policy(sharedOnly).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                     .doesNotThrowAnyException();
@@ -380,9 +488,32 @@ class FileAccessPolicyTest {
         void adminCannotDeletePersonalAttachment() {
             authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
 
-            assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, false, true))
+            assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(
+                    false, false, true, false, false))
                     .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                     .isInstanceOf(BusinessException.class);
+        }
+
+        @Test
+        @DisplayName("🚨 참조원 해석 실패는 다른 소유 근거와 관리자 권한보다 우선해 삭제를 거부한다")
+        void resolutionFailureDeniesOwnerAndAdmin() {
+            AttachmentReferenceResolver.Grants failedWithOwner =
+                    new AttachmentReferenceResolver.Grants(true, true, false, false, true);
+            authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+            assertThatThrownBy(() -> policy(failedWithOwner)
+                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                    .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+
+            AttachmentReferenceResolver.Grants failedWithoutKnownReference =
+                    new AttachmentReferenceResolver.Grants(false, false, false, false, true);
+            authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
+            assertThatThrownBy(() -> policy(failedWithoutKnownReference)
+                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                    .isEqualTo(CommonErrorCode.ACCESS_DENIED);
         }
 
         @Test

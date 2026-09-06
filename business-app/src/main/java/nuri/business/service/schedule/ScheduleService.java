@@ -4,6 +4,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
 import nuri.foundation.core.exception.BusinessException;
@@ -26,6 +27,7 @@ public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final ScheduleMapper scheduleMapper;
     private final UserRepository userRepository;
+    private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     /**
      * 소속 조직 미배정(ognz_id = null) 사용자의 폴백 조직. tb_ognz_info 의 '기본조직' 이다.
@@ -89,6 +91,10 @@ public class ScheduleService {
 
     @Transactional
     public Long createSchedule(String userId, ScheduleDto dto) {
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
         // [소유자 고정] 조회 4종(searchSchedules/findMonthlySchedules/findSchedulesByDateRange)이 모두
         //   s.schdlPicId = :loginId 로 필터한다. 담당자를 클라이언트 DTO 값으로 두면
         //   ① 미전송 시 null 이 되어 등록해도 어떤 목록에도 나타나지 않고(저장축↔조회축 단절),
@@ -110,7 +116,7 @@ public class ScheduleService {
                 .schdlPicId(userId)
                 .schdlIpAddr(dto.getSchdlIpAddr())
                 .reptSeCd(dto.getReptSeCd())
-                .atchFileSn(dto.getAtchFileSn())
+                .atchFileSn(atchFileSn)
                 .build();
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         return scheduleRepository.save(entity).getSchdlSn();

@@ -12,6 +12,7 @@ import nuri.business.service.board.dto.BoardMapperImpl;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.foundation.core.event.PostCreatedEvent;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.file.FileService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.service.user.UserService;
@@ -52,6 +53,8 @@ class BoardServiceTest {
     @Mock
     private FileService fileService;
     @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+    @Mock
     private ApplicationEventPublisher eventPublisher;
     private MeterRegistry meterRegistry;
     @Mock
@@ -73,6 +76,7 @@ class BoardServiceTest {
                 boardMasterRepository,
                 userService,
                 fileService,
+                attachmentAssignmentPolicy,
                 eventPublisher,
                 meterRegistry,
                 viewCountService,
@@ -804,6 +808,57 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("게시글 수정 - 타인의 첨부로 교체하면 엔티티 변경 전에 거부한다")
+    void updatePost_rejectsForeignAttachmentBeforeEntityMutation() {
+        Long pstSn = 1L;
+        Board board = Board.builder()
+                .pstSn(pstSn)
+                .pstTtl("Old")
+                .userId("user1")
+                .atchFileSn(100L)
+                .build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("user1"));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+        BoardSaveRequest request = new BoardSaveRequest(
+                "BBS_01", "Changed", "Content", null, null, 101L,
+                null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", pstSn, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        assertThat(board.getPstTtl()).isEqualTo("Old");
+        assertThat(board.getAtchFileSn()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("게시글 수정 - 기존 첨부를 그대로 유지하면 재할당 검증을 생략한다")
+    void updatePost_sameAttachmentSkipsAssignmentCheck() {
+        Long pstSn = 1L;
+        Board board = Board.builder()
+                .pstSn(pstSn)
+                .pstTtl("Old")
+                .userId("user1")
+                .atchFileSn(101L)
+                .build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("user1"));
+        BoardSaveRequest request = new BoardSaveRequest(
+                "BBS_01", "Changed", "Content", null, null, 101L,
+                null, null, null, null, null, null);
+
+        boardService.updatePost("BBS_01", pstSn, request);
+
+        verify(attachmentAssignmentPolicy, never()).assertAssignable(anyLong());
+        assertThat(board.getPstTtl()).isEqualTo("Changed");
+        assertThat(board.getAtchFileSn()).isEqualTo(101L);
+    }
+
+    @Test
     @DisplayName("게시글 삭제")
     void deletePost() {
         // given
@@ -1005,6 +1060,41 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("게시글 생성 - 타인이 업로드한 첨부는 저장 전에 거부한다")
+    void createPost_rejectsForeignAttachmentBeforeSave() {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
+        BoardSaveRequest request = new BoardSaveRequest(
+                "BBS_01", "Subj", "Cont", null, null, 101L,
+                null, null, null, null, null, null);
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        assertThatThrownBy(() -> boardService.createPost("user1", request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        verify(boardRepository, never()).save(any(Board.class));
+    }
+
+    @Test
+    @DisplayName("게시글 생성 - 없는 게시판은 첨부 식별자를 조회하기 전에 거부한다")
+    void createPost_missingBoardPrecedesAttachmentProbe() {
+        given(boardMasterRepository.findByIdWithPessimisticLock("MISSING"))
+                .willReturn(Optional.empty());
+        BoardSaveRequest request = new BoardSaveRequest(
+                "MISSING", "Subj", "Cont", null, null, 101L,
+                null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> boardService.createPost("user1", request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
+
+        verifyNoInteractions(attachmentAssignmentPolicy);
+        verify(boardRepository, never()).save(any(Board.class));
+    }
+
+    @Test
     @DisplayName("작성자를 찾을 수 없는 경우 익명으로 답글 생성")
     void replyPost_UserNotFound() {
         // given
@@ -1051,6 +1141,45 @@ class BoardServiceTest {
 
         // then
         verify(fileService).uploadFiles(files);
+    }
+
+    @Test
+    @DisplayName("답글 생성 - 타인이 업로드한 첨부는 저장 전에 거부한다")
+    void replyPost_rejectsForeignAttachmentBeforeSave() {
+        Long parentSn = 7L;
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
+        given(boardRepository.findById(parentSn))
+                .willReturn(Optional.of(Board.builder().pstSn(parentSn).sortOrdr(10L).build()));
+        BoardSaveRequest request = new BoardSaveRequest(
+                "BBS_01", "Reply", "Cont", null, null, 101L,
+                null, null, null, null, null, null);
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        assertThatThrownBy(() -> boardService.replyPost("user1", parentSn, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        verify(boardRepository, never()).save(any(Board.class));
+    }
+
+    @Test
+    @DisplayName("답글 생성 - 없는 부모글은 첨부 식별자를 조회하기 전에 거부한다")
+    void replyPost_missingParentPrecedesAttachmentProbe() {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
+        given(boardRepository.findById(7L)).willReturn(Optional.empty());
+        BoardSaveRequest request = new BoardSaveRequest(
+                "BBS_01", "Reply", "Cont", null, null, 101L,
+                null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> boardService.replyPost("user1", 7L, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+
+        verifyNoInteractions(attachmentAssignmentPolicy);
+        verify(boardRepository, never()).save(any(Board.class));
     }
 
     @Test
@@ -1206,7 +1335,60 @@ class BoardServiceTest {
         boardService.updatePostWithFiles(bbsId, pstSn, request, files);
 
         // then
-        verify(fileService).updateFiles(eq(atchFileSn), eq(files));
+        org.mockito.InOrder authorizationBeforeFileMutation = inOrder(attachmentAssignmentPolicy, fileService);
+        authorizationBeforeFileMutation.verify(attachmentAssignmentPolicy).assertAssignable(atchFileSn);
+        authorizationBeforeFileMutation.verify(fileService).updateFiles(eq(atchFileSn), eq(files));
+    }
+
+    @Test
+    @DisplayName("파일 포함 수정 - 게시글 비소유자는 기존 첨부의 물리 갱신 전에 거부한다")
+    void updatePostWithFiles_nonOwnerCannotMutateExistingAttachment() throws IOException {
+        Long pstSn = 1L;
+        Long atchFileSn = 101L;
+        Board board = Board.builder()
+                .pstSn(pstSn)
+                .userId("owner")
+                .atchFileSn(atchFileSn)
+                .build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("other-user"));
+        BoardSaveRequest request = new BoardSaveRequest(
+                "BBS_01", "Upd", "Cont", null, null, atchFileSn,
+                null, null, null, null, null, null);
+        org.springframework.web.multipart.MultipartFile file = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.List.of(file);
+
+        assertThatThrownBy(() -> boardService.updatePostWithFiles("BBS_01", pstSn, request, files))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        verify(fileService, never()).updateFiles(anyLong(), anyList());
+        verify(fileService, never()).uploadFiles(anyList());
+    }
+
+    @Test
+    @DisplayName("파일 포함 수정 - 게시글 비소유자는 새 파일 업로드 전에 거부한다")
+    void updatePostWithFiles_nonOwnerCannotUploadNewAttachment() throws IOException {
+        Long pstSn = 1L;
+        Board board = Board.builder().pstSn(pstSn).userId("owner").build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("other-user"));
+        BoardSaveRequest request = new BoardSaveRequest(
+                "BBS_01", "Upd", "Cont", null, null, null,
+                null, null, null, null, null, null);
+        org.springframework.web.multipart.MultipartFile file = mock(
+                org.springframework.web.multipart.MultipartFile.class);
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.List.of(file);
+
+        assertThatThrownBy(() -> boardService.updatePostWithFiles("BBS_01", pstSn, request, files))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        verify(fileService, never()).uploadFiles(anyList());
+        verify(fileService, never()).updateFiles(anyLong(), anyList());
     }
 
     @Test

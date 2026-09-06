@@ -2,6 +2,7 @@ package nuri.business.service.schedule;
 
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
+import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,9 @@ class ScheduleServiceTest {
     /** 담당자/부서 귀속을 서버가 정하면서 소속 조직 조회가 필요해졌다. 미스텁 시 Optional.empty() → 기본조직 폴백. */
     @Mock
     private nuri.business.domain.user.repository.UserRepository userRepository;
+
+    @Mock
+    private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     @InjectMocks
     private ScheduleService scheduleService;
@@ -97,6 +101,7 @@ class ScheduleServiceTest {
                 .schdlDeptId("OTHER_DEPT")
                 .schdlNm("New Schedule")
                 .schdlSeCd("1")
+                .atchFileSn(101L)
                 .build();
         given(userRepository.findByUserId(loginId)).willReturn(Optional.empty()); // 조직 미배정 → 기본조직 폴백
         given(scheduleRepository.save(any(Schedule.class)))
@@ -117,6 +122,27 @@ class ScheduleServiceTest {
         assertThat(saved.getSchdlPicId()).isEqualTo(loginId);
         // 부서도 서버가 결정 (미배정이므로 기본조직)
         assertThat(saved.getSchdlDeptId()).isEqualTo("ORGNZT_0000000000000");
+        assertThat(saved.getAtchFileSn()).isEqualTo(101L);
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+    }
+
+    @Test
+    @DisplayName("일정 생성 - 첨부 할당 거부 시 저장하지 않는다")
+    void createSchedule_deniedAttachmentDoesNotSave() {
+        ScheduleDto dto = ScheduleDto.builder()
+                .schdlNm("New Schedule")
+                .atchFileSn(101L)
+                .build();
+        org.mockito.Mockito.doThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED))
+                .when(attachmentAssignmentPolicy).assertAssignable(101L);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> scheduleService.createSchedule("user1", dto))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+
+        verify(attachmentAssignmentPolicy).assertAssignable(101L);
+        org.mockito.Mockito.verifyNoInteractions(scheduleRepository);
     }
 
     @Test
