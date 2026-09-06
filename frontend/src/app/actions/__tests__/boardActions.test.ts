@@ -162,7 +162,7 @@ describe('boardActions', () => {
       expect(consoleError).not.toHaveBeenCalled();
     });
 
-    it('파일이 있으면 생성 BBS multipart 계약의 경로와 part를 사용한다', async () => {
+    it('파일이 있으면 첨부 동반 등록(/with-files) 계약의 경로와 part를 사용한다', async () => {
       const formData = new FormData();
       formData.append('pstTtl', 'title');
       formData.append('pstCn', 'content');
@@ -172,7 +172,7 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(client.requestRaw).toHaveBeenCalledWith({
-        url: 'bbs/BBS_001',
+        url: 'boards/BBS_001/posts/with-files',
         method: 'post',
         data: expect.any(FormData),
         headers: { 'Content-Type': undefined },
@@ -185,7 +185,7 @@ describe('boardActions', () => {
       expect(result.redirect).toContain('pstSn=100');
     });
 
-    it('파일이 있는 수정도 생성 BBS multipart 경로를 쓰고 Content-Type을 수동 지정하지 않는다', async () => {
+    it('파일이 있는 수정도 첨부 동반 수정(/with-files) 경로를 쓰고 Content-Type을 수동 지정하지 않는다', async () => {
       const formData = new FormData();
       formData.append('pstSn', '100');
       formData.append('pstTtl', 'title edited');
@@ -196,7 +196,7 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(client.requestRaw).toHaveBeenCalledWith({
-        url: 'bbs/BBS_001/posts/100',
+        url: 'boards/BBS_001/posts/100/with-files',
         method: 'put',
         data: expect.any(FormData),
         headers: { 'Content-Type': undefined },
