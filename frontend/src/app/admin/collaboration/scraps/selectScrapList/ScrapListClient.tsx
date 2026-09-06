@@ -24,32 +24,39 @@ const DEFAULT_PAGE_UNIT = 10;
 export function parseScrapUrl(url: string | undefined): { isInternal: boolean; resolvedHref: string } | null {
     if (!url) return null;
     const trimmed = url.trim();
-    if (!trimmed) return null;
+    if (!trimmed || /[\r\n\t]/.test(trimmed)) return null;
 
-    // eGov 레거시 게시판 URL 변환
-    const bbsMatch = trimmed.match(/bbsId=([^&]+)/i)?.[1];
-    const nttMatch = trimmed.match(/(?:pstSn|nttId)=([^&]+)/i)?.[1];
+    // eGov 레거시 게시판 URL 변환 (파라미터 인코딩 및 주입 방어)
+    const bbsMatch = trimmed.match(/[?&]bbsId=([^&#\s]+)/i)?.[1];
+    const nttMatch = trimmed.match(/[?&](?:pstSn|nttId)=([^&#\s]+)/i)?.[1];
     if (bbsMatch && nttMatch) {
         return {
             isInternal: true,
-            resolvedHref: `/admin/community/boards/detail?bbsId=${bbsMatch}&pstSn=${nttMatch}`,
+            resolvedHref: `/admin/community/boards/detail?bbsId=${encodeURIComponent(bbsMatch)}&pstSn=${encodeURIComponent(nttMatch)}`,
         };
     }
 
-    // 내부 상대 경로 (/...)
-    if (trimmed.startsWith('/') && !trimmed.startsWith('//')) {
+    // 내부 상대 경로 (/...) — 프로토콜 상대 경로(//, /\) 및 오픈 리다이렉트 차단
+    if (trimmed.startsWith('/') && !/^\/[\\/]/.test(trimmed)) {
         return {
             isInternal: true,
             resolvedHref: trimmed,
         };
     }
 
-    // 외부 절대 URL (http / https)
+    // 외부 절대 URL (http / https 만 허용, new URL 로 스킴 엄격 검증)
     if (/^https?:\/\//i.test(trimmed)) {
-        return {
-            isInternal: false,
-            resolvedHref: trimmed,
-        };
+        try {
+            const parsed = new URL(trimmed);
+            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                return {
+                    isInternal: false,
+                    resolvedHref: parsed.href,
+                };
+            }
+        } catch {
+            return null;
+        }
     }
 
     return null;

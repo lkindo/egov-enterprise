@@ -72,9 +72,17 @@ vi.mock('@/app/components/ui/user-picker', () => ({
 
 vi.mock('@/app/components/ui/recipient-picker', () => ({
   RecipientPicker: ({ isOpen, onConfirm }: any) => isOpen ? (
-    <button type="button" onClick={() => onConfirm([{ kind: 'user', esntlId: 'USER_1', name: '홍길동' }])}>
-      홍길동 선택
-    </button>
+    <div>
+      <button type="button" onClick={() => onConfirm([{ kind: 'user', esntlId: 'USER_1', name: '홍길동' }])}>
+        홍길동 선택
+      </button>
+      <button type="button" onClick={() => onConfirm([
+        { kind: 'user', esntlId: 'USER_LONG_ID_0000001', name: '홍길동' },
+        { kind: 'user', esntlId: 'USER_LONG_ID_0000002', name: '이순신' },
+      ])}>
+        다중 수신자 선택
+      </button>
+    </div>
   ) : null,
 }));
 
@@ -435,5 +443,27 @@ describe('NotePage validation contract', () => {
     // 탭을 바꾸면 이전 탭의 페이지 위치를 끌고 가지 않는다.
     fireEvent.click(screen.getByRole('tab', { name: '보낸 쪽지함' }));
     await waitFor(() => expect(mocks.getSentNotes).toHaveBeenCalledWith({ page: 0, size: 50 }));
+  });
+
+  it('다중 수신자(총 길이 20자 초과)를 선택해도 유효성 검증을 통과하고 쉼표 구분자로 발송한다', async () => {
+    openComposer();
+    fireEvent.click(screen.getByRole('button', { name: /타겟 검색/ }));
+    fireEvent.click(screen.getByRole('button', { name: '다중 수신자 선택' }));
+
+    expect(screen.getByText('총 2명 선택됨')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('textbox', { name: '시스템 제목' }), { target: { value: '다중 발송 제목' } });
+    fireEvent.change(screen.getByRole('textbox', { name: '데이터 바디 (내용)' }), { target: { value: '다중 발송 본문' } });
+
+    fireEvent.click(screen.getByRole('button', { name: '메시지 전송' }));
+
+    await waitFor(() => {
+      expect(mocks.sendNote).toHaveBeenCalledWith({
+        rcverId: 'USER_LONG_ID_0000001,USER_LONG_ID_0000002',
+        noteSj: '다중 발송 제목',
+        noteCn: '다중 발송 본문',
+      });
+    });
+    expect(mocks.toast).toHaveBeenCalledWith('쪽지가 성공적으로 전송되었습니다.', 'success');
   });
 });

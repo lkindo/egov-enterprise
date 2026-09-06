@@ -137,6 +137,24 @@ class OnlinePollServiceTest {
     }
 
     @Test
+    @DisplayName("설문 목록 조회 - 미투표 일반 사용자에게는 목록 내 모든 항목 득표수를 숨기고 hasVoted는 false")
+    void getPollList_HidesVoteCountsForUnvotedUser() {
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Item 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder()
+                .pollSn(1L).pollNm("Poll 1").pollArticles(List.of(item)).build();
+        Page<OnlinePollManage> page = new org.springframework.data.domain.PageImpl<>(List.of(entity));
+        given(pollManageRepository.findAll(any(Pageable.class))).willReturn(page);
+        given(pollResultRepository.countByPollArtclSnIn(List.of(11L))).willReturn(List.<Object[]>of(new Object[]{11L, 42L}));
+
+        Page<OnlinePollManageDto> result = onlinePollService.getPollList("", Pageable.unpaged());
+
+        assertThat(result.getContent()).hasSize(1);
+        OnlinePollManageDto pollDto = result.getContent().get(0);
+        assertThat(pollDto.getHasVoted()).isFalse();
+        assertThat(pollDto.getPollArticles().get(0).getPollIemCo()).isEqualTo(0L);
+    }
+
+    @Test
     @DisplayName("설문 상세 조회 - 실패")
     void getPoll_Fail() {
         given(pollManageRepository.findById(99L)).willReturn(Optional.empty());

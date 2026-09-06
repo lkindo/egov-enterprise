@@ -18,6 +18,9 @@ public interface OnlinePollResultRepository extends JpaRepository<OnlinePollResu
     @Query("SELECT COUNT(r) FROM OnlinePollResult r WHERE r.pollSn = :pollSn AND r.frstRgtrId = :frstRgtrId")
     long countByPollSnAndFrstRegisterId(@Param("pollSn") Long pollSn, @Param("frstRgtrId") String frstRegisterId);
 
+    @Query("SELECT DISTINCT r.pollSn FROM OnlinePollResult r WHERE r.pollSn IN :pollSns AND r.frstRgtrId = :frstRegisterId")
+    List<Long> findVotedPollSnsByLoginId(@Param("pollSns") java.util.Collection<Long> pollSns, @Param("frstRegisterId") String frstRegisterId);
+
     List<OnlinePollResult> findByPollSn(Long pollSn);
 
     void deleteByPollSn(Long pollSn);

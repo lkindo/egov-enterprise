@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 
@@ -64,6 +66,29 @@ public class OnlinePollService {
                 .flatMap(list -> list.stream())
                 .collect(Collectors.toList());
         applyItemVoteCounts(allItems);
+
+        String currentLoginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(null);
+        boolean isAdmin = nuri.business.security.util.SecurityUtil.isAdmin();
+        Set<Long> votedPollSns = new HashSet<>();
+        if (currentLoginId != null && !isAdmin) {
+            List<Long> pollSns = dtoPage.getContent().stream()
+                    .map(OnlinePollManageDto::getPollSn)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            if (!pollSns.isEmpty()) {
+                votedPollSns.addAll(pollResultRepository.findVotedPollSnsByLoginId(pollSns, currentLoginId));
+            }
+        }
+
+        for (OnlinePollManageDto dto : dtoPage.getContent()) {
+            boolean hasVoted = votedPollSns.contains(dto.getPollSn());
+            dto.setHasVoted(hasVoted);
+            // [밴드웨건 효과 방지] 관리자가 아니고 아직 투표하지 않은 사용자에게는 각 항목의 득표수를 숨긴다.
+            if (!isAdmin && !hasVoted && dto.getPollArticles() != null) {
+                dto.getPollArticles().forEach(item -> item.setPollIemCo(0L));
+            }
+        }
+
         return dtoPage;
     }
 
