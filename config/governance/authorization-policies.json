@@ -126,6 +126,15 @@
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
+      "method": "POST",
+      "path": "/api/v1/admin/notifications/dispatch",
+      "handler": "nuri.api.controller.business.notification.NotificationAdminApiController#dispatchNotifications",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "NotificationService#dispatchToUsers"
+    },
+    {
       "method": "DELETE",
       "path": "/api/v1/admin/operation/events/{evntSn}",
       "handler": "nuri.api.controller.business.operation.EventApiController#deleteEvent",
@@ -698,22 +707,6 @@
       "method": "PUT",
       "path": "/api/v1/admin/system/policies/{type}",
       "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#updatePolicy",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/polls",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.OnlinePollApiController#insertPoll",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/polls/{pollSn}/vote",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.OnlinePollApiController#vote",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
@@ -2229,6 +2222,17 @@
     },
     {
       "target": "MenuService#updateMenuOrders",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "NotificationService#dispatchToUsers",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
         {

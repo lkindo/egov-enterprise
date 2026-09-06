@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 56,
-    "nativeFormFiles": 50,
+    "nativeFormOccurrences": 57,
+    "nativeFormFiles": 51,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
     "secondaryActionBoundaries": 65,
-    "candidateCount": 143
+    "candidateCount": 144
   },
   "entries": [
     {
@@ -60,26 +60,6 @@
       "testEvidence": [
         "frontend/src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/community/templates/TemplateAdminClient.tsx#TemplateAdminClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/community/templates/TemplateAdminClient.tsx",
-      "owner": "TemplateAdminClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "templateAdminService.deleteTemplate"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx"
       ]
     },
     {
@@ -401,6 +381,23 @@
       ]
     },
     {
+      "key": "formless-write:frontend/src/app/approvals/ApprovalHubClient.tsx#ApprovalHubClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/approvals/ApprovalHubClient.tsx",
+      "owner": "ApprovalHubClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:approvalDecisionSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
       "key": "formless-write:frontend/src/app/note/page.tsx#NotePage",
       "kind": "formless-write",
       "file": "frontend/src/app/note/page.tsx",
@@ -503,23 +500,6 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/survey/response/__tests__/SurveyResponseClient.test.tsx"
-      ]
-    },
-    {
-      "key": "formless-write:frontend/src/app/approvals/ApprovalHubClient.tsx#ApprovalHubClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/approvals/ApprovalHubClient.tsx",
-      "owner": "ApprovalHubClient",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useManualFormValidation-zod",
-      "schemaSource": "generated-or-derived:approvalDecisionSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx",
-        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
     {
@@ -656,26 +636,6 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx#BoardRegistClient.handleDeleteAttachment[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
-      "owner": "BoardRegistClient",
-      "handler": "handleDeleteAttachment",
-      "writeSinks": [
-        "fileService.deleteFile"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/community/boards/insert-board-article/__tests__/BoardRegistClient.attachment.test.tsx"
-      ]
-    },
-    {
       "key": "native-form:frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx#BoardMakerWizard[1]",
       "kind": "native-form",
       "file": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
@@ -705,6 +665,23 @@
       "serverErrors": "not-applicable",
       "pendingGuard": "not-applicable",
       "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx#NotificationDispatchDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+      "owner": "NotificationDispatchDialog",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:notificationDispatchSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
     },
     {
       "key": "native-form:frontend/src/app/admin/operation/events/EventManagementClient.tsx#EventManagementClient[1]",
@@ -738,26 +715,6 @@
       "testEvidence": [
         "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx#ExternalHrClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
-      "owner": "ExternalHrClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "operationAdminService.deleteExternalHr"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx"
       ]
     },
     {
@@ -809,26 +766,6 @@
       "testEvidence": [
         "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/operation/rewards/RewardManageClient.tsx#RewardManageClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
-      "owner": "RewardManageClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "operationAdminService.deleteReward"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx"
       ]
     },
     {
@@ -1163,6 +1100,20 @@
       "testEvidence": []
     },
     {
+      "key": "native-form:frontend/src/app/components/ui/recipient-picker.tsx#RecipientPicker[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/components/ui/recipient-picker.tsx",
+      "owner": "RecipientPicker",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
       "key": "native-form:frontend/src/app/components/ui/standard-data-table.tsx#StandardDataTable[1]",
       "kind": "native-form",
       "file": "frontend/src/app/components/ui/standard-data-table.tsx",
@@ -1195,20 +1146,6 @@
       "kind": "native-form",
       "file": "frontend/src/app/components/ui/standard-search-filter.tsx",
       "owner": "SmartSearchPanel",
-      "classification": "primitive",
-      "status": "compliant",
-      "validationMode": "not-applicable",
-      "schemaSource": "not-applicable",
-      "errorNavigation": "not-applicable",
-      "serverErrors": "not-applicable",
-      "pendingGuard": "not-applicable",
-      "testEvidence": []
-    },
-    {
-      "key": "native-form:frontend/src/app/components/ui/recipient-picker.tsx#RecipientPicker[1]",
-      "kind": "native-form",
-      "file": "frontend/src/app/components/ui/recipient-picker.tsx",
-      "owner": "RecipientPicker",
       "classification": "primitive",
       "status": "compliant",
       "validationMode": "not-applicable",
@@ -1415,6 +1352,40 @@
       "testEvidence": [
         "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
         "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/business/community/CommunityManageDialog.tsx#CommunityManageDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+      "owner": "CommunityManageDialog",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:communitySchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/community/__tests__/CommunityManageDialog.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx#DeptJobBoxManageDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
+      "owner": "DeptJobBoxManageDialog",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:deptJobBoxSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/deptJob/__tests__/DeptJobBoxManageDialog.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
@@ -1634,6 +1605,26 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx#BoardRegistClient.handleDeleteAttachment[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
+      "owner": "BoardRegistClient",
+      "handler": "handleDeleteAttachment",
+      "writeSinks": [
+        "fileService.deleteFile"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/insert-board-article/__tests__/BoardRegistClient.attachment.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx#BoardMasterListClient.bulkAction:완전 말소[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
@@ -1739,6 +1730,26 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/community/templates/TemplateAdminClient.tsx#TemplateAdminClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/templates/TemplateAdminClient.tsx",
+      "owner": "TemplateAdminClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "templateAdminService.deleteTemplate"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/operation/events/EventManagementClient.tsx#EventManagementClient.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -1757,6 +1768,46 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/operation/events/__tests__/EventManagementClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx#ExternalHrClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
+      "owner": "ExternalHrClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "operationAdminService.deleteExternalHr"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/operation/rewards/RewardManageClient.tsx#RewardManageClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
+      "owner": "RewardManageClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "operationAdminService.deleteReward"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx"
       ]
     },
     {
@@ -2655,6 +2706,86 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/components/business/community/CommunityManageDialog.tsx#CommunityManageDialog.handleClose[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+      "owner": "CommunityManageDialog",
+      "handler": "handleClose",
+      "writeSinks": [
+        "communityAdminService.deleteCommunity"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/community/__tests__/CommunityManageDialog.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/business/community/CommunityMembersPanel.tsx#CommunityMembersPanel.handleApprove[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/business/community/CommunityMembersPanel.tsx",
+      "owner": "CommunityMembersPanel",
+      "handler": "handleApprove",
+      "writeSinks": [
+        "communityAdminService.approveMember"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/business/community/CommunityMembersPanel.tsx#CommunityMembersPanel.handleReject[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/business/community/CommunityMembersPanel.tsx",
+      "owner": "CommunityMembersPanel",
+      "handler": "handleReject",
+      "writeSinks": [
+        "communityAdminService.rejectMember"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx#DeptJobBoxManageDialog.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
+      "owner": "DeptJobBoxManageDialog",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deptJobUserService.deleteDeptJobBox"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/deptJob/__tests__/DeptJobBoxManageDialog.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/components/features/comment/CommentSection.tsx#CommentSection.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/components/features/comment/CommentSection.tsx",
@@ -2718,120 +2849,6 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/components/features/satisfaction/__tests__/SatisfactionSection.test.tsx"
-      ]
-    },
-    {
-      "key": "native-form:frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx#DeptJobBoxManageDialog[1]",
-      "kind": "native-form",
-      "file": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
-      "owner": "DeptJobBoxManageDialog",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useAppForm-zod",
-      "schemaSource": "generated-or-derived:deptJobBoxSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/business/deptJob/__tests__/DeptJobBoxManageDialog.test.tsx",
-        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx#DeptJobBoxManageDialog.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
-      "owner": "DeptJobBoxManageDialog",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deptJobUserService.deleteDeptJobBox"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/business/deptJob/__tests__/DeptJobBoxManageDialog.test.tsx"
-      ]
-    },
-    {
-      "key": "native-form:frontend/src/components/business/community/CommunityManageDialog.tsx#CommunityManageDialog[1]",
-      "kind": "native-form",
-      "file": "frontend/src/components/business/community/CommunityManageDialog.tsx",
-      "owner": "CommunityManageDialog",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useAppForm-zod",
-      "schemaSource": "generated-or-derived:communitySchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/business/community/__tests__/CommunityManageDialog.test.tsx",
-        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/components/business/community/CommunityManageDialog.tsx#CommunityManageDialog.handleClose[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/components/business/community/CommunityManageDialog.tsx",
-      "owner": "CommunityManageDialog",
-      "handler": "handleClose",
-      "writeSinks": [
-        "communityAdminService.deleteCommunity"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/business/community/__tests__/CommunityManageDialog.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/components/business/community/CommunityMembersPanel.tsx#CommunityMembersPanel.handleApprove[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/components/business/community/CommunityMembersPanel.tsx",
-      "owner": "CommunityMembersPanel",
-      "handler": "handleApprove",
-      "writeSinks": [
-        "communityAdminService.approveMember"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/components/business/community/CommunityMembersPanel.tsx#CommunityMembersPanel.handleReject[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/components/business/community/CommunityMembersPanel.tsx",
-      "owner": "CommunityMembersPanel",
-      "handler": "handleReject",
-      "writeSinks": [
-        "communityAdminService.rejectMember"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx"
       ]
     }
   ],

@@ -19,7 +19,11 @@ const SELECT_CHECKBOX_CLASS = 'h-4 w-4 shrink-0 accent-primary disabled:cursor-n
 const StandardModal = dynamic(() => import('./standard-modal').then((mod) => mod.StandardModal), { ssr: false });
 
 /** 어떤 연락처가 필요한 채널인가 — 메일은 이메일, 문자는 휴대전화 번호. */
-export type RecipientChannel = 'mail' | 'sms';
+/**
+ * 발송 채널. `notification` 은 앱 내 알림(2026-09-06 DEC-OPS-042) — 계정(esntlId)으로 전달되므로 연락처가 필요 없고
+ * 주소록(명함)은 계정이 아니라 선택할 수 없다. 이 채널에서는 사용자 검색 탭만 보인다.
+ */
+export type RecipientChannel = 'mail' | 'sms' | 'notification';
 
 /**
  * 피커가 돌려주는 수신자 1명.
@@ -50,6 +54,7 @@ interface RecipientPickerProps {
 
 /** 채널이 요구하는 연락처가 명함에 있는가. 없으면 고를 수 없다 — 서버로 보내 봐야 거부된다. */
 function contactFor(channel: RecipientChannel, card: NameCard): string | undefined {
+  if (channel === 'notification') return undefined;
   const value = channel === 'mail' ? card.emlAddr : card.mblTelno;
   return value && value.trim() ? value.trim() : undefined;
 }
@@ -158,7 +163,11 @@ export function RecipientPicker({
     onClose();
   };
 
-  const channelLabel = channel === 'mail' ? '이메일' : '휴대전화 번호';
+  const channelLabel = channel === 'mail' ? '이메일' : channel === 'sms' ? '휴대전화 번호' : null;
+  const sourceTabs = ([
+    { value: 'users', label: '사용자 검색', icon: <User size={14} aria-hidden="true" /> },
+    { value: 'addressbook', label: '주소록', icon: <BookUser size={14} aria-hidden="true" /> },
+  ] as const).filter((item) => channel !== 'notification' || item.value === 'users');
 
   return (
     <StandardModal
@@ -186,10 +195,7 @@ export function RecipientPicker({
       */}
       <div className="space-y-4">
         <div role="tablist" aria-label="수신자 출처" className="inline-flex rounded-lg bg-muted p-1 gap-1">
-          {([
-            { value: 'users', label: '사용자 검색', icon: <User size={14} aria-hidden="true" /> },
-            { value: 'addressbook', label: '주소록', icon: <BookUser size={14} aria-hidden="true" /> },
-          ] as const).map((item) => (
+          {sourceTabs.map((item) => (
             <button
               key={item.value}
               type="button"
@@ -229,7 +235,9 @@ export function RecipientPicker({
             </button>
           </form>
           <p className="text-xs text-muted-foreground">
-            사용자의 {channelLabel}는 화면에 표시되지 않으며, 발송 시 서버가 등록된 연락처로 보냅니다. 등록된 연락처가 없으면 발송이 거부됩니다.
+            {channelLabel
+              ? `사용자의 ${channelLabel}는 화면에 표시되지 않으며, 발송 시 서버가 등록된 연락처로 보냅니다. 등록된 연락처가 없으면 발송이 거부됩니다.`
+              : '앱 내 알림은 선택한 사용자의 계정으로 전달됩니다. 연락처 정보는 필요하지 않습니다.'}
           </p>
           <div className="bg-card border rounded-lg min-h-[260px] max-h-[320px] overflow-y-auto">
             {userSearchState === 'loading' ? (

@@ -1260,6 +1260,25 @@ export const SmsRecptnDtoSchema = z.object({
 export type SmsRecptnDto = z.infer<typeof SmsRecptnDtoSchema>;
 
 // ==========================================================================
+// NotificationDispatchRequest Schema
+// ==========================================================================
+export const NotificationDispatchRequestSchema = z.object({
+  recipients: z.array(z.lazy(() => RecipientSchema)).min(0).max(100),
+  notiTtlNm: z.string().min(0).max(100),
+  notiCn: z.string().min(0).max(4000),
+  linkUrl: z.string().min(0).max(2000).optional(),
+});
+export type NotificationDispatchRequest = z.infer<typeof NotificationDispatchRequestSchema>;
+
+// ==========================================================================
+// Recipient Schema
+// ==========================================================================
+export const RecipientSchema = z.object({
+  esntlId: z.string().min(0).max(20),
+});
+export type Recipient = z.infer<typeof RecipientSchema>;
+
+// ==========================================================================
 // ApiResponseCommunityDto Schema
 // ==========================================================================
 export const ApiResponseCommunityDtoSchema = z.object({
@@ -6169,6 +6188,28 @@ export const SmsRecptnDtoResponseSchema = z.object({
   esntlId: z.string().min(0).max(20).optional().nullable(),
   rsltCd: z.string().optional().nullable(),
   rsltMsg: z.string().optional().nullable(),
+});
+
+export const NotificationDispatchRequestRequestSchema = z.object({
+  recipients: z.array(z.lazy(() => RecipientRequestSchema.strict())).min(0).max(100),
+  notiTtlNm: z.string().min(0).max(100),
+  notiCn: z.string().min(0).max(4000),
+  linkUrl: z.string().min(0).max(2000).optional(),
+});
+
+export const NotificationDispatchRequestResponseSchema = z.object({
+  recipients: z.array(z.lazy(() => RecipientResponseSchema)).min(0).max(100),
+  notiTtlNm: z.string().min(0).max(100),
+  notiCn: z.string().min(0).max(4000),
+  linkUrl: z.string().min(0).max(2000).optional().nullable(),
+});
+
+export const RecipientRequestSchema = z.object({
+  esntlId: z.string().min(0).max(20),
+});
+
+export const RecipientResponseSchema = z.object({
+  esntlId: z.string().min(0).max(20),
 });
 
 export const ApiResponseCommunityDtoRequestSchema = z.object({

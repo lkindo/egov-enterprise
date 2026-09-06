@@ -288,7 +288,10 @@ test('notification stream separates API failure from empty and the dispatch demo
   assert.match(client, /<SmartNotificationHub \/>/);
   const notification = currentAnalysis().manifest.routes.find(({ route }) => route === '/admin/notifications');
   assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch-preview'), false);
-  assert.deepEqual(notification.supportedActions, ['local-search', 'tab-filter']);
+  // [2026-09-06 DEC-OPS-042] 'send' 는 데모의 부활이 아니라 실기능이다 — POST /api/v1/admin/notifications/dispatch
+  //   (ADMIN/SYSTEM, 수신자 esntlId 서버 해석)를 부르는 notifications.dispatch capability 다. 데모 preview 부재 검사는 그대로다.
+  assert.deepEqual(notification.supportedActions, ['local-search', 'send', 'tab-filter']);
+  assert.equal(notification.capabilities.some(({ id }) => id === 'notifications.dispatch'), true);
 });
 
 test('empty, missing, and duplicate route populations fail closed', () => {

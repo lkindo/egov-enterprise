@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "36682a4644e0a36f15015f7c2b756487eda3eb36dc52da3eb1958c33b736326a"
+    "inventoryHash": "16e91ffbc56952167c3d6bc6563c40e6b606c0286913420897717ffd60ca22de"
   },
   "summary": {
-    "sourceFileCount": 519,
-    "records": 375,
-    "syntaxOccurrences": 440,
-    "ambiguousRecords": 348,
-    "unverifiedRecords": 375,
+    "sourceFileCount": 520,
+    "records": 377,
+    "syntaxOccurrences": 442,
+    "ambiguousRecords": 350,
+    "unverifiedRecords": 377,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,8 +44,8 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 50,
-      "navigation-producer": 158,
+      "form-producer": 51,
+      "navigation-producer": 159,
       "page-redirect": 11,
       "query-builder": 22,
       "query-consumer": 58,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 367,
+      "navigation": 369,
       "request-telemetry": 8
     }
   },
@@ -5751,6 +5751,44 @@
       }
     },
     {
+      "id": "URL-4EB657FE7CE758",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+      "producerFile": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/notifications",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-7ED1C57535938A",
       "surface": "navigation",
       "kind": "form-producer",
@@ -7551,6 +7589,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-DA09490FC8E2FD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/survey/hub",
+      "targetCandidate": "/admin/survey/polls",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/survey/polls",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

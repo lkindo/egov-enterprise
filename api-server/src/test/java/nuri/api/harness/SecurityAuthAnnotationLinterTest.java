@@ -146,12 +146,17 @@ class SecurityAuthAnnotationLinterTest {
             // 둘 다 DEFAULT_AUTHENTICATED|isAuthenticated() 로 같은 컨트롤러의 기존 GET(pending·my)과
             // **같은 인가 축**이다. processed 는 결재자 본인 esntlId 로 좁힌 조회이고 task-types 는
             // 공통코드 COM075 의 사용 중 상세코드(관리 데이터 아님)라 완화가 아니다(H3). endpoint 수 176 -> 178.
-            // [2026-09-06 DEC-OPS-043 커뮤니티 멤버십] GET 2행 추가 — endpoint 수 178 -> 180.
+            // [2026-09-06 DEC-OPS-041 투표 컨트롤러 통합] GET /api/v1/admin/system/polls{,/{pollSn}} 2행 **제거** —
+            // OnlinePollApiController 는 PollApiController(/api/v1/polls)의 부분집합으로 같은 OnlinePollService 를
+            // 감쌌다. 남는 /api/v1/polls 의 읽기는 종전과 같은 DEFAULT_AUTHENTICATED|isAuthenticated() 이고, 지운
+            // 2행은 RBAC_ADMIN_OR_SYSTEM 경로였으므로 공개 전환·완화가 아니라 표면 축소다(H3). 관리 화면은
+            // /polls 를 쓰며 등록·수정·삭제는 서비스 가드(assertAdmin)가 강제한다. endpoint 수 178 -> 176.
+            // [2026-09-06 DEC-OPS-043 커뮤니티 멤버십] GET 2행 추가 — endpoint 수 176 -> 178.
             //   /api/v1/admin/content/community/{cmntySn}/members 는 RBAC_ADMIN_OR_SYSTEM 위에
             //   hasAnyRole('ADMIN','SYSTEM') 메서드 인가를 더한 것(같은 컨트롤러의 다른 GET 은 URL 게이트만) —
             //   완화가 아니라 강화다. /api/v1/communities/{cmntySn}/membership 은 다른 사용자용 GET 과 같은
             //   DEFAULT_AUTHENTICATED|isAuthenticated() 이며 principal 자신의 행만 돌려준다(H3).
-            "a8b79e127b44cdc316502491a98695bcc515338960e1eba6bde38ca737366969";
+            "4a0b73f1b3a5ab980bc465970bc8650fbf64a694538dfa93b8b05362806e1f32";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

@@ -4,8 +4,11 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.notification.Notification;
 import nuri.business.domain.notification.NotificationRepository;
+import nuri.business.security.util.SecurityUtil;
+import nuri.business.service.notification.dto.NotificationDispatchRequest;
 import nuri.business.service.notification.dto.NotificationDto;
 import nuri.business.service.notification.dto.NotificationMapper;
+import nuri.business.service.user.UserContactService;
 import nuri.foundation.core.util.TransactionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +30,8 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationMapper notificationMapper;
+    /** 관리자 발송의 수신자 존재 확인 — 코어 사용자 도메인만 esntlId 를 해석할 수 있다(DEC-OPS-035 와 같은 축). */
+    private final UserContactService userContactService;
 
     public Page<NotificationDto> getNotificationList(String userId, String keyword, Pageable pageable) {
         requireUserId(userId);
@@ -70,6 +75,36 @@ public class NotificationService {
         });
 
         return saved.getNotiSn();
+    }
+
+    /**
+     * 관리자 알림 발송 — 선택한 사용자마다 같은 제목·내용의 알림을 만든다(2026-09-06 DEC-OPS-042, 감사 D09-05 후속).
+     *
+     * <p>수신자는 esntlId 로 받고 코어 사용자 도메인({@link UserContactService})이 존재를 확인한다 — 하나라도 없으면
+     * RESOURCE_NOT_FOUND 로 <b>전체를 거부</b>한다(부분 발송 금지, 메일·문자와 같은 규칙). 생성은 개인 알림과 같은
+     * 경로({@link #createNotification})를 지나므로 WebSocket 개인 큐 전송·커밋 후 발송 규칙도 그대로다.
+     * 컨트롤러의 {@code @AdminOrSystem} 과 별개로 서비스에서 ADMIN/SYSTEM 을 다시 확인한다(백엔드 헌법 제8조).
+     *
+     * @return 만든 알림 수(중복 수신자는 한 번만)
+     */
+    @Transactional
+    public int dispatchToUsers(NotificationDispatchRequest request) {
+        SecurityUtil.assertAdmin();
+        Objects.requireNonNull(request, "발송 요청은 null 일 수 없습니다");
+        List<String> esntlIds = request.getRecipients().stream()
+                .map(NotificationDispatchRequest.Recipient::getEsntlId)
+                .toList();
+        List<UserContactService.UserContact> recipients = userContactService.resolve(esntlIds);
+        for (UserContactService.UserContact recipient : recipients) {
+            NotificationDto dto = NotificationDto.builder()
+                    .notiTtlNm(request.getNotiTtlNm())
+                    .notiCn(request.getNotiCn())
+                    .linkUrl(request.getLinkUrl())
+                    .build();
+            createNotification(recipient.esntlId(), dto);
+        }
+        log.info("Dispatched {} notification(s) by administrator", recipients.size());
+        return recipients.size();
     }
 
     @Transactional

@@ -68,6 +68,13 @@ const KNOWN_ROUTE_CAPABILITIES = {
       evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationsClient.tsx', 'frontend/src/app/components/ui/smart-notification-hub.tsx', 'frontend/src/lib/hooks/use-notifications.ts', 'frontend/e2e/12-notification.spec.ts'],
     },
     {
+      // [2026-09-06 DEC-OPS-042] 관리자 발송이 실기능이 됐다 — POST /api/v1/admin/notifications/dispatch(ADMIN/SYSTEM).
+      //   live 는 E4(현재 UI→서버 왕복 산출물)가 있어야 하므로 partial + candidateStatus live 로 둔다(결재 허브와 같은 규칙).
+      id: 'notifications.dispatch', status: 'partial', candidateStatus: 'live', dataSource: 'admin-notifications-dispatch-api', actions: ['send'],
+      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '알림 보내기', primaryTask: false,
+      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx', 'frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx', 'frontend/src/services/foundation/system/NotificationAdminService.ts', 'api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java', 'api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java'],
+    },
+    {
       id: 'notifications.health-metrics', status: 'demo', dataSource: 'hardcoded-metrics', actions: [],
       unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '98.2% / ACTIVE', primaryTask: false,
       evidenceLevel: 'E1', evidence: ['frontend/src/app/components/ui/smart-notification-hub.tsx'],

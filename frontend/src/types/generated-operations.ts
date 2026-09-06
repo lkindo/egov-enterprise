@@ -224,6 +224,7 @@ import {
   NetworkDtoRequestSchema,
   NoteDtoRequestSchema,
   NoteDtoResponseSchema,
+  NotificationDispatchRequestRequestSchema,
   NotificationDtoRequestSchema,
   NotificationDtoResponseSchema,
   OnlineManualDtoRequestSchema,
@@ -4305,57 +4306,6 @@ export const createPopupOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
-export const getPolls_1Operation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "getPolls_1",
-  method: "get",
-  path: "/api/v1/admin/system/polls",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseOnlinePollManageDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseOnlinePollManageDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const insertPollOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "insertPoll",
-  method: "post",
-  path: "/api/v1/admin/system/polls",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: OnlinePollManageDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const vote_1Operation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "vote_1",
-  method: "post",
-  path: "/api/v1/admin/system/polls/{pollSn}/vote",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "pollSn": z.number().int() }).strict(),
-  querySchema: z.object({ "pollArtclSn": z.number().int() }).strict(),
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
 export const getStatusOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getStatus",
   method: "get",
@@ -5066,6 +5016,23 @@ export const createEventOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: EventInfoDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const dispatchNotificationsOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "dispatchNotifications",
+  method: "post",
+  path: "/api/v1/admin/notifications/dispatch",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: NotificationDispatchRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseIntegerResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
@@ -6341,23 +6308,6 @@ export const getBbsStatsOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => StatsDtoResponseSchema)),
   envelopeSchema: ApiResponseListStatsDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const getPoll_1Operation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "getPoll_1",
-  method: "get",
-  path: "/api/v1/admin/system/polls/{pollSn}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "pollSn": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => OnlinePollManageDtoResponseSchema),
-  envelopeSchema: ApiResponseOnlinePollManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
 });
