@@ -7,10 +7,16 @@ export class BusinessExtensionPage {
         this.page = page;
     }
 
+    /**
+     * [2026-09-06 DEC-OPS-040] `/admin/system/ism` 은 정본 결재 허브(`/approvals`)로의 page-redirect 별칭이 됐다
+     * (DEC-OPS-039 제안의 owner 승인). 종전 이 메서드는 약식 결재 화면의 문구를 기다렸지만 그 화면은 사라졌으므로,
+     * 별칭 진입이 정본 허브에 도달하는지를 본다. 결재 완주(상신→대기함→승인→처리함)는 11-enterprise-workflow 가 검증한다.
+     */
     async gotoIsm() {
-        console.log('>>> [Business] Navigating to Informal Sanction Hub (ISM)');
+        console.log('>>> [Business] Navigating to ISM alias (redirects to the approval hub)');
         await this.page.goto('/admin/system/ism');
-        await expect(this.page.getByText(/인포멀 생션 아키텍처|약식결재/i).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page).toHaveURL(/\/approvals(?:[?#]|$)/, { timeout: 15000 });
+        await expect(this.page.getByRole('heading', { level: 1, name: '결재 허브' })).toBeVisible({ timeout: 15000 });
     }
 
     async gotoHpcm() {
@@ -20,35 +26,5 @@ export class BusinessExtensionPage {
             level: 1,
             name: '도움말 콘텐츠 관리(HPCM)',
         })).toBeVisible({ timeout: 15000 });
-    }
-
-    async verifyIsmMetrics() {
-        console.log('>>> [Business] Verifying ISM Metrics');
-        // [2026-08-24 A1 이행] 밑줄 의사코드 지표 라벨(결재_대기_시퀀스 등)을 업무 문구로 바꿨다(G14).
-        //   집계는 결과 툴바에 '조회분 기준 · 대기 N건 · 승인 N건 · 반려 N건'으로 한 줄로 모였다.
-        await expect(this.page.getByTestId('work-list-toolbar')).toContainText('조회분 기준');
-    }
-
-    /**
-     * 첫 대기 건을 승인한다.
-     *
-     * [2026-08-28] 종전에는 의견 textarea 를 채운 뒤 승인했다. 서버는 승인 시 그 값을
-     * 저장하지 않으므로(`InformalSanction.approve()` 가 rjct_rsn_cn 을 null 로 지운다)
-     * 화면에서 승인 필수 요구를 걷어냈고, 이 흐름도 사유 없이 승인하도록 맞춘다.
-     * 행 버튼 라벨도 '승인 실행' → '결재 처리' 다(모달에서 반려도 고를 수 있으므로).
-     */
-    async approveFirstPendingSanction() {
-        console.log('>>> [Business] Approving first pending sanction');
-        const processButton = this.page.getByRole('button', { name: /결재 처리/i }).first();
-
-        if (await processButton.isVisible()) {
-            await processButton.click();
-
-            await this.page.getByRole('button', { name: /최종 승인/i }).click();
-
-            await expect(this.page.getByText(/승인 처리했습니다|완료/i)).toBeVisible();
-        } else {
-            console.warn('>>> [Business] No pending sanctions found to approve.');
-        }
     }
 }
