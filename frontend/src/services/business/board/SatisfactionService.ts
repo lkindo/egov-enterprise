@@ -5,6 +5,7 @@ import {
   deleteOperation,
   getAverageOperation,
   getListOperation,
+  updateOperation,
 } from '@/types/generated-operations';
 
 /** 게시글 만족도 DTO — 백엔드 `SatisfactionDto` 의 생성 타입을 SSOT 로 삼는다. */
@@ -36,6 +37,20 @@ class SatisfactionService extends ApiService {
   create = async (bbsId: string, pstSn: number, body: Satisfaction): Promise<number> => {
     return this.executeGenerated(createOperation, {
       path: { bbsId, pstSn },
+      body,
+    });
+  };
+
+  /**
+   * 인증된 소유자 또는 관리자의 만족도를 수정한다.
+   *
+   * <p>서버(`SatisfactionService#updateSatisfaction`)는 `assertCanModify` 로 owner-or-admin 을
+   * 판정한 뒤 <b>점수와 내용만</b> 갱신한다(`entity.update(dgstfnScr, dgstfnCn)`). 나머지 필드는
+   * 본문에 실려도 반영되지 않는다.
+   */
+  update = async (bbsId: string, pstSn: number, dgstfnSn: number, body: Satisfaction): Promise<void> => {
+    return this.executeGenerated(updateOperation, {
+      path: { bbsId, pstSn, dgstfnSn },
       body,
     });
   };

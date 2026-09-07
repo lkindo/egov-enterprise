@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 63,
-    "nativeFormFiles": 54,
+    "nativeFormOccurrences": 64,
+    "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 22,
     "secondaryActionBoundaries": 70,
-    "candidateCount": 156
+    "candidateCount": 157
   },
   "entries": [
     {
@@ -1573,6 +1573,23 @@
         "frontend/src/components/business/schedule/__tests__/ScheduleCreateForm.test.tsx",
         "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/features/satisfaction/SatisfactionEditForm.tsx#SatisfactionEditForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/features/satisfaction/SatisfactionEditForm.tsx",
+      "owner": "SatisfactionEditForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "local:satisfactionCreateSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/features/satisfaction/__tests__/SatisfactionEditForm.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
     {
