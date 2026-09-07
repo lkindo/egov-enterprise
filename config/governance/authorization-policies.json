@@ -346,24 +346,27 @@
       "path": "/api/v1/admin/system/codes/administ",
       "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#createAdministCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "AdministCodeService#createAdministCode"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/admin/system/codes/administ/{code}",
       "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#deleteAdministCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "AdministCodeService#deleteAdministCode"
     },
     {
       "method": "PUT",
       "path": "/api/v1/admin/system/codes/administ/{code}",
       "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#updateAdministCode",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "AdministCodeService#updateAdministCode"
     },
     {
       "method": "POST",
@@ -1754,6 +1757,39 @@
       ]
     },
     {
+      "target": "AdministCodeService#createAdministCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "AdministCodeService#deleteAdministCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "AdministCodeService#updateAdministCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
       "target": "AuthorManageService#deleteAuthor",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -1820,7 +1856,7 @@
       ]
     },
     {
-      "target": "BoardService#getPostDetail",
+      "target": "BoardService#findOwnedPost",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
         {
@@ -1831,7 +1867,7 @@
       ]
     },
     {
-      "target": "BoardService#findOwnedPost",
+      "target": "BoardService#getPostDetail",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
         {

@@ -3,6 +3,8 @@ package nuri.business.service.code;
 import nuri.business.domain.code.AdministCode;
 import nuri.business.repository.code.AdministCodeRepository;
 import nuri.business.service.code.dto.AdministCodeDto;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +14,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.business.domain.code.exception.CodeErrorCode;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -19,13 +26,26 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.spy;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AdministCodeService (행정코드 관리) 테스트")
 class AdministCodeServiceTest {
+
+    @BeforeEach
+    void authenticateAdmin() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new TestingAuthenticationToken("admin", null, "ROLE_ADMIN"));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Mock
     private AdministCodeRepository administCodeRepository;
@@ -148,12 +168,54 @@ class AdministCodeServiceTest {
     }
 
     @Test
-    @DisplayName("행정코드 삭제 성공")
+    @DisplayName("행정코드 삭제 성공 — 하위 코드가 없을 때만 지운다")
     void deleteAdministCode_Success() {
-        // when
+        AdministCode entity = AdministCode.builder().admdstCd("1100000000").admdstZoneNm("서울특별시").build();
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+        given(administCodeRepository.countByUpAdmdstCd("1100000000")).willReturn(0L);
+
         administCodeService.deleteAdministCode("1100000000");
 
-        // then
-        verify(administCodeRepository).deleteById("1100000000");
+        verify(administCodeRepository).delete(entity);
+    }
+
+    @Test
+    @DisplayName("없는 행정코드 삭제는 조용히 성공하지 않는다")
+    void deleteAdministCode_NotFound_ThrowsException() {
+        given(administCodeRepository.findById("NOT_FOUND")).willReturn(Optional.empty());
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> administCodeService.deleteAdministCode("NOT_FOUND"));
+
+        assertThat(error.getErrorCode()).isEqualTo(CodeErrorCode.CODE_NOT_FOUND);
+        verify(administCodeRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("하위 행정코드가 남아 있으면 상위 삭제를 거부한다 — 끊긴 상위 참조를 만들지 않는다")
+    void deleteAdministCode_WithChildren_Rejected() {
+        AdministCode entity = AdministCode.builder().admdstCd("1100000000").admdstZoneNm("서울특별시").build();
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(entity));
+        given(administCodeRepository.countByUpAdmdstCd("1100000000")).willReturn(3L);
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> administCodeService.deleteAdministCode("1100000000"));
+
+        assertThat(error.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
+        assertThat(error.getMessage()).contains("3");
+        verify(administCodeRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("행정코드 쓰기는 서비스 계층에서도 일반 사용자를 거부한다")
+    void administCodeWriteRequiresAdminAtServiceBoundary() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new TestingAuthenticationToken("user", null, "ROLE_USER"));
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> administCodeService.deleteAdministCode("1100000000"));
+
+        assertThat(error.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        verify(administCodeRepository, never()).delete(any());
     }
 }

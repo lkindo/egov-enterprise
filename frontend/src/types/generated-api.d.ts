@@ -1074,7 +1074,10 @@ export interface paths {
         /** 행정코드 수정 */
         put: operations["updateAdministCode"];
         post?: never;
-        /** 행정코드 삭제 */
+        /**
+         * 행정코드 삭제
+         * @description 하위 행정구역 코드가 있으면 409 로 거부합니다.
+         */
         delete: operations["deleteAdministCode"];
         options?: never;
         head?: never;
