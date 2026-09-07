@@ -10,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -30,9 +29,9 @@ public class InternetSvcGuidanceService {
     @Transactional
     public Long registerIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
         InternetSvcGuidance isg = InternetSvcGuidance.builder()
-                .itntSvcNm(dto.getIntnetSvcNm())
-                .itntSvcExpln(dto.getIntnetSvcDc())
-                .rfltYn(dto.getReflctAt())
+                .itntSvcNm(dto.getItntSvcNm())
+                .itntSvcExpln(dto.getItntSvcExpln())
+                .rfltYn(dto.getRfltYn())
                 .build();
         InternetSvcGuidance saved = internetSvcGuidanceRepository.save(Objects.requireNonNull(isg));
         return saved.getItntSrvcSn();
@@ -49,7 +48,7 @@ public class InternetSvcGuidanceService {
                 .findById(Objects.requireNonNull(dto.getItntSrvcSn()))
                 .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException(
                         nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND));
-        isg.update(dto.getIntnetSvcNm(), dto.getIntnetSvcDc(), dto.getReflctAt());
+        isg.update(dto.getItntSvcNm(), dto.getItntSvcExpln(), dto.getRfltYn());
     }
 
     /** 존재 확인 — 수정과 같은 이유(없는 id 가 조용히 200 으로 끝나지 않게). */
@@ -71,18 +70,14 @@ public class InternetSvcGuidanceService {
                 .map(this::convertToDto);
     }
 
-    public List<InternetSvcGuidanceDto> getIntnetSvcGuidanceResult() {
-        return java.util.Collections.emptyList();
-    }
-
     private InternetSvcGuidanceDto convertToDto(InternetSvcGuidance isg) {
         return InternetSvcGuidanceDto.builder()
                 .itntSrvcSn(isg.getItntSrvcSn())
-                .intnetSvcNm(isg.getItntSvcNm())
-                .intnetSvcDc(isg.getItntSvcExpln())
-                .reflctAt(isg.getRfltYn())
-                .userId(isg.getLastMdfrId())
-                .regDate(isg.getMdfcnDt())
+                .itntSvcNm(isg.getItntSvcNm())
+                .itntSvcExpln(isg.getItntSvcExpln())
+                .rfltYn(isg.getRfltYn())
+                .lastMdfrId(isg.getLastMdfrId())
+                .mdfcnDt(isg.getMdfcnDt())
                 .build();
     }
 }

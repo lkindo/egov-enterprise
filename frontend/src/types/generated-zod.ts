@@ -584,12 +584,12 @@ export type LoginPolicyDto = z.infer<typeof LoginPolicyDtoSchema>;
 // InternetSvcGuidanceDto Schema
 // ==========================================================================
 export const InternetSvcGuidanceDtoSchema = z.object({
-  itntSrvcSn: z.number().int().optional(),
-  intnetSvcNm: z.string().min(0).max(100),
-  intnetSvcDc: z.string().min(0).max(1000),
-  reflctAt: z.string().min(0).max(1).optional(),
-  userId: z.string().optional(),
-  regDate: z.iso.datetime({ offset: true, local: true }).optional(),
+  itntSrvcSn: z.number().int().optional().nullable(),
+  itntSvcNm: z.string().min(0).max(100),
+  itntSvcExpln: z.string().min(0).max(4000),
+  rfltYn: z.string().min(0).max(1).optional(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 export type InternetSvcGuidanceDto = z.infer<typeof InternetSvcGuidanceDtoSchema>;
 
@@ -5202,21 +5202,18 @@ export const LoginPolicyDtoResponseSchema = z.object({
 });
 
 export const InternetSvcGuidanceDtoRequestSchema = z.object({
-  itntSrvcSn: z.number().int().optional(),
-  intnetSvcNm: z.string().min(0).max(100),
-  intnetSvcDc: z.string().min(0).max(1000),
-  reflctAt: z.string().min(0).max(1).optional(),
-  userId: z.string().optional(),
-  regDate: z.iso.datetime({ offset: true, local: true }).optional(),
+  itntSvcNm: z.string().min(0).max(100),
+  itntSvcExpln: z.string().min(0).max(4000),
+  rfltYn: z.string().min(0).max(1).optional(),
 });
 
 export const InternetSvcGuidanceDtoResponseSchema = z.object({
   itntSrvcSn: z.number().int().optional().nullable(),
-  intnetSvcNm: z.string().min(0).max(100),
-  intnetSvcDc: z.string().min(0).max(1000),
-  reflctAt: z.string().min(0).max(1).optional().nullable(),
-  userId: z.string().optional().nullable(),
-  regDate: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  itntSvcNm: z.string().min(0).max(100),
+  itntSvcExpln: z.string().min(0).max(4000),
+  rfltYn: z.string().min(0).max(1).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const GroupManageDtoRequestSchema = z.object({

@@ -5645,13 +5645,13 @@ export interface components {
         };
         InternetSvcGuidanceDto: {
             /** Format: int64 */
-            itntSrvcSn?: number;
-            intnetSvcNm: string;
-            intnetSvcDc: string;
-            reflctAt?: string;
-            userId?: string;
+            readonly itntSrvcSn?: number | null;
+            itntSvcNm: string;
+            itntSvcExpln: string;
+            rfltYn?: string;
+            readonly lastMdfrId?: string | null;
             /** Format: date-time */
-            regDate?: string;
+            readonly mdfcnDt?: string | null;
         };
         GroupManageDto: {
             groupId?: string;

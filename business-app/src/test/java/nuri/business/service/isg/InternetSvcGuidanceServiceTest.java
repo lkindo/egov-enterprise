@@ -51,7 +51,7 @@ class InternetSvcGuidanceServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getItntSrvcSn()).isEqualTo(id);
-        assertThat(result.getIntnetSvcNm()).isEqualTo("Test ISG");
+        assertThat(result.getItntSvcNm()).isEqualTo("Test ISG");
     }
 
     @Test
@@ -74,9 +74,9 @@ class InternetSvcGuidanceServiceTest {
     void registerIntnetSvcGuidance() {
         // given
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
-                .intnetSvcNm("New ISG")
-                .intnetSvcDc("Description")
-                .reflctAt("Y")
+                .itntSvcNm("New ISG")
+                .itntSvcExpln("Description")
+                .rfltYn("Y")
                 .build();
         given(internetSvcGuidanceRepository.save(any(InternetSvcGuidance.class)))
                 .willReturn(InternetSvcGuidance.builder().itntSrvcSn(1L).build());
@@ -103,9 +103,9 @@ class InternetSvcGuidanceServiceTest {
 
         InternetSvcGuidanceDto updateDto = InternetSvcGuidanceDto.builder()
                 .itntSrvcSn(id)
-                .intnetSvcNm("Updated ISG")
-                .intnetSvcDc("Updated Desc")
-                .reflctAt("N")
+                .itntSvcNm("Updated ISG")
+                .itntSvcExpln("Updated Desc")
+                .rfltYn("N")
                 .build();
 
         // when
@@ -142,7 +142,7 @@ class InternetSvcGuidanceServiceTest {
     void updateIntnetSvcGuidance_NotFound() {
         given(internetSvcGuidanceRepository.findById(99L)).willReturn(Optional.empty());
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
-                .itntSrvcSn(99L).intnetSvcNm("X").intnetSvcDc("Y").reflctAt("N").build();
+                .itntSrvcSn(99L).itntSvcNm("X").itntSvcExpln("Y").rfltYn("N").build();
 
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> internetSvcGuidanceService.updateIntnetSvcGuidance(dto))
@@ -197,13 +197,6 @@ class InternetSvcGuidanceServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getIntnetSvcNm()).isEqualTo("Test ISG");
-    }
-
-    @Test
-    @DisplayName("인터넷 서비스 안내 결과 목록 (빈 목록 반환)")
-    void getIntnetSvcGuidanceResult() {
-        List<InternetSvcGuidanceDto> result = internetSvcGuidanceService.getIntnetSvcGuidanceResult();
-        assertThat(result).isEmpty();
+        assertThat(result.getContent().get(0).getItntSvcNm()).isEqualTo("Test ISG");
     }
 }

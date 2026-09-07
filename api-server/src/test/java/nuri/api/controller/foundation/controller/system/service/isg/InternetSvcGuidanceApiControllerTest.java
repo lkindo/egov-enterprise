@@ -70,8 +70,8 @@ class InternetSvcGuidanceApiControllerTest {
         // Given
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
                 .itntSrvcSn(1L)
-                .intnetSvcNm("테스트 서비스")
-                .intnetSvcDc("테스트 설명")
+                .itntSvcNm("테스트 서비스")
+                .itntSvcExpln("테스트 설명")
                 .build();
         when(isgService.getIntnetSvcGuidance(1L)).thenReturn(dto);
 
@@ -79,7 +79,7 @@ class InternetSvcGuidanceApiControllerTest {
         mockMvc.perform(get("/api/v1/admin/system/isg/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.itntSrvcSn").value(1))
-                .andExpect(jsonPath("$.data.intnetSvcNm").value("테스트 서비스"));
+                .andExpect(jsonPath("$.data.itntSvcNm").value("테스트 서비스"));
     }
 
     @Test
@@ -87,8 +87,8 @@ class InternetSvcGuidanceApiControllerTest {
     void testRegisterIsg() throws Exception {
         // Given
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
-                .intnetSvcNm("새 서비스")
-                .intnetSvcDc("새 설명")
+                .itntSvcNm("새 서비스")
+                .itntSvcExpln("새 설명")
                 .build();
         when(isgService.registerIntnetSvcGuidance(any(InternetSvcGuidanceDto.class))).thenReturn(1L);
 
@@ -107,8 +107,8 @@ class InternetSvcGuidanceApiControllerTest {
     void testUpdateIsg() throws Exception {
         // Given
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
-                .intnetSvcNm("수정 서비스")
-                .intnetSvcDc("수정 설명")
+                .itntSvcNm("수정 서비스")
+                .itntSvcExpln("수정 설명")
                 .build();
 
         // When & Then

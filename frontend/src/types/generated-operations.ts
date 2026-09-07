@@ -2166,7 +2166,7 @@ export const updateIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: InternetSvcGuidanceDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["itntSrvcSn"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 
@@ -4387,7 +4387,7 @@ export const registerIsgOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: InternetSvcGuidanceDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["itntSrvcSn"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
 });
 

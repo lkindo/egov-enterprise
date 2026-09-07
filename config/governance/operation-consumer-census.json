@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "authority": "operation-consumer-census",
+  "generatedAt": "2026-09-07",
+  "notes": [
+    "Every documented OpenAPI operation must be consumed by the frontend, mechanically derivable as a springdoc alias duplicate, or listed here with a category and a reason.",
+    "bff-route-handler and non-browser-consumer entries are machine-verified: an evidence file must exist and reference the operation path suffix. A category label alone proves nothing.",
+    "unwired entries are real debt. expected.unwiredMax is a monotonic ratchet — raising it is a visible diff, never a silent exception.",
+    "Alias duplicates (springdoc _N suffixes over multi-path @RequestMapping) are derived, never listed. Listing one is an error."
+  ],
+  "expected": {
+    "operationCount": 379,
+    "unwiredMax": 22
+  },
+  "entries": [
+    {
+      "operationId": "login",
+      "category": "bff-route-handler",
+      "note": "Next route handler proxies login server-side so the refresh token never reaches browser JavaScript; the browser calls /api/auth/login, not the backend operation.",
+      "evidence": ["frontend/src/app/api/auth/login/route.ts"]
+    },
+    {
+      "operationId": "logout",
+      "category": "bff-route-handler",
+      "note": "Same BFF boundary as login — the route handler clears the HttpOnly cookies it set.",
+      "evidence": ["frontend/src/app/api/auth/logout/route.ts"]
+    },
+    {
+      "operationId": "reissue",
+      "category": "bff-route-handler",
+      "note": "Token reissue runs server-side in the route handler; the refresh token is never exposed to the client bundle.",
+      "evidence": ["frontend/src/app/api/auth/reissue/route.ts"]
+    },
+
+    {
+      "operationId": "checkHealth",
+      "category": "unwired",
+      "note": "Application-level liveness surface with no wired probe — docker-compose healthchecks use /actuator/health instead. Decide whether to point a probe here or drop the endpoint.",
+      "evidence": []
+    },
+    {
+      "operationId": "triggerError",
+      "category": "unwired",
+      "note": "Forced-500 diagnostic, bean-excluded under @Profile(\"!prod\"). Invoked by hand when verifying GlobalExceptionHandler; no automated consumer.",
+      "evidence": []
+    },
+
+    {
+      "operationId": "signup",
+      "category": "unwired",
+      "note": "Public self-signup has no screen — this product provisions accounts through admin user management. The endpoint stays frozen by SignupContractLinter (privilege-escalation regression guard) rather than deleted.",
+      "evidence": []
+    },
+    {
+      "operationId": "checkIdDplct",
+      "category": "unwired",
+      "note": "Duplicate-id check exists only to serve the unwired signup flow above; it becomes reachable if signup gets a screen.",
+      "evidence": []
+    },
+
+    {
+      "operationId": "getAbsences",
+      "category": "unwired",
+      "note": "The /admin/user/absences screen renders the ABSENCES tab but discloses that absence data is not connected and that the list shows all users. Wiring these three operations is what removes that disclosure.",
+      "evidence": []
+    },
+    {
+      "operationId": "getAbsence",
+      "category": "unwired",
+      "note": "Absence detail — same unwired tab as getAbsences.",
+      "evidence": []
+    },
+    {
+      "operationId": "updateAbsence",
+      "category": "unwired",
+      "note": "Absence update — same unwired tab as getAbsences.",
+      "evidence": []
+    },
+
+    {
+      "operationId": "createRespondent",
+      "category": "unwired",
+      "note": "Survey respondent write path; /admin/survey/respondents currently only lists and deletes respondents.",
+      "evidence": []
+    },
+    {
+      "operationId": "getRespondent",
+      "category": "unwired",
+      "note": "Survey respondent detail — no consumer on the respondents screen.",
+      "evidence": []
+    },
+    {
+      "operationId": "updateRespondent",
+      "category": "unwired",
+      "note": "Survey respondent update — no consumer on the respondents screen.",
+      "evidence": []
+    },
+
+    {
+      "operationId": "getTemplate",
+      "category": "unwired",
+      "note": "Survey template detail. The template screen lists and writes templates but never opens one by id, so neither this nor its alias path is consumed.",
+      "evidence": []
+    },
+    {
+      "operationId": "getTemplate_1",
+      "category": "unwired",
+      "note": "Alias path of getTemplate under /api/v1/surveys. It is listed rather than derived because the base operation is itself unconsumed — the alias rule only covers duplicates whose base is live.",
+      "evidence": []
+    },
+
+    {
+      "operationId": "createNotification",
+      "category": "unwired",
+      "note": "Self-notification creation for the authenticated principal. Admin dispatch to other users goes through the separate /admin/notifications/dispatch operation (DEC-OPS-042), which is wired.",
+      "evidence": []
+    },
+    {
+      "operationId": "getNotification",
+      "category": "unwired",
+      "note": "Notification detail — the notification centre renders from the list response and never fetches a single item.",
+      "evidence": []
+    },
+    {
+      "operationId": "deleteNotification",
+      "category": "unwired",
+      "note": "Single-notification delete — the centre exposes mark-as-read and bulk paths only.",
+      "evidence": []
+    },
+
+    {
+      "operationId": "update",
+      "category": "unwired",
+      "note": "Satisfaction rating update. ADR-0011 retired anonymous satisfaction and left edit/delete as authenticated owner-or-admin, but no screen offers editing an existing rating yet.",
+      "evidence": []
+    },
+    {
+      "operationId": "moderate",
+      "category": "unwired",
+      "note": "Admin moderation delete for a satisfaction rating; no moderation screen exists.",
+      "evidence": []
+    },
+
+    {
+      "operationId": "getScheduleList",
+      "category": "unwired",
+      "note": "Flat schedule list. The schedule screens query the department-scoped endpoints instead.",
+      "evidence": []
+    },
+    {
+      "operationId": "insertLoginPolicy",
+      "category": "unwired",
+      "note": "Per-user login policy creation. The restored /admin/security/login-policy screen (DEC-OPS-024) reads and updates policies but has no create path.",
+      "evidence": []
+    },
+    {
+      "operationId": "getMenuCreationList",
+      "category": "unwired",
+      "note": "Menu creation candidates by authority code; the menu admin screen builds its tree from the standard menu list.",
+      "evidence": []
+    },
+    {
+      "operationId": "getConnectStats",
+      "category": "unwired",
+      "note": "User-facing connection statistics; the stats screens consume the admin statistics operations.",
+      "evidence": []
+    },
+    {
+      "operationId": "getInstitutionCodeDetail",
+      "category": "unwired",
+      "note": "Institution code detail. The institution screen shows list rows only — related to GAP-CODE-001, where the receive-log to ledger path is still undecided.",
+      "evidence": []
+    }
+  ]
+}

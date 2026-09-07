@@ -26,7 +26,9 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  */
 // [2026-09-06 DEC-OPS-040] 40 → 39: /admin/system/ism(IsmClient)이 /approvals 로 통합돼 화면이 사라졌다 — 되돌리기가 아니라
 //   같은 개인 결재함 두 화면을 하나로 모은 결과다(DEC-OPS-039 제안의 owner 승인). 정본 /approvals 는 A2 MasterDetailPage 소비자다.
-const ADOPTERS = 39;
+// [2026-09-07] 39 -> 40: /admin/system/isg 신설. 백엔드 5본이 완비인데 프런트 호출부가 0 이라
+//   등록 경로조차 없던 고아 도메인을 배선했다 — 되돌리기가 아니라 새 A1 소비자다.
+const ADOPTERS = 40;
 const DIRECT_ONLY = 4;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
