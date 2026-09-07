@@ -70,10 +70,17 @@ describe('CodeAdminService', () => {
       expect(client.put).toHaveBeenCalledWith('admin/system/codes/cl/CL01', data, undefined);
     });
 
-    it('deleteClCode should call delete', async () => {
-      await codeAdminService.deleteClCode('CL01');
-      expect(client.delete).toHaveBeenCalledWith('admin/system/codes/cl/CL01', undefined);
-    });
+    /*
+      [2026-09-08] deleteClCode·deleteCmmnCode 계약을 걷었다.
+
+      서버의 두 삭제는 논리 삭제(`useYn='N'`)이고, 화면의 분류·그룹 편집 폼에 있는 사용여부
+      토글이 `updateClCode`·`updateCmmnCode` 로 **정확히 같은 결과**를 낸다
+      (CommonCodeCategory·CommonCodeGroup 의 delete() 와 update(..., useYn, ...) 를 대조).
+      오히려 update 는 lastMdfrId 를 남겨 누가 껐는지 기록된다.
+
+      그래서 죽은 위임 메서드를 제거했다. 서버 API 는 남으며 축 1 원장이
+      superseded-surface 로 그 사실과 대체 대상을 기계 검증한다.
+    */
   });
 
   describe('Common Code', () => {
