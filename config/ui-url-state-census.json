@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "75731c3e5f972a7a313765e73c1753411f921048d10017ee5f21359189fd5ef1"
+    "inventoryHash": "151cf68e98745ce4839c66c250347c9fb0d619493baf0cc14727e9b7887c3875"
   },
   "summary": {
-    "sourceFileCount": 523,
-    "records": 380,
-    "syntaxOccurrences": 449,
-    "ambiguousRecords": 353,
-    "unverifiedRecords": 380,
+    "sourceFileCount": 524,
+    "records": 381,
+    "syntaxOccurrences": 450,
+    "ambiguousRecords": 354,
+    "unverifiedRecords": 381,
     "exactPopulations": {
       "filesystemRoutes": 121,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 52,
+      "form-producer": 53,
       "navigation-producer": 161,
       "page-redirect": 11,
       "query-builder": 22,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 372,
+      "navigation": 373,
       "request-telemetry": 8
     }
   },
@@ -15462,6 +15462,45 @@
       "evidence": {
         "source": "frontend/src/app/UnifiedDashboardClient.tsx",
         "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-2A0ED5ED1193BE",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/account/ChangePasswordForm.tsx",
+      "producerFile": "frontend/src/components/account/ChangePasswordForm.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/account/ChangePasswordForm.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
