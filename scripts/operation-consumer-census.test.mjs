@@ -370,6 +370,49 @@ test('화면 소비 판정은 접두가 같은 다른 메서드를 소비로 착
   assert.deepEqual(analyzeScreenReachability({ boundaries, repoRoot: root, ts }).orphans, []);
 });
 
+test('.bind() 재수출을 named import 로 직접 부르는 형태도 소비로 센다 — 2026-09-07 거짓 양성 정정', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'screen-reach-direct-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  // deptScheduleService 형태: 클래스 메서드를 모듈 레벨 named export 로 다시 내보낸다.
+  const serviceFile = join(root, 'frontend/src/services/DirectService.ts');
+  mkdirSync(dirname(serviceFile), { recursive: true });
+  writeFileSync(serviceFile, [
+    'class DirectService {',
+    '  async loadMonthly() {',
+    '    return this.executeGenerated(loadMonthlyOperation, {});',
+    '  }',
+    '}',
+    'export const directService = new DirectService();',
+    'export const loadMonthly = directService.loadMonthly.bind(directService);',
+  ].join('\n'));
+
+  const boundaries = { records: [{ file: 'frontend/src/services/DirectService.ts', line: 3, operationId: 'loadMonthly' }] };
+  const screenFile = join(root, 'frontend/src/app/page.tsx');
+  mkdirSync(dirname(screenFile), { recursive: true });
+
+  // 점 없는 직접 호출 — 정정 전에는 이것을 고아로 셌다(실측: deptScheduleService 5메서드).
+  writeFileSync(screenFile, [
+    "import { loadMonthly } from '@/services/DirectService';",
+    'export default () => loadMonthly({ yearMonth: "2026-09" });',
+  ].join('\n'));
+  assert.deepEqual(analyzeScreenReachability({ boundaries, repoRoot: root, ts }).orphans, []);
+
+  // 이름이 접두로만 겹치는 다른 심볼은 소비로 세지 않는다.
+  writeFileSync(screenFile, 'export default () => loadMonthlyTotals();\n');
+  assert.deepEqual(
+    analyzeScreenReachability({ boundaries, repoRoot: root, ts }).orphans.map((e) => e.method),
+    ['loadMonthly'],
+  );
+
+  // 접미가 겹치는 속성 접근도 오인하지 않는다.
+  writeFileSync(screenFile, 'export default () => x.somethingLoadMonthly();\n');
+  assert.deepEqual(
+    analyzeScreenReachability({ boundaries, repoRoot: root, ts }).orphans.map((e) => e.method),
+    ['loadMonthly'],
+  );
+});
+
 test('서비스 밖 호출부와 테스트 파일은 소비 판정에서 제외된다', (t) => {
   const root = mkdtempSync(join(tmpdir(), 'screen-reach-scope-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
