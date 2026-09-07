@@ -2,6 +2,7 @@ package nuri.api.controller.foundation.controller.code;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
+import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.security.util.SecurityUtil;
@@ -46,6 +47,7 @@ public class AdministCodeApiController {
     }
 
     @Operation(summary = "행정코드 등록")
+    @AdminOrSystem
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createAdministCode(@Valid @RequestBody AdministCodeDto dto) {
         administCodeService.createAdministCode(dto, currentLoginId());
@@ -53,13 +55,15 @@ public class AdministCodeApiController {
     }
 
     @Operation(summary = "행정코드 수정")
+    @AdminOrSystem
     @PutMapping("/{code}")
     public ResponseEntity<ApiResponse<Void>> updateAdministCode(@PathVariable String code, @Valid @RequestBody AdministCodeDto dto) {
         administCodeService.updateAdministCode(code, dto, currentLoginId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "행정코드 삭제")
+    @Operation(summary = "행정코드 삭제", description = "하위 행정구역 코드가 있으면 409 로 거부합니다.")
+    @AdminOrSystem
     @DeleteMapping("/{code}")
     public ResponseEntity<ApiResponse<Void>> deleteAdministCode(@PathVariable String code) {
         administCodeService.deleteAdministCode(code);
