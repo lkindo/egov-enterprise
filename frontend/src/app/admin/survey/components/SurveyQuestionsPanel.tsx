@@ -4,10 +4,19 @@ import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 import { Survey, SurveyQuestion } from '@/types/business/survey';
+
+/*
+  전체 치환(PUT) payload 타입. 서버가 이 필드들을 그대로 엔티티에 덮어쓰므로 하나라도 빠지면
+  그 값이 null 이 된다 — 목록 행의 기존 값을 함께 실어 보내기 위한 명시적 계약이다.
+*/
+type SurveyInfoUpdate = Pick<Survey,
+  'srvyTtl' | 'srvyPrps' | 'srvyWrtGdCn' | 'srvyBgngYmd' | 'srvyEndYmd' | 'srvyTrgt' | 'srvyTmpltSn'>;
+type SurveyQuestionUpdate = Pick<SurveyQuestion, 'qstnSn' | 'qstnTypeCd' | 'qstnCn' | 'maxChcCnt'>;
+type SurveyItemUpdate = { artclSn?: number; artclCn: string; etcAnsYn?: string };
 import { PageResponse } from '@/types/foundation/system';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Trash2, ListChecks, MessageSquareText } from 'lucide-react';
+import { Check, Loader2, Pencil, Plus, Trash2, X, ListChecks, MessageSquareText } from 'lucide-react';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -16,9 +25,12 @@ import {
   surveyInfoCreateSchema,
   surveyInfoValidationLabels,
   surveyItemCreateSchema,
+  surveyItemEditSchema,
   surveyItemValidationLabels,
   surveyQuestionCreateSchema,
+  surveyQuestionEditSchema,
   surveyQuestionValidationLabels,
+  surveyTitleEditSchema,
 } from './survey-panel-form-validation';
 
 /** '1' = 객관식. 그 외는 주관식으로 취급한다(백엔드 통계 DTO 와 같은 규약). */
@@ -109,6 +121,74 @@ export default function SurveyQuestionsPanel() {
     onSettled: () => { surveyDeletePendingRef.current = false; },
   });
 
+  /*
+    [2026-09-07] 수정 배선. 2026-08-28 에 등록·삭제만 배선하고 update 3본은 남겨 뒀는데,
+    그래서 오타 하나를 고치려면 지우고 다시 만들어야 했다(축 2 실측: 소비자 0).
+
+    ⚠ 서버의 update 는 전부 **전체 치환**이다 —
+      · updateSurvey  → srvyTtl·srvyPrps·srvyWrtGdCn·srvyBgngYmd·srvyEndYmd·srvyTrgt·srvyTmpltSn 7필드
+      · updateQuestion→ qstnSn·qstnTypeCd·qstnCn·maxChcCnt 4필드
+      · updateItem    → artclSn·artclCn·etcAnsYn 3필드
+    바꾸는 필드만 보내면 나머지가 null 로 지워진다. 그래서 목록 행이 가진 나머지 값을 그대로
+    함께 실어 보낸다(round-trip). 목록 projection 이 SurveyInfoDto·SurveyQuestionDto·
+    SurveyArticleDto 전체를 주므로 별도 상세 조회 없이 가능하다.
+  */
+  const [editingTarget, setEditingTarget] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const editPendingRef = useRef(false);
+
+  /*
+    편집 검증도 등록과 같은 규격을 쓴다 — 오류 요약·첫 오류 포커스·서버 필드 오류 매핑·
+    동기 잠금이 폼 검증 census 의 native-form 계약이다(임시 trim 검사로는 그 계약을 못 지킨다).
+  */
+  const titleEditValidation = useManualFormValidation(surveyTitleEditSchema, {
+    labels: { srvyTtl: '설문지 제목' },
+  });
+  const questionEditValidation = useManualFormValidation(surveyQuestionEditSchema, {
+    labels: { qstnCn: '문항 내용' },
+  });
+  const itemEditValidation = useManualFormValidation(surveyItemEditSchema, {
+    labels: { artclCn: '항목 내용' },
+  });
+
+  const clearEditErrors = () => {
+    titleEditValidation.setFormErrors({}, false);
+    questionEditValidation.setFormErrors({}, false);
+    itemEditValidation.setFormErrors({}, false);
+  };
+
+  const beginEdit = (target: string, current: string) => {
+    if (editPendingRef.current) return;
+    setEditingTarget(target);
+    setEditingText(current);
+    setError(null);
+    clearEditErrors();
+  };
+  const cancelEdit = () => {
+    if (editPendingRef.current) return;
+    setEditingTarget(null);
+    setEditingText('');
+    clearEditErrors();
+  };
+  const finishEdit = () => {
+    editPendingRef.current = false;
+    setEditingTarget(null);
+    setEditingText('');
+    clearEditErrors();
+  };
+
+  const editSurvey = useMutation({
+    mutationFn: (payload: { srvySn: number; body: SurveyInfoUpdate }) =>
+      surveyAdminService.updateSurvey(payload.srvySn, payload.body),
+    onSuccess: () => { setError(null); finishEdit(); void queryClient.invalidateQueries({ queryKey: surveysKey }); },
+    onError: (mutationError: unknown) => {
+      editPendingRef.current = false;
+      const fieldErrors = extractFieldErrors(mutationError);
+      if (fieldErrors) titleEditValidation.setFormErrors(fieldErrors);
+      else setError(extractErrorMessage(mutationError, '설문지 제목 수정에 실패했습니다.'));
+    },
+  });
+
   const questionsKey = ['admin-survey-questions', srvySn];
   const { data: questions = [], isLoading } = useQuery<SurveyQuestion[]>({
     queryKey: questionsKey,
@@ -118,6 +198,47 @@ export default function SurveyQuestionsPanel() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: questionsKey });
   const onError = (e: unknown) => setError(extractErrorMessage(e, '처리에 실패했습니다.'));
+
+  const editQuestion = useMutation({
+    mutationFn: (payload: { srvyQstnSn: number; body: SurveyQuestionUpdate }) =>
+      surveyAdminService.updateQuestion(srvySn!, payload.srvyQstnSn, payload.body),
+    onSuccess: () => { setError(null); finishEdit(); invalidate(); },
+    onError: (mutationError: unknown) => {
+      editPendingRef.current = false;
+      const fieldErrors = extractFieldErrors(mutationError);
+      if (fieldErrors) questionEditValidation.setFormErrors(fieldErrors);
+      else setError(extractErrorMessage(mutationError, '문항 수정에 실패했습니다.'));
+    },
+  });
+
+  const editItem = useMutation({
+    mutationFn: (payload: { srvyArtclSn: number; body: SurveyItemUpdate }) =>
+      surveyAdminService.updateItem(payload.srvyArtclSn, payload.body),
+    onSuccess: () => { setError(null); finishEdit(); invalidate(); },
+    onError: (mutationError: unknown) => {
+      editPendingRef.current = false;
+      const fieldErrors = extractFieldErrors(mutationError);
+      if (fieldErrors) itemEditValidation.setFormErrors(fieldErrors);
+      else setError(extractErrorMessage(mutationError, '선택 항목 수정에 실패했습니다.'));
+    },
+  });
+
+  /**
+   * 빈 값은 서버에 보내지 않는다 — 전체 치환이라 빈 문자열이 그대로 저장된다.
+   * 검증은 각 편집 폼의 스키마가 하고, 통과한 값만 sink 로 넘긴다.
+   */
+  const submitEdit = <TInput, TOutput>(
+    validation: { validate: (values: TInput) => TOutput | null },
+    input: TInput,
+    run: (validated: TOutput) => void,
+  ) => {
+    if (editPendingRef.current) return;
+    const validated = validation.validate(input);
+    if (!validated) return;
+    editPendingRef.current = true;
+    setError(null);
+    run(validated);
+  };
 
   const addQuestion = useMutation({
     mutationFn: (payload: { srvySn: number; qstnCn: string; qstnTypeCd: string; qstnSn: number }) =>
@@ -227,6 +348,7 @@ export default function SurveyQuestionsPanel() {
 
   const templateOptions = templates?.list ?? [];
   const surveyOptions = surveys?.list ?? [];
+  const selectedSurvey = surveyOptions.find((s) => s.srvySn === srvySn) ?? null;
 
   return (
     <div className="space-y-6">
@@ -328,7 +450,18 @@ export default function SurveyQuestionsPanel() {
           type="button"
           variant="outline"
           size="sm"
-          disabled={srvySn === null || removeSurvey.isPending}
+          disabled={srvySn === null || removeSurvey.isPending || editingTarget !== null}
+          aria-label={selectedSurvey ? `${selectedSurvey.srvyTtl} 제목 수정` : '설문지 제목 수정'}
+          onClick={() => { if (selectedSurvey) beginEdit('survey', selectedSurvey.srvyTtl ?? ''); }}
+          className="shrink-0"
+        >
+          <Pencil size={14} aria-hidden="true" /> 제목 수정
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={srvySn === null || removeSurvey.isPending || editingTarget !== null}
           aria-busy={removeSurvey.isPending || undefined}
           onClick={() => { void handleDeleteSurvey(); }}
           className="shrink-0 border-destructive/30 text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground"
@@ -336,6 +469,49 @@ export default function SurveyQuestionsPanel() {
           <Trash2 size={14} aria-hidden="true" /> {removeSurvey.isPending ? '삭제 중…' : '설문지 삭제'}
         </Button>
       </div>
+
+      {editingTarget === 'survey' && selectedSurvey ? (
+        <form
+          className="flex items-center gap-2"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitEdit(titleEditValidation, { srvyTtl: editingText }, (validated) =>
+              editSurvey.mutate({
+                srvySn: selectedSurvey.srvySn!,
+                // 제목 외 6필드는 목록 행의 기존 값을 그대로 되돌려 보낸다 — 전체 치환이라
+                // 빠뜨리면 기간·목적·작성안내·대상이 지워진다.
+                body: {
+                  srvyTtl: validated.srvyTtl,
+                  srvyPrps: selectedSurvey.srvyPrps,
+                  srvyWrtGdCn: selectedSurvey.srvyWrtGdCn,
+                  srvyBgngYmd: selectedSurvey.srvyBgngYmd,
+                  srvyEndYmd: selectedSurvey.srvyEndYmd,
+                  srvyTrgt: selectedSurvey.srvyTrgt,
+                  srvyTmpltSn: selectedSurvey.srvyTmpltSn,
+                },
+              }));
+          }}
+        >
+          <Input
+            {...titleEditValidation.fieldProps('srvyTtl')}
+            value={editingText}
+            onChange={(e) => { titleEditValidation.clearError('srvyTtl'); setEditingText(e.target.value); }}
+            aria-label="설문지 제목 수정"
+            maxLength={100}
+            autoFocus
+          />
+          <Button type="submit" size="sm" disabled={editSurvey.isPending} aria-busy={editSurvey.isPending || undefined} className="shrink-0">
+            {editSurvey.isPending ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Check size={14} aria-hidden="true" />} 저장
+          </Button>
+          <Button type="button" size="sm" variant="ghost" disabled={editSurvey.isPending} onClick={cancelEdit} className="shrink-0">
+            <X size={14} aria-hidden="true" /> 취소
+          </Button>
+        </form>
+      ) : null}
+      {editingTarget === 'survey' && titleEditValidation.errors.srvyTtl ? (
+        <p {...titleEditValidation.messageProps('srvyTtl')} className="text-xs font-bold text-destructive-emphasis" />
+      ) : null}
 
       {error && <p role="alert" className="text-sm text-destructive-emphasis">{error}</p>}
 
@@ -409,10 +585,58 @@ export default function SurveyQuestionsPanel() {
                     <span className="bg-primary text-primary-foreground w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0">
                       {idx + 1}
                     </span>
-                    <span className="font-bold text-foreground flex-1 min-w-0 break-words">{q.qstnCn}</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-hub-blue/10 text-hub-blue shrink-0">
-                      {q.qstnTypeCd === MULTIPLE_CHOICE ? '객관식' : '주관식'}
-                    </span>
+                    {editingTarget === `question-${q.srvyQstnSn}` ? (
+                      <form
+                        className="flex items-center gap-2 flex-1 min-w-0"
+                        noValidate
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          submitEdit(questionEditValidation, { qstnCn: editingText }, (validated) =>
+                            editQuestion.mutate({
+                              srvyQstnSn: q.srvyQstnSn!,
+                              // 내용 외 3필드 round-trip — 빠뜨리면 순번·유형·최대선택수가 지워진다.
+                              body: {
+                                qstnCn: validated.qstnCn,
+                                qstnSn: q.qstnSn,
+                                qstnTypeCd: q.qstnTypeCd,
+                                maxChcCnt: q.maxChcCnt,
+                              },
+                            }));
+                        }}
+                      >
+                        <Input
+                          {...questionEditValidation.fieldProps('qstnCn')}
+                          value={editingText}
+                          onChange={(e) => { questionEditValidation.clearError('qstnCn'); setEditingText(e.target.value); }}
+                          aria-label="문항 내용"
+                          maxLength={4000}
+                          autoFocus
+                        />
+                        <Button type="submit" size="sm" disabled={editQuestion.isPending} aria-busy={editQuestion.isPending || undefined} className="shrink-0">
+                          {editQuestion.isPending ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Check size={14} aria-hidden="true" />} 저장
+                        </Button>
+                        <Button type="button" size="sm" variant="ghost" disabled={editQuestion.isPending} onClick={cancelEdit} className="shrink-0">
+                          <X size={14} aria-hidden="true" /> 취소
+                        </Button>
+                      </form>
+                    ) : (
+                      <>
+                        <span className="font-bold text-foreground flex-1 min-w-0 break-words">{q.qstnCn}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-hub-blue/10 text-hub-blue shrink-0">
+                          {q.qstnTypeCd === MULTIPLE_CHOICE ? '객관식' : '주관식'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`${q.qstnCn} 문항 수정`}
+                          disabled={deletingTarget !== null || editingTarget !== null || addQuestion.isPending || addItem.isPending}
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => beginEdit(`question-${q.srvyQstnSn}`, q.qstnCn ?? '')}
+                        >
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -443,7 +667,54 @@ export default function SurveyQuestionsPanel() {
                         {(q.items ?? []).map((item) => (
                           <li key={item.srvyArtclSn} className="flex items-center gap-2 text-sm">
                             <span className="text-muted-foreground/50">·</span>
-                            <span className="flex-1 min-w-0 break-words">{item.artclCn}</span>
+                            {editingTarget === `item-${item.srvyArtclSn}` ? (
+                              <form
+                                className="flex items-center gap-2 flex-1 min-w-0"
+                                noValidate
+                                onSubmit={(e) => {
+                                  e.preventDefault();
+                                  submitEdit(itemEditValidation, { artclCn: editingText }, (validated) =>
+                                    editItem.mutate({
+                                      srvyArtclSn: item.srvyArtclSn!,
+                                      // 내용 외 2필드 round-trip — 빠뜨리면 순번·기타답변여부가 지워진다.
+                                      body: {
+                                        artclCn: validated.artclCn,
+                                        artclSn: item.artclSn,
+                                        etcAnsYn: item.etcAnsYn,
+                                      },
+                                    }));
+                                }}
+                              >
+                                <Input
+                                  {...itemEditValidation.fieldProps('artclCn')}
+                                  value={editingText}
+                                  onChange={(e) => { itemEditValidation.clearError('artclCn'); setEditingText(e.target.value); }}
+                                  aria-label="선택 항목 내용"
+                                  maxLength={4000}
+                                  autoFocus
+                                />
+                                <Button type="submit" size="sm" disabled={editItem.isPending} aria-busy={editItem.isPending || undefined} className="shrink-0">
+                                  {editItem.isPending ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Check size={14} aria-hidden="true" />} 저장
+                                </Button>
+                                <Button type="button" size="sm" variant="ghost" disabled={editItem.isPending} onClick={cancelEdit} className="shrink-0">
+                                  <X size={14} aria-hidden="true" /> 취소
+                                </Button>
+                              </form>
+                            ) : (
+                              <>
+                                <span className="flex-1 min-w-0 break-words">{item.artclCn}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={`${item.artclCn} 항목 수정`}
+                                  disabled={deletingTarget !== null || editingTarget !== null || addQuestion.isPending || addItem.isPending}
+                                  className="h-7 w-7"
+                                  onClick={() => beginEdit(`item-${item.srvyArtclSn}`, item.artclCn ?? '')}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                                </Button>
+                              </>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"

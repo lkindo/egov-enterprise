@@ -279,7 +279,8 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
   describe('그룹 수정 (updateGroup)', () => {
     it('인자로 받은 groupId 가 경로를 결정한다 — 본문의 groupId 가 아니다', async () => {
       // 본문에 다른 groupId(GRP_0009)를 심어 두고, 경로는 인자(GRP_0001)만 따르는지 확인한다.
-      // 형제 구현(security/SecurityAdminService.ts)의 본문 기반 치환이 이식되면 이 단언이 깨진다.
+      // [2026-09-07] 본문 기반 치환을 쓰던 형제 구현(security/SecurityAdminService.ts)은 죽은 중복이라 걷혔다.
+      //   이 단언은 정본이 경로 파라미터로 식별자를 보낸다는 계약을 계속 고정한다.
       const payload: Partial<GroupManage> = { groupId: 'GRP_0009', groupNm: '이름만 수정' };
 
       await groupAdminService.updateGroup('GRP_0001', payload, { timeout: 2000 });

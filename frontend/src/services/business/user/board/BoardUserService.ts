@@ -1,15 +1,11 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import { BoardPost } from '@/types/business/board';
-import type { GeneratedOperationRequest } from '@/types/generated-operations';
+
 import {
-  createPostOperation,
-  deletePostOperation,
-  getPostOperation,
   getPostsOperation,
   likePostOperation,
   searchPostsOperation,
-  updatePostOperation,
 } from '@/types/generated-operations';
 
 /**
@@ -67,33 +63,15 @@ class BoardUserService extends UserService {
     }) as Promise<PageResponse<BoardPost>>;
   }
 
-  async getPost(bbsId: string, pstSn: number): Promise<BoardPost> {
-    return this.executeGenerated(getPostOperation, {
-      path: { bbsId, pstSn },
-    }) as Promise<BoardPost>;
-  }
+  /*
+    [2026-09-07] getPost·createPost·updatePost·deletePost 를 제거했다.
 
-  async createPost(data: Partial<BoardPost>): Promise<BoardPost> {
-    const response = await this.executeGenerated(createPostOperation, {
-      body: data as GeneratedOperationRequest<'createPost'>,
-    });
-    // 서버의 실제 반환값은 생성된 게시글 ID다. 기존 공개 시그니처와 런타임 반환은 모두 유지한다.
-    return response as unknown as BoardPost;
-  }
-
-  async updatePost(bbsId: string, pstSn: number, data: Partial<BoardPost>): Promise<void> {
-    return this.executeGenerated(updatePostOperation, {
-      path: { bbsId, pstSn },
-      body: data as GeneratedOperationRequest<'updatePost'>,
-    });
-  }
-
-  async deletePost(bbsId: string, pstSn: number): Promise<void> {
-    return this.executeGenerated(deletePostOperation, {
-      path: { bbsId, pstSn },
-    });
-  }
-
+    넷 다 호출부가 0 이었고(축 2 실측), 같은 일을 하는 경로가 이미 정본이다 —
+      · 상세 조회: BoardDetailServer 가 knowledgeService·boardAdminService 로 가져온다.
+      · 등록·수정: boardActions.saveBoardArticle (DEC-OPS-044 로 첨부 multipart 를 포함한 정본 경로).
+      · 삭제: boardActions.deleteBoardArticle.
+    남긴 셋(searchPosts·getPosts·likePost)은 화면이 실제로 부른다.
+  */
   async likePost(bbsId: string, pstSn: number): Promise<number> {
     // ApiService.patch가 이미 ApiResponse.data(=새 추천수)를 추출해 반환하므로 추가 .data 접근 금지(과거 undefined 반환 버그).
     return this.executeGenerated(likePostOperation, {

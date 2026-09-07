@@ -192,10 +192,10 @@ describe('UserAuthorityAdminService generated operation 계약', () => {
     });
   });
 
-  it('단건 저장은 백엔드 List 계약에 맞춰 한 요소 배열로 감싼다', async () => {
+  it('한 건만 저장할 때도 배열 계약을 그대로 쓴다 — 단수 편의 래퍼 없이 표현된다', async () => {
     const dto = makeDto();
 
-    await userAuthorityAdminService.saveUserAuthority(dto);
+    await userAuthorityAdminService.saveUserAuthorities([dto]);
 
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: BASE,
@@ -222,7 +222,7 @@ describe('UserAuthorityAdminService generated operation 계약', () => {
   it('void operation이 non-null data를 받으면 성공으로 오인하지 않는다', async () => {
     client.requestRaw.mockResolvedValueOnce(success(1));
 
-    await expect(userAuthorityAdminService.saveUserAuthority(makeDto())).rejects.toThrow(
+    await expect(userAuthorityAdminService.saveUserAuthorities([makeDto()])).rejects.toThrow(
       '생성 API void 응답이 OpenAPI 계약과 일치하지 않습니다.',
     );
   });
@@ -242,6 +242,6 @@ describe('UserAuthorityAdminService generated operation 계약', () => {
     const error = new Error('authority transport failed');
     client.requestRaw.mockRejectedValueOnce(error);
 
-    await expect(userAuthorityAdminService.saveUserAuthority(makeDto())).rejects.toBe(error);
+    await expect(userAuthorityAdminService.saveUserAuthorities([makeDto()])).rejects.toBe(error);
   });
 });

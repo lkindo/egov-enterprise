@@ -12,8 +12,8 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { RoleAdminService } from '@/services/foundation/security/SecurityAdminService';
 import { codeAdminService } from '../CodeAdminService';
+import { roleAdminService } from '../RoleAdminService';
 import { userAdminService } from '../UserAdminService';
 
 const success = <T,>(data: T) => ({
@@ -54,7 +54,9 @@ describe('foundation generated operation wave2 경계', () => {
     };
     client.getRaw.mockResolvedValueOnce(success(role));
 
-    await expect(new RoleAdminService().getRole('ROLE_READ')).resolves.toStrictEqual(role);
+    // [2026-09-07] 종전에는 security/SecurityAdminService 의 형제 RoleAdminService 로 검증했다.
+    //   그 파일이 정본(system/RoleAdminService)의 죽은 중복이라 걷히면서 정본으로 옮긴다.
+    await expect(roleAdminService.getRole('ROLE_READ')).resolves.toStrictEqual(role);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/roles/ROLE_READ', undefined);
   });
 

@@ -23,6 +23,9 @@ vi.mock('@/services/foundation/system/SurveyAdminService', () => ({
     deleteQuestion: vi.fn(),
     createItem: vi.fn(),
     deleteItem: vi.fn(),
+    updateSurvey: vi.fn(),
+    updateQuestion: vi.fn(),
+    updateItem: vi.fn(),
   },
 }));
 
@@ -46,11 +49,40 @@ const TEMPLATES = {
 };
 
 const SURVEYS = {
-  list: [{ srvySn: 201, srvyTtl: '만족도 조사' }],
+  /*
+    전체 치환(PUT) round-trip 을 검증하려면 목록 행이 나머지 필드를 갖고 있어야 한다.
+    실제 서버도 목록에서 SurveyInfoDto 전체를 준다.
+  */
+  list: [{
+    srvySn: 201,
+    srvyTtl: '만족도 조사',
+    srvyPrps: '서비스 개선',
+    srvyWrtGdCn: '솔직하게 답해 주세요',
+    srvyBgngYmd: '20260901',
+    srvyEndYmd: '20260930',
+    srvyTrgt: '전 직원',
+    srvyTmpltSn: 11,
+  }],
   total: 1,
   page: 1,
   size: 100,
   totalPage: 1,
+};
+
+/** 수정 배선 계약이 쓰는 항목 포함 문항 — 치환 round-trip 검증에 필요한 필드를 모두 갖는다. */
+const QUESTION_WITH_ITEM = {
+  srvyQstnSn: 301,
+  srvySn: 201,
+  qstnSn: 1,
+  qstnTypeCd: '1',
+  qstnCn: '만족하십니까',
+  maxChcCnt: 1,
+  srvyTmpltSn: 101,
+  frstRgtrId: 'admin',
+  crtDt: '2026-08-06T00:00:00',
+  items: [
+    { srvyArtclSn: 401, srvyQstnSn: 301, srvySn: 201, artclSn: 1, artclCn: '예', etcAnsYn: 'N' },
+  ],
 };
 
 const QUESTION_WITHOUT_ITEMS = {
@@ -513,5 +545,114 @@ describe('SurveyQuestionsPanel 설문지 등록·삭제', () => {
 
     await waitFor(() => expect(confirmMock).toHaveBeenCalledTimes(1));
     expect(mocked.deleteSurvey).not.toHaveBeenCalled();
+  });
+});
+
+describe('SurveyQuestionsPanel 수정 배선', () => {
+  /*
+    [2026-09-07] 2026-08-28 에 등록·삭제만 배선하고 update 3본은 남겨 뒀다 — 오타 하나를
+    고치려면 지우고 다시 만들어야 했다(축 2 실측: 소비자 0).
+
+    ⚠ 서버의 update 는 전부 전체 치환이므로 바꾸는 필드만 보내면 나머지가 null 이 된다.
+    아래 단언들은 **바꾸지 않는 필드가 기존 값 그대로 함께 실려 가는지**를 고정한다 —
+    그것이 이 배선의 안전 조건이다(DEC-OPS-045 와 같은 함정).
+  */
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocked.getTemplateList.mockResolvedValue(TEMPLATES as never);
+    mocked.getSurveyList.mockResolvedValue(SURVEYS as never);
+    mocked.getQuestions.mockResolvedValue([QUESTION_WITH_ITEM] as never);
+    mocked.updateSurvey.mockResolvedValue(undefined as never);
+    mocked.updateQuestion.mockResolvedValue(undefined as never);
+    mocked.updateItem.mockResolvedValue(undefined as never);
+  });
+
+  it('설문지 제목 수정은 나머지 6필드를 기존 값 그대로 함께 보낸다', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    const input = await screen.findByLabelText('설문지 제목 수정');
+    expect(input).toHaveValue('만족도 조사');
+    await user.clear(input);
+    await user.type(input, '만족도 조사 2026');
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
+    expect(mocked.updateSurvey).toHaveBeenCalledWith(201, {
+      srvyTtl: '만족도 조사 2026',
+      srvyPrps: '서비스 개선',
+      srvyWrtGdCn: '솔직하게 답해 주세요',
+      srvyBgngYmd: '20260901',
+      srvyEndYmd: '20260930',
+      srvyTrgt: '전 직원',
+      srvyTmpltSn: 11,
+    });
+  });
+
+  it('문항 수정은 순번·유형·최대선택수를 그대로 되돌려 보낸다', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: /문항 수정$/ }));
+    const input = await screen.findByLabelText('문항 내용');
+    await user.clear(input);
+    await user.type(input, '수정된 문항');
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    await waitFor(() => expect(mocked.updateQuestion).toHaveBeenCalledTimes(1));
+    const [srvySn, srvyQstnSn, body] = mocked.updateQuestion.mock.calls[0];
+    expect(srvySn).toBe(201);
+    expect(srvyQstnSn).toBe(QUESTION_WITH_ITEM.srvyQstnSn);
+    expect(body).toMatchObject({
+      qstnCn: '수정된 문항',
+      qstnSn: QUESTION_WITH_ITEM.qstnSn,
+      qstnTypeCd: QUESTION_WITH_ITEM.qstnTypeCd,
+    });
+  });
+
+  it('빈 내용은 저장하지 않는다 — 전체 치환이라 빈 값이 그대로 저장된다', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    await user.clear(await screen.findByLabelText('설문지 제목 수정'));
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    // 표준 검증(useManualFormValidation + zod)이 스키마 메시지를 낸다.
+    expect(await screen.findByText('설문지 제목을 입력해 주세요.')).toBeInTheDocument();
+    expect(mocked.updateSurvey).not.toHaveBeenCalled();
+  });
+
+  it('취소하면 sink 를 부르지 않고 편집을 닫는다', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    await user.click(screen.getByRole('button', { name: /취소/ }));
+
+    await waitFor(() => expect(screen.queryByLabelText('설문지 제목 수정')).toBeNull());
+    expect(mocked.updateSurvey).not.toHaveBeenCalled();
+  });
+
+  it('저장 실패는 화면에 드러내고 편집 상태를 유지한다', async () => {
+    mocked.updateSurvey.mockRejectedValue(new Error('설문 서버 오류'));
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    const input = await screen.findByLabelText('설문지 제목 수정');
+    await user.clear(input);
+    await user.type(input, '새 제목');
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('설문 서버 오류');
+    // 입력을 잃지 않는다 — 다시 타이핑하게 만들지 않는다.
+    expect(screen.getByLabelText('설문지 제목 수정')).toHaveValue('새 제목');
   });
 });

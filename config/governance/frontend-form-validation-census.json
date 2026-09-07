@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 58,
+    "nativeFormOccurrences": 61,
     "nativeFormFiles": 52,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
     "secondaryActionBoundaries": 69,
-    "candidateCount": 149
+    "candidateCount": 152
   },
   "entries": [
     {
@@ -855,6 +855,57 @@
       "testEvidence": [
         "frontend/src/app/admin/security/login-policy/__tests__/LoginPolicyAdminClient.behavior.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#SurveyQuestionsPanel[3]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "SurveyQuestionsPanel",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:surveyTitleEditSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#<anonymous>[2]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "<anonymous>",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:surveyQuestionEditSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#<anonymous>[3]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "<anonymous>",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:surveyItemEditSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
     {

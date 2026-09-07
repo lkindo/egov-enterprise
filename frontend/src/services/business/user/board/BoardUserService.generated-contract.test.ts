@@ -24,12 +24,6 @@ const post = {
   useYn: 'Y',
   userId: 'writer01',
 };
-const saveRequest = {
-  bbsId: 'BBS01',
-  pstTtl: '제목',
-  pstCn: '본문',
-  useYn: 'Y',
-};
 
 describe('BoardUserService generated contract', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -38,55 +32,29 @@ describe('BoardUserService generated contract', () => {
     client.getRaw
       .mockResolvedValueOnce(successEnvelope({ list: [post], total: 1 }))
       .mockResolvedValueOnce(successEnvelope(post));
-    client.requestRaw
-      .mockResolvedValueOnce(successEnvelope(21))
-      .mockResolvedValueOnce(successEnvelope(null))
-      .mockResolvedValueOnce(successEnvelope(null))
-      .mockResolvedValueOnce(successEnvelope(4));
+    client.requestRaw.mockResolvedValueOnce(successEnvelope(4));
 
     await expect(boardUserService.getPosts('BBS01', { page: 0, size: 20 }))
       .resolves.toMatchObject({ list: [post], total: 1 });
-    await expect(boardUserService.getPost('BBS01', 9)).resolves.toEqual(post);
-    await expect(boardUserService.createPost(saveRequest)).resolves.toBe(21);
-    await expect(boardUserService.updatePost('BBS01', 9, saveRequest)).resolves.toBeUndefined();
-    await expect(boardUserService.deletePost('BBS01', 9)).resolves.toBeUndefined();
     await expect(boardUserService.likePost('BBS01', 9)).resolves.toBe(4);
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'boards/BBS01', {
       params: { page: 0, size: 20 },
     });
-    expect(client.getRaw).toHaveBeenNthCalledWith(2, 'boards/BBS01/posts/9', undefined);
     expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
-      url: 'boards/posts',
-      method: 'post',
-      data: saveRequest,
-    });
-    expect(client.requestRaw).toHaveBeenNthCalledWith(2, {
-      url: 'boards/BBS01/posts/9',
-      method: 'put',
-      data: saveRequest,
-    });
-    expect(client.requestRaw).toHaveBeenNthCalledWith(3, {
-      url: 'boards/BBS01/posts/9',
-      method: 'delete',
-    });
-    expect(client.requestRaw).toHaveBeenNthCalledWith(4, {
       url: 'boards/BBS01/posts/9/like',
       method: 'patch',
     });
   });
 
-  it('writeOnly pswd가 상세 응답에 섞이면 경계에서 거부한다', async () => {
-    client.getRaw.mockResolvedValueOnce(successEnvelope({ ...post, pswd: 'secret' }));
+  /*
+    [2026-09-07] 상세 조회·등록·수정·삭제 계약을 이 파일에서 걷었다 — 해당 메서드가
+    대체된 표면이라 제거됐기 때문이다(축 2 실측: 호출부 0).
 
-    await expect(boardUserService.getPost('BBS01', 9)).rejects.toThrow(
-      '생성 API 응답에 허용되지 않은 필드가 있습니다.',
-    );
-  });
-
-  it('필수 본문이 없는 게시글 요청은 transport 전에 거부한다', async () => {
-    await expect(boardUserService.createPost({ bbsId: 'BBS01', pstTtl: '제목' } as never))
-      .rejects.toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
-    expect(client.requestRaw).not.toHaveBeenCalled();
-  });
+    같은 계약은 정본 경로가 계속 검증한다:
+      · 등록·수정·삭제·추천 — app/actions/__tests__/boardActions.test.ts
+        (첨부 동반 /with-files 경로와 part 구성 포함, DEC-OPS-044)
+      · 저장 payload 경계 — app/actions/__tests__/board-save-payload-contract.test.ts
+    커버리지를 지운 것이 아니라 소유자가 옮겨 간 것이다.
+  */
 });

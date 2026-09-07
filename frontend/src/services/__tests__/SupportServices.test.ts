@@ -10,7 +10,6 @@ import client from '@/lib/api/client';
 import * as pollService from '@/services/business/user/poll/PollUserService';
 import { commentService } from '@/services/business/comment/commentService';
 import { fileService } from '@/services/foundation/file/FileService';
-import * as securityService from '@/services/foundation/security/SecurityAdminService';
 
 vi.mock('@/lib/api/client', () => ({
   default: (() => {
@@ -65,8 +64,9 @@ describe('Common Support Services', () => {
   expect(client.getRaw).toHaveBeenCalledWith('files/101', undefined);
   });
 
-  it('securityService calls correct endpoints', async () => {
-  await securityService.getAuthorList({});
-  expect(client.get).toHaveBeenCalledWith('admin/system/authorities', expect.any(Object));
-  });
+  /*
+    [2026-09-07] securityService(= security/SecurityAdminService) 블록을 걷었다.
+    그 파일은 system/AuthorAdminService·RoleAdminService·GroupAdminService 의 죽은 중복이었고
+    화면은 전부 정본 쪽을 쓴다. 같은 경로 계약은 AuthorAdminService.test.ts 가 검증한다.
+  */
 });
