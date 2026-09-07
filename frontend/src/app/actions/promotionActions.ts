@@ -2,17 +2,24 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
+import { bannerAdminService } from '@/services/foundation/system/BannerAdminService';
+import { popupAdminService } from '@/services/foundation/system/PopupAdminService';
 import { Banner, Popup } from '@/types/foundation/banner';
-import {
-    createPopupOperation,
-    deleteBannerOperation,
-    deletePopupOperation,
-    insertBannerOperation,
-    updateBannerOperation,
-    updatePopupOperation,
-} from '@/types/generated-operations';
 import { extractErrorMessage, extractFieldErrors } from './actionUtils';
+
+/*
+  [2026-09-07] 생성 실행기 직접 호출 → 서비스 위임.
+
+  종전에는 이 파일만 `executeGeneratedOperation(insertBannerOperation, ...)` 처럼 디스크립터를
+  직접 불렀고, 그 결과 BannerAdminService·PopupAdminService 의 등록·수정·삭제 6메서드가
+  **같은 일을 하는 두 번째 경로로 살아 있으면서 아무도 부르지 않는 상태**가 됐다
+  (operation-consumer-census 축 2 가 고아로 집계 — DEC-OPS-051).
+
+  저장소의 다른 action 6개(code·comment·dept·menu·network·user)는 이미 서비스에 위임한다.
+  서비스 메서드가 모두 `config?: AxiosRequestConfig` 를 받으므로 서버 컨텍스트의 쿠키 주입도
+  그대로 통과한다 — action 은 서버 관심사(쿠키·revalidatePath·오류 정형화)만 갖고,
+  operation 결속은 서비스 한 곳이 소유한다.
+*/
 
 interface ActionResponse {
     success: boolean;
@@ -34,14 +41,10 @@ export async function saveBannerAction(prevState: unknown, { mode, data, id }: S
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
         if (mode === 'create') {
-            await executeGeneratedOperation(insertBannerOperation, { body: data, config: axiosConfig });
+            await bannerAdminService.createBanner(data, axiosConfig);
         } else {
             if (id === undefined) throw new Error('수정할 배너 ID가 없습니다.');
-            await executeGeneratedOperation(updateBannerOperation, {
-                path: { bnrSn: id },
-                body: data,
-                config: axiosConfig,
-            });
+            await bannerAdminService.updateBanner(id, data, axiosConfig);
         }
 
         revalidatePath('/admin/system/banner');
@@ -60,10 +63,7 @@ export async function deleteBannerAction(prevState: unknown, bnrSn: number): Pro
         const accessToken = cookieStore.get('accessToken')?.value;
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-        await executeGeneratedOperation(deleteBannerOperation, {
-            path: { bnrSn },
-            config: axiosConfig,
-        });
+        await bannerAdminService.deleteBanner(bnrSn, axiosConfig);
 
         revalidatePath('/admin/system/banner');
         // [2026-08-09 비대칭 정정] 저장은 '/' 를 재검증하는데 삭제는 하지 않았다.
@@ -84,14 +84,10 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
         if (mode === 'create') {
-            await executeGeneratedOperation(createPopupOperation, { body: data, config: axiosConfig });
+            await popupAdminService.createPopup(data, axiosConfig);
         } else {
             if (id === undefined) throw new Error('수정할 팝업 ID가 없습니다.');
-            await executeGeneratedOperation(updatePopupOperation, {
-                path: { popupSn: id },
-                body: data,
-                config: axiosConfig,
-            });
+            await popupAdminService.updatePopup(id, data, axiosConfig);
         }
 
         revalidatePath('/admin/system/banner');
@@ -110,10 +106,7 @@ export async function deletePopupAction(prevState: unknown, id: number): Promise
         const accessToken = cookieStore.get('accessToken')?.value;
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-        await executeGeneratedOperation(deletePopupOperation, {
-            path: { popupSn: id },
-            config: axiosConfig,
-        });
+        await popupAdminService.deletePopup(id, axiosConfig);
 
         revalidatePath('/admin/system/banner');
         // 배너와 같은 비대칭이었다 — 지운 팝업이 공개 화면에 계속 떴다.
