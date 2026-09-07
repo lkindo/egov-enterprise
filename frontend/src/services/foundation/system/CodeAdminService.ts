@@ -8,8 +8,6 @@ import {
     createCmmnCodeOperation,
     createDetailCodeOperation,
     deleteAdministCodeOperation,
-    deleteClCodeOperation,
-    deleteCmmnCodeOperation,
     deleteDetailCodeOperation,
     getAdministCodeDetailOperation,
     getAdministCodeListOperation,
@@ -292,10 +290,6 @@ class CodeAdminService extends AdminService {
         });
     }
 
-    async deleteClCode(clsfCd: string, config?: AxiosRequestConfig): Promise<void> {
-        return this.executeGenerated(deleteClCodeOperation, { path: { clCode: clsfCd }, config });
-    }
-
     // --- 공통코드 (Common Code) ---
     async getCmmnCodeList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<CmmnCode>> {
         const response = await this.executeGenerated(getCmmnCodeListOperation, {
@@ -324,10 +318,6 @@ class CodeAdminService extends AdminService {
             body: data as components['schemas']['CmmnCodeDto'],
             config,
         });
-    }
-
-    async deleteCmmnCode(cdId: string, config?: AxiosRequestConfig): Promise<void> {
-        return this.executeGenerated(deleteCmmnCodeOperation, { path: { codeId: cdId }, config });
     }
 
     /**
