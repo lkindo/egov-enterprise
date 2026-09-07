@@ -10,7 +10,7 @@
   ],
   "expected": {
     "operationCount": 379,
-    "unwiredMax": 22
+    "unwiredMax": 19
   },
   "entries": [
     {
@@ -58,24 +58,6 @@
       "evidence": []
     },
 
-    {
-      "operationId": "getAbsences",
-      "category": "unwired",
-      "note": "The /admin/user/absences screen renders the ABSENCES tab but discloses that absence data is not connected and that the list shows all users. Wiring these three operations is what removes that disclosure.",
-      "evidence": []
-    },
-    {
-      "operationId": "getAbsence",
-      "category": "unwired",
-      "note": "Absence detail — same unwired tab as getAbsences.",
-      "evidence": []
-    },
-    {
-      "operationId": "updateAbsence",
-      "category": "unwired",
-      "note": "Absence update — same unwired tab as getAbsences.",
-      "evidence": []
-    },
 
     {
       "operationId": "createRespondent",

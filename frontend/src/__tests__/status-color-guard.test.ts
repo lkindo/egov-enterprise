@@ -128,7 +128,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   CommunityBoardsWriteClient(text-rose-500 등 6건)의 하드코딩이 사라졌다 — 개선분 확정(하향).
 // [2026-09-06 DEC-OPS-038] 522 → 521: 알림 발송 데모(notification-sender.tsx)를 걷으며 그 안의 status 팔레트 하드코딩 1건이 사라졌다.
 // [2026-09-06 DEC-OPS-040] 521 → 512: 약식 결재 화면(IsmClient.tsx)이 /approvals 로 통합돼 사라지며 그 안의 status 팔레트 하드코딩 9건이 사라졌다 — 개선분 확정(하향).
-const BASELINE = 512;
+// [2026-09-07 DEC-OPS-049] 512 -> 507. 부재 탭의 "연동되지 않았습니다" 고지 블록이 amber 리터럴
+//   5건(border/bg/text 라이트·다크)을 쓰고 있었는데, 배선하면서 그 블록을 semantic 토큰
+//   (border/bg-muted/text-muted-foreground · destructive-emphasis)으로 교체해 사라졌다.
+//   실제 감소분이므로 확정한다 — 위반을 숨기려 올리는 방향이 아니다(H2).
+const BASELINE = 507;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
