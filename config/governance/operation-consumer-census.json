@@ -13,8 +13,8 @@
   ],
   "expected": {
     "operationCount": 379,
-    "unwiredMax": 19,
-    "screenOrphanMax": 71
+    "unwiredMax": 18,
+    "screenOrphanMax": 64
   },
   "entries": [
     {
@@ -36,6 +36,42 @@
       "evidence": ["frontend/src/app/api/auth/reissue/route.ts"]
     },
 
+    {
+      "operationId": "getInformalSanctionList",
+      "category": "superseded-surface",
+      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
+      "supersededBy": ["getPending", "getMyHistory", "getProcessed", "createApproval", "confirm", "cancelApproval"]
+    },
+    {
+      "operationId": "getInformalSanction",
+      "category": "superseded-surface",
+      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
+      "supersededBy": ["getPending", "getMyHistory", "getProcessed", "createApproval", "confirm", "cancelApproval"]
+    },
+    {
+      "operationId": "registerInformalSanction",
+      "category": "superseded-surface",
+      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
+      "supersededBy": ["getPending", "getMyHistory", "getProcessed", "createApproval", "confirm", "cancelApproval"]
+    },
+    {
+      "operationId": "updateInformalSanction",
+      "category": "superseded-surface",
+      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
+      "supersededBy": ["getPending", "getMyHistory", "getProcessed", "createApproval", "confirm", "cancelApproval"]
+    },
+    {
+      "operationId": "deleteInformalSanction",
+      "category": "superseded-surface",
+      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
+      "supersededBy": ["getPending", "getMyHistory", "getProcessed", "createApproval", "confirm", "cancelApproval"]
+    },
+    {
+      "operationId": "confirmInformalSanction",
+      "category": "superseded-surface",
+      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
+      "supersededBy": ["getPending", "getMyHistory", "getProcessed", "createApproval", "confirm", "cancelApproval"]
+    },
     {
       "operationId": "checkHealth",
       "category": "unwired",
@@ -85,13 +121,7 @@
     {
       "operationId": "getTemplate",
       "category": "unwired",
-      "note": "Survey template detail. The template screen lists and writes templates but never opens one by id, so neither this nor its alias path is consumed.",
-      "evidence": []
-    },
-    {
-      "operationId": "getTemplate_1",
-      "category": "unwired",
-      "note": "Alias path of getTemplate under /api/v1/surveys. It is listed rather than derived because the base operation is itself unconsumed — the alias rule only covers duplicates whose base is live.",
+      "note": "Survey template detail. The template screen lists and writes templates but never opens one by id. Its /api/v1/surveys alias is derived from this entry, not listed separately.",
       "evidence": []
     },
 

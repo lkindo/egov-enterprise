@@ -26,18 +26,18 @@ export type ApprovalDraftRequest = components['schemas']['ApprovalDraftRequest']
  * status … 어느 것도 실재하지 않는다). 응답 키 변환 경로도 서버·클라 양쪽에 없어, 목록은 전 행이
  * 빈 값이고 상세 제목에는 문자열 `#undefined` 가 그대로 렌더됐다.
  *
- * 같은 결함을 관리자 화면(ISM)이 이미 겪고 고쳤다 — {@link IsmAdminService} 의 주석이 그 이력을
- * 남기고 "로컬 인터페이스 재선언 금지" 를 명문화한다. 여기서도 생성 타입을 재수출해 SSOT 를 공유한다.
+ * 같은 결함을 관리자 화면(ISM)이 이미 겪고 고쳤다 — 그 이력과 "로컬 인터페이스 재선언 금지" 는
+ * `./informal-sanction-vocabulary` 주석이 잇는다(DEC-OPS-040 으로 ISM 화면이 통합되며 서비스는 걷혔다).
  */
-export type { InformalSanctionDto } from '@/services/foundation/system/IsmAdminService';
+export type { InformalSanctionDto } from './informal-sanction-vocabulary';
 export {
   SANCTION_STATUS,
   isSanctionPending,
   type SanctionStatusCode,
-} from '@/services/foundation/system/IsmAdminService';
+} from './informal-sanction-vocabulary';
 
-import type { InformalSanctionDto } from '@/services/foundation/system/IsmAdminService';
-import { SANCTION_STATUS } from '@/services/foundation/system/IsmAdminService';
+import type { InformalSanctionDto } from './informal-sanction-vocabulary';
+import { SANCTION_STATUS } from './informal-sanction-vocabulary';
 
 const ApprovalDecisionRequestSchema = ApprovalConfirmRequestSchema.superRefine((request, context) => {
   if (request.status === SANCTION_STATUS.REJECTED && !request.reason?.trim()) {

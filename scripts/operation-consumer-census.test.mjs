@@ -401,6 +401,91 @@ test('서비스 밖 호출부와 테스트 파일은 소비 판정에서 제외�
   assert.equal(isTestFile('frontend/src/services/A.ts'), false);
 });
 
+test("superseded-surface 는 도피처가 아니다 — 대체자가 실재하고 소비 중이어야 통과한다", () => {
+  const apiDoc = fixtureDoc({
+    '/api/v1/old': { get: fixtureOperation('getOld') },
+    '/api/v1/new': { get: fixtureOperation('getNew') },
+    '/api/v1/alsoDead': { get: fixtureOperation('getAlsoDead') },
+  });
+  const boundaries = { records: [{ operationId: 'getNew' }] };
+  const ledger = (supersededBy) => ({
+    expected: { unwiredMax: 1 },
+    entries: [
+      { operationId: 'getOld', category: 'superseded-surface', note: '대체됨', supersededBy },
+      { operationId: 'getAlsoDead', category: 'unwired', note: 'debt', evidence: [] },
+    ],
+  });
+
+  // 살아 있는 대체자를 지목하면 통과하고, 부채로도 세지 않는다.
+  const ok = analyze({ apiDoc, boundaries, ledger: ledger(['getNew']) });
+  assert.deepEqual(ok.errors, []);
+  assert.equal(ok.summary.unwired, 1, 'superseded 는 unwired 부채에 들어가지 않는다');
+
+  // 대체자를 적지 않으면 red — 기록만으로 통과시키지 않는다.
+  assert.equal(
+    analyze({ apiDoc, boundaries, ledger: ledger([]) }).errors.map((e) => e.code)[0],
+    'MISSING_SUPERSEDED_BY',
+  );
+
+  // 없는 operation 을 대체자로 적으면 red.
+  assert.equal(
+    analyze({ apiDoc, boundaries, ledger: ledger(['getGhost']) }).errors.map((e) => e.code)[0],
+    'UNKNOWN_SUPERSEDED_BY',
+  );
+
+  // 대체자 자신이 죽어 있으면 red — 죽은 표면으로 죽은 표면을 정당화하지 못한다.
+  assert.equal(
+    analyze({ apiDoc, boundaries, ledger: ledger(['getAlsoDead']) }).errors.map((e) => e.code)[0],
+    'DEAD_SUPERSEDED_BY',
+  );
+});
+
+test('별칭은 기본이 소비 중이거나 원장에 등재됐을 때 파생된다 — 같은 사유를 두 벌로 적지 않는다', () => {
+  const apiDoc = fixtureDoc({
+    '/api/v1/things': { get: fixtureOperation('getThings') },
+    '/api/v1/admin/system/things': { get: fixtureOperation('getThings_1') },
+  });
+
+  // 기본이 원장에 등재되면 별칭은 자동 파생이다(별칭은 새 표면이 아니다).
+  const ledgeredBase = analyze({
+    apiDoc,
+    boundaries: { records: [] },
+    ledger: {
+      expected: { unwiredMax: 1 },
+      entries: [{ operationId: 'getThings', category: 'unwired', note: '화면 없음', evidence: [] }],
+    },
+  });
+  assert.deepEqual(ledgeredBase.errors, []);
+  assert.equal(ledgeredBase.summary.aliasDerived, 1);
+  assert.equal(ledgeredBase.summary.unwired, 1, '별칭이 부채를 두 번 세지 않는다');
+
+  // 그 상태에서 별칭까지 원장에 적으면 중복이라 red 다.
+  assert.deepEqual(
+    analyze({
+      apiDoc,
+      boundaries: { records: [] },
+      ledger: {
+        expected: { unwiredMax: 2 },
+        entries: [
+          { operationId: 'getThings', category: 'unwired', note: '화면 없음', evidence: [] },
+          { operationId: 'getThings_1', category: 'unwired', note: '중복 기재', evidence: [] },
+        ],
+      },
+    }).errors.map((e) => e.code),
+    ['DERIVABLE_LEDGER_ENTRY'],
+  );
+
+  // 기본도 별칭도 판단이 없으면 둘 다 red 다 — 파생은 판단을 대신하지 않는다.
+  assert.equal(
+    analyze({
+      apiDoc,
+      boundaries: { records: [] },
+      ledger: { expected: { unwiredMax: 0 }, entries: [] },
+    }).errors.filter((e) => e.code === 'UNCONSUMED_OPERATION').length,
+    2,
+  );
+});
+
 test('보조 함수는 경로 접미와 springdoc 접미를 정확히 다룬다', () => {
   assert.equal(pathSuffix('/api/v1/auth/login'), '/auth/login');
   assert.equal(pathSuffix('/api/v2/things'), '/things');

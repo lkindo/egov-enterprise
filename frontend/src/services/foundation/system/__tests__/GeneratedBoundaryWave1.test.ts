@@ -15,7 +15,6 @@ vi.mock('@/lib/api/client', () => ({ default: client }));
 import { attachmentIntegrityService } from '../AttachmentIntegrityService';
 import { auditAdminService } from '../AuditAdminService';
 import { authorAdminService } from '../AuthorAdminService';
-import { ismAdminService, SANCTION_STATUS } from '../IsmAdminService';
 import { systemLogAdminService } from '../SystemLogAdminService';
 import { templateAdminService, type TmplatInfo } from '../TemplateAdminService';
 
@@ -100,16 +99,6 @@ describe('foundation system generated operation 경계', () => {
       '생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.',
     );
     expect(client.requestRaw).not.toHaveBeenCalled();
-  });
-
-  it('ISM 승인 요청은 generated PATCH operation을 사용한다', async () => {
-    await ismAdminService.confirmInfrmlSanctn(7, SANCTION_STATUS.REJECTED, '증빙 누락');
-
-    expect(client.requestRaw).toHaveBeenCalledWith({
-      url: 'informal-sanctions/7/confirm',
-      method: 'patch',
-      params: { confmAt: 'R', returnResn: '증빙 누락' },
-    });
   });
 
   it('사용자 로그 목록은 generated operation과 정규화된 query를 사용한다', async () => {

@@ -209,7 +209,6 @@
           "src/services/foundation/system/CommunityAdminService.ts",
           "src/services/foundation/system/HpcmAdminService.ts",
           "src/services/foundation/system/InternetSvcGuidanceAdminService.ts",
-          "src/services/foundation/system/IsmAdminService.ts",
           "src/services/foundation/system/PopupAdminService.ts",
           "src/services/foundation/system/StatsAdminService.ts",
           "src/services/foundation/system/TemplateAdminService.ts",
