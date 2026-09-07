@@ -6,7 +6,8 @@
     "Every documented OpenAPI operation must be consumed by the frontend, mechanically derivable as a springdoc alias duplicate, or listed here with a category and a reason.",
     "bff-route-handler and non-browser-consumer entries are machine-verified: an evidence file must exist and reference the operation path suffix. A category label alone proves nothing.",
     "unwired entries are real debt. expected.unwiredMax is a monotonic ratchet — raising it is a visible diff, never a silent exception.",
-    "Alias duplicates (springdoc _N suffixes over multi-path @RequestMapping) are derived, never listed. Listing one is an error."
+    "Alias duplicates (springdoc _N suffixes over multi-path @RequestMapping) are derived, never listed. Listing one is an error.",
+    "LIMITATION: consumed means a production TypeScript module calls the operation — not that a user-reachable screen uses it. A service method whose only caller is its own unit test still counts as consumed (measured: deleteRespondent). That second axis needs a separate gate; see GAP-WIRING-001."
   ],
   "expected": {
     "operationCount": 379,
@@ -62,19 +63,19 @@
     {
       "operationId": "createRespondent",
       "category": "unwired",
-      "note": "Survey respondent write path; /admin/survey/respondents currently only lists and deletes respondents.",
+      "note": "Respondent register write path, deliberately unwired. tb_srvy_rspdnt holds personal data (name, gender, birthdate, phone) and is NOT linked to survey results by id — tb_srvy_rslt carries only rspns_nm as a string (V2_0). No code path creates respondent rows, so the register is structurally empty. Wiring a create form would open a new personal-data entry surface with no downstream consumer; that is a product decision, not a wiring gap.",
       "evidence": []
     },
     {
       "operationId": "getRespondent",
       "category": "unwired",
-      "note": "Survey respondent detail — no consumer on the respondents screen.",
+      "note": "Respondent detail — same deliberate hold as createRespondent (personal data, register unlinked from results).",
       "evidence": []
     },
     {
       "operationId": "updateRespondent",
       "category": "unwired",
-      "note": "Survey respondent update — no consumer on the respondents screen.",
+      "note": "Respondent update — same deliberate hold as createRespondent (personal data, register unlinked from results).",
       "evidence": []
     },
 

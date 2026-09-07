@@ -18,6 +18,18 @@
  * `generated-api-boundaries` census 도 이 축을 못 본다 — 그것은 "호출부가 있는 것 중 생성 경로를
  * 쓰는 비율"을 재므로, 호출부가 0 이면 애초에 분모에서 빠진다(실측: adoption 100% 인데 미소비 60건).
  *
+ * [이 게이트가 증명하는 것과 증명하지 못하는 것 — 2026-09-07 실측으로 확정]
+ * 증명하는 것: 각 operation 을 부르는 **생산 TypeScript 모듈이 존재한다**.
+ * 증명하지 못하는 것: 그 호출부가 **사용자가 도달하는 화면에서 실제로 쓰인다**.
+ *
+ * <p>실측 반례: `deleteRespondent` 는 `SurveyAdminService.deleteRespondent()` 가 생성 실행기를
+ * 부르므로 consumed 로 집계되지만, 그 서비스 메서드를 부르는 곳은 **자기 단위 테스트뿐**이다
+ * (app/·components/ 호출부 0). 즉 백엔드에서 `UnreachableServiceLinter` 가 닫았던
+ * "유일한 참조가 단위 테스트" 패턴이 프런트 서비스 계층에서 한 겹 아래로 내려가 있다.
+ *
+ * <p>그 축(서비스 메서드 → 화면 도달성)은 별도 게이트가 필요하며 GAP-WIRING-001 에 등재돼 있다.
+ * 이 게이트의 unwired 수치를 "화면에서 못 쓰는 기능의 총량" 으로 읽으면 **과소평가**다.
+ *
  * [규칙] 모든 operation 은 다음 셋 중 정확히 하나다.
  *   1. consumed      — 프런트 호출부가 있다(generated-api-boundaries 레코드).
  *   2. alias-derived — springdoc 이 다중 `@RequestMapping` 경로 때문에 만든 `_N` 접미 중복이고,
