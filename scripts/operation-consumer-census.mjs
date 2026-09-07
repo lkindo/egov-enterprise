@@ -75,6 +75,14 @@ export const CATEGORIES = Object.freeze({
   'non-browser-consumer': { requiresEvidence: true, countsAsDebt: false },
   /** 소비자가 없다. 부채이며 래칫에 걸린다. */
   unwired: { requiresEvidence: false, countsAsDebt: true },
+  /**
+   * 다른 네임스페이스가 같은 일을 하고 화면은 그쪽을 쓴다 — "아무도 안 만든 기능" 과는 다르다.
+   *
+   * <p>기록만으로 통과시키지 않는다: `supersededBy` 에 적은 operation 이 **실재하고 실제로
+   * 소비 중**이어야 한다(기계 검증). 대체자가 없거나 그 자신도 죽어 있으면 red 이므로
+   * 이 카테고리는 `unwired` 를 피하는 도피처가 되지 못한다.
+   */
+  'superseded-surface': { requiresEvidence: false, countsAsDebt: false, requiresSupersededBy: true },
 });
 
 /** `/api/v1/auth/login` → `/auth/login`. BFF·부하 테스트는 base URL 을 따로 들고 접미만 쓴다. */
@@ -112,10 +120,14 @@ export function readOperations(apiDoc) {
 
 /**
  * 별칭 판정. `_N` 접미만으로는 부족하다 — 서로 다른 핸들러의 이름 충돌일 수도 있다.
- * 기본 operationId 가 **같은 메서드·같은 태그·같은 파라미터 집합**을 갖고 **실제로 소비 중**일 때만
- * 별칭으로 인정한다. 하나라도 어긋나면 별칭이 아니며 원장 등재 대상이 된다.
+ * 기본 operationId 가 **같은 메서드·같은 태그·같은 파라미터 집합**을 가져야 하고, 그 기본이
+ * **소비 중이거나 원장에 사유와 함께 등재돼** 있어야 한다.
+ *
+ * <p>원장 등재까지 인정하는 이유: 별칭은 같은 핸들러의 다른 경로일 뿐 <b>새 표면이 아니다</b>.
+ * 기본 쪽에 이미 판단과 사유가 적혀 있는데 별칭을 따로 적게 하면 같은 사유가 두 벌로 복제되고,
+ * 한쪽만 갱신되는 순간 원장이 스스로 모순된다.
  */
-export function isAliasDuplicate(operation, byOperationId, consumed) {
+export function isAliasDuplicate(operation, byOperationId, consumed, ledgered = new Set()) {
   const base = baseOperationId(operation.operationId);
   if (base === operation.operationId) return false;
   const target = byOperationId.get(base);
@@ -123,7 +135,7 @@ export function isAliasDuplicate(operation, byOperationId, consumed) {
   return target.method === operation.method
     && target.tag === operation.tag
     && target.parameterKey === operation.parameterKey
-    && consumed.has(base);
+    && (consumed.has(base) || ledgered.has(base));
 }
 
 export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_ROOT }) {
@@ -152,7 +164,7 @@ export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_RO
       classified.consumed.push(operation);
       continue;
     }
-    if (isAliasDuplicate(operation, byOperationId, consumed)) {
+    if (isAliasDuplicate(operation, byOperationId, consumed, ledgerByOperationId)) {
       classified.alias.push(operation);
       continue;
     }
@@ -185,7 +197,7 @@ export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_RO
       });
       continue;
     }
-    if (isAliasDuplicate(operation, byOperationId, consumed)) {
+    if (isAliasDuplicate(operation, byOperationId, consumed, ledgerByOperationId)) {
       errors.push({
         code: 'DERIVABLE_LEDGER_ENTRY',
         operationId: entry.operationId,
@@ -202,6 +214,36 @@ export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_RO
       errors.push({ code: 'MISSING_NOTE', operationId: entry.operationId, message: 'every ledger entry must state why in `note`' });
     }
     if (category.countsAsDebt) debtCount += 1;
+
+    if (category.requiresSupersededBy) {
+      const replacements = Array.isArray(entry.supersededBy) ? entry.supersededBy : [];
+      if (replacements.length === 0) {
+        errors.push({
+          code: 'MISSING_SUPERSEDED_BY',
+          operationId: entry.operationId,
+          message: `category '${entry.category}' must name the operations that took over in supersededBy`,
+        });
+      } else {
+        // 대체자가 실재하고 실제로 소비 중이어야 한다 — 죽은 표면으로 죽은 표면을 정당화하지 못한다.
+        const missing = replacements.filter((id) => !byOperationId.has(id));
+        const dead = replacements.filter((id) => byOperationId.has(id) && !consumed.has(id));
+        if (missing.length > 0) {
+          errors.push({
+            code: 'UNKNOWN_SUPERSEDED_BY',
+            operationId: entry.operationId,
+            message: `supersededBy names operations that do not exist: ${missing.join(', ')}`,
+          });
+        }
+        if (dead.length > 0) {
+          errors.push({
+            code: 'DEAD_SUPERSEDED_BY',
+            operationId: entry.operationId,
+            message: `supersededBy names operations that are themselves unconsumed: ${dead.join(', ')}`,
+          });
+        }
+      }
+    }
+
     if (!category.requiresEvidence) continue;
 
     const evidence = Array.isArray(entry.evidence) ? entry.evidence : [];

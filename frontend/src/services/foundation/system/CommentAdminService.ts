@@ -42,7 +42,7 @@ function withoutConfigParams(config?: AxiosRequestConfig): AxiosRequestConfig | 
  * 경로 주의: 백엔드 관리자 댓글 API 는 `@RequestMapping("/api/v1/admin/comments")` 로,
  * AdminService 의 기본 조립 규칙(`admin/{category=system}/{path}`)이 만드는
  * `admin/system/comments` 와 일치하지 않는다(목록·삭제 전건 404 원인).
- * 따라서 IsmAdminService 선례와 동일하게 ApiService 를 직접 상속해 경로를 확정한다.
+ * 따라서 AdminService 조립 규칙에 기대지 않고 ApiService 를 직접 상속해 경로를 확정한다.
  */
 class CommentAdminService extends ApiService {
   constructor() {
