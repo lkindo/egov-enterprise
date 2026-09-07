@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 68,
-    "candidateCount": 148
+    "secondaryActionBoundaries": 69,
+    "candidateCount": 149
   },
   "entries": [
     {
@@ -750,6 +750,26 @@
       "testEvidence": [
         "frontend/src/app/admin/operation/memo-reports/__tests__/MemoReportDetail.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleToggleAbsence[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleToggleAbsence",
+      "writeSinks": [
+        "userAbsenceAdminService.updateAbsence"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.absence.test.tsx"
       ]
     },
     {

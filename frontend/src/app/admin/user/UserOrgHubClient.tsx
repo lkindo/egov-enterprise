@@ -31,7 +31,9 @@ import { type LucideIcon,
   Info,
   Save,
   GripVertical,
-  KeyRound } from 'lucide-react';
+  KeyRound,
+  Loader2,
+  UserCheck } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -42,7 +44,13 @@ import { cn } from '@/lib/utils';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage } from '@/types/foundation/user';
 import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
+import {
+  ABSENT,
+  PRESENT,
+  userAbsenceAdminService,
+} from '@/services/foundation/system/UserAbsenceAdminService';
 import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { MasterDetailLayout } from '@/app/components/patterns/master-detail-page';
@@ -469,6 +477,73 @@ export default function UserOrgHubClient({
     return (Array.isArray(list) ? list.filter(Boolean) : []) as UserManage[];
   }, [usersData]);
 
+  /*
+    [2026-09-07] 부재(자리비움) 배선. 종전에는 이 탭이 전체 사용자를 그린 뒤 "부재 정보는 아직
+    연동되지 않았습니다" 라고 고지만 했다(operation-consumer-census 의 unwired 부채).
+
+    ⚠ 조인 축은 esntlId 다 — tb_user_absn.user_id 는 이름과 달리 로그인 ID 가 아니라 사용자 PK 이고
+      FK 도 tb_user_info(esntl_id) 를 가리킨다(V2_14). 반면 이 허브의 selectedItemId 는 userId(로그인 ID)라
+      두 키가 다르므로, 부재 상태는 반드시 사용자 행의 esntlId 로 찾는다.
+
+    ⚠ 서버는 '기록이 있는 사용자' 만 돌려준다 — 목록에 없는 사용자는 부재가 아니며, 복귀한 사용자는
+      userAbsnYn='N' 행으로 남는다. 그래서 '없음 = 정상' 과 'N = 정상' 을 같게 다룬다.
+  */
+  const {
+    data: absenceRecords,
+    isLoading: isAbsencesLoading,
+    isError: isAbsencesError,
+    error: absencesError,
+    refetch: refetchAbsences,
+  } = useQuery({
+    queryKey: ['admin-user-absences'],
+    queryFn: () => userAbsenceAdminService.getAbsences(),
+    enabled: activeTab === 'ABSENCES',
+  });
+
+  const absenceByEsntlId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const record of absenceRecords ?? []) {
+      if (record?.userId) map.set(record.userId, record.userAbsnYn ?? PRESENT);
+    }
+    return map;
+  }, [absenceRecords]);
+
+  /** 조회가 실패했으면 '전원 정상' 이라고 말하지 않는다 — 모르는 것과 정상인 것은 다르다. */
+  const absenceOf = (user: UserManage): string | null => {
+    if (isAbsencesError) return null;
+    if (!user?.esntlId) return null;
+    return absenceByEsntlId.get(user.esntlId) === ABSENT ? ABSENT : PRESENT;
+  };
+
+  const [absencePendingId, setAbsencePendingId] = useState<string | null>(null);
+  const absencePendingRef = useRef(false);
+
+  const handleToggleAbsence = async (user: UserManage) => {
+    const esntlId = user?.esntlId;
+    if (absencePendingRef.current || !esntlId) return;
+    const current = absenceOf(user);
+    if (current === null) return;
+    const next = current === ABSENT ? PRESENT : ABSENT;
+
+    absencePendingRef.current = true;
+    setAbsencePendingId(esntlId);
+    try {
+      await userAbsenceAdminService.updateAbsence(esntlId, next);
+      toast(
+        next === ABSENT
+          ? `${user.userNm ?? user.userId}님을 부재로 표시했습니다.`
+          : `${user.userNm ?? user.userId}님을 복귀 처리했습니다.`,
+        'success',
+      );
+      queryClient.invalidateQueries({ queryKey: ['admin-user-absences'] });
+    } catch (error) {
+      toast(extractErrorMessage(error, '부재 상태를 변경하지 못했습니다.'), 'error');
+    } finally {
+      absencePendingRef.current = false;
+      setAbsencePendingId(null);
+    }
+  };
+
   /**
    * 검색 입력은 사용자/부서 탭이 공유한다. USERS 탭에서 입력한 사용자 검색어가 부서 조회에 섞이면
    * '부서 이동' 모달의 대상 목록이 그 키워드로 걸러져 비어 버린다 — 부서 탭에서만 키워드를 태운다.
@@ -839,19 +914,72 @@ export default function UserOrgHubClient({
         <div className="flex items-center gap-4 py-1">
           <div className={cn(
             "w-12 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-md transition-transform group-hover:rotate-6",
-            selectedItemId === user?.esntlId ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+            // [2026-09-07] selectedItemId 는 onRowClick·keyField·상세조회가 모두 쓰는 userId(로그인 ID)인데
+            //   이 두 줄만 esntlId 와 비교해 **선택 강조가 한 번도 켜지지 않았다**. 부재 배선이 같은 파일에
+            //   esntlId 축을 새로 들여오므로, 어느 키가 선택 키인지 모호한 채로 두지 않는다.
+            selectedItemId === user?.userId ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
           )}>
             {user?.userNm?.[0]}
           </div>
           <div className="space-y-0.5">
-            <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
+            <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === user.userId ? "text-white" : "text-foreground")}>
               {user.userNm}
             </h4>
             <p className="text-[10px] font-bold tracking-tight text-muted-foreground">{user.userId}</p>
           </div>
         </div>
       )
-    }
+    },
+    // 부재 탭에서만 상태·조치 열을 붙인다. 사용자 탭의 열 구성은 건드리지 않는다.
+    ...(activeTab === 'ABSENCES' ? [
+      {
+        header: '부재 여부',
+        className: 'w-32',
+        accessor: (user: UserManage) => {
+          const state = absenceOf(user);
+          // 조회 실패나 esntlId 부재는 '정상' 이 아니라 '알 수 없음' 이다.
+          if (state === null) {
+            return <span className="text-xs font-bold text-muted-foreground">알 수 없음</span>;
+          }
+          return state === ABSENT
+            ? <span className="text-xs font-bold text-warning-emphasis">부재</span>
+            : <span className="text-xs font-bold text-muted-foreground">정상</span>;
+        },
+      },
+      {
+        header: '조치',
+        className: 'text-right w-36',
+        accessor: (user: UserManage) => {
+          const state = absenceOf(user);
+          if (state === null) return null;
+          const isPending = absencePendingId !== null && absencePendingId === user.esntlId;
+          const label = state === ABSENT
+            ? `${user.userNm ?? user.userId} 복귀 처리`
+            : `${user.userNm ?? user.userId} 부재 처리`;
+          return (
+            <div className="flex justify-end pr-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={absencePendingId !== null}
+                aria-busy={isPending}
+                aria-label={isPending ? `${label} 중` : label}
+                onClick={(event) => { event.stopPropagation(); void handleToggleAbsence(user); }}
+                className="gap-2 h-9"
+              >
+                {isPending
+                  ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                  : (state === ABSENT
+                      ? <UserCheck size={14} aria-hidden="true" />
+                      : <UserMinus size={14} aria-hidden="true" />)}
+                {/* 같은 행에 상태 '부재/정상' 이 함께 있어 동사 없이 '부재' 만 쓰면 상태 표시와 구분되지 않는다. */}
+                {state === ABSENT ? '복귀 처리' : '부재 처리'}
+              </Button>
+            </div>
+          );
+        },
+      },
+    ] : []),
   ];
 
   return (
@@ -1092,12 +1220,35 @@ export default function UserOrgHubClient({
                     ) : (
                         <div className="space-y-4">
                           {activeTab === 'ABSENCES' && (
-                            <div role="note" className="flex items-start gap-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 text-left">
-                              <Info size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
-                              <p className="text-xs font-bold text-amber-700 dark:text-amber-400 leading-relaxed">
-                                부재(자리비움) 정보는 아직 이 화면에 연동되지 않았습니다. 아래 목록은 <strong>부재자가 아니라 전체 사용자</strong>입니다.
-                              </p>
-                            </div>
+                            /*
+                              [2026-09-07] 종전 문구는 "부재 정보는 아직 연동되지 않았습니다" 였다. 이제 연동됐으므로
+                              그 고지를 걷되, 남은 사실 두 가지는 계속 말한다 — 목록은 전체 사용자이고(부재자 필터가 아니다),
+                              조회가 실패하면 '전원 정상' 으로 위장하지 않는다.
+                            */
+                            isAbsencesError ? (
+                              <div role="alert" className="flex items-start gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5 text-left">
+                                <Info size={16} className="mt-0.5 shrink-0 text-destructive-emphasis" aria-hidden="true" />
+                                <div className="space-y-2">
+                                  <p className="text-xs font-bold text-destructive-emphasis leading-relaxed">
+                                    부재 상태를 불러오지 못했습니다. 아래 목록의 부재 여부는 <strong>알 수 없음</strong>이며 정상이라는 뜻이 아닙니다.
+                                    {absencesError instanceof Error ? ` (${absencesError.message})` : ''}
+                                  </p>
+                                  <Button variant="outline" size="sm" onClick={() => { void refetchAbsences(); }} className="gap-2 h-8">
+                                    <RefreshCcw size={14} aria-hidden="true" /> 다시 시도
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div role="note" className="flex items-start gap-3 p-4 rounded-xl border border-border bg-muted/40 text-left">
+                                <Info size={16} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                                <p className="text-xs font-bold text-muted-foreground leading-relaxed">
+                                  아래 목록은 <strong>전체 사용자</strong>이며, 각 행의 부재 여부를 함께 표시합니다.
+                                  {isAbsencesLoading
+                                    ? ' 부재 상태를 불러오는 중입니다.'
+                                    : ` 현재 페이지에서 부재로 표시된 사용자는 ${users.filter((user) => absenceOf(user) === ABSENT).length}명입니다.`}
+                                </p>
+                              </div>
+                            )
                           )}
                           <StandardDataTable<UserManage>
                               columns={userColumns as Column<UserManage>[]}

@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 374,
-    "eligible": 360,
+    "total": 377,
+    "eligible": 363,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 360,
+      "generated": 363,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "5d01e80b4a97141f66189a4a13d404910a3e77ddf7d8f939aec53de983bf1d62",
+  "inventoryHash": "2cf3a4bcad70851e769b320d5044e980b4541dcd7e26f08bfba605c95564faf9",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -6015,6 +6015,57 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "c7eaa0095db44620414d"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/UserAbsenceAdminService.ts",
+      "owner": "UserAbsenceAdminService.getAbsences",
+      "ordinal": 1,
+      "line": 38,
+      "column": 28,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/admin/system/user-absences",
+      "operationId": "getAbsences",
+      "descriptorName": "getAbsencesOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "a5193e4795bf40d388a6"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/UserAbsenceAdminService.ts",
+      "owner": "UserAbsenceAdminService.getAbsence",
+      "ordinal": 1,
+      "line": 47,
+      "column": 12,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/admin/system/user-absences/{emplyrId}",
+      "operationId": "getAbsence",
+      "descriptorName": "getAbsenceOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "c43a2e3d39c3604088a6"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/UserAbsenceAdminService.ts",
+      "owner": "UserAbsenceAdminService.updateAbsence",
+      "ordinal": 1,
+      "line": 52,
+      "column": 11,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "put",
+      "target": "/api/v1/admin/system/user-absences/{emplyrId}",
+      "operationId": "updateAbsence",
+      "descriptorName": "updateAbsenceOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "acd82e4d4dcd07e291c0"
     },
     {
       "file": "frontend/src/services/foundation/system/UserAdminService.ts",
