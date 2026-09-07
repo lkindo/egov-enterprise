@@ -28,7 +28,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { GroupManageDtoSchema } from '@/types/generated-zod';
-import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { FormErrorSummary } from '@/components/ui/form';
 ;
@@ -116,6 +116,41 @@ export default function SecurityGroupClient() {
  },
  onSettled: () => { submitPendingRef.current = false; },
  });
+
+ /*
+   [2026-09-08] 일괄 삭제 배선.
+
+   서버 deleteGroups 는 사용자의 그룹 지정을 먼저 해제한 뒤(clearGroupIdByGroupIdIn) 한
+   트랜잭션에서 지운다 — 단수 삭제 N번 반복과 다르다(중간 실패 시 일부 사용자만 그룹이
+   풀린 채 남지 않는다). API 는 있었는데 화면에 다중 선택이 없어 소비자가 0 이었다.
+ */
+ const bulkDeletePendingRef = useRef(false);
+ const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+ const handleBulkDelete = async (targets: GroupManage[]) => {
+   if (bulkDeletePendingRef.current || deletePendingRef.current || submitPendingRef.current) return;
+   if (targets.length === 0) return;
+   bulkDeletePendingRef.current = true;
+   setIsBulkDeleting(true);
+   try {
+     const ok = await confirm({
+       title: '보안 그룹 일괄 삭제',
+       message: `선택한 ${targets.length}개 그룹을 삭제합니다. 이 그룹들에 배정된 사용자의 그룹 지정이 해제되며 되돌릴 수 없습니다.`,
+       confirmText: '삭제',
+       variant: 'destructive',
+     });
+     if (!ok) return;
+
+     await groupAdminService.deleteGroups(targets.map((group) => group.groupId));
+     queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
+     toast(`${targets.length}개 그룹을 삭제했습니다.`, 'success');
+   } catch (bulkError: unknown) {
+     toast(extractErrorMessage(bulkError, '일괄 삭제 중 시스템 예외가 발생했습니다.'), 'error');
+   } finally {
+     bulkDeletePendingRef.current = false;
+     setIsBulkDeleting(false);
+   }
+ };
 
  const deleteMutation = useMutation({
  mutationFn: (groupId: string) => groupAdminService.deleteGroup(groupId),
@@ -294,6 +329,15 @@ export default function SecurityGroupClient() {
  >
  <StandardDataTable
  accessibleLabel="보안 그룹 목록"
+ enableSelection
+ bulkActions={[{
+   label: '선택 그룹 삭제',
+   variant: 'destructive',
+   disabled: isBulkDeleting || isDeletePending || isSubmitPending,
+   ariaBusy: isBulkDeleting,
+   pendingLabel: '삭제 처리 중…',
+   onClick: (items) => { void handleBulkDelete(items); },
+ }]}
  keyField="groupId"
  columns={columns}
  data={groups}

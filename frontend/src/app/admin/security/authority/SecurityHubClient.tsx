@@ -51,7 +51,7 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 
 import { AuthorForm, AuthorFormValues } from '@/components/admin/security/AuthorForm';
-import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 // --- Types ---
 interface MenuNode extends Menu {
   children?: MenuNode[];
@@ -381,7 +381,9 @@ export default function SecurityHubClient({
   }, [menusData, tempMenuMappings]);
 
   const onAuthorSubmit = async (values: AuthorFormValues) => {
-    if (authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest()) return;
+    // 자식 폼 저장과 일괄 삭제는 서로 잠근다 — 저장 중 일괄 삭제가 나가면 방금 만든 권한이 지워진다.
+    if (authorSaveRequestRef.current || authorDeleteRequestRef.current
+      || bulkAuthorDeleteRef.current || hasMappingWriteRequest()) return;
     authorSaveRequestRef.current = true;
     setAuthorSavePending(true);
     try {
@@ -710,6 +712,49 @@ export default function SecurityHubClient({
     }
   };
 
+  /*
+    [2026-09-08] 권한 일괄 삭제 배선.
+
+    ⚠ 서버 deleteAuthors 는 **all-or-nothing** 이다 — 선택한 코드 전부에 대해
+    assertNoAssignedUsers·assertNoHierarchyReferences 를 먼저 돌리고, 하나라도 걸리면 아무것도
+    지우지 않는다. 그 설계 근거를 서비스 주석이 남겼다("일부만 지우면 어느 것이 남았는지 화면이
+    말할 수 없다"). 따라서 확인 문구도 그 사실을 그대로 말한다 — 부분 삭제를 약속하지 않는다.
+
+    단수 삭제를 N번 반복하는 것과 결정적으로 다른 지점이라, 이 API 는 화면이 생기기 전에도
+    지우지 않고 남겨 뒀다(operation-consumer-census 축 2 의 '일괄 삭제 UI 부재' 분류).
+  */
+  const bulkAuthorDeleteRef = useRef(false);
+  const [isBulkAuthorDeleting, setIsBulkAuthorDeleting] = useState(false);
+
+  const handleBulkAuthorDelete = async (targets: AuthorInfo[]) => {
+    if (bulkAuthorDeleteRef.current || authorDeleteRequestRef.current || authorSaveRequestRef.current) return;
+    if (targets.length === 0) return;
+    bulkAuthorDeleteRef.current = true;
+    setIsBulkAuthorDeleting(true);
+    const codes = targets.map((auth) => auth.authrtCd).filter(Boolean) as string[];
+    try {
+      const ok = await confirm({
+        title: '권한 일괄 삭제',
+        message: `선택한 ${codes.length}개 권한과 각 권한의 메뉴·롤 매핑을 삭제합니다. `
+          + `이 중 하나라도 사용자에게 배정돼 있거나 다른 권한의 상위로 쓰이면 아무것도 삭제되지 않습니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+
+      await authorAdminService.deleteAuthors(codes);
+      toast(`${codes.length}개 권한을 삭제했습니다.`, 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
+      if (selectedAuthorCode && codes.includes(selectedAuthorCode)) setSelectedAuthorCode('');
+    } catch (bulkError: unknown) {
+      // 서버가 거부하면 그 사유(어느 권한에 보유자가 있는지)를 그대로 보여 준다.
+      toast(extractErrorMessage(bulkError, '일괄 삭제 중 오류가 발생했습니다.'), 'error');
+    } finally {
+      bulkAuthorDeleteRef.current = false;
+      setIsBulkAuthorDeleting(false);
+    }
+  };
+
   const isSecurityWritePending = authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null || isGlobalLoading;
 
   const roleColumns: Column<AuthorInfo>[] = [
@@ -1011,6 +1056,15 @@ export default function SecurityHubClient({
                       onRetry={() => refetchAuthors()}
                       onRowClick={(item) => handleRoleSelect((item as AuthorInfo).authrtCd)}
                       rowActionLabel={(item) => `${item.authrtNm || item.authrtCd} 역할 선택`}
+                      enableSelection
+                      bulkActions={[{
+                        label: '선택 권한 삭제',
+                        variant: 'destructive',
+                        disabled: isBulkAuthorDeleting || isSecurityWritePending,
+                        ariaBusy: isBulkAuthorDeleting,
+                        pendingLabel: '삭제 처리 중…',
+                        onClick: (items) => { void handleBulkAuthorDelete(items); },
+                      }]}
                       keyField="authrtCd"
                       isPremium={false}
                       className="border-none bg-transparent"
@@ -1273,7 +1327,7 @@ export default function SecurityHubClient({
           onSubmit={onAuthorSubmit}
           onCancel={handleCloseAuthorModal}
           isPending={authorSavePending}
-          isDisabled={authorDeletePendingCode !== null || mappingPendingAction !== null || isGlobalLoading}
+          isDisabled={authorDeletePendingCode !== null || isBulkAuthorDeleting || mappingPendingAction !== null || isGlobalLoading}
         />
       </StandardModal>
     </div>
