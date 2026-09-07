@@ -4,13 +4,26 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+
 import {
   analyze,
+  analyzeScreenReachability,
   baseOperationId,
   isAliasDuplicate,
+  isServiceFile,
+  isTestFile,
+  owningMethodAt,
   pathSuffix,
   runCensus,
 } from './operation-consumer-census.mjs';
+
+const ts = createRequire(resolve('frontend/package.json'))('typescript');
+
+function sourceFileOf(text) {
+  return ts.createSourceFile('fixture.ts', text, ts.ScriptTarget.Latest, true);
+}
 
 /**
  * 🔌 operation consumer census 계약.
@@ -269,6 +282,123 @@ test('operationId 가 없는 문서는 조용히 넘어가지 않고 fail-closed
     }),
     /operation without operationId/u,
   );
+});
+
+test('축 2 — 현재 저장소의 화면 도달성이 래칫 안에 있고 귀속 실패가 없다', () => {
+  const result = runCensus();
+  assert.deepEqual(result.errors, [], JSON.stringify(result.errors, null, 2));
+  assert.equal(
+    result.reachability.unattributed.length,
+    0,
+    '귀속 실패는 통과가 아니라 red 다 — 못 본 호출부를 본 것처럼 세면 래칫이 거짓으로 낮아진다',
+  );
+  assert.ok(result.summary.screenOrphans <= result.summary.screenOrphanMax);
+  assert.ok(result.summary.serviceMethods > result.summary.screenOrphans);
+});
+
+test('소유자 귀속은 클래스 프로퍼티 화살표 함수를 놓치지 않는다 — 1차 시도의 오탐 원인', () => {
+  // 정규식으로 "  name(" 만 찾으면 이 형태를 못 봐서 호출부가 생성자의 super(...) 에 귀속됐다.
+  const text = [
+    'class Service extends Base {',
+    '  constructor() {',
+    '    super("/base");',
+    '  }',
+    '',
+    '  arrowMethod = async () => {',
+    '    return this.execute();',
+    '  };',
+    '',
+    '  async normalMethod() {',
+    '    return this.execute();',
+    '  }',
+    '}',
+  ].join('\n');
+  const sourceFile = sourceFileOf(text);
+
+  assert.equal(owningMethodAt(ts, sourceFile, 7), 'arrowMethod');
+  assert.equal(owningMethodAt(ts, sourceFile, 11), 'normalMethod');
+  // 생성자 안의 호출부는 화면이 부를 수 있는 '메서드' 가 아니다 — null 로 두어 귀속 실패(red)가 되게 한다.
+  //   통과시키면 아무도 부를 수 없는 호출부가 조용히 도달 가능으로 집계된다.
+  assert.equal(owningMethodAt(ts, sourceFile, 3), null);
+});
+
+test('객체 리터럴·변수 초기화 형태의 서비스도 소유자를 정확히 찾는다', () => {
+  const objectLiteral = sourceFileOf([
+    'export const svc = {',
+    '  fetchThing: async () => {',
+    '    return call();',
+    '  },',
+    '};',
+  ].join('\n'));
+  assert.equal(owningMethodAt(ts, objectLiteral, 3), 'fetchThing');
+
+  const variableInit = sourceFileOf([
+    'const loadThing = async () => {',
+    '  return call();',
+    '};',
+  ].join('\n'));
+  assert.equal(owningMethodAt(ts, variableInit, 2), 'loadThing');
+});
+
+test('화면 소비 판정은 접두가 같은 다른 메서드를 소비로 착각하지 않는다', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'screen-reach-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const serviceFile = join(root, 'frontend/src/services/ThingService.ts');
+  mkdirSync(dirname(serviceFile), { recursive: true });
+  writeFileSync(serviceFile, [
+    'class ThingService {',
+    '  async getThing() {',
+    '    return this.executeGenerated(getThingOperation, {});',
+    '  }',
+    '}',
+  ].join('\n'));
+
+  // 화면은 getThingList 만 부른다 — getThing 은 부르지 않는다.
+  const screenFile = join(root, 'frontend/src/app/page.tsx');
+  mkdirSync(dirname(screenFile), { recursive: true });
+  writeFileSync(screenFile, 'export default () => thingService.getThingList();\n');
+
+  const boundaries = { records: [{ file: 'frontend/src/services/ThingService.ts', line: 3, operationId: 'getThing' }] };
+  const result = analyzeScreenReachability({ boundaries, repoRoot: root, ts });
+
+  assert.equal(result.unattributed.length, 0);
+  assert.deepEqual(result.orphans.map((entry) => entry.method), ['getThing']);
+
+  // 실제로 그 메서드를 부르면 통과한다.
+  writeFileSync(screenFile, 'export default () => thingService.getThing();\n');
+  assert.deepEqual(analyzeScreenReachability({ boundaries, repoRoot: root, ts }).orphans, []);
+});
+
+test('서비스 밖 호출부와 테스트 파일은 소비 판정에서 제외된다', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'screen-reach-scope-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const serviceFile = join(root, 'frontend/src/services/OnlyTestedService.ts');
+  mkdirSync(dirname(serviceFile), { recursive: true });
+  writeFileSync(serviceFile, [
+    'class OnlyTestedService {',
+    '  async doThing() {',
+    '    return this.executeGenerated(doThingOperation, {});',
+    '  }',
+    '}',
+  ].join('\n'));
+
+  // 유일한 소비자가 단위 테스트라면 고아다 — 이 게이트의 존재 이유(deleteRespondent 실측 사례).
+  const testFile = join(root, 'frontend/src/services/__tests__/OnlyTestedService.test.ts');
+  mkdirSync(dirname(testFile), { recursive: true });
+  writeFileSync(testFile, 'await onlyTestedService.doThing();\n');
+
+  const boundaries = { records: [{ file: 'frontend/src/services/OnlyTestedService.ts', line: 3, operationId: 'doThing' }] };
+  assert.deepEqual(
+    analyzeScreenReachability({ boundaries, repoRoot: root, ts }).orphans.map((e) => e.method),
+    ['doThing'],
+  );
+
+  assert.equal(isServiceFile('frontend/src/services/A.ts'), true);
+  assert.equal(isServiceFile('frontend/src/app/page.tsx'), false);
+  assert.equal(isTestFile('frontend/src/services/__tests__/A.test.ts'), true);
+  assert.equal(isTestFile('frontend/src/services/A.ts'), false);
 });
 
 test('보조 함수는 경로 접미와 springdoc 접미를 정확히 다룬다', () => {
