@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ vi.mock('@/services/business/board/SatisfactionService', () => ({
     list: vi.fn(),
     average: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
     remove: vi.fn(),
   },
 }));
@@ -36,6 +37,7 @@ describe('SatisfactionSection', () => {
     // 서버가 만들지 않는 조합이었고, 그래서 화면이 0.0 을 그리는 것이 정상처럼 보였다.
     mocked.average.mockResolvedValue({});
     mocked.remove.mockResolvedValue(undefined);
+    mocked.update.mockResolvedValue(undefined);
   });
 
   it('게시글 경로(bbsId/pstSn)를 서비스에 그대로 전달한다', async () => {
@@ -205,6 +207,69 @@ describe('SatisfactionSection', () => {
     expect(pendingButton).toHaveAttribute('aria-busy', 'true');
     await act(async () => rejectDelete(new Error('삭제 처리 실패')));
     expect(await screen.findByText('삭제 처리 실패')).toBeVisible();
+  });
+
+  /*
+    [2026-09-08] 수정 배선 계약.
+
+    ADR-0011 이 만족도 수정을 인증된 owner-or-admin 으로 열어 뒀는데 화면에는 등록·삭제만
+    있었다 — 별을 잘못 누르면 지우고 다시 매기는 수밖에 없었다. 서버가 갱신하는 것은
+    점수와 내용 둘뿐이므로 편집도 그 둘만 다룬다.
+  */
+  it('수정은 기존 점수·내용으로 열리고 저장하면 그 둘을 보낸다', async () => {
+    const user = userEvent.setup();
+    mocked.list.mockResolvedValue([
+      { dgstfnSn: 7, dgstfnScr: 2, dgstfnCn: '보통입니다', userNm: '홍길동', useYn: 'Y' },
+    ]);
+    renderWidget();
+
+    await user.click(await screen.findByRole('button', { name: '홍길동의 만족도 수정' }));
+    const textarea = screen.getByLabelText('만족도 의견 수정');
+    expect(textarea).toHaveValue('보통입니다');
+
+    await user.clear(textarea);
+    await user.type(textarea, '다시 보니 좋았습니다');
+    // 점수도 함께 올린다 — 서버는 두 필드를 통째로 받는다.
+    const group = screen.getByRole('radiogroup', { name: '만족도 점수 수정' });
+    await user.click(within(group).getByRole('radio', { name: '5점' }));
+    await user.click(screen.getByRole('button', { name: '만족도 저장' }));
+
+    await waitFor(() => expect(mocked.update).toHaveBeenCalledTimes(1));
+    expect(mocked.update).toHaveBeenCalledWith('BBS_01', 1, 7, expect.objectContaining({
+      dgstfnScr: 5,
+      dgstfnCn: '다시 보니 좋았습니다',
+    }));
+  });
+
+  it('🔒 수정 실패(권한 없음)는 서버 판정을 그대로 노출하고 편집 값을 지키지 않는다', async () => {
+    const user = userEvent.setup();
+    mocked.list.mockResolvedValue([
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '홍길동', useYn: 'Y' },
+    ]);
+    mocked.update.mockRejectedValue(new Error('수정 권한이 없습니다.'));
+    renderWidget();
+
+    await user.click(await screen.findByRole('button', { name: '홍길동의 만족도 수정' }));
+    await user.click(screen.getByRole('button', { name: '만족도 저장' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('수정 권한이 없습니다.');
+    // 편집 모드가 유지돼 사용자가 다시 시도하거나 취소할 수 있다.
+    expect(screen.getByLabelText('만족도 의견 수정')).toBeInTheDocument();
+  });
+
+  it('수정 중에는 삭제 버튼을 잠근다 — 편집 중인 항목이 사라지지 않게 한다', async () => {
+    const user = userEvent.setup();
+    mocked.list.mockResolvedValue([
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '홍길동', useYn: 'Y' },
+    ]);
+    renderWidget();
+
+    await user.click(await screen.findByRole('button', { name: '홍길동의 만족도 수정' }));
+    expect(screen.queryByRole('button', { name: /홍길동의 만족도 삭제/ })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: '취소' }));
+    expect(await screen.findByRole('button', { name: '홍길동의 만족도 삭제' })).toBeInTheDocument();
+    expect(mocked.update).not.toHaveBeenCalled();
   });
 
   it('만족도가 없으면 안내 문구를 보여준다', async () => {

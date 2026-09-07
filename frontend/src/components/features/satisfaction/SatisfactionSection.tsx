@@ -4,8 +4,7 @@ import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { satisfactionService, Satisfaction } from '@/services/business/board/SatisfactionService';
 import { Button } from '@/components/ui/button';
-import { Star, Trash2, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Trash2, Loader2, Pencil } from 'lucide-react';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -13,48 +12,9 @@ import {
   satisfactionCreateSchema,
   satisfactionValidationLabels,
 } from './satisfaction-form-validation';
+import { Stars } from './Stars';
+import { SatisfactionEditForm } from './SatisfactionEditForm';
 
-const MAX_SCORE = 5;
-
-/** 별 표시. 읽기 전용(점수 렌더)과 입력(클릭 가능) 양쪽에 쓴다. */
-function Stars({
-  score,
-  onSelect,
-  size = 16,
-}: {
-  score: number;
-  onSelect?: (n: number) => void;
-  size?: number;
-}) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: MAX_SCORE }, (_, i) => i + 1).map((n) => {
-        const filled = n <= score;
-        const star = (
-          <Star
-            size={size}
-            className={cn(filled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30')}
-          />
-        );
-        return onSelect ? (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onSelect(n)}
-            aria-label={`${n}점`}
-            role="radio"
-            aria-checked={n === score}
-            className="p-0.5 hover:scale-110 transition-transform"
-          >
-            {star}
-          </button>
-        ) : (
-          <span key={n}>{star}</span>
-        );
-      })}
-    </div>
-  );
-}
 
 /**
  * 게시글 만족도 위젯.
@@ -62,9 +22,14 @@ function Stars({
  * <p>백엔드는 D-8(#302)에서 배선됐으나 화면이 없어 <b>"API 는 있고 화면이 없는"</b> 상태였다.
  * 이 컴포넌트가 그 짝을 맞춘다.
  *
- * <p>삭제는 백엔드가 소유자/관리자 또는 익명 비밀번호로 판정한다 — 화면은 권한을 추측하지 않고
- * 삭제 버튼을 항상 노출한 뒤 <b>서버 판정 결과를 그대로 보여준다</b>. 화면에서 권한을 흉내내면
+ * <p>수정·삭제는 백엔드가 소유자/관리자를 판정한다(`assertCanModify`) — 화면은 권한을 추측하지
+ * 않고 버튼을 항상 노출한 뒤 <b>서버 판정 결과를 그대로 보여준다</b>. 화면에서 권한을 흉내내면
  * 서버 규칙과 갈라지고, 그 불일치는 조용히 누적된다.
+ *
+ * <p>[2026-09-08] 수정 배선. ADR-0011 이 만족도 수정을 <b>인증된 owner-or-admin</b> 으로 열어
+ * 뒀는데 화면에는 등록·삭제만 있어, 별을 잘못 누르면 지우고 다시 매기는 수밖에 없었다
+ * (operation-consumer-census 축 1 이 `update` 를 소비 0 으로 지목). 서버가 갱신하는 것은
+ * <b>점수와 내용 둘뿐</b>이므로 편집도 그 둘만 다룬다.
  */
 export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; pstSn: number }) {
   const queryClient = useQueryClient();
@@ -79,6 +44,10 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
     labels: satisfactionValidationLabels,
     focusTargets: { dgstfnScr: () => scoreGroupRef.current },
   });
+
+  // 편집 대상만 부모가 갖는다 — 값·검증·서버 오류 표시는 SatisfactionEditForm 이 소유한다.
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const editPendingRef = useRef(false);
 
   const listKey = ['satisfactions', bbsId, pstSn];
 
@@ -130,6 +99,31 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
       setDeletingSatisfactionId(null);
     },
   });
+
+  const startEdit = (item: Satisfaction) => {
+    if (editPendingRef.current || deletePendingRef.current) return;
+    setEditingId(item.dgstfnSn ?? null);
+    setError(null);
+  };
+
+  const cancelEdit = () => {
+    if (editPendingRef.current) return;
+    setEditingId(null);
+  };
+
+  /** 실패는 그대로 올려보낸다 — 자식 폼이 필드 오류·안내로 처리하고 편집 값을 지킨다. */
+  const saveEdit = async (dgstfnSn: number, body: Satisfaction) => {
+    if (editPendingRef.current) return;
+    editPendingRef.current = true;
+    try {
+      await satisfactionService.update(bbsId, pstSn, dgstfnSn, body);
+      setEditingId(null);
+      setError(null);
+      invalidate();
+    } finally {
+      editPendingRef.current = false;
+    }
+  };
 
   const handleDelete = (dgstfnSn: number) => {
     if (deletePendingRef.current) return;
@@ -267,31 +261,52 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
         <ul className="space-y-3">
           {list.map((item) => (
             <li key={item.dgstfnSn} className="flex items-start gap-3 p-3 border rounded-lg bg-card">
-              <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Stars score={item.dgstfnScr ?? 0} size={14} />
-                  <span className="text-xs font-bold text-foreground">{item.userNm || '익명'}</span>
-                  <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                    {item.crtDt ? item.crtDt.substring(0, 10) : ''}
-                  </span>
-                </div>
-                {item.dgstfnCn && (
-                  <p className="text-sm text-muted-foreground break-words">{item.dgstfnCn}</p>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`${item.userNm || '익명'}의 만족도 ${deletingSatisfactionId === item.dgstfnSn ? '삭제 중…' : '삭제'}`}
-                aria-busy={deletingSatisfactionId === item.dgstfnSn || undefined}
-                className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
-                disabled={deletingSatisfactionId !== null}
-                onClick={() => item.dgstfnSn && handleDelete(item.dgstfnSn)}
-              >
-                {deletingSatisfactionId === item.dgstfnSn
-                  ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  : <Trash2 className="h-4 w-4" aria-hidden="true" />}
-              </Button>
+              {editingId === item.dgstfnSn ? (
+                <SatisfactionEditForm
+                  item={item}
+                  isPending={deletingSatisfactionId !== null}
+                  onCancel={cancelEdit}
+                  onSubmit={(body) => saveEdit(item.dgstfnSn!, body)}
+                />
+              ) : (
+                <>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Stars score={item.dgstfnScr ?? 0} size={14} />
+                      <span className="text-xs font-bold text-foreground">{item.userNm || '익명'}</span>
+                      <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                        {item.crtDt ? item.crtDt.substring(0, 10) : ''}
+                      </span>
+                    </div>
+                    {item.dgstfnCn && (
+                      <p className="text-sm text-muted-foreground break-words">{item.dgstfnCn}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`${item.userNm || '익명'}의 만족도 수정`}
+                    className="h-8 w-8 shrink-0"
+                    disabled={deletingSatisfactionId !== null || editingId !== null}
+                    onClick={() => startEdit(item)}
+                  >
+                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`${item.userNm || '익명'}의 만족도 ${deletingSatisfactionId === item.dgstfnSn ? '삭제 중…' : '삭제'}`}
+                    aria-busy={deletingSatisfactionId === item.dgstfnSn || undefined}
+                    className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
+                    disabled={deletingSatisfactionId !== null || editingId !== null}
+                    onClick={() => item.dgstfnSn && handleDelete(item.dgstfnSn)}
+                  >
+                    {deletingSatisfactionId === item.dgstfnSn
+                      ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      : <Trash2 className="h-4 w-4" aria-hidden="true" />}
+                  </Button>
+                </>
+              )}
             </li>
           ))}
         </ul>

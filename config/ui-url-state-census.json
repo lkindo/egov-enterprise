@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "0ff177ef6ef8c48eef28628f79f8a4c599805b28bbac7e2095d8dc01fb4084a7"
+    "inventoryHash": "c389506f06b40ae0c3cfbd9e1978880d1469f379aaef1bd1eaf119d4ee4ce243"
   },
   "summary": {
-    "sourceFileCount": 525,
-    "records": 382,
-    "syntaxOccurrences": 451,
-    "ambiguousRecords": 355,
-    "unverifiedRecords": 382,
+    "sourceFileCount": 527,
+    "records": 383,
+    "syntaxOccurrences": 452,
+    "ambiguousRecords": 356,
+    "unverifiedRecords": 383,
     "exactPopulations": {
       "filesystemRoutes": 121,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 54,
+      "form-producer": 55,
       "navigation-producer": 161,
       "page-redirect": 11,
       "query-builder": 22,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 374,
+      "navigation": 375,
       "request-telemetry": 8
     }
   },
@@ -16011,6 +16011,45 @@
         "source": "frontend/src/components/common/PagePagination.tsx",
         "detector": "href-navigation",
         "occurrenceCount": 5
+      }
+    },
+    {
+      "id": "URL-2B18EF9C89D47B",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/features/satisfaction/SatisfactionEditForm.tsx",
+      "producerFile": "frontend/src/components/features/satisfaction/SatisfactionEditForm.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/features/satisfaction/SatisfactionEditForm.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
       }
     },
     {
