@@ -44,6 +44,42 @@ describe('notification controls accessibility', () => {
     expect(unread).toHaveAttribute('aria-pressed', 'true');
   });
 
+  /*
+    [2026-09-08] 삭제 버튼은 카드 **바깥**에 둔다.
+
+    미읽음 카드는 카드 전체가 button(클릭 = 읽음 처리)이라, 그 안에 삭제 버튼을 넣으면
+    중첩 button 이 되고 보조기술이 두 동작을 구분하지 못한다.
+  */
+  it('삭제 버튼은 알림 카드 안에 중첩되지 않고 대상을 이름으로 밝힌다', () => {
+    const onDelete = vi.fn();
+    const onMarkRead = vi.fn();
+    render(
+      <AppNotificationDrawer
+        isOpen
+        onClose={vi.fn()}
+        onMarkRead={onMarkRead}
+        onMarkAllRead={vi.fn()}
+        onDelete={onDelete}
+        notifications={[{
+          id: 21,
+          title: '보안 경고',
+          message: '확인이 필요합니다.',
+          time: '방금 전',
+          isRead: false,
+          type: 'SECURITY',
+        }]}
+      />,
+    );
+
+    const deleteButton = screen.getByRole('button', { name: '보안 경고 삭제' });
+    expect(deleteButton.closest('button:not([aria-label="보안 경고 삭제"])')).toBeNull();
+
+    fireEvent.click(deleteButton);
+    expect(onDelete).toHaveBeenCalledWith(21);
+    // 삭제를 눌렀는데 읽음 처리까지 나가면 두 동작이 겹친다.
+    expect(onMarkRead).not.toHaveBeenCalled();
+  });
+
   // [2026-09-06 DEC-OPS-038] 발송 미리보기 데모(NotificationSender)와 알림 페이지 히어로 블록을 걷었다 — 두 스펙도 함께 제거.
   it('업무 링크가 있는 알림은 중첩 button이 아니며 Enter 탐색을 가로막지 않는다', () => {
     const onClose = vi.fn();
@@ -54,6 +90,7 @@ describe('notification controls accessibility', () => {
         onClose={onClose}
         onMarkRead={onMarkRead}
         onMarkAllRead={vi.fn()}
+        onDelete={vi.fn()}
         notifications={[
           {
             id: 7,
@@ -99,6 +136,7 @@ describe('notification controls accessibility', () => {
         onClose={vi.fn()}
         onMarkRead={onMarkRead}
         onMarkAllRead={vi.fn()}
+        onDelete={vi.fn()}
         notifications={[{
           id: 8,
           title: '시스템 공지',
@@ -123,6 +161,7 @@ describe('notification controls accessibility', () => {
         onClose={vi.fn()}
         onMarkRead={onMarkRead}
         onMarkAllRead={vi.fn()}
+        onDelete={vi.fn()}
         notifications={[{
           id: 10,
           title: '확인 완료 공지',
@@ -148,6 +187,7 @@ describe('notification controls accessibility', () => {
       onClose: vi.fn(),
       onMarkRead: vi.fn(),
       onMarkAllRead,
+      onDelete: vi.fn(),
     };
     const { rerender } = render(
       <AppNotificationDrawer

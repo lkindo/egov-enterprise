@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 345,
-    "eligible": 331,
+    "total": 346,
+    "eligible": 332,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 331,
+      "generated": 332,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "c9a3a99b3aa0da4bffb292af89db04f1eafc45de09400f77005c370bb93a9e1b",
+  "inventoryHash": "1789f5be67a2faa4639035f7c5919f294011704dad70b9016042b0ad5b8366e6",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -410,7 +410,7 @@
       "file": "frontend/src/lib/hooks/use-notifications.ts",
       "owner": "<anonymous-function>",
       "ordinal": 1,
-      "line": 236,
+      "line": 237,
       "column": 9,
       "classification": "generated",
       "transport": "generated-executor",
@@ -427,7 +427,7 @@
       "file": "frontend/src/lib/hooks/use-notifications.ts",
       "owner": "<anonymous-function>",
       "ordinal": 2,
-      "line": 237,
+      "line": 238,
       "column": 9,
       "classification": "generated",
       "transport": "generated-executor",
@@ -444,7 +444,7 @@
       "file": "frontend/src/lib/hooks/use-notifications.ts",
       "owner": "markAsRead",
       "ordinal": 1,
-      "line": 458,
+      "line": 459,
       "column": 13,
       "classification": "generated",
       "transport": "generated-executor",
@@ -459,9 +459,26 @@
     },
     {
       "file": "frontend/src/lib/hooks/use-notifications.ts",
+      "owner": "removeNotification",
+      "ordinal": 1,
+      "line": 496,
+      "column": 13,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "executeGeneratedOperation",
+      "method": "delete",
+      "target": "/api/v1/notifications/{notiSn}",
+      "operationId": "deleteNotification",
+      "descriptorName": "deleteNotificationOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "80e40a9191194f65d8cb"
+    },
+    {
+      "file": "frontend/src/lib/hooks/use-notifications.ts",
       "owner": "<anonymous-function>",
       "ordinal": 3,
-      "line": 501,
+      "line": 533,
       "column": 9,
       "classification": "generated",
       "transport": "generated-executor",

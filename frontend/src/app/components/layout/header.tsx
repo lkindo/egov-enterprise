@@ -80,7 +80,7 @@ export function Header({
   const { user, logout } = useAuth();
   const isAdministrativeUser = isAdministrativeRole(user?.role);
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
-  const { notifications, unreadCount, error: notificationsError, markAsRead, markAllAsRead, refresh: refreshNotifications } = useNotifications();
+  const { notifications, unreadCount, error: notificationsError, markAsRead, markAllAsRead, removeNotification, refresh: refreshNotifications } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   /*
     [2026-09-08] 본인 비밀번호 변경. 서버(PUT /users/me/password)와 userService.changePassword 는
@@ -335,6 +335,7 @@ export function Header({
         onClose={() => setIsNotifOpen(false)}
         onMarkRead={markAsRead}
         onMarkAllRead={markAllAsRead}
+        onDelete={removeNotification}
         // [2026-08-04] 조회 실패를 드로어까지 전달한다. 이 배선이 없으면 훅이 오류를 알아도
         //   화면은 여전히 '활성화된 알림이 없습니다' 를 렌더한다(상태만 만들고 배선하지 않는 것은
         //   고친 것이 아니다 — 12축 감사 클러스터 D).

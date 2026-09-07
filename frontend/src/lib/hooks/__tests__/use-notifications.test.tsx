@@ -295,6 +295,60 @@ describe('useNotifications', () => {
     });
   });
 
+  /*
+    [2026-09-08] 단건 삭제.
+
+    서버(DELETE /notifications/{notiSn})는 findOwnedNotification 으로 본인 알림만 지우는데
+    호출부가 0 이었다 — 읽은 알림이 계속 쌓여도 정리할 방법이 없었다(보존 스케줄러는 기본
+    비활성이고 보존 개월도 미정). 일괄 삭제는 서버 경로가 없어 범위가 제품 결정이다.
+  */
+  describe('단건 삭제', () => {
+    it('삭제하면 목록에서 빠지고 미읽음이었으면 배지도 줄어든다', async () => {
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(3));
+      vi.mocked(client.requestRaw).mockResolvedValue(
+        { success: true, code: 'S000', message: 'success', data: null } as never,
+      );
+
+      await act(async () => { await result.current.removeNotification(1); });
+
+      expect(client.requestRaw).toHaveBeenCalledWith({
+        url: 'notifications/1',
+        method: 'delete',
+      });
+      expect(result.current.notifications).toHaveLength(0);
+      // 지운 알림이 배지에 남으면 열어도 찾을 수 없다.
+      expect(result.current.unreadCount).toBe(2);
+    });
+
+    it('이미 읽은 알림을 지워도 배지는 그대로다', async () => {
+      mockFetch([{ ...NOTIF, readYn: 'Y' }], 3);
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      vi.mocked(client.requestRaw).mockResolvedValue(
+        { success: true, code: 'S000', message: 'success', data: null } as never,
+      );
+
+      await act(async () => { await result.current.removeNotification(1); });
+
+      expect(result.current.notifications).toHaveLength(0);
+      expect(result.current.unreadCount).toBe(3);
+    });
+
+    it('삭제 실패는 알리고 목록을 건드리지 않는다', async () => {
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.unreadCount).toBe(3));
+      vi.mocked(client.requestRaw).mockRejectedValue(new Error('500'));
+
+      await act(async () => { await result.current.removeNotification(1); });
+
+      // 실패했는데 목록에서 빼면 새로고침 전까지 없는 것처럼 보인다.
+      expect(result.current.notifications).toHaveLength(1);
+      expect(result.current.unreadCount).toBe(3);
+      expect(toast).toHaveBeenCalledWith('알림을 삭제하지 못했습니다.', 'error');
+    });
+  });
+
   describe('읽음 처리', () => {
     it('단건 읽음은 즉시 반영하고 배지를 하나 줄인다', async () => {
       const { result } = renderHook(() => useNotifications());

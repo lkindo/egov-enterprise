@@ -13,7 +13,7 @@
   ],
   "expected": {
     "operationCount": 379,
-    "unwiredMax": 16,
+    "unwiredMax": 15,
     "screenOrphanMax": 43
   },
   "entries": [
@@ -177,12 +177,6 @@
       "operationId": "getNotification",
       "category": "unwired",
       "note": "Notification detail — the notification centre renders from the list response and never fetches a single item.",
-      "evidence": []
-    },
-    {
-      "operationId": "deleteNotification",
-      "category": "unwired",
-      "note": "Single-notification delete — the centre exposes mark-as-read and bulk paths only.",
       "evidence": []
     },
     {
