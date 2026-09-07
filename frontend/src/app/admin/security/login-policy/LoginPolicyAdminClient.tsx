@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { loginPolicyAdminService, LoginPolicy } from '@/services/foundation/system/LoginPolicyAdminService';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -22,7 +24,8 @@ import {
   Settings2, 
   User,
   Fingerprint,
-  Timer
+  Timer,
+  Trash2
 } from 'lucide-react';
 import { useAppForm } from '@/hooks/useAppForm';
 import { z } from 'zod';
@@ -91,6 +94,7 @@ const LOGIN_POLICIES_QUERY_KEY = ['admin-login-policies'] as const;
 export default function LoginPolicyAdminClient() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const confirm = useConfirm();
   const [selectedPolicy, setSelectedPolicy] = useState<LoginPolicy | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   /**
@@ -150,6 +154,44 @@ export default function LoginPolicyAdminClient() {
     IP 제한·허용 시간대·OTP 를 걸 방법이 없었다(operation-consumer-census 축 1 이
     insertLoginPolicy 를 소비 0 으로 지목).
   */
+  /*
+    [2026-09-08] 정책 해제(삭제) 배선.
+
+    ⚠ 정책을 **비우는 것**(lmtYn='N'·ipAddr='')과 **지우는 것**은 다르다. 비우면 행이 남아
+    목록에 regYn='Y'(정책 보유)로 계속 표시되고, 지워야 regYn='N'(정책 없음)이 된다. 즉
+    화면에는 정책을 완전히 해제할 방법이 없었다 — 등록 경로와 짝이 되는 기능 부재였다.
+
+    정책이 없는 사용자(regYn='N')에게는 이 액션을 노출하지 않는다. 서버가 404 를 낼 뿐이고,
+    사용자에게는 "지울 것이 없는데 삭제 버튼이 있는" 상태가 된다.
+  */
+  const releasePendingRef = useRef(false);
+  const [releasePendingUserId, setReleasePendingUserId] = useState<string | null>(null);
+
+  const handleRelease = async (policy: LoginPolicy) => {
+    if (releasePendingRef.current || form.formState.isSubmitting) return;
+    releasePendingRef.current = true;
+    setReleasePendingUserId(policy.userId);
+    try {
+      const ok = await confirm({
+        title: '로그인 정책 해제',
+        message: `'${policy.userNm || policy.userId}'(${policy.userId})의 로그인 정책을 해제합니다. `
+          + 'IP 제한·허용 시간대·2단계 인증 설정이 모두 사라지고 이 계정에는 로그인 제한이 적용되지 않습니다.',
+        confirmText: '해제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+
+      await loginPolicyAdminService.deleteLoginPolicy(policy.userId);
+      toast('로그인 정책을 해제했습니다.', 'success');
+      queryClient.invalidateQueries({ queryKey: LOGIN_POLICIES_QUERY_KEY });
+    } catch (releaseError: unknown) {
+      toast(extractErrorMessage(releaseError, '정책 해제 중 오류가 발생했습니다.'), 'error');
+    } finally {
+      releasePendingRef.current = false;
+      setReleasePendingUserId(null);
+    }
+  };
+
   const onFormSubmit = async (values: LoginPolicyFormValues) => {
     if (!selectedPolicy) return;
     const isNew = selectedPolicy.regYn !== 'Y';
@@ -229,15 +271,31 @@ export default function LoginPolicyAdminClient() {
       header: '설정',
       className: 'text-right',
       accessor: (item) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleEdit(item)}
-          aria-label={`${item.userNm || item.userId} 로그인 정책 수정`}
-          className="hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg transition-all"
-        >
-          <Settings2 size={16} aria-hidden="true" />
-        </Button>
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleEdit(item)}
+            aria-label={`${item.userNm || item.userId} 로그인 정책 수정`}
+            className="hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg transition-all"
+          >
+            <Settings2 size={16} aria-hidden="true" />
+          </Button>
+          {/* 정책이 있는 사용자에게만 해제를 노출한다 — 없는 대상에 삭제 버튼을 두면 거짓 어포던스다. */}
+          {item.regYn === 'Y' ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => { void handleRelease(item); }}
+              disabled={releasePendingUserId !== null}
+              aria-busy={releasePendingUserId === item.userId || undefined}
+              aria-label={`${item.userNm || item.userId} 로그인 정책 해제`}
+              className="text-destructive-emphasis hover:bg-destructive/10 rounded-lg transition-all"
+            >
+              <Trash2 size={16} aria-hidden="true" />
+            </Button>
+          ) : null}
+        </div>
       )
     }
   ];

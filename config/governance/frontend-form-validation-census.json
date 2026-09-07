@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 22,
-    "secondaryActionBoundaries": 73,
-    "candidateCount": 160
+    "secondaryActionBoundaries": 74,
+    "candidateCount": 161
   },
   "entries": [
     {
@@ -2190,6 +2190,26 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx#LoginPolicyAdminClient.handleRelease[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
+      "owner": "LoginPolicyAdminClient",
+      "handler": "handleRelease",
+      "writeSinks": [
+        "loginPolicyAdminService.deleteLoginPolicy"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/login-policy/__tests__/LoginPolicyAdminClient.behavior.test.tsx"
       ]
     },
     {

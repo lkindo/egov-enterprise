@@ -14,7 +14,7 @@
   "expected": {
     "operationCount": 379,
     "unwiredMax": 14,
-    "screenOrphanMax": 40
+    "screenOrphanMax": 39
   },
   "entries": [
     {
