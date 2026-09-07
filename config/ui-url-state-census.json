@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "151cf68e98745ce4839c66c250347c9fb0d619493baf0cc14727e9b7887c3875"
+    "inventoryHash": "0ff177ef6ef8c48eef28628f79f8a4c599805b28bbac7e2095d8dc01fb4084a7"
   },
   "summary": {
-    "sourceFileCount": 524,
-    "records": 381,
-    "syntaxOccurrences": 450,
-    "ambiguousRecords": 354,
-    "unverifiedRecords": 381,
+    "sourceFileCount": 525,
+    "records": 382,
+    "syntaxOccurrences": 451,
+    "ambiguousRecords": 355,
+    "unverifiedRecords": 382,
     "exactPopulations": {
       "filesystemRoutes": 121,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 53,
+      "form-producer": 54,
       "navigation-producer": 161,
       "page-redirect": 11,
       "query-builder": 22,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 373,
+      "navigation": 374,
       "request-telemetry": 8
     }
   },
@@ -15500,6 +15500,45 @@
       },
       "evidence": {
         "source": "frontend/src/components/account/ChangePasswordForm.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-F8B804D04DDA40",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/components/account/ProfileEditForm.tsx",
+      "producerFile": "frontend/src/components/account/ProfileEditForm.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/account/ProfileEditForm.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }
