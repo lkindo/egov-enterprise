@@ -8,14 +8,19 @@ const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   save: vi.fn(),
   create: vi.fn(),
+  remove: vi.fn(),
+  confirm: vi.fn(),
   toast: vi.fn(),
 }));
+
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 
 vi.mock('@/services/foundation/system/LoginPolicyAdminService', () => ({
   loginPolicyAdminService: {
     getLoginPolicyList: (...args: unknown[]) => mocks.list(...args),
     saveLoginPolicy: (...args: unknown[]) => mocks.save(...args),
     createLoginPolicy: (...args: unknown[]) => mocks.create(...args),
+    deleteLoginPolicy: (...args: unknown[]) => mocks.remove(...args),
   },
 }));
 vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
@@ -80,6 +85,8 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     mocks.list.mockResolvedValue({ list: [policy], total: 1, totalPage: 1 });
     mocks.save.mockResolvedValue(undefined);
     mocks.create.mockResolvedValue(undefined);
+    mocks.remove.mockResolvedValue(undefined);
+    mocks.confirm.mockResolvedValue(true);
   });
 
   /*
@@ -106,6 +113,49 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1));
     expect(mocks.create.mock.calls[0][0]).toBe('newbie');
     expect(mocks.save).not.toHaveBeenCalled();
+  });
+
+  /*
+    [2026-09-08] 정책 해제.
+
+    ⚠ 정책을 **비우는 것**(lmtYn='N'·ipAddr='')과 **지우는 것**은 다르다. 비우면 행이 남아
+    목록에 regYn='Y'(정책 보유)로 계속 표시되고, 지워야 regYn='N' 이 된다 — 화면에는 정책을
+    완전히 해제할 방법이 없었다.
+  */
+  it('정책 해제는 중복 실행을 막고 진행을 드러내며 실패 사유를 그대로 알린다', async () => {
+    let reject: (error: unknown) => void = () => undefined;
+    mocks.remove.mockReturnValue(new Promise((_resolve, next) => { reject = next; }));
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사용자 로그인 정책 해제' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    // 무엇이 사라지는지 확인 본문이 밝힌다.
+    expect(mocks.confirm.mock.calls[0][0].message).toContain('2단계 인증');
+
+    await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith('tester'));
+    const pending = screen.getByRole('button', { name: '테스트 사용자 로그인 정책 해제' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(pending);
+    expect(mocks.remove).toHaveBeenCalledTimes(1);
+
+    reject({ response: { data: { message: '정책을 해제하지 못했습니다.' } } });
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      expect.stringContaining('정책을 해제하지 못했습니다.'),
+      'error',
+    ));
+  });
+
+  it('정책이 없는 사용자에게는 해제를 노출하지 않는다 — 지울 것이 없는 삭제 버튼은 거짓 어포던스다', async () => {
+    mocks.list.mockResolvedValue({
+      list: [{ ...policy, userId: 'newbie', userNm: '신규 사용자', regYn: 'N' }],
+      total: 1,
+      totalPage: 1,
+    });
+    renderClient();
+
+    await screen.findByRole('button', { name: '신규 사용자 로그인 정책 수정' });
+    expect(screen.queryByRole('button', { name: '신규 사용자 로그인 정책 해제' })).toBeNull();
   });
 
   it('정책이 있는 사용자는 수정 경로로 저장한다', async () => {
