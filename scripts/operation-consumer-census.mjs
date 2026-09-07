@@ -356,10 +356,22 @@ export function owningMethodAt(ts, sourceFile, line) {
 }
 
 /**
- * 화면 소비 판정은 **관대하다** — `.<메서드명>(` 이 서비스 밖 생산 코드 어디에든 보이면 통과다.
- * 백엔드 {@code UnreachableServiceLinter} 의 "확실한 부분집합만 잡고 애매하면 통과" 설계를 따른다.
- * 흔한 이름(`create`·`getList`)은 다른 서비스의 동명 메서드와 겹쳐 통과할 수 있으나, 그것은
- * <b>놓치는 방향</b>이라 거짓 red 를 만들지 않는다.
+ * 화면 소비 판정은 **두 호출 형태를 모두 인정**한다.
+ *
+ * <ol>
+ *   <li><b>멤버 호출</b> — `.<메서드명>(`. 서비스 인스턴스를 통해 부르는 일반적인 형태다.</li>
+ *   <li><b>직접 호출</b> — `<메서드명>(`. 서비스가 메서드를 `.bind()` 로 재수출하고 화면이
+ *       named import 로 받아 점 없이 부르는 형태다.</li>
+ * </ol>
+ *
+ * <p>[2026-09-07 정정] 처음에는 멤버 호출만 봤고, 그래서 `deptScheduleService` 의 7메서드처럼
+ * <b>화면이 실제로 부르는데 고아로 집계되는 거짓 양성</b>이 생겼다. 그 서비스는 클래스 메서드를
+ * 모듈 레벨 named export 로 다시 내보내고 화면은 `getDeptScheduleMonthList({...})` 처럼 부른다.
+ * 게이트가 실제와 다른 사실을 주장하면 래칫 수치 자체가 거짓이 되므로 두 형태를 함께 본다.
+ *
+ * <p>판정은 여전히 백엔드 {@code UnreachableServiceLinter} 를 따라 <b>의도적으로 관대</b>하다 —
+ * 흔한 이름은 다른 모듈의 동명 심볼과 겹쳐 통과할 수 있으나 그것은 <b>놓치는 방향</b>이라
+ * 거짓 red 를 만들지 않는다.
  */
 export function analyzeScreenReachability({ boundaries, repoRoot = DEFAULT_REPO_ROOT, ts }) {
   const sourceRoot = resolve(repoRoot, FRONTEND_SOURCE_ROOT);
@@ -400,7 +412,10 @@ export function analyzeScreenReachability({ boundaries, repoRoot = DEFAULT_REPO_
   const orphans = [];
   for (const entry of methods.values()) {
     const escaped = entry.method.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-    if (new RegExp(`\\.${escaped}\\s*\\(`, 'u').test(consumerText)) continue;
+    // 멤버 호출(`svc.method(`) 또는 직접 호출(`method(` — .bind() 재수출을 named import 로 받은 형태).
+    const memberCall = new RegExp(`\\.${escaped}\\s*\\(`, 'u');
+    const directCall = new RegExp(`(?<![.\\w$])${escaped}\\s*\\(`, 'u');
+    if (memberCall.test(consumerText) || directCall.test(consumerText)) continue;
     orphans.push({ ...entry, operationIds: [...entry.operationIds].sort() });
   }
   orphans.sort((a, b) => a.file.localeCompare(b.file) || a.method.localeCompare(b.method));
