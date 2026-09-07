@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useRef, useState, use } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Moon,
@@ -18,6 +18,7 @@ import {
   HeartHandshake,
   ShieldCheck,
   KeyRound,
+  UserCog,
   CircleDot
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,6 +45,9 @@ import dynamic from 'next/dynamic';
 import { userService } from '@/services/business/user/userService';
 import { useToast } from '@/app/components/ui/toast';
 import { ChangePasswordForm } from '@/components/account/ChangePasswordForm';
+import { ProfileEditForm } from '@/components/account/ProfileEditForm';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
+import type { UserDto } from '@/types/foundation/user';
 
 const StandardModal = dynamic(
   () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
@@ -87,6 +91,30 @@ export function Header({
   const { toast } = useToast();
   const [isPasswordOpen, setPasswordOpen] = useState(false);
   const [isPasswordPending, setPasswordPending] = useState(false);
+  /*
+    [2026-09-08] 내 프로필 수정. `PUT /users/me` 와 userService.updateMe 도 호출부가 0 이었다 —
+    사용자는 전화번호 한 칸을 고치려 해도 관리자에게 부탁해야 했다. 현재 값을 먼저 읽어 폼을
+    채운 뒤 여는 이유는, 빈 폼을 먼저 보여 주면 사용자가 그 상태를 '내 정보가 비어 있다' 로
+    읽고 지움 의도로 저장할 수 있기 때문이다(서버 계약상 빈 문자열은 실제로 지움이다).
+  */
+  const [profileInitial, setProfileInitial] = useState<UserDto | null>(null);
+  const [isProfilePending, setProfilePending] = useState(false);
+  // 저장 요청 자체의 재진입 잠금. state 는 리렌더 뒤에야 반영되므로 같은 틱의 두 번째 제출을
+  // 막지 못한다 — 폼 안쪽 잠금과 별개로 이 경계도 자기 잠금을 갖는다.
+  const profilePendingRef = useRef(false);
+  const [isProfileLoading, setProfileLoading] = useState(false);
+
+  const openProfile = async () => {
+    if (isProfileLoading) return;
+    setProfileLoading(true);
+    try {
+      setProfileInitial(await userService.getMe());
+    } catch (error: unknown) {
+      toast(extractErrorMessage(error, '내 정보를 불러오지 못했습니다.'), 'error');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   // 서버 prefetch 가 비어 있으면(토큰 부재·백엔드 장애) 클라이언트가 직접 조회해 GNB 를 복구한다.
   // 기존에는 서버가 준 값을 그대로 쓰기만 해(const menus = resolvedMenus) 복구 수단이 전혀 없었다.
@@ -267,6 +295,15 @@ export function Header({
                       )}
                       <Button
                         variant="ghost"
+                        aria-label="내 정보 수정"
+                        className="w-full justify-start text-sm h-9 gap-2 font-medium"
+                        onClick={openProfile}
+                        disabled={isProfileLoading}
+                      >
+                        <UserCog size={14} /> {isProfileLoading ? '불러오는 중…' : '내 정보 수정'}
+                      </Button>
+                      <Button
+                        variant="ghost"
                         aria-label="비밀번호 변경"
                         className="w-full justify-start text-sm h-9 gap-2 font-medium"
                         onClick={() => setPasswordOpen(true)}
@@ -315,6 +352,35 @@ export function Header({
           linkUrl: n.linkUrl ?? null,
         }))}
       />
+
+      <StandardModal
+        isOpen={profileInitial !== null}
+        onClose={() => { if (!isProfilePending) setProfileInitial(null); }}
+        title="내 정보 수정"
+        maxWidth="lg"
+      >
+        {profileInitial ? (
+          <ProfileEditForm
+            isPending={isProfilePending}
+            initialValues={profileInitial}
+            onCancel={() => { if (!isProfilePending) setProfileInitial(null); }}
+            onSubmit={async (patch) => {
+              if (profilePendingRef.current) return;
+              profilePendingRef.current = true;
+              setProfilePending(true);
+              try {
+                await userService.updateMe(patch);
+                toast('내 정보를 저장했습니다.', 'success');
+                setProfileInitial(null);
+              } finally {
+                // 실패는 폼이 필드 오류·안내로 처리하도록 그대로 올려보낸다(입력 보존).
+                profilePendingRef.current = false;
+                setProfilePending(false);
+              }
+            }}
+          />
+        ) : null}
+      </StandardModal>
 
       <StandardModal
         isOpen={isPasswordOpen}
