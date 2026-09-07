@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 22,
-    "secondaryActionBoundaries": 70,
-    "candidateCount": 157
+    "secondaryActionBoundaries": 73,
+    "candidateCount": 160
   },
   "entries": [
     {
@@ -77,6 +77,7 @@
       "composedChildContracts": [
         {
           "actionHandlers": [
+            "bulkAction:선택 권한 삭제",
             "handleAuthorDelete",
             "handleSaveGlobal",
             "handleSaveMenuMapping",
@@ -1978,6 +1979,27 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.bulkAction:선택 권한 삭제[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "bulkAction:선택 권한 삭제",
+      "triggerLabel": "선택 권한 삭제",
+      "writeSinks": [
+        "authorAdminService.deleteAuthors"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleAuthorDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -2129,6 +2151,27 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/security/group/SecurityGroupClient.tsx#SecurityGroupClient.bulkAction:선택 그룹 삭제[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
+      "owner": "SecurityGroupClient",
+      "handler": "bulkAction:선택 그룹 삭제",
+      "triggerLabel": "선택 그룹 삭제",
+      "writeSinks": [
+        "groupAdminService.deleteGroups"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/security/group/SecurityGroupClient.tsx#SecurityGroupClient.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
@@ -2147,6 +2190,27 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/role/SecurityRoleClient.tsx#SecurityRoleClient.bulkAction:선택 롤 삭제[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
+      "owner": "SecurityRoleClient",
+      "handler": "bulkAction:선택 롤 삭제",
+      "triggerLabel": "선택 롤 삭제",
+      "writeSinks": [
+        "roleAdminService.deleteRoles"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/role/__tests__/SecurityRoleClient.test.tsx"
       ]
     },
     {

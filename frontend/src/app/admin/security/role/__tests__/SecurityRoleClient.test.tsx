@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  removeMany: vi.fn(),
 }));
 
 vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
@@ -21,6 +22,7 @@ vi.mock('@/services/foundation/system/RoleAdminService', () => ({
     createRole: mocks.create,
     updateRole: mocks.update,
     deleteRole: mocks.remove,
+    deleteRoles: mocks.removeMany,
   },
 }));
 
@@ -78,12 +80,28 @@ vi.mock('@/components/common/PagePagination', () => ({
   ),
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data, pagination }: {
+  StandardDataTable: ({ columns, data, pagination, bulkActions }: {
     columns: Array<{ accessor: (role: any) => React.ReactNode }>;
     data: Array<{ roleNm?: string }>;
     pagination?: { onPageChange: (page: number) => void };
+    bulkActions?: Array<{
+      label: string; pendingLabel?: string; disabled?: boolean; ariaBusy?: boolean;
+      onClick: (items: unknown[]) => void;
+    }>;
   }) => (
     <div>
+      {/* 일괄 액션은 선택된 행을 받는다. mock 은 선택 상태를 만들지 않으므로 전체를 넘긴다. */}
+      {(bulkActions ?? []).map((action, index) => (
+        <button
+          key={index}
+          type="button"
+          disabled={action.disabled}
+          aria-busy={action.ariaBusy || undefined}
+          onClick={() => action.onClick(data)}
+        >
+          {action.ariaBusy ? action.pendingLabel : action.label}
+        </button>
+      ))}
       {data.map((role, rowIndex) => (
         <div key={role.roleNm ?? rowIndex}>
           {columns.map((column, columnIndex) => <div key={columnIndex}>{column.accessor(role)}</div>)}
@@ -138,6 +156,7 @@ describe('SecurityRoleClient', () => {
     mocks.create.mockResolvedValue(undefined);
     mocks.update.mockResolvedValue(undefined);
     mocks.remove.mockResolvedValue(undefined);
+    mocks.removeMany.mockResolvedValue(undefined);
   });
 
   /*
@@ -337,6 +356,59 @@ describe('SecurityRoleClient', () => {
     expect(screen.getByRole('region', { name: '신규 세분화 보안 롤 설정' })).toBeInTheDocument();
     expect(cancel).toBeEnabled();
     expect(mocks.toast).not.toHaveBeenCalledWith(expect.any(String), 'error');
+  });
+
+  /*
+    [2026-09-08] 일괄 삭제.
+
+    서버 deleteRoles 는 deleteAllByIdInBatch 로 한 트랜잭션에서 지운다 — 단수 삭제 N번
+    반복과 다르다(중간 실패로 상태가 갈리지 않는다). API 는 있었는데 화면에 다중 선택이
+    없어 소비자가 0 이었다.
+  */
+  it('선택 롤 일괄 삭제는 확인 뒤 복수 API 로 한 번에 보낸다', async () => {
+    renderClient();
+    // 행이 그려진 뒤 눌러야 선택 대상이 실린다(mock 표는 data 를 그대로 넘긴다).
+    await screen.findByRole('button', { name: '관리자 롤 롤 수정' });
+    fireEvent.click(screen.getByRole('button', { name: '선택 롤 삭제' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm.mock.calls[0][0]).toMatchObject({ variant: 'destructive' });
+    await waitFor(() => expect(mocks.removeMany).toHaveBeenCalledWith(['ROLE_ADMIN']));
+    // 단수 경로로 쪼개 보내지 않는다 — 그러면 트랜잭션 경계가 깨진다.
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  it('일괄 삭제 확인을 취소하면 아무것도 보내지 않는다', async () => {
+    mocks.confirm.mockResolvedValue(false);
+    renderClient();
+    // 행이 그려진 뒤 눌러야 선택 대상이 실린다(mock 표는 data 를 그대로 넘긴다).
+    await screen.findByRole('button', { name: '관리자 롤 롤 수정' });
+    fireEvent.click(screen.getByRole('button', { name: '선택 롤 삭제' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.removeMany).not.toHaveBeenCalled();
+  });
+
+  it('선택 롤 삭제는 중복 실행을 막고 진행을 드러내며 실패 사유를 그대로 알린다', async () => {
+    let reject: (error: unknown) => void = () => undefined;
+    mocks.removeMany.mockReturnValue(new Promise((_resolve, next) => { reject = next; }));
+    renderClient();
+    await screen.findByRole('button', { name: '관리자 롤 롤 수정' });
+
+    fireEvent.click(screen.getByRole('button', { name: '선택 롤 삭제' }));
+    await waitFor(() => expect(mocks.removeMany).toHaveBeenCalledTimes(1));
+
+    const pending = screen.getByRole('button', { name: '삭제 처리 중…' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(pending);
+    expect(mocks.removeMany).toHaveBeenCalledTimes(1);
+
+    reject({ response: { data: { message: '참조 중인 롤이 있습니다.' } } });
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      expect.stringContaining('참조 중인 롤이 있습니다.'),
+      'error',
+    ));
   });
 
   it('deleteRole 롤 삭제를 동기 잠금하고 pending 제어를 알리며 실패 시 행과 제어를 복구한다', async () => {

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   createAuthor: vi.fn(),
   updateAuthor: vi.fn(),
   deleteAuthor: vi.fn(),
+  deleteAuthors: vi.fn(),
   getAuthorMenus: vi.fn(),
   getUsers: vi.fn(),
   saveUsers: vi.fn(),
@@ -37,6 +38,7 @@ vi.mock('@/services/foundation/system/AuthorAdminService', () => ({
     createAuthor: mocks.createAuthor,
     updateAuthor: mocks.updateAuthor,
     deleteAuthor: mocks.deleteAuthor,
+    deleteAuthors: mocks.deleteAuthors,
     getAuthorMenus: mocks.getAuthorMenus,
   },
 }));
@@ -117,8 +119,20 @@ vi.mock('../components/SecurityMatrixVisualizer', () => ({
   ),
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data, onRowClick, onRetry, pagination, keyField, rowActionLabel }: any) => (
+  StandardDataTable: ({ columns, data, onRowClick, onRetry, pagination, keyField, rowActionLabel, bulkActions }: any) => (
     <div data-testid={`table-${keyField}`}>
+      {/* 일괄 액션은 선택된 행을 받는다. mock 은 선택 상태를 만들지 않으므로 전체를 넘긴다. */}
+      {(bulkActions ?? []).map((action: any, index: number) => (
+        <button
+          key={index}
+          type="button"
+          disabled={action.disabled}
+          aria-busy={action.ariaBusy || undefined}
+          onClick={() => action.onClick(data)}
+        >
+          {action.ariaBusy ? action.pendingLabel : action.label}
+        </button>
+      ))}
       <table>
         <tbody>
           {data.map((item: any, rowIndex: number) => {
@@ -216,6 +230,7 @@ describe('SecurityHubClient', () => {
     mocks.createAuthor.mockResolvedValue(undefined);
     mocks.updateAuthor.mockResolvedValue(undefined);
     mocks.deleteAuthor.mockResolvedValue(undefined);
+    mocks.deleteAuthors.mockResolvedValue(undefined);
     mocks.getUsers.mockResolvedValue({ list: users, total: 2, totalPage: 1 });
     mocks.getMenus.mockResolvedValue(menus);
     /*
@@ -515,6 +530,49 @@ describe('SecurityHubClient', () => {
     fireEvent.click(screen.getByRole('tab', { name: '권한 매트릭스' }));
     expect(mocks.replace).toHaveBeenCalledWith('/admin/security/authority?page=2&view=matrix', { scroll: false });
     fireEvent.click(screen.getByRole('button', { name: '보안 정책 정보 새로고침' }));
+  });
+
+  /*
+    [2026-09-08] 권한 일괄 삭제.
+
+    ⚠ 서버 deleteAuthors 는 **all-or-nothing** 이다 — 선택 전 건에 대해
+    assertNoAssignedUsers·assertNoHierarchyReferences 를 먼저 돌리고 하나라도 걸리면 아무것도
+    지우지 않는다. 서비스 주석이 그 근거를 남겼다("일부만 지우면 어느 것이 남았는지 화면이
+    말할 수 없다"). 화면 문구가 그 사실을 그대로 말해야 한다 — 부분 삭제를 약속하면 거짓말이다.
+  */
+  it('선택 권한 일괄 삭제는 all-or-nothing 을 밝히고 복수 API 로 한 번에 보낸다', async () => {
+    renderClient();
+    await screen.findByRole('button', { name: '관리자 역할 선택' });
+    fireEvent.click(screen.getByRole('button', { name: '선택 권한 삭제' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    const message = mocks.confirm.mock.calls[0][0].message as string;
+    expect(message).toContain('아무것도 삭제되지 않습니다');
+    await waitFor(() => expect(mocks.deleteAuthors).toHaveBeenCalledWith(['ROLE_ADMIN', 'ROLE_USER']));
+    // 단수로 쪼개 보내면 서버가 보장하는 전부-아니면-전무가 깨진다.
+    expect(mocks.deleteAuthor).not.toHaveBeenCalled();
+  });
+
+  it('선택 권한 삭제는 중복 실행을 막고 진행을 드러내며 실패 사유를 그대로 알린다', async () => {
+    let reject: (error: unknown) => void = () => undefined;
+    mocks.deleteAuthors.mockReturnValue(new Promise((_resolve, next) => { reject = next; }));
+    renderClient();
+    await screen.findByRole('button', { name: '관리자 역할 선택' });
+
+    fireEvent.click(screen.getByRole('button', { name: '선택 권한 삭제' }));
+    await waitFor(() => expect(mocks.deleteAuthors).toHaveBeenCalledTimes(1));
+
+    const pending = screen.getByRole('button', { name: '삭제 처리 중…' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(pending);
+    expect(mocks.deleteAuthors).toHaveBeenCalledTimes(1);
+
+    reject({ response: { data: { message: '관리자 권한을 가진 사용자가 3명 있습니다.' } } });
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      expect.stringContaining('사용자가 3명'),
+      'error',
+    ));
   });
 
   it('loads and saves the global matrix reached by a deep link', async () => {

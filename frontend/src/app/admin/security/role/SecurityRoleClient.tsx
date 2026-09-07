@@ -30,7 +30,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { RoleManageDtoSchema } from '@/types/generated-zod';
-import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { FormErrorSummary } from '@/components/ui/form';
 ;
@@ -166,6 +166,41 @@ export default function SecurityRoleClient() {
     },
     onSettled: () => { submitPendingRef.current = false; },
   });
+
+  /*
+    [2026-09-08] 일괄 삭제 배선.
+
+    서버 deleteRoles 는 deleteAllByIdInBatch 로 **한 트랜잭션**에서 지운다 — 단수 삭제를 N번
+    반복하는 것과 다르다(중간 실패 시 상태가 갈리지 않는다). 그 API 는 있었는데 화면에 다중
+    선택이 없어 소비자가 0 이었다(operation-consumer-census 축 2).
+  */
+  const bulkDeletePendingRef = useRef(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const handleBulkDelete = async (targets: RoleManage[]) => {
+    if (bulkDeletePendingRef.current || deletePendingRef.current || submitPendingRef.current) return;
+    if (targets.length === 0) return;
+    bulkDeletePendingRef.current = true;
+    setIsBulkDeleting(true);
+    try {
+      const ok = await confirm({
+        title: '보안 롤 일괄 삭제',
+        message: `선택한 ${targets.length}개 롤을 삭제합니다. 되돌릴 수 없습니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+
+      await roleAdminService.deleteRoles(targets.map((role) => role.roleId));
+      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+      toast(`${targets.length}개 롤을 삭제했습니다.`, 'success');
+    } catch (bulkError: unknown) {
+      toast(extractErrorMessage(bulkError, '일괄 삭제 중 시스템 예외가 발생했습니다.'), 'error');
+    } finally {
+      bulkDeletePendingRef.current = false;
+      setIsBulkDeleting(false);
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (roleCode: string) => roleAdminService.deleteRole(roleCode),
@@ -380,6 +415,15 @@ export default function SecurityRoleClient() {
  >
  <StandardDataTable
  accessibleLabel="보안 롤 목록"
+ enableSelection
+ bulkActions={[{
+   label: '선택 롤 삭제',
+   variant: 'destructive',
+   disabled: isBulkDeleting || isDeletePending || isSubmitPending,
+   ariaBusy: isBulkDeleting,
+   pendingLabel: '삭제 처리 중…',
+   onClick: (items) => { void handleBulkDelete(items); },
+ }]}
  keyField="roleId"
  columns={columns}
  data={roles}

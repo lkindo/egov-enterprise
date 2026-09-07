@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  removeMany: vi.fn(),
 }));
 
 vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
@@ -21,6 +22,7 @@ vi.mock('@/services/foundation/system/GroupAdminService', () => ({
     createGroup: mocks.create,
     updateGroup: mocks.update,
     deleteGroup: mocks.remove,
+    deleteGroups: mocks.removeMany,
   },
 }));
 
@@ -55,8 +57,20 @@ vi.mock('@/components/common/PagePagination', () => ({
   ),
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data, onRetry, pagination }: any) => (
+  StandardDataTable: ({ columns, data, onRetry, pagination, bulkActions }: any) => (
     <div>
+      {/* 일괄 액션은 선택된 행을 받는다. mock 은 선택 상태를 만들지 않으므로 전체를 넘긴다. */}
+      {(bulkActions ?? []).map((action: any, index: number) => (
+        <button
+          key={index}
+          type="button"
+          disabled={action.disabled}
+          aria-busy={action.ariaBusy || undefined}
+          onClick={() => action.onClick(data)}
+        >
+          {action.ariaBusy ? action.pendingLabel : action.label}
+        </button>
+      ))}
       {data.map((item: any, rowIndex: number) => (
         <div key={rowIndex}>
           {columns.map((column: any, index: number) => <div key={index}>{column.accessor(item)}</div>)}
@@ -107,6 +121,7 @@ describe('SecurityGroupClient', () => {
     vi.clearAllMocks();
     mocks.confirm.mockResolvedValue(true);
     mocks.list.mockResolvedValue({ list: [group, unnamedGroup], page: 1, size: 10, total: 12, totalPage: 2 });
+    mocks.removeMany.mockResolvedValue(undefined);
     mocks.create.mockResolvedValue(undefined);
     mocks.update.mockResolvedValue(undefined);
     mocks.remove.mockResolvedValue(undefined);
@@ -258,6 +273,56 @@ describe('SecurityGroupClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '관리자 그룹 그룹 삭제' }));
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('삭제 처리 중 시스템 예외가 발생했습니다.', 'error'));
+  });
+
+  /*
+    [2026-09-08] 일괄 삭제.
+
+    서버 deleteGroups 는 사용자의 그룹 지정을 먼저 해제한 뒤(clearGroupIdByGroupIdIn) 한
+    트랜잭션에서 지운다 — 단수 삭제 N번 반복과 다르다(일부 사용자만 그룹이 풀린 채 남지 않는다).
+  */
+  it('선택 그룹 일괄 삭제는 확인 뒤 복수 API 로 한 번에 보낸다', async () => {
+    renderClient();
+    await screen.findByRole('button', { name: '관리자 그룹 그룹 삭제' });
+    fireEvent.click(screen.getByRole('button', { name: '선택 그룹 삭제' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    // 사용자 그룹 지정 해제를 확인 본문이 미리 말한다.
+    expect(mocks.confirm.mock.calls[0][0].message).toContain('그룹 지정이 해제');
+    await waitFor(() => expect(mocks.removeMany).toHaveBeenCalledWith(['GROUP_ADMIN', 'GROUP_EMPTY']));
+    expect(mocks.remove).not.toHaveBeenCalled();
+  });
+
+  it('선택 그룹 삭제는 중복 실행을 막고 진행을 드러내며 실패 사유를 그대로 알린다', async () => {
+    let reject: (error: unknown) => void = () => undefined;
+    mocks.removeMany.mockReturnValue(new Promise((_resolve, next) => { reject = next; }));
+    renderClient();
+    await screen.findByRole('button', { name: '관리자 그룹 그룹 삭제' });
+
+    fireEvent.click(screen.getByRole('button', { name: '선택 그룹 삭제' }));
+    await waitFor(() => expect(mocks.removeMany).toHaveBeenCalledTimes(1));
+
+    const pending = screen.getByRole('button', { name: '삭제 처리 중…' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(pending);
+    expect(mocks.removeMany).toHaveBeenCalledTimes(1);
+
+    reject({ response: { data: { message: '참조 중인 그룹이 있습니다.' } } });
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      expect.stringContaining('참조 중인 그룹이 있습니다.'),
+      'error',
+    ));
+  });
+
+  it('일괄 삭제 확인을 취소하면 아무것도 보내지 않는다', async () => {
+    mocks.confirm.mockResolvedValue(false);
+    renderClient();
+    await screen.findByRole('button', { name: '관리자 그룹 그룹 삭제' });
+    fireEvent.click(screen.getByRole('button', { name: '선택 그룹 삭제' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.removeMany).not.toHaveBeenCalled();
   });
 
   it('그룹 삭제를 동기 잠금하고 pending 제어를 알리며 실패 시 행과 제어를 복구한다', async () => {
