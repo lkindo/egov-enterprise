@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 344,
-    "eligible": 330,
+    "total": 343,
+    "eligible": 329,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 330,
+      "generated": 329,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "bf01c1904870f811ed7551d875f6e5f86e2c83111e3012a143736fca0b8e1ff0",
+  "inventoryHash": "1814c5283f0ad01c872fd011b194486934e39595bdc00f561359d755342f41f9",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -5712,26 +5712,9 @@
     },
     {
       "file": "frontend/src/services/foundation/system/UserAuthorityAdminService.ts",
-      "owner": "UserAuthorityAdminService.saveUserAuthority",
-      "ordinal": 1,
-      "line": 171,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "post",
-      "target": "/api/v1/admin/system/user-authorities",
-      "operationId": "saveUserAuthorities",
-      "descriptorName": "saveUserAuthoritiesOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "07915737f4e42d54b3bd"
-    },
-    {
-      "file": "frontend/src/services/foundation/system/UserAuthorityAdminService.ts",
       "owner": "UserAuthorityAdminService.deleteUserAuthorities",
       "ordinal": 1,
-      "line": 175,
+      "line": 177,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",

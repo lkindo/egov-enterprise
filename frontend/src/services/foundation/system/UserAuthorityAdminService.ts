@@ -167,9 +167,11 @@ class UserAuthorityAdminService extends AdminService {
     return this.executeGenerated(saveUserAuthoritiesOperation, { body: data, config });
   }
 
-  async saveUserAuthority(data: UserAuthorityDto, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(saveUserAuthoritiesOperation, { body: [data], config });
-  }
+  /*
+    [2026-09-07] saveUserAuthority(단수) 래퍼를 걷었다. 복수 메서드를 `[data]` 로 감싸기만 했고
+    호출부가 0 이었다(축 2 실측). 화면은 처음부터 saveUserAuthorities 를 부른다 —
+    한 건을 저장할 때도 배열로 보내면 되므로 래퍼가 없어도 표현력이 줄지 않는다.
+  */
 
   async deleteUserAuthorities(uniqIds: string[], config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(deleteUserAuthoritiesOperation, { body: uniqIds, config });
