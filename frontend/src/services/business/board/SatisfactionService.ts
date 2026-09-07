@@ -5,6 +5,7 @@ import {
   deleteOperation,
   getAverageOperation,
   getListOperation,
+  moderateOperation,
   updateOperation,
 } from '@/types/generated-operations';
 
@@ -58,6 +59,20 @@ class SatisfactionService extends ApiService {
   /** 인증된 소유자 또는 관리자의 만족도를 논리 삭제한다. */
   remove = async (bbsId: string, pstSn: number, dgstfnSn: number): Promise<void> => {
     return this.executeGenerated(deleteOperation, {
+      path: { bbsId, pstSn, dgstfnSn },
+    });
+  };
+
+  /**
+   * 관리자 대리 삭제.
+   *
+   * <p>일반 삭제(`remove`)와 결과는 같지만 <b>판정이 다르다</b>. `deleteSatisfaction` 은
+   * `assertCanModify` 를 거치는데 그 함수는 <b>작성자(`frstRgtrId`)가 비어 있으면 관리자도
+   * 거부</b>한다. 반면 이 경로는 `assertAdmin` 만 본다. 따라서 ADR-0011 이전의 익명 평가처럼
+   * 작성자 정보가 없는 행은 <b>이 경로로만</b> 지울 수 있다.
+   */
+  moderate = async (bbsId: string, pstSn: number, dgstfnSn: number): Promise<void> => {
+    return this.executeGenerated(moderateOperation, {
       path: { bbsId, pstSn, dgstfnSn },
     });
   };

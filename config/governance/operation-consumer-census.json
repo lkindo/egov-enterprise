@@ -13,7 +13,7 @@
   ],
   "expected": {
     "operationCount": 379,
-    "unwiredMax": 17,
+    "unwiredMax": 16,
     "screenOrphanMax": 43
   },
   "entries": [
@@ -183,12 +183,6 @@
       "operationId": "deleteNotification",
       "category": "unwired",
       "note": "Single-notification delete — the centre exposes mark-as-read and bulk paths only.",
-      "evidence": []
-    },
-    {
-      "operationId": "moderate",
-      "category": "unwired",
-      "note": "Admin moderation delete for a satisfaction rating; no moderation screen exists.",
       "evidence": []
     },
     {

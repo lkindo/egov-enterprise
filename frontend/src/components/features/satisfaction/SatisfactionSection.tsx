@@ -8,6 +8,9 @@ import { Trash2, Loader2, Pencil } from 'lucide-react';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import {
   satisfactionCreateSchema,
   satisfactionValidationLabels,
@@ -33,6 +36,21 @@ import { SatisfactionEditForm } from './SatisfactionEditForm';
  */
 export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; pstSn: number }) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const confirm = useConfirm();
+  /*
+    [2026-09-08] 관리자 대리 삭제 경로.
+
+    두 삭제 API 는 결과가 같지만 판정이 다르다 — 일반 삭제의 `assertCanModify` 는 **작성자
+    (frstRgtrId)가 비어 있으면 관리자도 거부**하고, 대리 삭제는 `assertAdmin` 만 본다. 즉
+    ADR-0011 이전의 익명 평가처럼 작성자 정보가 없는 행은 대리 삭제로만 지울 수 있는데 그
+    화면이 없었다(operation-consumer-census 축 1 이 `moderate` 를 소비 0 으로 지목).
+
+    역할 판정은 라우트 게이트와 같은 집합을 쓴다(DEC-OPS-023 ②). 이것은 **표시가 아니라 경로
+    선택**이며 실패 모드가 안전하다 — 관리자를 일반 사용자로 잘못 보면 자기 평가는 그대로
+    지워지고 레거시 행만 못 지운다. 반대 방향은 서버가 @AdminOnly 로 막는다.
+  */
+  const isAdmin = isAdministrativeRole(user?.role);
   const [score, setScore] = useState(0);
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +105,9 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (dgstfnSn: number) => satisfactionService.remove(bbsId, pstSn, dgstfnSn),
+    mutationFn: (dgstfnSn: number) => (isAdmin
+      ? satisfactionService.moderate(bbsId, pstSn, dgstfnSn)
+      : satisfactionService.remove(bbsId, pstSn, dgstfnSn)),
     onSuccess: () => {
       setError(null);
       invalidate();
@@ -125,12 +145,26 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
     }
   };
 
-  const handleDelete = (dgstfnSn: number) => {
+  const handleDelete = async (dgstfnSn: number, authorName: string) => {
     if (deletePendingRef.current) return;
     deletePendingRef.current = true;
     setDeletingSatisfactionId(dgstfnSn);
     setError(null);
     try {
+      // 관리자는 남의 평가도 지울 수 있으므로 대상을 밝히고 확인을 받는다.
+      if (isAdmin) {
+        const ok = await confirm({
+          title: '만족도 삭제',
+          message: `${authorName} 님의 만족도를 삭제합니다. 되돌릴 수 없습니다.`,
+          variant: 'destructive',
+          confirmText: '삭제',
+        });
+        if (!ok) {
+          deletePendingRef.current = false;
+          setDeletingSatisfactionId(null);
+          return;
+        }
+      }
       deleteMutation.mutate(dgstfnSn);
     } catch (mutationError) {
       deletePendingRef.current = false;
@@ -299,7 +333,7 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
                     aria-busy={deletingSatisfactionId === item.dgstfnSn || undefined}
                     className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
                     disabled={deletingSatisfactionId !== null || editingId !== null}
-                    onClick={() => item.dgstfnSn && handleDelete(item.dgstfnSn)}
+                    onClick={() => item.dgstfnSn && handleDelete(item.dgstfnSn, item.userNm || '익명')}
                   >
                     {deletingSatisfactionId === item.dgstfnSn
                       ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

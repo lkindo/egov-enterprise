@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 344,
-    "eligible": 330,
+    "total": 345,
+    "eligible": 331,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 330,
+      "generated": 331,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "dc8f923d7d17c713bf3627a91a566b0cb864b8812248ace3c4c2ea3aeeb9c3bf",
+  "inventoryHash": "c9a3a99b3aa0da4bffb292af89db04f1eafc45de09400f77005c370bb93a9e1b",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -478,7 +478,7 @@
       "file": "frontend/src/services/business/board/SatisfactionService.ts",
       "owner": "<anonymous-function>",
       "ordinal": 1,
-      "line": 24,
+      "line": 25,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -495,7 +495,7 @@
       "file": "frontend/src/services/business/board/SatisfactionService.ts",
       "owner": "<anonymous-function>",
       "ordinal": 2,
-      "line": 31,
+      "line": 32,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -512,7 +512,7 @@
       "file": "frontend/src/services/business/board/SatisfactionService.ts",
       "owner": "<anonymous-function>",
       "ordinal": 3,
-      "line": 38,
+      "line": 39,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -529,7 +529,7 @@
       "file": "frontend/src/services/business/board/SatisfactionService.ts",
       "owner": "<anonymous-function>",
       "ordinal": 4,
-      "line": 52,
+      "line": 53,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -546,7 +546,7 @@
       "file": "frontend/src/services/business/board/SatisfactionService.ts",
       "owner": "<anonymous-function>",
       "ordinal": 5,
-      "line": 60,
+      "line": 61,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -558,6 +558,23 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "a106228b1d137d4a59bd"
+    },
+    {
+      "file": "frontend/src/services/business/board/SatisfactionService.ts",
+      "owner": "<anonymous-function>",
+      "ordinal": 6,
+      "line": 75,
+      "column": 12,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "delete",
+      "target": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}/moderate",
+      "operationId": "moderate",
+      "descriptorName": "moderateOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "69ab2b1cb58cc689cc2e"
     },
     {
       "file": "frontend/src/services/business/comment/commentService.ts",

@@ -6,6 +6,20 @@ import SatisfactionSection from '../SatisfactionSection';
 import { satisfactionService } from '@/services/business/board/SatisfactionService';
 import { satisfactionCreateSchema } from '../satisfaction-form-validation';
 
+const testState = vi.hoisted(() => ({
+  /** 기본은 일반 사용자. 관리자 경로(대리 삭제)는 개별 테스트가 바꾼다. */
+  role: 'USER' as string | undefined,
+  confirm: vi.fn(),
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'u1', name: '홍길동', role: testState.role } }),
+}));
+
+vi.mock('@/app/components/ui/confirm-modal', () => ({
+  useConfirm: () => testState.confirm,
+}));
+
 vi.mock('@/services/business/board/SatisfactionService', () => ({
   satisfactionService: {
     list: vi.fn(),
@@ -13,6 +27,7 @@ vi.mock('@/services/business/board/SatisfactionService', () => ({
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
+    moderate: vi.fn(),
   },
 }));
 
@@ -38,6 +53,9 @@ describe('SatisfactionSection', () => {
     mocked.average.mockResolvedValue({});
     mocked.remove.mockResolvedValue(undefined);
     mocked.update.mockResolvedValue(undefined);
+    mocked.moderate.mockResolvedValue(undefined);
+    testState.role = 'USER';
+    testState.confirm.mockResolvedValue(true);
   });
 
   it('게시글 경로(bbsId/pstSn)를 서비스에 그대로 전달한다', async () => {
@@ -270,6 +288,59 @@ describe('SatisfactionSection', () => {
     await user.click(screen.getByRole('button', { name: '취소' }));
     expect(await screen.findByRole('button', { name: '홍길동의 만족도 삭제' })).toBeInTheDocument();
     expect(mocked.update).not.toHaveBeenCalled();
+  });
+
+  /*
+    [2026-09-08] 관리자 대리 삭제 경로.
+
+    두 삭제 API 는 결과가 같지만 판정이 다르다 — 일반 삭제의 `assertCanModify` 는 작성자
+    (frstRgtrId)가 비어 있으면 **관리자도 거부**하고, 대리 삭제는 `assertAdmin` 만 본다.
+    ADR-0011 이전의 익명 평가처럼 작성자 정보가 없는 행은 대리 삭제로만 지울 수 있다.
+  */
+  it('일반 사용자의 삭제는 일반 경로로 나간다', async () => {
+    mocked.list.mockResolvedValue([
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '홍길동', useYn: 'Y' },
+    ]);
+    renderWidget();
+
+    fireEvent.click(await screen.findByRole('button', { name: /홍길동의 만족도 삭제/ }));
+
+    await waitFor(() => expect(mocked.remove).toHaveBeenCalledWith('BBS_01', 1, 7));
+    expect(mocked.moderate).not.toHaveBeenCalled();
+    // 자기 것을 지우는 흐름이라 확인 대화를 끼우지 않는다(종전 동작 보존).
+    expect(testState.confirm).not.toHaveBeenCalled();
+  });
+
+  it('관리자의 삭제는 대리 삭제 경로로 나가고 대상을 밝힌 확인을 거친다', async () => {
+    testState.role = 'ADMIN';
+    mocked.list.mockResolvedValue([
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '김철수', useYn: 'Y' },
+    ]);
+    renderWidget();
+
+    fireEvent.click(await screen.findByRole('button', { name: /김철수의 만족도 삭제/ }));
+
+    await waitFor(() => expect(testState.confirm).toHaveBeenCalledTimes(1));
+    expect(testState.confirm.mock.calls[0][0].message).toContain('김철수');
+    await waitFor(() => expect(mocked.moderate).toHaveBeenCalledWith('BBS_01', 1, 7));
+    expect(mocked.remove).not.toHaveBeenCalled();
+  });
+
+  it('관리자가 확인을 취소하면 아무것도 지우지 않는다', async () => {
+    testState.role = 'ROLE_SYSTEM';
+    testState.confirm.mockResolvedValue(false);
+    mocked.list.mockResolvedValue([
+      { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '김철수', useYn: 'Y' },
+    ]);
+    renderWidget();
+
+    fireEvent.click(await screen.findByRole('button', { name: /김철수의 만족도 삭제/ }));
+
+    await waitFor(() => expect(testState.confirm).toHaveBeenCalledTimes(1));
+    expect(mocked.moderate).not.toHaveBeenCalled();
+    expect(mocked.remove).not.toHaveBeenCalled();
+    // 취소 후 다시 시도할 수 있어야 한다 — 잠금이 풀린다.
+    expect(await screen.findByRole('button', { name: /김철수의 만족도 삭제$/ })).toBeEnabled();
   });
 
   it('만족도가 없으면 안내 문구를 보여준다', async () => {
