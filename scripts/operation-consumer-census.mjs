@@ -18,17 +18,20 @@
  * `generated-api-boundaries` census 도 이 축을 못 본다 — 그것은 "호출부가 있는 것 중 생성 경로를
  * 쓰는 비율"을 재므로, 호출부가 0 이면 애초에 분모에서 빠진다(실측: adoption 100% 인데 미소비 60건).
  *
- * [이 게이트가 증명하는 것과 증명하지 못하는 것 — 2026-09-07 실측으로 확정]
- * 증명하는 것: 각 operation 을 부르는 **생산 TypeScript 모듈이 존재한다**.
- * 증명하지 못하는 것: 그 호출부가 **사용자가 도달하는 화면에서 실제로 쓰인다**.
+ * [이 게이트는 두 축을 함께 잰다 — 2026-09-07]
  *
- * <p>실측 반례: `deleteRespondent` 는 `SurveyAdminService.deleteRespondent()` 가 생성 실행기를
- * 부르므로 consumed 로 집계되지만, 그 서비스 메서드를 부르는 곳은 **자기 단위 테스트뿐**이다
- * (app/·components/ 호출부 0). 즉 백엔드에서 `UnreachableServiceLinter` 가 닫았던
- * "유일한 참조가 단위 테스트" 패턴이 프런트 서비스 계층에서 한 겹 아래로 내려가 있다.
+ * <p><b>축 1 (operation 소비)</b>: 각 operation 을 부르는 생산 TypeScript 모듈이 존재하는가.
  *
- * <p>그 축(서비스 메서드 → 화면 도달성)은 별도 게이트가 필요하며 GAP-WIRING-001 에 등재돼 있다.
- * 이 게이트의 unwired 수치를 "화면에서 못 쓰는 기능의 총량" 으로 읽으면 **과소평가**다.
+ * <p><b>축 2 (화면 도달성)</b>: 그 호출부를 감싼 **서비스 메서드를 화면이 실제로 부르는가**.
+ * 축 1 만으로는 부족하다는 것이 실측으로 드러났다 — `deleteRespondent` 는
+ * `SurveyAdminService.deleteRespondent()` 가 생성 실행기를 부르므로 축 1 을 통과하지만, 그
+ * 서비스 메서드를 부르는 곳은 <b>자기 단위 테스트뿐</b>이다(app/·components/ 호출부 0).
+ * 즉 백엔드에서 {@code UnreachableServiceLinter} 가 닫았던 "유일한 참조가 단위 테스트" 패턴이
+ * 프런트 서비스 계층에서 한 겹 아래로 내려가 있었다(DEC-OPS-050 이 그 한계를 기록했고 이 축이 닫는다).
+ *
+ * <p>축 2 는 예외 목록을 두지 않는다 — 77건을 원장에 적으면 그 목록이 곧 서랍이 된다(H2).
+ * 대신 <b>단조 감소 래칫</b>(`expected.screenOrphanMax`) 하나로 신규 유입만 막고, 실패 시 전체
+ * 목록을 출력해 불투명해지지 않게 한다(status-color-guard 와 같은 설계).
  *
  * [규칙] 모든 operation 은 다음 셋 중 정확히 하나다.
  *   1. consumed      — 프런트 호출부가 있다(generated-api-boundaries 레코드).
@@ -49,7 +52,8 @@
  *   node scripts/operation-consumer-census.mjs
  *   node scripts/operation-consumer-census.mjs --json
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,6 +63,7 @@ export const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
 export const API_DOC_PATH = 'api-docs.json';
 export const BOUNDARY_PATH = join('config', 'governance', 'generated-api-boundaries.json');
 export const LEDGER_PATH = join('config', 'governance', 'operation-consumer-census.json');
+export const FRONTEND_SOURCE_ROOT = join('frontend', 'src');
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete']);
 
@@ -256,17 +261,160 @@ export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_RO
   };
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// 축 2 — 서비스 메서드 → 화면 도달성
+// ───────────────────────────────────────────────────────────────────────────
+
+const toPosix = (value) => value.split('\\').join('/');
+
+export const isServiceFile = (file) => toPosix(file).includes('/services/');
+export const isTestFile = (file) => /__tests__|\.test\.|\.spec\./u.test(toPosix(file));
+
+function listSourceFiles(dir, out = []) {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) listSourceFiles(full, out);
+    else if (/\.(ts|tsx)$/u.test(full)) out.push(toPosix(full));
+  }
+  return out;
+}
+
+/**
+ * 함수형 노드에서 사람이 부르는 이름을 뽑는다.
+ *
+ * <p>이름 기반 정규식만 쓰면 <b>클래스 프로퍼티 화살표 함수</b>를 소유자로 잡지 못해 호출부가
+ * 엉뚱한 선언(생성자의 {@code super(...)})에 귀속된다 — 1차 시도에서 실제로 그 오탐이 나왔다.
+ * AST 로 네 가지 형태(메서드·함수 선언·프로퍼티 초기화·변수 초기화)를 모두 인식한다.
+ */
+function functionLikeName(ts, node, sourceFile) {
+  const isFn = (init) => init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init));
+  if (ts.isMethodDeclaration(node) && node.name) return node.name.getText(sourceFile);
+  if (ts.isFunctionDeclaration(node) && node.name) return node.name.getText(sourceFile);
+  if (ts.isPropertyDeclaration(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
+  if (ts.isPropertyAssignment(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
+  if (ts.isVariableDeclaration(node) && isFn(node.initializer)) return node.name.getText(sourceFile);
+  return null;
+}
+
+/** 해당 라인을 감싸는 **가장 안쪽** 함수형 노드의 이름. 없으면 null(귀속 실패). */
+export function owningMethodAt(ts, sourceFile, line) {
+  const position = ts.getPositionOfLineAndCharacter(sourceFile, Math.max(0, line - 1), 0);
+  let best = null;
+  const visit = (node) => {
+    const start = node.getStart(sourceFile);
+    const end = node.getEnd();
+    if (start <= position && position <= end) {
+      const name = functionLikeName(ts, node, sourceFile);
+      if (name && (!best || end - start < best.width)) best = { name, width: end - start };
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return best?.name ?? null;
+}
+
+/**
+ * 화면 소비 판정은 **관대하다** — `.<메서드명>(` 이 서비스 밖 생산 코드 어디에든 보이면 통과다.
+ * 백엔드 {@code UnreachableServiceLinter} 의 "확실한 부분집합만 잡고 애매하면 통과" 설계를 따른다.
+ * 흔한 이름(`create`·`getList`)은 다른 서비스의 동명 메서드와 겹쳐 통과할 수 있으나, 그것은
+ * <b>놓치는 방향</b>이라 거짓 red 를 만들지 않는다.
+ */
+export function analyzeScreenReachability({ boundaries, repoRoot = DEFAULT_REPO_ROOT, ts }) {
+  const sourceRoot = resolve(repoRoot, FRONTEND_SOURCE_ROOT);
+  if (!existsSync(sourceRoot)) return { orphans: [], unattributed: [], methodCount: 0 };
+
+  const files = listSourceFiles(sourceRoot);
+  const consumerText = files
+    .filter((file) => !isServiceFile(file) && !isTestFile(file))
+    .map((file) => readFileSync(file, 'utf8'))
+    .join('\n');
+
+  const parsed = new Map();
+  const readSource = (absolute) => {
+    if (!parsed.has(absolute)) {
+      const text = readFileSync(absolute, 'utf8');
+      parsed.set(absolute, ts.createSourceFile(absolute, text, ts.ScriptTarget.Latest, true));
+    }
+    return parsed.get(absolute);
+  };
+
+  const methods = new Map();
+  const unattributed = [];
+  for (const record of boundaries.records ?? []) {
+    const file = toPosix(record.file ?? '');
+    if (!record.operationId || !isServiceFile(file) || isTestFile(file)) continue;
+    const absolute = resolve(repoRoot, file);
+    if (!existsSync(absolute)) continue;
+    const owner = owningMethodAt(ts, readSource(absolute), record.line);
+    if (!owner) {
+      unattributed.push({ file, line: record.line, operationId: record.operationId });
+      continue;
+    }
+    const key = `${file}#${owner}`;
+    if (!methods.has(key)) methods.set(key, { file, method: owner, operationIds: new Set() });
+    methods.get(key).operationIds.add(record.operationId);
+  }
+
+  const orphans = [];
+  for (const entry of methods.values()) {
+    const escaped = entry.method.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    if (new RegExp(`\\.${escaped}\\s*\\(`, 'u').test(consumerText)) continue;
+    orphans.push({ ...entry, operationIds: [...entry.operationIds].sort() });
+  }
+  orphans.sort((a, b) => a.file.localeCompare(b.file) || a.method.localeCompare(b.method));
+  return { orphans, unattributed, methodCount: methods.size };
+}
+
 export function loadJson(repoRoot, relativePath) {
   return JSON.parse(readFileSync(resolve(repoRoot, relativePath), 'utf8'));
 }
 
 export function runCensus(repoRoot = DEFAULT_REPO_ROOT) {
-  return analyze({
+  const boundaries = loadJson(repoRoot, BOUNDARY_PATH);
+  const ledger = loadJson(repoRoot, LEDGER_PATH);
+  const result = analyze({
     apiDoc: loadJson(repoRoot, API_DOC_PATH),
-    boundaries: loadJson(repoRoot, BOUNDARY_PATH),
-    ledger: loadJson(repoRoot, LEDGER_PATH),
+    boundaries,
+    ledger,
     repoRoot,
   });
+
+  // 축 2 — TypeScript 는 프런트 워크스페이스에만 있으므로 여기서 지연 로드한다.
+  const ts = createRequire(resolve(repoRoot, 'frontend', 'package.json'))('typescript');
+  const reachability = analyzeScreenReachability({ boundaries, repoRoot, ts });
+
+  const orphanMax = ledger.expected?.screenOrphanMax;
+  if (typeof orphanMax !== 'number' || !Number.isInteger(orphanMax) || orphanMax < 0) {
+    result.errors.push({
+      code: 'INVALID_SCREEN_RATCHET',
+      operationId: null,
+      message: 'expected.screenOrphanMax must be a non-negative integer',
+    });
+  } else if (reachability.orphans.length > orphanMax) {
+    // 목록을 함께 실어 red 가 불투명해지지 않게 한다 — 예외 파일을 만들지 않는 대신의 장치다.
+    const listed = reachability.orphans
+      .map((entry) => `${entry.method} (${entry.operationIds.join(', ')}) — ${entry.file}`)
+      .join('\n      ');
+    result.errors.push({
+      code: 'SCREEN_REACHABILITY_RATCHET',
+      operationId: null,
+      message: `service methods with no screen caller ${reachability.orphans.length} exceed the frozen maximum ${orphanMax}\n      ${listed}`,
+    });
+  }
+  if (reachability.unattributed.length > 0) {
+    // 귀속 실패는 통과가 아니라 red 다 — 못 본 것을 본 것처럼 세지 않는다.
+    result.errors.push({
+      code: 'UNATTRIBUTED_CALL_SITE',
+      operationId: null,
+      message: `${reachability.unattributed.length} generated call site(s) could not be attributed to an enclosing function`,
+    });
+  }
+
+  result.summary.serviceMethods = reachability.methodCount;
+  result.summary.screenOrphans = reachability.orphans.length;
+  result.summary.screenOrphanMax = orphanMax ?? null;
+  result.reachability = reachability;
+  return result;
 }
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH;
@@ -279,7 +427,9 @@ if (isDirectRun) {
     process.stdout.write(
       `operation consumer census: total=${summary.operationCount} consumed=${summary.consumed} `
       + `alias-derived=${summary.aliasDerived} ledgered=${summary.ledgered} `
-      + `unwired=${summary.unwired}/${summary.unwiredMax}\n`,
+      + `unwired=${summary.unwired}/${summary.unwiredMax}\n`
+      + `screen reachability: service methods=${summary.serviceMethods} `
+      + `no-screen-caller=${summary.screenOrphans}/${summary.screenOrphanMax}\n`,
     );
   }
   if (result.errors.length > 0) {
@@ -289,5 +439,8 @@ if (isDirectRun) {
     }
     process.exit(1);
   }
-  process.stdout.write('✅ every documented operation has a consumer or a justified ledger entry\n');
+  process.stdout.write(
+    '✅ every documented operation has a consumer or a justified ledger entry,'
+    + ' and no new service method lost its screen caller\n',
+  );
 }

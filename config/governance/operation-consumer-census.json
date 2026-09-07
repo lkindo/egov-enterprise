@@ -7,11 +7,14 @@
     "bff-route-handler and non-browser-consumer entries are machine-verified: an evidence file must exist and reference the operation path suffix. A category label alone proves nothing.",
     "unwired entries are real debt. expected.unwiredMax is a monotonic ratchet — raising it is a visible diff, never a silent exception.",
     "Alias duplicates (springdoc _N suffixes over multi-path @RequestMapping) are derived, never listed. Listing one is an error.",
-    "LIMITATION: consumed means a production TypeScript module calls the operation — not that a user-reachable screen uses it. A service method whose only caller is its own unit test still counts as consumed (measured: deleteRespondent). That second axis needs a separate gate; see GAP-WIRING-001."
+    "AXIS 2 (screen reachability): consumed on axis 1 only means a production TypeScript module calls the operation. Axis 2 additionally checks that the service method wrapping that call site is invoked from outside services/ and tests — the case that first exposed the gap was deleteRespondent, whose only caller was its own unit test.",
+    "Axis 2 keeps no exception list on purpose: 77 entries would become a drawer (H2). It is a single monotonic ratchet (expected.screenOrphanMax) and prints the full offending list on failure, mirroring status-color-guard.",
+    "Axis 2 is deliberately lenient, following UnreachableServiceLinter: a method counts as reachable if `.name(` appears anywhere in non-service production code. Common names may pass by collision — that direction misses violations rather than inventing them."
   ],
   "expected": {
     "operationCount": 379,
-    "unwiredMax": 19
+    "unwiredMax": 19,
+    "screenOrphanMax": 77
   },
   "entries": [
     {
