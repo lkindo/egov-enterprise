@@ -17,6 +17,7 @@ import {
   Users,
   HeartHandshake,
   ShieldCheck,
+  KeyRound,
   CircleDot
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,6 +40,15 @@ import {
   resolveMenuInternalRoute,
 } from '@/lib/navigation/internal-route';
 import { SITE_IDENTITY } from '@/config/site-identity';
+import dynamic from 'next/dynamic';
+import { userService } from '@/services/business/user/userService';
+import { useToast } from '@/app/components/ui/toast';
+import { ChangePasswordForm } from '@/components/account/ChangePasswordForm';
+
+const StandardModal = dynamic(
+  () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
+  { ssr: false },
+);
 
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
   1000000: LayoutGrid, // 워크스페이스
@@ -68,6 +78,15 @@ export function Header({
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount, error: notificationsError, markAsRead, markAllAsRead, refresh: refreshNotifications } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  /*
+    [2026-09-08] 본인 비밀번호 변경. 서버(PUT /users/me/password)와 userService.changePassword 는
+    있었는데 호출부가 0 이었다 — DEC-OPS-032 가 관리자 초기화만 열었고, 정작 사용자가 자기
+    비밀번호를 바꿀 경로는 어디에도 없었다. 계정 메뉴에 두는 이유는 새 라우트·URL 상태를 만들지
+    않기 위해서다(DEC-OPS-037 의 다이얼로그 선례).
+  */
+  const { toast } = useToast();
+  const [isPasswordOpen, setPasswordOpen] = useState(false);
+  const [isPasswordPending, setPasswordPending] = useState(false);
 
   // 서버 prefetch 가 비어 있으면(토큰 부재·백엔드 장애) 클라이언트가 직접 조회해 GNB 를 복구한다.
   // 기존에는 서버가 준 값을 그대로 쓰기만 해(const menus = resolvedMenus) 복구 수단이 전혀 없었다.
@@ -248,6 +267,14 @@ export function Header({
                       )}
                       <Button
                         variant="ghost"
+                        aria-label="비밀번호 변경"
+                        className="w-full justify-start text-sm h-9 gap-2 font-medium"
+                        onClick={() => setPasswordOpen(true)}
+                      >
+                        <KeyRound size={14} /> 비밀번호 변경
+                      </Button>
+                      <Button
+                        variant="ghost"
                         aria-label="로그아웃"
                         className="w-full justify-start text-sm h-9 gap-2 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10 font-medium"
                         onClick={handleLogout}
@@ -288,6 +315,29 @@ export function Header({
           linkUrl: n.linkUrl ?? null,
         }))}
       />
+
+      <StandardModal
+        isOpen={isPasswordOpen}
+        onClose={() => { if (!isPasswordPending) setPasswordOpen(false); }}
+        title="비밀번호 변경"
+        maxWidth="md"
+      >
+        <ChangePasswordForm
+          isPending={isPasswordPending}
+          onCancel={() => { if (!isPasswordPending) setPasswordOpen(false); }}
+          onSubmit={async (oldPassword, newPassword) => {
+            setPasswordPending(true);
+            try {
+              await userService.changePassword(oldPassword, newPassword);
+              toast('비밀번호를 변경했습니다.', 'success');
+              setPasswordOpen(false);
+            } finally {
+              // 실패는 폼이 필드 오류·안내로 처리하도록 그대로 올려보낸다(입력 보존).
+              setPasswordPending(false);
+            }
+          }}
+        />
+      </StandardModal>
     </header>
   );
 }
