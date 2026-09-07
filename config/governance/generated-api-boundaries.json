@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 346,
-    "eligible": 332,
+    "total": 347,
+    "eligible": 333,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 332,
+      "generated": 333,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "1789f5be67a2faa4639035f7c5919f294011704dad70b9016042b0ad5b8366e6",
+  "inventoryHash": "ecb2906a740d09bb1140b23b09b9d56ece62bbb6e9a9f7a46ff406b749979c8c",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -4201,7 +4201,7 @@
       "file": "frontend/src/services/foundation/system/LoginPolicyAdminService.ts",
       "owner": "LoginPolicyAdminService.getLoginPolicyList",
       "ordinal": 1,
-      "line": 47,
+      "line": 48,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -4218,7 +4218,7 @@
       "file": "frontend/src/services/foundation/system/LoginPolicyAdminService.ts",
       "owner": "LoginPolicyAdminService.getLoginPolicy",
       "ordinal": 1,
-      "line": 60,
+      "line": 61,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -4233,9 +4233,26 @@
     },
     {
       "file": "frontend/src/services/foundation/system/LoginPolicyAdminService.ts",
+      "owner": "LoginPolicyAdminService.createLoginPolicy",
+      "ordinal": 1,
+      "line": 76,
+      "column": 12,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "post",
+      "target": "/api/v1/admin/system/login-policies/{userId}",
+      "operationId": "insertLoginPolicy",
+      "descriptorName": "insertLoginPolicyOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "adeb574ffb6c634eb54e"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/LoginPolicyAdminService.ts",
       "owner": "LoginPolicyAdminService.saveLoginPolicy",
       "ordinal": 1,
-      "line": 68,
+      "line": 85,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -4252,7 +4269,7 @@
       "file": "frontend/src/services/foundation/system/LoginPolicyAdminService.ts",
       "owner": "LoginPolicyAdminService.deleteLoginPolicy",
       "ordinal": 1,
-      "line": 77,
+      "line": 94,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",

@@ -13,7 +13,7 @@
   ],
   "expected": {
     "operationCount": 379,
-    "unwiredMax": 15,
+    "unwiredMax": 14,
     "screenOrphanMax": 43
   },
   "entries": [
@@ -183,12 +183,6 @@
       "operationId": "getScheduleList",
       "category": "unwired",
       "note": "Flat schedule list. The schedule screens query the department-scoped endpoints instead.",
-      "evidence": []
-    },
-    {
-      "operationId": "insertLoginPolicy",
-      "category": "unwired",
-      "note": "Per-user login policy creation. The restored /admin/security/login-policy screen (DEC-OPS-024) reads and updates policies but has no create path.",
       "evidence": []
     },
     {

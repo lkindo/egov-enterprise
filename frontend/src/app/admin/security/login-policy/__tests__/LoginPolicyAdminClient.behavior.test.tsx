@@ -7,6 +7,7 @@ import LoginPolicyAdminClient from '../LoginPolicyAdminClient';
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   save: vi.fn(),
+  create: vi.fn(),
   toast: vi.fn(),
 }));
 
@@ -14,6 +15,7 @@ vi.mock('@/services/foundation/system/LoginPolicyAdminService', () => ({
   loginPolicyAdminService: {
     getLoginPolicyList: (...args: unknown[]) => mocks.list(...args),
     saveLoginPolicy: (...args: unknown[]) => mocks.save(...args),
+    createLoginPolicy: (...args: unknown[]) => mocks.create(...args),
   },
 }));
 vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: string) => value }));
@@ -77,6 +79,45 @@ describe('LoginPolicyAdminClient validation behavior', () => {
     vi.clearAllMocks();
     mocks.list.mockResolvedValue({ list: [policy], total: 1, totalPage: 1 });
     mocks.save.mockResolvedValue(undefined);
+    mocks.create.mockResolvedValue(undefined);
+  });
+
+  /*
+    [2026-09-08] 신규 등록 경로.
+
+    목록(searchLoginPolicies)은 **전체 사용자**를 좌측 조인으로 돌려주고 regYn 이 정책 존재
+    여부다. 그런데 화면에 등록 경로가 없어, 정책이 없는 사용자를 골라 저장하면 서버
+    updateLoginPolicy 가 404 를 냈다 — 새 사용자에게 IP 제한·OTP 를 걸 방법이 없었다.
+  */
+  it('정책이 없는 사용자는 등록 경로로 저장한다', async () => {
+    mocks.list.mockResolvedValue({
+      list: [{ ...policy, userId: 'newbie', userNm: '신규 사용자', regYn: 'N' }],
+      total: 1,
+      totalPage: 1,
+    });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '신규 사용자 로그인 정책 수정' }));
+    // 화면이 그 사실을 먼저 말한다 — 저장하고 나서 알게 하지 않는다.
+    expect(screen.getByText(/아직 로그인 정책이 없습니다/)).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
+
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1));
+    expect(mocks.create.mock.calls[0][0]).toBe('newbie');
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
+
+  it('정책이 있는 사용자는 수정 경로로 저장한다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '테스트 사용자 로그인 정책 수정' }));
+    expect(screen.queryByText(/아직 로그인 정책이 없습니다/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '정책 동기화 적용' }));
+
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(1));
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it('invalid 값을 write하지 않고 summary와 첫 오류 필드로 연결한다', async () => {

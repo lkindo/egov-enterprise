@@ -6,6 +6,7 @@ import {
   deleteLoginPolicyOperation,
   getLoginPolicyListOperation,
   getLoginPolicyOperation,
+  insertLoginPolicyOperation,
   updateLoginPolicyOperation,
 } from '@/types/generated-operations';
 
@@ -63,7 +64,23 @@ class LoginPolicyAdminService extends AdminService {
     }) as Promise<LoginPolicy>;
   }
 
-  /** 로그인 정책 수정(등록/수정) */
+  /**
+   * 로그인 정책 신규 등록.
+   *
+   * <p>[2026-09-08] 목록(`searchLoginPolicies`)은 <b>전체 사용자</b>를 좌측 조인으로 돌려주고
+   * `regYn` 이 정책 존재 여부다. 그런데 화면에는 등록 경로가 없어, 정책이 없는 사용자
+   * (`regYn='N'`)를 골라 저장하면 서버 `updateLoginPolicy` 가 `findById(...).orElseThrow` 로
+   * <b>404</b> 를 냈다 — 새 사용자에게 IP 제한·허용 시간대·OTP 를 걸 방법이 없었다.
+   */
+  async createLoginPolicy(userId: string, data: Partial<LoginPolicy>, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(insertLoginPolicyOperation, {
+      path: { userId },
+      body: { ...data, userId } as GeneratedOperationRequest<'insertLoginPolicy'>,
+      config,
+    });
+  }
+
+  /** 로그인 정책 수정. 대상 정책이 없으면 서버가 404 다 — 신규는 `createLoginPolicy` 를 쓴다. */
   async saveLoginPolicy(userId: string, data: Partial<LoginPolicy>, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updateLoginPolicyOperation, {
       path: { userId },
