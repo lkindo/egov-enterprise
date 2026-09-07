@@ -115,6 +115,23 @@ export const surveyInfoCreateSchema = SurveyInfoDtoSchema.pick({
   srvyPrps: surveyPurposeSchema,
 });
 
+
+/**
+ * 수정 전용 스키마 3종.
+ *
+ * ⚠ 서버의 update 는 전부 **전체 치환**이다 — 바꾸는 필드만 보내면 나머지가 null 이 된다.
+ * 그래서 화면은 목록 행의 기존 값을 함께 실어 보내고(round-trip), 이 스키마는 사용자가
+ * 실제로 입력하는 필드만 검사한다. 나머지 필드의 정합은 서버 DTO 검증이 담당한다.
+ */
+export const surveyTitleEditSchema = SurveyInfoDtoSchema.pick({ srvyTtl: true })
+  .extend({ srvyTtl: surveyTitleSchema });
+
+export const surveyQuestionEditSchema = SurveyQuestionDtoSchema.pick({ qstnCn: true })
+  .extend({ qstnCn: questionContentSchema });
+
+export const surveyItemEditSchema = SurveyArticleDtoSchema.pick({ artclCn: true })
+  .extend({ artclCn: itemContentSchema });
+
 export const surveyInfoValidationLabels = {
   srvyTtl: '설문지 제목',
   srvyTmpltSn: '템플릿',
