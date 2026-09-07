@@ -27,16 +27,16 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "0636cc7e47471ba35855c57d40f7a8701a41fe3648611905e43308c9fa8e2ff3"
+    "inventoryHash": "a702c301019840ed5fac93e7a6295c67cb4a0f09c5d05c6ed59028205d8a9c22"
   },
   "summary": {
-    "sourceFileCount": 520,
-    "records": 379,
-    "syntaxOccurrences": 445,
-    "ambiguousRecords": 352,
-    "unverifiedRecords": 379,
+    "sourceFileCount": 523,
+    "records": 380,
+    "syntaxOccurrences": 446,
+    "ambiguousRecords": 353,
+    "unverifiedRecords": 380,
     "exactPopulations": {
-      "filesystemRoutes": 120,
+      "filesystemRoutes": 121,
       "dynamicRoutePatterns": 11,
       "configRedirects": 14,
       "pageRedirects": 11
@@ -44,7 +44,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 51,
+      "form-producer": 52,
       "navigation-producer": 161,
       "page-redirect": 11,
       "query-builder": 22,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 371,
+      "navigation": 372,
       "request-telemetry": 8
     }
   },
@@ -9788,6 +9788,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
         "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-9B847CB9D07046",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/system/isg/InternetSvcGuidanceClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/isg/InternetSvcGuidanceClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/isg",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/isg/InternetSvcGuidanceClient.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },

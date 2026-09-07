@@ -120,12 +120,14 @@ test('proxy shell access is measured separately from unresolved capability roles
 
   assert.equal(sourceShellCounts.public?.length, 1);
   assert.equal(sourceShellCounts.authenticated?.length, 49);
-  assert.equal(sourceShellCounts['admin-system']?.length, 70);
+  // [2026-09-07] 70 -> 71. /admin/system/isg 신설 — 백엔드 5본이 완비인데 프런트 호출부가 0 이라
+  //   등록 경로조차 없던 도메인을 배선했다(고아 도메인 종결).
+  assert.equal(sourceShellCounts['admin-system']?.length, 71);
   assert.equal(effectiveShellCounts.public?.length, 1);
   // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
   //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.
   assert.equal(effectiveShellCounts.authenticated?.length, 49);
-  assert.equal(effectiveShellCounts['admin-system']?.length, 70);
+  assert.equal(effectiveShellCounts['admin-system']?.length, 71);
   // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
   //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
   //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.

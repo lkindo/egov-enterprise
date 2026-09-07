@@ -5,7 +5,7 @@
  "schemaRef": "config/ui-navigation-disposition.schema.json",
  "manifestRef": {
   "path": "config/ui-route-capabilities.json",
-  "sha256": "8eeb56b8b45f570d04723ba6bca069b03e6573e948ed427d7d621c236c68b28b"
+  "sha256": "dda9afc4c68b621b53f8bb58ef070d88fab4e0f8e57260729ddc8108490216ab"
  },
  "provisionalDirection": {
   "status": "accepted-provisional-direction",
@@ -1607,6 +1607,24 @@
   },
   {
    "route": "/admin/system/hpcm",
+   "reviewState": "proposed",
+   "disposition": "retain-canonical",
+   "authorizationReview": "unverified",
+   "privacyReview": "unverified",
+   "effectiveMenuExposureReview": "unverified",
+   "capabilityReview": "unverified",
+   "profileOwnershipReview": "unverified",
+   "owner": "product/UX + domain owner",
+   "reviewBy": "2026-11-30",
+   "approvals": {
+    "domain": null,
+    "productIa": null,
+    "securityPrivacy": null,
+    "accessibility": null
+   }
+  },
+  {
+   "route": "/admin/system/isg",
    "reviewState": "proposed",
    "disposition": "retain-canonical",
    "authorizationReview": "unverified",

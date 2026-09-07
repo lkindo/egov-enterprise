@@ -36605,35 +36605,47 @@
         "type": "object",
         "properties": {
           "itntSrvcSn": {
-            "type": "integer",
-            "format": "int64"
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
           },
-          "intnetSvcNm": {
+          "itntSvcNm": {
             "type": "string",
             "maxLength": 100,
             "minLength": 0
           },
-          "intnetSvcDc": {
+          "itntSvcExpln": {
             "type": "string",
-            "maxLength": 1000,
+            "maxLength": 4000,
             "minLength": 0
           },
-          "reflctAt": {
+          "rfltYn": {
             "type": "string",
             "maxLength": 1,
             "minLength": 0
           },
-          "userId": {
-            "type": "string"
+          "lastMdfrId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
           },
-          "regDate": {
-            "type": "string",
-            "format": "date-time"
+          "mdfcnDt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
           }
         },
         "required": [
-          "intnetSvcDc",
-          "intnetSvcNm"
+          "itntSvcExpln",
+          "itntSvcNm"
         ]
       },
       "GroupManageDto": {
