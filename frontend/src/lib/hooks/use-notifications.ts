@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/app/components/ui/toast';
 import { normalizeInternalRoute } from '@/lib/navigation/internal-route';
 import {
+  deleteNotificationOperation,
   getNotificationsOperation,
   getUnreadCountOperation,
   markAsReadOperation,
@@ -475,6 +476,37 @@ export function useNotifications() {
   };
 
   /**
+   * 알림 한 건을 삭제한다.
+   *
+   * <p>[2026-09-08] 서버(`DELETE /api/v1/notifications/{notiSn}`)는 `findOwnedNotification` 으로
+   * <b>본인 알림만</b> 지우고 남의 것은 404 다. 그런데 호출부가 0 이라, 읽은 알림이 계속 쌓여도
+   * 사용자가 정리할 방법이 없었다 — 보존 스케줄러(DEC-OPS-038)는 기본 비활성이고 보존 개월도
+   * 아직 결정 전이다(PD-NOTE-003).
+   *
+   * <p>일괄 삭제는 서버에 경로가 없고 파괴적이라 범위·확인 절차를 정하는 제품 결정이 선행이다
+   * (2026-08-29 에 죽은 '전체 삭제' 버튼을 걷으며 남긴 판단). 여기서는 단건만 배선한다.
+   */
+  const removeNotification = async (id: number) => {
+    if (!userId || ownerIdRef.current !== userId) return;
+    const generation = lifecycleGenerationRef.current;
+    const target = notificationsRef.current.find(n => n.notiSn === id);
+    const wasUnread = target?.readYn === 'N';
+
+    try {
+      await executeGeneratedOperation(deleteNotificationOperation, { path: { notiSn: id } });
+      if (generation !== lifecycleGenerationRef.current || ownerIdRef.current !== userId) return;
+
+      replaceNotifications(notificationsRef.current.filter(n => n.notiSn !== id));
+      // 미읽음이었다면 배지도 함께 줄인다 — 지운 알림이 배지에 남으면 열어도 찾을 수 없다.
+      if (wasUnread) replaceUnreadCount(Math.max(0, unreadCountRef.current - 1));
+    } catch {
+      if (generation === lifecycleGenerationRef.current && ownerIdRef.current === userId) {
+        toast('알림을 삭제하지 못했습니다.', 'error');
+      }
+    }
+  };
+
+  /**
    * 화면에 불러온 알림을 읽음 처리한다.
    *
    * ⚠ [2026-08-29] '모두' 가 아니다. `notifications` 는 `GET /notifications` 첫 응답이고
@@ -539,6 +571,7 @@ export function useNotifications() {
     error,
     markAsRead,
     markAllAsRead,
+    removeNotification,
     refresh: fetchNotifications,
   };
 }

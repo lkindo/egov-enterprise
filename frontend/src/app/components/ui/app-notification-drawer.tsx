@@ -8,7 +8,8 @@ import { X,
   Activity,  
   Database,  
   Zap,  
-  AlertTriangle } from 'lucide-react';
+  AlertTriangle,
+  Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog as DialogPrimitive } from 'radix-ui';
@@ -37,6 +38,13 @@ interface AppNotificationDrawerProps {
   onMarkRead: (id: number) => void;
   onMarkAllRead: () => void;
   /**
+   * 알림 한 건 삭제.
+   *
+   * <p>서버는 본인 알림만 지운다. 일괄 삭제는 서버 경로가 없고 파괴적이라 범위·확인 절차를
+   * 정하는 제품 결정이 선행이다(2026-08-29 판단) — 여기서는 단건만 노출한다.
+   */
+  onDelete: (id: number) => void;
+  /**
    * [2026-08-04] 조회 실패 사유. null 이면 정상.
    * 이 값이 없던 동안 드로어는 실패와 '알림 없음' 을 **같은 화면**으로 렌더했다 —
    * 보안 알림이 오고 있어도 사용자는 조용하다고 믿었다.
@@ -48,7 +56,7 @@ interface AppNotificationDrawerProps {
 
 type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
-export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, error, onRetry }: AppNotificationDrawerProps) {
+export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, onDelete, error, onRetry }: AppNotificationDrawerProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
   const hasUnreadNotifications = notifications.some(n => !n.isRead);
 
@@ -252,23 +260,35 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                     </>
                   );
 
-                  if (canMarkRead) {
-                    return (
-                      <button
-                        key={notif.id}
-                        type="button"
-                        aria-label={`알림: ${notif.title || '알림 항목'}`}
-                        className={cardClassName}
-                        onClick={() => onMarkRead(notif.id)}
-                      >
-                        {cardContent}
-                      </button>
-                    );
-                  }
-
+                  /*
+                    [2026-09-08] 삭제 버튼은 카드 **바깥**에 둔다. 미읽음 카드는 카드 전체가
+                    button(클릭 = 읽음 처리)이라 그 안에 버튼을 넣으면 중첩 button 이 되고
+                    보조기술이 두 동작을 구분하지 못한다.
+                  */
                   return (
-                    <div key={notif.id} className={cardClassName}>
-                      {cardContent}
+                    <div key={notif.id} className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        {canMarkRead ? (
+                          <button
+                            type="button"
+                            aria-label={`알림: ${notif.title || '알림 항목'}`}
+                            className={cardClassName}
+                            onClick={() => onMarkRead(notif.id)}
+                          >
+                            {cardContent}
+                          </button>
+                        ) : (
+                          <div className={cardClassName}>{cardContent}</div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={`${notif.title || '알림 항목'} 삭제`}
+                        className="shrink-0 mt-1 p-2 rounded-md text-muted-foreground hover:text-destructive-emphasis hover:bg-destructive/10 transition-colors"
+                        onClick={() => onDelete(notif.id)}
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
                     </div>
                   );
                 })

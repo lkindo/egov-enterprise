@@ -141,16 +141,30 @@ export default function LoginPolicyAdminClient() {
     setIsEditModalOpen(true);
   };
 
+  /*
+    [2026-09-08] 신규 등록 경로를 붙인다.
+
+    목록(searchLoginPolicies)은 **전체 사용자**를 좌측 조인으로 돌려주고 regYn 이 정책 존재
+    여부다. 그런데 화면에는 등록 경로가 없어, 정책이 없는 사용자(regYn='N')를 골라 저장하면
+    서버 updateLoginPolicy 가 findById(...).orElseThrow 로 **404** 를 냈다 — 새 사용자에게
+    IP 제한·허용 시간대·OTP 를 걸 방법이 없었다(operation-consumer-census 축 1 이
+    insertLoginPolicy 를 소비 0 으로 지목).
+  */
   const onFormSubmit = async (values: LoginPolicyFormValues) => {
     if (!selectedPolicy) return;
+    const isNew = selectedPolicy.regYn !== 'Y';
     try {
-      await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.userId, values as Partial<LoginPolicy>);
-      toast('로그인 정책이 성공적으로 업데이트되었습니다.', 'success');
+      if (isNew) {
+        await loginPolicyAdminService.createLoginPolicy(selectedPolicy.userId, values as Partial<LoginPolicy>);
+      } else {
+        await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.userId, values as Partial<LoginPolicy>);
+      }
+      toast(isNew ? '로그인 정책을 등록했습니다.' : '로그인 정책이 성공적으로 업데이트되었습니다.', 'success');
       setIsEditModalOpen(false);
       queryClient.invalidateQueries({ queryKey: LOGIN_POLICIES_QUERY_KEY });
     } catch (error: unknown) {
       if (!form.applyServerErrors(error)) {
-        toast('정책 저장 중 오류가 발생했습니다.', 'error');
+        toast(isNew ? '정책 등록 중 오류가 발생했습니다.' : '정책 저장 중 오류가 발생했습니다.', 'error');
       }
     }
   };
@@ -300,10 +314,16 @@ export default function LoginPolicyAdminClient() {
             <div className="space-y-1">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                  <Settings2 className="text-primary" /> 정책 프로파일링
+                  <Settings2 className="text-primary" />
+                  {selectedPolicy?.regYn === 'Y' ? '정책 프로파일링' : '정책 신규 등록'}
                 </DialogTitle>
               </DialogHeader>
               <p className="text-xs font-bold text-surface-inverse-foreground/40 tracking-[0.3em] uppercase">USER_ID: {selectedPolicy?.userId}</p>
+              {selectedPolicy?.regYn !== 'Y' ? (
+                <p className="text-xs font-semibold text-surface-inverse-foreground/70">
+                  이 사용자에게는 아직 로그인 정책이 없습니다. 저장하면 새로 등록됩니다.
+                </p>
+              ) : null}
             </div>
             <div className="w-14 h-11 rounded-lg bg-white/10 flex items-center justify-center border border-white/5">
               <User size={24} className="text-primary" />
