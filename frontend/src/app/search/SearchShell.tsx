@@ -14,26 +14,21 @@ import { Loader2, Database } from 'lucide-react';
  */
 const SearchShell = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="min-h-screen bg-muted/30 p-8 space-y-12">
+    <div className="min-h-screen bg-muted/20">
+        {/*
+          [2026-09-08] 전면 히어로 로딩(80vh·w-32 로더·text-4xl·펄스 블러·가짜 진행바)을 걷고
+          업무 화면 로딩으로 줄였다. 이 화면은 결과를 기다리는 중간 상태이지 랜딩이 아니다.
+          진행바는 실제 진행률을 모르는 채 움직이던 장식이라 함께 제거했다.
+        */}
         <Suspense fallback={
-            <div className="min-h-[80vh] flex flex-col items-center justify-center gap-10 p-20 text-center">
-                <div className="relative group">
-                    <div className="absolute inset-0 bg-primary/20 rounded-lg blur-3xl group-hover:scale-150 transition-transform duration-1000 animate-pulse" />
-                    <div className="relative w-32 h-32 bg-card rounded-lg border-2 border-border flex items-center justify-center shadow-2xl transition-all group-hover:rotate-12 group-hover:scale-110">
-                        <Loader2 className="w-16 h-11 text-primary animate-spin" strokeWidth={3} />
-                    </div>
+            <div className="mx-auto flex max-w-[var(--page-max-w)] flex-col items-center gap-3 p-[var(--page-pad)] py-20 text-center">
+                <Loader2 className="size-6 animate-spin text-primary" aria-hidden="true" />
+                <div className="flex items-center gap-2">
+                    <Database className="size-4 text-muted-foreground" aria-hidden="true" />
+                    <span className="text-[length:var(--font-size-body)] font-semibold text-muted-foreground">임직원·바로가기 검색</span>
                 </div>
-                <div className="space-y-4 relative">
-                    <div className="flex items-center justify-center gap-3 mb-2">
-                        <Database className="text-primary w-5 h-5 animate-pulse" />
-                        <span className="text-xs font-bold text-primary tracking-[0.2em]">임직원·바로가기 검색</span>
-                    </div>
-                    <h1 className="text-4xl font-bold tracking-tighter text-foreground leading-tight">검색 결과를 불러오는 중</h1>
-                    <p className="text-sm font-bold text-muted-foreground max-w-xs mx-auto tracking-tight leading-relaxed">임직원과 바로가기 검색 결과를 준비하고 있습니다.</p>
-                </div>
-                <div className="w-64 h-1.5 bg-muted rounded-lg overflow-hidden relative">
-                    <div className="absolute inset-0 bg-primary w-1/3 animate-[progress_2s_infinite_ease-in-out]" />
-                </div>
+                <h1 className="text-xl font-bold tracking-tight text-foreground">검색 결과를 불러오는 중</h1>
+                <p className="text-[length:var(--font-size-body)] text-muted-foreground">임직원과 바로가기 검색 결과를 준비하고 있습니다.</p>
             </div>
         }>
             {children}

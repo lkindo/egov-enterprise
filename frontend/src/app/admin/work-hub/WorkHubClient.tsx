@@ -311,7 +311,9 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       header: '일자',
       accessor: (item) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">
-          {item.schdlBgngYmd ? format(parseYmd(item.schdlBgngYmd) as Date, 'MM.dd (E)', { locale: ko }) : '-'}
+          {/* [2026-09-08] 'MM.dd (E)' → 'yyyy-MM-dd (E)'. 연도를 감추면 지난 해 일정이
+              올해 것으로 읽힌다 — 표기 통일과 함께 그 모호함도 없앤다. */}
+          {item.schdlBgngYmd ? format(parseYmd(item.schdlBgngYmd) as Date, 'yyyy-MM-dd (E)', { locale: ko }) : '-'}
         </span>
       ),
       className: 'w-32',

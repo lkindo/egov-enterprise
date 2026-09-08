@@ -31,6 +31,21 @@ interface RealTimeDashboardProps {
 
 const NOTIFICATION_TYPES = new Set<RealTimeNotification['type']>(['USER', 'POST', 'COMMENT', 'SYSTEM', 'ALERT']);
 
+/**
+ * 알림 시각 표기. 시스템 표준은 'yyyy-MM-dd HH:mm:ss' 다.
+ *
+ * <p>[2026-09-08] 종전 `toLocaleString()` 은 브라우저 로케일을 따라가 '2026. 9. 8. 오후 8:05:13'
+ * 처럼 자릿수·구분자·오전/오후 표기가 사용자마다 달라졌다. 서버·다른 화면과 같은 형식으로 고정한다.
+ * 값이 시각으로 해석되지 않으면 원문을 그대로 보여 준다(없는 시각을 지어내지 않는다).
+ */
+function formatTimestamp(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`
+    + ` ${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}`;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -193,7 +208,9 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
                         </div>
                         <p className="text-muted-foreground">{notification.message}</p>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(notification.timestamp).toLocaleString()}
+                          {/* [2026-09-08] toLocaleString 은 브라우저 로케일에 따라 '2026. 9. 8.' 처럼
+                              자릿수와 구분자가 달라진다. 시스템 표준 표기로 고정한다. */}
+                          {formatTimestamp(notification.timestamp)}
                         </span>
                       </div>
                     ))}
