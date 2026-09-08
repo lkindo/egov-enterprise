@@ -412,18 +412,14 @@ describe('없는 것을 있다고 말하지 않는다', () => {
     expect(screen).not.toContain('연결된 접근 정책이 함께 사라집니다');
   });
 
-  it('눌러도 아무 일이 없는 버튼을 두지 않는다', () => {
-    /*
-      마이페이지의 '관리' 열은 onClick 없는 ⋮ 버튼이었다. 메뉴가 열릴 것처럼 보이는 아이콘과
-      '위젯 추가 옵션' 이라는 aria-label 까지 달려 있어 스크린리더 사용자에게 더 분명한
-      거짓말이었다.
-    */
-    const screen = stripComments(
-      readRepo('frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx'),
-    );
-    expect(screen).not.toContain('위젯 추가 옵션');
-    expect(screen).not.toContain('MoreVertical');
-  });
+  /*
+    [2026-09-08 PD-MYPG-001] '눌러도 아무 일이 없는 버튼을 두지 않는다' 를 걷었다.
+
+    그 계약의 대상이던 마이페이지 화면 자체를 제거했기 때문이다 — tb_indv_pg_conts 는 시드도
+    생성 경로도 없고 무엇보다 그 값을 읽는 화면이 없었다(대시보드 위젯 SPI 구현 2개가 쓰지
+    않는다). 죽은 ⋮ 버튼은 2026-08-29 에 이미 제거됐고, 이제 화면까지 사라져 계약의 소유자가
+    없다. 같은 부류의 재유입은 이 파일의 다른 정직성 계약들이 계속 막는다.
+  */
 });
 
 /**
@@ -737,12 +733,17 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     ).not.toContain('"System"');
   });
 
-  it('마이페이지 설정이 렌더하는 화면 없이 배치를 약속하지 않는다', () => {
-    const client = stripComments(readSrc('app/admin/workspace/my-page/WorkspaceMyPageClient.tsx'));
-    expect(client, '마이페이지 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('myPageAdminService');
-    expect(client).not.toContain('개인 대시보드에 배치할');
+  /*
+    [2026-09-08 PD-MYPG-001] 이 계약이 지키던 것을 **화면 제거로 종결했다.**
 
-    // 대시보드 위젯 SPI 구현체가 이 값을 읽기 시작하면 red 가 되어 문구를 되살릴 때를 알려 준다.
+    종전에는 "마이페이지 설정이 렌더하는 화면 없이 배치를 약속하지 않는다" 를 검사했다 —
+    문구만 사실로 고치고 기능은 남긴 상태였기 때문이다. 이번에 사용자 결정으로 화면·API·
+    서비스·DTO·엔티티를 걷었으므로 약속할 주체가 없다.
+
+    ⚠ 아래 SPI 검사는 남긴다. 대시보드 위젯 구현체가 이 값을 읽기 시작하면(=소비처가 생기면)
+    red 가 되어, 표면을 되살릴 때가 왔음을 알려 준다.
+  */
+  it('대시보드 위젯 SPI 는 여전히 마이페이지 콘텐츠를 소비하지 않는다', () => {
     const providers = collectJavaSources(path.join(ROOT, 'business-app', 'src', 'main'))
       .filter((source) => source.includes('DashboardItemProvider'));
     expect(providers.length, 'DashboardItemProvider 구현체를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(0);

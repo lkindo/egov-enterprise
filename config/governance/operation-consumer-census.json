@@ -12,9 +12,9 @@
     "Axis 2 is deliberately lenient, following UnreachableServiceLinter: a method counts as reachable if `.name(` appears anywhere in non-service production code. Common names may pass by collision — that direction misses violations rather than inventing them."
   ],
   "expected": {
-    "operationCount": 374,
+    "operationCount": 370,
     "unwiredMax": 11,
-    "screenOrphanMax": 36
+    "screenOrphanMax": 34
   },
   "entries": [
     {

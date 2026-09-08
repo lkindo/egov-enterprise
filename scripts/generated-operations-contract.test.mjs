@@ -106,7 +106,11 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   //   목록·상세·등록·수정·삭제. tb_srvy_rspdnt 는 성명·성별·생년월일·전화번호를 담는데 응답 결과와
   //   ID 로 연결되지 않고 행을 만드는 코드 경로가 없어 화면이 항상 빈 목록이었다. 사용자 결정으로
   //   API·화면·서비스·DTO 를 함께 걷었고, 엔티티·리포지토리·테이블은 남는다(템플릿 변경 가드가 사용).
-  assert.equal(operations.length, 374);
+  // [2026-09-08 PD-MYPG-001 마이페이지 콘텐츠 표면 제거] 4본 제거 — 374 -> 370.
+  //   목록·등록·수정·삭제. tb_indv_pg_conts 는 시드도 생성 경로도 없고 무엇보다 그 값을 읽는
+  //   화면이 없다(대시보드 위젯 SPI 구현 2개가 쓰지 않는다) — 켜고 꺼도 어디에도 나타나지 않아
+  //   소비처를 먼저 정하기로 했다(사용자 결정). 엔티티·테이블은 남는다.
+  assert.equal(operations.length, 370);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

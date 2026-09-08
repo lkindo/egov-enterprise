@@ -125,12 +125,15 @@ test('proxy shell access is measured separately from unresolved capability roles
   // [2026-09-08 PD-SRVY-001] 71 -> 70. /admin/survey/respondents 를 걷었다 — tb_srvy_rspdnt 는
   //   성명·생년월일·전화번호를 담는데 응답 결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어
   //   **항상 빈 목록을 보여주는 개인정보 화면**이었다. 라우트·허브 탭·config redirect·API 5본을 함께 제거했다.
-  assert.equal(sourceShellCounts['admin-system']?.length, 70);
+  // [2026-09-08 PD-MYPG-001] 70 -> 69. /admin/workspace/my-page 를 걷었다 — tb_indv_pg_conts 는 시드도
+  //   생성 경로도 없고 무엇보다 **그 값을 읽는 화면이 없다**(대시보드 위젯 SPI 구현 2개가 이 값을
+  //   쓰지 않는다). 켜고 꺼도 어디에도 나타나지 않아 소비처를 먼저 정하기로 했다(사용자 결정).
+  assert.equal(sourceShellCounts['admin-system']?.length, 69);
   assert.equal(effectiveShellCounts.public?.length, 1);
   // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
   //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.
   assert.equal(effectiveShellCounts.authenticated?.length, 49);
-  assert.equal(effectiveShellCounts['admin-system']?.length, 70);
+  assert.equal(effectiveShellCounts['admin-system']?.length, 69);
   // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
   //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
   //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.

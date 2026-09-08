@@ -314,19 +314,6 @@ export const ApprovalConfirmRequestSchema = z.object({
 export type ApprovalConfirmRequest = z.infer<typeof ApprovalConfirmRequestSchema>;
 
 // ==========================================================================
-// MyPageContentDto Schema
-// ==========================================================================
-export const MyPageContentDtoSchema = z.object({
-  contsSn: z.number().int().optional(),
-  cntntsNm: z.string().min(0).max(100).optional(),
-  cntcUrl: z.string().min(0).max(255).optional(),
-  cntntsUseYn: z.enum(["Y","N"]).optional(),
-  cntntsLinkUrl: z.string().min(0).max(255).optional(),
-  cntntsDc: z.string().min(0).max(255).optional(),
-});
-export type MyPageContentDto = z.infer<typeof MyPageContentDtoSchema>;
-
-// ==========================================================================
 // UserProfileUpdateRequest Schema
 // ==========================================================================
 export const UserProfileUpdateRequestSchema = z.object({
@@ -2487,20 +2474,6 @@ export const CommonCodeDtoSchema = z.object({
   useYn: z.string().min(0).max(1),
 });
 export type CommonCodeDto = z.infer<typeof CommonCodeDtoSchema>;
-
-// ==========================================================================
-// ApiResponseListMyPageContentDto Schema
-// ==========================================================================
-export const ApiResponseListMyPageContentDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => MyPageContentDtoSchema)).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseListMyPageContentDto = z.infer<typeof ApiResponseListMyPageContentDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseUserDto Schema
@@ -4740,24 +4713,6 @@ export const ApprovalConfirmRequestRequestSchema = z.object({
 export const ApprovalConfirmRequestResponseSchema = z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional().nullable(),
-});
-
-export const MyPageContentDtoRequestSchema = z.object({
-  contsSn: z.number().int().optional(),
-  cntntsNm: z.string().min(0).max(100).optional(),
-  cntcUrl: z.string().min(0).max(255).optional(),
-  cntntsUseYn: z.enum(["Y","N"]).optional(),
-  cntntsLinkUrl: z.string().min(0).max(255).optional(),
-  cntntsDc: z.string().min(0).max(255).optional(),
-});
-
-export const MyPageContentDtoResponseSchema = z.object({
-  contsSn: z.number().int().optional().nullable(),
-  cntntsNm: z.string().min(0).max(100).optional().nullable(),
-  cntcUrl: z.string().min(0).max(255).optional().nullable(),
-  cntntsUseYn: z.enum(["Y","N"]).optional().nullable(),
-  cntntsLinkUrl: z.string().min(0).max(255).optional().nullable(),
-  cntntsDc: z.string().min(0).max(255).optional().nullable(),
 });
 
 export const UserProfileUpdateRequestRequestSchema = z.object({
@@ -7838,26 +7793,6 @@ export const CommonCodeDtoResponseSchema = z.object({
   dtlCdNm: z.string().min(0).max(100),
   dtlCdExpln: z.string().min(0).max(4000).optional().nullable(),
   useYn: z.string().min(0).max(1),
-});
-
-export const ApiResponseListMyPageContentDtoRequestSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.array(z.lazy(() => MyPageContentDtoRequestSchema.strict())).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-});
-
-export const ApiResponseListMyPageContentDtoResponseSchema = z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.array(z.lazy(() => MyPageContentDtoResponseSchema)).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
 export const ApiResponsePageResponseUserDtoRequestSchema = z.object({

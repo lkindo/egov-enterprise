@@ -1012,30 +1012,6 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/admin/system/workspace/mypage/contents",
-      "handler": "nuri.api.controller.business.workspace.MyPageApiController#createContent",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/workspace/mypage/contents/{contsSn}",
-      "handler": "nuri.api.controller.business.workspace.MyPageApiController#deleteContent",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/workspace/mypage/contents/{contsSn}",
-      "handler": "nuri.api.controller.business.workspace.MyPageApiController#updateContent",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "POST",
       "path": "/api/v1/approvals",
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApproval",
       "policy": "AUTHENTICATED",

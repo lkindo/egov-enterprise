@@ -284,9 +284,6 @@ export function Header({
                     <div className="space-y-0.5">
                       {isAdministrativeUser && (
                         <>
-                          <Link href="/admin/workspace/my-page" aria-label="마이페이지 환경 설정 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                            <span className="flex items-center gap-2"><User size={14} /> 마이페이지 환경 설정</span>
-                          </Link>
                           <Link href="/admin/system/menus" aria-label="시스템 메뉴 관리 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
                             <span className="flex items-center gap-2"><Settings size={14} /> 시스템 메뉴 관리</span>
                           </Link>

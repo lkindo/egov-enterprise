@@ -27,16 +27,16 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "533201d75ee653f5fe973414e6de1c85d32685dbea0230bb672c3445f6975c6c"
+    "inventoryHash": "21bb05fd14d3f45a2f731ffe6c257877efb3d83ae62bd2bb2de7261228d086f1"
   },
   "summary": {
-    "sourceFileCount": 525,
-    "records": 381,
-    "syntaxOccurrences": 450,
-    "ambiguousRecords": 355,
-    "unverifiedRecords": 381,
+    "sourceFileCount": 522,
+    "records": 380,
+    "syntaxOccurrences": 449,
+    "ambiguousRecords": 354,
+    "unverifiedRecords": 380,
     "exactPopulations": {
-      "filesystemRoutes": 120,
+      "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
       "configRedirects": 13,
       "pageRedirects": 11
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 160,
+      "navigation-producer": 159,
       "page-redirect": 11,
       "query-builder": 22,
       "query-consumer": 58,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 373,
+      "navigation": 372,
       "request-telemetry": 8
     }
   },
@@ -12490,45 +12490,6 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/admin/system/menus",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/components/layout/header.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-B279BF765E7AF3",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/components/layout/header.tsx",
-      "producerFile": "frontend/src/app/components/layout/header.tsx",
-      "consumerFile": null,
-      "routePattern": "unresolved",
-      "targetCandidate": "/admin/workspace/my-page",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/workspace/my-page",
         "status": "unverified"
       },
       "authorizationBoundary": {

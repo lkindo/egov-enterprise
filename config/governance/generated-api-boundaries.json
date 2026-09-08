@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 374,
-    "generatedDescriptorCount": 374
+    "openApiOperationCount": 370,
+    "generatedDescriptorCount": 370
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 343,
-    "eligible": 329,
+    "total": 339,
+    "eligible": 325,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 329,
+      "generated": 325,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "33ddb227f0df4b2a90543c71d5f7afec8f2f47c09b33a20bd9d8535f6877d76e",
+  "inventoryHash": "130e059901cbc54930ab366ab960a199eeee6d6b4884c1a536423873c8e380d8",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -5811,74 +5811,6 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "4fa0cc57c45c552fc4b9"
-    },
-    {
-      "file": "frontend/src/services/foundation/workspace/MyPageAdminService.ts",
-      "owner": "MyPageAdminService.getContents",
-      "ordinal": 1,
-      "line": 52,
-      "column": 28,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "get",
-      "target": "/api/v1/admin/system/workspace/mypage/contents",
-      "operationId": "getContents",
-      "descriptorName": "getContentsOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "d138460a99ac30698d74"
-    },
-    {
-      "file": "frontend/src/services/foundation/workspace/MyPageAdminService.ts",
-      "owner": "MyPageAdminService.createContent",
-      "ordinal": 1,
-      "line": 57,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "post",
-      "target": "/api/v1/admin/system/workspace/mypage/contents",
-      "operationId": "createContent",
-      "descriptorName": "createContentOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "7b2ab9de92ac98e3555c"
-    },
-    {
-      "file": "frontend/src/services/foundation/workspace/MyPageAdminService.ts",
-      "owner": "MyPageAdminService.updateContent",
-      "ordinal": 1,
-      "line": 65,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "put",
-      "target": "/api/v1/admin/system/workspace/mypage/contents/{contsSn}",
-      "operationId": "updateContent",
-      "descriptorName": "updateContentOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "97bff2743beaf3bcb00e"
-    },
-    {
-      "file": "frontend/src/services/foundation/workspace/MyPageAdminService.ts",
-      "owner": "MyPageAdminService.deleteContent",
-      "ordinal": 1,
-      "line": 69,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "this.executeGenerated",
-      "method": "delete",
-      "target": "/api/v1/admin/system/workspace/mypage/contents/{contsSn}",
-      "operationId": "deleteContent",
-      "descriptorName": "deleteContentOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "a60011524988ae0008b3"
     }
   ]
 }

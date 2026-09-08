@@ -31,7 +31,10 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 // [2026-09-08 PD-SRVY-001] 40 -> 39: /admin/survey/respondents 를 걷었다. tb_srvy_rspdnt 는 성명·
 //   생년월일·전화번호를 담는데 응답 결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어 그 A1 화면은
 //   **항상 빈 목록**이었다. 되돌리기가 아니라 표면 제거이며, 사용자 결정(PD-SRVY-001)에 따른다.
-const ADOPTERS = 39;
+// [2026-09-08 PD-MYPG-001] 39 -> 38: /admin/workspace/my-page 를 걷었다. tb_indv_pg_conts 는 시드도
+//   생성 경로도 없고 **그 값을 읽는 화면조차 없어**(대시보드 위젯 SPI 구현 2개가 쓰지 않는다) 켜고
+//   꺼도 어디에도 나타나지 않았다. 되돌리기가 아니라 표면 제거이며 사용자 결정(PD-MYPG-001)에 따른다.
+const ADOPTERS = 38;
 const DIRECT_ONLY = 4;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
