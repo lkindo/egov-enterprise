@@ -162,7 +162,18 @@ class SecurityAuthAnnotationLinterTest {
             //   0건이었다. 남는 /api/v1/boards 의 읽기는 종전과 같은 DEFAULT_AUTHENTICATED|isAuthenticated()
             //   이므로 공개 전환·완화가 아니라 표면 축소다(H3). 옮겨 온 multipart 쓰기 2본은 읽기가 아니라
             //   이 census 에 잡히지 않는다.
-            "f4a6574544f1fb44f41ddd91cb6bd68a492cf38ba93e1eee510836ab327f8489";
+            // [2026-09-08 PD-SRVY-001 설문 응답자 표면 제거] GET 2행 **제거** — endpoint 수 176 -> 174.
+            //   /api/v1/admin/system/surveys/{srvySn}/respondents 목록·상세다. tb_srvy_rspdnt 는 성명·성별·
+            //   생년월일·전화번호를 담는데 응답 결과(tb_srvy_rslt)와 ID 로 연결되지 않고(결과는 rspns_nm 문자열만)
+            //   행을 만드는 코드 경로가 저장소에 없어 **화면이 항상 빈 목록**이었다. 사용자 결정(PD-SRVY-001)으로
+            //   API 5본·화면·서비스·DTO 를 함께 걷었다. 공개 전환이 아니라 개인정보 표면 축소다(H3).
+            //   엔티티·리포지토리·테이블은 남는다(설문 템플릿 변경 가드가 existsBySrvySn 을 쓴다).
+            // [2026-09-08 PD-MYPG-001 마이페이지 콘텐츠 표면 제거] GET 1행 **제거** — endpoint 수 174 -> 173.
+            //   /api/v1/admin/system/workspace/mypage/contents 목록이다. tb_indv_pg_conts 는 시드도 생성
+            //   경로도 없고 무엇보다 **그 값을 읽는 화면이 없다**(대시보드 위젯 SPI 구현 2개가 쓰지 않는다).
+            //   사용자 결정으로 소비처를 먼저 정하기로 하고 API·화면·서비스·DTO·엔티티를 걷었다.
+            //   공개 전환이 아니라 표면 축소다(H3). 테이블은 남으며 마이그레이션 검증도 그대로다.
+            "35fe76d65e626929006ac13b23ea99372135d887d30b6919ec155d1b92ffd683";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

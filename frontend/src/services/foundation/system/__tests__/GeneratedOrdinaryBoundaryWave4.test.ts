@@ -20,7 +20,6 @@ import { createExternalHrOperation } from '@/types/generated-operations';
 import { smsAdminService } from '@/services/foundation/operation/SmsAdminService';
 import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
 import { manualAdminService } from '@/services/foundation/user/ManualAdminService';
-import { myPageAdminService } from '@/services/foundation/workspace/MyPageAdminService';
 import { deptAuthorityAdminService } from '../DeptAuthorityAdminService';
 import { policyAdminService } from '../PolicyAdminService';
 import { userAuthorityAdminService } from '../UserAuthorityAdminService';
@@ -169,46 +168,13 @@ describe('foundation ordinary generated boundary wave4', () => {
     });
   });
 
-  it('my-page creation returns the generated numeric identifier', async () => {
-    client.requestRaw.mockResolvedValueOnce(success(44));
-    const body = { cntntsNm: 'Inbox', cntntsUseYn: 'Y' as const };
+  /*
+    [2026-09-08 PD-MYPG-001] 마이페이지 콘텐츠 경계 계약 2건을 걷었다 — 그 API·서비스·화면을
+    함께 제거했기 때문이다. tb_indv_pg_conts 는 시드도 생성 경로도 없고, 무엇보다 **그 값을 읽는
+    화면이 없다**(대시보드 위젯 SPI 구현 2개가 이 값을 쓰지 않는다) — 켜고 꺼도 어디에도
+    나타나지 않으므로 소비처를 먼저 정하기로 했다. 엔티티·테이블은 남는다.
+  */
 
-    await expect(myPageAdminService.createContent(body)).resolves.toBe(44);
-    expect(client.requestRaw).toHaveBeenCalledWith({
-      url: 'admin/system/workspace/mypage/contents',
-      method: 'post',
-      data: body,
-    });
-  });
-
-  it('my-page list, update, and delete use their exact generated operations', async () => {
-    const content = {
-      contsSn: 44,
-      cntntsNm: 'Inbox',
-      cntcUrl: '/inbox',
-      cntntsUseYn: 'Y' as const,
-      cntntsLinkUrl: '/inbox',
-      cntntsDc: 'Inbox contents',
-    };
-    client.getRaw.mockResolvedValueOnce(success([content]));
-
-    await expect(myPageAdminService.getContents({ all: true })).resolves.toStrictEqual([content]);
-    await myPageAdminService.updateContent(44, { cntntsNm: 'Updated' });
-    await myPageAdminService.deleteContent(44);
-
-    expect(client.getRaw).toHaveBeenCalledWith('admin/system/workspace/mypage/contents', {
-      params: { all: true },
-    });
-    expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
-      url: 'admin/system/workspace/mypage/contents/44',
-      method: 'put',
-      data: { cntntsNm: 'Updated' },
-    });
-    expect(client.requestRaw).toHaveBeenNthCalledWith(2, {
-      url: 'admin/system/workspace/mypage/contents/44',
-      method: 'delete',
-    });
-  });
 
   it('survey response submission uses the exact generated path and response', async () => {
     client.requestRaw.mockResolvedValueOnce(success(55));

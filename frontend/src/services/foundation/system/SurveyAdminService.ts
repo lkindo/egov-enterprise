@@ -3,7 +3,6 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import {
   Survey as SurveyInfo,
-  SurveyRespondent,
   SurveyQuestion,
   SurveyAnswer,
 } from '@/types/business/survey';
@@ -11,11 +10,9 @@ import type { components } from '@/types/generated-api';
 import {
   deleteQuestionOperation,
   deleteItemOperation,
-  deleteRespondentOperation,
   deleteSurveyOperation,
   deleteTemplateOperation,
   getQuestionsOperation,
-  getRespondentsOperation,
   getSurveyOperation,
   getSurveysOperation,
   getTemplatesOperation,
@@ -132,32 +129,17 @@ class SurveyAdminService extends AdminService {
     return response as PageResponse<SurveyTemplate>;
   }
 
-  /**
-   * 설문별 응답자 목록 (관리자 전용).
-   *
-   * <p>응답자는 반드시 설문 하위로 조회한다 — 경로가 조회 범위를 강제한다.
-   * 백엔드가 `@AdminOnly` 이므로 ADMIN 이 아니면 403 이다.
-   */
-  async getRespondents(
-    srvySn: number,
-    params?: SearchParams,
-    config?: AxiosRequestConfig
-  ): Promise<PageResponse<SurveyRespondent>> {
-    const response = await this.executeGenerated(getRespondentsOperation, {
-      path: { srvySn },
-      query: toSurveyPageQuery(params),
-      config,
-    });
-    return response as PageResponse<SurveyRespondent>;
-  }
+  /*
+    [2026-09-08 PD-SRVY-001 결정] 설문 응답자 관리 표면을 걷었다.
 
-  /** 설문 응답자 삭제 */
-  async deleteRespondent(srvySn: number, respondentId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(deleteRespondentOperation, {
-      path: { srvySn, respondentId },
-      config,
-    });
-  }
+    `tb_srvy_rspdnt` 는 성명·성별·생년월일·전화번호를 담는 개인정보인데 응답 결과
+    (`tb_srvy_rslt`)와 **ID 로 연결돼 있지 않고**(결과는 `rspns_nm` 문자열만) 행을 만드는
+    코드 경로가 저장소에 없어 구조적으로 비어 있었다 — 즉 이 화면은 **항상 빈 목록을 보여주는
+    개인정보 화면**이었다. 서버 API 5본과 화면도 함께 제거했다.
+
+    엔티티·리포지토리는 남는다(설문 템플릿 변경 가드가 existsBySrvySn 을 쓴다). 테이블 자체의
+    처분은 파괴적 DB 변경이라 별도 승인 경계다.
+  */
 
   // --- 템플릿 CRUD ---
 

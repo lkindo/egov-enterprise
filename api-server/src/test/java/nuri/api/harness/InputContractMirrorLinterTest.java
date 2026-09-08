@@ -22,7 +22,6 @@ import nuri.business.domain.code.CommonCodeGroup;
 import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobBox;
 import nuri.business.domain.group.GroupManage;
-import nuri.business.domain.mypage.MyPageContent;
 import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.operation.ExternalHr;
 import nuri.business.domain.report.WorkReport;
@@ -61,7 +60,6 @@ import nuri.business.service.user.dto.UserValidationGroups;
 import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
-import nuri.business.service.workspace.dto.MyPageContentDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -149,8 +147,6 @@ class InputContractMirrorLinterTest {
             // [GAP-CONTRACT-001] 실제 서비스가 요청값을 직접 저장하는 필드만 묶는다.
             // 서버 생성 ID·감사 필드와 인증 주체에서 주입하는 작성자 필드는 의도적으로 제외한다.
             // ExternalHr.otsdHrId처럼 요청자가 공급해야 하는 복합 PK는 저장 입력이므로 포함한다.
-            new LengthBinding(MyPageContent.class, MyPageContentDto.class,
-                    List.of("cntntsNm", "cntcUrl", "cntntsUseYn", "cntntsLinkUrl", "cntntsDc")),
             new LengthBinding(Scrap.class, ScrapDto.class,
                     List.of("scrapNm", "scrapUrl", "scrapExpln", "useYn")),
             new LengthBinding(AddressBook.class, AddressBookDto.class,
@@ -189,7 +185,6 @@ class InputContractMirrorLinterTest {
             new EnumBinding(BoardMasterDto.class, "blogYn", List.of("Y", "N")),
             new EnumBinding(BoardMasterDto.class, "ansYn", List.of("Y", "N")),
             new EnumBinding(BoardMasterDto.class, "stsfdgYn", List.of("Y", "N")),
-            new EnumBinding(MyPageContentDto.class, "cntntsUseYn", List.of("Y", "N")),
             new EnumBinding(ScrapDto.class, "useYn", List.of("Y", "N")),
             new EnumBinding(AddressBookDto.class, "useYn", List.of("Y", "N")));
 
@@ -233,7 +228,6 @@ class InputContractMirrorLinterTest {
                     requiredField("sndngTelno", NotBlank.class))),
             // [2026-09-05 DEC-OPS-035] 수신자는 esntlId 또는 rcptnTelno 중 하나라 필드 단위 필수가 없다(서비스가 해석).
             new RequiredBinding(SmsRecptnDto.class, List.of()),
-            new RequiredBinding(MyPageContentDto.class, List.of()),
             requiredNotBlank(ScrapDto.class, "useYn"),
             requiredNotBlank(AddressBookDto.class, "adbkNm", "rlsScopeCd"),
             requiredNotBlank(AddressBookUserDto.class, "userId"),
@@ -264,8 +258,11 @@ class InputContractMirrorLinterTest {
                     List.of("itntSrvcSn", "lastMdfrId", "mdfcnDt")));
 
     // [2026-09-07] +3 (ISG itntSvcNm/itntSvcExpln/rfltYn).
-    private static final int MIN_LENGTH_FIELDS = 116;
-    private static final int MIN_ENUM_FIELDS = 16;
+    // [2026-09-08 PD-MYPG-001] 116 -> 111. MyPageContentDto 5필드가 빠졌다 — 그 DTO 를 걷었기
+    //   때문이다(마이페이지 콘텐츠 관리 표면 제거). 검증 약화가 아니라 검증 대상 자체의 소멸이며,
+    //   엔티티·테이블은 남으므로 표면이 되살아나면 이 바인딩도 함께 복구한다.
+    private static final int MIN_LENGTH_FIELDS = 111;
+    private static final int MIN_ENUM_FIELDS = 15;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
     // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).

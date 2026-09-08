@@ -10,9 +10,14 @@ import java.time.LocalDateTime;
  * 설문 응답(`tb_srvy_rslt`) 1건 — 조회 전용.
  *
  * <p>이 테이블은 <b>(설문 × 문항 × 항목)</b> 단위의 개별 응답 레코드다. 응답자 신상은 여기에
- * 없고 별도 테이블({@code tb_srvy_rspdnt} → {@link SurveyRespondentDto})에 있으며, <b>두 테이블은
+ * 없고 별도 테이블({@code tb_srvy_rspdnt})에 있으며, <b>두 테이블은
  * ID 로 연결돼 있지 않다</b> — 이쪽은 {@code rspnsNm}(이름 문자열)만 갖는다(물리 스키마 실측
  * 2026-08-05). 그래서 "이 응답이 누구 것인가" 는 감사 컬럼 {@code frstRgtrId} 로만 확정된다.
+ *
+ * <p>[2026-09-08 PD-SRVY-001 결정] 그 응답자 명부의 <b>관리 표면을 걷었다</b> — 성명·성별·생년월일·
+ * 전화번호를 담는데 결과와 ID 로 연결되지 않고 행을 만드는 경로도 없어 구조적으로 비어 있었다.
+ * 엔티티·리포지토리는 남는다(설문 템플릿 변경 가드가 {@code existsBySrvySn} 을 쓴다). 테이블 자체의
+ * 처분은 파괴적 DB 변경이라 별도 승인 경계다.
  */
 @Builder
 public record SurveyResultDto(

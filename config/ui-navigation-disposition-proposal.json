@@ -5,7 +5,7 @@
  "schemaRef": "config/ui-navigation-disposition.schema.json",
  "manifestRef": {
   "path": "config/ui-route-capabilities.json",
-  "sha256": "dda9afc4c68b621b53f8bb58ef070d88fab4e0f8e57260729ddc8108490216ab"
+  "sha256": "ad9d382e26068ab1d0ce7775eed60def0e5b129c14a5cd8b36487d9d7a21504b"
  },
  "provisionalDirection": {
   "status": "accepted-provisional-direction",
@@ -1399,24 +1399,6 @@
    }
   },
   {
-   "route": "/admin/survey/respondents",
-   "reviewState": "proposed",
-   "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
-   "owner": "product/UX + domain owner",
-   "reviewBy": "2026-11-30",
-   "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
-   }
-  },
-  {
    "route": "/admin/survey/stats",
    "reviewState": "proposed",
    "disposition": "consolidate-to-canonical",
@@ -2236,24 +2218,6 @@
       ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
      ]
     }
-   }
-  },
-  {
-   "route": "/admin/workspace/my-page",
-   "reviewState": "proposed",
-   "disposition": "retain-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
-   "owner": "product/UX + domain owner",
-   "reviewBy": "2026-11-30",
-   "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
    }
   },
   {

@@ -900,30 +900,6 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#createRespondent",
-      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
-      "methodSecurity": "hasRole('ADMIN')",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#deleteRespondent",
-      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
-      "methodSecurity": "hasRole('ADMIN')",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#updateRespondent",
-      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
-      "methodSecurity": "hasRole('ADMIN')",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "POST",
       "path": "/api/v1/admin/system/templates",
       "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo",
       "policy": "ADMIN_OR_SYSTEM",
@@ -1030,30 +1006,6 @@
       "method": "PATCH",
       "path": "/api/v1/admin/system/users/{userId}/password",
       "handler": "nuri.api.controller.UserApiController#updatePasswordByAdmin",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/workspace/mypage/contents",
-      "handler": "nuri.api.controller.business.workspace.MyPageApiController#createContent",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/workspace/mypage/contents/{contsSn}",
-      "handler": "nuri.api.controller.business.workspace.MyPageApiController#deleteContent",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/workspace/mypage/contents/{contsSn}",
-      "handler": "nuri.api.controller.business.workspace.MyPageApiController#updateContent",
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"

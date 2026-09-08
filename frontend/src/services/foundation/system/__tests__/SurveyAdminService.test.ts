@@ -117,13 +117,12 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       page,
       { srvySn: 7, srvyTtl: '설문', srvyTmpltSn: 3 },
       page,
-      page,
       [],
     ];
     for (const data of responses) {
       client.getRaw.mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data });
     }
-    for (let index = 0; index < 11; index += 1) {
+    for (let index = 0; index < 10; index += 1) {
       client.requestRaw.mockResolvedValueOnce({
         success: true,
         code: 'S000',
@@ -135,11 +134,9 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
     await surveyAdminService.getSurveyList();
     await surveyAdminService.getSurvey(7);
     await surveyAdminService.getTemplateList();
-    await surveyAdminService.getRespondents(7);
     await surveyAdminService.getQuestions(7);
     await surveyAdminService.updateSurvey(7, { srvyTtl: '수정', srvyTmpltSn: 3 });
     await surveyAdminService.deleteSurvey(7);
-    await surveyAdminService.deleteRespondent(7, 'RSPDNT-0001');
     await surveyAdminService.createTemplate({ srvyTmpltTypeCd: '01' });
     await surveyAdminService.updateTemplate(3, { srvyTmpltExpln: '수정' });
     await surveyAdminService.deleteTemplate(3);
@@ -153,7 +150,6 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       [BASE, { params: { keyword: '' } }],
       [`${BASE}/7`, undefined],
       [`${BASE}/templates`, { params: { keyword: '' } }],
-      [`${BASE}/7/respondents`, { params: { keyword: '' } }],
       [`${BASE}/7/questions`, undefined],
     ]);
     expect(client.requestRaw.mock.calls.map(([request]) => ({
@@ -162,7 +158,6 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
     }))).toEqual([
       { url: `${BASE}/7`, method: 'put' },
       { url: `${BASE}/7`, method: 'delete' },
-      { url: `${BASE}/7/respondents/RSPDNT-0001`, method: 'delete' },
       { url: `${BASE}/templates`, method: 'post' },
       { url: `${BASE}/templates/3`, method: 'put' },
       { url: `${BASE}/templates/3`, method: 'delete' },
@@ -377,50 +372,14 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
     });
   });
 
-  describe('응답자(respondents)', () => {
-    it('응답자 목록은 설문 하위 경로(/{srvySn}/respondents)로만 조회된다 — 경로가 조회 범위를 강제한다', async () => {
-      await surveyAdminService.getRespondents(7, {
-        pageIndex: 2,
-        size: 20,
-        searchKeyword: '홍길동',
-      });
+  /*
+    [2026-09-08 PD-SRVY-001 결정] 응답자 계약 블록을 걷었다.
 
-      // pageIndex 를 직접 줬으므로 page 기반 +1 변환은 개입하지 않고, size 만 확장된다.
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/7/respondents`, {
-        params: {
-          keyword: '홍길동',
-          page: 1,
-          size: 20,
-        },
-      });
-    });
-
-    it('응답자 목록도 page 0 을 pageIndex 1 로 변환한다', async () => {
-      await surveyAdminService.getRespondents(7, { page: 0 });
-
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/7/respondents`, {
-        params: { keyword: '', page: 0 },
-      });
-    });
-
-    it('params 없이 config 만 넘겨도 signal 이 보존되고 keyword 기본값이 채워진다', async () => {
-      const { signal } = new AbortController();
-
-      await surveyAdminService.getRespondents(7, undefined, { signal });
-
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/7/respondents`, {
-        signal,
-        params: { keyword: '' },
-      });
-    });
-
-    it('응답자 삭제는 (srvySn, respondentId) 순서로 치환한다 — 뒤바뀌면 다른 설문의 응답자를 지운다', async () => {
-      await surveyAdminService.deleteRespondent(7, 'RSPDNT-0001');
-
-      expect(client.delete).toHaveBeenCalledWith(`${BASE}/7/respondents/RSPDNT-0001`, undefined);
-      expect(client.delete).not.toHaveBeenCalledWith(`${BASE}/RSPDNT-0001/respondents/7`, undefined);
-    });
-  });
+    tb_srvy_rspdnt 는 성명·성별·생년월일·전화번호를 담는 개인정보인데 응답 결과와 ID 로
+    연결되지 않고 행을 만드는 경로가 없어 구조적으로 비어 있었다 — 관리 화면은 항상 빈
+    목록이었다. 서버 API 5본·화면·서비스 메서드를 함께 제거했으므로 이 계약도 소유자가
+    사라졌다. 엔티티·리포지토리는 남는다(설문 템플릿 변경 가드가 사용).
+  */
 
   describe('문항(questions)·항목(items)', () => {
     it('문항 목록은 /{srvySn}/questions 단 한 번만 호출한다 — 항목이 중첩돼 오므로 문항별 추가 조회는 없다', async () => {
@@ -509,16 +468,14 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
   });
 
   describe('자원 간 경로 격리', () => {
-    it('5종 자원의 조회 경로는 서로 겹치지 않는다 — 하나라도 겹치면 다른 자원을 조작하게 된다', async () => {
+    it('4종 자원의 조회 경로는 서로 겹치지 않는다 — 하나라도 겹치면 다른 자원을 조작하게 된다', async () => {
       await surveyAdminService.getSurveyList();
       await surveyAdminService.getTemplateList();
-      await surveyAdminService.getRespondents(7);
       await surveyAdminService.getQuestions(7);
 
       expect(client.get.mock.calls.map((call) => call[0])).toEqual([
         'admin/system/surveys',
         'admin/system/surveys/templates',
-        'admin/system/surveys/7/respondents',
         'admin/system/surveys/7/questions',
       ]);
     });
@@ -528,7 +485,7 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       await surveyAdminService.getSurvey(7);
       await surveyAdminService.createTemplate({ srvyTmpltTypeCd: '01' });
       await surveyAdminService.updateItem(900, { artclCn: '보통' });
-      await surveyAdminService.deleteRespondent(7, 'RSPDNT-0001');
+      await surveyAdminService.deleteTemplate(3);
 
       const paths = [client.get, client.post, client.put, client.delete].flatMap((fn) =>
         fn.mock.calls.map((call) => String(call[0]))

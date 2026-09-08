@@ -132,7 +132,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   5건(border/bg/text 라이트·다크)을 쓰고 있었는데, 배선하면서 그 블록을 semantic 토큰
 //   (border/bg-muted/text-muted-foreground · destructive-emphasis)으로 교체해 사라졌다.
 //   실제 감소분이므로 확정한다 — 위반을 숨기려 올리는 방향이 아니다(H2).
-const BASELINE = 507;
+// [2026-09-08 PD-SRVY-001·PD-MYPG-001] 507 -> 503. 설문 응답자·마이페이지 콘텐츠 화면을 걷으면서
+//   그 안의 status 리터럴 4건이 함께 사라졌다. 토큰 이행이 아니라 화면 제거에 따른 감소이며,
+//   BASELINE 은 단조 감소 래칫이므로 개선분을 확정한다.
+const BASELINE = 503;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

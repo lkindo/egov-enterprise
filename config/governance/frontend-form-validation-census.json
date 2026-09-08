@@ -7,9 +7,9 @@
     "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 22,
-    "secondaryActionBoundaries": 74,
-    "candidateCount": 161
+    "formlessWriteBoundaries": 21,
+    "secondaryActionBoundaries": 73,
+    "candidateCount": 159
   },
   "entries": [
     {
@@ -363,22 +363,6 @@
       "pendingGuard": "composed-child-submit-and-action-locks",
       "testEvidence": [
         "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"
-      ]
-    },
-    {
-      "key": "formless-write:frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx#WorkspaceMyPage",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx",
-      "owner": "WorkspaceMyPage",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/workspace/my-page/__tests__/WorkspaceMyPageClient.test.tsx"
       ]
     },
     {
@@ -2846,26 +2830,6 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx#WorkspaceMyPage.toggleStatus[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx",
-      "owner": "WorkspaceMyPage",
-      "handler": "toggleStatus",
-      "writeSinks": [
-        "myPageAdminService.updateContent"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/workspace/my-page/__tests__/WorkspaceMyPageClient.test.tsx"
       ]
     },
     {

@@ -1,5 +1,4 @@
 import { test } from './fixtures/base-test';
-import { WorkspacePage } from './pages/WorkspacePage';
 import { SearchPage } from './pages/SearchPage';
 import path from 'path';
 
@@ -16,18 +15,17 @@ test.describe('Tier 9: Admin Observability & Workspace Intelligence', () => {
     // [E2E 감사 Phase3 중복제거] 삭제됨: 'Observability: Monitor System Health & Topology' —
     // ObservabilityPage.verifyHeader/Metrics/Topology 동일 검증을 16-system-observability가 소유. 09는 워크스페이스/검색만 유지.
 
-    test('Workspace: Manage MyPage Content Settings', async ({ page }) => {
-        const workspace = new WorkspacePage(page);
-        
-        console.log('\n>>> Navigating to Workspace MyPage Settings');
-        await workspace.navigateToMyPageSettings();
-        
-        console.log('>>> Verifying settings header');
-        await workspace.verifyMyPageHeader();
-        
-        console.log('>>> Toggling content visibility status');
-        await workspace.toggleContentStatus(0);
-    });
+    // [2026-09-08 PD-MYPG-001 제거] 'Workspace: Manage MyPage Content Settings' 를 걷었다.
+    //
+    //   ① 대상 화면(/admin/workspace/my-page)과 API 를 함께 제거했다 — tb_indv_pg_conts 는 시드도
+    //      생성 경로도 없고, 무엇보다 **그 값을 읽는 화면이 없다**(대시보드 위젯 SPI 구현 2개가 이
+    //      값을 쓰지 않는다). 켜고 꺼도 어디에도 나타나지 않으므로 소비처를 먼저 정하기로 했다.
+    //
+    //   ② 이 테스트 자체도 위장이었다. toggleContentStatus 가
+    //      `if (count > 0) { …클릭… } else { console.log('No content items found') }` 라
+    //      **두 갈래가 모두 통과 경로**였고, 시드가 없으니 실제로는 항상 else 였다 — 남는 검증은
+    //      "페이지가 열린다" 뿐이다. 같은 파일의 검색 테스트가 2026-08-10 에 정확히 그 이유로
+    //      제거됐다("동전던지기 단언을 커버리지로 세지 않는다").
 
     // [2026-08-10 제거] 삭제됨: 'Search: Integrated Neural Search Verification'.
     //

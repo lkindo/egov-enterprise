@@ -134,15 +134,15 @@ describe('Header account navigation authorization', () => {
     await openAccountMenu();
 
     expect(screen.getByText('관리자')).toBeInTheDocument();
-    expect(queryAccountLink('/admin/workspace/my-page')).toHaveAttribute(
-      'href',
-      '/admin/workspace/my-page',
-    );
+    /*
+      [2026-09-08 PD-MYPG-001] '마이페이지 환경 설정' 링크를 걷었다 — 그 화면과 API 를 함께
+      제거했기 때문이다. 관리자 전용 링크 노출 계약 자체는 시스템 메뉴 관리로 계속 검증한다.
+    */
+    expect(queryAccountLink('/admin/workspace/my-page')).not.toBeInTheDocument();
     expect(queryAccountLink('/admin/system/menus')).toHaveAttribute(
       'href',
       '/admin/system/menus',
     );
-    expect(screen.getByRole('link', { name: '마이페이지 환경 설정 이동' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '시스템 메뉴 관리 이동' })).toBeInTheDocument();
   });
 
