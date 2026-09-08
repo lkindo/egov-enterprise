@@ -1410,7 +1410,7 @@
               <div class="stat-desc"><code>nuri.api.harness</code> 실측</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">42</div>
+              <div class="stat-val">45</div>
               <div class="stat-label">PostgreSQL 스키마 검증 클래스</div>
               <div class="stat-desc"><code>@Tag("schema-validation")</code> 실측</div>
             </div>
@@ -1446,7 +1446,7 @@
           <article class="status-card">
             <span class="badge badge-success">ENFORCED</span>
             <h3>중앙 gate registry</h3>
-            <p><code>gates.json</code>이 governance 38·ArchUnit 10·schema-validation 42개와 7개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
+            <p><code>gates.json</code>이 governance 38·ArchUnit 10·schema-validation 45개와 7개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-warning">ADVISORY</span>
@@ -2148,17 +2148,17 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="status-card">
             <span class="badge badge-warning">PARTIAL EVIDENCE</span>
             <h3>테스트·CI</h3>
-            <p>테스트 소스 82개·<code>@Test</code> 403건을 루트 <code>backend-build</code>가 실행합니다. PostgreSQL Testcontainers 일부 경로가 있지만 실제 source vendor 전수·cutover 증거는 아닙니다.</p>
+            <p>테스트 소스 84개·<code>@Test</code> 409건을 루트 <code>backend-build</code>가 실행합니다. PostgreSQL Testcontainers 일부 경로가 있지만 실제 source vendor 전수·cutover 증거는 아닙니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-success">FAIL-CLOSED</span>
             <h3>승인·재결속</h3>
-            <p>source endpoint·driver·adapter·scope·inventory, mapping, target fingerprint와 실행 구현 digest를 load 직전에 다시 대조하며 WARN/FAIL은 non-zero 종료입니다.</p>
+            <p>source endpoint·driver·adapter·scope·inventory, mapping, target의 JDBC 위치·클러스터·DB identity·허용 스키마와 실행 구현 digest를 load 직전에 다시 대조하며 WARN/FAIL은 non-zero 종료입니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-error">PRODUCTION GAP</span>
             <h3>운영 준비도</h3>
-            <p>실제 YAML의 <code>endpointId</code> 보존 결함은 회귀 테스트와 함께 해소했습니다. target JDBC location/instance 미결속, DB 권한 수준 source read-only, 실 PostgreSQL·Oracle·Tibero E2E, 결과 artifact, upsert·CDC와 cutover/rollback은 여전히 남아 있습니다.</p>
+            <p>target 위치·클러스터·DB·허용 스키마 결속, 실행 JSON과 PostgreSQL 부분 적재 복구를 검증했습니다. DB 권한 수준 source read-only, 운영 규모 PostgreSQL·Oracle·Tibero E2E, upsert·CDC와 실제 cutover/rollback 입증은 남아 있습니다.</p>
           </article>
         </div>
 
@@ -2182,7 +2182,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               <span class="flow-step-dot" aria-hidden="true"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">Plan <span class="flow-step-badge database">BOUND REVIEW</span></div>
-                <div class="flow-step-desc">inventory와 mapping, 실제 PostgreSQL target table·column·PK fingerprint를 결합합니다. 선택 review는 객체 stable ID별 disposition을 inventory·target·mapping·execution digest 네 축에 결속하며, 미분류·미검토·불완전 visibility는 <code>commitReady=false</code> blocker입니다.</div>
+                <div class="flow-step-desc">inventory와 mapping, 실제 PostgreSQL target table·column·PK 및 접속 환경·허용 스키마 fingerprint를 결합합니다. 선택 review는 객체 stable ID별 disposition을 inventory·target·mapping·execution digest 네 축에 결속하며, 미분류·미검토·불완전 visibility는 <code>commitReady=false</code> blocker입니다.</div>
                 <div class="flow-step-file">MigrationPlanner.java · WorkflowReviewLoader.java · PostgresTargetSchemaFingerprinter.java</div>
               </div>
               <div class="flow-step-number">02</div>
@@ -2212,7 +2212,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               <span class="flow-step-dot" aria-hidden="true"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">Run-scoped verification <span class="flow-step-badge client">PASS / WARN / FAIL</span></div>
-                <div class="flow-step-desc">commit에서는 checkpoint 수·target identity 유일성·재조회 행 checksum과 read/transformed/written/error를 대조합니다. dry-run은 source 조회·변환 결과만 판정하고 target을 대조하지 않습니다. WARN/FAIL은 non-zero지만 report 객체를 JSON/Markdown 감사 artifact로 보존하지 않습니다.</div>
+                <div class="flow-step-desc">commit에서는 checkpoint 수·target identity 유일성·재조회 행 checksum과 read/transformed/written/error를 대조합니다. dry-run은 source 조회·변환 결과만 판정하고 target을 대조하지 않습니다. WARN/FAIL은 non-zero로 종료합니다. 실행별 STARTED/PASS/FAILED JSON에 승인 digest·모드·시각·검증 건수를 보존하며, STARTED가 남으면 결과 미확정입니다.</div>
                 <div class="flow-step-file">MigrationVerifier.java → MigrationReport</div>
               </div>
               <div class="flow-step-number">05</div>
@@ -2236,8 +2236,8 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 </tr>
                 <tr>
                   <td>2. 타깃 준비</td>
-                  <td>PostgreSQL-only target fingerprint와 Flyway 관리 <code>migration_control</code> run/keymap/checkpoint</td>
-                  <td>credential-redacted JDBC location/instance 결속, 애플리케이션 Flyway 적용 완료, backup, 기존 행 충돌과 INSERT-only 정책, rollback 책임자와 승인 기록</td>
+                  <td>PostgreSQL-only 접속 환경·스키마 fingerprint와 Flyway 관리 <code>migration_control</code> run/keymap/checkpoint</td>
+                  <td>접속 경로·점검 창 고정, 애플리케이션 Flyway 적용 완료, backup, 기존 행 충돌과 INSERT-only 정책, rollback 책임자와 승인 기록</td>
                   <td><span class="badge badge-error">REQUIRED</span></td>
                 </tr>
                 <tr>
@@ -2255,7 +2255,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <tr>
                   <td>5. 사후 검증</td>
                   <td>commit의 run-scoped checkpoint·target identity·행 checksum 대조와 PASS/WARN/FAIL 판정</td>
-                  <td>canonical 결과 artifact, FK/UNIQUE/도메인·표본 diff, cutover/rollback 의사결정과 독립 승인</td>
+                  <td>실행 JSON과 실제 상태 대조, FK/UNIQUE/도메인·표본 diff, cutover/rollback 의사결정과 독립 승인</td>
                   <td><span class="badge badge-warning">PARTIAL</span></td>
                 </tr>
               </tbody>
@@ -2267,19 +2267,20 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="glass-card">
             <h3 class="glow-header">현행 CI 증거</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">
-              루트 <code>./gradlew build</code>가 82개 Java 테스트 소스의 <code>@Test</code> 403건을 실행하고 JaCoCo에 포함합니다. required <code>mutation-test</code>에는 transform과 validate/verify 범위가 있으나 workflow·adapter·JDBC·실 DB cutover 전체를 보증하지 않습니다. PostgreSQL Testcontainers도 runtime schema와 generated identity의 제한된 경로입니다.
+              루트 <code>./gradlew build</code>가 84개 Java 테스트 소스의 <code>@Test</code> 409건을 실행하고 JaCoCo에 포함합니다. required <code>mutation-test</code>에는 transform과 validate/verify 범위가 있으나 workflow·adapter·JDBC·실 DB cutover 전체를 보증하지 않습니다. PostgreSQL Testcontainers는 runtime schema·generated identity 외에도 서로 다른 대상 DB 판별과 501행 부분 커밋·재개·중복 방지·변조 탐지를 검증합니다. 운영 규모·vendor 전수 증거는 아닙니다.
             </p>
           </article>
           <article class="glass-card">
             <h3 class="glow-header">권장 강화 순서</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">
-              <strong>P1</strong> target JDBC location/instance 결속, 지원 vendor/version·최소권한 source read-only rehearsal, canonical 결과 artifact와 부분 성공 reconciliation → <strong>P2</strong> LOB/문자셋·운영 규모, 제한적 upsert·증분/CDC·cutover/rollback 순입니다. <code>endpointId</code> loader 보존과 실제 YAML <code>discover</code> 회귀는 2026-09-05에 완료했습니다. target은 PostgreSQL-only이고 비데이터 객체 DDL은 현재 프로젝트 Flyway가 소유합니다.
+              <strong>P1</strong> 지원 vendor/version·최소권한 source read-only rehearsal과 운영 백업·중단/재개·cutover 입증 → <strong>P2</strong> LOB/문자셋·운영 규모, 제한적 upsert·증분/CDC 순입니다. target 환경 결속·실행 JSON·부분 성공 복구와 격리 백업 복원은 2026-09-09에 검증했으며 운영 RTO/RPO를 대체하지 않습니다. <code>endpointId</code> loader 보존과 실제 YAML <code>discover</code> 회귀는 2026-09-05에 완료했습니다. target은 PostgreSQL-only이고 비데이터 객체 DDL은 현재 프로젝트 Flyway가 소유합니다.
             </p>
           </article>
         </div>
 
         <div class="callout">
           <strong>근거:</strong>
+          <a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/04-operations/migration-recovery-runbook.md" target="_blank" rel="noopener noreferrer">재개·복구 런북</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md" target="_blank" rel="noopener noreferrer">설계·로드맵</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/tree/main/migration-tool" target="_blank" rel="noopener noreferrer">구현 모듈</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/migration-tool/src/main/java/nuri/migration/model/MappingLoader.java" target="_blank" rel="noopener noreferrer">endpoint loader</a> ·
@@ -2342,7 +2343,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">평가 기준</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            2026-09-03 기준 중앙 registry가 <strong>governance JUnit 38개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 42개</strong>와 runner catalog 7개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
+            2026-09-09 기준 중앙 registry가 <strong>governance JUnit 38개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 45개</strong>와 runner catalog 7개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
           </p>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
             <strong style="color: var(--accent-success);">핵심 집행:</strong> 태그 기반 전수 census, 단일 source index, 의미 기반 인가 정책 matrix, Entity Lombok gate, schema suite의 공유 PostgreSQL, 구조화 E2E 오류 ledger·고정 대기 0건·실행시간 기반 shard, 85/70/75 exact ratchet이 실행 경로에 결속돼 있습니다.
@@ -2373,14 +2374,14 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               <tbody>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>적용된 SQL의 <code>linter:ignore</code> 193건/44파일은 내용 hash·owner·reviewBy와 함께 <code>legacy-debt-unapproved</code>로 동결됐지만 승인된 waiver나 제거 완료를 뜻하지 않음</td>
+                  <td>적용된 SQL의 <code>linter:ignore</code> 198건/45파일은 내용 hash·owner·reviewBy와 함께 <code>legacy-debt-unapproved</code>로 동결됐지만 승인된 waiver나 제거 완료를 뜻하지 않음</td>
                   <td>신규 예외는 안정 ID·reason·owner·approvedAt·expiresAt·evidence를 1:1 등록하고, legacy debt는 reviewBy 전에 재검토해 신규 보정 migration과 배포 증거로 위험을 단계적으로 상환</td>
                   <td><strong>권장</strong> — “구조화 waiver·만료·선행 release 증거” 원칙만 조문에 추가, 세부 schema는 manifest로 분리</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>승인형 discover/plan/validate/load, 44종 discovery·visibility, source endpoint/driver/scope·mapping·target schema·implementation 결속, typed identity와 chunk data-keymap-checkpoint 원자성·durable resume가 구현됐다. MappingLoader의 source/target <code>endpointId</code> 보존과 실제 YAML <code>discover</code> 회귀도 추가됐다. 다만 target JDBC location/instance는 결속되지 않으며 vendor adapter는 실 DB 증거가 부족하고 target DBMS는 PostgreSQL-only다.</td>
-                  <td>credential-redacted target location/instance binding을 먼저 추가한다. 이어 최소권한 source 계정과 PostgreSQL·Oracle·Tibero E2E를 포함한 vendor rehearsal, canonical 결과 artifact, 부분 성공/commit ambiguity reconciliation, backup·cutover/rollback을 증명하고 필요 시 staging 기반 upsert와 CDC를 별도 설계한다.</td>
+                  <td>승인형 discover/plan/validate/load, 44종 discovery·visibility, source endpoint/driver/scope·mapping·target schema·implementation 결속, typed identity와 chunk data-keymap-checkpoint 원자성·durable resume가 구현됐다. MappingLoader의 source/target <code>endpointId</code> 보존과 실제 YAML <code>discover</code> 회귀도 추가됐다. target JDBC location·클러스터·DB identity·허용 스키마 결속, 실행 JSON과 PostgreSQL 부분 적재 복구도 추가됐다. vendor adapter의 실 운영 DB 증거는 부족하며 target DBMS는 PostgreSQL-only다.</td>
+                  <td>최소권한 source 계정과 운영 규모 PostgreSQL·Oracle·Tibero E2E를 포함한 vendor rehearsal, 강제 종료/commit ambiguity reconciliation, 실제 운영 backup·cutover/rollback을 증명한다. 실행 JSON·부분 적재 복구 및 격리 PostgreSQL 복원 검증은 완료했으며, upsert와 CDC는 별도 설계한다.</td>
                   <td><strong>불필요</strong> — 문서·도구·하네스 현행화</td>
                 </tr>
                 <tr>
@@ -2501,7 +2502,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           "목표: live information_schema 선조회와 meta_standard_* 사전 정렬",
           "모든 환경·전체 Flyway SQL에 ZeroDowntimeMigrationLinter hard-stop 적용",
           "현행 공백: EntitySchema 검증은 repo migration을 기준으로 하며 live DB divergence는 직접 확인하지 않음",
-          "기존 linter:ignore 193건/44파일은 hash·owner·reviewBy를 가진 legacy-debt-unapproved inventory로 동결되며 소급 승인되지 않음",
+          "기존 linter:ignore 198건/45파일은 hash·owner·reviewBy를 가진 legacy-debt-unapproved inventory로 동결되며 소급 승인되지 않음",
           "DB·ZDM 스킬은 live metadata 우선, CHAR 금지, read-only bridge 경계와 단계별 migration 절차로 교정됨"
         ]
       },
@@ -2545,7 +2546,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
 
     const dbModelMapping = [
       { layer: "DB 표준 단어", example: "<code>INQ_CNT</code> (조회수)", spec: "<code>meta_standard_words</code>와 migration의 실제 예시", audit: "<span class='badge badge-warning'>PARTIAL</span> SchemaNaming은 접두·snake_case·제약·audit 중심이며 모든 표준 단어 의미를 전수 검증하지 않습니다.", badge: "cyan" },
-      { layer: "DB 물리 컬럼", example: "<code>tb_bbs_item.inq_cnt</code>", spec: "Flyway가 재현하는 PostgreSQL 17 스키마", audit: "<span class='badge badge-success'>HARD</span> schema-validation이 migration 적용·Hibernate validate·write smoke를 수행하고 38개 tag census를 중앙 registry가 exact-match합니다.", badge: "primary" },
+      { layer: "DB 물리 컬럼", example: "<code>tb_bbs_item.inq_cnt</code>", spec: "Flyway가 재현하는 PostgreSQL 17 스키마", audit: "<span class='badge badge-success'>HARD</span> schema-validation이 migration 적용·Hibernate validate·write smoke를 수행하고 45개 tag census를 중앙 registry가 exact-match합니다.", badge: "primary" },
       { layer: "Backend JPA", example: "<code>Board.inqCnt : Integer</code>", spec: "Entity ↔ 물리 컬럼 타입/nullable 계약", audit: "<span class='badge badge-success'>HARD</span> Hibernate validate 대상. live 운영 DB가 아니라 테스트 컨테이너의 repo migration 기준입니다.", badge: "success" },
       { layer: "Frontend Zod", example: "<code>inqCnt: z.number().optional()</code>", spec: "OpenAPI snapshot에서 생성한 Zod 계약", audit: "<span class='badge badge-success'>HARD</span> codegen diff는 생성물 drift를 잡지만 도메인 의미·최솟값까지 자동 추론하는 것은 아닙니다.", badge: "warning" }
     ];
@@ -2583,7 +2584,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 3,
         title: "실 PostgreSQL 스키마·쓰기 검증",
-        desc: "38개 schema-validation 클래스가 PostgreSQL 17에 Flyway 전량 적용, Hibernate validate, PK/constraint/type 및 쓰기 smoke를 수행합니다. 35개 migration suite는 컨테이너 1개를 공유하되 각자 격리 DB를 생성·삭제하고 registry가 전수 tag를 동결합니다.",
+        desc: "45개 schema-validation 클래스가 PostgreSQL 17에 Flyway 전량 적용, Hibernate validate, PK/constraint/type 및 쓰기 smoke를 수행합니다. 41개 migration suite는 컨테이너 1개를 공유하되 각자 격리 DB를 생성·삭제하고 registry가 전수 tag를 동결합니다.",
         badge1: "Database", badge2: "CI Hard", badge3: "Shared + Isolated", type1: "error", type2: "success", type3: "success",
         impl: "SharedPostgresMigrationTestSupport.java · SharedPostgresMigrationHarnessContractTest.java · :api-server:schemaValidationTest",
         doc: "Schema validation guide", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/getting-started.md",
@@ -2628,7 +2629,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 8,
         title: "Legacy ETL 정확성·이관 안전성",
-        desc: "migration-tool은 discover→plan→validate→load 승인형 CLI, 44종 객체·visibility inventory, source endpoint/driver/scope와 mapping·PostgreSQL target fingerprint·실행 구현 결속, typed/composite/generated identity 및 chunk data-keymap-checkpoint 원자성과 durable checksum resume를 구현했습니다. MappingLoader의 source/target endpointId 보존과 실제 YAML discover 회귀도 추가했습니다. 다만 target JDBC location/instance 미결속, vendor 실 DB·운영 권한 증거, 결과 artifact, upsert·CDC와 cutover/rollback은 아직 PARTIAL입니다.",
+        desc: "migration-tool은 discover→plan→validate→load 승인형 CLI, 44종 객체·visibility inventory, source endpoint/driver/scope와 mapping·PostgreSQL target fingerprint·실행 구현 결속, typed/composite/generated identity 및 chunk data-keymap-checkpoint 원자성과 durable checksum resume를 구현했습니다. MappingLoader의 source/target endpointId 보존과 실제 YAML discover 회귀도 추가했습니다. target 접속 환경·허용 스키마 결속, 실행 JSON과 PostgreSQL 부분 적재 복구도 검증했습니다. vendor 실 운영 DB·최소권한·강제 종료·cutover, upsert·CDC와 실제 RTO/RPO 증거는 아직 PARTIAL입니다.",
         badge1: "Data Migration", badge2: "Fail-closed Core", badge3: "Production Partial", type1: "cyan", type2: "success", type3: "warning",
         impl: "migration-tool/src/test · ci.yml migration-transform/migration-validate-verify · :migration-tool:test",
         doc: "Legacy migration design", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md",

@@ -48,6 +48,8 @@
 푸시 전 전체 운영 계약에서 설문 서비스 호출 위치 5개의 오래된 행 번호와 신규 query 파일로 인한
 URL census 소스 파일 수 차이를 발견해 생성기를 다시 실행했다. API 소비·URL 상태 항목과 승인
 클래스는 동일하며, URL 원장의 파일 수(522→523)와 그에 결속된 해시만 함께 갱신했다.
+Governance Atlas도 스키마 검증 45개, 이관 테스트 소스 84개·`@Test` 409건, SQL waiver
+198건/45파일이라는 현재 소스 집계와 이관 구현·운영 한계를 반영했다. 기존 문서 계약 10개가 통과했다.
 
 실행 로그와 XML/브라우저 증거는 로컬 ignored `build/priority-six-*`, 각 모듈의 `build/test-results/`,
 `build/reports/priority-6/`에 있다. 로컬 실행은 required CI, 운영 배포 또는 수동 접근성 합격을 대신하지 않는다.
