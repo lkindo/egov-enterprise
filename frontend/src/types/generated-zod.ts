@@ -164,6 +164,7 @@ export const MemoReportDtoSchema = z.object({
   drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  editable: z.boolean().optional(),
 });
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
@@ -4513,6 +4514,7 @@ export const MemoReportDtoResponseSchema = z.object({
   drctnMttrRegDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   rptrInqDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  editable: z.boolean().optional().nullable(),
 });
 
 export const InformalSanctionDtoRequestSchema = z.object({

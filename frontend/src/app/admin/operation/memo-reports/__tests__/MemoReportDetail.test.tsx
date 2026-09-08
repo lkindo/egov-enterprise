@@ -27,6 +27,9 @@ const mocks = vi.hoisted(() => ({
   getMemoReport: vi.fn(),
   createMemoReport: vi.fn(),
   updateDrctMatter: vi.fn(),
+  updateMemoReport: vi.fn(),
+  deleteMemoReport: vi.fn(),
+  confirm: vi.fn(),
   toast: vi.fn(),
   replace: vi.fn(),
   user: { role: 'ROLE_ADMIN' } as { role: string } | null,
@@ -47,8 +50,11 @@ vi.mock('@/services/business/memoreport/memoReportService', () => ({
     getMemoReport: mocks.getMemoReport,
     createMemoReport: mocks.createMemoReport,
     updateDrctMatter: mocks.updateDrctMatter,
+    updateMemoReport: mocks.updateMemoReport,
+    deleteMemoReport: mocks.deleteMemoReport,
   },
 }));
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/user-picker', () => ({
   UserPicker: ({ isOpen, onSelect }: { isOpen: boolean; onSelect: (u: { esntlId?: string; userNm?: string }) => void }) =>
@@ -95,7 +101,10 @@ describe('메모보고 열람', () => {
     mocks.getReceivedReports.mockResolvedValue(page);
     mocks.getMyReports.mockResolvedValue(page);
     mocks.getMemoReports.mockResolvedValue(page);
-    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: '9월까지 검토 바랍니다.' });
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: '9월까지 검토 바랍니다.', editable: true });
+    mocks.updateMemoReport.mockResolvedValue(undefined);
+    mocks.deleteMemoReport.mockResolvedValue(undefined);
+    mocks.confirm.mockResolvedValue(true);
   });
 
   it('행을 열면 본문과 지시사항을 보여 준다 — 종전에는 여는 방법이 없었다', async () => {
@@ -190,6 +199,83 @@ describe('메모보고 열람', () => {
 
     expect(await screen.findByText('USR_A')).toBeVisible();
     expect(screen.getByText('USR_B')).toBeVisible();
+  });
+  /*
+    [2026-09-08 PD-RPT-001] 수정·삭제.
+
+    서버는 완비였지만 화면이 "내가 고칠 수 있는가" 를 판정할 정보를 못 받았다 — 쓰기 인가는
+    assertOwnerOrAdmin(frstRgtrId) 즉 loginId 축인데 열람 인가는 esntlId 축(userId·rptrId)이다.
+    이제 서버가 판정 결과(editable)만 내려주고 화면은 그것으로 액션 노출을 정한다.
+  */
+  it('editable 이 아니면 수정·삭제를 노출하지 않는다 — 화면이 인가를 흉내내지 않는다', async () => {
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, editable: false });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    await screen.findByText('서버 증설이 필요합니다.');
+
+    expect(screen.queryByRole('button', { name: '수정' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '삭제' })).toBeNull();
+    // 모달 자체의 X 버튼도 '닫기' 라 이름이 겹친다 — footer 의 것만 센다.
+    expect(screen.getAllByRole('button', { name: '닫기' }).length).toBeGreaterThan(0);
+  });
+
+  it('수정은 바꾸지 않은 필드까지 함께 보낸다 — 서버 update 가 전체 치환이다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    await screen.findByText('서버 증설이 필요합니다.');
+    fireEvent.click(screen.getByRole('button', { name: '수정' }));
+
+    const title = await screen.findByDisplayValue('3분기 운영 보고');
+    fireEvent.change(title, { target: { value: '3분기 운영 보고(정정)' } });
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
+    const [sn, body] = mocks.updateMemoReport.mock.calls[0];
+    expect(sn).toBe(ROW.memoRptSn);
+    // 화면이 묻지 않는 수신자·보고일자도 상세에서 읽어 되돌려 보낸다 — 빠지면 서버가 지운다.
+    expect(body).toMatchObject({
+      rptTtl: '3분기 운영 보고(정정)',
+      rptCn: '서버 증설이 필요합니다.',
+      rptrId: ROW.rptrId,
+    });
+  });
+
+  it('삭제는 중복 실행을 막고 진행을 드러내며 실패 사유를 그대로 알린다', async () => {
+    let reject: (error: unknown) => void = () => undefined;
+    mocks.deleteMemoReport.mockReturnValue(new Promise((_resolve, next) => { reject = next; }));
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    await screen.findByText('서버 증설이 필요합니다.');
+    fireEvent.click(screen.getByRole('button', { name: '삭제' }));
+
+    await waitFor(() => expect(mocks.deleteMemoReport).toHaveBeenCalledTimes(1));
+    const pending = screen.getByRole('button', { name: '삭제 중…' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(pending);
+    expect(mocks.deleteMemoReport).toHaveBeenCalledTimes(1);
+
+    reject({ response: { data: { message: '이미 처리된 보고입니다.' } } });
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      expect.stringContaining('이미 처리된 보고입니다.'),
+      'error',
+    ));
+  });
+
+  it('삭제는 대상을 밝힌 확인을 거치고 취소하면 아무것도 지우지 않는다', async () => {
+    mocks.confirm.mockResolvedValue(false);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    await screen.findByText('서버 증설이 필요합니다.');
+    fireEvent.click(screen.getByRole('button', { name: '삭제' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm.mock.calls[0][0].message).toContain('3분기 운영 보고');
+    expect(mocks.deleteMemoReport).not.toHaveBeenCalled();
   });
 });
 
@@ -351,4 +437,5 @@ describe('메모보고 전체 탭 노출', () => {
     await screen.findByRole('tab', { name: '수신함' });
     expect(screen.queryByRole('tab', { name: '전체' })).not.toBeInTheDocument();
   });
+
 });

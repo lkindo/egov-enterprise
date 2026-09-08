@@ -79,5 +79,25 @@ public class MemoReportDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime crtDt;
 
+    /**
+     * 현재 인증 주체가 이 보고를 수정·삭제할 수 있는지 — <b>서버가 판정한 결과</b>다.
+     *
+     * <p>[2026-09-08 PD-RPT-001] 화면이 인가를 흉내내지 않게 하려고 판정 결과만 내려준다.
+     * 그 인가는 서비스의 {@code assertOwnerOrAdmin(frstRgtrId)} 즉 <b>loginId 축</b>인데,
+     * 같은 도메인의 열람 인가는 {@code userId}·{@code rptrId} 즉 <b>esntlId 축</b>이다.
+     * 두 축이 다르므로 화면이 응답만 보고 "내가 고칠 수 있는가" 를 계산할 방법이 없었다.
+     *
+     * <p>대안으로 {@code frstRgtrId}(loginId)를 응답에 싣는 안이 있었으나, 목록 응답에 loginId 가
+     * 실리면 계정 열거 표면이 넓어진다. 판정 결과만 보내면 식별자를 노출하지 않는다.
+     *
+     * <p>이 값은 <b>요청에서 받지 않는다</b> — 서버 판정이므로 클라이언트가 주장할 수 없다.
+     * 실제 인가는 여전히 서비스가 집행하며, 이 필드는 화면 표시용 힌트다(백엔드 헌법 제8조의
+     * 이중 검증은 그대로다).
+     */
+    @Schema(description = "현재 사용자가 수정·삭제할 수 있는지(서버 판정)",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean editable;
+
     // 수기 from(MemoReport) 은 MemoReportMapper(MapStruct, 프레임워크 표준)로 대체됨.
 }
