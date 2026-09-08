@@ -94,6 +94,9 @@ describe('memoReportService generated instruction contract', () => {
       'drctnMttrRegDt',
       'rptrInqDt',
       'crtDt',
+      // [2026-09-08 PD-RPT-001] editable 은 서버 판정(수정·삭제 가능 여부)이라 요청에서 받지 않는다.
+      // 클라이언트가 주장할 수 있으면 화면이 자기 권한을 스스로 여는 셈이 된다.
+      'editable',
     ] as const;
     type ServerOwnedField = Extract<keyof MemoReportInput, (typeof serverOwnedFields)[number]>;
     expectTypeOf<ServerOwnedField>().toEqualTypeOf<never>();
