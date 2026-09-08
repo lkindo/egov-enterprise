@@ -5,6 +5,7 @@ import type { components, operations } from '@/types/generated-api';
 import {
     getCommunities_1Operation,
     getCommunity_1Operation,
+    getCommunityBoardsOperation,
     getMyMembershipOperation,
     joinCommunityOperation,
 } from '@/types/generated-operations';
@@ -14,6 +15,13 @@ export type CommunityMembership = {
     cmntySn: number;
     status: NonNullable<components['schemas']['CommunityMembershipDto']['status']>;
     joinYmd: string | null;
+};
+
+/** 커뮤니티에 귀속된 게시판 한 건 — 승인된 회원만 받는다(서버가 판정). */
+export type CommunityBoard = {
+    bbsId: string;
+    bbsTtl: string | null;
+    bbsExpln: string | null;
 };
 
 type CommunityListQuery = NonNullable<operations['getCommunities_1']['parameters']['query']>;
@@ -99,6 +107,27 @@ class CommunityUserService extends UserService {
             throw new Error('커뮤니티 멤버십 응답이 필수 계약과 일치하지 않습니다.');
         }
         return { cmntySn: response.cmntySn, status: response.status, joinYmd: response.joinYmd ?? null };
+    }
+
+    /**
+     * 커뮤니티 귀속 게시판 목록 (2026-09-08 PD-CMTY-001) — 회원 자격이 처음으로 여는 기능.
+     *
+     * <p>인가는 서버가 판정한다. 회원이 아니면 403 이며 화면은 그 사실을 안내로 바꾼다.
+     * `bbsId` 가 없는 행은 링크를 만들 수 없으므로 계약 위반으로 본다.
+     */
+    async getCommunityBoards(cmntySn: number): Promise<CommunityBoard[]> {
+        const response = await this.executeGenerated(getCommunityBoardsOperation, {
+            path: { cmntySn },
+        });
+        if (!Array.isArray(response)) {
+            throw new Error('커뮤니티 게시판 응답이 필수 계약과 일치하지 않습니다.');
+        }
+        return response.map((board) => {
+            if (typeof board?.bbsId !== 'string' || board.bbsId.length === 0) {
+                throw new Error('커뮤니티 게시판 응답에 게시판 ID 가 없습니다.');
+            }
+            return { bbsId: board.bbsId, bbsTtl: board.bbsTtl ?? null, bbsExpln: board.bbsExpln ?? null };
+        });
     }
 
     /**

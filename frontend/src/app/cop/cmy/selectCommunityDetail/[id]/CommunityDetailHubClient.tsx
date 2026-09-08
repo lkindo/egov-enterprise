@@ -54,6 +54,27 @@ export default function CommunityDetailHubClient({
   });
   const membershipStatus = membership?.status;
 
+  /*
+    [2026-09-08 PD-CMTY-001] 회원 자격이 처음으로 여는 기능 — 커뮤니티 귀속 게시판 목록.
+
+    종전에는 이 화면의 '커뮤니티 게시글' 섹션이 아무 조회도 하지 않고 '아직 제공되지 않습니다'
+    라고만 말했다. `tb_bbs_master.cmnty_sn` 과 `findByCmntySnAndUseYn` 은 있었지만 호출자가
+    0 이었다(GAP-CMTY-001). 이제 서버가 승인된 회원에게만 목록을 내려준다.
+
+    회원이 아닐 때는 **조회 자체를 하지 않는다** — 서버가 403 을 줄 것이 확실한 요청을 보내
+    콘솔에 오류를 남길 이유가 없고, 화면은 어차피 안내를 보여 준다.
+  */
+  const canSeeBoards = membershipStatus === 'MEMBER';
+  const {
+    data: boards,
+    isLoading: isBoardsLoading,
+    error: boardsError,
+  } = useQuery({
+    queryKey: ['community-boards', cmntySn],
+    queryFn: () => communityUserService.getCommunityBoards(cmntySn),
+    enabled: canSeeBoards,
+  });
+
   /**
    * 커뮤니티 가입 신청.
    *
@@ -185,25 +206,59 @@ export default function CommunityDetailHubClient({
               </div>
             </HubSectionCard>
 
+            {/*
+              [2026-09-08 PD-CMTY-001] '아직 제공되지 않습니다' 를 실제 목록으로 바꾼다.
+              [2026-08-28] 그 이전에는 '등록된 게시글이 없습니다' 라고 단정했는데 이 섹션은 어떤
+              조회도 하지 않았다 — 글이 있는 커뮤니티에서도 비었다고 말했다. 지금은 조회하고,
+              조회할 수 없는 사람에게는 그 이유를 말한다.
+            */}
             <HubSectionCard
-              title="커뮤니티 게시글"
-              description="커뮤니티에서 공유된 게시글 목록입니다"
+              title="커뮤니티 게시판"
+              description="이 커뮤니티에 귀속된 게시판입니다. 회원만 볼 수 있습니다."
               icon={MessageSquare}
             >
-              <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-border rounded-[var(--radius-hub-section)] bg-muted/30">
-                <div className="w-20 h-11 bg-card border-2 border-border rounded-[var(--radius-hub-item)] flex items-center justify-center text-muted-foreground shadow-xl mb-8 group-hover:rotate-12 transition-transform">
-                  <BookOpen size={32} />
+              {!canSeeBoards ? (
+                <div className="flex flex-col items-center justify-center gap-4 py-16 text-center border-2 border-dashed border-border rounded-[var(--radius-hub-section)] bg-muted/30">
+                  <BookOpen size={32} className="text-muted-foreground" aria-hidden="true" />
+                  <p className="text-sm font-bold text-muted-foreground">
+                    {membershipStatus === 'REQUESTED'
+                      ? '가입 승인을 기다리는 중입니다. 승인되면 이 커뮤니티의 게시판이 보입니다.'
+                      : '이 커뮤니티의 게시판은 승인된 회원만 볼 수 있습니다.'}
+                  </p>
                 </div>
-                {/*
-                  [2026-08-28] '등록된 게시글이 없습니다' → 미제공 고지.
-                  이 섹션은 **어떤 조회도 하지 않는다.** 그런데 '게시글이 없다'고 단정해,
-                  실제로 글이 있는 커뮤니티에서도 비었다고 말했다. 커뮤니티별 게시글을 내려주는
-                  경로가 아직 없으므로(BoardMasterRepository 의 커뮤니티 조회는 미노출),
-                  없다고 말하는 대신 아직 제공되지 않는다고 말한다.
-                */}
-                <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">_ Not_Available</h4>
-                <p className="text-xs font-bold text-muted-foreground tracking-tight mt-4">커뮤니티별 게시글 목록은 아직 제공되지 않습니다</p>
-              </div>
+              ) : isBoardsLoading ? (
+                <p className="py-16 text-center text-sm text-muted-foreground">게시판을 불러오는 중…</p>
+              ) : boardsError ? (
+                <p role="alert" className="py-16 text-center text-sm font-bold text-destructive-emphasis">
+                  게시판 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+                </p>
+              ) : (boards ?? []).length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-4 py-16 text-center border-2 border-dashed border-border rounded-[var(--radius-hub-section)] bg-muted/30">
+                  <BookOpen size={32} className="text-muted-foreground" aria-hidden="true" />
+                  <p className="text-sm font-bold text-muted-foreground">이 커뮤니티에 등록된 게시판이 없습니다.</p>
+                </div>
+              ) : (
+                <ul className="space-y-3 py-4">
+                  {(boards ?? []).map((board) => (
+                    <li key={board.bbsId}>
+                      <Link
+                        href={`/admin/community/boards/select-board-list?bbsId=${encodeURIComponent(board.bbsId)}`}
+                        className="flex items-center gap-4 rounded-[var(--radius-hub-widget)] border border-border bg-card px-6 py-4 transition-all hover:bg-muted"
+                      >
+                        <BookOpen size={20} className="shrink-0 text-primary" aria-hidden="true" />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-bold text-foreground">
+                            {board.bbsTtl || board.bbsId}
+                          </span>
+                          {board.bbsExpln ? (
+                            <span className="block truncate text-xs text-muted-foreground">{board.bbsExpln}</span>
+                          ) : null}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </HubSectionCard>
           </div>
 
@@ -233,7 +288,8 @@ export default function CommunityDetailHubClient({
                         ? '가입 신청이 접수되었습니다. 관리자가 승인하면 회원이 됩니다.'
                         : '신청하면 관리자가 검토해 승인하거나 반려합니다.'}
                     <br />
-                    커뮤니티별 게시글 등 회원 전용 기능은 아직 제공되지 않습니다.
+                    {/* [2026-09-08 PD-CMTY-001] 회원 전용 게시판이 생겼으므로 미제공 고지를 걷는다. */}
+                    회원이 되면 이 커뮤니티에 귀속된 게시판을 이용할 수 있습니다.
                   </p>
                 </div>
                 {/*

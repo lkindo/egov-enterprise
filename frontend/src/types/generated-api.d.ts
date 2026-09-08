@@ -3620,6 +3620,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/communities/{cmntySn}/boards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 커뮤니티 게시판 목록
+         * @description 커뮤니티에 귀속된 사용 중인 게시판 목록을 조회합니다. 승인된 회원만 조회할 수 있습니다.
+         */
+        get: operations["getCommunityBoards"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/boards/{bbsId}": {
         parameters: {
             query?: never;
@@ -7380,6 +7400,28 @@ export interface components {
             status?: "NONE" | "REQUESTED" | "MEMBER" | "UNKNOWN";
             /** @description 가입(신청)일자 yyyyMMdd — 행이 없으면 null */
             joinYmd?: string;
+        };
+        ApiResponseListCommunityBoardDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["CommunityBoardDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 커뮤니티 귀속 게시판 */
+        CommunityBoardDto: {
+            /** @description 게시판 ID */
+            bbsId?: string;
+            /** @description 게시판 제목 */
+            bbsTtl?: string;
+            /** @description 게시판 설명 */
+            bbsExpln?: string;
+            /** @description 게시판 유형 코드 */
+            bbsTypeCd?: string;
         };
         ApiResponsePageResponseCommentDto: {
             success?: boolean;
@@ -29482,6 +29524,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseCommunityMembershipDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getCommunityBoards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseListCommunityBoardDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

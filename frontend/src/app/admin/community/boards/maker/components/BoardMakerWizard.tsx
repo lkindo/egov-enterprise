@@ -18,7 +18,8 @@ import {
  SelectValue,
 } from "@/components/ui/select";
 import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { communityUserService } from '@/services/business/user/community/CommunityUserService';
 import {
  ChevronRight,
  ChevronLeft,
@@ -133,6 +134,18 @@ export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
    .max(100, '메뉴 명칭은 최대 100자까지 입력할 수 있습니다.'),
  upperMenuNo: z.enum(['0', '2000000', '2030000'], { message: '상위 메뉴를 선택해 주세요.' }),
  menuOrdr: MenuDtoSchema.shape.menuOrdr.int('메뉴 순서는 정수여야 합니다.'),
+ /*
+   [2026-09-08 PD-CMTY-001] 커뮤니티 귀속(선택).
+
+   값이 있으면 그 게시판은 **회원 전용**이 된다 — 승인된 회원과 관리자만 목록·상세·댓글·
+   작성에 접근한다(BoardService.assertCommunityAccess). 빈 문자열은 '귀속 없음' 이며 서버에
+   보내지 않는다.
+
+   ⚠ 귀속은 **생성 시점에만** 정한다. 나중에 바꾸면 이미 쌓인 글의 열람 범위가 통째로
+   달라지는데(H3 — 인가 의미 변경), 그것은 별도 결정이 필요한 일이다. 서버의
+   updateBoardMaster 도 cmntySn 을 건드리지 않는다.
+ */
+ cmntySn: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof boardMakerFormSchema>;
@@ -141,6 +154,7 @@ const BOARD_MAKER_FORM_LABELS: Record<string, string> = {
  bbsTtl: '게시판 명칭',
  bbsExpln: '게시판 소개',
  tmpltId: '템플릿',
+ cmntySn: '커뮤니티 귀속',
  upperMenuNo: '상위 메뉴',
  menuNm: '메뉴 명칭',
  menuOrdr: '메뉴 순서',
@@ -150,6 +164,7 @@ const BOARD_MAKER_FORM_LABELS: Record<string, string> = {
 const BOARD_MAKER_FIELD_STEPS: Record<string, number> = {
  bbsTtl: 1,
  bbsExpln: 1,
+ cmntySn: 1,
  tmpltId: 2,
  upperMenuNo: 4,
  upMenuSn: 4,
@@ -184,6 +199,7 @@ export function BoardMakerWizard() {
  bbsAtrbCd: 'BBSA01',
  tmpltId: 'TMPLT_HUB',
  useYn: 'Y',
+ cmntySn: '',
  menuNm: '',
  upperMenuNo: '2000000',
  menuOrdr: 1,
@@ -195,6 +211,17 @@ export function BoardMakerWizard() {
  },
  });
  const { register, handleSubmit, formState: { errors }, watch, setValue } = form;
+
+ /*
+   [2026-09-08 PD-CMTY-001] 귀속 후보 목록. 관리자 화면이므로 관리자용 목록을 쓴다
+   (사용 중지된 커뮤니티도 포함되지만, 그런 커뮤니티에 새 게시판을 붙일 이유가 없어
+   사용 중인 것만 후보로 둔다).
+ */
+ const { data: communities } = useQuery({
+   queryKey: ['board-maker-communities'],
+   queryFn: () => communityUserService.getCommunityList({ pageIndex: 1, pageUnit: 100 }),
+ });
+ const communityOptions = (communities?.list ?? []).filter((community) => community.useYn === 'Y');
 
  const selectedTemplate = watch('tmpltId');
  const bbsTtl = watch('bbsTtl');
@@ -256,6 +283,9 @@ export function BoardMakerWizard() {
  atchPsbltyFileSz: Number(data.atchPsbltyFileSz),
  tmpltId: data.tmpltId,
  blogYn: 'N',
+ // [2026-09-08 PD-CMTY-001] 빈 값은 '귀속 없음' 이라 필드를 아예 보내지 않는다.
+ //   서버는 없는 커뮤니티 귀속을 404 로 거부한다.
+ ...(data.cmntySn ? { cmntySn: Number(data.cmntySn) } : {}),
  useYn: 'Y'
  });
 
@@ -457,6 +487,30 @@ export function BoardMakerWizard() {
  {...register('bbsExpln')}
  />
  {errors.bbsExpln && <p id="bbsExpln-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsExpln.message}</p>}
+ </div>
+
+ <div className="space-y-4 text-left">
+ <Label htmlFor="cmntySn" className="text-xl font-bold text-foreground flex items-center gap-2 transition-colors">
+ <span className="w-1.5 h-6 bg-muted rounded-lg inline-block" />
+ 커뮤니티 귀속
+ </Label>
+ <select
+ id="cmntySn"
+ aria-describedby="cmntySn-help"
+ className="h-11 w-full rounded-lg border-2 border-border bg-card px-6 text-lg font-bold shadow-inner-sm focus:ring-4 focus:ring-primary/10 transition-all"
+ {...register('cmntySn')}
+ >
+ <option value="">귀속하지 않음 (모든 인증 사용자 열람)</option>
+ {communityOptions.map((community) => (
+ <option key={community.cmntySn} value={String(community.cmntySn)}>
+ {community.cmntyNm}
+ </option>
+ ))}
+ </select>
+ <p id="cmntySn-help" className="ml-2 text-sm font-medium text-muted-foreground">
+ 커뮤니티에 귀속하면 <strong>승인된 회원과 관리자만</strong> 이 게시판의 글을 보고 쓸 수 있고,
+ 통합 검색 결과에서도 제외됩니다. 귀속은 생성 후에는 바꿀 수 없습니다.
+ </p>
  </div>
 
  {/*

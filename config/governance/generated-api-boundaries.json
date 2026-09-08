@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 370,
-    "generatedDescriptorCount": 370
+    "openApiOperationCount": 371,
+    "generatedDescriptorCount": 371
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 339,
-    "eligible": 325,
+    "total": 340,
+    "eligible": 326,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 325,
+      "generated": 326,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "130e059901cbc54930ab366ab960a199eeee6d6b4884c1a536423873c8e380d8",
+  "inventoryHash": "2fde88a6d1be03b0781d05361fa0baf45d27c28c4ab9c05d5e2dfe6afe284644",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -1396,7 +1396,7 @@
       "file": "frontend/src/services/business/user/community/CommunityUserService.ts",
       "owner": "CommunityUserService.getCommunityList",
       "ordinal": 1,
-      "line": 76,
+      "line": 84,
       "column": 32,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1413,7 +1413,7 @@
       "file": "frontend/src/services/business/user/community/CommunityUserService.ts",
       "owner": "CommunityUserService.getCommunity",
       "ordinal": 1,
-      "line": 86,
+      "line": 94,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1430,7 +1430,7 @@
       "file": "frontend/src/services/business/user/community/CommunityUserService.ts",
       "owner": "CommunityUserService.getMyMembership",
       "ordinal": 1,
-      "line": 95,
+      "line": 103,
       "column": 32,
       "classification": "generated",
       "transport": "generated-executor",
@@ -1445,9 +1445,26 @@
     },
     {
       "file": "frontend/src/services/business/user/community/CommunityUserService.ts",
+      "owner": "CommunityUserService.getCommunityBoards",
+      "ordinal": 1,
+      "line": 119,
+      "column": 32,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "this.executeGenerated",
+      "method": "get",
+      "target": "/api/v1/communities/{cmntySn}/boards",
+      "operationId": "getCommunityBoards",
+      "descriptorName": "getCommunityBoardsOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "5ac37eec2dfca016b7a1"
+    },
+    {
+      "file": "frontend/src/services/business/user/community/CommunityUserService.ts",
       "owner": "CommunityUserService.joinCommunity",
       "ordinal": 1,
-      "line": 108,
+      "line": 137,
       "column": 16,
       "classification": "generated",
       "transport": "generated-executor",

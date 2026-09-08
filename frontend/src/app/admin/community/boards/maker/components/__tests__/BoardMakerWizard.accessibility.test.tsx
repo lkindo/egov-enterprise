@@ -5,6 +5,11 @@ import { BoardMakerWizard } from '../BoardMakerWizard';
 
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+  // [2026-09-08 PD-CMTY-001] 마법사가 커뮤니티 귀속 후보를 조회한다.
+  useQuery: () => ({ data: { list: [] } }),
+}));
+vi.mock('@/services/business/user/community/CommunityUserService', () => ({
+  communityUserService: { getCommunityList: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/BoardAdminService', () => ({
   boardAdminService: { createBoard: vi.fn() },
