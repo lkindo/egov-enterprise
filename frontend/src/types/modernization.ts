@@ -31,8 +31,6 @@ export interface BoardMasterDto {
   mdfcnDt?: string;
   useYn?: string;
   cmntySn?: number;
-  blogSn?: number;
-  blogYn?: string;
   ansYn?: string;
   stsfdgYn?: string;
   // UI related fields (often joined in backend)

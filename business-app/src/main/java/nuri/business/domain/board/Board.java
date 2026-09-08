@@ -96,9 +96,6 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String scrtYn;
 
-    @Column(name = "blog_sn")
-    private Long blogSn;
-
     private java.time.LocalDateTime evntDt;
 
     @Column(length = 12)
@@ -128,7 +125,7 @@ public class Board extends BaseEntity implements Serializable {
     private Board(Long pstSn, String bbsId, Long ansSn, String pstTtl, String pstCn, Long upPstSn,
             Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
             String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
-            Long atchFileSn, String scrtYn, Long blogSn, java.time.LocalDateTime evntDt,
+            Long atchFileSn, String scrtYn, java.time.LocalDateTime evntDt,
             String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
             Integer cmntCnt, Integer fileCnt) {
         this.pstSn = pstSn;
@@ -150,7 +147,6 @@ public class Board extends BaseEntity implements Serializable {
         this.pswd = pswd;
         this.atchFileSn = atchFileSn;
         this.scrtYn = scrtYn;
-        this.blogSn = blogSn;
         this.evntDt = evntDt;
         this.qnaSttsCd = qnaSttsCd != null ? qnaSttsCd : "OPEN";
         this.qnaCatCd = qnaCatCd;
@@ -168,11 +164,11 @@ public class Board extends BaseEntity implements Serializable {
     public static Board create(Long pstSn, String bbsId, Long ansSn, String pstTtl, String pstCn, Long upPstSn,
             Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
             String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
-            Long atchFileSn, String scrtYn, Long blogSn, java.time.LocalDateTime evntDt,
+            Long atchFileSn, String scrtYn, java.time.LocalDateTime evntDt,
             String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
             Integer cmntCnt, Integer fileCnt) {
         return new Board(pstSn, bbsId, ansSn, pstTtl, pstCn, upPstSn, sortOrdr, ttlBoldYn, ansLv, inqCnt, useYn,
-                pstBgngYmd, pstEndYmd, userId, userNm, pswd, atchFileSn, scrtYn, blogSn, evntDt,
+                pstBgngYmd, pstEndYmd, userId, userNm, pswd, atchFileSn, scrtYn, evntDt,
                 qnaSttsCd, qnaCatCd, likeCnt, ansYn, ntcYn, cmntCnt, fileCnt);
     }
 

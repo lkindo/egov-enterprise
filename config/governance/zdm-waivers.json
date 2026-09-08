@@ -99,6 +99,61 @@
       "approvedAt": "2026-09-02",
       "expiresAt": "2027-09-02",
       "evidence": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0006",
+      "path": "api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql",
+      "directive": "ignore",
+      "reason": "ADR-0012 사용자 승인 블로그 퇴역: tb_bbs_master.blog_sn만 폐기한다. 선행 V2_89 쓰기 차단과 잠금 내 데이터 부재 재검증, CASCADE 없는 실패 원자성을 PostgreSQL 통합 테스트로 보장한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-08",
+      "expiresAt": "2027-09-08",
+      "expandMigration": "api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+      "evidence": "api-server/src/test/java/nuri/api/schema/BlogRetirementMigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0007",
+      "path": "api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql",
+      "directive": "ignore",
+      "reason": "ADR-0012 사용자 승인 블로그 퇴역: tb_bbs_master.blog_yn만 폐기한다. 선행 V2_89 쓰기 차단과 잠금 내 데이터 부재 재검증, CASCADE 없는 실패 원자성을 PostgreSQL 통합 테스트로 보장한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-08",
+      "expiresAt": "2027-09-08",
+      "expandMigration": "api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+      "evidence": "api-server/src/test/java/nuri/api/schema/BlogRetirementMigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0008",
+      "path": "api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql",
+      "directive": "ignore",
+      "reason": "ADR-0012 사용자 승인 블로그 퇴역: tb_bbs_item.blog_sn만 폐기한다. 선행 V2_89 쓰기 차단과 잠금 내 데이터 부재 재검증, CASCADE 없는 실패 원자성을 PostgreSQL 통합 테스트로 보장한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-08",
+      "expiresAt": "2027-09-08",
+      "expandMigration": "api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+      "evidence": "api-server/src/test/java/nuri/api/schema/BlogRetirementMigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0009",
+      "path": "api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql",
+      "directive": "ignore",
+      "reason": "ADR-0012 사용자 승인 블로그 퇴역: tb_blog_user_map만 폐기한다. 선행 V2_89 쓰기 차단과 잠금 내 데이터 부재 재검증, CASCADE 없는 실패 원자성을 PostgreSQL 통합 테스트로 보장한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-08",
+      "expiresAt": "2027-09-08",
+      "expandMigration": "api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+      "evidence": "api-server/src/test/java/nuri/api/schema/BlogRetirementMigrationIntegrationTest.java"
+    },
+    {
+      "id": "ZDM-2026-0010",
+      "path": "api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql",
+      "directive": "ignore",
+      "reason": "ADR-0012 사용자 승인 블로그 퇴역: tb_blog_info만 폐기한다. 선행 V2_89 쓰기 차단과 잠금 내 데이터 부재 재검증, CASCADE 없는 실패 원자성을 PostgreSQL 통합 테스트로 보장한다.",
+      "owner": "database-platform",
+      "approvedAt": "2026-09-08",
+      "expiresAt": "2027-09-08",
+      "expandMigration": "api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+      "evidence": "api-server/src/test/java/nuri/api/schema/BlogRetirementMigrationIntegrationTest.java"
     }
   ]
 }

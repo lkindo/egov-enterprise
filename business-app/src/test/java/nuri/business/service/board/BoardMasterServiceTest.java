@@ -161,13 +161,12 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("옵션 필드(블로그, 댓글, 만족도)가 포함된 게시판 마스터 생성")
+    @DisplayName("옵션 필드(댓글, 만족도)가 포함된 게시판 마스터 생성")
     void createBoardMaster_WithOptionalFields() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             BoardMasterDto dto = BoardMasterDto.builder()
                     .bbsTtl("Full Board")
-                    .blogYn("Y")
                     .ansYn("Y")
                     .stsfdgYn("Y")
                     .build();
@@ -175,7 +174,7 @@ class BoardMasterServiceTest {
             boardMasterService.createBoardMaster("user1", dto);
 
             verify(entityManager).persist(argThat((BoardMaster bm) ->
-                "Y".equals(bm.getBlogYn()) && "Y".equals(bm.getAnsYn()) && "Y".equals(bm.getStsfdgYn())
+                "Y".equals(bm.getAnsYn()) && "Y".equals(bm.getStsfdgYn())
             ));
         }
     }

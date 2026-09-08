@@ -53,11 +53,6 @@ public class BoardMasterDto {
     @NotBlank
     private String useYn;
     private Long cmntySn;
-    private Long blogSn;
-    @Schema(allowableValues = { "Y", "N" })
-    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
-    @Size(max = 1)
-    private String blogYn;
     @Schema(allowableValues = { "Y", "N" })
     @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
     @Size(max = 1)

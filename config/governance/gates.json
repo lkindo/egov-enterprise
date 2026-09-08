@@ -703,6 +703,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/BlogBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-BLOG-RETIREMENT",
+          "source": "api-server/src/test/java/nuri/api/schema/BlogRetirementMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BOARD-POST-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
         },

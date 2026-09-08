@@ -75,9 +75,6 @@ public record BoardDto(
     @Size(max = 1)
     String scrtYn,
 
-    @Schema(description = "블로그 일련번호", nullable = true, types = {"integer", "null"})
-    Long blogSn,
-
     @Schema(description = "행사일", nullable = true, types = {"string", "null"})
     LocalDateTime evntDt,
 

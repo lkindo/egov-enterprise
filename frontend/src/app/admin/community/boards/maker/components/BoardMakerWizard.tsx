@@ -282,7 +282,6 @@ export function BoardMakerWizard() {
  atchPsbltyFileQty: Number(data.atchPsbltyFileQty),
  atchPsbltyFileSz: Number(data.atchPsbltyFileSz),
  tmpltId: data.tmpltId,
- blogYn: 'N',
  // [2026-09-08 PD-CMTY-001] 빈 값은 '귀속 없음' 이라 필드를 아예 보내지 않는다.
  //   서버는 없는 커뮤니티 귀속을 404 로 거부한다.
  ...(data.cmntySn ? { cmntySn: Number(data.cmntySn) } : {}),
