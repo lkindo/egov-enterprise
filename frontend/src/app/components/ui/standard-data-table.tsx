@@ -585,7 +585,7 @@ export function StandardDataTable<T extends object>({
             </thead>
             <tbody role="rowgroup" className="divide-y divide-border/40">
               {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
+                Array.from({ length: pagination?.pageSize ?? 5 }).map((_, i) => (
                   // 로딩 스켈레톤은 순수 장식이므로 접근성 트리에서 제외한다(중복 낭독 방지).
                   <tr key={`loading-row-${i}`} className="animate-pulse" aria-hidden="true">
                     {/* control-has-associated-label 은 빈 td 를 컨트롤로 오판한다. 이 행은 aria-hidden 장식이라 라벨 대상이 아니다. */}

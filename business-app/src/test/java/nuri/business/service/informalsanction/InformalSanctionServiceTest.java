@@ -145,6 +145,45 @@ class InformalSanctionServiceTest {
         verify(informalSanctionRepository, never()).save(any(InformalSanction.class));
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"ZZ", "RETIRED"})
+    @DisplayName("수정도 사용 중 업무 구분만 허용하며 거절 시 기존 내용을 보존한다")
+    void updateRejectsUnknownTaskTypeWithoutMutation(String taskType) {
+        InformalSanction entity = InformalSanction.builder().ifmlAtrzSn(1L)
+                .aplcntId("owner").taskSeCd("C1").reqYmd("20260908").aprvrId("boss").aprvYn("A").build();
+        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(commonCodeService.getCodesByGroup("COM075"))
+                .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+        InformalSanctionDto dto = InformalSanctionDto.builder().ifmlAtrzSn(1L)
+                .taskSeCd(taskType).reqYmd("20260909").aprvrId("new-boss").build();
+
+        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
+                .isInstanceOf(BusinessException.class).extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(entity.getTaskSeCd()).isEqualTo("C1");
+        assertThat(entity.getReqYmd()).isEqualTo("20260908");
+        assertThat(entity.getAprvrId()).isEqualTo("boss");
+        securityUtilMock.verify(() -> SecurityUtil.assertOwnerByEsntlId("owner"));
+    }
+
+    @Test
+    @DisplayName("수정 인가 실패 시 코드 사전 조회와 내용 변경에 도달하지 않는다")
+    void updateChecksOwnerBeforeTaskType() {
+        InformalSanction entity = InformalSanction.builder().ifmlAtrzSn(1L)
+                .aplcntId("owner").taskSeCd("C1").aprvYn("A").build();
+        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        securityUtilMock.when(() -> SecurityUtil.assertOwnerByEsntlId("owner"))
+                .thenThrow(new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED));
+
+        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(
+                InformalSanctionDto.builder().ifmlAtrzSn(1L).taskSeCd("ZZ").build()))
+                .isInstanceOf(BusinessException.class).extracting("errorCode")
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+        verifyNoInteractions(commonCodeService);
+        assertThat(entity.getTaskSeCd()).isEqualTo("C1");
+    }
+
     @Test
     @DisplayName("결재 승인 처리 테스트")
     void confirmInformalSanctionTest() {

@@ -220,9 +220,8 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   });
 
   // 자동 임시저장 훅 연동
-  const { restoreDraft, clearDraft, hasDraft } = useAutoSaveDraft({
+  const { restoreDraft, clearDraft, hasDraft, lastSavedAt } = useAutoSaveDraft({
     scope: draftScope,
-    legacyKeys: [`egov-draft-board_insert_${bbsId}`],
     getData: () => ({
       title: form.getValues('pstTtl'),
       content: form.getValues('pstCn')
@@ -242,7 +241,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       draftPromptedRef.current = true;
       void confirm({
         title: '임시저장 데이터 복구',
-        message: '이전에 작성 중이던 임시저장 데이터가 있습니다. 복구하시겠습니까?',
+        message: '현재 탭에서 작성하던 초안이 있습니다. 복구하시겠습니까?',
         confirmText: '복구',
         cancelText: '새로 작성',
       }).then((restore) => {
@@ -339,6 +338,12 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
 
       <Form {...form}>
         <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-12 px-4">
+          <p className="text-sm text-muted-foreground">
+            초안 임시 보관은 현재 탭에서만 유효합니다. 새로고침하거나 탭을 닫으면 사라지므로 게시글을 등록해 주세요.
+          </p>
+          <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+            {lastSavedAt ? '현재 탭에 초안을 임시 보관했습니다.' : ''}
+          </p>
           <FormErrorSummary
             labels={{
               pstTtl: '제목',

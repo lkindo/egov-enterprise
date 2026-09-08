@@ -179,7 +179,11 @@ public class MigrationVerifier {
             try {
                 String placeholders = String.join(", ", batch.stream().map(ignored -> "?").toList());
                 Object[] arguments = batch.stream()
-                        .map(MigrationStateStore.CheckpointEntry::targetKey)
+                        // 레거시 checkpoint는 키를 문자열로 보존한다. PostgreSQL의 bigint/UUID 키와
+                        // varchar 파라미터를 비교하면 operator 오류가 나므로 서버의 컬럼 타입 추론을 쓴다.
+                        // 복합 typed identity는 아래 전용 경계에서 원래 JDBC 타입으로 바인딩한다.
+                        .map(checkpoint -> new org.springframework.jdbc.core.SqlParameterValue(
+                                java.sql.Types.OTHER, checkpoint.targetKey()))
                         .toArray();
                 List<Map<String, Object>> rows = target.queryForList(
                         selectPrefix + placeholders + ")", arguments);

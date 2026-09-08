@@ -180,7 +180,7 @@ export function WorkListPage({
         role="group"
         aria-label="결과 도구"
         data-testid="work-list-toolbar"
-        className="flex flex-wrap items-center justify-between gap-2"
+        className="flex min-h-6 flex-wrap items-center justify-between gap-2"
       >
         <p aria-live="polite" className="text-[length:var(--font-size-body)] text-muted-foreground">
           {typeof totalCount === 'number' && (

@@ -13,6 +13,7 @@ import nuri.migration.artifact.CatalogSnapshotArtifactEnvelope;
 import nuri.migration.artifact.CatalogSnapshotDigester;
 import nuri.migration.artifact.MappingSpecDigester;
 import nuri.migration.artifact.MigrationExecutionContract;
+import nuri.migration.artifact.MigrationExecutionArtifact;
 import nuri.migration.artifact.MigrationPlanArtifactCodec;
 import nuri.migration.artifact.SourceDriverEvidence;
 import nuri.migration.artifact.SourceEndpointBinding;
@@ -235,7 +236,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         }
         String executionContractDigest = MigrationExecutionContract.capture(
                 mapping, plannedAdapter, transformers).digest();
-        TargetSchemaFingerprint target = fingerprintTarget(mapping);
+        TargetSchemaFingerprint target = fingerprintTarget(mapping, options.targetSchemas());
         Map<String, nuri.migration.plan.DispositionDecision> decisions = Map.of();
         if (options.review() != null) {
             WorkflowReview review = reviewLoader.load(
@@ -326,9 +327,10 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                         "source inventory digest");
             }
 
-            TargetSchemaFingerprint target = fingerprintTarget(mapping);
+            TargetSchemaFingerprint target = fingerprintTarget(mapping, options.targetSchemas());
             requireEqual(plan.targetSchemaDigest(), target.digest(), "target schema digest");
             executeApproved(
+                    options.plan(), plan,
                     mapping,
                     options.mode(),
                     source,
@@ -350,7 +352,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         return plan;
     }
 
-    private TargetSchemaFingerprint fingerprintTarget(MappingSpec mapping) throws SQLException {
+    private TargetSchemaFingerprint fingerprintTarget(MappingSpec mapping, java.util.Set<String> allowedSchemas) throws SQLException {
         JdbcTemplate target = introspector.jdbc(mapping.target());
         try (Connection connection = open(target)) {
             connection.setReadOnly(true);
@@ -358,7 +360,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             if (!POSTGRESQL_PRODUCT.equals(metadata.getDatabaseProductName())) {
                 throw gate("target database product는 정확히 PostgreSQL이어야 합니다.");
             }
-            return targetFingerprinter.fingerprint(connection, mapping);
+            return targetFingerprinter.fingerprintBound(connection, mapping, allowedSchemas);
         }
     }
 
@@ -411,6 +413,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     }
 
     private void executeApproved(
+            java.nio.file.Path planPath,
+            MigrationPlan plan,
             MappingSpec mapping,
             MigrationMode mode,
             JdbcTemplate source,
@@ -423,17 +427,32 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             target = introspector.jdbc(mapping.target());
             requireValid(validator.validateLiveTarget(mapping, target), "live target schema");
         }
-        List<EtlExecutor.TableResult> results = executor.execute(
-                mapping,
-                mode,
-                source,
-                target,
-                readSessionPolicy,
-                sourceFreezeAcknowledged);
-        MigrationReport report = verifier.verify(mapping, results, target);
-        if (!report.ok()) {
-            throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다.");
+        java.nio.file.Path evidence = planPath.resolveSibling(
+                planPath.getFileName() + ".load-" + java.util.UUID.randomUUID() + ".json");
+        java.time.Instant started = java.time.Instant.now();
+        // 증거 경로에 쓰지 못하면 적재를 시작하지 않는다. 중단 시 STARTED는 성공을 뜻하지 않는다.
+        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null);
+        MigrationReport report = null;
+        try {
+            List<EtlExecutor.TableResult> results = executor.execute(
+                    mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged);
+            report = verifier.verify(mapping, results, target);
+            if (!report.ok()) {
+                throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다.");
+            }
+            writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report);
+        } catch (Throwable failure) {
+            rethrowJvmFatal(failure);
+            writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report);
+            throw failure;
         }
+    }
+
+    private void writeExecutionEvidence(java.nio.file.Path path, MigrationPlan plan, MappingSpec mapping,
+            MigrationMode mode, String status, java.time.Instant started, MigrationReport report) {
+        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report);
+        requireNoBoundCredentials(artifact, mapping);
+        files.writeAtomic(path, artifact);
     }
 
     private SourceJdbcEndpoint openSourceEndpoint(

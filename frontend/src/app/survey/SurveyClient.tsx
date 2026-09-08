@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
+import { surveyListOptions } from '@/queries/survey-query-options';
 import { Survey } from '@/types/business/survey';
-import { useToast } from '@/app/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
 import { todayStorageYmd } from '@/lib/format-date';
 import { SURVEY_STATUS_LABEL, displaySurveyYmd, getSurveyStatus } from '@/lib/survey-status';
@@ -14,28 +14,11 @@ import { Calendar, ArrowRight } from 'lucide-react';
 
 export default function SurveyClient() {
   const router = useRouter();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<Survey[]>([]);
-  const [total, setTotal] = useState<number | undefined>(undefined);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const { data, isFetching, isError, error, refetch } = useQuery(surveyListOptions(page, pageSize));
   // 목록은 클라이언트에서 불러오므로 기준일이 SSR 마크업에 실리지 않는다.
   const [today] = useState(() => todayStorageYmd());
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const res = await surveyAdminService.getSurveys({ page: 0, size: 10 });
-        setData(res.list || []);
-        setTotal(typeof res.total === 'number' ? res.total : undefined);
-      } catch {
-        toast('설문 목록을 불러오지 못했습니다.', 'error');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [toast]);
 
   const columns = [
 
@@ -102,13 +85,16 @@ export default function SurveyClient() {
       title="온라인 설문 조사"
       description="진행 중인 설문에 응답하고, 종료된 설문은 결과 통계를 확인합니다."
       breadcrumbItems={[{ label: '업무지원' }, { label: '설문조사' }]}
-      totalCount={total}
+      totalCount={isError ? undefined : data?.total}
     >
       <StandardDataTable<Survey>
         accessibleLabel="설문 조사 목록"
         columns={columns}
-        data={data}
-        loading={loading}
+        keyField="srvySn"
+        data={data?.list ?? []}
+        loading={isFetching}
+        error={isError ? error : null}
+        onRetry={() => void refetch()}
         onRowClick={(item) => router.push(`/survey/${item.srvySn}`)}
         rowActionLabel={(item) => (
           getSurveyStatus(item, today) === 'active'
@@ -116,6 +102,13 @@ export default function SurveyClient() {
             : `${item.srvyTtl || `${item.srvySn}번`} 설문 결과 보기`
         )}
         emptyMessage="등록된 설문 조사가 없습니다."
+        pagination={{
+          currentPage: page + 1,
+          totalPages: data?.totalPage ?? 0,
+          pageSize,
+          onPageChange: (next) => setPage(next - 1),
+          onPageSizeChange: (size) => { setPageSize(size); setPage(0); },
+        }}
       />
     </WorkListPage>
   );

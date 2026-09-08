@@ -525,7 +525,7 @@
       "id": "board-article-composer",
       "archetype": "form-composer-upload-autosave",
       "title": "실제 게시글 composer와 임시저장 회복",
-      "primaryTask": "synthetic 게시판에서 제목·본문을 작성하고 validation과 reload 뒤 draft를 복구한 다음 저장 결과를 확인하며, 첨부 action은 지원 여부가 검증되기 전 성공 과업으로 간주하지 않는다.",
+      "primaryTask": "synthetic 게시판에서 제목·본문을 작성하고 validation과 같은 문서 내 화면 이동 뒤 메모리 초안을 복구한 다음 저장 결과를 확인하며, 첨부 action은 지원 여부가 검증되기 전 성공 과업으로 간주하지 않는다.",
       "journeySteps": [
         {
           "id": "composer-ready",
@@ -551,8 +551,8 @@
           "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
           "role": "ADMIN",
           "state": {
-            "data": "synthetic-local-draft",
-            "interaction": "reload-restore-and-submit",
+            "data": "synthetic-memory-draft",
+            "interaction": "same-document-restore-and-submit",
             "network": "online"
           },
           "truth": {

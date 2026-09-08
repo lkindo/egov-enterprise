@@ -26,6 +26,30 @@ import java.util.Set;
 /** MappingSpec가 쓰는 target table/column/PK만 실제 JDBC metadata에서 읽는 read-only fingerprinter. */
 public final class PostgresTargetSchemaFingerprinter {
 
+    /** 승인 workflow는 schema뿐 아니라 실제 접속 환경과 허용 스키마를 함께 검증한다. */
+    public TargetSchemaFingerprint fingerprintBound(Connection connection, MappingSpec mapping,
+                                                     Set<String> allowedSchemas) throws SQLException {
+        if (allowedSchemas == null || allowedSchemas.isEmpty()
+                || allowedSchemas.stream().anyMatch(schema -> schema == null
+                    || !schema.matches("[a-z][a-z0-9_]*") || schema.startsWith("pg_")
+                    || schema.equals("information_schema") || schema.equals("migration_control"))) {
+            throw new IllegalArgumentException("target schema allowlist is invalid");
+        }
+        for (TableMapping table : mapping.tables()) {
+            String[] parts = table.target().split("\\.", -1);
+            if (parts.length != 2 || !allowedSchemas.contains(parts[0])
+                    || !parts[1].matches("[a-z][a-z0-9_]*")) {
+                throw new IllegalArgumentException("workflow target must be explicitly schema-qualified and allowlisted");
+            }
+        }
+        String environment = nuri.migration.artifact.TargetEndpointBinding.capture(connection, mapping.target());
+        TargetSchemaFingerprint schema = fingerprint(connection, mapping);
+        String digest = nuri.migration.artifact.CanonicalArtifactDigest.sha256(Map.of(
+                "version", 2, "environment", environment, "schema", schema.digest(),
+                "allowedSchemas", allowedSchemas.stream().sorted().toList()));
+        return new TargetSchemaFingerprint(2, schema.databaseProduct(), schema.databaseVersion(), digest, schema.tables());
+    }
+
     public TargetSchemaFingerprint fingerprint(Connection connection, MappingSpec mapping) throws SQLException {
         Objects.requireNonNull(connection, "connection");
         Objects.requireNonNull(mapping, "mapping");

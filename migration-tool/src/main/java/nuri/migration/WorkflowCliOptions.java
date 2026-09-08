@@ -33,7 +33,8 @@ public record WorkflowCliOptions(
         MigrationMode mode,
         String adapterAcknowledgement,
         String sourceDriverEvidenceAcknowledgement,
-        boolean sourceFreezeAcknowledged
+        boolean sourceFreezeAcknowledged,
+        Set<String> targetSchemas
 ) {
 
     private static final Map<WorkflowCommand, Set<String>> ALLOWED = Map.of(
@@ -43,14 +44,14 @@ public record WorkflowCliOptions(
                     "source-driver-jar", "source-driver-class"),
             WorkflowCommand.PLAN,
             Set.of("command", "mapping", "inventory", "plan", "review", "source-adapter",
-                    "schemas", "catalogs", "object-kinds", "include-system-objects"),
+                    "schemas", "catalogs", "object-kinds", "include-system-objects", "target-schemas"),
             WorkflowCommand.VALIDATE,
             Set.of("command", "plan"),
             WorkflowCommand.LOAD,
             Set.of("command", "mapping", "inventory", "plan", "mode", "source-adapter",
                     "schemas", "catalogs", "object-kinds", "include-system-objects",
                     "source-driver-jar", "source-driver-class",
-                    "ack-adapter", "ack-source-driver", "ack-source-freeze"));
+                    "ack-adapter", "ack-source-driver", "ack-source-freeze", "target-schemas"));
 
     public WorkflowCliOptions {
         command = Objects.requireNonNull(command, "command");
@@ -63,6 +64,7 @@ public record WorkflowCliOptions(
                 : Collections.unmodifiableSet(EnumSet.copyOf(objectKinds));
         sourceDriverJars = List.copyOf(Objects.requireNonNull(sourceDriverJars, "sourceDriverJars"));
         mode = Objects.requireNonNull(mode, "mode");
+        targetSchemas = Set.copyOf(Objects.requireNonNull(targetSchemas, "targetSchemas"));
     }
 
     public static WorkflowCliOptions parse(ApplicationArguments arguments) {
@@ -100,11 +102,13 @@ public record WorkflowCliOptions(
         String acknowledgement = optional(arguments, "ack-adapter");
         String sourceDriverAcknowledgement = optionalDigest(arguments, "ack-source-driver");
         boolean freeze = flag(arguments, "ack-source-freeze");
+        Set<String> targetSchemas = arguments.containsOption("target-schemas")
+                ? parseCsv(arguments, "target-schemas") : Set.of("public");
         return new WorkflowCliOptions(
                 command, mapping, inventory, plan, review, sourceAdapter,
                 catalogs, schemas, objectKinds, includeSystemObjects,
                 sourceDriverJars, sourceDriverClass, mode,
-                acknowledgement, sourceDriverAcknowledgement, freeze);
+                acknowledgement, sourceDriverAcknowledgement, freeze, targetSchemas);
     }
 
     private static WorkflowCommand parseCommand(String value) {

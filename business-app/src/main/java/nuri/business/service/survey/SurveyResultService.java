@@ -64,9 +64,13 @@ public class SurveyResultService {
     /**
      * 설문 응답 제출. 답변 N건이 행 N개가 된다.
      *
+     * <p>설문 행의 DB 쓰기 잠금을 먼저 얻고, 같은 트랜잭션에서 중복 검사와 전체 답변 저장을 한다.
+     * 다중 애플리케이션 인스턴스에서도 대기 중인 요청은 선행 제출의 커밋 뒤 중복을 확인한다.
+     * 한 설문의 제출은 직렬화되며 서로 다른 설문은 독립적으로 처리한다.
+     *
      * <p><b>중복 제출 방어는 두 겹이다.</b>
      * <ol>
-     *   <li>여기 {@code existsBySrvySnAndFrstRgtrId} — 비동시 재제출을 막는다.</li>
+     *   <li>잠금 안의 {@code existsBySrvySnAndFrstRgtrId} — 다른 답안을 포함한 재제출을 막는다.</li>
      *   <li>{@code V2_44} 의 {@code uk_tb_srvy_rslt_answer}
      *       ({@code srvy_id, srvy_qstn_id, srvy_artcl_id, frst_rgtr_id}) — 동일 답변 행의 중복을
      *       DB 가 막는다.</li>
@@ -77,15 +81,13 @@ public class SurveyResultService {
      * {@code srvy_id}·{@code frst_rgtr_id} 를 가지므로, 그 조합에 UNIQUE 를 걸면 <b>정상 제출의
      * 2번째 답변부터 거부된다</b>. 온라인 투표(V2_4)는 1인 1행이라 통했을 뿐이다.
      *
-     * <p><b>아직 닫히지 않은 것</b>: 두 요청이 동시에 1)을 통과한 뒤 <b>서로 다른 항목</b>을 고르면
-     * 두 벌의 응답이 함께 남는다. 완전한 보장은 "이 사용자가 이 설문에 응답했다" 를 담는 단일
-     * 앵커 행이 필요하며(예: 제출 시 {@code tb_srvy_rspdnt} 행 생성 + 거기에 UNIQUE), 그것은
-     * 응답자 테이블의 성격(PII 보유)과 제출 의미론을 함께 정해야 하는 제품 결정이다.
+     * <p>앵커는 이미 존재하는 설문 행이므로 개인정보를 보유한 응답자 테이블을 새로 쓰지 않는다.
+     * 제출이 롤백되면 답변과 잠금이 함께 해제되어 이후 정상 제출이 가능하다.
      */
     @Transactional
     public int submitResponse(Long srvySn, SurveyResponseSubmitDto dto) {
         Objects.requireNonNull(srvySn);
-        SurveyInfo survey = infoRepository.findById(srvySn)
+        SurveyInfo survey = infoRepository.findByIdForSubmission(srvySn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertWithinPeriod(survey);
 

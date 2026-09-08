@@ -71,6 +71,7 @@ import {
 } from '../frontend/scripts/ui-quality-baseline-core.mjs';
 
 import {
+  isPersistedBoardDraftKey,
   readBaselineBuildAttestationFile,
   validateExecutionPreflight as validateRunnerExecutionPreflight,
 } from '../frontend/scripts/ui-quality-baseline-runner.mjs';
@@ -1411,6 +1412,16 @@ test('synthetic mutation diagnostic is a fixed six-step non-baseline slice', () 
   assert.doesNotMatch(runnerSource, /UI_BASELINE_(?:CASE|STEP|SCENARIO)_FILTER/);
   assert.match(baselineProtocolSource, /synthetic-mutation-v1/);
   assert.match(baselineProtocolSource, /zero-active-residue/);
+});
+
+test('draft privacy probe detects scoped and legacy persisted keys while preserving preferences', () => {
+  for (const key of ['egov-board-draft:v2:user:board:create:new', 'egov-draft-board_insert_BBS-1', 'autosave_bbs_write']) {
+    assert.equal(isPersistedBoardDraftKey(key), true, `must reject persisted draft key: ${key}`);
+  }
+  for (const key of [null, '', 'theme', 'unrelated-preference']) {
+    assert.equal(isPersistedBoardDraftKey(key), false);
+  }
+  assert.match(runnerSource, /persistedKeys\.some\(isPersistedBoardDraftKey\)/);
 });
 
 test('draft restoration polling is bounded and tolerates transient reads without fabricating success', async () => {

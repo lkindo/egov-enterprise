@@ -60,16 +60,14 @@ class SmsAsyncProcessorTest {
     void processSending_SenderFailure() {
         SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build();
         given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(recptn));
-        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "0101"))).willReturn(Optional.of(recptn));
         given(smsSender.send(anyString(), anyString(), anyString())).willReturn(false);
 
         smsAsyncProcessor.processSending(1L, "0102", "Hello");
 
-        // Unit test에서는 @Recover가 자동 실행되지 않으므로 수동 호출하여 로직 검증
-        smsAsyncProcessor.recoverSmsSending(new RuntimeException("Failure"), 1L, "0101", "0102", "Hello");
-        assertThat(recptn.getRsltCd()).isEqualTo("F");
-        assertThat(recptn.getRsltMsg()).isEqualTo("Gateway delivery failed");
-        assertThat(recptn.getRsltMsg()).doesNotContain("Failure");
+        // 복구는 결과만 반환한다. 최종 F 기록과 정제된 메시지는 실제 프록시 테스트에서 검증한다.
+        assertThat(smsAsyncProcessor.recoverSmsSending(new RuntimeException("Failure"),
+                1L, "0101", "0102", "Hello")).isFalse();
+        verify(smsRecptnRepository, never()).findById(any());
     }
 
     @Test
@@ -77,14 +75,13 @@ class SmsAsyncProcessorTest {
     void processSending_Exception() {
         SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build();
         given(smsRecptnRepository.findByIdSmsTrsmSn(1L)).willReturn(List.of(recptn));
-        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "0101"))).willReturn(Optional.of(recptn));
         doThrow(new RuntimeException("Error")).when(smsSender).send(anyString(), anyString(), anyString());
 
         smsAsyncProcessor.processSending(1L, "0102", "Hello");
 
-        // @Recover 수동 호출 검증
-        smsAsyncProcessor.recoverSmsSending(new RuntimeException("Error"), 1L, "0101", "0102", "Hello");
-        assertThat(recptn.getRsltCd()).isEqualTo("F");
+        assertThat(smsAsyncProcessor.recoverSmsSending(new RuntimeException("Error"),
+                1L, "0101", "0102", "Hello")).isFalse();
+        verify(smsRecptnRepository, never()).findById(any());
     }
 
     @Test

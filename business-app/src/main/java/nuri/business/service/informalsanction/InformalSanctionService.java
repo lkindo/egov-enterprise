@@ -175,6 +175,7 @@ public class InformalSanctionService {
             throw new BusinessException(CommonErrorCode.INVALID_STATE, "신청 상태인 경우에만 수정할 수 있습니다.");
         }
 
+        assertKnownTaskType(dto.getTaskSeCd());
         entity.update(dto.getTaskSeCd(), dto.getReqYmd(), dto.getAprvrId());
     }
 

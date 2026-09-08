@@ -3,6 +3,17 @@ export const BOARD_DRAFT_PREFIX = 'egov-board-draft:v2:';
 const LEGACY_BOARD_DRAFT_PREFIX = 'egov-draft-board_';
 const LEGACY_BOARD_AUTOSAVE_KEY = 'autosave_bbs_write';
 
+// 업무 본문은 브라우저 영속 저장소에 쓰지 않는다. 현재 문서의 메모리에서만 유지한다.
+const drafts = new Map<string, string>();
+let draftEpoch = 0;
+export const boardDraftMemoryStorage = {
+  getItem: (key: string): string | null => drafts.get(key) ?? null,
+  setItem: (key: string, value: string): void => { drafts.set(key, value); },
+  removeItem: (key: string): void => { drafts.delete(key); },
+  clear: (): void => { drafts.clear(); draftEpoch += 1; },
+};
+export const getBoardDraftEpoch = (): number => draftEpoch;
+
 export interface BoardDraftScope {
   /** 현재 인증 사용자/세션의 불투명 식별자. 익명·빈 값은 허용하지 않는다. */
   ownerId: string;
@@ -18,7 +29,7 @@ function segment(value: string, name: keyof BoardDraftScope): string {
   return encodeURIComponent(normalized);
 }
 
-/** 사용자/게시판/작업/레코드가 모두 다른 localStorage namespace를 소유한다. */
+/** 사용자/게시판/작업/레코드별 메모리 키. 구 영속 초안을 제거할 때도 같은 접두사를 쓴다. */
 export function buildBoardDraftStorageKey(scope: BoardDraftScope): string {
   return [
     BOARD_DRAFT_PREFIX.slice(0, -1),
@@ -57,11 +68,19 @@ export function purgeLegacyBoardDraftStorage(storage: Storage): void {
   );
 }
 
-/** 로그아웃 시 모든 게시글 초안과 판별 불가능한 legacy 초안을 제거한다. */
-export function purgeBoardDraftStorage(storage: Storage): void {
-  removeMatching(
-    storage,
-    (key) => key.startsWith(BOARD_DRAFT_PREFIX)
-      || isLegacyBoardDraftKey(key),
-  );
+/** 과거 영속 초안은 내용을 읽거나 복원하지 않고 제거한다. 다른 저장값은 보존한다. */
+export function purgePersistedBoardDraftStorage(storage?: Storage): void {
+  try {
+    if (!storage && typeof window === 'undefined') return;
+    removeMatching(storage ?? window.localStorage,
+      (key) => key.startsWith(BOARD_DRAFT_PREFIX) || isLegacyBoardDraftKey(key));
+  } catch {
+    // 브라우저가 localStorage 속성 접근 자체를 막아도 편집·로그아웃은 계속한다.
+  }
+}
+
+/** 로그아웃/세션 만료 시 메모리를 지우고 기존 훅의 늦은 저장도 무효화한다. */
+export function purgeBoardDraftStorage(storage?: Storage): void {
+  boardDraftMemoryStorage.clear();
+  purgePersistedBoardDraftStorage(storage);
 }

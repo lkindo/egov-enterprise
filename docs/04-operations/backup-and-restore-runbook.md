@@ -408,6 +408,18 @@ docker run --rm --network none --user 0:0 --entrypoint sh \
    늘었다면 2·3번의 짝이 맞지 않는 것이다.
 4. **로그인** — 관리자 1계정으로 실제 로그인한다. 계정 잠금·로그인 정책이 복원됐는지 본다.
 
+## 격리 복원 자동 검증
+
+`./gradlew :api-server:schemaValidationTest --tests '*BackupRestoreDrillIntegrationTest'`는
+운영 접속정보를 읽지 않고 독립 PostgreSQL 17 컨테이너 두 개를 만든다. 전체 Flyway 적용 DB의
+`pg_dump` → `pg_restore`, 첨부 archive 복원, 동일 ARIA 키 복호화·다른 키 거부를 검사한다.
+테이블별 행수·첨부 참조·실물 내용·미검증 제약도 대조한다. 실행 시간과 범위는
+`api-server/build/reports/restore-drill/result.json`에 남고 원시 dump는 임시 경로에서 정리한다.
+
+2026-09-09 최종 실행은 82개 테이블(이력 테이블 포함)·17,182행을 대조했고, 백업 0.680초,
+복원·검증 1.548초, 백업 시점 대비 누락 0행이었다. 이는 합성 데이터의 구성 요소 복구 검증이다.
+운영 백업 존재, 앱 이미지·권한·외부 DB·네트워크 복구 시간이나 운영 RTO/RPO를 증명하지 않는다.
+
 ## 4. 주기·보존·RTO/RPO — **미결정**
 
 이 문서는 절차만 정한다. 아래 값은 이 저장소가 정할 수 없다.

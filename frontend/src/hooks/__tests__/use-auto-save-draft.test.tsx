@@ -22,6 +22,8 @@ import { renderHook, act, cleanup } from '@testing-library/react';
 import { useAutoSaveDraft } from '../use-auto-save-draft';
 import {
   buildBoardDraftStorageKey,
+  boardDraftMemoryStorage,
+  purgeBoardDraftStorage,
   type BoardDraftScope,
 } from '@/lib/drafts/board-draft-storage';
 
@@ -63,6 +65,7 @@ function storedDraft(overrides: Record<string, unknown> = {}) {
 
 describe('useAutoSaveDraft', () => {
   beforeEach(() => {
+    boardDraftMemoryStorage.clear();
     localStorage.clear();
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
@@ -72,19 +75,20 @@ describe('useAutoSaveDraft', () => {
     cleanup();
     vi.clearAllTimers();
     vi.useRealTimers();
+    boardDraftMemoryStorage.clear();
     localStorage.clear();
     vi.restoreAllMocks();
   });
 
   describe('저장', () => {
-    it('최소 길이를 넘으면 localStorage 에 저장한다', () => {
+    it('최소 길이를 넘으면 현재 탭의 메모리에 보관한다', () => {
       const { result } = setup();
 
       act(() => {
         result.current.saveDraft();
       });
 
-      const raw = localStorage.getItem(FULL_KEY);
+      const raw = boardDraftMemoryStorage.getItem(FULL_KEY);
       expect(raw).not.toBeNull();
       const saved = JSON.parse(raw!);
       expect(saved.title).toBe(LONG.title);
@@ -102,7 +106,7 @@ describe('useAutoSaveDraft', () => {
       });
 
       // 이 가드가 뒤집히면 글자 한 두 개마다 초안이 쓰이고, 반대로 항상 막히면 아무것도 저장되지 않는다.
-      expect(localStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
       expect(result.current.lastSavedAt).toBeNull();
     });
 
@@ -117,17 +121,19 @@ describe('useAutoSaveDraft', () => {
       });
 
       // `< minLength` 의 경계를 옮긴 뮤턴트가 여기서 죽는다.
-      expect(localStorage.getItem(FULL_KEY)).not.toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).not.toBeNull();
     });
 
-    it('localStorage 가 거부해도 편집을 막지 않는다 (용량 초과 등)', () => {
+    it('영속 저장소 쓰기가 금지돼도 메모리 보관과 편집은 계속된다', () => {
       const { result } = setup();
-      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      const persist = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new DOMException('QuotaExceededError');
       });
 
       // 여기서 예외가 새면 **글을 쓰던 화면이 통째로 죽는다.**
       expect(() => act(() => { result.current.saveDraft(); })).not.toThrow();
+      expect(persist).not.toHaveBeenCalled();
+      expect(result.current.restoreDraft()).toMatchObject(LONG);
     });
 
     it('저장할 때마다 현재 데이터를 다시 읽는다 — 스냅샷을 붙들지 않는다', () => {
@@ -139,13 +145,36 @@ describe('useAutoSaveDraft', () => {
       act(() => { result.current.saveDraft(); });
 
       // getData 를 한 번만 읽어 캐시하면 **수정분이 영원히 저장되지 않는다.**
-      expect(JSON.parse(localStorage.getItem(FULL_KEY)!).content).toBe('나중에 바꾼 내용입니다');
+      expect(JSON.parse(boardDraftMemoryStorage.getItem(FULL_KEY)!).content).toBe('나중에 바꾼 내용입니다');
     });
   });
 
   describe('복원', () => {
-    it('저장된 초안은 마운트 시 존재만 감지하고 사용자가 선택할 때 복원한다', () => {
+    it('과거 localStorage 본문은 읽거나 복원하지 않고 삭제한다', () => {
       localStorage.setItem(FULL_KEY, JSON.stringify(storedDraft()));
+      localStorage.setItem('unrelated-preference', 'keep');
+      const read = vi.spyOn(Storage.prototype, 'getItem');
+      const { result, onRestore } = setup();
+      expect(read).not.toHaveBeenCalled();
+      expect(result.current.hasDraft).toBe(false);
+      expect(onRestore).not.toHaveBeenCalled();
+      expect(localStorage.getItem(FULL_KEY)).toBeNull();
+      expect(localStorage.getItem('unrelated-preference')).toBe('keep');
+    });
+
+    it('같은 탭에서 다시 들어오면 보관되지만 사용자 범위가 다르면 복원되지 않는다', () => {
+      const first = setup();
+      act(() => first.result.current.saveDraft());
+      first.unmount();
+      const other = setup({ scope: { ...SCOPE, ownerId: 'user-2' } });
+      expect(other.result.current.restoreDraft()).toBeNull();
+      other.unmount();
+      const same = setup();
+      expect(same.result.current.restoreDraft()).toMatchObject(LONG);
+    });
+
+    it('저장된 초안은 마운트 시 존재만 감지하고 사용자가 선택할 때 복원한다', () => {
+      boardDraftMemoryStorage.setItem(FULL_KEY, JSON.stringify(storedDraft()));
 
       const { result, onRestore } = setup();
 
@@ -158,13 +187,13 @@ describe('useAutoSaveDraft', () => {
     });
 
     it('TTL이 지난 초안은 삭제하고 복원하지 않는다', () => {
-      localStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ expiresAt: NOW.getTime() - 1 })));
+      boardDraftMemoryStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ expiresAt: NOW.getTime() - 1 })));
 
       const { result, onRestore } = setup();
 
       expect(result.current.hasDraft).toBe(false);
       expect(result.current.restoreDraft()).toBeNull();
-      expect(localStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
       expect(onRestore).not.toHaveBeenCalled();
     });
 
@@ -174,7 +203,7 @@ describe('useAutoSaveDraft', () => {
         title: '다른 사용자 제목', content: '다른 사용자 본문', savedAt: NOW.toISOString(),
       }));
 
-      const { result, onRestore } = setup({ legacyKeys: [legacyKey] });
+      const { result, onRestore } = setup();
 
       expect(localStorage.getItem(legacyKey)).toBeNull();
       expect(result.current.hasDraft).toBe(false);
@@ -190,18 +219,18 @@ describe('useAutoSaveDraft', () => {
     });
 
     it('깨진 JSON 은 null 로 처리한다 — 글쓰기 화면이 죽으면 안 된다', () => {
-      localStorage.setItem(FULL_KEY, '{이건 JSON 이 아니다');
+      boardDraftMemoryStorage.setItem(FULL_KEY, '{이건 JSON 이 아니다');
 
       const { result } = setup();
 
       // 파싱 예외가 새면 초안 하나 때문에 그 게시판 글쓰기가 영구히 열리지 않는다.
       expect(result.current.hasDraft).toBe(false);
       expect(result.current.restoreDraft()).toBeNull();
-      expect(localStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
     });
 
     it('onRestore 를 주지 않아도 복원값을 돌려준다', () => {
-      localStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ title: 'T', content: 'C' })));
+      boardDraftMemoryStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ title: 'T', content: 'C' })));
 
       const { result } = renderHook(() =>
         useAutoSaveDraft({ scope: SCOPE, getData: () => LONG })
@@ -212,32 +241,61 @@ describe('useAutoSaveDraft', () => {
   });
 
   describe('삭제', () => {
+    it('로그아웃 후 늦은 타이머·복원 콜백은 이전 초안을 되살리지 않는다', () => {
+      const { result } = setup({ interval: 1000 });
+      act(() => result.current.saveDraft());
+      act(() => purgeBoardDraftStorage());
+      act(() => vi.advanceTimersByTime(3000));
+      expect(result.current.restoreDraft()).toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
+    });
+
+    it('정상 제출 뒤 같은 입력을 자동 저장하거나 이탈 경고하지 않는다', () => {
+      const { result } = setup({ interval: 1000 });
+      act(() => result.current.saveDraft());
+      act(() => result.current.clearDraft());
+      act(() => vi.advanceTimersByTime(3000));
+      const event = new Event('beforeunload', { cancelable: true });
+      act(() => window.dispatchEvent(event));
+      expect(event.defaultPrevented).toBe(false);
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
+    });
     it('정상 제출 후 초안을 지우고 상태도 되돌린다', () => {
-      localStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ title: 'T', content: 'C' })));
+      boardDraftMemoryStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ title: 'T', content: 'C' })));
       const { result } = setup();
       expect(result.current.hasDraft).toBe(true);
 
       act(() => { result.current.clearDraft(); });
 
       // 지우지 않으면 다음 글쓰기에서 **이미 올린 글이 초안으로 되살아난다.**
-      expect(localStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
       expect(result.current.hasDraft).toBe(false);
       expect(result.current.lastSavedAt).toBeNull();
     });
 
     it('다른 게시판의 초안은 건드리지 않는다', () => {
       const otherKey = buildBoardDraftStorageKey({ ...SCOPE, boardId: 'OTHER' });
-      localStorage.setItem(otherKey, JSON.stringify(storedDraft({ title: 'x', content: 'y' })));
+      boardDraftMemoryStorage.setItem(otherKey, JSON.stringify(storedDraft({ title: 'x', content: 'y' })));
       const { result } = setup();
 
       act(() => { result.current.clearDraft(); });
 
       // 키에 boardId 가 안 섞이면 한 게시판 제출이 다른 게시판 초안을 지운다.
-      expect(localStorage.getItem(otherKey)).not.toBeNull();
+      expect(boardDraftMemoryStorage.getItem(otherKey)).not.toBeNull();
     });
   });
 
   describe('주기 저장과 정리', () => {
+    it('미제출 입력의 문서 이탈을 확인하고 pagehide에서 메모리를 비운다', () => {
+      const { result } = setup();
+      const event = new Event('beforeunload', { cancelable: true });
+      act(() => window.dispatchEvent(event));
+      expect(event.defaultPrevented).toBe(true);
+      expect(result.current.restoreDraft()).toMatchObject(LONG);
+      act(() => window.dispatchEvent(new Event('pagehide')));
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
+      expect(result.current.restoreDraft()).toBeNull();
+    });
     it('지정한 간격마다 자동 저장한다', () => {
       const { getData } = setup({ interval: 1000 });
       const before = getData.mock.calls.length;
@@ -246,7 +304,7 @@ describe('useAutoSaveDraft', () => {
 
       // 간격을 무시하면 저장이 아예 안 되거나 매 틱마다 쓴다.
       expect(getData.mock.calls.length).toBeGreaterThan(before);
-      expect(localStorage.getItem(FULL_KEY)).not.toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).not.toBeNull();
     });
 
     it('언마운트하면 주기 저장을 멈춘다 — 사라진 화면의 내용을 계속 쓰면 안 된다', () => {
@@ -264,24 +322,25 @@ describe('useAutoSaveDraft', () => {
 
     it('페이지 이탈 직전에 한 번 더 저장한다', () => {
       const { result } = setup();
-      expect(localStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
 
       act(() => { window.dispatchEvent(new Event('beforeunload')); });
 
       // 마지막 주기 이후에 쓴 내용은 이 저장이 없으면 통째로 사라진다.
-      expect(localStorage.getItem(FULL_KEY)).not.toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).not.toBeNull();
       expect(result.current.lastSavedAt).not.toBeNull();
     });
 
     it('언마운트하면 beforeunload 리스너를 뗀다', () => {
       const { unmount } = setup();
       unmount();
-      localStorage.clear();
+      boardDraftMemoryStorage.clear();
+    localStorage.clear();
 
       act(() => { window.dispatchEvent(new Event('beforeunload')); });
 
       // 리스너가 남으면 화면을 떠난 뒤에도 옛 내용이 다시 쓰인다.
-      expect(localStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
     });
   });
 });
