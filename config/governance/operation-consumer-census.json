@@ -20,13 +20,13 @@
     {
       "operationId": "checkHealth",
       "category": "unwired",
-      "note": "Application-level liveness surface with no wired probe — docker-compose healthchecks use /actuator/health instead. Decide whether to point a probe here or drop the endpoint.",
+      "note": "Application-level liveness surface. PD-OPS-003 decided (2026-09-08) to keep the production compose healthcheck pointed at /actuator/health, which also covers registered indicators (DB, disk) — this endpoint only confirms the application answers. Retiring it was considered and deferred because external load balancers or monitoring may already target the path; that needs deployment-environment confirmation, not a repository decision.",
       "evidence": []
     },
     {
       "operationId": "checkIdDplct",
       "category": "unwired",
-      "note": "Duplicate-id check exists only to serve the unwired signup flow above; it becomes reachable if signup gets a screen.",
+      "note": "Duplicate-id check that exists only to serve the signup flow. PD-AUTH-003 decided (2026-09-08) not to surface public self-signup, so this stays unwired by decision; it becomes reachable only if that decision is revisited.",
       "evidence": []
     },
     {
@@ -118,7 +118,7 @@
     {
       "operationId": "getInstitutionCodeDetail",
       "category": "unwired",
-      "note": "Institution code detail. The institution screen shows list rows only — related to GAP-CODE-001, where the receive-log to ledger path is still undecided.",
+      "note": "Institution code detail. PD-CODE-001 decided (2026-09-08) to keep the receive log read-only: the ledger write path stays unbuilt because chg_se_cd has no authoritative value domain (the screen reads 1/2/3, this module's tests use \"I\", and there is no seed, enum or contract). Interpreting it without a spec would overwrite or delete core data. Reopening requires the standard/供給처 specification — see GAP-CODE-001.",
       "evidence": []
     },
     {
@@ -191,7 +191,7 @@
     {
       "operationId": "signup",
       "category": "unwired",
-      "note": "Public self-signup has no screen — this product provisions accounts through admin user management. The endpoint stays frozen by SignupContractLinter (privilege-escalation regression guard) rather than deleted.",
+      "note": "Public self-signup. PD-AUTH-003 decided (2026-09-08) to keep admin provisioning only: opening it would require captcha, email verification and an approval queue — new feature work, not wiring — and does not match the current internal-enterprise product shape. The endpoint stays frozen by SignupContractLinter (the service pins Role.USER, so no privilege escalation), and this entry records the decision rather than an unexamined gap.",
       "evidence": []
     },
     {
