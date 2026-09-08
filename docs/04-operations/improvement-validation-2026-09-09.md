@@ -76,6 +76,24 @@ Governance Atlas도 스키마 검증 45개, 이관 테스트 소스 84개·`@Tes
 `authoritativeBaseline:false`를 유지하며, 기존 승인 이미지·전체 시나리오·수동 검토가 필요한
 [UI 기준선 절차](ui-ux-baseline-protocol.md)의 공식 결과로 승격하지 않았다.
 
+## 병합 전 의존성 보안 검증
+
+PR [#603](https://github.com/lkindo/egov-enterprise/pull/603)의 최초 CI는 의존성 감사에서
+critical 2건과 high 5건을 차단했다. 기존 감사 정책을 유지하고 다음 취약 버전만 갱신했다.
+
+| 의존성 | lockfile 변경 | 공식 수정 근거 |
+|---|---|---|
+| Next.js / eslint-config-next | 16.2.12 → 16.3.4 | [Windows RCE](https://github.com/vercel/next.js/security/advisories/GHSA-p293-qw3h-jr36), [AVIF RCE](https://github.com/vercel/next.js/security/advisories/GHSA-2xp9-vwfh-vxw4), [16.3.4 후속 수정](https://github.com/vercel/next.js/releases/tag/v16.3.4) |
+| Tiptap 패키지군 | 3.29.2 → 3.31.3 | [Markdown ReDoS](https://github.com/ueberdosis/tiptap/security/advisories/GHSA-j95f-988m-3j2f), [속성 병합](https://github.com/ueberdosis/tiptap/security/advisories/GHSA-cp6q-959q-f8rh) |
+| sharp | 0.35.0 → 0.35.4 | [libheif 보안 수정](https://github.com/lovell/sharp/security/advisories/GHSA-rgj7-g3m4-5g8c) |
+| js-yaml | 3.x → 3.15.2, 4.3.1 → 4.3.2 | [빈 merge source CPU 제한](https://github.com/nodeca/js-yaml/security/advisories/GHSA-2883-xcg3-v3hh) |
+
+js-yaml override는 각 메이저의 취약 범위에만 적용하여 Redocly의 v4 API 호환성을 유지한다.
+갱신 후 CI와 같은 `node ../scripts/frontend-audit-policy.mjs`가 통과했다. 남은 8건은
+low/moderate 권고이며 차단 대상 critical/high는 0건이다. 이는 검증 시점의 결과이며 이후 새 공지는
+계속 같은 감사로 판정한다. 인증·프록시·CSP 영향 테스트 30개와 Next.js 16.3.4 production 빌드가
+통과했다. Next.js가 생성한 `next-env.d.ts`의 root params 타입 참조도 함께 반영했다.
+
 ## OCI 표준 길이 정합성 적용 검토안
 
 `.env`의 OCI 접속으로 read-only DB bridge를 사용했다. 정확한 표준 용어 약어가 일치하는
