@@ -64,6 +64,15 @@ public class BoardService extends BaseAbstractService {
          */
         private final BoardIdProperties boardIdProperties;
 
+        /**
+         * 커뮤니티 귀속 게시판({@code tb_bbs_master.cmnty_sn} 이 있는 게시판)의 접근 판정 포트.
+         *
+         * <p>커뮤니티 도메인이 base projection 에서 빠지면 이 빈이 없다 — 그때는 {@code null} 이며
+         * 호출부는 <b>거부</b>로 해석한다(fail-closed). 판정할 수 없는데 통과시키면 회원 전용
+         * 게시판이 전원 공개로 뒤집히기 때문이다(H3).
+         */
+        private final nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess;
+
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
                         UserService userService,
@@ -73,7 +82,8 @@ public class BoardService extends BaseAbstractService {
                         MeterRegistry meterRegistry,
                         BoardViewCountService viewCountService,
                         BoardMapper boardMapper,
-                        BoardIdProperties boardIdProperties) {
+                        BoardIdProperties boardIdProperties,
+                        @org.springframework.lang.Nullable nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
                 this.userService = required(userService, "userService 는 null 일 수 없습니다");
@@ -85,6 +95,9 @@ public class BoardService extends BaseAbstractService {
                 this.viewCountService = required(viewCountService, "viewCountService 는 null 일 수 없습니다");
                 this.boardMapper = required(boardMapper, "boardMapper 는 null 일 수 없습니다");
                 this.boardIdProperties = required(boardIdProperties, "boardIdProperties 는 null 일 수 없습니다");
+                // 포트는 선택 주입이다 — 커뮤니티 도메인이 없는 프로필에서는 null 이고, 그때 커뮤니티
+                // 귀속 게시판은 관리자 외에게 닫힌다(아래 assertCommunityAccess).
+                this.communityBoardAccess = communityBoardAccess;
         }
 
 
@@ -178,6 +191,12 @@ public class BoardService extends BaseAbstractService {
                 // bbsId 를 비워 두면 게시판 한정 술어가 빠진다 — 활성 게시판(useYn='Y') 조인은
                 //   searchArticles 쪽에 이미 있어 폐쇄된 게시판은 여전히 제외된다.
                 condition.setUseYn("Y");
+                // [2026-09-08 PD-CMTY-001] 통합 검색은 커뮤니티 귀속 게시판을 아예 제외한다.
+                //   회원인지 여부를 검색 술어에 실어 나르는 대신(가입한 커뮤니티 집합을 매 검색마다
+                //   조회해야 한다) 이 경로에서는 통째로 빼고, 회원은 커뮤니티 상세의 게시판 목록으로
+                //   들어간다. 관리자도 제외한다 — 여기서만 열어 두면 같은 검색어가 사람마다 다른
+                //   결과를 내는데 그 사실을 화면이 말하지 않는다.
+                condition.setExcludeCommunityBoards(true);
                 condition.setSearchCnd("0"); // 0 = 제목
                 condition.setSearchWrd(trimmed);
                 bindCurrentViewerVisibility(condition);
@@ -228,9 +247,48 @@ public class BoardService extends BaseAbstractService {
         }
 
         private void assertActiveBoardMaster(String bbsId) {
-                boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                                .filter(master -> "Y".equals(master.getUseYn()))
+                BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
+                                .filter(candidate -> "Y".equals(candidate.getUseYn()))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                assertCommunityAccess(master);
+        }
+
+        /**
+         * 커뮤니티 귀속 게시판이면 <b>승인된 회원</b>만 통과시킨다(관리자는 예외).
+         *
+         * <p>[2026-09-08 PD-CMTY-001] {@code cmnty_sn} 은 V2_0 부터 있었지만 읽는 코드가 없어
+         * 귀속이 아무것도 뜻하지 않았다(GAP-CMTY-001 — 회원이 되어도 열리는 기능이 없었다).
+         * 이제 이 값이 있는 게시판은 회원 전용이다.
+         *
+         * <p>귀속이 없는 게시판({@code cmntySn == null})의 거동은 <b>전혀 바뀌지 않는다</b> —
+         * 현재 저장소의 모든 게시판이 여기 해당한다.
+         */
+        private void assertCommunityAccess(BoardMaster master) {
+                Long cmntySn = master == null ? null : master.getCmntySn();
+                if (cmntySn == null) {
+                        return;
+                }
+                // 관리자는 다른 열람 경로와 같은 이유로 통과한다(운영·감사). role hierarchy 로 SYSTEM 포함.
+                if (SecurityUtil.isAdmin()) {
+                        return;
+                }
+                String esntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
+                if (esntlId == null || communityBoardAccess == null
+                                || !communityBoardAccess.isApprovedMember(cmntySn, esntlId)) {
+                        throw new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED,
+                                        "커뮤니티 회원만 이용할 수 있는 게시판입니다.");
+                }
+        }
+
+        /**
+         * {@code bbsId} 로 게시판을 읽어 커뮤니티 접근만 판정한다 — <b>활성 여부는 보지 않는다</b>.
+         *
+         * <p>상세·댓글·수정·삭제 경로는 종전에 게시판 활성 여부를 요구하지 않았다. 여기서 함께
+         * 요구하면 비활성 게시판의 기존 글이 갑자기 404 가 되므로, 이번 변경은 커뮤니티 축만 더한다.
+         */
+        private void assertCommunityAccess(String bbsId) {
+                boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
+                                .ifPresent(this::assertCommunityAccess);
         }
 
         private void bindCurrentViewerVisibility(BoardSearchCondition condition) {
@@ -250,6 +308,8 @@ public class BoardService extends BaseAbstractService {
                         BoardMaster master = boardMasterRepository
                                         .findByIdWithPessimisticLock(request.bbsId())
                                         .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                        // [2026-09-08 PD-CMTY-001] 읽을 수 없는 게시판에는 쓸 수도 없다.
+                        assertCommunityAccess(master);
                         if (request.atchFileSn() != null) {
                                 attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
                         }
@@ -331,6 +391,8 @@ public class BoardService extends BaseAbstractService {
                 BoardMaster master = boardMasterRepository
                                 .findByIdWithPessimisticLock(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                // [2026-09-08 PD-CMTY-001] 등록과 같은 경계.
+                assertCommunityAccess(master);
 
                 Board parent = boardRepository
                                 .findById(parentSn)
@@ -411,6 +473,8 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional(readOnly = true)
         public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstSn) {
+                // [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판이면 승인된 회원만 본다.
+                assertCommunityAccess(bbsId);
                 // [2026-08-22 제품 결정] 논리 삭제(useYn='N') 게시글은 일반 사용자에게 404 지만
                 // **관리자에게는 열람을 허용**한다. 복구·감사 경로가 404 로 막히면 관리자가 삭제된 글의
                 // 내용을 확인할 방법이 사라진다.
@@ -447,6 +511,8 @@ public class BoardService extends BaseAbstractService {
                         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                                         "댓글의 bbsId와 pstSn은 필수입니다.");
                 }
+                // [2026-09-08 PD-CMTY-001] 상세와 같은 경계 — 회원 전용 게시판의 댓글도 회원만 읽고 쓴다.
+                assertCommunityAccess(bbsId);
                 BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
@@ -499,6 +565,7 @@ public class BoardService extends BaseAbstractService {
         @Transactional
         public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
                 required(bbsId, "bbsId 는 null 일 수 없습니다");
+                assertCommunityAccess(bbsId); // [2026-09-08 PD-CMTY-001]
                 Board board = findOwnedPost(pstSn);
                 updateOwnedPost(board, request, false);
         }
@@ -594,6 +661,7 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public void deletePost(@NonNull String bbsId, @NonNull Long pstSn, String authorId) {
+                assertCommunityAccess(required(bbsId, "bbsId 는 null 일 수 없습니다")); // [2026-09-08 PD-CMTY-001]
                 Board board = boardRepository
                                 .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));

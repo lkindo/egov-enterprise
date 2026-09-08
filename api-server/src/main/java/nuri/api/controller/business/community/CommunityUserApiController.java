@@ -5,6 +5,8 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.system.content.community.CommunityService;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.community.dto.CommunityMembershipDto;
+import nuri.business.service.board.BoardMasterService;
+import nuri.business.service.board.dto.CommunityBoardDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +27,12 @@ import org.springframework.web.bind.annotation.*;
 public class CommunityUserApiController {
 
     private final CommunityService communityService;
+    /**
+     * [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판 목록. 게시판 도메인이 소유하는 질의라
+     * 커뮤니티 서비스를 거치지 않는다 — 커뮤니티가 게시판을 import 하면 서비스 계층 교차 결합
+     * (GAP-ARCH-001)이 늘어나므로 조립은 컨트롤러에서 한다.
+     */
+    private final BoardMasterService boardMasterService;
 
     /**
      * [2026-09-02] 사용 중인 커뮤니티만 돌려준다. 종전에는 관리자 목록과 같은 메서드를 불러
@@ -63,6 +71,20 @@ public class CommunityUserApiController {
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
         return ResponseEntity.ok(ApiResponse.success(
                 communityService.getMembership(cmntySn, userDetails.getUsername())));
+    }
+
+    /**
+     * [2026-09-08 PD-CMTY-001] 회원 자격이 처음으로 여는 기능.
+     *
+     * <p>승인된 회원(또는 관리자)만 목록을 받고 그 밖에는 403 이다. 판정은 게시판 서비스가
+     * {@code CommunityBoardAccessPort} 로 수행하며 게시판 진입 시점에 같은 게이트가 다시 판정한다.
+     */
+    @Operation(summary = "커뮤니티 게시판 목록",
+            description = "커뮤니티에 귀속된 사용 중인 게시판 목록을 조회합니다. 승인된 회원만 조회할 수 있습니다.")
+    @GetMapping("/{cmntySn}/boards")
+    public ResponseEntity<ApiResponse<java.util.List<CommunityBoardDto>>> getCommunityBoards(
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
+        return ResponseEntity.ok(ApiResponse.success(boardMasterService.getCommunityBoards(cmntySn)));
     }
 
     @Operation(summary = "커뮤니티 가입 신청", description = "사용자가 특정 커뮤니티에 가입을 신청합니다. 관리자가 승인하면 회원이 됩니다.")

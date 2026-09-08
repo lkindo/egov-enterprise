@@ -60,6 +60,8 @@ class BoardServiceTest {
     @Mock
     private BoardViewCountService viewCountService;
     @Mock
+    private nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess;
+    @Mock
     private Timer timer;
     @Mock
     private Timer.Sample sample;
@@ -83,7 +85,10 @@ class BoardServiceTest {
                 new BoardMapperImpl(),
                 // 설정 미주입 기본값 = 종전 PUBLIC_FAQ_BOARD_ID 리터럴(BBSMSTR_AAAAAAAAAAAA).
                 // 아래 FAQ 테스트들의 기존 리터럴 기대값을 그대로 두어 기본값 동작 불변을 검증한다.
-                new nuri.business.core.config.BoardIdProperties());
+                new nuri.business.core.config.BoardIdProperties(),
+                // [2026-09-08 PD-CMTY-001] 커뮤니티 접근 포트. 대부분의 시나리오는 귀속 없는 게시판이라
+                //   호출되지 않으며, 귀속 게시판 테스트만 이 목의 응답을 지정한다.
+                communityBoardAccess);
     }
 
     @org.junit.jupiter.api.AfterEach

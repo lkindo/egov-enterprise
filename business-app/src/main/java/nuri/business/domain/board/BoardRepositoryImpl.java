@@ -4,6 +4,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -127,6 +128,12 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         @Override
         public Page<BoardSearchResult> searchArticles(BoardSearchCondition condition, @NonNull Pageable pageable) {
                 BooleanBuilder builder = BoardPredicate.searchBoard(condition);
+                // [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판 제외 축. 술어를 QBoard 가 아니라
+                //   조인된 QBoardMaster 에 걸어야 하므로 BoardPredicate 가 아닌 여기서 더한다.
+                //   꺼져 있으면 null 이라 where 절에 아무 조건도 붙지 않는다(종전 동작 그대로).
+                BooleanExpression communityScope = condition.isExcludeCommunityBoards()
+                                ? QBoardMaster.boardMaster.cmntySn.isNull()
+                                : null;
 
                 OrderSpecifier<?> orderSpecifier = QBoard.board.sortOrdr.desc();
 
@@ -172,7 +179,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .from(QBoard.board)
                                 .innerJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
-                                .where(builder, QBoardMaster.boardMaster.useYn.eq("Y"))
+                                .where(builder, QBoardMaster.boardMaster.useYn.eq("Y"), communityScope)
                                 .orderBy(orderSpecifier, QBoard.board.ansSn.asc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
@@ -183,7 +190,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .from(QBoard.board)
                                 .innerJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
-                                .where(builder, QBoardMaster.boardMaster.useYn.eq("Y"))
+                                .where(builder, QBoardMaster.boardMaster.useYn.eq("Y"), communityScope)
                                 .fetchOne();
 
                 return new PageImpl<>(results, pageable,
