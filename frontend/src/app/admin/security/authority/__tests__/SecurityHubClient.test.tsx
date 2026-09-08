@@ -401,7 +401,7 @@ describe('SecurityHubClient', () => {
     renderClient();
     expect(await screen.findByText('관리자')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /신규 보안 아키텍처 설정/ }));
+    fireEvent.click(screen.getByRole('button', { name: /권한 새로 만들기/ }));
     expect(screen.getByRole('region', { name: '신규 권한 등록' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '역할 폼 저장' }));
     await waitFor(() => expect(mocks.createAuthor).toHaveBeenCalledWith(expect.objectContaining({ authrtCd: 'ROLE_NEW' })));
@@ -439,7 +439,7 @@ describe('SecurityHubClient', () => {
     expect(busy).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByRole('button', { name: '사용자 할당 저장' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '메뉴 권한 저장' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /신규 보안 아키텍처 설정/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /권한 새로 만들기/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: '관리자 역할 수정' })).toBeDisabled();
     expect(authorSubmit).toBeDisabled();
     expect(authorCancel).toBeDisabled();
@@ -480,7 +480,7 @@ describe('SecurityHubClient', () => {
     renderClient();
     expect(await screen.findByText('관리자')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /신규 보안 아키텍처 설정/ }));
+    fireEvent.click(screen.getByRole('button', { name: /권한 새로 만들기/ }));
     const authorForm = screen.getByRole('region', { name: '신규 권한 등록' });
     const submit = within(authorForm).getByRole('button', { name: '역할 폼 저장' });
     const cancel = within(authorForm).getByRole('button', { name: '역할 폼 취소' });
@@ -494,7 +494,7 @@ describe('SecurityHubClient', () => {
     expect(busy).toBeDisabled();
     expect(busy).toHaveAttribute('aria-busy', 'true');
     expect(cancel).toBeDisabled();
-    expect(screen.getByRole('button', { name: /신규 보안 아키텍처 설정/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /권한 새로 만들기/ })).toBeDisabled();
     const remove = screen.getByRole('button', { name: '관리자 역할 삭제' });
     expect(remove).toBeDisabled();
     act(() => {

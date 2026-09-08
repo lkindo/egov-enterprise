@@ -15,7 +15,7 @@ export class SecurityAdminPage {
 
     async createAuthority(authCode: string, authNm: string) {
         console.log(`>>> Creating Authority: ${authCode}`);
-        await this.page.getByRole('button', { name: '신규 보안 아키텍처 설정', exact: true }).click();
+        await this.page.getByRole('button', { name: '권한 새로 만들기', exact: true }).click();
         const dialog = this.page.getByRole('dialog', { name: '신규 권한 등록' });
         const codeInput = dialog.getByRole('textbox', { name: /보안 역할 식별자/ });
         const nameInput = dialog.getByRole('textbox', { name: /역할 레이블 명칭/ });
