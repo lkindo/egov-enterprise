@@ -173,7 +173,12 @@ class SecurityAuthAnnotationLinterTest {
             //   경로도 없고 무엇보다 **그 값을 읽는 화면이 없다**(대시보드 위젯 SPI 구현 2개가 쓰지 않는다).
             //   사용자 결정으로 소비처를 먼저 정하기로 하고 API·화면·서비스·DTO·엔티티를 걷었다.
             //   공개 전환이 아니라 표면 축소다(H3). 테이블은 남으며 마이그레이션 검증도 그대로다.
-            "35fe76d65e626929006ac13b23ea99372135d887d30b6919ec155d1b92ffd683";
+            // [2026-09-08 PD-CMTY-001 커뮤니티 귀속 게시판] GET 1행 추가 — endpoint 수 173 -> 174.
+            //   /api/v1/communities/{cmntySn}/boards 다. URL 축은 종전 커뮤니티 사용자 API 와 같은
+            //   DEFAULT_AUTHENTICATED 이고, **회원 판정은 서비스 가드**가 한다
+            //   (BoardMasterService#assertCommunityMember — manualGuardPolicies 에 등재).
+            //   즉 인증만으로 열리는 표면이 아니라 승인된 회원·관리자만 목록을 받는다(H3).
+            "59f242c20b6457d9aeefc0f381ad4f64e76dc522b81b10f110d6b6eaf5647b92";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

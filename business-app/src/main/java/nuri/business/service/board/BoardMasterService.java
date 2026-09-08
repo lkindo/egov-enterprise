@@ -8,13 +8,13 @@ import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardMasterSearchResult;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.board.dto.BoardMasterMapper;
+import nuri.business.service.board.dto.CommunityBoardDto;
 import nuri.business.domain.board.BoardMasterSearchCondition;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.foundation.core.util.IdGenerationUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,13 +29,27 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BoardMasterService extends BaseAbstractService {
 
     private final BoardMasterRepository boardMasterRepository;
     private final BoardRepository boardRepository;
     private final BoardMasterMapper boardMasterMapper;
+    /**
+     * 커뮤니티 귀속 판정 포트. 커뮤니티 도메인이 base projection 에서 빠지면 {@code null} 이고,
+     * 그때 커뮤니티 귀속 게시판 목록은 관리자 외에게 닫힌다(fail-closed — {@link BoardService} 와 같은 규칙).
+     */
+    private final nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess;
+
+    public BoardMasterService(BoardMasterRepository boardMasterRepository,
+            BoardRepository boardRepository,
+            BoardMasterMapper boardMasterMapper,
+            @org.springframework.lang.Nullable nuri.foundation.core.community.CommunityBoardAccessPort communityBoardAccess) {
+        this.boardMasterRepository = boardMasterRepository;
+        this.boardRepository = boardRepository;
+        this.boardMasterMapper = boardMasterMapper;
+        this.communityBoardAccess = communityBoardAccess;
+    }
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -53,6 +67,52 @@ public class BoardMasterService extends BaseAbstractService {
         return getBoardMasterList(searchCondition, searchKeyword, pageable).getContent();
     }
 
+    /**
+     * 커뮤니티에 귀속된 활성 게시판 목록 — <b>승인된 회원(또는 관리자)만</b> 볼 수 있다.
+     *
+     * <p>[2026-09-08 PD-CMTY-001] {@code findByCmntySnAndUseYn} 은 V2_0 이후 선언만 있고 호출자가
+     * 0 이었다(GAP-CMTY-001). 이 메서드가 그 첫 소비자이며, 회원 자격이 처음으로 무언가를 연다.
+     *
+     * <p>인가는 {@link BoardService#assertCommunityAccess} 와 <b>같은 규칙</b>이다 — 관리자는 통과,
+     * 그 밖에는 승인된 회원만, 포트가 없으면 거부. 목록만 열고 글 내용은 게시판 진입 시점에 같은
+     * 게이트가 다시 판정한다(이중 검증).
+     */
+    public List<CommunityBoardDto> getCommunityBoards(@NonNull Long cmntySn) {
+        assertCommunityMember(Objects.requireNonNull(cmntySn, "cmntySn 는 null 일 수 없습니다"));
+        return boardMasterRepository.findByCmntySnAndUseYn(cmntySn, "Y").stream()
+                .map(CommunityBoardDto::from)
+                .toList();
+    }
+
+    private void assertCommunityMember(Long cmntySn) {
+        if (nuri.business.security.util.SecurityUtil.isAdmin()) {
+            return;
+        }
+        String esntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
+        if (esntlId == null || communityBoardAccess == null
+                || !communityBoardAccess.isApprovedMember(cmntySn, esntlId)) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED,
+                    "커뮤니티 회원만 게시판 목록을 볼 수 있습니다.");
+        }
+    }
+
+    /**
+     * 게시판을 없는 커뮤니티에 귀속시키지 못하게 막는다.
+     *
+     * <p>[2026-09-08 PD-CMTY-001] {@code cmnty_sn} 에는 물리 FK 가 없어(V2_0) 오타 한 번이면 아무도
+     * 회원일 수 없는 게시판이 만들어지고, 그 게시판은 관리자 외에게 영구히 닫힌다. 권한 저장 경로가
+     * 같은 이유로 존재를 먼저 확인하는 선례({@code assertAuthoritiesExist}, GAP-AUTH-002)를 따른다.
+     */
+    private void assertCommunityExists(Long cmntySn) {
+        if (cmntySn == null) {
+            return;
+        }
+        if (communityBoardAccess == null || !communityBoardAccess.exists(cmntySn)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND,
+                    "커뮤니티를 찾을 수 없습니다: " + cmntySn);
+        }
+    }
+
     public BoardMasterDto getBoardMaster(@NonNull String bbsId) {
         return boardMasterRepository.findById(bbsId)
                 .map(boardMasterMapper::toDto)
@@ -61,6 +121,7 @@ public class BoardMasterService extends BaseAbstractService {
 
     @Transactional
     public String createBoardMaster(String userId, BoardMasterDto dto) {
+        assertCommunityExists(dto.getCmntySn());
         String bbsId = dto.getBbsId();
         if (bbsId == null || bbsId.isEmpty()) {
             bbsId = IdGenerationUtil.generateUniqueId("BBSMSTR_", 12, boardMasterRepository::existsById);

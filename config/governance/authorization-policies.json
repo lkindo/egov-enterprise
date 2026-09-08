@@ -2475,6 +2475,40 @@
   ],
   "manualGuardPolicies": [
     {
+      "target": "BoardService#assertCommunityAccess",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.isAdmin()",
+        "SecurityUtil.getCurrentEsntlId()",
+        "communityBoardAccess == null",
+        "communityBoardAccess.isApprovedMember(cmntySn, esntlId)",
+        "CommonErrorCode.ACCESS_DENIED"
+      ],
+      "forbiddenTokens": [
+        "communityBoardAccess != null &&",
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "BoardMasterService#assertCommunityMember",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardMasterService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.isAdmin()",
+        "SecurityUtil.getCurrentEsntlId()",
+        "communityBoardAccess == null",
+        "communityBoardAccess.isApprovedMember(cmntySn, esntlId)",
+        "CommonErrorCode.ACCESS_DENIED"
+      ],
+      "forbiddenTokens": [
+        "communityBoardAccess != null &&",
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
       "target": "AttachmentAssignmentPolicy#assertAssignable",
       "source": "business-core/src/main/java/nuri/business/service/file/AttachmentAssignmentPolicy.java",
       "policy": "STRICT_OWNER",

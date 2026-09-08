@@ -34,6 +34,13 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
+    /**
+     * [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판 목록은 <b>게시판 도메인</b>이 소유한다 —
+     * 커뮤니티가 게시판을 import 하면 서비스 계층 교차 결합(GAP-ARCH-001)이 늘어나므로 조립만 여기서 한다.
+     */
+    @MockitoBean
+    private nuri.business.service.board.BoardMasterService boardMasterService;
+
     @Test
     @DisplayName("커뮤니티 목록 조회 성공")
     void getCommunities_Success() throws Exception {
@@ -102,5 +109,33 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    /**
+     * [2026-09-08 PD-CMTY-001] 회원 자격이 처음으로 여는 기능.
+     *
+     * <p>여기서 고정하는 것은 <b>경로와 위임 대상</b>이다 — 인가 판정 자체는
+     * {@code BoardMasterService#assertCommunityMember} 가 소유하고 그 규칙은
+     * {@code BoardCommunityAccessTest} 가 검증한다. 컨트롤러가 커뮤니티 서비스로 우회하거나
+     * 판정 없는 다른 조회를 부르면 인가가 사라지므로 호출 대상을 양방향으로 고정한다.
+     */
+    @Test
+    @DisplayName("커뮤니티 게시판 목록 — 게시판 서비스의 회원 판정 경로로만 조회한다")
+    @WithMockCustomUser
+    void getCommunityBoards_Success() throws Exception {
+        given(boardMasterService.getCommunityBoards(anyLong())).willReturn(List.of(
+                new nuri.business.service.board.dto.CommunityBoardDto(
+                        "BBSMSTR_CMNTY01", "회원 게시판", "회원만 씁니다", "BBST01")));
+
+        mockMvc.perform(get("/api/v1/communities/101/boards")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].bbsId").value("BBSMSTR_CMNTY01"))
+                .andExpect(jsonPath("$.data[0].bbsTtl").value("회원 게시판"));
+
+        org.mockito.Mockito.verify(boardMasterService).getCommunityBoards(101L);
+        // 커뮤니티 서비스로 우회하면 회원 판정이 통째로 빠진다.
+        org.mockito.Mockito.verifyNoInteractions(communityService);
     }
 }

@@ -3,9 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BoardMakerWizard, boardMakerFormSchema } from '../BoardMakerWizard';
 
-const { createBoardMaster, createMenu } = vi.hoisted(() => ({
+const { createBoardMaster, createMenu, communities } = vi.hoisted(() => ({
   createBoardMaster: vi.fn(),
   createMenu: vi.fn(),
+  // [2026-09-08 PD-CMTY-001] 귀속 후보 목록. 사용 중지된 커뮤니티는 후보에서 빠진다.
+  communities: {
+    current: {
+      list: [
+        { cmntySn: 7, cmntyNm: '연구모임', useYn: 'Y' },
+        { cmntySn: 8, cmntyNm: '폐쇄된 모임', useYn: 'N' },
+      ],
+    },
+  },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -13,6 +22,10 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+  useQuery: () => ({ data: communities.current }),
+}));
+vi.mock('@/services/business/user/community/CommunityUserService', () => ({
+  communityUserService: { getCommunityList: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/BoardAdminService', () => ({
   boardAdminService: { createBoardMaster },
@@ -35,6 +48,7 @@ const validDraft = {
   bbsAtrbCd: 'BBSA01',
   tmpltId: 'TMPLT_HUB',
   useYn: 'Y',
+  cmntySn: '',
   menuNm: '사내 소식',
   upperMenuNo: '2000000',
   menuOrdr: 1,
@@ -121,5 +135,57 @@ describe('BoardMakerWizard validation', () => {
 
     await act(async () => resolveBoard('BBS_TEST'));
     await waitFor(() => expect(createMenu).toHaveBeenCalledTimes(1));
+  });
+
+  /*
+    [2026-09-08 PD-CMTY-001] 커뮤니티 귀속.
+
+    귀속을 설정할 수 있는 화면이 없으면 회원 전용 게시판은 **구조적으로 만들어질 수 없고**,
+    서버 게이트도 커뮤니티 상세의 목록도 영원히 빈 기능이 된다(ISG·설문 응답자가 그랬다).
+    그래서 이 마법사가 유일한 생산자이며, 여기서 고정하는 것은 둘이다 —
+    선택하지 않으면 필드를 **보내지 않고**, 선택하면 숫자로 보낸다.
+  */
+  describe('커뮤니티 귀속', () => {
+    async function fillToLastStep() {
+      fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), {
+        target: { value: '연구 자료실' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /다음 단계로/ }));
+      await screen.findByRole('heading', { name: '템플릿 선택' });
+      fireEvent.click(screen.getByRole('button', { name: /다음 단계로/ }));
+      await screen.findByRole('heading', { name: '접근 권한 안내' });
+      fireEvent.click(screen.getByRole('button', { name: /다음 단계로/ }));
+      await screen.findByRole('heading', { name: '메뉴 배포' });
+    }
+
+    it('사용 중인 커뮤니티만 후보로 두고, 고르지 않으면 귀속 필드를 보내지 않는다', async () => {
+      createBoardMaster.mockResolvedValue('BBS_TEST');
+      render(<BoardMakerWizard />);
+
+      const select = screen.getByLabelText('커뮤니티 귀속');
+      expect(select).toHaveValue('');
+      expect(screen.getByRole('option', { name: '연구모임' })).toBeInTheDocument();
+      // 사용 중지된 커뮤니티에 새 게시판을 붙일 이유가 없다 — 후보에서 뺀다.
+      expect(screen.queryByRole('option', { name: '폐쇄된 모임' })).toBeNull();
+
+      await fillToLastStep();
+      fireEvent.submit(screen.getByRole('button', { name: '게시판 생성 및 메뉴 배포' }).closest('form')!);
+
+      await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+      // undefined 로 보내는 것과 다르다 — 서버는 값이 있으면 존재를 검증하고 없으면 귀속 없음이다.
+      expect(createBoardMaster.mock.calls[0][0]).not.toHaveProperty('cmntySn');
+    });
+
+    it('커뮤니티를 고르면 숫자로 실어 보낸다 — 그 게시판은 회원 전용이 된다', async () => {
+      createBoardMaster.mockResolvedValue('BBS_TEST');
+      render(<BoardMakerWizard />);
+
+      fireEvent.change(screen.getByLabelText('커뮤니티 귀속'), { target: { value: '7' } });
+      await fillToLastStep();
+      fireEvent.submit(screen.getByRole('button', { name: '게시판 생성 및 메뉴 배포' }).closest('form')!);
+
+      await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+      expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ cmntySn: 7 });
+    });
   });
 });

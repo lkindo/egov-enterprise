@@ -27425,6 +27425,90 @@
         }
       }
     },
+    "/api/v1/communities/{cmntySn}/boards": {
+      "get": {
+        "tags": [
+          "Community User"
+        ],
+        "summary": "커뮤니티 게시판 목록",
+        "description": "커뮤니티에 귀속된 사용 중인 게시판 목록을 조회합니다. 승인된 회원만 조회할 수 있습니다.",
+        "operationId": "getCommunityBoards",
+        "parameters": [
+          {
+            "name": "cmntySn",
+            "in": "path",
+            "description": "커뮤니티 일련번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListCommunityBoardDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/boards/{bbsId}": {
       "get": {
         "tags": [
@@ -40319,6 +40403,62 @@
           "joinYmd": {
             "type": "string",
             "description": "가입(신청)일자 yyyyMMdd — 행이 없으면 null"
+          }
+        }
+      },
+      "ApiResponseListCommunityBoardDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityBoardDto"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "CommunityBoardDto": {
+        "type": "object",
+        "description": "커뮤니티 귀속 게시판",
+        "properties": {
+          "bbsId": {
+            "type": "string",
+            "description": "게시판 ID"
+          },
+          "bbsTtl": {
+            "type": "string",
+            "description": "게시판 제목"
+          },
+          "bbsExpln": {
+            "type": "string",
+            "description": "게시판 설명"
+          },
+          "bbsTypeCd": {
+            "type": "string",
+            "description": "게시판 유형 코드"
           }
         }
       },
