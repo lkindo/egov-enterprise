@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, BarChart3, Users, Plus, Layers, Activity, AlertTriangle, RefreshCcw, ListChecks, LayoutTemplate, Users2, Vote } from "lucide-react";
+import { LayoutGrid, BarChart3, Users, Plus, Layers, Activity, AlertTriangle, RefreshCcw, ListChecks, LayoutTemplate, Vote } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
@@ -20,7 +20,6 @@ import SurveyManageClient from '../manage/SurveyManageClient';
 import SurveyStatsClient from '../stats/SurveyStatsClient';
 import SurveyQuestionsPanel from '../components/SurveyQuestionsPanel';
 import SurveyTemplatesPanel from '../components/SurveyTemplatesPanel';
-import SurveyRespondentsClient from '../respondents/SurveyRespondentsClient';
 
 // 허브 탭 정의 — 아래 TabsList/TabsContent 와 1:1 로 유지한다.
 //
@@ -32,7 +31,11 @@ import SurveyRespondentsClient from '../respondents/SurveyRespondentsClient';
 // settings('시스템 연동') 탭은 여전히 없다 — 대응 백엔드가 없어 만들 것이 없다.
 // items('항목관리', 구 메뉴 2010600)도 탭으로 두지 않는다: 항목은 문항 하위 자원이라
 // 소속 문항 없이 의미가 없고, 문항 관리 탭 안에서 함께 다루는 것이 도메인에 맞다.
-const SURVEY_TABS = ['manage', 'questions', 'templates', 'respondents', 'stats'] as const;
+/*
+  [2026-09-08 PD-SRVY-001 결정] 응답자 탭을 걷었다 — tb_srvy_rspdnt 는 개인정보를 담는데
+  응답 결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어 **항상 빈 목록**이었다.
+*/
+const SURVEY_TABS = ['manage', 'questions', 'templates', 'stats'] as const;
 type SurveyTab = (typeof SURVEY_TABS)[number];
 
 const DEFAULT_TAB: SurveyTab = 'manage';
@@ -207,7 +210,6 @@ export function SurveyHubClient() {
  <TabTrigger value="manage" icon={LayoutGrid} label="여론조사 관리" />
  <TabTrigger value="questions" icon={ListChecks} label="문항 관리" />
  <TabTrigger value="templates" icon={LayoutTemplate} label="템플릿" />
- <TabTrigger value="respondents" icon={Users2} label="응답자" />
  <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
  </TabsList>
  </div>
@@ -241,9 +243,6 @@ export function SurveyHubClient() {
  <SurveyTemplatesPanel />
  </TabsContent>
 
- <TabsContent value="respondents" className="m-0 focus-visible:outline-none">
- <SurveyRespondentsClient embedded />
- </TabsContent>
 
  <TabsContent value="stats" className="m-0 focus-visible:outline-none">
  <SurveyStatsClient embedded />

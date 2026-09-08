@@ -900,30 +900,6 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#createRespondent",
-      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
-      "methodSecurity": "hasRole('ADMIN')",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#deleteRespondent",
-      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
-      "methodSecurity": "hasRole('ADMIN')",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#updateRespondent",
-      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
-      "methodSecurity": "hasRole('ADMIN')",
-      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
-    },
-    {
-      "method": "POST",
       "path": "/api/v1/admin/system/templates",
       "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo",
       "policy": "ADMIN_OR_SYSTEM",

@@ -78,7 +78,10 @@ test('current URL-state census exactly covers critical route and URL producer po
   assert.deepEqual(actual.summary.exactPopulations, {
     filesystemRoutes: FILESYSTEM_ROUTE_COUNT,
     dynamicRoutePatterns: 11,
-    configRedirects: 14,
+    // [2026-09-08 PD-SRVY-001] 14 → 13. /admin/survey/respondents 의 리다이렉트를 제거했다 —
+    //   목적지였던 허브 응답자 탭도 함께 걷었으므로 남겨 두면 존재하지 않는 탭으로 보낸다.
+    //   URL 상태 표면이 **줄어드는** 방향이다.
+    configRedirects: 13,
     // [2026-09-05 DEC-OPS-034] 5 → 7: boards/write · boards/[id] 가 insert-board-article 로의 page-redirect 가 됐다.
     // [2026-09-06 DEC-OPS-040] 7 → 11: /admin/system/ism → /approvals, /admin/community · /admin/community/boards →
     //   /admin/help?tab=COMMUNITY, /admin/system/monitoring → /admin/system/monitoring/hub 가 page-redirect 가 됐다.

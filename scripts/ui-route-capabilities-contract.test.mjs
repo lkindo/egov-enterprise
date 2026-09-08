@@ -122,12 +122,15 @@ test('proxy shell access is measured separately from unresolved capability roles
   assert.equal(sourceShellCounts.authenticated?.length, 49);
   // [2026-09-07] 70 -> 71. /admin/system/isg 신설 — 백엔드 5본이 완비인데 프런트 호출부가 0 이라
   //   등록 경로조차 없던 도메인을 배선했다(고아 도메인 종결).
-  assert.equal(sourceShellCounts['admin-system']?.length, 71);
+  // [2026-09-08 PD-SRVY-001] 71 -> 70. /admin/survey/respondents 를 걷었다 — tb_srvy_rspdnt 는
+  //   성명·생년월일·전화번호를 담는데 응답 결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어
+  //   **항상 빈 목록을 보여주는 개인정보 화면**이었다. 라우트·허브 탭·config redirect·API 5본을 함께 제거했다.
+  assert.equal(sourceShellCounts['admin-system']?.length, 70);
   assert.equal(effectiveShellCounts.public?.length, 1);
   // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
   //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.
   assert.equal(effectiveShellCounts.authenticated?.length, 49);
-  assert.equal(effectiveShellCounts['admin-system']?.length, 71);
+  assert.equal(effectiveShellCounts['admin-system']?.length, 70);
   // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
   //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
   //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.
@@ -137,7 +140,9 @@ test('proxy shell access is measured separately from unresolved capability roles
   //   두 라우트의 disposition 은 overlay 에서 consolidate-to-canonical 로 함께 제안됐다.
   // [2026-09-06 DEC-OPS-040] 19 → 23. 감사 잔여 overlay 제안을 owner 승인으로 확정하며 /admin/system/ism · /admin/community ·
   //   /admin/community/boards · /admin/system/monitoring 이 정본으로의 page-redirect 별칭이 됐다.
-  assert.equal(analysis.result.summary.effectiveAliases, 23);
+  // [2026-09-08 PD-SRVY-001] 23 → 22. /admin/survey/respondents 의 config redirect 를 함께 걷었다 —
+  //   목적지였던 허브 응답자 탭도 제거했으므로 남겨 두면 존재하지 않는 탭으로 보낸다.
+  assert.equal(analysis.result.summary.effectiveAliases, 22);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(

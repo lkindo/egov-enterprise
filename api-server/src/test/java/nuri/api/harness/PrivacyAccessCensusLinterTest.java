@@ -4,7 +4,6 @@ import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
 import nuri.business.service.operation.dto.ExternalHrDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
-import nuri.business.service.survey.dto.SurveyRespondentDto;
 import nuri.business.service.user.dto.UserDto;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import org.junit.jupiter.api.DisplayName;
@@ -77,17 +76,18 @@ class PrivacyAccessCensusLinterTest {
             //   읽기 매퍼가 recipients 를 빈 배열로 채워 연락처를 싣지 않는다.
             "SmsApiController#getSmsRecipients",
             "AddressBookApiController#getAddressBook",
-            "AddressBookApiController#searchUsers",
-            "SurveyRespondentApiController#getRespondents",
-            "SurveyRespondentApiController#getRespondent");
+            // [2026-09-08 PD-SRVY-001] 설문 응답자 2건이 여기서 빠졌다 — 그 관리 표면(API 5본·화면)을
+            //   걷었기 때문이다. tb_srvy_rspdnt 는 성명·성별·생년월일·전화번호를 담는데 응답 결과와
+            //   ID 로 연결되지 않고 행을 만드는 경로도 없어 화면이 항상 빈 목록이었다. 테이블·엔티티는
+            //   남으므로(설문 템플릿 변경 가드가 사용) 표면이 되살아나면 이 census 도 함께 복구한다.
+            "AddressBookApiController#searchUsers");
 
     private static final Set<Class<?>> KNOWN_SENSITIVE_RESPONSE_TYPES = Set.of(
             UserDto.class,
             ExternalHrDto.class,
             SmsRecptnDto.class,
             AddressBookDto.class,
-            AddressBookUserDto.class,
-            SurveyRespondentDto.class);
+            AddressBookUserDto.class);
 
     private static final Set<String> SENSITIVE_FIELD_NAMES = Set.of(
             "emladdr", "email", "emailaddress",

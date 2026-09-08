@@ -12,9 +12,9 @@
     "Axis 2 is deliberately lenient, following UnreachableServiceLinter: a method counts as reachable if `.name(` appears anywhere in non-service production code. Common names may pass by collision — that direction misses violations rather than inventing them."
   ],
   "expected": {
-    "operationCount": 379,
-    "unwiredMax": 14,
-    "screenOrphanMax": 37
+    "operationCount": 374,
+    "unwiredMax": 11,
+    "screenOrphanMax": 36
   },
   "entries": [
     {
@@ -46,12 +46,6 @@
       "operationId": "createNotification",
       "category": "unwired",
       "note": "Self-notification creation for the authenticated principal. Admin dispatch to other users goes through the separate /admin/notifications/dispatch operation (DEC-OPS-042), which is wired.",
-      "evidence": []
-    },
-    {
-      "operationId": "createRespondent",
-      "category": "unwired",
-      "note": "Respondent register write path, deliberately unwired. tb_srvy_rspdnt holds personal data (name, gender, birthdate, phone) and is NOT linked to survey results by id — tb_srvy_rslt carries only rspns_nm as a string (V2_0). No code path creates respondent rows, so the register is structurally empty. Wiring a create form would open a new personal-data entry surface with no downstream consumer; that is a product decision, not a wiring gap.",
       "evidence": []
     },
     {
@@ -134,12 +128,6 @@
       "evidence": []
     },
     {
-      "operationId": "getRespondent",
-      "category": "unwired",
-      "note": "Respondent detail — same deliberate hold as createRespondent (personal data, register unlinked from results).",
-      "evidence": []
-    },
-    {
       "operationId": "getScheduleList",
       "category": "unwired",
       "note": "Flat schedule list. The schedule screens query the department-scoped endpoints instead.",
@@ -212,12 +200,6 @@
         "confirm",
         "cancelApproval"
       ]
-    },
-    {
-      "operationId": "updateRespondent",
-      "category": "unwired",
-      "note": "Respondent update — same deliberate hold as createRespondent (personal data, register unlinked from results).",
-      "evidence": []
     }
   ]
 }

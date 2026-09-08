@@ -102,7 +102,11 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   //   같은 InformalSanctionService#deleteInformalSanction 을 부르는 /informal-sanctions 계열과 공존하지만,
   //   /approvals 가 결재 도메인의 정본 네임스페이스이고(DEC-OPS-030·039·040) 인가 의미는 그 서비스 가드가
   //   집행한다(assertOwnerByEsntlId + "A" 상태 — 관리자도 우회 못 한다).
-  assert.equal(operations.length, 379);
+  // [2026-09-08 PD-SRVY-001 설문 응답자 표면 제거] 5본 제거 — 379 -> 374.
+  //   목록·상세·등록·수정·삭제. tb_srvy_rspdnt 는 성명·성별·생년월일·전화번호를 담는데 응답 결과와
+  //   ID 로 연결되지 않고 행을 만드는 코드 경로가 없어 화면이 항상 빈 목록이었다. 사용자 결정으로
+  //   API·화면·서비스·DTO 를 함께 걷었고, 엔티티·리포지토리·테이블은 남는다(템플릿 변경 가드가 사용).
+  assert.equal(operations.length, 374);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

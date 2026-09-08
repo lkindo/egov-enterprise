@@ -130,7 +130,6 @@ const nextConfig = {
       { source: '/admin/survey/questions', destination: '/admin/survey/hub?tab=questions', permanent: false },
       { source: '/admin/survey/stats', destination: '/admin/survey/hub?tab=stats', permanent: false },
       { source: '/admin/survey/items', destination: '/admin/survey/hub?tab=questions', permanent: false },
-      { source: '/admin/survey/respondents', destination: '/admin/survey/hub?tab=respondents', permanent: false },
       { source: '/admin/survey/templates', destination: '/admin/survey/hub?tab=templates', permanent: false },
       { source: '/admin/observability', destination: '/admin/system/monitoring/hub?tab=observability', permanent: false },
       { source: '/admin/security/audit', destination: '/admin/system/monitoring/hub?tab=security', permanent: false },

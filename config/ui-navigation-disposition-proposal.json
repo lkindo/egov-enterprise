@@ -5,7 +5,7 @@
  "schemaRef": "config/ui-navigation-disposition.schema.json",
  "manifestRef": {
   "path": "config/ui-route-capabilities.json",
-  "sha256": "dda9afc4c68b621b53f8bb58ef070d88fab4e0f8e57260729ddc8108490216ab"
+  "sha256": "039a1493e2a261f23fd86f86f531fd838fcc6236e3a2f66520dc7821a5046bb9"
  },
  "provisionalDirection": {
   "status": "accepted-provisional-direction",
@@ -1382,24 +1382,6 @@
   },
   {
    "route": "/admin/survey/questions",
-   "reviewState": "proposed",
-   "disposition": "consolidate-to-canonical",
-   "authorizationReview": "unverified",
-   "privacyReview": "unverified",
-   "effectiveMenuExposureReview": "unverified",
-   "capabilityReview": "unverified",
-   "profileOwnershipReview": "unverified",
-   "owner": "product/UX + domain owner",
-   "reviewBy": "2026-11-30",
-   "approvals": {
-    "domain": null,
-    "productIa": null,
-    "securityPrivacy": null,
-    "accessibility": null
-   }
-  },
-  {
-   "route": "/admin/survey/respondents",
    "reviewState": "proposed",
    "disposition": "consolidate-to-canonical",
    "authorizationReview": "unverified",

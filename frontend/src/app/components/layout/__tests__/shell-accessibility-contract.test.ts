@@ -179,7 +179,9 @@ describe('app shell accessibility source contract', () => {
     expect(boardListPage).toMatch(/BoardListSkeleton[\s\S]*?<h1\b/);
     expect(statsFallback).toMatch(/<h1\b/);
     expect(surveyHub).toContain('<SurveyManageClient embedded />');
-    expect(surveyHub).toContain('<SurveyRespondentsClient embedded />');
+    // [2026-09-08 PD-SRVY-001] 응답자 탭을 걷었다 — tb_srvy_rspdnt 는 개인정보를 담는데 응답
+    //   결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어 항상 빈 목록이었다. 나머지 임베드
+    //   화면(manage·stats)의 h1 중첩 금지 계약은 그대로다.
     expect(surveyHub).toContain('<SurveyStatsClient embedded />');
   });
 
