@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "78e784834cf1a9d48bec4654ed45dde9e5c1400b0a54f1e708cf6971b80ccff9"
+    "inventoryHash": "82b9894e4fbf8eeae2204791d94b07aec42cd0afc322891890624456dddb93dc"
   },
   "summary": {
     "sourceFileCount": 522,
-    "records": 381,
+    "records": 380,
     "syntaxOccurrences": 450,
-    "ambiguousRecords": 355,
-    "unverifiedRecords": 381,
+    "ambiguousRecords": 354,
+    "unverifiedRecords": 380,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 160,
+      "navigation-producer": 159,
       "page-redirect": 11,
       "query-builder": 22,
       "query-consumer": 58,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 373,
+      "navigation": 372,
       "request-telemetry": 8
     }
   },
@@ -6345,7 +6345,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 2
+        "occurrenceCount": 3
       }
     },
     {
@@ -13310,56 +13310,6 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/cop/cmy/selectCommunityList",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-E1F721B74012BE",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
-      "producerFile": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/cop/cmy/selectCommunityDetail/[id]",
-      "targetCandidate": "/admin/community/boards/select-board-list?bbsId=[computed]",
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        }
-      ],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/community/boards/select-board-list",
         "status": "unverified"
       },
       "authorizationBoundary": {

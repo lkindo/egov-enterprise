@@ -342,4 +342,78 @@ class MemoReportServiceTest {
         // then
         verify(entity).updateInqireDt(any(java.time.LocalDateTime.class));
     }
+
+    /*
+      [2026-09-08 PD-RPT-001] editable — 화면이 인가를 흉내내지 않게 서버가 판정한다.
+
+      쓰기 인가는 assertOwnerOrAdmin(frstRgtrId) 즉 **loginId 축**인데 같은 도메인의 열람 인가는
+      userId·rptrId 즉 **esntlId 축**이다. 두 축이 달라 화면은 응답만 보고 "내가 고칠 수 있는가" 를
+      계산할 수 없었다. 그래서 판정 결과만 싣는다(식별자는 싣지 않는다 — loginId 가 목록 응답에
+      실리면 계정 열거 표면이 넓어진다).
+    */
+    @Test
+    @DisplayName("editable: 작성자 본인이면 true — 쓰기 인가와 같은 loginId 축으로 판정한다")
+    void editableTrueForOwner() {
+        Pageable pageable = PageRequest.of(0, 10);
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-me").build();
+        entity.setFrstRgtrId("login-me");
+        given(memoReportRepository.findByUserId(eq("esntl-me"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(entity)));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(false);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(Optional.of("login-me"));
+
+        Page<MemoReportDto> result = memoReportService.getMyReportList("esntl-me", null, pageable);
+
+        assertThat(result.getContent().get(0).getEditable()).isTrue();
+    }
+
+    @Test
+    @DisplayName("editable: 남의 보고면 false — 열람은 되지만 수정은 안 되는 상태를 화면이 알 수 있다")
+    void editableFalseForOthers() {
+        Pageable pageable = PageRequest.of(0, 10);
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
+        entity.setFrstRgtrId("login-someone-else");
+        given(memoReportRepository.findByRptrId(eq("esntl-me"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(entity)));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(false);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(Optional.of("login-me"));
+
+        Page<MemoReportDto> result = memoReportService.getReceivedReportList("esntl-me", null, pageable);
+
+        assertThat(result.getContent().get(0).getEditable()).isFalse();
+    }
+
+    @Test
+    @DisplayName("editable: 관리자는 남의 보고도 true — assertOwnerOrAdmin 과 같은 규칙이다")
+    void editableTrueForAdmin() {
+        Pageable pageable = PageRequest.of(0, 10);
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).build();
+        entity.setFrstRgtrId("login-someone-else");
+        given(memoReportRepository.searchByTitle(eq(""), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(entity)));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(true);
+
+        Page<MemoReportDto> result = memoReportService.getMemoReportList(null, pageable);
+
+        assertThat(result.getContent().get(0).getEditable()).isTrue();
+    }
+
+    @Test
+    @DisplayName("editable: 작성자 정보가 없으면 false — 판정 불가를 '가능' 으로 열지 않는다")
+    void editableFalseWhenOwnerMissing() {
+        Pageable pageable = PageRequest.of(0, 10);
+        // 감사 컬럼이 비어 있으면 assertOwnerOrAdmin 도 통과시키지 않는다(현재 loginId 와 null 은 같을 수 없다).
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-me").build();
+        given(memoReportRepository.findByUserId(eq("esntl-me"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(entity)));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(false);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                .thenReturn(Optional.of("login-me"));
+
+        Page<MemoReportDto> result = memoReportService.getMyReportList("esntl-me", null, pageable);
+
+        assertThat(result.getContent().get(0).getEditable()).isFalse();
+    }
 }

@@ -39,7 +39,7 @@ public class MemoReportService {
         nuri.business.security.util.SecurityUtil.assertAdmin();
         // 검색어를 받고도 무시하던 default 구현(findAll)을 실제 제목 검색으로 대체했다.
         return memoReportRepository.searchByTitle(keyword != null ? keyword : "", pageable)
-                .map(memoReportMapper::toDto);
+                .map(this::toDtoWithPermission);
     }
 
     /**
@@ -53,7 +53,7 @@ public class MemoReportService {
         Page<MemoReport> page = hasKeyword(keyword)
                 ? memoReportRepository.findByUserIdAndRptTtlContaining(writerId, keyword.trim(), pageable)
                 : memoReportRepository.findByUserId(writerId, pageable);
-        return page.map(memoReportMapper::toDto);
+        return page.map(this::toDtoWithPermission);
     }
 
     /** 수신함. 발신함과 같은 이유로 제목 검색을 지원한다(소유 스코프는 rptrId 로 유지). */
@@ -62,18 +62,52 @@ public class MemoReportService {
         Page<MemoReport> page = hasKeyword(keyword)
                 ? memoReportRepository.findByRptrIdAndRptTtlContaining(rptUserId, keyword.trim(), pageable)
                 : memoReportRepository.findByRptrId(rptUserId, pageable);
-        return page.map(memoReportMapper::toDto);
+        return page.map(this::toDtoWithPermission);
     }
 
     private static boolean hasKeyword(String keyword) {
         return keyword != null && !keyword.trim().isEmpty();
     }
 
+    /**
+     * 현재 주체가 이 보고를 수정·삭제할 수 있는지 — {@code updateMemoReport}·{@code deleteMemoReport}
+     * 가 쓰는 {@code assertOwnerOrAdmin(frstRgtrId)} 와 <b>같은 규칙을 예외 대신 boolean 으로</b>
+     * 계산한다.
+     *
+     * <p>[2026-09-08 PD-RPT-001] 화면이 인가를 흉내내지 않게 하려고 판정을 서버에 둔다. 그 인가는
+     * loginId 축(감사 컬럼 {@code frstRgtrId})인데 같은 도메인의 열람 인가는 esntlId 축
+     * ({@code userId}·{@code rptrId})이라, 화면은 응답만 보고 판정할 수 없었다.
+     *
+     * <p>⚠ 이 값은 <b>표시용 힌트</b>이고 인가 자체가 아니다. 실제 차단은 쓰기 경로의
+     * {@code assertOwnerOrAdmin} 이 그대로 집행한다(백엔드 헌법 제8조 — 이중 검증).
+     */
+    private boolean canModify(MemoReport entity) {
+        if (nuri.business.security.util.SecurityUtil.isAdmin()) {
+            return true;
+        }
+        String owner = entity.getFrstRgtrId();
+        if (!org.springframework.util.StringUtils.hasText(owner)) {
+            // 작성자 정보가 없으면 소유 판정이 불가능하다 — assertOwnerOrAdmin 도 같은 입력에서
+            // 거부하므로(현재 loginId 와 null 은 같을 수 없다) 화면에도 열어 주지 않는다.
+            return false;
+        }
+        return nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .filter(owner::equals)
+                .isPresent();
+    }
+
+    /** 매핑 결과에 서버 판정({@code editable})을 실어 준다. 매퍼는 요청 컨텍스트를 모른다. */
+    private MemoReportDto toDtoWithPermission(MemoReport entity) {
+        MemoReportDto dto = memoReportMapper.toDto(entity);
+        dto.setEditable(canModify(entity));
+        return dto;
+    }
+
     public MemoReportDto getMemoReport(@NonNull Long memoRptSn) {
         MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 작성자·수신자·관리자만 열람
-        return memoReportMapper.toDto(entity);
+        return toDtoWithPermission(entity);
     }
 
     /**

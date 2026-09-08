@@ -4965,6 +4965,8 @@ export interface components {
              * @description 생성일시
              */
             readonly crtDt?: string | null;
+            /** @description 현재 사용자가 수정·삭제할 수 있는지(서버 판정) */
+            readonly editable?: boolean;
         };
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {

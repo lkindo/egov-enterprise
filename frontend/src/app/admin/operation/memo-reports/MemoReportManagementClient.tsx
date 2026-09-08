@@ -16,9 +16,11 @@ import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { z } from 'zod';
 import { MemoReportDtoRequestSchema, MemoReportDtoSchema } from '@/types/generated-zod';
 import { getTodayYmd } from '@/lib/date/today-ymd';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
@@ -87,6 +89,7 @@ export default function MemoReportManagementClient() {
   //   막히는 비대칭이고, 조용히 죽는 결함이다(DEC-OPS-023).
   const isAdmin = isAdministrativeRole(user?.role);
   const { toast } = useToast();
+  const confirm = useConfirm();
 
   /*
    * [2026-08-28] 상세 열람 배선.
@@ -180,6 +183,92 @@ export default function MemoReportManagementClient() {
       setComposing(false);
     }
   });
+
+  /*
+    [2026-09-08 PD-RPT-001] 수정·삭제 배선.
+
+    서버는 완비돼 있었지만(`assertOwnerOrAdmin(frstRgtrId)`) **화면이 "내가 고칠 수 있는가" 를
+    판정할 정보를 받지 못했다** — 그 인가는 loginId 축인데 응답 DTO 에 그 필드가 없고, 같은
+    도메인의 열람 인가는 esntlId 축(userId·rptrId)이라 두 축이 다르다.
+
+    사용자 결정으로 서버가 판정 결과만 내려준다(`editable`). 식별자는 싣지 않는다 — loginId 가
+    목록 응답에 실리면 계정 열거 표면이 넓어진다. 화면은 그 값으로 액션 노출만 정하고, 실제
+    차단은 여전히 서버가 집행한다(백엔드 헌법 제8조 — 이중 검증).
+
+    ⚠ 서버 update 는 **전체 치환**이다(entity.update 가 인자를 무조건 대입). 그래서 수정 폼은
+    바꾸지 않는 필드도 상세에서 읽어 함께 싣는다 — 설문 수정(DEC-OPS-058)과 같은 형태다.
+  */
+  const [isEditing, setIsEditing] = useState(false);
+  const editingRef = useRef(false);
+  const [isEditPending, setEditPending] = useState(false);
+  const deleteReportRef = useRef(false);
+  const [isDeletePending, setDeletePending] = useState(false);
+
+  const editForm = useAppForm(memoComposeSchema, {
+    defaultValues: { rptTtl: '', rptCn: '', rptrId: '' },
+  });
+
+  const openEdit = () => {
+    if (editingRef.current || deleteReportRef.current || detail == null) return;
+    editForm.reset({
+      rptTtl: detail.rptTtl ?? '',
+      rptCn: detail.rptCn ?? '',
+      rptrId: detail.rptrId ?? '',
+    });
+    setIsEditing(true);
+  };
+
+  const submitEdit = editForm.handleSubmit(async (values) => {
+    if (editingRef.current || detailTarget == null || detail == null) return;
+    editingRef.current = true;
+    setEditPending(true);
+    try {
+      await memoReportService.updateMemoReport(detailTarget.memoRptSn, {
+        rptTtl: values.rptTtl,
+        rptCn: values.rptCn,
+        rptrId: values.rptrId,
+        // 전체 치환이므로 화면이 묻지 않는 값도 상세에서 읽어 되돌려 보낸다.
+        memoRptYmd: detail.memoRptYmd ?? getTodayYmd(),
+        atchFileSn: detail.atchFileSn ?? undefined,
+      });
+      toast('보고를 수정했습니다.', 'success');
+      setIsEditing(false);
+      await refetchDetail();
+      await refetch();
+    } catch (error: unknown) {
+      if (!editForm.applyServerErrors(error)) {
+        toast('보고를 수정하지 못했습니다. 입력 내용은 유지됩니다.', 'error');
+      }
+    } finally {
+      editingRef.current = false;
+      setEditPending(false);
+    }
+  });
+
+  const handleDeleteReport = async () => {
+    if (deleteReportRef.current || editingRef.current || detailTarget == null) return;
+    deleteReportRef.current = true;
+    setDeletePending(true);
+    try {
+      const ok = await confirm({
+        title: '보고 삭제',
+        message: `'${detailTarget.rptTtl || `${detailTarget.memoRptSn}번 보고`}' 를 삭제합니다. 되돌릴 수 없습니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+
+      await memoReportService.deleteMemoReport(detailTarget.memoRptSn);
+      toast('보고를 삭제했습니다.', 'success');
+      setDetailTarget(null);
+      await refetch();
+    } catch (error: unknown) {
+      toast(extractErrorMessage(error, '보고를 삭제하지 못했습니다.'), 'error');
+    } finally {
+      deleteReportRef.current = false;
+      setDeletePending(false);
+    }
+  };
 
   const submitInstruction = instructionForm.handleSubmit(async (values) => {
     if (savingInstructionRef.current || detailTarget == null) return;
@@ -408,9 +497,38 @@ export default function MemoReportManagementClient() {
           title={detailTarget.rptTtl || `${detailTarget.memoRptSn}번 보고`}
           maxWidth="2xl"
           footer={
-            <Button type="button" variant="outline" onClick={() => setDetailTarget(null)} className="w-full">
-              닫기
-            </Button>
+            <div className="flex w-full gap-2">
+              {/*
+                editable 은 서버 판정이다(assertOwnerOrAdmin 과 같은 규칙). 화면이 인가를
+                흉내내지 않고 그 결과만 쓴다 — 판정 불가(작성자 정보 없음)도 false 로 온다.
+              */}
+              {detail?.editable ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openEdit}
+                    disabled={isEditing || isDeletePending}
+                    className="flex-1"
+                  >
+                    수정
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => { void handleDeleteReport(); }}
+                    disabled={isEditing || isDeletePending}
+                    aria-busy={isDeletePending || undefined}
+                    className="flex-1 text-destructive-emphasis hover:bg-destructive/10"
+                  >
+                    {isDeletePending ? '삭제 중…' : '삭제'}
+                  </Button>
+                </>
+              ) : null}
+              <Button type="button" variant="outline" onClick={() => setDetailTarget(null)} className="flex-1">
+                닫기
+              </Button>
+            </div>
           }
         >
           {detailError ? (
@@ -447,9 +565,80 @@ export default function MemoReportManagementClient() {
 
               <section aria-labelledby="memo-report-body-heading" className="space-y-2">
                 <h3 id="memo-report-body-heading" className="text-sm font-bold text-foreground">보고 내용</h3>
-                <p className="whitespace-pre-wrap rounded-md border border-border p-4 text-sm text-foreground">
-                  {detail?.rptCn || '내용이 없습니다.'}
-                </p>
+                {isEditing ? (
+                  /*
+                    수정은 제목·내용만 다룬다 — 수신자 변경은 별개 기능이고, 이 경로의 주 용도는
+                    오타 정정이다. rptrId 는 상세에서 읽어 그대로 되돌려 보낸다(서버 update 가
+                    전체 치환이라 보내지 않으면 지워진다).
+                  */
+                  <Form {...editForm}>
+                    <form onSubmit={submitEdit} noValidate className="space-y-4">
+                      <FormErrorSummary labels={COMPOSE_LABELS} onNavigate={editForm.focusError} />
+                      <ShadcnFormField
+                        control={editForm.control}
+                        name="rptTtl"
+                        required
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-sm font-bold text-foreground">제목</FormLabel>
+                            <FormControl>
+                              <Input {...field} maxLength={100} disabled={isEditPending} />
+                            </FormControl>
+                            <FormMessage className="text-xs font-bold text-destructive" />
+                          </FormItem>
+                        )}
+                      />
+                      <ShadcnFormField
+                        control={editForm.control}
+                        name="rptrId"
+                        render={({ field }) => (
+                          <FormItem className="space-y-0">
+                            <FormControl>
+                              <input type="hidden" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <ShadcnFormField
+                        control={editForm.control}
+                        name="rptCn"
+                        required
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-sm font-bold text-foreground">내용</FormLabel>
+                            <FormControl>
+                              <textarea
+                                {...field}
+                                maxLength={4000}
+                                disabled={isEditPending}
+                                className="w-full min-h-[160px] rounded-md border border-border bg-muted/40 p-4 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs font-bold text-destructive" />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsEditing(false)}
+                          disabled={isEditPending}
+                        >
+                          취소
+                        </Button>
+                        <Button type="submit" size="sm" disabled={isEditPending} aria-busy={isEditPending || undefined}>
+                          {isEditPending ? '저장 중…' : '저장'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                ) : (
+                  <p className="whitespace-pre-wrap rounded-md border border-border p-4 text-sm text-foreground">
+                    {detail?.rptCn || '내용이 없습니다.'}
+                  </p>
+                )}
               </section>
 
               <section aria-labelledby="memo-report-instruction-heading" className="space-y-2">
