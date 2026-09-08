@@ -244,10 +244,17 @@ describe('권한 → 롤 할당', () => {
     };
     // ⚠ [2026-09-01] `mockResolvedValueOnce` 2개로 두 페이지를 흉내내면 **호출 순서·횟수에
     //   의존**한다. 그 2개가 소진된 뒤의 호출은 beforeEach 의 fallback(`ROLES`, total 6)을 받고,
-    //   그러면 전량 헬퍼가 1페이지만 조회하고 끝나 `ROLE_LAST` 가 사라진다 — 쿼리가 한 번 더
-    //   돌기만 해도(마운트·리트라이·리렌더) 선택 집합이 통째로 바뀐다.
-    //   실측: CI 에서 이 테스트가 간헐 실패했고 저장 본문이 빈 배열로 관측됐다(로컬은 통과).
-    //   pageIndex 로 응답을 결정하면 몇 번 호출되든 같은 결과라 비결정성이 사라진다.
+    //   그러면 전량 헬퍼가 1페이지만 조회하고 끝나 `ROLE_LAST` 가 사라진다.
+    //   pageIndex 로 응답을 결정하면 몇 번 호출되든 같은 결과라 그 축의 비결정성은 사라진다.
+    //
+    // ⚠ [2026-09-08 정정] 그런데 이 테스트는 그 뒤에도 CI 에서 저장 본문이 `[]` 로 간헐 실패했다
+    //   (로컬은 통과). **원인은 목이 아니었다.** TanStack Query v5 의 useMutation 은
+    //   `React.useEffect(() => observer.setOptions(options))` 로 옵션을 패시브 이펙트에서
+    //   갱신하므로(설치본 useMutation.js:20-22 실측), 커밋은 됐지만 이펙트가 아직 흐르지 않은
+    //   순간에 저장을 누르면 mutationFn 이 **한 렌더 뒤처진 클로저**였다 — 화면은 '해제'를
+    //   보여 주는데 본문은 직전의 빈 집합이었다. 전체 교체 저장이라 결과는 "롤이 전부 사라진
+    //   권한" 이며, 이 파일 헤더가 경고하는 사고 그 자체다.
+    //   SecurityHubClient 가 저장 본문을 클릭 시점에 계산해 variables 로 넘기도록 고쳐 닫았다.
     mocks.getAuthorRoles.mockImplementation((...args: unknown[]) => {
       const params = args[1] as { pageIndex?: number } | undefined;
       return Promise.resolve((params?.pageIndex ?? 1) === 1

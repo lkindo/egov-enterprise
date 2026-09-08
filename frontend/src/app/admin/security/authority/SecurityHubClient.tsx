@@ -268,9 +268,25 @@ export default function SecurityHubClient({
     });
   };
 
+  /*
+    [2026-09-08] 저장 본문을 **클릭 시점에 계산해 variables 로 넘긴다.**
+
+    ⚠ 종전에는 mutationFn 이 렌더 스코프의 tempRoleMappings 를 클로저로 잡았다. 그런데
+    TanStack Query v5 의 useMutation 은 `React.useEffect(() => observer.setOptions(options))`
+    로 옵션을 **패시브 이펙트에서** 갱신한다(설치본 useMutation.js:20-22 실측). 즉 커밋은
+    됐지만 이펙트가 아직 흐르지 않은 순간에 저장을 누르면 mutationFn 이 **한 렌더 뒤처진
+    클로저**이고, 화면은 '해제'(선택됨)를 보여 주는데 저장 본문은 직전의 빈 집합이 된다.
+
+    이 화면의 저장은 **전체 교체**라 그 결과가 "아무 롤도 없는 권한" 이다 — 저장은 성공하고
+    화면도 정상으로 보이므로 아무도 눈치채지 못한다. 이 파일 헤더가 경고하는 바로 그 사고다.
+
+    실측: 계약 테스트가 CI 에서 간헐 실패하며 저장 본문이 `[]` 로 관측됐다(로컬 통과).
+    2026-09-01 에 목(mock)을 결정적으로 바꿔 한 번 덮었으나 원인은 목이 아니라 이 지연이었다.
+    variables 로 넘기면 클릭 시점 렌더의 값이 그대로 실려 지연 자체가 사라진다.
+  */
   const saveAuthorRoleMutation = useMutation({
     // 전체 교체이므로 "지금 선택된 전체 집합" 을 보낸다. 부분 목록은 나머지를 지운다.
-    mutationFn: () => authorAdminService.saveAuthorRoles(selectedAuthorCode, Array.from(tempRoleMappings)),
+    mutationFn: (roleIds: string[]) => authorAdminService.saveAuthorRoles(selectedAuthorCode, roleIds),
     onSuccess: () => {
       toast('권한에 할당된 롤이 업데이트되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-roles', selectedAuthorCode] });
@@ -299,7 +315,7 @@ export default function SecurityHubClient({
 
     roleMappingRequestRef.current = true;
     setMappingPendingAction('role');
-    saveAuthorRoleMutation.mutate();
+    saveAuthorRoleMutation.mutate(Array.from(tempRoleMappings));
   };
 
   useEffect(() => {
@@ -427,12 +443,15 @@ export default function SecurityHubClient({
   );
 
   const saveUserMappingMutation = useMutation({
-    mutationFn: async () => {
-      const mappings: UserAuthorityDto[] = Array.from(tempUserMappings).map(uid => ({
+    // 롤 할당과 같은 이유로 부여·회수 대상을 variables 로 넘긴다(위 saveAuthorRoleMutation 주석 참조).
+    // 여기서 뒤처진 클로저는 "회수 대상이 비어 보이는" 방향으로도 틀릴 수 있어 더 위험하다.
+    mutationFn: async ({ grantIds, revokeIds }: { grantIds: string[]; revokeIds: string[] }) => {
+      const mappings: UserAuthorityDto[] = grantIds.map(uid => ({
         scrtyDcsnTrgtId: uid,
         authrtId: selectedAuthorCode,
         mbrTypeCd: users.find(u => u.scrtyDcsnTrgtId === uid)?.mbrTypeCd || 'USR'
       }));
+      const revokeTargets = revokeIds;
 
       // 저장 API 는 업서트 전용이라, 체크를 해제해도 기존 행이 남아 권한이 회수되지 않았다.
       // (성공 토스트 후 invalidate 하면 서버 상태가 다시 체크된 채 돌아오던 원인)
@@ -482,7 +501,10 @@ export default function SecurityHubClient({
           return;
         }
       }
-      saveUserMappingMutation.mutate();
+      saveUserMappingMutation.mutate({
+        grantIds: Array.from(tempUserMappings),
+        revokeIds: revokeTargets,
+      });
     } catch {
       userMappingRequestRef.current = false;
       setMappingPendingAction(null);
@@ -491,7 +513,8 @@ export default function SecurityHubClient({
   };
 
   const saveMenuMappingMutation = useMutation({
-    mutationFn: () => menuAdminService.saveMenuCreation(selectedAuthorCode, Array.from(tempMenuMappings)),
+    // 롤 할당과 같은 이유로 variables 로 넘긴다(위 saveAuthorRoleMutation 주석 참조).
+    mutationFn: (menuNos: number[]) => menuAdminService.saveMenuCreation(selectedAuthorCode, menuNos),
     onSuccess: () => {
       toast('메뉴 접근 권한이 업데이트되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus', selectedAuthorCode] });
@@ -511,7 +534,7 @@ export default function SecurityHubClient({
     if (!isMenuMappingReady || authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest() || saveMenuMappingMutation.isPending) return;
     menuMappingRequestRef.current = true;
     setMappingPendingAction('menu');
-    saveMenuMappingMutation.mutate();
+    saveMenuMappingMutation.mutate(Array.from(tempMenuMappings));
   };
 
   const loadGlobalMappings = async () => {

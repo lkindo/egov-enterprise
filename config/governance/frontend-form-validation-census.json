@@ -2085,6 +2085,7 @@
       "stateInvariant": "The selected authority persists exactly the menu assignments represented by tempMenuMappings.",
       "structuredPayloads": [
         "Array.from(tempMenuMappings)",
+        "menuNos",
         "selectedAuthorCode"
       ],
       "testEvidence": [
@@ -2111,6 +2112,7 @@
       "stateInvariant": "The selected authority persists exactly the role assignments represented by tempRoleMappings — the server replaces the whole set, so a partial payload silently deletes the rest.",
       "structuredPayloads": [
         "Array.from(tempRoleMappings)",
+        "roleIds",
         "selectedAuthorCode"
       ],
       "testEvidence": [
@@ -2138,6 +2140,7 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "stateInvariant": "Each user persists exactly the selected authority assignments after revoked mappings are removed.",
       "structuredPayloads": [
+        "{\n        grantIds: Array.from(tempUserMappings),\n        revokeIds: revokeTargets,\n      }",
         "mappings",
         "revokeTargets"
       ],
