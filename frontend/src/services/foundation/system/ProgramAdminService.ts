@@ -61,7 +61,8 @@ class ProgramAdminService extends AdminService {
  async updateProgram(progrmFileNm: string, data: Partial<Program>, config?: AxiosRequestConfig): Promise<void> {
  return this.executeGenerated(updateProgramOperation, {
  path: { progrmFileNm },
- body: data as GeneratedOperationRequest<'updateProgram'>,
+ // 수정 대상은 URL 경로에서 확정한다. 공유 DTO의 필수 키도 같은 값으로 보낸다.
+ body: { ...data, prgrmFileNm: progrmFileNm } as GeneratedOperationRequest<'updateProgram'>,
  config,
  });
  }

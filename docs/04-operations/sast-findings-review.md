@@ -8,6 +8,8 @@
 따르면 수정된 10.1.58은 릴리스 투표를 통과하지 않아 배포된 수정본은 10.1.59다.
 `dependencyInsight`와 runtime classpath에서 core·EL·WebSocket 10.1.59를 확인했고 인증·인가 테스트
 19건이 통과했다. 이는 위 SAST 예외와 별도이며 나머지 개발 의존성 경고를 예외 처리하거나 닫지 않는다.
+SAST-FP-007의 보완 방어 파일인 `build.gradle`은 Tomcat 버전과 설명만 바뀌었고,
+H2의 테스트 전용 의존성과 메모리 DB 프로필이 유지됨을 재검토해 해당 소스 해시만 갱신했다.
 
 - 로그 주입 40건: 검색어·메일 제목·사용자 식별자의 불필요한 복제를 제거했다. 진단에 필요한 경로와
   식별자는 [`SafeLog`](../../foundation/src/main/java/nuri/foundation/security/util/SafeLog.java)로
