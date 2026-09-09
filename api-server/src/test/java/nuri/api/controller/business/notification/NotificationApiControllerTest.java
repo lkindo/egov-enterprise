@@ -110,6 +110,36 @@ class NotificationApiControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.data").value(2));
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {" "})
+    @DisplayName("알림 등록은 비어 있는 제목을 거부한다")
+    void createRejectsMissingTitle(String title) throws Exception {
+        NotificationDto dto = NotificationDto.builder().notiTtlNm(title).build();
+        mockMvc.perform(post("/api/v1/notifications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(notificationService);
+    }
+
+    @Test
+    @DisplayName("알림 등록에서 클라이언트가 보낸 서버 소유 필드는 무시한다")
+    void createIgnoresServerOwnedFields() throws Exception {
+        mockMvc.perform(post("/api/v1/notifications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"notiTtlNm":"Title","notiSn":999,"rcvrId":"anotherUser",
+                         "readYn":"Y","notiIvlVal":"forged",
+                         "notiDt":"2000-01-01T00:00:00","crtDt":"2000-01-01T00:00:00"}
+                        """))
+                .andExpect(status().isOk());
+        verify(notificationService).createNotification(eq("testUser"), argThat(dto ->
+                dto.getNotiSn() == null && dto.getRcvrId() == null && dto.getReadYn() == null
+                        && dto.getNotiIvlVal() == null && dto.getNotiDt() == null && dto.getCrtDt() == null
+                        && "Title".equals(dto.getNotiTtlNm())));
+    }
+
     @Test
     @DisplayName("알림 삭제 - 성공")
     void deleteNotification_success() throws Exception {

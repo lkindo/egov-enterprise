@@ -70,6 +70,28 @@
 
 ## 운영 적용·점검
 
+### 보존 결정 전 읽기 전용 실측
+
+[`retention-readiness-census.sql`](../../scripts/sql/retention-readiness-census.sql)은 읽은 알림 6개월 경과,
+모든 발신·수신 사본이 삭제된 쪽지, 논리 삭제 게시글·첨부 참조 건수만 반환한다.
+알림 6개월은 비교용 권고값이며 운영 파기 설정을 변경하지 않는다. 쪽지는 모든 사본의 삭제 상태를 확인하고,
+상태가 null인 사본도 보존한다. 첨부 참조가 있다는 사실만으로 실물 삭제 대상으로 삼지 않는다.
+PD-NOTE-001/003·PD-STORAGE-001은 복구 창과 보존 기간을 확정한 후 별도로 활성화한다.
+
+### 로그 날짜 인덱스
+
+[`V2_97`](../../api-server/src/main/resources/db/migration/V2_97__index_log_search_dates.sql)은
+로그인 `crt_dt`, 시스템 `ocrn_ymd` 및 기존 검색의 `btrim(ocrn_ymd)`, 개인정보 `inq_dt`에 인덱스 4개를 추가한다.
+2026-09-09 OCI에서 기존 날짜 인덱스 부재를 확인했다. 저장 데이터와 인가·보존 기간은 변경하지 않는다.
+트랜잭션 안에서 실행하며 잠금 대기는 5초, 문장 실행은 60초로 제한한다. 실패 시 전체 롤백 후 원인을 조사한다.
+대규모 복제본에서는 소요 시간과 쓰기 차단 영향을 먼저 측정하고 유지보수 창을 확보한다.
+실제 OCI 적용은 대상·영향 승인 후 수행하며, 테스트 통과와 운영 적용을 구분한다.
+2026-09-09 사용자 승인 후 OCI 적용을 완료했다. Flyway 2.97 성공과 인덱스 4개의 valid/ready 상태를
+독립적인 읽기 전용 조회로 재확인했다. 직전 백업의 암호화·복원 검증을 마쳤고, 복원본과 OCI 각각에서
+업무 테이블 81개(이력 제외)의 행 수·전체 행 해시가 적용 전후 같았다.
+[`LogSearchIndexMigrationIntegrationTest`](../../api-server/src/test/java/nuri/api/schema/LogSearchIndexMigrationIntegrationTest.java)는
+잠금 충돌 시 롤백, 기존 행 수 보존, PostgreSQL 조회 계획의 인덱스 사용을 검사한다.
+
 ### 1. 배포 전
 
 1. 각 테이블이 어떤 데이터와 행위자를 기록하는지 표본 값 자체가 아닌 schema·코드로 확인한다.

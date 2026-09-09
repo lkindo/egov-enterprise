@@ -200,7 +200,7 @@ public class User extends BaseEntity implements Serializable {
         this.chgPswdLastDt = LocalDateTime.now();
     }
 
-    public void unlock() {
+    public void unlockAccount() {
         this.lckYn = "N";
         this.lckCnt = 0;
         this.lckLastPnttm = null;
@@ -300,7 +300,7 @@ public class User extends BaseEntity implements Serializable {
      * <p>시각 없이 {@code lckYn} 만 세우면 자동 해제의 기준 시점이 없어 <b>영구 잠금</b>이 되고,
      * 사용자는 관리자 개입 없이는 복구할 수 없다(과거 결함).
      */
-    public void lock() {
+    public void lockAccount() {
         this.lckYn = "Y";
         this.lckLastPnttm = LocalDateTime.now();
     }

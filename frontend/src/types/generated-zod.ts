@@ -455,7 +455,7 @@ export type RoleManageDto = z.infer<typeof RoleManageDtoSchema>;
 // ProgramDto Schema
 // ==========================================================================
 export const ProgramDtoSchema = z.object({
-  prgrmFileNm: z.string().min(0).max(300).optional(),
+  prgrmFileNm: z.string().min(0).max(300),
   prgrmStrgPath: z.string().min(0).max(1000).optional(),
   prgrmKornNm: z.string().min(0).max(100).optional(),
   url: z.string().min(0).max(1000).optional(),
@@ -959,13 +959,13 @@ export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
 // ==========================================================================
 export const NotificationDtoSchema = z.object({
   notiSn: z.number().int().optional(),
-  notiTtlNm: z.string().min(0).max(100).optional(),
+  notiTtlNm: z.string().min(0).max(100),
   notiCn: z.string().min(0).max(4000).optional(),
   notiDt: z.iso.datetime({ offset: true, local: true }).optional(),
   notiIvlVal: z.string().min(0).max(100).optional(),
   rcvrId: z.string().min(0).max(20).optional(),
   readYn: z.string().min(0).max(1).optional(),
-  linkUrl: z.string().min(0).max(1000).optional(),
+  linkUrl: z.string().min(0).max(2000).optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 export type NotificationDto = z.infer<typeof NotificationDtoSchema>;
@@ -4425,21 +4425,13 @@ export const ScrapDtoResponseSchema = z.object({
 });
 
 export const ScheduleDtoRequestSchema = z.object({
-  schdlSn: z.number().int().optional(),
   schdlSeCd: z.string().min(0).max(12).optional(),
   schdlNm: z.string().min(0).max(300),
   schdlCn: z.string().min(0).max(4000).optional(),
   reptSeCd: z.string().min(0).max(12).optional(),
   schdlBgngYmd: z.string().min(0).max(8).optional(),
   schdlEndYmd: z.string().min(0).max(8).optional(),
-  schdlIpAddr: z.string().optional(),
-  schdlPicId: z.string().min(0).max(20).optional(),
   atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  schdlDeptId: z.string().min(0).max(20).optional(),
   schdlKndCd: z.string().min(0).max(12).optional(),
   schdlPlcNm: z.string().min(0).max(100).optional(),
   schdlImprtCd: z.string().min(0).max(12).optional(),
@@ -4940,7 +4932,7 @@ export const RoleManageDtoResponseSchema = z.object({
 });
 
 export const ProgramDtoRequestSchema = z.object({
-  prgrmFileNm: z.string().min(0).max(300).optional(),
+  prgrmFileNm: z.string().min(0).max(300),
   prgrmStrgPath: z.string().min(0).max(1000).optional(),
   prgrmKornNm: z.string().min(0).max(100).optional(),
   url: z.string().min(0).max(1000).optional(),
@@ -4948,7 +4940,7 @@ export const ProgramDtoRequestSchema = z.object({
 });
 
 export const ProgramDtoResponseSchema = z.object({
-  prgrmFileNm: z.string().min(0).max(300).optional().nullable(),
+  prgrmFileNm: z.string().min(0).max(300),
   prgrmStrgPath: z.string().min(0).max(1000).optional().nullable(),
   prgrmKornNm: z.string().min(0).max(100).optional().nullable(),
   url: z.string().min(0).max(1000).optional().nullable(),
@@ -5675,26 +5667,20 @@ export const ApiResponseLongResponseSchema = z.object({
 });
 
 export const NotificationDtoRequestSchema = z.object({
-  notiSn: z.number().int().optional(),
-  notiTtlNm: z.string().min(0).max(100).optional(),
+  notiTtlNm: z.string().min(0).max(100),
   notiCn: z.string().min(0).max(4000).optional(),
-  notiDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  notiIvlVal: z.string().min(0).max(100).optional(),
-  rcvrId: z.string().min(0).max(20).optional(),
-  readYn: z.string().min(0).max(1).optional(),
-  linkUrl: z.string().min(0).max(1000).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  linkUrl: z.string().min(0).max(2000).optional(),
 });
 
 export const NotificationDtoResponseSchema = z.object({
   notiSn: z.number().int().optional().nullable(),
-  notiTtlNm: z.string().min(0).max(100).optional().nullable(),
+  notiTtlNm: z.string().min(0).max(100),
   notiCn: z.string().min(0).max(4000).optional().nullable(),
   notiDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   notiIvlVal: z.string().min(0).max(100).optional().nullable(),
   rcvrId: z.string().min(0).max(20).optional().nullable(),
   readYn: z.string().min(0).max(1).optional().nullable(),
-  linkUrl: z.string().min(0).max(1000).optional().nullable(),
+  linkUrl: z.string().min(0).max(2000).optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 

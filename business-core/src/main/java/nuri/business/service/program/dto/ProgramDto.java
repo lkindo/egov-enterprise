@@ -14,8 +14,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = "프로그램 정보 DTO")
 public class ProgramDto {
+    /** 등록은 클라이언트 키가 필요하고 수정은 URL 경로의 키를 사용한다. */
+    public interface OnCreate {}
+
     @Schema(description = "프로그램 파일 명칭")
     @Size(max = 300)
+    @NotBlank(groups = OnCreate.class)
     private String prgrmFileNm;
 
     @Schema(description = "프로그램 저장 경로")

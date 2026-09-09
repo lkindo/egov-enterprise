@@ -50,6 +50,41 @@ class ProgramServiceTest {
     @InjectMocks
     private ProgramService programService;
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    void unfilteredCountAndNullBatchDoNotInventFilters(String keyword) {
+        var search = new BaseSearchDto();
+        search.setSearchKeyword(keyword);
+        when(programRepository.count()).thenReturn(12L);
+        assertEquals(12, programService.selectProgrmListTotCnt(search));
+        programService.deleteProgrmManageList(null);
+        verify(programRepository, never()).searchByKeyword(any(), any());
+        verify(programRepository, never()).deleteAllByIdInBatch(any());
+        verifyNoInteractions(authorizationManagerProvider);
+    }
+
+    @Test
+    void filteredCountUsesTotalRatherThanPageSize() {
+        var search = new BaseSearchDto();
+        search.setSearchKeyword("search");
+        when(programRepository.searchByKeyword(eq("search"), any())).thenReturn(
+                new PageImpl<>(List.of(Program.builder().prgrmFileNm("one").build()), org.springframework.data.domain.PageRequest.of(0, 1), 37));
+        assertEquals(37, programService.selectProgrmListTotCnt(search));
+        verify(programRepository, never()).count();
+    }
+
+    @Test
+    void missingDetailAndUpdateDoNotInvalidateAuthorization() {
+        var search = new BaseSearchDto();
+        search.setSearchKeyword(null);
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE,
+                assertThrows(BusinessException.class, () -> programService.selectProgrm(search)).getErrorCode());
+        search.setSearchKeyword("missing");
+        assertThrows(BusinessException.class, () -> programService.selectProgrm(search));
+        assertThrows(BusinessException.class, () -> programService.updateProgrm(ProgramDto.builder().prgrmFileNm("missing").build()));
+        verifyNoInteractions(authorizationManagerProvider);
+    }
+
     @Test
     void refusesSingleAndBatchDeletionOfReferencedProgram() {
         when(programRepository.hasReferences("linked")).thenReturn(true);

@@ -60,6 +60,12 @@ import nuri.business.service.user.dto.UserValidationGroups;
 import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.sms.dto.SmsRecptnDto;
+import nuri.business.domain.schedule.Schedule;
+import nuri.business.service.schedule.dto.ScheduleDto;
+import nuri.business.domain.notification.Notification;
+import nuri.business.service.notification.dto.NotificationDto;
+import nuri.business.domain.program.Program;
+import nuri.business.service.program.dto.ProgramDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -169,7 +175,13 @@ class InputContractMirrorLinterTest {
             //   실제로 itntSvcExpln 의 DTO 상한(1000)이 엔티티·컬럼(4000)보다 좁았다. 종전에는 DTO 만
             //   intnetSvcNm/intnetSvcDc/reflctAt 어휘를 써서 이름 기반 바인딩 자체가 불가능했다.
             new LengthBinding(InternetSvcGuidance.class, InternetSvcGuidanceDto.class,
-                    List.of("itntSvcNm", "itntSvcExpln", "rfltYn")));
+                    List.of("itntSvcNm", "itntSvcExpln", "rfltYn")),
+            new LengthBinding(Schedule.class, ScheduleDto.class,
+                    List.of("schdlSeCd", "schdlNm", "schdlCn", "reptSeCd", "schdlBgngYmd", "schdlEndYmd",
+                            "schdlKndCd", "schdlPlcNm", "schdlImprtCd")),
+            new LengthBinding(Notification.class, NotificationDto.class, List.of("notiTtlNm", "notiCn", "linkUrl")),
+            new LengthBinding(Program.class, ProgramDto.class,
+                    List.of("prgrmFileNm", "prgrmStrgPath", "prgrmKornNm", "url", "prgrmExpln")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
@@ -239,7 +251,10 @@ class InputContractMirrorLinterTest {
             requiredNotBlank(DeptJobBoxDto.class, "deptTaskBoxNm"),
             new RequiredBinding(DeptJobDto.class, List.of()),
             // [2026-09-07] 이름·설명 없는 안내는 목록에서 빈 행이 되므로 제품 규칙으로 필수다(컬럼은 nullable).
-            requiredNotBlank(InternetSvcGuidanceDto.class, "itntSvcNm", "itntSvcExpln"));
+            requiredNotBlank(InternetSvcGuidanceDto.class, "itntSvcNm", "itntSvcExpln"),
+            requiredNotBlank(ScheduleDto.class, "schdlNm"),
+            requiredNotBlank(NotificationDto.class, "notiTtlNm"),
+            new RequiredBinding(ProgramDto.class, List.of(requiredField("prgrmFileNm", NotBlank.class, ProgramDto.OnCreate.class))));
 
     /** 요청에서 신뢰하지 않고 서버가 생성·주입·파생하는 필드의 방향성 기준선. */
     private static final List<ReadOnlyBinding> READ_ONLY_BINDINGS = List.of(
@@ -254,21 +269,25 @@ class InputContractMirrorLinterTest {
                     List.of("deptTaskSn", "deptTaskBoxNm", "deptId", "deptNm", "picNm",
                             "frstRgtrId", "crtDt", "lastMdfrId", "mdfcnDt")),
             new ReadOnlyBinding(InternetSvcGuidanceDto.class,
-                    List.of("itntSrvcSn", "lastMdfrId", "mdfcnDt")));
+                    List.of("itntSrvcSn", "lastMdfrId", "mdfcnDt")),
+            new ReadOnlyBinding(ScheduleDto.class,
+                    List.of("schdlSn", "schdlPicId", "schdlDeptId", "frstRgtrId", "crtDt", "lastMdfrId", "mdfcnDt", "schdlIpAddr")),
+            new ReadOnlyBinding(NotificationDto.class,
+                    List.of("notiSn", "notiDt", "notiIvlVal", "rcvrId", "readYn", "crtDt")));
 
     // [2026-09-07] +3 (ISG itntSvcNm/itntSvcExpln/rfltYn).
     // [2026-09-08 PD-MYPG-001] 116 -> 111. MyPageContentDto 5필드가 빠졌다 — 그 DTO 를 걷었기
     //   때문이다(마이페이지 콘텐츠 관리 표면 제거). 검증 약화가 아니라 검증 대상 자체의 소멸이며,
     //   엔티티·테이블은 남으므로 표면이 되살아나면 이 바인딩도 함께 복구한다.
     // ADR-0012: BoardMasterDto.blogYn 제거로 길이/enum 표적을 각각 1개 줄인다.
-    private static final int MIN_LENGTH_FIELDS = 110;
+    private static final int MIN_LENGTH_FIELDS = 127;
     private static final int MIN_ENUM_FIELDS = 14;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
     // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).
-    private static final int MIN_REQUIRED_FIELDS = 39;
+    private static final int MIN_REQUIRED_FIELDS = 42;
     // [2026-09-07] +3 (ISG itntSrvcSn/lastMdfrId/mdfcnDt).
-    private static final int MIN_READ_ONLY_FIELDS = 31;
+    private static final int MIN_READ_ONLY_FIELDS = 45;
 
     @Test
     @DisplayName("입력 DTO 길이와 enum 제약이 Entity 저장 계약을 넘지 않는다")

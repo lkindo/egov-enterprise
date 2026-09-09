@@ -56,11 +56,8 @@ public class ShadowAuthorizationLogger implements AuthorizationManager<RequestAu
 
             if (enforceGranted != shadowGranted) {
                 String requestUri = context.getRequest().getRequestURI();
-                Authentication auth = authentication.get();
-                String principal = auth != null ? auth.getName() : "anonymous";
-
-                log.warn("[SHADOW_MISMATCH] URI={}, principal={}, enforce={}, shadow={}",
-                        requestUri, principal, enforceGranted, shadowGranted);
+                log.warn("[SHADOW_MISMATCH] URI={}, enforce={}, shadow={}",
+                        nuri.foundation.security.util.SafeLog.text(requestUri), enforceGranted, shadowGranted);
             }
         } catch (Exception e) {
             log.warn("[SHADOW_ERROR] 섀도우 인가 평가 중 오류: {}", e.getMessage());

@@ -117,7 +117,7 @@ public class BoardService extends BaseAbstractService {
                         String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
                         @NonNull Pageable pageable) {
                 log.info("Fetching board posts - bbsId: {}, searchApplied: {}, orderBy: {}",
-                                bbsId, StringUtils.hasText(searchWrd), orderBy);
+                                nuri.foundation.security.util.SafeLog.text(bbsId), StringUtils.hasText(searchWrd), nuri.foundation.security.util.SafeLog.text(orderBy));
                 assertActiveBoardMaster(bbsId);
 
                 BoardSearchCondition condition = new BoardSearchCondition();
@@ -320,12 +320,12 @@ public class BoardService extends BaseAbstractService {
                                 author = userService.getUserById(required(userId, "userId 는 null 일 수 없습니다"));
                         } catch (BusinessException e) {
                                 if (e.getErrorCode() == UserErrorCode.USER_NOT_FOUND) {
-                                        log.warn("게시글 작성자를 찾을 수 없습니다 (ID: {}), 익명 처리합니다.", userId, e);
+                                        log.warn("게시글 작성자를 찾을 수 없어 익명 처리합니다.");
                                 } else {
-                                        log.error("게시글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
+                                        log.error("게시글 작성자 조회 실패: {}", e.getClass().getSimpleName());
                                 }
                         } catch (Exception e) {
-                                log.error("게시글 작성자 조회 중 예외 발생 (ID: {})", userId, e);
+                                log.error("게시글 작성자 조회 실패: {}", e.getClass().getSimpleName());
                         }
 
                         Long sortOrdr = boardRepository.findMaxSortOrdr(master.getBbsId()) + 1;

@@ -68,6 +68,25 @@ class MailAsyncProcessorTest {
     }
 
     @Test
+    @DisplayName("SMTP 미설정은 재발송 없이 실패 상태와 지표를 기록한다")
+    void unavailableSenderRecordsFailure() {
+        var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        var processor = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository, registry);
+        processor.setSelf(processor);
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
+
+        processor.processSending(1L, "Sub", "Cn", "from", "to");
+
+        assertThat(mail.getDsptchRsltCd()).isEqualTo("F");
+        org.assertj.core.api.Assertions.assertThat(registry.counter("mail.dispatch.total", "result", "failure").count())
+                .isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(registry.find("mail.dispatch.total").tag("result", "success").counter())
+                .isNull();
+        verify(sentMailRepository, times(1)).findById(1L);
+    }
+
+    @Test
     @DisplayName("비동기 메일 발송 - 엔티티 없음")
     void processSending_NoEntity() throws Exception {
         given(sentMailRepository.findById(1L)).willReturn(Optional.empty());

@@ -179,7 +179,10 @@ subprojects { subproject ->
     //       **끌어내리는 하한**으로 작동할 위험만 남는다.
     //     · tomcat 오버라이드 **유지**. 3.5.16 BOM 은 10.1.55 를 준다 — 알려진 CVE 요구선(>=10.1.55)은
     //       충족하지만 현행 10.1.57 보다 낮다. 제거하면 2패치 하락이므로 아직 "따라잡았다" 고 볼 수 없다.
-    ext['tomcat.version'] = '10.1.57'
+    // [2026-09-09] 현재 runtime 10.1.57에 Dependabot Critical 3건이 남았다.
+    // Apache security-10 공지: 수정된 10.1.58은 릴리스 투표 실패, 배포된 수정본은 10.1.59다.
+    // https://tomcat.apache.org/security-10.html#Fixed_in_Apache_Tomcat_10.1.59
+    ext['tomcat.version'] = '10.1.59'
 
     //   [2026-08-07 CVE 상환 2차] 열린 Dependabot 알림 84건을 **실제 해석 버전**으로 재판정한 결과
     //   조치가 필요한 maven 항목은 12건이었다(나머지는 §아래 census 참조). BOM 이 관리하는 3종을

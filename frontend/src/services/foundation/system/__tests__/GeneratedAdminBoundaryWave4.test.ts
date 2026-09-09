@@ -36,7 +36,7 @@ describe('generated admin boundary wave 4', () => {
     vi.clearAllMocks();
     client.getRaw.mockImplementation((url: string) => {
       if (url.endsWith('/deletable')) return Promise.resolve(successEnvelope(false));
-      if (url.includes('programs/')) return Promise.resolve(successEnvelope({}));
+      if (url.includes('programs/')) return Promise.resolve(successEnvelope({ prgrmFileNm: 'menu.do' }));
       if (url.includes('popups/')) return Promise.resolve(successEnvelope(popup));
       if (url.includes('help/hpcm/')) return Promise.resolve(successEnvelope(hpcm));
       if (url.includes('login-policies/')) {

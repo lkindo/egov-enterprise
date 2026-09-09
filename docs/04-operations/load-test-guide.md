@@ -22,11 +22,24 @@
 | `users-500` | 2분 / 5분 / 2분 | 500 |
 | `users-1000` | 5분 / 10분 / 5분 | 1000 |
 
-통합 threshold는 `http_req_duration: p(95)<1000ms`, `http_req_failed: rate<1%`다. 개별 요청 check도
+통합 threshold는 `http_req_duration: p(95)<1000ms`, `http_req_failed: rate<1%`, `checks: rate==1`이다. 개별 요청 check도
 스크립트에 있으며 로그인 500ms, 대시보드 800ms, 사용자 목록 600ms, 게시글 생성 1000ms 기준을 사용한다.
 수치를 바꾸면 스크립트와 이 표를 같은 변경에서 갱신하고, 왜 바꾸는지 기준선 자료를 남긴다.
 
+사용자 목록은 실제 `ApiResponse.data`의 `PageResponse(list,total,page,size,totalPage)`를 검증한다.
+2026-09-09 재검증에서 종전 `result.content` 검사 실패가 종료 코드에 반영되지 않는 것을 확인했다.
+잘못된 응답 계약은 이제 k6 종료 코드 99로 실패한다. 응답 본문이나 인증 토큰은 실패 로그에 남기지 않는다.
+회귀 검증은 `node --test scripts/load-test-response-contract.test.mjs scripts/load-test-command-contract.test.mjs`이며
+`test:operational-contracts`와 CI의 운영 계약 검사에 포함된다. HTTP 200만으로 부하 검증을 통과했다고 판정하지 않는다.
+
 ## 로컬 실행
+
+2026-09-09 검증에서는 별도 빌드가 없는 Windows·Tomcat 10.1.59·loopback PostgreSQL 17(e2e/Flyway seed)에서
+사용자 목록 조회만 60초 증가·60초 유지·15초 감소, 최대 100 VU로 실행했다. 요청 3,271건의
+HTTP 오류율은 0%, p95 22.60ms, 최대 102.49ms였고 9,812개 check가 모두 통과했다(k6 종료 코드 0).
+이는 위 통합 `users-100` 시나리오나 운영 데이터 규모, 500/1000 VU 용량을 검증한 수치가 아니다.
+앞선 순간 부하 중 발견한 인가 매핑 조회 실패의 5분 캐시 문제는 장애를 캐시하지 않도록 수정했으며,
+현재 요청 거부와 DB 복구 후 재조회는 `DbUrlAuthorizationManagerTest`로 검증한다.
 
 ### 1. 도구와 대상 준비
 

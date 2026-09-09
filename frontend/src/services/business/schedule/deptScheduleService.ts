@@ -74,12 +74,12 @@ class DeptScheduleService extends ApiService {
   /**
    * 일정 등록
    * @param schedule 일정 정보. 날짜(schdlBgngYmd/schdlEndYmd)는 'yyyyMMdd' 8자여야 한다(@Size(max=8)).
-   *   schdlSn(PK)과 schdlPicId(담당자)는 보내지 않아도 된다 — DB가 채번하고 서버가 인증 주체로 고정한다.
+   *   PK·담당자·부서·감사 필드는 서버가 생성하므로 요청에 포함하지 않는다.
    * @returns 생성된 일정의 숫자 일련번호
    */
-  public async createDeptSchedule(schedule: Partial<DeptSchedule>): Promise<number> {
+  public async createDeptSchedule(schedule: GeneratedOperationRequest<'createSchedule'>): Promise<number> {
     return this.executeGenerated(createScheduleOperation, {
-      body: schedule as GeneratedOperationRequest<'createSchedule'>,
+      body: schedule,
     });
   }
 
@@ -88,10 +88,10 @@ class DeptScheduleService extends ApiService {
    * @param schdlSn 일정 일련번호
    * @param schedule 수정할 일정 정보
    */
-  public async updateDeptSchedule(schdlSn: number, schedule: Partial<DeptSchedule>): Promise<void> {
+  public async updateDeptSchedule(schdlSn: number, schedule: GeneratedOperationRequest<'updateSchedule'>): Promise<void> {
     return this.executeGenerated(updateScheduleOperation, {
       path: { schdlSn },
-      body: schedule as GeneratedOperationRequest<'updateSchedule'>,
+      body: schedule,
     });
   }
 

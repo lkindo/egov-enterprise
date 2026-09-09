@@ -43,7 +43,9 @@ public class ProgramApiController {
 
     @Operation(summary = "프로그램 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createProgram(@Valid @RequestBody ProgramDto dto) throws Exception {
+    public ResponseEntity<ApiResponse<Void>> createProgram(
+            @org.springframework.validation.annotation.Validated({jakarta.validation.groups.Default.class, ProgramDto.OnCreate.class})
+            @RequestBody ProgramDto dto) throws Exception {
         programService.insertProgrm(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

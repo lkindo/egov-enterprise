@@ -75,7 +75,7 @@ class UserTest {
         user.incrementLockCount();
         assertEquals(2, user.getLckCnt());
 
-        user.unlock();
+        user.unlockAccount();
         assertEquals("N", user.getLckYn());
         assertEquals(0, user.getLckCnt());
         assertNull(user.getLckLastPnttm());
@@ -88,7 +88,7 @@ class UserTest {
         assertFalse(user.isLocked());
 
         LocalDateTime before = LocalDateTime.now();
-        user.lock();
+        user.lockAccount();
 
         assertTrue(user.isLocked());
         assertEquals("Y", user.getLckYn());

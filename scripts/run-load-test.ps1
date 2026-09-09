@@ -10,10 +10,10 @@ param(
     [string]$BaseUrl = "http://localhost:8080",
     
     [Parameter(Mandatory=$false)]
-    [string]$TestUsername = "testuser",
+    [string]$TestUsername = "webmaster",
     
     [Parameter(Mandatory=$false)]
-    [string]$TestPassword = "testpass123!"
+    [string]$TestPassword = "1"
 )
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path

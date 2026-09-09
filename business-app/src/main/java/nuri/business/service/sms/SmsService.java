@@ -67,7 +67,7 @@ public class SmsService {
     }
 
     public Page<SmsDto> getSmsList(String searchCondition, String searchKeyword, Pageable pageable) {
-        log.debug("Searching SMS with condition: {}, keyword: {}", searchCondition, searchKeyword);
+        log.debug("Searching SMS");
         return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(smsMapper::toDto);
     }
 
@@ -80,7 +80,7 @@ public class SmsService {
 
     @Transactional
     public Long sendSms(String userId, @Valid SmsDto dto) {
-        log.info("Sending SMS requested by user: {}, sender: {}", userId, nuri.foundation.core.util.PiiMaskUtil.phone(dto.getSndngTelno()));
+        log.info("SMS dispatch requested");
         // 수신 번호를 먼저 확정한다 — 해석이 실패하면 수신자 없는 발송 헤더가 남지 않아야 한다.
         List<String> recipientNumbers = resolveRecipientNumbers(dto);
 

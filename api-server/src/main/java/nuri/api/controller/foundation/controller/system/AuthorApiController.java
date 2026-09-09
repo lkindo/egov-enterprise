@@ -35,7 +35,7 @@ public class AuthorApiController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorManageDto>>> getAuthors(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
-        log.info(">>> [AuthorApiController] getAuthors called with params: {}", searchDto);
+        log.debug(">>> [AuthorApiController] getAuthors requested");
 
         // 목록과 총건수를 한 질의에서 얻는다. 종전에는 총건수가 검색을 무시한 전체 count() 였다.
         Page<AuthorManageDto> page = authorManageService.selectAuthorList(searchDto);
@@ -74,7 +74,7 @@ public class AuthorApiController {
     @GetMapping("/{authrtCd}/menus")
     public ResponseEntity<ApiResponse<List<MenuCreateDto>>> getAuthorMenus(
             @PathVariable String authrtCd) {
-        log.info(">>> [AuthorApiController] getAuthorMenus called for code: {}", authrtCd);
+        log.debug(">>> [AuthorApiController] getAuthorMenus requested");
 
         MenuCreateDto vo = new MenuCreateDto();
         vo.setAuthrtCd(authrtCd);

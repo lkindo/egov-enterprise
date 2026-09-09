@@ -16,15 +16,14 @@ const successEnvelope = (data: unknown) => ({
   data,
 });
 
-const schedule = {
-  schdlSn: 7,
+const scheduleInput = {
   schdlSeCd: '1',
-  schdlDeptId: 'DEPT01',
   schdlBgngYmd: '20260831',
   schdlEndYmd: '20260831',
   schdlNm: '주간 회의',
   schdlCn: '회의 내용',
 };
+const schedule = { ...scheduleInput, schdlSn: 7, schdlDeptId: 'DEPT01' };
 
 describe('deptScheduleService generated contract', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -50,8 +49,8 @@ describe('deptScheduleService generated contract', () => {
     await expect(deptScheduleService.getDeptScheduleByRange('20260801', '20260831'))
       .resolves.toEqual([schedule]);
     await expect(deptScheduleService.getDeptSchedule(7)).resolves.toEqual(schedule);
-    await expect(deptScheduleService.createDeptSchedule(schedule)).resolves.toBe(11);
-    await expect(deptScheduleService.updateDeptSchedule(7, schedule)).resolves.toBeUndefined();
+    await expect(deptScheduleService.createDeptSchedule(scheduleInput)).resolves.toBe(11);
+    await expect(deptScheduleService.updateDeptSchedule(7, scheduleInput)).resolves.toBeUndefined();
     await expect(deptScheduleService.deleteDeptSchedule(7)).resolves.toBeUndefined();
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'schedules/dept', {
@@ -67,12 +66,12 @@ describe('deptScheduleService generated contract', () => {
     expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
       url: 'schedules',
       method: 'post',
-      data: schedule,
+      data: scheduleInput,
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(2, {
       url: 'schedules/7',
       method: 'put',
-      data: schedule,
+      data: scheduleInput,
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(3, {
       url: 'schedules/7',
@@ -94,4 +93,13 @@ describe('deptScheduleService generated contract', () => {
     );
     expect(client.requestRaw).not.toHaveBeenCalled();
   });
+
+  it.each(['schdlSn', 'schdlPicId', 'schdlDeptId', 'schdlIpAddr', 'frstRgtrId', 'crtDt', 'lastMdfrId', 'mdfcnDt'])(
+    '서버 소유 필드 %s는 등록과 수정 요청에서 거부한다', async (field) => {
+      const forged = { ...scheduleInput, [field]: 'forged' };
+      await expect(deptScheduleService.createDeptSchedule(forged)).rejects.toThrow('허용되지 않은 필드');
+      await expect(deptScheduleService.updateDeptSchedule(7, forged)).rejects.toThrow('허용되지 않은 필드');
+      expect(client.requestRaw).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -70,7 +70,7 @@ public class DbUrlAuthorizationManager implements AuthorizationManager<RequestAu
         Map<String, Set<String>> mappings = loadMappings();
         if (mappings.isEmpty()) {
             // DB에 매핑이 없으면 fail-closed: 거부
-            log.warn("[DbUrlAuth] URL 인가 매핑이 비어 있음 (fail-closed) → 거부: {}", requestUri);
+            log.warn("[DbUrlAuth] URL 인가 매핑이 비어 있음 (fail-closed) → 거부: {}", nuri.foundation.security.util.SafeLog.text(requestUri));
             return new AuthorizationDecision(false);
         }
 
@@ -89,7 +89,7 @@ public class DbUrlAuthorizationManager implements AuthorizationManager<RequestAu
             // 보호해야 하는 주요 어드민/보안 경로 및 별칭 경로인 경우 구체적 DB 매핑이 없으면 fail-closed 차단
             for (String securePath : securePaths) {
                 if (pathMatcher.match(securePath, requestUri)) {
-                    log.warn("[DbUrlAuth] 보호 대상 보안 경로에 구체적인 DB 매핑 부재 (fail-closed) → 거부: {}", requestUri);
+                    log.warn("[DbUrlAuth] 보호 대상 보안 경로에 구체적인 DB 매핑 부재 (fail-closed) → 거부: {}", nuri.foundation.security.util.SafeLog.text(requestUri));
                     return new AuthorizationDecision(false);
                 }
             }
@@ -104,8 +104,7 @@ public class DbUrlAuthorizationManager implements AuthorizationManager<RequestAu
                 .anyMatch(requiredRoles::contains);
 
         if (!granted) {
-            log.debug("[DbUrlAuth] 접근 거부: URI={}, 사용자 권한={}, 요구 롤={}",
-                    requestUri, authorities, requiredRoles);
+            log.debug("[DbUrlAuth] 접근 거부: URI={}", nuri.foundation.security.util.SafeLog.text(requestUri));
         }
 
         return new AuthorizationDecision(granted);
@@ -130,8 +129,10 @@ public class DbUrlAuthorizationManager implements AuthorizationManager<RequestAu
                 log.info("[DbUrlAuth] DB에서 URL 인가 매핑 로드 완료: {} 개 패턴", map.size());
                 return map;
             } catch (Exception e) {
-                log.error("[DbUrlAuth] DB 매핑 로드 실패 (fail-closed): {}", e.getMessage());
-                return Collections.emptyMap();
+                log.error("[DbUrlAuth] DB 매핑 로드 실패 (fail-closed): {}", e.getClass().getSimpleName());
+                // 장애를 정상적인 빈 매핑으로 5분간 캐시하면 DB 복구 뒤에도 전 요청이 거부된다.
+                // null은 Caffeine에 저장되지 않는다. 현재 요청은 거부하고 다음 요청에서 재조회한다.
+                return null;
             }
         });
         return result != null ? result : Collections.emptyMap();

@@ -33,7 +33,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { ProgramDtoSchema } from '@/types/generated-zod';
 
 export const programFormSchema = ProgramDtoSchema.extend({
-  prgrmFileNm: ProgramDtoSchema.shape.prgrmFileNm.unwrap().min(1),
+  prgrmFileNm: ProgramDtoSchema.shape.prgrmFileNm.min(1),
   prgrmStrgPath: ProgramDtoSchema.shape.prgrmStrgPath.unwrap().min(1),
   prgrmKornNm: ProgramDtoSchema.shape.prgrmKornNm.unwrap().min(1),
   url: ProgramDtoSchema.shape.url.unwrap().min(1),

@@ -4779,7 +4779,7 @@
       "file": "frontend/src/services/foundation/system/ProgramAdminService.ts",
       "owner": "ProgramAdminService.deleteProgram",
       "ordinal": 1,
-      "line": 71,
+      "line": 72,
       "column": 9,
       "classification": "generated",
       "transport": "generated-executor",

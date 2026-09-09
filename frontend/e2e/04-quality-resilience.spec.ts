@@ -2,6 +2,7 @@ import { test, expect } from './fixtures/base-test';
 import { getAdminBearerToken } from './utils/admin-token';
 import { buildSpecScope, ConsoleErrorGuard } from './fixtures/error-detector';
 import { BOARD_DRAFT_PREFIX } from '../src/lib/drafts/board-draft-storage';
+import { createVisualAdmin } from './fixtures/visual-admin';
 
 /**
  * [Tier 4] Quality & Resilience: Security, UX, A11y, Visual
@@ -102,7 +103,54 @@ test.describe('Tier 4: Quality & Resilience', () => {
     });
 
     test.describe('Global Quality (A11y & Visual)', () => {
-        test.use({ storageState: 'playwright/.auth/admin.json' });
+        test.use({
+            storageState: async ({ playwright, baseURL }, use) => {
+                const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+                try {
+                    const admin = await createVisualAdmin(request, baseURL!);
+                    try {
+                        await use(admin.storageState);
+                    } finally {
+                        await admin.dispose();
+                    }
+                } finally {
+                    await request.dispose();
+                }
+            },
+        });
+
+        test('Visual Session Isolation', async ({ page, request, context, playwright, baseURL }) => {
+            const sharedHeaders = { Authorization: `Bearer ${getAdminBearerToken()}` };
+            // BFF는 세션 쿠키를 우선하므로 공유 계정 API에는 VRT 쿠키가 없는 별도 context를 쓴다.
+            const sharedRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+            const created = await sharedRequest.post('/api/v1/notifications', {
+                headers: sharedHeaders,
+                data: { notiTtlNm: 'E2E VRT shared notification', notiCn: 'Session isolation probe' },
+            });
+            expect(created.status()).toBe(200);
+            const notificationId = (await created.json()).data;
+            try {
+                const token = (await context.cookies()).find(cookie => cookie.name === 'accessToken')?.value;
+                expect(Boolean(token) && token !== getAdminBearerToken(), 'VRT는 공유 관리자 세션을 재사용하지 않는다').toBe(true);
+                const count = await request.get('/api/v1/notifications/unread-count', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                expect(count.status()).toBe(200);
+                expect((await count.json()).data, '다른 테스트의 미읽음 알림이 VRT 계정에 섞이지 않는다').toBe(0);
+                const sharedCount = await sharedRequest.get('/api/v1/notifications/unread-count', { headers: sharedHeaders });
+                expect(sharedCount.status()).toBe(200);
+                expect((await sharedCount.json()).data, '공유 계정의 알림을 지워 격리한 것으로 위장하지 않는다').toBeGreaterThan(0);
+                await page.goto('/admin');
+                await expect(page.getByRole('button', { name: '알림', exact: true })).toBeVisible();
+            } finally {
+                try {
+                    const deleted = await sharedRequest.delete(`/api/v1/notifications/${notificationId}`, { headers: sharedHeaders });
+                    expect(deleted.status(), '이 테스트가 만든 공유 알림만 정리').toBe(200);
+                } finally {
+                    await sharedRequest.dispose();
+                }
+            }
+        });
 
         // [2026-08-10 중복제거] 삭제됨: 'Accessibility Audit (axe-core)'.
         //   대상(`/admin`)이 01-core-base 의 'Accessibility Audit for Admin Dashboard' 와 동일한데,

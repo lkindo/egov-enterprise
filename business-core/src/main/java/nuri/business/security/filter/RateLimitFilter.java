@@ -120,7 +120,8 @@ public class RateLimitFilter implements Filter {
     private void recordRejection(HttpServletRequest request, String clientIp, int tokens) {
         long total = rejectedCount.incrementAndGet();
         LOG.warn("[RATE-LIMIT] 429 거절 — ip={} method={} uri={} tokens={} 누적={}",
-                clientIp, request.getMethod(), request.getRequestURI(), tokens, total);
+                nuri.foundation.security.util.SafeLog.text(clientIp), nuri.foundation.security.util.SafeLog.text(request.getMethod()),
+                nuri.foundation.security.util.SafeLog.text(request.getRequestURI()), tokens, total);
     }
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RateLimitFilter.class);

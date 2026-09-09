@@ -75,7 +75,7 @@ export class AuthTokenManager {
     });
 
     if (!loginSuccess) {
-      console.error('Login failed:', response.body);
+      console.error(`Login failed: status=${response.status}`);
       throw new Error('Authentication failed');
     }
 

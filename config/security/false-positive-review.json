@@ -9,7 +9,7 @@
       "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
       "line": 160,
       "fingerprint": "dec982be271ed34f:1",
-      "sourceSha256": "0a461f4d64ab6fc86665182a47e0a21e2a18677ad1aedd72dc64e81ea8ef7a90",
+      "sourceSha256": "28a5d4c75f0cfa7595e74bdb9b51954489897b2cdc3b4a800687bcc1ce00be2f",
       "expiresOn": "2026-12-08",
       "reason": "Stateless Bearer API chain; Origin validation; Strict refresh cookie; separate legacy CSRF chain.",
       "id": "SAST-FP-001",
@@ -20,11 +20,11 @@
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
-          "sha256": "05b16104483773aa24ed3eaaedb74fd4b524365b7927c526182138f4e8ceb03a"
+          "sha256": "7abdde2a72d24ad337e226959af4b1745bb47fa4fc21fececabbac916329c0c4"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/filter/OriginValidationFilter.java",
-          "sha256": "9b9fd0c837f9014912b5539cf330573c8e856e4ca103e1f9fce93f8b81b1532e"
+          "sha256": "e2e2ece39d947807e11baa3986cfdfb9b59df29c05b702aff048ddfeff21992b"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/util/CookieUtil.java",
@@ -70,11 +70,11 @@
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
-          "sha256": "05b16104483773aa24ed3eaaedb74fd4b524365b7927c526182138f4e8ceb03a"
+          "sha256": "7abdde2a72d24ad337e226959af4b1745bb47fa4fc21fececabbac916329c0c4"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/filter/OriginValidationFilter.java",
-          "sha256": "9b9fd0c837f9014912b5539cf330573c8e856e4ca103e1f9fce93f8b81b1532e"
+          "sha256": "e2e2ece39d947807e11baa3986cfdfb9b59df29c05b702aff048ddfeff21992b"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/util/CookieUtil.java",
@@ -82,7 +82,7 @@
         },
         {
           "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
-          "sha256": "0a461f4d64ab6fc86665182a47e0a21e2a18677ad1aedd72dc64e81ea8ef7a90"
+          "sha256": "28a5d4c75f0cfa7595e74bdb9b51954489897b2cdc3b4a800687bcc1ce00be2f"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/constants/SecurityConstants.java",
@@ -156,7 +156,7 @@
       "supportingSources": [
         {
           "file": "build.gradle",
-          "sha256": "6024c47eac874837e7eaed94862d994a0c68f83a92d7d665656edbebc084332e"
+          "sha256": "b272d50ca5c578bd4be7099983d8000927eae6d8a8de8085874199919ad8b487"
         },
         {
           "file": "api-server/build.gradle",

@@ -219,7 +219,7 @@ public class ApiSecurityConfig {
                                                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                                                         operationalAuditInterceptor.publishSecurityFailure(
                                                                         request, HttpStatus.FORBIDDEN.value());
-                                                        log.warn(">>> Access denied to {}: {}", request.getRequestURI(), accessDeniedException.getMessage());
+                                                        log.warn(">>> Access denied to {}", nuri.foundation.security.util.SafeLog.text(request.getRequestURI()));
                                                         response.setContentType("application/json;charset=UTF-8");
                                                         response.setStatus(HttpStatus.FORBIDDEN.value());
                                                         // 이 체인은 CSRF 비활성(STATELESS+JWT)이라 403은 권한 부족만을 의미 — 오해 소지의 CSRF 문구 제거.

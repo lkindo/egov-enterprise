@@ -36,7 +36,7 @@ public class AuthApiController {
             HttpServletRequest request,
             HttpServletResponse response) {
         String clientIp = clientIpResolver.resolve(request);
-        log.info(">>> [Login] Attempting login for userId: {} from IP: {}", loginRequest.getUserId(), clientIp);
+        log.debug(">>> [Login] Authentication requested");
         TokenResponse tokenResponse = authService.login(loginRequest, clientIp);
         jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
         return ApiResponse.success(tokenResponse);
