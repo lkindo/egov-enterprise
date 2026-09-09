@@ -10,7 +10,7 @@ export class SecurityAdminPage {
     async gotoAuthorities() {
         console.log('>>> Navigating to Authority Management');
         await this.page.goto('/admin/security/authority');
-        await expect(this.page.getByRole('heading', { name: /보안.*거버넌스/i }).first()).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '권한(보안) 정책 관리', level: 1, exact: true })).toBeVisible();
     }
 
     async createAuthority(authCode: string, authNm: string) {
