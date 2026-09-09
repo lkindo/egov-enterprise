@@ -1,0 +1,16 @@
+name: eGov secure coding
+queries:
+  - uses: security-extended
+# Java is traced from all five modules' production compilation. These paths
+# constrain the JavaScript/TypeScript extractor, including operational scripts.
+paths:
+  - frontend/src
+  - frontend/scripts
+  - frontend/next.config.ts
+  - scripts
+  - .agent/scripts
+  - foundation/src/main
+  - business-core/src/main
+  - business-app/src/main
+  - api-server/src/main
+  - migration-tool/src/main

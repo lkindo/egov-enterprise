@@ -1,3 +1,5 @@
+import { htmlToSemanticPlainText } from '@/lib/html-to-text';
+export { htmlToSemanticPlainText } from '@/lib/html-to-text';
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
@@ -185,13 +187,6 @@ class HelpUserService extends UserService {
   }
 }
 
-const SEMANTIC_BREAK_ELEMENTS = new Set([
-  'ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'DIV', 'DL', 'DT', 'DD',
-  'FIGCAPTION', 'FIGURE', 'FOOTER', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-  'HEADER', 'HR', 'LI', 'MAIN', 'NAV', 'OL', 'P', 'PRE', 'SECTION', 'TABLE',
-  'TBODY', 'TD', 'TFOOT', 'TH', 'THEAD', 'TR', 'UL',
-]);
-
 function canonicalPositiveInteger(value: unknown): string | null {
   const candidate = typeof value === 'number' ? String(value) : value;
   if (typeof candidate !== 'string' || !/^[1-9]\d*$/.test(candidate)) return null;
@@ -218,72 +213,6 @@ function isPublicFaqListItem(item: BoardFaqListItem): boolean {
     && item.scrtYn === 'N'
     && item.useYn === 'Y'
     && canonicalPositiveInteger(item.pstSn) !== null;
-}
-
-/** Rich-text FAQ 본문을 실행 가능한 markup이 없는 읽기용 평문으로 변환한다. */
-export function htmlToSemanticPlainText(html: string): string {
-  if (!html) return '';
-
-  if (typeof DOMParser === 'undefined') {
-    return normalizePlainText(
-      decodeHtmlEntities(
-        html
-          .replace(/<(script|style|template|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
-          .replace(/<br\s*\/?>/gi, '\n')
-          .replace(/<\/?(?:address|article|aside|blockquote|div|dl|dt|dd|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>/gi, '\n')
-          .replace(/<[^>]*>/g, ''),
-      ),
-    );
-  }
-
-  const documentNode = new DOMParser().parseFromString(html, 'text/html');
-  documentNode.querySelectorAll('script, style, template, noscript').forEach((node) => node.remove());
-  const fragments: string[] = [];
-
-  const collectText = (node: globalThis.Node) => {
-    if (node.nodeType === 3) {
-      fragments.push(node.textContent ?? '');
-      return;
-    }
-    if (node.nodeType !== 1) return;
-
-    const isBreak = node.nodeName === 'BR';
-    const isSemanticBoundary = SEMANTIC_BREAK_ELEMENTS.has(node.nodeName);
-    if (isBreak || isSemanticBoundary) fragments.push('\n');
-    if (!isBreak) node.childNodes.forEach(collectText);
-    if (isSemanticBoundary) fragments.push('\n');
-  };
-
-  documentNode.body.childNodes.forEach(collectText);
-  return normalizePlainText(fragments.join(''));
-}
-
-function decodeHtmlEntities(value: string): string {
-  const namedEntities: Record<string, string> = {
-    amp: '&', apos: "'", gt: '>', lt: '<', nbsp: ' ', quot: '"',
-  };
-
-  return value
-    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => safeCodePoint(code, 16))
-    .replace(/&#(\d+);/g, (_, code: string) => safeCodePoint(code, 10))
-    .replace(/&([a-z]+);/gi, (entity, name: string) => namedEntities[name.toLowerCase()] ?? entity);
-}
-
-function safeCodePoint(code: string, radix: number): string {
-  const codePoint = Number.parseInt(code, radix);
-  return Number.isSafeInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
-    ? String.fromCodePoint(codePoint)
-    : '';
-}
-
-function normalizePlainText(value: string): string {
-  return value
-    .replace(/\u00a0/g, ' ')
-    .replace(/\r\n?/g, '\n')
-    .split('\n')
-    .map((line) => line.replace(/[\t ]+/g, ' ').trim())
-    .filter(Boolean)
-    .join('\n');
 }
 
 export const helpUserService = new HelpUserService();

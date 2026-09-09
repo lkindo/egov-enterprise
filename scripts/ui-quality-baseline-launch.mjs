@@ -487,24 +487,24 @@ function captureRepositoryIdentity(repositoryRoot, executeCommand, sourceEnviron
 function readBoundedRegularFile(targetPath, maximumBytes, invalidMessage) {
   let descriptor;
   try {
+    descriptor = openSync(targetPath, fileConstants.O_RDONLY | (process.platform === 'win32'
+      ? 0 : fileConstants.O_NOFOLLOW | fileConstants.O_NONBLOCK));
     const before = lstatSync(targetPath);
     if (!before.isFile()
       || before.isSymbolicLink()
       || !Number.isSafeInteger(before.size)
       || before.size < 1
       || before.size > maximumBytes) throw new Error(invalidMessage);
-    descriptor = openSync(
-      targetPath,
-      fileConstants.O_RDONLY | (process.platform === 'win32' ? 0 : fileConstants.O_NOFOLLOW),
-    );
     const opened = fstatSync(descriptor);
-    if (!opened.isFile() || opened.size !== before.size) throw new Error(invalidMessage);
+    if (!opened.isFile() || opened.size !== before.size
+      || opened.dev !== before.dev || opened.ino !== before.ino) throw new Error(invalidMessage);
     const bounded = Buffer.alloc(maximumBytes + 1);
     const bytesRead = readSync(descriptor, bounded, 0, bounded.length, 0);
     if (bytesRead !== before.size || bytesRead > maximumBytes) throw new Error(invalidMessage);
     const after = lstatSync(targetPath);
     if (!after.isFile()
       || after.isSymbolicLink()
+      || after.dev !== before.dev || after.ino !== before.ino
       || after.size !== before.size
       || after.mtimeMs !== before.mtimeMs) throw new Error(invalidMessage);
     return Buffer.from(bounded.subarray(0, bytesRead));

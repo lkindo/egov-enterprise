@@ -4796,6 +4796,16 @@
               }
             }
           },
+          "409": {
+            "description": "게시판이 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -4828,16 +4838,6 @@
           },
           "404": {
             "description": "대상을 찾을 수 없음 (code: C003/C007)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "게시판이 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22685,6 +22685,16 @@
               }
             }
           },
+          "409": {
+            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -22707,16 +22717,6 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22943,6 +22943,16 @@
               }
             }
           },
+          "404": {
+            "description": "수신자로 지정한 사용자가 존재하지 않음 — 부분 발송 없이 전체 거부 (code: C002)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
           "400": {
             "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
             "content": {
@@ -22965,16 +22975,6 @@
           },
           "403": {
             "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "수신자로 지정한 사용자가 존재하지 않음 — 부분 발송 없이 전체 거부 (code: C002)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35672,7 +35672,7 @@
             "example": "/admin/survey/hub?tab=manage",
             "maxLength": 500,
             "minLength": 0,
-            "pattern": "^$|^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$"
+            "pattern": "^$|^(?:/(?:[^\\s?#/\\\\]+/)*[^\\s?#/\\\\]*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$"
           },
           "crtrId": {
             "type": "string",

@@ -1,3 +1,4 @@
+import { readRegularFile } from '../../scripts/read-regular-file.mjs';
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import {
@@ -604,7 +605,7 @@ function collectJsonArtifactEntries(root) {
       if (stats.isDirectory()) {
         visit(absolutePath, relativePath);
       } else if (stats.isFile() && entry.name.endsWith('.json')) {
-        entries.push({ relativePath, bytes: readFileSync(absolutePath) });
+        entries.push({ relativePath, bytes: readRegularFile(absolutePath) });
       } else {
         throw new Error('baseline staging contains a non-JSON artifact');
       }

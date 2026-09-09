@@ -36,6 +36,7 @@ jobs:
       schema: ${{ steps.scope.outputs.schema }}
       e2e: ${{ steps.scope.outputs.e2e }}
       mutation: ${{ steps.scope.outputs.mutation }}
+      sast: ${{ steps.scope.outputs.sast }}
       docs-only: ${{ steps.scope.outputs.docs_only }}
       atlas: ${{ steps.scope.outputs.atlas }}
       unknown-count: ${{ steps.scope.outputs.unknown_count }}
@@ -74,6 +75,103 @@ jobs:
               --head "${HEAD:-$GITHUB_SHA}" \
               --github-output "$GITHUB_OUTPUT"
           fi
+
+  # CodeQL scans the complete source population when code/configuration changes.
+  # Do not replace this with a diff-only baseline or suppress existing findings.
+  sast-scope:
+    needs: change-scope
+    if: needs.change-scope.outputs.sast == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      # PR diff filtering drops unchanged taint findings and breaks full-scan policy.
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [java, javascript]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Set up JDK for traced production compilation
+        if: matrix.language == 'java'
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c  # v6.0.0
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+
+      - name: Initialize CodeQL security analysis
+        id: codeql
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938  # v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.language == 'java' && 'manual' || 'none' }}
+          config-file: config/security/codeql.yml
+          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.26.4/codeql-bundle-linux64.tar.gz
+
+      - name: Trace all production Java modules
+        if: matrix.language == 'java'
+        run: ./gradlew compileJava --no-daemon --no-build-cache --rerun-tasks --console=plain -Dfile.encoding=UTF-8
+
+      - name: Analyze secure coding
+        id: analyze
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938  # v4
+        with:
+          output: build/sast/raw
+          upload: never
+          upload-database: false
+
+      - name: Enforce secure coding policy
+        run: node scripts/sast-policy.mjs build/sast/raw/${{ matrix.language }}.sarif ${{ matrix.language }} build/sast/sanitized/${{ matrix.language }}.sarif build/sast/publish/${{ matrix.language }}.sarif
+
+      - name: Prove secure coding detection and rejection
+        env:
+          CODEQL_PATH: ${{ steps.codeql.outputs.codeql-path }}
+          # Prevent the native tracer from re-injecting the production environment.
+          LD_PRELOAD: ''
+        run: node scripts/sast-probe.mjs ${{ matrix.language }}
+
+      - name: Upload sanitized security results
+        if: always() && steps.analyze.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938  # v4
+        with:
+          sarif_file: build/sast/publish/${{ matrix.language }}.sarif
+          category: secure-coding/${{ matrix.language }}
+
+      - name: Retain sanitized SAST evidence
+        if: always() && steps.analyze.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: sast-${{ matrix.language }}
+          path: build/sast/sanitized/${{ matrix.language }}.sarif
+          if-no-files-found: error
+          retention-days: 14
+
+  secure-coding:
+    needs: [change-scope, sast-scope]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: 시큐어코딩 언어별 결과 집계
+        env:
+          CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
+          EXPECTED_WORK: ${{ needs.change-scope.outputs.sast }}
+          SOURCE_RESULT: ${{ needs.sast-scope.result }}
+        run: node scripts/aggregate-required-check.mjs
 
   # 로컬 훅과 무관하게 required CI에서 gitleaks를 hard-fail로 실행한다.
   # 라이선스·가변 태그 노출을 피하려고 고정 버전 바이너리를 직접 내려받는다.

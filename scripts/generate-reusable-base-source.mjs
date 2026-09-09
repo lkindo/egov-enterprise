@@ -7,13 +7,17 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   copyFileSync,
+  closeSync,
   existsSync,
   mkdirSync,
+  openSync,
+  ftruncateSync,
   readFileSync,
   readdirSync,
   rmSync,
   statSync,
   writeFileSync,
+  writeSync,
 } from 'node:fs';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -345,19 +349,30 @@ function adaptOwnershipGuardBaseline(output) {
     'harness',
     'OwnershipGuardBaselineLinterTest.java',
   );
-  if (!existsSync(path)) return;
-  const source = readFileSync(path, 'utf8');
-  const block = /private static final Set<String> FROZEN_CENSUS = new TreeSet<>\(Arrays\.asList\(([\s\S]*?)\)\);/;
-  const match = source.match(block);
-  if (!match) fail('generated ownership guard baseline 블록을 찾지 못했다.');
-  const entries = [...match[1].matchAll(/"([A-Za-z0-9_$]+#[^"]+)"/g)]
-    .map((item) => item[1])
-    .filter((entry) => mainTypes.has(entry.split('#')[0]));
-  if (entries.length === 0) fail('generated ownership guard baseline이 비었다.');
-  const replacement = 'private static final Set<String> FROZEN_CENSUS = new TreeSet<>(Arrays.asList(\n'
-    + entries.map((entry, index) => `            "${entry}"${index === entries.length - 1 ? '' : ','}`).join('\n')
-    + '));';
-  writeFileSync(path, source.replace(block, replacement), 'utf8');
+  let descriptor;
+  try {
+    descriptor = openSync(path, 'r+');
+  } catch (error) {
+    if (error.code === 'ENOENT') return;
+    throw error;
+  }
+  try {
+    const source = readFileSync(descriptor, 'utf8');
+    const block = /private static final Set<String> FROZEN_CENSUS = new TreeSet<>\(Arrays\.asList\(([\s\S]*?)\)\);/;
+    const match = source.match(block);
+    if (!match) fail('generated ownership guard baseline 블록을 찾지 못했다.');
+    const entries = [...match[1].matchAll(/"([A-Za-z0-9_$]+#[^"]+)"/g)]
+      .map((item) => item[1])
+      .filter((entry) => mainTypes.has(entry.split('#')[0]));
+    if (entries.length === 0) fail('generated ownership guard baseline이 비었다.');
+    const replacement = 'private static final Set<String> FROZEN_CENSUS = new TreeSet<>(Arrays.asList(\n'
+      + entries.map((entry, index) => `            "${entry}"${index === entries.length - 1 ? '' : ','}`).join('\n')
+      + '));';
+    const bytes = Buffer.from(source.replace(block, replacement), 'utf8');
+    let offset = 0;
+    while (offset < bytes.length) offset += writeSync(descriptor, bytes, offset, bytes.length - offset, offset);
+    ftruncateSync(descriptor, bytes.length);
+  } finally { closeSync(descriptor); }
 }
 
 function adaptGeneratedHarness(output) {

@@ -1446,7 +1446,7 @@
           <article class="status-card">
             <span class="badge badge-success">ENFORCED</span>
             <h3>중앙 gate registry</h3>
-            <p><code>gates.json</code>이 governance 38·ArchUnit 10·schema-validation 47개와 7개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
+            <p><code>gates.json</code>이 governance 38·ArchUnit 10·schema-validation 47개와 7개 runner catalog, 7개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-warning">ADVISORY</span>
@@ -1467,14 +1467,15 @@
           <p style="color: var(--text-muted); line-height: 1.7;">
             <strong>Runtime/build:</strong> Java 21 · Spring Boot 3.5.16 · Gradle 9.6.1 · Node.js ≥22 · pnpm 9.15.0 · Next.js 16.3.4 · PostgreSQL 17
           </p>
-          <p id="required-check-contexts" data-required-count="5" style="color: var(--text-muted); line-height: 1.7; margin-top: 0.6rem;">
+          <p id="required-check-contexts" data-required-count="6" style="color: var(--text-muted); line-height: 1.7; margin-top: 0.6rem;">
             <strong>Required contexts:</strong>
             <code data-required-context="backend-build">backend-build</code> ·
             <code data-required-context="frontend-build">frontend-build</code> ·
             <code data-required-context="secret-scan">secret-scan</code> ·
             <code data-required-context="e2e-test">e2e-test</code> ·
-            <code data-required-context="mutation-test">mutation-test</code>
-            <br><small>내부 실행은 duration-balanced E2E 2 shard입니다. 원격 ruleset은 2026-08-20 이 manifest로 전환됐고 <code>npm run verify:ops</code>가 context 5개·review 정책·force-push/삭제 보호의 exact-match를 실측합니다.</small>
+            <code data-required-context="mutation-test">mutation-test</code> ·
+            <code data-required-context="secure-coding">secure-coding</code>
+            <br><small>내부 실행은 duration-balanced E2E 2 shard입니다. 시큐어코딩은 Java·JavaScript CodeQL 분석 결과를 집계합니다. <code>npm run verify:ops</code>가 원격 ruleset의 context 6개·review 정책·force-push/삭제 보호와 manifest의 exact-match를 실측합니다.</small>
           </p>
           <p style="color: var(--text-muted); line-height: 1.7; margin-top: 0.6rem;">
             <strong>Dependency controls:</strong> PR Gradle graph는 read-only producer가 artifact를 만들고 checkout/run 없는 trusted <code>workflow_run</code>이 제출합니다. <code>secret-scan</code>은 base/head snapshot을 최대 600초 fail-closed 확인한 뒤 신규 runtime High 이상을 review합니다. 프론트 감사는 <code>pnpm audit --json</code> 단일 조회로 Critical 전체와 운영 High를 차단하고 개발 전용 High만 warning으로 남기며 형식·네트워크 오류는 실패 처리합니다.
@@ -2343,7 +2344,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">평가 기준</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            2026-09-09 기준 중앙 registry가 <strong>governance JUnit 38개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 47개</strong>와 runner catalog 7개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
+            2026-09-09 기준 중앙 registry가 <strong>governance JUnit 38개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 47개</strong>와 runner catalog 7개, execution profile 7개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
           </p>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
             <strong style="color: var(--accent-success);">핵심 집행:</strong> 태그 기반 전수 census, 단일 source index, 의미 기반 인가 정책 matrix, Entity Lombok gate, schema suite의 공유 PostgreSQL, 구조화 E2E 오류 ledger·고정 대기 0건·실행시간 기반 shard, 85/70/75 exact ratchet이 실행 경로에 결속돼 있습니다.

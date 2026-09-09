@@ -26,7 +26,7 @@ function refactorFile(filePath) {
     
     // 1단계: @Column(name = "xxx") 단독 사용 중 필드 스네이크 케이스와 일치하는 경우 어노테이션 라인 전체 제거
     // 멀티라인 어노테이션들과 필드를 매치하기 위해 정교한 정규식 스캔
-    const singleColumnPattern = /@Column\s*\(\s*name\s*=\s*["']([^"']+)["']\s*\)\s*\r?\n(\s*(?:@[A-Za-z0-9_]+(?:\([^)]*\))?\s*\r?\n)*\s*(?:private|protected|public)\s+[A-Za-z0-9_<>]+\s+([A-Za-z0-9_]+)\s*;)/g;
+    const singleColumnPattern = /@Column[ \t]*\([ \t]*name[ \t]*=[ \t]*["']([^"'\r\n]+)["'][ \t]*\)[ \t]*\r?\n((?:[ \t]*@[A-Za-z0-9_]+(?:\([^\r\n)]*\))?[ \t]*\r?\n)*[ \t]*(?:private|protected|public)[ \t]+[A-Za-z0-9_<>]+[ \t]+([A-Za-z0-9_]+)[ \t]*;)/g;
     
     content = content.replace(singleColumnPattern, (match, colName, tail, fieldName) => {
         const expectedSnake = camelToSnake(fieldName);

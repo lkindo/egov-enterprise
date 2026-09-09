@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readRegularFile } from '../../scripts/read-regular-file.mjs';
 /**
  * Exact frontend form/write-boundary census.
  *
@@ -1700,7 +1701,7 @@ function evidenceTestBlocks(repoRoot, source) {
   const stats = statSync(target);
   const cached = EVIDENCE_TEST_BLOCK_CACHE.get(target);
   if (cached?.mtimeMs === stats.mtimeMs && cached?.size === stats.size) return cached.blocks;
-  const text = readFileSync(target, 'utf8');
+  const text = readRegularFile(target, { encoding: 'utf8' });
   const project = new Project({
     compilerOptions: { allowJs: true, jsx: 4 },
     skipAddingFilesFromTsConfig: true,

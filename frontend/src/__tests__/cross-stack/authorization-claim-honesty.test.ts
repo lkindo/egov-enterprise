@@ -85,7 +85,7 @@ export function findUnenforcedDenial(source: string): string[] {
   // 술어가 변수로 한 번 우회하는 흔한 형태도 잡는다: const x = !isAdmin && ...; {x ? (...)}
   for (const match of stripped.matchAll(/const\s+([A-Za-z_$][\w$]*)\s*=\s*([^;]*![\s]*isAdmin[^;]*);/g)) {
     const [, name] = match;
-    const branch = stripped.split(new RegExp(`\{\s*${name}\s*\?`))[1];
+    const branch = stripped.split(new RegExp(String.raw`\{\s*${name}\s*\?`))[1];
     if (!branch) continue;
     const word = DENIAL_VOCABULARY.find((token) => branch.slice(0, 1600).includes(token));
     if (word) hits.push(`${name} (= !isAdmin …) → "${word}"`);

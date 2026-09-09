@@ -38,6 +38,25 @@
       "jobId": "frontend-scope",
       "name": "Frontend dependency audit policy",
       "run": "node ../scripts/frontend-audit-policy.mjs"
+    },
+    {
+      "jobId": "sast-scope",
+      "name": "Initialize CodeQL security analysis",
+      "uses": "github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938"
+    },
+    {
+      "jobId": "sast-scope",
+      "name": "Analyze secure coding",
+      "uses": "github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938"
+    },
+    {
+      "jobId": "sast-scope",
+      "name": "Prove secure coding detection and rejection",
+      "run": "node scripts/sast-probe.mjs ${{ matrix.language }}",
+      "env": {
+        "CODEQL_PATH": "${{ steps.codeql.outputs.codeql-path }}",
+        "LD_PRELOAD": ""
+      }
     }
   ],
   "requiredChecks": [
@@ -173,6 +192,40 @@
         "resultExpression": "needs.mutation-scope.result",
         "successResult": "success",
         "scopeExpression": "needs.change-scope.outputs.mutation",
+        "classifierResultExpression": "needs.change-scope.result",
+        "skippedResult": "skipped"
+      }
+    },
+    {
+      "context": "secure-coding",
+      "jobId": "secure-coding",
+      "needs": [
+        "change-scope",
+        "sast-scope"
+      ],
+      "jobIf": "always()",
+      "aggregate": {
+        "sourceJobId": "sast-scope",
+        "sourceNeeds": [
+          "change-scope"
+        ],
+        "sourceJobIf": "needs.change-scope.outputs.sast == 'true'",
+        "sourceMatrix": {
+          "key": "language",
+          "values": [
+            "java",
+            "javascript"
+          ]
+        },
+        "sourceStepName": "Enforce secure coding policy",
+        "sourceRun": "node scripts/sast-policy.mjs build/sast/raw/${{ matrix.language }}.sarif ${{ matrix.language }} build/sast/sanitized/${{ matrix.language }}.sarif build/sast/publish/${{ matrix.language }}.sarif",
+        "sourceWorkingDirectory": null,
+        "sourceEnv": {},
+        "aggregateStepName": "시큐어코딩 언어별 결과 집계",
+        "aggregateRun": "node scripts/aggregate-required-check.mjs",
+        "resultExpression": "needs.sast-scope.result",
+        "successResult": "success",
+        "scopeExpression": "needs.change-scope.outputs.sast",
         "classifierResultExpression": "needs.change-scope.result",
         "skippedResult": "skipped"
       }

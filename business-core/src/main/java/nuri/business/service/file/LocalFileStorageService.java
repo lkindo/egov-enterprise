@@ -82,13 +82,16 @@ public class LocalFileStorageService implements FileStorageService {
             Path destinationDir = resolveWithinRoot(targetPath);
             Files.createDirectories(destinationDir);
             assertRealPathWithinRoot(destinationDir);
-            destinationFile = destinationDir.resolve(savedFilename);
+            destinationFile = destinationDir.resolve(savedFilename).normalize();
+            if (!destinationFile.startsWith(rootLocation)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
 
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            if (destinationFile != null) {
+            if (destinationFile != null && destinationFile.normalize().startsWith(rootLocation)) {
                 try {
                     Files.deleteIfExists(destinationFile);
                 } catch (IOException cleanupFailure) {

@@ -33,13 +33,14 @@ function workflowStep(jobBlock, name) {
   return jobBlock.slice(start, next < 0 ? jobBlock.length : next);
 }
 
-test('manifest intentionally names five stable enforced merge checks', () => {
+test('manifest intentionally names six stable enforced merge checks', () => {
   assert.deepEqual(expectedContexts, [
     'backend-build',
     'frontend-build',
     'secret-scan',
     'e2e-test',
     'mutation-test',
+    'secure-coding',
   ]);
 });
 
@@ -47,7 +48,7 @@ test('repository required-check manifest maps every exact context to a real CI j
   assert.deepEqual(validateStaticContract({ manifest, ciContent }), []);
 });
 
-test('exact five-context ruleset satisfies the contract', () => {
+test('exact six-context ruleset satisfies the contract', () => {
   assert.deepEqual(compareRequiredContexts(expectedContexts, expectedContexts), []);
 });
 

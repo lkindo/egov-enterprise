@@ -1,4 +1,5 @@
 package nuri.api.controller.business.smarttoolkit;
+import nuri.api.support.PageRequests;
 
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
@@ -42,7 +43,7 @@ public class DeptJobApiController {
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageUnit) {
 
-        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        PageRequest pageable = PageRequests.of(pageIndex, pageUnit);
         Page<DeptJobBoxDto> pageResult;
 
         if (deptId != null && !deptId.isEmpty()) {
@@ -136,7 +137,7 @@ public class DeptJobApiController {
         //   반대로("mine 일 때만 좁힌다") 쓰면 오타 한 글자가 조용히 전체 공개로 떨어진다.
         boolean mineOnly = !"dept".equalsIgnoreCase(scope);
 
-        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        PageRequest pageable = PageRequests.of(pageIndex, pageUnit);
         Page<DeptJobDto> pageResult = deptJobService.getDeptJobList(
                 deptId, deptTaskBoxSn, condition, searchWrd, mineOnly, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));

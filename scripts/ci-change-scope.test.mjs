@@ -227,6 +227,7 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     atlas: 'false',
     governance: 'true',
     secret_scan: 'true',
+    sast: 'false',
     backend: 'false',
     frontend: 'false',
     schema: 'false',

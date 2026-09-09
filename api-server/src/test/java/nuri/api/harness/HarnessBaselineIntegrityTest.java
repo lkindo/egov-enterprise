@@ -160,7 +160,8 @@ class HarnessBaselineIntegrityTest {
     private static final List<String> GATE_REGISTRIES = List.of(
             "config/governance/authorization-policies.json",
             "config/governance/gates.json",
-            "config/governance/zdm-waivers.json");
+            "config/governance/zdm-waivers.json",
+            "config/security/false-positive-review.json");
 
     /** registry 해시 키 접두 — {@code __registry.<저장소 상대경로>} */
     private static final String REGISTRY_KEY_PREFIX = "__registry.";
