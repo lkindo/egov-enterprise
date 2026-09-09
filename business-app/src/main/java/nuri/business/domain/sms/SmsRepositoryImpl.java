@@ -1,6 +1,7 @@
 package nuri.business.domain.sms;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,7 +50,9 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
         }
 
         if ("0".equals(searchCondition)) { // 수신전화번호 (RECPTN_TELNO)
-            return QSmsRecptn.smsRecptn.id.rcptnTelno.contains(searchKeyword);
+            // 전환 전 하이픈 키와 전환 후 숫자 키를 같은 검색어로 찾는다.
+            return Expressions.stringTemplate("replace({0}, '-', '')", QSmsRecptn.smsRecptn.id.rcptnTelno)
+                    .contains(SmsRecipientNumber.canonicalize(searchKeyword));
         } else if ("1".equals(searchCondition)) { // 전송내용 (TRNSMIS_CN)
             return QSms.sms.sndngCn.contains(searchKeyword);
         }

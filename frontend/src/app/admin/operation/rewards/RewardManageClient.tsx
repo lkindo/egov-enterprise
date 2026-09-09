@@ -32,7 +32,7 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { RewardManageDtoSchema } from '@/types/generated-zod';
 
 export const rewardSchema = RewardManageDtoSchema.extend({
-  rwardNm: RewardManageDtoSchema.shape.rwardNm.unwrap().min(1).max(100),
+  rwardNm: RewardManageDtoSchema.shape.rwardNm.unwrap().min(1),
   rwardwnrId: RewardManageDtoSchema.shape.rwardwnrId.unwrap().min(1).max(20),
   rwardCode: RewardManageDtoSchema.shape.rwardCode.unwrap().min(1).max(12),
   rwardDe: RewardManageDtoSchema.shape.rwardDe.unwrap()
@@ -363,7 +363,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 명칭</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={100} placeholder="모범 사원상" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={300} placeholder="모범 사원상" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

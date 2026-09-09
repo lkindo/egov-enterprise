@@ -3,7 +3,7 @@ import { NoteDtoSchema } from '@/types/generated-zod';
 
 /**
  * 쪽지 작성 화면의 API/물리 스키마 경계.
- * 제목 100자는 tb_note_info.note_ttl varchar(100), 본문 4000자는 DTO/엔티티 양쪽과 같다.
+ * 제목 256자는 tb_note_info.note_ttl varchar(256), 본문 4000자는 DTO/엔티티 양쪽과 같다.
  * 수신자는 쉼표 구분 다중 수신자를 지원하며, 개별 ID는 물리 컬럼(tb_note_recptn.rcvr_id varchar(20)) 상한을 따른다.
  */
 export const noteComposeSchema = NoteDtoSchema.extend({
@@ -21,7 +21,7 @@ export const noteComposeSchema = NoteDtoSchema.extend({
   noteSj: NoteDtoSchema.shape.noteSj.unwrap()
     .trim()
     .min(1, '제목을 입력해 주세요.')
-    .max(100),
+    .max(256),
   noteCn: NoteDtoSchema.shape.noteCn.unwrap(),
 }).pick({
   rcverId: true,

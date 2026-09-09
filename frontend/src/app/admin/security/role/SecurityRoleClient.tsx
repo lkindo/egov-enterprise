@@ -486,7 +486,7 @@ export default function SecurityRoleClient() {
   setFormData(prev => ({ ...prev, roleNm: e.target.value }));
  }}
  required
- maxLength={100}
+ maxLength={300}
  className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
  placeholder="롤 명칭 입력"
  />

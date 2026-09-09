@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class RewardManageDto {
     private Long rwrdSn;
-    // [2026-09-05] 물리 컬럼 폭과 정합(rwrd_user_id 20·rwrd_cd 12·rwrd_ymd 8·rwrd_nm 100·cntrb_cn 4000·atrzr_id 20·confm_yn 1·rtn_rsn_cn 4000).
+    // 물리 컬럼 폭과 정합(rwrd_user_id 20·rwrd_cd 12·rwrd_ymd 8·rwrd_nm 300·cntrb_cn 4000·atrzr_id 20·confm_yn 1·rtn_rsn_cn 4000).
     //   DTO 필드명이 레거시(rwardwnrId 등)라 InputContractMirrorLinter 의 이름 기반 바인딩은 붙이지 못한다.
     @Size(max = 20)
     private String rwardwnrId;
@@ -23,7 +23,7 @@ public class RewardManageDto {
     private String rwardCode;
     @Size(max = 8)
     private String rwardDe;
-    @Size(max = 100)
+    @Size(max = 300)
     private String rwardNm;
     @Size(max = 4000)
     private String pblenCn;

@@ -71,6 +71,37 @@ class SmsServiceTest {
     }
 
     @Test
+    @DisplayName("사용자·직접 입력의 하이픈 차이는 정규화 후 한 수신자로 저장한다")
+    void sendSms_normalizesBeforeDeduplication() {
+        SmsDto dto = SmsDto.builder().sndngTelno("01011112222").sndngCn("Hello")
+                .recipients(List.of(SmsRecptnDto.builder().esntlId("USR_A").build(),
+                        SmsRecptnDto.builder().rcptnTelno("01012345678").build(),
+                        SmsRecptnDto.builder().rcptnTelno("010-1234-5678").build()))
+                .build();
+        when(userContactService.resolve(List.of("USR_A"))).thenReturn(List.of(
+                new UserContactService.UserContact("USR_A", "테스트", null, "010-1234-5678")));
+        when(smsRecptnRepository.save(any(SmsRecptn.class))).thenAnswer(i -> i.getArgument(0));
+
+        smsService.sendSms("user01", dto);
+
+        verify(smsRecptnRepository).save(argThat(r -> "01012345678".equals(r.getRcptnTelno())));
+        verify(smsAsyncProcessor).processSending(eq(101L), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("잘못된 번호나 12자리 이상 번호는 발송 헤더 저장 전에 거절한다")
+    void sendSms_rejectsInvalidCanonicalNumberBeforeWrites() {
+        for (String phone : List.of("---", "010ABC12345", "123456789012", "+821012345678")) {
+            SmsDto dto = SmsDto.builder().sndngTelno("01011112222").sndngCn("Hello")
+                    .recipients(List.of(SmsRecptnDto.builder().rcptnTelno(phone).build())).build();
+            assertThatThrownBy(() -> smsService.sendSms("user01", dto)).isInstanceOf(BusinessException.class);
+        }
+        verify(smsRepository, never()).save(any());
+        verify(smsRecptnRepository, never()).save(any());
+        verifyNoInteractions(smsAsyncProcessor);
+    }
+
+    @Test
     @DisplayName("SMS 목록 조회 테스트")
     void getSmsListTest() {
         // Given

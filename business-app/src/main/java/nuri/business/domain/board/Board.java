@@ -50,7 +50,7 @@ public class Board extends BaseEntity implements Serializable {
 
     private Long ansSn;
 
-    @Column(length = 100)
+    @Column(length = 256)
     private String pstTtl;
 
     @Column(length = 4000)

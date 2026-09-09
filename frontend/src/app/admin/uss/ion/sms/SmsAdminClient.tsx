@@ -34,7 +34,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { format } from 'date-fns';
-import { smsSchema } from '@/lib/validation/schemas';
+import { smsSchema, smsRecipientNumberSchema } from '@/lib/validation/schemas';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
@@ -58,10 +58,7 @@ const smsValidationLabels: Record<string, string> = {
  * 낮춘다(2026-09-05 DEC-OPS-035). "둘 다 없음" 은 제출 핸들러가 수신 번호 필드 오류로 드러낸다.
  */
 const smsComposeSchema = smsSchema.extend({
-  rcptnTelno: z.string()
-    .trim()
-    .max(13, '수신 번호는 최대 13자까지 입력할 수 있습니다.')
-    .regex(/^[0-9-]*$/, '수신 번호는 숫자와 하이픈만 입력해 주세요.'),
+  rcptnTelno: z.string().trim().pipe(smsRecipientNumberSchema.or(z.literal(''))),
 });
 
 /** 요청당 수신자 상한 — 백엔드 SmsDto.MAX_RECIPIENTS_PER_REQUEST 와 같다. */
@@ -69,7 +66,15 @@ const MAX_SMS_RECIPIENTS = 100;
 
 /** 화면 선택을 발송 요청의 수신자 항목으로 옮긴다. 사용자는 esntlId 만, 명함·직접 입력은 번호만 싣는다. */
 function toSmsRecipient(recipient: RecipientSelection): { esntlId?: string; rcptnTelno?: string } {
-  return recipient.kind === 'user' ? { esntlId: recipient.esntlId } : { rcptnTelno: recipient.phone };
+  return recipient.kind === 'user'
+    ? { esntlId: recipient.esntlId }
+    : { rcptnTelno: smsRecipientNumberSchema.parse(recipient.phone) };
+}
+
+function smsRecipientKey(recipient: RecipientSelection): string {
+  return recipientKey(recipient.kind === 'user' ? recipient : {
+    ...recipient, phone: recipient.phone?.trim().replace(/-/g, ''),
+  });
 }
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
@@ -158,10 +163,10 @@ export default function SmsAdminClient({
   /** 선택을 합친다 — 같은 사람·같은 번호(recipientKey)는 한 번만. */
   const mergeRecipients = (incoming: RecipientSelection[]) => {
     setRecipients((previous) => {
-      const seen = new Set(previous.map(recipientKey));
+      const seen = new Set(previous.map(smsRecipientKey));
       const merged = [...previous];
       for (const recipient of incoming) {
-        const key = recipientKey(recipient);
+        const key = smsRecipientKey(recipient);
         if (seen.has(key)) continue;
         seen.add(key);
         merged.push(recipient);
@@ -192,7 +197,7 @@ export default function SmsAdminClient({
     const effective: RecipientSelection[] = typed
       ? (() => {
           const extra: RecipientSelection = { kind: 'contact', name: typed, phone: typed };
-          return recipients.some((r) => recipientKey(r) === recipientKey(extra)) ? recipients : [...recipients, extra];
+          return recipients.some((r) => smsRecipientKey(r) === smsRecipientKey(extra)) ? recipients : [...recipients, extra];
         })()
       : recipients;
     if (effective.length === 0) {
@@ -527,7 +532,7 @@ export default function SmsAdminClient({
                             <Input
                               {...field}
                               inputMode="tel"
-                              maxLength={20}
+                              maxLength={13}
                               placeholder="010-0000-0000"
                               onKeyDown={(event) => {
                                 if (event.key === 'Enter') {

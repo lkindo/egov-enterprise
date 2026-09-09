@@ -20,7 +20,7 @@ public class OrganizationManage extends BaseEntity {
     private String ognzId;
 
     // [V2_16] tb_ognz_info.ognz_nm SET NOT NULL 과 함께 이중 매핑(DeptManage)·물리 3자 계약 일치
-    @Column(length = 100, nullable = false)
+    @Column(length = 200, nullable = false)
     private String ognzNm;
 
     @Column(length = 4000)

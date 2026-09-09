@@ -26,7 +26,7 @@ public class InstitutionCode extends BaseEntity {
     @Column(length = 100)
     private String lwstInstNm;
  
-    @Column(length = 100)
+    @Column(length = 300)
     private String instAbbrNm;
  
     @Column(length = 2)
@@ -75,7 +75,8 @@ public class InstitutionCode extends BaseEntity {
     @Column(length = 8)
     private String chgYmd;
  
-    @Column(length = 20)
+    @Column(length = 6)
+    @jakarta.validation.constraints.Pattern(regexp = "^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$", message = "변경시각은 HHmmss 형식이어야 합니다.")
     private String chgTm;
  
     @Column(length = 8)

@@ -22,7 +22,7 @@ public record BoardDto(
     Long ansSn,
 
     @Schema(description = "제목", nullable = true, types = {"string", "null"})
-    @Size(max = 100)
+    @Size(max = 256)
     String pstTtl,
 
     @Schema(description = "내용", nullable = true, types = {"string", "null"})

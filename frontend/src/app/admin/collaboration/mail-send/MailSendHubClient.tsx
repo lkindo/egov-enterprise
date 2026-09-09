@@ -40,7 +40,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_RECIPIENTS = 100;
 
 /**
- * SentMail 물리 컬럼 계약: 제목 100자, 본문 4,000자. 수신자는 종전 `recptnPerson`(100자 문자열) 대신
+ * SentMail 물리 컬럼 계약: 제목 256자, 본문 4,000자. 수신자는 종전 `recptnPerson`(100자 문자열) 대신
  * `recipients[]` 로 보낸다 — 인원 제한이 컬럼 폭이 아니라 요청당 상한이 됐다(2026-09-05 DEC-OPS-035).
  */
 export const mailSendSchema = SentMailDtoSchema.pick({
@@ -53,7 +53,7 @@ export const mailSendSchema = SentMailDtoSchema.pick({
   sj: SentMailDtoSchema.shape.sj.unwrap()
     .trim()
     .min(1, '메일 제목을 입력해 주세요.')
-    .max(100, '메일 제목은 최대 100자까지 입력할 수 있습니다.'),
+    .max(256, '메일 제목은 최대 256자까지 입력할 수 있습니다.'),
   emailCn: SentMailDtoSchema.shape.emailCn.unwrap()
     .trim()
     .min(1, '메일 본문을 입력해 주세요.')
@@ -349,7 +349,7 @@ export default function MailSendHubClient() {
               }}
               className="h-11 bg-transparent border-none text-foreground text-3xl font-bold placeholder:text-foreground/10 focus-visible:ring-0 p-0 tracking-tight"
               placeholder="제목을 입력하세요."
-              maxLength={100}
+              maxLength={256}
               required
             />
             {validation.errors.sj ? (

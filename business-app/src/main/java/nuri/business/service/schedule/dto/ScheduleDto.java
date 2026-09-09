@@ -18,7 +18,7 @@ public class ScheduleDto {
     @Size(max = 12)
     private String schdlSeCd;
 
-    @Size(max = 100)
+    @Size(max = 300)
     @NotBlank
     private String schdlNm;
 

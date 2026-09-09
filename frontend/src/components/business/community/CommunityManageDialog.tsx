@@ -38,11 +38,11 @@ const NO_TEMPLATE = '__none__';
 const PAGE_SIZE = 10;
 
 /**
- * 커뮤니티 폼 계약. 서버 DTO(CommunityDto)를 확장한다 — 이름은 서버가 @NotBlank·@Size(100) 으로 거부한다.
+ * 커뮤니티 폼 계약. 서버 DTO(CommunityDto)의 필수 이름·300자 상한을 사용한다.
  * 소개는 비워도 되지만 빈 문자열로 보낸다(읽기 계약 fromCommunity 가 문자열을 요구한다).
  */
 export const communitySchema = CommunityDtoSchema.pick({ tmpltId: true }).extend({
-  cmntyNm: z.string().trim().min(1, '커뮤니티 이름을 입력하세요.').max(100, '커뮤니티 이름은 100자 이하여야 합니다.'),
+  cmntyNm: CommunityDtoSchema.shape.cmntyNm.trim().min(1, '커뮤니티 이름을 입력하세요.'),
   cmntyIntroCn: z.string().max(4000, '소개는 4000자 이하여야 합니다.').optional(),
   tmpltId: z.string().max(20).optional(),
   useYn: z.enum(['Y', 'N']),
@@ -315,7 +315,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                 <FormItem>
                   <FormLabel>커뮤니티 이름</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={100} placeholder="예: 신입사원 모임" className="h-11 rounded-lg" />
+                    <Input {...field} maxLength={300} placeholder="예: 신입사원 모임" className="h-11 rounded-lg" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

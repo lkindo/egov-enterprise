@@ -203,7 +203,7 @@ const SelectAddressBookDetailClient = () => {
                                             validation.clearError('adbkNm');
                                             setAdbkNm(e.target.value);
                                         }}
-                                        maxLength={100}
+                                        maxLength={200}
                                         required
                                     />
                                     {validation.errors.adbkNm ? (

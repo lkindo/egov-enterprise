@@ -1,6 +1,5 @@
 package nuri.api.schema;
 
-import nuri.business.domain.program.ProgramRepository;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -8,25 +7,17 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.springframework.data.jpa.repository.Query;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("메뉴 IDENTITY 및 자동 Program 준비 PostgreSQL 계약")
+@DisplayName("메뉴 IDENTITY 및 선택적 프로그램 참조 PostgreSQL 계약")
 class MenuIdentityMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     private static final long LEGACY_ROOT_SN = 800_000_000L;
@@ -127,86 +118,21 @@ class MenuIdentityMigrationIntegrationTest extends SharedPostgresMigrationTestSu
 
     @Test
     @Order(2)
-    @DisplayName("같은 Program을 동시에 최초 준비해도 PK 충돌 없이 한 행만 생성한다")
-    void concurrentProgramProvisioningIsAtomic() throws Exception {
+    @DisplayName("프로그램 미연결 메뉴는 허용하고 존재하지 않는 연결과 연결 중 삭제를 거부한다")
+    void optionalProgramReferenceEnforcesIntegrity() throws Exception {
         flyway(null).migrate();
-
-        var method = ProgramRepository.class.getMethod(
-                "insertIfAbsent", String.class, String.class, String.class, String.class, String.class);
-        Query query = method.getAnnotation(Query.class);
-        assertThat(query).isNotNull();
-        assertThat(query.nativeQuery()).isTrue();
-        assertThat(query.value()).contains("ON CONFLICT ON CONSTRAINT pk_tb_prgrm_lst DO NOTHING");
-
-        String jdbcSql = query.value()
-                .replace(":prgrmFileNm", "?")
-                .replace(":prgrmKornNm", "?")
-                .replace(":url", "?")
-                .replace(":prgrmStrgPath", "?")
-                .replace(":auditActor", "?");
-        String programFileName = "E2E_CONCURRENT_PROGRAM";
-
-        try (Connection connection = openConnection();
-             PreparedStatement delete = connection.prepareStatement(
-                     "DELETE FROM tb_prgrm_lst WHERE prgrm_file_nm = ?")) {
-            delete.setString(1, programFileName);
-            delete.executeUpdate();
-        }
-
-        CountDownLatch ready = new CountDownLatch(2);
-        CountDownLatch start = new CountDownLatch(1);
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        try {
-            Future<Integer> first = executor.submit(() -> insertProgram(jdbcSql, programFileName, ready, start));
-            Future<Integer> second = executor.submit(() -> insertProgram(jdbcSql, programFileName, ready, start));
-
-            boolean bothReady = ready.await(10, TimeUnit.SECONDS);
-            start.countDown();
-            assertThat(bothReady).as("두 독립 transaction이 동시에 insert를 시작할 준비").isTrue();
-
-            assertThat(List.of(
-                    first.get(30, TimeUnit.SECONDS),
-                    second.get(30, TimeUnit.SECONDS)))
-                    .containsExactlyInAnyOrder(0, 1);
-        } finally {
-            start.countDown();
-            executor.shutdownNow();
-        }
-
-        try (Connection connection = openConnection();
-             PreparedStatement select = connection.prepareStatement("""
-                     SELECT frst_rgtr_id, last_mdfr_id
-                       FROM tb_prgrm_lst
-                      WHERE prgrm_file_nm = ?
-                     """)) {
-            select.setString(1, programFileName);
-            try (ResultSet result = select.executeQuery()) {
-                assertThat(result.next()).isTrue();
-                assertThat(result.getString(1)).isEqualTo("admin");
-                assertThat(result.getString(2)).isEqualTo("admin");
-                assertThat(result.next()).isFalse();
-            }
-        }
-    }
-
-    private int insertProgram(String sql, String programFileName,
-            CountDownLatch ready, CountDownLatch start) throws Exception {
-        try (Connection connection = openConnection();
-             PreparedStatement insert = connection.prepareStatement(sql)) {
-            connection.setAutoCommit(false);
-            insert.setString(1, programFileName);
-            insert.setString(2, "동시 생성 프로그램");
-            insert.setString(3, "/e2e/concurrent-program");
-            insert.setString(4, "/auto-generated");
-            insert.setString(5, "admin");
-            insert.setString(6, "admin");
-            ready.countDown();
-            if (!start.await(10, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("동시 insert 시작 신호를 기다리는 중 timeout");
-            }
-            int inserted = insert.executeUpdate();
-            connection.commit();
-            return inserted;
+        try (Connection c = openConnection(); Statement s = c.createStatement()) {
+            s.executeUpdate("INSERT INTO tb_prgrm_lst(prgrm_file_nm) VALUES ('FK_TEST_PROGRAM')");
+            long id = singleLong(s, "INSERT INTO tb_menu_info(menu_nm,menu_ordr,prgrm_file_nm) "
+                    + "VALUES ('FK 테스트',1,'FK_TEST_PROGRAM') RETURNING menu_sn");
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> s.executeUpdate(
+                    "UPDATE tb_menu_info SET prgrm_file_nm='MISSING_PROGRAM' WHERE menu_sn="+id))
+                    .isInstanceOf(SQLException.class);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> s.executeUpdate(
+                    "DELETE FROM tb_prgrm_lst WHERE prgrm_file_nm='FK_TEST_PROGRAM'"))
+                    .isInstanceOf(SQLException.class);
+            assertThat(s.executeUpdate("UPDATE tb_menu_info SET prgrm_file_nm=NULL WHERE menu_sn="+id)).isEqualTo(1);
+            assertThat(s.executeUpdate("DELETE FROM tb_prgrm_lst WHERE prgrm_file_nm='FK_TEST_PROGRAM'")).isEqualTo(1);
         }
     }
 

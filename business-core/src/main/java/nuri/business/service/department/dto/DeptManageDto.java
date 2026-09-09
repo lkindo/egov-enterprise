@@ -25,7 +25,7 @@ public class DeptManageDto {
     private String ognzId;
 
     @NotBlank
-    @Size(max = 100)
+    @Size(max = 200)
     @Schema(description = "부서 명")
     private String ognzNm;
 

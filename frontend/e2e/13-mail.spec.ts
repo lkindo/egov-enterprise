@@ -11,8 +11,8 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
         mailPage = new MailPage(page);
     });
 
-    test('should send a mail and verify it in history', async ({ page }) => {
-        const subject = `E2E ${Date.now()}`;
+    test('should preserve a 256-character mail subject in history', async ({ page }) => {
+        const subject = `E2E ${Date.now()}`.padEnd(256, '가');
         const content = 'This is an automated test mail content.';
         /*
          * [2026-08-29] 수신자를 ID('webmaster')에서 메일 주소로 바꾼다.

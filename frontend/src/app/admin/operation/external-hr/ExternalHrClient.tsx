@@ -593,7 +593,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">소속기관</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={100} placeholder="한국인재개발원" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={200} placeholder="한국인재개발원" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

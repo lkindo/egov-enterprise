@@ -20,6 +20,7 @@ public class SentMailDto {
     private Long emlDsptchSn;
 
     @Schema(description = "Description")
+    @Size(max = 256)
     private String sj;
 
     @Schema(description = "Description")

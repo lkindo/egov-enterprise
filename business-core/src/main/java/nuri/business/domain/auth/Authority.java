@@ -18,7 +18,7 @@ public class Authority extends BaseEntity implements java.io.Serializable {
     @NonNull
     private String authrtCd;
 
-    @Column(nullable = false, length = 300)
+    @Column(nullable = false, length = 100)
     @NonNull
     private String authrtNm;
 

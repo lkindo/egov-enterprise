@@ -60,12 +60,12 @@ describe('ScheduleCreateForm validation', () => {
   it('일정명 max+1을 write sink로 보내지 않고 일정명으로 이동한다', async () => {
     renderForm();
     const fields = getFormFields();
-    fireEvent.change(fields.name, { target: { value: '가'.repeat(101) } });
+    fireEvent.change(fields.name, { target: { value: '가'.repeat(301) } });
 
     fireEvent.submit(fields.form);
 
     expect(mocks.submit).not.toHaveBeenCalled();
-    expect(await screen.findAllByText(/최대 100자/)).not.toHaveLength(0);
+    expect(await screen.findAllByText(/최대 300자/)).not.toHaveLength(0);
     await waitFor(() => expect(fields.name).toHaveFocus());
   });
 

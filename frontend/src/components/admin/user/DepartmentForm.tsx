@@ -29,7 +29,7 @@ import { DeptManageDtoSchema } from '@/types/generated-zod';
  * 필요한 제약만 좁힌다 — 부서명은 실제로 필수여야 한다.
  */
 export const deptSchema = DeptManageDtoSchema.extend({
-  ognzNm: z.string().min(1, '부서명을 입력하세요.').max(100),
+  ognzNm: DeptManageDtoSchema.shape.ognzNm.min(1, '부서명을 입력하세요.'),
   ognzExpln: z.string().max(4000).optional().or(z.literal('')),
 });
 
@@ -105,7 +105,7 @@ export function DepartmentForm({
                 <FormControl>
                   <Input
                     {...field}
-                    maxLength={100}
+                    maxLength={200}
                     className={cn(
                         "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"

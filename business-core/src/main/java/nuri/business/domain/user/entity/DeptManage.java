@@ -24,7 +24,7 @@ public class DeptManage extends BaseEntity {
     @Column(name = "ognz_id", length = 20)
     private String ognzId;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 200, nullable = false)
     private String ognzNm;
 
     @Column(length = 4000)

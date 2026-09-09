@@ -84,6 +84,19 @@ function deferred<T>() {
 }
 
 describe('StandardFileUploader', () => {
+  it('파일명 300자는 첨부하고 301자는 자동 업로드 전에 거부한다', async () => {
+    const onUpload = vi.fn().mockResolvedValue(undefined);
+    const acceptedFile = file('가'.repeat(296) + '.pdf', 'application/pdf');
+    const rejectedFile = file('가'.repeat(297) + '.pdf', 'application/pdf');
+    render(<StandardFileUploader isAutoUpload onUpload={onUpload} />);
+
+    fireEvent.drop(dropZone(), { dataTransfer: { files: [rejectedFile] } });
+    expect(onUpload).not.toHaveBeenCalled();
+    expect(toastMocks.error).toHaveBeenCalledWith('파일명은 확장자를 포함해 300자 이내로 지정해 주세요.');
+    fireEvent.change(input(), { target: { files: [acceptedFile] } });
+    await waitFor(() => expect(onUpload).toHaveBeenCalledExactlyOnceWith(acceptedFile, expect.any(Function)));
+  });
+
   it('파일 입력 계약과 제한 안내를 노출하고 키보드 포커스를 제공한다', async () => {
     const user = userEvent.setup();
     render(

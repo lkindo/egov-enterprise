@@ -12,7 +12,6 @@ import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.program.dto.ProgramDto;
-import nuri.business.security.audit.LoginUserAuditorAware;
 import nuri.business.security.util.SecurityUtil;
 import nuri.foundation.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +52,6 @@ public class MenuService {
     private final ProgramRepository programRepository;
     private final MenuAuthorityRepository menuAuthorityRepository;
     private final nuri.business.service.program.dto.ProgramMapper programMapper;
-    private final LoginUserAuditorAware loginUserAuditorAware;
 
     @PostConstruct
     @Transactional
@@ -316,20 +314,9 @@ public class MenuService {
     public void insertMenuManage(@NonNull MenuDto vo) {
         SecurityUtil.assertAdmin();
         // FE 가 "연결 프로그램 없음"을 빈 문자열로 보내므로 null 로 정규화한다.
-        // (정규화하지 않으면 원자 insert가 빈 문자열 PK의 쓰레기 Program 행을 생성한다)
         String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
 
-        if (prgrmFileNm != null) {
-            // 같은 프로그램을 참조하는 메뉴 두 건이 동시에 처음 생성되어도 PK 경합을 409로 노출하지 않는다.
-            // native insert에서도 JPA auditing과 같은 actor 값을 기록해 감사 의미를 보존한다.
-            String auditActor = loginUserAuditorAware.getCurrentAuditor().orElse("SYSTEM");
-            programRepository.insertIfAbsent(
-                    prgrmFileNm,
-                    "자동생성메뉴(" + vo.getMenuNm() + ")",
-                    vo.getModernRoute(),
-                    "/auto-generated",
-                    auditActor);
-        }
+        assertProgramExists(prgrmFileNm);
 
         Menu menu = Menu.builder()
                 .menuNm(vo.getMenuNm())
@@ -356,7 +343,9 @@ public class MenuService {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
         // Menu.update 는 null-safe 병합이다 — 전달되지 않은(null) 값은 기존 값을 유지하고, 빈 문자열이면 비운다.
-        menu.updateWithModernRoute(vo.getMenuNm(), normalizePrgrmFileNm(vo.getPrgrmFileNm()),
+        String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
+        assertProgramExists(prgrmFileNm);
+        menu.updateWithModernRoute(vo.getMenuNm(), prgrmFileNm,
                 normalizeUpMenuSn(vo.getUpMenuSn()),
                 vo.getMenuOrdr(),
                 vo.getMenuExpln(),
@@ -393,6 +382,13 @@ public class MenuService {
      */
     private static Long normalizeUpMenuSn(Long upMenuSn) {
         return (upMenuSn != null && upMenuSn == 0L) ? null : upMenuSn;
+    }
+
+    private void assertProgramExists(String prgrmFileNm) {
+        if (prgrmFileNm != null && !programRepository.existsById(prgrmFileNm)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "등록된 프로그램을 선택하거나 연결 프로그램을 비워 주세요.");
+        }
     }
 
     /**

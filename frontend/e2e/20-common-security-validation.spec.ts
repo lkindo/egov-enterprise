@@ -92,8 +92,17 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
         await expect(page).toHaveURL(/.*master/);
 
         console.log('>>> Step 2: Clearing cookies and localStorage to simulate session expiration');
+        // CI 34315391348 trace: 쿠키 삭제 뒤 GET /ws/083/zwtnev2m/eventsource가 401이고
+        // 로그인 화면에는 정상 도착했다. 인증된 진입 후에만 이 세션 소실 응답 1회를 검증한다.
+        consoleGuard.expectErrors([
+            sessionLossProbe('E2E-SESSION-CLEARED-SOCKJS-EVENTSOURCE-401',
+                /\/ws\/[0-9]{3}\/[A-Za-z0-9_-]+\/eventsource(?:\?|$)/, 'GET', 1,
+                '쿠키 삭제 뒤 SockJS EventSource 전송도 인증 거부되어야 한다.'),
+        ]);
         await context.clearCookies();
         await page.evaluate(() => localStorage.clear());
+        const deniedEventSource = await context.request.get('/ws/000/expired0/eventsource');
+        expect(deniedEventSource.status(), '세션 없는 EventSource 전송은 인증 거부되어야 함').toBe(401);
         
         console.log('>>> Step 3: Attempting a protected navigation');
         // API 인터셉터와 middleware가 모두 세션 소실을 감지할 수 있어 보호 경로 탐색은 다른

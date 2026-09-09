@@ -24,7 +24,7 @@ describe('generated DTO constraints stay attached to form schemas', () => {
   });
 
   it.each([
-    ['prgrmFileNm', 101],
+    ['prgrmFileNm', 301],
     ['prgrmStrgPath', 1001],
     ['prgrmKornNm', 101],
     ['url', 1001],
@@ -36,6 +36,10 @@ describe('generated DTO constraints stay attached to form schemas', () => {
       url: '/admin/program',
     };
 
+    expect(programFormSchema.safeParse({
+      ...validProgram,
+      [field]: 'a'.repeat(length - 1),
+    }).success).toBe(true);
     expect(programFormSchema.safeParse({
       ...validProgram,
       [field]: 'a'.repeat(length),

@@ -1,5 +1,6 @@
 package nuri.business.domain.menu;
 
+import nuri.business.domain.program.Program;
 import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,11 @@ class MenuPersistenceTest extends PersistenceTestSupport {
     @DisplayName("메뉴 정보 CRUD 테스트")
     void menuCrud() {
         // given
+        entityManager.persist(Program.builder()
+                .prgrmFileNm("file.do")
+                .prgrmKornNm("테스트 프로그램")
+                .url("/test/menu")
+                .build());
         Menu menu = Menu.builder()
                 .menuNm("테스트 메뉴")
                 .menuOrdr(1)
@@ -48,6 +54,8 @@ class MenuPersistenceTest extends PersistenceTestSupport {
         Menu updated = menuRepository.findById(menuSn).orElseThrow();
         assertThat(updated.getMenuNm()).isEqualTo("수정된 메뉴");
         assertThat(updated.getMenuOrdr()).isEqualTo(2);
+        assertThat(updated.getPrgrmFileNm()).isEqualTo("file.do");
+        assertThat(updated.getProgram().getPrgrmKornNm()).isEqualTo("테스트 프로그램");
     }
 
     @Test

@@ -294,7 +294,6 @@ export function BoardMakerWizard() {
  menuNm: data.menuNm || data.bbsTtl,
  upMenuSn: Number(data.upperMenuNo),
  menuOrdr: data.menuOrdr,
- prgrmFileNm: 'EgovBBSMaster',
  modernRoute: `/admin/community/boards/select-board-list?bbsId=${bbsId}`,
  menuExpln: `Auto-generated menu for board ${data.bbsTtl}`,
  useYn: 'N'

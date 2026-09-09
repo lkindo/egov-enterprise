@@ -38,11 +38,27 @@ class SmsRecptnAuditingRepositoryTest {
     private SmsRecptnRepository repository;
 
     @Autowired
+    private SmsRepository smsRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @AfterEach
     void clearSecurityContext() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("숫자로 저장된 수신번호는 하이픈을 포함한 검색어로도 조회된다")
+    void findsCanonicalRecipientUsingLegacySearchFormat() {
+        Sms sms = smsRepository.saveAndFlush(Sms.builder().sndngTelno("0212345678").sndngCn("search fixture").build());
+        repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(sms.getSmsTrsmSn())
+                .rcptnTelno("01012345678").rsltCd("P").build());
+        var pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        assertThat(smsRepository.searchSms("0", "010-1234-5678", pageable).getContent())
+                .extracting(Sms::getSmsTrsmSn).containsExactly(sms.getSmsTrsmSn());
+        assertThat(smsRepository.searchSms("0", "1234-5678", pageable).getTotalElements()).isEqualTo(1);
+        assertThat(smsRepository.searchSms("0", "9999", pageable).getContent()).isEmpty();
     }
 
     @Test

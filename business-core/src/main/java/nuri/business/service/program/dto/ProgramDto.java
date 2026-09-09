@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "프로그램 정보 DTO")
 public class ProgramDto {
     @Schema(description = "프로그램 파일 명칭")
-    @Size(max = 100)
+    @Size(max = 300)
     private String prgrmFileNm;
 
     @Schema(description = "프로그램 저장 경로")

@@ -28,7 +28,7 @@ public class RoleProgramMap extends BaseEntity implements Serializable {
     private String roleId;
 
     @Id
-    @Column(name = "prgrm_file_nm", length = 100)
+    @Column(name = "prgrm_file_nm", length = 300)
     @NonNull
     private String prgrmFileNm;
 

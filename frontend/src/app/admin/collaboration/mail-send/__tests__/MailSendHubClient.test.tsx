@@ -151,12 +151,12 @@ describe('MailSendHubClient validation', () => {
     const user = userEvent.setup();
     render(<MailSendHubClient />);
     const fields = await enterValidMail(user);
-    fireEvent.change(fields.subject, { target: { value: '가'.repeat(101) } });
+    fireEvent.change(fields.subject, { target: { value: '가'.repeat(257) } });
 
     await user.click(screen.getByRole('button', { name: /메일 발송/ }));
 
     expect(mocks.sendMail).not.toHaveBeenCalled();
-    expect(await screen.findAllByText(/최대 100자/)).not.toHaveLength(0);
+    expect(await screen.findAllByText(/최대 256자/)).not.toHaveLength(0);
     await waitFor(() => expect(fields.subject).toHaveFocus());
   });
 

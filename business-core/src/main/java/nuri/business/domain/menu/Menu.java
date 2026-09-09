@@ -27,12 +27,12 @@ public class Menu extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String menuNm;
 
-    @Column(name = "prgrm_file_nm", length = 100)
+    @Column(name = "prgrm_file_nm", length = 300)
     private String prgrmFileNm;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "prgrm_file_nm", referencedColumnName = "prgrm_file_nm", insertable = false, updatable = false,
-        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+        foreignKey = @ForeignKey(name = "fk_tb_menu_info_tb_prgrm_lst"))
     private nuri.business.domain.program.Program program;
 
     @Column(name = "up_menu_sn")
@@ -56,7 +56,7 @@ public class Menu extends BaseEntity {
     @Column(length = 100)
     private String relImgPath;
 
-    @Column(length = 100)
+    @Column(length = 300)
     private String relImgNm;
 
     /**

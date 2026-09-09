@@ -1,6 +1,6 @@
 # ARIA PII 마스터 키 로테이션 런북
 
-이 런북은 애플리케이션의 `ALGORITHM_KEY`로 암호화하는 `tb_user_info.rrno`에만 적용한다.
+이 런북은 애플리케이션의 `ALGORITHM_KEY`로 암호화하는 `tb_user_info.user_enrrno`에만 적용한다.
 SSH 키, JWT secret, TLS 인증서, provider credential의 회전 절차가 아니다. 외부 credential 폐기는
 각 provider 런북과 [.agent/memory/known-gaps.md](../../.agent/memory/known-gaps.md)에서 관리한다.
 
@@ -25,10 +25,10 @@ SSH 키, JWT secret, TLS 인증서, provider credential의 회전 절차가 아�
 ```sql
 SELECT count(*) AS rrno_rows
 FROM tb_user_info
-WHERE rrno IS NOT NULL AND btrim(rrno) <> '';
+WHERE user_enrrno IS NOT NULL AND btrim(user_enrrno) <> '';
 ```
 
-행 수와 확인 시각만 운영 기록에 남기고 rrno 값이나 암호문을 일반 로그·문서에 복사하지 않는다.
+행 수와 확인 시각만 운영 기록에 남기고 user_enrrno 값이나 암호문을 일반 로그·문서에 복사하지 않는다.
 
 ## 2. 새 키 생성·보관
 
@@ -66,7 +66,7 @@ openssl rand -base64 32
 - JPA entity를 읽고 같은 평문을 다시 `save`하는 방식에 기대지 않는다. dirty checking이 변경 없음으로 판단해
   UPDATE를 생략할 수 있으므로 raw ciphertext를 명시적으로 교체한다.
 - 읽은 암호문을 dual-key로 복호화하고 **활성 키로 다시 암호화**한다.
-- `WHERE <pk>=? AND rrno=?` 같은 compare-and-set으로 동시 변경을 감지한다.
+- `WHERE <pk>=? AND user_enrrno=?` 같은 compare-and-set으로 동시 변경을 감지한다.
 - batch별 transaction, 중단·재개 기준, 처리·실패 집계, idempotency, rollback 절차를 제공한다.
 - 실패 행을 조용히 skip하고 완료로 표시하지 않는다. 전체 성공 전에는 old key를 제거하지 않는다.
 - 테스트용 fixture에서 old-only ciphertext, active ciphertext, 손상값, 과거 평문, 동시 변경을 검증한다.

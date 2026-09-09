@@ -5,9 +5,11 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-08
-verified_against: 533fee82077a6e4243501a0cfd49a5b2bf676ea9
+verified_at: 2026-09-09
+verified_against: bc56579c19bf98495418e5a9060bda17d2f3028d
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0013-standard-text-length-alignment.md
+  - ../../docs/02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md
   - ../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md
   - ../../AGENTS.md
   - ../../docs/02-architecture/decisions/README.md
@@ -45,6 +47,8 @@ refresh_triggers:
 | ADR-0010 | accepted | 프론트엔드 `accessToken`·`session_exp` 쿠키의 `Secure`는 기본·배포 필수 속성으로 유지하고, 명시적으로 opt-in한 평문 HTTP local loopback 개발·검증에만 미설정을 허용한다. `accessToken`의 `HttpOnly`와 두 쿠키의 `SameSite=Strict`는 환경과 관계없이 유지한다. | 로컬 HTTP 흐름을 보존하면서 production 여부나 내부 URL만으로 공유 개발·preview·staging까지 예외가 넓어지는 것을 막고, 로그인·재발급을 같은 실행 계약에 결속하기 위해서다. | [ADR-0010](../../docs/02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md) | 2026-09-05 | - |
 | ADR-0011 | accepted | 익명 만족도와 비밀번호 소유 증명을 지원하지 않고, 만족도 수정·삭제를 인증된 owner-or-admin으로 제한한다. 공개 삭제 API의 `pswd` query와 DTO·서비스·엔티티 애플리케이션 매핑의 휴면 비밀번호 경로를 제거한다. credential-like 이름은 전역 경계가 query 요청을, 정적 API 계약이 path/query 선언을, 프론트 source 계약이 명시적 query producer를 차단하며 물리 컬럼은 별도 DB 결정 전까지 보존한다. | 현재 인증 제품과 소유권 모델을 일치시키고 자격증명을 request-target에 노출하는 이중 소유 증명 체계를 없애기 위해서다. | [ADR-0011](../../docs/02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 2026-09-05 | - |
 | ADR-0012 | accepted | 블로그 생산 도메인·게시판 귀속 계약·재사용 profile·비사용 물리 스키마를 제거한다. 새 Flyway는 쓰기를 먼저 차단하고 데이터나 참조가 있으면 제거를 거부하며 과거 migration과 공유 표준 사전은 보존한다. | 사용자가 블로그 도메인 전체 제거를 명시적으로 요청했고 OCI 읽기 실측에서 블로그·멤버십·게시판 귀속이 모두 0건이었다. | [ADR-0012](../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md) | 2026-09-08 | DEC-OPS-072의 블로그 유지 및 DEC-OPS-047의 블로그 기여자 부분 |
+| ADR-0013 | accepted | 설계 보류 6개를 제외한 표준 길이 24개를 DB·백엔드·프론트에서 맞추고 SMS 수신번호를 숫자 문자열로 정규화한다. 단계별 배포와 데이터 보존 검증을 이행한다. | 사용자 명시 적용 요청과 OCI 표준·스키마·데이터 실측에 따른 정합 작업이다. | [ADR-0013](../../docs/02-architecture/decisions/ADR-0013-standard-text-length-alignment.md) | 2026-09-09 | - |
+| ADR-0014 | accepted | 프로그램 키 300자와 선택적 메뉴 FK, 변경일자와 분리된 HHmmss, USER_ENRRNO/V256 암호화 표준으로 보류 6개를 정합한다. | 사용자가 OCI 실측 기반 권장안을 채택했다. 기존 경로·권한·암호문 보존과 단계적 전환을 검증한다. | [ADR-0014](../../docs/02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md) | 2026-09-09 | ADR-0013의 6개 보류 |
 
 ## 운영 결정 index
 

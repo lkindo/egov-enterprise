@@ -152,7 +152,7 @@ export default function ProgramAdminClient({
  try {
  const isConfirmed = await confirm({
  title: '프로그램 삭제',
- message: `[${program.prgrmKornNm}] (${program.prgrmFileNm}) 프로그램을 삭제하시겠습니까? 해당 프로그램과 연결된 모든 메뉴 연동이 해제될 수 있습니다.`,
+ message: `[${program.prgrmKornNm}] (${program.prgrmFileNm}) 프로그램을 삭제하시겠습니까? 메뉴 또는 역할에서 사용 중이면 먼저 연결을 해제해 주세요.`,
  variant: 'destructive',
  confirmText: '삭제 실행'
  });

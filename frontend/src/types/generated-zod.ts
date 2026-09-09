@@ -55,8 +55,8 @@ export const UserSelfProfileUpdateRequestSchema = z.object({
   middleTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
   faxNo: z.string().min(0).max(11).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
+  homeAddr: z.string().min(0).max(200).optional(),
+  daddr: z.string().min(0).max(200).optional(),
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
@@ -97,7 +97,7 @@ export type ScrapDto = z.infer<typeof ScrapDtoSchema>;
 export const ScheduleDtoSchema = z.object({
   schdlSn: z.number().int().optional(),
   schdlSeCd: z.string().min(0).max(12).optional(),
-  schdlNm: z.string().min(0).max(100),
+  schdlNm: z.string().min(0).max(300),
   schdlCn: z.string().min(0).max(4000).optional(),
   reptSeCd: z.string().min(0).max(12).optional(),
   schdlBgngYmd: z.string().min(0).max(8).optional(),
@@ -275,7 +275,7 @@ export type CommentDto = z.infer<typeof CommentDtoSchema>;
 // ==========================================================================
 export const BoardSaveRequestSchema = z.object({
   bbsId: z.string().min(0).max(20),
-  pstTtl: z.string().min(1).max(100),
+  pstTtl: z.string().min(1).max(256),
   pstCn: z.string().min(0).max(4000),
   pstBgngYmd: z.string().min(0).max(10).optional(),
   pstEndYmd: z.string().min(0).max(10).optional(),
@@ -324,8 +324,8 @@ export const UserProfileUpdateRequestSchema = z.object({
   middleTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
   faxNo: z.string().min(0).max(11).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
+  homeAddr: z.string().min(0).max(200).optional(),
+  daddr: z.string().min(0).max(200).optional(),
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
@@ -412,8 +412,8 @@ export type SurveyQuestionDto = z.infer<typeof SurveyQuestionDtoSchema>;
 // ==========================================================================
 export const SurveyInfoDtoSchema = z.object({
   srvySn: z.number().int().optional(),
-  srvyTtl: z.string().min(0).max(100),
-  srvyPrps: z.string().min(0).max(1000).optional(),
+  srvyTtl: z.string().min(0).max(256),
+  srvyPrps: z.string().min(0).max(4000).optional(),
   srvyWrtGdCn: z.string().min(0).max(4000).optional(),
   srvyBgngYmd: z.string().min(0).max(8).optional(),
   srvyEndYmd: z.string().min(0).max(8).optional(),
@@ -430,7 +430,7 @@ export type SurveyInfoDto = z.infer<typeof SurveyInfoDtoSchema>;
 export const SurveyTemplateDtoSchema = z.object({
   srvyTmpltSn: z.number().int().optional(),
   srvyTmpltTypeCd: z.string().min(0).max(12).optional(),
-  srvyTmpltPathNm: z.string().min(0).max(100).optional(),
+  srvyTmpltPathNm: z.string().min(0).max(300).optional(),
   srvyTmpltExpln: z.string().min(0).max(4000).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
@@ -442,7 +442,7 @@ export type SurveyTemplateDto = z.infer<typeof SurveyTemplateDtoSchema>;
 // ==========================================================================
 export const RoleManageDtoSchema = z.object({
   roleId: z.string().min(0).max(20).optional(),
-  roleNm: z.string().min(0).max(100),
+  roleNm: z.string().min(0).max(300),
   rolePatrn: z.string().min(0).max(300).optional(),
   roleExpln: z.string().min(0).max(4000).optional(),
   roleTypeCd: z.string().min(0).max(12).optional(),
@@ -455,7 +455,7 @@ export type RoleManageDto = z.infer<typeof RoleManageDtoSchema>;
 // ProgramDto Schema
 // ==========================================================================
 export const ProgramDtoSchema = z.object({
-  prgrmFileNm: z.string().min(0).max(100).optional(),
+  prgrmFileNm: z.string().min(0).max(300).optional(),
   prgrmStrgPath: z.string().min(0).max(1000).optional(),
   prgrmKornNm: z.string().min(0).max(100).optional(),
   url: z.string().min(0).max(1000).optional(),
@@ -514,14 +514,14 @@ export const MenuDtoSchema = z.object({
   id: z.number().int().optional(),
   menuNo: z.number().int().optional(),
   menuNm: z.string().min(0).max(100),
-  prgrmFileNm: z.string().min(0).max(100).optional(),
+  prgrmFileNm: z.string().min(0).max(300).optional(),
   upMenuSn: z.number().int().optional(),
   upperMenuId: z.number().int().optional(),
   menuOrdr: z.number().int(),
   chkURL: z.string().optional(),
   menuExpln: z.string().min(0).max(4000).optional(),
   relImgPath: z.string().min(0).max(100).optional(),
-  relImgNm: z.string().min(0).max(100).optional(),
+  relImgNm: z.string().min(0).max(300).optional(),
   modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional(),
   crtrId: z.string().min(0).max(20).optional(),
   useYn: z.string().min(0).max(1).optional(),
@@ -576,7 +576,7 @@ export type GroupManageDto = z.infer<typeof GroupManageDtoSchema>;
 // ==========================================================================
 export const DeptManageDtoSchema = z.object({
   ognzId: z.string().min(0).max(20).optional(),
-  ognzNm: z.string().min(0).max(100),
+  ognzNm: z.string().min(0).max(200),
   ognzExpln: z.string().min(0).max(4000).optional(),
   upOgnzId: z.string().min(0).max(20).optional(),
   sortOrdr: z.number().int().optional(),
@@ -730,7 +730,7 @@ export const RewardManageDtoSchema = z.object({
   rwardwnrId: z.string().min(0).max(20).optional(),
   rwardCode: z.string().min(0).max(12).optional(),
   rwardDe: z.string().min(0).max(8).optional(),
-  rwardNm: z.string().min(0).max(100).optional(),
+  rwardNm: z.string().min(0).max(300).optional(),
   pblenCn: z.string().min(0).max(4000).optional(),
   sanctnerId: z.string().min(0).max(20).optional(),
   confmAt: z.string().min(0).max(1).optional(),
@@ -768,7 +768,7 @@ export const ExternalHrDtoSchema = z.object({
   gndrCd: z.string().min(0).max(12).optional(),
   otsdHrNm: z.string().min(0).max(100).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
-  ogdpInstNm: z.string().min(0).max(100).optional(),
+  ogdpInstNm: z.string().min(0).max(200).optional(),
   brdtYmd: z.string().min(0).max(8).optional(),
   areaNo: z.string().min(0).max(4).optional(),
   mdTelno: z.string().min(0).max(4).optional(),
@@ -806,7 +806,7 @@ export const EventInfoDtoSchema = z.object({
   evntBgngYmd: z.string().min(0).max(8).optional(),
   evntEndYmd: z.string().min(0).max(8).optional(),
   evntUseCnt: z.number().int().optional(),
-  picNm: z.string().min(0).max(300).optional(),
+  picNm: z.string().min(0).max(100).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
   evntTypeCd: z.string().min(0).max(12).optional(),
   evntAprvYn: z.string().min(0).max(1).optional(),
@@ -823,7 +823,7 @@ export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
 // ==========================================================================
 export const CommunityDtoSchema = z.object({
   cmntySn: z.number().int().optional(),
-  cmntyNm: z.string().min(0).max(100),
+  cmntyNm: z.string().min(0).max(300),
   cmntyIntroCn: z.string().min(0).max(4000).optional(),
   regSeCd: z.string().min(0).max(12).optional(),
   regSeCdNm: z.string().optional(),
@@ -841,7 +841,7 @@ export type CommunityDto = z.infer<typeof CommunityDtoSchema>;
 // ==========================================================================
 export const AddressBookDtoSchema = z.object({
   adbkSn: z.number().int().optional(),
-  adbkNm: z.string().min(0).max(100),
+  adbkNm: z.string().min(0).max(200),
   rlsScopeCd: z.string().min(0).max(12),
   trgetOgnzId: z.string().min(0).max(20).optional(),
   useYn: z.enum(["Y","N"]).optional(),
@@ -975,7 +975,7 @@ export type NotificationDto = z.infer<typeof NotificationDtoSchema>;
 // ==========================================================================
 export const NoteDtoSchema = z.object({
   noteSn: z.number().int().optional(),
-  noteSj: z.string().optional(),
+  noteSj: z.string().min(0).max(256).optional(),
   noteCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
   noteSndngSn: z.number().int().optional(),
@@ -1017,7 +1017,7 @@ export type MailRecipientDto = z.infer<typeof MailRecipientDtoSchema>;
 // ==========================================================================
 export const SentMailDtoSchema = z.object({
   emlDsptchSn: z.number().int().optional(),
-  sj: z.string().optional(),
+  sj: z.string().min(0).max(256).optional(),
   emailCn: z.string().optional(),
   dsptchPerson: z.string().optional(),
   recptnPerson: z.string().min(0).max(100).optional(),
@@ -1107,8 +1107,8 @@ export const UserDtoSchema = z.object({
   pstinstCd: z.string().min(0).max(12).optional(),
   ognzId: z.string().min(0).max(20).optional(),
   groupId: z.string().min(0).max(20).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
+  homeAddr: z.string().min(0).max(200).optional(),
+  daddr: z.string().min(0).max(200).optional(),
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
@@ -1156,7 +1156,7 @@ export const InstitutionCodeRecptnDtoSchema = z.object({
   etcCd: z.string().min(0).max(20).optional(),
   allInstNm: z.string().min(0).max(100).optional(),
   lwstInstNm: z.string().min(0).max(100).optional(),
-  instAbbrNm: z.string().min(0).max(100).optional(),
+  instAbbrNm: z.string().min(0).max(300).optional(),
   odr: z.string().min(0).max(2).optional(),
   ord: z.string().min(0).max(3).optional(),
   instCycl: z.string().min(0).max(2).optional(),
@@ -1172,7 +1172,7 @@ export const InstitutionCodeRecptnDtoSchema = z.object({
   ablYmd: z.string().min(0).max(8).optional(),
   ablYn: z.string().min(0).max(1).optional(),
   chgYmd: z.string().min(0).max(8).optional(),
-  chgTm: z.string().min(0).max(20).optional(),
+  chgTm: z.string().min(0).max(6).regex(new RegExp("^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$")).optional(),
   crtrYmd: z.string().min(0).max(8).optional(),
   sortOrdr: z.number().int().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
@@ -1218,7 +1218,7 @@ export type SmsDto = z.infer<typeof SmsDtoSchema>;
 // ==========================================================================
 export const SmsRecptnDtoSchema = z.object({
   smsTrsmSn: z.number().int().optional(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional(),
+  rcptnTelno: z.string().min(1).max(11).regex(new RegExp("^[0-9]+$")).optional(),
   esntlId: z.string().min(0).max(20).optional(),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),
@@ -2097,7 +2097,7 @@ export const BoardDtoSchema = z.object({
   pstSn: z.number().int().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   ansSn: z.number().int().optional().nullable(),
-  pstTtl: z.string().min(0).max(100).optional().nullable(),
+  pstTtl: z.string().min(0).max(256).optional().nullable(),
   pstCn: z.string().min(0).max(4000).optional().nullable(),
   upPstSn: z.number().int().optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),
@@ -3544,7 +3544,7 @@ export const InstitutionCodeDtoSchema = z.object({
   instCd: z.string().min(0).max(7).optional(),
   allInstNm: z.string().min(0).max(100).optional(),
   lwstInstNm: z.string().min(0).max(100).optional(),
-  instAbbrNm: z.string().min(0).max(100).optional(),
+  instAbbrNm: z.string().min(0).max(300).optional(),
   odr: z.string().min(0).max(2).optional(),
   ord: z.string().min(0).max(3).optional(),
   instCycl: z.string().min(0).max(2).optional(),
@@ -3560,7 +3560,7 @@ export const InstitutionCodeDtoSchema = z.object({
   ablYmd: z.string().min(0).max(8).optional(),
   ablYn: z.string().min(0).max(1).optional(),
   chgYmd: z.string().min(0).max(8).optional(),
-  chgTm: z.string().min(0).max(20).optional(),
+  chgTm: z.string().min(0).max(6).regex(new RegExp("^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$")).optional(),
   crtrYmd: z.string().min(0).max(8).optional(),
   sortOrdr: z.number().int().optional(),
 });
@@ -4363,8 +4363,8 @@ export const UserSelfProfileUpdateRequestRequestSchema = z.object({
   middleTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
   faxNo: z.string().min(0).max(11).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
+  homeAddr: z.string().min(0).max(200).optional(),
+  daddr: z.string().min(0).max(200).optional(),
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
@@ -4379,8 +4379,8 @@ export const UserSelfProfileUpdateRequestResponseSchema = z.object({
   middleTelno: z.string().min(0).max(4).optional().nullable(),
   endTelno: z.string().min(0).max(4).optional().nullable(),
   faxNo: z.string().min(0).max(11).optional().nullable(),
-  homeAddr: z.string().min(0).max(300).optional().nullable(),
-  daddr: z.string().min(0).max(300).optional().nullable(),
+  homeAddr: z.string().min(0).max(200).optional().nullable(),
+  daddr: z.string().min(0).max(200).optional().nullable(),
   zip: z.string().min(0).max(5).optional().nullable(),
   officeTelno: z.string().min(0).max(20).optional().nullable(),
   mblTelno: z.string().min(0).max(11).optional().nullable(),
@@ -4427,7 +4427,7 @@ export const ScrapDtoResponseSchema = z.object({
 export const ScheduleDtoRequestSchema = z.object({
   schdlSn: z.number().int().optional(),
   schdlSeCd: z.string().min(0).max(12).optional(),
-  schdlNm: z.string().min(0).max(100),
+  schdlNm: z.string().min(0).max(300),
   schdlCn: z.string().min(0).max(4000).optional(),
   reptSeCd: z.string().min(0).max(12).optional(),
   schdlBgngYmd: z.string().min(0).max(8).optional(),
@@ -4448,7 +4448,7 @@ export const ScheduleDtoRequestSchema = z.object({
 export const ScheduleDtoResponseSchema = z.object({
   schdlSn: z.number().int().optional().nullable(),
   schdlSeCd: z.string().min(0).max(12).optional().nullable(),
-  schdlNm: z.string().min(0).max(100),
+  schdlNm: z.string().min(0).max(300),
   schdlCn: z.string().min(0).max(4000).optional().nullable(),
   reptSeCd: z.string().min(0).max(12).optional().nullable(),
   schdlBgngYmd: z.string().min(0).max(8).optional().nullable(),
@@ -4675,7 +4675,7 @@ export const CommentDtoResponseSchema = z.object({
 
 export const BoardSaveRequestRequestSchema = z.object({
   bbsId: z.string().min(0).max(20),
-  pstTtl: z.string().min(1).max(100),
+  pstTtl: z.string().min(1).max(256),
   pstCn: z.string().min(0).max(4000),
   pstBgngYmd: z.string().min(0).max(10).optional(),
   pstEndYmd: z.string().min(0).max(10).optional(),
@@ -4690,7 +4690,7 @@ export const BoardSaveRequestRequestSchema = z.object({
 
 export const BoardSaveRequestResponseSchema = z.object({
   bbsId: z.string().min(0).max(20),
-  pstTtl: z.string().min(1).max(100),
+  pstTtl: z.string().min(1).max(256),
   pstCn: z.string().min(0).max(4000),
   pstBgngYmd: z.string().min(0).max(10).optional().nullable(),
   pstEndYmd: z.string().min(0).max(10).optional().nullable(),
@@ -4744,8 +4744,8 @@ export const UserProfileUpdateRequestRequestSchema = z.object({
   middleTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
   faxNo: z.string().min(0).max(11).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
+  homeAddr: z.string().min(0).max(200).optional(),
+  daddr: z.string().min(0).max(200).optional(),
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
@@ -4763,8 +4763,8 @@ export const UserProfileUpdateRequestResponseSchema = z.object({
   middleTelno: z.string().min(0).max(4).optional().nullable(),
   endTelno: z.string().min(0).max(4).optional().nullable(),
   faxNo: z.string().min(0).max(11).optional().nullable(),
-  homeAddr: z.string().min(0).max(300).optional().nullable(),
-  daddr: z.string().min(0).max(300).optional().nullable(),
+  homeAddr: z.string().min(0).max(200).optional().nullable(),
+  daddr: z.string().min(0).max(200).optional().nullable(),
   zip: z.string().min(0).max(5).optional().nullable(),
   officeTelno: z.string().min(0).max(20).optional().nullable(),
   mblTelno: z.string().min(0).max(11).optional().nullable(),
@@ -4877,8 +4877,8 @@ export const SurveyQuestionDtoResponseSchema = z.object({
 
 export const SurveyInfoDtoRequestSchema = z.object({
   srvySn: z.number().int().optional(),
-  srvyTtl: z.string().min(0).max(100),
-  srvyPrps: z.string().min(0).max(1000).optional(),
+  srvyTtl: z.string().min(0).max(256),
+  srvyPrps: z.string().min(0).max(4000).optional(),
   srvyWrtGdCn: z.string().min(0).max(4000).optional(),
   srvyBgngYmd: z.string().min(0).max(8).optional(),
   srvyEndYmd: z.string().min(0).max(8).optional(),
@@ -4890,8 +4890,8 @@ export const SurveyInfoDtoRequestSchema = z.object({
 
 export const SurveyInfoDtoResponseSchema = z.object({
   srvySn: z.number().int().optional().nullable(),
-  srvyTtl: z.string().min(0).max(100),
-  srvyPrps: z.string().min(0).max(1000).optional().nullable(),
+  srvyTtl: z.string().min(0).max(256),
+  srvyPrps: z.string().min(0).max(4000).optional().nullable(),
   srvyWrtGdCn: z.string().min(0).max(4000).optional().nullable(),
   srvyBgngYmd: z.string().min(0).max(8).optional().nullable(),
   srvyEndYmd: z.string().min(0).max(8).optional().nullable(),
@@ -4904,7 +4904,7 @@ export const SurveyInfoDtoResponseSchema = z.object({
 export const SurveyTemplateDtoRequestSchema = z.object({
   srvyTmpltSn: z.number().int().optional(),
   srvyTmpltTypeCd: z.string().min(0).max(12).optional(),
-  srvyTmpltPathNm: z.string().min(0).max(100).optional(),
+  srvyTmpltPathNm: z.string().min(0).max(300).optional(),
   srvyTmpltExpln: z.string().min(0).max(4000).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
@@ -4913,7 +4913,7 @@ export const SurveyTemplateDtoRequestSchema = z.object({
 export const SurveyTemplateDtoResponseSchema = z.object({
   srvyTmpltSn: z.number().int().optional().nullable(),
   srvyTmpltTypeCd: z.string().min(0).max(12).optional().nullable(),
-  srvyTmpltPathNm: z.string().min(0).max(100).optional().nullable(),
+  srvyTmpltPathNm: z.string().min(0).max(300).optional().nullable(),
   srvyTmpltExpln: z.string().min(0).max(4000).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
@@ -4921,7 +4921,7 @@ export const SurveyTemplateDtoResponseSchema = z.object({
 
 export const RoleManageDtoRequestSchema = z.object({
   roleId: z.string().min(0).max(20).optional(),
-  roleNm: z.string().min(0).max(100),
+  roleNm: z.string().min(0).max(300),
   rolePatrn: z.string().min(0).max(300).optional(),
   roleExpln: z.string().min(0).max(4000).optional(),
   roleTypeCd: z.string().min(0).max(12).optional(),
@@ -4931,7 +4931,7 @@ export const RoleManageDtoRequestSchema = z.object({
 
 export const RoleManageDtoResponseSchema = z.object({
   roleId: z.string().min(0).max(20).optional().nullable(),
-  roleNm: z.string().min(0).max(100),
+  roleNm: z.string().min(0).max(300),
   rolePatrn: z.string().min(0).max(300).optional().nullable(),
   roleExpln: z.string().min(0).max(4000).optional().nullable(),
   roleTypeCd: z.string().min(0).max(12).optional().nullable(),
@@ -4940,7 +4940,7 @@ export const RoleManageDtoResponseSchema = z.object({
 });
 
 export const ProgramDtoRequestSchema = z.object({
-  prgrmFileNm: z.string().min(0).max(100).optional(),
+  prgrmFileNm: z.string().min(0).max(300).optional(),
   prgrmStrgPath: z.string().min(0).max(1000).optional(),
   prgrmKornNm: z.string().min(0).max(100).optional(),
   url: z.string().min(0).max(1000).optional(),
@@ -4948,7 +4948,7 @@ export const ProgramDtoRequestSchema = z.object({
 });
 
 export const ProgramDtoResponseSchema = z.object({
-  prgrmFileNm: z.string().min(0).max(100).optional().nullable(),
+  prgrmFileNm: z.string().min(0).max(300).optional().nullable(),
   prgrmStrgPath: z.string().min(0).max(1000).optional().nullable(),
   prgrmKornNm: z.string().min(0).max(100).optional().nullable(),
   url: z.string().min(0).max(1000).optional().nullable(),
@@ -5023,14 +5023,14 @@ export const MenuDtoRequestSchema = z.object({
   id: z.number().int().optional(),
   menuNo: z.number().int().optional(),
   menuNm: z.string().min(0).max(100),
-  prgrmFileNm: z.string().min(0).max(100).optional(),
+  prgrmFileNm: z.string().min(0).max(300).optional(),
   upMenuSn: z.number().int().optional(),
   upperMenuId: z.number().int().optional(),
   menuOrdr: z.number().int(),
   chkURL: z.string().optional(),
   menuExpln: z.string().min(0).max(4000).optional(),
   relImgPath: z.string().min(0).max(100).optional(),
-  relImgNm: z.string().min(0).max(100).optional(),
+  relImgNm: z.string().min(0).max(300).optional(),
   modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional(),
   crtrId: z.string().min(0).max(20).optional(),
   useYn: z.string().min(0).max(1).optional(),
@@ -5041,14 +5041,14 @@ export const MenuDtoResponseSchema = z.object({
   id: z.number().int().optional().nullable(),
   menuNo: z.number().int().optional().nullable(),
   menuNm: z.string().min(0).max(100),
-  prgrmFileNm: z.string().min(0).max(100).optional().nullable(),
+  prgrmFileNm: z.string().min(0).max(300).optional().nullable(),
   upMenuSn: z.number().int().optional().nullable(),
   upperMenuId: z.number().int().optional().nullable(),
   menuOrdr: z.number().int(),
   chkURL: z.string().optional().nullable(),
   menuExpln: z.string().min(0).max(4000).optional().nullable(),
   relImgPath: z.string().min(0).max(100).optional().nullable(),
-  relImgNm: z.string().min(0).max(100).optional().nullable(),
+  relImgNm: z.string().min(0).max(300).optional().nullable(),
   modernRoute: z.string().min(0).max(500).regex(new RegExp("^$|^(?:/(?:[^\\s?#/\\\\]+/?)*|(?:[A-Za-z0-9._~-]+/)*[A-Za-z0-9._~-]+\\.do)(?:\\?(?:tab|bbsId)=[^&#\\s]*(?:&(?:tab|bbsId)=[^&#\\s]*)*)?(?:#[^\\s]*)?$")).optional().nullable(),
   crtrId: z.string().min(0).max(20).optional().nullable(),
   useYn: z.string().min(0).max(1).optional().nullable(),
@@ -5114,7 +5114,7 @@ export const GroupManageDtoResponseSchema = z.object({
 
 export const DeptManageDtoRequestSchema = z.object({
   ognzId: z.string().min(0).max(20).optional(),
-  ognzNm: z.string().min(0).max(100),
+  ognzNm: z.string().min(0).max(200),
   ognzExpln: z.string().min(0).max(4000).optional(),
   upOgnzId: z.string().min(0).max(20).optional(),
   sortOrdr: z.number().int().optional(),
@@ -5124,7 +5124,7 @@ export const DeptManageDtoRequestSchema = z.object({
 
 export const DeptManageDtoResponseSchema = z.object({
   ognzId: z.string().min(0).max(20).optional().nullable(),
-  ognzNm: z.string().min(0).max(100),
+  ognzNm: z.string().min(0).max(200),
   ognzExpln: z.string().min(0).max(4000).optional().nullable(),
   upOgnzId: z.string().min(0).max(20).optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),
@@ -5339,7 +5339,7 @@ export const RewardManageDtoRequestSchema = z.object({
   rwardwnrId: z.string().min(0).max(20).optional(),
   rwardCode: z.string().min(0).max(12).optional(),
   rwardDe: z.string().min(0).max(8).optional(),
-  rwardNm: z.string().min(0).max(100).optional(),
+  rwardNm: z.string().min(0).max(300).optional(),
   pblenCn: z.string().min(0).max(4000).optional(),
   sanctnerId: z.string().min(0).max(20).optional(),
   confmAt: z.string().min(0).max(1).optional(),
@@ -5358,7 +5358,7 @@ export const RewardManageDtoResponseSchema = z.object({
   rwardwnrId: z.string().min(0).max(20).optional().nullable(),
   rwardCode: z.string().min(0).max(12).optional().nullable(),
   rwardDe: z.string().min(0).max(8).optional().nullable(),
-  rwardNm: z.string().min(0).max(100).optional().nullable(),
+  rwardNm: z.string().min(0).max(300).optional().nullable(),
   pblenCn: z.string().min(0).max(4000).optional().nullable(),
   sanctnerId: z.string().min(0).max(20).optional().nullable(),
   confmAt: z.string().min(0).max(1).optional().nullable(),
@@ -5398,7 +5398,7 @@ export const ExternalHrDtoRequestSchema = z.object({
   gndrCd: z.string().min(0).max(12).optional(),
   otsdHrNm: z.string().min(0).max(100).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
-  ogdpInstNm: z.string().min(0).max(100).optional(),
+  ogdpInstNm: z.string().min(0).max(200).optional(),
   brdtYmd: z.string().min(0).max(8).optional(),
   areaNo: z.string().min(0).max(4).optional(),
   mdTelno: z.string().min(0).max(4).optional(),
@@ -5412,7 +5412,7 @@ export const ExternalHrDtoResponseSchema = z.object({
   gndrCd: z.string().min(0).max(12).optional().nullable(),
   otsdHrNm: z.string().min(0).max(100).optional().nullable(),
   crTypeCd: z.string().min(0).max(12).optional().nullable(),
-  ogdpInstNm: z.string().min(0).max(100).optional().nullable(),
+  ogdpInstNm: z.string().min(0).max(200).optional().nullable(),
   brdtYmd: z.string().min(0).max(8).optional().nullable(),
   areaNo: z.string().min(0).max(4).optional().nullable(),
   mdTelno: z.string().min(0).max(4).optional().nullable(),
@@ -5452,7 +5452,7 @@ export const EventInfoDtoRequestSchema = z.object({
   evntBgngYmd: z.string().min(0).max(8).optional(),
   evntEndYmd: z.string().min(0).max(8).optional(),
   evntUseCnt: z.number().int().optional(),
-  picNm: z.string().min(0).max(300).optional(),
+  picNm: z.string().min(0).max(100).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
   evntTypeCd: z.string().min(0).max(12).optional(),
   evntAprvYn: z.string().min(0).max(1).optional(),
@@ -5471,7 +5471,7 @@ export const EventInfoDtoResponseSchema = z.object({
   evntBgngYmd: z.string().min(0).max(8).optional().nullable(),
   evntEndYmd: z.string().min(0).max(8).optional().nullable(),
   evntUseCnt: z.number().int().optional().nullable(),
-  picNm: z.string().min(0).max(300).optional().nullable(),
+  picNm: z.string().min(0).max(100).optional().nullable(),
   prepMttr: z.string().min(0).max(2500).optional().nullable(),
   evntTypeCd: z.string().min(0).max(12).optional().nullable(),
   evntAprvYn: z.string().min(0).max(1).optional().nullable(),
@@ -5484,7 +5484,7 @@ export const EventInfoDtoResponseSchema = z.object({
 
 export const CommunityDtoRequestSchema = z.object({
   cmntySn: z.number().int().optional(),
-  cmntyNm: z.string().min(0).max(100),
+  cmntyNm: z.string().min(0).max(300),
   cmntyIntroCn: z.string().min(0).max(4000).optional(),
   regSeCd: z.string().min(0).max(12).optional(),
   regSeCdNm: z.string().optional(),
@@ -5498,7 +5498,7 @@ export const CommunityDtoRequestSchema = z.object({
 
 export const CommunityDtoResponseSchema = z.object({
   cmntySn: z.number().int().optional().nullable(),
-  cmntyNm: z.string().min(0).max(100),
+  cmntyNm: z.string().min(0).max(300),
   cmntyIntroCn: z.string().min(0).max(4000).optional().nullable(),
   regSeCd: z.string().min(0).max(12).optional().nullable(),
   regSeCdNm: z.string().optional().nullable(),
@@ -5512,7 +5512,7 @@ export const CommunityDtoResponseSchema = z.object({
 
 export const AddressBookDtoRequestSchema = z.object({
   adbkSn: z.number().int().optional(),
-  adbkNm: z.string().min(0).max(100),
+  adbkNm: z.string().min(0).max(200),
   rlsScopeCd: z.string().min(0).max(12),
   trgetOgnzId: z.string().min(0).max(20).optional(),
   useYn: z.enum(["Y","N"]).optional(),
@@ -5526,7 +5526,7 @@ export const AddressBookDtoRequestSchema = z.object({
 
 export const AddressBookDtoResponseSchema = z.object({
   adbkSn: z.number().int().optional().nullable(),
-  adbkNm: z.string().min(0).max(100),
+  adbkNm: z.string().min(0).max(200),
   rlsScopeCd: z.string().min(0).max(12),
   trgetOgnzId: z.string().min(0).max(20).optional().nullable(),
   useYn: z.enum(["Y","N"]).optional().nullable(),
@@ -5700,7 +5700,7 @@ export const NotificationDtoResponseSchema = z.object({
 
 export const NoteDtoRequestSchema = z.object({
   noteSn: z.number().int().optional(),
-  noteSj: z.string().optional(),
+  noteSj: z.string().min(0).max(256).optional(),
   noteCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
   noteSndngSn: z.number().int().optional(),
@@ -5718,7 +5718,7 @@ export const NoteDtoRequestSchema = z.object({
 
 export const NoteDtoResponseSchema = z.object({
   noteSn: z.number().int().optional().nullable(),
-  noteSj: z.string().optional().nullable(),
+  noteSj: z.string().min(0).max(256).optional().nullable(),
   noteCn: z.string().min(0).max(4000).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
   noteSndngSn: z.number().int().optional().nullable(),
@@ -5760,7 +5760,7 @@ export const MailRecipientDtoResponseSchema = z.object({
 
 export const SentMailDtoRequestSchema = z.object({
   emlDsptchSn: z.number().int().optional(),
-  sj: z.string().optional(),
+  sj: z.string().min(0).max(256).optional(),
   emailCn: z.string().optional(),
   dsptchPerson: z.string().optional(),
   recptnPerson: z.string().min(0).max(100).optional(),
@@ -5772,7 +5772,7 @@ export const SentMailDtoRequestSchema = z.object({
 
 export const SentMailDtoResponseSchema = z.object({
   emlDsptchSn: z.number().int().optional().nullable(),
-  sj: z.string().optional().nullable(),
+  sj: z.string().min(0).max(256).optional().nullable(),
   emailCn: z.string().optional().nullable(),
   dsptchPerson: z.string().optional().nullable(),
   recptnPerson: z.string().min(0).max(100).optional().nullable(),
@@ -5874,8 +5874,8 @@ export const UserDtoRequestSchema = z.object({
   pstinstCd: z.string().min(0).max(12).optional(),
   ognzId: z.string().min(0).max(20).optional(),
   groupId: z.string().min(0).max(20).optional(),
-  homeAddr: z.string().min(0).max(300).optional(),
-  daddr: z.string().min(0).max(300).optional(),
+  homeAddr: z.string().min(0).max(200).optional(),
+  daddr: z.string().min(0).max(200).optional(),
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
@@ -5904,8 +5904,8 @@ export const UserDtoResponseSchema = z.object({
   pstinstCd: z.string().min(0).max(12).optional().nullable(),
   ognzId: z.string().min(0).max(20).optional().nullable(),
   groupId: z.string().min(0).max(20).optional().nullable(),
-  homeAddr: z.string().min(0).max(300).optional().nullable(),
-  daddr: z.string().min(0).max(300).optional().nullable(),
+  homeAddr: z.string().min(0).max(200).optional().nullable(),
+  daddr: z.string().min(0).max(200).optional().nullable(),
   zip: z.string().min(0).max(5).optional().nullable(),
   officeTelno: z.string().min(0).max(20).optional().nullable(),
   mblTelno: z.string().min(0).max(11).optional().nullable(),
@@ -5955,7 +5955,7 @@ export const InstitutionCodeRecptnDtoRequestSchema = z.object({
   etcCd: z.string().min(0).max(20).optional(),
   allInstNm: z.string().min(0).max(100).optional(),
   lwstInstNm: z.string().min(0).max(100).optional(),
-  instAbbrNm: z.string().min(0).max(100).optional(),
+  instAbbrNm: z.string().min(0).max(300).optional(),
   odr: z.string().min(0).max(2).optional(),
   ord: z.string().min(0).max(3).optional(),
   instCycl: z.string().min(0).max(2).optional(),
@@ -5971,7 +5971,7 @@ export const InstitutionCodeRecptnDtoRequestSchema = z.object({
   ablYmd: z.string().min(0).max(8).optional(),
   ablYn: z.string().min(0).max(1).optional(),
   chgYmd: z.string().min(0).max(8).optional(),
-  chgTm: z.string().min(0).max(20).optional(),
+  chgTm: z.string().min(0).max(6).regex(new RegExp("^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$")).optional(),
   crtrYmd: z.string().min(0).max(8).optional(),
   sortOrdr: z.number().int().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
@@ -5987,7 +5987,7 @@ export const InstitutionCodeRecptnDtoResponseSchema = z.object({
   etcCd: z.string().min(0).max(20).optional().nullable(),
   allInstNm: z.string().min(0).max(100).optional().nullable(),
   lwstInstNm: z.string().min(0).max(100).optional().nullable(),
-  instAbbrNm: z.string().min(0).max(100).optional().nullable(),
+  instAbbrNm: z.string().min(0).max(300).optional().nullable(),
   odr: z.string().min(0).max(2).optional().nullable(),
   ord: z.string().min(0).max(3).optional().nullable(),
   instCycl: z.string().min(0).max(2).optional().nullable(),
@@ -6003,7 +6003,7 @@ export const InstitutionCodeRecptnDtoResponseSchema = z.object({
   ablYmd: z.string().min(0).max(8).optional().nullable(),
   ablYn: z.string().min(0).max(1).optional().nullable(),
   chgYmd: z.string().min(0).max(8).optional().nullable(),
-  chgTm: z.string().min(0).max(20).optional().nullable(),
+  chgTm: z.string().min(0).max(6).regex(new RegExp("^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$")).optional().nullable(),
   crtrYmd: z.string().min(0).max(8).optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
@@ -6054,7 +6054,7 @@ export const SmsDtoResponseSchema = z.object({
 
 export const SmsRecptnDtoRequestSchema = z.object({
   smsTrsmSn: z.number().int().optional(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional(),
+  rcptnTelno: z.string().min(1).max(11).regex(new RegExp("^[0-9]+$")).optional(),
   esntlId: z.string().min(0).max(20).optional(),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),
@@ -6062,7 +6062,7 @@ export const SmsRecptnDtoRequestSchema = z.object({
 
 export const SmsRecptnDtoResponseSchema = z.object({
   smsTrsmSn: z.number().int().optional().nullable(),
-  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")).optional().nullable(),
+  rcptnTelno: z.string().min(1).max(11).regex(new RegExp("^[0-9]+$")).optional().nullable(),
   esntlId: z.string().min(0).max(20).optional().nullable(),
   rsltCd: z.string().optional().nullable(),
   rsltMsg: z.string().optional().nullable(),
@@ -7274,7 +7274,7 @@ export const BoardDtoRequestSchema = z.object({
   pstSn: z.number().int().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   ansSn: z.number().int().optional().nullable(),
-  pstTtl: z.string().min(0).max(100).optional().nullable(),
+  pstTtl: z.string().min(0).max(256).optional().nullable(),
   pstCn: z.string().min(0).max(4000).optional().nullable(),
   upPstSn: z.number().int().optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),
@@ -7303,7 +7303,7 @@ export const BoardDtoResponseSchema = z.object({
   pstSn: z.number().int().optional().nullable(),
   bbsId: z.string().min(0).max(20).optional().nullable(),
   ansSn: z.number().int().optional().nullable(),
-  pstTtl: z.string().min(0).max(100).optional().nullable(),
+  pstTtl: z.string().min(0).max(256).optional().nullable(),
   pstCn: z.string().min(0).max(4000).optional().nullable(),
   upPstSn: z.number().int().optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),
@@ -9311,7 +9311,7 @@ export const InstitutionCodeDtoRequestSchema = z.object({
   instCd: z.string().min(0).max(7).optional(),
   allInstNm: z.string().min(0).max(100).optional(),
   lwstInstNm: z.string().min(0).max(100).optional(),
-  instAbbrNm: z.string().min(0).max(100).optional(),
+  instAbbrNm: z.string().min(0).max(300).optional(),
   odr: z.string().min(0).max(2).optional(),
   ord: z.string().min(0).max(3).optional(),
   instCycl: z.string().min(0).max(2).optional(),
@@ -9327,7 +9327,7 @@ export const InstitutionCodeDtoRequestSchema = z.object({
   ablYmd: z.string().min(0).max(8).optional(),
   ablYn: z.string().min(0).max(1).optional(),
   chgYmd: z.string().min(0).max(8).optional(),
-  chgTm: z.string().min(0).max(20).optional(),
+  chgTm: z.string().min(0).max(6).regex(new RegExp("^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$")).optional(),
   crtrYmd: z.string().min(0).max(8).optional(),
   sortOrdr: z.number().int().optional(),
 });
@@ -9336,7 +9336,7 @@ export const InstitutionCodeDtoResponseSchema = z.object({
   instCd: z.string().min(0).max(7).optional().nullable(),
   allInstNm: z.string().min(0).max(100).optional().nullable(),
   lwstInstNm: z.string().min(0).max(100).optional().nullable(),
-  instAbbrNm: z.string().min(0).max(100).optional().nullable(),
+  instAbbrNm: z.string().min(0).max(300).optional().nullable(),
   odr: z.string().min(0).max(2).optional().nullable(),
   ord: z.string().min(0).max(3).optional().nullable(),
   instCycl: z.string().min(0).max(2).optional().nullable(),
@@ -9352,7 +9352,7 @@ export const InstitutionCodeDtoResponseSchema = z.object({
   ablYmd: z.string().min(0).max(8).optional().nullable(),
   ablYn: z.string().min(0).max(1).optional().nullable(),
   chgYmd: z.string().min(0).max(8).optional().nullable(),
-  chgTm: z.string().min(0).max(20).optional().nullable(),
+  chgTm: z.string().min(0).max(6).regex(new RegExp("^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$")).optional().nullable(),
   crtrYmd: z.string().min(0).max(8).optional().nullable(),
   sortOrdr: z.number().int().optional().nullable(),
 });

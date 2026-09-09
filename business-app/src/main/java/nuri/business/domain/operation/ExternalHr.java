@@ -41,7 +41,7 @@ public class ExternalHr implements Persistable<ExternalHrId> {
     @Column(length = 12)
     private String crTypeCd;
 
-    @Column(length = 100)
+    @Column(length = 200)
     private String ogdpInstNm;
 
     @Column(length = 8)

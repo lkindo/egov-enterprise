@@ -30,7 +30,7 @@ public class ExternalHrDto {
     private String otsdHrNm;
     @Size(max = 12)
     private String crTypeCd;
-    @Size(max = 100)
+    @Size(max = 200)
     private String ogdpInstNm;
     @Size(max = 8)
     private String brdtYmd;

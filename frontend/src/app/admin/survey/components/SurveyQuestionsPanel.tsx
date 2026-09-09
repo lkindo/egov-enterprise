@@ -376,7 +376,7 @@ export default function SurveyQuestionsPanel() {
                 surveyValidation.clearError('srvyTtl');
                 setNewSurveyTitle(e.target.value);
               }}
-              maxLength={100}
+              maxLength={256}
               placeholder="예: 2026년 사내 만족도 조사"
             />
             {surveyValidation.errors.srvyTtl ? (
@@ -498,7 +498,7 @@ export default function SurveyQuestionsPanel() {
             value={editingText}
             onChange={(e) => { titleEditValidation.clearError('srvyTtl'); setEditingText(e.target.value); }}
             aria-label="설문지 제목 수정"
-            maxLength={100}
+            maxLength={256}
             autoFocus
           />
           <Button type="submit" size="sm" disabled={editSurvey.isPending} aria-busy={editSurvey.isPending || undefined} className="shrink-0">

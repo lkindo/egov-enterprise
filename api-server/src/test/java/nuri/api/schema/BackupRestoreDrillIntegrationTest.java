@@ -59,7 +59,7 @@ class BackupRestoreDrillIntegrationTest {
                 assertThat(insert.executeUpdate()).isEqualTo(1);
             }
             try (var update = source.prepareStatement("""
-                    UPDATE tb_user_info SET rrno=?
+                    UPDATE tb_user_info SET user_enrrno=?
                     WHERE esntl_id=(SELECT esntl_id FROM tb_user_info ORDER BY esntl_id LIMIT 1)
                     """)) {
                 update.setString(1, encrypted);
@@ -89,7 +89,7 @@ class BackupRestoreDrillIntegrationTest {
             checked(RESTORED, "tar", "-xf", "/tmp/attachments.tar", "-C", "/tmp/drill-attachments");
             try (Connection restored = open(RESTORED); var statement = restored.createStatement()) {
                 assertThat(tableCounts(restored)).isEqualTo(before);
-                try (var rows = statement.executeQuery("SELECT rrno FROM tb_user_info ORDER BY esntl_id LIMIT 1")) {
+                try (var rows = statement.executeQuery("SELECT user_enrrno FROM tb_user_info ORDER BY esntl_id LIMIT 1")) {
                     assertThat(rows.next()).isTrue();
                     assertThat(crypto.decrypt(Base64.getDecoder().decode(rows.getString(1)), key)).isEqualTo(plain);
                     assertThatThrownBy(() -> crypto.decrypt(Base64.getDecoder().decode(rows.getString(1)), "wrong-key"))

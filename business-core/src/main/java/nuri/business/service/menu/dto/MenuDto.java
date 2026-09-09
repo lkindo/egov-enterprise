@@ -28,7 +28,7 @@ public class MenuDto {
     private String menuNm;
 
     @Schema(description = "프로그램 파일 명칭", example = "EgovMain")
-    @Size(max = 100)
+    @Size(max = 300)
     private String prgrmFileNm;
 
     @Schema(description = "상위 메뉴 번호", example = "0")
@@ -53,7 +53,7 @@ public class MenuDto {
     private String relImgPath;
 
     @Schema(description = "관련 이미지 명칭", example = "icon_system.png")
-    @Size(max = 100)
+    @Size(max = 300)
     private String relImgNm;
 
     /**

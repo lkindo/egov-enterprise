@@ -78,19 +78,19 @@ test.describe('Tier 21: Advanced Resilience', () => {
     //   스트레스를 주지 않는다.
 
     test('Data Integrity: Boundary Input (Huge Payload)', async ({ page }) => {
-        // 경계값(255자) 제출은 zod 검증 실패를 의도한다. 기대된 입력 오류는 console error가 아니라
+        // 경계값(257자) 제출은 zod 검증 실패를 의도한다. 기대된 입력 오류는 console error가 아니라
         // field와 프로그램적으로 연결된 inline 메시지·aria-invalid·focus 이동으로 안내되어야 한다.
         await page.goto('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
         
-        const hugeTitle = 'B'.repeat(255); // Near common DB limit for VARCHAR
+        const hugeTitle = 'B'.repeat(257); // 표준 제목 한도 256자의 바로 다음 경계
         const validContent = 'Content '.repeat(100);
 
         console.log('>>> Step 1: Filling form with large payload');
         const titleInput = page.locator('input[name="pstTtl"], input[name="nttSj"], [data-testid="article-title-input"]').first();
-        // 실제 사용자 입력은 maxlength가 100자로 잘라 준다. 여기서는 native 방어를 먼저 확인한 뒤
+        // 실제 사용자 입력은 maxlength가 256자로 잘라 준다. 여기서는 native 방어를 먼저 확인한 뒤
         // legacy draft/autofill/DOM 조작처럼 제한을 우회해 들어온 값도 Zod가 거부하고 오류 위치로
         // 안내하는 defense-in-depth 경계를 검증한다.
-        await expect(titleInput).toHaveAttribute('maxlength', '100');
+        await expect(titleInput).toHaveAttribute('maxlength', '256');
         await titleInput.evaluate((element) => element.removeAttribute('maxlength'));
         await titleInput.fill(hugeTitle);
         await expect(titleInput).toHaveValue(hugeTitle);
@@ -102,23 +102,23 @@ test.describe('Tier 21: Advanced Resilience', () => {
         const submitBtn = page.locator('button[type="submit"]').first();
         await submitBtn.click();
 
-        // native 제한을 우회한 pstTtl(255자)은 zod max(100)을 초과하므로 제출 시 검증이 '항상' 실패한다.
+        // native 제한을 우회한 pstTtl(257자)은 zod max(256)을 초과하므로 제출 시 검증이 '항상' 실패한다.
         // providers.tsx의 zod 에러맵이 too_big(string)을 '최대 {maximum}자 이하로 입력해야 합니다.'로
         // 매핑하고, 이 메시지는 pstTtl FormItem의 inline FormMessage(및 useAppForm의 Sonner 토스트)에
         // 렌더된다. 과거 getByRole('alert')는 Sonner의 '빈' announcer를 매칭하던 오탐이었으므로,
         // 실제 검증 메시지를 그 렌더 surface에서 단언한다.
-        const validationMessage = page.getByText('최대 100자 이하로 입력해야 합니다').first();
+        const validationMessage = page.getByText('최대 256자 이하로 입력해야 합니다').first();
         await expect(validationMessage).toBeVisible({ timeout: 30000 });
         await expect(titleInput).toBeFocused();
         await expect(titleInput).toHaveAttribute('aria-invalid', 'true');
         const errorMessageId = await titleInput.getAttribute('aria-errormessage');
         expect(errorMessageId, 'invalid title은 inline 오류 id를 aria-errormessage로 참조해야 함').toBeTruthy();
-        await expect(page.locator(`[id="${errorMessageId}"]`)).toContainText('최대 100자 이하로 입력해야 합니다');
+        await expect(page.locator(`[id="${errorMessageId}"]`)).toContainText('최대 256자 이하로 입력해야 합니다');
 
         const alertText = await validationMessage.innerText();
         console.log(`>>> Submission Validation Text: '${alertText}'`);
         // 경계값 초과 제출은 반드시 최대 길이 검증 메시지를 노출해야 한다(계약 단언).
-        expect(alertText, `경계값(255자) 제출은 최대 길이 검증 메시지를 노출해야 함 (실제: '${alertText}')`)
-            .toContain('최대 100자 이하로 입력해야 합니다');
+        expect(alertText, `경계값(257자) 제출은 최대 길이 검증 메시지를 노출해야 함 (실제: '${alertText}')`)
+            .toContain('최대 256자 이하로 입력해야 합니다');
     });
 });

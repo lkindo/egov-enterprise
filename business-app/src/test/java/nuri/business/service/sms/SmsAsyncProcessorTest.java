@@ -43,6 +43,28 @@ class SmsAsyncProcessorTest {
     }
 
     @Test
+    @DisplayName("전환 전 콜백 번호로 정규화된 키의 발송 결과를 기록한다")
+    void updateResult_legacyCallbackFindsCanonicalKey() {
+        SmsRecptn row = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01012345678").rsltCd("P").build();
+        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "01012345678"))).willReturn(Optional.of(row));
+        smsAsyncProcessor.updateResult(1L, "010-1234-5678", "S", "ok");
+        assertThat(row.getRsltCd()).isEqualTo("S");
+        verify(smsRecptnRepository, never()).findById(new SmsRecptnId(1L, "010-1234-5678"));
+        verifyNoInteractions(smsSender);
+    }
+
+    @Test
+    @DisplayName("전환 전 DB의 하이픈 키도 결과 기록에서 계속 읽는다")
+    void updateResult_fallsBackToLegacyStoredKey() {
+        SmsRecptn row = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("010-1234-5678").rsltCd("P").build();
+        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "01012345678"))).willReturn(Optional.empty());
+        given(smsRecptnRepository.findById(new SmsRecptnId(1L, "010-1234-5678"))).willReturn(Optional.of(row));
+        smsAsyncProcessor.updateResult(1L, "010-1234-5678", "S", "ok");
+        assertThat(row.getRsltCd()).isEqualTo("S");
+        verifyNoInteractions(smsSender);
+    }
+
+    @Test
     @DisplayName("비동기 SMS 발송 - 성공 (결과 기록은 키 기반 짧은 트랜잭션 경유)")
     void processSending_Success() {
         SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").build();

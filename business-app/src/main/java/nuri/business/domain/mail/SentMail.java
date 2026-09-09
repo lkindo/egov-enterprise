@@ -21,7 +21,7 @@ public class SentMail extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long emlDsptchSn;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 256, nullable = false)
     private String emlTtl;
 
     @Column(length = 4000)

@@ -97,7 +97,7 @@ describe('BoardRegistClient validation contract', () => {
     const title = screen.getByRole('textbox', { name: '게시글 제목' });
     const editor = screen.getByRole('textbox', { name: /게시글 본문 내용/ });
     expect(title).toHaveAttribute('aria-required', 'true');
-    expect(title).toHaveAttribute('maxlength', '100');
+    expect(title).toHaveAttribute('maxlength', '256');
     await waitFor(() => expect(editor).toHaveAttribute('data-error-focus', 'pstCn'));
     expect(editor).toHaveAttribute('aria-required', 'true');
   });
@@ -107,7 +107,7 @@ describe('BoardRegistClient validation contract', () => {
     renderSubject();
     const title = screen.getByRole('textbox', { name: '게시글 제목' });
     const editor = screen.getByRole('textbox', { name: /게시글 본문 내용/ });
-    const tooLongTitle = 'B'.repeat(101);
+    const tooLongTitle = 'B'.repeat(257);
     fireEvent.change(title, { target: { value: tooLongTitle } });
     fireEvent.change(editor, { target: { value: '<p>본문</p>' } });
     editor.focus();

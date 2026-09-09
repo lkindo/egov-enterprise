@@ -25,7 +25,7 @@ public class Note extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long noteSn;
 
-    @Column(length = 100)
+    @Column(length = 256)
     private String noteTtl;
 
     @Column(length = 4000)

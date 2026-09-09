@@ -113,7 +113,7 @@ const cases: ContractCase[] = [
     ),
     submitName: /시스템 동기화/,
     firstFieldName: /프로그램 파일명/,
-    maxLength: '100',
+    maxLength: '300',
     prepareValid: () => {
       fireEvent.change(screen.getByRole('textbox', { name: /프로그램 파일명/ }), {
         target: { value: 'TEST_PROGRAM' },
@@ -131,7 +131,7 @@ const cases: ContractCase[] = [
     render: (onSubmit) => <DepartmentForm mode="create" onSubmit={onSubmit} onCancel={vi.fn()} />,
     submitName: /부서 등록/,
     firstFieldName: /부서 명칭/,
-    maxLength: '100',
+    maxLength: '200',
     renderValid: (onSubmit) => (
       <DepartmentForm
         mode="create"

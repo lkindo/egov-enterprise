@@ -47,7 +47,7 @@ public class InstitutionCodeRecptnDto {
     private String lwstInstNm;
 
     @Schema(description = "기관약칭명")
-    @Size(max = 100)
+    @Size(max = 300)
     private String instAbbrNm;
 
     @Schema(description = "차수")
@@ -110,8 +110,9 @@ public class InstitutionCodeRecptnDto {
     @Size(max = 8)
     private String chgYmd;
 
-    @Schema(description = "변경시간")
-    @Size(max = 20)
+    @Schema(description = "변경시각 (HHmmss, 변경일자는 chgYmd)", example = "143025")
+    @Size(max = 6)
+    @Pattern(regexp = "^([01][0-9]|2[0-3])[0-5][0-9][0-5][0-9]$", message = "변경시각은 HHmmss 형식이어야 합니다.")
     private String chgTm;
 
     @Schema(description = "기준일자")

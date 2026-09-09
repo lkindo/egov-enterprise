@@ -47,7 +47,7 @@ public class EventInfoDto {
     private Long evntUseCnt;
 
     @Schema(description = "담당자명", example = "홍길동")
-    @Size(max = 300)
+    @Size(max = 100)
     private String picNm;
 
     @Schema(description = "준비 사항", example = "개인 노트북 지참 및 API 토큰 설정")

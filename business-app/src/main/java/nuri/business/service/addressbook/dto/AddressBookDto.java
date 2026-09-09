@@ -21,7 +21,7 @@ public class AddressBookDto {
     private Long adbkSn;
 
     @NotBlank(message = "주소록 명칭은 필수입니다.")
-    @Size(max = 100, message = "주소록 명칭은 100자 이내여야 합니다.")
+    @Size(max = 200, message = "주소록 명칭은 200자 이내여야 합니다.")
     @Schema(description = "주소록 명칭", example = "마케팅팀 주소록")
     private String adbkNm;
 

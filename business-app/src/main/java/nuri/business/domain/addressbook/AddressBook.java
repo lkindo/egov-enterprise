@@ -29,7 +29,7 @@ public class AddressBook extends BaseEntity {
         // (AddressBookUser 내 getAddressBook() 혹은 리플렉션/롬복 대응)
     }
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 200, nullable = false)
     private String adbkNm;
 
     @Column(length = 12)

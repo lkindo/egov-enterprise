@@ -123,7 +123,11 @@ public class SmsAsyncProcessor {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateResult(Long smsTrsmSn, String rcptnTelno, String rsltCd, String rsltMsg) {
-        smsRecptnRepository.findById(new SmsRecptnId(smsTrsmSn, rcptnTelno))
+        String canonical = nuri.business.domain.sms.SmsRecipientNumber.requireValid(rcptnTelno);
+        smsRecptnRepository.findById(new SmsRecptnId(smsTrsmSn, canonical))
+                // 전환 전 저장된 하이픈 키와 전환 후 숫자 키를 모두 읽어 결과 기록을 보존한다.
+                .or(() -> canonical.equals(rcptnTelno) ? java.util.Optional.empty()
+                        : smsRecptnRepository.findById(new SmsRecptnId(smsTrsmSn, rcptnTelno)))
                 .ifPresent(r -> r.updateResult(rsltCd, rsltMsg));
     }
 

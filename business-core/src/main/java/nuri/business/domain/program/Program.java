@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class Program extends BaseEntity {
 
     @Id
-    @Column(name = "prgrm_file_nm", length = 100)
+    @Column(name = "prgrm_file_nm", length = 300)
     private String prgrmFileNm;
 
     @Column(length = 1000)

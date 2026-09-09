@@ -25,7 +25,7 @@ public class SurveyTemplate extends BaseEntity {
     @Column(length = 4000)
     private String srvyTmpltExpln;
 
-    @Column(length = 100)
+    @Column(length = 300)
     private String srvyTmpltPathNm;
 
     private byte[] srvyTmpltImgInfo;
