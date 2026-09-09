@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "codeqlVersion": "2.26.4",
+  "minimumBlockingScore": 7,
+  "languages": ["java", "javascript"],
+  "querySuite": "security-extended"
+}

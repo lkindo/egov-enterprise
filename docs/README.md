@@ -79,6 +79,7 @@
 | [ADR-0010](02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md) | 프론트엔드 세션 쿠키의 Secure 예외를 명시적 평문 loopback으로 제한 |
 | [ADR-0011](02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 익명 만족도·비밀번호 소유 증명을 퇴역하고 자격증명 query를 제거 |
 | [ADR-0012](02-architecture/decisions/ADR-0012-retire-blog-domain.md) | 비사용 블로그 도메인·게시판 귀속 계약·물리 스키마를 제거하고 과거 Flyway 이력은 보존 |
+| [ADR-0015](02-architecture/decisions/ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 |
 
 ## 03-guides — 개발 지침
 
@@ -102,6 +103,8 @@
 | [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 재사용 Base 생성 가이드 |
 
 ## 04-operations — 운영
+
+[SAST 오탐 예외 검토 결과](04-operations/sast-findings-review.md)는 시큐어코딩 분석의 소스 근거와 승인된 한정 예외를 기록한다.
 
 | 문서 | 내용 |
 |---|---|

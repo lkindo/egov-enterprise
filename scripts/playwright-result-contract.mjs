@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readRegularFile } from './read-regular-file.mjs';
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -217,7 +218,7 @@ function cli() {
   if (size === 0 || size > MAX_REPORT_BYTES) {
     throw new Error(`Playwright JSON report size is invalid: ${size} bytes`);
   }
-  const report = JSON.parse(fs.readFileSync(reportPathValue, 'utf8'));
+  const report = JSON.parse(readRegularFile(reportPathValue, { maximumBytes: MAX_REPORT_BYTES, encoding: 'utf8' }));
   const result = validatePlaywrightResult(report, planned);
   if (result.errors.length > 0) throw new Error(result.errors.join('\n'));
   process.stdout.write(

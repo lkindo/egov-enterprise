@@ -152,6 +152,23 @@
           "job": "frontend-scope"
         }
       ]
+    },
+    {
+      "id": "EXEC-SECURE-CODING",
+      "tier": [
+        "ci"
+      ],
+      "command": "node scripts/sast-policy.mjs <sarif> <language> <audit-sarif> <publish-sarif>",
+      "bindings": [
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "run: node scripts/sast-policy.mjs build/sast/raw/${{ matrix.language }}.sarif ${{ matrix.language }} build/sast/sanitized/${{ matrix.language }}.sarif build/sast/publish/${{ matrix.language }}.sarif",
+          "tiers": [
+            "ci"
+          ],
+          "job": "sast-scope"
+        }
+      ]
     }
   ],
   "qualityPopulations": [

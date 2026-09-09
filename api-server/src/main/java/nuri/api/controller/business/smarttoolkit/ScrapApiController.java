@@ -1,4 +1,5 @@
 package nuri.api.controller.business.smarttoolkit;
+import nuri.api.support.PageRequests;
 
 import jakarta.validation.Valid;
 import nuri.business.service.scrap.ScrapService;
@@ -33,7 +34,7 @@ public class ScrapApiController {
             @RequestParam(defaultValue = "10") int pageUnit) {
 
         String userId = currentLoginId();
-        Pageable pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        Pageable pageable = PageRequests.of(pageIndex, pageUnit);
         Page<ScrapDto> pageResult = egovScrapService.getMyScrapList(userId, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));

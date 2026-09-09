@@ -19,3 +19,4 @@
 | [ADR-0012](ADR-0012-retire-blog-domain.md) | 비사용 블로그 도메인과 물리 스키마를 제거하고 데이터가 있는 환경의 제거는 차단 | Accepted |
 | [ADR-0013](ADR-0013-standard-text-length-alignment.md) | 설계 보류 6개를 유지하며 표준 길이 24개와 SMS 정규화를 양단 계약에 적용 | Accepted |
 | [ADR-0014](ADR-0014-deferred-standard-design-alignment.md) | 보류 6개를 프로그램 선택적 참조·HHmmss·암호화 주민번호 표준으로 정합 | Accepted |
+| [ADR-0015](ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 | Accepted |

@@ -64,7 +64,7 @@ function read(relativePath) {
 }
 
 function activeMarkdown(source) {
-  const withoutComments = source.replace(/<!--[\s\S]*?-->/gu, '');
+  const withoutComments = source.replace(/<!--[\s\S]*?-->/gu, ' ');
   let inFence = false;
   return withoutComments
     .split('\n')
@@ -80,8 +80,8 @@ function activeMarkdown(source) {
 
 function activeHtml(source) {
   return source
-    .replace(/<!--[\s\S]*?-->/gu, '')
-    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/giu, '');
+    .replace(/<!--[\s\S]*?-->/gu, ' ')
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/giu, ' ');
 }
 
 function htmlText(source) {

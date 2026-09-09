@@ -1,3 +1,4 @@
+import { readRegularFile } from './read-regular-file.mjs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -2192,7 +2193,7 @@ export function verifyDurableEvidenceFromRepository({ repoRoot = process.cwd() }
     const indexPath = path.join(root, ...indexRelativePath.split('/'));
     const indexStat = fs.lstatSync(indexPath);
     if (!indexStat.isFile() || indexStat.isSymbolicLink()) throw new Error('index is not a regular file');
-    const indexBytes = fs.readFileSync(indexPath);
+    const indexBytes = readRegularFile(indexPath);
     const index = assertCanonicalJsonBytes(indexBytes);
     if (index.currentDigest === null) {
       assertBaselineIndex(index, new Map());
@@ -2227,7 +2228,7 @@ export function verifyDurableEvidenceFromRepository({ repoRoot = process.cwd() }
       const absolutePath = path.join(root, ...relativePath.split('/'));
       const stat = fs.lstatSync(absolutePath);
       if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('summary is not a regular file');
-      const bytes = fs.readFileSync(absolutePath);
+      const bytes = readRegularFile(absolutePath);
       const summary = assertCanonicalJsonBytes(bytes);
       if (sha256Hex(bytes) !== entry.artifactDigest) throw new Error('summary filename digest does not match its bytes');
       const trackedPath = gitOutput(root, ['ls-files', '--error-unmatch', '--', relativePath]).trim();
@@ -2303,7 +2304,7 @@ function readArtifactMap(artifactRoot, forbiddenArtifactKeys) {
       if (relativePath.startsWith('../') || path.posix.extname(relativePath).toLowerCase() !== '.json') {
         throw new Error('artifact inventory must be JSON-only and contained');
       }
-      const bytes = fs.readFileSync(absolutePath);
+      const bytes = readRegularFile(absolutePath);
       let parsed;
       try {
         parsed = JSON.parse(bytes.toString('utf8'));

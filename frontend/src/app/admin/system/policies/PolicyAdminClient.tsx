@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/form';
 
 import { PolicyUpdateRequestSchema } from '@/types/generated-zod';
+import { htmlToSemanticPlainText } from '@/lib/html-to-text';
 
 export const policySchema = PolicyUpdateRequestSchema.extend({
   plcyTtl: PolicyUpdateRequestSchema.shape.plcyTtl
@@ -40,7 +41,7 @@ export const policySchema = PolicyUpdateRequestSchema.extend({
     .min(1, '정책 내용을 입력해 주세요.')
     .max(4000, '정책 내용은 최대 4,000자까지 입력할 수 있습니다.'),
 }).superRefine((values, context) => {
-  const plainText = values.plcyCn.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  const plainText = htmlToSemanticPlainText(values.plcyCn);
   if (!plainText) {
     context.addIssue({ code: 'custom', path: ['plcyCn'], message: '정책 내용을 입력해 주세요.' });
   }
@@ -149,7 +150,7 @@ export default function PolicyAdminClient() {
  accessor: (item) => (
  <div className="max-w-xs truncate text-muted-foreground opacity-60 text-left">
  {(() => {
- const plain = (item.plcyCn || '').replace(/<[^>]*>?/gm, '');
+ const plain = htmlToSemanticPlainText(item.plcyCn || '');
  if (!plain) return '내용 없음';
  return plain.length > 50 ? `${plain.substring(0, 50)}...` : plain;
  })()}

@@ -1,3 +1,4 @@
+import { readRegularFile } from './read-regular-file.mjs';
 import assert from 'node:assert/strict';
 import {
   mkdirSync,
@@ -624,7 +625,7 @@ test('build wrapper orders build then bounded inspect for each image and atomica
   assert.equal(result.attestationPath, attestationOutputPath);
   assert.match(result.attestationSha256, /^[a-f0-9]{64}$/u);
   assert.equal(statSync(attestationOutputPath).isFile(), true);
-  const raw = readFileSync(attestationOutputPath);
+  const raw = readRegularFile(attestationOutputPath);
   assert.equal(raw.at(-1), 0x0a);
   assert.deepEqual(validateBaselineBuildAttestationBytes(raw, {
     expectedAttestationSha256: result.attestationSha256,

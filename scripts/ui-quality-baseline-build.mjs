@@ -1,3 +1,4 @@
+import { readRegularFile } from './read-regular-file.mjs';
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import {
@@ -357,7 +358,7 @@ export function readDockerImageId(imageIdPath) {
     if (!metadata.isFile() || metadata.isSymbolicLink() || metadata.size > 80) {
       throw new Error('unsafe image ID file');
     }
-    rawBytes = readFileSync(imageIdPath);
+    rawBytes = readRegularFile(imageIdPath, { maximumBytes: 80 });
   } catch {
     throw new Error('baseline Docker image ID file is malformed');
   }
@@ -792,7 +793,7 @@ export function writeBaselineBuildAttestation({
     if (path.resolve(realpathSync(outputPath)) !== outputPath) {
       throw new Error('baseline build attestation publication verification failed');
     }
-    const readback = readFileSync(outputPath);
+    const readback = readRegularFile(outputPath);
     validateBaselineBuildAttestationBytes(readback, {
       expectedAttestationSha256: sha256(rawBytes),
     });

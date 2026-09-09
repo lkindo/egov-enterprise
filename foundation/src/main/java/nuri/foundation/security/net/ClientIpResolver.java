@@ -171,7 +171,7 @@ public class ClientIpResolver {
             if (range != null) {
                 result.add(range);
             } else {
-                log.warn("[ClientIpResolver] 신뢰 프록시 항목을 해석하지 못해 무시합니다: {}", t);
+                log.warn("[ClientIpResolver] 신뢰 프록시 항목을 해석하지 못해 무시합니다.");
             }
         }
         return result;

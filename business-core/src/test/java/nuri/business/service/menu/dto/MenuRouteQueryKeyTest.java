@@ -42,6 +42,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MenuRouteQueryKeyTest {
 
+    @Test
+    @org.junit.jupiter.api.Timeout(2)
+    void rejectsLongMalformedRouteWithoutExponentialBacktracking() {
+        assertThat(validate("/" + "a".repeat(450) + "?unexpected=value")).isNotEmpty();
+    }
+
     private static final Validator VALIDATOR;
 
     static {

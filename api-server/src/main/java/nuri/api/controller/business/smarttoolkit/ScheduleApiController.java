@@ -1,6 +1,7 @@
 package nuri.api.controller.business.smarttoolkit;
 
 import jakarta.validation.Valid;
+import nuri.api.support.PageRequests;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.schedule.ScheduleService;
@@ -33,7 +34,7 @@ public class ScheduleApiController {
             @RequestParam(defaultValue = "10") int pageUnit,
             @RequestParam(required = false) String schdlNm) {
         String userId = currentLoginId();
-        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        PageRequest pageable = PageRequests.of(pageIndex, pageUnit);
         Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList(userId, schdlNm, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
@@ -46,7 +47,7 @@ public class ScheduleApiController {
             @RequestParam(defaultValue = "10") int pageUnit,
             @RequestParam(required = false) String schdlNm) {
         String userId = currentLoginId();
-        PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        PageRequest pageable = PageRequests.of(pageIndex, pageUnit);
         // schdlSeCd = "1" is Dept in eGov. 필터축은 담당자가 아니라 부서(schdlDeptId)다.
         Page<ScheduleDto> pageResult = egovScheduleService.getDeptScheduleList("1", userId, schdlNm, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
