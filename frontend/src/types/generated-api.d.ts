@@ -4842,24 +4842,24 @@ export interface components {
         };
         ScheduleDto: {
             /** Format: int64 */
-            schdlSn?: number;
+            readonly schdlSn?: number;
             schdlSeCd?: string;
             schdlNm: string;
             schdlCn?: string;
             reptSeCd?: string;
             schdlBgngYmd?: string;
             schdlEndYmd?: string;
-            schdlIpAddr?: string;
-            schdlPicId?: string;
+            readonly schdlIpAddr?: string;
+            readonly schdlPicId?: string;
             /** Format: int64 */
             atchFileSn?: number;
-            frstRgtrId?: string;
+            readonly frstRgtrId?: string;
             /** Format: date-time */
-            crtDt?: string;
-            lastMdfrId?: string;
+            readonly crtDt?: string;
+            readonly lastMdfrId?: string;
             /** Format: date-time */
-            mdfcnDt?: string;
-            schdlDeptId?: string;
+            readonly mdfcnDt?: string;
+            readonly schdlDeptId?: string;
             schdlKndCd?: string;
             schdlPlcNm?: string;
             schdlImprtCd?: string;
@@ -5377,7 +5377,7 @@ export interface components {
         /** @description 프로그램 정보 DTO */
         ProgramDto: {
             /** @description 프로그램 파일 명칭 */
-            prgrmFileNm?: string;
+            prgrmFileNm: string;
             /** @description 프로그램 저장 경로 */
             prgrmStrgPath?: string;
             /** @description 프로그램 한글 명칭 */
@@ -6148,29 +6148,29 @@ export interface components {
              * Format: int64
              * @description 알림 일련번호
              */
-            notiSn?: number;
+            readonly notiSn?: number;
             /** @description 알림 제목 */
-            notiTtlNm?: string;
+            notiTtlNm: string;
             /** @description 알림 내용 */
             notiCn?: string;
             /**
              * Format: date-time
              * @description 알림 일시
              */
-            notiDt?: string;
+            readonly notiDt?: string;
             /** @description 알림 주기 설정 */
-            notiIvlVal?: string;
+            readonly notiIvlVal?: string;
             /** @description 수신자 ID */
-            rcvrId?: string;
+            readonly rcvrId?: string;
             /** @description 읽음 여부 */
-            readYn?: string;
+            readonly readYn?: string;
             /** @description 링크 URL */
             linkUrl?: string;
             /**
              * Format: date-time
              * @description 등록 일시
              */
-            crtDt?: string;
+            readonly crtDt?: string;
         };
         /** @description 쪽지 정보 */
         NoteDto: {

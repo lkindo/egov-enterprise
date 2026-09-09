@@ -43,13 +43,14 @@ public class OriginValidationFilter extends OncePerRequestFilter {
                     URI refererUri = new URI(referer);
                     source = refererUri.getScheme() + "://" + refererUri.getAuthority();
                 } catch (Exception e) {
-                    log.warn(">>> [OriginValidationFilter] Malformed Referer header: {}", referer);
+                    log.warn(">>> [OriginValidationFilter] Malformed Referer header");
                 }
             }
 
             if (source != null && !source.isBlank()) {
                 if (!isAllowedOrigin(source, request)) {
-                    log.warn(">>> [OriginValidationFilter] Blocked state-changing request with invalid origin/referer: {} for URI: {}", source, request.getRequestURI());
+                    log.warn(">>> [OriginValidationFilter] Blocked state-changing request with invalid origin/referer for URI: {}",
+                            nuri.foundation.security.util.SafeLog.text(request.getRequestURI()));
                     response.setStatus(HttpStatus.FORBIDDEN.value());
                     response.setContentType("application/json;charset=UTF-8");
                     response.getWriter().write("{\"success\":false,\"status\":403,\"code\":\"INVALID_ORIGIN\",\"message\":\"Access denied: untrusted Origin or Referer header\"}");

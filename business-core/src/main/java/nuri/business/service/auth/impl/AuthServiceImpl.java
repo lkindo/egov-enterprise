@@ -72,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
         loginPolicyRepository.findById(loginId).ifPresent(policy -> {
             if ("Y".equals(policy.getOtpUseYn())) {
                 if (request.getOtpCode() == null) {
-                    log.warn(">>> [Login] OTP Required for loginId: {}", loginId);
+                    log.warn(">>> [Login] OTP required");
                     throw new BusinessException("OTP 번호가 필요합니다.", CommonErrorCode.AUTH_ERROR);
                 }
 
@@ -80,10 +80,10 @@ public class AuthServiceImpl implements AuthService {
                         .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
                 if (!otpService.verifyCode(user.getOtpSecret(), request.getOtpCode())) {
-                    log.warn(">>> [Login] Invalid OTP for loginId: {}", loginId);
+                    log.warn(">>> [Login] Invalid OTP");
                     throw new BusinessException("OTP 번호가 일치하지 않습니다.", CommonErrorCode.AUTH_ERROR);
                 }
-                log.info(">>> [Login] OTP Verification Success for loginId: {}", loginId);
+                log.info(">>> [Login] OTP verification succeeded");
             }
         });
 

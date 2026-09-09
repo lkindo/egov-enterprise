@@ -118,11 +118,15 @@ public class DeptManageService {
         }
         // 조상 사슬을 거슬러 올라가며 자기 자신이 나오면 순환이다. 깊이는 데이터 이상 시의 무한루프 방지용 상한.
         String cursor = upOgnzId;
+        java.util.Set<String> visited = new java.util.HashSet<>();
         for (int depth = 0; cursor != null && depth < MAX_HIERARCHY_DEPTH; depth++) {
-            if (cursor.equals(ognzId)) {
+            if (cursor.equals(ognzId) || !visited.add(cursor)) {
                 throw new BusinessException("순환 참조가 발생하는 상위 부서입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
             }
             cursor = deptManageRepository.findById(cursor).map(d -> d.getUpOgnzId()).orElse(null);
+        }
+        if (cursor != null) {
+            throw new BusinessException("허용된 부서 계층 깊이를 초과합니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
     }
 }

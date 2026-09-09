@@ -26,7 +26,7 @@ public class GlobalMenuAdvice {
         MenuUIContext context = menuIntegrationService.processMenuContext(uri, queryString, contextPath, bbsId);
 
         if (context.getActiveRootMenuId() != null) {
-            log.debug("GlobalMenuAdvice - Identified rootMenuId: {} for URI: {}", context.getActiveRootMenuId(), uri);
+            log.debug("GlobalMenuAdvice - Identified rootMenuId: {}", context.getActiveRootMenuId());
             model.addAttribute("activeRootMenuId", context.getActiveRootMenuId());
             session.setAttribute("baseMenuNo", context.getActiveRootMenuId().toString());
         }

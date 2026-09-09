@@ -54,6 +54,9 @@ public class MailAsyncProcessor {
 
         try {
             emailSender.send(sj, emailCn, dsptchPerson, recptnPerson);
+        } catch (MailDeliveryUnavailableException e) {
+            log.warn("Mail delivery unavailable for dispatch serial number: {}", emlDsptchSn);
+            return false;
         } catch (Exception e) {
             // Checked Exception을 RuntimeException으로 변환하여 @Retryable이 작동하도록 함
             throw new RuntimeException("Mail delivery failed, triggering retry", e);

@@ -99,4 +99,35 @@ class ProgramApiControllerTest {
 
         verify(programService, times(1)).deleteProgrm(any(ProgramDto.class));
     }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {" "})
+    @DisplayName("프로그램 등록은 비어 있는 식별자를 거부한다")
+    void createRejectsMissingKey(String key) throws Exception {
+        ProgramDto dto = new ProgramDto();
+        dto.setPrgrmFileNm(key);
+        mockMvc.perform(post("/api/v1/admin/system/programs")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(programService);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"FORGED"})
+    @DisplayName("프로그램 수정은 본문 식별자와 무관하게 URL 경로의 대상을 사용한다")
+    void updateUsesPathKey(String bodyKey) throws Exception {
+        ProgramDto dto = new ProgramDto();
+        dto.setPrgrmFileNm(bodyKey);
+        dto.setPrgrmKornNm("수정 프로그램");
+        mockMvc.perform(put("/api/v1/admin/system/programs/PROG_01")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+        verify(programService).updateProgrm(argThat(actual ->
+                "PROG_01".equals(actual.getPrgrmFileNm())
+                        && "수정 프로그램".equals(actual.getPrgrmKornNm())));
+    }
 }

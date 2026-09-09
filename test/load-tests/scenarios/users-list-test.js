@@ -11,6 +11,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Config } from '../config.js';
 import { AuthTokenManager } from '../utils.js';
+import { hasPageResponse } from '../response-contracts.mjs';
 
 export const options = {
   tags: {
@@ -19,6 +20,7 @@ export const options = {
   },
   
   thresholds: {
+    checks: ['rate==1'],
     http_req_duration: ['p(95)<600'], // 95% 요청이 600ms 이내
     http_req_failed: ['rate<0.01'],   // 1% 미만 실패
   },
@@ -91,25 +93,7 @@ export default function (data) {
   const success = check(response, {
     'users list status is 200': (r) => r.status === 200,
     'users list response time < 600ms': (r) => r.timings.duration < 600,
-    'users list has content array': (r) => {
-      try {
-        const body = JSON.parse(r.body);
-        return body.result && Array.isArray(body.result.content);
-      } catch (e) {
-        return false;
-      }
-    },
-    'users list has pagination': (r) => {
-      try {
-        const body = JSON.parse(r.body);
-        return body.result && 
-               typeof body.result.page === 'number' && 
-               typeof body.result.size === 'number' &&
-               typeof body.result.totalElements === 'number';
-      } catch (e) {
-        return false;
-      }
-    },
+    'users list matches ApiResponse PageResponse': (r) => hasPageResponse(r.body),
   });
   
   if (!success) {

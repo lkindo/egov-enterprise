@@ -16,6 +16,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Config } from '../config.js';
 import { AuthTokenManager } from '../utils.js';
+import { hasPageResponse } from '../response-contracts.mjs';
 import { createHtmlReport, textSummary } from '../utils/report.js';
 
 /** 정의된 부하 레벨 전체. K6_SCENARIO 로 이 중 하나만 골라 돌린다. */
@@ -88,6 +89,7 @@ export const options = {
   },
 
   thresholds: {
+    checks: ['rate==1'],
     http_req_duration: ['p(95)<1000'],
     http_req_failed: ['rate<0.01'],
   },
@@ -199,6 +201,7 @@ function runUsersListTest(token) {
 
   check(response, {
     'users list status is 200': (r) => r.status === 200,
+    'users list matches ApiResponse PageResponse': (r) => hasPageResponse(r.body),
     'users list response time < 600ms': (r) => r.timings.duration < 600,
   });
 
@@ -250,9 +253,7 @@ export function teardown(data) {
  */
 export function handleSummary(data) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  const loadLevel = data.root_group?.checks?.[0]?.name?.includes('100') ? '100' :
-    data.root_group?.checks?.[0]?.name?.includes('500') ? '500' :
-      data.root_group?.checks?.[0]?.name?.includes('1000') ? '1000' : 'unknown';
+  const loadLevel = __ENV.K6_SCENARIO || 'all-1600';
 
   const reportTitle = `k6 Load Test Report - ${loadLevel} Users (${timestamp})`;
 

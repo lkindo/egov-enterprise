@@ -112,4 +112,75 @@ class DeptManageServiceTest {
         deptManageService.deleteDeptManage("DEPT1");
         verify(deptManageRepository).deleteById("DEPT1");
     }
+
+    @Test
+    void emptyHierarchyDoesNotWrite() {
+        deptManageService.updateDeptHierarchy(null);
+        deptManageService.updateDeptHierarchy(List.of());
+        verifyNoInteractions(deptManageRepository);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void refusesDeletionWhileMembersOrChildrenRemain(boolean members) {
+        if (members) given(userRepository.countByOgnzId("D")).willReturn(1L);
+        else given(deptManageRepository.countByUpOgnzId("D")).willReturn(1L);
+        BusinessException failure = assertThrows(BusinessException.class, () -> deptManageService.deleteDeptManage("D"));
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE, failure.getErrorCode());
+        verify(deptManageRepository, never()).deleteById(any());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    void rootHierarchyPreservesNameAndDefaultsOrder(String parent) {
+        var entity = DeptManage.builder().ognzId("D").ognzNm("keep").build();
+        given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
+        deptManageService.updateDeptHierarchy(List.of(DeptManageDto.builder().ognzId("D").upOgnzId(parent).ognzNm("forged").build()));
+        assertEquals("keep", entity.getOgnzNm());
+        assertEquals(0, entity.getSortOrdr());
+    }
+
+    @Test
+    void missingAndSelfParentAreRejectedBeforeMutation() {
+        var entity = DeptManage.builder().ognzId("D").build();
+        given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
+        for (String parent : List.of("D", "missing")) {
+            assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(
+                    List.of(DeptManageDto.builder().ognzId("D").upOgnzId(parent).build())));
+            assertNull(entity.getUpOgnzId());
+        }
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void rejectsCycleThroughSelfOrExistingAncestor(boolean throughSelf) {
+        var entity = DeptManage.builder().ognzId("D").build();
+        given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
+        given(deptManageRepository.existsById("A")).willReturn(true);
+        given(deptManageRepository.findById("A")).willReturn(Optional.of(DeptManage.builder().ognzId("A").upOgnzId(throughSelf ? "D" : "A").build()));
+        assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(
+                List.of(DeptManageDto.builder().ognzId("D").upOgnzId("A").build())));
+        assertNull(entity.getUpOgnzId());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {50, 51})
+    void hierarchyDepthBoundary(int depth) {
+        var entity = DeptManage.builder().ognzId("D").build();
+        given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
+        given(deptManageRepository.existsById("A0")).willReturn(true);
+        for (int i = 0; i < Math.min(depth, 50); i++) {
+            given(deptManageRepository.findById("A" + i)).willReturn(Optional.of(
+                    DeptManage.builder().ognzId("A" + i).upOgnzId(i + 1 < depth ? "A" + (i + 1) : null).build()));
+        }
+        var items = List.of(DeptManageDto.builder().ognzId("D").upOgnzId("A0").sortOrdr(3).build());
+        if (depth == 50) {
+            deptManageService.updateDeptHierarchy(items);
+            assertEquals("A0", entity.getUpOgnzId());
+            assertEquals(3, entity.getSortOrdr());
+        } else {
+            assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(items));
+            assertNull(entity.getUpOgnzId());
+        }
+    }
 }

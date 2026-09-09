@@ -627,7 +627,7 @@ export const updateScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: ScheduleDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["schdlSn"],["schdlIpAddr"],["schdlPicId"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["schdlDeptId"]],
   responseForbiddenPaths: [],
 });
 
@@ -2942,7 +2942,7 @@ export const createScheduleOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestSchema: ScheduleDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["schdlSn"],["schdlIpAddr"],["schdlPicId"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["schdlDeptId"]],
   responseForbiddenPaths: [],
 });
 
@@ -3027,7 +3027,7 @@ export const createNotificationOperation = /*#__PURE__*/ defineGeneratedOperatio
   requestSchema: NotificationDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["notiSn"],["notiDt"],["notiIvlVal"],["rcvrId"],["readYn"],["crtDt"]],
   responseForbiddenPaths: [],
 });
 

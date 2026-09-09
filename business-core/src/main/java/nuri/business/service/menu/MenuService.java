@@ -262,14 +262,14 @@ public class MenuService {
     }
 
     public List<MenuCreateDto> selectMenuCreatList(@NonNull MenuCreateDto vo) {
-        log.info(">>> [MenuService] selectMenuCreatList called for authorCode: {}", vo.getAuthrtCd());
+        log.debug(">>> [MenuService] selectMenuCreatList requested");
         List<MenuAuthorityProjection> projections = menuAuthorityRepository.selectMenuCreatList(vo.getAuthrtCd());
         log.info(">>> [MenuService] selectMenuCreatList found {} projections", projections.size());
         
         return projections.stream()
                 .map(proj -> {
                     if (proj.getMenuSn() == null) {
-                        log.error(">>> [MenuService] Found projection with NULL menuSn for authorCode: {}", vo.getAuthrtCd());
+                        log.error(">>> [MenuService] Found projection with NULL menuSn");
                     }
                     return MenuCreateDto.builder()
                         .menuSn(proj.getMenuSn())

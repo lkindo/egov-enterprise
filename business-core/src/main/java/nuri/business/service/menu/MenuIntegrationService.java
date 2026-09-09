@@ -28,7 +28,7 @@ public class MenuIntegrationService {
      */
     public MenuUIContext processMenuContext(String uri, String queryString, String contextPath, String bbsId) {
         String fullUri = (queryString != null) ? (uri + "?" + queryString) : uri;
-        log.debug("Processing menu context for URI: {}", fullUri);
+        log.debug("Processing menu context");
 
         List<MenuDto> menuHierarchy = menuService.getMenuHierarchy();
         List<MenuDto> flatMenuList = new ArrayList<>();

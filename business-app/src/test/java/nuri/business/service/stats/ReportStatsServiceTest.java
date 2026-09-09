@@ -37,6 +37,39 @@ class ReportStatsServiceTest {
     @Mock
     private nuri.business.domain.board.BoardRepository boardRepository;
 
+    @Mock private nuri.business.domain.user.repository.UserRepository userRepository;
+    @Mock private nuri.business.domain.log.LoginLogRepository loginLogRepository;
+    @Mock private nuri.business.domain.log.UserLogRepository userLogRepository;
+
+    @Test
+    void summarySumsNumericCountsAndSkipsIncompleteRows() {
+        given(userRepository.count()).willReturn(7L);
+        given(boardRepository.count()).willReturn(20L);
+        given(loginLogRepository.countLoginsByDate(anyString(), anyString())).willReturn(List.of(
+                new Object[]{"date", 2L}, new Object[]{"date", java.math.BigInteger.valueOf(3)},
+                new Object[]{}, new Object[]{"date"}, new Object[]{"date", null}));
+        var summary = reportStatsService.getSummary();
+        assertThat(summary.getTotalUsers()).isEqualTo(7);
+        assertThat(summary.getTotalPosts()).isEqualTo(20);
+        assertThat(summary.getTodayConnects()).isEqualTo(5);
+    }
+
+    @Test
+    void emptySummaryIsZeroButDatabaseFailurePropagates() {
+        assertThat(reportStatsService.getSummary().getTodayConnects()).isZero();
+        given(userRepository.count()).willThrow(new org.springframework.dao.DataAccessResourceFailureException("unavailable"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(reportStatsService::getSummary)
+                .isInstanceOf(org.springframework.dao.DataAccessResourceFailureException.class);
+    }
+
+    @Test
+    void activityQueriesUseCompactDates() {
+        reportStatsService.getUserStatsByDate("2026-02-01", "2026-02-28");
+        reportStatsService.getConnectStatsByDate("20260201", "20260228");
+        verify(userLogRepository).countByDate("20260201", "20260228");
+        verify(loginLogRepository).countLoginsByDate("20260201", "20260228");
+    }
+
     @Test
     @DisplayName("보고서 통계 목록 조회")
     void getReprtStatsList() {

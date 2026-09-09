@@ -304,7 +304,7 @@ public class FileService extends BaseAbstractService {
         }
         extension = extension.toLowerCase(Locale.ROOT);
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            log.warn("Blocked file upload attempt with forbidden extension: {}", extension);
+            log.warn("Blocked file upload attempt with forbidden extension");
             throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
         return extension;

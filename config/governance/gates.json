@@ -708,6 +708,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/AuthorityReferenceFkIntegrationTest.java"
         },
         {
+          "id": "DB-BACKUP-RESTORE-DRILL",
+          "source": "api-server/src/test/java/nuri/api/schema/BackupRestoreDrillIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BANNER-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BannerBigintMigrationIntegrationTest.java"
         },
@@ -724,24 +728,20 @@
           "source": "api-server/src/test/java/nuri/api/schema/BlogRetirementMigrationIntegrationTest.java"
         },
         {
-          "id": "DB-SURVEY-SUBMISSION-CONCURRENCY",
-          "source": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java"
-        },
-        {
-          "id": "DB-BACKUP-RESTORE-DRILL",
-          "source": "api-server/src/test/java/nuri/api/schema/BackupRestoreDrillIntegrationTest.java"
+          "id": "DB-MIG-BOARD-COMMENT-COUNT-RECONCILIATION",
+          "source": "api-server/src/test/java/nuri/api/schema/BoardCommentCountReconciliationMigrationIntegrationTest.java"
         },
         {
           "id": "DB-MIG-BOARD-POST-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
         },
         {
-          "id": "DB-MIG-BOARD-COMMENT-COUNT-RECONCILIATION",
-          "source": "api-server/src/test/java/nuri/api/schema/BoardCommentCountReconciliationMigrationIntegrationTest.java"
-        },
-        {
           "id": "DB-MIG-COMMUNITY-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/CommunityBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-DEFERRED-STANDARD-DESIGN",
+          "source": "api-server/src/test/java/nuri/api/schema/DeferredStandardDesignMigrationIntegrationTest.java"
         },
         {
           "id": "DB-MIG-DEPT-JOB-BIGINT",
@@ -784,12 +784,8 @@
           "source": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
         },
         {
-          "id": "DB-MIG-DEFERRED-STANDARD-DESIGN",
-          "source": "api-server/src/test/java/nuri/api/schema/DeferredStandardDesignMigrationIntegrationTest.java"
-        },
-        {
-          "id": "DB-MIG-STANDARD-TEXT-LENGTHS",
-          "source": "api-server/src/test/java/nuri/api/schema/StandardLengthMigrationIntegrationTest.java"
+          "id": "DB-MIG-LOG-SEARCH-INDEX",
+          "source": "api-server/src/test/java/nuri/api/schema/LogSearchIndexMigrationIntegrationTest.java"
         },
         {
           "id": "DB-MIG-LOGIN-LOG-BIGINT",
@@ -864,8 +860,16 @@
           "source": "api-server/src/test/java/nuri/api/schema/StampBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-STANDARD-TEXT-LENGTHS",
+          "source": "api-server/src/test/java/nuri/api/schema/StandardLengthMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-SURVEY-FAMILY-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/SurveyFamilyBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-SURVEY-SUBMISSION-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java"
         },
         {
           "id": "DB-MIG-SYS-LOG-BIGINT",

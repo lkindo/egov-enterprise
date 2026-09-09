@@ -113,11 +113,11 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             if (!isMatched) {
                 log.warn(">>> Password mismatch for user: {}", userId);
                 userEntity.incrementLockCount();
-                // 임계값 도달 → 잠금. lock() 이 잠금 시각까지 남기므로 lockMinutes 경과 후 스스로 풀린다.
+                // 임계값 도달 → 잠금. lockAccount()가 잠금 시각까지 남기므로 lockMinutes 경과 후 스스로 풀린다.
                 // save() 는 잠금 판정 '뒤'에 와야 lckYn/lckLastPnttm 이 같은 커밋에 함께 실린다.
                 Integer failures = userEntity.getLckCnt();
                 if (maxLoginFailures > 0 && failures != null && failures >= maxLoginFailures) {
-                    userEntity.lock();
+                    userEntity.lockAccount();
                     log.warn(">>> Account locked for user: {} (연속 실패 {}회 도달, {}분 후 자동 해제)",
                             userId, failures, lockMinutes);
                 }
@@ -125,7 +125,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
             
-            userEntity.unlock();
+            userEntity.unlockAccount();
             userRepository.save(userEntity);
             log.info(">>> Authenticating user: {}, esntlId: {}, Inherent Role: {}", 
                     userEntity.getUserId(), userEntity.getEsntlId(), userEntity.getRole());
@@ -217,7 +217,7 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             // [의도적] 여기서 별도 save() 를 하지 않는다. 해제된 상태는 이어지는 성공 경로(unlock+save)
             // 또는 실패 경로(카운터 저장)의 커밋에 그대로 실려 영속되므로, 인증 전(前) 단계에서
             // 미인증 요청마다 쓰기를 유발하지 않는 편이 안전하다.
-            user.unlock();
+            user.unlockAccount();
             log.info(">>> 잠금 기간 경과로 계정 자동 해제: {}", user.getUserId());
             return;
         }

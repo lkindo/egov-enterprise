@@ -61,7 +61,7 @@ public class MailService {
     }
 
     public Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, Pageable pageable) {
-        log.debug("Searching sent mails with condition: {}, keyword: {}", searchCondition, searchKeyword);
+        log.debug("Searching sent mails");
         // [IDOR] 일반 사용자는 자신이 발송한 건만, 관리자는 전건 — 발송메일 전건 노출 차단
         String senderLoginId = resolveSenderScope();
         return sentMailRepository

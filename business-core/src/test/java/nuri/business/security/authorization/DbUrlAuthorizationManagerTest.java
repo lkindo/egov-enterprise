@@ -130,6 +130,20 @@ class DbUrlAuthorizationManagerTest {
     // ---------------------------------------------------------------- 매칭 판정
 
     @Test
+    @DisplayName("일시적 조회 장애는 거부하되 복구 후 빈 캐시로 인가 장애를 연장하지 않는다")
+    void reloadsAfterTransientFailureWithoutAllowingFailedRequest() {
+        var manager = new DbUrlAuthorizationManager(jdbcTemplate, List.of());
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("temporary failure"))
+                .when(jdbcTemplate).query(anyString(), any(RowCallbackHandler.class));
+        assertFalse(manager.check(supply(adminAuth()), contextFor("/api/v1/admin/system/users")).isGranted());
+
+        givenMappings(row(ADMIN_URL, ROLE_ADMIN));
+        assertTrue(manager.check(supply(adminAuth()), contextFor("/api/v1/admin/system/users")).isGranted());
+        assertFalse(manager.check(supply(userAuth()), contextFor("/api/v1/admin/system/users")).isGranted());
+        verify(jdbcTemplate, times(2)).query(anyString(), any(RowCallbackHandler.class));
+    }
+
+    @Test
     @DisplayName("패턴이 매칭되고 요구 롤을 보유하면 허용한다")
     void grantsWhenPatternMatchesAndRoleHeld() {
         givenMappings(row(ADMIN_URL, ROLE_ADMIN));

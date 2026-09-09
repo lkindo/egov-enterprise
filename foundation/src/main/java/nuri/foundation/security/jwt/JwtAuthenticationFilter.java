@@ -23,8 +23,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getServletPath();
-        String method = request.getMethod();
+        String path = nuri.foundation.security.util.SafeLog.text(request.getServletPath());
+        String method = nuri.foundation.security.util.SafeLog.text(request.getMethod());
 
         // 디버깅을 위한 무조건적인 로그 추가
         log.debug(">>> [JwtFilter] Processing request: {} {}", method, path);

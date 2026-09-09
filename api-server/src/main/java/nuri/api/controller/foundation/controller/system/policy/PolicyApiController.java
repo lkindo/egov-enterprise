@@ -64,8 +64,8 @@ public class PolicyApiController {
             @PathVariable String type,
             @Valid @RequestBody PolicyUpdateRequest request) {
 
-        log.info("Updating policy: type={}, title={}, content length={}",
-                type, request.plcyTtl(), request.plcyCn().length());
+        log.info("Updating policy: type={}, content length={}",
+                nuri.foundation.security.util.SafeLog.text(type), request.plcyCn().length());
 
         policyService.updatePolicy(type, request.plcyTtl(), request.plcyCn());
 

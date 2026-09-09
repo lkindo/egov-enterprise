@@ -24,7 +24,7 @@ public class EventInfoService {
     private final EventInfoMapper eventInfoMapper;
 
     public Page<EventInfoDto> getEventList(String searchWrd, Pageable pageable) {
-        log.debug("Fetching event list with search: {}", searchWrd);
+        log.debug("Fetching event list");
         if (searchWrd == null || searchWrd.trim().isEmpty()) {
             return eventInfoRepository.findAll(Objects.requireNonNull(pageable)).map(eventInfoMapper::toDto);
         }
@@ -40,7 +40,7 @@ public class EventInfoService {
  
     @Transactional
     public Long createEvent(String userId, EventInfoDto dto) {
-        log.info("Creating new event by user: {}", userId);
+        log.info("Creating new event");
  
         EventInfo eventInfo = EventInfo.builder()
                 .bizYr(dto.getBizYr())
@@ -63,7 +63,7 @@ public class EventInfoService {
  
     @Transactional
     public void updateEvent(Long evntSn, String userId, EventInfoDto dto) {
-        log.info("Updating event serial number: {} by user: {}", evntSn, userId);
+        log.info("Updating event serial number: {}", evntSn);
         EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
  

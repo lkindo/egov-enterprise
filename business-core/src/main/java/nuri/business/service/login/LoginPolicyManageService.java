@@ -171,9 +171,7 @@ public class LoginPolicyManageService {
                     //
                     //   메시지는 정상적인 시간 제한과 구분한다 — 사용자가 "지금은 안 되는 시간"
                     //   으로 오해하면 관리자에게 문의하지 않아 파손이 방치된다.
-                    log.warn(">>> [LoginPolicy] 접속시간 정책을 해석할 수 없어 접속을 차단한다. "
-                            + "userId={} bgngTm={} endTm={}",
-                            userId, policy.getBgngTm(), policy.getEndTm(), e);
+                    log.warn(">>> [LoginPolicy] 접속시간 정책 형식 오류로 접속을 차단한다.");
                     throw new BusinessException(
                             "접속 시간 정책이 올바르지 않습니다. 관리자에게 문의하십시오.",
                             CommonErrorCode.LOGIN_POLICY_TIME_RESTRICTED);

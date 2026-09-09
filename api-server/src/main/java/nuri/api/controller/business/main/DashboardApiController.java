@@ -38,7 +38,7 @@ public class DashboardApiController {
         }
 
         String userId = userDetails.getUsername();
-        log.info(">>> [Dashboard] Fetching data for user: {}", userId);
+        log.debug(">>> [Dashboard] Fetching dashboard data");
         Map<String, Object> result = new HashMap<>();
 
         // 등록된 모든 위젯 프로바이더가 자기 데이터를 result 에 채운다(할 일/공지/결재대기 등 동적 확장).
