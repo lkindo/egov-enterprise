@@ -3,6 +3,12 @@
 2026-09-09 후속 Java 전체 분석에서 종전 Medium 41건이 0건이 됐다. 110개 보안 쿼리의 결과는
 기존 승인 예외 5건뿐이며 차단·정책 오류는 0건이다. 예외 추가나 임계값 완화는 없다.
 
+별도 의존성 재검증에서는 실제 runtime의 Tomcat 10.1.57에 대한 Dependabot Critical 3건을 확인해
+10.1.59로 올렸다. [Apache 공식 공지](https://tomcat.apache.org/security-10.html#Fixed_in_Apache_Tomcat_10.1.59)에
+따르면 수정된 10.1.58은 릴리스 투표를 통과하지 않아 배포된 수정본은 10.1.59다.
+`dependencyInsight`와 runtime classpath에서 core·EL·WebSocket 10.1.59를 확인했고 인증·인가 테스트
+19건이 통과했다. 이는 위 SAST 예외와 별도이며 나머지 개발 의존성 경고를 예외 처리하거나 닫지 않는다.
+
 - 로그 주입 40건: 검색어·메일 제목·사용자 식별자의 불필요한 복제를 제거했다. 진단에 필요한 경로와
   식별자는 [`SafeLog`](../../foundation/src/main/java/nuri/foundation/security/util/SafeLog.java)로
   CR/LF·제어문자·유니코드 줄 구분자를 치환하고 256자로 제한한다. 개인정보 마스킹이나 비밀 기록 허용 도구는 아니다.

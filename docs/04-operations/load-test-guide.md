@@ -34,9 +34,9 @@
 
 ## 로컬 실행
 
-2026-09-09 검증에서는 별도 빌드가 없는 Windows·loopback PostgreSQL 17(e2e/Flyway seed)에서
+2026-09-09 검증에서는 별도 빌드가 없는 Windows·Tomcat 10.1.59·loopback PostgreSQL 17(e2e/Flyway seed)에서
 사용자 목록 조회만 60초 증가·60초 유지·15초 감소, 최대 100 VU로 실행했다. 요청 3,271건의
-HTTP 오류율은 0%, p95 26.42ms, 최대 99.64ms였고 9,812개 check가 모두 통과했다(k6 종료 코드 0).
+HTTP 오류율은 0%, p95 22.60ms, 최대 102.49ms였고 9,812개 check가 모두 통과했다(k6 종료 코드 0).
 이는 위 통합 `users-100` 시나리오나 운영 데이터 규모, 500/1000 VU 용량을 검증한 수치가 아니다.
 앞선 순간 부하 중 발견한 인가 매핑 조회 실패의 5분 캐시 문제는 장애를 캐시하지 않도록 수정했으며,
 현재 요청 거부와 DB 복구 후 재조회는 `DbUrlAuthorizationManagerTest`로 검증한다.
