@@ -82,10 +82,16 @@ function isStatsTab(value: string | null): value is StatsTab {
   return !!value && (STATS_TABS as readonly string[]).includes(value);
 }
 
-/** X축 눈금 라벨: 'yyyyMMdd' → 'MM.DD' (표기 변환은 lib/format-date SSOT 경유) */
+/**
+ * X축 눈금 라벨: 'yyyyMMdd' → 'MM-DD' (표기 변환은 lib/format-date SSOT 경유).
+ *
+ * <p>[2026-09-08] 구분자를 점에서 시스템 표준인 '-' 로 바꿨다. ⚠ 눈금만은 연도를 떼고
+ * 'MM-DD' 로 둔다 — 30일치 축에 'yyyy-MM-dd' 를 전부 넣으면 라벨이 겹쳐 읽을 수 없다.
+ * 축 눈금은 문서상의 날짜 표기가 아니라 스케일 라벨이며, 연도는 조회 기간이 소유한다.
+ */
 function formatAxisDate(value: unknown): string {
   const raw = String(value ?? '');
-  const display = toDisplayYmd(raw, '', '.');
+  const display = toDisplayYmd(raw, '');
   return display ? display.slice(5) : raw;
 }
 

@@ -43,7 +43,8 @@ class BlogBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupp
                     """);
         }
 
-        flyway(null).migrate();
+        // 블로그는 V2_90에서 퇴역한다. 이 테스트는 보존한 V2_70 변환 이력을 검증한다.
+        flyway(MigrationVersion.fromVersion("2.88")).migrate();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

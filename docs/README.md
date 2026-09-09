@@ -78,6 +78,7 @@
 | [ADR-0009](02-architecture/decisions/ADR-0009-controlled-url-search-state.md) | 화면별 exact 계약 아래 일반 개인정보가 포함될 수 있는 업무 검색어의 URL 사용을 허용 |
 | [ADR-0010](02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md) | 프론트엔드 세션 쿠키의 Secure 예외를 명시적 평문 loopback으로 제한 |
 | [ADR-0011](02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 익명 만족도·비밀번호 소유 증명을 퇴역하고 자격증명 query를 제거 |
+| [ADR-0012](02-architecture/decisions/ADR-0012-retire-blog-domain.md) | 비사용 블로그 도메인·게시판 귀속 계약·물리 스키마를 제거하고 과거 Flyway 이력은 보존 |
 
 ## 03-guides — 개발 지침
 
@@ -111,6 +112,8 @@
 | [ui-quality-assisted-accessibility.md](04-operations/ui-quality-assisted-accessibility.md) | 수동 접근성 평가를 대체하지 않는 keyboard·viewport·forced-colors·reduced-motion 자동 보조 증거 |
 | [ui-ux-modernization-user-action-runbook.md](04-operations/ui-ux-modernization-user-action-runbook.md) | 자동화 완료 후 사용자·제품·운영 책임자가 남은 작업을 한 단계씩 검증·승인하는 마감 런북 |
 | [backup-and-restore-runbook.md](04-operations/backup-and-restore-runbook.md) | DB·첨부 실물·암호화 키를 한 세트로 백업/복원하는 절차와 복원 검증 4단계 (주기·RTO/RPO 는 미결정) |
+| [migration-recovery-runbook.md](04-operations/migration-recovery-runbook.md) | 대상 DB 환경 결속·스키마 허용 목록·실행 증거·부분 적재 재개·백업을 통한 전체 롤백 |
+| [improvement-validation-2026-09-09.md](04-operations/improvement-validation-2026-09-09.md) | 개선 우선순위 1~6의 검증 범위와 OCI 표준 불일치 적용 검토안 |
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |
 | [log-retention-policy.md](04-operations/log-retention-policy.md) | 로그 보존기간·개인정보 파기 정책 |
 | [database-optimization-guide.md](04-operations/database-optimization-guide.md) | DB 최적화 |

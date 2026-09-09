@@ -4773,7 +4773,7 @@
           "Template"
         ],
         "summary": "템플릿 삭제",
-        "description": "템플릿을 삭제합니다. 게시판·블로그가 참조 중인 템플릿은 삭제하지 않습니다(409).",
+        "description": "템플릿을 삭제합니다. 게시판이 참조 중인 템플릿은 삭제하지 않습니다(409).",
         "operationId": "deleteTmplatInfo",
         "parameters": [
           {
@@ -4797,7 +4797,7 @@
             }
           },
           "409": {
-            "description": "게시판·블로그가 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
+            "description": "게시판이 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014)",
             "content": {
               "application/json": {
                 "schema": {
@@ -36245,20 +36245,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "blogSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "blogYn": {
-            "type": "string",
-            "enum": [
-              "Y",
-              "N"
-            ],
-            "maxLength": 1,
-            "minLength": 0,
-            "pattern": "^(?:Y|N)$"
-          },
           "ansYn": {
             "type": "string",
             "enum": [
@@ -40183,14 +40169,6 @@
             "description": "비밀글 여부",
             "maxLength": 1,
             "minLength": 0
-          },
-          "blogSn": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "description": "블로그 일련번호"
           },
           "evntDt": {
             "type": [
@@ -44369,13 +44347,6 @@
           "cmntySn": {
             "type": "integer",
             "format": "int64"
-          },
-          "blogSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "blogYn": {
-            "type": "string"
           },
           "ansYn": {
             "type": "string"

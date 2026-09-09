@@ -106,9 +106,9 @@ export const BoardListFilters = ({
                     <span className="text-sm truncate">
                       {startDate ? (
                         endDate ? (
-                          `${format(startDate, "yyyy.MM.dd")} - ${format(endDate, "yyyy.MM.dd")}`
+                          `${format(startDate, "yyyy-MM-dd")} - ${format(endDate, "yyyy-MM-dd")}`
                         ) : (
-                          format(startDate, "yyyy.MM.dd")
+                          format(startDate, "yyyy-MM-dd")
                         )
                       ) : (
                         "기간 선택"

@@ -13,7 +13,11 @@ const routeTruthPath = join(repoRoot, 'config', 'ui-route-capabilities.json');
 const urlStateCensusPath = join(repoRoot, 'config', 'ui-url-state-census.json');
 const e2eRoot = join(repoRoot, 'frontend', 'e2e');
 
-const REVIEWED_ON = '2026-08-21';
+// [2026-09-08 정기 재검토] bounded status 28건을 소유자가 실제로 재확인하고 asOf 를 옮겼다.
+//   발견: sourceEvidence 가 실제 화면 컴포넌트(LoginClient·AdminDashboardClient)를 빠뜨려
+//   auth-login·admin-shell-hub 가 'r12 이후 무변경' 으로 잘못 읽히고 있었다 — 매니페스트에서 보강했다.
+//   ⚠ 이 상수와 매니페스트의 asOf 는 반드시 함께 바뀐다. 날짜만 조용히 미는 것을 막는 장치다.
+const REVIEWED_ON = '2026-09-08';
 const CURRENT_DATE = Object.fromEntries(
   new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Seoul',

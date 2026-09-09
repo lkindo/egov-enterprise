@@ -37,6 +37,29 @@ describe('foundation ordinary generated boundary wave4', () => {
     client.requestRaw.mockResolvedValue(success(null));
   });
 
+  it.each([undefined, null])('survey optional descriptions and dates may be %s without hiding the whole list', async (empty) => {
+    const survey = { srvySn: 7, srvyTtl: '제목만 작성한 설문', srvyTmpltSn: 1 };
+    const response = { ...survey, srvyPrps: empty, srvyWrtGdCn: empty, srvyTrgt: empty,
+      srvyBgngYmd: empty, srvyEndYmd: empty, frstRgtrId: empty, crtDt: empty };
+    client.getRaw.mockResolvedValueOnce(success({ list: [response], total: 1, page: 0, size: 10, totalPage: 1 }));
+    const page = await surveyAdminService.getSurveys({ page: 0, size: 10 });
+    expect(page).toMatchObject({
+      list: [{ ...survey, srvyPrps: '', srvyWrtGdCn: '', srvyTrgt: '', srvyBgngYmd: '', srvyEndYmd: '', crtDt: '' }],
+      total: 1,
+    });
+    expect(page.list[0]).not.toHaveProperty('frstRgtrId');
+  });
+
+  it('survey response still rejects missing identity and malformed optional text', async () => {
+    for (const survey of [
+      { srvyTtl: 'missing id', srvyTmpltSn: 1 },
+      { srvySn: 7, srvyTtl: 'bad text', srvyTmpltSn: 1, srvyPrps: 123 },
+    ]) {
+      client.getRaw.mockResolvedValueOnce(success({ list: [survey], total: 1, page: 0, size: 10, totalPage: 1 }));
+      await expect(surveyAdminService.getSurveys({ page: 0, size: 10 })).rejects.toThrow();
+    }
+  });
+
   it('operation external HR list uses its exact generated query', async () => {
     const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
     client.getRaw.mockResolvedValueOnce(success(page));

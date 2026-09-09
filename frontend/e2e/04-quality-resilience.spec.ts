@@ -71,52 +71,33 @@ test.describe('Tier 4: Quality & Resilience', () => {
         });
 
         test('Resilience: Auto-save Draft Restoration', async ({ page }) => {
-            await page.goto('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
-            
-            // Set up dialog listener BEFORE the action that triggers it (reload/refresh)
-            page.on('dialog', async dialog => {
-                console.log(`>>> Dialog appeared: ${dialog.message()}`);
-                await dialog.accept();
-            });
-
+            await page.goto('/admin/community/boards/select-board-list?bbsId=BBSMSTR_AAAAAAAAAAAA');
+            await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+            page.on('dialog', dialog => dialog.accept());
             const draftTitle = `Draft_${Date.now()}`;
             await page.locator('input[name="pstTtl"]').fill(draftTitle);
             await page.locator('.ProseMirror').fill('This is a test content for auto-save verification.');
-            
-            console.log('>>> Waiting for auto-save state...');
-            const draftScopeSuffix = ':BBSMSTR_AAAAAAAAAAAA:create:new';
-            await expect.poll(
-                () => page.evaluate(({ prefix, suffix }) => {
-                    const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
-                        .filter((key): key is string => Boolean(key?.startsWith(prefix) && key.endsWith(suffix)));
-                    if (keys.length !== 1) return { keyCount: keys.length, title: null };
-                    const raw = localStorage.getItem(keys[0]);
-                    if (!raw) return { keyCount: keys.length, title: null };
-                    try {
-                        return {
-                            keyCount: keys.length,
-                            title: (JSON.parse(raw) as { title?: string }).title ?? null,
-                        };
-                    } catch {
-                        return { keyCount: keys.length, title: null };
-                    }
-                }, { prefix: BOARD_DRAFT_PREFIX, suffix: draftScopeSuffix }),
-                { timeout: 10000, message: '자동 임시저장이 localStorage에 기록되지 않음' },
-            ).toEqual({ keyCount: 1, title: draftTitle });
-            
-            console.log('>>> Simulating crash (Refresh)');
-            await page.reload();
+            await expect(page.getByRole('status').filter({ hasText: '현재 탭에 초안을 임시 보관했습니다.' }))
+                .toBeVisible({ timeout: 10000 });
+            const persistentDraftKeys = () => page.evaluate(prefix =>
+                [localStorage, sessionStorage].flatMap(storage =>
+                    Array.from({ length: storage.length }, (_, index) => storage.key(index))
+                        .filter(key => key?.startsWith(prefix))), BOARD_DRAFT_PREFIX);
+            expect(await persistentDraftKeys()).toEqual([]);
 
-            // [2026-09-05 DEC-OPS-034] 복구 확인이 native confirm() 에서 useConfirm 모달로 바뀌었다(감사 D06-03 선행 이행).
-            //   위 dialog 리스너는 더 이상 발화하지 않으며, 모달의 '복구' 를 눌러야 임시저장이 복원된다.
+            // Next 클라이언트 이동으로 같은 문서 안에서만 복구한다.
+            await page.getByRole('button', { name: '취소', exact: true }).click();
+            await page.getByRole('button', { name: '글쓰기', exact: true }).click();
             const restoreDialog = page.getByRole('dialog').filter({ hasText: '임시저장 데이터 복구' });
-            await expect(restoreDialog).toBeVisible({ timeout: 15000 });
+            await expect(restoreDialog).toBeVisible();
             await restoreDialog.getByRole('button', { name: '복구', exact: true }).click();
-            await expect(restoreDialog).toBeHidden();
-
-            console.log('>>> Verifying restoration');
-            await expect(page.locator('input[name="pstTtl"]')).toHaveValue(draftTitle, { timeout: 15000 });
+            await expect(page.locator('input[name="pstTtl"]')).toHaveValue(draftTitle);
             await expect(page.locator('.ProseMirror')).toContainText('auto-save verification');
+
+            await page.reload();
+            await expect(page.locator('input[name="pstTtl"]')).toHaveValue('');
+            await expect(restoreDialog).toHaveCount(0);
+            expect(await persistentDraftKeys()).toEqual([]);
         });
     });
 

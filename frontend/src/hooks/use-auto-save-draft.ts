@@ -3,7 +3,9 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import {
   buildBoardDraftStorageKey,
-  removeLegacyBoardDraftKeys,
+  boardDraftMemoryStorage,
+  getBoardDraftEpoch,
+  purgePersistedBoardDraftStorage,
   type BoardDraftScope,
 } from '@/lib/drafts/board-draft-storage';
 
@@ -18,8 +20,6 @@ interface AutoSaveOptions {
   minLength?: number;
   /** 초안 유효기간. 기본 24시간. */
   ttlMs?: number;
-  /** 소유자를 판별할 수 없는 구 키. 값은 복원하지 않고 정확히 일치하는 키만 제거한다. */
-  legacyKeys?: readonly string[];
   /** 데이터 획득 함수 */
   getData: () => { title: string; content: string };
   /** 데이터 복원 콜백 */
@@ -35,7 +35,7 @@ interface DraftData {
 }
 
 /**
- * 게시글 작성 자동 임시저장 훅
+ * 현재 탭의 메모리에만 게시글을 임시 보관한다. 새로고침·문서 종료 후에는 복원되지 않는다.
  */
 export function useAutoSaveDraft(options: AutoSaveOptions) {
   const {
@@ -43,12 +43,12 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
     interval = 3000,
     minLength = 10,
     ttlMs = DEFAULT_TTL_MS,
-    legacyKeys,
     getData,
     onRestore,
   } = options;
   const fullKey = useMemo(() => scope ? buildBoardDraftStorageKey(scope) : null, [scope]);
-  const legacyKeySignature = (legacyKeys ?? []).join('\u0000');
+  const epoch = useMemo(() => ({ key: fullKey, value: getBoardDraftEpoch() }), [fullKey]);
+  const clearedDataRef = useRef<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
@@ -64,11 +64,12 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
 
   // 저장 실행
   const saveDraft = useCallback(() => {
-    if (!fullKey || ttlMs <= 0) return;
+    if (!fullKey || ttlMs <= 0 || epoch.value !== getBoardDraftEpoch()) return;
     const { title, content } = getDataRef.current();
 
     // 최소 글자 수 미만이면 저장하지 않음
     if ((title + content).length < minLength) return;
+    if (JSON.stringify({ title, content }) === clearedDataRef.current) return;
 
     const draft: DraftData = {
       version: 2,
@@ -79,18 +80,18 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
     };
 
     try {
-      localStorage.setItem(fullKey, JSON.stringify(draft));
+      boardDraftMemoryStorage.setItem(fullKey, JSON.stringify(draft));
       setLastSavedAt(draft.savedAt);
       setHasDraft(true);
     } catch {
-      // localStorage 용량 초과 등 예외 무시
+      // 임시 보관 실패가 편집을 막지 않게 한다.
     }
-  }, [fullKey, minLength, ttlMs]);
+  }, [fullKey, minLength, ttlMs, epoch]);
 
   const readDraft = useCallback((): DraftData | null => {
-    if (!fullKey) return null;
+    if (!fullKey || epoch.value !== getBoardDraftEpoch()) return null;
     try {
-      const raw = localStorage.getItem(fullKey);
+      const raw = boardDraftMemoryStorage.getItem(fullKey);
       if (!raw) return null;
       const data = JSON.parse(raw) as Partial<DraftData>;
       const valid = data.version === 2
@@ -100,19 +101,19 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
         && typeof data.expiresAt === 'number'
         && Number.isFinite(data.expiresAt);
       if (!valid || data.expiresAt! <= Date.now()) {
-        localStorage.removeItem(fullKey);
+        boardDraftMemoryStorage.removeItem(fullKey);
         return null;
       }
       return data as DraftData;
     } catch {
       try {
-        localStorage.removeItem(fullKey);
+        boardDraftMemoryStorage.removeItem(fullKey);
       } catch {
         // 읽기뿐 아니라 삭제도 거부될 수 있다. 편집 화면은 계속 사용할 수 있어야 한다.
       }
       return null;
     }
-  }, [fullKey]);
+  }, [fullKey, epoch]);
 
   // 복원
   const restoreDraft = useCallback((): DraftData | null => {
@@ -125,17 +126,15 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
 
   // 삭제 (정상 제출 시 호출)
   const clearDraft = useCallback(() => {
-    if (fullKey) localStorage.removeItem(fullKey);
+    if (fullKey) boardDraftMemoryStorage.removeItem(fullKey);
+    clearedDataRef.current = JSON.stringify(getDataRef.current());
     setHasDraft(false);
     setLastSavedAt(null);
   }, [fullKey]);
 
   // 초기 진입 시 기존 임시저장 확인
   useEffect(() => {
-    removeLegacyBoardDraftKeys(
-      localStorage,
-      legacyKeySignature ? legacyKeySignature.split('\u0000') : [],
-    );
+    purgePersistedBoardDraftStorage();
     const existing = readDraft();
     if (existing) {
       setHasDraft(true);
@@ -144,7 +143,7 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
       setHasDraft(false);
       setLastSavedAt(null);
     }
-  }, [legacyKeySignature, readDraft]);
+  }, [readDraft]);
 
   // 주기적 자동 저장
   useEffect(() => {
@@ -157,15 +156,25 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
     };
   }, [saveDraft, interval]);
 
-  // 페이지 이탈 시 저장
+  // 메모리 초안은 문서 종료를 넘지 못하므로, 미제출 입력이 있으면 브라우저 이탈 확인을 요청한다.
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      const data = getDataRef.current();
+      if (!fullKey || epoch.value !== getBoardDraftEpoch() || !(data.title + data.content).length
+        || JSON.stringify(data) === clearedDataRef.current) return;
       saveDraft();
+      event.preventDefault();
+      event.returnValue = '';
     };
+    const handlePageHide = () => boardDraftMemoryStorage.clear();
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [saveDraft]);
+    window.addEventListener('pagehide', handlePageHide);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [saveDraft, fullKey, epoch]);
 
   return {
     /** 기존 임시저장 데이터 존재 여부 */

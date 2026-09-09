@@ -23,27 +23,29 @@ function requireSurvey(item: components['schemas']['SurveyInfoDto']): Survey {
   if (
     typeof item.srvySn !== 'number'
     || typeof item.srvyTtl !== 'string'
-    || typeof item.srvyPrps !== 'string'
-    || typeof item.srvyWrtGdCn !== 'string'
-    || typeof item.srvyTrgt !== 'string'
-    || typeof item.srvyBgngYmd !== 'string'
-    || typeof item.srvyEndYmd !== 'string'
+    || (item.srvyPrps != null && typeof item.srvyPrps !== 'string')
+    || (item.srvyWrtGdCn != null && typeof item.srvyWrtGdCn !== 'string')
+    || (item.srvyTrgt != null && typeof item.srvyTrgt !== 'string')
+    || (item.srvyBgngYmd != null && typeof item.srvyBgngYmd !== 'string')
+    || (item.srvyEndYmd != null && typeof item.srvyEndYmd !== 'string')
     || typeof item.srvyTmpltSn !== 'number'
-    || typeof item.crtDt !== 'string'
+    || (item.frstRgtrId != null && typeof item.frstRgtrId !== 'string')
+    || (item.crtDt != null && typeof item.crtDt !== 'string')
   ) {
     throw new Error('설문 응답이 필수 계약과 일치하지 않습니다.');
   }
   return {
     srvySn: item.srvySn,
     srvyTtl: item.srvyTtl,
-    srvyPrps: item.srvyPrps,
-    srvyWrtGdCn: item.srvyWrtGdCn,
-    srvyTrgt: item.srvyTrgt,
-    srvyBgngYmd: item.srvyBgngYmd,
-    srvyEndYmd: item.srvyEndYmd,
+    // 서버 DTO의 미입력(null/누락)은 빈 텍스트로 정규화해 목록 전체를 숨기지 않는다.
+    srvyPrps: item.srvyPrps ?? '',
+    srvyWrtGdCn: item.srvyWrtGdCn ?? '',
+    srvyTrgt: item.srvyTrgt ?? '',
+    srvyBgngYmd: item.srvyBgngYmd ?? '',
+    srvyEndYmd: item.srvyEndYmd ?? '',
     srvyTmpltSn: item.srvyTmpltSn,
-    ...(item.frstRgtrId === undefined ? {} : { frstRgtrId: item.frstRgtrId }),
-    crtDt: item.crtDt,
+    ...(item.frstRgtrId == null ? {} : { frstRgtrId: item.frstRgtrId }),
+    crtDt: item.crtDt ?? '',
   };
 }
 

@@ -50,8 +50,10 @@ class EntityTableOwnershipLinterTest {
     //   테이블 처분은 파괴적 DB 변경이라 별도 승인 경계이며, V2_54 의 PK BIGINT IDENTITY 전환을
     //   검증하는 MyPageContentBigintMigrationIntegrationTest 도 JDBC 로 스키마만 보므로 그대로 산다.
     //   따라서 이 census 는 78 Entity → 78 물리 테이블이 아니라, 매핑 없는 테이블 1개가 생긴 상태다.
-    private static final int EXPECTED_ENTITY_COUNT = 78;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 77;
+    // [2026-09-08 ADR-0012] 블로그 퇴역으로 Blog/BlogUser와 tb_blog_info/tb_blog_user_map을 제거했다.
+    //   Entity 78 → 76, distinct @Table 77 → 75. 조직의 의도된 공유 매핑과 나머지 모집단은 그대로다.
+    private static final int EXPECTED_ENTITY_COUNT = 76;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 75;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
@@ -81,7 +83,7 @@ class EntityTableOwnershipLinterTest {
                     Set.of("up_ognz_id", "sort_ordr")));
 
     @Test
-    @DisplayName("78 Entity → 77 물리 테이블: 공유 테이블은 exact FQCN + 단일 쓰기 소유자다")
+    @DisplayName("76 Entity → 75 물리 테이블: 공유 테이블은 exact FQCN + 단일 쓰기 소유자다")
     void entityTableOwnershipIsUniqueExceptForExactDocumentedPairs() {
         EntityInventory inventory = scanEntities();
 
@@ -89,7 +91,7 @@ class EntityTableOwnershipLinterTest {
                 .as("Entity 스캔 모집단이 바뀌었습니다. 신규/삭제가 의도됐다면 물리 테이블 소유권을 재판정하십시오.")
                 .hasSize(EXPECTED_ENTITY_COUNT);
         assertThat(inventory.entitiesByTable())
-                .as("78 Entity의 distinct @Table 모집단")
+                .as("76 Entity의 distinct @Table 모집단")
                 .hasSize(EXPECTED_PHYSICAL_TABLE_COUNT);
 
         List<String> violations = new ArrayList<>(duplicateOwnershipViolations(
@@ -129,7 +131,7 @@ class EntityTableOwnershipLinterTest {
     }
 
     @Test
-    @DisplayName("감사 컬럼: 78 Entity의 상속/수동 매핑과 Flyway 물리 컬럼이 모두 full-audit다")
+    @DisplayName("감사 컬럼: 76 Entity의 상속/수동 매핑과 Flyway 물리 컬럼이 모두 full-audit다")
     void auditColumnMappingsMatchFlywayPhysicalColumns() throws IOException {
         EntityInventory inventory = scanEntities();
         Map<String, Map<String, String>> schema =
@@ -163,7 +165,7 @@ class EntityTableOwnershipLinterTest {
             }
         }
 
-        assertThat(census.getOrDefault(AuditShape.FULL, 0)).as("full audit Entity census").isEqualTo(78);
+        assertThat(census.getOrDefault(AuditShape.FULL, 0)).as("full audit Entity census").isEqualTo(EXPECTED_ENTITY_COUNT);
         assertThat(census.getOrDefault(AuditShape.TIME_ONLY, 0)).as("time-only Entity는 허용하지 않음").isZero();
         assertThat(census.getOrDefault(AuditShape.NONE, 0)).as("no-audit Entity는 허용하지 않음").isZero();
         assertThat(census.getOrDefault(AuditShape.PARTIAL, 0)).as("partial audit Entity는 허용하지 않음").isZero();

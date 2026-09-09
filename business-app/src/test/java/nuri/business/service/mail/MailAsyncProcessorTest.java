@@ -54,8 +54,6 @@ class MailAsyncProcessorTest {
     @Test
     @DisplayName("비동기 메일 발송 - 실패 (예외 발생)")
     void processSending_Failure() throws Exception {
-        SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
-        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
         doThrow(new RuntimeException("Send error")).when(emailSender).send(anyString(), anyString(), anyString(), anyString());
 
         // Exception is expected to bubble up in unit test
@@ -63,9 +61,10 @@ class MailAsyncProcessorTest {
             mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to")
         ).isInstanceOf(RuntimeException.class);
 
-        // Manually trigger recovery for verification
-        mailAsyncProcessor.recoverSending(new RuntimeException("Send error"), 1L, "Sub", "Cn", "from", "to");
-        assertThat(mail.getDsptchRsltCd()).isEqualTo("F");
+        // 발송 복구는 실패 결과만 반환한다. F 기록은 실제 프록시 통합 테스트에서 검증한다.
+        org.assertj.core.api.Assertions.assertThat(mailAsyncProcessor.recoverSending(
+                new RuntimeException("Send error"), 1L, "Sub", "Cn", "from", "to")).isFalse();
+        verifyNoInteractions(sentMailRepository);
     }
 
     @Test

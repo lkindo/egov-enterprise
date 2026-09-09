@@ -36,12 +36,20 @@ public class MailAsyncProcessor {
      * 외부 SMTP 연동 실패를 대비해 최대 3회 재시도한다. 발송 자체는 트랜잭션을 열지 않는다.
      */
     @Async("taskExecutor")
+    public void processSending(Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
+        boolean delivered = self.deliverMail(emlDsptchSn, sj, emailCn, dsptchPerson, recptnPerson);
+        meterRegistry.counter("mail.dispatch.total", "result", delivered ? "success" : "failure").increment();
+        self.recordResult(emlDsptchSn, delivered ? "S" : "F");
+    }
+
+    /** 발송만 재시도한다. 결과 기록이나 커밋 실패는 이 경계로 전파되지 않는다. */
     @org.springframework.retry.annotation.Retryable(
         retryFor = { Exception.class },
+        recover = "recoverSending",
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 2000)
     )
-    public void processSending(Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
+    public boolean deliverMail(Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
         log.info("Async mail processing started for dispatch serial number: {}", emlDsptchSn);
 
         try {
@@ -51,20 +59,36 @@ public class MailAsyncProcessor {
             throw new RuntimeException("Mail delivery failed, triggering retry", e);
         }
 
-        self.markResult(emlDsptchSn, "S"); // Success
-        meterRegistry.counter("mail.dispatch.total", "result", "success").increment();
         log.info("Mail sent successfully for dispatch serial number: {}", emlDsptchSn);
+        return true;
     }
 
     /**
      * 모든 재시도 실패 시 호출되는 복구 메서드
      */
     @org.springframework.retry.annotation.Recover
-    public void recoverSending(Exception e, Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
+    public boolean recoverSending(Exception e, Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
         log.error("All retry attempts failed for mail dispatch serial number: {}, errorType: {}",
                 emlDsptchSn, e.getClass().getSimpleName());
-        self.markResult(emlDsptchSn, "F"); // Final Failure
-        meterRegistry.counter("mail.dispatch.total", "result", "failure").increment();
+        return false;
+    }
+
+    /** 트랜잭션 프록시 밖에서 커밋 실패까지 포함해 기록만 재시도한다. */
+    @org.springframework.retry.annotation.Retryable(
+        retryFor = { org.springframework.dao.DataAccessException.class, org.springframework.transaction.TransactionException.class },
+        recover = "recoverRecording",
+        maxAttempts = 3,
+        backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
+    )
+    public void recordResult(Long emlDsptchSn, String resultCode) {
+        self.markResult(emlDsptchSn, resultCode);
+    }
+
+    @org.springframework.retry.annotation.Recover
+    public void recoverRecording(Exception e, Long emlDsptchSn, String resultCode) {
+        log.error("Mail result recording exhausted for dispatch serial number: {}, intendedResult: {}, errorType: {}",
+                emlDsptchSn, resultCode, e.getClass().getSimpleName());
+        meterRegistry.counter("mail.dispatch.recording.failures").increment();
     }
 
     /**

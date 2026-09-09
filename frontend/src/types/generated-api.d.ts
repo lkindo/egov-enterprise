@@ -509,7 +509,7 @@ export interface paths {
         post?: never;
         /**
          * 템플릿 삭제
-         * @description 템플릿을 삭제합니다. 게시판·블로그가 참조 중인 템플릿은 삭제하지 않습니다(409).
+         * @description 템플릿을 삭제합니다. 게시판이 참조 중인 템플릿은 삭제하지 않습니다(409).
          */
         delete: operations["deleteTmplatInfo"];
         options?: never;
@@ -5711,10 +5711,6 @@ export interface components {
             useYn: "Y" | "N";
             /** Format: int64 */
             cmntySn?: number;
-            /** Format: int64 */
-            blogSn?: number;
-            /** @enum {string} */
-            blogYn?: "Y" | "N";
             /** @enum {string} */
             ansYn?: "Y" | "N";
             /** @enum {string} */
@@ -7308,11 +7304,6 @@ export interface components {
             /** @description 비밀글 여부 */
             scrtYn?: string | null;
             /**
-             * Format: int64
-             * @description 블로그 일련번호
-             */
-            blogSn?: number | null;
-            /**
              * Format: date-time
              * @description 행사일
              */
@@ -8899,9 +8890,6 @@ export interface components {
             useYn: string;
             /** Format: int64 */
             cmntySn?: number;
-            /** Format: int64 */
-            blogSn?: number;
-            blogYn?: string;
             ansYn?: string;
             stsfdgYn?: string;
             authFlag?: string;
@@ -12941,7 +12929,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
-            /** @description 게시판·블로그가 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014) */
+            /** @description 게시판이 이 템플릿을 참조 중이라 삭제할 수 없음 (code: C014) */
             409: {
                 headers: {
                     [name: string]: unknown;

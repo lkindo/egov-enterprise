@@ -170,7 +170,7 @@ export default function TemplateAdminClient({
  try {
  const ok = await confirm({
  title: '템플릿 삭제',
- message: `'${item.tmpltNm}' 템플릿을 삭제합니다. 게시판·블로그가 참조 중인 템플릿은 서버가 삭제를 거부합니다. 삭제한 템플릿은 복구할 수 없습니다.`,
+ message: `'${item.tmpltNm}' 템플릿을 삭제합니다. 게시판이 참조 중인 템플릿은 서버가 삭제를 거부합니다. 삭제한 템플릿은 복구할 수 없습니다.`,
  confirmText: '삭제',
  variant: 'destructive',
  });

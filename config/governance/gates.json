@@ -703,6 +703,18 @@
           "source": "api-server/src/test/java/nuri/api/schema/BlogBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-BLOG-RETIREMENT",
+          "source": "api-server/src/test/java/nuri/api/schema/BlogRetirementMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-SURVEY-SUBMISSION-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java"
+        },
+        {
+          "id": "DB-BACKUP-RESTORE-DRILL",
+          "source": "api-server/src/test/java/nuri/api/schema/BackupRestoreDrillIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BOARD-POST-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
         },

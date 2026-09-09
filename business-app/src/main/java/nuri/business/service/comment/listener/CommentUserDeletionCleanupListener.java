@@ -18,7 +18,7 @@ import nuri.foundation.constants.Constants;
  *
  * <p>종전에는 {@code BoardUserDeletionCleanupListener} 가 comment 도메인의
  * {@link CommentRepository} 를 직접 주입해 board→comment 교차 도메인 결합이었다.
- * addressbook·blog·notification 과 같은 도메인별 구독 패턴으로 역전한다
+ * addressbook·notification 과 같은 도메인별 구독 패턴으로 역전한다
  * (GAP-ARCH-001, {@code CrossDomainCouplingLinterTest} app→app 6→5).
  */
 @Slf4j

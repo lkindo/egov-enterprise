@@ -33,19 +33,19 @@ class TmplatInfoServiceTest {
     @Spy
     private TemplateMapper templateMapper = Mappers.getMapper(TemplateMapper.class);
 
-    // [2026-09-06 D11-02 후속] 참조 도메인이 등록하는 포트 — 게시판·블로그 두 참조원을 mock 으로 둔다.
+    // 참조 포트가 여러 도메인의 참조 건수를 합산하는 계약을 검증한다.
     @Mock
     private TemplateReferenceContributor boardReferences;
 
     @Mock
-    private TemplateReferenceContributor blogReferences;
+    private TemplateReferenceContributor additionalReferences;
 
     private TmplatInfoService tmplatInfoService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        tmplatInfoService = new TmplatInfoService(templateRepository, templateMapper, List.of(boardReferences, blogReferences));
+        tmplatInfoService = new TmplatInfoService(templateRepository, templateMapper, List.of(boardReferences, additionalReferences));
     }
 
     @Test
@@ -137,22 +137,22 @@ class TmplatInfoServiceTest {
         verify(templateRepository, never()).deleteById(anyString());
     }
 
-    // [2026-09-06 감사 D11-02 후속] 참조 차단 — tb_bbs_master·tb_blog_info 의 문자열 참조는 DB 가 막지 않는다.
+    // 참조 차단 — tb_bbs_master 의 문자열 참조는 DB 가 막지 않는다.
     @Test
-    @DisplayName("게시판·블로그가 참조 중인 템플릿은 RESOURCE_IN_USE(409) 로 거부하고 참조원·건수를 밝힌다")
+    @DisplayName("여러 도메인이 참조 중인 템플릿은 RESOURCE_IN_USE(409) 로 거부하고 참조원·건수를 밝힌다")
     void deleteTmplatInfo_blockedWhenReferenced() {
         Template template = Template.builder().tmpltId("TMPLT_001").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
         when(templateRepository.findById("TMPLT_001")).thenReturn(Optional.of(template));
         when(boardReferences.sourceLabel()).thenReturn("게시판");
         when(boardReferences.countReferences("TMPLT_001")).thenReturn(2L);
-        when(blogReferences.sourceLabel()).thenReturn("블로그");
-        when(blogReferences.countReferences("TMPLT_001")).thenReturn(1L);
+        when(additionalReferences.sourceLabel()).thenReturn("확장 도메인");
+        when(additionalReferences.countReferences("TMPLT_001")).thenReturn(1L);
 
         assertThatThrownBy(() -> tmplatInfoService.deleteTmplatInfo("TMPLT_001"))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE)
                 .hasMessageContaining("게시판 2건")
-                .hasMessageContaining("블로그 1건");
+                .hasMessageContaining("확장 도메인 1건");
         verify(templateRepository, never()).delete(any(Template.class));
     }
 
@@ -162,7 +162,7 @@ class TmplatInfoServiceTest {
         Template template = Template.builder().tmpltId("TMPLT_002").tmpltNm("n").tmpltSeCd("TMPT01").tmpltPath("/p").useYn("Y").build();
         when(templateRepository.findById("TMPLT_002")).thenReturn(Optional.of(template));
         when(boardReferences.countReferences("TMPLT_002")).thenReturn(0L);
-        when(blogReferences.countReferences("TMPLT_002")).thenReturn(0L);
+        when(additionalReferences.countReferences("TMPLT_002")).thenReturn(0L);
 
         tmplatInfoService.deleteTmplatInfo("TMPLT_002");
         verify(templateRepository).delete(template);

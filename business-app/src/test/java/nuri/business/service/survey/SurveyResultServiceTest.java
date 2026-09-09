@@ -145,7 +145,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 다른 설문의 문항 ID 는 거부한다 (통계 오염 차단)")
     void submitRejectsForeignQuestion() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
         given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
@@ -169,7 +169,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 문항은 맞아도 항목이 다른 문항 소속이면 거부한다")
     void submitRejectsArticleFromAnotherQuestion() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "질문1", "1"), question(302L, "질문2", "1")));
@@ -193,7 +193,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 같은 사용자의 재제출은 거부한다")
     void submitRejectsDuplicate() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(true);
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
@@ -213,7 +213,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 로그인하지 않으면 거부한다 (제출자 식별이 감사 컬럼뿐이다)")
     void submitRequiresLogin() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
 
         SurveyResponseSubmitDto dto = new SurveyResponseSubmitDto("홍길동",
                 List.of(new SurveyResponseSubmitDto.Answer(301L, 401L, "예", null)));
@@ -232,7 +232,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("제출 - 답변 N건이 응답 행 N개가 된다")
     void submitCreatesOneRowPerAnswer() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "질문1", "1"), question(302L, "질문2", "1")));
@@ -263,7 +263,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 문항별 최대 선택 개수(maxChcCnt)를 초과하면 거부한다")
     void submitRejectsExceedingMaxChoiceCount() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         SurveyQuestion singleChoiceQuestion = SurveyQuestion.builder()
                 .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).qstnSn(1L).qstnCn("단일선택 질문")
@@ -291,7 +291,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 동일 문항 내 중복 항목을 제출하면 거부한다")
     void submitRejectsDuplicateChoiceForSameQuestion() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         SurveyQuestion multiChoiceQuestion = SurveyQuestion.builder()
                 .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).qstnSn(1L).qstnCn("복수선택 질문")
@@ -319,7 +319,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - maxChcCnt 가 NULL 이면 단일선택으로 강제한다 (화면이 라디오로 그리는 문항)")
     void submitTreatsNullMaxChoiceAsSingleChoice() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
         // maxChcCnt 미지정 = 물리 컬럼 NULL. 화면은 `maxChcCnt ?? 1` 로 라디오를 그린다.
         SurveyQuestion nullMaxQuestion = SurveyQuestion.builder()
@@ -358,7 +358,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 종료된 설문에는 응답할 수 없다")
     void submitRejectsClosedSurvey() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("20000101", "20000131")));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("20000101", "20000131")));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -375,7 +375,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 시작 전 설문에는 응답할 수 없다")
     void submitRejectsScheduledSurvey() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("29990101", "29991231")));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("29990101", "29991231")));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -392,7 +392,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("제출 - 비어 있는 기간 경계는 열린 것으로 본다 (기간 없는 설문은 계속 응답 가능)")
     void submitAllowsUnboundedPeriod() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(surveyWithPeriod(null, null)));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(surveyWithPeriod(null, null)));
         given(resultRepository.existsBySrvySnAndFrstRgtrId(201L, "user1")).willReturn(false);
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문1", "1")));
         given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
@@ -410,7 +410,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🔒 제출 - 기간 값이 8자리 날짜가 아니면 판정 불가이며 열지 않는다")
     void submitRejectsMalformedPeriod() {
-        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("2026-09-", "20261231")));
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(surveyWithPeriod("2026-09-", "20261231")));
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)

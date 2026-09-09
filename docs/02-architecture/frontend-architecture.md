@@ -6,7 +6,7 @@
 > **URL 검색 상태 결정**: 개인정보성 업무 검색어의 제한적 URL 허용은 [ADR-0009](./decisions/ADR-0009-controlled-url-search-state.md)를 따른다.
 
 ## 🚀 Overview
-본 프로젝트의 프론트엔드는 **Next.js 16.2.12 계열(App Router)**과 **React 19.2 계열**을 사용한다. 정확한 설치 버전은 `frontend/package.json`과 lockfile을 기준으로 판단한다.
+본 프로젝트의 프론트엔드는 **Next.js 16.3.4 계열(App Router)**과 **React 19.2 계열**을 사용한다. 정확한 설치 버전은 `frontend/package.json`과 lockfile을 기준으로 판단한다.
 
 ## 🗺️ Data Flow Architecture
 

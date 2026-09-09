@@ -36,7 +36,7 @@ export class BoardMasterPage {
       await expect(this.wizardButton).toBeVisible({ timeout: 15000 });
       await this.wizardButton.scrollIntoViewIfNeeded();
       await this.wizardButton.click();
-    } catch (e) {
+    } catch {
       console.log('>>> Standard wizard button not found, searching for any button with "마법사" or "Rocket"');
       const fallback = this.page.locator('button').filter({ hasText: /마법사/i }).first();
       await expect(fallback).toBeVisible({ timeout: 10000 });

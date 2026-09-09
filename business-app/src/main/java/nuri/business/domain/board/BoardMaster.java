@@ -57,12 +57,6 @@ public class BoardMaster extends BaseEntity {
     @Column(length = 20)
     private String tmpltId;
 
-    @Column(name = "blog_sn")
-    private Long blogSn;
-
-    @Column(length = 1)
-    private String blogYn = "N";
-
     @Column(name = "cmnty_sn")
     private Long cmntySn;
 
@@ -79,7 +73,7 @@ public class BoardMaster extends BaseEntity {
 
     private BoardMaster(String bbsId, String bbsTtl, String bbsExpln, String bbsTypeCd, String bbsAtrbCd,
             String ansPsbltyYn, String fileAtchPsbltyYn, Integer atchPsbltyFileQty, Long atchPsbltyFileSz,
-            String useYn, String tmpltId, Long blogSn, String blogYn, Long cmntySn,
+            String useYn, String tmpltId, Long cmntySn,
             String ansYn, String stsfdgYn) {
         this.bbsId = bbsId;
         this.bbsTtl = bbsTtl;
@@ -93,8 +87,6 @@ public class BoardMaster extends BaseEntity {
         this.atchPsbltyFileSz = atchPsbltyFileSz;
         this.useYn = useYn != null ? useYn : "Y";
         this.tmpltId = tmpltId;
-        this.blogSn = blogSn;
-        this.blogYn = blogYn != null ? blogYn : "N";
         this.cmntySn = cmntySn;
         this.ansYn = ansYn != null ? ansYn : "N";
         this.stsfdgYn = stsfdgYn != null ? stsfdgYn : "N";
@@ -106,10 +98,10 @@ public class BoardMaster extends BaseEntity {
     @Builder
     public static BoardMaster create(String bbsId, String bbsTtl, String bbsExpln, String bbsTypeCd, String bbsAtrbCd,
             String ansPsbltyYn, String fileAtchPsbltyYn, Integer atchPsbltyFileQty, Long atchPsbltyFileSz,
-            String useYn, String tmpltId, Long blogSn, String blogYn, Long cmntySn,
+            String useYn, String tmpltId, Long cmntySn,
             String ansYn, String stsfdgYn) {
         return new BoardMaster(bbsId, bbsTtl, bbsExpln, bbsTypeCd, bbsAtrbCd, ansPsbltyYn, fileAtchPsbltyYn,
-                atchPsbltyFileQty, atchPsbltyFileSz, useYn, tmpltId, blogSn, blogYn, cmntySn, ansYn, stsfdgYn);
+                atchPsbltyFileQty, atchPsbltyFileSz, useYn, tmpltId, cmntySn, ansYn, stsfdgYn);
     }
 
     public void registerOption(String ansYn, String stsfdgYn) {

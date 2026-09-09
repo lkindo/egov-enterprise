@@ -80,7 +80,8 @@ function formatSentAt(value?: string): { date: string; time: string } {
   if (!value) return { date: '-', time: '' };
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return { date: '-', time: '' };
-  return { date: format(parsed, 'yyyy.MM.dd'), time: format(parsed, 'HH:mm:ss') };
+  // [2026-09-08] 표기 통일: 시스템 전체 날짜는 yyyy-MM-dd 다(lib/format-date SSOT 와 같은 형식).
+  return { date: format(parsed, 'yyyy-MM-dd'), time: format(parsed, 'HH:mm:ss') };
 }
 
 export default function SmsAdminClient({

@@ -127,7 +127,7 @@ class TemplateApiControllerTest extends ControllerTestSupport {
     // [2026-09-06 감사 D11-02 후속] 참조 중 삭제는 409 — 사유 문구가 그대로 화면 토스트가 된다.
     @Test
     @WithMockCustomUser(role = "ADMIN")
-    @DisplayName("게시판·블로그가 참조 중인 템플릿의 삭제는 409 와 사유로 거절한다")
+    @DisplayName("게시판이 참조 중인 템플릿의 삭제는 409 와 사유로 거절한다")
     void deleteTmplatInfo_inUse() throws Exception {
         willThrow(new BusinessException("게시판 2건이 이 템플릿을 사용 중이라 삭제할 수 없습니다.", CommonErrorCode.RESOURCE_IN_USE))
                 .given(tmplatInfoService).deleteTmplatInfo("T1");

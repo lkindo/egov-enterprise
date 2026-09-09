@@ -63,18 +63,26 @@ public class SmsAsyncProcessor {
      * 개별 수신자 발송 (재시도 적용) — 외부 IO 이므로 트랜잭션을 열지 않는다.
      * 결과 기록만 updateResult 의 짧은 트랜잭션에 위임한다.
      */
+    public void sendToRecipient(Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
+        boolean delivered = self.deliverToRecipient(smsTrsmSn, rcptnTelno, senderTel, content);
+        meterRegistry.counter("sms.dispatch.total", "result", delivered ? "success" : "failure").increment();
+        self.recordResult(smsTrsmSn, rcptnTelno, delivered ? "S" : "F",
+                delivered ? "Success" : "Gateway delivery failed");
+    }
+
+    /** 외부 발송만 재시도하며 DB 기록·커밋 실패와 경계를 분리한다. */
     @org.springframework.retry.annotation.Retryable(
         retryFor = { Exception.class },
+        recover = "recoverSmsSending",
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
     )
-    public void sendToRecipient(Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
+    public boolean deliverToRecipient(Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
         log.debug("Attempting to send SMS to: {}", nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno));
         boolean success = smsSender.send(rcptnTelno, content, senderTel);
 
         if (success) {
-            self.updateResult(smsTrsmSn, rcptnTelno, "S", "Success");
-            meterRegistry.counter("sms.dispatch.total", "result", "success").increment();
+            return true;
         } else {
             // 외부 연동 실패 시 예외를 던져 재시도를 유도할 수 있음
             throw new IllegalStateException("SMS gateway did not confirm delivery");
@@ -85,12 +93,29 @@ public class SmsAsyncProcessor {
      * 모든 재시도 실패 시 호출되는 복구 메서드
      */
     @org.springframework.retry.annotation.Recover
-    public void recoverSmsSending(Exception e, Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
+    public boolean recoverSmsSending(Exception e, Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
         // 외부 예외 메시지는 전화번호·본문·API 응답을 포함할 수 있으므로 로그/DB에 복제하지 않는다.
         log.error("All retries failed for SMS to: {}, errorType: {}",
                 nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno), e.getClass().getSimpleName());
-        self.updateResult(smsTrsmSn, rcptnTelno, "F", "Gateway delivery failed");
-        meterRegistry.counter("sms.dispatch.total", "result", "failure").increment();
+        return false;
+    }
+
+    /** 새 트랜잭션의 커밋까지 끝난 뒤 성공으로 판단하는 기록 전용 재시도 경계. */
+    @org.springframework.retry.annotation.Retryable(
+        retryFor = { org.springframework.dao.DataAccessException.class, org.springframework.transaction.TransactionException.class },
+        recover = "recoverRecording",
+        maxAttempts = 3,
+        backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
+    )
+    public void recordResult(Long smsTrsmSn, String rcptnTelno, String rsltCd, String rsltMsg) {
+        self.updateResult(smsTrsmSn, rcptnTelno, rsltCd, rsltMsg);
+    }
+
+    @org.springframework.retry.annotation.Recover
+    public void recoverRecording(Exception e, Long smsTrsmSn, String rcptnTelno, String rsltCd, String rsltMsg) {
+        log.error("SMS result recording exhausted for transmission serial number: {}, recipient: {}, intendedResult: {}, errorType: {}",
+                smsTrsmSn, nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno), rsltCd, e.getClass().getSimpleName());
+        meterRegistry.counter("sms.dispatch.recording.failures").increment();
     }
 
     /**

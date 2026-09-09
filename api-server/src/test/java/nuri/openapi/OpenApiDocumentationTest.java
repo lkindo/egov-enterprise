@@ -115,7 +115,7 @@ class OpenApiDocumentationTest {
     assertNullableProperties(schemas.path("BoardDto"),
         "ansSn", "pstTtl", "pstCn", "upPstSn", "sortOrdr", "ttlBoldYn", "inqCnt",
         "useYn", "pstBgngYmd", "pstEndYmd", "userId", "userNm", "atchFileSn", "scrtYn",
-        "blogSn", "evntDt", "qnaSttsCd", "qnaCatCd", "likeCnt", "commentCnt", "fileCnt",
+        "evntDt", "qnaSttsCd", "qnaCatCd", "likeCnt", "commentCnt", "fileCnt",
         "crtDt", "frstRegisterNm", "ansLv");
     assertNullableProperties(schemas.path("AuthorGroupProjection"),
         "groupId", "mberTyNm", "authrtId");

@@ -5,9 +5,10 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-05
-verified_against: 9d492aef414ec692c8abddfbab9683a1b61198d4
+verified_at: 2026-09-08
+verified_against: 533fee82077a6e4243501a0cfd49a5b2bf676ea9
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md
   - ../../AGENTS.md
   - ../../GEMINI.md
   - ../../CLAUDE.md
@@ -65,6 +66,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-010 | PR 의존성 검사는 read-only Gradle graph producer → checkout/run 없는 trusted `workflow_run` 제출 → 최대 600초 snapshot readiness → runtime High 이상 review 순서로 fail-closed하도록 정의돼 있다. 신규 `workflow_run`은 기본 브랜치 선반영이 필요하므로 public fork probe 전에는 live 집행 완료로 간주하지 않는다. | [producer workflow](../../.github/workflows/dependency-submission.yml), [publisher workflow](../../.github/workflows/dependency-submission-publish.yml), [readiness verifier](../../scripts/dependency-snapshot-readiness.mjs), [dependency contract](../../scripts/dependency-submission-contract.mjs) | 2026-08-19 |
 | CTX-011 | 프론트 의존성 감사는 `pnpm audit --json`을 한 번 조회해 Critical 전체와 운영 의존성 High를 차단하고 개발 전용 High는 warning으로 남긴다. JSON 형식·집계 불일치와 실행/네트워크 오류는 fail-closed다. | [audit policy](../../scripts/frontend-audit-policy.mjs), [policy contract](../../scripts/frontend-audit-policy.test.mjs), [CI workflow](../../.github/workflows/ci.yml) | 2026-08-19 |
 | CTX-012 | 로컬 k6 wrapper는 `K6_SCENARIO=users-<load>` 환경 계약으로 100/500/1000 시나리오를 선택하고 알 수 없는 값은 실패한다. 잘못된 `--scenario` 재도입은 저비용 운영 계약이 pre-push·CI에서 차단하지만 실제 부하 결과는 대상 환경이 필요한 별도 증거다. | [load wrapper](../../scripts/run-load-test.ps1), [scenario selector](../../test/load-tests/scenarios/load-levels.js), [command contract](../../scripts/load-test-command-contract.test.mjs) | 2026-08-19 |
+| CTX-013 | 블로그 도메인은 사용자 요청에 따라 제품·재사용 profile에서 제외하는 것으로 확정했다. 게시판의 블로그 계약과 비사용 물리 스키마는 새 Flyway로 제거하며, 데이터가 있는 환경은 제거가 중단된다. 과거 migration과 공유 표준 사전은 보존한다. | [ADR-0012](../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md), [재사용 profile](../../config/reusable-base-profiles.json) | 2026-09-08 |
 
 ## 개발·검증·배포 흐름
 

@@ -467,4 +467,42 @@ describe('BoardMasterListClient selection contract', () => {
     expect(boardMasterEditSchema.safeParse({ ...valid, useYn: 'X' }).success).toBe(false);
     expect(boardMasterEditSchema.safeParse({ ...valid, bbsTtl: 123 }).success).toBe(false);
   });
+
+  /*
+    [2026-09-08] 사용 중지된 게시판의 '게시글 목록 열기'.
+
+    ⚠ 종전에는 useYn 과 무관하게 버튼이 열려 있었고, 비활성 게시판에서 누르면 서버가
+    assertActiveBoardMaster(useYn='Y' 필터)에서 걸러 404 를 냈다. 메시지가
+    '게시판을 찾을 수 없습니다' 라 **방금 목록에서 보고 누른 항목이 없다고** 말했다
+    (실측: bbsId=BBSMSTR_000000002061, use_yn='N').
+
+    화면이 누르기 전에 사실을 말하도록 잠갔다. 이 계약이 그 잠금을 붙잡는다 —
+    disabled 를 걷으면 red 이고, 활성 게시판까지 잠가도 red 다.
+  */
+  it('사용 중지된 게시판은 게시글 목록 열기를 잠그고 이유를 라벨에 밝힌다', () => {
+    mocks.boards[0].useYn = 'N';
+    render(<BoardMasterListClient />);
+
+    const blocked = screen.getByRole('button', {
+      name: '첫 번째 게시판 사용 중지된 게시판이라 게시글 목록을 열 수 없습니다',
+    });
+    expect(blocked).toBeDisabled();
+
+    fireEvent.click(blocked);
+    // 잠근 버튼이 이동을 일으키면 목적지에서 404 를 만난다.
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it('사용 중인 게시판은 게시글 목록 열기가 열려 있고 그 게시판으로 이동한다', () => {
+    mocks.boards[0].useYn = 'Y';
+    render(<BoardMasterListClient />);
+
+    const open = screen.getByRole('button', { name: '첫 번째 게시판 게시글 목록 열기' });
+    expect(open).not.toBeDisabled();
+
+    fireEvent.click(open);
+    expect(mocks.push).toHaveBeenCalledWith(
+      '/admin/community/boards/select-board-list?bbsId=BBS-A',
+    );
+  });
 });

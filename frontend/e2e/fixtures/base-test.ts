@@ -40,7 +40,7 @@ export const test = base.extend<MyFixtures>({
         const fileName = `playwright_${crypto.randomUUID()}.json`;
         fs.writeFileSync(path.join(nycOutputDir, fileName), JSON.stringify(coverage), 'utf8');
       }
-    } catch (e) {
+    } catch {
       // API 페이지나 redirect 등으로 윈도우 객체 평가 불가 시 예외 스킵하여 E2E 깨짐 방어
     }
   }, { auto: true }],

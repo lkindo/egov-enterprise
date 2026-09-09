@@ -35,7 +35,7 @@ export class ObservabilityPage {
         try {
             await loading.waitFor({ state: 'visible', timeout: 2000 });
             await loading.waitFor({ state: 'hidden', timeout: 30000 });
-        } catch (e) {
+        } catch {
             console.log('>>> Topology loader not detected or already hidden.');
         }
         // [2026-08-03 계약 전환] 종전엔 'PostgreSQL Primary' 노드가 보이는지를 단언했다.

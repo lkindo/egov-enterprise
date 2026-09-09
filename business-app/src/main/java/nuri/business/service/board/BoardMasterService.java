@@ -139,8 +139,6 @@ public class BoardMasterService extends BaseAbstractService {
                 .atchPsbltyFileSz(dto.getAtchPsbltyFileSz())
                 .tmpltId(dto.getTmpltId())
                 .useYn(dto.getUseYn())
-                .blogSn(dto.getBlogSn())
-                .blogYn(dto.getBlogYn())
                 .cmntySn(dto.getCmntySn())
                 .ansYn(dto.getAnsYn())
                 .stsfdgYn(dto.getStsfdgYn())

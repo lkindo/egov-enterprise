@@ -395,6 +395,21 @@ export function BoardMasterListClient() {
         const pendingLabel = board.useYn === 'Y'
           ? `${board.bbsTtl} 비활성화 처리 중`
           : `${board.bbsTtl} 영구 삭제 처리 중`;
+        /*
+          [2026-09-08] 사용 중지된 게시판의 '게시글 목록 열기' 를 잠근다.
+
+          ⚠ 종전에는 useYn 과 무관하게 버튼이 열려 있었다. 비활성 게시판에서 누르면 서버가
+          BoardService.assertActiveBoardMaster(useYn='Y' 필터)에서 걸러 404 를 냈고, 메시지가
+          **'게시판을 찾을 수 없습니다'** 였다 — 방금 목록에서 보고 누른 항목이 존재하지 않는다고
+          말하는 셈이라 사용자는 데이터가 사라진 것으로 오해한다(실측: bbsId=..._2061, use_yn='N').
+
+          서버 인가는 그대로 두고 화면이 사실을 먼저 말한다 — 누르기 전에 이유를 알 수 있고,
+          화면이 할 수 없는 일을 약속하지 않는다.
+        */
+        const isOpenable = board.useYn === 'Y';
+        const openLabel = isOpenable
+          ? `${board.bbsTtl} 게시글 목록 열기`
+          : `${board.bbsTtl} 사용 중지된 게시판이라 게시글 목록을 열 수 없습니다`;
 
         return (
         <div className="flex items-center justify-end gap-3 pr-6">
@@ -430,10 +445,11 @@ export function BoardMasterListClient() {
           </Button>
           <Button
             onClick={() => router.push(`/admin/community/boards/select-board-list?bbsId=${board.bbsId}`)}
+            disabled={!isOpenable}
             size="icon"
             variant="ghost"
-            title={`${board.bbsTtl} 게시글 목록 열기`}
-            aria-label={`${board.bbsTtl} 게시글 목록 열기`}
+            title={openLabel}
+            aria-label={openLabel}
             className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm"
           >
             <ArrowRight size={20} />

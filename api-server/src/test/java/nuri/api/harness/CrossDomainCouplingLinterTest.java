@@ -82,7 +82,7 @@ class CrossDomainCouplingLinterTest {
     private static final int APP_TO_APP_COUPLING = 4;
 
     /**
-     * app → core 결합 동결(2026-09-06 전수 타입 참조 실측 33건).
+     * app → core 결합 동결(2026-09-08 전수 타입 참조 실측 34건).
      *
      * <p>코어는 삭제 대상이 아니라 허용 가능하지만, '허용' 과 '미탐지' 를 구분하기 위해 동결한다.
      *
@@ -105,10 +105,13 @@ class CrossDomainCouplingLinterTest {
      * <p>[2026-09-06 DEC-OPS-043] 34 → 35. {@code community → user}({@code UserRepository#findByEsntlIdIn}) 신설 —
      * 관리자 회원·가입 신청 목록이 esntlId 로 저장된 회원의 <b>이름</b>을 보여 주기 위해서다. 이름만 싣고 연락처는
      * 내보내지 않으며, 찾지 못한 사용자는 null 로 둔다(고아 행 하나가 목록 전체를 죽이지 않게).
+     * <p>[2026-09-08 ADR-0012] 35 → 34. 블로그 퇴역으로
+     * {@code blog/listener/BlogUserDeletionCleanupListener.java: blog → user (UserDeletionEvent)}
+     * 한 edge를 제거했다. 다른 교차 참조와 app → app 4건은 그대로다.
      */
-    private static final int APP_TO_CORE_COUPLING = 35;
+    private static final int APP_TO_CORE_COUPLING = 34;
 
-    /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(교차 edge 실측 37건 대비 여유). */
+    /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(교차 edge 실측 38건 대비 여유). */
     private static final int CROSS_DOMAIN_REFERENCE_FLOOR = 25;
 
     @Test

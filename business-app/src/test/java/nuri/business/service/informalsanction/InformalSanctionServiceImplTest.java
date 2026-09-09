@@ -191,6 +191,11 @@ class InformalSanctionServiceImplTest {
     void updateInformalSanction_Success() {
         InformalSanctionDto dto = new InformalSanctionDto();
         dto.setIfmlAtrzSn(1L);
+        dto.setTaskSeCd("CD1");
+        dto.setReqYmd("20260909");
+        dto.setAprvrId("APPROVER_02");
+        given(commonCodeService.getCodesByGroup("COM075"))
+                .willReturn(List.of(new CommonCodeDto("COM075", "CD1", "TaskName", "", "Y")));
         
         InformalSanction entity = InformalSanction.builder()
                 .ifmlAtrzSn(1L)
@@ -204,6 +209,9 @@ class InformalSanctionServiceImplTest {
         informalSanctionService.updateInformalSanction(dto);
 
         verify(informalSanctionRepository, times(1)).findById(1L);
+        assertThat(entity.getTaskSeCd()).isEqualTo("CD1");
+        assertThat(entity.getReqYmd()).isEqualTo("20260909");
+        assertThat(entity.getAprvrId()).isEqualTo("APPROVER_02");
     }
 
     @Test

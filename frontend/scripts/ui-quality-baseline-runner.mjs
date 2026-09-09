@@ -1168,16 +1168,8 @@ async function installStatePreparation(page, stateCase) {
   }
 
   if (stateCase.stepId === 'draft-restoration') {
-    const boardId = process.env.UI_BASELINE_SYNTHETIC_BOARD_ID || 'BBSMSTR_AAAAAAAAAAAA';
-    await page.addInitScript(({ storageKey }) => {
-      localStorage.setItem(storageKey, JSON.stringify({
-        title: 'UI_BASELINE_DRAFT_TITLE',
-        content: '<p>UI_BASELINE_DRAFT_CONTENT</p>',
-        savedAt: '2026-08-21T00:00:00.000Z',
-      }));
-    }, { storageKey: `egov-draft-board_insert_${boardId}` });
     page.on('dialog', (dialog) => dialog.accept());
-    preparation.coverage = 'synthetic-local-draft-installed';
+    preparation.coverage = 'same-document-memory-draft';
   }
 
   return preparation;
@@ -1560,6 +1552,11 @@ async function completeBoardWizard(page, fixture) {
     .waitFor({ state: 'visible', timeout: 30_000 });
 }
 
+export function isPersistedBoardDraftKey(key) {
+  return typeof key === 'string' && (key.startsWith('egov-board-draft:v2:')
+    || key.startsWith('egov-draft-board_') || key === 'autosave_bbs_write');
+}
+
 async function exerciseState(page, stateCase, preparation, { browser, baseOrigin, mutationRunNonce }) {
   switch (stateCase.stepId) {
     case 'invalid-credentials': {
@@ -1724,15 +1721,27 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       break;
     }
     case 'draft-restoration': {
+      const boardId = process.env.UI_BASELINE_SYNTHETIC_BOARD_ID || 'BBSMSTR_AAAAAAAAAAAA';
+      await page.goto(`/admin/community/boards/select-board-list?bbsId=${encodeURIComponent(boardId)}`);
+      await page.getByRole('button', { name: '글쓰기', exact: true }).click();
       const title = page.getByRole('textbox', { name: '게시글 제목' });
+      await title.fill('UI_BASELINE_DRAFT_TITLE');
+      await page.locator('.ProseMirror').fill('UI_BASELINE_DRAFT_CONTENT');
+      await page.getByRole('status').filter({ hasText: '현재 탭에 초안을 임시 보관했습니다.' }).waitFor();
+      await page.getByRole('button', { name: '취소', exact: true }).click();
+      await page.getByRole('button', { name: '글쓰기', exact: true }).click();
+      const dialog = page.getByRole('dialog').filter({ hasText: '임시저장 데이터 복구' });
+      await dialog.getByRole('button', { name: '복구', exact: true }).click();
       const restored = await pollForExpectedValue({
-        readValue: () => title.inputValue(),
-        expectedValue: 'UI_BASELINE_DRAFT_TITLE',
-        maxAttempts: 100,
-        intervalMs: 100,
+        readValue: () => title.inputValue(), expectedValue: 'UI_BASELINE_DRAFT_TITLE',
+        maxAttempts: 100, intervalMs: 100,
       });
-      preparation.coverage = 'synthetic-draft-restoration-prepared';
-      preparation.assertions.push({ id: 'draft-restored-after-reload-context', passed: restored });
+      const persistedKeys = await page.evaluate(() => [localStorage, sessionStorage].flatMap(storage =>
+        Array.from({ length: storage.length }, (_, index) => storage.key(index))));
+      const persisted = persistedKeys.some(isPersistedBoardDraftKey);
+      preparation.coverage = 'synthetic-memory-draft-restoration-prepared';
+      preparation.assertions.push({ id: 'draft-restored-in-same-document', passed: restored });
+      preparation.assertions.push({ id: 'draft-not-persisted', passed: !persisted });
       break;
     }
     case 'user-faq-search': {

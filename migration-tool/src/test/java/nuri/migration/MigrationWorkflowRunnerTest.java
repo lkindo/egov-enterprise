@@ -169,7 +169,7 @@ class MigrationWorkflowRunnerTest {
         given(adapter.preflight(eq(sourceConnection), any(DiscoveryRequest.class)))
                 .willReturn(preflight(experimentalIdentity, List.of()));
         given(adapter.discover(eq(sourceConnection), any(DiscoveryRequest.class))).willReturn(snapshot);
-        given(fingerprinter.fingerprint(targetConnection, mapping)).willReturn(targetFingerprint);
+        given(fingerprinter.fingerprintBound(targetConnection, mapping, Set.of("public"))).willReturn(targetFingerprint);
         given(validator.validate(mapping)).willReturn(pass());
         given(validator.validateLiveSource(mapping, sourceJdbc)).willReturn(pass());
         given(validator.validateLiveTarget(mapping, targetJdbc)).willReturn(pass());
@@ -314,7 +314,7 @@ class MigrationWorkflowRunnerTest {
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("source endpoint");
         assertThat(plan).doesNotExist();
-        verify(fingerprinter, never()).fingerprint(any(), any());
+        verify(fingerprinter, never()).fingerprintBound(any(), any(), any());
         verify(sourceEndpoints, never()).open(any(), anyList(), any());
 
         given(loader.loadContent(any(String.class))).willReturn(mapping);
@@ -325,7 +325,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("source endpoint");
-        verify(fingerprinter, never()).fingerprint(any(), any());
+        verify(fingerprinter, never()).fingerprintBound(any(), any(), any());
         verify(sourceEndpoints, never()).open(any(), anyList(), any());
         verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
     }
@@ -381,7 +381,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("static mapping");
 
         assertThat(plan).doesNotExist();
-        verify(fingerprinter, never()).fingerprint(any(), any());
+        verify(fingerprinter, never()).fingerprintBound(any(), any(), any());
     }
 
     @Test
@@ -397,7 +397,7 @@ class MigrationWorkflowRunnerTest {
                 "--inventory=" + scopedInventory, "--plan=" + scopedPlan)))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("scope");
-        verify(fingerprinter, never()).fingerprint(any(), any());
+        verify(fingerprinter, never()).fingerprintBound(any(), any(), any());
 
         runner.run(args(
                 "--command=plan", "--mapping=" + mappingPath,
@@ -479,7 +479,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("PostgreSQL");
-        verify(fingerprinter, never()).fingerprint(any(), any());
+        verify(fingerprinter, never()).fingerprintBound(any(), any(), any());
     }
 
     @Test
@@ -495,7 +495,7 @@ class MigrationWorkflowRunnerTest {
 
         verify(adapter).preflight(eq(sourceConnection), any(DiscoveryRequest.class));
         verify(adapter).discover(eq(sourceConnection), any(DiscoveryRequest.class));
-        verify(fingerprinter).fingerprint(targetConnection, mapping);
+        verify(fingerprinter).fingerprintBound(targetConnection, mapping, Set.of("public"));
         verify(executor).execute(
                 mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true);
         verify(validator, never()).validateLiveTarget(any(), any());
@@ -504,6 +504,30 @@ class MigrationWorkflowRunnerTest {
         lifetime.verify(executor).execute(
                 mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true);
         lifetime.verify(sourceEndpoint).close();
+        try (var entries = Files.list(temp)) {
+            Path evidence = entries.filter(path -> path.getFileName().toString().startsWith("plan.json.load-"))
+                    .findFirst().orElseThrow();
+            String json = Files.readString(evidence);
+            assertThat(json).contains("\"status\":\"PASS\"", "\"mode\":\"DRY_RUN\"")
+                    .doesNotContain("sentinel-target", "sentinel-source", "jdbc:");
+        }
+    }
+
+    @Test
+    void failedExecutionLeavesDurableFailureEvidenceWithoutExceptionPayload() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("plan.json");
+        writeApprovedArtifacts(inventory, plan, snapshot, mapping);
+        given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
+                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean()))
+                .willThrow(new IllegalStateException("sentinel-source-password"));
+        assertThatThrownBy(() -> load(inventory, plan)).isInstanceOf(MigrationExecutionException.class);
+        try (var entries = Files.list(temp)) {
+            Path evidence = entries.filter(path -> path.getFileName().toString().startsWith("plan.json.load-"))
+                    .findFirst().orElseThrow();
+            assertThat(Files.readString(evidence)).contains("\"status\":\"FAILED\"")
+                    .doesNotContain("sentinel-source-password", "jdbc:");
+        }
     }
 
     @Test
@@ -592,7 +616,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("source inventory");
 
         given(adapter.discover(eq(sourceConnection), any(DiscoveryRequest.class))).willReturn(snapshot);
-        given(fingerprinter.fingerprint(targetConnection, mapping)).willReturn(targetFingerprint("f"));
+        given(fingerprinter.fingerprintBound(targetConnection, mapping, Set.of("public"))).willReturn(targetFingerprint("f"));
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("target schema");

@@ -913,13 +913,15 @@ export default function SecurityHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-    <div className="space-y-12 pb-24">
+    {/* [2026-09-08] 여백·장식을 업무 화면 규격으로 낮추고, 제목을 메뉴명과 맞췄다 —
+        '통합 보안 거버넌스 허브' 는 메뉴 어디에도 없는 말이라 사용자가 자기 위치를 헷갈렸다. */}
+    <div className="space-y-4 pb-8">
       <PageHeader
-        title="통합 보안 거버넌스 허브"
-        breadcrumbs={[{ label: '보안 관리' }, { label: '권한 설정' }, { label: '통합 컨트롤' }]}
+        title="권한(보안) 정책 관리"
+        breadcrumbs={[{ label: '보안 관리' }, { label: '권한 설정' }]}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <div role="tablist" aria-label="보안 허브 보기 전환" className="flex items-center gap-1 bg-muted p-1 rounded-lg mr-4 border-2 border-border">
+            <div role="tablist" aria-label="보안 허브 보기 전환" className="flex items-center gap-1 bg-muted p-1 rounded-md mr-3 border border-border">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -976,9 +978,9 @@ export default function SecurityHubClient({
                     queryClient.invalidateQueries({ queryKey: ['admin-user-authorities'] });
                     queryClient.invalidateQueries({ queryKey: ['admin-author-menus'] });
                   }}
-                  className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                  className="size-[var(--control-h)] rounded-md border border-border bg-card p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
                 >
-                  <RefreshCcw size={22} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
+                  <RefreshCcw size={16} aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -991,9 +993,9 @@ export default function SecurityHubClient({
                   <Button
                     onClick={handleOpenAuthorCreate}
                     disabled={isSecurityWritePending}
-                  className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+                  className="h-[var(--control-h)] gap-2 rounded-md px-4 text-[length:var(--font-size-body)] font-bold"
                 >
-                  <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 설정
+                  <Plus size={16} aria-hidden="true" /> 권한 새로 만들기
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -1052,7 +1054,7 @@ export default function SecurityHubClient({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
-            className="grid grid-cols-12 gap-12 min-h-[850px]"
+            className="grid grid-cols-12 gap-4"
           >
 
             <div className="col-span-12 lg:col-span-3 space-y-8 h-full">
@@ -1115,7 +1117,7 @@ export default function SecurityHubClient({
                         onClick={handleSaveUserMapping}
                         aria-busy={mappingPendingAction === 'user' || undefined}
                         disabled={!isUserMappingReady || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
-                        className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                        className="h-[var(--control-h-sm)] gap-2 rounded-md px-3 text-xs font-bold disabled:opacity-50"
                       >
                         <Save size={14} aria-hidden="true" /> {mappingPendingAction === 'user' ? '사용자 할당 저장 중…' : '사용자 할당 저장'}
                       </Button>
@@ -1141,7 +1143,7 @@ export default function SecurityHubClient({
                     />
                   </div>
 
-                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[500px]">
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[320px]">
                     <AnimatePresence mode="wait">
                       {!selectedAuthorCode ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
@@ -1195,7 +1197,7 @@ export default function SecurityHubClient({
                         onClick={handleSaveMenuMapping}
                         aria-busy={mappingPendingAction === 'menu' || undefined}
                         disabled={!isMenuMappingReady || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
-                        className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                        className="h-[var(--control-h-sm)] gap-2 rounded-md px-3 text-xs font-bold disabled:opacity-50"
                       >
                         <RefreshCcw size={14} aria-hidden="true" /> {mappingPendingAction === 'menu' ? '메뉴 권한 저장 중…' : '메뉴 권한 저장'}
                       </Button>
@@ -1207,22 +1209,21 @@ export default function SecurityHubClient({
                 }
               >
                 <div className="relative h-full flex flex-col pt-4">
-                  <div className="flex items-center gap-4 bg-surface-inverse rounded-lg p-8 mb-10 shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform group-hover:rotate-6">
-                      <ShieldCheck size={120} className="text-primary" />
-                    </div>
-                    <div className="w-14 h-11 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 relative z-10">
-                      <ShieldCheck size={28} className="text-primary" />
-                    </div>
-                    <div className="relative z-10 space-y-1">
-                      <span className="text-xs font-bold text-surface-inverse-foreground/30 tracking-tight">정책 매핑 현황</span>
-                      <div className="text-surface-inverse-foreground text-lg font-bold tracking-tighter leading-none">
-                        {tempMenuMappings.size} 개의 활성 노드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> 에 매핑됨
-                      </div>
-                    </div>
+                  {/*
+                    [2026-09-08] 장식 히어로(반전 배경 · 120px 회전 아이콘 · p-8 mb-10 · shadow-2xl ·
+                    비정사각 w-14 h-11)를 요약 한 줄로 줄였다. 이 자리는 지금 몇 개가 선택돼 있는지
+                    확인하는 곳이지 배너가 아니다. '활성 노드'·'N/A' 같은 의사코드도 걷었다.
+                  */}
+                  <div className="mb-3 flex items-center gap-2 rounded-md border border-border bg-muted/30 px-4 py-2">
+                    <ShieldCheck size={16} className="shrink-0 text-primary" aria-hidden="true" />
+                    <p className="text-[length:var(--font-size-body)] text-muted-foreground">
+                      {selectedAuthorCode
+                        ? <>선택한 권한 <span className="font-bold text-foreground">{selectedAuthorCode}</span> 에 메뉴 <span className="font-bold text-foreground">{tempMenuMappings.size}</span>개가 지정돼 있습니다.</>
+                        : '권한을 먼저 선택하세요.'}
+                    </p>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[500px]">
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[320px]">
                     <AnimatePresence mode="wait">
                       {!selectedAuthorCode ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
@@ -1277,7 +1278,7 @@ export default function SecurityHubClient({
                     onClick={() => { void handleSaveRoleMapping(); }}
                     aria-busy={mappingPendingAction === 'role' || undefined}
                     disabled={!isRoleMappingReady || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
-                    className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                    className="h-[var(--control-h-sm)] gap-2 rounded-md px-3 text-xs font-bold disabled:opacity-50"
                   >
                     <RefreshCcw size={14} aria-hidden="true" /> {mappingPendingAction === 'role' ? '롤 할당 저장 중…' : '롤 할당 저장'}
                   </Button>

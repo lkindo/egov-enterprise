@@ -134,7 +134,7 @@ class InputContractMirrorLinterTest {
                     List.of("ognzId", "ognzNm", "ognzExpln", "upOgnzId")),
             new LengthBinding(BoardMaster.class, BoardMasterDto.class,
                     List.of("bbsId", "bbsTtl", "bbsExpln", "bbsTypeCd", "bbsAtrbCd",
-                            "ansPsbltyYn", "fileAtchPsbltyYn", "tmpltId", "useYn", "blogYn",
+                            "ansPsbltyYn", "fileAtchPsbltyYn", "tmpltId", "useYn",
                             "ansYn", "stsfdgYn")),
             // [2026-08-29 표적 확장] tb_tmplt_info 는 다섯 컬럼이 전부 NOT NULL 인데 DTO 는
             //   useYn 하나만 제약하고 있었다. 특히 tmpltId 는 PK 이자 NOT NULL 이고 생성 전략이
@@ -182,7 +182,6 @@ class InputContractMirrorLinterTest {
             new EnumBinding(BoardMasterDto.class, "ansPsbltyYn", List.of("Y", "N")),
             new EnumBinding(BoardMasterDto.class, "fileAtchPsbltyYn", List.of("Y", "N")),
             new EnumBinding(BoardMasterDto.class, "useYn", List.of("Y", "N")),
-            new EnumBinding(BoardMasterDto.class, "blogYn", List.of("Y", "N")),
             new EnumBinding(BoardMasterDto.class, "ansYn", List.of("Y", "N")),
             new EnumBinding(BoardMasterDto.class, "stsfdgYn", List.of("Y", "N")),
             new EnumBinding(ScrapDto.class, "useYn", List.of("Y", "N")),
@@ -261,8 +260,9 @@ class InputContractMirrorLinterTest {
     // [2026-09-08 PD-MYPG-001] 116 -> 111. MyPageContentDto 5필드가 빠졌다 — 그 DTO 를 걷었기
     //   때문이다(마이페이지 콘텐츠 관리 표면 제거). 검증 약화가 아니라 검증 대상 자체의 소멸이며,
     //   엔티티·테이블은 남으므로 표면이 되살아나면 이 바인딩도 함께 복구한다.
-    private static final int MIN_LENGTH_FIELDS = 111;
-    private static final int MIN_ENUM_FIELDS = 15;
+    // ADR-0012: BoardMasterDto.blogYn 제거로 길이/enum 표적을 각각 1개 줄인다.
+    private static final int MIN_LENGTH_FIELDS = 110;
+    private static final int MIN_ENUM_FIELDS = 14;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 2;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
     // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).

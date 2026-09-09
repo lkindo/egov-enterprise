@@ -150,7 +150,6 @@
       "backend": {
         "appDomains": [
           "addressbook",
-          "blog",
           "help",
           "informalsanction",
           "isg",
@@ -225,8 +224,6 @@
         "tables": [
           "tb_adbk_info",
           "tb_adbk_manage",
-          "tb_blog_info",
-          "tb_blog_user_map",
           "tb_bnr_info",
           "tb_cmnty_info",
           "tb_cmnty_user_map",
@@ -278,15 +275,15 @@
     }
   ],
   "databaseSnapshot": {
-    "source": "api-server current versioned migrations/public",
-    "checkedAt": "2026-08-16T04:05:03.1316898Z",
-    "physicalTableCountExcludingFlyway": 83,
-    "physicalSequenceCount": 49,
+    "source": "isolated PostgreSQL 17/public; repository Flyway migrations through V2_90 (not OCI deployment state)",
+    "checkedAt": "2026-09-08T14:41:07.568Z",
+    "physicalTableCountExcludingFlyway": 81,
+    "physicalSequenceCount": 48,
     "physicalStandaloneSequenceCount": 3,
     "metaRows": {
       "meta_standard_words": 3386,
       "meta_standard_terms": 13207,
-      "meta_standard_domains": 127
+      "meta_standard_domains": 128
     }
   }
 }

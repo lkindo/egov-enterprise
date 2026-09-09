@@ -27,8 +27,6 @@ public record BoardMasterDetailResponse(
         LocalDateTime mdfcnDt,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String useYn,
         Long cmntySn,
-        Long blogSn,
-        String blogYn,
         String ansYn,
         String stsfdgYn,
         String authFlag,
@@ -43,7 +41,7 @@ public record BoardMasterDetailResponse(
                 dto.getAtchPsbltyFileQty(), dto.getAtchPsbltyFileSz(),
                 dto.getTmpltId(), dto.getFrstRgtrId(), dto.getCrtDt(),
                 dto.getLastMdfrId(), dto.getMdfcnDt(), dto.getUseYn(),
-                dto.getCmntySn(), dto.getBlogSn(), dto.getBlogYn(),
+                dto.getCmntySn(),
                 dto.getAnsYn(), dto.getStsfdgYn(), dto.getAuthFlag(), dto.getTmplatCours());
     }
 }
