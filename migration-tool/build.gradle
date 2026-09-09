@@ -28,3 +28,10 @@ jar { enabled = false }
 tasks.named('test', Test) {
     doFirst { systemProperty 'migration.drill.classpath', classpath.asPath }
 }
+
+// PIT runs the same crash drill in its own minion JVM, outside Gradle's Test task.
+pitest {
+    jvmArgs.add(providers.provider {
+        "-Dmigration.drill.classpath=${sourceSets.test.runtimeClasspath.asPath}".toString()
+    })
+}

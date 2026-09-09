@@ -156,7 +156,7 @@
       "supportingSources": [
         {
           "file": "build.gradle",
-          "sha256": "b0a805dc4ed87491d036f7d11b49798409183937471b33e6bf5c5be2c5e19615"
+          "sha256": "d36a91d2b7e8e9aba22f3a5a6c321fbb6ec7588e7b98a3734de4d1454f429490"
         },
         {
           "file": "api-server/build.gradle",
@@ -176,7 +176,7 @@
         },
         {
           "file": "migration-tool/build.gradle",
-          "sha256": "c8560bbd370b41c4ba5d391ee8392eb252b601578802394c86b53477e38fb07b"
+          "sha256": "3cbfc6da78e570bb2b0c153c73dca7c3fb655e005f80cc670061043444d04a92"
         }
       ]
     }

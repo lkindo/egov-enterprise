@@ -20,6 +20,12 @@ Gradle 플러그인은 별도 classpath를 사용한다. `dependencies`의 compi
 constraints는 이 경로의 HttpComponents 패치를 담당하며, 애플리케이션의 BOM override와 별개다.
 플러그인을 올리거나 constraints를 제거할 때 두 경로를 모두 재검증한다.
 
+PIT의 Launcher 자동 탐색도 임시 configuration을 해석한다. 현재는 Launcher를 공통
+`testRuntimeOnly`로 선언하고 자동 탐색을 끄므로 JUnit 버전 관리를 그대로 적용한다.
+이 설정을 변경할 때는 [PIT의 탐색 구현](https://github.com/szpak/gradle-pitest-plugin/blob/633ebc801141d113279b8d0dd34e7bcb4f16e850/src/main/groovy/info/solidsoft/gradle/pitest/PitestPlugin.groovy)과
+실제 compile/runtime/test·PIT classpath를 비교하고 변이 테스트를 실행한다.
+임시 configuration 전체를 제출 대상에서 제외하거나 경고를 일괄 dismiss하지 않는다.
+
 ## 2. 현재 실행 경로
 
 | 경로 | 역할 | 강제력 |

@@ -84,7 +84,7 @@ class EtlCrashRecoveryPostgresIntegrationTest {
 
     private Process startWorker(String phase) throws Exception {
         String classpath = System.getProperty("migration.drill.classpath");
-        assertThat(classpath).as("Run this process drill through the Gradle test task").isNotBlank();
+        assertThat(classpath).as("The Gradle test or PIT task must supply the drill classpath").isNotBlank();
         Path arguments = directory.resolve(phase + ".args");
         Files.writeString(arguments, "-cp\n\"" + classpath.replace('\\', '/') + "\"\n"
                 + Worker.class.getName() + "\n");
