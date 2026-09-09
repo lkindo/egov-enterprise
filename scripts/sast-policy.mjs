@@ -13,6 +13,9 @@ export function evaluateSarif(report, language) {
     throw new Error('Expected one CodeQL SARIF 2.1.0 run');
   }
   const run = report.runs[0];
+  if (run.properties?.incrementalMode) {
+    throw new Error('Incremental CodeQL analysis cannot establish full-source security policy');
+  }
   if (!run.tool?.driver?.name?.startsWith('CodeQL')
       || run.tool.driver.semanticVersion !== policy.codeqlVersion && run.tool.driver.version !== policy.codeqlVersion) {
     throw new Error('Missing or unexpected CodeQL engine version');

@@ -14,6 +14,8 @@
 
 `secure-coding`을 여섯 번째 required context로 정의한다. 코드·설정 변경의 두 언어 분석이 모두 성공해야 하며, 문서 전용 변경의 명시적 skip만 허용한다. 기존·신규 여부와 관계없이 보안 점수 7.0 이상을 차단하고 나머지는 리포트에 남긴다. 규칙 전체 제외나 baseline으로 기존 High를 일괄 숨기지 않는다. 분석·리포트·메타데이터 오류도 실패시킨다.
 
+PR에서도 전체 소스를 분석하도록 SAST job의 `CODEQL_ACTION_DIFF_INFORMED_QUERIES`를 `false`로 고정한다. [고정 버전 Action의 기본값](https://github.com/github/codeql-action/blob/cdf488f595d80d6e07e03d4674febd5ab45fa938/src/feature-flags.ts)은 PR diff 기반 분석을 활성화하므로 변경되지 않은 데이터 흐름 탐지를 생략할 수 있다. 정책 evaluator는 `incrementalMode`가 있는 SARIF를 거부하고, 계약 테스트는 전체 분석 설정의 삭제·변경을 차단한다.
+
 실제 취약/안전 fixture로 언어별 탐지와 동일 정책 CLI의 실패 종료 코드를 CI에서 확인한다. GitHub Security와 CI artifact에는 소스 내용·snippet·소스에서 유래한 메시지를 제거한 SARIF만 게시하고 CodeQL DB는 업로드하지 않는다. 운영 앱·OCI 연결 및 자격증명은 사용하지 않는다.
 
 2026-09-09 사용자는 확실한 오탐의 예외 등록을 명시 승인했다. [7건의 재검토 결과](../../04-operations/sast-findings-review.md)에 따라 규칙·파일·행·fingerprint·소스/방어 해시·만료일에 결속한 예외만 허용한다. 승인 목록은 하네스 registry 동결에 포함한다. 감사 artifact에는 예외와 근거를 유지하고 GitHub 게시본에서는 승인된 개별 탐지만 제외한다. 신규 탐지와 변경·만료·건수 불일치는 실패하며 예외 재승인 없이 자동 갱신하지 않는다.

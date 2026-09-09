@@ -13,6 +13,9 @@ function verifyBinding(workflow) {
   const jobs = parseWorkflowJobs(workflow);
   const scan = jobs.get('sast-scope') ?? '';
   const errors = validateStaticContract({ manifest, ciContent: workflow });
+  if (!/^    env:\n(?:      #[^\n]*\n)*      CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'$/m.test(scan)) {
+    errors.push('SAST job must disable PR diff-informed analysis');
+  }
   for (const required of [
     'config-file: config/security/codeql.yml',
     `tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v${policy.codeqlVersion}/codeql-bundle-linux64.tar.gz`,
@@ -44,6 +47,8 @@ test('deleted gate, missing language, bypass, query config drift and detached pr
     ['--no-build-cache --rerun-tasks', '--no-build-cache'],
     ['sarif_file: build/sast/publish/', 'sarif_file: build/sast/raw/'],
     ['path: build/sast/sanitized/', 'path: build/sast/publish/'],
+    ["CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'", "CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'true'"],
+    ["CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'", ''],
   ]) {
     assert.ok(ci.includes(from), from);
     assert.ok(verifyBinding(ci.replace(from, to)).length, from);

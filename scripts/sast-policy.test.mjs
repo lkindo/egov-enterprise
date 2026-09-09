@@ -46,6 +46,8 @@ test('missing, malformed, incomplete or wrong-language evidence fails closed', (
   for (const mutate of [
     r => { r.runs = []; },
     r => { r.runs[0].tool.driver.version = '0.0.0'; },
+    r => { r.runs[0].properties = { incrementalMode: 'diff-informed' }; },
+    r => { r.runs[0].properties = { incrementalMode: 'diff-informed,overlay' }; },
     r => { delete r.runs[0].results; },
     r => { r.runs[0].invocations = []; },
     r => { r.runs[0].invocations[0].executionSuccessful = false; },
@@ -79,6 +81,8 @@ test('real CLI exits 0 for reviewed, 1 for high, and 2 for incomplete or invalid
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sast-policy-'));
   const file = path.join(directory, 'result.sarif');
   const command = path.join(repoRoot, 'scripts/sast-policy.mjs');
+  const incremental = report();
+  incremental.runs[0].properties = { incrementalMode: 'diff-informed' };
   const reviewed = report('7', false);
   reviewed.runs[0].results = reviewedExceptions.findings.filter(e => e.language === 'java').map(e => ({
     ruleId: e.ruleId, partialFingerprints: { primaryLocationLineHash: e.fingerprint },
@@ -87,7 +91,7 @@ test('real CLI exits 0 for reviewed, 1 for high, and 2 for incomplete or invalid
   reviewed.runs[0].tool.driver.rules = [...new Set(reviewed.runs[0].results.map(r => r.ruleId))].map(id => ({
     id, properties: { tags: ['security'], 'security-severity': '7.8' },
   }));
-  for (const [input, exit] of [[reviewed, 0], [report('7', false), 2], [report('7'), 1], [{}, 2]]) {
+  for (const [input, exit] of [[reviewed, 0], [report('7', false), 2], [report('7'), 1], [incremental, 2], [{}, 2]]) {
     fs.writeFileSync(file, JSON.stringify(input));
     assert.equal(spawnSync(process.execPath, [command, file, 'java']).status, exit);
   }

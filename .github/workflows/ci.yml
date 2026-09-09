@@ -83,6 +83,9 @@ jobs:
     if: needs.change-scope.outputs.sast == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      # PR diff filtering drops unchanged taint findings and breaks full-scan policy.
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'
     permissions:
       contents: read
       security-events: write
