@@ -1,6 +1,26 @@
 import { test, expect } from './fixtures/base-test';
+import { createVisualAdmin } from './fixtures/visual-admin';
 import fs from 'fs';
 import path from 'path';
+
+// 병렬 VRT와 같은 동명이인을 항상 보장해 검색 결과 순서에 의존하는 선택을 차단한다.
+const approvalTest = test.extend<{ sameNameUser: void }>({
+    sameNameUser: [async ({ playwright, baseURL }, use) => {
+        const fixtureRequest = await playwright.request.newContext({
+            baseURL, storageState: { cookies: [], origins: [] },
+        });
+        try {
+            const sameNameUser = await createVisualAdmin(fixtureRequest, baseURL!);
+            try {
+                await use();
+            } finally {
+                await sameNameUser.dispose();
+            }
+        } finally {
+            await fixtureRequest.dispose();
+        }
+    }, { auto: true }],
+});
 
 /**
  * Tier 11: Enterprise Workflow & Productivity
@@ -25,7 +45,7 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
      *   없는 임의 시드 금지) 테스트가 관리자 API 로 코드 하나를 보장한 뒤 시작한다. 이미 있으면
      *   등록 응답은 실패해도 되고, 실제 판정은 `/approvals/task-types` 가 그 코드를 돌려주는지다.
      */
-    test('Workflow: 결재를 올리고 승인해 세 탭을 완주한다', async ({ page, request }) => {
+    approvalTest('Workflow: 결재를 올리고 승인해 세 탭을 완주한다', async ({ page, request }) => {
         console.log('\n>>> Starting Workflow: Electronic Approval full lifecycle');
         const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
         const authPath = path.join(__dirname, '..', 'playwright', '.auth', 'admin.json');
@@ -49,8 +69,9 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         // 결재자로 고를 내 표시 이름(피커는 성명으로만 검색한다).
         const meRes = await request.get(`${API_BASE}/users/me`, { headers });
         expect(meRes.ok()).toBeTruthy();
-        const me: { userNm?: string } = (await meRes.json()).data;
+        const me: { userNm?: string; esntlId?: string } = (await meRes.json()).data;
         expect(me.userNm, '현재 사용자 표시 이름이 있어야 피커로 찾을 수 있다').toBeTruthy();
+        expect(me.esntlId, '동명이인 중 본인을 식별할 고유 ID가 있어야 한다').toBeTruthy();
 
         // 1. 결재 허브
         await page.goto('/approvals');
@@ -71,33 +92,44 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         await expect(picker).toBeVisible();
         await picker.getByLabel('사용자 검색어 입력').fill(me.userNm!);
         await picker.getByRole('button', { name: '검색' }).click();
-        await picker.getByRole('button', { name: `사용자 선택: ${me.userNm}` }).first().click();
+        const sameNameUsers = picker.getByRole('button', { name: `사용자 선택: ${me.userNm}`, exact: true });
+        await expect.poll(() => sameNameUsers.count(), { message: '동명이인이 있어도 본인을 선택해야 한다' }).toBeGreaterThanOrEqual(2);
+        await sameNameUsers.filter({ has: page.getByText(`ID: ${me.esntlId}`, { exact: true }) }).click();
         await expect(dialog.getByTestId('approval-draft-approver')).toContainText(me.userNm!);
 
         // 5. 상신
-        await dialog.getByRole('button', { name: '결재 상신' }).click();
+        const [submittedRequest] = await Promise.all([
+            page.waitForRequest((req) => req.method() === 'POST' && new URL(req.url()).pathname === '/api/v1/approvals'),
+            dialog.getByRole('button', { name: '결재 상신' }).click(),
+        ]);
+        expect(submittedRequest.postDataJSON().aprvrId, '상신 결재자는 현재 사용자여야 한다').toBe(me.esntlId);
+        const submittedResponse = await submittedRequest.response();
+        expect(submittedResponse?.ok(), '상신 요청이 저장되어야 한다').toBe(true);
+        const approvalId: number = (await submittedResponse!.json()).data;
+        expect(Number.isInteger(approvalId) && approvalId > 0, '저장된 결재 번호가 있어야 한다').toBe(true);
         await expect(page.getByText('결재를 상신했습니다', { exact: false })).toBeVisible();
         await expect(dialog).toBeHidden();
 
         // 6. '내가 올린 결재' 로 자동 전환되고 방금 올린 건이 보인다.
         await expect(page.getByRole('tab', { name: '내가 올린 결재' })).toHaveAttribute('aria-selected', 'true');
-        const submittedItem = page.getByTestId('approval-item').filter({ hasText: taskName }).first();
-        await expect(submittedItem).toBeVisible();
-        await expect(submittedItem.getByText('대기 중')).toBeVisible();
+        // 같은 업무 구분의 과거 결재가 있어도 이번 상신 번호만 따라간다.
+        const approvalItem = page.getByTestId('approval-item').filter({
+            has: page.getByRole('button', { name: `${taskName} #${approvalId} 상세 열기`, exact: true }),
+        });
+        await expect(approvalItem).toBeVisible();
+        await expect(approvalItem.getByText('대기 중')).toBeVisible();
 
         // 7. 결재자(=나)의 대기함에서 승인
         await page.getByRole('tab', { name: '대기 중인 결재' }).click();
-        const pendingItem = page.getByTestId('approval-item').filter({ hasText: taskName }).first();
-        await pendingItem.getByRole('button').click();
+        await approvalItem.getByRole('button').click();
         await page.getByRole('button', { name: '결재 승인' }).click();
         await page.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
         await expect(page.getByText('성공적으로 승인되었습니다.')).toBeVisible();
 
         // 8. '내가 처리한 결재' 에 승인 완료로 남는다 — 종전에는 이 목록을 볼 탭이 없었다.
         await page.getByRole('tab', { name: '내가 처리한 결재' }).click();
-        const processedItem = page.getByTestId('approval-item').filter({ hasText: taskName }).first();
-        await expect(processedItem).toBeVisible();
-        await expect(processedItem.getByText('승인 완료')).toBeVisible();
+        await expect(approvalItem).toBeVisible();
+        await expect(approvalItem.getByText('승인 완료')).toBeVisible();
 
         // 9. 회귀 차단 — 종전의 가짜 성공 문구·목업 라우트로의 이동이 되살아나면 red 다.
         await expect(page.locator('text=결재 상신이 완료되었습니다')).toHaveCount(0);
