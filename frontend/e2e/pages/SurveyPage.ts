@@ -134,7 +134,7 @@ export class SurveyPage {
             try {
                 await surveyCard.waitFor({ state: 'visible', timeout: 3000 });
                 break;
-            } catch (e) {
+            } catch {
                 // Diagnostic logging
                 const allTitles = await this.page.locator('h3').allInnerTexts();
                 console.log(`>>> [Survey] Attempt ${i + 1}: "${surveyTitle}" not found. Visible titles:`, allTitles.filter(t => t.length > 0));

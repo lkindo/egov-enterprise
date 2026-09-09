@@ -94,6 +94,10 @@ low/moderate 권고이며 차단 대상 critical/high는 0건이다. 이는 검�
 계속 같은 감사로 판정한다. 인증·프록시·CSP 영향 테스트 30개와 Next.js 16.3.4 production 빌드가
 통과했다. Next.js가 생성한 `next-env.d.ts`의 root params 타입 참조도 함께 반영했다.
 
+새 ESLint의 내부 URL 문서 이동 경고 4곳은 인증 상태 초기화·오류 복구를 위한 전체 문서 이동을
+유지하고 계속 보고한다. 예외·허용치 추가 없이 E2E 네 곳의 미사용 catch binding을 제거했다.
+기존 catch 처리·재시도·단언은 변경하지 않았다.
+
 ## OCI 표준 길이 정합성 적용 검토안
 
 `.env`의 OCI 접속으로 read-only DB bridge를 사용했다. 정확한 표준 용어 약어가 일치하는
