@@ -7,13 +7,19 @@ import { evaluateSarif, policy, repoRoot } from './sast-policy.mjs';
 const language = process.argv[2];
 if (!policy.languages.includes(language) || process.argv.length !== 3) throw new Error('Expected java or javascript');
 const codeql = process.env.CODEQL_PATH || 'codeql';
+// CodeQL Action leaves production build tracing active after analyze. A fresh
+// probe must own its extractor/tracer environment or javac feeds the old DB.
+const probeEnv = { ...process.env };
+for (const name of Object.keys(probeEnv)) {
+  if (/^(?:CODEQL_|SEMMLE_)/.test(name) || name === 'LD_PRELOAD') delete probeEnv[name];
+}
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'egov-sast-probe-'));
 const source = path.join(root, 'source');
 fs.mkdirSync(source);
 const log = fs.openSync(path.join(root, 'probe.log'), 'w');
 function run(args) {
-  const result = spawnSync(codeql, args, { cwd: source, stdio: ['ignore', log, log] });
-  if (result.error || result.status !== 0) throw new Error(`CodeQL probe failed: ${root}`);
+  const result = spawnSync(codeql, args, { cwd: source, env: probeEnv, stdio: ['ignore', log, log] });
+  if (result.error || result.status !== 0) throw new Error(`CodeQL probe ${args.slice(0, 2).join(' ')} failed: ${root}`);
 }
 try {
   // These files are only compiled/analyzed; the vulnerable operations never run.

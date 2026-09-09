@@ -18,6 +18,8 @@ PR에서도 전체 소스를 분석하도록 SAST job의 `CODEQL_ACTION_DIFF_INF
 
 실제 취약/안전 fixture로 언어별 탐지와 동일 정책 CLI의 실패 종료 코드를 CI에서 확인한다. GitHub Security와 CI artifact에는 소스 내용·snippet·소스에서 유래한 메시지를 제거한 SARIF만 게시하고 CodeQL DB는 업로드하지 않는다. 운영 앱·OCI 연결 및 자격증명은 사용하지 않는다.
 
+CI의 검증 단계는 시작 시 `LD_PRELOAD`를 비워 native tracer의 환경 재주입을 막는다. 검증용 CodeQL 하위 프로세스는 본 분석의 `CODEQL_*`·`SEMMLE_*`·`LD_PRELOAD` 추적 환경을 상속하지 않고 새 DB의 추적 환경을 생성한다. 본 분석의 환경과 DB는 변경하지 않는다. Linux에서 상위 추적을 유지한 채 분석하면 fixture가 새 DB에 수집되지 않는 실패와, 이 격리를 적용한 뒤 취약 코드 탐지·안전 코드 무탐지·정책 종료 코드 1을 모두 재현했다.
+
 2026-09-09 사용자는 확실한 오탐의 예외 등록을 명시 승인했다. [7건의 재검토 결과](../../04-operations/sast-findings-review.md)에 따라 규칙·파일·행·fingerprint·소스/방어 해시·만료일에 결속한 예외만 허용한다. 승인 목록은 하네스 registry 동결에 포함한다. 감사 artifact에는 예외와 근거를 유지하고 GitHub 게시본에서는 승인된 개별 탐지만 제외한다. 신규 탐지와 변경·만료·건수 불일치는 실패하며 예외 재승인 없이 자동 갱신하지 않는다.
 
 기존 release workflow는 required-check manifest를 읽으므로 새 체크의 성공 이력 없는 SHA를 발행하지 못한다. 원격 브랜치 보호는 저장소 파일만으로 적용되지 않으며 `verify:ops`의 실측으로 별도 확인한다.

@@ -52,7 +52,11 @@
     {
       "jobId": "sast-scope",
       "name": "Prove secure coding detection and rejection",
-      "run": "node scripts/sast-probe.mjs ${{ matrix.language }}"
+      "run": "node scripts/sast-probe.mjs ${{ matrix.language }}",
+      "env": {
+        "CODEQL_PATH": "${{ steps.codeql.outputs.codeql-path }}",
+        "LD_PRELOAD": ""
+      }
     }
   ],
   "requiredChecks": [

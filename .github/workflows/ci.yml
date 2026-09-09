@@ -136,6 +136,8 @@ jobs:
       - name: Prove secure coding detection and rejection
         env:
           CODEQL_PATH: ${{ steps.codeql.outputs.codeql-path }}
+          # Prevent the native tracer from re-injecting the production environment.
+          LD_PRELOAD: ''
         run: node scripts/sast-probe.mjs ${{ matrix.language }}
 
       - name: Upload sanitized security results

@@ -49,6 +49,7 @@ test('deleted gate, missing language, bypass, query config drift and detached pr
     ['path: build/sast/sanitized/', 'path: build/sast/publish/'],
     ["CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'", "CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'true'"],
     ["CODEQL_ACTION_DIFF_INFORMED_QUERIES: 'false'", ''],
+    ["LD_PRELOAD: ''", 'LD_PRELOAD: inherited-tracer'],
   ]) {
     assert.ok(ci.includes(from), from);
     assert.ok(verifyBinding(ci.replace(from, to)).length, from);
