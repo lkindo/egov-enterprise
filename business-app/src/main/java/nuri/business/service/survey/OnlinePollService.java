@@ -399,7 +399,7 @@ public class OnlinePollService {
     }
 
     private String normalizeDate(String date) {
-        if (date == null) return null;
+        if (date == null || date.isEmpty()) return null;
         return date.replace("-", "").replace(".", "").replace("/", "");
     }
 }

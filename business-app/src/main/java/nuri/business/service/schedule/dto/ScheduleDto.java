@@ -1,5 +1,8 @@
 package nuri.business.service.schedule.dto;
 
+import nuri.foundation.core.validation.Ymd;
+import nuri.foundation.core.validation.YmdRange;
+
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
@@ -12,6 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@YmdRange(start = "schdlBgngYmd", end = "schdlEndYmd")
 public class ScheduleDto {
     @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
     @io.swagger.v3.oas.annotations.media.Schema(accessMode = io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY)
@@ -31,8 +35,10 @@ public class ScheduleDto {
     private String reptSeCd;
 
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String schdlBgngYmd;
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String schdlEndYmd;
 
     @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)

@@ -362,4 +362,20 @@ describe('API 클라이언트 인터셉터', () => {
       expect(instance.post).not.toHaveBeenCalled();
     });
   });
+  it('일시적인 인증 저장소 503은 토큰 재발급이나 로그인 이동을 유발하지 않는다', async () => {
+    const location = { pathname: '/admin', href: '/admin' };
+    const dispatchEvent = vi.fn();
+    Object.defineProperty(globalThis, 'window', { value: { location, dispatchEvent }, configurable: true, writable: true });
+    const { instance, captured } = await loadClient();
+    const unavailable = Object.assign(new Error('Service unavailable'), {
+      config: { url: '/admin/system/users' },
+      response: { status: 503, data: { success: false, code: 'S002' } },
+    });
+    await expect(captured.responseErr!(unavailable)).rejects.toBe(unavailable);
+    expect(instance.post).not.toHaveBeenCalled();
+    expect(instance).not.toHaveBeenCalled();
+    expect(location.href).toBe('/admin');
+    expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'api-error' }));
+  });
+
 });

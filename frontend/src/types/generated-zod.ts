@@ -17,7 +17,7 @@ export const WorkReportDtoSchema = z.object({
   userNm: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional(),
   rptSttsCd: z.string().min(0).max(12).optional().nullable(),
-  rptYmd: z.string().min(0).max(8).optional(),
+  rptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   rptTypeCd: z.string().optional().nullable(),
 });
 export type WorkReportDto = z.infer<typeof WorkReportDtoSchema>;
@@ -100,8 +100,8 @@ export const ScheduleDtoSchema = z.object({
   schdlNm: z.string().min(0).max(300),
   schdlCn: z.string().min(0).max(4000).optional(),
   reptSeCd: z.string().min(0).max(12).optional(),
-  schdlBgngYmd: z.string().min(0).max(8).optional(),
-  schdlEndYmd: z.string().min(0).max(8).optional(),
+  schdlBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  schdlEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   schdlIpAddr: z.string().optional(),
   schdlPicId: z.string().min(0).max(20).optional(),
   atchFileSn: z.number().int().optional(),
@@ -130,22 +130,22 @@ export const OnlinePollArticleDtoSchema = z.object({
 export type OnlinePollArticleDto = z.infer<typeof OnlinePollArticleDtoSchema>;
 
 // ==========================================================================
-// OnlinePollManageDto Schema
+// OnlinePollManageRequest Schema
 // ==========================================================================
-export const OnlinePollManageDtoSchema = z.object({
+export const OnlinePollManageRequestSchema = z.object({
   pollSn: z.number().int().optional(),
   pollNm: z.string().min(0).max(100),
-  pollBgngYmd: z.string().min(0).max(8).optional(),
-  pollEndYmd: z.string().min(0).max(8).optional(),
+  pollBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  pollEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   pollKndCd: z.string().min(0).max(12).optional(),
-  pollDsuseYn: z.string().optional(),
-  pollAtmcDsuseYn: z.string().optional(),
+  pollDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional(),
+  pollAtmcDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoSchema)).optional(),
   hasVoted: z.boolean().optional(),
 });
-export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
+export type OnlinePollManageRequest = z.infer<typeof OnlinePollManageRequestSchema>;
 
 // ==========================================================================
 // MemoReportDto Schema
@@ -153,7 +153,7 @@ export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 export const MemoReportDtoSchema = z.object({
   memoRptSn: z.number().int().optional().nullable(),
   rptTtl: z.string().min(0).max(100),
-  memoRptYmd: z.string().min(0).max(8).optional(),
+  memoRptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   userId: z.string().optional().nullable(),
   wrterNm: z.string().min(0).max(100).optional().nullable(),
   rptrId: z.string().min(0).max(20),
@@ -415,8 +415,8 @@ export const SurveyInfoDtoSchema = z.object({
   srvyTtl: z.string().min(0).max(256),
   srvyPrps: z.string().min(0).max(4000).optional(),
   srvyWrtGdCn: z.string().min(0).max(4000).optional(),
-  srvyBgngYmd: z.string().min(0).max(8).optional(),
-  srvyEndYmd: z.string().min(0).max(8).optional(),
+  srvyBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  srvyEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   srvyTrgt: z.string().min(0).max(1000).optional(),
   srvyTmpltSn: z.number().int(),
   frstRgtrId: z.string().optional(),
@@ -769,7 +769,7 @@ export const ExternalHrDtoSchema = z.object({
   otsdHrNm: z.string().min(0).max(100).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
   ogdpInstNm: z.string().min(0).max(200).optional(),
-  brdtYmd: z.string().min(0).max(8).optional(),
+  brdtYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   areaNo: z.string().min(0).max(4).optional(),
   mdTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
@@ -796,27 +796,27 @@ export const ApiResponseExternalHrDtoSchema = z.object({
 export type ApiResponseExternalHrDto = z.infer<typeof ApiResponseExternalHrDtoSchema>;
 
 // ==========================================================================
-// EventInfoDto Schema
+// EventInfoRequest Schema
 // ==========================================================================
-export const EventInfoDtoSchema = z.object({
+export const EventInfoRequestSchema = z.object({
   evntSn: z.number().int().optional(),
-  evntNm: z.string().min(0).max(200).optional(),
+  evntNm: z.string().min(0).max(200),
   bizYr: z.string().min(0).max(4).optional(),
   evntCn: z.string().min(0).max(4000).optional(),
-  evntBgngYmd: z.string().min(0).max(8).optional(),
-  evntEndYmd: z.string().min(0).max(8).optional(),
+  evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   evntUseCnt: z.number().int().optional(),
   picNm: z.string().min(0).max(100).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
   evntTypeCd: z.string().min(0).max(12).optional(),
   evntAprvYn: z.string().min(0).max(1).optional(),
-  evntAprvYmd: z.string().min(0).max(8).optional(),
+  evntAprvYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
-export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
+export type EventInfoRequest = z.infer<typeof EventInfoRequestSchema>;
 
 // ==========================================================================
 // CommunityDto Schema
@@ -1599,6 +1599,24 @@ export const ApiResponsePageResponseOnlinePollManageDtoSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseOnlinePollManageDto = z.infer<typeof ApiResponsePageResponseOnlinePollManageDtoSchema>;
+
+// ==========================================================================
+// OnlinePollManageDto Schema
+// ==========================================================================
+export const OnlinePollManageDtoSchema = z.object({
+  pollSn: z.number().int().optional(),
+  pollNm: z.string().min(0).max(100),
+  pollBgngYmd: z.string().min(0).max(8).optional(),
+  pollEndYmd: z.string().min(0).max(8).optional(),
+  pollKndCd: z.string().min(0).max(12).optional(),
+  pollDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional(),
+  pollAtmcDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoSchema)).optional(),
+  hasVoted: z.boolean().optional(),
+});
+export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 
 // ==========================================================================
 // PageResponseOnlinePollManageDto Schema
@@ -4129,6 +4147,29 @@ export const ApiResponsePageResponseEventInfoDtoSchema = z.object({
 export type ApiResponsePageResponseEventInfoDto = z.infer<typeof ApiResponsePageResponseEventInfoDtoSchema>;
 
 // ==========================================================================
+// EventInfoDto Schema
+// ==========================================================================
+export const EventInfoDtoSchema = z.object({
+  evntSn: z.number().int().optional(),
+  evntNm: z.string().min(0).max(200).optional(),
+  bizYr: z.string().min(0).max(4).optional(),
+  evntCn: z.string().min(0).max(4000).optional(),
+  evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  evntUseCnt: z.number().int().optional(),
+  picNm: z.string().min(0).max(100).optional(),
+  prepMttr: z.string().min(0).max(2500).optional(),
+  evntTypeCd: z.string().min(0).max(12).optional(),
+  evntAprvYn: z.string().min(0).max(1).optional(),
+  evntAprvYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  lastMdfrId: z.string().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
+
+// ==========================================================================
 // PageResponseEventInfoDto Schema
 // ==========================================================================
 export const PageResponseEventInfoDtoSchema = z.object({
@@ -4310,7 +4351,7 @@ export const WorkReportDtoRequestSchema = z.object({
   rptCn: z.string().min(0).max(4000).optional(),
   rptSeCd: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
-  rptYmd: z.string().min(0).max(8).optional(),
+  rptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
 });
 
 export const WorkReportDtoResponseSchema = z.object({
@@ -4322,7 +4363,7 @@ export const WorkReportDtoResponseSchema = z.object({
   userNm: z.string().optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
   rptSttsCd: z.string().min(0).max(12).optional().nullable(),
-  rptYmd: z.string().min(0).max(8).optional().nullable(),
+  rptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   rptTypeCd: z.string().optional().nullable(),
 });
 
@@ -4429,8 +4470,8 @@ export const ScheduleDtoRequestSchema = z.object({
   schdlNm: z.string().min(0).max(300),
   schdlCn: z.string().min(0).max(4000).optional(),
   reptSeCd: z.string().min(0).max(12).optional(),
-  schdlBgngYmd: z.string().min(0).max(8).optional(),
-  schdlEndYmd: z.string().min(0).max(8).optional(),
+  schdlBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  schdlEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   atchFileSn: z.number().int().optional(),
   schdlKndCd: z.string().min(0).max(12).optional(),
   schdlPlcNm: z.string().min(0).max(100).optional(),
@@ -4443,8 +4484,8 @@ export const ScheduleDtoResponseSchema = z.object({
   schdlNm: z.string().min(0).max(300),
   schdlCn: z.string().min(0).max(4000).optional().nullable(),
   reptSeCd: z.string().min(0).max(12).optional().nullable(),
-  schdlBgngYmd: z.string().min(0).max(8).optional().nullable(),
-  schdlEndYmd: z.string().min(0).max(8).optional().nullable(),
+  schdlBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  schdlEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   schdlIpAddr: z.string().optional().nullable(),
   schdlPicId: z.string().min(0).max(20).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
@@ -4476,28 +4517,28 @@ export const OnlinePollArticleDtoResponseSchema = z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
-export const OnlinePollManageDtoRequestSchema = z.object({
+export const OnlinePollManageRequestRequestSchema = z.object({
   pollSn: z.number().int().optional(),
   pollNm: z.string().min(0).max(100),
-  pollBgngYmd: z.string().min(0).max(8).optional(),
-  pollEndYmd: z.string().min(0).max(8).optional(),
+  pollBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  pollEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   pollKndCd: z.string().min(0).max(12).optional(),
-  pollDsuseYn: z.string().optional(),
-  pollAtmcDsuseYn: z.string().optional(),
+  pollDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional(),
+  pollAtmcDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoRequestSchema.strict())).optional(),
   hasVoted: z.boolean().optional(),
 });
 
-export const OnlinePollManageDtoResponseSchema = z.object({
+export const OnlinePollManageRequestResponseSchema = z.object({
   pollSn: z.number().int().optional().nullable(),
   pollNm: z.string().min(0).max(100),
-  pollBgngYmd: z.string().min(0).max(8).optional().nullable(),
-  pollEndYmd: z.string().min(0).max(8).optional().nullable(),
+  pollBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  pollEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   pollKndCd: z.string().min(0).max(12).optional().nullable(),
-  pollDsuseYn: z.string().optional().nullable(),
-  pollAtmcDsuseYn: z.string().optional().nullable(),
+  pollDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional().nullable(),
+  pollAtmcDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional().nullable(),
@@ -4506,7 +4547,7 @@ export const OnlinePollManageDtoResponseSchema = z.object({
 
 export const MemoReportDtoRequestSchema = z.object({
   rptTtl: z.string().min(0).max(100),
-  memoRptYmd: z.string().min(0).max(8).optional(),
+  memoRptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   rptrId: z.string().min(0).max(20),
   rptCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
@@ -4515,7 +4556,7 @@ export const MemoReportDtoRequestSchema = z.object({
 export const MemoReportDtoResponseSchema = z.object({
   memoRptSn: z.number().int().optional().nullable(),
   rptTtl: z.string().min(0).max(100),
-  memoRptYmd: z.string().min(0).max(8).optional().nullable(),
+  memoRptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   userId: z.string().optional().nullable(),
   wrterNm: z.string().min(0).max(100).optional().nullable(),
   rptrId: z.string().min(0).max(20),
@@ -4872,8 +4913,8 @@ export const SurveyInfoDtoRequestSchema = z.object({
   srvyTtl: z.string().min(0).max(256),
   srvyPrps: z.string().min(0).max(4000).optional(),
   srvyWrtGdCn: z.string().min(0).max(4000).optional(),
-  srvyBgngYmd: z.string().min(0).max(8).optional(),
-  srvyEndYmd: z.string().min(0).max(8).optional(),
+  srvyBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  srvyEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   srvyTrgt: z.string().min(0).max(1000).optional(),
   srvyTmpltSn: z.number().int(),
   frstRgtrId: z.string().optional(),
@@ -4885,8 +4926,8 @@ export const SurveyInfoDtoResponseSchema = z.object({
   srvyTtl: z.string().min(0).max(256),
   srvyPrps: z.string().min(0).max(4000).optional().nullable(),
   srvyWrtGdCn: z.string().min(0).max(4000).optional().nullable(),
-  srvyBgngYmd: z.string().min(0).max(8).optional().nullable(),
-  srvyEndYmd: z.string().min(0).max(8).optional().nullable(),
+  srvyBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  srvyEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   srvyTrgt: z.string().min(0).max(1000).optional().nullable(),
   srvyTmpltSn: z.number().int(),
   frstRgtrId: z.string().optional().nullable(),
@@ -5391,7 +5432,7 @@ export const ExternalHrDtoRequestSchema = z.object({
   otsdHrNm: z.string().min(0).max(100).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
   ogdpInstNm: z.string().min(0).max(200).optional(),
-  brdtYmd: z.string().min(0).max(8).optional(),
+  brdtYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   areaNo: z.string().min(0).max(4).optional(),
   mdTelno: z.string().min(0).max(4).optional(),
   endTelno: z.string().min(0).max(4).optional(),
@@ -5405,7 +5446,7 @@ export const ExternalHrDtoResponseSchema = z.object({
   otsdHrNm: z.string().min(0).max(100).optional().nullable(),
   crTypeCd: z.string().min(0).max(12).optional().nullable(),
   ogdpInstNm: z.string().min(0).max(200).optional().nullable(),
-  brdtYmd: z.string().min(0).max(8).optional().nullable(),
+  brdtYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   areaNo: z.string().min(0).max(4).optional().nullable(),
   mdTelno: z.string().min(0).max(4).optional().nullable(),
   endTelno: z.string().min(0).max(4).optional().nullable(),
@@ -5436,38 +5477,38 @@ export const ApiResponseExternalHrDtoResponseSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 });
 
-export const EventInfoDtoRequestSchema = z.object({
+export const EventInfoRequestRequestSchema = z.object({
   evntSn: z.number().int().optional(),
-  evntNm: z.string().min(0).max(200).optional(),
+  evntNm: z.string().min(0).max(200),
   bizYr: z.string().min(0).max(4).optional(),
   evntCn: z.string().min(0).max(4000).optional(),
-  evntBgngYmd: z.string().min(0).max(8).optional(),
-  evntEndYmd: z.string().min(0).max(8).optional(),
+  evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   evntUseCnt: z.number().int().optional(),
   picNm: z.string().min(0).max(100).optional(),
   prepMttr: z.string().min(0).max(2500).optional(),
   evntTypeCd: z.string().min(0).max(12).optional(),
   evntAprvYn: z.string().min(0).max(1).optional(),
-  evntAprvYmd: z.string().min(0).max(8).optional(),
+  evntAprvYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
 });
 
-export const EventInfoDtoResponseSchema = z.object({
+export const EventInfoRequestResponseSchema = z.object({
   evntSn: z.number().int().optional().nullable(),
-  evntNm: z.string().min(0).max(200).optional().nullable(),
+  evntNm: z.string().min(0).max(200),
   bizYr: z.string().min(0).max(4).optional().nullable(),
   evntCn: z.string().min(0).max(4000).optional().nullable(),
-  evntBgngYmd: z.string().min(0).max(8).optional().nullable(),
-  evntEndYmd: z.string().min(0).max(8).optional().nullable(),
+  evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   evntUseCnt: z.number().int().optional().nullable(),
   picNm: z.string().min(0).max(100).optional().nullable(),
   prepMttr: z.string().min(0).max(2500).optional().nullable(),
   evntTypeCd: z.string().min(0).max(12).optional().nullable(),
   evntAprvYn: z.string().min(0).max(1).optional().nullable(),
-  evntAprvYmd: z.string().min(0).max(8).optional().nullable(),
+  evntAprvYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
@@ -6570,6 +6611,34 @@ export const ApiResponsePageResponseOnlinePollManageDtoResponseSchema = z.object
   data: z.lazy(() => PageResponseOnlinePollManageDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const OnlinePollManageDtoRequestSchema = z.object({
+  pollSn: z.number().int().optional(),
+  pollNm: z.string().min(0).max(100),
+  pollBgngYmd: z.string().min(0).max(8).optional(),
+  pollEndYmd: z.string().min(0).max(8).optional(),
+  pollKndCd: z.string().min(0).max(12).optional(),
+  pollDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional(),
+  pollAtmcDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoRequestSchema.strict())).optional(),
+  hasVoted: z.boolean().optional(),
+});
+
+export const OnlinePollManageDtoResponseSchema = z.object({
+  pollSn: z.number().int().optional().nullable(),
+  pollNm: z.string().min(0).max(100),
+  pollBgngYmd: z.string().min(0).max(8).optional().nullable(),
+  pollEndYmd: z.string().min(0).max(8).optional().nullable(),
+  pollKndCd: z.string().min(0).max(12).optional().nullable(),
+  pollDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional().nullable(),
+  pollAtmcDsuseYn: z.string().min(0).max(1).regex(new RegExp("[YN]")).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  pollArticles: z.array(z.lazy(() => OnlinePollArticleDtoResponseSchema)).optional().nullable(),
+  hasVoted: z.boolean().optional().nullable(),
 });
 
 export const PageResponseOnlinePollManageDtoRequestSchema = z.object({
@@ -10137,6 +10206,44 @@ export const ApiResponsePageResponseEventInfoDtoResponseSchema = z.object({
   data: z.lazy(() => PageResponseEventInfoDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const EventInfoDtoRequestSchema = z.object({
+  evntSn: z.number().int().optional(),
+  evntNm: z.string().min(0).max(200).optional(),
+  bizYr: z.string().min(0).max(4).optional(),
+  evntCn: z.string().min(0).max(4000).optional(),
+  evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  evntUseCnt: z.number().int().optional(),
+  picNm: z.string().min(0).max(100).optional(),
+  prepMttr: z.string().min(0).max(2500).optional(),
+  evntTypeCd: z.string().min(0).max(12).optional(),
+  evntAprvYn: z.string().min(0).max(1).optional(),
+  evntAprvYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  lastMdfrId: z.string().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+
+export const EventInfoDtoResponseSchema = z.object({
+  evntSn: z.number().int().optional().nullable(),
+  evntNm: z.string().min(0).max(200).optional().nullable(),
+  bizYr: z.string().min(0).max(4).optional().nullable(),
+  evntCn: z.string().min(0).max(4000).optional().nullable(),
+  evntBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  evntEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  evntUseCnt: z.number().int().optional().nullable(),
+  picNm: z.string().min(0).max(100).optional().nullable(),
+  prepMttr: z.string().min(0).max(2500).optional().nullable(),
+  evntTypeCd: z.string().min(0).max(12).optional().nullable(),
+  evntAprvYn: z.string().min(0).max(1).optional().nullable(),
+  evntAprvYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 });
 
 export const PageResponseEventInfoDtoRequestSchema = z.object({

@@ -15,6 +15,11 @@
 요청 버전과 해석 버전이 다르면 해석 버전으로 판정한다. `first_patched_version`만 비교하지 말고 advisory의
 전체 `vulnerable_version_range`에 실제 해석값이 포함되는지 확인한다.
 
+Gradle 플러그인은 별도 classpath를 사용한다. `dependencies`의 compile/runtime/test 결과에
+없어도 `./gradlew buildEnvironment`에서 취약 라이브러리가 해석될 수 있다. 루트 `buildscript`
+constraints는 이 경로의 HttpComponents 패치를 담당하며, 애플리케이션의 BOM override와 별개다.
+플러그인을 올리거나 constraints를 제거할 때 두 경로를 모두 재검증한다.
+
 ## 2. 현재 실행 경로
 
 | 경로 | 역할 | 강제력 |

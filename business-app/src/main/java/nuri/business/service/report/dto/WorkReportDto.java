@@ -1,5 +1,7 @@
 package nuri.business.service.report.dto;
 
+import nuri.foundation.core.validation.Ymd;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -50,6 +52,7 @@ public class WorkReportDto {
     @Size(max = 12)
     private String rptSttsCd;
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String rptYmd;
     @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

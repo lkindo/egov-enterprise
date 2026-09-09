@@ -13,7 +13,7 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { eventService, EventInfo } from '@/services/foundation/operation/eventService';
 import { Button } from '@/components/ui/button';
 import { FormErrorSummary } from '@/components/ui/form';
-import { EventInfoDtoSchema } from '@/types/generated-zod';
+import { EventInfoRequestSchema } from '@/types/generated-zod';
 
 /**
  * `<input type="date">` 는 `2026-05-01`(10자)을 준다. 그러나 evnt_bgng_ymd/evnt_end_ymd 는
@@ -55,7 +55,7 @@ const eventInputDate = (label: string, generated: z.ZodOptional<z.ZodString>) =>
   .transform(inputToYmd)
   .pipe(generated.unwrap());
 
-export const eventCreateSchema = EventInfoDtoSchema.pick({
+export const eventCreateSchema = EventInfoRequestSchema.pick({
   evntNm: true,
   evntCn: true,
   evntBgngYmd: true,
@@ -64,10 +64,10 @@ export const eventCreateSchema = EventInfoDtoSchema.pick({
   picNm: true,
   prepMttr: true,
 }).extend({
-  evntNm: EventInfoDtoSchema.shape.evntNm.unwrap().trim().min(1, '행사 명칭을 입력해 주세요.'),
-  evntCn: EventInfoDtoSchema.shape.evntCn.unwrap().trim().min(1, '상세 내용을 입력해 주세요.'),
-  evntBgngYmd: eventInputDate('행사 시작일', EventInfoDtoSchema.shape.evntBgngYmd),
-  evntEndYmd: eventInputDate('행사 종료일', EventInfoDtoSchema.shape.evntEndYmd),
+  evntNm: EventInfoRequestSchema.shape.evntNm.trim().min(1, '행사 명칭을 입력해 주세요.'),
+  evntCn: EventInfoRequestSchema.shape.evntCn.unwrap().trim().min(1, '상세 내용을 입력해 주세요.'),
+  evntBgngYmd: eventInputDate('행사 시작일', EventInfoRequestSchema.shape.evntBgngYmd),
+  evntEndYmd: eventInputDate('행사 종료일', EventInfoRequestSchema.shape.evntEndYmd),
   /*
     [2026-08-28] 담당자(picNm)·준비사항(prepMttr)을 폼에 올린다.
 
@@ -75,14 +75,14 @@ export const eventCreateSchema = EventInfoDtoSchema.pick({
     (' 이 창에서 보이지 않는 값은 그대로 유지됩니다') 값이 실제로 무엇인지는 제품 어디에서도
     볼 수 없었다. 필수는 아니다 — 기존 행에 값이 없을 수 있고 서버도 요구하지 않는다.
   */
-  picNm: EventInfoDtoSchema.shape.picNm.unwrap().trim().optional(),
-  prepMttr: EventInfoDtoSchema.shape.prepMttr.unwrap().trim().optional(),
+  picNm: EventInfoRequestSchema.shape.picNm.unwrap().trim().optional(),
+  prepMttr: EventInfoRequestSchema.shape.prepMttr.unwrap().trim().optional(),
   evntUseCnt: z.string()
     .trim()
     .min(1, '참여 정원을 입력해 주세요.')
     .regex(/^\d+$/, '참여 정원은 0명 이상의 정수로 입력해 주세요.')
     .transform(Number)
-    .pipe(EventInfoDtoSchema.shape.evntUseCnt.unwrap().finite().int().min(0, '참여 정원은 0명 이상이어야 합니다.')),
+    .pipe(EventInfoRequestSchema.shape.evntUseCnt.unwrap().finite().int().min(0, '참여 정원은 0명 이상이어야 합니다.')),
 }).refine((values) => values.evntEndYmd >= values.evntBgngYmd, {
   path: ['evntEndYmd'],
   message: '행사 종료일은 시작일보다 빠를 수 없습니다.',
@@ -184,12 +184,12 @@ export default function EventManagementClient() {
 
   // --- Mutations ---
   const updateMutation = useMutation({
-    mutationFn: ({ evntSn, data }: { evntSn: number; data: Partial<EventInfo> }) =>
+    mutationFn: ({ evntSn, data }: { evntSn: number; data: Parameters<typeof eventService.createEvent>[0] }) =>
       eventService.updateEvent(evntSn, data),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: Partial<EventInfo>) => eventService.createEvent(data),
+    mutationFn: (data: Parameters<typeof eventService.createEvent>[0]) => eventService.createEvent(data),
   });
 
   const deleteMutation = useMutation({

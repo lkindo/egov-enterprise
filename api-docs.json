@@ -1348,7 +1348,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OnlinePollManageDto"
+                "$ref": "#/components/schemas/OnlinePollManageRequest"
               }
             }
           },
@@ -11518,7 +11518,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EventInfoDto"
+                "$ref": "#/components/schemas/EventInfoRequest"
               }
             }
           },
@@ -12995,7 +12995,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OnlinePollManageDto"
+                "$ref": "#/components/schemas/OnlinePollManageRequest"
               }
             }
           },
@@ -22854,7 +22854,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EventInfoDto"
+                "$ref": "#/components/schemas/EventInfoRequest"
               }
             }
           },
@@ -33908,7 +33908,8 @@
           "rptYmd": {
             "type": "string",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "rptTypeCd": {
             "type": [
@@ -34146,12 +34147,14 @@
           "schdlBgngYmd": {
             "type": "string",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "schdlEndYmd": {
             "type": "string",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "schdlIpAddr": {
             "type": "string",
@@ -34250,9 +34253,9 @@
           "pollArtclNm"
         ]
       },
-      "OnlinePollManageDto": {
+      "OnlinePollManageRequest": {
         "type": "object",
-        "description": "온라인 설문 관리 DTO (표준화)",
+        "description": "온라인 설문 등록·수정 입력",
         "properties": {
           "pollSn": {
             "type": "integer",
@@ -34269,13 +34272,15 @@
             "type": "string",
             "description": "설문 시작일",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "pollEndYmd": {
             "type": "string",
             "description": "설문 종료일",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "pollKndCd": {
             "type": "string",
@@ -34285,11 +34290,17 @@
           },
           "pollDsuseYn": {
             "type": "string",
-            "description": "설문 폐기 여부"
+            "description": "설문 폐기 여부",
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "[YN]"
           },
           "pollAtmcDsuseYn": {
             "type": "string",
-            "description": "설문 자동 폐기 여부"
+            "description": "설문 자동 폐기 여부",
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "[YN]"
           },
           "frstRgtrId": {
             "type": "string",
@@ -34339,7 +34350,8 @@
             "type": "string",
             "description": "보고일자",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "userId": {
             "type": [
@@ -35297,13 +35309,15 @@
             "type": "string",
             "description": "설문 시작 일자",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "srvyEndYmd": {
             "type": "string",
             "description": "설문 종료 일자",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "srvyTrgt": {
             "type": "string",
@@ -36536,7 +36550,8 @@
           "brdtYmd": {
             "type": "string",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "areaNo": {
             "type": "string",
@@ -36625,9 +36640,9 @@
           }
         }
       },
-      "EventInfoDto": {
+      "EventInfoRequest": {
         "type": "object",
-        "description": "행사 정보 상세 DTO",
+        "description": "행사 등록·수정 입력",
         "properties": {
           "evntSn": {
             "type": "integer",
@@ -36661,14 +36676,16 @@
             "description": "행사 시작일",
             "example": 20260525,
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "evntEndYmd": {
             "type": "string",
             "description": "행사 종료일",
             "example": 20260526,
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "evntUseCnt": {
             "type": "integer",
@@ -36709,7 +36726,8 @@
             "description": "승인 일자",
             "example": 20260525,
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "frstRgtrId": {
             "type": "string",
@@ -36731,7 +36749,10 @@
             "format": "date-time",
             "description": "최종 수정 일시"
           }
-        }
+        },
+        "required": [
+          "evntNm"
+        ]
       },
       "CommunityDto": {
         "type": "object",
@@ -38953,6 +38974,78 @@
             }
           }
         }
+      },
+      "OnlinePollManageDto": {
+        "type": "object",
+        "description": "온라인 설문 관리 DTO (표준화)",
+        "properties": {
+          "pollSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
+          },
+          "pollNm": {
+            "type": "string",
+            "description": "설문 제목",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "pollBgngYmd": {
+            "type": "string",
+            "description": "설문 시작일",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "pollEndYmd": {
+            "type": "string",
+            "description": "설문 종료일",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "pollKndCd": {
+            "type": "string",
+            "description": "설문 종류 코드",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "pollDsuseYn": {
+            "type": "string",
+            "description": "설문 폐기 여부",
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "[YN]"
+          },
+          "pollAtmcDsuseYn": {
+            "type": "string",
+            "description": "설문 자동 폐기 여부",
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "[YN]"
+          },
+          "frstRgtrId": {
+            "type": "string",
+            "description": "생성자 ID"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "생성 일시"
+          },
+          "pollArticles": {
+            "type": "array",
+            "description": "설문 항목 목록",
+            "items": {
+              "$ref": "#/components/schemas/OnlinePollArticleDto"
+            }
+          },
+          "hasVoted": {
+            "type": "boolean",
+            "description": "현재 사용자의 투표 참여 여부"
+          }
+        },
+        "required": [
+          "pollNm"
+        ]
       },
       "PageResponseOnlinePollManageDto": {
         "type": "object",
@@ -44984,6 +45077,117 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
+          }
+        }
+      },
+      "EventInfoDto": {
+        "type": "object",
+        "description": "행사 정보 상세 DTO",
+        "properties": {
+          "evntSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "행사 내부 일련번호",
+            "example": 1
+          },
+          "evntNm": {
+            "type": "string",
+            "description": "행사 명칭",
+            "example": "사내 인공지능 해커톤 캠페인",
+            "maxLength": 200,
+            "minLength": 0
+          },
+          "bizYr": {
+            "type": "string",
+            "description": "행사 연도",
+            "example": 2026,
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "evntCn": {
+            "type": "string",
+            "description": "행사 상세내용",
+            "example": "기업용 차세대 거울 동기화 실증을 위한 전사 활동입니다.",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "evntBgngYmd": {
+            "type": "string",
+            "description": "행사 시작일",
+            "example": 20260525,
+            "maxLength": 8,
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
+          },
+          "evntEndYmd": {
+            "type": "string",
+            "description": "행사 종료일",
+            "example": 20260526,
+            "maxLength": 8,
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
+          },
+          "evntUseCnt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "참여 정원 (Capacity)",
+            "example": 150
+          },
+          "picNm": {
+            "type": "string",
+            "description": "담당자명",
+            "example": "홍길동",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "prepMttr": {
+            "type": "string",
+            "description": "준비 사항",
+            "example": "개인 노트북 지참 및 API 토큰 설정",
+            "maxLength": 2500,
+            "minLength": 0
+          },
+          "evntTypeCd": {
+            "type": "string",
+            "description": "행사 유형 코드",
+            "example": "EVT01",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "evntAprvYn": {
+            "type": "string",
+            "description": "승인 여부",
+            "example": "Y",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "evntAprvYmd": {
+            "type": "string",
+            "description": "승인 일자",
+            "example": 20260525,
+            "maxLength": 8,
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
+          },
+          "frstRgtrId": {
+            "type": "string",
+            "description": "최초 등록자 ID",
+            "example": "webmaster"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "최초 등록 일시"
+          },
+          "lastMdfrId": {
+            "type": "string",
+            "description": "최종 수정자 ID",
+            "example": "webmaster"
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "최종 수정 일시"
           }
         }
       },

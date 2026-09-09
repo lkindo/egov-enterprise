@@ -80,6 +80,16 @@ public class AttachmentIntegrityService {
      * @return 점검 결과. 어긋난 건수와 조치 대상 예시를 담는다.
      */
     public AttachmentIntegrityReport scan() {
+        return scanWithBudget(new ScanBudget(Long.MAX_VALUE, java.time.Duration.ofDays(1)));
+    }
+
+    /** Scheduled scans stop between I/O operations and never report a partial scan as success. */
+    @Transactional(readOnly = true, timeout = 60, isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public AttachmentIntegrityReport scanBounded(int maxItems, java.time.Duration duration) {
+        return scanWithBudget(new ScanBudget(maxItems, duration));
+    }
+
+    private AttachmentIntegrityReport scanWithBudget(ScanBudget budget) {
         long checked = 0;
         long missing = 0;
         List<String> samples = new ArrayList<>();
@@ -87,8 +97,11 @@ public class AttachmentIntegrityService {
         int pageNumber = 0;
         Page<FileDetail> page;
         do {
-            page = fileDetailRepository.findAll(PageRequest.of(pageNumber, SCAN_PAGE_SIZE));
+            budget.checkTime();
+            page = fileDetailRepository.findAll(PageRequest.of(pageNumber, SCAN_PAGE_SIZE,
+                    org.springframework.data.domain.Sort.by("id")));
             for (FileDetail detail : page.getContent()) {
+                budget.step();
                 checked++;
                 if (isMissing(detail)) {
                     missing++;
@@ -107,7 +120,7 @@ public class AttachmentIntegrityService {
             log.info(">>> 첨부 정합성 점검: {}건 모두 저장소에 실물이 있습니다.", checked);
         }
 
-        OrphanCensus orphans = censusOrphans();
+        OrphanCensus orphans = censusOrphans(budget);
 
         return new AttachmentIntegrityReport(checked, missing, samples,
                 orphans.storageRoot(), orphans.filesChecked(), orphans.candidates(),
@@ -136,13 +149,15 @@ public class AttachmentIntegrityService {
      * <p>빈 디렉터리는 정상이다. {@code FileService.deleteFiles} 는 파일만 지우고 디렉터리는
      * 남긴다. 그래서 판정 단위는 디렉터리가 아니라 <b>파일</b>이다.
      */
-    private OrphanCensus censusOrphans() {
+    private OrphanCensus censusOrphans(ScanBudget budget) {
         String root = describeRoot();
         List<String> samples = new ArrayList<>();
 
         List<String> directories;
         try {
-            directories = listNames(GENERAL_ROOT);
+            directories = listNames(GENERAL_ROOT, budget);
+        } catch (ScanLimitExceededException limit) {
+            throw limit;
         } catch (RuntimeException enumerationFailure) {
             // 업로드 이력이 없어 general/ 이 아직 없을 수도, 저장소에 닿지 못할 수도 있다.
             // 포트가 둘을 구분해 주지 않으므로 0 건으로 단정하지 않고 모른다고 남긴다.
@@ -182,12 +197,14 @@ public class AttachmentIntegrityService {
                 continue;
             }
 
-            Map<String, Set<String>> known = knownNamesByDirectory(chunk, numeric);
+            Map<String, Set<String>> known = knownNamesByDirectory(chunk, numeric, budget);
             for (String directory : chunk) {
                 Set<String> expected = known.getOrDefault(directory, Set.of());
                 List<String> entries;
                 try {
-                    entries = listNames(GENERAL_ROOT + "/" + directory);
+                    entries = listNames(GENERAL_ROOT + "/" + directory, budget);
+                } catch (ScanLimitExceededException limit) {
+                    throw limit;
                 } catch (RuntimeException perDirectoryFailure) {
                     // 스캔 도중 지워졌거나 권한이 없을 수 있다. 여기서 예외가 밖으로 나가면
                     // **이미 끝난 정방향 결과까지 통째로 버려진다** — 진단 도구가 진단 대상
@@ -226,10 +243,11 @@ public class AttachmentIntegrityService {
      * 그 행 때문에 다른 디렉터리의 파일이 정상으로 보일 수 있다.
      */
     private Map<String, Set<String>> knownNamesByDirectory(List<String> directories,
-                                                           Map<String, Long> numeric) {
+                                                           Map<String, Long> numeric, ScanBudget budget) {
         List<Long> sns = directories.stream().map(numeric::get).toList();
         Map<String, Set<String>> known = new LinkedHashMap<>();
-        for (StoredFileKey key : fileDetailRepository.findStoredKeysByAtchFileSnIn(sns)) {
+        for (StoredFileKey key : fileDetailRepository.findStoredKeysByAtchFileSnIn(sns, PageRequest.of(0, budget.queryLimit()))) {
+            budget.step();
             if (key.strgFileNm() == null || key.fileStrgPath() == null) {
                 continue;
             }
@@ -250,9 +268,9 @@ public class AttachmentIntegrityService {
      * 물고 있고 포트도 구현체도 닫아 주지 않는다. 닫지 않으면 디렉터리가 많은 저장소에서
      * 파일 디스크립터가 고갈된다.
      */
-    private List<String> listNames(String path) {
+    private List<String> listNames(String path, ScanBudget budget) {
         try (Stream<Path> entries = fileStorageService.loadAll(path)) {
-            return entries.map(Path::toString).toList();
+            return entries.peek(ignored -> budget.step()).map(Path::toString).toList();
         }
     }
 
@@ -293,4 +311,39 @@ public class AttachmentIntegrityService {
                 + " path=" + detail.getFileStrgPath()
                 + "/" + detail.getStrgFileNm();
     }
+    public static final class ScanLimitExceededException extends RuntimeException {
+        private ScanLimitExceededException() { super("Attachment scan budget exceeded"); }
+    }
+
+    private static final class ScanBudget {
+        private final long maxItems;
+        private final long started = System.nanoTime();
+        private final long durationNanos;
+        private long items;
+
+        private ScanBudget(long maxItems, java.time.Duration duration) {
+            if (maxItems < 1 || duration.isNegative() || duration.isZero()) {
+                throw new IllegalArgumentException("Positive scan limits are required");
+            }
+            this.maxItems = maxItems;
+            this.durationNanos = duration.toNanos();
+        }
+
+        private void checkTime() {
+            if (Thread.currentThread().isInterrupted() || System.nanoTime() - started >= durationNanos) {
+                throw new ScanLimitExceededException();
+            }
+        }
+
+        private void step() {
+            checkTime();
+            if (++items > maxItems) throw new ScanLimitExceededException();
+        }
+
+        private int queryLimit() {
+            checkTime();
+            return (int) Math.min(Integer.MAX_VALUE - 1L, maxItems - items) + 1;
+        }
+    }
+
 }

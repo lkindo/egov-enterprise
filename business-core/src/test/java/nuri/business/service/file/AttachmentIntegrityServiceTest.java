@@ -162,7 +162,7 @@ class AttachmentIntegrityServiceTest {
         givenStorage(java.util.Map.of(
                 "general", List.of("1"),
                 "general/1", List.of("a.png", "b.png")));
-        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any()))
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any(), any()))
                 .thenReturn(List.of(key(1L, "general/1", "a.png"), key(1L, "general/1", "b.png")));
 
         AttachmentIntegrityReport report = service.scan();
@@ -185,7 +185,7 @@ class AttachmentIntegrityServiceTest {
         givenStorage(java.util.Map.of(
                 "general", List.of("1"),
                 "general/1", List.of("a.png", "ghost.png")));
-        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any()))
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any(), any()))
                 .thenReturn(List.of(key(1L, "general/1", "a.png")));
 
         AttachmentIntegrityReport report = service.scan();
@@ -233,7 +233,7 @@ class AttachmentIntegrityServiceTest {
                 "general", List.of("1"),
                 "general/1", List.of("a.png")));
         // 같은 sn 이지만 경로는 구 키 시절 것이다 — general/1 의 a.png 를 설명하지 못한다.
-        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any()))
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any(), any()))
                 .thenReturn(List.of(key(1L, "general/FILE_0001", "a.png")));
 
         AttachmentIntegrityReport report = service.scan();
@@ -248,7 +248,7 @@ class AttachmentIntegrityServiceTest {
         givenStorage(java.util.Map.of(
                 "general", List.of("1"),
                 "general/1", List.of()));
-        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any())).thenReturn(List.of());
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any(), any())).thenReturn(List.of());
 
         AttachmentIntegrityReport report = service.scan();
 
@@ -284,7 +284,7 @@ class AttachmentIntegrityServiceTest {
             List<String> entries = "general".equals(path) ? List.of("1") : List.of("a.png");
             return entries.stream().map(java.nio.file.Path::of).onClose(closed::incrementAndGet);
         });
-        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any())).thenReturn(List.of());
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any(), any())).thenReturn(List.of());
 
         service.scan();
 
@@ -299,7 +299,7 @@ class AttachmentIntegrityServiceTest {
         givenStorage(java.util.Map.of(
                 "general", List.of("1"),
                 "general/1", List.of("ghost.png")));
-        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any())).thenReturn(List.of());
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any(), any())).thenReturn(List.of());
 
         service.scan();
 
@@ -333,7 +333,7 @@ class AttachmentIntegrityServiceTest {
             }
             return java.util.stream.Stream.of(java.nio.file.Path.of("b.png"));
         });
-        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any()))
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any(), any()))
                 .thenReturn(List.of(key(2L, "general/2", "b.png")));
 
         AttachmentIntegrityReport report = service.scan();
@@ -347,4 +347,28 @@ class AttachmentIntegrityServiceTest {
         assertThat(report.orphanSamples()).anySatisfy(sample ->
                 assertThat(sample).contains("열거 불가(디렉터리)").contains("general/1"));
     }
+    @Test
+    void boundedScanStopsAtRecordLimitInsteadOfReturningPartialSuccess() {
+        givenRecords(List.of(detail(1L, 1, "general/1", "one"), detail(2L, 1, "general/2", "two")));
+        when(fileStorageService.exists(any(), any())).thenReturn(true);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.scanBounded(1, java.time.Duration.ofSeconds(10)))
+                .isInstanceOf(AttachmentIntegrityService.ScanLimitExceededException.class);
+    }
+
+    @Test
+    void boundedScanDoesNotSwallowEnumerationBudgetFailure() {
+        givenRecords(List.of());
+        when(fileStorageService.loadAll("general")).thenReturn(java.util.stream.Stream.of(java.nio.file.Path.of("1"), java.nio.file.Path.of("2")));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.scanBounded(1, java.time.Duration.ofSeconds(10)))
+                .isInstanceOf(AttachmentIntegrityService.ScanLimitExceededException.class);
+    }
+
+    @Test
+    void boundedScanRejectsInvalidLimitsAndExpiredDeadline() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.scanBounded(0, java.time.Duration.ofSeconds(1)))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.scanBounded(1, java.time.Duration.ofNanos(1)))
+                .isInstanceOf(AttachmentIntegrityService.ScanLimitExceededException.class);
+    }
+
 }

@@ -1,5 +1,8 @@
 package nuri.business.service.operation.dto;
 
+import nuri.foundation.core.validation.Ymd;
+import nuri.foundation.core.validation.YmdRange;
+
 import jakarta.validation.constraints.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -18,6 +21,7 @@ import java.time.LocalDateTime;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "행사 정보 상세 DTO")
+@YmdRange(start = "evntBgngYmd", end = "evntEndYmd")
 public class EventInfoDto {
 
     @Schema(description = "행사 내부 일련번호", example = "1")
@@ -37,13 +41,16 @@ public class EventInfoDto {
 
     @Schema(description = "행사 시작일", example = "20260525")
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String evntBgngYmd;
 
     @Schema(description = "행사 종료일", example = "20260526")
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String evntEndYmd;
 
     @Schema(description = "참여 정원 (Capacity)", example = "150")
+    @PositiveOrZero
     private Long evntUseCnt;
 
     @Schema(description = "담당자명", example = "홍길동")
@@ -64,6 +71,7 @@ public class EventInfoDto {
 
     @Schema(description = "승인 일자", example = "20260525")
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String evntAprvYmd;
 
     @Schema(description = "최초 등록자 ID", example = "webmaster")

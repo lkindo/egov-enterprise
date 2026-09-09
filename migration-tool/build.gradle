@@ -23,3 +23,8 @@ bootJar {
     mainClass = 'nuri.migration.MigrationToolApplication'
 }
 jar { enabled = false }
+
+// The crash drill starts a fresh JVM; Gradle's worker java.class.path is not the test runtime classpath.
+tasks.named('test', Test) {
+    doFirst { systemProperty 'migration.drill.classpath', classpath.asPath }
+}

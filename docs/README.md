@@ -123,6 +123,7 @@
 | [performance-optimization-guide.md](04-operations/performance-optimization-guide.md) | 성능 최적화 |
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
+| [readiness-followups.md](04-operations/readiness-followups.md) | 날짜 입력·화면 연결·정기 첨부 점검의 운영 계약과 검증 경계 |
 | [url-state-privacy-classification-draft.md](04-operations/url-state-privacy-classification-draft.md) | ADR-0009 이전 URL-state 프라이버시 분류의 **역사적 초안** — 현행 검색 정책은 ADR-0009, 부류별 검토 상태는 비규범 `class-governed` 컨테이너를 확인 |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |

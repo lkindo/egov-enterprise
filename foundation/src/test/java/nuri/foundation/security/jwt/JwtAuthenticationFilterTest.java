@@ -83,4 +83,39 @@ class JwtAuthenticationFilterTest {
         // Then
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
+    @Test
+    void unavailableIdentityStoreReturns503WithoutDiscardingTheClientTokenAndCanRecover() throws Exception {
+        when(tokenProvider.resolveToken(request)).thenReturn("same-token");
+        when(tokenProvider.validateToken("same-token")).thenReturn(true);
+        Authentication auth = mock(Authentication.class);
+        when(tokenProvider.getAuthentication("same-token"))
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("private-db-detail"))
+                .thenReturn(auth);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        assertThat(response.getStatus()).isEqualTo(503);
+        assertThat(response.getHeader("Retry-After")).isEqualTo("5");
+        assertThat(response.getContentAsString()).contains("S002").doesNotContain("private-db-detail", "same-token");
+        assertThat(response.getHeaders("Set-Cookie")).isEmpty();
+        assertThat(filterChain.getRequest()).isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        var recovered = new MockHttpServletResponse();
+        var recoveredChain = new MockFilterChain();
+        jwtAuthenticationFilter.doFilterInternal(request, recovered, recoveredChain);
+        assertThat(recovered.getStatus()).isEqualTo(200);
+        assertThat(recoveredChain.getRequest()).isSameAs(request);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(auth);
+    }
+
+    @Test
+    void transactionStartFailureReturns503AndClearsAnExistingContext() throws Exception {
+        when(tokenProvider.resolveToken(request)).thenReturn("token");
+        when(tokenProvider.validateToken("token")).thenReturn(true);
+        when(tokenProvider.getAuthentication("token")).thenThrow(new org.springframework.transaction.CannotCreateTransactionException("unavailable"));
+        SecurityContextHolder.getContext().setAuthentication(mock(Authentication.class));
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        assertThat(response.getStatus()).isEqualTo(503);
+        assertThat(filterChain.getRequest()).isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
 }

@@ -16,6 +16,7 @@ import {
   getSurveyOperation,
   getSurveysOperation,
   getTemplatesOperation,
+  getTemplateOperation,
   insertItemOperation,
   insertQuestionOperation,
   insertSurveyOperation,
@@ -142,6 +143,10 @@ class SurveyAdminService extends AdminService {
   */
 
   // --- 템플릿 CRUD ---
+
+  async getSurveyTemplate(srvyTmpltSn: number, config?: AxiosRequestConfig): Promise<SurveyTemplate> {
+    return this.executeGenerated(getTemplateOperation, { path: { srvyTmpltSn }, config });
+  }
 
   async createTemplate(data: Partial<SurveyTemplate>, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(insertTemplateOperation, { body: data, config });

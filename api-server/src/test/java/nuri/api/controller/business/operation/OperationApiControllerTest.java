@@ -94,7 +94,7 @@ class OperationApiControllerTest {
     @Test
     @DisplayName("행사 등록/수정/삭제 - 성공")
     void event_crud_success() throws Exception {
-        EventInfoDto dto = EventInfoDto.builder().build();
+        EventInfoDto dto = EventInfoDto.builder().evntNm("Integration test event").build();
         when(eventService.createEvent(anyString(), any())).thenReturn(1L);
 
         eventMockMvc.perform(post("/api/v1/admin/operation/events")

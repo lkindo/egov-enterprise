@@ -6,7 +6,7 @@ import { surveyAdminService, SurveyTemplate } from '@/services/foundation/system
 import { PageResponse } from '@/types/foundation/system';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Trash2, LayoutTemplate } from 'lucide-react';
+import { Loader2, Plus, Trash2, LayoutTemplate, Pencil } from 'lucide-react';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -26,6 +26,9 @@ export default function SurveyTemplatesPanel() {
   const [newType, setNewType] = useState('');
   const [newExpln, setNewExpln] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<SurveyTemplate | null>(null);
+  const [loadingTemplate, setLoadingTemplate] = useState<number | null>(null);
+  const editPendingRef = useRef(false);
   const [deletingTemplate, setDeletingTemplate] = useState<number | null>(null);
   const createPendingRef = useRef(false);
   const deletePendingRef = useRef(false);
@@ -45,10 +48,16 @@ export default function SurveyTemplatesPanel() {
 
   const create = useMutation({
     mutationFn: (payload: { srvyTmpltTypeCd: string; srvyTmpltExpln: string }) =>
-      surveyAdminService.createTemplate(payload),
+      editing?.srvyTmpltSn
+        ? surveyAdminService.updateTemplate(editing.srvyTmpltSn, {
+          ...payload,
+          srvyTmpltPathNm: editing.srvyTmpltPathNm,
+        })
+        : surveyAdminService.createTemplate(payload),
     onSuccess: () => {
       setNewType('');
       setNewExpln('');
+      setEditing(null);
       setError(null);
       validation.setFormErrors({}, false);
       invalidate();
@@ -77,11 +86,30 @@ export default function SurveyTemplatesPanel() {
   });
 
   const beginDelete = (srvyTmpltSn: number) => {
-    if (deletePendingRef.current) return;
+    if (deletePendingRef.current || editPendingRef.current || createPendingRef.current) return;
     deletePendingRef.current = true;
     setDeletingTemplate(srvyTmpltSn);
     setError(null);
     remove.mutate(srvyTmpltSn);
+  };
+
+  const beginEdit = async (srvyTmpltSn: number) => {
+    if (editPendingRef.current || createPendingRef.current || deletePendingRef.current) return;
+    editPendingRef.current = true;
+    setLoadingTemplate(srvyTmpltSn);
+    setError(null);
+    try {
+      const detail = await surveyAdminService.getSurveyTemplate(srvyTmpltSn);
+      setEditing({ ...detail, srvyTmpltSn });
+      setNewType(detail.srvyTmpltTypeCd ?? '');
+      setNewExpln(detail.srvyTmpltExpln ?? '');
+      validation.setFormErrors({}, false);
+    } catch (loadError) {
+      setError(extractErrorMessage(loadError, '템플릿 상세 조회에 실패했습니다. 다시 시도해 주세요.'));
+    } finally {
+      editPendingRef.current = false;
+      setLoadingTemplate(null);
+    }
   };
 
   return (
@@ -89,7 +117,7 @@ export default function SurveyTemplatesPanel() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (createPendingRef.current) return;
+          if (createPendingRef.current || editPendingRef.current || deletePendingRef.current) return;
           const validated = validation.validate({
             srvyTmpltTypeCd: newType,
             srvyTmpltExpln: newExpln,
@@ -112,6 +140,7 @@ export default function SurveyTemplatesPanel() {
             <Input
               {...validation.fieldProps('srvyTmpltTypeCd')}
               value={newType}
+              disabled={loadingTemplate !== null || create.isPending}
               onChange={(e) => {
                 validation.clearError('srvyTmpltTypeCd');
                 setNewType(e.target.value);
@@ -129,6 +158,7 @@ export default function SurveyTemplatesPanel() {
             <Input
               {...validation.fieldProps('srvyTmpltExpln')}
               value={newExpln}
+              disabled={loadingTemplate !== null || create.isPending}
               onChange={(e) => {
                 validation.clearError('srvyTmpltExpln');
                 setNewExpln(e.target.value);
@@ -141,9 +171,19 @@ export default function SurveyTemplatesPanel() {
               <p {...validation.messageProps('srvyTmpltExpln')} className="text-xs font-bold text-destructive-emphasis" />
             ) : null}
           </div>
-          <Button type="submit" disabled={create.isPending} className="shrink-0">
-            <Plus className="h-4 w-4 mr-1" /> 템플릿 추가
+          <Button type="submit" disabled={create.isPending || loadingTemplate !== null || deletingTemplate !== null} className="shrink-0">
+            {editing ? <Pencil className="h-4 w-4 mr-1" aria-hidden="true" /> : <Plus className="h-4 w-4 mr-1" aria-hidden="true" />}
+            {editing ? '템플릿 수정 저장' : '템플릿 추가'}
           </Button>
+          {editing && (
+            <Button type="button" variant="outline" disabled={create.isPending || loadingTemplate !== null}
+              onClick={() => {
+                setEditing(null); setNewType(''); setNewExpln('');
+                validation.setFormErrors({}, false);
+              }}>
+              수정 취소
+            </Button>
+          )}
         </div>
       </form>
 
@@ -175,11 +215,23 @@ export default function SurveyTemplatesPanel() {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={`${t.srvyTmpltExpln || t.srvyTmpltSn} 템플릿 수정`}
+                aria-busy={loadingTemplate === t.srvyTmpltSn}
+                disabled={loadingTemplate !== null || create.isPending || deletingTemplate !== null}
+                onClick={() => { if (t.srvyTmpltSn) void beginEdit(t.srvyTmpltSn); }}
+              >
+                {loadingTemplate === t.srvyTmpltSn
+                  ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  : <Pencil className="h-4 w-4" aria-hidden="true" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 aria-label={deletingTemplate === t.srvyTmpltSn
                   ? `${t.srvyTmpltExpln || t.srvyTmpltSn} 템플릿 삭제 중`
                   : `${t.srvyTmpltExpln || t.srvyTmpltSn} 템플릿 삭제`}
                 aria-busy={deletingTemplate === t.srvyTmpltSn}
-                disabled={deletingTemplate !== null}
+                disabled={deletingTemplate !== null || loadingTemplate !== null || create.isPending || editing?.srvyTmpltSn === t.srvyTmpltSn}
                 className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
                 onClick={() => t.srvyTmpltSn && beginDelete(t.srvyTmpltSn)}
               >
