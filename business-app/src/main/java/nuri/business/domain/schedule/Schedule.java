@@ -26,7 +26,7 @@ public class Schedule extends BaseEntity implements Serializable {
     @Column(length = 12)
     private String schdlSeCd;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 300, nullable = false)
     private String schdlNm;
 
     @Column(length = 4000)

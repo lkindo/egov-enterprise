@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pollSchema,  smsSchema,  menuSchema } from '../schemas';
+import { pollSchema, smsSchema, smsRecipientNumberSchema, menuSchema } from '../schemas';
 
 describe('Standardized Validation Schemas', () => {
   
@@ -49,6 +49,18 @@ describe('Standardized Validation Schemas', () => {
   });
 
   describe('smsSchema (SMS)', () => {
+    it('하이픈 입력을 선행 0이 보존된 11자리 수신번호로 정규화한다', () => {
+      expect(smsRecipientNumberSchema.parse(' 010-1234-5678 ')).toBe('01012345678');
+      expect(smsRecipientNumberSchema.parse('01012345678')).toBe('01012345678');
+      expect(smsRecipientNumberSchema.parse('0101')).toBe('0101');
+    });
+
+    it.each(['---', '   ', '010123456789', '010ABC45678', '+82-10-1234-5678'])(
+      '잘못된 수신번호 %s는 전송 전에 거부한다', (number) => {
+        expect(smsRecipientNumberSchema.safeParse(number).success).toBe(false);
+      },
+    );
+
     it('should validate message length within 80 chars', () => {
       const validData = {
         sndngTelno: '010-1234-5678',

@@ -767,6 +767,14 @@
           "source": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-DEFERRED-STANDARD-DESIGN",
+          "source": "api-server/src/test/java/nuri/api/schema/DeferredStandardDesignMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-STANDARD-TEXT-LENGTHS",
+          "source": "api-server/src/test/java/nuri/api/schema/StandardLengthMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-LOGIN-LOG-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/LoginLogBigintMigrationIntegrationTest.java"
         },

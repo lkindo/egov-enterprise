@@ -134,8 +134,16 @@ public class ProgramService {
     @Transactional
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrm(ProgramDto dto) {
-        programRepository.deleteById(Objects.requireNonNull(dto.getPrgrmFileNm()));
+        assertNotReferenced(Objects.requireNonNull(dto.getPrgrmFileNm()));
+        programRepository.deleteById(dto.getPrgrmFileNm());
         evictAuthorizationCacheAfterCommit();
+    }
+
+    private void assertNotReferenced(String prgrmFileNm) {
+        if (programRepository.hasReferences(prgrmFileNm)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                    "메뉴 또는 역할에서 사용 중인 프로그램입니다. 먼저 연결을 해제해 주세요.");
+        }
     }
 
     /**
@@ -147,6 +155,7 @@ public class ProgramService {
         if (checkedProgrmFileNmForDel == null)
             return;
         List<String> delProgrmFileNm = Arrays.asList(checkedProgrmFileNmForDel.split(","));
+        delProgrmFileNm.forEach(this::assertNotReferenced);
         programRepository.deleteAllByIdInBatch(Objects.requireNonNull(delProgrmFileNm));
         evictAuthorizationCacheAfterCommit();
     }

@@ -41,10 +41,10 @@ public class FileDetail extends BaseEntity {
     @Column(length = 1000)
     private String fileStrgPath; // 파일저장경로
 
-    @Column(length = 100)
+    @Column(length = 300)
     private String strgFileNm; // 저장파일명
 
-    @Column(length = 100)
+    @Column(length = 300)
     private String orgnlFileNm; // 원본파일명
 
     @Column(length = 20)

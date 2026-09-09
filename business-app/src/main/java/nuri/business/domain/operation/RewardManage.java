@@ -30,7 +30,7 @@ public class RewardManage extends BaseEntity {
     @Column(length = 8)
     private String rwrdYmd;
 
-    @Column(length = 100)
+    @Column(length = 300)
     private String rwrdNm;
 
     @Column(length = 4000)

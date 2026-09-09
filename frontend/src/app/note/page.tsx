@@ -523,7 +523,7 @@ export default function NotePage() {
               type="text"
               aria-label="시스템 제목"
               aria-required="true"
-              maxLength={100}
+              maxLength={256}
               {...validation.fieldProps('noteSj')}
               value={formData.noteSj}
               onChange={(e) => {

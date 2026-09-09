@@ -18,7 +18,7 @@ public class CommunityDto {
     private Long cmntySn;
     // [2026-09-06 DEC-OPS-037] 제품 규칙(컬럼은 nullable) — 이름 없는 커뮤니티는 목록·포틀릿에서 빈칸이 된다.
     @NotBlank
-    @Size(max = 100)
+    @Size(max = 300)
     private String cmntyNm;
     @Size(max = 4000)
     private String cmntyIntroCn;

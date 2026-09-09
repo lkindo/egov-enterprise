@@ -9,7 +9,6 @@ import nuri.business.domain.menu.MenuRepository;
 import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuDto;
-import nuri.business.security.audit.LoginUserAuditorAware;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,9 +50,6 @@ class MenuServiceTest {
     @Mock
     private nuri.business.service.program.dto.ProgramMapper programMapper;
 
-    @Mock
-    private LoginUserAuditorAware loginUserAuditorAware;
-
     @InjectMocks
     private MenuService menuService;
 
@@ -69,7 +65,6 @@ class MenuServiceTest {
         lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         lenient().doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
                 .when(authentication).getAuthorities();
-        lenient().when(loginUserAuditorAware.getCurrentAuditor()).thenReturn(Optional.of("admin"));
     }
 
     @AfterEach
@@ -361,8 +356,8 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("insertMenuManage - Program 최초 생성 경합을 원자적 insert-if-absent로 닫는다")
-    void insertMenuManage_ProvisionsProgramAtomically() {
+    @DisplayName("insertMenuManage - 등록된 프로그램만 연결하고 메뉴 번호는 DB에서 생성한다")
+    void insertMenuManage_LinksExistingProgram() {
         MenuDto dto = MenuDto.builder()
                 .menuNo(9_999_999L)
                 .menuNm("테스트 메뉴")
@@ -370,17 +365,38 @@ class MenuServiceTest {
                 .modernRoute("/test/new-program")
                 .build();
         
+        when(programRepository.existsById("NewProgram")).thenReturn(true);
         menuService.insertMenuManage(dto);
-        
-        verify(programRepository).insertIfAbsent(
-                "NewProgram", "자동생성메뉴(테스트 메뉴)", "/test/new-program", "/auto-generated", "admin");
-        verify(programRepository, never()).existsById(anyString());
+        verify(programRepository).existsById("NewProgram");
         verify(programRepository, never()).save(any(Program.class));
         ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
         verify(menuRepository).save(menuCaptor.capture());
         assertThat(menuCaptor.getValue().getMenuSn())
                 .as("create payload의 수동 menuNo는 무시하고 DB IDENTITY가 번호를 부여해야 한다")
                 .isNull();
+    }
+
+    @Test
+    void rejectsUnknownProgramOnCreateAndUpdate() {
+        MenuDto dto = MenuDto.builder().menuNo(1L).menuNm("메뉴")
+                .prgrmFileNm("missing").modernRoute("/test").build();
+        assertThatThrownBy(() -> menuService.insertMenuManage(dto)).isInstanceOf(BusinessException.class);
+        Menu menu = mock(Menu.class);
+        when(menuRepository.findById(1L)).thenReturn(Optional.of(menu));
+        assertThatThrownBy(() -> menuService.updateMenuManage(dto)).isInstanceOf(BusinessException.class);
+        verify(menuRepository, never()).save(any());
+        verifyNoInteractions(menu);
+        verify(programRepository, never()).save(any());
+    }
+
+    @Test
+    void createsIndependentRouteWithoutProgram() {
+        menuService.insertMenuManage(MenuDto.builder().menuNm("독립 메뉴").modernRoute("/test").build());
+        ArgumentCaptor<Menu> captured = ArgumentCaptor.forClass(Menu.class);
+        verify(menuRepository).save(captured.capture());
+        assertThat(captured.getValue().getPrgrmFileNm()).isNull();
+        assertThat(captured.getValue().getModernRoute()).isEqualTo("/test");
+        verifyNoInteractions(programRepository);
     }
 
     @Test

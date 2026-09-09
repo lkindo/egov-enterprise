@@ -24,7 +24,7 @@ public class SurveyTemplateDto {
     private String srvyTmpltTypeCd;
 
     @Schema(description = "설문 템플릿 이미지 경로 명")
-    @Size(max = 100)
+    @Size(max = 300)
     private String srvyTmpltPathNm;
 
     @Schema(description = "설문 템플릿 설명 내용")

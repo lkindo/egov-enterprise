@@ -6462,7 +6462,10 @@ export interface components {
             ablYn?: string;
             /** @description 변경일자 */
             chgYmd?: string;
-            /** @description 변경시간 */
+            /**
+             * @description 변경시각 (HHmmss, 변경일자는 chgYmd)
+             * @example 143025
+             */
             chgTm?: string;
             /** @description 기준일자 */
             crtrYmd?: string;
@@ -6528,7 +6531,7 @@ export interface components {
              * @description SMS 전송 일련번호
              */
             smsTrsmSn?: number;
-            /** @description 수신 번호. esntlId 를 지정하면 생략한다 */
+            /** @description 하이픈을 제외한 수신 번호. esntlId 를 지정하면 생략한다 */
             rcptnTelno?: string;
             /** @description 수신자 사용자 고유 ID(esntlId). 지정하면 서버가 등록된 휴대전화 번호를 해석한다 */
             esntlId?: string;
@@ -8635,7 +8638,10 @@ export interface components {
             ablYn?: string;
             /** @description 변경일자 */
             chgYmd?: string;
-            /** @description 변경시간 */
+            /**
+             * @description 변경시각 (HHmmss, 변경일자는 chgYmd)
+             * @example 143025
+             */
             chgTm?: string;
             /** @description 기준일자 */
             crtrYmd?: string;

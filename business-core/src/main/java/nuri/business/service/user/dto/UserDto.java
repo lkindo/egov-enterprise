@@ -90,10 +90,10 @@ public record UserDto(
     @Size(max = 20, message = "그룹 ID 는 최대 20 자입니다")
     String groupId,
 
-    @Size(max = 300, message = "주소는 최대 300 자입니다")
+    @Size(max = 200, message = "주소는 최대 200 자입니다")
     String homeAddr,
 
-    @Size(max = 300, message = "상세주소는 최대 300 자입니다")
+    @Size(max = 200, message = "상세주소는 최대 200 자입니다")
     String daddr,
 
     @Size(max = 5, message = "우편번호는 5자입니다")

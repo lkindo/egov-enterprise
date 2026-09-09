@@ -17,3 +17,5 @@
 | [ADR-0010](ADR-0010-frontend-session-cookie-secure-policy.md) | 프론트엔드 세션 쿠키의 Secure 예외를 명시적 평문 loopback으로 제한 | Accepted |
 | [ADR-0011](ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 익명 만족도와 비밀번호 소유 증명을 퇴역하고 수정·삭제를 인증 owner/admin으로 제한 | Accepted |
 | [ADR-0012](ADR-0012-retire-blog-domain.md) | 비사용 블로그 도메인과 물리 스키마를 제거하고 데이터가 있는 환경의 제거는 차단 | Accepted |
+| [ADR-0013](ADR-0013-standard-text-length-alignment.md) | 설계 보류 6개를 유지하며 표준 길이 24개와 SMS 정규화를 양단 계약에 적용 | Accepted |
+| [ADR-0014](ADR-0014-deferred-standard-design-alignment.md) | 보류 6개를 프로그램 선택적 참조·HHmmss·암호화 주민번호 표준으로 정합 | Accepted |

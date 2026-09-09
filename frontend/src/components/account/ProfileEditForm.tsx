@@ -206,8 +206,8 @@ export function ProfileEditForm({ initialValues, onSubmit, onCancel, isPending =
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {renderField('homeAddr', { maxLength: 300, autoComplete: 'street-address' })}
-        {renderField('daddr', { maxLength: 300 })}
+        {renderField('homeAddr', { maxLength: 200, autoComplete: 'street-address' })}
+        {renderField('daddr', { maxLength: 200 })}
       </div>
 
       <div className="flex gap-3 pt-1">

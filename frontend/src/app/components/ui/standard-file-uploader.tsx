@@ -6,6 +6,9 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
+/** FileService와 tb_file_detail.orgnl_file_nm의 원본 파일명 상한. */
+const MAX_FILENAME_LENGTH = 300;
+
 interface FileState {
   file: File;
   progress: number;
@@ -130,6 +133,10 @@ export function StandardFileUploader({
 
   const handleFiles = useCallback((files: File[]) => {
     const validFiles = files.filter(file => {
+      if (file.name.length > MAX_FILENAME_LENGTH) {
+        toast.error('파일명은 확장자를 포함해 300자 이내로 지정해 주세요.');
+        return false;
+      }
       // 형식 검증: 드래그&드롭 파일은 input의 accept 필터를 우회하므로 여기서 직접 차단한다.
       const isTypeValid = isFileTypeAccepted(file, accept);
       if (!isTypeValid) {

@@ -386,7 +386,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
                         placeholder="제목을 입력하세요."
                         autoFocus
                         aria-label="게시글 제목"
-                        maxLength={100}
+                        maxLength={256}
                       />
                     </FormControl>
                     <FormMessage className="font-black text-destructive-emphasis uppercase text-[10px] tracking-widest pt-2" />

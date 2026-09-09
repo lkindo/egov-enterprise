@@ -158,9 +158,9 @@ public class SmsService {
                     throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                             "'" + name + "' 님은 등록된 휴대전화 번호가 없어 문자를 보낼 수 없습니다.");
                 }
-                numbers.add(contact.mblTelno());
+                numbers.add(nuri.business.domain.sms.SmsRecipientNumber.requireValid(contact.mblTelno()));
             } else {
-                numbers.add(recipient.getRcptnTelno().trim());
+                numbers.add(nuri.business.domain.sms.SmsRecipientNumber.requireValid(recipient.getRcptnTelno()));
             }
         }
         return new ArrayList<>(numbers);

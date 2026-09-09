@@ -601,7 +601,7 @@ export default function EventManagementClient() {
                     validation.clearError('picNm');
                     setForm({ ...form, picNm: e.target.value });
                   }}
-                  maxLength={300}
+                  maxLength={100}
                   className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
                   placeholder="예: 총무팀 김담당"
                 />

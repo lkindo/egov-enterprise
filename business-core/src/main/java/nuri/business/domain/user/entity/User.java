@@ -64,7 +64,7 @@ public class User extends BaseEntity implements Serializable {
     private String certDnVl;
 
     // ■ 개인 정보
-    @Column(length = 256)
+    @Column(name = "user_enrrno", length = 256)
     @Convert(converter = nuri.business.domain.common.RrnoEncryptionConverter.class)
     private String rrno;
 
@@ -84,10 +84,10 @@ public class User extends BaseEntity implements Serializable {
     @Column(length = 5)
     private String zip;
 
-    @Column(length = 300)
+    @Column(length = 200)
     private String homeAddr;
 
-    @Column(length = 300)
+    @Column(length = 200)
     private String daddr;
 
     @Column(length = 4)

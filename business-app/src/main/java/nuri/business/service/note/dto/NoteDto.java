@@ -17,6 +17,7 @@ public class NoteDto {
     @Schema(description = "쪽지 일련번호")
     private Long noteSn;
     @Schema(description = "제목")
+    @Size(max = 256)
     private String noteSj;
     @Schema(description = "내용")
     @Size(max = 4000)

@@ -19,10 +19,10 @@ public class SurveyInfo extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long srvySn;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 256, nullable = false)
     private String srvyTtl;
 
-    @Column(length = 1000)
+    @Column(length = 4000)
     private String srvyPrps;
 
     @Column(length = 4000)

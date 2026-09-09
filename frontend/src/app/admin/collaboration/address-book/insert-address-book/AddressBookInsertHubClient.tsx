@@ -145,7 +145,7 @@ export default function AddressBookInsertHubClient() {
       className="h-11 bg-transparent border-none text-foreground text-3xl font-bold placeholder:text-foreground/10 focus-visible:ring-0 p-0 tracking-tight"
       placeholder="주소록 명칭을 입력하세요."
       data-testid="identity-name-input"
-      maxLength={100}
+      maxLength={200}
       required
       autoFocus
     />

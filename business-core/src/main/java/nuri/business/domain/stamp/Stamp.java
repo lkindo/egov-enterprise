@@ -32,7 +32,7 @@ public class Stamp extends BaseEntity {
     @Column(length = 20)
     private String crtrId;
 
-    @Column(length = 100)
+    @Column(length = 300)
     private String mpngFileNm;
 
     @Column(length = 1000)

@@ -24,7 +24,7 @@ public class RoleManageDto {
     private String roleId;
     
     @Schema(description = "롤명", example = "일반사용자 롤")
-    @Size(max = 100)
+    @Size(max = 300)
     @NotBlank
     private String roleNm;
     

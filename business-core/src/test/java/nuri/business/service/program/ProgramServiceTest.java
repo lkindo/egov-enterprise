@@ -50,6 +50,16 @@ class ProgramServiceTest {
     @InjectMocks
     private ProgramService programService;
 
+    @Test
+    void refusesSingleAndBatchDeletionOfReferencedProgram() {
+        when(programRepository.hasReferences("linked")).thenReturn(true);
+        assertThrows(BusinessException.class, () -> programService.deleteProgrm(
+                ProgramDto.builder().prgrmFileNm("linked").build()));
+        assertThrows(BusinessException.class, () -> programService.deleteProgrmManageList("free,linked"));
+        verify(programRepository, never()).deleteById(anyString());
+        verify(programRepository, never()).deleteAllByIdInBatch(any());
+    }
+
     @Nested
     @DisplayName("프로그램 목록 조회 테스트")
     class SelectProgramListTests {

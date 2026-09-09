@@ -132,7 +132,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     await screen.findByText('기존 일정');
     await userEvent.click(screen.getByRole('button', { name: '기존 일정 수정' }));
     const title = screen.getByRole('textbox', { name: /일정명/ });
-    fireEvent.change(title, { target: { value: '일'.repeat(101) } });
+    fireEvent.change(title, { target: { value: '일'.repeat(301) } });
     fireEvent.change(screen.getByRole('textbox', { name: /내용/ }), { target: { value: '내'.repeat(4001) } });
     fireEvent.change(screen.getByRole('textbox', { name: /장소/ }), { target: { value: '장'.repeat(101) } });
     fireEvent.change(screen.getByLabelText(/시작일/), { target: { value: '2026-08-28' } });
@@ -141,7 +141,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     await userEvent.click(screen.getByRole('button', { name: '저장' }));
 
     expect(harness.updateDeptSchedule).not.toHaveBeenCalled();
-    expect(await screen.findByText('일정명: 최대 100자까지 입력할 수 있습니다.')).toBeInTheDocument();
+    expect(await screen.findByText('일정명: 최대 300자까지 입력할 수 있습니다.')).toBeInTheDocument();
     expect(screen.getByText('내용: 최대 4000자까지 입력할 수 있습니다.')).toBeInTheDocument();
     expect(screen.getByText('장소: 최대 100자까지 입력할 수 있습니다.')).toBeInTheDocument();
     expect(screen.getByText('시작일은 종료일보다 빠르거나 같아야 합니다.')).toBeInTheDocument();

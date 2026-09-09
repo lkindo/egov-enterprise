@@ -340,7 +340,7 @@ export default function ScheduleDeptClient() {
                             </Label>
                             <Input
                                 id="schdlNm"
-                                maxLength={100}
+                                maxLength={300}
                                 aria-required="true"
                                 {...validation.fieldProps('schdlNm')}
                                 className="rounded-lg h-12"

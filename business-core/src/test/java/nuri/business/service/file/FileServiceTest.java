@@ -66,7 +66,7 @@ class FileServiceTest {
     @DisplayName("파일 업로드 성공")
     void uploadFiles_Success() throws IOException {
         // given
-        MockMultipartFile file = validJpeg("test.jpg");
+        MockMultipartFile file = validJpeg("가".repeat(296) + ".jpg");
         List<MultipartFile> files = Collections.singletonList(file);
         
         FileMaster master = new FileMaster(123L);
@@ -139,7 +139,7 @@ class FileServiceTest {
     @Test
     @DisplayName("파일 업로드 - DB 컬럼보다 긴 원본 파일명은 파일 저장 전에 거부한다")
     void uploadFiles_rejectsFilenameLongerThanDatabaseColumn() {
-        MockMultipartFile file = validJpeg("a".repeat(97) + ".jpg");
+        MockMultipartFile file = validJpeg("a".repeat(297) + ".jpg");
 
         assertThatThrownBy(() -> fileService.uploadFiles(List.of(file)))
                 .isInstanceOf(BusinessException.class);

@@ -160,20 +160,20 @@ describe('NotePage validation contract', () => {
     await waitFor(() => expect(pickerButton).toHaveFocus());
   });
 
-  it('제목 100자·본문 4000자 한계를 넘으면 입력을 보존하고 첫 오류 필드로 이동한다', async () => {
+  it('제목 256자·본문 4000자 한계를 넘으면 입력을 보존하고 첫 오류 필드로 이동한다', async () => {
     openComposer();
     selectRecipient();
     const title = screen.getByRole('textbox', { name: '시스템 제목' });
     const body = screen.getByRole('textbox', { name: '데이터 바디 (내용)' });
-    fireEvent.change(title, { target: { value: '제'.repeat(101) } });
+    fireEvent.change(title, { target: { value: '제'.repeat(257) } });
     fireEvent.change(body, { target: { value: '본'.repeat(4001) } });
 
     fireEvent.click(screen.getByRole('button', { name: '메시지 전송' }));
 
     expect(mocks.sendNote).not.toHaveBeenCalled();
-    expect(await screen.findByText('제목: 최대 100자까지 입력할 수 있습니다.')).toBeInTheDocument();
+    expect(await screen.findByText('제목: 최대 256자까지 입력할 수 있습니다.')).toBeInTheDocument();
     expect(screen.getByText('내용: 최대 4000자까지 입력할 수 있습니다.')).toBeInTheDocument();
-    expect(title).toHaveValue('제'.repeat(101));
+    expect(title).toHaveValue('제'.repeat(257));
     expect(title).toHaveAttribute('aria-invalid', 'true');
     await waitFor(() => expect(title).toHaveFocus());
   });

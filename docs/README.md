@@ -149,3 +149,9 @@
 | 게이트 계층·훅 규약 | [.githooks/README.md](../.githooks/README.md) |
 | 3대 헌법 | [.agent/knowledge/](../.agent/knowledge/) |
 | Gemini 역사 지원 자산 | [.gemini/tasks/](../.gemini/tasks/) — 활성 세션 저널은 두지 않고 기존 census·archive 지원 자산만 유지 |
+
+[ADR-0013](02-architecture/decisions/ADR-0013-standard-text-length-alignment.md) — 표준 길이 24개 정합과 SMS 수신번호 정규화.
+
+[표준 길이 전환 런북](04-operations/standard-length-alignment-runbook.md) — 단계별 스키마·애플리케이션 전환과 실패·복구 검증.
+
+- [보류 6개 표준 설계 결정(ADR-0014)](02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md)

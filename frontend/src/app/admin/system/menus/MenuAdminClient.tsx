@@ -812,31 +812,24 @@ export default function MenuAdminClient({
                 </FormItem>
               )}
             />
-            {/* 서버에서 받아온 프로그램 목록을 자동완성 후보로 소비한다(연결 프로그램 미입력 시 그룹 노드). */}
+            {/* 라우트와 프로그램 연결은 독립적이며, 기존 프로그램만 선택할 수 있다. */}
             <ShadcnFormField
               control={form.control} name="prgrmFileNm"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-foreground ml-1">연결 프로그램</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      value={field.value ?? ''}
-                      maxLength={100}
-                      list="menu-program-options"
-                      className="h-11 rounded-lg font-bold px-5"
-                      placeholder="프로그램 파일명을 선택하거나 입력 (선택)"
-                    />
-                  </FormControl>
-                  <datalist id="menu-program-options">
-                    {programs
-                      .filter((p) => !!p.prgrmFileNm)
-                      .map((p) => (
+                    <select {...field} value={field.value ?? ''}
+                      className="h-11 w-full rounded-lg border border-input bg-background px-5 font-bold">
+                      <option value="">연결 없음</option>
+                      {programs.filter((p) => !!p.prgrmFileNm).map((p) => (
                         <option key={p.prgrmFileNm} value={p.prgrmFileNm}>
-                          {p.prgrmKornNm ?? ''}
+                          {p.prgrmKornNm || p.prgrmFileNm} ({p.prgrmFileNm})
                         </option>
                       ))}
-                  </datalist>
+                    </select>
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">연결 라우트만으로 메뉴를 만들 수 있습니다. 새 프로그램은 프로그램 관리에서 등록해 주세요.</p>
                   <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                 </FormItem>
               )}

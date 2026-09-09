@@ -45,8 +45,8 @@ public class FileService extends BaseAbstractService {
             "zip", "7z", "rar" // 압축
     );
     private static final int MAX_FILES_PER_REQUEST = 20;
-    /** FileDetail.orgnlFileNm의 @Column(length = 100)과 같은 상한. */
-    private static final int MAX_ORIGINAL_FILENAME_LENGTH = 100;
+    /** FileDetail.orgnlFileNm의 @Column(length = 300)과 같은 상한. */
+    private static final int MAX_ORIGINAL_FILENAME_LENGTH = 300;
     private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024;
     private static final long MAX_REQUEST_SIZE_BYTES = 50L * 1024 * 1024;
     private static final int SIGNATURE_READ_SIZE = 16;

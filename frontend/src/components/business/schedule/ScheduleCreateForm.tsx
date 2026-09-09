@@ -49,7 +49,7 @@ export const scheduleFormSchema = ScheduleDtoSchema.extend({
   schdlNm: z.string()
     .trim()
     .min(1, '일정명을 입력하세요.')
-    .max(100, '일정명은 최대 100자까지 입력할 수 있습니다.')
+    .max(300, '일정명은 최대 300자까지 입력할 수 있습니다.')
     .pipe(ScheduleDtoSchema.shape.schdlNm),
   schdlCn: z.string()
     .trim()
@@ -165,7 +165,7 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
                   value={field.value ?? ''}
                   className={cn('h-11 rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
                   placeholder="예: 주간 팀 회의"
-                  maxLength={100}
+                  maxLength={300}
                 />
               </FormControl>
               <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />

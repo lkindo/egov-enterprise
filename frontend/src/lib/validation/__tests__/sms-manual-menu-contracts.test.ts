@@ -13,7 +13,7 @@ describe('SMS, manual, and menu write-boundary contracts', () => {
     if (valid.success) {
       expect(valid.data).toMatchObject({
         sndngTelno: '02-1234-5678',
-        rcptnTelno: '010-1234-5678',
+        rcptnTelno: '01012345678',
         sndngCn: '전송할 문자',
       });
       expect(valid.data).not.toHaveProperty('recipients');
@@ -51,7 +51,8 @@ describe('SMS, manual, and menu write-boundary contracts', () => {
     expect(menuSchema.safeParse(valid).success).toBe(true);
     expect(menuSchema.safeParse({ ...valid, menuNm: '   ' }).success).toBe(false);
     expect(menuSchema.safeParse({ ...valid, menuNm: '가'.repeat(101) }).success).toBe(false);
-    expect(menuSchema.safeParse({ ...valid, prgrmFileNm: 'a'.repeat(101) }).success).toBe(false);
+    expect(menuSchema.safeParse({ ...valid, prgrmFileNm: 'a'.repeat(300) }).success).toBe(true);
+    expect(menuSchema.safeParse({ ...valid, prgrmFileNm: 'a'.repeat(301) }).success).toBe(false);
     expect(menuSchema.safeParse({ ...valid, modernRoute: 'a'.repeat(501) }).success).toBe(false);
     expect(menuSchema.safeParse({ ...valid, menuExpln: '가'.repeat(4001) }).success).toBe(false);
     expect(menuSchema.safeParse({ ...valid, menuOrdr: 1.5 }).success).toBe(false);

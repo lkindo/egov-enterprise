@@ -112,7 +112,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
     try {
       const ok = await confirm({
         title: '프로그램 영구 삭제',
-        message: '해당 프로그램 명세가 시스템에서 영구적으로 제거됩니다. 정말로 진행하시겠습니까?',
+        message: '프로그램을 영구 삭제합니다. 메뉴 또는 역할에서 사용 중이면 먼저 연결을 해제해 주세요.',
         variant: 'destructive'
       });
 
@@ -195,7 +195,7 @@ export function ProgramForm({ onOpenChange, data, onSuccess, onWritePendingChang
                     placeholder="프로그램파일명" 
                     {...field} 
                     readOnly={isEdit} 
-                    maxLength={100}
+                    maxLength={300}
                     className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                   />
                 </FormControl>

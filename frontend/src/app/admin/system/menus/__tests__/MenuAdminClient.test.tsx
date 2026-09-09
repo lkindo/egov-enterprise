@@ -172,6 +172,13 @@ describe('MenuAdminClient Component', () => {
     const btn = await screen.findByRole('button', { name: '신규 메뉴 등록' });
     fireEvent.click(btn);
     expect(await screen.findByText(/신규 메뉴 정의/i)).toBeInTheDocument();
+    const program = screen.getByRole('combobox', { name: '연결 프로그램' });
+    expect(program.tagName).toBe('SELECT');
+    expect(program).toHaveValue('');
+    expect(screen.getByRole('option', { name: '연결 없음' })).toBeInTheDocument();
+    fireEvent.change(program, { target: { value: 'prog1' } });
+    expect(program).toHaveValue('prog1');
+
   });
 
   it('selects a menu with aria-current and shows its detail actions', async () => {

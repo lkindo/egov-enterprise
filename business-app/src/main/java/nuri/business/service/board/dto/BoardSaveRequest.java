@@ -10,7 +10,7 @@ import org.springframework.lang.NonNull;
 public record BoardSaveRequest(
                 @Schema(description = "게시판 ID") @NotBlank(message = "Board ID is required.") @Size(max = 20) @NonNull String bbsId,
 
-                @Schema(description = "게시글 제목") @NotBlank(message = "Subject is required.") @Size(min = 1, max = 100, message = "Subject must be between 1 and 100 characters.") @NonNull String pstTtl,
+                @Schema(description = "게시글 제목") @NotBlank(message = "Subject is required.") @Size(min = 1, max = 256, message = "Subject must be between 1 and 256 characters.") @NonNull String pstTtl,
 
                 @Schema(description = "게시글 내용") @NotBlank(message = "Content is required.") @Size(max = 4000) @NonNull String pstCn,
 

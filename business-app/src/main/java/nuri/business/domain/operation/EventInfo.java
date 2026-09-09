@@ -41,7 +41,7 @@ public class EventInfo extends BaseEntity {
 
     private Long evntUseCnt;
 
-    @Column(length = 300)
+    @Column(length = 100)
     private String picNm;
 
     @Column(length = 2500)

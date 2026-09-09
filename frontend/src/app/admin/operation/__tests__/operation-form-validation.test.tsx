@@ -225,7 +225,7 @@ describe('operation useAppForm consumers', () => {
     await waitFor(() => expect(firstField).toHaveFocus());
     expect(firstField).toHaveAttribute('aria-required', 'true');
     expect(firstField).toHaveAttribute('aria-invalid', 'true');
-    expect(firstField).toHaveAttribute('maxlength', '100');
+    expect(firstField).toHaveAttribute('maxlength', '300');
     expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent(/입력 오류/);
     expect(mocks.createReward).not.toHaveBeenCalled();
   });

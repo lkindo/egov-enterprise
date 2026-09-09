@@ -89,7 +89,7 @@ BEGIN
         INSERT INTO tb_menu_info
             (menu_sn, up_menu_sn, menu_ordr, menu_nm, prgrm_file_nm, menu_expln, modern_route, use_yn, del_yn, frst_rgtr_id, crt_dt)
         VALUES
-            (910, NULL, 1,  '시스템 관리 센터',   'dir', 'base 부트스트랩 관리자 메뉴', '/admin/user/manage',               'Y', 'N', 'SYSTEM', NOW()),
+            (910, NULL, 1,  '시스템 관리 센터',   NULL, 'base 부트스트랩 관리자 메뉴', '/admin/user/manage',               'Y', 'N', 'SYSTEM', NOW()),
             (911, 910,  1,  '사용자 관리',        NULL,  NULL,                          '/admin/user/manage',               'Y', 'N', 'SYSTEM', NOW()),
             (912, 910,  2,  '부서 및 조직 관리',  NULL,  NULL,                          '/admin/user/departments',          'Y', 'N', 'SYSTEM', NOW()),
             (913, 910,  3,  '권한(보안) 정책 관리', NULL, NULL,                         '/admin/security/authority',        'Y', 'N', 'SYSTEM', NOW()),

@@ -20,12 +20,12 @@ public class SurveyInfoDto {
     private Long srvySn;
 
     @Schema(description = "설문 제목")
-    @Size(max = 100)
+    @Size(max = 256)
     @NotBlank
     private String srvyTtl;
 
     @Schema(description = "설문 목적")
-    @Size(max = 1000)
+    @Size(max = 4000)
     private String srvyPrps;
 
     @Schema(description = "설문 작성 안내 내용")
