@@ -121,7 +121,7 @@ export function SmartOnboardingHub() {
           previousFocusRef.current?.focus();
           previousFocusRef.current = null;
         }}
-        className="relative max-w-4xl w-full bg-surface-inverse text-surface-inverse-foreground border border-surface-inverse-border rounded-lg shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-0 flex flex-col md:flex-row min-h-[500px] gap-0"
+        className="max-w-4xl sm:max-w-4xl w-full bg-surface-inverse text-surface-inverse-foreground border border-surface-inverse-border rounded-lg shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-0 flex flex-col md:flex-row min-h-[500px] gap-0"
       >
         {/* Progress Strip */}
         <div className="absolute top-0 left-0 w-full h-1 flex px-10 pt-4 gap-2 z-20">
