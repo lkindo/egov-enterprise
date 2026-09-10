@@ -37,11 +37,20 @@ function mutate(relative, transform, callback) {
 function add(relative, content, callback) {
   const target = path.resolve(fixture, relative);
   assert.ok(target.startsWith(`${fixture}${path.sep}`));
-  assert.equal(fs.existsSync(target), false);
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, content);
+  fs.writeFileSync(target, content, { flag: 'wx' });
   try { callback(); } finally { fs.unlinkSync(target); }
 }
+
+test('fixture additions reject an existing file without overwriting or removing it', () => {
+  const relative = 'existing-fixture-sentinel.txt';
+  add(relative, 'original sentinel', () => {
+    let callbackInvoked = false;
+    assert.throws(() => add(relative, 'replacement', () => { callbackInvoked = true; }), { code: 'EEXIST' });
+    assert.equal(fs.readFileSync(path.join(fixture, relative), 'utf8'), 'original sentinel');
+    assert.equal(callbackInvoked, false);
+  });
+});
 
 test('catalog is deterministic and covers source-owned modules, articles, gates and decision IDs', () => {
   assert.deepEqual(buildAtlasCatalog(fixture), baseline);

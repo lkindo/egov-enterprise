@@ -102,8 +102,9 @@ export function documentationLinks(source) {
 }
 
 export function documentAnchors(source, markdown = true) {
+  // Mask raw-text blocks so removing them cannot join tokens or create headings.
   const text = withoutBlockExamples(source)
-    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, value => value.replace(/[^\n]/g, ' '));
   const anchors = new Set();
   // HTML IDs are explicit anchors; <a name> is also supported by repository renderers.
   for (const match of withoutInlineExamples(text).matchAll(/<([a-z][\w-]*)\b[^>]*?\s(id|name)\s*=\s*(["'])(.*?)\3[^>]*>/gi)) {
@@ -120,7 +121,14 @@ export function documentAnchors(source, markdown = true) {
       && lines[index].trim() && !/^\s*[>|*-]/.test(lines[index]);
     if (!heading && !setext) continue;
     let title = heading ? heading[1] : lines[index++].trim();
-    title = decodeEntities(title.replace(/!?\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/<[^>]*>/g, ''));
+    title = title.replace(/!?\[([^\]]+)\]\([^)]*\)/g, '$1');
+    // Extract heading text to a fixed point; this is not an HTML sanitizer.
+    let previous;
+    do {
+      previous = title;
+      title = title.replace(/<[^>]*>/g, '');
+    } while (title !== previous);
+    title = decodeEntities(title);
     const base = title.toLowerCase().replace(/[^\p{L}\p{M}\p{N}\p{Pc} -]/gu, '').replace(/ /g, '-');
     let slug = base;
     let suffix = 0;

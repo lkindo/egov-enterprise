@@ -59,6 +59,18 @@ test('link extraction ignores fenced and inline examples while preserving real t
   ]);
 });
 
+test('raw-text blocks cannot synthesize heading anchors or expose embedded IDs', () => {
+  for (const tag of ['script', 'style']) {
+    const source = [
+      `<${tag}>ignored</${tag}># synthetic`,
+      `<${tag}>\n# hidden\n<div id="embedded"></div>\n</${tag}>`,
+      '# Actual',
+      '## A<span>nested <strong>title</strong></span> B &amp; C',
+    ].join('\n');
+    assert.deepEqual([...documentAnchors(source)], ['actual', 'anested-title-b--c']);
+  }
+});
+
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owned-doc-links-'));
   t.after(() => {
@@ -98,6 +110,14 @@ test('constitution metadata missing file or fragment cannot silently pass', t =>
   const result = validateDocumentationLinks({ repoRoot: root, files: ['README.md'] });
   assert.match(result.errors.join('\n'), /metadata\.json -> guide\.md#absent: missing heading/);
   assert.match(result.errors.join('\n'), /metadata\.json -> missing\.java: missing target/);
+});
+
+test('links to synthetic headings remain red while real headings stay resolvable', t => {
+  const root = fixture(t);
+  fs.writeFileSync(path.join(root, 'README.md'), '[fake](guide.md#synthetic)\n[real](guide.md#actual)\n');
+  fs.writeFileSync(path.join(root, 'guide.md'), '<script>ignored</script># synthetic\n# Actual\n<a id="explicit"></a>\n');
+  const result = validateDocumentationLinks({ repoRoot: root, files: ['README.md'] });
+  assert.deepEqual(result.errors, ['README.md -> guide.md#synthetic: missing heading or HTML anchor']);
 });
 
 test('owned documentation does not revive the retired CI billing-block narrative', () => {
