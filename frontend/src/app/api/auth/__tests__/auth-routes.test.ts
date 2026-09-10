@@ -35,6 +35,11 @@ vi.mock('axios', () => ({
 
 const mockedPost = vi.mocked(axios.post);
 const LOGIN_ERROR_COPY = '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.';
+const authorization = { groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
+
+function tokenEnvelope(data: Record<string, unknown>) {
+  return successEnvelope({ ...authorization, ...data });
+}
 
 function successEnvelope<T>(data: T) {
   return {
@@ -119,7 +124,7 @@ async function issueSessionThroughRoute(
   const token = tokenWithExp(inOneHour());
   mockedPost.mockResolvedValue({
     status: 200,
-    data: successEnvelope(routeName === 'login'
+    data: tokenEnvelope(routeName === 'login'
       ? { accessToken: token, role: 'ROLE_USER' }
       : { accessToken: token }),
     headers: {},
@@ -233,7 +238,7 @@ describe('POST /api/auth/login', () => {
     const token = tokenWithExp(inOneHour());
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: token, role: 'ROLE_ADMIN' }),
+      data: tokenEnvelope({ accessToken: token, role: 'ROLE_ADMIN' }),
       headers: {},
     });
 
@@ -241,7 +246,7 @@ describe('POST /api/auth/login', () => {
 
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body).toEqual({ success: true, data: { role: 'ROLE_ADMIN' } });
+    expect(body).toEqual({ success: true, data: { role: 'ROLE_ADMIN', ...authorization } });
     // ② 토큰이 바디로 새면 HttpOnly 가 무의미해진다.
     expect(JSON.stringify(body)).not.toContain(token);
 
@@ -256,7 +261,7 @@ describe('POST /api/auth/login', () => {
     const token = tokenWithExp(inOneHour());
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: token, role: 'ROLE_USER' }),
+      data: tokenEnvelope({ accessToken: token, role: 'ROLE_USER' }),
       headers: {},
     });
 
@@ -275,7 +280,7 @@ describe('POST /api/auth/login', () => {
     const token = tokenWithExp(exp);
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: token, role: 'ROLE_USER' }),
+      data: tokenEnvelope({ accessToken: token, role: 'ROLE_USER' }),
       headers: {},
     });
 
@@ -290,7 +295,7 @@ describe('POST /api/auth/login', () => {
   it('백엔드가 준 Set-Cookie(refreshToken)를 그대로 포워딩한다', async () => {
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: tokenWithExp(inOneHour()), role: 'ROLE_USER' }),
+      data: tokenEnvelope({ accessToken: tokenWithExp(inOneHour()), role: 'ROLE_USER' }),
       headers: { 'set-cookie': ['refreshToken=rt-value; Path=/; HttpOnly'] },
     });
 
@@ -352,7 +357,7 @@ describe('POST /api/auth/login', () => {
   it('백엔드가 success=true 인데 토큰을 주지 않으면 쿠키를 심지 않는다', async () => {
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ role: 'ROLE_USER' }),
+      data: tokenEnvelope({ role: 'ROLE_USER' }),
       headers: {},
     });
 
@@ -382,7 +387,7 @@ describe('POST /api/auth/login', () => {
     const token = tokenWithExp(inOneHour());
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: token, role: 7 }),
+      data: tokenEnvelope({ accessToken: token, role: 7 }),
       headers: {},
     });
 
@@ -399,14 +404,14 @@ describe('POST /api/auth/reissue', () => {
     const token = tokenWithExp(inOneHour());
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: token }),
+      data: tokenEnvelope({ accessToken: token }),
       headers: {},
     });
 
     const response = await reissue(postRequest('/api/auth/reissue', undefined, { cookie: 'refreshToken=rt' }));
 
     const body = await response.json();
-    expect(body).toEqual({ success: true, data: {} });
+    expect(body).toEqual({ success: true, data: authorization });
     expect(JSON.stringify(body)).not.toContain(token);
     expect(setCookie(response, 'accessToken')?.value).toBe(token);
   });
@@ -414,7 +419,7 @@ describe('POST /api/auth/reissue', () => {
   it('재발급 쿠키 수명도 새 토큰 exp 를 따른다', async () => {
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: tokenWithExp(inOneHour()) }),
+      data: tokenEnvelope({ accessToken: tokenWithExp(inOneHour()) }),
       headers: {},
     });
 
@@ -428,7 +433,7 @@ describe('POST /api/auth/reissue', () => {
   it('요청의 쿠키 헤더를 백엔드로 포워딩한다 (refreshToken 이 거기 있다)', async () => {
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: tokenWithExp(inOneHour()) }),
+      data: tokenEnvelope({ accessToken: tokenWithExp(inOneHour()) }),
       headers: {},
     });
 
@@ -501,7 +506,7 @@ describe('POST /api/auth/reissue', () => {
     const token = tokenWithExp(inOneHour());
     mockedPost.mockResolvedValue({
       status: 200,
-      data: successEnvelope({ accessToken: token, role: 7 }),
+      data: tokenEnvelope({ accessToken: token, role: 7 }),
       headers: {},
     });
 

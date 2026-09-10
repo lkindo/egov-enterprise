@@ -64,12 +64,13 @@ public class SecurityConfig {
                                                 .requestMatchers("/css/**", "/js/**", "/images/**", "/resource/**",
                                                                 "/static/**")
                                                 .permitAll()
-                                                .requestMatchers("/uat/uia/**", "/auth/**", "/api/v1/auth/**").permitAll()
+                                                .requestMatchers("/api/v1/**", "/actuator/**").access(
+                                                        new nuri.business.security.authorization.OperationAuthorizationManager(
+                                                                new nuri.business.security.authorization.PermissionPolicy()))
+                                                .requestMatchers("/uat/uia/**", "/auth/**").permitAll()
                                                 .requestMatchers("/sym/mms/**").permitAll()      
                                                 .requestMatchers("/connection").permitAll()      
                                                 .requestMatchers("/WEB-INF/**", "/upload/**").permitAll()
-                                                .requestMatchers("/api/v1/public/**").permitAll()
-                                                .requestMatchers("/api/v1/menus/**").permitAll()
                                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(new CredentialRequestTargetFilter(),

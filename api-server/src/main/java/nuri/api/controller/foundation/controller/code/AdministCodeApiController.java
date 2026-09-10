@@ -30,6 +30,7 @@ public class AdministCodeApiController {
 
     @Operation(summary = "행정코드 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.AdministCodeApiController#getAdministCodeList')")
     public ResponseEntity<ApiResponse<PageResponse<AdministCodeDto>>> getAdministCodeList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 
@@ -41,30 +42,31 @@ public class AdministCodeApiController {
 
     @Operation(summary = "행정코드 상세 조회")
     @GetMapping("/{code}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.AdministCodeApiController#getAdministCodeDetail')")
     public ResponseEntity<ApiResponse<AdministCodeDto>> getAdministCodeDetail(@PathVariable String code) {
         AdministCodeDto dto = administCodeService.getAdministCodeDetail(code);
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
     @Operation(summary = "행정코드 등록")
-    @AdminOrSystem
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.AdministCodeApiController#createAdministCode')")
     public ResponseEntity<ApiResponse<Void>> createAdministCode(@Valid @RequestBody AdministCodeDto dto) {
         administCodeService.createAdministCode(dto, currentLoginId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "행정코드 수정")
-    @AdminOrSystem
     @PutMapping("/{code}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.AdministCodeApiController#updateAdministCode')")
     public ResponseEntity<ApiResponse<Void>> updateAdministCode(@PathVariable String code, @Valid @RequestBody AdministCodeDto dto) {
         administCodeService.updateAdministCode(code, dto, currentLoginId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "행정코드 삭제", description = "하위 행정구역 코드가 있으면 409 로 거부합니다.")
-    @AdminOrSystem
     @DeleteMapping("/{code}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.AdministCodeApiController#deleteAdministCode')")
     public ResponseEntity<ApiResponse<Void>> deleteAdministCode(@PathVariable String code) {
         administCodeService.deleteAdministCode(code);
         return ResponseEntity.ok(ApiResponse.success(null));

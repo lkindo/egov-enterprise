@@ -2,18 +2,19 @@ package nuri.business.service.menu;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.business.domain.common.BaseSearchDto;
-import nuri.business.domain.auth.MenuAuthority;
 import nuri.business.domain.auth.MenuAuthorityProjection;
-import nuri.business.domain.auth.MenuAuthorityRepository;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
+import nuri.business.domain.menu.NavigationGrantRepository;
 import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuCreateDto;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.program.dto.ProgramDto;
 import nuri.business.security.util.SecurityUtil;
+import nuri.business.service.auth.AuthorizationAdministrationService;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.security.service.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.cache.annotation.CacheEvict;
@@ -31,11 +32,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.GrantedAuthority;
 import jakarta.annotation.PostConstruct;
 
 /**
@@ -50,7 +51,8 @@ public class MenuService {
 
     private final MenuRepository menuRepository;
     private final ProgramRepository programRepository;
-    private final MenuAuthorityRepository menuAuthorityRepository;
+    private final NavigationGrantRepository navigationGrantRepository;
+    private final AuthorizationAdministrationService authorizationAdministrationService;
     private final nuri.business.service.program.dto.ProgramMapper programMapper;
 
     @PostConstruct
@@ -78,55 +80,36 @@ public class MenuService {
     }
 
     /**
-     * 권한별 메뉴 계층 구조 조회 (캐싱 적용)
+     * 현재 그룹의 NAVIGATION 권한으로 메뉴 계층을 조회한다. 권한 회수를 숨기는 장기 캐시는 두지 않는다.
      */
-    @Cacheable(value = "menuHierarchy", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication()?.authorities ?: 'ROLE_ANONYMOUS'")
     public List<MenuDto> getMenuHierarchy() {
         try {
-            log.debug("getMenuHierarchy started (Cache Miss)");
+            log.debug("getMenuHierarchy started");
 
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            List<String> roles = new ArrayList<>();
-            if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
-                for (GrantedAuthority authority : auth.getAuthorities()) {
-                    roles.add(authority.getAuthority());
-                }
-            } else {
-                roles.add("ROLE_ANONYMOUS");
-            }
-
-            return buildMenuTree(null, roles);
+            return buildMenuTree(null, currentGroups(auth));
         } catch (Exception e) {
             log.error("getMenuHierarchy failed", e);
             throw e;
         }
     }
 
-    private List<MenuDto> buildMenuTree(Long rootMenuNo, List<String> roles) {
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> menuWithAuthResults = menuRepository.findAllWithAuthorities();
-
-        Map<Long, Menu> menuMap = new LinkedHashMap<>();
-        Map<Long, List<MenuAuthority>> authorityMap = new HashMap<>();
-
-        for (nuri.business.service.menu.dto.MenuWithAuthDto result : menuWithAuthResults) {
-            Menu menu = result.menu();
-            MenuAuthority authority = result.menuAuthority();
-
-            menuMap.put(menu.getMenuSn(), menu);
-
-            if (authority != null) {
-                authorityMap.computeIfAbsent(menu.getMenuSn(), k -> new ArrayList<>())
-                        .add(authority);
-            }
+    private static List<String> currentGroups(Authentication auth) {
+        if (auth == null || auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
+            return List.of("ROLE_ANONYMOUS");
         }
+        if (auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails user
+                && user.isEnabled() && user.isAccountNonLocked()) {
+            return user.getGroups();
+        }
+        // 임의 GrantedAuthority나 단일 role 문자열을 그룹 배정으로 추정하지 않는다.
+        return List.of();
+    }
 
-        List<Menu> filteredMenus = menuMap.values().stream()
-                .filter(m -> {
-                    boolean isAuthorized = authorityMap.getOrDefault(m.getMenuSn(), new ArrayList<>()).stream()
-                            .anyMatch(ma -> roles.contains(ma.getId().getAuthrtCd()));
-                    boolean isAdmin = roles.contains(nuri.business.security.AuthorityConstants.AUTHORITY_ADMIN);
-                    return (isAuthorized || isAdmin) && "Y".equals(m.getUseYn());
-                })
+    private List<MenuDto> buildMenuTree(Long rootMenuNo, List<String> groups) {
+        Set<Long> allowedMenuIds = navigationGrantRepository.findAllowedMenuIds(groups);
+        List<Menu> filteredMenus = menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc().stream()
+                .filter(m -> allowedMenuIds.contains(m.getMenuSn()) && "Y".equals(m.getUseYn()))
                 .collect(Collectors.toList());
 
         List<Program> programs = programRepository.findAll();
@@ -138,7 +121,7 @@ public class MenuService {
         List<MenuDto> rootNodes = new ArrayList<>();
 
         // Pass 1: 모든 노드의 DTO를 먼저 만들어 dtoMap을 완성한다.
-        // findAllWithAuthorities는 ORDER BY upMenuSn ASC (Postgres 기본 NULLS LAST)라 루트(upMenuSn=null)가 맨 뒤에 온다.
+        // 메뉴 조회는 ORDER BY upMenuSn ASC (Postgres 기본 NULLS LAST)라 루트(upMenuSn=null)가 맨 뒤에 온다.
         // 단일 패스로 조립하면 자식이 부모보다 먼저 처리돼 dtoMap.containsKey(부모)=false로 자식이 유실된다(→ getSubMenus=0, 사이드바 파손).
         // 2-pass로 조립 순서에 비의존하게 만든다.
         for (Menu menu : filteredMenus) {
@@ -243,7 +226,7 @@ public class MenuService {
         Pageable pageable = searchVO.toPageable(Sort.by("id.authrtCd").ascending());
         String searchKeyword = searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "";
 
-        return menuAuthorityRepository
+        return navigationGrantRepository
                 .selectMenuCreatManagList(searchKeyword, Objects.requireNonNull(pageable)).stream()
                 .map(proj -> MenuCreateDto.builder()
                         .authrtCd(proj.getAuthrtCd())
@@ -257,13 +240,13 @@ public class MenuService {
 
     public int selectMenuCreatManagTotCnt(@NonNull BaseSearchDto searchVO) {
         String searchKeyword = searchVO.getSearchKeyword() != null ? searchVO.getSearchKeyword() : "";
-        return (int) menuAuthorityRepository.selectMenuCreatManagList(searchKeyword, PageRequest.of(0, 1))
+        return (int) navigationGrantRepository.selectMenuCreatManagList(searchKeyword, PageRequest.of(0, 1))
                 .getTotalElements();
     }
 
     public List<MenuCreateDto> selectMenuCreatList(@NonNull MenuCreateDto vo) {
         log.debug(">>> [MenuService] selectMenuCreatList requested");
-        List<MenuAuthorityProjection> projections = menuAuthorityRepository.selectMenuCreatList(vo.getAuthrtCd());
+        List<MenuAuthorityProjection> projections = navigationGrantRepository.selectMenuCreatList(vo.getAuthrtCd());
         log.info(">>> [MenuService] selectMenuCreatList found {} projections", projections.size());
         
         return projections.stream()
@@ -282,37 +265,28 @@ public class MenuService {
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void insertMenuCreatList(String authorCode, String checkedMenuNos) {
-        SecurityUtil.assertAdmin();
-        menuAuthorityRepository.deleteByIdAuthrtCd(Objects.requireNonNull(authorCode));
-
-        if (checkedMenuNos != null && !checkedMenuNos.isEmpty()) {
-            String[] menuNos = checkedMenuNos.split(",");
-            List<MenuAuthority> authorities = new ArrayList<>();
-            for (String menuNo : menuNos) {
-                if (menuNo == null || menuNo.isEmpty())
-                    continue;
-                long mNo = Long.parseLong(menuNo);
-                MenuAuthority ma = MenuAuthority.builder()
-                        .id(MenuAuthority.MenuAuthorityId.builder()
-                                .authrtCd(authorCode)
-                                .menuSn(mNo)
-                                .build())
-                        .mapngCrtId(authorCode)
-                        .build();
-                authorities.add(ma);
-            }
-            if (!authorities.isEmpty()) {
-                menuAuthorityRepository.saveAll(Objects.requireNonNull(authorities));
-            }
-        }
+        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                "권한 전체 목록과 버전을 다시 조회한 뒤 통합 권한 화면에서 저장해 주세요.");
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    public void insertMenuCreatList(String authorCode, String checkedMenuNos, String expectedVersion) {
+        SecurityUtil.assertPermission("AUTHRT_GRANT");
+        if (expectedVersion == null || expectedVersion.isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "권한 전체 목록의 버전이 필요합니다.");
+        }
+        authorizationAdministrationService.replaceNavigationGrants(
+                Objects.requireNonNull(authorCode), parseMenuIds(checkedMenuNos), expectedVersion);
+    }
+
+    @Transactional
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("MENU_CREATE");
         // FE 가 "연결 프로그램 없음"을 빈 문자열로 보내므로 null 로 정규화한다.
         String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
 
@@ -332,14 +306,15 @@ public class MenuService {
         // 감사 필드: crtDt/mdfcnDt 는 auditing 이 채움, 작성자는 "webmaster" 명시 유지(하위 호환)
         menu.setFrstRgtrId("webmaster");
         menu.setLastMdfrId("webmaster");
-        menuRepository.save(Objects.requireNonNull(menu));
+        Menu saved = menuRepository.save(Objects.requireNonNull(menu));
+        authorizationAdministrationService.grantNewMenuToCompatibilityAdmin(saved.getMenuSn());
     }
 
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void updateMenuManage(@NonNull MenuDto vo) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("MENU_UPDATE");
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
         // Menu.update 는 null-safe 병합이다 — 전달되지 않은(null) 값은 기존 값을 유지하고, 빈 문자열이면 비운다.
@@ -360,9 +335,9 @@ public class MenuService {
      * 정렬 저장은 상위메뉴/순서만 건드리도록 전용 경로로 분리한다.
      */
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void updateMenuOrders(@NonNull List<MenuDto> menuList) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("MENU_UPDATE");
         for (MenuDto vo : menuList) {
             Long menuNo = vo.getMenuNo() != null ? vo.getMenuNo() : vo.getId();
             if (menuNo == null) {
@@ -400,33 +375,27 @@ public class MenuService {
 
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void deleteMenuManage(@NonNull MenuDto vo) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("MENU_DELETE");
         Long menuNo = Objects.requireNonNull(vo.getMenuNo());
+        lockExistingMenus(List.of(menuNo));
         // [V2_13 결속] 자식 메뉴 존재 시 명시적 도메인 예외 — 무음 고아화(구버그)도, FK 409(불친절)도 아닌 사전 안내
         if (menuRepository.countByUpMenuSn(menuNo) > 0) {
             throw new BusinessException("하위 메뉴가 있는 메뉴는 삭제할 수 없습니다. 하위 메뉴를 먼저 삭제하세요.",
                     CommonErrorCode.INVALID_INPUT_VALUE);
         }
-        // [V2_12 결속] fk_tb_menu_crt_dtl_tb_menu_info(NO ACTION) — 메뉴-권한 매핑을 먼저 정리해야 삭제 가능
-        menuAuthorityRepository.deleteByIdMenuSn(menuNo);
+        authorizationAdministrationService.removeNavigationGrantsForMenus(List.of(menuNo));
         menuRepository.deleteById(menuNo);
     }
 
     @Transactional
-    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void deleteMenuManageList(String checkedMenuNoForDel) {
-        if (checkedMenuNoForDel == null || checkedMenuNoForDel.isEmpty())
-            return;
-        String[] delMenuNos = checkedMenuNoForDel.split(",");
-        List<Long> ids = new ArrayList<>();
-        for (String menuNo : delMenuNos) {
-            if (menuNo == null || menuNo.isEmpty())
-                continue;
-            ids.add(Long.parseLong(menuNo));
-        }
+        SecurityUtil.assertPermission("MENU_DELETE");
+        List<Long> ids = parseMenuIds(checkedMenuNoForDel);
         if (!ids.isEmpty()) {
+            lockExistingMenus(ids);
             // [V2_13 결속] 삭제 집합 밖의 자식을 가진 메뉴가 있으면 차단 (서브트리 일괄 삭제는 허용 —
             // fk_tb_menu_info_tb_menu_info_up 은 DEFERRABLE INITIALLY DEFERRED 라 커밋 시점에 일괄 검증됨)
             for (Long id : ids) {
@@ -435,9 +404,31 @@ public class MenuService {
                             CommonErrorCode.INVALID_INPUT_VALUE);
                 }
             }
-            // [V2_12 결속] 메뉴-권한 매핑 선정리 (위 deleteMenuManage 와 동일 사유)
-            menuAuthorityRepository.deleteByIdMenuSnIn(ids);
+            authorizationAdministrationService.removeNavigationGrantsForMenus(ids);
             menuRepository.deleteAllById(Objects.requireNonNull(ids));
+        }
+    }
+
+    private void lockExistingMenus(List<Long> ids) {
+        if (menuRepository.findForUpdateByMenuSnIn(ids).size() != ids.size()) {
+            throw new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND, "삭제할 메뉴를 다시 조회해 주세요.");
+        }
+    }
+
+    private static List<Long> parseMenuIds(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return List.of();
+        }
+        try {
+            List<Long> ids = java.util.Arrays.stream(csv.split(","))
+                    .map(String::trim).filter(value -> !value.isEmpty())
+                    .map(Long::valueOf).distinct().sorted().toList();
+            if (ids.stream().anyMatch(id -> id < 1)) {
+                throw new NumberFormatException("Menu identifiers must be positive");
+            }
+            return ids;
+        } catch (NumberFormatException invalidId) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "올바른 메뉴 번호를 입력해 주세요.");
         }
     }
 
@@ -487,6 +478,7 @@ public class MenuService {
 
     public List<MenuDto> getSubMenus(Long menuNo) {
         List<MenuDto> fullHierarchy = getMenuHierarchy();
+        if (menuNo == null || menuNo <= 0) return fullHierarchy;
         return findSubTree(fullHierarchy, menuNo);
     }
 

@@ -59,7 +59,7 @@ public class WorkReportService extends BaseAbstractService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // 소유권 검증(IDOR 방어): 작성자(frstRgtrId=loginId) 본인 또는 관리자만 수정 가능.
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "WORK_RPT_UPDATE_ALL");
 
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
@@ -76,7 +76,7 @@ public class WorkReportService extends BaseAbstractService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // 소유권 검증(IDOR 방어): 작성자 본인 또는 관리자만 삭제 가능.
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "WORK_RPT_DELETE_ALL");
 
         workReportRepository.delete(entity);
     }
@@ -98,7 +98,7 @@ public class WorkReportService extends BaseAbstractService {
      */
     public Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchWrd, @NonNull Pageable pageable) {
         String scopedId = searchId;
-        if (!SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN) && !SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM)) {
+        if (!SecurityUtil.hasPermission("WORK_RPT_READ_ALL")) {
             scopedId = SecurityUtil.getCurrentLoginId().orElse(null);
             if (scopedId == null) {
                 // 인증 주체를 알 수 없으면 열지 않는다(무인증 전량 조회 방지).
@@ -146,7 +146,7 @@ public class WorkReportService extends BaseAbstractService {
     public WorkReportDto getWorkReport(@NonNull Long rptpSn) {
         return workReportRepository.findById(rptpSn)
                 .map(entity -> {
-                    SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+                    SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "WORK_RPT_READ_ALL");
                     return toDto(entity, lookupName(resolveAuthorNames(List.of(entity)), entity.getUserId()));
                 })
                 .orElseThrow(() -> new BusinessException(

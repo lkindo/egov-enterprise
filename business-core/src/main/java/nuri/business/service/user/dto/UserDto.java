@@ -2,6 +2,7 @@ package nuri.business.service.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import org.springframework.lang.NonNull;
 import jakarta.validation.constraints.NotBlank;
@@ -15,7 +16,7 @@ import nuri.business.domain.auth.UserAuthority;
 /**
  * 사용자 관리 DTO (Record 버전)
  */
-@Builder
+@Builder(toBuilder = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record UserDto(
     @NonNull
@@ -137,8 +138,20 @@ public record UserDto(
     
     String lckYn,
 
-    LocalDateTime crtDt
+    LocalDateTime crtDt,
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, requiredMode = Schema.RequiredMode.REQUIRED) java.util.List<String> groups,
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, requiredMode = Schema.RequiredMode.REQUIRED) java.util.List<String> permissions,
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, requiredMode = Schema.RequiredMode.REQUIRED) String authorizationVersion
 ) {
+    public UserDto withAuthorization(nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot snapshot) {
+        return toBuilder().groups(snapshot.groups()).permissions(snapshot.permissions())
+                .authorizationVersion(snapshot.authorizationVersion())
+                .role(snapshot.groups().stream().findFirst().orElse(null)).build();
+    }
+
     public UserDto(
         String userId,
         String userNm,
@@ -181,7 +194,8 @@ public record UserDto(
             null, // userSe
             null, // userSttsCd
             null, // lckYn
-            crtDt
+            crtDt,
+            java.util.List.of(), java.util.List.of(), null
         );
     }
 
@@ -223,7 +237,7 @@ public record UserDto(
     public static UserDto from(User user, UserAuthority authority) {
         if (user == null) return null;
         UserDto dto = from(user);
-        String roleVal = authority != null ? authority.getAuthrtId() : (user.getRole() != null ? "ROLE_" + user.getRole().name() : "ROLE_USER");
+        String roleVal = authority != null ? authority.getAuthrtId() : null;
         String userSeVal = authority != null ? authority.getMbrTypeCd() : "USR";
 
         return UserDto.builder()

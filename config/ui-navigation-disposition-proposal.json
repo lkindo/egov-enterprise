@@ -5,7 +5,7 @@
  "schemaRef": "config/ui-navigation-disposition.schema.json",
  "manifestRef": {
   "path": "config/ui-route-capabilities.json",
-  "sha256": "ad9d382e26068ab1d0ce7775eed60def0e5b129c14a5cd8b36487d9d7a21504b"
+  "sha256": "76f30c890a2305a6de6b917ad65587c57c7599b6119d9ac538faddfcc5d116fe"
  },
  "provisionalDirection": {
   "status": "accepted-provisional-direction",
@@ -1067,7 +1067,7 @@
   {
    "route": "/admin/security/role",
    "reviewState": "proposed",
-   "disposition": "retain-canonical",
+   "disposition": "consolidate-to-canonical",
    "authorizationReview": "unverified",
    "privacyReview": "unverified",
    "effectiveMenuExposureReview": "unverified",

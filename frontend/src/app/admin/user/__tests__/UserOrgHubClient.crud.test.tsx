@@ -23,7 +23,6 @@ import { userAdminService } from '@/services/foundation/system/UserAdminService'
 import {
   bulkDeleteUsersAction,
   bulkMoveUserDeptAction,
-  bulkUpdateUserRoleAction,
   bulkUpdateUserStatusAction,
 } from '@/app/actions/userActions';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
@@ -787,49 +786,6 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(screen.getByText('부서 일괄 이동')).toBeVisible();
     expect(screen.getByRole('radio', { name: /개발부/ })).toBeChecked();
     expect(screen.getByRole('button', { name: '부서 이동 실행' })).toBeEnabled();
-  });
-
-  it('handleBulkRoleUpdate 권한 일괄 변경은 같은 tick 중복 실행을 막고 pending·실패 상태를 안내한다', async () => {
-    const pending = deferred<{ success: boolean; message: string }>();
-    vi.mocked(bulkUpdateUserRoleAction).mockReturnValueOnce(pending.promise);
-    renderHub();
-    await screen.findByText('row-user1');
-
-    fireEvent.click(screen.getByText('bulk-권한 변경'));
-    fireEvent.click(await screen.findByRole('radio', { name: /시스템 관리자/ }));
-    const submit = screen.getByRole('button', { name: '권한 변경 실행' });
-    act(() => {
-      submit.click();
-      submit.click();
-    });
-
-    await waitFor(() => expect(bulkUpdateUserRoleAction).toHaveBeenCalledTimes(1));
-    expect(bulkUpdateUserRoleAction).toHaveBeenCalledWith(['user1'], 'ADMIN');
-    const busy = screen.getByRole('button', { name: '권한 변경 실행 중…' });
-    expect(busy).toBeDisabled();
-    expect(busy).toHaveAttribute('aria-busy', 'true');
-
-    await act(async () => pending.reject(new Error('권한 변경 API 장애')));
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('권한 변경 중 오류 발생', 'error'));
-    expect(screen.getByText('사용자 권한 일괄 변경')).toBeVisible();
-    expect(screen.getByRole('radio', { name: /시스템 관리자/ })).toBeChecked();
-    expect(screen.getByText('홍길동')).toBeVisible();
-    const restored = screen.getByRole('button', { name: '권한 변경 실행' });
-    expect(restored).toBeEnabled();
-    expect(restored).not.toHaveAttribute('aria-busy');
-  });
-
-  it('권한 일괄 변경 성공을 안내하고 모달을 닫는다', async () => {
-    vi.mocked(bulkUpdateUserRoleAction).mockResolvedValueOnce({ success: true, message: '권한을 변경했습니다.' });
-    renderHub();
-    await screen.findByText('row-user1');
-
-    fireEvent.click(screen.getByText('bulk-권한 변경'));
-    fireEvent.click(await screen.findByRole('radio', { name: /시스템 관리자/ }));
-    fireEvent.click(screen.getByRole('button', { name: '권한 변경 실행' }));
-
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('권한을 변경했습니다.', 'success'));
-    expect(screen.queryByText('사용자 권한 일괄 변경')).not.toBeInTheDocument();
   });
 
   /**

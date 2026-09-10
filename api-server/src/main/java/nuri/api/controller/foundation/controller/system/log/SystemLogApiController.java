@@ -32,6 +32,7 @@ public class SystemLogApiController {
 
     @Operation(summary = "시스템 로그 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.SystemLogApiController#getSysLogList')")
     public ResponseEntity<ApiResponse<PageResponse<SysLogDto>>> getSysLogList(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
         
@@ -60,8 +61,8 @@ public class SystemLogApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = LogExcelExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @AdminOrSystem
     @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.SystemLogApiController#exportSystemLogs')")
     public ResponseEntity<StreamingResponseBody> exportSystemLogs(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
@@ -96,6 +97,7 @@ public class SystemLogApiController {
 
     @Operation(summary = "시스템 로그 상세 조회")
     @GetMapping("/{sysLogSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.SystemLogApiController#getSysLog')")
     public ResponseEntity<ApiResponse<SysLogDto>> getSysLog(
             @PathVariable("sysLogSn") Long sysLogSn) throws Exception {
         SysLogDto result = logManageService.selectSysLogDetail(sysLogSn);

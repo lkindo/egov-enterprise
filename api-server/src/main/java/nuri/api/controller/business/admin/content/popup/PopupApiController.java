@@ -27,6 +27,7 @@ public class PopupApiController {
 
     @Operation(summary = "팝업 목록 조회", description = "관리자가 팝업 목록을 페이지네이션하여 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#getPopups')")
     public ResponseEntity<ApiResponse<PageResponse<PopupDto>>> getPopups(
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -36,6 +37,7 @@ public class PopupApiController {
 
     @Operation(summary = "팝업 상세 조회", description = "특정 팝업의 상세 정보를 조회합니다.")
     @GetMapping("/{popupSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#getPopup')")
     public ResponseEntity<ApiResponse<PopupDto>> getPopup(
             @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn) {
         return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupSn)));
@@ -43,6 +45,7 @@ public class PopupApiController {
 
     @Operation(summary = "팝업 등록", description = "새로운 팝업을 등록합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#createPopup')")
     public ResponseEntity<ApiResponse<Long>> createPopup(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody PopupDto popupDto) {
@@ -51,6 +54,7 @@ public class PopupApiController {
 
     @Operation(summary = "팝업 정보 수정", description = "기존 팝업의 정보를 수정합니다.")
     @PutMapping("/{popupSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#updatePopup')")
     public ResponseEntity<ApiResponse<Void>> updatePopup(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn,
@@ -61,6 +65,7 @@ public class PopupApiController {
 
     @Operation(summary = "팝업 삭제", description = "등록된 팝업을 삭제합니다.")
     @DeleteMapping("/{popupSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#deletePopup')")
     public ResponseEntity<ApiResponse<Void>> deletePopup(
             @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn) {
         popupService.deletePopup(popupSn);

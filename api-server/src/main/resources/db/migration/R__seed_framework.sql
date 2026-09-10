@@ -1,8 +1,7 @@
--- Framework 필수 시드 데이터 (Repeatable — 멱등)
--- 시스템 기본 권한/역할 정의.
--- V2_85 이후 tb_user_authrt_map.authrt_id 는 tb_authrt_info.authrt_cd 를 참조한다.
--- reusable-base 의 schema-only baseline 에도 이 FK가 남으므로, 아래 webmaster 매핑보다
--- 부모 권한을 먼저 보증해야 신규 base 에 repeatable 을 단독 적용할 수 있다.
+-- Framework 필수 초기 데이터. 권한 배정은 이번 실행에서 새로 만든 계정에만 적용한다.
+-- 그룹 부모 → 사용자 → 명시 membership + 같은 트랜잭션의 감사 순서이며, 기존 회원의
+-- 회수된 그룹은 재부여하지 않는다. Expand 창에서는 새로 생성한 계정만 구·신 표에
+-- 같은 값으로 기록하고 원본 스냅샷을 남겨 Contract의 정확 비교를 유지한다.
 INSERT INTO tb_authrt_info (authrt_cd, authrt_nm, crt_dt)
 VALUES ('ROLE_ADMIN', '관리자 권한', CURRENT_TIMESTAMP)
 ON CONFLICT (authrt_cd) DO NOTHING;
@@ -11,14 +10,15 @@ INSERT INTO tb_authrt_info (authrt_cd, authrt_nm, crt_dt)
 VALUES ('ROLE_USER', '사용자 권한', CURRENT_TIMESTAMP)
 ON CONFLICT (authrt_cd) DO NOTHING;
 
--- ROLE_ADMIN, ROLE_USER 기본 역할
-INSERT INTO tb_role_info (role_id, role_nm, role_expln, role_crt_ymd)
-VALUES ('ROLE_ADMIN', '시스템 관리자', '시스템 전반의 모든 권한을 가진 최고 관리자', CURRENT_DATE)
-ON CONFLICT (role_id) DO NOTHING;
-
-INSERT INTO tb_role_info (role_id, role_nm, role_expln, role_crt_ymd)
-VALUES ('ROLE_USER', '일반 사용자', '비즈니스 서비스 접근 권한을 가진 일반 임직원', CURRENT_DATE)
-ON CONFLICT (role_id) DO NOTHING;
+-- 구 role 마스터는 이전 버전 target/Expand 창에만 존재한다.
+DO $$ BEGIN
+    IF to_regclass('public.tb_role_info') IS NOT NULL THEN
+        INSERT INTO tb_role_info(role_id,role_nm,role_expln,role_crt_ymd) VALUES
+            ('ROLE_ADMIN','시스템 관리자','시스템 전반의 모든 권한을 가진 최고 관리자',CURRENT_DATE),
+            ('ROLE_USER','일반 사용자','비즈니스 서비스 접근 권한을 가진 일반 임직원',CURRENT_DATE)
+        ON CONFLICT (role_id) DO NOTHING;
+    END IF;
+END $$;
 
 -- 기본 어드민 사용자 생성 (webmaster / USRCNFRM_00000000001)
 --
@@ -36,18 +36,50 @@ ON CONFLICT (role_id) DO NOTHING;
 --   운영 최초 로그인: ADMIN_INITIAL_PASSWORD 환경변수를 주면 기동 시 1회 설정된다
 --   (AdminPasswordProvisioner). 미설정이면 이 계정은 로그인 불가 상태로 남는다.
 --   dev/local/e2e 의 알려진 비밀번호는 classpath:db/seed-dev 에만 존재하며 운영 locations 에 없다.
+DO $$
+DECLARE
+    created_user integer;
+    legacy_row jsonb;
+    target_row jsonb;
+BEGIN
 INSERT INTO tb_user_info
   (esntl_id, user_id, user_nm, user_type_cd, pswd, user_stts_cd, sbscrb_ymd)
 VALUES
   ('USRCNFRM_00000000001', 'webmaster', '최고관리자', 'EMP', '{disabled}NO-LOGIN-PASSWORD-NOT-PROVISIONED', 'P', to_char(CURRENT_DATE, 'YYYYMMDD'))
 ON CONFLICT (esntl_id) DO NOTHING;
+    GET DIAGNOSTICS created_user = ROW_COUNT;
 
--- 최고관리자 역할 매핑 (webmaster -> ROLE_ADMIN)
-INSERT INTO tb_user_authrt_map
-  (scrty_dcsn_trgt_id, authrt_id, mbr_type_cd, crt_dt)
-VALUES
-  ('USRCNFRM_00000000001', 'ROLE_ADMIN', 'USR', CURRENT_TIMESTAMP)
-ON CONFLICT (scrty_dcsn_trgt_id) DO NOTHING;
+    IF to_regclass('public.tb_authrt_user_map') IS NULL THEN
+        -- 과거 Flyway target 검증은 당시 단일 배정 모델을 유지한다.
+        INSERT INTO tb_user_authrt_map(scrty_dcsn_trgt_id,authrt_id,mbr_type_cd,crt_dt)
+        VALUES ('USRCNFRM_00000000001','ROLE_ADMIN','USR',CURRENT_TIMESTAMP)
+        ON CONFLICT (scrty_dcsn_trgt_id) DO NOTHING;
+    ELSIF created_user > 0 THEN
+        -- 삭제/회수 이력이 있는 계정은 repeatable 재실행으로 권한을 되살리지 않는다.
+        IF EXISTS (SELECT 1 FROM tb_authrt_chg_hstry WHERE scrty_dcsn_trgt_id='USRCNFRM_00000000001') THEN
+            RETURN;
+        END IF;
+        INSERT INTO tb_authrt_user_map
+            (scrty_dcsn_trgt_id,authrt_cd,mbr_type_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)
+        VALUES ('USRCNFRM_00000000001','ROLE_ADMIN','USR','SYSTEM',CURRENT_TIMESTAMP,'SYSTEM',CURRENT_TIMESTAMP);
+        SELECT to_jsonb(target) INTO target_row FROM tb_authrt_user_map target
+         WHERE scrty_dcsn_trgt_id='USRCNFRM_00000000001' AND authrt_cd='ROLE_ADMIN';
+        IF to_regclass('public.tb_user_authrt_map') IS NOT NULL THEN
+            INSERT INTO tb_user_authrt_map
+                (scrty_dcsn_trgt_id,authrt_id,mbr_type_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)
+            VALUES ('USRCNFRM_00000000001','ROLE_ADMIN','USR','SYSTEM',CURRENT_TIMESTAMP,'SYSTEM',CURRENT_TIMESTAMP);
+            SELECT to_jsonb(legacy) INTO legacy_row FROM tb_user_authrt_map legacy
+             WHERE scrty_dcsn_trgt_id='USRCNFRM_00000000001';
+        END IF;
+        INSERT INTO tb_authrt_chg_hstry
+            (dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,scrty_dcsn_trgt_id,
+             chg_artcl_nm,chg_bfr_cn,chg_aftr_cn,chg_rsn,frst_rgtr_id,crt_dt)
+        VALUES ('bootstrap:framework','bootstrap:framework','USER_GROUP','MIGRATE','ROLE_ADMIN','USRCNFRM_00000000001',
+            CASE WHEN legacy_row IS NULL THEN 'membership' ELSE 'legacy_membership' END,
+            legacy_row::text,target_row::text,'이번 실행에서 새로 만든 bootstrap 계정의 명시 배정; 기존 배정은 재부여하지 않음',
+            'SYSTEM',CURRENT_TIMESTAMP);
+    END IF;
+END $$;
 
 -- 공통코드 분류 부모 시드 (참조 무결성 완결)
 -- 근거: V2_2 가 tb_com_cd 그룹헤더 78건을 전부 clsf_cd='EFC' 로 시드하나,

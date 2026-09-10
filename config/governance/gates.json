@@ -712,6 +712,18 @@
           "source": "api-server/src/test/java/nuri/api/schema/AuthorityReferenceFkIntegrationTest.java"
         },
         {
+          "id": "DB-AUTHORIZATION-ADMINISTRATION",
+          "source": "api-server/src/test/java/nuri/api/schema/AuthorizationAdministrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-AUTHORIZATION-CONTRACT",
+          "source": "api-server/src/test/java/nuri/api/schema/AuthorizationContractIntegrationTest.java"
+        },
+        {
+          "id": "DB-AUTHORIZATION-EXPANSION",
+          "source": "api-server/src/test/java/nuri/api/schema/AuthorizationGrantExpansionIntegrationTest.java"
+        },
+        {
           "id": "DB-BACKUP-RESTORE-DRILL",
           "source": "api-server/src/test/java/nuri/api/schema/BackupRestoreDrillIntegrationTest.java"
         },

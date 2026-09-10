@@ -18,7 +18,6 @@ import java.util.List;
 @Tag(name = "Banner User", description = "배너 사용자 API")
 @RestController("systemBannerUserApiController")
 @RequestMapping("/api/v1/banners")
-@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class BannerUserApiController {
 
@@ -26,6 +25,7 @@ public class BannerUserApiController {
 
     @Operation(summary = "메인화면 노출 배너 조회", description = "메인 화면에 노출하도록 설정된 활성 배너 목록을 조회합니다.")
     @GetMapping("/reflected")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerUserApiController#getReflectedBanners')")
     public ResponseEntity<ApiResponse<List<BannerDto>>> getReflectedBanners() {
         return ResponseEntity.ok(ApiResponse.success(bannerService.getReflectedBanners()));
     }

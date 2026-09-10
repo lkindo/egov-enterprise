@@ -28,6 +28,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService 단위 테스트")
 class UserServiceTest {
+    @org.junit.jupiter.api.AfterEach
+    void clearAuthorization() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
+
 
     @Mock
     private UserRepository userRepository;
@@ -58,6 +61,9 @@ class UserServiceTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
+    @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
+
     @InjectMocks
     private UserService userService;
 
@@ -80,6 +86,7 @@ class UserServiceTest {
         list.add(new Object[]{user, authority});
         
         given(userRepository.findAllWithAuthorities()).willReturn(list);
+        given(authorizationSnapshots.loadAll(java.util.Set.of("USR1"))).willReturn(java.util.Map.of("USR1",new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of("ROLE_USER"),List.of(),"version")));
 
         List<UserDto> result = userService.getUserList();
 
@@ -98,7 +105,7 @@ class UserServiceTest {
                 .build();
         
         given(userRepository.findById("USR1")).willReturn(Optional.of(user));
-        given(userAuthorityRepository.findById("USR1")).willReturn(Optional.empty());
+        given(authorizationSnapshots.load("USR1")).willReturn(new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of(),List.of(),"empty"));
 
         UserDto result = userService.getUserById("USR1");
 
@@ -109,16 +116,36 @@ class UserServiceTest {
     @DisplayName("사용자 등록 테스트 - 성공")
     void registerUserSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("testuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
             
             String userId = userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("USER").build());
 
             assertEquals("testuser", userId);
-            verify(userRepository).save(any());
-            verify(userAuthorityRepository).save(any());
+            verify(userRepository).saveAndFlush(any());
+            verify(authorizationAdministration).lockAndAuthorize("USER_CREATE");
+            verify(authorizationAdministration).assignNewUser(anyString());
         }
+    }
+
+    @Test
+    @DisplayName("등록 권한이 잠금 대기 중 회수되면 계정과 기본 그룹을 저장하지 않는다")
+    void registerUserRejectsRevocationAfterAdministrationLock() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+        assertTrue(nuri.business.security.util.SecurityUtil.hasPermission("USER_CREATE"));
+        var revoked = new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+        doThrow(revoked).when(authorizationAdministration).lockAndAuthorize("USER_CREATE");
+
+        var actual = assertThrows(BusinessException.class, () -> userService.registerUser(
+                UserDto.builder().userId("newuser").pswd("ValidPass123!").userNm("New user").role("USER").build()));
+
+        assertSame(revoked, actual);
+        verify(authorizationAdministration).lockAndAuthorize("USER_CREATE");
+        verifyNoMoreInteractions(authorizationAdministration);
+        verifyNoInteractions(userRepository, userAuthorityRepository, passwordEncoder, eventPublisher);
     }
 
     /**
@@ -128,7 +155,7 @@ class UserServiceTest {
      * (userId·pswd·userNm·esntlId·pswdHint·pswdCrans·role). 그래서 관리자가 등록 폼에 채운
      * <b>이메일·연락처·소속 부서가 오류 없이 사라졌다</b> — 성공 토스트까지 뜬 채로.
      *
-     * <p>⚠ 위 registerUserSuccessTest 가 이것을 잡지 못한 이유: {@code verify(userRepository).save(any())}
+     * <p>⚠ 위 registerUserSuccessTest 가 이것을 잡지 못한 이유: {@code verify(userRepository).saveAndFlush(any())}
      * 는 "저장이 호출됐다"만 본다. <b>무엇을 저장했는지는 보지 않는다.</b> 그래서 필드를 통째로
      * 버려도 그린이었다. 여기서는 ArgumentCaptor 로 <b>저장된 엔티티의 값</b>을 직접 확인한다.
      *
@@ -140,7 +167,8 @@ class UserServiceTest {
     @DisplayName("사용자 등록 - 폼이 보낸 이메일·연락처·소속 부서가 실제로 저장된다 (입력값 유실 회귀 방어)")
     void registerUser_persistsOptionalProfileFields() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("newuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
 
@@ -156,7 +184,7 @@ class UserServiceTest {
                     .build());
 
             org.mockito.ArgumentCaptor<User> saved = org.mockito.ArgumentCaptor.forClass(User.class);
-            verify(userRepository).save(saved.capture());
+            verify(userRepository).saveAndFlush(saved.capture());
 
             assertEquals("newuser@egov.kr", saved.getValue().getEmlAddr(), "이메일이 저장되지 않았다");
             assertEquals("01012345678", saved.getValue().getMblTelno(), "연락처가 저장되지 않았다");
@@ -168,7 +196,8 @@ class UserServiceTest {
     @DisplayName("사용자 등록 테스트 - 실패 (ID 중복)")
     void registerUserDuplicateIdTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("testuser")).willReturn(Optional.of(mock(User.class)));
             
             assertThrows(BusinessException.class, () -> 
@@ -212,7 +241,8 @@ class UserServiceTest {
 
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             userService.updateUser("user1", UserDto.builder().build());
             verify(user).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -227,7 +257,8 @@ class UserServiceTest {
         
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.updateUser("user2", UserDto.builder().build()));
         }
@@ -246,14 +277,13 @@ class UserServiceTest {
         given(passwordEncoder.encode(anyString())).willReturn("encoded");
 
         userService.signup(request);
-        verify(userRepository).save(any());
+        verify(userRepository).saveAndFlush(any());
     }
 
     @Test
     @DisplayName("사용자 목록 페이지 조회")
     void getPagedUserListTest() {
-        @SuppressWarnings("unchecked")
-        Page<UserDto> page = mock(Page.class);
+        Page<UserDto> page = Page.empty();
         given(userRepository.getPagedUserList(anyString(), any())).willReturn(page);
         
         Page<UserDto> result = userService.getPagedUserList("search", org.springframework.data.domain.PageRequest.of(0, 10));
@@ -263,8 +293,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 목록 페이지 조회 (검색어 없음)")
     void getUserPageTest() {
-        @SuppressWarnings("unchecked")
-        Page<UserDto> page = mock(Page.class);
+        Page<UserDto> page = Page.empty();
         given(userRepository.getPagedUserList(isNull(), any())).willReturn(page);
         
         Page<UserDto> result = userService.getUserPage(org.springframework.data.domain.PageRequest.of(0, 10));
@@ -274,8 +303,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 목록 페이지 조회 (기본 페이징 적용)")
     void searchUserPageTest() {
-        @SuppressWarnings("unchecked")
-        Page<UserDto> page = mock(Page.class);
+        Page<UserDto> page = Page.empty();
         given(userRepository.getPagedUserList(eq("search"), any())).willReturn(page);
         
         Page<UserDto> result = userService.searchUserPage("search");
@@ -286,7 +314,8 @@ class UserServiceTest {
     @DisplayName("사용자 삭제 테스트 - 관리자 성공")
     void deleteUserSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User user = mock(User.class);
             given(user.getEsntlId()).willReturn("USR_TEST_ESNTL_0001");
             given(user.getUserId()).willReturn("user1");
@@ -294,7 +323,7 @@ class UserServiceTest {
 
             userService.deleteUser("user1");
             // [V2_12] 종속 정리(권한매핑) 후 일괄 삭제로 전환됨
-            verify(userAuthorityRepository).deleteAllByIdInBatch(List.of("USR_TEST_ESNTL_0001"));
+            verify(authorizationAdministration).removeDeletedUsers(List.of("USR_TEST_ESNTL_0001"));
             verify(userRepository).deleteAllInBatch(List.of(user));
         }
     }
@@ -303,7 +332,8 @@ class UserServiceTest {
     @DisplayName("사용자 삭제 테스트 - 관리자 권한 없음")
     void deleteUserNoAuthTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.deleteUser("user1"));
         }
@@ -313,7 +343,8 @@ class UserServiceTest {
     @DisplayName("사용자 삭제 테스트 - 존재하지 않음")
     void deleteUserNotFoundTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("user1")).willReturn(Optional.empty());
             given(userRepository.existsById("user1")).willReturn(false);
             
@@ -325,7 +356,8 @@ class UserServiceTest {
     @DisplayName("사용자 다중 삭제 - 성공")
     void deleteUserListSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User user1 = mock(User.class);
             User user2 = mock(User.class);
             given(user1.getEsntlId()).willReturn("USR_TEST_ESNTL_0001");
@@ -346,13 +378,14 @@ class UserServiceTest {
     @DisplayName("사용자 상태 다중 변경 - 성공")
     void updateUsersStatusSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User user = mock(User.class);
             given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
             
             userService.updateUsersStatus(List.of("user1"), "ACTIVE");
             verify(user).updateStatus("ACTIVE");
-            verify(userRepository).saveAll(List.of(user));
+            verify(userRepository).saveAllAndFlush(List.of(user));
             verify(userRepository, never()).findAllById(anyList());
         }
     }
@@ -361,7 +394,8 @@ class UserServiceTest {
     @DisplayName("사용자 상태 다중 변경 - loginId 일부가 없으면 부분 성공하지 않는다")
     void updateUsersStatusRejectsUnknownLoginIdTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User existing = mock(User.class);
             given(userRepository.findByUserIdIn(List.of("user1", "missing"))).willReturn(List.of(existing));
 
@@ -378,58 +412,54 @@ class UserServiceTest {
     @DisplayName("사용자 부서 다중 변경 - 성공")
     void moveUsersToDeptSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User user = mock(User.class);
             given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
             
             userService.moveUsersToDept(List.of("user1"), "DEPT1");
+            verify(authorizationAdministration).lockAndAuthorize("USER_DEPT");
             verify(user).updateOrgnztId("DEPT1");
             verify(userRepository).saveAll(List.of(user));
         }
     }
 
     @Test
-    @DisplayName("사용자 역할 다중 변경 - 성공 (기존 권한 있음)")
-    void updateUsersRoleSuccessTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            User user = mock(User.class);
-            given(user.getEsntlId()).willReturn("ESNTL1");
-            given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
-            UserAuthority auth = mock(UserAuthority.class);
-            given(auth.getScrtyDcsnTrgtId()).willReturn("ESNTL1");
-            given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of(auth));
+    @DisplayName("부서 이동 권한이 잠금 대기 중 회수되면 사용자 조회와 변경을 시작하지 않는다")
+    void moveUsersToDeptRejectsRevocationAfterAdministrationLock() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+        assertTrue(nuri.business.security.util.SecurityUtil.hasPermission("USER_DEPT"));
+        var revoked = new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+        doThrow(revoked).when(authorizationAdministration).lockAndAuthorize("USER_DEPT");
 
-            userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN);
-            verify(user).changeRole(nuri.business.domain.user.entity.Role.ADMIN);
-            verify(auth).update(eq("ROLE_ADMIN"), any());
-            verify(userRepository).saveAll(anyList());
-            verify(userRepository, never()).findAllById(anyList());
-        }
+        var actual = assertThrows(BusinessException.class,
+                () -> userService.moveUsersToDept(List.of("user1"), "DEPT1"));
+
+        assertSame(revoked, actual);
+        verify(authorizationAdministration).lockAndAuthorize("USER_DEPT");
+        verifyNoMoreInteractions(authorizationAdministration);
+        verifyNoInteractions(userRepository, userAuthorityRepository, eventPublisher);
     }
 
     @Test
-    @DisplayName("사용자 역할 다중 변경 - 성공 (기존 권한 없음)")
-    void updateUsersRoleNoExistingAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            User user = mock(User.class);
-            given(user.getEsntlId()).willReturn("ESNTL1");
-            given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
-            given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
-
-            userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN);
-            verify(user).changeRole(nuri.business.domain.user.entity.Role.ADMIN);
-            verify(userAuthorityRepository).saveAll(anyList());
-            verify(userRepository).saveAll(anyList());
+    @DisplayName("퇴역 단일 역할 변경 API는 배정 데이터에 쓰지 않는다")
+    void legacyRoleMutationIsRejectedWithoutWrites() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+            nuri.business.support.AuthorizationTestPrincipal.authentication("fixture","FIXTURE_ESNTL","ROLE_ADMIN"));
+        for (var role:nuri.business.domain.user.entity.Role.values()) {
+            var error=assertThrows(BusinessException.class,() -> userService.updateUsersRole(List.of("user1"),role));
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE,error.getErrorCode());
         }
+        verifyNoInteractions(userRepository,userAuthorityRepository,authorizationAdministration);
     }
 
     @Test
     @DisplayName("관리자 비밀번호 변경 - 성공")
     void updatePasswordByAdminSuccessTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User user = mock(User.class);
             given(userRepository.findById("user1")).willReturn(Optional.of(user));
             given(passwordEncoder.encode("newpwd")).willReturn("encoded");
@@ -447,17 +477,18 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 등록 테스트 - 잘못된 역할 이름으로 폴백")
+    @DisplayName("사용자 등록은 알 수 없는 역할 요청을 거부한다")
     void registerUserInvalidRoleTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("testuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
             
-            String userId = userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("INVALID_ROLE").build());
-
-            assertEquals("testuser", userId);
-            verify(userRepository).save(any());
+            var error=assertThrows(BusinessException.class,() -> userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").role("INVALID_ROLE").build()));
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE,error.getErrorCode());
+            verify(userRepository,never()).saveAndFlush(any());
+            verify(authorizationAdministration,never()).assignNewUser(anyString());
         }
     }
 
@@ -465,7 +496,8 @@ class UserServiceTest {
     @DisplayName("사용자 등록 테스트 - 관리자 권한 없음")
     void registerUserNoAuthTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> 
                 userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("USER").build()));
@@ -476,7 +508,8 @@ class UserServiceTest {
     @DisplayName("사용자 다중 삭제 - 관리자 권한 없음")
     void deleteUserListNoAuthTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.deleteUserList(List.of("user1", "user2")));
         }
@@ -486,7 +519,8 @@ class UserServiceTest {
     @DisplayName("관리자 비밀번호 변경 - 관리자 권한 없음")
     void updatePasswordByAdminNoAuthTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.updatePasswordByAdmin("user1", "newpwd"));
         }
@@ -496,7 +530,8 @@ class UserServiceTest {
     @DisplayName("사용자 상태 다중 변경 - 관리자 권한 없음")
     void updateUsersStatusNoAuthTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.updateUsersStatus(List.of("user1"), "ACTIVE"));
         }
@@ -506,7 +541,8 @@ class UserServiceTest {
     @DisplayName("사용자 부서 다중 변경 - 관리자 권한 없음")
     void moveUsersToDeptNoAuthTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.moveUsersToDept(List.of("user1"), "DEPT1"));
         }
@@ -516,7 +552,8 @@ class UserServiceTest {
     @DisplayName("사용자 역할 다중 변경 - 관리자 권한 없음")
     void updateUsersRoleNoAuthTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN));
         }
@@ -535,7 +572,8 @@ class UserServiceTest {
     @DisplayName("사용자 등록 테스트 - 롤 파라미터가 null/empty인 경우")
     void registerUserEmptyRoleTest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("testuser2")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
             
@@ -543,7 +581,7 @@ class UserServiceTest {
             String userId = userService.registerUser(UserDto.builder().userId("testuser2").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("").build());
 
             assertEquals("testuser2", userId);
-            verify(userRepository).save(any());
+            verify(userRepository).saveAndFlush(any());
         }
     }
 }

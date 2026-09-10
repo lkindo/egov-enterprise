@@ -20,7 +20,7 @@ import {
  WIKI_BOARD_ID,
 } from '@/config/board-ids';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { isQnaSolved } from '@/services/business/user/help/HelpUserService';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  // [2026-08-28] 리터럴 비교는 SYSTEM·ROLE_SYSTEM 을 빠뜨려 **권한 있는 관리자에게 기능이
  //   사라진다**. proxy 의 /admin 게이트는 4종을 전부 통과시키므로, 라우트는 열어 주는데
  //   화면만 막히는 비대칭이 된다 — DEC-OPS-023 ②가 계약으로 막으려던 형태다.
- const isAdmin = isAdministrativeRole(user?.role);
+ const canReadBoardMasters = canPermission(user, 'BBS_MST_READ');
+ const canManageCommunities = canPermission(user, 'COMMUNITY_READ_ALL');
  // [2026-09-06 DEC-OPS-037] 커뮤니티 생성·수정·폐쇄(감사 D07-01). 관리자이고 커뮤니티 탭일 때만 버튼을 그린다.
  const [communityManageOpen, setCommunityManageOpen] = useState(false);
  const [searchQuery, setSearchQuery] = useState('');
@@ -177,7 +178,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tighter leading-none">지식 매트릭스</h2>
  </div>
  <div className="flex items-center gap-3 md:gap-4 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
- {isAdmin && (
+ {canReadBoardMasters && (
  <Button
  onClick={() => router.push('/admin/community/boards/master')}
  variant="outline"
@@ -186,7 +187,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <Settings2 className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-180 transition-transform text-primary" /> 게시판 관리
  </Button>
  )}
- {isAdmin && activeCategory === 'COMMUNITY' && (
+ {canManageCommunities && activeCategory === 'COMMUNITY' && (
  <Button
  onClick={() => setCommunityManageOpen(true)}
  variant="outline"
@@ -433,7 +434,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </div>
  </motion.div>
  {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
- {isAdmin && communityManageOpen && (
+ {canManageCommunities && communityManageOpen && (
  <CommunityManageDialog isOpen onClose={() => setCommunityManageOpen(false)} />
  )}
  </motion.div>

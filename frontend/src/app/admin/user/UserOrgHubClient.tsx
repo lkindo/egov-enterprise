@@ -63,8 +63,7 @@ import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
 import { 
   bulkUpdateUserStatusAction, 
   bulkMoveUserDeptAction, 
-  bulkDeleteUsersAction,
-  bulkUpdateUserRoleAction
+  bulkDeleteUsersAction
 } from '@/app/actions/userActions';
 
 import { StandardModal } from '@/app/components/ui/standard-modal';
@@ -115,7 +114,6 @@ type UserOrgWriteOperation =
   | 'bulk-delete'
   | 'bulk-status'
   | 'bulk-move'
-  | 'bulk-role'
   | 'dept-hierarchy';
 
 const dropAnimation: DropAnimation = {
@@ -365,10 +363,10 @@ export default function UserOrgHubClient({
   const [selectedBulkItems, setSelectedBulkItems] = useState<UserManage[]>([]);
   const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
   const [isBulkMoveModalOpen, setIsBulkMoveModalOpen] = useState(false);
-  const [isBulkRoleModalOpen, setIsBulkRoleModalOpen] = useState(false);
+
   const [targetStatus, setTargetStatus] = useState('P');
   const [targetDeptId, setTargetDeptId] = useState('');
-  const [targetRole, setTargetRole] = useState('USER');
+
 
   const beginNonFormAction = (operation: UserOrgWriteOperation) => {
     if (actionRequestRef.current) return false;
@@ -456,10 +454,7 @@ export default function UserOrgHubClient({
     setIsBulkMoveModalOpen(false);
   };
 
-  const handleCloseBulkRoleModal = () => {
-    if (actionRequestRef.current) return;
-    setIsBulkRoleModalOpen(false);
-  };
+
 
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', debouncedKeyword, userPage],
@@ -790,24 +785,7 @@ export default function UserOrgHubClient({
     }
   };
 
-  const handleBulkRoleUpdate = async () => {
-    const operation = 'bulk-role' as const;
-    if (!beginNonFormAction(operation)) return;
-    try {
-      const res = await bulkUpdateUserRoleAction(selectedBulkItems.map(u => u.userId), targetRole);
-      if (res.success) {
-        toast(res.message, 'success');
-        refetchUsers();
-        setIsBulkRoleModalOpen(false);
-      } else {
-        toast(res.message, 'error');
-      }
-    } catch {
-      toast('권한 변경 중 오류 발생', 'error');
-    } finally {
-      finishNonFormAction(operation);
-    }
-  };
+
 
   const userBulkActions = [
     {
@@ -830,16 +808,7 @@ export default function UserOrgHubClient({
         setIsBulkMoveModalOpen(true);
       }
     },
-    {
-      label: '권한 변경',
-      icon: <ShieldCheck size={16} />,
-      disabled: isSaving,
-      onClick: (items: (UserManage | Department)[]) => {
-        if (actionRequestRef.current) return;
-        setSelectedBulkItems(items as UserManage[]);
-        setIsBulkRoleModalOpen(true);
-      }
-    },
+
     {
       label: '일괄 삭제',
       icon: <UserMinus size={16} />,
@@ -1532,7 +1501,7 @@ export default function UserOrgHubClient({
               {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-muted-foreground">외 {selectedBulkItems.length - 5}명</span>}
             </div>
           </div>
-          
+
           <div className="space-y-4">
             {/* 폼 컨트롤이 아니라 버튼 그룹이므로 <label> 이 아니라 radiogroup 으로 이름을 붙인다(감사 P2). */}
             <p id="bulk-status-label" className="text-xs font-bold text-foreground tracking-tight">변경할 상태 선택</p>
@@ -1662,80 +1631,8 @@ export default function UserOrgHubClient({
         </div>
       </StandardModal>
 
-      {/* Bulk Role Modal */}
-      <StandardModal
-        isOpen={isBulkRoleModalOpen}
-        onClose={handleCloseBulkRoleModal}
-        title="사용자 권한 일괄 변경"
-        maxWidth="sm"
-      >
-        <div className="space-y-8 p-4">
-          <div className="p-6 bg-muted rounded-lg border border-border">
-            <p className="text-xs font-bold text-muted-foreground tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
-            <div className="flex flex-wrap gap-2">
-              {selectedBulkItems.slice(0, 5).map(u => (
-                <span key={u.userId} className="px-3 py-1 bg-card border border-border rounded-lg text-xs font-bold text-foreground">{u.userNm}</span>
-              ))}
-              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-muted-foreground">외 {selectedBulkItems.length - 5}명</span>}
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <p id="bulk-role-label" className="text-xs font-bold text-foreground tracking-tight">변경할 권한 선택</p>
-            <div role="radiogroup" aria-labelledby="bulk-role-label" className="grid grid-cols-1 gap-3">
-              {[
-                { code: 'USER', label: '일반 사용자 (USER)', icon: <Users size={18} /> },
-                { code: 'ADMIN', label: '시스템 관리자 (ADMIN)', icon: <ShieldCheck size={18} /> }
-              ].map(r => (
-                <button
-                  key={r.code}
-                  type="button"
-                  role="radio"
-                  aria-checked={targetRole === r.code}
-                  disabled={isSaving}
-                  onClick={() => setTargetRole(r.code)}
-                  className={cn(
-                    "w-full flex items-center justify-between p-5 rounded-lg border-2 transition-all",
-                    targetRole === r.code ? "border-primary bg-primary/5 shadow-lg" : "border-border hover:border-border bg-card"
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-                      targetRole === r.code ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-                    )}>
-                      {r.icon}
-                    </div>
-                    <span className="text-sm font-bold tracking-tight text-foreground">{r.label}</span>
-                  </div>
-                  {targetRole === r.code && <div className="w-5 h-5 rounded-lg bg-primary flex items-center justify-center text-white shadow-lg"><ChevronRight size={12} /></div>}
-                </button>
-              ))}
-            </div>
-          </div>
 
-          <div className="flex gap-4 pt-4">
-            <button 
-              type="button"
-              disabled={isSaving}
-              onClick={handleCloseBulkRoleModal}
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
-            >
-              취소
-            </button>
-            <Button 
-              onClick={() => void handleBulkRoleUpdate()}
-              disabled={isSaving}
-              aria-busy={activeWriteOperation === 'bulk-role' || undefined}
-              className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
-            >
-              {activeWriteOperation === 'bulk-role' ? (
-                <><RefreshCcw size={16} className="animate-spin" aria-hidden="true" /> 권한 변경 실행 중…</>
-              ) : '권한 변경 실행'}
-            </Button>
-          </div>
-        </div>
-      </StandardModal>
+
 
     </div>
     </TooltipProvider>

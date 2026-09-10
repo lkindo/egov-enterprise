@@ -66,7 +66,7 @@ public class CommonCodeService extends BaseAbstractService {
                                 .collect(Collectors.toList());
         }
 
-        @AdminOnly
+        @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('CODE_CREATE')")
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public CommonCodeDto createCode(@NonNull CommonCodeSaveRequest request) {
@@ -120,7 +120,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnClCode(@NonNull CmmnClCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_CREATE");
 
                 if (commonCodeCategoryRepository
                                 .existsById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))) {
@@ -138,7 +138,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnClCode(@NonNull CmmnClCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_UPDATE");
 
                 commonCodeCategoryRepository.findById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .ifPresent(entity -> {
@@ -152,7 +152,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnClCode(@NonNull CmmnClCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_DELETE");
 
                 commonCodeCategoryRepository.findById(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .ifPresent(category -> category.delete());
@@ -198,7 +198,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnCode(@NonNull CmmnCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_CREATE");
 
                 if (commonCodeGroupRepository
                                 .existsById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))) {
@@ -217,7 +217,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnCode(@NonNull CmmnCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_UPDATE");
 
                 commonCodeGroupRepository.findById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
                                 .ifPresent(entity -> {
@@ -242,7 +242,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnCodeHierarchy(List<CmmnCodeHierarchyDto> items) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_UPDATE");
                 if (items == null || items.isEmpty()) {
                         return;
                 }
@@ -279,7 +279,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnCode(@NonNull CmmnCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_DELETE");
 
                 commonCodeGroupRepository.findById(required(dto.getCdId(), "dto.getCdId() 는 null 일 수 없습니다"))
                                 .ifPresent(group -> group.delete());
@@ -345,7 +345,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_CREATE");
 
                 if (commonCodeRepository
                                 .existsById(required(
@@ -367,7 +367,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_UPDATE");
 
                 commonCodeRepository
                                 .findById(required(
@@ -385,7 +385,7 @@ public class CommonCodeService extends BaseAbstractService {
         @Transactional
         @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
-                SecurityUtil.assertAdmin();
+                SecurityUtil.assertPermission("CODE_DELETE");
 
                 commonCodeRepository
                                 .findById(required(

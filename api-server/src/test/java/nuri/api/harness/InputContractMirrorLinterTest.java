@@ -14,7 +14,7 @@ import jakarta.validation.constraints.Size;
 import nuri.business.domain.addressbook.AddressBook;
 import nuri.business.domain.addressbook.AddressBookUser;
 import nuri.business.domain.auth.Authority;
-import nuri.business.domain.auth.RoleInfo;
+import nuri.business.domain.auth.AuthorityGrant;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.code.CommonCode;
 import nuri.business.domain.code.CommonCodeCategory;
@@ -36,7 +36,7 @@ import nuri.business.domain.sms.SmsRecptnId;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
 import nuri.business.service.auth.dto.AuthorManageDto;
-import nuri.business.service.auth.dto.RoleManageDto;
+import nuri.business.service.auth.dto.AuthorizationDto;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.code.dto.CmmnClCodeDto;
 import nuri.business.service.code.dto.CmmnCodeDto;
@@ -83,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -111,6 +112,28 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("governance-harness")
 class InputContractMirrorLinterTest {
 
+    @Test
+    @DisplayName("현재 권한 입력의 정상 snapshot과 길이·유형·null 항목 위반을 실제 검증기로 구분한다")
+    void authorizationInputBoundariesRejectInvalidSnapshots() {
+        try (var factory = jakarta.validation.Validation.buildDefaultValidatorFactory()) {
+            var validator = factory.getValidator();
+            org.junit.jupiter.api.Assertions.assertTrue(validator.validate(
+                    new AuthorizationDto.CreateGroup("TEAM", "name", "description")).isEmpty());
+            org.junit.jupiter.api.Assertions.assertTrue(validator.validate(
+                    new AuthorizationDto.ReplaceGrants(List.of(new AuthorizationDto.Grant("OPERATION", "BOARD_READ")), "v1", true)).isEmpty());
+            for (Object invalid : List.of(
+                    new AuthorizationDto.CreateGroup("X".repeat(21), "name", "description"),
+                    new AuthorizationDto.CreateGroup("TEAM", "X".repeat(101), "description"),
+                    new AuthorizationDto.CreateGroup("TEAM", "name", "X".repeat(4001)),
+                    new AuthorizationDto.ReplaceGrants(List.of(new AuthorizationDto.Grant("UNKNOWN", "BOARD_READ")), "v1", true),
+                    new AuthorizationDto.ReplaceGrants(List.of(new AuthorizationDto.Grant("OPERATION", "X".repeat(21))), "v1", true),
+                    new AuthorizationDto.ReplaceGrants(java.util.Collections.singletonList(null), "v1", true),
+                    new AuthorizationDto.ReplaceGrants(List.of(), "v1", false))) {
+                org.junit.jupiter.api.Assertions.assertFalse(validator.validate(invalid).isEmpty(), invalid.getClass().getSimpleName());
+            }
+        }
+    }
+
     private static final Logger log = LoggerFactory.getLogger(InputContractMirrorLinterTest.class);
 
     private static final String API_DOCS_FILE = "api-docs.json";
@@ -132,8 +155,12 @@ class InputContractMirrorLinterTest {
                     List.of("cdId", "dtlCd", "dtlCdNm", "dtlCdExpln", "useYn")),
             new LengthBinding(GroupManage.class, GroupManageDto.class,
                     List.of("groupId", "groupNm", "groupDc")),
-            new LengthBinding(RoleInfo.class, RoleManageDto.class,
-                    List.of("roleId", "roleNm", "rolePatrn", "roleExpln", "roleTypeCd")),
+            // Retired URL-role input is replaced by the current group and typed-grant input contracts.
+            new LengthBinding(Authority.class, AuthorizationDto.CreateGroup.class,
+                    List.of("code", "name", "description"),
+                    java.util.Map.of("code", "authrtCd", "name", "authrtNm", "description", "authrtExpln")),
+            new LengthBinding(AuthorityGrant.class, AuthorizationDto.Grant.class,
+                    List.of("type", "code"), java.util.Map.of("type", "authrtTypeCd", "code", "authrtGrntCd")),
             new LengthBinding(Authority.class, AuthorManageDto.class,
                     List.of("authrtCd", "authrtNm", "authrtExpln")),
             new LengthBinding(DeptManage.class, DeptManageDto.class,
@@ -184,6 +211,7 @@ class InputContractMirrorLinterTest {
                     List.of("prgrmFileNm", "prgrmStrgPath", "prgrmKornNm", "url", "prgrmExpln")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
+            new EnumBinding(AuthorizationDto.Grant.class, "type", List.of("OPERATION", "NAVIGATION")),
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
             new EnumBinding(PopupDto.class, "stopvewSetupYn", List.of("Y", "N")),
             new EnumBinding(PopupDto.class, "ntceYn", List.of("Y", "N")),
@@ -200,6 +228,7 @@ class InputContractMirrorLinterTest {
             new EnumBinding(AddressBookDto.class, "useYn", List.of("Y", "N")));
 
     private static final List<NestedValidationBinding> NESTED_VALIDATION_BINDINGS = List.of(
+            new NestedValidationBinding(AuthorizationDto.ReplaceGrants.class, "grants", AuthorizationDto.Grant.class),
             new NestedValidationBinding(SmsDto.class, "recipients", SmsRecptnDto.class),
             new NestedValidationBinding(AddressBookDto.class, "adbkMan", AddressBookUserDto.class));
 
@@ -223,7 +252,8 @@ class InputContractMirrorLinterTest {
             requiredNotBlank(CmmnCodeDto.class, "useYn"),
             requiredNotBlank(CmmnDetailCodeDto.class, "useYn"),
             new RequiredBinding(GroupManageDto.class, List.of()),
-            requiredNotBlank(RoleManageDto.class, "roleNm"),
+            requiredNotBlank(AuthorizationDto.CreateGroup.class, "code", "name"),
+            requiredNotBlank(AuthorizationDto.Grant.class, "type", "code"),
             requiredNotBlank(AuthorManageDto.class, "authrtCd", "authrtNm"),
             requiredNotBlank(DeptManageDto.class, "ognzNm"),
             new RequiredBinding(BoardMasterDto.class, List.of(
@@ -256,8 +286,13 @@ class InputContractMirrorLinterTest {
             requiredNotBlank(NotificationDto.class, "notiTtlNm"),
             new RequiredBinding(ProgramDto.class, List.of(requiredField("prgrmFileNm", NotBlank.class, ProgramDto.OnCreate.class))));
 
+    /** Shared DTO response-only required fields must never become required request inputs. */
+    private static final Map<Class<?>, Set<String>> REQUIRED_RESPONSE_FIELDS = Map.of(
+            UserDto.class, Set.of("groups", "permissions", "authorizationVersion"));
+
     /** 요청에서 신뢰하지 않고 서버가 생성·주입·파생하는 필드의 방향성 기준선. */
     private static final List<ReadOnlyBinding> READ_ONLY_BINDINGS = List.of(
+            new ReadOnlyBinding(UserDto.class, List.of("groups", "permissions", "authorizationVersion")),
             new ReadOnlyBinding(MemoReportDto.class,
                     List.of("memoRptSn", "userId", "wrterNm", "rptrNm", "drctnMttr",
                             "drctnMttrRegDt", "rptrInqDt", "crtDt")),
@@ -335,7 +370,7 @@ class InputContractMirrorLinterTest {
         List<String> violations = new ArrayList<>();
         for (LengthBinding binding : LENGTH_BINDINGS) {
             for (String fieldName : binding.fields()) {
-                Field entityField = declaredField(binding.entityType(), fieldName, violations, "Entity");
+                Field entityField = declaredField(binding.entityType(), binding.entityField(fieldName), violations, "Entity");
                 Field dtoField = declaredField(binding.dtoType(), fieldName, violations, "DTO");
                 if (entityField == null || dtoField == null) {
                     continue;
@@ -541,11 +576,17 @@ class InputContractMirrorLinterTest {
                 violations.add("OpenAPI schema 부재: " + binding.dtoType().getSimpleName());
                 continue;
             }
-            Set<String> openApiRequired = new TreeSet<>();
-            schema.path("required").forEach(node -> openApiRequired.add(node.asText()));
-            if (!openApiRequired.equals(expected)) {
+            Set<String> openApiExpected = new TreeSet<>(expected);
+            openApiExpected.addAll(REQUIRED_RESPONSE_FIELDS.getOrDefault(binding.dtoType(), Set.of()));
+            if (!schemaRequiredFieldsMatch(schema, openApiExpected)) {
                 violations.add(binding.dtoType().getSimpleName() + " — OpenAPI required="
-                        + openApiRequired + " (expected=" + expected + ")");
+                        + schema.path("required") + " (expected input + response-only=" + openApiExpected + ")");
+            }
+            for (String field : REQUIRED_RESPONSE_FIELDS.getOrDefault(binding.dtoType(), Set.of())) {
+                JsonNode property = schema.path("properties").path(field);
+                if (!property.path("readOnly").asBoolean(false) || allowsNull(property)) {
+                    violations.add(binding.dtoType().getSimpleName() + "." + field + " — required response-only field direction/nullability drift");
+                }
             }
             for (String fieldName : expected) {
                 JsonNode property = openApiProperty(schemas, binding.dtoType(), fieldName, violations);
@@ -558,6 +599,36 @@ class InputContractMirrorLinterTest {
 
         failIfAny("[INPUT CONTRACT] 필수 입력 의미 계약 불일치", violations);
         log.info("✅ 입력 필수 계약: {} DTO, {}필드.", REQUIRED_BINDINGS.size(), requiredFieldCount);
+    }
+
+    private static boolean schemaRequiredFieldsMatch(JsonNode schema, Set<String> expected) {
+        Set<String> actual = new TreeSet<>();
+        schema.path("required").forEach(node -> actual.add(node.asText()));
+        return actual.equals(expected);
+    }
+
+    @Test
+    @DisplayName("인가 응답 필수 필드는 요청으로 주입할 수 없고 입력 필수 계약도 줄어들지 않는다")
+    void authorizationResponseFieldsCannotBecomeRequestPermissions() throws IOException {
+        var mapper = new ObjectMapper();
+        UserDto request = mapper.readValue("""
+                {"userId":"member01","userNm":"회원","groups":["ROLE_ADMIN"],
+                 "permissions":["AUTHRT_GRANT"],"authorizationVersion":"forged"}
+                """, UserDto.class);
+        org.junit.jupiter.api.Assertions.assertNull(request.groups());
+        org.junit.jupiter.api.Assertions.assertNull(request.permissions());
+        org.junit.jupiter.api.Assertions.assertNull(request.authorizationVersion());
+        JsonNode actual = mapper.readTree(HarnessSourceIndex.read(resolveApiDocs()))
+                .path("components").path("schemas").path("UserDto");
+        Set<String> expected = Set.of("userId", "userNm", "pswd", "groups", "permissions", "authorizationVersion");
+        org.junit.jupiter.api.Assertions.assertTrue(schemaRequiredFieldsMatch(actual, expected));
+        for (String removed : List.of("userId", "authorizationVersion")) {
+            var changed = actual.deepCopy();
+            var required = mapper.createArrayNode();
+            actual.path("required").forEach(field -> { if (!removed.equals(field.asText())) required.add(field.asText()); });
+            ((com.fasterxml.jackson.databind.node.ObjectNode) changed).set("required", required);
+            org.junit.jupiter.api.Assertions.assertFalse(schemaRequiredFieldsMatch(changed, expected), removed);
+        }
     }
 
     @Test
@@ -730,7 +801,12 @@ class InputContractMirrorLinterTest {
         fail(message.toString());
     }
 
-    private record LengthBinding(Class<?> entityType, Class<?> dtoType, List<String> fields) {
+    private record LengthBinding(Class<?> entityType, Class<?> dtoType, List<String> fields,
+                                 java.util.Map<String, String> entityFields) {
+        LengthBinding(Class<?> entityType, Class<?> dtoType, List<String> fields) {
+            this(entityType, dtoType, fields, java.util.Map.of());
+        }
+        String entityField(String dtoField) { return entityFields.getOrDefault(dtoField, dtoField); }
     }
 
     private record EnumBinding(Class<?> dtoType, String field, List<String> allowedValues) {

@@ -2,8 +2,9 @@ package nuri.business.service.menu;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.domain.auth.MenuAuthority;
-import nuri.business.domain.auth.MenuAuthorityRepository;
+import nuri.business.domain.menu.NavigationGrantRepository;
+import nuri.business.service.auth.AuthorizationAdministrationService;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
 import nuri.business.domain.program.Program;
@@ -19,7 +20,6 @@ import org.mockito.Mock;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -45,7 +45,10 @@ class MenuServiceTest {
     private ProgramRepository programRepository;
 
     @Mock
-    private MenuAuthorityRepository menuAuthorityRepository;
+    private NavigationGrantRepository navigationGrantRepository;
+
+    @Mock
+    private AuthorizationAdministrationService authorizationAdministrationService;
 
     @Mock
     private nuri.business.service.program.dto.ProgramMapper programMapper;
@@ -63,8 +66,37 @@ class MenuServiceTest {
     void setUp() {
         SecurityContextHolder.setContext(securityContext);
         lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
-        lenient().doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .when(authentication).getAuthorities();
+        useGroup("ROLE_ADMIN");
+    }
+
+    private void useGroup(String group) {
+        CustomUserDetails principal = CustomUserDetails.builder().userId("tester").esntlId("TESTER_001")
+                .groups(List.of(group)).permissions(List.of("MENU_CREATE", "MENU_UPDATE", "MENU_DELETE", "AUTHRT_GRANT"))
+                .enabled(true).build();
+        lenient().when(authentication.isAuthenticated()).thenReturn(true);
+        lenient().when(authentication.getPrincipal()).thenReturn(principal);
+        lenient().doReturn(principal.getAuthorities()).when(authentication).getAuthorities();
+    }
+
+    private record MenuGrantFixture(Menu menu, String group) {}
+
+    private void stubNavigation(List<MenuGrantFixture> fixtures) {
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(
+                fixtures.stream().map(MenuGrantFixture::menu).distinct().toList());
+        when(navigationGrantRepository.findAllowedMenuIds(anyList())).thenAnswer(invocation -> {
+            List<String> groups = invocation.getArgument(0);
+            return fixtures.stream().filter(row -> row.group() != null && groups.contains(row.group()))
+                    .map(row -> row.menu().getMenuSn()).collect(java.util.stream.Collectors.toSet());
+        });
+    }
+
+    private void stubGeneratedMenuId(Long generatedId) {
+        when(menuRepository.save(any(Menu.class))).thenAnswer(invocation -> {
+            Menu row = invocation.getArgument(0);
+            assertThat(row.getMenuSn()).as("create payload ID must not reach the repository").isNull();
+            org.springframework.test.util.ReflectionTestUtils.setField(row, "menuSn", generatedId);
+            return row;
+        });
     }
 
     @AfterEach
@@ -73,22 +105,19 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("getMenuHierarchy - ROLE_ADMIN인 경우 모든 메뉴 조회")
+    @DisplayName("getMenuHierarchy - ADMIN도 명시적으로 부여된 NAVIGATION만 조회")
     void getMenuHierarchy_Admin() {
         // given
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn("admin");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+        useGroup("ROLE_ADMIN");
 
         Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
         Menu menu2 = Menu.builder().menuSn(2L).menuNm("Menu 2").menuOrdr(2).upMenuSn(1L).build();
         
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, null));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu2, null));
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(menu1, "ROLE_ADMIN"));
+        results.add(new MenuGrantFixture(menu2, "ROLE_ADMIN"));
         
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         // when
@@ -101,19 +130,59 @@ class MenuServiceTest {
     }
 
     @Test
+    void adminHasNoImplicitNavigationAndRevocationIsReadImmediately() {
+        Menu menu = Menu.builder().menuSn(1L).menuNm("Menu").build();
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenReturn(List.of(menu));
+        when(navigationGrantRepository.findAllowedMenuIds(List.of("ROLE_ADMIN")))
+                .thenReturn(java.util.Set.of(1L)).thenReturn(java.util.Set.of());
+        assertThat(menuService.getMenuHierarchy()).hasSize(1);
+        assertThat(menuService.getMenuHierarchy()).isEmpty();
+    }
+
+    @Test
+    void authenticatedUnknownPrincipalDoesNotInheritAnonymousGroup() {
+        when(authentication.getPrincipal()).thenReturn("anonymousUser");
+        stubNavigation(List.of(new MenuGrantFixture(Menu.builder().menuSn(1L).build(), "ROLE_ANONYMOUS")));
+        assertThat(menuService.getMenuHierarchy()).isEmpty();
+        verify(navigationGrantRepository).findAllowedMenuIds(List.of());
+    }
+
+    @Test
+    void anonymousTokenUsesOnlyAnonymousGroup() {
+        when(securityContext.getAuthentication()).thenReturn(new org.springframework.security.authentication.AnonymousAuthenticationToken(
+                "test", "anonymousUser", List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ANONYMOUS"))));
+        stubNavigation(List.of(new MenuGrantFixture(Menu.builder().menuSn(1L).build(), "ROLE_ANONYMOUS")));
+        assertThat(menuService.getMenuHierarchy()).hasSize(1);
+    }
+
+    @Test
+    void unversionedInvalidOrUnauthorizedGrantReplacementDoesNotMutate() {
+        assertThatThrownBy(() -> menuService.insertMenuCreatList("ROLE_USER", "1"))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> menuService.insertMenuCreatList("ROLE_USER", "1", " "))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> menuService.insertMenuCreatList("ROLE_USER", "-1", "version-1"))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        when(securityContext.getAuthentication()).thenReturn(null);
+        assertThatThrownBy(() -> menuService.insertMenuCreatList("ROLE_USER", "1", "version-1"))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        assertThatThrownBy(() -> menuService.insertMenuManage(MenuDto.builder().menuNm("menu").build()))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verifyNoInteractions(authorizationAdministrationService, menuRepository);
+    }
+
+    @Test
     @DisplayName("getMenuHierarchy - 익명 사용자인 경우 ROLE_ANONYMOUS 권한 적용")
     void getMenuHierarchy_Anonymous() {
         // given
         when(securityContext.getAuthentication()).thenReturn(null);
 
         Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).build();
-        MenuAuthority auth = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(1L).build())
-                .build();
+        String auth = "ROLE_ANONYMOUS";
 
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, auth));
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(menu1, auth));
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         // when
@@ -127,19 +196,16 @@ class MenuServiceTest {
     @DisplayName("getMenuHierarchy - useYn이 'N'인 메뉴는 필터링됨")
     void getMenuHierarchy_FilterInactiveMenus() {
         // given
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn("admin");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+        useGroup("ROLE_ADMIN");
 
         Menu menuActive = Menu.builder().menuSn(1L).menuNm("Active Menu").menuOrdr(1).useYn("Y").build();
         Menu menuInactive = Menu.builder().menuSn(2L).menuNm("Inactive Menu").menuOrdr(2).useYn("N").build();
         
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuActive, null));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuInactive, null));
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(menuActive, "ROLE_ADMIN"));
+        results.add(new MenuGrantFixture(menuInactive, "ROLE_ADMIN"));
         
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         // when
@@ -184,22 +250,20 @@ class MenuServiceTest {
     @DisplayName("insertMenuCreatList - 기존 권한 삭제 및 신규 추가")
     void insertMenuCreatList_Success() {
         // when
-        menuService.insertMenuCreatList("ROLE_USER", "1,2,3");
+        menuService.insertMenuCreatList("ROLE_USER", "3,1,2,1", "version-1");
 
         // then
-        verify(menuAuthorityRepository).deleteByIdAuthrtCd("ROLE_USER");
-        verify(menuAuthorityRepository).saveAll(any());
+        verify(authorizationAdministrationService).replaceNavigationGrants("ROLE_USER", List.of(1L, 2L, 3L), "version-1");
     }
 
     @Test
     @DisplayName("insertMenuCreatList - 빈 문자열인 경우 추가하지 않음")
     void insertMenuCreatList_Empty() {
         // when
-        menuService.insertMenuCreatList("ROLE_USER", "");
+        menuService.insertMenuCreatList("ROLE_USER", "", "version-1");
 
         // then
-        verify(menuAuthorityRepository).deleteByIdAuthrtCd("ROLE_USER");
-        verify(menuAuthorityRepository, never()).saveAll(any());
+        verify(authorizationAdministrationService).replaceNavigationGrants("ROLE_USER", List.of(), "version-1");
     }
 
     @Test
@@ -239,7 +303,7 @@ class MenuServiceTest {
     @DisplayName("getMenuHierarchy - 예외 발생 시 catch 블록 테스트")
     void getMenuHierarchy_Exception() {
         when(securityContext.getAuthentication()).thenReturn(null);
-        when(menuRepository.findAllWithAuthorities()).thenThrow(new RuntimeException("DB Error"));
+        when(menuRepository.findAllByOrderByUpMenuSnAscMenuOrdrAsc()).thenThrow(new RuntimeException("DB Error"));
 
         assertThatThrownBy(() -> menuService.getMenuHierarchy())
                 .isInstanceOf(RuntimeException.class)
@@ -249,23 +313,18 @@ class MenuServiceTest {
     @Test
     @DisplayName("getMenuHierarchy - 일반 사용자(ROLE_USER) 권한 일치 필터링 테스트")
     void getMenuHierarchy_NotAdminButAuthorized() {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn("user");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(authentication).getAuthorities();
+        useGroup("ROLE_USER");
 
         Menu menu1 = Menu.builder().menuSn(1L).menuNm("Auth Menu").build();
         Menu menu2 = Menu.builder().menuSn(2L).menuNm("NoAuth Menu").build();
         
-        MenuAuthority auth = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_USER").menuSn(1L).build())
-                .build();
+        String auth = "ROLE_USER";
 
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, auth));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu2, null)); // 권한 없음
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(menu1, auth));
+        results.add(new MenuGrantFixture(menu2, null)); // 권한 없음
 
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();
@@ -279,18 +338,14 @@ class MenuServiceTest {
         when(securityContext.getAuthentication()).thenReturn(null);
         Menu parentMenu = Menu.builder().menuSn(1L).menuNm("Parent Menu").upMenuSn(0L).useYn("Y").build();
         Menu menu1 = Menu.builder().menuSn(2L).menuNm("Child Menu").upMenuSn(1L).useYn("Y").build();
-        MenuAuthority authParent = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(1L).build())
-                .build();
-        MenuAuthority auth = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(2L).build())
-                .build();
+        String authParent = "ROLE_ANONYMOUS";
+        String auth = "ROLE_ANONYMOUS";
 
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(parentMenu, authParent));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, auth));
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(parentMenu, authParent));
+        results.add(new MenuGrantFixture(menu1, auth));
         
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getSubMenus(1L);
@@ -331,7 +386,7 @@ class MenuServiceTest {
         org.springframework.data.domain.Page<nuri.business.domain.auth.MenuCreatManageProjection> page = 
             new org.springframework.data.domain.PageImpl<>(List.of(proj));
             
-        when(menuAuthorityRepository.selectMenuCreatManagList(eq("ROLE"), any())).thenReturn(page);
+        when(navigationGrantRepository.selectMenuCreatManagList(eq("ROLE"), any())).thenReturn(page);
         
         List<nuri.business.service.menu.dto.MenuCreateDto> list = menuService.selectMenuCreatManagList(search);
         assertThat(list).hasSize(1);
@@ -348,7 +403,7 @@ class MenuServiceTest {
         when(proj.getMenuSn()).thenReturn(null); // 강제 null
         when(proj.getRegYn()).thenReturn("Y");
         
-        when(menuAuthorityRepository.selectMenuCreatList("ROLE_USER")).thenReturn(List.of(proj));
+        when(navigationGrantRepository.selectMenuCreatList("ROLE_USER")).thenReturn(List.of(proj));
         
         List<nuri.business.service.menu.dto.MenuCreateDto> result = menuService.selectMenuCreatList(vo);
         assertThat(result).hasSize(1);
@@ -366,6 +421,7 @@ class MenuServiceTest {
                 .build();
         
         when(programRepository.existsById("NewProgram")).thenReturn(true);
+        stubGeneratedMenuId(101L);
         menuService.insertMenuManage(dto);
         verify(programRepository).existsById("NewProgram");
         verify(programRepository, never()).save(any(Program.class));
@@ -373,7 +429,8 @@ class MenuServiceTest {
         verify(menuRepository).save(menuCaptor.capture());
         assertThat(menuCaptor.getValue().getMenuSn())
                 .as("create payload의 수동 menuNo는 무시하고 DB IDENTITY가 번호를 부여해야 한다")
-                .isNull();
+                .isEqualTo(101L);
+        verify(authorizationAdministrationService).grantNewMenuToCompatibilityAdmin(101L);
     }
 
     @Test
@@ -391,6 +448,7 @@ class MenuServiceTest {
 
     @Test
     void createsIndependentRouteWithoutProgram() {
+        stubGeneratedMenuId(102L);
         menuService.insertMenuManage(MenuDto.builder().menuNm("독립 메뉴").modernRoute("/test").build());
         ArgumentCaptor<Menu> captured = ArgumentCaptor.forClass(Menu.class);
         verify(menuRepository).save(captured.capture());
@@ -414,12 +472,18 @@ class MenuServiceTest {
     @Test
     @DisplayName("deleteMenuManageList - 체크된 번호 삭제")
     void deleteMenuManageList_Valid() {
+        when(menuRepository.findForUpdateByMenuSnIn(anyList())).thenAnswer(invocation -> {
+            List<Long> requested = invocation.getArgument(0);
+            return requested.stream().map(id -> Menu.builder().menuSn(id).build()).toList();
+        });
         menuService.deleteMenuManageList("1,2,,3"); // 빈 값 포함
         verify(menuRepository).deleteAllById(List.of(1L, 2L, 3L));
+        verify(authorizationAdministrationService).removeNavigationGrantsForMenus(List.of(1L, 2L, 3L));
         
         menuService.deleteMenuManageList(null); // 조기 리턴 분기
         menuService.deleteMenuManage(MenuDto.builder().menuNo(1L).build());
         verify(menuRepository).deleteById(1L);
+        verify(authorizationAdministrationService).removeNavigationGrantsForMenus(List.of(1L));
     }
 
     @Test
@@ -438,10 +502,7 @@ class MenuServiceTest {
     @Test
     @DisplayName("buildMenuTree - 루트 메뉴 필터링 엣지 케이스")
     void buildMenuTree_RootMenuFilteringEdges() {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn("admin");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+        useGroup("ROLE_ADMIN");
 
         Menu menuMax = Menu.builder().menuSn(10000000L).menuNm("Max Menu").useYn("Y").build();
         Menu menuNullUpper = Menu.builder().menuSn(1L).menuNm("Null Upper").upMenuSn(null).useYn("Y").build();
@@ -449,14 +510,14 @@ class MenuServiceTest {
         Menu menuNormal = Menu.builder().menuSn(3L).menuNm("Normal").upMenuSn(1L).useYn("Y").build();
         Menu menuOrphan = Menu.builder().menuSn(4L).menuNm("Orphan").upMenuSn(99L).useYn("Y").build(); // dtoMap doesn't contain upper
 
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuMax, null));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuNullUpper, null));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuZeroUpper, null));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuNormal, null));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuOrphan, null));
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(menuMax, "ROLE_ADMIN"));
+        results.add(new MenuGrantFixture(menuNullUpper, "ROLE_ADMIN"));
+        results.add(new MenuGrantFixture(menuZeroUpper, "ROLE_ADMIN"));
+        results.add(new MenuGrantFixture(menuNormal, "ROLE_ADMIN"));
+        results.add(new MenuGrantFixture(menuOrphan, "ROLE_ADMIN"));
 
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();
@@ -474,26 +535,18 @@ class MenuServiceTest {
         Menu menuOrphan = Menu.builder().menuSn(3L).menuNm("Orphan").upMenuSn(99L).useYn("Y").build(); // 상위 메뉴 없음
         Menu menuSubChild = Menu.builder().menuSn(4L).menuNm("Sub Child").upMenuSn(2L).useYn("Y").build(); // 하위의 하위
 
-        MenuAuthority authParent = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(1L).build())
-                .build();
-        MenuAuthority auth = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(2L).build())
-                .build();
-        MenuAuthority authOrphan = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(3L).build())
-                .build();
-        MenuAuthority authSubChild = MenuAuthority.builder()
-                .id(MenuAuthority.MenuAuthorityId.builder().authrtCd("ROLE_ANONYMOUS").menuSn(4L).build())
-                .build();
+        String authParent = "ROLE_ANONYMOUS";
+        String auth = "ROLE_ANONYMOUS";
+        String authOrphan = "ROLE_ANONYMOUS";
+        String authSubChild = "ROLE_ANONYMOUS";
 
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(parentMenu, authParent));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuChild, auth));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuOrphan, authOrphan));
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menuSubChild, authSubChild));
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(parentMenu, authParent));
+        results.add(new MenuGrantFixture(menuChild, auth));
+        results.add(new MenuGrantFixture(menuOrphan, authOrphan));
+        results.add(new MenuGrantFixture(menuSubChild, authSubChild));
         
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getSubMenus(1L);
@@ -506,12 +559,11 @@ class MenuServiceTest {
     @Test
     @DisplayName("insertMenuCreatList - null 체크 및 빈 요소 무시")
     void insertMenuCreatList_Edges() {
-        menuService.insertMenuCreatList("ROLE_USER", null);
-        verify(menuAuthorityRepository).deleteByIdAuthrtCd("ROLE_USER");
-        verify(menuAuthorityRepository, never()).saveAll(any());
+        menuService.insertMenuCreatList("ROLE_USER", null, "version-1");
+        verify(authorizationAdministrationService).replaceNavigationGrants("ROLE_USER", List.of(), "version-1");
 
-        menuService.insertMenuCreatList("ROLE_USER", ",,");
-        verify(menuAuthorityRepository, times(2)).deleteByIdAuthrtCd("ROLE_USER");
+        menuService.insertMenuCreatList("ROLE_USER", ",,", "version-2");
+        verify(authorizationAdministrationService).replaceNavigationGrants("ROLE_USER", List.of(), "version-2");
     }
     
     @Test
@@ -566,7 +618,7 @@ class MenuServiceTest {
         org.springframework.data.domain.Page<nuri.business.domain.auth.MenuCreatManageProjection> page = 
             new org.springframework.data.domain.PageImpl<>(Collections.emptyList());
             
-        when(menuAuthorityRepository.selectMenuCreatManagList(eq(""), any())).thenReturn(page);
+        when(navigationGrantRepository.selectMenuCreatManagList(eq(""), any())).thenReturn(page);
         
         List<nuri.business.service.menu.dto.MenuCreateDto> list = menuService.selectMenuCreatManagList(search);
         assertThat(list).isEmpty();
@@ -578,38 +630,28 @@ class MenuServiceTest {
     @Test
     @DisplayName("getSubMenus - rootMenuNo가 null 이거나 <= 0 인 경우")
     void getSubMenus_NullOrZero() {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn("admin");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+        useGroup("ROLE_ADMIN");
 
         Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).useYn("Y").build();
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, null));
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(menu1, "ROLE_ADMIN"));
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
-        try {
-            menuService.getSubMenus(null);
-            menuService.getSubMenus(0L);
-            menuService.getSubMenus(-1L);
-        } catch(Exception e) {
-            // expected or caught
-        }
+        assertThat(menuService.getSubMenus(null)).hasSize(1);
+        assertThat(menuService.getSubMenus(0L)).hasSize(1);
+        assertThat(menuService.getSubMenus(-1L)).hasSize(1);
     }
 
     @Test
     @DisplayName("getSubMenus - 찾지 못하는 rootMenuNo 인 경우")
     void getSubMenus_NotFound() {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn("admin");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+        useGroup("ROLE_ADMIN");
 
         Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).useYn("Y").build();
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, null));
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(menu1, "ROLE_ADMIN"));
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         assertThat(menuService.getSubMenus(999L)).isEmpty();
@@ -618,15 +660,12 @@ class MenuServiceTest {
     @Test
     @DisplayName("getSubMenus - Children이 Null인 MenuDto 반환")
     void getSubMenus_ChildrenNull() {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn("admin");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+        useGroup("ROLE_ADMIN");
 
         Menu menu1 = Menu.builder().menuSn(1L).menuNm("Menu 1").menuOrdr(1).useYn("Y").build();
-        List<nuri.business.service.menu.dto.MenuWithAuthDto> results = new ArrayList<>();
-        results.add(new nuri.business.service.menu.dto.MenuWithAuthDto(menu1, null));
-        when(menuRepository.findAllWithAuthorities()).thenReturn(results);
+        List<MenuGrantFixture> results = new ArrayList<>();
+        results.add(new MenuGrantFixture(menu1, "ROLE_ADMIN"));
+        stubNavigation(results);
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> subMenus = menuService.getSubMenus(1L);
@@ -638,15 +677,9 @@ class MenuServiceTest {
     @Test
     @DisplayName("deleteMenuManageList - null 이나 비어있는 문자열 처리")
     void deleteMenuManageList_Empty() {
-        try {
-            menuService.deleteMenuManageList(null);
-        } catch(Exception e) {}
-        try {
-            menuService.deleteMenuManageList("");
-        } catch(Exception e) {}
-        try {
-            menuService.deleteMenuManageList("   ");
-        } catch(Exception e) {}
+        menuService.deleteMenuManageList(null);
+        menuService.deleteMenuManageList("");
+        menuService.deleteMenuManageList("   ");
         
         verify(menuRepository, never()).deleteAllById(any());
     }
@@ -654,9 +687,8 @@ class MenuServiceTest {
     @Test
     @DisplayName("insertMenuCreatList - split 후 trim 처리 빈문자열 무시")
     void insertMenuCreatList_TrimmedEmpty() {
-        try {
-            menuService.insertMenuCreatList("ROLE_USER", "1, , 3,");
-        } catch(Exception e) {}
+        menuService.insertMenuCreatList("ROLE_USER", "1, , 3,", "version-1");
+        verify(authorizationAdministrationService).replaceNavigationGrants("ROLE_USER", List.of(1L, 3L), "version-1");
     }
 
     @Test

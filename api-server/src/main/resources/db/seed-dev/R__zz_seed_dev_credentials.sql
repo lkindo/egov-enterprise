@@ -22,6 +22,12 @@ UPDATE tb_user_info
 --   E2E 의 auth.setup.ts 는 관리자(webmaster)와 일반 사용자(TEST1) 두 세션을 만든다.
 --   공유 OCI DB 에는 TEST1 이 누적돼 있어 로컬은 통과했지만 신규 DB(CI 컨테이너)에서는 401 로 실패했다
 --   (2026-07-26 CI 실측: "Backend unreachable for TEST1 (401)"). 빈 DB 에서도 성립하도록 명시 시드한다.
+DO $$
+DECLARE
+    created_user integer;
+    legacy_row jsonb;
+    target_row jsonb;
+BEGIN
 INSERT INTO tb_user_info
   (esntl_id, user_id, user_nm, user_type_cd, pswd, user_stts_cd, sbscrb_ymd)
 VALUES
@@ -29,14 +35,41 @@ VALUES
    '{bcrypt}$2a$10$C3g3CUhTf4f0xG1jJ1LYh.zoesF5XjPevWU2Yg8i24.eoiD4uhYxu', 'P',
    to_char(CURRENT_DATE, 'YYYYMMDD'))
 ON CONFLICT (esntl_id) DO NOTHING;
+    GET DIAGNOSTICS created_user = ROW_COUNT;
+
+    IF to_regclass('public.tb_authrt_user_map') IS NULL THEN
+        -- 과거 Flyway target 검증은 당시 단일 배정 모델을 유지한다.
+        INSERT INTO tb_user_authrt_map(scrty_dcsn_trgt_id,authrt_id,mbr_type_cd,crt_dt)
+        VALUES ('USRCNFRM_00000000002','ROLE_USER','USR',CURRENT_TIMESTAMP)
+        ON CONFLICT (scrty_dcsn_trgt_id) DO NOTHING;
+    ELSIF created_user > 0 THEN
+        -- 삭제/회수 이력이 있는 계정은 repeatable 재실행으로 권한을 되살리지 않는다.
+        IF EXISTS (SELECT 1 FROM tb_authrt_chg_hstry WHERE scrty_dcsn_trgt_id='USRCNFRM_00000000002') THEN
+            RETURN;
+        END IF;
+        INSERT INTO tb_authrt_user_map
+            (scrty_dcsn_trgt_id,authrt_cd,mbr_type_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)
+        VALUES ('USRCNFRM_00000000002','ROLE_USER','USR','SYSTEM',CURRENT_TIMESTAMP,'SYSTEM',CURRENT_TIMESTAMP);
+        SELECT to_jsonb(target) INTO target_row FROM tb_authrt_user_map target
+         WHERE scrty_dcsn_trgt_id='USRCNFRM_00000000002' AND authrt_cd='ROLE_USER';
+        IF to_regclass('public.tb_user_authrt_map') IS NOT NULL THEN
+            INSERT INTO tb_user_authrt_map
+                (scrty_dcsn_trgt_id,authrt_id,mbr_type_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)
+            VALUES ('USRCNFRM_00000000002','ROLE_USER','USR','SYSTEM',CURRENT_TIMESTAMP,'SYSTEM',CURRENT_TIMESTAMP);
+            SELECT to_jsonb(legacy) INTO legacy_row FROM tb_user_authrt_map legacy
+             WHERE scrty_dcsn_trgt_id='USRCNFRM_00000000002';
+        END IF;
+        INSERT INTO tb_authrt_chg_hstry
+            (dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,scrty_dcsn_trgt_id,
+             chg_artcl_nm,chg_bfr_cn,chg_aftr_cn,chg_rsn,frst_rgtr_id,crt_dt)
+        VALUES ('bootstrap:dev','bootstrap:dev','USER_GROUP','MIGRATE','ROLE_USER','USRCNFRM_00000000002',
+            CASE WHEN legacy_row IS NULL THEN 'membership' ELSE 'legacy_membership' END,
+            legacy_row::text,target_row::text,'이번 실행에서 새로 만든 bootstrap 계정의 명시 배정; 기존 배정은 재부여하지 않음',
+            'SYSTEM',CURRENT_TIMESTAMP);
+    END IF;
+END $$;
 
 -- 이미 존재하는 TEST1(공유 DB 누적분)의 비밀번호도 개발용으로 정렬한다.
 UPDATE tb_user_info
    SET pswd = '{bcrypt}$2a$10$C3g3CUhTf4f0xG1jJ1LYh.zoesF5XjPevWU2Yg8i24.eoiD4uhYxu'
  WHERE esntl_id = 'USRCNFRM_00000000002';
-
-INSERT INTO tb_user_authrt_map
-  (scrty_dcsn_trgt_id, authrt_id, mbr_type_cd, crt_dt)
-VALUES
-  ('USRCNFRM_00000000002', 'ROLE_USER', 'USR', CURRENT_TIMESTAMP)
-ON CONFLICT (scrty_dcsn_trgt_id) DO NOTHING;

@@ -49,7 +49,7 @@ public class SatisfactionService {
     public void updateSatisfaction(SatisfactionDto dto) {
         String userId = currentLoginId();
         Satisfaction entity = findOrThrow(Objects.requireNonNull(dto.getDgstfnSn()));
-        assertCanModify(entity);
+        assertCanModify(entity, "SATISFY_UPDATE_ALL");
         entity.update(dto.getDgstfnScr(), dto.getDgstfnCn());
         entity.setLastMdfrId(userId);
     }
@@ -59,7 +59,7 @@ public class SatisfactionService {
     public void deleteSatisfaction(Long satisfactionId) {
         String userId = currentLoginId();
         Satisfaction entity = findOrThrow(satisfactionId);
-        assertCanModify(entity);
+        assertCanModify(entity, "SATISFY_DELETE_ALL");
         entity.delete();
         entity.setLastMdfrId(userId);
     }
@@ -70,7 +70,7 @@ public class SatisfactionService {
      */
     @Transactional
     public void deleteByModerator(Long satisfactionId) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("SATISFY_MODERATE");
         String moderatorId = currentLoginId();
         Satisfaction entity = findOrThrow(satisfactionId);
         entity.delete();
@@ -100,11 +100,11 @@ public class SatisfactionService {
      * 수정·삭제 권한 검사. 작성자 감사 값이 없는 레거시 행은 관리자도 일반 경로로 변경하지 못한다.
      * 그런 행의 정리는 명시적인 moderation 경로만 허용한다.
      */
-    private void assertCanModify(Satisfaction entity) {
+    private void assertCanModify(Satisfaction entity, String overridePermission) {
         if (!StringUtils.hasText(entity.getFrstRgtrId())) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
-        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+        SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), overridePermission);
     }
 
     private String currentLoginId() {

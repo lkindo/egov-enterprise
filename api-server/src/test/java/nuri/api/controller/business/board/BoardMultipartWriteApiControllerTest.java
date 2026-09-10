@@ -46,12 +46,7 @@ class BoardMultipartWriteApiControllerTest extends ControllerTestSupport {
 
     @BeforeEach
     void setUp() {
-        UserDetails userDetails = User.withUsername("user01")
-                .password("")
-                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
-                .build();
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities());
+        var auth = nuri.business.support.AuthorizationTestPrincipal.authentication("user01", "user01", "USER");
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 

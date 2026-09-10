@@ -39,16 +39,16 @@ public class SurveySubmissionApiController {
 
     @Operation(summary = "설문 결과 통계",
             description = "문항 × 항목 단위의 평면 분포를 반환한다. 응답이 0건인 항목도 0% 행으로 포함한다.")
-    @Authenticated
     @GetMapping("/stats")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#getStats')")
     public ResponseEntity<ApiResponse<List<SurveyStatsDto>>> getStats(@PathVariable Long srvySn) {
         return ResponseEntity.ok(ApiResponse.success(surveyResultService.getStats(srvySn)));
     }
 
     @Operation(summary = "설문 응답 제출",
             description = "답변 N건이 응답 행 N개가 된다. 같은 사용자의 재제출은 거부한다.")
-    @Authenticated
     @PostMapping("/responses")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#submit')")
     public ResponseEntity<ApiResponse<Integer>> submit(
             @PathVariable Long srvySn,
             @Valid @RequestBody SurveyResponseSubmitDto dto) {

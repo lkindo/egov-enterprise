@@ -31,6 +31,7 @@ public class DeptApiController {
 
     @Operation(summary = "부서 목록 조회", description = "시스템 부서 목록을 페이징하여 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#getDepts')")
     public ResponseEntity<ApiResponse<PageResponse<DeptManageDto>>> getDepts(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -52,6 +53,7 @@ public class DeptApiController {
      */
     @Operation(summary = "부서 전량 조회 (조직도 트리용)", description = "페이징 없이 전체 부서 목록을 조회합니다. 조직도 편집 화면 전용.")
     @GetMapping("/tree")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#getDeptTree')")
     public ResponseEntity<ApiResponse<java.util.List<DeptManageDto>>> getDeptTree(
             @RequestParam(required = false) String keyword) {
 
@@ -61,6 +63,7 @@ public class DeptApiController {
 
     @Operation(summary = "부서 상세 조회", description = "특정 부서 ID에 해당하는 상세 정보를 조회합니다.")
     @GetMapping("/{deptId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#getDept')")
     public ResponseEntity<ApiResponse<DeptManageDto>> getDept(
             @Parameter(description = "부서 ID (OgnzId)") @PathVariable String deptId) {
         return ResponseEntity.ok(ApiResponse.success(deptManageService.getDeptManage(deptId)));
@@ -69,6 +72,7 @@ public class DeptApiController {
     @Operation(summary = "부서 등록",
             description = "새로운 시스템 부서를 등록하고 생성된 부서 ID 를 반환합니다. ognzId 는 서버가 채번하므로 보내지 않습니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#insertDept')")
     public ResponseEntity<ApiResponse<String>> insertDept(@Valid @RequestBody DeptManageDto dto) {
         return ResponseEntity.ok(ApiResponse.success(deptManageService.insertDeptManage(dto)));
     }
@@ -76,6 +80,7 @@ public class DeptApiController {
     @Operation(summary = "조직 계층 일괄 저장",
             description = "조직도 편집 결과(상위 부서·정렬 순서)를 일괄 반영합니다. 각 항목의 ognzId 는 필수입니다.")
     @PutMapping("/batch-hierarchy")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#updateDeptHierarchy')")
     public ResponseEntity<ApiResponse<Void>> updateDeptHierarchy(
             @Valid @RequestBody java.util.List<@Valid DeptHierarchyItemRequest> items) {
         java.util.List<DeptManageDto> hierarchy = items.stream()
@@ -91,6 +96,7 @@ public class DeptApiController {
 
     @Operation(summary = "부서 정보 수정", description = "기존 시스템 부서의 정보를 수정합니다.")
     @PutMapping("/{deptId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#updateDept')")
     public ResponseEntity<ApiResponse<Void>> updateDept(
             @PathVariable String deptId,
             @Valid @RequestBody DeptManageDto dto) {
@@ -101,6 +107,7 @@ public class DeptApiController {
 
     @Operation(summary = "부서 삭제", description = "시스템에서 부서를 삭제합니다.")
     @DeleteMapping("/{deptId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#deleteDept')")
     public ResponseEntity<ApiResponse<Void>> deleteDept(
             @Parameter(description = "부서 ID (OgnzId)") @PathVariable String deptId) {
         deptManageService.deleteDeptManage(deptId);

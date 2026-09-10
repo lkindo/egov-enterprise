@@ -19,7 +19,6 @@ import java.util.List;
 
 @Tag(name = "Schedule", description = "일정 관리 API")
 @Slf4j
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/schedules")
 @RequiredArgsConstructor
@@ -29,6 +28,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 목록 조회", description = "사용자가 담당자인 일정 목록을 페이징하여 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#getScheduleList')")
     public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getScheduleList(
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageUnit,
@@ -42,6 +42,7 @@ public class ScheduleApiController {
     @Operation(summary = "부서 일정 목록 조회",
             description = "로그인 사용자와 같은 부서의 일정 목록을 페이징하여 조회합니다. schdlNm 으로 부분일치 검색할 수 있습니다.")
     @GetMapping("/dept")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#getDeptScheduleList')")
     public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getDeptScheduleList(
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageUnit,
@@ -55,6 +56,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "월별 일정 조회", description = "사용자의 월별 일정 목록을 조회합니다.")
     @GetMapping("/monthly")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#getMonthlySchedule')")
     public ResponseEntity<ApiResponse<List<ScheduleDto>>> getMonthlySchedule(
             @RequestParam String yearMonth) {
         String userId = currentLoginId();
@@ -64,6 +66,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "기간별 일정 조회", description = "사용자의 특정 기간 내 일정 목록을 조회합니다.")
     @GetMapping("/range")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#getScheduleByDateRange')")
     public ResponseEntity<ApiResponse<List<ScheduleDto>>> getScheduleByDateRange(
             @RequestParam String startDate,
             @RequestParam String endDate) {
@@ -74,6 +77,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 상세 조회", description = "특정 일정의 상세 정보를 조회합니다.")
     @GetMapping("/{schdlSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#getSchedule')")
     public ResponseEntity<ApiResponse<ScheduleDto>> getSchedule(@PathVariable Long schdlSn) {
         ScheduleDto dto = egovScheduleService.getSchedule(schdlSn);
         return ResponseEntity.ok(ApiResponse.success(dto));
@@ -81,6 +85,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 등록", description = "새로운 일정을 등록합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#createSchedule')")
     public ResponseEntity<ApiResponse<Long>> createSchedule(@Valid @RequestBody ScheduleDto dto) {
         // [H2] 엔벨로프를 우회하던 수동 빈-401 제거 — 인증은 Spring Security가 이미 강제한다.
         String userId = currentLoginId();
@@ -90,6 +95,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 수정", description = "기존 일정을 수정합니다.")
     @PutMapping("/{schdlSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#updateSchedule')")
     public ResponseEntity<ApiResponse<Void>> updateSchedule(@PathVariable Long schdlSn, @Valid @RequestBody ScheduleDto dto) {
         String userId = currentLoginId();
         egovScheduleService.updateSchedule(schdlSn, userId, dto);
@@ -98,6 +104,7 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 삭제", description = "일정을 삭제합니다.")
     @DeleteMapping("/{schdlSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#deleteSchedule')")
     public ResponseEntity<ApiResponse<Void>> deleteSchedule(@PathVariable Long schdlSn) {
         String userId = currentLoginId();
         egovScheduleService.deleteSchedule(schdlSn, userId);

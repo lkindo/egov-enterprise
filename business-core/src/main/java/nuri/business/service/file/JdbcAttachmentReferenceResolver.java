@@ -31,11 +31,20 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
 
     private final JdbcTemplate jdbcTemplate;
     private final List<AttachmentSource> sources;
+    private final nuri.foundation.core.community.CommunityBoardAccessPort communityAccess;
 
     public JdbcAttachmentReferenceResolver(
             JdbcTemplate jdbcTemplate,
             List<AttachmentSourceContributor> contributors) {
+        this(jdbcTemplate, contributors, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public JdbcAttachmentReferenceResolver(JdbcTemplate jdbcTemplate,
+            List<AttachmentSourceContributor> contributors,
+            @org.springframework.lang.Nullable nuri.foundation.core.community.CommunityBoardAccessPort communityAccess) {
         this.jdbcTemplate = jdbcTemplate;
+        this.communityAccess = communityAccess;
         this.sources = contributors.stream()
                 .flatMap(contributor -> contributor.sources().stream())
                 .sorted(Comparator.comparing(AttachmentSource::table))
@@ -81,6 +90,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
     }
 
     private SourceHit query(AttachmentSource source, Long atchFileSn, String loginId, String esntlId) {
+        if (source == AttachmentSource.BOARD) return queryBoard(atchFileSn, loginId, esntlId);
         List<Object> params = new ArrayList<>();
 
         String sharedExpr = source.sharedPredicate() != null ? source.sharedPredicate() : "1 = 0";
@@ -123,6 +133,30 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 rs.getLong("shared_cnt") > 0,
                 rs.getLong("owner_cnt") > 0), params.toArray());
     }
+
+    /** The referenced board's community gate applies before either owner or public-post reachability. */
+    private SourceHit queryBoard(Long fileId, String loginId, String esntlId) {
+        var references = jdbcTemplate.query("""
+                SELECT b.frst_rgtr_id,b.user_id,b.scrt_yn,m.bbs_id AS master_id,m.cmnty_sn
+                  FROM tb_bbs_item b LEFT JOIN tb_bbs_master m ON m.bbs_id=b.bbs_id
+                 WHERE b.atch_file_sn=?
+                """, (rs,n) -> new BoardReference(rs.getString("frst_rgtr_id"),rs.getString("user_id"),
+                    rs.getString("scrt_yn"),rs.getString("master_id"),rs.getObject("cmnty_sn",Long.class)),fileId);
+        boolean shared=false, owner=false;
+        for (var reference: references) {
+            if (reference.masterId()==null) throw new org.springframework.dao.DataRetrievalFailureException("Referenced board master missing");
+            boolean communityAllowed=reference.communityId()==null
+                    || nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")
+                    || (communityAccess!=null && esntlId!=null && communityAccess.isApprovedMember(reference.communityId(),esntlId));
+            if (communityAllowed) {
+                shared |= !"Y".equals(reference.secret());
+                owner |= (loginId!=null && loginId.equals(reference.registrar())) || (esntlId!=null && esntlId.equals(reference.userId()));
+            }
+        }
+        return new SourceHit(!references.isEmpty(),shared,owner);
+    }
+
+    private record BoardReference(String registrar,String userId,String secret,String masterId,Long communityId) {}
 
     /**
      * 술어에 들어 있는 <b>바인드 자리표시자</b> 개수를 센다.

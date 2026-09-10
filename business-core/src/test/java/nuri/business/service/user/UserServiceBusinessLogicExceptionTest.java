@@ -31,6 +31,12 @@ import static org.mockito.Mockito.mockStatic;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService (비즈니스 로직 예외 상황) 테스트")
 class UserServiceBusinessLogicExceptionTest {
+    @Mock private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
+    @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
+
+    @org.junit.jupiter.api.AfterEach
+    void clearAuthorization() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
+
 
         @Mock
         private UserRepository userRepository;
@@ -95,7 +101,7 @@ class UserServiceBusinessLogicExceptionTest {
                 when(userRepository.findByUserId("newUser")).thenReturn(java.util.Optional.empty());
                 when(passwordEncoder.encode(any(String.class))).thenReturn("encodedPassword");
                 doThrow(new RuntimeException("Database connection failed"))
-                                .when(userRepository).save(any(User.class));
+                                .when(userRepository).saveAndFlush(any(User.class));
 
                 // When & Then
                 assertThatThrownBy(() -> userService.signup(signupRequest))
@@ -127,11 +133,12 @@ class UserServiceBusinessLogicExceptionTest {
         @DisplayName("사용자 등록 실패 - DB 저장 오류")
         void registerUser_fail_withDatabaseSaveError() {
                 try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-                        mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+                        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
                         // Given
                         when(passwordEncoder.encode("password123!")).thenReturn("encodedPassword");
                         doThrow(new RuntimeException("Database save failed"))
-                                        .when(userRepository).save(any(User.class));
+                                        .when(userRepository).saveAndFlush(any(User.class));
 
                         // When & Then
                         assertThatThrownBy(
@@ -158,7 +165,8 @@ class UserServiceBusinessLogicExceptionTest {
         @DisplayName("사용자 등록 실패 - 필수 필드(UserId) 누락")
         void registerUser_fail_withNullUserId() {
                 try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-                        mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+                        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
                         // [2026-08-11] 빌더를 우회해 **서비스 가드**에 직접 도달시킨다.
                         //   registerUser 가 UserDto 를 받도록 바뀌면서, Lombok @Builder 가 @NonNull 필드
                         //   (userId·userNm)에 null 검사를 생성해 **빌더 단계에서 NPE** 가 먼저 난다.
@@ -178,7 +186,8 @@ class UserServiceBusinessLogicExceptionTest {
         @DisplayName("사용자 등록 실패 - 필수 필드(UserNm) 누락")
         void registerUser_fail_withNullUserNm() {
                 try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-                        mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+                        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
                         // 빌더 우회 이유는 위 UserId 케이스 주석 참조.
                         UserDto invalid = org.mockito.Mockito.mock(UserDto.class);
                         org.mockito.Mockito.when(invalid.userId()).thenReturn("newUser");
@@ -194,7 +203,8 @@ class UserServiceBusinessLogicExceptionTest {
         @DisplayName("사용자 등록 실패 - 비밀번호 인코딩 오류")
         void registerUser_fail_withPasswordEncodingError() {
                 try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-                        mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+                        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
                         // Given
                         when(passwordEncoder.encode("password123!"))
                                         .thenThrow(new RuntimeException("Password encoding failed"));

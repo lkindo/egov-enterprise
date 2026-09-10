@@ -105,10 +105,10 @@ test('source hashes are portable between LF and CRLF checkouts', () => {
   assert.equal(gateExitCode(f.apply()), 0);
 });
 
-test('the approved seven-entry inventory matches every current source and defense', () => {
+test('the retained approved findings match current source and defenses; retired write branches have no exceptions', () => {
   assert.deepEqual(reviewedExceptions.findings.map(e => e.id),
-    Array.from({ length: 7 }, (_, i) => `SAST-FP-${String(i + 1).padStart(3, '0')}`));
-  assert.equal(reviewedExceptions.findings.filter(e => e.language === 'java').length, 5);
+    ['SAST-FP-001', 'SAST-FP-002', 'SAST-FP-003', 'SAST-FP-006', 'SAST-FP-007']);
+  assert.equal(reviewedExceptions.findings.filter(e => e.language === 'java').length, 3);
   for (const entry of reviewedExceptions.findings) {
     assert.equal(sourceHash(repoRoot, entry.file), entry.sourceSha256, entry.id);
     for (const source of entry.supportingSources) assert.equal(sourceHash(repoRoot, source.file), source.sha256, source.file);

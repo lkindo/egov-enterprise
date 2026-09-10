@@ -56,6 +56,7 @@ public class NetworkMonitoringApiController {
     @Operation(summary = "네트워크 서비스 상태 목록 조회",
             description = "계측 소스가 연결되기 전까지 항상 빈 목록을 반환한다. 하드코딩된 가짜 헬스 상태를 내리지 않는다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#getStatus')")
     public ResponseEntity<ApiResponse<PageResponse<NetworkStatusDetailedDto>>> getStatus(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 
@@ -70,18 +71,21 @@ public class NetworkMonitoringApiController {
 
     @Operation(summary = "네트워크 기초 정보 등록", description = "미구현 — 501 을 반환한다(저장 없이 200 을 주지 않는다).")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#createNetwork')")
     public ResponseEntity<ApiResponse<Void>> createNetwork(@RequestBody NetworkDto networkDto) {
         return notImplemented();
     }
 
     @Operation(summary = "네트워크 정보 수정", description = "미구현 — 501 을 반환한다.")
     @PutMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#updateNetwork')")
     public ResponseEntity<ApiResponse<Void>> updateNetwork(@PathVariable String id, @RequestBody NetworkDto networkDto) {
         return notImplemented();
     }
 
     @Operation(summary = "네트워크 정보 삭제", description = "미구현 — 501 을 반환한다.")
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#deleteNetwork')")
     public ResponseEntity<ApiResponse<Void>> deleteNetwork(@PathVariable String id) {
         return notImplemented();
     }

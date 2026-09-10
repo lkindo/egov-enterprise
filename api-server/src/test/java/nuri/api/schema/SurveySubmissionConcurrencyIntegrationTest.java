@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
 @SpringBootTest
+@org.springframework.context.annotation.Import(AuthorizationSchemaRehearsalTestConfiguration.class)
 @ActiveProfiles({"test", "tc"})
 class SurveySubmissionConcurrencyIntegrationTest {
     @Autowired private SurveyResultService service;

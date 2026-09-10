@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthorForm } from '@/components/admin/security/AuthorForm';
+import { AuthorizationGroupForm } from '@/app/admin/security/authority/components/AuthorizationGroupForm';
 import { NetworkForm } from '@/components/admin/system/NetworkForm';
 import { ProgramForm } from '@/components/admin/system/ProgramForm';
 import { DepartmentForm } from '@/components/admin/user/DepartmentForm';
@@ -68,21 +68,21 @@ type ContractCase = {
 
 const cases: ContractCase[] = [
   {
-    name: 'AuthorForm',
-    render: (onSubmit) => <AuthorForm mode="create" onSubmit={onSubmit} onCancel={vi.fn()} />,
-    submitName: /권한 배포/,
-    firstFieldName: /보안 역할 식별자/,
+    name: 'AuthorizationGroupForm',
+    render: (onSubmit) => <AuthorizationGroupForm creating initial={{ code: '', name: '', description: '' }} externalBusy={false} onSubmit={onSubmit} />,
+    submitName: /그룹 등록/,
+    firstFieldName: /그룹 코드/,
     maxLength: '20',
     renderValid: (onSubmit) => (
-      <AuthorForm
-        mode="create"
-        initialData={{ authrtCd: 'ROLE_TEST', authrtNm: '테스트 역할' }}
+      <AuthorizationGroupForm
+        creating
+        initial={{ code: 'ROLE_TEST', name: '테스트 그룹', description: '' }}
         onSubmit={onSubmit}
-        onCancel={vi.fn()}
+        externalBusy={false}
       />
     ),
-    serverField: 'authrtNm',
-    serverFieldName: /역할 레이블 명칭/,
+    serverField: 'name',
+    serverFieldName: /그룹명/,
   },
   {
     name: 'NetworkForm',

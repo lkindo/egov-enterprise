@@ -25,6 +25,7 @@ public class RewardManageApiController {
 
     @Operation(summary = "포상 목록 조회", description = "포상 정보를 페이징하여 조회한다. name 지정 시 포상명 부분일치 검색.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.RewardManageApiController#getAllRewards')")
     public ResponseEntity<ApiResponse<PageResponse<RewardManageDto>>> getAllRewards(
             @RequestParam(required = false) String name,
             @PageableDefault(size = 10, sort = "crtDt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -34,6 +35,7 @@ public class RewardManageApiController {
 
     @Operation(summary = "포상 등록", description = "포상 정보를 등록한다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.RewardManageApiController#createReward')")
     public ResponseEntity<ApiResponse<RewardManageDto>> createReward(@Valid @RequestBody RewardManageDto dto) {
         return ResponseEntity.ok(ApiResponse.success(rewardManageService.createReward(dto)));
     }
@@ -41,6 +43,7 @@ public class RewardManageApiController {
     /* [2026-09-05 DEC-OPS-036] 수정·삭제 신설 — 종전에는 GET·POST 뿐이었다(감사 D11-01). */
     @Operation(summary = "포상 수정", description = "포상 정보(수상자·코드·일자·명칭·공적 내용)를 수정한다.")
     @PutMapping("/{rwrdSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.RewardManageApiController#updateReward')")
     public ResponseEntity<ApiResponse<RewardManageDto>> updateReward(
             @PathVariable Long rwrdSn,
             @Valid @RequestBody RewardManageDto dto) {
@@ -49,6 +52,7 @@ public class RewardManageApiController {
 
     @Operation(summary = "포상 삭제", description = "포상 정보를 삭제한다.")
     @DeleteMapping("/{rwrdSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.RewardManageApiController#deleteReward')")
     public ResponseEntity<ApiResponse<Void>> deleteReward(@PathVariable Long rwrdSn) {
         rewardManageService.deleteReward(rwrdSn);
         return ResponseEntity.ok(ApiResponse.success(null));

@@ -11,7 +11,6 @@ import nuri.business.support.ControllerTestSupport;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -202,9 +201,7 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
     void createIsNotPrivacyAccess() throws NoSuchMethodException {
         Method handler = ExternalHrApiController.class.getMethod("createExternalHr", ExternalHrDto.class);
         assertThat(handler.isAnnotationPresent(PrivacyAccess.class)).isFalse();
-        assertThat(handler.isAnnotationPresent(AdminOrSystem.class))
-                .as("외부인사 등록은 URL RBAC와 별개로 메서드에서도 ADMIN/SYSTEM을 재확인한다")
-                .isTrue();
+        nuri.security.support.MethodPermissionContract.assertOperation(handler, "EXT_HR_CREATE", false);
     }
 
     // [2026-09-05 DEC-OPS-036] 수정·삭제 경로(복합키는 경로에 둘 다 싣는다).

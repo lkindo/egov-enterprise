@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @Tag("schema-validation")
 @SpringBootTest
+@org.springframework.context.annotation.Import(AuthorizationSchemaRehearsalTestConfiguration.class)
 @ActiveProfiles({"test", "tc"})
 @DisplayName("🐘 실 PostgreSQL 쓰기 스모크 — CHECK 제약과 애플리케이션 쓰기 값의 정합")
 class WriteSmokeIntegrationTest {

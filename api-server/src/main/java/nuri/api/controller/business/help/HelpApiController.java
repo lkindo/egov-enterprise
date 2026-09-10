@@ -30,6 +30,7 @@ public class HelpApiController {
 
     @Operation(summary = "도움말 목록 조회", description = "도움말 목록을 페이징하여 조회합니다.")
     @GetMapping("/hpcm")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#getHpcmList')")
     public ResponseEntity<ApiResponse<PageResponse<HpcmDto>>> getHpcmList(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -39,6 +40,7 @@ public class HelpApiController {
 
     @Operation(summary = "도움말 상세 조회", description = "도움말 상세 정보를 조회합니다.")
     @GetMapping("/hpcm/{hlpSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#getHpcm')")
     public ResponseEntity<ApiResponse<HpcmDto>> getHpcm(
             @Parameter(description = "도움말 일련번호") @PathVariable Long hlpSn) {
         return ResponseEntity.ok(ApiResponse.success(helpService.getHpcm(hlpSn)));
@@ -46,6 +48,7 @@ public class HelpApiController {
 
     @Operation(summary = "도움말 등록", description = "새로운 도움말을 등록합니다.")
     @PostMapping("/hpcm")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#insertHpcm')")
     public ResponseEntity<ApiResponse<Long>> insertHpcm(@Valid @RequestBody HpcmDto dto) {
         Long hlpSn = helpService.createHpcm("ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(hlpSn));
@@ -53,6 +56,7 @@ public class HelpApiController {
 
     @Operation(summary = "도움말 수정", description = "도움말 정보를 수정합니다.")
     @PutMapping("/hpcm/{hlpSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#updateHpcm')")
     public ResponseEntity<ApiResponse<Void>> updateHpcm(
             @PathVariable Long hlpSn,
             @Valid @RequestBody HpcmDto dto) {
@@ -62,6 +66,7 @@ public class HelpApiController {
 
     @Operation(summary = "도움말 삭제", description = "도움말 정보를 삭제합니다.")
     @DeleteMapping("/hpcm/{hlpSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#deleteHpcm')")
     public ResponseEntity<ApiResponse<Void>> deleteHpcm(@PathVariable Long hlpSn) {
         helpService.deleteHpcm(hlpSn);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -71,6 +76,7 @@ public class HelpApiController {
 
     @Operation(summary = "온라인 매뉴얼 목록 조회", description = "온라인 매뉴얼 목록을 페이징하여 조회합니다.")
     @GetMapping("/manuals")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#getManuals')")
     public ResponseEntity<ApiResponse<PageResponse<OnlineManualDto>>> getManuals(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -80,6 +86,7 @@ public class HelpApiController {
 
     @Operation(summary = "온라인 매뉴얼 상세 조회", description = "특정 온라인 매뉴얼의 상세 정보를 조회합니다.")
     @GetMapping("/manuals/{onlnMnlSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#getManual')")
     public ResponseEntity<ApiResponse<OnlineManualDto>> getManual(
             @Parameter(description = "매뉴얼 일련번호") @PathVariable Long onlnMnlSn) {
         return ResponseEntity.ok(ApiResponse.success(helpService.getOnlineManual(onlnMnlSn)));
@@ -87,6 +94,7 @@ public class HelpApiController {
 
     @Operation(summary = "온라인 매뉴얼 등록", description = "새로운 온라인 매뉴얼을 등록합니다.")
     @PostMapping("/manuals")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#createManual')")
     public ResponseEntity<ApiResponse<Long>> createManual(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody OnlineManualDto dto) {
@@ -97,6 +105,7 @@ public class HelpApiController {
 
     @Operation(summary = "온라인 매뉴얼 수정", description = "온라인 매뉴얼 정보를 수정합니다.")
     @PutMapping("/manuals/{onlnMnlSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#updateManual')")
     public ResponseEntity<ApiResponse<Void>> updateManual(
             @PathVariable Long onlnMnlSn,
             @Valid @RequestBody OnlineManualDto dto) {
@@ -106,6 +115,7 @@ public class HelpApiController {
 
     @Operation(summary = "온라인 매뉴얼 삭제", description = "온라인 매뉴얼 정보를 삭제합니다.")
     @DeleteMapping("/manuals/{onlnMnlSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#deleteManual')")
     public ResponseEntity<ApiResponse<Void>> deleteManual(@PathVariable Long onlnMnlSn) {
         helpService.deleteOnlineManual(onlnMnlSn);
         return ResponseEntity.ok(ApiResponse.success(null));

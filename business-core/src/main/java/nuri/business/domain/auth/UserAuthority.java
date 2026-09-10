@@ -8,7 +8,8 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
-@Table(name = "tb_user_authrt_map")
+@Table(name = "tb_authrt_user_map")
+@IdClass(UserAuthorityId.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserAuthority extends BaseEntity implements Serializable {
@@ -19,7 +20,8 @@ public class UserAuthority extends BaseEntity implements Serializable {
     @NonNull
     private String scrtyDcsnTrgtId;
 
-    @Column(name = "authrt_id", nullable = false, length = 30)
+    @Id
+    @Column(name = "authrt_cd", nullable = false, length = 20)
     @NonNull
     private String authrtId;
 
@@ -29,7 +31,7 @@ public class UserAuthority extends BaseEntity implements Serializable {
     private nuri.business.domain.user.entity.User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "authrt_id", referencedColumnName = "authrt_cd", insertable = false, updatable = false,
+    @JoinColumn(name = "authrt_cd", referencedColumnName = "authrt_cd", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Authority authority;
 
@@ -48,7 +50,9 @@ public class UserAuthority extends BaseEntity implements Serializable {
     }
 
     public void update(@NonNull String authrtId, String mbrTypeCd) {
-        this.authrtId = Objects.requireNonNull(authrtId);
+        if (!this.authrtId.equals(Objects.requireNonNull(authrtId))) {
+            throw new IllegalArgumentException("Membership keys are immutable; use an audited group assignment");
+        }
         this.mbrTypeCd = mbrTypeCd;
     }
 }

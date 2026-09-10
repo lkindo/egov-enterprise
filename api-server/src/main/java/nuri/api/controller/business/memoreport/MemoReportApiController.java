@@ -21,7 +21,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "MemoReport", description = "메모보고 관리 API")
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/memo-reports")
 @RequiredArgsConstructor
@@ -31,7 +30,7 @@ public class MemoReportApiController {
 
     @Operation(summary = "메모보고 목록 조회", description = "전체 메모보고 목록을 페이징하여 조회합니다. (관리자 전용)")
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#getMemoReports')")
     public ResponseEntity<ApiResponse<PageResponse<MemoReportDto>>> getMemoReports(
             @RequestParam(required = false) String searchKeyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -41,6 +40,7 @@ public class MemoReportApiController {
 
     @Operation(summary = "나의 메모보고 목록 조회", description = "내가 작성한 메모보고 목록을 조회합니다.")
     @GetMapping("/my")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#getMyReports')")
     public ResponseEntity<ApiResponse<PageResponse<MemoReportDto>>> getMyReports(
             @AuthenticationPrincipal UserDetails userDetails,
             // [2026-08-29] 화면이 보내던 검색어를 실제로 받는다 — 종전에는 선언이 없어 조용히 버려졌다.
@@ -52,6 +52,7 @@ public class MemoReportApiController {
 
     @Operation(summary = "수신 메모보고 목록 조회", description = "나에게 수신된 메모보고 목록을 조회합니다.")
     @GetMapping("/received")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#getReceivedReports')")
     public ResponseEntity<ApiResponse<PageResponse<MemoReportDto>>> getReceivedReports(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String searchKeyword,
@@ -62,6 +63,7 @@ public class MemoReportApiController {
 
     @Operation(summary = "메모보고 상세 조회", description = "메모보고 상세 정보를 조회합니다.")
     @GetMapping("/{memoRptSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#getMemoReport')")
     public ResponseEntity<ApiResponse<MemoReportDto>> getMemoReport(
             @Parameter(description = "메모보고 일련번호") @PathVariable Long memoRptSn) {
         memoReportService.readMemoReport(memoRptSn);
@@ -70,6 +72,7 @@ public class MemoReportApiController {
 
     @Operation(summary = "메모보고 등록", description = "새로운 메모보고를 등록합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#createMemoReport')")
     public ResponseEntity<ApiResponse<Long>> createMemoReport(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody MemoReportDto dto) {
@@ -79,6 +82,7 @@ public class MemoReportApiController {
 
     @Operation(summary = "메모보고 수정", description = "기존 메모보고를 수정합니다.")
     @PutMapping("/{memoRptSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#updateMemoReport')")
     public ResponseEntity<ApiResponse<Void>> updateMemoReport(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long memoRptSn,
@@ -89,6 +93,7 @@ public class MemoReportApiController {
 
     @Operation(summary = "지시사항 업데이트", description = "메모보고에 대한 지시사항을 업데이트합니다.")
     @PatchMapping(value = "/{memoRptSn}/instr-cn", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#updateDrctMatter')")
     public ResponseEntity<ApiResponse<Void>> updateDrctMatter(
             @PathVariable Long memoRptSn,
             @Valid @RequestBody MemoInstructionRequest request) {
@@ -98,6 +103,7 @@ public class MemoReportApiController {
 
     @Operation(summary = "메모보고 삭제", description = "메모보고 정보를 삭제합니다.")
     @DeleteMapping("/{memoRptSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#deleteMemoReport')")
     public ResponseEntity<ApiResponse<Void>> deleteMemoReport(@PathVariable Long memoRptSn) {
         memoReportService.deleteMemoReport(memoRptSn);
         return ResponseEntity.ok(ApiResponse.success(null));

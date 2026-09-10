@@ -151,6 +151,13 @@ export function validateReusableBase(manifest, repository) {
   const { domainOwners, tableOwners, sequenceOwners } = ownershipMaps(manifest, errors);
   const packRank = (packName) => manifest.packs?.[packName]?.rank;
 
+  for (const table of ['tb_authrt_info', 'tb_authrt_user_map', 'tb_authrt_grnt_map', 'tb_authrt_chg_hstry']) {
+    if (tableOwners.get(table) !== 'core') errors.push(`authorization core table '${table}'은 core pack에 있어야 한다.`);
+  }
+  for (const table of ['tb_user_authrt_map', 'tb_authrt_role_map', 'tb_menu_crt_dtl', 'tb_role_prgrm_map', 'tb_role_hierarchy', 'tb_role_info']) {
+    if (tableOwners.has(table)) errors.push(`retired authorization table '${table}'은 Contract 이후 base에 포함할 수 없다.`);
+  }
+
   for (const sourceRoot of repository.unexpectedAppSourceRoots ?? []) {
     errors.push(`business-app source root '${sourceRoot}'가 domain/service 소유 경계 밖에 있다.`);
   }

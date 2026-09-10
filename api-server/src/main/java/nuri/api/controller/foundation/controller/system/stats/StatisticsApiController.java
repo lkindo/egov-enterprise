@@ -25,6 +25,7 @@ public class StatisticsApiController {
 
     @Operation(summary = "보고서 통계 조회")
     @GetMapping("/report")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getReportStats')")
     public ResponseEntity<ApiResponse<List<StatsDto>>> getReportStats(
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate) throws Exception {
@@ -36,6 +37,7 @@ public class StatisticsApiController {
 
     @Operation(summary = "자료이용현황 통계 조회")
     @GetMapping("/data-usage")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getDataUsageStats')")
     public ResponseEntity<ApiResponse<List<StatsDto>>> getDataUsageStats(
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate) throws Exception {
@@ -47,6 +49,7 @@ public class StatisticsApiController {
 
     @Operation(summary = "게시물 통계 조회")
     @GetMapping("/bbs")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getBbsStats')")
     public ResponseEntity<ApiResponse<List<StatsDto>>> getBbsStats(
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate) throws Exception {
@@ -58,6 +61,7 @@ public class StatisticsApiController {
 
     @Operation(summary = "사용자 통계 조회")
     @GetMapping("/user")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getUserStats')")
     public ResponseEntity<ApiResponse<List<StatsDto>>> getUserStats(
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate) throws Exception {
@@ -69,6 +73,7 @@ public class StatisticsApiController {
 
     @Operation(summary = "접속 통계 조회")
     @GetMapping("/connect")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getConnectStats')")
     public ResponseEntity<ApiResponse<List<StatsDto>>> getConnectStats(
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
@@ -81,6 +86,7 @@ public class StatisticsApiController {
 
     @Operation(summary = "요약 통계 조회")
     @GetMapping("/summary")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getSummary')")
     public ResponseEntity<ApiResponse<nuri.business.service.stats.dto.SummaryStatsDto>> getSummary() {
         return ResponseEntity.ok(ApiResponse.success(reportStatsService.getSummary()));
     }

@@ -11,6 +11,7 @@
  *   node scripts/generate-reusable-base-db.mjs --profile core --allow-dirty --allow-non-release-ref
  */
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   copyFileSync,
   existsSync,
@@ -233,6 +234,27 @@ function restore(container, user, database, sql) {
   );
 }
 
+/** Raw SQL rehearsal ledger is disposable evidence only; it is removed before pg_dump. */
+export function buildIsolatedContractSql(database, catalogVersion, contractSql) {
+  if (!/^test_reusable_base_[a-z0-9_]+$/.test(database)) fail('Contract rehearsal requires a disposable generated DB name.');
+  if (!/^[a-f0-9]{64}$/.test(catalogVersion)) fail('Contract rehearsal requires the generated catalog digest.');
+  if (!contractSql.includes('DO $authorization_contract$')) fail('The actual authorization Contract SQL is required.');
+  const evidence = createHash('sha256').update(`DISPOSABLE_BASE_REHEARSAL:${database}`).digest('hex');
+  const backup = createHash('sha256').update('DISPOSABLE_BASE_NO_OPERATIONAL_BACKUP').digest('hex');
+  return `BEGIN;
+DO $$ BEGIN
+  IF current_database() <> '${database}' THEN RAISE EXCEPTION 'Disposable Contract target mismatch'; END IF;
+END $$;
+CREATE TABLE flyway_schema_history(version varchar(50),success boolean);
+INSERT INTO flyway_schema_history VALUES('2.98',true),('2.99',true);
+SELECT set_config('app.authorization_cutover_evidence','${evidence}',true);
+SELECT set_config('app.authorization_backup_sha256','${backup}',true);
+SELECT set_config('app.authorization_catalog_version','${catalogVersion}',true);
+${contractSql}
+DROP TABLE flyway_schema_history;
+COMMIT;`;
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
@@ -266,7 +288,16 @@ function main() {
     createDatabase(args.container, user, workingDb);
     workingCreated = true;
     const migrations = versionedMigrations();
-    for (const migration of migrations) restore(args.container, user, workingDb, migration.sql);
+    for (const migration of migrations) restore(args.container, user, workingDb, `BEGIN;\n${migration.sql.toString('utf8')}\nCOMMIT;`);
+    // Flyway applies repeatables after every versioned migration. Rehearse that order, then
+    // execute the same guarded Contract before counting/dumping the final physical model.
+    for (const seed of ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql']) {
+      restore(args.container, user, workingDb, readFileSync(join(ROOT, 'api-server/src/main/resources/db/migration', seed)));
+    }
+    const permissionSource = readFileSync(join(ROOT, 'business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java'), 'utf8');
+    const catalogVersion = permissionSource.match(/CATALOG_VERSION\s*=\s*"([a-f0-9]{64})"/)?.[1];
+    const contractSql = readFileSync(join(ROOT, 'api-server/src/main/resources/db/cutover/authorization-contract.sql'), 'utf8');
+    restore(args.container, user, workingDb, buildIsolatedContractSql(workingDb, catalogVersion, contractSql));
 
     const sourceTables = listObjects(args.container, user, workingDb, 'table');
     assertSameSet(sourceTables, sourceExpectedTables, '현재 migration table snapshot');
@@ -377,14 +408,14 @@ function main() {
     }
     if (metaMismatches.length) fail(`재적용 DB meta row 수 불일치: ${metaMismatches.join(', ')}`);
 
-    // day-1 관리자 부트스트랩 단언 — 이게 비면 생성 base 는 부팅 후 관리자가
-    // 메뉴 0건 + URL 인가 fail-closed(403) 로 잠긴다. (R__zz_seed_base_admin.sql 계약)
+    // The empty baseline must explicitly grant capabilities and navigation, with an audited
+    // bootstrap marker. Program URLs are inventory and never authorization policy.
     const bootstrapChecks = [
       ['tb_menu_info 관리자 메뉴 트리', 'SELECT count(*) FROM public.tb_menu_info'],
-      ['tb_menu_crt_dtl ROLE_ADMIN 매핑', "SELECT count(*) FROM public.tb_menu_crt_dtl WHERE authrt_cd='ROLE_ADMIN'"],
-      ['tb_prgrm_lst URL 인가 레지스트리', 'SELECT count(*) FROM public.tb_prgrm_lst'],
-      ['tb_role_prgrm_map ROLE_ADMIN→/api/v1/admin/**',
-        "SELECT count(*) FROM public.tb_role_prgrm_map rpm JOIN public.tb_prgrm_lst p ON p.prgrm_file_nm = rpm.prgrm_file_nm WHERE rpm.role_id='ROLE_ADMIN' AND p.url='/api/v1/admin/**'"],
+      ['ROLE_ADMIN NAVIGATION', "SELECT count(*) FROM public.tb_authrt_grnt_map WHERE authrt_cd='ROLE_ADMIN' AND authrt_type_cd='NAVIGATION'"],
+      ['ROLE_ADMIN permission administration', "SELECT count(*) FROM (SELECT authrt_cd FROM public.tb_authrt_grnt_map WHERE authrt_cd='ROLE_ADMIN' AND authrt_type_cd='OPERATION' AND authrt_grnt_cd IN ('AUTHRT_GRANT','AUTHRT_ASSIGN') GROUP BY authrt_cd HAVING count(*)=2) complete_manager"],
+      ['initial admin membership', "SELECT count(*) FROM public.tb_authrt_user_map WHERE scrty_dcsn_trgt_id='USRCNFRM_00000000001' AND authrt_cd='ROLE_ADMIN'"],
+      ['audited schema-only bootstrap', "SELECT count(*) FROM public.tb_authrt_chg_hstry WHERE chg_artcl_nm='legacy_authorization_contract' AND chg_type_cd='UPDATE'"],
     ];
     for (const [label, sql] of bootstrapChecks) {
       const count = Number(psql(args.container, user, verifyDb, sql));
@@ -401,7 +432,8 @@ function main() {
         `- tables: ${desiredTables.length}\n` +
         `- sequences: ${desiredSequences.length}\n` +
         `- 검증: 별도 빈 PostgreSQL DB에 baseline → meta seed → framework seed → admin bootstrap seed 재적용 완료\n` +
-        `- day-1 관리자 부트스트랩: 최소 메뉴 트리·URL 인가(ROLE_ADMIN→/api/v1/admin/**) SQL 단언 PASS\n\n` +
+        `- 권한 전환: 생성기 소유 disposable DB에서 실제 Contract 리허설 후 구 6개 테이블 제거 확인\n` +
+        `- day-1 관리자 부트스트랩: 명시 OPERATION/NAVIGATION·회원 그룹·감사 이력 SQL 단언 PASS\n\n` +
         `운영 DB 축소용 마이그레이션이 아니다. 신규 프로젝트의 빈 DB에서만 사용한다.\n`,
       'utf8',
     );
@@ -412,9 +444,11 @@ function main() {
   }
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(`[base-db] FAIL: ${error.message}`);
-  process.exitCode = 1;
+if (process.argv[1] && resolve(process.argv[1]) === resolve(SCRIPT_PATH)) {
+  try {
+    main();
+  } catch (error) {
+    console.error(`[base-db] FAIL: ${error.message}`);
+    process.exitCode = 1;
+  }
 }

@@ -227,7 +227,7 @@ public class CommunityService {
      */
     public Page<CommunityMemberDto> getMembers(Long cmntySn, CommunityMemberStatus status,
             @org.springframework.lang.NonNull Pageable pageable) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("COMMUNITY_READ_ALL");
         requireCommunity(cmntySn);
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 Sort.by(Sort.Order.desc("joinYmd"), Sort.Order.asc("id.userId")));
@@ -241,7 +241,7 @@ public class CommunityService {
     /** 가입 신청 승인 — 신청 상태({@code A})인 행만 회원({@code P})으로 옮긴다. 그 외 상태는 400(INVALID_STATE). */
     @Transactional
     public void approveMember(Long cmntySn, String userId) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("COMMUNITY_APPROVE");
         CommunityUser member = requireMembership(cmntySn, userId);
         if (!member.isRequested()) {
             throw new BusinessException(CommonErrorCode.INVALID_STATE, "가입 신청 상태가 아니어서 승인할 수 없습니다.");
@@ -255,7 +255,7 @@ public class CommunityService {
      */
     @Transactional
     public void rejectMember(Long cmntySn, String userId) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("COMMUNITY_REJECT");
         CommunityUser member = requireMembership(cmntySn, userId);
         if (!member.isRequested()) {
             throw new BusinessException(CommonErrorCode.INVALID_STATE,

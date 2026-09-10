@@ -21,15 +21,14 @@ import java.util.List;
 @Tag(name = "File", description = "파일 관리 API")
 @RestController
 @RequestMapping({"/api/v1/files", "/api/v1/admin/system/files", "/api/v1/admin/content/files", "/api/v1/admin/operation/files"})
-@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class FileApiController {
 
     private final FileService fileService;
 
     @Operation(summary = "파일 업로드", description = "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.")
-    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.file.FileApiController#uploadFiles')")
     public ResponseEntity<ApiResponse<Long>> uploadFiles(
             @RequestPart("files") List<MultipartFile> files) throws IOException {
         Long atchFileSn = fileService.uploadFiles(files);
@@ -38,12 +37,14 @@ public class FileApiController {
 
     @Operation(summary = "파일 목록 조회", description = "첨부파일 일련번호에 속한 파일 목록을 조회합니다.")
     @GetMapping("/{atchFileSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.file.FileApiController#getFileList')")
     public ResponseEntity<ApiResponse<List<FileDto>>> getFileList(@PathVariable Long atchFileSn) {
         return ResponseEntity.ok(ApiResponse.success(fileService.getFileList(atchFileSn)));
     }
 
     @Operation(summary = "파일 다운로드", description = "특정 파일을 다운로드합니다.")
     @GetMapping("/{atchFileSn}/{fileSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.file.FileApiController#downloadFile')")
     public ResponseEntity<Resource> downloadFile(
             @PathVariable Long atchFileSn,
             @PathVariable Integer fileSn) throws IOException {
@@ -64,8 +65,8 @@ public class FileApiController {
      * 소유자·(개인 귀속이 아닌 첨부의) 관리자만 지울 수 있고, 공유 열람 근거는 삭제 근거가 아니다.
      */
     @Operation(summary = "파일 삭제", description = "첨부파일 한 건을 삭제합니다. 업로더 본인, 참조 행의 소유자, 또는 개인 귀속이 아닌 첨부의 관리자만 삭제할 수 있습니다.")
-    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{atchFileSn}/{fileSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.file.FileApiController#deleteFile')")
     public ResponseEntity<ApiResponse<Void>> deleteFile(
             @PathVariable Long atchFileSn,
             @PathVariable Integer fileSn) throws IOException {

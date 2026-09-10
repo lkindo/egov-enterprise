@@ -197,6 +197,6 @@ class ScheduleServiceTest {
         scheduleService.deleteSchedule(schdlSn, "otherUser");
 
         // then — 가드가 소유자 loginId 로 호출됨
-        __secUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin("creator"));
+        __secUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermission("creator", "SCHEDULE_DELETE_ALL"));
     }
 }

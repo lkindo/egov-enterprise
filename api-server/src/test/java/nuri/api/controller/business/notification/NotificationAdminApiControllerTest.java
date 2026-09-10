@@ -6,7 +6,6 @@ import nuri.business.service.notification.dto.NotificationDispatchRequest;
 import nuri.business.support.ControllerTestSupport;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.security.annotation.AdminOrSystem;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -84,9 +83,9 @@ class NotificationAdminApiControllerTest extends ControllerTestSupport {
     }
 
     @Test
-    @DisplayName("발송은 URL 게이트와 별개로 메서드에서도 ADMIN/SYSTEM 을 재확인한다")
+    @DisplayName("발송은 HTTP와 메서드에서 NOTI_DISPATCH 권한을 확인한다")
     void dispatch_isMethodGuarded() throws Exception {
         Method handler = NotificationAdminApiController.class.getMethod("dispatchNotifications", NotificationDispatchRequest.class);
-        assertThat(handler.isAnnotationPresent(AdminOrSystem.class)).isTrue();
+        nuri.security.support.MethodPermissionContract.assertOperation(handler, "NOTI_DISPATCH", false);
     }
 }

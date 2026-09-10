@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/dept-jobs")
-@PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class DeptJobApiController {
 
@@ -37,6 +36,7 @@ public class DeptJobApiController {
 
     @Operation(summary = "부서 업무함 목록 조회", description = "부서 업무함 목록을 페이징하여 조회합니다.")
     @GetMapping("/boxes")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJobBoxList')")
     public ResponseEntity<ApiResponse<PageResponse<DeptJobBoxDto>>> getDeptJobBoxList(
             @RequestParam(defaultValue = "") String searchWrd,
             @RequestParam(defaultValue = "") String deptId,
@@ -57,14 +57,15 @@ public class DeptJobApiController {
 
     @Operation(summary = "부서 업무함 상세 조회", description = "특정 부서 업무함의 상세 정보를 조회합니다.")
     @GetMapping("/boxes/{deptTaskBoxSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJobBox')")
     public ResponseEntity<ApiResponse<DeptJobBoxDto>> getDeptJobBox(@PathVariable Long deptTaskBoxSn) {
         DeptJobBoxDto dto = egovDeptJobBoxService.getDeptJobBox(deptTaskBoxSn);
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
     @Operation(summary = "부서 업무함 등록", description = "새로운 부서 업무함을 등록합니다.")
-    @AdminOrSystem
     @PostMapping("/boxes")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJobBox')")
     public ResponseEntity<ApiResponse<Long>> createDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody DeptJobBoxDto dto) {
@@ -74,8 +75,8 @@ public class DeptJobApiController {
     }
 
     @Operation(summary = "부서 업무함 수정", description = "기존 부서 업무함 정보를 수정합니다.")
-    @AdminOrSystem
     @PutMapping("/boxes/{deptTaskBoxSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#updateDeptJobBox')")
     public ResponseEntity<ApiResponse<Void>> updateDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
             @PathVariable Long deptTaskBoxSn,
@@ -86,8 +87,8 @@ public class DeptJobApiController {
     }
 
     @Operation(summary = "부서 업무함 삭제", description = "부서 업무함을 삭제합니다.")
-    @AdminOrSystem
     @DeleteMapping("/boxes/{deptTaskBoxSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#deleteDeptJobBox')")
     public ResponseEntity<ApiResponse<Void>> deleteDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
             @PathVariable Long deptTaskBoxSn) {
@@ -114,6 +115,7 @@ public class DeptJobApiController {
             description = "부서 업무 목록을 페이징하여 조회합니다. 기본값은 '내가 담당자인 업무'이며, "
                     + "scope=dept 로 부서 전체를 조회할 수 있습니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJobList')")
     public ResponseEntity<ApiResponse<PageResponse<DeptJobDto>>> getDeptJobList(
             @RequestParam(required = false) String deptId,
             @RequestParam(required = false) Long deptTaskBoxSn,
@@ -145,21 +147,22 @@ public class DeptJobApiController {
 
     @Operation(summary = "부서 업무 상세 조회", description = "특정 부서 업무의 상세 정보를 조회합니다.")
     @GetMapping("/{deptTaskSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJob')")
     public ResponseEntity<ApiResponse<DeptJobDto>> getDeptJob(@PathVariable Long deptTaskSn) {
         return ResponseEntity.ok(ApiResponse.success(deptJobService.getDeptJob(deptTaskSn)));
     }
 
     @Operation(summary = "부서 업무 등록", description = "새로운 부서 업무를 등록합니다. 식별자는 서버가 채번합니다.")
-    @PreAuthorize("isAuthenticated()")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJob')")
     public ResponseEntity<ApiResponse<Long>> createDeptJob(@Valid @RequestBody DeptJobDto dto) {
         Long newSn = deptJobService.createDeptJob(dto);
         return ResponseEntity.ok(ApiResponse.success(newSn));
     }
 
     @Operation(summary = "부서 업무 수정", description = "부서 업무를 수정합니다. 담당자 본인 또는 관리자만 가능합니다.")
-    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{deptTaskSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#updateDeptJob')")
     public ResponseEntity<ApiResponse<Void>> updateDeptJob(
             @PathVariable Long deptTaskSn,
             @Valid @RequestBody DeptJobDto dto) {
@@ -168,8 +171,8 @@ public class DeptJobApiController {
     }
 
     @Operation(summary = "부서 업무 삭제", description = "부서 업무를 삭제합니다. 담당자 본인 또는 관리자만 가능합니다.")
-    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{deptTaskSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#deleteDeptJob')")
     public ResponseEntity<ApiResponse<Void>> deleteDeptJob(@PathVariable Long deptTaskSn) {
         deptJobService.deleteDeptJob(deptTaskSn);
         return ResponseEntity.ok(ApiResponse.success(null));

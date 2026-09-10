@@ -21,7 +21,6 @@ import java.util.List;
 @Tag(name = "Statistics User", description = "통계 사용자 API")
 @RestController("systemStatisticsUserApiController")
 @RequestMapping("/api/v1/statistics")
-@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class StatisticsUserApiController {
 
@@ -29,6 +28,7 @@ public class StatisticsUserApiController {
 
     @Operation(summary = "접속 통계 조회(사용자)", description = "사용자 홈 대시보드용 접속(로그인) 추이 통계.")
     @GetMapping("/connect")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsUserApiController#getConnectStats')")
     public ResponseEntity<ApiResponse<List<StatsDto>>> getConnectStats(
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate) throws Exception {

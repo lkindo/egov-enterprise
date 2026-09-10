@@ -8,11 +8,14 @@ import {
   authReissueResponseSchema,
 } from '../auth-bff-contract';
 
+const authorization = { groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
+
 describe('local auth BFF Zod contract', () => {
   it('accepts only the redacted login role payload', () => {
-    expect(authLoginDataSchema.parse({ role: 'ROLE_USER' })).toEqual({ role: 'ROLE_USER' });
+    expect(authLoginDataSchema.parse({ role: 'ROLE_USER', ...authorization })).toEqual({ role: 'ROLE_USER', ...authorization });
     expect(authLoginDataSchema.safeParse({
       role: 'ROLE_USER',
+      ...authorization,
       accessToken: 'must-not-enter-js-state',
     }).success).toBe(false);
   });
@@ -20,7 +23,7 @@ describe('local auth BFF Zod contract', () => {
   it('keeps login success and failure envelopes strict', () => {
     expect(authLoginResponseSchema.safeParse({
       success: true,
-      data: { role: 'ROLE_ADMIN' },
+      data: { role: 'ROLE_ADMIN', ...authorization },
     }).success).toBe(true);
     expect(authLoginResponseSchema.safeParse({
       success: false,
@@ -31,11 +34,17 @@ describe('local auth BFF Zod contract', () => {
   });
 
   it('forbids token material in the reissue response', () => {
-    expect(authReissueResponseSchema.safeParse({ success: true, data: {} }).success).toBe(true);
+    expect(authReissueResponseSchema.safeParse({ success: true, data: authorization }).success).toBe(true);
     expect(authReissueResponseSchema.safeParse({
       success: true,
-      data: { accessToken: 'must-not-enter-js-state' },
+      data: { ...authorization, accessToken: 'must-not-enter-js-state' },
     }).success).toBe(false);
+  });
+
+  it('rejects incomplete authorization snapshots on login and refresh', () => {
+    expect(authLoginDataSchema.safeParse({ role: 'ROLE_ADMIN' }).success).toBe(false);
+    expect(authReissueResponseSchema.safeParse({ success: true, data: {} }).success).toBe(false);
+    expect(authLoginDataSchema.safeParse({ role: 'USER', ...authorization, groups: undefined }).success).toBe(false);
   });
 
   it('uses one strict logout acknowledgement for success and fail-safe clearing', () => {

@@ -19,9 +19,8 @@ interface CleanupPost { pstSn?: number; id?: string | number; pstTtl?: string; t
 interface CleanupMenu { menuNo: number; menuNm: string }
 interface CleanupAddress { adbkSn: number; adbkNm?: string }
 interface CleanupManual { onlnMnlSn: number; onlnMnlNm?: string }
-interface CleanupRole { roleId: string; roleNm?: string }
 interface CleanupGroup { groupId: string; groupNm?: string }
-interface CleanupAuthority { authrtCd: string; authrtNm?: string }
+interface CleanupAuthority { code: string; version: string }
 
 function extractPage<T>(response: AxiosResponse<ApiEnvelope<PagePayload<T>>>): T[] {
   return response.data.data?.list ?? response.data.data?.content ?? [];
@@ -51,8 +50,6 @@ export const CLEANUP_PATH_CATEGORIES = [
   'address-book-item',
   'manuals-collection',
   'manual-item',
-  'roles-collection',
-  'role-item',
   'groups-collection',
   'group-item',
   'authorities-collection',
@@ -430,27 +427,7 @@ export async function cleanup() {
     // 11. Cleanup Security Artifacts (Authorities: ROLE_E2E_, Groups: GROUP_E2E_, Roles: URL_E2E_)
     // 02-admin-system.spec.ts 가 생성하는 권한/그룹/롤이 정리 대상에 없어 라이브 DB 에
     // 가비지가 축적됐음(2026-07-17 실측 411+155행 수동 정리). 재축적 방지.
-    console.log('>>> Cleaning up test security artifacts (roles/groups/authorities)...');
-    try {
-      activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'roles-collection' };
-      const rolesRes = await axios.get<ApiEnvelope<PagePayload<CleanupRole>>>(`${API_BASE}/admin/system/roles`, {
-        headers,
-        params: { size: 100 }
-      });
-      const roles = extractPage(rolesRes);
-      const testRoles = roles.filter((r) =>
-        r.roleId?.startsWith('URL_E2E_') || r.roleNm?.startsWith('E2E Role')
-      );
-      for (const role of testRoles) {
-        process.stdout.write('  - Deleting test role... ');
-        activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'role-item' };
-        await axios.delete(`${API_BASE}/admin/system/roles/${role.roleId}`, { headers });
-        console.log('DONE');
-      }
-      console.log(`  => ${testRoles.length} role(s) cleaned.`);
-    } catch (error: unknown) {
-      recordCleanupFailure(failures, activeContext, error);
-    }
+    console.log('>>> Cleaning up test security artifacts (classification groups/authorization groups)...');
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'groups-collection' };
       const groupsRes = await axios.get<ApiEnvelope<PagePayload<CleanupGroup>>>(`${API_BASE}/admin/system/groups`, {
@@ -473,16 +450,14 @@ export async function cleanup() {
     }
     try {
       activeContext = { stage: 'cleanup', method: 'GET', pathCategory: 'authorities-collection' };
-      const authRes = await axios.get<ApiEnvelope<PagePayload<CleanupAuthority>>>(`${API_BASE}/admin/system/authorities`, {
-        headers,
-        params: { size: 100 }
-      });
-      const authorities = extractPage(authRes);
-      const testAuths = authorities.filter((a) => a.authrtCd?.startsWith('ROLE_E2E_'));
+      const authRes = await axios.get<ApiEnvelope<CleanupAuthority[]>>(`${API_BASE}/admin/authorization/groups`, { headers });
+      const authorities = authRes.data.data;
+      if (!Array.isArray(authorities) || authorities.some((entry) => !entry.code || !entry.version)) throw new Error('Incomplete authorization group response');
+      const testAuths = authorities.filter((a) => a.code.startsWith('ROLE_E2E_'));
       for (const auth of testAuths) {
         process.stdout.write('  - Deleting test authority... ');
         activeContext = { stage: 'cleanup', method: 'DELETE', pathCategory: 'authority-item' };
-        await axios.delete(`${API_BASE}/admin/system/authorities/${auth.authrtCd}`, { headers });
+        await axios.delete(`${API_BASE}/admin/authorization/groups/${encodeURIComponent(auth.code)}`, { headers, params: { version: auth.version } });
         console.log('DONE');
       }
       console.log(`  => ${testAuths.length} authority(ies) cleaned.`);

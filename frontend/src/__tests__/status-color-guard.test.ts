@@ -135,7 +135,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [2026-09-08 PD-SRVY-001·PD-MYPG-001] 507 -> 503. 설문 응답자·마이페이지 콘텐츠 화면을 걷으면서
 //   그 안의 status 리터럴 4건이 함께 사라졌다. 토큰 이행이 아니라 화면 제거에 따른 감소이며,
 //   BASELINE 은 단조 감소 래칫이므로 개선분을 확정한다.
-const BASELINE = 503;
+// Superseded role/authority forms removed nine legacy status colors.
+const BASELINE = 494;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

@@ -36,7 +36,7 @@ public class MemoReportService {
      */
     public Page<MemoReportDto> getMemoReportList(String keyword, @NonNull Pageable pageable) {
         Objects.requireNonNull(pageable);
-        nuri.business.security.util.SecurityUtil.assertAdmin();
+        nuri.business.security.util.SecurityUtil.assertPermission("MEMO_RPT_READ_ALL");
         // 검색어를 받고도 무시하던 default 구현(findAll)을 실제 제목 검색으로 대체했다.
         return memoReportRepository.searchByTitle(keyword != null ? keyword : "", pageable)
                 .map(this::toDtoWithPermission);
@@ -82,7 +82,7 @@ public class MemoReportService {
      * {@code assertOwnerOrAdmin} 이 그대로 집행한다(백엔드 헌법 제8조 — 이중 검증).
      */
     private boolean canModify(MemoReport entity) {
-        if (nuri.business.security.util.SecurityUtil.isAdmin()) {
+        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")) {
             return true;
         }
         String owner = entity.getFrstRgtrId();
@@ -118,9 +118,7 @@ public class MemoReportService {
      * <b>esntlId</b> 축이며, loginId 로 비교하면 수신자가 자기 앞으로 온 보고를 열지 못하는 오탐이 난다.</p>
      */
     private void assertParticipantOrAdmin(MemoReport entity) {
-        if (nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)
-                || nuri.business.security.util.SecurityUtil
-                        .hasRole(nuri.business.security.AuthorityConstants.ROLE_SYSTEM)) {
+        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")) {
             return;
         }
         String esntlId = currentEsntlIdOrDeny();
@@ -156,7 +154,7 @@ public class MemoReportService {
     public void updateMemoReport(Long memoRptSn, String userId, MemoReportDto dto) {
         MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(memoRptSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 작성자/관리자만 수정
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "MEMO_RPT_UPDATE_ALL"); // [IDOR] 작성자/관리자만 수정
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -170,7 +168,7 @@ public class MemoReportService {
     public void deleteMemoReport(@NonNull Long memoRptSn) {
         MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 작성자/관리자만 삭제
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "MEMO_RPT_DELETE_ALL"); // [IDOR] 작성자/관리자만 삭제
         memoReportRepository.delete(entity);
     }
 

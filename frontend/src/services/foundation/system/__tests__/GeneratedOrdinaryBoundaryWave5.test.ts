@@ -160,7 +160,7 @@ describe('ordinary generated boundary wave5', () => {
   });
 
   it('my-profile read, profile update, and password change all use their generated contracts', async () => {
-    const me = { userId: 'test_user', userNm: '홍길동', esntlId: 'USER_1', role: 'ROLE_USER' };
+    const me = { groups: ['ROLE_USER'], permissions: [], authorizationVersion: 'fixture-v1', userId: 'test_user', userNm: '홍길동', esntlId: 'USER_1', role: 'ROLE_USER' };
     client.getRaw.mockResolvedValueOnce(success(me));
     await expect(userService.getMe()).resolves.toStrictEqual(me);
     await userService.changePassword('Oldpass1!', 'Newpass1!');

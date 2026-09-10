@@ -31,6 +31,7 @@ public class CommunityApiController {
 
     @Operation(summary = "커뮤니티 목록 조회", description = "시스템에 등록된 전체 커뮤니티 목록을 페이징하여 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#getCommunities')")
     public ResponseEntity<ApiResponse<PageResponse<CommunityDto>>> getCommunities(
             @RequestParam(required = false) String searchCnd,
             @RequestParam(required = false) String searchWrd,
@@ -41,6 +42,7 @@ public class CommunityApiController {
 
     @Operation(summary = "커뮤니티 상세 조회", description = "특정 커뮤니티의 상세 기본 정보를 조회합니다.")
     @GetMapping("/{cmntySn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#getCommunity')")
     public ResponseEntity<ApiResponse<CommunityDto>> getCommunity(
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
         return ResponseEntity.ok(ApiResponse.success(communityService.getCommunity(cmntySn)));
@@ -48,6 +50,7 @@ public class CommunityApiController {
 
     @Operation(summary = "커뮤니티 개설 신청/등록", description = "새로운 커뮤니티 개설을 신청하거나 등록합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#createCommunity')")
     public ResponseEntity<ApiResponse<CommunityDto>> createCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CommunityDto communityDto) {
@@ -57,6 +60,7 @@ public class CommunityApiController {
 
     @Operation(summary = "커뮤니티 정보 수정", description = "커뮤니티 명칭, 소개 등 기본 정보를 수정합니다.")
     @PutMapping("/{cmntySn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#updateCommunity')")
     public ResponseEntity<ApiResponse<Void>> updateCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
@@ -68,6 +72,7 @@ public class CommunityApiController {
 
     @Operation(summary = "커뮤니티 폐쇄/삭제", description = "커뮤니티를 폐쇄 처리하거나 삭제합니다.")
     @DeleteMapping("/{cmntySn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#deleteCommunity')")
     public ResponseEntity<ApiResponse<Void>> deleteCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
@@ -82,8 +87,8 @@ public class CommunityApiController {
 
     @Operation(summary = "커뮤니티 회원·가입 신청 목록",
             description = "커뮤니티의 회원과 가입 신청을 페이징 조회합니다. status 를 주면 그 상태만(REQUESTED=가입 신청, APPROVED=회원). 이름은 사용자 도메인에서 해석하며 연락처는 싣지 않습니다.")
-    @AdminOrSystem
     @GetMapping("/{cmntySn}/members")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#getMembers')")
     public ResponseEntity<ApiResponse<PageResponse<CommunityMemberDto>>> getMembers(
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
             @Parameter(description = "멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체")
@@ -94,8 +99,8 @@ public class CommunityApiController {
     }
 
     @Operation(summary = "커뮤니티 가입 신청 승인", description = "가입 신청 상태(REQUESTED)인 사용자를 회원으로 승인합니다. 신청 상태가 아니면 400 입니다.")
-    @AdminOrSystem
     @PatchMapping("/{cmntySn}/members/{userId}/approve")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#approveMember')")
     public ResponseEntity<ApiResponse<Void>> approveMember(
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
             @Parameter(description = "사용자 식별자(esntlId)") @PathVariable String userId) {
@@ -104,8 +109,8 @@ public class CommunityApiController {
     }
 
     @Operation(summary = "커뮤니티 가입 신청 반려", description = "가입 신청 상태(REQUESTED)인 행을 삭제합니다. 사용자는 다시 신청할 수 있습니다. 이미 회원인 행은 반려 대상이 아니라 400 입니다(탈퇴 처리는 별도).")
-    @AdminOrSystem
     @DeleteMapping("/{cmntySn}/members/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#rejectMember')")
     public ResponseEntity<ApiResponse<Void>> rejectMember(
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
             @Parameter(description = "사용자 식별자(esntlId)") @PathVariable String userId) {
@@ -115,6 +120,7 @@ public class CommunityApiController {
 
     @Operation(summary = "포틀릿용 커뮤니티 목록", description = "메인 화면 포틀릿 표시에 최적화된 커뮤니티 목록을 조회합니다.")
     @GetMapping("/portlet")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#getCommunityPortlet')")
     public ResponseEntity<ApiResponse<List<CommunityDto>>> getCommunityPortlet() {
         return ResponseEntity.ok(ApiResponse.success(communityService.getCommunityListPortlet()));
     }

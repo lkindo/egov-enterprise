@@ -61,19 +61,14 @@ describe('P1 frontend safety source contract', () => {
     expect(route).not.toMatch(/['"]sample['"]\s*:/);
   });
 
-  it('SecurityHub 전체교체 저장은 query revision이 임시 기준선에 반영된 뒤에만 활성화된다', () => {
-    const hub = stripComments(
-      readSource('app', 'admin', 'security', 'authority', 'SecurityHubClient.tsx'),
-    );
-
-    for (const mapping of ['user', 'menu', 'role'] as const) {
-      const capitalized = `${mapping[0].toUpperCase()}${mapping.slice(1)}`;
-      expect(hub).toContain(
-        `${mapping}MappingRevision === ${mapping}MappingQueryRevision`,
-      );
-      expect(hub).toContain(
-        `set${capitalized}MappingRevision(${mapping}MappingQueryRevision)`,
-      );
+  it('SecurityHub 전체교체는 전체 조회와 편집 기준선 version이 현재 응답에 일치해야 활성화된다', () => {
+    for (const component of ['AuthorizationGroupEditor', 'AuthorizationMembershipEditor']) {
+      const source = stripComments(readSource('app', 'admin', 'security', 'authority', 'components', `${component}.tsx`));
+      expect(source).toContain('baseline.version === snapshot.version');
+      expect(source).toContain('currentBaseline && complete');
+      expect(source).toContain('setBaseline(snapshot)');
+      expect(source).toContain('version: baseline.version, complete: true');
+      expect(source).toContain('pendingRef.current');
     }
   });
 });

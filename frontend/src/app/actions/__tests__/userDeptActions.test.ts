@@ -10,7 +10,6 @@ import { saveDeptHierarchyAction } from '../deptActions';
 import {
   bulkDeleteUsersAction,
   bulkMoveUserDeptAction,
-  bulkUpdateUserRoleAction,
   bulkUpdateUserStatusAction,
 } from '../userActions';
 import { deptAdminService } from '@/services/foundation/system/DeptAdminService';
@@ -70,17 +69,6 @@ describe('사용자·조직 관리자 서버 액션', () => {
 
     expect(userAdminService.deleteUsers).toHaveBeenCalledWith(['U1'], {});
     expect(result).toEqual({ success: true, message: '1명의 사용자가 삭제되었습니다.' });
-  });
-
-  it('권한 변경 실패는 백엔드 메시지를 반환하고 성공 캐시 무효화를 하지 않는다', async () => {
-    vi.mocked(userAdminService.updateUsersRole).mockRejectedValueOnce({
-      response: { data: { message: '부여할 수 없는 권한입니다.' } },
-    });
-
-    const result = await bulkUpdateUserRoleAction(['U1'], 'SUPER_ADMIN');
-
-    expect(result).toEqual({ success: false, message: '부여할 수 없는 권한입니다.' });
-    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
   it('조직 계층은 화면 순서를 1부터 부여하고 루트의 상위 ID는 비운다', async () => {

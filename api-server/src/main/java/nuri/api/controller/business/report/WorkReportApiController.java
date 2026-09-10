@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "WorkReport", description = "작업보고 관리 API")
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/work-reports")
 @RequiredArgsConstructor
@@ -25,6 +24,7 @@ public class WorkReportApiController {
 
     @Operation(summary = "작업보고 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.report.WorkReportApiController#getWorkReportList')")
     public ResponseEntity<ApiResponse<PageResponse<WorkReportDto>>> getWorkReportList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
         Pageable pageable = searchDto.toPageable();
@@ -41,6 +41,7 @@ public class WorkReportApiController {
 
     @Operation(summary = "작업보고 상세 조회")
     @GetMapping("/{rptpSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.report.WorkReportApiController#getWorkReport')")
     public ResponseEntity<ApiResponse<WorkReportDto>> getWorkReport(@PathVariable Long rptpSn) {
         WorkReportDto result = workReportService.getWorkReport(rptpSn);
         return ResponseEntity.ok(ApiResponse.success(result));
@@ -48,6 +49,7 @@ public class WorkReportApiController {
 
     @Operation(summary = "작업보고 등록")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.report.WorkReportApiController#createWorkReport')")
     public ResponseEntity<ApiResponse<Void>> createWorkReport(@Valid @RequestBody WorkReportDto dto) {
         // 작성자는 서비스가 인증 주체(loginId)로 fail-closed 고정한다 — 요청 값은 신뢰하지 않는다.
         workReportService.createWorkReport(dto);
@@ -56,6 +58,7 @@ public class WorkReportApiController {
 
     @Operation(summary = "작업보고 수정")
     @PutMapping("/{rptpSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.report.WorkReportApiController#updateWorkReport')")
     public ResponseEntity<ApiResponse<Void>> updateWorkReport(@PathVariable Long rptpSn, @Valid @RequestBody WorkReportDto dto) {
         dto.setRptpSn(rptpSn);
         workReportService.updateWorkReport(dto);
@@ -64,6 +67,7 @@ public class WorkReportApiController {
 
     @Operation(summary = "작업보고 삭제")
     @DeleteMapping("/{rptpSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.report.WorkReportApiController#deleteWorkReport')")
     public ResponseEntity<ApiResponse<Void>> deleteWorkReport(@PathVariable Long rptpSn) {
         workReportService.deleteWorkReport(rptpSn);
         return ResponseEntity.ok(ApiResponse.success(null));

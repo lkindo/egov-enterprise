@@ -1,9 +1,8 @@
 package nuri.business.service.menu;
 
 import nuri.business.support.IntegrationTest;
-import nuri.business.domain.auth.MenuAuthority;
-import nuri.business.domain.auth.MenuAuthority.MenuAuthorityId;
-import nuri.business.domain.auth.MenuAuthorityRepository;
+import nuri.business.domain.auth.AuthorityGrant;
+import org.springframework.jdbc.core.JdbcTemplate;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
 import nuri.business.domain.program.Program;
@@ -23,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * MenuService 통합 테스트
  * - N+1 쿼리 해결 검증
- * - 캐싱 동작 검증
+ * - 권한 회수 즉시 반영 검증
  * - 권한별 메뉴 필터링 검증
  */
 @IntegrationTest
@@ -37,7 +36,7 @@ class MenuServiceIntegrationTest {
     @Autowired
     private ProgramRepository programRepository;
     @Autowired
-    private MenuAuthorityRepository menuAuthorityRepository;
+    private JdbcTemplate jdbc;
     @Autowired
     private jakarta.persistence.EntityManager entityManager;
     @Autowired
@@ -56,7 +55,7 @@ class MenuServiceIntegrationTest {
             cacheManager.getCache("menuParentMap").clear();
         }
         
-        menuAuthorityRepository.deleteAll();
+        jdbc.update("DELETE FROM tb_authrt_grnt_map");
         menuRepository.deleteAll();
         programRepository.deleteAll();
         entityManager.flush();
@@ -65,8 +64,8 @@ class MenuServiceIntegrationTest {
 
     @Test
     @WithMockCustomUser(role = "ADMIN")
-    @DisplayName("메뉴 계층 구조 조회 및 캐싱 테스트")
-    void testGetMenuHierarchyAndCaching() {
+    @DisplayName("명시적 ADMIN 메뉴 권한과 권한 회수 즉시 반영")
+    void testGetMenuHierarchyAndImmediateRevocation() {
         // Given
         Program program = Program.builder()
                 .prgrmFileNm("PROG_01")
@@ -93,15 +92,10 @@ class MenuServiceIntegrationTest {
                 .build();
         menuRepository.save(child);
 
-        MenuAuthority auth = MenuAuthority.builder()
-                .id(MenuAuthorityId.builder().authrtCd("ROLE_ADMIN").menuSn(root.getMenuSn()).build())
-                .build();
-        menuAuthorityRepository.save(auth);
-
-        MenuAuthority auth2 = MenuAuthority.builder()
-                .id(MenuAuthorityId.builder().authrtCd("ROLE_ADMIN").menuSn(child.getMenuSn()).build())
-                .build();
-        menuAuthorityRepository.save(auth2);
+        entityManager.persist(AuthorityGrant.builder().authrtCd("ROLE_ADMIN")
+                .authrtTypeCd("NAVIGATION").authrtGrntCd(root.getMenuSn().toString()).build());
+        entityManager.persist(AuthorityGrant.builder().authrtCd("ROLE_ADMIN")
+                .authrtTypeCd("NAVIGATION").authrtGrntCd(child.getMenuSn().toString()).build());
 
         entityManager.flush();
         entityManager.clear();
@@ -111,7 +105,12 @@ class MenuServiceIntegrationTest {
 
         // Then
         assertThat(hierarchy).isNotEmpty();
-        assertThat(hierarchy.get(0).getChildren()).isNotEmpty();
+        assertThat(hierarchy.get(0).getChildren()).extracting(MenuDto::getMenuNo).containsExactly(child.getMenuSn());
+        jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd=? AND authrt_type_cd=? AND authrt_grnt_cd=?",
+                "ROLE_ADMIN", "NAVIGATION", child.getMenuSn().toString());
+        assertThat(menuService.getMenuHierarchy().get(0).getChildren()).isEmpty();
+        jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd=?", "ROLE_ADMIN");
+        assertThat(menuService.getMenuHierarchy()).isEmpty();
         
         // 커버리지 확보를 위한 추가 메서드 호출 (searchMenus)
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);

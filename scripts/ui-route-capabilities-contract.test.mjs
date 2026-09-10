@@ -145,7 +145,8 @@ test('proxy shell access is measured separately from unresolved capability roles
   //   /admin/community/boards · /admin/system/monitoring 이 정본으로의 page-redirect 별칭이 됐다.
   // [2026-09-08 PD-SRVY-001] 23 → 22. /admin/survey/respondents 의 config redirect 를 함께 걷었다 —
   //   목적지였던 허브 응답자 탭도 제거했으므로 남겨 두면 존재하지 않는 탭으로 보낸다.
-  assert.equal(analysis.result.summary.effectiveAliases, 22);
+  // Technical role editing now redirects to canonical authorization groups.
+  assert.equal(analysis.result.summary.effectiveAliases, 23);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(

@@ -85,7 +85,7 @@ public class ScheduleService {
     public ScheduleDto getSchedule(@NonNull Long schdlSn) {
         Schedule entity = scheduleRepository.findById(schdlSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 조회
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_READ_ALL"); // [IDOR] 소유자/관리자만 조회
         return convertToDto(entity);
     }
 
@@ -126,7 +126,7 @@ public class ScheduleService {
     public void updateSchedule(Long schdlSn, String userId, ScheduleDto dto) {
         Schedule entity = scheduleRepository.findById(Objects.requireNonNull(schdlSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정
 
         entity.updateAll(
                 dto.getSchdlNm(),
@@ -153,7 +153,7 @@ public class ScheduleService {
 
         // [IDOR/정체성 수정] 기존 가드는 userId(컨트롤러 esntlId)와 frstRgtrId(loginId)를 비교해 항상 deny-all 이었다.
         // SecurityUtil 이 SecurityContext 에서 loginId 를 읽어 소유자/관리자를 올바로 판정한다.
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_DELETE_ALL");
 
         scheduleRepository.delete(entity);
     }

@@ -837,6 +837,95 @@ export const CommunityDtoSchema = z.object({
 export type CommunityDto = z.infer<typeof CommunityDtoSchema>;
 
 // ==========================================================================
+// ReplaceGroups Schema
+// ==========================================================================
+export const ReplaceGroupsSchema = z.object({
+  groups: z.array(z.string().min(0).max(20)).min(0).max(100),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional(),
+});
+export type ReplaceGroups = z.infer<typeof ReplaceGroupsSchema>;
+
+// ==========================================================================
+// UpdateGroup Schema
+// ==========================================================================
+export const UpdateGroupSchema = z.object({
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
+  version: z.string().min(0).max(64),
+});
+export type UpdateGroup = z.infer<typeof UpdateGroupSchema>;
+
+// ==========================================================================
+// Grant Schema
+// ==========================================================================
+export const GrantSchema = z.object({
+  type: z.enum(["OPERATION","NAVIGATION"]),
+  code: z.string().min(0).max(20),
+});
+export type Grant = z.infer<typeof GrantSchema>;
+
+// ==========================================================================
+// ReplaceGrants Schema
+// ==========================================================================
+export const ReplaceGrantsSchema = z.object({
+  grants: z.array(z.lazy(() => GrantSchema)).min(0).max(2000),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional(),
+});
+export type ReplaceGrants = z.infer<typeof ReplaceGrantsSchema>;
+
+// ==========================================================================
+// ChangeDepartmentGroups Schema
+// ==========================================================================
+export const ChangeDepartmentGroupsSchema = z.object({
+  userIds: z.array(z.string().min(0).max(20)).min(0).max(2000),
+  groupCode: z.string().min(0).max(20),
+  action: z.string().regex(new RegExp("ADD|REMOVE")),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional(),
+});
+export type ChangeDepartmentGroups = z.infer<typeof ChangeDepartmentGroupsSchema>;
+
+// ==========================================================================
+// ApiResponseDepartmentSnapshot Schema
+// ==========================================================================
+export const ApiResponseDepartmentSnapshotSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => DepartmentSnapshotSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseDepartmentSnapshot = z.infer<typeof ApiResponseDepartmentSnapshotSchema>;
+
+// ==========================================================================
+// DepartmentMember Schema
+// ==========================================================================
+export const DepartmentMemberSchema = z.object({
+  userId: z.string(),
+  loginId: z.string(),
+  userName: z.string(),
+  groups: z.array(z.string()),
+  version: z.string(),
+  complete: z.boolean(),
+});
+export type DepartmentMember = z.infer<typeof DepartmentMemberSchema>;
+
+// ==========================================================================
+// DepartmentSnapshot Schema
+// ==========================================================================
+export const DepartmentSnapshotSchema = z.object({
+  departmentId: z.string(),
+  users: z.array(z.lazy(() => DepartmentMemberSchema)),
+  version: z.string(),
+  complete: z.boolean(),
+});
+export type DepartmentSnapshot = z.infer<typeof DepartmentSnapshotSchema>;
+
+// ==========================================================================
 // AddressBookDto Schema
 // ==========================================================================
 export const AddressBookDtoSchema = z.object({
@@ -1048,6 +1137,9 @@ export type ApiResponseTokenResponse = z.infer<typeof ApiResponseTokenResponseSc
 export const TokenResponseSchema = z.object({
   accessToken: z.string().optional(),
   role: z.string().optional(),
+  groups: z.array(z.string()).optional(),
+  permissions: z.array(z.string()).optional(),
+  authorizationVersion: z.string().optional(),
 });
 export type TokenResponse = z.infer<typeof TokenResponseSchema>;
 
@@ -1119,6 +1211,9 @@ export const UserDtoSchema = z.object({
   userSttsCd: z.string().min(0).max(12).optional(),
   lckYn: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  groups: z.array(z.string()),
+  permissions: z.array(z.string()),
+  authorizationVersion: z.string(),
 });
 export type UserDto = z.infer<typeof UserDtoSchema>;
 
@@ -1257,6 +1352,16 @@ export const ApiResponseCommunityDtoSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseCommunityDto = z.infer<typeof ApiResponseCommunityDtoSchema>;
+
+// ==========================================================================
+// CreateGroup Schema
+// ==========================================================================
+export const CreateGroupSchema = z.object({
+  code: z.string().min(0).max(20).regex(new RegExp("[A-Z][A-Z0-9_]{0,19}")),
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
+});
+export type CreateGroup = z.infer<typeof CreateGroupSchema>;
 
 // ==========================================================================
 // MemoInstructionRequest Schema
@@ -2487,6 +2592,9 @@ export const CurrentUserResponseSchema = z.object({
   role: z.string().optional(),
   userSe: z.string().optional(),
   email: z.string().optional(),
+  groups: z.array(z.string()).optional(),
+  permissions: z.array(z.string()).optional(),
+  authorizationVersion: z.string().optional(),
 });
 export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
 
@@ -4281,6 +4389,235 @@ export const ApiResponseListCommunityDtoSchema = z.object({
 export type ApiResponseListCommunityDto = z.infer<typeof ApiResponseListCommunityDtoSchema>;
 
 // ==========================================================================
+// ApiResponsePageResponseUserChoice Schema
+// ==========================================================================
+export const ApiResponsePageResponseUserChoiceSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseUserChoiceSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponseUserChoice = z.infer<typeof ApiResponsePageResponseUserChoiceSchema>;
+
+// ==========================================================================
+// PageResponseUserChoice Schema
+// ==========================================================================
+export const PageResponseUserChoiceSchema = z.object({
+  list: z.array(z.lazy(() => UserChoiceSchema)).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+export type PageResponseUserChoice = z.infer<typeof PageResponseUserChoiceSchema>;
+
+// ==========================================================================
+// UserChoice Schema
+// ==========================================================================
+export const UserChoiceSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  userNm: z.string(),
+  departmentId: z.string().nullable(),
+});
+export type UserChoice = z.infer<typeof UserChoiceSchema>;
+
+// ==========================================================================
+// ApiResponseMembershipSnapshot Schema
+// ==========================================================================
+export const ApiResponseMembershipSnapshotSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MembershipSnapshotSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseMembershipSnapshot = z.infer<typeof ApiResponseMembershipSnapshotSchema>;
+
+// ==========================================================================
+// MembershipSnapshot Schema
+// ==========================================================================
+export const MembershipSnapshotSchema = z.object({
+  userId: z.string(),
+  groups: z.array(z.string()),
+  version: z.string(),
+  complete: z.boolean(),
+});
+export type MembershipSnapshot = z.infer<typeof MembershipSnapshotSchema>;
+
+// ==========================================================================
+// ApiResponsePageResponseChange Schema
+// ==========================================================================
+export const ApiResponsePageResponseChangeSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseChangeSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponseChange = z.infer<typeof ApiResponsePageResponseChangeSchema>;
+
+// ==========================================================================
+// Change Schema
+// ==========================================================================
+export const ChangeSchema = z.object({
+  id: z.number().int(),
+  requestId: z.string(),
+  policyVersion: z.string(),
+  targetType: z.string(),
+  changeType: z.string(),
+  group: z.string().nullable(),
+  userId: z.string().nullable(),
+  grantType: z.string().nullable(),
+  grantCode: z.string().nullable(),
+  field: z.string(),
+  before: z.string().nullable(),
+  after: z.string().nullable(),
+  actorId: z.string().nullable(),
+  createdAt: z.iso.datetime({ offset: true, local: true }),
+});
+export type Change = z.infer<typeof ChangeSchema>;
+
+// ==========================================================================
+// PageResponseChange Schema
+// ==========================================================================
+export const PageResponseChangeSchema = z.object({
+  list: z.array(z.lazy(() => ChangeSchema)).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+export type PageResponseChange = z.infer<typeof PageResponseChangeSchema>;
+
+// ==========================================================================
+// ApiResponseListGroupSummary Schema
+// ==========================================================================
+export const ApiResponseListGroupSummarySchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => GroupSummarySchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListGroupSummary = z.infer<typeof ApiResponseListGroupSummarySchema>;
+
+// ==========================================================================
+// GroupSummary Schema
+// ==========================================================================
+export const GroupSummarySchema = z.object({
+  code: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  version: z.string().optional(),
+});
+export type GroupSummary = z.infer<typeof GroupSummarySchema>;
+
+// ==========================================================================
+// ApiResponseGroupSnapshot Schema
+// ==========================================================================
+export const ApiResponseGroupSnapshotSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => GroupSnapshotSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseGroupSnapshot = z.infer<typeof ApiResponseGroupSnapshotSchema>;
+
+// ==========================================================================
+// GroupSnapshot Schema
+// ==========================================================================
+export const GroupSnapshotSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  grants: z.array(z.lazy(() => GrantSchema)),
+  version: z.string(),
+  complete: z.boolean(),
+});
+export type GroupSnapshot = z.infer<typeof GroupSnapshotSchema>;
+
+// ==========================================================================
+// ApiResponseListDepartmentChoice Schema
+// ==========================================================================
+export const ApiResponseListDepartmentChoiceSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => DepartmentChoiceSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListDepartmentChoice = z.infer<typeof ApiResponseListDepartmentChoiceSchema>;
+
+// ==========================================================================
+// DepartmentChoice Schema
+// ==========================================================================
+export const DepartmentChoiceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+export type DepartmentChoice = z.infer<typeof DepartmentChoiceSchema>;
+
+// ==========================================================================
+// ApiResponseCatalog Schema
+// ==========================================================================
+export const ApiResponseCatalogSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CatalogSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseCatalog = z.infer<typeof ApiResponseCatalogSchema>;
+
+// ==========================================================================
+// Catalog Schema
+// ==========================================================================
+export const CatalogSchema = z.object({
+  operations: z.array(z.lazy(() => OperationSchema)),
+  navigation: z.array(z.lazy(() => NavigationSchema)),
+  catalogVersion: z.string(),
+});
+export type Catalog = z.infer<typeof CatalogSchema>;
+
+// ==========================================================================
+// Navigation Schema
+// ==========================================================================
+export const NavigationSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  parentCode: z.string().nullable(),
+});
+export type Navigation = z.infer<typeof NavigationSchema>;
+
+// ==========================================================================
+// Operation Schema
+// ==========================================================================
+export const OperationSchema = z.object({
+  code: z.string(),
+  domain: z.string(),
+  action: z.string(),
+  name: z.string(),
+});
+export type Operation = z.infer<typeof OperationSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseAddressBookDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseAddressBookDtoSchema = z.object({
@@ -5543,6 +5880,120 @@ export const CommunityDtoResponseSchema = z.object({
   crtDt: z.string().optional().nullable(),
 });
 
+export const ReplaceGroupsRequestSchema = z.object({
+  groups: z.array(z.string().min(0).max(20)).min(0).max(100),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional(),
+});
+
+export const ReplaceGroupsResponseSchema = z.object({
+  groups: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(100),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional().nullable(),
+});
+
+export const UpdateGroupRequestSchema = z.object({
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
+  version: z.string().min(0).max(64),
+});
+
+export const UpdateGroupResponseSchema = z.object({
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
+  version: z.string().min(0).max(64),
+});
+
+export const GrantRequestSchema = z.object({
+  type: z.enum(["OPERATION","NAVIGATION"]),
+  code: z.string().min(0).max(20),
+});
+
+export const GrantResponseSchema = z.object({
+  type: z.enum(["OPERATION","NAVIGATION"]),
+  code: z.string().min(0).max(20),
+});
+
+export const ReplaceGrantsRequestSchema = z.object({
+  grants: z.array(z.lazy(() => GrantRequestSchema.strict())).min(0).max(2000),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional(),
+});
+
+export const ReplaceGrantsResponseSchema = z.object({
+  grants: z.array(z.lazy(() => GrantResponseSchema)).min(0).max(2000),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional().nullable(),
+});
+
+export const ChangeDepartmentGroupsRequestSchema = z.object({
+  userIds: z.array(z.string().min(0).max(20)).min(0).max(2000),
+  groupCode: z.string().min(0).max(20),
+  action: z.string().regex(new RegExp("ADD|REMOVE")),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional(),
+});
+
+export const ChangeDepartmentGroupsResponseSchema = z.object({
+  userIds: z.array(z.string().min(0).max(20).optional().nullable()).min(0).max(2000),
+  groupCode: z.string().min(0).max(20),
+  action: z.string().regex(new RegExp("ADD|REMOVE")),
+  version: z.string().min(0).max(64),
+  complete: z.boolean().optional().nullable(),
+});
+
+export const ApiResponseDepartmentSnapshotRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => DepartmentSnapshotRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseDepartmentSnapshotResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => DepartmentSnapshotResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const DepartmentMemberRequestSchema = z.object({
+  userId: z.string(),
+  loginId: z.string(),
+  userName: z.string(),
+  groups: z.array(z.string()),
+  version: z.string(),
+  complete: z.boolean(),
+});
+
+export const DepartmentMemberResponseSchema = z.object({
+  userId: z.string(),
+  loginId: z.string(),
+  userName: z.string(),
+  groups: z.array(z.string().optional().nullable()),
+  version: z.string(),
+  complete: z.boolean(),
+});
+
+export const DepartmentSnapshotRequestSchema = z.object({
+  departmentId: z.string(),
+  users: z.array(z.lazy(() => DepartmentMemberRequestSchema.strict())),
+  version: z.string(),
+  complete: z.boolean(),
+});
+
+export const DepartmentSnapshotResponseSchema = z.object({
+  departmentId: z.string(),
+  users: z.array(z.lazy(() => DepartmentMemberResponseSchema)),
+  version: z.string(),
+  complete: z.boolean(),
+});
+
 export const AddressBookDtoRequestSchema = z.object({
   adbkSn: z.number().int().optional(),
   adbkNm: z.string().min(0).max(200),
@@ -5831,11 +6282,17 @@ export const ApiResponseTokenResponseResponseSchema = z.object({
 export const TokenResponseRequestSchema = z.object({
   accessToken: z.string().optional(),
   role: z.string().optional(),
+  groups: z.array(z.string()).optional(),
+  permissions: z.array(z.string()).optional(),
+  authorizationVersion: z.string().optional(),
 });
 
 export const TokenResponseResponseSchema = z.object({
   accessToken: z.string().optional().nullable(),
   role: z.string().optional().nullable(),
+  groups: z.array(z.string().optional().nullable()).optional().nullable(),
+  permissions: z.array(z.string().optional().nullable()).optional().nullable(),
+  authorizationVersion: z.string().optional().nullable(),
 });
 
 export const ApiResponseStringRequestSchema = z.object({
@@ -5943,6 +6400,9 @@ export const UserDtoResponseSchema = z.object({
   userSttsCd: z.string().min(0).max(12).optional().nullable(),
   lckYn: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  groups: z.array(z.string().optional().nullable()),
+  permissions: z.array(z.string().optional().nullable()),
+  authorizationVersion: z.string(),
 });
 
 export const UserAuthorityDtoRequestSchema = z.object({
@@ -6135,6 +6595,18 @@ export const ApiResponseCommunityDtoResponseSchema = z.object({
   data: z.lazy(() => CommunityDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CreateGroupRequestSchema = z.object({
+  code: z.string().min(0).max(20).regex(new RegExp("[A-Z][A-Z0-9_]{0,19}")),
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
+});
+
+export const CreateGroupResponseSchema = z.object({
+  code: z.string().min(0).max(20).regex(new RegExp("[A-Z][A-Z0-9_]{0,19}")),
+  name: z.string().min(0).max(100),
+  description: z.string().min(0).max(4000).optional().nullable(),
 });
 
 export const MemoInstructionRequestRequestSchema = z.object({
@@ -7853,6 +8325,9 @@ export const CurrentUserResponseRequestSchema = z.object({
   role: z.string().optional(),
   userSe: z.string().optional(),
   email: z.string().optional(),
+  groups: z.array(z.string()).optional(),
+  permissions: z.array(z.string()).optional(),
+  authorizationVersion: z.string().optional(),
 });
 
 export const CurrentUserResponseResponseSchema = z.object({
@@ -7862,6 +8337,9 @@ export const CurrentUserResponseResponseSchema = z.object({
   role: z.string().optional().nullable(),
   userSe: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
+  groups: z.array(z.string().optional().nullable()).optional().nullable(),
+  permissions: z.array(z.string().optional().nullable()).optional().nullable(),
+  authorizationVersion: z.string().optional().nullable(),
 });
 
 export const ApiResponseListCommonCodeDtoRequestSchema = z.object({
@@ -10402,6 +10880,320 @@ export const ApiResponseListCommunityDtoResponseSchema = z.object({
   data: z.array(z.lazy(() => CommunityDtoResponseSchema)).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const ApiResponsePageResponseUserChoiceRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseUserChoiceRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponsePageResponseUserChoiceResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseUserChoiceResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const PageResponseUserChoiceRequestSchema = z.object({
+  list: z.array(z.lazy(() => UserChoiceRequestSchema.strict())).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+
+export const PageResponseUserChoiceResponseSchema = z.object({
+  list: z.array(z.lazy(() => UserChoiceResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
+});
+
+export const UserChoiceRequestSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  userNm: z.string(),
+  departmentId: z.string().nullable(),
+});
+
+export const UserChoiceResponseSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  userNm: z.string(),
+  departmentId: z.string().nullable(),
+});
+
+export const ApiResponseMembershipSnapshotRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MembershipSnapshotRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseMembershipSnapshotResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => MembershipSnapshotResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const MembershipSnapshotRequestSchema = z.object({
+  userId: z.string(),
+  groups: z.array(z.string()),
+  version: z.string(),
+  complete: z.boolean(),
+});
+
+export const MembershipSnapshotResponseSchema = z.object({
+  userId: z.string(),
+  groups: z.array(z.string().optional().nullable()),
+  version: z.string(),
+  complete: z.boolean(),
+});
+
+export const ApiResponsePageResponseChangeRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseChangeRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponsePageResponseChangeResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseChangeResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const ChangeRequestSchema = z.object({
+  id: z.number().int(),
+  requestId: z.string(),
+  policyVersion: z.string(),
+  targetType: z.string(),
+  changeType: z.string(),
+  group: z.string().nullable(),
+  userId: z.string().nullable(),
+  grantType: z.string().nullable(),
+  grantCode: z.string().nullable(),
+  field: z.string(),
+  before: z.string().nullable(),
+  after: z.string().nullable(),
+  actorId: z.string().nullable(),
+  createdAt: z.iso.datetime({ offset: true, local: true }),
+});
+
+export const ChangeResponseSchema = z.object({
+  id: z.number().int(),
+  requestId: z.string(),
+  policyVersion: z.string(),
+  targetType: z.string(),
+  changeType: z.string(),
+  group: z.string().nullable(),
+  userId: z.string().nullable(),
+  grantType: z.string().nullable(),
+  grantCode: z.string().nullable(),
+  field: z.string(),
+  before: z.string().nullable(),
+  after: z.string().nullable(),
+  actorId: z.string().nullable(),
+  createdAt: z.iso.datetime({ offset: true, local: true }),
+});
+
+export const PageResponseChangeRequestSchema = z.object({
+  list: z.array(z.lazy(() => ChangeRequestSchema.strict())).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+});
+
+export const PageResponseChangeResponseSchema = z.object({
+  list: z.array(z.lazy(() => ChangeResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
+});
+
+export const ApiResponseListGroupSummaryRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => GroupSummaryRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseListGroupSummaryResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => GroupSummaryResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const GroupSummaryRequestSchema = z.object({
+  code: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  version: z.string().optional(),
+});
+
+export const GroupSummaryResponseSchema = z.object({
+  code: z.string().optional().nullable(),
+  name: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  version: z.string().optional().nullable(),
+});
+
+export const ApiResponseGroupSnapshotRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => GroupSnapshotRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseGroupSnapshotResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => GroupSnapshotResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const GroupSnapshotRequestSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  grants: z.array(z.lazy(() => GrantRequestSchema.strict())),
+  version: z.string(),
+  complete: z.boolean(),
+});
+
+export const GroupSnapshotResponseSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  grants: z.array(z.lazy(() => GrantResponseSchema)),
+  version: z.string(),
+  complete: z.boolean(),
+});
+
+export const ApiResponseListDepartmentChoiceRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => DepartmentChoiceRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseListDepartmentChoiceResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => DepartmentChoiceResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const DepartmentChoiceRequestSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export const DepartmentChoiceResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+export const ApiResponseCatalogRequestSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CatalogRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+});
+
+export const ApiResponseCatalogResponseSchema = z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CatalogResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+});
+
+export const CatalogRequestSchema = z.object({
+  operations: z.array(z.lazy(() => OperationRequestSchema.strict())),
+  navigation: z.array(z.lazy(() => NavigationRequestSchema.strict())),
+  catalogVersion: z.string(),
+});
+
+export const CatalogResponseSchema = z.object({
+  operations: z.array(z.lazy(() => OperationResponseSchema)),
+  navigation: z.array(z.lazy(() => NavigationResponseSchema)),
+  catalogVersion: z.string(),
+});
+
+export const NavigationRequestSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  parentCode: z.string().nullable(),
+});
+
+export const NavigationResponseSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  parentCode: z.string().nullable(),
+});
+
+export const OperationRequestSchema = z.object({
+  code: z.string(),
+  domain: z.string(),
+  action: z.string(),
+  name: z.string(),
+});
+
+export const OperationResponseSchema = z.object({
+  code: z.string(),
+  domain: z.string(),
+  action: z.string(),
+  name: z.string(),
 });
 
 export const ApiResponsePageResponseAddressBookDtoRequestSchema = z.object({

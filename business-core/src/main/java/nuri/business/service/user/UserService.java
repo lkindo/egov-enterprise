@@ -18,8 +18,6 @@ import nuri.business.service.user.dto.UserSearchDto;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.business.service.user.event.UserDeletionEvent;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +49,8 @@ public class UserService extends BaseAbstractService {
         private final nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
         private final PasswordEncoder passwordEncoder;
         private final ApplicationEventPublisher eventPublisher;
+        private final nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
+        private final nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
@@ -58,7 +58,9 @@ public class UserService extends BaseAbstractService {
                         nuri.business.domain.log.UserLogRepository userLogRepository,
                         nuri.business.domain.deptjob.DeptJobRepository deptJobRepository,
                         PasswordEncoder passwordEncoder,
-                        ApplicationEventPublisher eventPublisher) {
+                        ApplicationEventPublisher eventPublisher,
+                        nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots,
+                        nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.userAuthorityRepository = required(userAuthorityRepository,
                                 "UserAuthorityRepository 는 null 일 수 없습니다");
@@ -72,41 +74,39 @@ public class UserService extends BaseAbstractService {
                 this.deptJobRepository = required(deptJobRepository, "DeptJobRepository 는 null 일 수 없습니다");
                 this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
+                this.authorizationSnapshots = required(authorizationSnapshots);
+                this.authorizationAdministration = required(authorizationAdministration);
         }
 
         /**
          * 사용자 목록 조회 (N+1 쿼리 개선 버전)
          */
-        @Cacheable(value = "users", key = "'userList'")
         public List<UserDto> getUserList() {
                 // [성능 개선] 단일 쿼리로 사용자와 권한 정보를 함께 조회 (N+1 방지)
                 List<Object[]> results = userRepository.findAllWithAuthorities();
 
                 // 사용자와 권한 매핑
                 Map<String, User> userMap = new java.util.LinkedHashMap<>();
-                Map<String, UserAuthority> authorityMap = new java.util.HashMap<>();
 
                 for (Object[] result : results) {
                         User user = (User) result[0];
-                        UserAuthority authority = (UserAuthority) result[1];
 
                         userMap.put(user.getEsntlId(), user);
-                        if (authority != null) {
-                                authorityMap.put(authority.getScrtyDcsnTrgtId(), authority);
-                        }
                 }
 
+                var snapshots=authorizationSnapshots.loadAll(userMap.keySet());
                 return userMap.values().stream()
-                                .map(user -> UserDto.from(user, authorityMap.get(user.getEsntlId())))
+                                .map(user -> UserDto.from(user).withAuthorization(snapshots.get(user.getEsntlId())))
                                 .collect(Collectors.toList());
         }
 
         /**
          * 사용자 목록 페이지 조회 구현
          */
-        @Cacheable(value = "users", key = "'pagedUserList:' + (#searchKeyword ?: '') + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
         public Page<UserDto> getPagedUserList(String searchKeyword, @NonNull Pageable pageable) {
-                return userRepository.getPagedUserList(searchKeyword, required(pageable, "Pageable 은 null 일 수 없습니다"));
+                var page=userRepository.getPagedUserList(searchKeyword, required(pageable, "Pageable 은 null 일 수 없습니다"));
+                var snapshots=authorizationSnapshots.loadAll(page.getContent().stream().map(UserDto::esntlId).toList());
+                return page.map(user -> user.withAuthorization(snapshots.get(user.esntlId())));
         }
 
 
@@ -169,33 +169,18 @@ public class UserService extends BaseAbstractService {
         /**
          * 사용자 상세 조회
          */
-        @Cacheable(value = "users", key = "#id")
         public UserDto getUserById(@NonNull String id) {
-                // 로그인 ID 또는 PK(esntlId) 중 어느 핸들로도 조회 허용.
-                // (User @Id == esntlId 이므로 findById 와 findByEsntlId 는 동일 쿼리 → 후자 중복 분기 제거)
-                User user = userRepository.findByUserId(id)
-                                .or(() -> userRepository.findById(id))
-                                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-
-                String authorCode = userAuthorityRepository
-                                .findById(required(user.getEsntlId(), "사용자 고유 ID 는 null 일 수 없습니다"))
-                                .map(auth -> auth.getAuthrtId())
-                                .orElse(null);
-
-                UserAuthority authority = (authorCode != null) ? UserAuthority.builder()
-                                .scrtyDcsnTrgtId(required(user.getEsntlId()))
-                                .authrtId(authorCode)
-                                .build() : null;
-
-                return UserDto.from(user, authority);
-        }
+                User user = userRepository.findByUserId(id).or(() -> userRepository.findById(id))
+                        .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+                return UserDto.from(user).withAuthorization(authorizationSnapshots.load(user.getEsntlId()));
+    }
 
         /**
          * 사용자 등록 (비밀번호 암호화 적용)
          */
         @Transactional
-        @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
         public String registerUser(@NonNull UserDto dto) {
+                authorizationAdministration.lockAndAuthorize("USER_CREATE");
                 required(dto, "등록 요청은 null 일 수 없습니다");
                 String userId = required(dto.userId(), "사용자 ID 는 null 일 수 없습니다");
                 String pswd = required(dto.pswd(), "비밀번호 는 null 일 수 없습니다");
@@ -205,7 +190,7 @@ public class UserService extends BaseAbstractService {
                 String roleName = dto.role();
 
                 // [보안] 관리자 권한 확인
-                nuri.business.security.util.SecurityUtil.assertAdmin();
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_CREATE");
 
                 // [안정성] ID 중복 체크 (통합 테이블 내 userId 필드 기준)
                 if (userRepository.findByUserId(userId).isPresent()) {
@@ -216,12 +201,10 @@ public class UserService extends BaseAbstractService {
                 String encodedPassword = passwordEncoder.encode(pswd);
 
                 Role role = Role.USER;
-                if (org.springframework.util.StringUtils.hasText(roleName)) {
-                        try {
-                                role = Role.valueOf(roleName);
-                        } catch (IllegalArgumentException e) {
-                                log.warn("Invalid role name: {}, defaulting to ROLE_USER", roleName);
-                        }
+                if (org.springframework.util.StringUtils.hasText(roleName)
+                        && !"USER".equals(roleName) && !"ROLE_USER".equals(roleName)) {
+                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                            "신규 사용자 그룹은 USER입니다. 추가 그룹은 권한 관리에서 배정해 주세요.");
                 }
 
                 // [2026-08-11 결함 수정] 종전에는 아래 builder 에 **7개 필드만** 넣었다
@@ -262,15 +245,8 @@ public class UserService extends BaseAbstractService {
                                 .build();
 
 
-                userRepository.save(required(user));
-
-                // 권한 정보 저장
-                UserAuthority authority = UserAuthority.builder()
-                                .scrtyDcsnTrgtId(user.getEsntlId())
-                                .authrtId("ROLE_" + user.getRole().name())
-                                .mbrTypeCd("USR")
-                                .build();
-                userAuthorityRepository.save(authority);
+                userRepository.saveAndFlush(required(user));
+                authorizationAdministration.assignNewUser(user.getEsntlId());
 
                 return userId;
         }
@@ -279,14 +255,14 @@ public class UserService extends BaseAbstractService {
          * 사용자 정보 수정
          */
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUser(@NonNull String userId, @NonNull UserDto userDto) {
+                authorizationAdministration.lockAdministration();
                 User user = userRepository.findByUserId(userId)
                                 .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
                 // [보안] 본인 또는 관리자만 수정 가능
-                nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(user.getEsntlId());
+                nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(user.getEsntlId(), "USER_UPDATE");
 
                 // [2026-08-12 결함 수정] **보내지 않은 필드가 지워지던 것**을 막는다.
                 //
@@ -368,10 +344,9 @@ public class UserService extends BaseAbstractService {
          * 사용자 삭제
          */
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUser(@NonNull String userId) {
                 // [보안] 관리자 권한 확인
-                nuri.business.security.util.SecurityUtil.assertAdmin();
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_DELETE");
 
                 if (!userRepository.findByUserId(userId).isPresent() && !userRepository.existsById(userId)) {
                         throw new BusinessException(UserErrorCode.USER_NOT_FOUND);
@@ -407,7 +382,7 @@ public class UserService extends BaseAbstractService {
                         // 재귀속 종착 계정이 사라지면 콘텐츠 보존 정책 자체가 붕괴한다
                         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
                 }
-                userAuthorityRepository.deleteAllByIdInBatch(esntlIds);
+                authorizationAdministration.removeDeletedUsers(esntlIds);
                 // [P2 키 규약] tb_auth_rfsh_tk 는 esntlId 단일 키잉 — 발급/로그아웃/재발급 전 경로가
                 // esntlId 기준임을 실측 확인했고, 레거시 loginId 키 행은 V2_18 이 정리한다(생성 경로 없음).
                 // 사용자별 파생 delete N회를 같은 PK 축의 명시적 IN bulk delete 한 번으로 수렴한다.
@@ -433,8 +408,8 @@ public class UserService extends BaseAbstractService {
          * 사용자 회원가입 (기존 API 호환 및 비밀번호 암호화 적용)
          */
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true)
         public UserResponse signup(UserSignupRequest request) {
+                authorizationAdministration.lockAdministration();
                 required(request, "회원가입 요청 정보는 null 일 수 없습니다");
                 required(request.getUserId(), "사용자 ID 는 null 일 수 없습니다");
                 required(request.getPswd(), "비밀번호 는 null 일 수 없습니다");
@@ -457,19 +432,12 @@ public class UserService extends BaseAbstractService {
                                 .pswdHint(request.getPswdHint())
                                 .pswdCrans(request.getPswdCrans())
                                 // [보안] 공개 엔드포인트이므로 권한을 요청에서 받지 않고 USER 로 고정한다.
-                                //   관리자 계정 생성은 assertAdmin() 이 걸린 registerUser() 경로만 사용한다.
+                                //   관리자 등록도 USER 그룹으로 생성하며 추가 그룹은 버전 검증된 배정 API로 부여한다.
                                 .role(Role.USER)
                                 .build();
 
-                userRepository.save(required(user));
-
-                // 권한 정보 저장
-                UserAuthority authority = UserAuthority.builder()
-                                .scrtyDcsnTrgtId(user.getEsntlId())
-                                .authrtId("ROLE_" + user.getRole().name())
-                                .mbrTypeCd("USR")
-                                .build();
-                userAuthorityRepository.save(authority);
+                userRepository.saveAndFlush(required(user));
+                authorizationAdministration.assignNewUser(user.getEsntlId());
 
                 return UserResponse.from(user);
         }
@@ -485,10 +453,9 @@ public class UserService extends BaseAbstractService {
          * 여러 사용자를 한꺼번에 삭제합니다.
          */
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUserList(@NonNull List<String> userIds) {
                 // [보안] 관리자 권한 확인
-                nuri.business.security.util.SecurityUtil.assertAdmin();
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_DELETE");
                 required(userIds, "사용자 ID 목록은 null 일 수 없습니다");
 
                 // [버그수정] 기존 deleteAllByIdInBatch(userIds)는 PK(esntlId) 기준이라, FE(UserOrgHubClient)가
@@ -516,10 +483,9 @@ public class UserService extends BaseAbstractService {
          * 관리자 권한으로 비밀번호를 변경합니다. (기존 비밀번호 확인 없음)
          */
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
                 // [보안] 관리자 권한 확인
-                nuri.business.security.util.SecurityUtil.assertAdmin();
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_PASSWORD");
 
                 User user = userRepository.findByUserId(userId)
                                 .or(() -> userRepository.findById(userId))
@@ -531,23 +497,25 @@ public class UserService extends BaseAbstractService {
          * 여러 사용자의 상태를 한꺼번에 변경합니다.
          */
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status) {
                 // [보안] 관리자 권한 확인
-                nuri.business.security.util.SecurityUtil.assertAdmin();
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_STATUS");
+                authorizationAdministration.lockAndAuthorize("USER_STATUS");
+                long managerCount = authorizationAdministration.managerCount();
                 List<User> users = findAllByLoginIdOrThrow(userIds);
                 users.forEach(user -> user.updateStatus(status));
-                userRepository.saveAll(users);
+                userRepository.saveAllAndFlush(users);
+                authorizationAdministration.protectLastManager(managerCount);
         }
 
         /**
          * 여러 사용자의 소속 부서를 한꺼번에 변경합니다.
          */
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true)
         public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId) {
+                authorizationAdministration.lockAndAuthorize("USER_DEPT");
                 // [보안] 관리자 권한 확인
-                nuri.business.security.util.SecurityUtil.assertAdmin();
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT");
                 List<User> users = findAllByLoginIdOrThrow(userIds);
                 users.forEach(user -> user.updateOrgnztId(ognzId));
                 userRepository.saveAll(users);
@@ -557,38 +525,11 @@ public class UserService extends BaseAbstractService {
          * 여러 사용자의 권한을 한꺼번에 변경합니다.
          */
         @Transactional
-        @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role) {
-                // [보안] 관리자 권한 확인
-                nuri.business.security.util.SecurityUtil.assertAdmin();
-                List<User> users = findAllByLoginIdOrThrow(userIds);
-                String authorCode = "ROLE_" + role.name();
-
-                // 사용자별 findById 하던 N+1 을 findAllById 배치 조회로 제거.
-                List<String> esntlIds = users.stream().map(u -> u.getEsntlId()).collect(java.util.stream.Collectors.toList());
-                java.util.Map<String, UserAuthority> existingByTarget = userAuthorityRepository.findAllById(esntlIds).stream()
-                        .collect(java.util.stream.Collectors.toMap(a -> a.getScrtyDcsnTrgtId(), a -> a));
-                List<UserAuthority> newAuthorities = new java.util.ArrayList<>();
-
-                users.forEach(user -> {
-                        user.changeRole(role);
-                        UserAuthority existing = existingByTarget.get(user.getEsntlId());
-                        if (existing != null) {
-                                existing.update(authorCode, existing.getMbrTypeCd());
-                        } else {
-                                newAuthorities.add(UserAuthority.builder()
-                                        .scrtyDcsnTrgtId(user.getEsntlId())
-                                        .authrtId(authorCode)
-                                        .mbrTypeCd("USR")
-                                        .build());
-                        }
-                });
-
-                if (!newAuthorities.isEmpty()) {
-                        userAuthorityRepository.saveAll(newAuthorities);
-                }
-                userRepository.saveAll(users);
-        }
+                nuri.business.security.util.SecurityUtil.assertPermission("AUTHRT_ASSIGN");
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "단일 role 변경은 종료되었습니다. 사용자별 전체 그룹과 버전으로 배정해 주세요.");
+    }
 
         /**
          * 화면의 벌크 선택 키인 loginId({@code user_id})로 사용자를 전부 확정한다.

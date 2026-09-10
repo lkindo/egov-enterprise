@@ -661,6 +661,31 @@ test('StandardDataTable bulkActions callbacks are distinct secondary actions', (
   }
 });
 
+test('conditional bulk action spreads retain every permission-gated write boundary', () => {
+  const subject = fixture({
+    'frontend/src/ConditionalBulk.tsx': `
+      export function ConditionalBulk(){
+        const savePendingRef = useRef(false);
+        const save = async () => { if(savePendingRef.current) return; savePendingRef.current=true; try { await boardService.batchUpdate(); } catch { setError('failed'); } finally { savePendingRef.current=false; } };
+        const remove = () => boardService.batchDelete();
+        return <StandardDataTable bulkActions={[
+          ...(canUpdate ? [{label:'활성화',disabled:pending,ariaBusy:pending,onClick:save}] : []),
+          ...(canDelete ? [{label:'삭제',disabled:pending,ariaBusy:pending,onClick:remove}] : [])
+        ]} />;
+      }
+    `,
+  });
+  try {
+    const actions = subject.discovery.candidates.filter(({ kind }) => kind === 'secondary-action');
+    assert.deepEqual(actions.map((action) => action.triggerLabel).sort(), ['삭제', '활성화']);
+    assert.deepEqual(actions.find((action) => action.triggerLabel === '삭제').writeSinks, ['boardService.batchDelete']);
+    const manifest = createDraftManifest(subject.discovery);
+    const omitted = actions.find((action) => action.triggerLabel === '삭제');
+    manifest.entries = manifest.entries.filter((entry) => entry.key !== omitted.key);
+    assert.ok(validateFormValidationCensus({ ...subject, manifest }).some((error) => error.code === 'UNREGISTERED_CANDIDATE' && error.key === omitted.key));
+  } finally { subject.cleanup(); }
+});
+
 test('secondary action ledger fails when its write sink drifts', () => {
   const subject = fixture({
     'frontend/src/SinkOwner.tsx': `

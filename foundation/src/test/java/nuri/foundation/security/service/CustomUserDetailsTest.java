@@ -4,75 +4,68 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("사용자 상세 정보(CustomUserDetails) 테스트")
+@DisplayName("사용자 상세 정보의 명시적 권한 계약")
 class CustomUserDetailsTest {
-
     @Test
-    @DisplayName("권한 정보 생성 테스트 - 권한 코드 명시")
-    void getAuthoritiesWithAuthorCode() {
-        // given
+    void legacyRoleAndGroupNamesNeverGrantOperationPermissions() {
         CustomUserDetails user = CustomUserDetails.builder()
-                .authorCode("ROLE_ADMIN")
-                .build();
-
-        // when
-        Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
-
-        // then
-        assertThat(authorities).hasSize(1);
-        assertThat(authorities.iterator().next().getAuthority()).isEqualTo("ROLE_ADMIN");
+                .authorCode("ROLE_ADMIN").roleName("ADMIN")
+                .authorityCodes(List.of("ROLE_SYSTEM"))
+                .groups(List.of("ROLE_ADMIN", "ROLE_SYSTEM")).build();
+        assertThat(user.getAuthorities()).isEmpty();
+        assertThat(user.getGroups()).containsExactly("ROLE_ADMIN", "ROLE_SYSTEM");
     }
 
     @Test
-    @DisplayName("권한 정보 생성 테스트 - 역할 이름 기준")
-    void getAuthoritiesWithRoleName() {
-        // given
-        CustomUserDetails user = CustomUserDetails.builder()
-                .roleName("USER")
-                .build();
-
-        // when
-        Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
-
-        // then
-        assertThat(authorities.iterator().next().getAuthority()).isEqualTo("ROLE_USER");
+    void emptyAssignmentNeverFallsBackToUser() {
+        assertThat(CustomUserDetails.builder().build().getAuthorities()).isEmpty();
+        assertThat(CustomUserDetails.builder().permissions(List.of()).build().getAuthorities()).isEmpty();
+        assertThat(new CustomUserDetails("login", "subject", "name", "", "ADMIN", "N", "ROLE_ADMIN")
+                .getAuthorities()).isEmpty();
     }
 
     @Test
-    @DisplayName("권한 정보 생성 테스트 - 기본값")
-    void getAuthoritiesDefault() {
-        // given
-        CustomUserDetails user = CustomUserDetails.builder().build();
-
-        // when
-        Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
-
-        // then
-        assertThat(authorities.iterator().next().getAuthority()).isEqualTo("ROLE_USER");
+    void permissionsAreExactImmutableValuesWithoutRolePrefixExpansion() {
+        var input = new ArrayList<>(List.of("SURVEY_READ", "SURVEY_CREATE", "SURVEY_READ"));
+        CustomUserDetails user = CustomUserDetails.builder().permissions(input).build();
+        input.add("AUTH_ASSIGN");
+        assertThat(user.getAuthorities()).extracting(GrantedAuthority::getAuthority)
+                .containsExactly("SURVEY_CREATE", "SURVEY_READ");
+        assertThatThrownBy(() -> user.getPermissions().add("AUTH_ASSIGN"))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
-    @DisplayName("계정 잠금 상태 확인")
-    void isAccountNonLocked() {
-        // given
-        CustomUserDetails lockedUser = CustomUserDetails.builder().lockAt("Y").build();
-        CustomUserDetails unlockedUser = CustomUserDetails.builder().lockAt("N").build();
-
-        // then
-        assertThat(lockedUser.isAccountNonLocked()).isFalse();
-        assertThat(unlockedUser.isAccountNonLocked()).isTrue();
+    void blankAuthorizationCodesAreRejected() {
+        assertThatThrownBy(() -> CustomUserDetails.builder().permissions(List.of(" ")).build())
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> CustomUserDetails.builder().groups(java.util.Arrays.asList("USER", null)).build())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("기본 상태값 확인")
-    void statusCheck() {
-        CustomUserDetails user = CustomUserDetails.builder().build();
-        assertThat(user.isAccountNonExpired()).isTrue();
-        assertThat(user.isCredentialsNonExpired()).isTrue();
-        assertThat(user.isEnabled()).isTrue();
+    void enabledRequiresExplicitCurrentAccountState() {
+        assertThat(CustomUserDetails.builder().build().isEnabled()).isFalse();
+        assertThat(CustomUserDetails.builder().enabled(true).build().isEnabled()).isTrue();
+        assertThat(CustomUserDetails.builder().enabled(false).build().isEnabled()).isFalse();
+    }
+
+    @Test
+    void accountLockRemainsIndependentOfMemberships() {
+        assertThat(CustomUserDetails.builder().enabled(true).lockAt("Y").build().isAccountNonLocked()).isFalse();
+        CustomUserDetails active = CustomUserDetails.builder().enabled(true).lockAt("N")
+                .groups(List.of()).authorizationVersion("current").build();
+        assertThat(active.isAccountNonLocked()).isTrue();
+        assertThat(active.isEnabled()).isTrue();
+        assertThat(active.getGroups()).isEmpty();
+        assertThat(active.getAuthorizationVersion()).isEqualTo("current");
+        assertThat(active.isAccountNonExpired()).isTrue();
+        assertThat(active.isCredentialsNonExpired()).isTrue();
     }
 }

@@ -58,7 +58,7 @@ public enum AttachmentSource {
     POPUP("tb_popup_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null,
             "(file_url = '/api/v1/files/' || ? OR file_url = '/api/v1/files/download?fileId=' || ?)"),
 
-    /** 게시판 글. 비밀글({@code scrt_yn='Y'})이 아니면 인증된 사용자에게 공개된 콘텐츠다. */
+    /** 게시판 글. resolver는 비밀글 조건 앞에 커뮤니티 승인 회원 조건을 함께 적용한다. */
     BOARD("tb_bbs_item", Sensitivity.SHARED,
             "(scrt_yn IS NULL OR scrt_yn <> 'Y')",
             "frst_rgtr_id = ?", "user_id = ?"),

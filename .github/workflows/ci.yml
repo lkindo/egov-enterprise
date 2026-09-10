@@ -591,6 +591,8 @@ jobs:
 
   e2e-tests:
     needs: [change-scope, backend-scope, frontend-scope]
+    env:
+      COMPOSE_FILE: docker-compose.yml:docker-compose.authz-e2e.yml
     if: ${{ always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.e2e == 'true' && (needs.backend-scope.result == 'success' || needs.backend-scope.result == 'skipped') && (needs.frontend-scope.result == 'success' || needs.frontend-scope.result == 'skipped') }}
     runs-on: ubuntu-latest
     # 정상 shard의 여유는 보장하되 멈춘 실행이 러너를 장시간 점유하지 않도록 제한한다.

@@ -106,7 +106,7 @@ class CommunityApiControllerTest {
         when(communityService.createCommunity(eq("user"), any(CommunityDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/v1/admin/content/community")
-                        .with(SecurityMockMvcRequestPostProcessors.user("user"))
+                        .with(SecurityMockMvcRequestPostProcessors.user(nuri.business.support.AuthorizationTestPrincipal.principal("user", "user", "ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
@@ -122,7 +122,7 @@ class CommunityApiControllerTest {
         requestDto.setUseYn("Y");
 
         mockMvc.perform(post("/api/v1/admin/content/community")
-                        .with(SecurityMockMvcRequestPostProcessors.user("user"))
+                        .with(SecurityMockMvcRequestPostProcessors.user(nuri.business.support.AuthorizationTestPrincipal.principal("user", "user", "ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isBadRequest());
@@ -139,7 +139,7 @@ class CommunityApiControllerTest {
         doNothing().when(communityService).updateCommunity(eq("user"), any(CommunityDto.class));
 
         mockMvc.perform(put("/api/v1/admin/content/community/101")
-                        .with(SecurityMockMvcRequestPostProcessors.user("user"))
+                        .with(SecurityMockMvcRequestPostProcessors.user(nuri.business.support.AuthorizationTestPrincipal.principal("user", "user", "ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -152,7 +152,7 @@ class CommunityApiControllerTest {
         doNothing().when(communityService).deleteCommunity(101L, "user");
 
         mockMvc.perform(delete("/api/v1/admin/content/community/101")
-                        .with(SecurityMockMvcRequestPostProcessors.user("user")))
+                        .with(SecurityMockMvcRequestPostProcessors.user(nuri.business.support.AuthorizationTestPrincipal.principal("user", "user", "ADMIN"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -198,18 +198,21 @@ class CommunityApiControllerTest {
     }
 
     /**
-     * 🔒 멤버십 전이 3본은 URL 게이트 외에 메서드 인가(@AdminOrSystem)를 직접 든다. standalone MockMvc 는
+     * 🔒 멤버십 전이 3본은 URL 게이트 외에 메서드의 정확한 기능 인가를 직접 든다. standalone MockMvc 는
      * 메서드 보안을 집행하지 않으므로 애노테이션의 존재를 리플렉션으로 고정한다 — 제거되면 인가 완화다.
      */
     @Test
-    @DisplayName("🔒 멤버십 전이 핸들러는 @AdminOrSystem 을 직접 든다")
+    @DisplayName("멤버십 조회·승인·거절은 각각의 기능 권한을 확인한다")
     void membershipHandlersCarryMethodSecurity() throws Exception {
         for (String name : List.of("getMembers", "approveMember", "rejectMember")) {
             java.lang.reflect.Method handler = java.util.Arrays.stream(CommunityApiController.class.getDeclaredMethods())
                     .filter(m -> m.getName().equals(name)).findFirst().orElseThrow();
-            org.junit.jupiter.api.Assertions.assertNotNull(
-                    handler.getAnnotation(nuri.foundation.security.annotation.AdminOrSystem.class),
-                    name + " 에 @AdminOrSystem 이 없다");
+            String permission = switch (name) {
+                case "getMembers" -> "COMMUNITY_READ_ALL";
+                case "approveMember" -> "COMMUNITY_APPROVE";
+                default -> "COMMUNITY_REJECT";
+            };
+            nuri.security.support.MethodPermissionContract.assertOperation(handler, permission, false);
         }
     }
 

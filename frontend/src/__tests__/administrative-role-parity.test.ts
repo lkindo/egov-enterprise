@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ADMINISTRATIVE_ROLES, isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -14,11 +15,11 @@ const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
  * 생성 마법사가 정확히 이 방식으로 사라졌고(role 은 authority id 라 `ROLE_ADMIN`),
  * 하단 마케팅 배너가 같은 동작을 중복 제공하던 동안 가려져 있었다.
  */
-function proxyAdminRoles(): string[] {
+function proxyUsesCurrentPermissions(): boolean {
   const proxy = readFileSync(join(SRC_DIR, 'proxy.ts'), 'utf8');
-  const gate = proxy.slice(proxy.indexOf('const isAdmin ='));
-  const block = gate.slice(0, gate.indexOf(';'));
-  return [...block.matchAll(/normalizedRole === '([A-Z_]+)'/g)].map((match) => match[1]).sort();
+  return proxy.includes('await loadPageAuthorization(accessToken, userSubject)') &&
+    proxy.includes('canEnterRegisteredPage(normalizedPath, authorization)') &&
+    !proxy.includes('normalizedRole');
 }
 
 /**
@@ -66,8 +67,11 @@ describe('자체 역할 집합 탐지기', () => {
 });
 
 describe('관리자 판정 parity', () => {
-  it('클라이언트 표시 판정이 라우트 게이트와 같은 역할 집합을 쓴다', () => {
-    expect(proxyAdminRoles()).toEqual([...ADMINISTRATIVE_ROLES].sort());
+  it('both client affordances and the route gate require current functional grants', () => {
+    expect(proxyUsesCurrentPermissions()).toBe(true);
+    const roleOnly = { role: 'ROLE_ADMIN', permissions: [], authorizationVersion: 'v1' };
+    expect(canPermission(roleOnly, 'BBS_MST_CREATE')).toBe(false);
+    expect(canPermission({ permissions: ['BBS_MST_CREATE'], authorizationVersion: 'v1' }, 'BBS_MST_CREATE')).toBe(true);
   });
 
   it('authority id 형태(ROLE_ADMIN)와 대소문자 흔들림을 모두 인정한다', () => {
@@ -84,7 +88,7 @@ describe('관리자 판정 parity', () => {
       join(SRC_DIR, 'app/admin/community/boards/master/BoardMasterListClient.tsx'),
       'utf8',
     );
-    expect(client).toContain('isAdministrativeRole(user?.role)');
+    expect(client).toContain("canPermission(user, 'BBS_MST_CREATE')");
     expect(client).not.toMatch(/user\?\.role === '[A-Z_]+'/);
   });
 

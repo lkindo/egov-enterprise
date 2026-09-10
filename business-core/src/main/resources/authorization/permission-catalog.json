@@ -1,0 +1,2785 @@
+{
+  "schemaVersion": 1,
+  "description": "Source-owned OPERATION codes; domain resource predicates remain mandatory. NAVIGATION codes come from menu rows.",
+  "permissions": [
+    {
+      "code": "ABSENCE_READ",
+      "domain": "ABSENCE",
+      "action": "READ",
+      "name": "부재 관리 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "ABSENCE_UPDATE",
+      "domain": "ABSENCE",
+      "action": "UPDATE",
+      "name": "부재 관리 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "ADBK_CREATE",
+      "domain": "ADBK",
+      "action": "CREATE",
+      "name": "주소록 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "ADBK_DELETE",
+      "domain": "ADBK",
+      "action": "DELETE",
+      "name": "주소록 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "ADBK_DELETE_ALL",
+      "domain": "ADBK",
+      "action": "DELETE_ALL",
+      "name": "주소록 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "ADBK_READ",
+      "domain": "ADBK",
+      "action": "READ",
+      "name": "주소록 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "ADBK_READ_ALL",
+      "domain": "ADBK",
+      "action": "READ_ALL",
+      "name": "주소록 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "ADBK_UPDATE",
+      "domain": "ADBK",
+      "action": "UPDATE",
+      "name": "주소록 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "ADBK_UPDATE_ALL",
+      "domain": "ADBK",
+      "action": "UPDATE_ALL",
+      "name": "주소록 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "ADMCODE_CREATE",
+      "domain": "ADMCODE",
+      "action": "CREATE",
+      "name": "행정 코드 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "ADMCODE_DELETE",
+      "domain": "ADMCODE",
+      "action": "DELETE",
+      "name": "행정 코드 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "ADMCODE_READ",
+      "domain": "ADMCODE",
+      "action": "READ",
+      "name": "행정 코드 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "ADMCODE_UPDATE",
+      "domain": "ADMCODE",
+      "action": "UPDATE",
+      "name": "행정 코드 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "APPROVAL_APPROVE",
+      "domain": "APPROVAL",
+      "action": "APPROVE",
+      "name": "전자 결재 · 승인",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "APPROVAL_CANCEL",
+      "domain": "APPROVAL",
+      "action": "CANCEL",
+      "name": "전자 결재 · 취소",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "APPROVAL_CREATE",
+      "domain": "APPROVAL",
+      "action": "CREATE",
+      "name": "전자 결재 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "APPROVAL_READ",
+      "domain": "APPROVAL",
+      "action": "READ",
+      "name": "전자 결재 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "AUTHRT_ASSIGN",
+      "domain": "AUTHRT",
+      "action": "ASSIGN",
+      "name": "권한 관리 · 배정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "AUTHRT_AUDIT",
+      "domain": "AUTHRT",
+      "action": "AUDIT",
+      "name": "권한 관리 · 변경 이력 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "AUTHRT_CREATE",
+      "domain": "AUTHRT",
+      "action": "CREATE",
+      "name": "권한 관리 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "AUTHRT_DELETE",
+      "domain": "AUTHRT",
+      "action": "DELETE",
+      "name": "권한 관리 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "AUTHRT_GRANT",
+      "domain": "AUTHRT",
+      "action": "GRANT",
+      "name": "권한 관리 · 기능·메뉴 권한 설정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "AUTHRT_READ",
+      "domain": "AUTHRT",
+      "action": "READ",
+      "name": "권한 관리 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "AUTHRT_UPDATE",
+      "domain": "AUTHRT",
+      "action": "UPDATE",
+      "name": "권한 관리 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BANNER_CREATE",
+      "domain": "BANNER",
+      "action": "CREATE",
+      "name": "배너 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BANNER_DELETE",
+      "domain": "BANNER",
+      "action": "DELETE",
+      "name": "배너 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BANNER_READ",
+      "domain": "BANNER",
+      "action": "READ",
+      "name": "배너 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "BANNER_UPDATE",
+      "domain": "BANNER",
+      "action": "UPDATE",
+      "name": "배너 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BBS_MST_CREATE",
+      "domain": "BBS_MST",
+      "action": "CREATE",
+      "name": "게시판 관리 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BBS_MST_DELETE",
+      "domain": "BBS_MST",
+      "action": "DELETE",
+      "name": "게시판 관리 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BBS_MST_READ",
+      "domain": "BBS_MST",
+      "action": "READ",
+      "name": "게시판 관리 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BBS_MST_READ_ALL",
+      "domain": "BBS_MST",
+      "action": "READ_ALL",
+      "name": "게시판 관리 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BBS_MST_UPDATE",
+      "domain": "BBS_MST",
+      "action": "UPDATE",
+      "name": "게시판 관리 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BOARD_CREATE",
+      "domain": "BOARD",
+      "action": "CREATE",
+      "name": "게시글 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "BOARD_DELETE",
+      "domain": "BOARD",
+      "action": "DELETE",
+      "name": "게시글 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "BOARD_DELETE_ALL",
+      "domain": "BOARD",
+      "action": "DELETE_ALL",
+      "name": "게시글 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BOARD_LIKE",
+      "domain": "BOARD",
+      "action": "LIKE",
+      "name": "게시글 · 추천",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "BOARD_READ",
+      "domain": "BOARD",
+      "action": "READ",
+      "name": "게시글 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "BOARD_READ_ALL",
+      "domain": "BOARD",
+      "action": "READ_ALL",
+      "name": "게시글 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "BOARD_UPDATE",
+      "domain": "BOARD",
+      "action": "UPDATE",
+      "name": "게시글 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "BOARD_UPDATE_ALL",
+      "domain": "BOARD",
+      "action": "UPDATE_ALL",
+      "name": "게시글 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CLASS_GRP_CREATE",
+      "domain": "CLASS_GRP",
+      "action": "CREATE",
+      "name": "권한 그룹 분류 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CLASS_GRP_DELETE",
+      "domain": "CLASS_GRP",
+      "action": "DELETE",
+      "name": "권한 그룹 분류 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CLASS_GRP_READ",
+      "domain": "CLASS_GRP",
+      "action": "READ",
+      "name": "권한 그룹 분류 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CLASS_GRP_UPDATE",
+      "domain": "CLASS_GRP",
+      "action": "UPDATE",
+      "name": "권한 그룹 분류 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CODE_CREATE",
+      "domain": "CODE",
+      "action": "CREATE",
+      "name": "공통 코드 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CODE_DELETE",
+      "domain": "CODE",
+      "action": "DELETE",
+      "name": "공통 코드 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CODE_READ",
+      "domain": "CODE",
+      "action": "READ",
+      "name": "공통 코드 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CODE_UPDATE",
+      "domain": "CODE",
+      "action": "UPDATE",
+      "name": "공통 코드 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMENT_CREATE",
+      "domain": "COMMENT",
+      "action": "CREATE",
+      "name": "댓글 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "COMMENT_DELETE",
+      "domain": "COMMENT",
+      "action": "DELETE",
+      "name": "댓글 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "COMMENT_DELETE_ALL",
+      "domain": "COMMENT",
+      "action": "DELETE_ALL",
+      "name": "댓글 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMENT_READ",
+      "domain": "COMMENT",
+      "action": "READ",
+      "name": "댓글 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "COMMENT_READ_ALL",
+      "domain": "COMMENT",
+      "action": "READ_ALL",
+      "name": "댓글 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMENT_UPDATE",
+      "domain": "COMMENT",
+      "action": "UPDATE",
+      "name": "댓글 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "COMMENT_UPDATE_ALL",
+      "domain": "COMMENT",
+      "action": "UPDATE_ALL",
+      "name": "댓글 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMUNITY_APPROVE",
+      "domain": "COMMUNITY",
+      "action": "APPROVE",
+      "name": "커뮤니티 · 승인",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMUNITY_CREATE_ALL",
+      "domain": "COMMUNITY",
+      "action": "CREATE_ALL",
+      "name": "커뮤니티 · 등록 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMUNITY_DELETE_ALL",
+      "domain": "COMMUNITY",
+      "action": "DELETE_ALL",
+      "name": "커뮤니티 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMUNITY_JOIN",
+      "domain": "COMMUNITY",
+      "action": "JOIN",
+      "name": "커뮤니티 · 가입",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "COMMUNITY_READ",
+      "domain": "COMMUNITY",
+      "action": "READ",
+      "name": "커뮤니티 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "COMMUNITY_READ_ALL",
+      "domain": "COMMUNITY",
+      "action": "READ_ALL",
+      "name": "커뮤니티 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMUNITY_REJECT",
+      "domain": "COMMUNITY",
+      "action": "REJECT",
+      "name": "커뮤니티 · 반려",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "COMMUNITY_UPDATE_ALL",
+      "domain": "COMMUNITY",
+      "action": "UPDATE_ALL",
+      "name": "커뮤니티 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DASHBOARD_READ",
+      "domain": "DASHBOARD",
+      "action": "READ",
+      "name": "대시보드 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "DEPT_BOX_CREATE",
+      "domain": "DEPT_BOX",
+      "action": "CREATE",
+      "name": "부서 문서함 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DEPT_BOX_DELETE",
+      "domain": "DEPT_BOX",
+      "action": "DELETE",
+      "name": "부서 문서함 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DEPT_BOX_READ",
+      "domain": "DEPT_BOX",
+      "action": "READ",
+      "name": "부서 문서함 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "DEPT_BOX_UPDATE",
+      "domain": "DEPT_BOX",
+      "action": "UPDATE",
+      "name": "부서 문서함 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DEPT_CREATE",
+      "domain": "DEPT",
+      "action": "CREATE",
+      "name": "부서 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DEPT_DELETE",
+      "domain": "DEPT",
+      "action": "DELETE",
+      "name": "부서 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DEPT_JOB_CREATE",
+      "domain": "DEPT_JOB",
+      "action": "CREATE",
+      "name": "부서 업무 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "DEPT_JOB_DELETE",
+      "domain": "DEPT_JOB",
+      "action": "DELETE",
+      "name": "부서 업무 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "DEPT_JOB_DELETE_ALL",
+      "domain": "DEPT_JOB",
+      "action": "DELETE_ALL",
+      "name": "부서 업무 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DEPT_JOB_READ",
+      "domain": "DEPT_JOB",
+      "action": "READ",
+      "name": "부서 업무 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "DEPT_JOB_UPDATE",
+      "domain": "DEPT_JOB",
+      "action": "UPDATE",
+      "name": "부서 업무 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "DEPT_JOB_UPDATE_ALL",
+      "domain": "DEPT_JOB",
+      "action": "UPDATE_ALL",
+      "name": "부서 업무 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DEPT_READ",
+      "domain": "DEPT",
+      "action": "READ",
+      "name": "부서 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DEPT_UPDATE",
+      "domain": "DEPT",
+      "action": "UPDATE",
+      "name": "부서 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EVENT_CREATE",
+      "domain": "EVENT",
+      "action": "CREATE",
+      "name": "행사 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EVENT_DELETE",
+      "domain": "EVENT",
+      "action": "DELETE",
+      "name": "행사 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EVENT_DELETE_ALL",
+      "domain": "EVENT",
+      "action": "DELETE_ALL",
+      "name": "행사 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EVENT_READ",
+      "domain": "EVENT",
+      "action": "READ",
+      "name": "행사 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EVENT_UPDATE",
+      "domain": "EVENT",
+      "action": "UPDATE",
+      "name": "행사 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EVENT_UPDATE_ALL",
+      "domain": "EVENT",
+      "action": "UPDATE_ALL",
+      "name": "행사 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EXT_HR_CREATE",
+      "domain": "EXT_HR",
+      "action": "CREATE",
+      "name": "외부 인사 연계 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EXT_HR_DELETE",
+      "domain": "EXT_HR",
+      "action": "DELETE",
+      "name": "외부 인사 연계 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EXT_HR_DELETE_ALL",
+      "domain": "EXT_HR",
+      "action": "DELETE_ALL",
+      "name": "외부 인사 연계 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EXT_HR_READ",
+      "domain": "EXT_HR",
+      "action": "READ",
+      "name": "외부 인사 연계 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EXT_HR_UPDATE",
+      "domain": "EXT_HR",
+      "action": "UPDATE",
+      "name": "외부 인사 연계 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "EXT_HR_UPDATE_ALL",
+      "domain": "EXT_HR",
+      "action": "UPDATE_ALL",
+      "name": "외부 인사 연계 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "FILE_AUDIT",
+      "domain": "FILE",
+      "action": "AUDIT",
+      "name": "첨부파일 · 변경 이력 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "FILE_DELETE",
+      "domain": "FILE",
+      "action": "DELETE",
+      "name": "첨부파일 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "FILE_DELETE_ALL",
+      "domain": "FILE",
+      "action": "DELETE_ALL",
+      "name": "첨부파일 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "FILE_DOWNLOAD",
+      "domain": "FILE",
+      "action": "DOWNLOAD",
+      "name": "첨부파일 · 다운로드",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "FILE_DOWNLOAD_ALL",
+      "domain": "FILE",
+      "action": "DOWNLOAD_ALL",
+      "name": "첨부파일 · 다운로드 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "FILE_READ",
+      "domain": "FILE",
+      "action": "READ",
+      "name": "첨부파일 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "FILE_READ_ALL",
+      "domain": "FILE",
+      "action": "READ_ALL",
+      "name": "첨부파일 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "FILE_UPLOAD",
+      "domain": "FILE",
+      "action": "UPLOAD",
+      "name": "첨부파일 · 업로드",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "FILE_UPLOAD_ALL",
+      "domain": "FILE",
+      "action": "UPLOAD_ALL",
+      "name": "첨부파일 · 업로드 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "HELP_CREATE",
+      "domain": "HELP",
+      "action": "CREATE",
+      "name": "도움말 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "HELP_DELETE",
+      "domain": "HELP",
+      "action": "DELETE",
+      "name": "도움말 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "HELP_DELETE_ALL",
+      "domain": "HELP",
+      "action": "DELETE_ALL",
+      "name": "도움말 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "HELP_READ",
+      "domain": "HELP",
+      "action": "READ",
+      "name": "도움말 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "HELP_UPDATE",
+      "domain": "HELP",
+      "action": "UPDATE",
+      "name": "도움말 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "HELP_UPDATE_ALL",
+      "domain": "HELP",
+      "action": "UPDATE_ALL",
+      "name": "도움말 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INFORMAL_APPROVE",
+      "domain": "INFORMAL",
+      "action": "APPROVE",
+      "name": "약식 결재 · 승인",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "INFORMAL_CREATE",
+      "domain": "INFORMAL",
+      "action": "CREATE",
+      "name": "약식 결재 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "INFORMAL_CREATE_ALL",
+      "domain": "INFORMAL",
+      "action": "CREATE_ALL",
+      "name": "약식 결재 · 등록 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INFORMAL_DELETE",
+      "domain": "INFORMAL",
+      "action": "DELETE",
+      "name": "약식 결재 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "INFORMAL_DELETE_ALL",
+      "domain": "INFORMAL",
+      "action": "DELETE_ALL",
+      "name": "약식 결재 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INFORMAL_READ",
+      "domain": "INFORMAL",
+      "action": "READ",
+      "name": "약식 결재 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "INFORMAL_READ_ALL",
+      "domain": "INFORMAL",
+      "action": "READ_ALL",
+      "name": "약식 결재 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INFORMAL_UPDATE",
+      "domain": "INFORMAL",
+      "action": "UPDATE",
+      "name": "약식 결재 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "INFORMAL_UPDATE_ALL",
+      "domain": "INFORMAL",
+      "action": "UPDATE_ALL",
+      "name": "약식 결재 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INST_CODE_CREATE",
+      "domain": "INST_CODE",
+      "action": "CREATE",
+      "name": "기관 코드 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INST_CODE_DELETE",
+      "domain": "INST_CODE",
+      "action": "DELETE",
+      "name": "기관 코드 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INST_CODE_IMPORT",
+      "domain": "INST_CODE",
+      "action": "IMPORT",
+      "name": "기관 코드 · 가져오기",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INST_CODE_READ",
+      "domain": "INST_CODE",
+      "action": "READ",
+      "name": "기관 코드 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "INST_CODE_UPDATE",
+      "domain": "INST_CODE",
+      "action": "UPDATE",
+      "name": "기관 코드 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "LOGIN_LOG_EXPORT",
+      "domain": "LOGIN_LOG",
+      "action": "EXPORT",
+      "name": "로그인 이력 · 내보내기",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "LOGIN_LOG_READ",
+      "domain": "LOGIN_LOG",
+      "action": "READ",
+      "name": "로그인 이력 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "LOGIN_POL_CREATE",
+      "domain": "LOGIN_POL",
+      "action": "CREATE",
+      "name": "로그인 정책 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "LOGIN_POL_DELETE",
+      "domain": "LOGIN_POL",
+      "action": "DELETE",
+      "name": "로그인 정책 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "LOGIN_POL_READ",
+      "domain": "LOGIN_POL",
+      "action": "READ",
+      "name": "로그인 정책 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "LOGIN_POL_UPDATE",
+      "domain": "LOGIN_POL",
+      "action": "UPDATE",
+      "name": "로그인 정책 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MAIL_DELETE",
+      "domain": "MAIL",
+      "action": "DELETE",
+      "name": "메일 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "MAIL_DELETE_ALL",
+      "domain": "MAIL",
+      "action": "DELETE_ALL",
+      "name": "메일 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MAIL_READ",
+      "domain": "MAIL",
+      "action": "READ",
+      "name": "메일 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "MAIL_READ_ALL",
+      "domain": "MAIL",
+      "action": "READ_ALL",
+      "name": "메일 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MAIL_SEND",
+      "domain": "MAIL",
+      "action": "SEND",
+      "name": "메일 · 발송",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "MEMO_RPT_CREATE",
+      "domain": "MEMO_RPT",
+      "action": "CREATE",
+      "name": "메모 보고 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "MEMO_RPT_DELETE",
+      "domain": "MEMO_RPT",
+      "action": "DELETE",
+      "name": "메모 보고 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "MEMO_RPT_DELETE_ALL",
+      "domain": "MEMO_RPT",
+      "action": "DELETE_ALL",
+      "name": "메모 보고 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MEMO_RPT_INSTRUCT",
+      "domain": "MEMO_RPT",
+      "action": "INSTRUCT",
+      "name": "메모 보고 · 지시",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "MEMO_RPT_READ",
+      "domain": "MEMO_RPT",
+      "action": "READ",
+      "name": "메모 보고 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "MEMO_RPT_READ_ALL",
+      "domain": "MEMO_RPT",
+      "action": "READ_ALL",
+      "name": "메모 보고 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MEMO_RPT_UPDATE",
+      "domain": "MEMO_RPT",
+      "action": "UPDATE",
+      "name": "메모 보고 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "MEMO_RPT_UPDATE_ALL",
+      "domain": "MEMO_RPT",
+      "action": "UPDATE_ALL",
+      "name": "메모 보고 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MENU_CREATE",
+      "domain": "MENU",
+      "action": "CREATE",
+      "name": "메뉴 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MENU_DELETE",
+      "domain": "MENU",
+      "action": "DELETE",
+      "name": "메뉴 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MENU_READ",
+      "domain": "MENU",
+      "action": "READ",
+      "name": "메뉴 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "MENU_UPDATE",
+      "domain": "MENU",
+      "action": "UPDATE",
+      "name": "메뉴 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "NETWORK_CREATE",
+      "domain": "NETWORK",
+      "action": "CREATE",
+      "name": "네트워크 정보 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "NETWORK_DELETE",
+      "domain": "NETWORK",
+      "action": "DELETE",
+      "name": "네트워크 정보 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "NETWORK_READ",
+      "domain": "NETWORK",
+      "action": "READ",
+      "name": "네트워크 정보 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "NETWORK_UPDATE",
+      "domain": "NETWORK",
+      "action": "UPDATE",
+      "name": "네트워크 정보 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "NOTE_DELETE",
+      "domain": "NOTE",
+      "action": "DELETE",
+      "name": "쪽지 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "NOTE_READ",
+      "domain": "NOTE",
+      "action": "READ",
+      "name": "쪽지 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "NOTE_SEND",
+      "domain": "NOTE",
+      "action": "SEND",
+      "name": "쪽지 · 발송",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "NOTI_ACK",
+      "domain": "NOTI",
+      "action": "ACK",
+      "name": "알림 · 확인",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "NOTI_CREATE",
+      "domain": "NOTI",
+      "action": "CREATE",
+      "name": "알림 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "NOTI_DELETE",
+      "domain": "NOTI",
+      "action": "DELETE",
+      "name": "알림 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "NOTI_DISPATCH",
+      "domain": "NOTI",
+      "action": "DISPATCH",
+      "name": "알림 · 발송 처리",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "NOTI_READ",
+      "domain": "NOTI",
+      "action": "READ",
+      "name": "알림 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "OPS_READ",
+      "domain": "OPS",
+      "action": "READ",
+      "name": "운영 진단 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "POLICY_READ",
+      "domain": "POLICY",
+      "action": "READ",
+      "name": "이용 정책 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "POLICY_UPDATE",
+      "domain": "POLICY",
+      "action": "UPDATE",
+      "name": "이용 정책 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "POLL_CREATE",
+      "domain": "POLL",
+      "action": "CREATE",
+      "name": "온라인 투표 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "POLL_DELETE",
+      "domain": "POLL",
+      "action": "DELETE",
+      "name": "온라인 투표 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "POLL_DELETE_ALL",
+      "domain": "POLL",
+      "action": "DELETE_ALL",
+      "name": "온라인 투표 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "POLL_READ",
+      "domain": "POLL",
+      "action": "READ",
+      "name": "온라인 투표 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "POLL_READ_ALL",
+      "domain": "POLL",
+      "action": "READ_ALL",
+      "name": "온라인 투표 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "POLL_UPDATE",
+      "domain": "POLL",
+      "action": "UPDATE",
+      "name": "온라인 투표 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "POLL_UPDATE_ALL",
+      "domain": "POLL",
+      "action": "UPDATE_ALL",
+      "name": "온라인 투표 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "POLL_VOTE",
+      "domain": "POLL",
+      "action": "VOTE",
+      "name": "온라인 투표 · 투표",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "POPUP_CREATE",
+      "domain": "POPUP",
+      "action": "CREATE",
+      "name": "팝업 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "POPUP_DELETE",
+      "domain": "POPUP",
+      "action": "DELETE",
+      "name": "팝업 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "POPUP_READ",
+      "domain": "POPUP",
+      "action": "READ",
+      "name": "팝업 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "POPUP_UPDATE",
+      "domain": "POPUP",
+      "action": "UPDATE",
+      "name": "팝업 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "PRIVACY_EXPORT",
+      "domain": "PRIVACY",
+      "action": "EXPORT",
+      "name": "개인정보 조회 이력 · 내보내기",
+      "defaultGroups": [
+        "ROLE_ADMIN"
+      ]
+    },
+    {
+      "code": "PRIVACY_READ",
+      "domain": "PRIVACY",
+      "action": "READ",
+      "name": "개인정보 조회 이력 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN"
+      ]
+    },
+    {
+      "code": "PROGRAM_CREATE",
+      "domain": "PROGRAM",
+      "action": "CREATE",
+      "name": "프로그램 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "PROGRAM_DELETE",
+      "domain": "PROGRAM",
+      "action": "DELETE",
+      "name": "프로그램 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "PROGRAM_READ",
+      "domain": "PROGRAM",
+      "action": "READ",
+      "name": "프로그램 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "PROGRAM_UPDATE",
+      "domain": "PROGRAM",
+      "action": "UPDATE",
+      "name": "프로그램 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "REWARD_CREATE",
+      "domain": "REWARD",
+      "action": "CREATE",
+      "name": "포상 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "REWARD_DELETE",
+      "domain": "REWARD",
+      "action": "DELETE",
+      "name": "포상 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "REWARD_DELETE_ALL",
+      "domain": "REWARD",
+      "action": "DELETE_ALL",
+      "name": "포상 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "REWARD_READ",
+      "domain": "REWARD",
+      "action": "READ",
+      "name": "포상 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "REWARD_UPDATE",
+      "domain": "REWARD",
+      "action": "UPDATE",
+      "name": "포상 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "REWARD_UPDATE_ALL",
+      "domain": "REWARD",
+      "action": "UPDATE_ALL",
+      "name": "포상 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SATISFY_CREATE",
+      "domain": "SATISFY",
+      "action": "CREATE",
+      "name": "만족도 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SATISFY_DELETE",
+      "domain": "SATISFY",
+      "action": "DELETE",
+      "name": "만족도 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SATISFY_DELETE_ALL",
+      "domain": "SATISFY",
+      "action": "DELETE_ALL",
+      "name": "만족도 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SATISFY_MODERATE",
+      "domain": "SATISFY",
+      "action": "MODERATE",
+      "name": "만족도 · 운영 관리",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SATISFY_READ",
+      "domain": "SATISFY",
+      "action": "READ",
+      "name": "만족도 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SATISFY_UPDATE",
+      "domain": "SATISFY",
+      "action": "UPDATE",
+      "name": "만족도 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SATISFY_UPDATE_ALL",
+      "domain": "SATISFY",
+      "action": "UPDATE_ALL",
+      "name": "만족도 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SCHEDULE_CREATE",
+      "domain": "SCHEDULE",
+      "action": "CREATE",
+      "name": "일정 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SCHEDULE_DELETE",
+      "domain": "SCHEDULE",
+      "action": "DELETE",
+      "name": "일정 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SCHEDULE_DELETE_ALL",
+      "domain": "SCHEDULE",
+      "action": "DELETE_ALL",
+      "name": "일정 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SCHEDULE_READ",
+      "domain": "SCHEDULE",
+      "action": "READ",
+      "name": "일정 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SCHEDULE_READ_ALL",
+      "domain": "SCHEDULE",
+      "action": "READ_ALL",
+      "name": "일정 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SCHEDULE_UPDATE",
+      "domain": "SCHEDULE",
+      "action": "UPDATE",
+      "name": "일정 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SCHEDULE_UPDATE_ALL",
+      "domain": "SCHEDULE",
+      "action": "UPDATE_ALL",
+      "name": "일정 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SCRAP_CREATE",
+      "domain": "SCRAP",
+      "action": "CREATE",
+      "name": "스크랩 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SCRAP_DELETE",
+      "domain": "SCRAP",
+      "action": "DELETE",
+      "name": "스크랩 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SCRAP_DELETE_ALL",
+      "domain": "SCRAP",
+      "action": "DELETE_ALL",
+      "name": "스크랩 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SCRAP_READ",
+      "domain": "SCRAP",
+      "action": "READ",
+      "name": "스크랩 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SCRAP_READ_ALL",
+      "domain": "SCRAP",
+      "action": "READ_ALL",
+      "name": "스크랩 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SCRAP_UPDATE",
+      "domain": "SCRAP",
+      "action": "UPDATE",
+      "name": "스크랩 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SCRAP_UPDATE_ALL",
+      "domain": "SCRAP",
+      "action": "UPDATE_ALL",
+      "name": "스크랩 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SERVICE_CREATE",
+      "domain": "SERVICE",
+      "action": "CREATE",
+      "name": "서비스 관리 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SERVICE_DELETE",
+      "domain": "SERVICE",
+      "action": "DELETE",
+      "name": "서비스 관리 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SERVICE_READ",
+      "domain": "SERVICE",
+      "action": "READ",
+      "name": "서비스 관리 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SERVICE_UPDATE",
+      "domain": "SERVICE",
+      "action": "UPDATE",
+      "name": "서비스 관리 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SMS_READ",
+      "domain": "SMS",
+      "action": "READ",
+      "name": "문자 메시지 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SMS_SEND",
+      "domain": "SMS",
+      "action": "SEND",
+      "name": "문자 메시지 · 발송",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "STATS_READ",
+      "domain": "STATS",
+      "action": "READ",
+      "name": "통계 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SURVEY_CREATE_ALL",
+      "domain": "SURVEY",
+      "action": "CREATE_ALL",
+      "name": "설문 · 등록 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SURVEY_DELETE_ALL",
+      "domain": "SURVEY",
+      "action": "DELETE_ALL",
+      "name": "설문 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SURVEY_READ",
+      "domain": "SURVEY",
+      "action": "READ",
+      "name": "설문 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SURVEY_READ_ALL",
+      "domain": "SURVEY",
+      "action": "READ_ALL",
+      "name": "설문 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SURVEY_RSP_DELETE",
+      "domain": "SURVEY_RSP",
+      "action": "DELETE",
+      "name": "설문 응답 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SURVEY_RSP_READ",
+      "domain": "SURVEY_RSP",
+      "action": "READ",
+      "name": "설문 응답 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SURVEY_SUBMIT",
+      "domain": "SURVEY",
+      "action": "SUBMIT",
+      "name": "설문 · 제출",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "SURVEY_UPDATE_ALL",
+      "domain": "SURVEY",
+      "action": "UPDATE_ALL",
+      "name": "설문 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SYS_LOG_EXPORT",
+      "domain": "SYS_LOG",
+      "action": "EXPORT",
+      "name": "시스템 이력 · 내보내기",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "SYS_LOG_READ",
+      "domain": "SYS_LOG",
+      "action": "READ",
+      "name": "시스템 이력 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "TEMPLATE_CREATE",
+      "domain": "TEMPLATE",
+      "action": "CREATE",
+      "name": "템플릿 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "TEMPLATE_DELETE",
+      "domain": "TEMPLATE",
+      "action": "DELETE",
+      "name": "템플릿 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "TEMPLATE_READ",
+      "domain": "TEMPLATE",
+      "action": "READ",
+      "name": "템플릿 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "TEMPLATE_UPDATE",
+      "domain": "TEMPLATE",
+      "action": "UPDATE",
+      "name": "템플릿 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_CREATE",
+      "domain": "USER",
+      "action": "CREATE",
+      "name": "사용자 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_DELETE",
+      "domain": "USER",
+      "action": "DELETE",
+      "name": "사용자 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_DEPT",
+      "domain": "USER",
+      "action": "DEPT",
+      "name": "사용자 · 부서 변경",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_LOG_EXPORT",
+      "domain": "USER_LOG",
+      "action": "EXPORT",
+      "name": "사용자 변경 이력 · 내보내기",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_LOG_READ",
+      "domain": "USER_LOG",
+      "action": "READ",
+      "name": "사용자 변경 이력 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_PASSWORD",
+      "domain": "USER",
+      "action": "PASSWORD",
+      "name": "사용자 · 비밀번호 변경",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_READ",
+      "domain": "USER",
+      "action": "READ",
+      "name": "사용자 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_STATUS",
+      "domain": "USER",
+      "action": "STATUS",
+      "name": "사용자 · 상태 변경",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "USER_UPDATE",
+      "domain": "USER",
+      "action": "UPDATE",
+      "name": "사용자 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "WEB_LOG_EXPORT",
+      "domain": "WEB_LOG",
+      "action": "EXPORT",
+      "name": "웹 접근 이력 · 내보내기",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "WEB_LOG_READ",
+      "domain": "WEB_LOG",
+      "action": "READ",
+      "name": "웹 접근 이력 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "WORK_RPT_CREATE",
+      "domain": "WORK_RPT",
+      "action": "CREATE",
+      "name": "업무 보고 · 등록",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "WORK_RPT_DELETE",
+      "domain": "WORK_RPT",
+      "action": "DELETE",
+      "name": "업무 보고 · 삭제",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "WORK_RPT_DELETE_ALL",
+      "domain": "WORK_RPT",
+      "action": "DELETE_ALL",
+      "name": "업무 보고 · 삭제 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "WORK_RPT_READ",
+      "domain": "WORK_RPT",
+      "action": "READ",
+      "name": "업무 보고 · 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "WORK_RPT_READ_ALL",
+      "domain": "WORK_RPT",
+      "action": "READ_ALL",
+      "name": "업무 보고 · 조회 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "WORK_RPT_UPDATE",
+      "domain": "WORK_RPT",
+      "action": "UPDATE",
+      "name": "업무 보고 · 수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM",
+        "ROLE_USER"
+      ]
+    },
+    {
+      "code": "WORK_RPT_UPDATE_ALL",
+      "domain": "WORK_RPT",
+      "action": "UPDATE_ALL",
+      "name": "업무 보고 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    }
+  ],
+  "pagePermissions": {
+    "/": [],
+    "/admin": [],
+    "/admin/collaboration": [],
+    "/admin/collaboration/address-book": [],
+    "/admin/collaboration/address-book/insert-address-book": [],
+    "/admin/collaboration/address-book/select-address-book-detail/[id]": [],
+    "/admin/collaboration/address-book/select-address-book-list": [],
+    "/admin/collaboration/mail-history": [],
+    "/admin/collaboration/mail-send": [],
+    "/admin/collaboration/scraps": [],
+    "/admin/collaboration/scraps/insertScrap": [],
+    "/admin/collaboration/scraps/selectScrapDetail/[id]": [],
+    "/admin/collaboration/scraps/selectScrapList": [],
+    "/admin/community": [],
+    "/admin/community/[id]": [],
+    "/admin/community/board": [],
+    "/admin/community/boards": [],
+    "/admin/community/boards/[id]": [],
+    "/admin/community/boards/detail": [],
+    "/admin/community/boards/insert-board-article": [],
+    "/admin/community/boards/maker": [
+      "BBS_MST_CREATE",
+      "BBS_MST_UPDATE"
+    ],
+    "/admin/community/boards/master": [
+      "BBS_MST_READ"
+    ],
+    "/admin/community/boards/select-board-list": [],
+    "/admin/community/boards/write": [],
+    "/admin/community/templates": [
+      "TEMPLATE_READ"
+    ],
+    "/admin/help": [],
+    "/admin/help/faq": [],
+    "/admin/help/qna": [],
+    "/admin/notifications": [
+      "NOTI_DISPATCH"
+    ],
+    "/admin/observability": [
+      "OPS_READ",
+      "SYS_LOG_READ",
+      "WEB_LOG_READ",
+      "LOGIN_LOG_READ"
+    ],
+    "/admin/operation/events": [
+      "EVENT_READ"
+    ],
+    "/admin/operation/external-hr": [
+      "EXT_HR_READ"
+    ],
+    "/admin/operation/memo-reports": [
+      "MEMO_RPT_READ_ALL"
+    ],
+    "/admin/operation/rewards": [
+      "REWARD_READ"
+    ],
+    "/admin/operation/rough-map": [
+      "EVENT_READ"
+    ],
+    "/admin/patterns": [
+      "OPS_READ"
+    ],
+    "/admin/sanctn/forms": [
+      "TEMPLATE_READ"
+    ],
+    "/admin/sanctn/workflow": [
+      "APPROVAL_READ"
+    ],
+    "/admin/security/audit": [
+      "OPS_READ",
+      "SYS_LOG_READ",
+      "WEB_LOG_READ",
+      "LOGIN_LOG_READ"
+    ],
+    "/admin/security/authority": [
+      "AUTHRT_READ",
+      "AUTHRT_AUDIT"
+    ],
+    "/admin/security/dept-authority": [
+      "AUTHRT_READ"
+    ],
+    "/admin/security/group": [
+      "CLASS_GRP_READ"
+    ],
+    "/admin/security/login-policy": [
+      "LOGIN_POL_READ"
+    ],
+    "/admin/security/role": [
+      "AUTHRT_READ"
+    ],
+    "/admin/stats": [
+      "STATS_READ"
+    ],
+    "/admin/stats/board": [
+      "STATS_READ"
+    ],
+    "/admin/stats/data-usage": [
+      "STATS_READ"
+    ],
+    "/admin/stats/report": [
+      "STATS_READ"
+    ],
+    "/admin/stats/screen": [
+      "STATS_READ"
+    ],
+    "/admin/stats/user": [
+      "STATS_READ"
+    ],
+    "/admin/survey": [
+      "SURVEY_READ_ALL",
+      "SURVEY_RSP_READ"
+    ],
+    "/admin/survey/hub": [
+      "SURVEY_READ_ALL",
+      "SURVEY_RSP_READ"
+    ],
+    "/admin/survey/items": [
+      "SURVEY_READ_ALL",
+      "SURVEY_RSP_READ"
+    ],
+    "/admin/survey/manage": [
+      "SURVEY_READ_ALL",
+      "SURVEY_RSP_READ"
+    ],
+    "/admin/survey/manage/[id]": [
+      "SURVEY_READ_ALL"
+    ],
+    "/admin/survey/manage/create": [
+      "SURVEY_CREATE_ALL"
+    ],
+    "/admin/survey/polls": [
+      "POLL_READ"
+    ],
+    "/admin/survey/polls/manage": [
+      "POLL_CREATE",
+      "POLL_UPDATE_ALL",
+      "POLL_DELETE_ALL"
+    ],
+    "/admin/survey/polls/participate": [],
+    "/admin/survey/questions": [
+      "SURVEY_READ_ALL",
+      "SURVEY_RSP_READ"
+    ],
+    "/admin/survey/stats": [
+      "SURVEY_READ_ALL",
+      "SURVEY_RSP_READ"
+    ],
+    "/admin/survey/templates": [
+      "SURVEY_READ_ALL",
+      "SURVEY_RSP_READ"
+    ],
+    "/admin/system/audit": [
+      "OPS_READ",
+      "SYS_LOG_READ",
+      "WEB_LOG_READ",
+      "LOGIN_LOG_READ"
+    ],
+    "/admin/system/banner": [
+      "BANNER_READ"
+    ],
+    "/admin/system/codes/administ": [
+      "ADMCODE_READ"
+    ],
+    "/admin/system/codes/institution": [
+      "INST_CODE_READ"
+    ],
+    "/admin/system/comments": [
+      "COMMENT_READ_ALL"
+    ],
+    "/admin/system/common-code": [
+      "CODE_READ"
+    ],
+    "/admin/system/common-code/codes": [
+      "CODE_READ"
+    ],
+    "/admin/system/hpcm": [
+      "HELP_READ"
+    ],
+    "/admin/system/isg": [
+      "SERVICE_READ"
+    ],
+    "/admin/system/ism": [],
+    "/admin/system/layout": [
+      "MENU_READ"
+    ],
+    "/admin/system/logs": [
+      "LOGIN_LOG_READ",
+      "SYS_LOG_READ",
+      "USER_LOG_READ",
+      "WEB_LOG_READ"
+    ],
+    "/admin/system/logs/login": [
+      "LOGIN_LOG_READ"
+    ],
+    "/admin/system/logs/privacy": [
+      "PRIVACY_READ"
+    ],
+    "/admin/system/logs/system": [
+      "SYS_LOG_READ"
+    ],
+    "/admin/system/logs/user": [
+      "USER_LOG_READ"
+    ],
+    "/admin/system/logs/web": [
+      "WEB_LOG_READ"
+    ],
+    "/admin/system/menus": [
+      "MENU_READ"
+    ],
+    "/admin/system/menus/by-authority": [
+      "AUTHRT_READ"
+    ],
+    "/admin/system/monitoring": [
+      "OPS_READ",
+      "SYS_LOG_READ",
+      "WEB_LOG_READ",
+      "LOGIN_LOG_READ"
+    ],
+    "/admin/system/monitoring/hub": [
+      "OPS_READ",
+      "SYS_LOG_READ",
+      "WEB_LOG_READ",
+      "LOGIN_LOG_READ"
+    ],
+    "/admin/system/network": [
+      "NETWORK_READ"
+    ],
+    "/admin/system/policies": [
+      "POLICY_READ"
+    ],
+    "/admin/system/programs": [
+      "PROGRAM_READ"
+    ],
+    "/admin/user/absences": [
+      "ABSENCE_READ"
+    ],
+    "/admin/user/departments": [
+      "DEPT_READ"
+    ],
+    "/admin/user/indvdl-info-policy": [
+      "LOGIN_POL_READ"
+    ],
+    "/admin/user/login-policy": [
+      "LOGIN_POL_READ"
+    ],
+    "/admin/user/manage": [
+      "USER_READ"
+    ],
+    "/admin/uss/ion/sms": [
+      "SMS_READ"
+    ],
+    "/admin/uss/olh/online-manual": [
+      "HELP_READ"
+    ],
+    "/admin/work-hub": [],
+    "/admin/workflow": [
+      "APPROVAL_READ"
+    ],
+    "/approvals": [],
+    "/approvals/draft": [],
+    "/cop/cmy/selectCommunityDetail/[id]": [],
+    "/cop/cmy/selectCommunityList": [],
+    "/cop/sms/selectSmsList": [
+      "SMS_READ"
+    ],
+    "/help": [],
+    "/help/policies/[type]": [],
+    "/login": [],
+    "/note": [],
+    "/search": [],
+    "/smart-toolkit/dept-job": [],
+    "/smart-toolkit/dept-job/[id]": [],
+    "/smart-toolkit/dept-job/create": [],
+    "/smart-toolkit/dept-job/insertDeptJob": [],
+    "/smart-toolkit/dept-job/selectDeptJobDetail/[id]": [],
+    "/smart-toolkit/dept-job/selectDeptJobList": [],
+    "/smart-toolkit/schedule": [],
+    "/smart-toolkit/schedule/dept": [],
+    "/smart-toolkit/work-report": [],
+    "/survey": [],
+    "/survey/[id]": [],
+    "/survey/response": [],
+    "/survey/response/[id]": [],
+    "/survey/stats": []
+  }
+}

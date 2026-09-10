@@ -8,6 +8,8 @@ on:
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_FILE: docker-compose.yml:docker-compose.authz-e2e.yml
     name: Scan the application
     steps:
       - name: Checkout

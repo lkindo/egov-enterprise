@@ -20,9 +20,10 @@ vi.mock('next/config', () => ({
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
+import SockJS from 'sockjs-client';
 import { WebSocketProvider, useWebSocket } from '../websocket-context';
 
-let authUser: { id: string } | null = { id: 'U1' };
+let authUser: { id: string; authorizationVersion?: string } | null = { id: 'U1', authorizationVersion: 'v1' };
 
 /** 마지막으로 생성된 Client 스텁 — 콜백을 직접 발화시키기 위해 붙잡는다. */
 type ClientStub = {
@@ -47,7 +48,7 @@ vi.mock('@stomp/stompjs', () => ({
     created.push(this);
   }),
 }));
-vi.mock('sockjs-client', () => ({ default: vi.fn(() => ({})) }));
+vi.mock('sockjs-client', () => ({ default: vi.fn(function () { return {}; }) }));
 vi.mock('../AuthContext', () => ({ useAuth: () => ({ user: authUser }) }));
 
 /** 컨텍스트 값을 밖으로 노출시키는 소비자. */
@@ -70,10 +71,40 @@ describe('WebSocketProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     created.length = 0;
-    authUser = { id: 'U1' };
+    authUser = { id: 'U1', authorizationVersion: 'v1' };
   });
 
   describe('연결 수명', () => {
+    it('권한 버전 변경 시 기존 연결을 종료하고 늦은 이전 연결 콜백을 무시한다', () => {
+      let value: ReturnType<typeof useWebSocket> | undefined;
+      const view = render(<WebSocketProvider><Probe onValue={(next) => { value = next; }} /></WebSocketProvider>);
+      const first = created[0];
+      act(() => { first.onConnect?.(); });
+      expect(value?.client).toBe(first);
+      authUser = { id: 'U1', authorizationVersion: 'v2' };
+      view.rerender(<WebSocketProvider><Probe onValue={(next) => { value = next; }} /></WebSocketProvider>);
+      expect(first.deactivate).toHaveBeenCalledTimes(1);
+      expect(value?.client).toBeNull();
+      act(() => { first.onConnect?.(); });
+      expect(value?.client).toBeNull();
+      act(() => { created[1].onConnect?.(); });
+      expect(value?.client).toBe(created[1]);
+    });
+
+    it('같은 사용자·권한 버전의 새 객체는 연결을 재생성하지 않는다', () => {
+      const view = renderProvider();
+      authUser = { id: 'U1', authorizationVersion: 'v1' };
+      view.rerender(<WebSocketProvider><Probe onValue={() => undefined} /></WebSocketProvider>);
+      expect(created).toHaveLength(1);
+    });
+
+    it('허용한 동일 출처 transport만 사용하며 토큰을 연결 헤더나 URL에 넣지 않는다', () => {
+      renderProvider();
+      (created[0].config.webSocketFactory as () => unknown)();
+      expect(SockJS).toHaveBeenCalledWith('/ws', undefined, { transports: ['websocket', 'xhr-streaming', 'xhr-polling'] });
+      expect(created[0].config.connectHeaders).toBeUndefined();
+    });
+
     it('로그인 사용자가 있으면 연결을 시작한다', () => {
       renderProvider();
 

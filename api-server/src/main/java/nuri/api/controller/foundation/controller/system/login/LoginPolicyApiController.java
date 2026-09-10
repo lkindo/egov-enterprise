@@ -34,13 +34,13 @@ import java.util.List;
 @RestController("systemLoginPolicyApiController")
 @RequestMapping("/api/v1/admin/system/login-policies")
 @RequiredArgsConstructor
-@nuri.foundation.security.annotation.AdminOrSystem
 public class LoginPolicyApiController {
 
     private final LoginPolicyManageService loginPolicyManageService;
 
     @Operation(summary = "로그인 정책 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#getLoginPolicyList')")
     public ResponseEntity<ApiResponse<PageResponse<LoginPolicyDto>>> getLoginPolicyList(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
@@ -52,6 +52,7 @@ public class LoginPolicyApiController {
 
     @Operation(summary = "로그인 정책 상세 조회")
     @GetMapping("/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#getLoginPolicy')")
     public ResponseEntity<ApiResponse<LoginPolicyDto>> getLoginPolicy(
             @PathVariable("userId") String userId) throws Exception {
         LoginPolicyDto result = loginPolicyManageService.selectLoginPolicy(userId);
@@ -60,6 +61,7 @@ public class LoginPolicyApiController {
 
     @Operation(summary = "로그인 정책 등록")
     @PostMapping("/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#insertLoginPolicy')")
     public ResponseEntity<ApiResponse<Void>> insertLoginPolicy(
             @PathVariable("userId") String userId,
             @Valid @RequestBody LoginPolicyDto loginPolicy) throws Exception {
@@ -70,6 +72,7 @@ public class LoginPolicyApiController {
 
     @Operation(summary = "로그인 정책 수정")
     @PutMapping("/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#updateLoginPolicy')")
     public ResponseEntity<ApiResponse<Void>> updateLoginPolicy(
             @PathVariable("userId") String userId,
             @Valid @RequestBody LoginPolicyDto loginPolicy) throws Exception {
@@ -80,6 +83,7 @@ public class LoginPolicyApiController {
 
     @Operation(summary = "로그인 정책 삭제")
     @DeleteMapping("/{userId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy')")
     public ResponseEntity<ApiResponse<Void>> deleteLoginPolicy(
             @PathVariable("userId") String userId) throws Exception {
         LoginPolicyDto dto = LoginPolicyDto.builder().userId(userId).build();

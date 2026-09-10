@@ -55,15 +55,7 @@ class SatisfactionServiceTest {
     }
 
     private static void authenticateAs(String loginId, String role) {
-        CustomUserDetails principal = CustomUserDetails.builder()
-                .userId(loginId)
-                .esntlId("ESNTL_" + loginId)
-                .userNm(loginId)
-                .password("unused")
-                .roleName(role)
-                .authorCode("ROLE_" + role)
-                .lockAt("N")
-                .build();
+        CustomUserDetails principal = nuri.business.support.AuthorizationTestPrincipal.principal(loginId, "ESNTL_" + loginId, role);
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(new UsernamePasswordAuthenticationToken(
                 principal, null, principal.getAuthorities()));
@@ -104,15 +96,7 @@ class SatisfactionServiceTest {
     @Test
     @DisplayName("등록 - principal이 있어도 인증되지 않은 SecurityContext는 거부한다")
     void createRejectsUnauthenticatedPrincipal() {
-        CustomUserDetails principal = CustomUserDetails.builder()
-                .userId("untrusted")
-                .esntlId("ESNTL_untrusted")
-                .userNm("untrusted")
-                .password("unused")
-                .roleName("USER")
-                .authorCode("ROLE_USER")
-                .lockAt("N")
-                .build();
+        CustomUserDetails principal = nuri.business.support.AuthorizationTestPrincipal.principal("untrusted", "ESNTL_untrusted", "USER");
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(new UsernamePasswordAuthenticationToken(principal, null));
         SecurityContextHolder.setContext(context);

@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.hamcrest.Matchers.containsString;
@@ -39,7 +40,8 @@ import nuri.business.support.ControllerTestSupport;
 //   @WebMvcTest 는 컴포넌트 스캔이 제한적이라 foundation 의 @Component 가 자동으로 오지 않아
 //   컨텍스트 로딩이 통째로 실패했다(W1-07 에서 XFF 신뢰 판정을 통합하며 생긴 회귀).
 //   @MockitoBean 으로 대체하지 말 것 — 신뢰 경계 판정이 사라져 필터의 보안 계약이 무의미해진다.
-@ContextConfiguration(classes = { ApiSecurityConfig.class, nuri.foundation.security.net.ClientIpResolver.class })
+@ContextConfiguration(classes = { ApiSecurityConfig.class, nuri.foundation.security.net.ClientIpResolver.class,
+        nuri.business.security.authorization.PermissionPolicy.class })
 @DisplayName("ApiSecurityConfig 설정 테스트")
 public class ApiSecurityConfigTest extends ControllerTestSupport {
 
@@ -86,7 +88,7 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
                                       .isLessThan(500);
                 });
 
-        mockMvc.perform(get("/api/v1/auth/login"))
+        mockMvc.perform(post("/api/v1/auth/login"))
                 .andDo(print())
                 .andExpect(result -> {
                     int status = result.getResponse().getStatus();

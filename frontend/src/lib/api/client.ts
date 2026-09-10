@@ -3,6 +3,7 @@ import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
+import { assertCurrentAuthorizationRequest, getAuthorizationRequestEpoch, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 
 /*
  * 요청 단위 옵션 확장.
@@ -14,6 +15,7 @@ import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 declare module 'axios' {
   export interface AxiosRequestConfig {
     suppressErrorToast?: boolean;
+    _authorizationEpoch?: number;
   }
 }
 
@@ -60,6 +62,9 @@ const axiosInstance = axios.create({
 // Request interceptor: Access Token 첨부
 axiosInstance.interceptors.request.use(
   async (config) => {
+    // Keep an existing epoch on retries: an old mutation must never run as the next account.
+    assertCurrentAuthorizationRequest(config._authorizationEpoch);
+    config._authorizationEpoch ??= getAuthorizationRequestEpoch();
     let token = null;
     
     if (typeof window === 'undefined') {
@@ -140,6 +145,7 @@ export function reissueSession(): Promise<void> {
     .then((res) => {
       const validation = authReissueResponseSchema.safeParse(res.data);
       if (!validation.success || !validation.data.success) throw new Error('Token reissue failed');
+      notifyAuthorizationChanged();
     })
     .finally(() => {
       inFlightReissue = null;
@@ -150,9 +156,20 @@ export function reissueSession(): Promise<void> {
 
 // Response interceptor: 401 시 token refresh
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    assertCurrentAuthorizationRequest(response.config?._authorizationEpoch);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    assertCurrentAuthorizationRequest(originalRequest?._authorizationEpoch);
+
+    // A denied operation refreshes display grants, never the access token or the mutation itself.
+    // Excluding identity/refresh requests prevents a rejected recheck from triggering itself.
+    if (error.response?.status === 403 &&
+        !/(?:^|\/)(?:auth\/|users\/me(?:$|\?))/.test(originalRequest?.url ?? '')) {
+      notifyAuthorizationChanged();
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (typeof window !== 'undefined' &&

@@ -1,5 +1,5 @@
-import SecurityRoleClient from './SecurityRoleClient';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <SecurityRoleClient />;
+  redirect('/admin/security/authority');
 }

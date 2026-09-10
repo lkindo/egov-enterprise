@@ -102,6 +102,30 @@ export async function executeGeneratedOperation<const Descriptor extends Generat
   return parseGeneratedOperationResponse(descriptor, rawResponse);
 }
 
+/** Server-side GET transport for proxy authorization checks. Contract owns path/method/response. */
+export async function executeGeneratedFetchOperation<const Descriptor extends GeneratedOperationDescriptor>(
+  descriptor: Descriptor,
+  args: GeneratedOperationArguments<Descriptor>,
+  transport: { baseUrl: string; headers?: HeadersInit; signal?: AbortSignal },
+): Promise<GeneratedOperationResponse<Descriptor>> {
+  if (descriptor.method !== 'get' || descriptor.requestKind !== 'none' || descriptor.responseKind !== 'json') {
+    throw new Error('서버 조회 transport는 생성 JSON GET 계약만 허용합니다.');
+  }
+  const runtimeArgs = args as unknown as { path?: unknown; query?: unknown; body?: unknown; config?: unknown };
+  if (runtimeArgs.config !== undefined || runtimeArgs.body !== undefined) throw new Error('조회 계약을 호출부에서 덮어쓸 수 없습니다.');
+  const baseUrl = new URL(`${transport.baseUrl.replace(/\/$/, '')}/`);
+  if (!['http:', 'https:'].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password) throw new Error('유효한 서버 API 주소가 필요합니다.');
+  const target = new URL(buildGeneratedOperationPath(descriptor, runtimeArgs.path as never), baseUrl);
+  const query = parseGeneratedOperationQuery(descriptor, runtimeArgs.query);
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (value === undefined || value === null) continue;
+    for (const item of Array.isArray(value) ? value : [value]) target.searchParams.append(key, String(item));
+  }
+  const response = await fetch(target.toString(), { method: 'GET', headers: transport.headers, signal: transport.signal, cache: 'no-store', redirect: 'error' });
+  if (!response.ok) throw new Error('현재 서버 권한을 조회하지 못했습니다.');
+  return parseGeneratedOperationResponse(descriptor, await response.json());
+}
+
 export async function executeGeneratedMultipartOperation<
   const Descriptor extends GeneratedMultipartDescriptor,
 >(

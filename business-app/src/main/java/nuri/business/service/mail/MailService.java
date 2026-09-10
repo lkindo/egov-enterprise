@@ -73,7 +73,7 @@ public class MailService {
         log.debug("Fetching mail details for dispatch serial number: {}", emlDsptchSn);
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(emlDsptchSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(sentMail.getFrstRgtrId()); // [IDOR] 발신자/관리자만 열람
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(sentMail.getFrstRgtrId(), "MAIL_READ_ALL"); // [IDOR] 발신자/관리자만 열람
         return SentMailDto.from(sentMail);
     }
 
@@ -85,9 +85,7 @@ public class MailService {
      * esntlId 가 아니다. — 백엔드 헌법 제8조(서비스 레이어 권한 재검증)</p>
      */
     private String resolveSenderScope() {
-        if (nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)
-                || nuri.business.security.util.SecurityUtil
-                        .hasRole(nuri.business.security.AuthorityConstants.ROLE_SYSTEM)) {
+        if (nuri.business.security.util.SecurityUtil.hasPermission("MAIL_READ_ALL")) {
             return null;
         }
         return nuri.business.security.util.SecurityUtil.getCurrentLoginId()
@@ -240,7 +238,7 @@ public class MailService {
     public void deleteMail(Long emlDsptchSn) {
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(emlDsptchSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(sentMail.getFrstRgtrId()); // [IDOR] 발신자/관리자만 삭제
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(sentMail.getFrstRgtrId(), "MAIL_DELETE_ALL"); // [IDOR] 발신자/관리자만 삭제
         sentMailRepository.delete(Objects.requireNonNull(sentMail));
     }
 }

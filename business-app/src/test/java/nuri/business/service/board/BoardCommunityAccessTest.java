@@ -87,7 +87,7 @@ class BoardCommunityAccessTest {
         securityUtil = mockStatic(nuri.business.security.util.SecurityUtil.class,
                 org.mockito.Mockito.CALLS_REAL_METHODS);
         // 기본은 비관리자·인증된 사용자다. isAdmin() 은 hasRole 을 실제로 호출하므로 여기서 갈린다.
-        securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasRole(anyString())).thenReturn(false);
+        securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(false);
         securityUtil.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of(VIEWER));
 
@@ -154,7 +154,7 @@ class BoardCommunityAccessTest {
         @Test
         @DisplayName("관리자는 통과한다")
         void adminPasses() {
-            securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasRole(anyString())).thenReturn(true);
+            securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(true);
             given(boardRepository.searchArticles(any(BoardSearchCondition.class), any(Pageable.class)))
                     .willReturn(new PageImpl<>(List.of()));
 

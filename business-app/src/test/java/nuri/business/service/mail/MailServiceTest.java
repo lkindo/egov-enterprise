@@ -80,17 +80,15 @@ class MailServiceTest {
     }
 
     private void asAdmin() {
-        securityUtil.when(() -> SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN)).thenReturn(true);
-        securityUtil.when(() -> SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM)).thenReturn(false);
+        securityUtil.when(() -> SecurityUtil.hasPermission("MAIL_READ_ALL")).thenReturn(true);
         securityUtil.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("admin"));
     }
 
     private void asUser(String loginId) {
-        securityUtil.when(() -> SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN)).thenReturn(false);
-        securityUtil.when(() -> SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM)).thenReturn(false);
+        securityUtil.when(() -> SecurityUtil.hasPermission("MAIL_READ_ALL")).thenReturn(false);
         securityUtil.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of(loginId));
         // 실제 가드는 assertOwnerOrAdmin 이 담당한다 — 소유자 불일치 시 예외를 던지도록 재현
-        securityUtil.when(() -> SecurityUtil.assertOwnerOrAdmin(anyString()))
+        securityUtil.when(() -> SecurityUtil.assertOwnerOrPermission(anyString(), anyString()))
                 .thenAnswer(inv -> {
                     if (!loginId.equals(inv.getArgument(0))) {
                         throw new nuri.foundation.core.exception.BusinessException(

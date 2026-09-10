@@ -48,8 +48,8 @@ public class WebLogApiController {
     private final WebLogManageService webLogManageService;
 
     @Operation(summary = "웹 로그 목록 조회", description = "URL 부분일치 검색과 페이징을 지원한다.")
-    @AdminOrSystem
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.WebLogApiController#getWebLogList')")
     public ResponseEntity<ApiResponse<PageResponse<WebLogDto>>> getWebLogList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
         Page<WebLogDto> page = webLogManageService.selectWebLogList(searchDto);
@@ -78,8 +78,8 @@ public class WebLogApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = LogExcelExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @AdminOrSystem
     @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.WebLogApiController#exportWebLogs')")
     public ResponseEntity<StreamingResponseBody> exportWebLogs(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 

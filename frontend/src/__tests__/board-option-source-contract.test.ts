@@ -92,7 +92,7 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
      * "아무 게시판도 못 고른다"로 악화된다.
      */
     const code = stripComments(read('hooks/api/use-board-options.ts'));
-    expect(code, '관리자 판정 SSOT 를 쓰지 않는다').toContain('isAdministrativeRole');
+    expect(code, '기능 권한 판정 SSOT 를 쓰지 않는다').toContain("canPermission(user, 'BBS_MST_READ')");
     expect(code, '역할과 무관하게 조회한다').toMatch(/enabled:\s*isAdmin/);
   });
 

@@ -2,8 +2,11 @@ package nuri.business.service.auth.impl;
 
 import nuri.business.domain.auth.RefreshToken;
 import nuri.business.domain.auth.RefreshTokenRepository;
-import nuri.business.domain.auth.UserAuthority;
-import nuri.business.domain.auth.UserAuthorityRepository;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import nuri.business.domain.login.LoginPolicy;
 import nuri.business.domain.login.LoginPolicyRepository;
 import nuri.business.domain.user.entity.User;
@@ -28,7 +31,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -41,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -80,7 +83,7 @@ class AuthServiceImplTest {
     @Mock private AuthenticationManager authenticationManager;
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private UserRepository userRepository;
-    @Mock private UserAuthorityRepository userAuthorityRepository;
+    @Mock private UserDetailsService userDetailsService;
     @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private LoginPolicyManageService loginPolicyManageService;
     @Mock private LoginPolicyRepository loginPolicyRepository;
@@ -94,10 +97,11 @@ class AuthServiceImplTest {
     void setUp() {
         // 인증 성공이 기본값 — 각 테스트는 자기가 검증할 분기만 덮어쓴다.
         given(authentication.getName()).willReturn(ESNTL_ID);
-        given(authentication.getAuthorities())
-                .willAnswer(inv -> List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        var current = principal(List.of("ROLE_ADMIN", "CONTENT"), List.of("CONTENT_EDIT"), "v1", true, "N");
+        given(authentication.getPrincipal()).willReturn(current);
+        given(userDetailsService.loadUserByUsername(ESNTL_ID)).willReturn(current);
         given(authenticationManager.authenticate(any())).willReturn(authentication);
-        given(jwtTokenProvider.createAccessToken(anyString(), anyString())).willReturn("access-token");
+        given(jwtTokenProvider.createAccessToken(anyString(), nullable(String.class))).willReturn("access-token");
         given(jwtTokenProvider.createRefreshToken(anyString())).willReturn("refresh-token");
         given(refreshTokenRepository.findById(anyString())).willReturn(Optional.empty());
         given(loginPolicyRepository.findById(anyString())).willReturn(Optional.empty());
@@ -259,26 +263,27 @@ class AuthServiceImplTest {
         }
 
         @Test
-        @DisplayName("권한에 ROLE_ 접두가 없으면 붙이고, 있으면 중복해 붙이지 않는다")
-        void normalizesRolePrefix() {
-            given(authentication.getAuthorities())
-                    .willAnswer(inv -> List.of(new SimpleGrantedAuthority("ADMIN")));
-
+        @DisplayName("로그인은 공통 principal의 그룹·기능 권한·버전을 변환 없이 반환한다")
+        void returnsCanonicalAuthorization() {
             TokenResponse res = authService.login(loginRequest(null), CLIENT_IP);
             assertThat(res.getRole()).isEqualTo("ROLE_ADMIN");
-
-            given(authentication.getAuthorities())
-                    .willAnswer(inv -> List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
-            assertThat(authService.login(loginRequest(null), CLIENT_IP).getRole())
-                    .isEqualTo("ROLE_ADMIN");
+            assertThat(res.getGroups()).containsExactly("CONTENT", "ROLE_ADMIN");
+            assertThat(res.getPermissions()).containsExactly("CONTENT_EDIT");
+            assertThat(res.getAuthorizationVersion()).isEqualTo("v1");
         }
 
         @Test
-        @DisplayName("권한이 비어 있으면 ROLE_USER 로 떨어진다")
-        void fallsBackToRoleUserWhenNoAuthorities() {
-            given(authentication.getAuthorities()).willAnswer(inv -> List.of());
-
-            assertThat(authService.login(loginRequest(null), CLIENT_IP).getRole()).isEqualTo("ROLE_USER");
+        @DisplayName("활성 계정에 배정이 없으면 로그인은 가능하되 권한을 보충하지 않는다")
+        void emptyAssignmentsNeverFallBackToRoleUser() {
+            var current = CustomUserDetails.builder().userId(LOGIN_ID).esntlId(ESNTL_ID)
+                    .enabled(true).authorizationVersion("empty-v2").build();
+            given(authentication.getPrincipal()).willReturn(current);
+            TokenResponse response = authService.login(loginRequest(null), CLIENT_IP);
+            assertThat(response.getRole()).isNull();
+            assertThat(response.getGroups()).isEmpty();
+            assertThat(response.getPermissions()).isEmpty();
+            assertThat(response.getAuthorizationVersion()).isEqualTo("empty-v2");
+            verify(jwtTokenProvider).createAccessToken(ESNTL_ID, null);
         }
 
         @Test
@@ -371,29 +376,43 @@ class AuthServiceImplTest {
         }
 
         @Test
-        @DisplayName("권한은 UserAuthority → User.role → ROLE_USER 순으로 결정된다")
-        void resolvesRoleByPrecedence() {
+        @DisplayName("로그인과 refresh는 같은 권한 원본을 사용하며 회수된 권한은 재발급에 남지 않는다")
+        void refreshUsesCurrentAuthorizationWithoutRoleFallback() {
+            TokenResponse login = authService.login(loginRequest(null), CLIENT_IP);
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
+            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(storedToken()));
+            TokenResponse first = authService.reissue("old");
+            assertThat(first.getGroups()).isEqualTo(login.getGroups());
+            assertThat(first.getPermissions()).isEqualTo(login.getPermissions());
+            assertThat(first.getAuthorizationVersion()).isEqualTo(login.getAuthorizationVersion());
 
-            // ① UserAuthority 가 있으면 그것이 이긴다.
-            RefreshToken t1 = storedToken();
-            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(t1));
-            User user = userWithSecret();
-            given(userRepository.findById(ESNTL_ID)).willReturn(Optional.of(user));
-            UserAuthority ua = org.mockito.Mockito.mock(UserAuthority.class);
-            given(ua.getAuthrtId()).willReturn("ROLE_MANAGER");
-            given(userAuthorityRepository.findById(ESNTL_ID)).willReturn(Optional.of(ua));
-            assertThat(authService.reissue("old").getRole()).isEqualTo("ROLE_MANAGER");
+            given(userDetailsService.loadUserByUsername(ESNTL_ID))
+                    .willReturn(principal(List.of(), List.of(), "v2", true, "N"));
+            TokenResponse revoked = authService.reissue("old");
+            assertThat(revoked.getGroups()).isEmpty();
+            assertThat(revoked.getPermissions()).isEmpty();
+            assertThat(revoked.getAuthorizationVersion()).isEqualTo("v2");
+            verify(userDetailsService, times(2)).loadUserByUsername(ESNTL_ID);
+        }
 
-            // ② UserAuthority 가 없으면 User.role 로 떨어진다.
-            given(userAuthorityRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
-            assertThat(authService.reissue("old").getRole())
-                    .isEqualTo("ROLE_" + user.getRole().name());
-
-            // ③ 사용자 자체가 없으면 ROLE_USER.
-            given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
-            assertThat(authService.reissue("old").getRole()).isEqualTo("ROLE_USER");
+        @Test
+        void disabledLockedOrDeletedAccountCannotRefreshOrRotate() {
+            given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
+            RefreshToken stored = storedToken();
+            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
+            given(userDetailsService.loadUserByUsername(ESNTL_ID))
+                    .willReturn(principal(List.of("ROLE_ADMIN"), List.of("CONTENT_EDIT"), "v2", false, "N"));
+            assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(DisabledException.class);
+            given(userDetailsService.loadUserByUsername(ESNTL_ID))
+                    .willReturn(principal(List.of("ROLE_ADMIN"), List.of("CONTENT_EDIT"), "v3", true, "Y"));
+            assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(LockedException.class);
+            given(userDetailsService.loadUserByUsername(ESNTL_ID))
+                    .willThrow(new UsernameNotFoundException("Account unavailable"));
+            assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(UsernameNotFoundException.class);
+            assertThat(stored.getRfshTkn()).isEqualTo("old");
+            verify(jwtTokenProvider, never()).createAccessToken(anyString(), nullable(String.class));
+            verify(refreshTokenRepository, never()).save(any());
         }
     }
 
@@ -438,6 +457,13 @@ class AuthServiceImplTest {
     }
 
     // ── 픽스처 ────────────────────────────────────────────────────────────────
+
+    private static CustomUserDetails principal(List<String> groups, List<String> permissions,
+                                               String version, boolean enabled, String lockAt) {
+        return CustomUserDetails.builder().userId(LOGIN_ID).esntlId(ESNTL_ID)
+                .authorCode("ROLE_ADMIN").groups(groups).permissions(permissions)
+                .authorizationVersion(version).enabled(enabled).lockAt(lockAt).build();
+    }
 
     private static LoginPolicy otpEnabledPolicy() {
         return LoginPolicy.create(LOGIN_ID, null, "Y", "N", null, null, "Y");

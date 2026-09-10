@@ -1,0 +1,2808 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/address-books",
+    "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#getAddressBooks",
+    "access": "PERMISSION",
+    "permission": "ADBK_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/address-books",
+    "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#createAddressBook",
+    "access": "PERMISSION",
+    "permission": "ADBK_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/address-books/search-users",
+    "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#searchUsers",
+    "access": "PERMISSION",
+    "permission": "ADBK_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/address-books/{adbkSn}",
+    "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#deleteAddressBook",
+    "access": "PERMISSION",
+    "permission": "ADBK_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/address-books/{adbkSn}",
+    "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#getAddressBook",
+    "access": "PERMISSION",
+    "permission": "ADBK_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/address-books/{adbkSn}",
+    "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#updateAddressBook",
+    "access": "PERMISSION",
+    "permission": "ADBK_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/comments",
+    "handler": "nuri.api.controller.business.admin.CommentApiController#getComments",
+    "access": "PERMISSION",
+    "permission": "COMMENT_READ_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/comments/{id}",
+    "handler": "nuri.api.controller.business.admin.CommentApiController#deleteComment",
+    "access": "PERMISSION",
+    "permission": "COMMENT_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/content/community",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#getCommunities",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/content/community",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#createCommunity",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_CREATE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/content/community/portlet",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#getCommunityPortlet",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/content/community/{cmntySn}",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#deleteCommunity",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/content/community/{cmntySn}",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#getCommunity",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ_ALL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/content/community/{cmntySn}",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#updateCommunity",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_UPDATE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/content/community/{cmntySn}/members",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#getMembers",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/content/community/{cmntySn}/members/{userId}",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#rejectMember",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_REJECT"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/content/community/{cmntySn}/members/{userId}/approve",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#approveMember",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_APPROVE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/content/files",
+    "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+    "access": "PERMISSION",
+    "permission": "FILE_UPLOAD_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/content/files/{atchFileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#getFileList",
+    "access": "PERMISSION",
+    "permission": "FILE_READ_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/content/files/{atchFileSn}/{fileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+    "access": "PERMISSION",
+    "permission": "FILE_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/content/files/{atchFileSn}/{fileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#downloadFile",
+    "access": "PERMISSION",
+    "permission": "FILE_DOWNLOAD_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/files/integrity",
+    "handler": "nuri.api.controller.business.file.AttachmentIntegrityApiController#scan",
+    "access": "PERMISSION",
+    "permission": "FILE_AUDIT"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/notifications/dispatch",
+    "handler": "nuri.api.controller.business.notification.NotificationAdminApiController#dispatchNotifications",
+    "access": "PERMISSION",
+    "permission": "NOTI_DISPATCH"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/events",
+    "handler": "nuri.api.controller.business.operation.EventApiController#getEventList",
+    "access": "PERMISSION",
+    "permission": "EVENT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/operation/events",
+    "handler": "nuri.api.controller.business.operation.EventApiController#createEvent",
+    "access": "PERMISSION",
+    "permission": "EVENT_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/operation/events/{evntSn}",
+    "handler": "nuri.api.controller.business.operation.EventApiController#deleteEvent",
+    "access": "PERMISSION",
+    "permission": "EVENT_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/events/{evntSn}",
+    "handler": "nuri.api.controller.business.operation.EventApiController#getEvent",
+    "access": "PERMISSION",
+    "permission": "EVENT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/operation/events/{evntSn}",
+    "handler": "nuri.api.controller.business.operation.EventApiController#updateEvent",
+    "access": "PERMISSION",
+    "permission": "EVENT_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/external-hr",
+    "handler": "nuri.api.controller.business.operation.ExternalHrApiController#getAllExternalHr",
+    "access": "PERMISSION",
+    "permission": "EXT_HR_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/operation/external-hr",
+    "handler": "nuri.api.controller.business.operation.ExternalHrApiController#createExternalHr",
+    "access": "PERMISSION",
+    "permission": "EXT_HR_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+    "handler": "nuri.api.controller.business.operation.ExternalHrApiController#deleteExternalHr",
+    "access": "PERMISSION",
+    "permission": "EXT_HR_DELETE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/operation/external-hr/{evntSn}/{otsdHrId}",
+    "handler": "nuri.api.controller.business.operation.ExternalHrApiController#updateExternalHr",
+    "access": "PERMISSION",
+    "permission": "EXT_HR_UPDATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/operation/files",
+    "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+    "access": "PERMISSION",
+    "permission": "FILE_UPLOAD_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/files/{atchFileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#getFileList",
+    "access": "PERMISSION",
+    "permission": "FILE_READ_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+    "access": "PERMISSION",
+    "permission": "FILE_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#downloadFile",
+    "access": "PERMISSION",
+    "permission": "FILE_DOWNLOAD_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/rewards",
+    "handler": "nuri.api.controller.business.operation.RewardManageApiController#getAllRewards",
+    "access": "PERMISSION",
+    "permission": "REWARD_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/operation/rewards",
+    "handler": "nuri.api.controller.business.operation.RewardManageApiController#createReward",
+    "access": "PERMISSION",
+    "permission": "REWARD_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/operation/rewards/{rwrdSn}",
+    "handler": "nuri.api.controller.business.operation.RewardManageApiController#deleteReward",
+    "access": "PERMISSION",
+    "permission": "REWARD_DELETE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/operation/rewards/{rwrdSn}",
+    "handler": "nuri.api.controller.business.operation.RewardManageApiController#updateReward",
+    "access": "PERMISSION",
+    "permission": "REWARD_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/sms",
+    "handler": "nuri.api.controller.business.sms.SmsApiController#getSmsList",
+    "access": "PERMISSION",
+    "permission": "SMS_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/operation/sms",
+    "handler": "nuri.api.controller.business.sms.SmsApiController#sendSms",
+    "access": "PERMISSION",
+    "permission": "SMS_SEND"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/sms/delivery-status",
+    "handler": "nuri.api.controller.business.sms.SmsApiController#getDeliveryStatus",
+    "access": "PERMISSION",
+    "permission": "SMS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/sms/{smsTrsmSn}",
+    "handler": "nuri.api.controller.business.sms.SmsApiController#getSms",
+    "access": "PERMISSION",
+    "permission": "SMS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/operation/sms/{smsTrsmSn}/recipients",
+    "handler": "nuri.api.controller.business.sms.SmsApiController#getSmsRecipients",
+    "access": "PERMISSION",
+    "permission": "SMS_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/authorities",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthors",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/authorities",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#getAuthors",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/authorities",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#createAuthor",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/authorities/{authrtCd}",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthor",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/authorities/{authrtCd}",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#getAuthor",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/authorities/{authrtCd}",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#updateAuthor",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/authorities/{authrtCd}/menus",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#getAuthorMenus",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/authorities/{authrtCd}/roles",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorRoleApiController#getAuthorRoles",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/authorities/{authrtCd}/roles",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorRoleApiController#saveAuthorRoles",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_GRANT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/banners",
+    "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#getBanners",
+    "access": "PERMISSION",
+    "permission": "BANNER_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/banners",
+    "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#insertBanner",
+    "access": "PERMISSION",
+    "permission": "BANNER_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/banners/reflected",
+    "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#getReflectedBanners",
+    "access": "PERMISSION",
+    "permission": "BANNER_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/banners/{bnrSn}",
+    "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#deleteBanner",
+    "access": "PERMISSION",
+    "permission": "BANNER_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/banners/{bnrSn}",
+    "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#getBanner",
+    "access": "PERMISSION",
+    "permission": "BANNER_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/banners/{bnrSn}",
+    "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#updateBanner",
+    "access": "PERMISSION",
+    "permission": "BANNER_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/board-masters",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#getBoardMasterList",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/board-masters",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#createBoardMaster",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_CREATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/board-masters/batch/delete",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMastersInBatch",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_DELETE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/board-masters/batch/status",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMasterStatusInBatch",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_UPDATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMaster",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#getBoardMaster",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMaster",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}/deletable",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#isBoardMasterDeletable",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}/physical",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMasterPhysically",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/administ",
+    "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#getAdministCodeList",
+    "access": "PERMISSION",
+    "permission": "ADMCODE_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/codes/administ",
+    "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#createAdministCode",
+    "access": "PERMISSION",
+    "permission": "ADMCODE_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/codes/administ/{code}",
+    "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#deleteAdministCode",
+    "access": "PERMISSION",
+    "permission": "ADMCODE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/administ/{code}",
+    "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#getAdministCodeDetail",
+    "access": "PERMISSION",
+    "permission": "ADMCODE_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/codes/administ/{code}",
+    "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#updateAdministCode",
+    "access": "PERMISSION",
+    "permission": "ADMCODE_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/cl",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#getClCodeList",
+    "access": "PERMISSION",
+    "permission": "CODE_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/codes/cl",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createClCode",
+    "access": "PERMISSION",
+    "permission": "CODE_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/codes/cl/{clCode}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteClCode",
+    "access": "PERMISSION",
+    "permission": "CODE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/cl/{clCode}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#getClCode",
+    "access": "PERMISSION",
+    "permission": "CODE_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/codes/cl/{clCode}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateClCode",
+    "access": "PERMISSION",
+    "permission": "CODE_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/cmmn",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#getCmmnCodeList",
+    "access": "PERMISSION",
+    "permission": "CODE_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/codes/cmmn",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createCmmnCode",
+    "access": "PERMISSION",
+    "permission": "CODE_CREATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/codes/cmmn/batch-hierarchy",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateCmmnCodeHierarchy",
+    "access": "PERMISSION",
+    "permission": "CODE_UPDATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/codes/cmmn/{codeId}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteCmmnCode",
+    "access": "PERMISSION",
+    "permission": "CODE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/cmmn/{codeId}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#getCmmnCode",
+    "access": "PERMISSION",
+    "permission": "CODE_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/codes/cmmn/{codeId}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateCmmnCode",
+    "access": "PERMISSION",
+    "permission": "CODE_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/detail",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#getDetailCodeList",
+    "access": "PERMISSION",
+    "permission": "CODE_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/codes/detail",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createDetailCode",
+    "access": "PERMISSION",
+    "permission": "CODE_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/codes/detail/{codeId}/{code}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteDetailCode",
+    "access": "PERMISSION",
+    "permission": "CODE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/detail/{codeId}/{code}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#getDetailCode",
+    "access": "PERMISSION",
+    "permission": "CODE_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/codes/detail/{codeId}/{code}",
+    "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateDetailCode",
+    "access": "PERMISSION",
+    "permission": "CODE_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/institution",
+    "handler": "nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#getInstitutionCodeList",
+    "access": "PERMISSION",
+    "permission": "INST_CODE_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/institution/receptions",
+    "handler": "nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#getInstitutionCodeRecptnList",
+    "access": "PERMISSION",
+    "permission": "INST_CODE_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/codes/institution/receptions/process",
+    "handler": "nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#processInstitutionCodeRecptn",
+    "access": "PERMISSION",
+    "permission": "INST_CODE_IMPORT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/codes/institution/{code}",
+    "handler": "nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#getInstitutionCodeDetail",
+    "access": "PERMISSION",
+    "permission": "INST_CODE_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/departments",
+    "handler": "nuri.api.controller.system.DeptApiController#getDepts",
+    "access": "PERMISSION",
+    "permission": "DEPT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/departments",
+    "handler": "nuri.api.controller.system.DeptApiController#insertDept",
+    "access": "PERMISSION",
+    "permission": "DEPT_CREATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/departments/batch-hierarchy",
+    "handler": "nuri.api.controller.system.DeptApiController#updateDeptHierarchy",
+    "access": "PERMISSION",
+    "permission": "DEPT_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/departments/tree",
+    "handler": "nuri.api.controller.system.DeptApiController#getDeptTree",
+    "access": "PERMISSION",
+    "permission": "DEPT_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/departments/{deptId}",
+    "handler": "nuri.api.controller.system.DeptApiController#deleteDept",
+    "access": "PERMISSION",
+    "permission": "DEPT_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/departments/{deptId}",
+    "handler": "nuri.api.controller.system.DeptApiController#getDept",
+    "access": "PERMISSION",
+    "permission": "DEPT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/departments/{deptId}",
+    "handler": "nuri.api.controller.system.DeptApiController#updateDept",
+    "access": "PERMISSION",
+    "permission": "DEPT_UPDATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/dept-authorities/batch",
+    "handler": "nuri.api.controller.system.DeptAuthorityApiController#saveDeptUserAuthorities",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_ASSIGN"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/dept-authorities/{deptId}",
+    "handler": "nuri.api.controller.system.DeptAuthorityApiController#getDeptAuthorities",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/files",
+    "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+    "access": "PERMISSION",
+    "permission": "FILE_UPLOAD_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/files/{atchFileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#getFileList",
+    "access": "PERMISSION",
+    "permission": "FILE_READ_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/files/{atchFileSn}/{fileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+    "access": "PERMISSION",
+    "permission": "FILE_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/files/{atchFileSn}/{fileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#downloadFile",
+    "access": "PERMISSION",
+    "permission": "FILE_DOWNLOAD_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/groups",
+    "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#deleteGroups",
+    "access": "PERMISSION",
+    "permission": "CLASS_GRP_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/groups",
+    "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#getGroups",
+    "access": "PERMISSION",
+    "permission": "CLASS_GRP_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/groups",
+    "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#createGroup",
+    "access": "PERMISSION",
+    "permission": "CLASS_GRP_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/groups/{groupId}",
+    "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#deleteGroup",
+    "access": "PERMISSION",
+    "permission": "CLASS_GRP_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/groups/{groupId}",
+    "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#getGroup",
+    "access": "PERMISSION",
+    "permission": "CLASS_GRP_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/groups/{groupId}",
+    "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#updateGroup",
+    "access": "PERMISSION",
+    "permission": "CLASS_GRP_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/isg",
+    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#getIsgList",
+    "access": "PERMISSION",
+    "permission": "SERVICE_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/isg",
+    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#registerIsg",
+    "access": "PERMISSION",
+    "permission": "SERVICE_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#deleteIsg",
+    "access": "PERMISSION",
+    "permission": "SERVICE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#getIsg",
+    "access": "PERMISSION",
+    "permission": "SERVICE_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#updateIsg",
+    "access": "PERMISSION",
+    "permission": "SERVICE_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/ism",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanctionList",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_READ_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/ism",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_CREATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/ism/{informalSanctionId}",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/ism/{informalSanctionId}",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_READ_ALL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/ism/{informalSanctionId}",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_UPDATE_ALL"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/system/ism/{informalSanctionId}/confirm",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_APPROVE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/login-policies",
+    "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#getLoginPolicyList",
+    "access": "PERMISSION",
+    "permission": "LOGIN_POL_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/login-policies/{userId}",
+    "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy",
+    "access": "PERMISSION",
+    "permission": "LOGIN_POL_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/login-policies/{userId}",
+    "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#getLoginPolicy",
+    "access": "PERMISSION",
+    "permission": "LOGIN_POL_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/login-policies/{userId}",
+    "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#insertLoginPolicy",
+    "access": "PERMISSION",
+    "permission": "LOGIN_POL_CREATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/login-policies/{userId}",
+    "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#updateLoginPolicy",
+    "access": "PERMISSION",
+    "permission": "LOGIN_POL_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/login",
+    "handler": "nuri.api.controller.foundation.controller.system.log.LoginLogApiController#getLoginLogList",
+    "access": "PERMISSION",
+    "permission": "LOGIN_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/login/export.xlsx",
+    "handler": "nuri.api.controller.foundation.controller.system.log.LoginLogApiController#exportLoginLogs",
+    "access": "PERMISSION",
+    "permission": "LOGIN_LOG_EXPORT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/login/{lgnSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.log.LoginLogApiController#getLoginLog",
+    "access": "PERMISSION",
+    "permission": "LOGIN_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/privacy",
+    "handler": "nuri.api.controller.foundation.controller.system.log.PrivacyLogApiController#getPrivacyLogList",
+    "access": "PERMISSION",
+    "permission": "PRIVACY_READ",
+    "excludedGroups": [
+      "ROLE_SYSTEM"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/privacy/export.xlsx",
+    "handler": "nuri.api.controller.foundation.controller.system.log.PrivacyLogApiController#exportPrivacyLogs",
+    "access": "PERMISSION",
+    "permission": "PRIVACY_EXPORT",
+    "excludedGroups": [
+      "ROLE_SYSTEM"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/system",
+    "handler": "nuri.api.controller.foundation.controller.system.log.SystemLogApiController#getSysLogList",
+    "access": "PERMISSION",
+    "permission": "SYS_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/system/export.xlsx",
+    "handler": "nuri.api.controller.foundation.controller.system.log.SystemLogApiController#exportSystemLogs",
+    "access": "PERMISSION",
+    "permission": "SYS_LOG_EXPORT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/system/{sysLogSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.log.SystemLogApiController#getSysLog",
+    "access": "PERMISSION",
+    "permission": "SYS_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/user",
+    "handler": "nuri.api.controller.foundation.controller.system.log.UserLogApiController#getUserLogList",
+    "access": "PERMISSION",
+    "permission": "USER_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/user/export.xlsx",
+    "handler": "nuri.api.controller.foundation.controller.system.log.UserLogApiController#exportUserLogs",
+    "access": "PERMISSION",
+    "permission": "USER_LOG_EXPORT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/web",
+    "handler": "nuri.api.controller.foundation.controller.system.log.WebLogApiController#getWebLogList",
+    "access": "PERMISSION",
+    "permission": "WEB_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/web/export.xlsx",
+    "handler": "nuri.api.controller.foundation.controller.system.log.WebLogApiController#exportWebLogs",
+    "access": "PERMISSION",
+    "permission": "WEB_LOG_EXPORT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/menus",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#getMenuList",
+    "access": "PERMISSION",
+    "permission": "MENU_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/menus",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#createMenu",
+    "access": "PERMISSION",
+    "permission": "MENU_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/menus/all",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#getAllMenus",
+    "access": "PERMISSION",
+    "permission": "MENU_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/menus/batch-order",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#updateMenuOrder",
+    "access": "PERMISSION",
+    "permission": "MENU_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/menus/creation-manage",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#getMenuCreationManageList",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/menus/creation/{authorCode}",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#getMenuCreationList",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/menus/creation/{authorCode}",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#createMenuCreation",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_GRANT"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/menus/{menuNo}",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#deleteMenu",
+    "access": "PERMISSION",
+    "permission": "MENU_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/menus/{menuNo}",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#getMenu",
+    "access": "PERMISSION",
+    "permission": "MENU_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/menus/{menuNo}",
+    "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#updateMenu",
+    "access": "PERMISSION",
+    "permission": "MENU_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/ntwrksvc-monitoring",
+    "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#getStatus",
+    "access": "PERMISSION",
+    "permission": "NETWORK_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/ntwrksvc-monitoring",
+    "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#createNetwork",
+    "access": "PERMISSION",
+    "permission": "NETWORK_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
+    "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#deleteNetwork",
+    "access": "PERMISSION",
+    "permission": "NETWORK_DELETE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
+    "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#updateNetwork",
+    "access": "PERMISSION",
+    "permission": "NETWORK_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/policies",
+    "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#getPolicies",
+    "access": "PERMISSION",
+    "permission": "POLICY_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/policies/{type}",
+    "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#getPolicy",
+    "access": "PERMISSION",
+    "permission": "POLICY_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/policies/{type}",
+    "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#updatePolicy",
+    "access": "PERMISSION",
+    "permission": "POLICY_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/popups",
+    "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#getPopups",
+    "access": "PERMISSION",
+    "permission": "POPUP_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/popups",
+    "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#createPopup",
+    "access": "PERMISSION",
+    "permission": "POPUP_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/popups/{popupSn}",
+    "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#deletePopup",
+    "access": "PERMISSION",
+    "permission": "POPUP_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/popups/{popupSn}",
+    "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#getPopup",
+    "access": "PERMISSION",
+    "permission": "POPUP_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/popups/{popupSn}",
+    "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#updatePopup",
+    "access": "PERMISSION",
+    "permission": "POPUP_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/programs",
+    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#getProgramList",
+    "access": "PERMISSION",
+    "permission": "PROGRAM_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/programs",
+    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#createProgram",
+    "access": "PERMISSION",
+    "permission": "PROGRAM_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/programs/{progrmFileNm}",
+    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#deleteProgram",
+    "access": "PERMISSION",
+    "permission": "PROGRAM_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/programs/{progrmFileNm}",
+    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#getProgram",
+    "access": "PERMISSION",
+    "permission": "PROGRAM_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/programs/{progrmFileNm}",
+    "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#updateProgram",
+    "access": "PERMISSION",
+    "permission": "PROGRAM_UPDATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/roles",
+    "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRoles",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/roles",
+    "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#getRoles",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/roles",
+    "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#createRole",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/roles/{roleCode}",
+    "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRole",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/roles/{roleCode}",
+    "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#getRole",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/roles/{roleCode}",
+    "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#updateRole",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/statistics/bbs",
+    "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getBbsStats",
+    "access": "PERMISSION",
+    "permission": "STATS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/statistics/connect",
+    "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getConnectStats",
+    "access": "PERMISSION",
+    "permission": "STATS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/statistics/data-usage",
+    "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getDataUsageStats",
+    "access": "PERMISSION",
+    "permission": "STATS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/statistics/report",
+    "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getReportStats",
+    "access": "PERMISSION",
+    "permission": "STATS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/statistics/summary",
+    "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getSummary",
+    "access": "PERMISSION",
+    "permission": "STATS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/statistics/user",
+    "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getUserStats",
+    "access": "PERMISSION",
+    "permission": "STATS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/survey-responses",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#getResponses",
+    "access": "PERMISSION",
+    "permission": "SURVEY_RSP_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/survey-responses/{srvyRspnsSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#deleteResponse",
+    "access": "PERMISSION",
+    "permission": "SURVEY_RSP_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/survey-responses/{srvyRspnsSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#getResponse",
+    "access": "PERMISSION",
+    "permission": "SURVEY_RSP_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/surveys",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getSurveys",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/surveys",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertSurvey",
+    "access": "PERMISSION",
+    "permission": "SURVEY_CREATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem",
+    "access": "PERMISSION",
+    "permission": "SURVEY_DELETE_ALL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateItem",
+    "access": "PERMISSION",
+    "permission": "SURVEY_UPDATE_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/surveys/questions/{srvyQstnSn}/items",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertItem",
+    "access": "PERMISSION",
+    "permission": "SURVEY_CREATE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/surveys/templates",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getTemplates",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/surveys/templates",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertTemplate",
+    "access": "PERMISSION",
+    "permission": "SURVEY_CREATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteTemplate",
+    "access": "PERMISSION",
+    "permission": "SURVEY_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getTemplate",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ_ALL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateTemplate",
+    "access": "PERMISSION",
+    "permission": "SURVEY_UPDATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/surveys/{srvySn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteSurvey",
+    "access": "PERMISSION",
+    "permission": "SURVEY_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/surveys/{srvySn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getSurvey",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ_ALL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/surveys/{srvySn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateSurvey",
+    "access": "PERMISSION",
+    "permission": "SURVEY_UPDATE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/surveys/{srvySn}/questions",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getQuestions",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/surveys/{srvySn}/questions",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertQuestion",
+    "access": "PERMISSION",
+    "permission": "SURVEY_CREATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteQuestion",
+    "access": "PERMISSION",
+    "permission": "SURVEY_DELETE_ALL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateQuestion",
+    "access": "PERMISSION",
+    "permission": "SURVEY_UPDATE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/templates",
+    "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#selectTmplatInfoList",
+    "access": "PERMISSION",
+    "permission": "TEMPLATE_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/templates",
+    "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo",
+    "access": "PERMISSION",
+    "permission": "TEMPLATE_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/templates/{tmpltId}",
+    "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#deleteTmplatInfo",
+    "access": "PERMISSION",
+    "permission": "TEMPLATE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/templates/{tmpltId}",
+    "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#selectTmplatInfoDetail",
+    "access": "PERMISSION",
+    "permission": "TEMPLATE_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/templates/{tmpltId}",
+    "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#updateTmplatInfo",
+    "access": "PERMISSION",
+    "permission": "TEMPLATE_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/user-absences",
+    "handler": "nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#getAbsences",
+    "access": "PERMISSION",
+    "permission": "ABSENCE_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/user-absences/{emplyrId}",
+    "handler": "nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#getAbsence",
+    "access": "PERMISSION",
+    "permission": "ABSENCE_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/user-absences/{emplyrId}",
+    "handler": "nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#updateAbsence",
+    "access": "PERMISSION",
+    "permission": "ABSENCE_UPDATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/user-authorities",
+    "handler": "nuri.api.controller.foundation.controller.system.UserAuthorityApiController#deleteUserAuthorities",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_ASSIGN"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/user-authorities",
+    "handler": "nuri.api.controller.foundation.controller.system.UserAuthorityApiController#getUserAuthorities",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/user-authorities",
+    "handler": "nuri.api.controller.foundation.controller.system.UserAuthorityApiController#saveUserAuthorities",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_ASSIGN"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/users",
+    "handler": "nuri.api.controller.UserApiController#deleteUsers",
+    "access": "PERMISSION",
+    "permission": "USER_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/users",
+    "handler": "nuri.api.controller.UserApiController#getUsers",
+    "access": "PERMISSION",
+    "permission": "USER_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/users",
+    "handler": "nuri.api.controller.UserApiController#insertUser",
+    "access": "PERMISSION",
+    "permission": "USER_CREATE"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/system/users/dept",
+    "handler": "nuri.api.controller.UserApiController#moveUsersToDept",
+    "access": "PERMISSION",
+    "permission": "USER_DEPT"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/system/users/role",
+    "handler": "nuri.api.controller.UserApiController#updateUsersRole",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_ASSIGN"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/system/users/status",
+    "handler": "nuri.api.controller.UserApiController#updateUsersStatus",
+    "access": "PERMISSION",
+    "permission": "USER_STATUS"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/system/users/{userId}",
+    "handler": "nuri.api.controller.UserApiController#deleteUser",
+    "access": "PERMISSION",
+    "permission": "USER_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/users/{userId}",
+    "handler": "nuri.api.controller.UserApiController#getUser",
+    "access": "PERMISSION",
+    "permission": "USER_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/system/users/{userId}",
+    "handler": "nuri.api.controller.UserApiController#updateUser",
+    "access": "PERMISSION",
+    "permission": "USER_UPDATE"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/system/users/{userId}/password",
+    "handler": "nuri.api.controller.UserApiController#updatePasswordByAdmin",
+    "access": "PERMISSION",
+    "permission": "USER_PASSWORD"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApproval",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/my",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getMyHistory",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/pending",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getPending",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/processed",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getProcessed",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/task-types",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getTaskTypes",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/approvals/{id}",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#cancelApproval",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CANCEL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/approvals/{id}/confirm",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#confirm",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_APPROVE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "handler": "nuri.api.controller.foundation.auth.AuthApiController#login",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout",
+    "handler": "nuri.api.controller.foundation.auth.AuthApiController#logout",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/me",
+    "handler": "nuri.api.controller.foundation.auth.AuthApiController#getCurrentUser",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/reissue",
+    "handler": "nuri.api.controller.foundation.auth.AuthApiController#reissue",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/banners/reflected",
+    "handler": "nuri.api.controller.business.admin.content.banner.BannerUserApiController#getReflectedBanners",
+    "access": "PERMISSION",
+    "permission": "BANNER_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/boards/posts",
+    "handler": "nuri.api.controller.business.board.BoardApiController#createPost",
+    "access": "PERMISSION",
+    "permission": "BOARD_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/public-faqs",
+    "handler": "nuri.api.controller.business.board.BoardApiController#getPublicFaqs",
+    "access": "PERMISSION",
+    "permission": "BOARD_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/public-faqs/{pstSn}",
+    "handler": "nuri.api.controller.business.board.BoardApiController#getPublicFaqDetail",
+    "access": "PERMISSION",
+    "permission": "BOARD_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/search",
+    "handler": "nuri.api.controller.business.board.BoardApiController#searchPosts",
+    "access": "PERMISSION",
+    "permission": "BOARD_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/{bbsId}",
+    "handler": "nuri.api.controller.business.board.BoardApiController#getPosts",
+    "access": "PERMISSION",
+    "permission": "BOARD_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/boards/{bbsId}/posts/with-files",
+    "handler": "nuri.api.controller.business.board.BoardApiController#createPostWithFiles",
+    "access": "PERMISSION",
+    "permission": "BOARD_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}",
+    "handler": "nuri.api.controller.business.board.BoardApiController#deletePost",
+    "access": "PERMISSION",
+    "permission": "BOARD_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}",
+    "handler": "nuri.api.controller.business.board.BoardApiController#getPost",
+    "access": "PERMISSION",
+    "permission": "BOARD_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}",
+    "handler": "nuri.api.controller.business.board.BoardApiController#updatePost",
+    "access": "PERMISSION",
+    "permission": "BOARD_UPDATE"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
+    "handler": "nuri.api.controller.business.board.BoardApiController#likePost",
+    "access": "PERMISSION",
+    "permission": "BOARD_LIKE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions",
+    "handler": "nuri.api.controller.business.board.SatisfactionApiController#getList",
+    "access": "PERMISSION",
+    "permission": "SATISFY_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions",
+    "handler": "nuri.api.controller.business.board.SatisfactionApiController#create",
+    "access": "PERMISSION",
+    "permission": "SATISFY_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/average",
+    "handler": "nuri.api.controller.business.board.SatisfactionApiController#getAverage",
+    "access": "PERMISSION",
+    "permission": "SATISFY_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
+    "handler": "nuri.api.controller.business.board.SatisfactionApiController#delete",
+    "access": "PERMISSION",
+    "permission": "SATISFY_DELETE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
+    "handler": "nuri.api.controller.business.board.SatisfactionApiController#update",
+    "access": "PERMISSION",
+    "permission": "SATISFY_UPDATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}/moderate",
+    "handler": "nuri.api.controller.business.board.SatisfactionApiController#moderate",
+    "access": "PERMISSION",
+    "permission": "SATISFY_MODERATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/with-files",
+    "handler": "nuri.api.controller.business.board.BoardApiController#updatePostWithFiles",
+    "access": "PERMISSION",
+    "permission": "BOARD_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/{bbsId}/stats",
+    "handler": "nuri.api.controller.business.board.BoardApiController#getStats",
+    "access": "PERMISSION",
+    "permission": "BOARD_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/comments",
+    "handler": "nuri.api.controller.business.comment.CommentApiController#getComments",
+    "access": "PERMISSION",
+    "permission": "COMMENT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/comments",
+    "handler": "nuri.api.controller.business.comment.CommentApiController#createComment",
+    "access": "PERMISSION",
+    "permission": "COMMENT_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/comments/{commentNo}",
+    "handler": "nuri.api.controller.business.comment.CommentApiController#deleteComment",
+    "access": "PERMISSION",
+    "permission": "COMMENT_DELETE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/comments/{commentNo}",
+    "handler": "nuri.api.controller.business.comment.CommentApiController#updateComment",
+    "access": "PERMISSION",
+    "permission": "COMMENT_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities",
+    "handler": "nuri.api.controller.business.community.CommunityUserApiController#getCommunities",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{cmntySn}",
+    "handler": "nuri.api.controller.business.community.CommunityUserApiController#getCommunity",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{cmntySn}/boards",
+    "handler": "nuri.api.controller.business.community.CommunityUserApiController#getCommunityBoards",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/communities/{cmntySn}/join",
+    "handler": "nuri.api.controller.business.community.CommunityUserApiController#joinCommunity",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_JOIN"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/communities/{cmntySn}/membership",
+    "handler": "nuri.api.controller.business.community.CommunityUserApiController#getMyMembership",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dashboard",
+    "handler": "nuri.api.controller.business.main.DashboardApiController#getDashboardData",
+    "access": "PERMISSION",
+    "permission": "DASHBOARD_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dept-jobs",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJobList",
+    "access": "PERMISSION",
+    "permission": "DEPT_JOB_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/dept-jobs",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJob",
+    "access": "PERMISSION",
+    "permission": "DEPT_JOB_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dept-jobs/boxes",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJobBoxList",
+    "access": "PERMISSION",
+    "permission": "DEPT_BOX_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/dept-jobs/boxes",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJobBox",
+    "access": "PERMISSION",
+    "permission": "DEPT_BOX_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#deleteDeptJobBox",
+    "access": "PERMISSION",
+    "permission": "DEPT_BOX_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJobBox",
+    "access": "PERMISSION",
+    "permission": "DEPT_BOX_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#updateDeptJobBox",
+    "access": "PERMISSION",
+    "permission": "DEPT_BOX_UPDATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/dept-jobs/{deptTaskSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#deleteDeptJob",
+    "access": "PERMISSION",
+    "permission": "DEPT_JOB_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/dept-jobs/{deptTaskSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#getDeptJob",
+    "access": "PERMISSION",
+    "permission": "DEPT_JOB_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/dept-jobs/{deptTaskSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#updateDeptJob",
+    "access": "PERMISSION",
+    "permission": "DEPT_JOB_UPDATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/files",
+    "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+    "access": "PERMISSION",
+    "permission": "FILE_UPLOAD"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/files/{atchFileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#getFileList",
+    "access": "PERMISSION",
+    "permission": "FILE_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/files/{atchFileSn}/{fileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#deleteFile",
+    "access": "PERMISSION",
+    "permission": "FILE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/files/{atchFileSn}/{fileSn}",
+    "handler": "nuri.api.controller.business.file.FileApiController#downloadFile",
+    "access": "PERMISSION",
+    "permission": "FILE_DOWNLOAD"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/health",
+    "handler": "nuri.api.controller.foundation.controller.system.HealthCheckApiController#checkHealth",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/help/hpcm",
+    "handler": "nuri.api.controller.business.help.HelpApiController#getHpcmList",
+    "access": "PERMISSION",
+    "permission": "HELP_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/help/hpcm",
+    "handler": "nuri.api.controller.business.help.HelpApiController#insertHpcm",
+    "access": "PERMISSION",
+    "permission": "HELP_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/help/hpcm/{hlpSn}",
+    "handler": "nuri.api.controller.business.help.HelpApiController#deleteHpcm",
+    "access": "PERMISSION",
+    "permission": "HELP_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/help/hpcm/{hlpSn}",
+    "handler": "nuri.api.controller.business.help.HelpApiController#getHpcm",
+    "access": "PERMISSION",
+    "permission": "HELP_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/help/hpcm/{hlpSn}",
+    "handler": "nuri.api.controller.business.help.HelpApiController#updateHpcm",
+    "access": "PERMISSION",
+    "permission": "HELP_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/help/manuals",
+    "handler": "nuri.api.controller.business.help.HelpApiController#getManuals",
+    "access": "PERMISSION",
+    "permission": "HELP_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/help/manuals",
+    "handler": "nuri.api.controller.business.help.HelpApiController#createManual",
+    "access": "PERMISSION",
+    "permission": "HELP_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/help/manuals/{onlnMnlSn}",
+    "handler": "nuri.api.controller.business.help.HelpApiController#deleteManual",
+    "access": "PERMISSION",
+    "permission": "HELP_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/help/manuals/{onlnMnlSn}",
+    "handler": "nuri.api.controller.business.help.HelpApiController#getManual",
+    "access": "PERMISSION",
+    "permission": "HELP_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/help/manuals/{onlnMnlSn}",
+    "handler": "nuri.api.controller.business.help.HelpApiController#updateManual",
+    "access": "PERMISSION",
+    "permission": "HELP_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/informal-sanctions",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanctionList",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/informal-sanctions",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/informal-sanctions/{informalSanctionId}",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/informal-sanctions/{informalSanctionId}",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/informal-sanctions/{informalSanctionId}",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_UPDATE"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/informal-sanctions/{informalSanctionId}/confirm",
+    "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
+    "access": "PERMISSION",
+    "permission": "INFORMAL_APPROVE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mails",
+    "handler": "nuri.api.controller.business.mail.MailApiController#getSentMails",
+    "access": "PERMISSION",
+    "permission": "MAIL_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/mails",
+    "handler": "nuri.api.controller.business.mail.MailApiController#sendMail",
+    "access": "PERMISSION",
+    "permission": "MAIL_SEND"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/mails/{emlDsptchSn}",
+    "handler": "nuri.api.controller.business.mail.MailApiController#deleteMail",
+    "access": "PERMISSION",
+    "permission": "MAIL_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/mails/{emlDsptchSn}",
+    "handler": "nuri.api.controller.business.mail.MailApiController#getSentMail",
+    "access": "PERMISSION",
+    "permission": "MAIL_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/memo-reports",
+    "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#getMemoReports",
+    "access": "PERMISSION",
+    "permission": "MEMO_RPT_READ_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/memo-reports",
+    "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#createMemoReport",
+    "access": "PERMISSION",
+    "permission": "MEMO_RPT_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/memo-reports/my",
+    "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#getMyReports",
+    "access": "PERMISSION",
+    "permission": "MEMO_RPT_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/memo-reports/received",
+    "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#getReceivedReports",
+    "access": "PERMISSION",
+    "permission": "MEMO_RPT_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/memo-reports/{memoRptSn}",
+    "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#deleteMemoReport",
+    "access": "PERMISSION",
+    "permission": "MEMO_RPT_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/memo-reports/{memoRptSn}",
+    "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#getMemoReport",
+    "access": "PERMISSION",
+    "permission": "MEMO_RPT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/memo-reports/{memoRptSn}",
+    "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#updateMemoReport",
+    "access": "PERMISSION",
+    "permission": "MEMO_RPT_UPDATE"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/memo-reports/{memoRptSn}/instr-cn",
+    "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#updateDrctMatter",
+    "access": "PERMISSION",
+    "permission": "MEMO_RPT_INSTRUCT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/menus/head",
+    "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#getHeadMenu",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/menus/left",
+    "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#getLeftMenu",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notes",
+    "handler": "nuri.api.controller.business.note.NoteApiController#sendNote",
+    "access": "PERMISSION",
+    "permission": "NOTE_SEND"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notes/received",
+    "handler": "nuri.api.controller.business.note.NoteApiController#getReceivedNotes",
+    "access": "PERMISSION",
+    "permission": "NOTE_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notes/sent",
+    "handler": "nuri.api.controller.business.note.NoteApiController#getSentNotes",
+    "access": "PERMISSION",
+    "permission": "NOTE_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notes/{noteSn}",
+    "handler": "nuri.api.controller.business.note.NoteApiController#getNote",
+    "access": "PERMISSION",
+    "permission": "NOTE_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/notes/{relationSn}",
+    "handler": "nuri.api.controller.business.note.NoteApiController#deleteNote",
+    "access": "PERMISSION",
+    "permission": "NOTE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications",
+    "handler": "nuri.api.controller.business.notification.NotificationApiController#getNotifications",
+    "access": "PERMISSION",
+    "permission": "NOTI_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications",
+    "handler": "nuri.api.controller.business.notification.NotificationApiController#createNotification",
+    "access": "PERMISSION",
+    "permission": "NOTI_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/unread-count",
+    "handler": "nuri.api.controller.business.notification.NotificationApiController#getUnreadCount",
+    "access": "PERMISSION",
+    "permission": "NOTI_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/notifications/{notiSn}",
+    "handler": "nuri.api.controller.business.notification.NotificationApiController#deleteNotification",
+    "access": "PERMISSION",
+    "permission": "NOTI_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/{notiSn}",
+    "handler": "nuri.api.controller.business.notification.NotificationApiController#getNotification",
+    "access": "PERMISSION",
+    "permission": "NOTI_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/{notiSn}/read",
+    "handler": "nuri.api.controller.business.notification.NotificationApiController#markAsRead",
+    "access": "PERMISSION",
+    "permission": "NOTI_ACK"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/polls",
+    "handler": "nuri.api.controller.business.poll.PollApiController#getPolls",
+    "access": "PERMISSION",
+    "permission": "POLL_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/polls",
+    "handler": "nuri.api.controller.business.poll.PollApiController#createPoll",
+    "access": "PERMISSION",
+    "permission": "POLL_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/polls/{pollSn}",
+    "handler": "nuri.api.controller.business.poll.PollApiController#deletePoll",
+    "access": "PERMISSION",
+    "permission": "POLL_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/polls/{pollSn}",
+    "handler": "nuri.api.controller.business.poll.PollApiController#getPoll",
+    "access": "PERMISSION",
+    "permission": "POLL_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/polls/{pollSn}",
+    "handler": "nuri.api.controller.business.poll.PollApiController#updatePoll",
+    "access": "PERMISSION",
+    "permission": "POLL_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/polls/{pollSn}/items",
+    "handler": "nuri.api.controller.business.poll.PollApiController#getPollItems",
+    "access": "PERMISSION",
+    "permission": "POLL_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/polls/{pollSn}/vote/{pollArtclSn}",
+    "handler": "nuri.api.controller.business.poll.PollApiController#vote",
+    "access": "PERMISSION",
+    "permission": "POLL_VOTE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/popups/active",
+    "handler": "nuri.api.controller.business.admin.content.popup.PopupUserApiController#getActivePopups",
+    "access": "PERMISSION",
+    "permission": "POPUP_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/popups/{popupSn}",
+    "handler": "nuri.api.controller.business.admin.content.popup.PopupUserApiController#getPopup",
+    "access": "PERMISSION",
+    "permission": "POPUP_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/public/debug/error",
+    "handler": "nuri.api.controller.foundation.controller.system.DebugController#triggerError",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/schedules",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#getScheduleList",
+    "access": "PERMISSION",
+    "permission": "SCHEDULE_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/schedules",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#createSchedule",
+    "access": "PERMISSION",
+    "permission": "SCHEDULE_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/schedules/dept",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#getDeptScheduleList",
+    "access": "PERMISSION",
+    "permission": "SCHEDULE_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/schedules/monthly",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#getMonthlySchedule",
+    "access": "PERMISSION",
+    "permission": "SCHEDULE_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/schedules/range",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#getScheduleByDateRange",
+    "access": "PERMISSION",
+    "permission": "SCHEDULE_READ"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/schedules/{schdlSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#deleteSchedule",
+    "access": "PERMISSION",
+    "permission": "SCHEDULE_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/schedules/{schdlSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#getSchedule",
+    "access": "PERMISSION",
+    "permission": "SCHEDULE_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/schedules/{schdlSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#updateSchedule",
+    "access": "PERMISSION",
+    "permission": "SCHEDULE_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scraps",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScrapApiController#getMyScrapList",
+    "access": "PERMISSION",
+    "permission": "SCRAP_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scraps",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScrapApiController#createScrap",
+    "access": "PERMISSION",
+    "permission": "SCRAP_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/scraps/{scrapSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScrapApiController#deleteScrap",
+    "access": "PERMISSION",
+    "permission": "SCRAP_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scraps/{scrapSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScrapApiController#getScrap",
+    "access": "PERMISSION",
+    "permission": "SCRAP_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/scraps/{scrapSn}",
+    "handler": "nuri.api.controller.business.smarttoolkit.ScrapApiController#updateScrap",
+    "access": "PERMISSION",
+    "permission": "SCRAP_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/statistics/connect",
+    "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsUserApiController#getConnectStats",
+    "access": "PERMISSION",
+    "permission": "STATS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/surveys",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getSurveys",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/surveys",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertSurvey",
+    "access": "PERMISSION",
+    "permission": "SURVEY_CREATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/surveys/questions/items/{srvyArtclSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem",
+    "access": "PERMISSION",
+    "permission": "SURVEY_DELETE_ALL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/surveys/questions/items/{srvyArtclSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateItem",
+    "access": "PERMISSION",
+    "permission": "SURVEY_UPDATE_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/surveys/questions/{srvyQstnSn}/items",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertItem",
+    "access": "PERMISSION",
+    "permission": "SURVEY_CREATE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/surveys/templates",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getTemplates",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/surveys/templates",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertTemplate",
+    "access": "PERMISSION",
+    "permission": "SURVEY_CREATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/surveys/templates/{srvyTmpltSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteTemplate",
+    "access": "PERMISSION",
+    "permission": "SURVEY_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/surveys/templates/{srvyTmpltSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getTemplate",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/surveys/templates/{srvyTmpltSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateTemplate",
+    "access": "PERMISSION",
+    "permission": "SURVEY_UPDATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/surveys/{srvySn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteSurvey",
+    "access": "PERMISSION",
+    "permission": "SURVEY_DELETE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/surveys/{srvySn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getSurvey",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/surveys/{srvySn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateSurvey",
+    "access": "PERMISSION",
+    "permission": "SURVEY_UPDATE_ALL"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/surveys/{srvySn}/questions",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getQuestions",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/surveys/{srvySn}/questions",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertQuestion",
+    "access": "PERMISSION",
+    "permission": "SURVEY_CREATE_ALL"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteQuestion",
+    "access": "PERMISSION",
+    "permission": "SURVEY_DELETE_ALL"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateQuestion",
+    "access": "PERMISSION",
+    "permission": "SURVEY_UPDATE_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/surveys/{srvySn}/responses",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#submit",
+    "access": "PERMISSION",
+    "permission": "SURVEY_SUBMIT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/surveys/{srvySn}/stats",
+    "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#getStats",
+    "access": "PERMISSION",
+    "permission": "SURVEY_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/check-id",
+    "handler": "nuri.api.controller.UserApiController#checkIdDplct",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/me",
+    "handler": "nuri.api.controller.UserApiController#getMe",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/me",
+    "handler": "nuri.api.controller.UserApiController#updateMe",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/users/me/password",
+    "handler": "nuri.api.controller.UserApiController#changePassword",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/search",
+    "handler": "nuri.api.controller.UserApiController#searchAssignableUsers",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/users/signup",
+    "handler": "nuri.api.controller.UserApiController#signup",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/work-reports",
+    "handler": "nuri.api.controller.business.report.WorkReportApiController#getWorkReportList",
+    "access": "PERMISSION",
+    "permission": "WORK_RPT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/work-reports",
+    "handler": "nuri.api.controller.business.report.WorkReportApiController#createWorkReport",
+    "access": "PERMISSION",
+    "permission": "WORK_RPT_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/work-reports/{rptpSn}",
+    "handler": "nuri.api.controller.business.report.WorkReportApiController#deleteWorkReport",
+    "access": "PERMISSION",
+    "permission": "WORK_RPT_DELETE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/work-reports/{rptpSn}",
+    "handler": "nuri.api.controller.business.report.WorkReportApiController#getWorkReport",
+    "access": "PERMISSION",
+    "permission": "WORK_RPT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/work-reports/{rptpSn}",
+    "handler": "nuri.api.controller.business.report.WorkReportApiController#updateWorkReport",
+    "access": "PERMISSION",
+    "permission": "WORK_RPT_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/catalog",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#catalog",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/groups",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#groups",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/groups/{code}",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#group",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/authorization/groups",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#createGroup",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_CREATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/authorization/groups/{code}",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#updateGroup",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_UPDATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/authorization/groups/{code}",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#deleteGroup",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_DELETE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/authorization/groups/{code}/grants",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#replaceGrants",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_GRANT"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/users/{userId}/groups",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#memberships",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/authorization/users/{userId}/groups",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#replaceMemberships",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_ASSIGN"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/users",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#users",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/history",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#history",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_AUDIT"
+  },
+  {
+    "method": "GET",
+    "path": "/actuator/health",
+    "handler": "EXTERNAL#/actuator/health",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/actuator",
+    "handler": "EXTERNAL#/actuator",
+    "access": "PERMISSION",
+    "permission": "OPS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/actuator/info",
+    "handler": "EXTERNAL#/actuator/info",
+    "access": "PERMISSION",
+    "permission": "OPS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/actuator/metrics",
+    "handler": "EXTERNAL#/actuator/metrics",
+    "access": "PERMISSION",
+    "permission": "OPS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/actuator/metrics/{name}",
+    "handler": "EXTERNAL#/actuator/metrics/{name}",
+    "access": "PERMISSION",
+    "permission": "OPS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/actuator/prometheus",
+    "handler": "EXTERNAL#/actuator/prometheus",
+    "access": "PERMISSION",
+    "permission": "OPS_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/ws",
+    "handler": "EXTERNAL#/ws",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/ws/info",
+    "handler": "EXTERNAL#sockjs:/ws/info",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/ws/websocket",
+    "handler": "EXTERNAL#sockjs:/ws/websocket",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/ws/{server}/{session}/websocket",
+    "handler": "EXTERNAL#sockjs:/ws/{server}/{session}/websocket",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/ws/{server}/{session}/xhr",
+    "handler": "EXTERNAL#sockjs:/ws/{server}/{session}/xhr",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/ws/{server}/{session}/xhr_streaming",
+    "handler": "EXTERNAL#sockjs:/ws/{server}/{session}/xhr_streaming",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/ws/{server}/{session}/xhr_send",
+    "handler": "EXTERNAL#sockjs:/ws/{server}/{session}/xhr_send",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/actuator/health/liveness",
+    "handler": "EXTERNAL#/actuator/health/liveness",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/actuator/health/readiness",
+    "handler": "EXTERNAL#/actuator/health/readiness",
+    "access": "PUBLIC",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/departments/{departmentId}/memberships",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#departmentMemberships",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/authorization/departments/{departmentId}/memberships",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#changeDepartmentGroups",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_ASSIGN"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/authorization/departments",
+    "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#departments",
+    "access": "PERMISSION",
+    "permission": "AUTHRT_READ"
+  }
+]

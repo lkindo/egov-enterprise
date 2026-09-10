@@ -48,12 +48,14 @@ public class SmsApiController {
                     `deliveryConfigured=false` 면 발송 접수는 성공하지만 모든 수신자 결과가 실패로 기록됩니다 \
                     (발송 파이프라인의 장애가 아니라 배포 형상입니다).""")
     @GetMapping("/delivery-status")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#getDeliveryStatus')")
     public ResponseEntity<ApiResponse<SmsDeliveryStatusDto>> getDeliveryStatus() {
         return ResponseEntity.ok(ApiResponse.success(smsService.getDeliveryStatus()));
     }
 
     @Operation(summary = "SMS 발송 내역 조회", description = "발송된 SMS 목록을 페이징 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#getSmsList')")
     public ResponseEntity<ApiResponse<PageResponse<SmsDto>>> getSmsList(
             @RequestParam(required = false) String searchCondition,
             @RequestParam(required = false) String searchKeyword,
@@ -64,6 +66,7 @@ public class SmsApiController {
 
     @Operation(summary = "SMS 상세 조회", description = "특정 SMS의 발송 상세 정보를 조회합니다.")
     @GetMapping("/{smsTrsmSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#getSms')")
     public ResponseEntity<ApiResponse<SmsDto>> getSms(
             @Parameter(description = "SMS 전송 일련번호") @PathVariable Long smsTrsmSn) {
         return ResponseEntity.ok(ApiResponse.success(smsService.getSms(smsTrsmSn)));
@@ -83,6 +86,7 @@ public class SmsApiController {
     @Operation(summary = "SMS 수신자 목록 조회", description = "특정 SMS의 수신자 목록을 조회합니다.")
     @PrivacyAccess("SMS 수신자 목록(수신 전화번호)")
     @GetMapping("/{smsTrsmSn}/recipients")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#getSmsRecipients')")
     public ResponseEntity<ApiResponse<List<SmsRecptnDto>>> getSmsRecipients(
             @Parameter(description = "SMS 전송 일련번호") @PathVariable Long smsTrsmSn) {
         return ResponseEntity.ok(ApiResponse.success(smsService.getSmsRecipients(smsTrsmSn)));
@@ -90,6 +94,7 @@ public class SmsApiController {
 
     @Operation(summary = "SMS 발송", description = "새로운 SMS를 발송합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#sendSms')")
     public ResponseEntity<ApiResponse<Long>> sendSms(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody SmsDto smsDto) {

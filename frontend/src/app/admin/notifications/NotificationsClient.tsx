@@ -6,7 +6,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { SmartNotificationHub } from '@/app/components/ui/smart-notification-hub';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { NotificationDispatchDialog } from './NotificationDispatchDialog';
 
 /**
@@ -18,12 +18,12 @@ import { NotificationDispatchDialog } from './NotificationDispatchDialog';
  * query 를 읽거나 쓰지 않는다.
  *
  * [2026-09-06 DEC-OPS-042] 관리자 발송을 실제 기능으로 승격했다 — '알림 보내기' 는 라우트 게이트와 같은 역할 집합
- * (isAdministrativeRole, DEC-OPS-023 ②)에만 보이고, 다이얼로그는 열릴 때만 마운트한다(DEC-OPS-037 과 같은 방식).
+ * (NOTI_DISPATCH 기능권한)에만 보이고, 다이얼로그는 열릴 때만 마운트한다(DEC-OPS-037 과 같은 방식).
  * 수신자는 공용 피커로 고르고 서버(`/admin/notifications/dispatch`)가 존재를 확인한 뒤 사람마다 알림을 만든다.
  */
 export default function NotificationsClient() {
   const { user } = useAuth();
-  const canDispatch = isAdministrativeRole(user?.role);
+  const canDispatch = canPermission(user, 'NOTI_DISPATCH');
   const [isDispatchOpen, setDispatchOpen] = useState(false);
 
   return (

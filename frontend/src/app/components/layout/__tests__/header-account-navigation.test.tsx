@@ -64,8 +64,8 @@ const headMenus: MenuInfo[] = [
   },
 ];
 
-function renderHeader(user: UserInfo | null, menus: MenuInfo[] = headMenus) {
-  testState.user = user;
+function renderHeader(user: (Omit<UserInfo, 'groups' | 'permissions' | 'authorizationVersion'> & Partial<Pick<UserInfo, 'groups' | 'permissions' | 'authorizationVersion'>>) | null, menus: MenuInfo[] = headMenus) {
+  testState.user = user ? { groups: [], permissions: [], authorizationVersion: 'v1', ...user } : null;
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
@@ -128,12 +128,19 @@ describe('Header account navigation authorization', () => {
     expect(queryAccountLink('/admin/system/menus')).not.toBeInTheDocument();
   });
 
-  it.each(['ADMIN', 'SYSTEM', 'ROLE_ADMIN', 'ROLE_SYSTEM'])('명시적 관리자 역할 %s에는 관리자 전용 링크를 제공한다', async (role) => {
+  it.each(['ADMIN', 'SYSTEM', 'ROLE_ADMIN', 'ROLE_SYSTEM'])('legacy role %s alone does not grant menu administration', async (role) => {
     renderHeader({ id: `${role.toLowerCase()}-user`, name: '관리 사용자', role, userSe: 'USR' });
 
     await openAccountMenu();
+    expect(queryAccountLink('/admin/system/menus')).not.toBeInTheDocument();
+  });
 
-    expect(screen.getByText('관리자')).toBeInTheDocument();
+  it('provides menu navigation from an explicit permission independently of role', async () => {
+    renderHeader({ id: 'menu-reader', name: '메뉴 조회 사용자', role: 'USER', permissions: ['MENU_READ'], authorizationVersion: 'v2' });
+
+    await openAccountMenu();
+
+    expect(screen.getByText('사용자')).toBeInTheDocument();
     /*
       [2026-09-08 PD-MYPG-001] '마이페이지 환경 설정' 링크를 걷었다 — 그 화면과 API 를 함께
       제거했기 때문이다. 관리자 전용 링크 노출 계약 자체는 시스템 메뉴 관리로 계속 검증한다.

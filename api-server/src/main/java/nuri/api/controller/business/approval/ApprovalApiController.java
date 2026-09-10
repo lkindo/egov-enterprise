@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Approval", description = "Unified Electronic Approval APIs")
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/approvals")
 @RequiredArgsConstructor
@@ -35,6 +34,7 @@ public class ApprovalApiController {
     @Operation(summary = "Get Pending Approvals (Inbox)",
             description = "결재자 본인에게 온 결재 중 **대기(신청) 상태**만 조회합니다. 처리 완료 건은 제외됩니다.")
     @GetMapping("/pending")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getPending')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getPending(
             @LoginUser CustomUserDetails userDetails,
             Pageable pageable) {
@@ -49,6 +49,7 @@ public class ApprovalApiController {
     @Operation(summary = "Get My Submitted Approvals",
             description = "내가 신청자인 결재 목록입니다(대기·승인·반려 전부). 결재자로서 처리한 이력은 /processed 입니다.")
     @GetMapping("/my")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getMyHistory')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getMyHistory(
             @LoginUser CustomUserDetails userDetails,
             Pageable pageable) {
@@ -59,6 +60,7 @@ public class ApprovalApiController {
     @Operation(summary = "Get Approvals I Processed",
             description = "결재자 본인이 이미 **승인·반려한** 결재만 조회합니다. 대기 건은 /pending 입니다.")
     @GetMapping("/processed")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getProcessed')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getProcessed(
             @LoginUser CustomUserDetails userDetails,
             Pageable pageable) {
@@ -69,6 +71,7 @@ public class ApprovalApiController {
     @Operation(summary = "Get Approval Task Types",
             description = "기안 시 고르는 업무 구분(공통코드 COM075 의 사용 중 상세코드)입니다. 등록된 코드가 없으면 빈 목록입니다.")
     @GetMapping("/task-types")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getTaskTypes')")
     public ResponseEntity<ApiResponse<java.util.List<nuri.business.service.code.dto.CommonCodeDto>>> getTaskTypes() {
         return ResponseEntity.ok(ApiResponse.success(approvalService.getTaskTypes()));
     }
@@ -82,6 +85,7 @@ public class ApprovalApiController {
     @Operation(summary = "Create Approval Draft",
             description = "현재 사용자를 신청자로 결재를 상신합니다. 업무 구분은 /task-types 의 코드여야 하고 결재자는 사용자 검색의 esntlId 입니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApproval')")
     public ResponseEntity<ApiResponse<Long>> createApproval(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody nuri.api.controller.business.approval.dto.ApprovalDraftRequest request) {
@@ -100,6 +104,7 @@ public class ApprovalApiController {
 
     @Operation(summary = "Confirm Approval (Approve/Reject)")
     @PutMapping("/{id}/confirm")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#confirm')")
     public ResponseEntity<ApiResponse<Void>> confirm(
             @PathVariable Long id,
             @Valid @RequestBody ApprovalConfirmRequest request) {
@@ -121,6 +126,7 @@ public class ApprovalApiController {
             description = "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. "
                     + "신청자 본인만 가능하며 관리자도 대리 취소할 수 없습니다.")
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#cancelApproval')")
     public ResponseEntity<ApiResponse<Void>> cancelApproval(@PathVariable Long id) {
         approvalService.deleteInformalSanction(id);
         return ResponseEntity.ok(ApiResponse.success(null));

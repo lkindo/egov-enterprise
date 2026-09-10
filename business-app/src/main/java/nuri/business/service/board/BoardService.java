@@ -269,7 +269,7 @@ public class BoardService extends BaseAbstractService {
                         return;
                 }
                 // 관리자는 다른 열람 경로와 같은 이유로 통과한다(운영·감사). role hierarchy 로 SYSTEM 포함.
-                if (SecurityUtil.isAdmin()) {
+                if (SecurityUtil.hasPermission("BOARD_READ_ALL")) {
                         return;
                 }
                 String esntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
@@ -292,8 +292,7 @@ public class BoardService extends BaseAbstractService {
         }
 
         private void bindCurrentViewerVisibility(BoardSearchCondition condition) {
-                boolean secretPostAdminOverride = SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN)
-                                || SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM);
+                boolean secretPostAdminOverride = SecurityUtil.hasPermission("BOARD_READ_ALL");
                 condition.setSecretPostAdminOverride(secretPostAdminOverride);
                 condition.setViewerEsntlId(secretPostAdminOverride
                                 ? null
@@ -483,7 +482,7 @@ public class BoardService extends BaseAbstractService {
                 //   · 비활성 게시판(BoardMaster.useYn='N')은 완화하지 않는다 — 별개 결정이다.
                 //   · hasRole("ADMIN") 은 role hierarchy 로 SYSTEM 을 포함한다(백엔드 헌법 제8조 2항).
                 BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
-                                .or(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")
+                                .or(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")
                                                 ? boardRepository.findArticleDetailIncludingDeleted(bbsId, pstSn)
                                                 : java.util.Optional.empty())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
@@ -492,7 +491,7 @@ public class BoardService extends BaseAbstractService {
                 // UserDetails.getUsername() (= esntlId)으로 고정되므로 같은 축의 owner-or-admin 가드를 쓴다.
                 // 비밀번호 검증 입력/계약이 없는 상세 API에서 저장 비밀번호를 임의로 재사용하지 않는다.
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
-                        nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(detail.getUserId());
+                        nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
                 }
 
                 // Redis 기반 쓰기 지연 처리
@@ -516,7 +515,7 @@ public class BoardService extends BaseAbstractService {
                 BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
-                        SecurityUtil.assertOwnerOrAdminByEsntlId(detail.getUserId());
+                        SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
                 }
         }
 
@@ -577,7 +576,7 @@ public class BoardService extends BaseAbstractService {
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
-                nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(board.getUserId());
+                nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL");
                 return board;
         }
 
@@ -667,7 +666,7 @@ public class BoardService extends BaseAbstractService {
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
-                nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(board.getUserId());
+                nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL");
 
                 board.delete();
         }

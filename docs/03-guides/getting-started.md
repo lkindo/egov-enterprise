@@ -120,14 +120,14 @@ pnpm -C frontend exec tsc --noEmit        # 프론트엔드 타입 무결성
 ./scripts/generate-domain.ps1 -DomainName "product" -FieldName "title"
 ```
 
-> `business-app`에 Entity(`BaseEntity` 상속)·Dto·SearchDto·Repository·Service·Controller 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장.
+> `business-app`에 Entity(`BaseEntity` 상속)·Dto·Repository·Service와 `api-server` Controller 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장.
 
-> 스캐폴드는 명시적 CRUD를 생성한다. Service는 클래스레벨 `@Transactional(readOnly = true)`와 쓰기 메서드 트랜잭션을, Controller는 `api-server` 배치와 읽기 `@Authenticated`/쓰기 `@AdminOrSystem` 관례를 직접 생성한다. Flyway DDL은 버전·표준용어 충돌을 피하려고 파일로 쓰지 않고 검토용 초안만 출력한다.
+> 스캐폴드는 명시적 CRUD를 생성한다. Service는 클래스레벨 `@Transactional(readOnly = true)`와 쓰기 메서드 트랜잭션을, Controller는 `api-server`에 배치한다. 정확한 handler `@PreAuthorize` 가드를 생성하지만, 실제 기능 카탈로그·operation binding과 기본 그룹 부여는 자동 등록하지 않는다. 도메인 정책을 검토 등록하기 전에는 요청이 거부되고 인가 린터도 red다. Flyway DDL은 버전·표준용어 충돌을 피하려고 파일로 쓰지 않고 검토용 초안만 출력한다.
 > 생성 직후에도 도메인별 소유권·인가와 표준 용어는 사람이 확정해야 하며, `./gradlew clean compileJava compileTestJava`로 검증한다.
 
 #### 5.2.1 컨트롤러·서비스 작성 관례 (실존 코드 기준)
 
-아래는 **저장소에 실제로 있는 코드에서 발췌·요약**한 것이다. 원본을 직접 열어 대조할 것.
+아래는 실존 코드 관례를 상품 도메인으로 옮긴 예시다. `ProductApiController`와 `PRODUCT_UPDATE_ALL`은 예시이며, 사용할 실제 기능 코드와 각 HTTP method/path/handler를 [인가 원장](../../config/governance/authorization-policies.json)에 등록한 뒤 생성물을 갱신해야 한다. 미등록 경로는 거부된다.
 
 - 참조 컨트롤러: [`DeptJobApiController`](../../api-server/src/main/java/nuri/api/controller/business/smarttoolkit/DeptJobApiController.java)(인가·로그인 주체 주입 포함), [`AddressBookApiController`](../../api-server/src/main/java/nuri/api/controller/business/addressbook/AddressBookApiController.java)(사용자 소유권 CRUD)
 - 참조 서비스: [`DeptJobService`](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java)(채번·소유권 가드), [`AddressBookService`](../../business-app/src/main/java/nuri/business/service/addressbook/AddressBookService.java)(명시 CRUD·소유권)
@@ -145,6 +145,7 @@ public class ProductApiController {
 
     @Operation(summary = "상품 목록 조회")
     @GetMapping
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.ProductApiController#getProducts')")
     public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getProducts(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -153,7 +154,7 @@ public class ProductApiController {
     }
 
     @Operation(summary = "상품 등록")
-    @PreAuthorize("isAuthenticated()")                          // 또는 @AdminOnly / @AdminOrSystem
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.ProductApiController#createProduct')")
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createProduct(
             @LoginUser CustomUserDetails userDetails,           // 로그인 주체 주입
@@ -169,15 +170,13 @@ public class ProductApiController {
 | 응답은 **항상** `ResponseEntity<ApiResponse<T>>` | `nuri.foundation.core.response.ApiResponse` — `ApiResponse.success(data)` | BE 헌법 제6조 |
 | 페이징 응답은 `PageResponse.of(page)` 로 감싼다 | `nuri.foundation.core.response.PageResponse` | BE 헌법 제6조 |
 | Entity 를 반환하지 않는다 (DTO 전용) | `ArchitectureTest.controller_should_not_depend_on_entity`(ArchUnit) | BE 헌법 제3조 |
-| 비공개 읽기·쓰기에 명시적 인가 경계 필수 | `@Authenticated`·`@AdminOnly`·`@AdminOrSystem`(`nuri.foundation.security.annotation`) 메타 애노테이션 사용 가능 | BE 헌법 제8조 1항 |
+| 비공개 읽기·쓰기에 명시적 인가 경계 필수 | `@PreAuthorize("@permissionPolicy.allowed(authentication, '정규클래스#메서드')")`와 원장의 정확한 기능 코드 | BE 헌법 제8조 1항 |
 | 로그인 주체는 `@LoginUser CustomUserDetails` 로 받는다 | `nuri.business.security.annotation.LoginUser` | — |
 | 요청 본문 검증은 `@Valid @RequestBody` | jakarta validation | — |
 
-> 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 객체 소유권 의미까지 자동 판정하지는 않는다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가 대상이 아닌 읽기·쓰기 엔드포인트에 명시적 인가 애노테이션이 없으면 실패시킨다. 현 스캐폴드는 읽기에 `@Authenticated`, 쓰기에 `@AdminOrSystem`을 생성하므로 도메인 정책에 맞게 조정하되 제거하지 말 것.
+> `SecurityAuthAnnotationLinterTest`는 실제 MVC method/path/handler 전체 집합과 검토된 `operationBindings`, 각 handler의 정확한 가드를 대조한다. 등록된 서비스 가드의 기능 코드와 helper 인자도 검사한다. `SecurePathsDeclarationSyncLinterTest`는 카탈로그·런타임 생성물과 실제 필터 연결을 확인한다. 검사 범위나 최소 커버리지를 줄여 새 경로를 통과시키지 않는다.
 >
-> ⚠ **집행 범위를 정확히 알아 둘 것.** Test#1은 패키지 skip 없이 전 컨트롤러의 읽기·쓰기를 순회하고 ① 공개 화이트리스트 ② 인가 애노테이션/메타 애노테이션 존재 ③ `rbac.db-auth.secure-paths`·DB 프로그램 URL 매칭 중 하나를 요구한다. Test#2는 쓰기만 보고 `/api/v1/admin/`을 URL 시큐리티에 위임한다.
->
-> 그래서 **"모든 컨트롤러를 순회한다"는 참이지만 "인가 의미까지 모두 검증한다"는 거짓**이다. 신규 경로가 `secure-paths`에서 빠지고 인가 애노테이션도 없으면 린터가 위반으로 잡으므로 조용히 통과하지 않는다. 다만 ②는 `@PreAuthorize("isAuthenticated()")`처럼 IDOR 방어력이 없는 애노테이션도 존재 조건을 만족하므로, 읽기·사용자 소유 데이터는 서비스 계층 소유권 가드를 별도로 붙여야 한다. 최신 범위는 항상 린터 javadoc(`SecurityAuthAnnotationLinterTest` 클래스 주석)을 SSOT 로 삼을 것.
+> 이 검사는 소유권·참여 관계의 모든 분기를 증명하지 않는다. 사용자 소유 데이터와 커뮤니티 첨부처럼 관계가 중요한 기능은 실제 서비스 부정 테스트를 함께 작성한다. [권한 단순화 설계](../02-architecture/authorization-simplification-design.md)와 [보안 실행 가이드](security-hardening-playbook.md)에 운영 계약과 검증 경계를 정리했다.
 
 **Service** — 재사용 admin 코어면 `business-core`, 프로젝트 고유 도메인이면 `business-app`(BE 헌법 제1조).
 
@@ -208,7 +207,7 @@ public class ProductService extends BaseAbstractService {
     public void updateProduct(String id, ProductDto dto) {
         Product entity = productRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());   // IDOR 방어(서비스 계층 재검증)
+        SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "PRODUCT_UPDATE_ALL");   // IDOR 방어(서비스 계층 재검증)
         entity.update(dto.getTitle() /* ... */);                   // 더티 체킹 — save() 재호출 불필요
     }
 }
@@ -219,7 +218,7 @@ public class ProductService extends BaseAbstractService {
 | 클래스에 `@Transactional(readOnly = true)`, 쓰기 메서드만 `@Transactional` | `ServiceReadOnlyTransactionalLinterTest`(api-server 하네스)가 신규 `@Service` 누락을 빌드 실패 처리 | BE 헌법 제9조 1항 |
 | Entity↔DTO 변환은 **MapStruct** `@Mapper(componentModel = "spring")` | 예: `DeptJobMapper` — 수기 `from()` 대체 | README §프로젝트 구조 |
 | 미존재 리소스는 `new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND)` → 전역 핸들러가 404 변환 | `GlobalExceptionHandler` | BE 헌법 제7조 |
-| 소유권 재검증은 `SecurityUtil.assertOwnerOrAdmin(...)` / `assertAdmin()` | `nuri.business.security.util.SecurityUtil` | BE 헌법 제8조 |
+| 소유권 재검증은 `SecurityUtil.assertOwnerOrPermission(owner, "정확한_우회_기능")` / `assertPermission("정확한_기능")`; owner-only는 `assertOwner` 유지 | `nuri.business.security.util.SecurityUtil` | BE 헌법 제8조 |
 | 소유자 축(`loginId` vs `esntlId`)을 **대상 컬럼이 실제 저장하는 축과 일치**시킨다 | `IdentityAxisLinterTest` 가 `getCurrentUserId()` 사용을 차단 | BE 헌법 제8조 2항 · [identity-model-guide.md](identity-model-guide.md) |
 | 상태 전이 로직은 엔티티 메서드(`entity.update(...)`)에 캡슐화 | — | BE 헌법 제5조 |
 | 공통 가드(`required`/`notBlank`/`toPage`)는 `BaseAbstractService` 상속으로 사용 | `business-core/.../core/service/BaseAbstractService.java` | — |
@@ -238,7 +237,7 @@ public class ProductService extends BaseAbstractService {
 
 ### 6.2 RBAC와 소유권
 
-DB URL 인가는 `DbUrlAuthorizationManager`, 세부 업무 규칙은 보안 애노테이션과 서비스 소유권 가드, 메뉴 가시성은 DB 매핑이 담당한다. 어느 한 계층의 green이 다른 계층의 올바른 인가 의미를 대신하지 않는다. 개인 데이터는 저장된 소유자 축까지 확인한다.
+기능 카탈로그·HTTP method/path/handler 원장과 DB의 복수 그룹·typed grant에서 현재 사용자 권한을 계산한다. HTTP와 메서드는 같은 기능 권한을 확인하고, 서비스의 소유자·참여자·개인정보 제한은 계속 적용한다. NAVIGATION 부여는 메뉴 표시만 허용한다. 핵심 3테이블과 원자적 감사 1테이블의 구조는 [설계](../02-architecture/authorization-simplification-design.md), 운영 DB 사전 검증과 전환은 [실행 절차](../04-operations/authorization-cutover-runbook.md)를 따른다. 로컬 검증은 OCI 적용 완료의 증거가 아니다.
 
 ### 6.3 단일 테넌트 전제
 

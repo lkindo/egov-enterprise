@@ -17,6 +17,7 @@ const password = process.env.TEST_PASSWORD;
 if (!username || !password) throw new Error('Supply disposable seed credentials through TEST_USERNAME/TEST_PASSWORD');
 const name = `egov-readiness-${randomBytes(6).toString('hex')}`;
 const label = 'readiness-followups';
+const databaseName = 'authz_e2e_readiness';
 const dbPassword = randomBytes(24).toString('hex');
 const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java') : 'java';
 const k6 = process.env.K6_BINARY || 'k6';
@@ -35,7 +36,7 @@ function assertOwned() {
 }
 function sql(statement) {
   assertOwned();
-  return docker(['exec', name, 'psql', '-U', 'drill', '-d', 'drill', '-At', '-v', 'ON_ERROR_STOP=1', '-c', statement]).trim();
+  return docker(['exec', name, 'psql', '-U', 'drill', '-d', databaseName, '-At', '-v', 'ON_ERROR_STOP=1', '-c', statement]).trim();
 }
 async function waitUntil(predicate, timeout = 60000) {
   const deadline = Date.now() + timeout;
@@ -78,20 +79,22 @@ function runK6(scenario) {
 try {
   await assertFreePort(8080);
   docker(['run', '-d', '--rm', '--name', name, '--label', `egov.task=${label}`, '-p', '127.0.0.1::5432',
-    '-e', 'POSTGRES_PASSWORD', '-e', 'POSTGRES_USER=drill', '-e', 'POSTGRES_DB=drill', 'postgres:17-alpine'],
+    '-e', 'POSTGRES_PASSWORD', '-e', 'POSTGRES_USER=drill', '-e', `POSTGRES_DB=${databaseName}`, 'postgres:17-alpine'],
   { env: { ...process.env, POSTGRES_PASSWORD: dbPassword } });
   dbCreated = true;
-  await waitUntil(() => { docker(['exec', name, 'pg_isready', '-U', 'drill', '-d', 'drill']); return true; });
+  await waitUntil(() => { docker(['exec', name, 'pg_isready', '-U', 'drill', '-d', databaseName]); return true; });
   const port = JSON.parse(docker(['inspect', '--format', '{{json .NetworkSettings.Ports}}', name]))['5432/tcp'][0].HostPort;
   const args = path.join(output, 'readiness-java.args');
   writeFileSync(args, `-cp\n"${classpath.replaceAll('\\', '/')}"\nnuri.ApiServerApplication\n`);
   const inheritedEnvironment = Object.fromEntries(Object.entries(process.env)
     .filter(([key]) => !/^(SPRING_|DB_|NURI_|GLOBALS_|JWT_|ALGORITHM_|MAIL_|SMS_|MANAGEMENT_)/i.test(key)));
   const environment = {
-    ...inheritedEnvironment, DB_URL: `jdbc:postgresql://127.0.0.1:${port}/drill?socketTimeout=3&connectTimeout=3&ApplicationName=readiness-api`,
+    ...inheritedEnvironment, DB_URL: `jdbc:postgresql://127.0.0.1:${port}/${databaseName}?socketTimeout=3&connectTimeout=3&ApplicationName=readiness-api`,
     DB_USERNAME: 'drill', DB_PASSWORD: dbPassword, SPRING_PROFILES_ACTIVE: 'e2e', SERVER_ADDRESS: '127.0.0.1', SERVER_PORT: '8080',
     ALGORITHM_KEY: randomBytes(24).toString('hex'), JWT_SECRET: randomBytes(64).toString('base64'),
     NURI_LOG_RETENTION_ENABLED: 'false', NURI_ATTACHMENT_INTEGRITY_ENABLED: 'false',
+    NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true',
+    NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
     GLOBALS_FILE_STOREPATH: path.join(output, 'runtime-uploads'),
     SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: '1000',
   };
@@ -139,7 +142,7 @@ try {
   const control = await requestUsers();
   if (control.status !== 200 || !control.validPage) throw new Error('Recovery control request failed');
   assertOwned();
-  locker = spawn('docker', ['exec', '-i', name, 'psql', '-U', 'drill', '-d', 'drill', '-At', '-v', 'ON_ERROR_STOP=1'],
+  locker = spawn('docker', ['exec', '-i', name, 'psql', '-U', 'drill', '-d', databaseName, '-At', '-v', 'ON_ERROR_STOP=1'],
     { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
   let lockReady = false;
   locker.stdout.on('data', chunk => { if (chunk.toString().includes('READINESS_LOCKED')) lockReady = true; });

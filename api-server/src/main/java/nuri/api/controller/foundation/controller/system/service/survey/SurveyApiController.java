@@ -49,8 +49,8 @@ public class SurveyApiController {
     // --- Templates ---
 
     @Operation(summary = "설문 템플릿 목록 페이징 조회")
-    @AdminOrSystem
     @GetMapping("/templates")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getTemplates')")
     public ResponseEntity<ApiResponse<PageResponse<SurveyTemplateDto>>> getTemplates(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -59,15 +59,15 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 템플릿 상세 조회")
-    @AdminOrSystem
     @GetMapping("/templates/{srvyTmpltSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getTemplate')")
     public ResponseEntity<ApiResponse<SurveyTemplateDto>> getTemplate(@PathVariable Long srvyTmpltSn) {
         return ResponseEntity.ok(ApiResponse.success(surveyService.getTmplat(srvyTmpltSn)));
     }
 
     @Operation(summary = "설문 템플릿 등록")
-    @AdminOrSystem
     @PostMapping("/templates")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertTemplate')")
     public ResponseEntity<ApiResponse<Void>> insertTemplate(@Valid @RequestBody SurveyTemplateDto dto) {
         surveyService.insertTmplat(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -76,8 +76,8 @@ public class SurveyApiController {
     // --- Survey Info ---
 
     @Operation(summary = "설문 정보 목록 페이징 조회")
-    @Authenticated
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getSurveys')")
     public ResponseEntity<ApiResponse<PageResponse<SurveyInfoDto>>> getSurveys(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -86,23 +86,23 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 정보 상세 조회")
-    @Authenticated
     @GetMapping("/{srvySn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getSurvey')")
     public ResponseEntity<ApiResponse<SurveyInfoDto>> getSurvey(@PathVariable Long srvySn) {
         return ResponseEntity.ok(ApiResponse.success(surveyService.getSurvey(srvySn)));
     }
 
     @Operation(summary = "설문 정보 등록")
-    @AdminOrSystem
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertSurvey')")
     public ResponseEntity<ApiResponse<Void>> insertSurvey(@Valid @RequestBody SurveyInfoDto dto) {
         surveyService.insertSurvey(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 정보 수정")
-    @AdminOrSystem
     @PutMapping("/{srvySn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateSurvey')")
     public ResponseEntity<ApiResponse<Void>> updateSurvey(@PathVariable Long srvySn, @Valid @RequestBody SurveyInfoDto dto) {
         dto.setSrvySn(srvySn);
         surveyService.updateSurvey(dto);
@@ -110,16 +110,16 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 정보 삭제")
-    @AdminOrSystem
     @DeleteMapping("/{srvySn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteSurvey')")
     public ResponseEntity<ApiResponse<Void>> deleteSurvey(@PathVariable Long srvySn) {
         surveyService.deleteSurvey(srvySn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 템플릿 수정")
-    @AdminOrSystem
     @PutMapping("/templates/{srvyTmpltSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateTemplate')")
     public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable Long srvyTmpltSn, @Valid @RequestBody SurveyTemplateDto dto) {
         dto.setSrvyTmpltSn(srvyTmpltSn);
         surveyService.updateTmplat(dto);
@@ -127,8 +127,8 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 템플릿 삭제")
-    @AdminOrSystem
     @DeleteMapping("/templates/{srvyTmpltSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteTemplate')")
     public ResponseEntity<ApiResponse<Void>> deleteTemplate(@PathVariable Long srvyTmpltSn) {
         surveyService.deleteTmplat(srvyTmpltSn);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -137,15 +137,15 @@ public class SurveyApiController {
     // --- Questions & Items ---
 
     @Operation(summary = "설문 문항 목록 조회")
-    @Authenticated
     @GetMapping("/{srvySn}/questions")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#getQuestions')")
     public ResponseEntity<ApiResponse<List<SurveyQuestionDto>>> getQuestions(@PathVariable Long srvySn) {
         return ResponseEntity.ok(ApiResponse.success(surveyService.getQuestionList(srvySn)));
     }
 
     @Operation(summary = "설문 문항 수정")
-    @AdminOrSystem
     @PutMapping("/{srvySn}/questions/{srvyQstnSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateQuestion')")
     public ResponseEntity<ApiResponse<Void>> updateQuestion(@PathVariable Long srvySn, @PathVariable Long srvyQstnSn, @Valid @RequestBody SurveyQuestionDto dto) {
         dto.setSrvySn(srvySn);
         dto.setSrvyQstnSn(srvyQstnSn);
@@ -154,8 +154,8 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 문항 삭제")
-    @AdminOrSystem
     @DeleteMapping("/{srvySn}/questions/{srvyQstnSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteQuestion')")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
             @PathVariable Long srvySn,
             @PathVariable Long srvyQstnSn) {
@@ -164,8 +164,8 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 문항 등록")
-    @AdminOrSystem
     @PostMapping("/{srvySn}/questions")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertQuestion')")
     public ResponseEntity<ApiResponse<Void>> insertQuestion(@PathVariable Long srvySn,
             @Valid @RequestBody SurveyQuestionDto dto) {
         dto.setSrvySn(srvySn);
@@ -174,8 +174,8 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 항목 수정")
-    @AdminOrSystem
     @PutMapping("/questions/items/{srvyArtclSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateItem')")
     public ResponseEntity<ApiResponse<Void>> updateItem(@PathVariable Long srvyArtclSn, @Valid @RequestBody SurveyArticleDto dto) {
         dto.setSrvyArtclSn(srvyArtclSn);
         surveyService.updateItem(dto);
@@ -183,16 +183,16 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 항목 삭제")
-    @AdminOrSystem
     @DeleteMapping("/questions/items/{srvyArtclSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem')")
     public ResponseEntity<ApiResponse<Void>> deleteItem(@PathVariable Long srvyArtclSn) {
         surveyService.deleteItem(srvyArtclSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 항목 등록")
-    @AdminOrSystem
     @PostMapping("/questions/{srvyQstnSn}/items")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertItem')")
     public ResponseEntity<ApiResponse<Void>> insertItem(@PathVariable Long srvyQstnSn, @Valid @RequestBody SurveyArticleDto dto) {
         dto.setSrvyQstnSn(srvyQstnSn);
         surveyService.insertItem(dto);

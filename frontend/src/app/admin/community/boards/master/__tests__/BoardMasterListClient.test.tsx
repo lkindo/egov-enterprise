@@ -59,7 +59,7 @@ vi.mock('@/services/business/user/MenuService', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { role: 'ADMIN' } }),
+  useAuth: () => ({ user: { role: 'ADMIN', permissions: ['BBS_MST_READ', 'BBS_MST_CREATE', 'BBS_MST_UPDATE', 'BBS_MST_DELETE'], authorizationVersion: 'v1' } }),
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({

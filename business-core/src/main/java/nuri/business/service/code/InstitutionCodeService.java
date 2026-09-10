@@ -161,7 +161,7 @@ public class InstitutionCodeService extends BaseAbstractService {
     }
 
     @Transactional
-    @AdminOnly
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('INST_CODE_CREATE')")
     public void insertInstitutionCode(InstitutionCodeDto dto) {
         if (institutionCodeRepository.existsById(dto.getInstCd())) {
             throw new BusinessException(CodeErrorCode.DUPLICATE_CODE);
@@ -195,7 +195,7 @@ public class InstitutionCodeService extends BaseAbstractService {
     }
 
     @Transactional
-    @AdminOnly
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('INST_CODE_UPDATE')")
     public void updateInstitutionCode(InstitutionCodeDto dto) {
         institutionCodeRepository.findById(dto.getInstCd()).ifPresent(entity -> {
             entity.update(dto.getAllInstNm(), dto.getLwstInstNm(), dto.getInstAbbrNm(), dto.getOdr(), dto.getOrd(),
@@ -207,7 +207,7 @@ public class InstitutionCodeService extends BaseAbstractService {
     }
 
     @Transactional
-    @AdminOnly
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('INST_CODE_DELETE')")
     public void deleteInstitutionCode(InstitutionCodeDto dto) {
         institutionCodeRepository.deleteById(dto.getInstCd());
     }

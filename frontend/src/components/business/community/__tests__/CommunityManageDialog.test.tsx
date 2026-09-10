@@ -13,6 +13,7 @@ import { CommunityManageDialog } from '../CommunityManageDialog';
  * 폐쇄는 확인 후 한 번만 부르고 pending 동안 disabled·aria-busy 이며 실패는 토스트로 드러난다.
  */
 const mocks = vi.hoisted(() => ({
+  permissions: [] as string[],
   getCommunityList: vi.fn(),
   createCommunity: vi.fn(),
   updateCommunity: vi.fn(),
@@ -21,6 +22,10 @@ const mocks = vi.hoisted(() => ({
   getMembers: vi.fn(),
   confirm: vi.fn(),
   toast: vi.fn(),
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { permissions: mocks.permissions, authorizationVersion: 'v1' } }),
 }));
 
 vi.mock('next/dynamic', () => ({
@@ -78,6 +83,7 @@ function renderDialog() {
 describe('CommunityManageDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.permissions = ['COMMUNITY_READ_ALL', 'COMMUNITY_CREATE_ALL', 'COMMUNITY_UPDATE_ALL', 'COMMUNITY_DELETE_ALL'];
     mocks.getCommunityList.mockResolvedValue({ list: communities, total: 2, page: 0, size: 10, totalPage: 1 });
     mocks.getTemplateList.mockResolvedValue([{ tmpltId: 'TMPL01', tmpltNm: '기본 템플릿' }]);
     mocks.createCommunity.mockResolvedValue({ cmntySn: 13 });
@@ -85,6 +91,18 @@ describe('CommunityManageDialog', () => {
     mocks.deleteCommunity.mockResolvedValue(undefined);
     mocks.getMembers.mockResolvedValue({ list: [], total: 0, page: 0, size: 20, totalPage: 1 });
     mocks.confirm.mockResolvedValue(true);
+  });
+
+  it('조회 권한만 있으면 등록·수정·폐쇄를 표시하지 않는다', async () => {
+    mocks.permissions = ['COMMUNITY_READ_ALL'];
+    renderDialog();
+    await screen.findByRole('list', { name: '커뮤니티 목록' });
+    expect(screen.queryByRole('form', { name: '커뮤니티 등록' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '독서 모임 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '독서 모임 폐쇄' })).not.toBeInTheDocument();
+    expect(mocks.createCommunity).not.toHaveBeenCalled();
+    expect(mocks.updateCommunity).not.toHaveBeenCalled();
+    expect(mocks.deleteCommunity).not.toHaveBeenCalled();
   });
 
   // [2026-09-06 DEC-OPS-043] 행의 '회원 관리' 가 같은 다이얼로그 안에서 회원 패널로 바꿔 끼우고, 돌아오면 목록·폼이 복원된다.

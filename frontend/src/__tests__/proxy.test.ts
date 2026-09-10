@@ -1,7 +1,8 @@
 // @vitest-environment node
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 import type { NextRequest } from 'next/server';
+import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
 
 /**
  * Proxy 인증 게이트 회귀 테스트.
@@ -30,7 +31,7 @@ function signToken(
   alg: 'HS256' | 'HS384' | 'HS512' = 'HS384'
 ): string {
   const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
-  const data = `${b64({ alg, typ: 'JWT' })}.${b64(payload)}`;
+  const data = `${b64({ alg, typ: 'JWT' })}.${b64({ typ: 'access', ...payload })}`;
   const sig = createHmac(HASH[alg], Buffer.from(secret, 'utf8')).update(data).digest('base64url');
   return `${data}.${sig}`;
 }
@@ -41,6 +42,14 @@ const pastExp = () => Math.floor(Date.now() / 1000) - 3600;
 let proxy: (req: NextRequest) => Promise<Response>;
 let NextRequestCtor: typeof NextRequest;
 const originalSecret = process.env.JWT_SECRET;
+const fetchMock = vi.fn();
+
+beforeEach(() => {
+  fetchMock.mockReset().mockResolvedValue(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
+    id: 'webmaster', groups: ['USER'], permissions: [], authorizationVersion: 'v1',
+  } })));
+  vi.stubGlobal('fetch', fetchMock);
+});
 
 beforeAll(async () => {
   process.env.JWT_SECRET = SECRET;
@@ -50,6 +59,7 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
+  vi.unstubAllGlobals();
   if (originalSecret === undefined) delete process.env.JWT_SECRET;
   else process.env.JWT_SECRET = originalSecret;
 });
@@ -120,5 +130,34 @@ describe('proxy 인증 게이트', () => {
 
   it('로그인 페이지 자체는 게이트를 적용하지 않는다(리다이렉트 루프 방지)', async () => {
     expect(redirectedToLogin(await proxy(requestWith(null, '/login')))).toBe(false);
+  });
+
+  it('an old ADMIN claim cannot reopen a page after the server revokes its permission', async () => {
+    const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET);
+    const response = await proxy(requestWith(token, '/admin/system/menus'));
+    expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
+    expect(new URL(response.headers.get('location')!).pathname).toBe('/');
+  });
+
+  it('a current functional grant opens its page without an administrator role claim', async () => {
+    const permissions = PAGE_PERMISSIONS['/admin/system/menus'];
+    expect(permissions.length).toBeGreaterThan(0);
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
+      id: 'webmaster', groups: ['MENU_EDITOR'], permissions, authorizationVersion: 'v2',
+    } })));
+    const token = signToken({ sub: 'webmaster', role: 'USER', exp: futureExp() }, SECRET);
+    const response = await proxy(requestWith(token, '/admin/system/menus'));
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('content-security-policy')).toContain("script-src");
+  });
+
+  it.each([
+    { sub: 'webmaster', typ: 'refresh', exp: futureExp() },
+    { role: 'ADMIN', exp: futureExp() },
+    { sub: 'webmaster', role: 'ADMIN' },
+  ])('rejects the wrong token kind or incomplete signed identity before querying permissions', async (payload) => {
+    expect(redirectedToLogin(await proxy(requestWith(signToken(payload, SECRET))))).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

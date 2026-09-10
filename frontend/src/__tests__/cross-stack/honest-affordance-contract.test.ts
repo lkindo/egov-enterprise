@@ -168,13 +168,13 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
 describe('정책: 권한 벽을 일시 장애처럼 안내하지 않는다', () => {
   it('열람 실패가 권한 때문이면 기다리라고 하지 않는다', () => {
     /*
-     * 본문은 /api/v1/admin/system/policies/{type} 에서 읽는데 그 경로는 ROLE_ADMIN·ROLE_SYSTEM
-     * 전용이다. 일반 사용자에게는 영구 403 이라, '잠시 후 다시 시도' 는 끝나지 않는 새로고침을
-     * 유도한다.
+     * 정책 본문은 현재 기능권한을 요구한다. 권한 거부를 일시 장애로 안내하면
+     * 사용자가 새로고침을 반복하게 되므로, 필요한 권한을 확인하도록 안내한다.
      */
     const page = stripComments(readSrc('app/help/policies/[type]/page.tsx'));
     expect(page).toContain('403');
-    expect(page).toContain('관리자만 열람할 수 있습니다');
+    expect(page).toContain('이 정보를 열람할 권한이 필요합니다');
+    expect(page).not.toContain('관리자만 열람할 수 있습니다');
   });
 
   it('관리 허브가 이 화면을 공개 페이지라고 부르지 않는다', () => {
@@ -659,40 +659,24 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   });
 
   it('권한 삭제 안내가 서버의 정리 범위를 넘어 약속하지 않는다', () => {
-    const hub = stripComments(readSrc('app/admin/security/authority/SecurityHubClient.tsx'));
+    const hub = stripComments(readSrc('app/admin/security/authority/components/AuthorizationGroupEditor.tsx'));
     expect(hub, '권한 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('권한을 삭제하시겠습니까');
     expect(hub).not.toContain('관련 할당 정보가 모두 사라집니다');
     expect(hub, '보유자가 있으면 삭제되지 않는다는 사실을 화면이 말해야 한다').toContain('먼저 사용자 할당을 해제');
 
     const service = stripComments(
-      readRepo('business-core/src/main/java/nuri/business/service/auth/AuthorManageService.java'),
+      readRepo('business-core/src/main/java/nuri/business/service/auth/AuthorizationAdministrationService.java'),
     );
-    const start = service.indexOf('public void deleteAuthor(');
-    expect(start, 'deleteAuthor 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
-    // ⚠ [2026-08-30] 종전 종료 마커는 `indexOf('public ', start + 1)` 이었는데, deleteAuthor
-    //   다음 public 은 deleteAuthors 라 **그 사이의 private assertNoAssignedUsers 선언까지
-    //   슬라이스에 들어왔다**. 그래서 단건 삭제의 호출문만 지워도 이 단언이 green 이었다 —
-    //   메시지가 말하는 회귀를 잡지 못하는 vacuous 단언이었다(자기 검토 실측).
-    //   헬퍼 선언 직전까지만 자른다.
-    const helperAt = service.indexOf('private void assertNoAssignedUsers');
-    expect(helperAt, '보유자 확인 헬퍼가 사라졌다 — 슬라이스 기준점이 없으면 이 계약은 vacuous 하다').toBeGreaterThan(-1);
-    const body = service.slice(start, helperAt);
-    expect(body, '삭제 본문 추출이 깨졌다 — 계약이 vacuous 하다').toContain('menuAuthorityRepository');
-    /*
-     * [2026-08-29 GAP-AUTH-002] 이제 보유자가 있으면 삭제를 **차단**한다.
-     *
-     * 정리 범위를 넓히는 것(cascade delete)이 아니라 차단을 택했다 — 회수는 오삭제 시 복구가
-     * 불가능하고 인가 의미를 조용히 지운다(H3). 차단은 최악이 '삭제가 막힘' 이고 그건 정확히
-     * 드러나야 할 상황이다.
-     *
-     * 가드가 사라지면 red 다. 그리고 여전히 사용자 할당을 **삭제하지는 않는다** — 그 축이
-     * 생기면(정리 DML 승인 후) 문구와 이 계약을 함께 갱신해야 한다.
-     */
-    expect(body, '보유자 확인 가드가 사라졌다 — 삭제가 다시 조용히 끊긴 참조를 남긴다').toContain('assertNoAssignedUsers');
-    expect(
-      body,
-      '사용자 할당까지 정리하게 됐다 — 문구를 되살리고 이 계약을 갱신하라(인가 데이터 삭제이므로 결정 기록도 함께).',
-    ).not.toContain('userAuthorityRepository.delete');
+    const start = service.indexOf('public void deleteGroup(');
+    expect(start, '정규 삭제 실행 경로를 찾지 못했다').toBeGreaterThan(-1);
+    const end = service.indexOf('@Transactional', start + 1);
+    expect(end).toBeGreaterThan(start);
+    const body = service.slice(start, end);
+    expect(body).toContain('requireVersion(before.version(),expectedVersion)');
+    expect(body).toContain('RESERVED.contains(code)');
+    expect(body).toMatch(/SELECT count\(\*\) FROM tb_authrt_user_map[\s\S]*RESOURCE_IN_USE/);
+    expect(body.indexOf('RESOURCE_IN_USE')).toBeLessThan(body.indexOf('DELETE FROM tb_authrt_info'));
+    expect(body).not.toContain('DELETE FROM tb_authrt_user_map');
   });
 
   it('권한별 메뉴 화면이 계층을 실제로 가진 API 에서 가져온다', () => {

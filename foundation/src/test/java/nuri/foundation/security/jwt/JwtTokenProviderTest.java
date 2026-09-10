@@ -204,12 +204,49 @@ class JwtTokenProviderTest {
     void getAuthentication_success() {
         String token = jwtTokenProvider.createAccessToken("testuser", "ROLE_USER");
         UserDetails userDetails = mock(UserDetails.class);
+        when(userDetails.isAccountNonLocked()).thenReturn(true);
+        when(userDetails.isAccountNonExpired()).thenReturn(true);
+        when(userDetails.isCredentialsNonExpired()).thenReturn(true);
+        when(userDetails.isEnabled()).thenReturn(true);
         when(userDetails.getAuthorities()).thenReturn(Collections.emptyList());
         when(userDetailsService.loadUserByUsername("testuser")).thenReturn(userDetails);
         
         Authentication authentication = jwtTokenProvider.getAuthentication(token);
         assertThat(authentication).isNotNull();
         assertThat(authentication.getPrincipal()).isEqualTo(userDetails);
+    }
+
+    @Test
+    void existingJwtUsesCurrentPermissionsAfterRevocationInsteadOfItsRoleClaim() {
+        String token = jwtTokenProvider.createAccessToken("subject", "ROLE_ADMIN");
+        var initial = nuri.foundation.security.service.CustomUserDetails.builder()
+                .esntlId("subject").enabled(true).groups(java.util.List.of("CONTENT"))
+                .permissions(java.util.List.of("CONTENT_EDIT")).authorizationVersion("before").build();
+        var revoked = nuri.foundation.security.service.CustomUserDetails.builder()
+                .esntlId("subject").enabled(true).groups(java.util.List.of())
+                .permissions(java.util.List.of()).authorizationVersion("after").build();
+        when(userDetailsService.loadUserByUsername("subject")).thenReturn(initial, revoked);
+
+        assertThat(jwtTokenProvider.getAuthentication(token).getAuthorities())
+                .extracting(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .containsExactly("CONTENT_EDIT");
+        assertThat(jwtTokenProvider.getAuthentication(token).getAuthorities()).isEmpty();
+        org.mockito.Mockito.verify(userDetailsService, org.mockito.Mockito.times(2)).loadUserByUsername("subject");
+    }
+
+    @Test
+    void existingJwtIsRejectedWhenTheCurrentAccountIsDisabledOrLocked() {
+        String token = jwtTokenProvider.createAccessToken("subject", "ROLE_ADMIN");
+        var disabled = nuri.foundation.security.service.CustomUserDetails.builder()
+                .esntlId("subject").enabled(false).lockAt("N").build();
+        var locked = nuri.foundation.security.service.CustomUserDetails.builder()
+                .esntlId("subject").enabled(true).lockAt("Y").build();
+        when(userDetailsService.loadUserByUsername("subject")).thenReturn(disabled, locked);
+
+        assertThrows(org.springframework.security.authentication.DisabledException.class,
+                () -> jwtTokenProvider.getAuthentication(token));
+        assertThrows(org.springframework.security.authentication.LockedException.class,
+                () -> jwtTokenProvider.getAuthentication(token));
     }
 
     @Test

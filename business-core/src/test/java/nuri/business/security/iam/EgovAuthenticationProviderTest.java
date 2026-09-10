@@ -1,7 +1,8 @@
 package nuri.business.security.iam;
 
-import nuri.business.domain.auth.UserAuthorityRepository;
-import nuri.business.domain.auth.UserAuthority;
+import nuri.foundation.security.service.CustomUserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.authentication.DisabledException;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.security.service.EgovPasswordEncoder;
@@ -21,6 +22,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,7 +37,7 @@ class EgovAuthenticationProviderTest {
     private UserRepository userRepository;
 
     @Mock
-    private UserAuthorityRepository userAuthorityRepository;
+    private UserDetailsService userDetailsService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -56,7 +58,9 @@ class EgovAuthenticationProviderTest {
         // EgovPasswordEncoder도 PasswordEncoder를 구현하므로 @InjectMocks 생성자 추론은 두 mock을
         // 모호하게 매칭할 수 있다. 의존성을 명시해 표준/레거시 인코더 경계를 실행 순서와 무관하게 고정한다.
         authenticationProvider = new EgovAuthenticationProvider(
-                userRepository, userAuthorityRepository, passwordEncoder, egovPasswordEncoder);
+                userRepository, userDetailsService, passwordEncoder, egovPasswordEncoder);
+        lenient().when(userDetailsService.loadUserByUsername(anyString())).thenAnswer(invocation ->
+                principal(invocation.getArgument(0), List.of("ROLE_USER"), List.of("PROFILE_READ")));
         testUser = User.builder()
                 .userId("testuser")
                 .esntlId("USR_0000000000001")
@@ -85,19 +89,14 @@ class EgovAuthenticationProviderTest {
         when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(true);
         when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
         
-        UserAuthority userAuthority = UserAuthority.builder()
-                .scrtyDcsnTrgtId("USR_0000000000001")
-                .authrtId("ROLE_USER")
-                .build();
-        lenient().when(userAuthorityRepository.findById("USR_0000000000001")).thenReturn(Optional.of(userAuthority));
-
         // When
         Authentication result = authenticationProvider.authenticate(auth);
 
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("USR_0000000000001");
-        assertThat(result.getAuthorities()).extracting("authority").contains("ROLE_USER");
+        assertThat(result.getAuthorities()).extracting("authority").containsExactly("PROFILE_READ");
+        verify(userDetailsService).loadUserByUsername("USR_0000000000001");
         verify(userRepository).save(any(User.class)); // 재해시 + unlock 상태를 한 번에 저장
         assertThat(testUser.getPswd()).isEqualTo("{bcrypt}migrated");
         verify(passwordEncoder, never()).matches(anyString(), anyString());
@@ -303,10 +302,10 @@ class EgovAuthenticationProviderTest {
     }
 
     @Test
-    @DisplayName("인증 성공 - DB 권한(ROLE_ADMIN) 기반 역할 부여")
+    @DisplayName("인증 성공 - 공통 principal의 복수 그룹과 기능 권한을 그대로 적용")
     void authenticate_success_dbAuthorityAdmin() {
         // webmaster '특수 처리'(하드코딩 자동 ADMIN)는 보안 하드닝으로 제거됨.
-        // 현행 모델: 역할은 DB 권한 매핑(tb_user_authrt_map, esntlId 기준)에서 결정된다.
+        // 표시 enum이나 로그인 ID가 아닌 공통 UserDetailsService의 현재 권한을 적용한다.
         // Given — [P2 키 규약] User.changeUserId 제거(loginId 불변 선언)에 따라 빌더로 직접 구성
         User webmasterUser = User.builder()
                 .userId("webmaster")
@@ -319,17 +318,47 @@ class EgovAuthenticationProviderTest {
         lenient().when(userRepository.findById("webmaster")).thenReturn(Optional.of(webmasterUser));
         lenient().when(egovPasswordEncoder.matches("password", "hashedPassword", "webmaster")).thenReturn(true);
         lenient().when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
-        UserAuthority adminAuthority = UserAuthority.builder()
-                .scrtyDcsnTrgtId("USR_0000000000001")
-                .authrtId("ROLE_ADMIN")
-                .build();
-        lenient().when(userAuthorityRepository.findById("USR_0000000000001")).thenReturn(Optional.of(adminAuthority));
+        var current = principal("USR_0000000000001", List.of("ROLE_ADMIN", "SURVEY"),
+                List.of("AUTH_ASSIGN", "SURVEY_EDIT"));
+        when(userDetailsService.loadUserByUsername("USR_0000000000001")).thenReturn(current);
+        var displayRoleBefore = webmasterUser.getRole();
 
         // When
         Authentication result = authenticationProvider.authenticate(auth);
 
         // Then
-        assertThat(result.getAuthorities()).extracting("authority").contains("ROLE_ADMIN");
+        assertThat(result.getPrincipal()).isSameAs(current);
+        assertThat(result.getAuthorities()).extracting("authority").containsExactly("AUTH_ASSIGN", "SURVEY_EDIT");
+        assertThat(webmasterUser.getRole()).isEqualTo(displayRoleBefore);
+    }
+
+    @Test
+    void inactiveAccountIsRejectedBeforePasswordOrAuthorizationLookup() {
+        testUser.updateStatus("D");
+        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        assertThatThrownBy(() -> authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("testuser", "password")))
+                .isInstanceOf(DisabledException.class);
+        verifyNoInteractions(passwordEncoder, egovPasswordEncoder);
+        verify(userDetailsService, never()).loadUserByUsername(anyString());
+    }
+
+    @Test
+    void emptyCurrentGrantsDoNotAcquireFallbackAuthorities() {
+        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(true);
+        when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
+        when(userDetailsService.loadUserByUsername(testUser.getEsntlId()))
+                .thenReturn(principal(testUser.getEsntlId(), List.of(), List.of()));
+        Authentication result = authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("testuser", "password"));
+        assertThat(result.isAuthenticated()).isTrue();
+        assertThat(result.getAuthorities()).isEmpty();
+    }
+
+    private static CustomUserDetails principal(String subject, List<String> groups, List<String> permissions) {
+        return CustomUserDetails.builder().esntlId(subject).userId("testuser").enabled(true).lockAt("N")
+                .groups(groups).permissions(permissions).authorizationVersion("version-1").build();
     }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -36,6 +36,8 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
         BooleanExpression authorityJoin = user.esntlId.eq(userAuthority.scrtyDcsnTrgtId);
         if (StringUtils.hasText(authorCode)) {
             authorityJoin = authorityJoin.and(userAuthority.authrtId.eq(authorCode));
+        } else {
+            authorityJoin = authorityJoin.and(firstDisplayGroup());
         }
         var query = queryFactory
                 .select(Projections.bean(AuthorGroupProjection.class,
@@ -83,7 +85,7 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
                                 .otherwise("N").as("regYn")))
                 .from(deptManage)
                 .join(user).on(deptManage.ognzId.eq(user.ognzId))
-                .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.scrtyDcsnTrgtId))
+                .leftJoin(userAuthority).on(user.esntlId.eq(userAuthority.scrtyDcsnTrgtId).and(firstDisplayGroup()))
                 .where(deptManage.ognzId.eq(deptCode))
                 .orderBy(user.userId.asc());
 
@@ -101,6 +103,13 @@ public class UserAuthorityRepositoryImpl implements UserAuthorityRepositoryCusto
         long total = totalResult != null ? totalResult : 0L;
 
         return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
+    }
+
+    /** Retired single-group response: stable display only, one user per page row. */
+    private BooleanExpression firstDisplayGroup() {
+        var membership = new QUserAuthority("displayMembership");
+        return userAuthority.authrtId.eq(com.querydsl.jpa.JPAExpressions.select(membership.authrtId.min())
+                .from(membership).where(membership.scrtyDcsnTrgtId.eq(user.esntlId)));
     }
 
     private BooleanExpression conditionEq(String searchCondition, String searchKeyword) {

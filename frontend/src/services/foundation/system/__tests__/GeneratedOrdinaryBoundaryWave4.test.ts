@@ -20,10 +20,7 @@ import { createExternalHrOperation } from '@/types/generated-operations';
 import { smsAdminService } from '@/services/foundation/operation/SmsAdminService';
 import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
 import { manualAdminService } from '@/services/foundation/user/ManualAdminService';
-import { deptAuthorityAdminService } from '../DeptAuthorityAdminService';
 import { policyAdminService } from '../PolicyAdminService';
-import { userAuthorityAdminService } from '../UserAuthorityAdminService';
-
 const success = <T,>(data: T) => ({
   success: true as const,
   code: 'S000',
@@ -152,28 +149,6 @@ describe('foundation ordinary generated boundary wave4', () => {
       data: body,
     });
   });
-
-  it('user authority delete keeps identifiers in the generated DELETE body', async () => {
-    await userAuthorityAdminService.deleteUserAuthorities(['USER_1']);
-
-    expect(client.requestRaw).toHaveBeenCalledWith({
-      url: 'admin/system/user-authorities',
-      method: 'delete',
-      data: ['USER_1'],
-    });
-  });
-
-  it('department authority batch uses its exact generated request', async () => {
-    const body = { deptId: 'DEPT_1', authrtId: 'ROLE_ADMIN', allMembers: true };
-    await deptAuthorityAdminService.updateDeptAuthorities(body);
-
-    expect(client.requestRaw).toHaveBeenCalledWith({
-      url: 'admin/system/dept-authorities/batch',
-      method: 'post',
-      data: body,
-    });
-  });
-
   it('manual creation returns the generated numeric identifier', async () => {
     client.requestRaw.mockResolvedValueOnce(success(31));
     const body = {

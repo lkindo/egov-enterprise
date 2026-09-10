@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Plus, Settings2, BookOpen, X, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { cn } from "@/lib/utils";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { BoardPost } from '@/types/business/board';
@@ -89,7 +89,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const queryClient = useQueryClient();
  // [2026-08-28] 판정 SSOT 사용. 리터럴 비교는 SYSTEM 관리자에게 '게시판 관리' 진입점을
  //   지워 버린다(DEC-OPS-023 ②가 e2e 로 잡았던 것과 같은 결함).
- const isAdmin = isAdministrativeRole(user?.role);
+ const canReadBoardMasters = canPermission(user, 'BBS_MST_READ');
  const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
  const router = useRouter();
 
@@ -490,7 +490,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </div>
  <CardAction className="flex items-center gap-4 relative z-10">
  <>
- {isAdmin && (
+ {canReadBoardMasters && (
  <Link href="/admin/community/boards/master">
  <Button variant="outline" size="lg" className="h-14 px-8 gap-3 border-2 border-border bg-white/50 backdrop-blur-md text-foreground hover:bg-surface-inverse hover:text-white font-black shadow-xl transition-all rounded-2xl hover:-translate-y-1 active:scale-95" aria-label="게시판 관리">
  <Settings2 className="w-6 h-6" /> 게시판 관리

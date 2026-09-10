@@ -52,13 +52,13 @@ export async function POST(request: NextRequest) {
       return loginResponse(failure.body, failure.status);
     }
 
-    const { accessToken, role } = tokenResponse;
+    const { accessToken, role, groups, permissions, authorizationVersion } = tokenResponse;
     if (accessToken && role) {
 
       // Next.js Response 생성
       const nextResponse = loginResponse({
         success: true,
-        data: { role },
+        data: { role, groups, permissions, authorizationVersion },
       }, 200);
 
       // [2026-08-15] 쿠키 수명을 **토큰 수명에서 유도**한다. 종전 하드코딩 86400(24시간)은

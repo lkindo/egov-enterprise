@@ -61,6 +61,7 @@ public class LoginLogApiController {
 
     @Operation(summary = "로그인 로그 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.LoginLogApiController#getLoginLogList')")
     public ResponseEntity<ApiResponse<PageResponse<LoginLogDto>>> getLoginLogList(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
@@ -95,8 +96,8 @@ public class LoginLogApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @AdminOrSystem
     @GetMapping(value = "/export.xlsx", produces = XLSX_MEDIA_TYPE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.LoginLogApiController#exportLoginLogs')")
     public ResponseEntity<StreamingResponseBody> exportLoginLogs(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 
@@ -124,6 +125,7 @@ public class LoginLogApiController {
 
     @Operation(summary = "로그인 로그 상세 조회")
     @GetMapping("/{lgnSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.LoginLogApiController#getLoginLog')")
     public ResponseEntity<ApiResponse<LoginLogDto>> getLoginLog(
             @PathVariable("lgnSn") Long lgnSn) throws Exception {
         LoginLogDto result = loginLogManageService.selectLoginLogDetail(lgnSn);

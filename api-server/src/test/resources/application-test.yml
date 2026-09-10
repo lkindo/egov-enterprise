@@ -81,13 +81,3 @@ logging:
     org.hibernate.orm.model.mapping: DEBUG
     nuri: DEBUG
     org.springframework.boot.autoconfigure: DEBUG
-
-# RBAC DB 인가 모드 (테스트 프로필 디폴트는 false로 두어 기존 테스트 보호, 신규 격리 테스트만 활성화)
-rbac:
-  shadow:
-    enabled: true
-  db-auth:
-    enabled: false
-    secure-paths: "/api/v1/admin/**,/actuator/**,/api/v1/help,/api/v1/help/**"
-
-

@@ -56,7 +56,7 @@ class WorkReportServiceTest {
     //   종전에 가드 없이 통과하던 것이 결함이었고, 가드 도입으로 red 가 난 것이 곧 가드가 사는 증거다.
     private static void authenticateAs(String loginId, String authority) {
         CustomUserDetails principal =
-                new CustomUserDetails(loginId, "ESNTL_" + loginId, loginId, "", null, "N", authority);
+                nuri.business.support.AuthorizationTestPrincipal.principal(loginId, "ESNTL_" + loginId, authority);
         Authentication auth =
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
         SecurityContext ctx = SecurityContextHolder.createEmptyContext();

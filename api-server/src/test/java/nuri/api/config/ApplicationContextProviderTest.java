@@ -70,27 +70,10 @@ class ApplicationContextProviderTest {
   }
  
   @Test
-  void testSecurityUtilHasRoleWithRoleHierarchy() {
-    // given
-    RoleHierarchy mockRoleHierarchy = mock(RoleHierarchy.class);
-    when(mockContext.getBean(RoleHierarchy.class)).thenReturn(mockRoleHierarchy);
- 
-    Authentication mockAuth = mock(Authentication.class);
-    doReturn(List.of(new SimpleGrantedAuthority("ROLE_SYSTEM"))).when(mockAuth).getAuthorities();
- 
-    SecurityContext mockSecurityContext = mock(SecurityContext.class);
-    when(mockSecurityContext.getAuthentication()).thenReturn(mockAuth);
-    SecurityContextHolder.setContext(mockSecurityContext);
- 
-    // SYSTEM이 ADMIN 권한으로 도달 가능하다고 스터빙
-    doReturn(List.of(new SimpleGrantedAuthority("ROLE_SYSTEM"), new SimpleGrantedAuthority("ROLE_ADMIN")))
-        .when(mockRoleHierarchy).getReachableGrantedAuthorities(any());
- 
-    // when
-    boolean result = SecurityUtil.hasRole("ADMIN");
- 
-    // then
-    assertTrue(result);
-    verify(mockRoleHierarchy).getReachableGrantedAuthorities(any());
+  void explicitPermissionDoesNotConsultLegacyRoleHierarchy() {
+    SecurityContextHolder.getContext().setAuthentication(
+        nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "ESNTL_fixture", "ADMIN"));
+    assertTrue(SecurityUtil.hasPermission("AUTHRT_READ"));
+    verifyNoInteractions(mockContext);
   }
 }

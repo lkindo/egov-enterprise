@@ -16,7 +16,6 @@ import { communityAdminService } from '../CommunityAdminService';
 import { deptAdminService } from '../DeptAdminService';
 import { groupAdminService } from '../GroupAdminService';
 import { menuAdminService } from '../MenuAdminService';
-import { roleAdminService } from '../RoleAdminService';
 import { statsAdminService } from '../StatsAdminService';
 
 const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
@@ -105,32 +104,6 @@ describe('generated system boundary wave 3', () => {
     );
     expect(client.requestRaw).not.toHaveBeenCalled();
   });
-
-  it('RoleAdminService의 6개 경계를 operation descriptor로 실행한다', async () => {
-    const role = { roleId: 'ROLE_A', roleNm: '역할' };
-    client.getRaw
-      .mockResolvedValueOnce(envelope(page([role])))
-      .mockResolvedValueOnce(envelope(role));
-
-    await roleAdminService.getRoleList({ page: 0, size: 20, searchWrd: '역할' });
-    await roleAdminService.getRole('ROLE_A');
-    await roleAdminService.createRole({ roleNm: '역할' });
-    await roleAdminService.updateRole('ROLE_A', { roleNm: '수정' });
-    await roleAdminService.deleteRole('ROLE_A');
-    await roleAdminService.deleteRoles(['ROLE_A', 'ROLE_B']);
-
-    expect(client.getRaw.mock.calls.map(([url]) => url)).toEqual([
-      'admin/system/roles',
-      'admin/system/roles/ROLE_A',
-    ]);
-    expect(client.requestRaw.mock.calls.map(([request]) => [request.method, request.url])).toEqual([
-      ['post', 'admin/system/roles'],
-      ['put', 'admin/system/roles/ROLE_A'],
-      ['delete', 'admin/system/roles/ROLE_A'],
-      ['delete', 'admin/system/roles'],
-    ]);
-  });
-
   it('StatsAdminService의 6개 조회 경계를 operation descriptor로 실행한다', async () => {
     client.getRaw
       .mockResolvedValueOnce(envelope({ totalUsers: 1, totalPosts: 2, todayConnects: 3 }))

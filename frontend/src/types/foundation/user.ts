@@ -41,6 +41,9 @@ export interface UserDto {
   userNm: string;
   esntlId: string;
   role: string;
+  groups?: string[];
+  permissions?: string[];
+  authorizationVersion?: string;
   emplNo?: string;
   ofcpsNm?: string;
   crtDt?: string;

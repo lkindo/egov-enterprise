@@ -29,11 +29,13 @@ vi.mock('next/config', () => ({
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 
+const authorization = { groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
+
 type Handler = (arg: unknown) => Promise<unknown>;
 
 /** axios.create() 가 돌려줄 스텁. 인터셉터 핸들러를 캡처한다. */
 function makeInstanceStub() {
-  const captured: { requestOk?: Handler; responseErr?: Handler } = {};
+  const captured: { requestOk?: Handler; responseOk?: Handler; responseErr?: Handler } = {};
   const instance = Object.assign(
     // 인스턴스 자체가 함수다 — 인터셉터가 `axiosInstance(originalRequest)` 로 재시도한다.
     vi.fn(async (config: unknown) => ({ __retriedWith: config })),
@@ -41,7 +43,7 @@ function makeInstanceStub() {
       interceptors: {
         request: { use: vi.fn((ok: Handler) => { captured.requestOk = ok; }), eject: vi.fn() },
         response: {
-          use: vi.fn((_ok: Handler, err: Handler) => { captured.responseErr = err; }),
+          use: vi.fn((ok: Handler, err: Handler) => { captured.responseOk = ok; captured.responseErr = err; }),
           eject: vi.fn(),
         },
       },
@@ -86,6 +88,18 @@ describe('API 클라이언트 인터셉터', () => {
   });
 
   describe('응답 본문 처리 (extractData)', () => {
+    it('계정 변경 전 요청의 늦은 성공 응답과 재시도는 차단한다', async () => {
+      const { captured, instance } = await loadClient();
+      const { advanceAuthorizationRequestEpoch } = await import('@/lib/auth/authorization-state');
+      const config = await captured.requestOk!({ url: '/private-mutation', headers: {} });
+      advanceAuthorizationRequestEpoch();
+      expect(() => captured.responseOk!({ config, data: { previousAccount: true } })).toThrow('이전 요청 결과');
+      await expect(captured.requestOk!(config)).rejects.toThrow('이전 요청 결과');
+      await expect(captured.responseErr!({ config, response: { status: 401 } })).rejects.toThrow('이전 요청 결과');
+      expect(instance.post).not.toHaveBeenCalled();
+      expect(instance).not.toHaveBeenCalled();
+    });
+
     it('generated 경계용 raw 요청은 envelope를 벗기지 않는다', async () => {
       const { client, instance } = await loadClient();
       const envelope = { success: true, code: 'S001', message: 'ok', data: { id: 7 } };
@@ -186,7 +200,7 @@ describe('API 클라이언트 인터셉터', () => {
         configurable: true, writable: true,
       });
       const { instance, captured } = await loadClient();
-      instance.post.mockResolvedValueOnce({ data: { success: true, data: {} } });
+      instance.post.mockResolvedValueOnce({ data: { success: true, data: authorization } });
 
       await captured.responseErr!({ response: { status: 401 }, config: { url: '/x' } });
 
@@ -209,7 +223,7 @@ describe('API 클라이언트 인터셉터', () => {
         configurable: true, writable: true,
       });
       const { instance, captured } = await loadClient();
-      instance.post.mockResolvedValueOnce({ data: { success: true, data: {} } });
+      instance.post.mockResolvedValueOnce({ data: { success: true, data: authorization } });
       const original = { url: '/x' };
 
       const result = await captured.responseErr!({ response: { status: 401 }, config: original });
@@ -376,6 +390,36 @@ describe('API 클라이언트 인터셉터', () => {
     expect(instance).not.toHaveBeenCalled();
     expect(location.href).toBe('/admin');
     expect(dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'api-error' }));
+  });
+
+  it('403 signals an authorization recheck without refreshing tokens or replaying the mutation', async () => {
+    const dispatchEvent = vi.fn();
+    Object.defineProperty(globalThis, 'window', {
+      value: { location: { pathname: '/admin', href: '/admin' }, dispatchEvent },
+      configurable: true, writable: true,
+    });
+    const { instance, captured } = await loadClient();
+    const denied = Object.assign(new Error('Forbidden'), {
+      config: { url: '/boards/1', method: 'delete', suppressErrorToast: true },
+      response: { status: 403 },
+    });
+    await expect(captured.responseErr!(denied)).rejects.toBe(denied);
+    expect(dispatchEvent).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ type: 'authorization-changed' }));
+    expect(instance.post).not.toHaveBeenCalled();
+    expect(instance).not.toHaveBeenCalled();
+  });
+
+  it.each(['/auth/me', '/api/v1/auth/me', '/users/me', '/api/auth/reissue'])('a rejected %s recheck cannot schedule itself', async (url) => {
+    const dispatchEvent = vi.fn();
+    Object.defineProperty(globalThis, 'window', {
+      value: { location: { pathname: '/admin', href: '/admin' }, dispatchEvent },
+      configurable: true, writable: true,
+    });
+    const { captured } = await loadClient();
+    await expect(captured.responseErr!(Object.assign(new Error('Forbidden'), {
+      config: { url, suppressErrorToast: true }, response: { status: 403 },
+    }))).rejects.toThrow('Forbidden');
+    expect(dispatchEvent).not.toHaveBeenCalled();
   });
 
 });

@@ -27,35 +27,35 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "a44b230b06c0a126100a675947a3fbf1b0ac91899a3cc78b4991de530b9ee7a8"
+    "inventoryHash": "f2b5d83cb1b667c31385183cb6abc27a3bdd569638e9a686919a5131704a7536"
   },
   "summary": {
-    "sourceFileCount": 524,
-    "records": 381,
-    "syntaxOccurrences": 451,
-    "ambiguousRecords": 355,
-    "unverifiedRecords": 381,
+    "sourceFileCount": 532,
+    "records": 378,
+    "syntaxOccurrences": 448,
+    "ambiguousRecords": 351,
+    "unverifiedRecords": 378,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
       "configRedirects": 13,
-      "pageRedirects": 11
+      "pageRedirects": 12
     },
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 55,
+      "form-producer": 56,
       "navigation-producer": 160,
-      "page-redirect": 11,
-      "query-builder": 22,
-      "query-consumer": 58,
-      "query-producer": 43,
-      "request-query-producer": 1,
+      "page-redirect": 12,
+      "query-builder": 21,
+      "query-consumer": 56,
+      "query-producer": 40,
+      "request-query-producer": 2,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 373,
-      "request-telemetry": 8
+      "navigation": 369,
+      "request-telemetry": 9
     }
   },
   "requiredNegativeCases": [
@@ -6846,20 +6846,20 @@
       }
     },
     {
-      "id": "URL-909B5C7656F65F",
+      "id": "URL-AEF82EA7630B06",
       "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.replace",
-      "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/admin/security/authority/components/AuthorizationGroupForm.tsx",
+      "producerFile": "frontend/src/app/admin/security/authority/components/AuthorizationGroupForm.tsx",
       "consumerFile": null,
       "routePattern": "/admin/security/authority",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "computed-navigation-target",
+        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
@@ -6879,179 +6879,23 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-        "detector": "router-navigation",
+        "source": "frontend/src/app/admin/security/authority/components/AuthorizationGroupForm.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
     {
-      "id": "URL-61A389497C16B4",
+      "id": "URL-74BCEDDCE4EC87",
       "surface": "navigation",
-      "kind": "query-builder",
-      "operation": "copy-existing-query",
-      "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "consumerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<unknown-source-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
-      "riskSignals": [
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [
-        "unknown-source-query-copied"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-        "detector": "url-search-params-constructor",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-C5E658277B6790",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "get",
-      "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "page",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is consumed with get().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-C5FF8FAC051747",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "get",
-      "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "view",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is consumed with get().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-CA37CEEFA17E9B",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/security/authority/components/AuthorizationHistory.tsx",
+      "producerFile": "frontend/src/app/admin/security/authority/components/AuthorizationHistory.tsx",
       "consumerFile": null,
       "routePattern": "/admin/security/authority",
       "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "page",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
         "producer-consumer-join-unresolved"
@@ -7073,149 +6917,8 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-34369EE638F40A",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "delete",
-      "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "view",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with delete().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-40AC718453C9F2",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "page",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-22609BB8A9698E",
-      "surface": "navigation",
-      "kind": "query-producer",
-      "operation": "set",
-      "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/security/authority",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "view",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is mutated with set().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-        "detector": "url-search-param-method",
+        "source": "frontend/src/app/admin/security/authority/components/AuthorizationHistory.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
@@ -7254,6 +6957,82 @@
       "evidence": {
         "source": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-E74CA9309090BD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/security/role/page.tsx",
+      "producerFile": "frontend/src/app/admin/security/role/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/security/role",
+      "targetCandidate": "/admin/security/authority",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/security/authority",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/security/role/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-42DD7EAA6DE10A",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/security/role/page.tsx",
+      "producerFile": "frontend/src/app/admin/security/role/page.tsx",
+      "consumerFile": "frontend/src/app/admin/security/role/page.tsx",
+      "routePattern": "/admin/security/role",
+      "targetCandidate": "/admin/security/authority",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/security/authority",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/security/role/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
@@ -15448,45 +15227,6 @@
       }
     },
     {
-      "id": "URL-AB14804C5A665D",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/components/admin/security/AuthorForm.tsx",
-      "producerFile": "frontend/src/components/admin/security/AuthorForm.tsx",
-      "consumerFile": null,
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/components/admin/security/AuthorForm.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-1CB73363CF614B",
       "surface": "navigation",
       "kind": "form-producer",
@@ -16212,6 +15952,97 @@
       "evidence": {
         "source": "frontend/src/lib/api/client.ts",
         "detector": "url-observer",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-461136B2646F5D",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "append",
+      "source": "frontend/src/lib/api/generated-api-client.ts",
+      "producerFile": "frontend/src/lib/api/generated-api-client.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "<computed>",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "computed-or-aggregate-state"
+          ]
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with append().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-query-key",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/lib/api/generated-api-client.ts",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-219D7497CEF6A1",
+      "surface": "request-telemetry",
+      "kind": "request-query-producer",
+      "operation": "fetch",
+      "source": "frontend/src/lib/api/generated-api-client.ts",
+      "producerFile": "frontend/src/lib/api/generated-api-client.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Request URL producer emits the observed target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-request-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/lib/api/generated-api-client.ts",
+        "detector": "fetch-request",
         "occurrenceCount": 1
       }
     },

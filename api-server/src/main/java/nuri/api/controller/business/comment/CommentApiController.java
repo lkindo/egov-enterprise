@@ -15,7 +15,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor
@@ -25,6 +24,7 @@ public class CommentApiController {
     private final BoardService boardService;
 
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.comment.CommentApiController#getComments')")
     public ResponseEntity<ApiResponse<PageResponse<CommentDto>>> getComments(
             @RequestParam Long pstSn,
             @RequestParam String bbsId,
@@ -41,6 +41,7 @@ public class CommentApiController {
      * {@code wrter_id} 는 esntlId 축이며, {@link CustomUserDetails} 가 그 혼동을 경고한다.
      */
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.comment.CommentApiController#createComment')")
     public ResponseEntity<ApiResponse<Long>> createComment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CommentDto commentDto) {
@@ -50,6 +51,7 @@ public class CommentApiController {
     }
 
     @PutMapping("/{commentNo}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.comment.CommentApiController#updateComment')")
     public ResponseEntity<ApiResponse<Void>> updateComment(
             @PathVariable Long commentNo,
             @Valid @RequestBody CommentDto commentDto) {
@@ -58,6 +60,7 @@ public class CommentApiController {
     }
 
     @DeleteMapping("/{commentNo}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.comment.CommentApiController#deleteComment')")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long commentNo) {
         commentService.deleteComment(commentNo);
         return ResponseEntity.ok(ApiResponse.success(null));

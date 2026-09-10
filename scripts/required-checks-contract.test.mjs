@@ -106,9 +106,10 @@ test('job-level name override cannot silently change a required check context', 
 
 test('E2E aggregate remains bound to the fail-closed source condition and real runner step', () => {
   const detachedCondition = ciContent.replace(
-    /  e2e-tests:\r?\n    needs: \[change-scope, backend-scope, frontend-scope\]\r?\n    if: .*$/m,
-    '  e2e-tests:\n    needs: [change-scope, backend-scope, frontend-scope]\n    if: true',
+    /(  e2e-tests:\r?\n[\s\S]*?\r?\n)    if: [^\r\n]*/,
+    '$1    if: true',
   );
+  assert.notEqual(detachedCondition, ciContent, 'negative fixture must replace the real E2E condition');
   assert.match(
     validateStaticContract({ manifest, ciContent: detachedCondition }).join('\n'),
     /e2e-tests.*fail-closed scope condition/i,

@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Tag("schema-validation")
 @SpringBootTest
+@org.springframework.context.annotation.Import(AuthorizationSchemaRehearsalTestConfiguration.class)
 @ActiveProfiles({"test", "tc"})
 @DisplayName("🐘 실 PostgreSQL + Flyway 전량 적용 후 엔티티 매핑 검증(ddl-auto: validate)")
 class SchemaValidationIntegrationTest {
@@ -49,7 +50,7 @@ class SchemaValidationIntegrationTest {
     @Test
     @DisplayName("Flyway 마이그레이션이 실 PostgreSQL 에 적용되고 전 엔티티 매핑이 검증된다")
     void migrationsApplyAndEntitiesValidateAgainstRealPostgres() throws SQLException {
-        // 이 메서드가 실행됐다는 것은 이미 ① Flyway migrate ② Hibernate validate 가 통과했다는 뜻이다.
+        // 이 메서드가 실행됐다는 것은 Flyway → 명시적 Contract 리허설 → 배리어 → Hibernate validate가 통과했다는 뜻이다.
         // (실패 시 ApplicationContext 로딩 단계에서 SchemaManagementException 으로 죽는다.)
         try (Connection conn = dataSource.getConnection();
              Statement st = conn.createStatement()) {
@@ -81,6 +82,11 @@ class SchemaValidationIntegrationTest {
             assertThat(tables)
                     .as("물리 테이블 수가 비정상 — 스키마가 비어 있으면 validate 통과는 vacuous 하다")
                     .isGreaterThanOrEqualTo(50);
+            try (ResultSet rs=st.executeQuery("SELECT count(*) FROM tb_authrt_chg_hstry "
+                    + "WHERE chg_artcl_nm='legacy_authorization_contract' AND chg_type_cd='UPDATE'")) {
+                assertThat(rs.next()).isTrue();
+                assertThat(rs.getInt(1)).as("JPA validate 전에 실제 Contract를 수행했어야 한다").isEqualTo(1);
+            }
         }
     }
 }

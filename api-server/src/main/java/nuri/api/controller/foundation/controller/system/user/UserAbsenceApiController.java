@@ -22,18 +22,21 @@ public class UserAbsenceApiController {
 
     @Operation(summary = "사용자 부재 정보 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#getAbsences')")
     public ResponseEntity<ApiResponse<List<UserAbsenceDto>>> getAbsences() {
         return ResponseEntity.ok(ApiResponse.success(userAbsenceService.getAbsences()));
     }
 
     @Operation(summary = "사용자 부재 상태 상세 조회")
     @GetMapping("/{emplyrId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#getAbsence')")
     public ResponseEntity<ApiResponse<UserAbsenceDto>> getAbsence(@PathVariable String emplyrId) {
         return ResponseEntity.ok(ApiResponse.success(userAbsenceService.getAbsence(emplyrId)));
     }
 
     @Operation(summary = "사용자 부재 상태 업데이트")
     @PutMapping("/{emplyrId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#updateAbsence')")
     public ResponseEntity<ApiResponse<Void>> updateAbsence(
             @PathVariable String emplyrId,
             @Valid @RequestBody UserAbsenceDto dto) {

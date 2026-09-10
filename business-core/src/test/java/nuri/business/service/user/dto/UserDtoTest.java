@@ -44,7 +44,7 @@ class UserDtoTest {
         User user = User.builder().userId("user1").esntlId("esntl1").userNm("Hong").pswd("1234").role(Role.ADMIN).build();
         UserDto dto = UserDto.from(user, null);
         assertNotNull(dto);
-        assertEquals("ROLE_ADMIN", dto.role());
+        assertNull(dto.role(), "저장된 사용자 enum으로 미배정 권한을 복원하지 않는다");
         assertEquals("USR", dto.userSe());
     }
 
@@ -55,7 +55,7 @@ class UserDtoTest {
         user.changeRole(null);
         UserDto dto = UserDto.from(user, null);
         assertNotNull(dto);
-        assertEquals("ROLE_USER", dto.role());
+        assertNull(dto.role(), "미배정 상태는 USER로 승격하지 않는다");
         assertEquals("USR", dto.userSe());
     }
 

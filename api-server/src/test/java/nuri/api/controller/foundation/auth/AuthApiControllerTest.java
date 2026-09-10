@@ -12,6 +12,7 @@ import nuri.business.service.user.dto.UserDto;
 import nuri.business.domain.user.entity.Role;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -26,10 +27,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
+import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -71,6 +72,11 @@ class AuthApiControllerTest {
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
  
     @Test
     @DisplayName("로그인 성공")
@@ -81,6 +87,9 @@ class AuthApiControllerTest {
                 .accessToken("access-token")
                 .refreshToken("refresh-token")
                 .role("ROLE_USER")
+                .groups(List.of("CONTENT"))
+                .permissions(List.of("CONTENT_EDIT"))
+                .authorizationVersion("v1")
                 .build();
  
         when(authService.login(any(), anyString())).thenReturn(tokenResponse);
@@ -92,6 +101,9 @@ class AuthApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.accessToken").value("access-token"))
+                .andExpect(jsonPath("$.data.groups[0]").value("CONTENT"))
+                .andExpect(jsonPath("$.data.permissions[0]").value("CONTENT_EDIT"))
+                .andExpect(jsonPath("$.data.authorizationVersion").value("v1"))
                 // [Phase 3 계약] refreshToken 은 바디에 노출되지 않는다(@JsonIgnore, HttpOnly 쿠키로만 전달)
                 .andExpect(jsonPath("$.data.refreshToken").doesNotExist());
     }
@@ -139,11 +151,14 @@ class AuthApiControllerTest {
     @DisplayName("내 정보 조회")
     void testMe() throws Exception {
         // Given
-        CustomUserDetails userDetails = mock(CustomUserDetails.class);
-        when(userDetails.getUserId()).thenReturn("user01");
+        CustomUserDetails userDetails = CustomUserDetails.builder().userId("user01")
+                .esntlId("ESNTL_000000000001").enabled(true).authorCode("ROLE_REVIEWER")
+                .groups(List.of("CONTENT", "REVIEW"))
+                .permissions(List.of("CONTENT_EDIT", "CONTENT_REVIEW"))
+                .authorizationVersion("current-v2").build();
         
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                userDetails, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+                userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
  
         UserDto userDto = UserDto.builder()
@@ -160,6 +175,12 @@ class AuthApiControllerTest {
                 .andExpect(jsonPath("$.data.id").value("user01"))
                 .andExpect(jsonPath("$.data.name").value("Test User"))
                 .andExpect(jsonPath("$.data.esntlId").value("ESNTL_000000000001"))
+                .andExpect(jsonPath("$.data.role").value("ROLE_REVIEWER"))
+                .andExpect(jsonPath("$.data.groups[0]").value("CONTENT"))
+                .andExpect(jsonPath("$.data.groups[1]").value("REVIEW"))
+                .andExpect(jsonPath("$.data.permissions[0]").value("CONTENT_EDIT"))
+                .andExpect(jsonPath("$.data.permissions[1]").value("CONTENT_REVIEW"))
+                .andExpect(jsonPath("$.data.authorizationVersion").value("current-v2"))
                 .andExpect(jsonPath("$.data.userSe").doesNotExist())
                 .andExpect(jsonPath("$.data.email").doesNotExist())
                 .andExpect(jsonPath("$.data.pswd").doesNotExist())
@@ -191,24 +212,14 @@ class AuthApiControllerTest {
     }
  
     @Test
-    @DisplayName("내 정보 조회 - UserDetails가 아닌 Principal")
+    @DisplayName("내 정보 조회 - 현재 권한 계약이 없는 Principal은 거부")
     void testMeSimplePrincipal() throws Exception {
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                 "user01", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
         SecurityContextHolder.getContext().setAuthentication(auth);
  
-        UserDto userDto = UserDto.builder()
-                .userId("user01")
-                .userNm("Test User")
-                .esntlId("ESNTL_000000000001")
-                .role(Role.USER.name())
-                .build();
-        when(userService.getUserById("user01")).thenReturn(userDto);
- 
         mockMvc.perform(get("/api/v1/auth/me"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("user01"))
-                .andExpect(jsonPath("$.data.esntlId").value("ESNTL_000000000001"));
+                .andExpect(status().isUnauthorized());
         
         SecurityContextHolder.clearContext();
     }

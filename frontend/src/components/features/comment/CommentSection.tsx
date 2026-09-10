@@ -35,7 +35,7 @@ type OptimisticCommentAction =
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 
 export default function CommentSection({ pstSn, bbsId, initialComments }: CommentSectionProps) {
   const [, startTransition] = useTransition();
@@ -48,12 +48,11 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
    *
    * 서버 가드({@code SecurityUtil.assertOwnerOrAdmin})와 **같은 축**을 본다 — 등록자 로그인 ID.
    * 종전에는 판정 자체가 없어 남의 댓글에도 버튼이 떴고, 사용자는 확인창을 통과한 뒤에야 실패했다.
-   * 역할 집합은 라우트 게이트와 같은 SSOT 를 쓴다(DEC-OPS-023) — 문자열 직접 비교를 쓰면
-   * 권한 있는 관리자에게 기능이 조용히 사라진다.
+   * 소유자의 수정·삭제 기능권한과 다른 작성자의 댓글 관리 권한을 구분한다.
    */
-  const canManageComment = (comment: CommentView) =>
-    isAdministrativeRole(user?.role)
-    || Boolean(user?.id && comment.frstRgtrId && comment.frstRgtrId === user.id);
+  const canManageComment = (comment: CommentView, action: 'UPDATE' | 'DELETE') =>
+    canPermission(user, `COMMENT_${action}`)
+    && (canPermission(user, `COMMENT_${action}_ALL`) || Boolean(user?.id && comment.frstRgtrId && comment.frstRgtrId === user.id));
   
   // Optimistic State Management (React 19)
   const [optimisticComments, addOptimisticComment] = useOptimistic<CommentView[], OptimisticCommentAction>(
@@ -298,9 +297,9 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                           `editingId` 가 새 `ansSn` 과 어긋나 **폼이 조용히 접히며 입력이 유실된다.**
                           (카드가 이미 opacity/grayscale 로 미확정임을 알리고 있었는데, 동작만 막지 않고 있었다.)
                         */}
-                        {!comment.isOptimistic && canManageComment(comment) && (
+                        {!comment.isOptimistic && (canManageComment(comment, 'UPDATE') || canManageComment(comment, 'DELETE')) && (
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                          {editingId === comment.ansSn ? (
+                          {editingId === comment.ansSn && canManageComment(comment, 'UPDATE') ? (
                             <>
                               <Button
                                 variant="ghost"
@@ -331,7 +330,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                             </>
                           ) : (
                             <>
-                              <Button
+                              {canManageComment(comment, 'UPDATE') && <Button
                                 variant="ghost"
                                 size="sm"
                                 disabled={hasWritePending}
@@ -343,8 +342,8 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                                 aria-label="댓글 수정"
                                 className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted"
                                 data-testid="comment-edit-button"
-                              ><Edit2 className="w-5 h-5" /></Button>
-                              <Button
+                              ><Edit2 className="w-5 h-5" /></Button>}
+                              {canManageComment(comment, 'DELETE') && <Button
                                 variant="ghost"
                                 size="sm"
                                 disabled={hasWritePending}
@@ -357,14 +356,14 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                                 {deletePendingId === comment.ansSn
                                   ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
                                   : <Trash2 className="w-5 h-5" aria-hidden="true" />}
-                              </Button>
+                              </Button>}
                             </>
                           )}
                         </div>
                         )}
                       </div>
 
-                      {editingId === comment.ansSn ? (
+                      {editingId === comment.ansSn && canManageComment(comment, 'UPDATE') ? (
                         <div className="space-y-3">
                           <FormErrorSummary
                             errors={editValidation.errors}

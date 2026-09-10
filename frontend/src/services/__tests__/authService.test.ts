@@ -40,7 +40,7 @@ describe('authService', () => {
  });
 
  it('login should call the local auth BFF and parse its strict response', async () => {
- const mockResponse = { role: 'ROLE_USER' };
+ const mockResponse = { role: 'ROLE_USER', groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
  mockedPost.mockResolvedValue({
    data: { success: true, data: mockResponse },
  });
@@ -164,6 +164,9 @@ describe('authService', () => {
    role: 'ROLE_USER',
    userSe: 'USR',
    email: 'tester@example.test',
+   groups: [],
+   permissions: [],
+   authorizationVersion: '',
  });
  expect(result).not.toHaveProperty('pswd');
  });
@@ -173,6 +176,19 @@ describe('authService', () => {
      id: 'user01',
      name: 'Tester',
      role: 'USER',
+     groups: [],
+     permissions: [],
+     authorizationVersion: '',
+   });
+ });
+
+ it('preserves the backend multi-group permission snapshot and drops undeclared fields', () => {
+   expect(normalizeAuthUser({
+     id: 'user01', name: 'Tester', role: 'ROLE_ADMIN', groups: ['ROLE_ADMIN', 'REVIEW'],
+     permissions: ['EXAMPLE_READ'], authorizationVersion: 'v2', accessToken: 'unexpected',
+   })).toEqual({
+     id: 'user01', name: 'Tester', role: 'ROLE_ADMIN', groups: ['ROLE_ADMIN', 'REVIEW'],
+     permissions: ['EXAMPLE_READ'], authorizationVersion: 'v2',
    });
  });
 

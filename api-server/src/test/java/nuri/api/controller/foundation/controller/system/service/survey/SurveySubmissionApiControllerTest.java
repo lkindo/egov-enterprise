@@ -7,7 +7,6 @@ import nuri.business.service.survey.dto.SurveyStatsDto;
 import nuri.business.support.ControllerTestSupport;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.security.annotation.Authenticated;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -111,26 +110,18 @@ class SurveySubmissionApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.success").value(false));
     }
 
-    /**
-     * DEC-OPS-010 의 결정을 코드에 고정한다. {@code @Authenticated} 가 {@code @AdminOrSystem}
-     * 으로 바뀌면 <b>일반 사용자가 설문에 응답할 수 없게 된다</b> — 설문은 일반 사용자가
-     * 응답하는 제품이므로 그 변경은 제품 의도를 뒤집는다.
-     */
+    /** Initial USER grants preserve participation, while grant revocation closes the exact operation. */
     @Test
-    @DisplayName("열람·제출은 인증 사용자에게 열려 있다 — 관리자 전용으로 좁히지 않는다")
+    @DisplayName("기본 사용자 참여 권한과 기능별 회수 경계를 유지한다")
     void readAndSubmitStayOpenToAuthenticatedUsers() throws NoSuchMethodException {
         var stats = SurveySubmissionApiController.class.getMethod("getStats", Long.class);
-        var submit = SurveySubmissionApiController.class.getMethod(
-                "submit", Long.class, SurveyResponseSubmitDto.class);
-
-        assertThat(stats.isAnnotationPresent(Authenticated.class)).isTrue();
-        assertThat(submit.isAnnotationPresent(Authenticated.class)).isTrue();
-        assertThat(stats.isAnnotationPresent(nuri.foundation.security.annotation.AdminOrSystem.class))
-                .as("관리자 전용으로 좁히면 일반 사용자가 설문 결과를 볼 수 없다")
-                .isFalse();
-        assertThat(submit.isAnnotationPresent(nuri.foundation.security.annotation.AdminOrSystem.class))
-                .as("관리자 전용으로 좁히면 일반 사용자가 설문에 응답할 수 없다")
-                .isFalse();
+        var submit = SurveySubmissionApiController.class.getMethod("submit", Long.class, SurveyResponseSubmitDto.class);
+        nuri.security.support.MethodPermissionContract.assertOperation(stats, "SURVEY_READ", false);
+        nuri.security.support.MethodPermissionContract.assertOperation(submit, "SURVEY_SUBMIT", false);
+        var policy = new nuri.business.security.authorization.PermissionPolicy();
+        var user = nuri.business.support.AuthorizationTestPrincipal.authentication("participant", "participant-id", "ROLE_USER");
+        assertThat(policy.allowed(user, stats.getDeclaringClass().getName() + "#" + stats.getName())).isTrue();
+        assertThat(policy.allowed(user, submit.getDeclaringClass().getName() + "#" + submit.getName())).isTrue();
     }
 
     /** 통계 응답이 배열 계약을 유지하는지 — 소비 화면이 map 을 기대하도록 바뀌면 red 다. */

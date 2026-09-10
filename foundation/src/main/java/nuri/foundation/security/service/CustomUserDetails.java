@@ -6,9 +6,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -27,20 +26,28 @@ public class CustomUserDetails implements UserDetails {
     private final String esntlId;
     private final String userNm;
     private final String password;
+    /** 표시 호환 전용. 인가에는 사용하지 않는다. */
     private final String roleName;
     private final String lockAt;
+    /** 표시 호환 전용. 인가에는 사용하지 않는다. */
     private final String authorCode;
 
-    /**
-     * DB 기반 다중 권한 목록. null 이면 기존 단일 authorCode/roleName 폴백.
-     * Builder 에서 {@code .authorityCodes(List.of("ROLE_ADMIN", "ROLE_SYSTEM"))} 형태로 주입한다.
-     */
+    /** 이전 builder 호출의 소스 호환만 유지한다. 이 값으로 권한을 부여하지 않는다. */
     @Builder.Default
     private final List<String> authorityCodes = null;
 
+    @Builder.Default
+    private final List<String> groups = List.of();
+    @Builder.Default
+    private final List<String> permissions = List.of();
+    private final String authorizationVersion;
+    /** 계정 저장소가 현재 상태를 확인해 명시적으로 활성화해야 한다. */
+    private final boolean enabled;
+
     private CustomUserDetails(String userId, String esntlId, String userNm, String password,
                               String roleName, String lockAt, String authorCode,
-                              List<String> authorityCodes) {
+                              List<String> authorityCodes, List<String> groups, List<String> permissions,
+                              String authorizationVersion, boolean enabled) {
         this.userId = userId;
         this.esntlId = esntlId;
         this.userNm = userNm;
@@ -49,27 +56,34 @@ public class CustomUserDetails implements UserDetails {
         this.lockAt = lockAt;
         this.authorCode = authorCode;
         this.authorityCodes = authorityCodes;
+        this.groups = immutableCodes(groups);
+        this.permissions = immutableCodes(permissions);
+        this.authorizationVersion = authorizationVersion;
+        this.enabled = enabled;
     }
 
     /** 하위 호환성을 위한 7개 인자 생성자 (기존 테스트 및 호출부 지원) */
     public CustomUserDetails(String userId, String esntlId, String userNm, String password,
                              String roleName, String lockAt, String authorCode) {
-        this(userId, esntlId, userNm, password, roleName, lockAt, authorCode, null);
+        this(userId, esntlId, userNm, password, roleName, lockAt, authorCode,
+                null, List.of(), List.of(), null, false);
     }
 
     @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 다중 권한이 주입되어 있으면 우선 사용
-        if (authorityCodes != null && !authorityCodes.isEmpty()) {
-            return authorityCodes.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toUnmodifiableList());
+        // 그룹 이름과 이전 role 표현을 capability로 승격하지 않는다. 빈 권한은 빈 권한이다.
+        return permissions.stream().map(SimpleGrantedAuthority::new).toList();
+    }
+
+    private static List<String> immutableCodes(List<String> codes) {
+        if (codes == null) {
+            return List.of();
         }
-        // 폴백: 기존 단일 authorCode/roleName 로직
-        String role = (authorCode != null) ? authorCode
-                : (roleName != null ? "ROLE_" + roleName : "ROLE_USER");
-        return Collections.singleton(new SimpleGrantedAuthority(role));
+        if (codes.stream().anyMatch(code -> code == null || code.isBlank())) {
+            throw new IllegalArgumentException("Authorization codes must be non-blank");
+        }
+        return codes.stream().map(Objects::requireNonNull).distinct().sorted().toList();
     }
 
     @JsonIgnore
@@ -115,6 +129,6 @@ public class CustomUserDetails implements UserDetails {
     @JsonIgnore
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 }

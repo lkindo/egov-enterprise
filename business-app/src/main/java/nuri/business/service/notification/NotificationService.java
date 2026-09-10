@@ -89,7 +89,7 @@ public class NotificationService {
      */
     @Transactional
     public int dispatchToUsers(NotificationDispatchRequest request) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("NOTI_DISPATCH");
         Objects.requireNonNull(request, "발송 요청은 null 일 수 없습니다");
         List<String> esntlIds = request.getRecipients().stream()
                 .map(NotificationDispatchRequest.Recipient::getEsntlId)

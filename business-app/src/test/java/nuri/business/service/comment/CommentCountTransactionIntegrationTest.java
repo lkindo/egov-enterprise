@@ -226,15 +226,7 @@ class CommentCountTransactionIntegrationTest {
     }
 
     private static void installAdminSecurityContext() {
-        CustomUserDetails principal = CustomUserDetails.builder()
-                .userId(ACTOR_LOGIN_ID)
-                .esntlId("ESNTL_COMMENT_ADMIN")
-                .userNm("Comment Admin")
-                .password("password")
-                .authorCode("ROLE_ADMIN")
-                .roleName("ADMIN")
-                .lockAt("N")
-                .build();
+        CustomUserDetails principal = nuri.business.support.AuthorizationTestPrincipal.principal(ACTOR_LOGIN_ID, "ESNTL_COMMENT_ADMIN", "ADMIN");
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, "password", principal.getAuthorities()));
     }

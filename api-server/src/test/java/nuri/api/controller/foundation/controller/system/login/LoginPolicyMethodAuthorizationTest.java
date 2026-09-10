@@ -18,41 +18,28 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * 로그인 정책 API 의 <b>메서드 인가</b>가 URL 게이트와 독립적으로 동작하는지 검증한다.
- *
- * <p><b>왜 필요한가.</b> 이 컨트롤러는 5개 엔드포인트 어디에도 메서드 인가가 없었고
- * URL 게이트({@code /api/v1/admin/**} → {@code ADMIN_ALL}) 한 겹에만 의존했다. 그 매핑 한 줄이
- * 빠지면 접속 IP 제한·허용 시간대·2단계 인증(OTP) 설정이 함께 열린다.
- *
- * <p><b>URL 게이트를 일부러 더 넓게 열어 두고 판정한다.</b> 운영 시드대로 두면 그 축이 먼저 막아
- * 메서드 인가의 유무를 구분할 수 없다 — 그러면 이 테스트는 아무것도 증명하지 못한다. 반대로
- * 게이트를 <b>비우면</b> {@code DbUrlAuthorizationManager} 가 fail-closed 라 관리자까지 403 이 되어
- * 역시 구분이 안 된다(실측). 그래서 {@code ADMIN_ALL} 에 ROLE_USER 까지 매핑해 <b>일반 사용자가
- * URL 축을 통과하게</b> 만든 뒤, 남은 방어선이 실제로 막는지를 본다. 이 ROLE_USER 매핑은 이 테스트
- * 전용이며 운영 시드(V2_11)에는 없다.
- */
+/** HTTP 요청과 실제 proxied controller 직접 호출에서 동일한 명시적 기능 권한을 검증한다. */
 @SpringBootTest(
         classes = nuri.ApiServerApplication.class,
         properties = {
                 "spring.datasource.url=jdbc:h2:mem:login_policy_authz_testdb;DB_CLOSE_DELAY=-1;IGNORECASE=TRUE;NON_KEYWORDS=KEY,VALUE",
                 "spring.jpa.hibernate.ddl-auto=create-drop",
-                "rbac.shadow.enabled=true",
-                "rbac.db-auth.enabled=true"
         }
 )
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @org.springframework.test.annotation.DirtiesContext
 class LoginPolicyMethodAuthorizationTest {
+    @Autowired
+    private LoginPolicyApiController controller;
+
+    @org.junit.jupiter.api.AfterEach
+    void clearPrincipal() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
 
     private static final String LIST_URL = "/api/v1/admin/system/login-policies";
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
@@ -60,40 +47,25 @@ class LoginPolicyMethodAuthorizationTest {
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @BeforeEach
-    void widenUrlGateSoMethodSecurityIsTheOnlyJudge() {
-        jdbcTemplate.execute("DELETE FROM tb_role_prgrm_map");
-        jdbcTemplate.execute("DELETE FROM tb_prgrm_lst");
-        jdbcTemplate.execute("DELETE FROM tb_authrt_role_map");
-        jdbcTemplate.execute("DELETE FROM tb_authrt_info");
-        jdbcTemplate.execute("DELETE FROM tb_role_info");
-
-        for (String role : new String[]{"ROLE_ADMIN", "ROLE_SYSTEM", "ROLE_USER"}) {
-            jdbcTemplate.update("INSERT INTO tb_authrt_info (authrt_cd, authrt_nm) VALUES (?, ?)", role, role);
-            jdbcTemplate.update("INSERT INTO tb_role_info (role_id, role_nm) VALUES (?, ?)", role, role);
-            jdbcTemplate.update("INSERT INTO tb_authrt_role_map (authrt_cd, role_cd) VALUES (?, ?)", role, role);
-        }
-
-        jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) "
-                + "VALUES ('ADMIN_ALL', '관리자 전체', '/api/v1/admin/**')");
-        // ⚠ ROLE_USER 매핑은 **이 테스트 전용**이다(운영 시드에는 없다). 일반 사용자를 URL 축에
-        //    통과시켜야 메서드 인가가 유일한 판정자가 되고, 그때 비로소 이 계약이 무언가를 증명한다.
-        for (String role : new String[]{"ROLE_ADMIN", "ROLE_SYSTEM", "ROLE_USER"}) {
-            jdbcTemplate.update("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES (?, 'ADMIN_ALL')", role);
-        }
+    @Test
+    @DisplayName("HTTP 필터를 거치지 않은 컨트롤러 빈 호출도 기능 권한을 집행한다")
+    void directControllerInvocationRequiresTheSamePermission() throws Exception {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("ordinary", "USR_ORDINARY", "USER"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> controller.getLoginPolicyList(new nuri.business.domain.common.BaseSearchDto()))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("operator", "USR_OPERATOR", "ADMIN"));
+        org.assertj.core.api.Assertions.assertThat(controller.getLoginPolicyList(new nuri.business.domain.common.BaseSearchDto()).getStatusCode().value())
+                .isEqualTo(200);
     }
 
     private CustomUserDetails principal(String userId, String roleName) {
-        return CustomUserDetails.builder()
-                .userId(userId)
-                .esntlId("USR_" + userId)
-                .userNm(userId)
-                .roleName(roleName)
-                .build();
+        return nuri.business.support.AuthorizationTestPrincipal.principal(userId, "USR_" + userId, roleName);
     }
 
     @Test
-    @DisplayName("일반 사용자는 URL 게이트를 통과해도 메서드 인가에서 차단된다")
+    @DisplayName("일반 사용자는 로그인 정책 기능 권한이 없어 차단된다")
     void list_shouldBeForbidden_forNormalUser() throws Exception {
         mockMvc.perform(get(LIST_URL).with(user(principal("normal_user", "USER"))))
                 .andExpect(status().isForbidden());

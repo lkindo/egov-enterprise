@@ -174,4 +174,23 @@ class UserAuthorityRepositoryTest extends PersistenceTestSupport {
         // Then
         assertThat(result.getContent()).isNotEmpty();
     }
+
+    @Test
+    void multipleMembershipsDoNotDuplicateUsersOrChangePageCounts() {
+        em.persist(DeptManage.builder().ognzId("MULTI_DEPT").ognzNm("복수 그룹 부서").build());
+        testUser.updateOrgnztId("MULTI_DEPT");
+        userRepository.save(testUser);
+        userAuthorityRepository.save(UserAuthority.builder().scrtyDcsnTrgtId(testUser.getEsntlId())
+                .authrtId("ROLE_USER").mbrTypeCd("USR03").build());
+        em.flush();
+        var general=userAuthorityRepository.searchAuthorGroups("1","testUser",PageRequest.of(0,1));
+        assertThat(general.getTotalElements()).isEqualTo(1);
+        assertThat(general.getContent()).singleElement().extracting(AuthorGroupProjection::getAuthrtId).isEqualTo("ROLE_ADMIN");
+        var selected=userAuthorityRepository.searchAuthorGroups("1","testUser","ROLE_USER",PageRequest.of(0,1));
+        assertThat(selected.getContent()).singleElement().extracting(AuthorGroupProjection::getRegYn).isEqualTo("Y");
+        var department=userAuthorityRepository.searchDeptAuthors("MULTI_DEPT",PageRequest.of(0,1));
+        assertThat(department.getTotalElements()).isEqualTo(1);
+        assertThat(department.getContent()).hasSize(1);
+        assertThat(userAuthorityRepository.findByScrtyDcsnTrgtIdOrderByAuthrtId(testUser.getEsntlId())).hasSize(2);
+    }
 }

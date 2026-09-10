@@ -58,7 +58,7 @@ public class CommentService {
     public void updateComment(Long commentNo, String content) {
         Comment comment = commentRepository.findById(commentNo)
                 .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(comment.getFrstRgtrId()); // [IDOR] 작성자/관리자만 수정
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(comment.getFrstRgtrId(), "COMMENT_UPDATE_ALL"); // [IDOR] 작성자/관리자만 수정
         comment.update(content);
     }
 
@@ -66,7 +66,7 @@ public class CommentService {
     public void deleteComment(Long commentNo) {
         Comment comment = commentRepository.findByIdForUpdate(commentNo)
                 .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(comment.getFrstRgtrId()); // [IDOR] 작성자/관리자만 삭제
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(comment.getFrstRgtrId(), "COMMENT_DELETE_ALL"); // [IDOR] 작성자/관리자만 삭제
         if (!"Y".equals(comment.getUseYn())) {
             return;
         }

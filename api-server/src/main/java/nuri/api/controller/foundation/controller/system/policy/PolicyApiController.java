@@ -28,6 +28,7 @@ public class PolicyApiController {
 
     @Operation(summary = "정책 목록 조회", description = "시스템의 모든 정책 목록을 조회합니다.")
     @GetMapping("")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.policy.PolicyApiController#getPolicies')")
     public ResponseEntity<ApiResponse<List<PolicyService.Policy>>> getPolicies() {
         return ResponseEntity.ok(ApiResponse.success(policyService.getPolicies()));
     }
@@ -49,6 +50,7 @@ public class PolicyApiController {
      */
     @Operation(summary = "정책 내용 조회", description = "저작권(copyright) 또는 개인정보보호정책(privacy) 내용을 조회합니다. 등록된 정책이 없으면 404 입니다.")
     @GetMapping("/{type}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.policy.PolicyApiController#getPolicy')")
     public ResponseEntity<ApiResponse<PolicyService.Policy>> getPolicy(@PathVariable String type) {
         // 목록 조회(getPolicies)와 동일한 필드명(plcyTypeCd/plcyTtl/plcyCn)으로 응답한다.
         PolicyService.Policy result = policyService.getPolicy(type)
@@ -60,6 +62,7 @@ public class PolicyApiController {
 
     @Operation(summary = "정책 내용 수정")
     @PutMapping("/{type}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.policy.PolicyApiController#updatePolicy')")
     public ResponseEntity<ApiResponse<Void>> updatePolicy(
             @PathVariable String type,
             @Valid @RequestBody PolicyUpdateRequest request) {

@@ -25,13 +25,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping({"/api/v1/informal-sanctions", "/api/v1/admin/system/ism"})
 @RequiredArgsConstructor
-@PreAuthorize("isAuthenticated()")
 public class InformalSanctionApiController {
 
     private final InformalSanctionService informalSanctionService;
 
     @Operation(summary = "비정형 결재 목록 조회", description = "신청자 또는 결재자 기준의 결재 목록을 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanctionList')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getInformalSanctionList(
             @LoginUser CustomUserDetails userDetails,
             @RequestParam(required = false) String type,
@@ -48,6 +48,7 @@ public class InformalSanctionApiController {
 
     @Operation(summary = "비정형 결재 상세 조회", description = "비정형 결재 상세 정보를 조회합니다.")
     @GetMapping("/{informalSanctionId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanction')")
     public ResponseEntity<ApiResponse<InformalSanctionDto>> getInformalSanction(
             @LoginUser CustomUserDetails userDetails,
             @Parameter(description = "결재 일련번호") @PathVariable("informalSanctionId") Long ifmlAtrzSn) {
@@ -57,6 +58,7 @@ public class InformalSanctionApiController {
 
     @Operation(summary = "비정형 결재 등록", description = "새로운 비정형 결재를 요청합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction')")
     public ResponseEntity<ApiResponse<Long>> registerInformalSanction(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody InformalSanctionDto dto) throws Exception {
@@ -68,6 +70,7 @@ public class InformalSanctionApiController {
 
     @Operation(summary = "비정형 결재 수정", description = "비정형 결재 정보를 수정합니다.")
     @PutMapping("/{informalSanctionId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction')")
     public ResponseEntity<ApiResponse<Void>> updateInformalSanction(
             @Parameter(description = "결재 일련번호") @PathVariable("informalSanctionId") Long ifmlAtrzSn,
             @Valid @RequestBody InformalSanctionDto dto) {
@@ -78,6 +81,7 @@ public class InformalSanctionApiController {
 
     @Operation(summary = "비정형 결재 승인/반려", description = "결재자가 결재를 승인 또는 반려 처리합니다.")
     @PatchMapping("/{informalSanctionId}/confirm")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction')")
     public ResponseEntity<ApiResponse<Void>> confirmInformalSanction(
             @Parameter(description = "결재 일련번호") @PathVariable("informalSanctionId") Long ifmlAtrzSn,
             @RequestParam String confmAt,
@@ -88,6 +92,7 @@ public class InformalSanctionApiController {
 
     @Operation(summary = "비정형 결재 삭제", description = "비정형 결재 정보를 삭제합니다.")
     @DeleteMapping("/{informalSanctionId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction')")
     public ResponseEntity<ApiResponse<Void>> deleteInformalSanction(
             @Parameter(description = "결재 일련번호") @PathVariable("informalSanctionId") Long ifmlAtrzSn) {
         informalSanctionService.deleteInformalSanction(ifmlAtrzSn);

@@ -9,7 +9,7 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import {
   satisfactionCreateSchema,
@@ -50,7 +50,7 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
     선택**이며 실패 모드가 안전하다 — 관리자를 일반 사용자로 잘못 보면 자기 평가는 그대로
     지워지고 레거시 행만 못 지운다. 반대 방향은 서버가 @AdminOnly 로 막는다.
   */
-  const isAdmin = isAdministrativeRole(user?.role);
+  const isAdmin = canPermission(user, 'SATISFY_MODERATE');
   const [score, setScore] = useState(0);
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);

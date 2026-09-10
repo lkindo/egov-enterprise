@@ -3,15 +3,8 @@ import type { components, operations } from '@/types/generated-api';
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 import {
-  createAuthorOperation,
-  deleteAuthorOperation,
-  deleteAuthorsOperation,
   getAuthorMenusOperation,
-  getAuthorOperation,
-  getAuthorRolesOperation,
   getAuthorsOperation,
-  saveAuthorRolesOperation,
-  updateAuthorOperation,
 } from '@/types/generated-operations';
 /**
  * 권한별 메뉴 할당 여부 응답 1건 — 서버 `MenuCreateDto` 의 실제 모양이다.
@@ -96,41 +89,6 @@ class AuthorAdminService extends AdminService {
     return requireAuthorPage(response);
   }
 
-  /** 권한 그룹 상세 조회 */
-  async getAuthor(authorCode: string, config?: AxiosRequestConfig): Promise<AuthorInfo> {
-    return this.executeGenerated(getAuthorOperation, {
-      path: { authrtCd: authorCode },
-      config,
-    });
-  }
-
-  /** 권한 그룹 등록 */
-  async createAuthor(data: Partial<AuthorInfo>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(createAuthorOperation, { body: data as AuthorInfo, config });
-  }
-
-  /** 권한 그룹 수정 */
-  async updateAuthor(authorCode: string, data: Partial<AuthorInfo>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(updateAuthorOperation, {
-      path: { authrtCd: authorCode },
-      body: data as AuthorInfo,
-      config,
-    });
-  }
-
-  /** 권한 그룹 삭제 */
-  async deleteAuthor(authorCode: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(deleteAuthorOperation, {
-      path: { authrtCd: authorCode },
-      config,
-    });
-  }
-
-  /** 권한 그룹 다중 삭제 */
-  async deleteAuthors(authorCodes: string[], config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(deleteAuthorsOperation, { body: authorCodes, config });
-  }
-
   /**
    * 권한별 메뉴 할당 여부 조회.
    *
@@ -148,44 +106,6 @@ class AuthorAdminService extends AdminService {
   async getAuthorMenus(authorCode: string, config?: AxiosRequestConfig): Promise<AuthorMenuAssignment[]> {
     return this.executeGenerated(getAuthorMenusOperation, {
       path: { authrtCd: authorCode },
-      config,
-    });
-  }
-
-  /**
-   * 권한별 롤 목록과 할당 여부 조회.
-   *
-   * 서버는 `tb_role_info`에 left join 으로 할당 여부(`regYn`)를 붙여 페이지 단위로 내려준다.
-   * 전체 페이지를 모으면 "이 권한이 가질 수 있는 롤 전체 + 지금 가진 것" 이 된다.
-   *
-   * ⚠ 호출자는 서버 상한 안에서 **모든 페이지를 끝까지** 받아야 한다. 저장이 전체 교체
-   * (`insertAuthorRole` 이 기존 매핑을 전량 삭제한 뒤 재삽입)이므로, 첫 페이지만 보고
-   * 저장하면 **보지 못한 페이지의 롤이 전부 지워진다**.
-   */
-  async getAuthorRoles(
-    authorCode: string,
-    params?: { pageIndex?: number; pageUnit?: number; searchKeyword?: string },
-    config?: AxiosRequestConfig,
-  ): Promise<PageResponse<AuthorRoleProjection>> {
-    const response = await this.executeGenerated(getAuthorRolesOperation, {
-      path: { authrtCd: authorCode },
-      query: params,
-      config,
-    });
-    return requireAuthorPage(response);
-  }
-
-  /**
-   * 권한에 할당할 롤을 저장한다.
-   *
-   * ⚠ **전체 교체다.** 서버가 기존 매핑을 전량 삭제한 뒤 받은 목록으로 다시 만든다.
-   * 부분 목록을 보내면 나머지가 조용히 사라진다 — 호출자는 반드시 "지금 선택된 전체 집합" 을
-   * 보내야 한다.
-   */
-  async saveAuthorRoles(authorCode: string, roleCodes: string[], config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(saveAuthorRolesOperation, {
-      path: { authrtCd: authorCode },
-      body: roleCodes,
       config,
     });
   }

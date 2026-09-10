@@ -39,16 +39,6 @@ import java.util.Map;
 @Slf4j
 public class ApiSecurityConfig {
         private final JwtTokenProvider jwtTokenProvider;
-        private final org.springframework.beans.factory.ObjectProvider<org.springframework.jdbc.core.JdbcTemplate> jdbcTemplateProvider;
-
-        @org.springframework.beans.factory.annotation.Value("${rbac.shadow.enabled:false}")
-        private boolean rbacShadowEnabled;
-
-        @org.springframework.beans.factory.annotation.Value("${rbac.db-auth.enabled:false}")
-        private boolean rbacDbAuthEnabled;
-
-        @org.springframework.beans.factory.annotation.Value("${rbac.db-auth.secure-paths:#{T(java.util.Collections).emptyList()}}")
-        private List<String> securePaths;
 
         /**
          * 관리(actuator) 서버 포트. 미설정이면 애플리케이션 포트와 동일 컨텍스트다.
@@ -87,16 +77,8 @@ public class ApiSecurityConfig {
                                 && !"-1".equals(managementServerPort);
         }
 
-        public ApiSecurityConfig(
-                JwtTokenProvider jwtTokenProvider,
-                org.springframework.beans.factory.ObjectProvider<org.springframework.jdbc.core.JdbcTemplate> jdbcTemplateProvider) {
+        public ApiSecurityConfig(JwtTokenProvider jwtTokenProvider) {
                 this.jwtTokenProvider = jwtTokenProvider;
-                this.jdbcTemplateProvider = jdbcTemplateProvider;
-        }
-
-        @Bean
-        public nuri.business.security.authorization.DbUrlAuthorizationManager dbUrlAuthorizationManager() {
-                return new nuri.business.security.authorization.DbUrlAuthorizationManager(jdbcTemplateProvider.getIfAvailable(), securePaths);
         }
 
         @Bean
@@ -114,9 +96,6 @@ public class ApiSecurityConfig {
 
         @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins}")
         private List<String> allowedOrigins;
-
-        @org.springframework.beans.factory.annotation.Value("${security.whitelist}")
-        private List<String> whitelist;
 
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
@@ -162,11 +141,6 @@ public class ApiSecurityConfig {
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
                                 .authorizeHttpRequests(auth -> {
-                                                auth.requestMatchers(whitelist.stream()
-                                                                .map(ApiSecurityConfig::pathMatcher)
-                                                                .toArray(RequestMatcher[]::new))
-                                                                .permitAll();
-
                                                 // [W1-12 보완] 관리 포트가 분리된 형상에서만 스크레이프 경로를 연다.
                                                 //   securePaths 보다 **먼저** 선언해야 한다 — authorizeHttpRequests 는
                                                 //   선언 순서로 매칭하므로, 뒤에 두면 `/actuator/**` 규칙이 먼저 걸려 무효가 된다.
@@ -178,36 +152,8 @@ public class ApiSecurityConfig {
                                                                         .permitAll();
                                                 }
 
-                                                if (rbacDbAuthEnabled) {
-                                                        // Phase 3: DB 인가 적용 (enforce)
-                                                        auth.requestMatchers(securePaths.stream()
-                                                                        .map(ApiSecurityConfig::pathMatcher)
-                                                                        .toArray(RequestMatcher[]::new))
-                                                                .access(dbUrlAuthorizationManager());
-                                                } else if (rbacShadowEnabled) {
-                                                        // Phase 2: 섀도우 모드 (병행 평가 및 로깅, enforce는 하드코딩)
-                                                        var adminEnforce = org.springframework.security.authorization.AuthorityAuthorizationManager.<org.springframework.security.web.access.intercept.RequestAuthorizationContext>hasAnyRole(
-                                                                nuri.business.security.AuthorityConstants.ROLE_ADMIN,
-                                                                nuri.business.security.AuthorityConstants.ROLE_SYSTEM
-                                                        );
-                                                        var shadowLogger = new nuri.business.security.authorization.ShadowAuthorizationLogger(
-                                                                adminEnforce,
-                                                                dbUrlAuthorizationManager(),
-                                                                true
-                                                        );
-                                                        auth.requestMatchers(securePaths.stream()
-                                                                        .map(ApiSecurityConfig::pathMatcher)
-                                                                        .toArray(RequestMatcher[]::new))
-                                                                .access(shadowLogger);
-                                                } else {
-                                                        // 기존 하드코딩 동작
-                                                        auth.requestMatchers(pathMatcher("/api/v1/admin/**"))
-                                                                .hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
-                                                                .requestMatchers(pathMatcher("/actuator/**"))
-                                                                .hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM);
-                                                }
-
-                                                auth.anyRequest().authenticated();
+                                                auth.anyRequest().access(new nuri.business.security.authorization.OperationAuthorizationManager(
+                                                        new nuri.business.security.authorization.PermissionPolicy()));
                                 })
                                 .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint((request, response, authenticationException) -> {
@@ -247,7 +193,9 @@ public class ApiSecurityConfig {
                                 .addFilterBefore(new nuri.foundation.security.filter.OriginValidationFilter(allowedOrigins),
                                                 UsernamePasswordAuthenticationFilter.class)
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
-                                                UsernamePasswordAuthenticationFilter.class);
+                                                UsernamePasswordAuthenticationFilter.class)
+                                .addFilterBefore(new nuri.config.websocket.WebSocketCookieAuthenticationFilter(jwtTokenProvider,allowedOrigins),
+                                                JwtAuthenticationFilter.class);
                 return http.build();
         }
 
@@ -288,7 +236,7 @@ public class ApiSecurityConfig {
                                                                 pathMatcher("/swagger-ui.html")
                                                 };
                                                 if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))) {
-                                                        auth.requestMatchers(docs).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM);
+                                                        auth.requestMatchers(docs).hasAuthority("OPS_READ");
                                                 } else {
                                                         auth.requestMatchers(docs).permitAll();
                                                 }

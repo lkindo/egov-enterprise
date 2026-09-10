@@ -39,16 +39,15 @@ export default async function PolicyViewPage({
     /*
      * [2026-08-28] 실패 사유를 세 갈래로 구분한다.
      *
-     * 이 화면은 본문을 /api/v1/admin/system/policies/{type} 에서 읽는데, ApiSecurityConfig 가
-     * /api/v1/admin/** 를 ROLE_ADMIN·ROLE_SYSTEM 으로 제한한다. 즉 **일반 사용자에게는 영구히
-     * 403** 이다. 종전 폴백은 '잠시 후 다시 시도해 주세요' 라고 안내해 일시적 장애처럼 보이게
+     * 이 화면은 /api/v1/admin/system/policies/{type}에서 읽으며 현재 POLICY_READ가 필요하다.
+     * 이 기능권한이 없으면 403이다. 종전 폴백은 '잠시 후 다시 시도해 주세요' 라고 안내해 일시적 장애처럼 보이게
      * 했고, 사용자는 새로고침을 반복하게 된다 — 권한 문제는 기다려도 해소되지 않는다.
      *
      * 404(미등록)는 이번에 새로 구분한다. 종전에는 서버가 본문을 **지어내서** 200 으로
      * 돌려줬기 때문에 이 갈래가 존재할 수 없었다 — 신규 설치의 기본 상태가 "가짜 개인정보
      * 처리방침을 진짜처럼 게시" 였다. 없는 것은 없다고 말한다.
      *
-     * 비관리자도 읽을 수 있는 공개 조회 경로를 여는 것은 신규 API 표면이자 라우트 인가
+     * 인증·기능권한 없이 읽는 공개 조회 경로를 여는 것은 신규 API 표면이자 라우트 인가
      * 완화라 별도 결정이다.
      */
     const status = (error as { response?: { status?: number } })?.response?.status;
@@ -81,7 +80,7 @@ export default async function PolicyViewPage({
               {view.kind === 'not-registered'
                 ? '등록된 정책이 없습니다. 시스템 관리자가 등록하면 이곳에 표시됩니다.'
                 : view.kind === 'permission-wall'
-                  ? '이 정책 본문은 현재 관리자만 열람할 수 있습니다. 필요하면 시스템 관리자에게 문의해 주세요.'
+                  ? '이 정보를 열람할 권한이 필요합니다. 필요하면 시스템 관리자에게 문의해 주세요.'
                   : '정책 내용을 불러오지 못했습니다.'}
             </p>
           )}

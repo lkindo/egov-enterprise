@@ -212,7 +212,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
         const authCode = `ROLE_E2E_${suffix.toUpperCase()}`;
         const groupId = `GROUP_E2E_${suffix.toUpperCase()}`;
 
-        test('Authority/Group/Role Comprehensive CRUD', async ({ securityAdminPage }) => {
+        test('권한 그룹·사용자 분류 그룹 등록과 퇴역 롤 경로 이동', async ({ securityAdminPage }) => {
             console.log('\n>>> Starting Security & Authority CRUD Flow');
 
             // 1. Authority Management
@@ -225,8 +225,6 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
 
             // 3. Role Management
             await securityAdminPage.gotoRoles();
-            await securityAdminPage.createRole(`URL_E2E_${suffix.toUpperCase()}`, `E2E Role ${suffix}`);
-
             console.log('>>> Security & Authority CRUD Completed');
         });
     });

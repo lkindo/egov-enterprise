@@ -30,6 +30,7 @@ public class AuthorRoleApiController {
 
     @Operation(summary = "권한별 롤 목록 조회", description = "특정 권한에 할당된 롤 목록 및 전체 롤 상태를 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorRoleApiController#getAuthorRoles')")
     public ResponseEntity<ApiResponse<PageResponse<AuthorRoleProjection>>> getAuthorRoles(
             @PathVariable String authrtCd,
             @Valid @ModelAttribute BaseSearchDto searchDto) {
@@ -46,6 +47,7 @@ public class AuthorRoleApiController {
 
     @Operation(summary = "권한별 롤 할당 저장", description = "특정 권한에 대해 선택된 롤들을 할당합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorRoleApiController#saveAuthorRoles')")
     public ResponseEntity<ApiResponse<Void>> saveAuthorRoles(
             @PathVariable String authrtCd,
             @RequestBody List<String> roleCds) {
