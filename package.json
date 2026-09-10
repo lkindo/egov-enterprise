@@ -33,6 +33,8 @@
     "base:generate-db": "node scripts/generate-reusable-base-db.mjs",
     "base:generate-source": "node scripts/generate-reusable-base-source.mjs",
     "verify": "node scripts/verify.mjs full",
+    "atlas:build": "node scripts/build-atlas.mjs",
+    "atlas:check": "node scripts/build-atlas.mjs --check",
     "verify:docs": "node scripts/verify.mjs docs",
     "verify:fast": "node scripts/verify.mjs fast",
     "verify:push": "node scripts/verify.mjs push",

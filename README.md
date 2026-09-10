@@ -7,6 +7,8 @@
 
 ## 📑 프로젝트 개요 (Overview)
 
+프로젝트 구조·업무 흐름·헌법·검증·운영은 [Governance & Harness Atlas](frontend/public/governance_harness_atlas.html)에서 탐색할 수 있습니다. 설명의 원본과 생성·현행화 방법은 [Atlas 가이드](docs/03-guides/governance-atlas-guide.md)를 참고하세요.
+
 본 프로젝트는 전자정부 표준프레임워크의 방대한 공통 컴포넌트를 최신 기술 스택으로 재구축하여, 엔터프라이즈 환경에서의 확장성, 유연성, 그리고 사용자 경험(UX)을 극대화하는 것을 목표로 합니다.
 
 - **Frontend**: 차세대 React 프레임워크인 Next.js 16을 활용한 고성능 UI/UX 구현.
@@ -52,7 +54,7 @@ egov-enterprise/
 ├── migration-tool/    # 레거시→표준 스키마 데이터 이관 ETL CLI (독립 실행, foundation 미의존, 이관 시에만 선택 포함)
 └── frontend/          # Next.js 16 (App Router) 프런트엔드
 ```
-- **의존 방향**: `api-server → business-app → business-core → foundation` (단방향·비순환). 형제 도메인 간 결합은 `DomainIsolationTest`(ArchUnit)로 차단 → 프로젝트 고유 도메인의 안전한 삭제 지원.
+- **의존 방향**: `api-server → business-app → business-core → foundation` (단방향·비순환). `DomainIsolationTest`는 엔티티의 도메인 격리를, `CrossDomainCouplingLinterTest`는 서비스의 교차 도메인 참조를 검사한다. 잔여 결합과 도메인 제거 시 확인할 경계는 [활성 gap](.agent/memory/known-gaps.md)에서 추적한다.
 - **엔티티↔DTO 매핑**: MapStruct `@Mapper` 표준(수기 `from()` 대체). 신규 도메인은 스캐폴드 제너레이터(`scripts/generate-domain.ps1`)로 골격을 뽑되, Service·Controller 는 [getting-started §5.2.1](docs/03-guides/getting-started.md) 의 실존 관례(`ApiResponse` 래퍼·`@PreAuthorize`·`@Transactional(readOnly=true)`·MapStruct)대로 작성한다. 제네릭 `BaseCrudController`/`BaseCrudService`는 존재하지 않으므로 상속 대상으로 가정하지 않는다.
 
 ---
@@ -89,7 +91,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 ```
 
 ### 로컬 개발 통합 실행
-아래 통합 실행 명령을 호출하면 로컬 DB 구동 상태를 자동으로 확인하고, 백엔드와 프론트엔드를 동시에 실행합니다.
+아래 통합 실행 명령은 루트 `.env`를 읽어 같은 환경으로 백엔드와 프론트엔드를 실행합니다. DB는 앞 단계의 부트스트랩 또는 별도 구성으로 먼저 준비합니다.
 ```bash
 npm run dev
 # 또는 (Windows PowerShell)

@@ -5,9 +5,10 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-09
-verified_against: bc56579c19bf98495418e5a9060bda17d2f3028d
+verified_at: 2026-09-10
+verified_against: b1b4ba4bd21939cdaa5351447611486f647efa1e
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0015-secure-coding-ci.md
   - ../../docs/02-architecture/decisions/ADR-0013-standard-text-length-alignment.md
   - ../../docs/02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md
   - ../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md
@@ -29,6 +30,7 @@ refresh_triggers:
 
 - 허용 상태: `accepted`, `superseded`, `rejected`.
 - 기존 결정을 소급 편집하지 않는다. 변경은 후속 ADR/DEC가 `supersedes`로 연결한다.
+- 행의 시행일·당시 수치는 결정 배경이며 현재 구현 수치가 아니다. 현행 상태는 [project-context.md](project-context.md)·[known-gaps.md](known-gaps.md)와 링크된 코드에서 확인한다. 재검증일은 인덱스·참조 점검일이며 과거 승인이나 외부 운영 증거를 새로 부여하지 않는다.
 - 헌법과 `AGENTS.md`의 실질 정책 변경은 사용자 명시 요청이 먼저다.
 
 ## Accepted ADR index

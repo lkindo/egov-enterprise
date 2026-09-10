@@ -20,13 +20,13 @@
   "code": "COMMON_001",
   "message": "Success",
   "data": {},
-  "timestamp": "2026-08-19 09:00:00"
+  "timestamp": "2026-08-19T09:00:00"
 }
 ```
 
 HTTP 상태와 body의 `status`는 같아야 한다. 기본 `ErrorCode` 상태와 다른 HTTP 상태를 써야 할 때는 상태를 받는 `ApiResponse.error(HttpStatus, ErrorCode, String)` 팩토리를 사용한다.
 
-바이너리 다운로드·스트림처럼 wrapper를 적용할 수 없는 응답은 현재 구현과 헌법 사이에 승인되지 않은 예외가 남아 있다. 자동으로 wrapper로 변환하지 말고 [공용 gap registry](../../../memory/known-gaps.md)와 해당 컨트롤러 계약을 먼저 확인한다.
+바이너리 다운로드·스트림은 [헌법 제6조 3항](./constitution.md#제6조-응답-포맷의-통일)의 승인된 예외다. `Content-Disposition: attachment`, 명시적 미디어 타입과 [ResponseContractLinterTest](../../../../api-server/src/test/java/nuri/api/harness/ResponseContractLinterTest.java)의 파일명·핸들러 census 조건을 함께 지킨다. JSON으로 표현 가능한 응답을 이 예외로 우회하지 않는다.
 
 ## 2. 페이징 응답
 
@@ -62,6 +62,8 @@ public record PostRequest(
 ```
 
 API 계약 변경 뒤에는 서버 기동에 의존하지 않는 오프라인 codegen을 기본으로 실행한다.
+
+입력이 바뀌면 [OpenAPI 추출 절차](../../../../docs/03-guides/api-documentation-guide.md)에 따라 `api-docs.json`부터 갱신한 후 아래 명령을 실행한다. `codegen:zod`는 `generated-zod.ts`와 `generated-operations.ts`를 함께 생성한다. 날짜 입력은 [Ymd](../../../../foundation/src/main/java/nuri/foundation/core/validation/Ymd.java)의 달력 형식과 [YmdRange](../../../../foundation/src/main/java/nuri/foundation/core/validation/YmdRange.java)의 기간 순서를 사용하되, 필수 여부와 기존 읽기 데이터의 처리 범위는 도메인 계약을 따른다.
 
 ```bash
 pnpm -C frontend codegen:file

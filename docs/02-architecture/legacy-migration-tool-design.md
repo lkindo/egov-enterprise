@@ -31,7 +31,7 @@ mapping.yml + source DB
 | `discover` | `mapping.yml`과 source connection으로 요청한 catalog/schema/44개 object kind를 조사하고 canonical JSON inventory를 atomic write | source·target `endpointId` 존재를 요구하고, source endpoint digest·adapter product/version preflight·JDBC read-only signal·driver evidence·discovery scope를 inventory에 결속한다. raw DDL·JDBC URL·username/password는 artifact에 기록하지 않는다. |
 | `plan` | inventory, mapping, 현재 target PostgreSQL schema fingerprint와 선택적 `review.yml`을 결합해 schema v3 plan을 atomic write | inventory의 source endpoint·driver·adapter·scope, mapping digest, target fingerprint, migration-tool 구현 bytes·핵심 class·adapter read-session·선택 transformer 계약을 digest로 묶는다. 발견 객체 전부가 검토·분류되지 않거나 visibility finding이 남으면 `commitReady=false`다. |
 | `validate` | plan 한 개를 읽어 `commitReady`를 검사 | 승인 workflow는 정확히 plan schema v3만 허용한다. 이 명령은 live DB를 다시 읽거나 새 artifact를 만들지 않는다. |
-| `load` | mapping·inventory·plan과 동일 discovery scope로 source를 다시 조사하고 `dry-run` 또는 `commit` 실행 | source endpoint/driver/scope/inventory, mapping, target PostgreSQL fingerprint, 실행 구현 계약을 모두 다시 exact-match한다. 불일치·미승인 adapter/driver/freeze·검증 WARN/FAIL은 non-zero 종료다. 현재 load 결과 JSON/Markdown artifact는 만들지 않는다. |
+| `load` | mapping·inventory·plan과 동일 discovery scope로 source를 다시 조사하고 `dry-run` 또는 `commit` 실행 | source endpoint/driver/scope/inventory, mapping, target PostgreSQL fingerprint, 실행 구현 계약을 모두 다시 exact-match한다. 불일치·미승인 adapter/driver/freeze·검증 WARN/FAIL은 non-zero 종료다. plan 옆의 고유 실행 JSON에 `STARTED`를 먼저 저장하고 `PASS`/`FAILED`로 갱신한다. |
 
 Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 적용한다. 출력은 같은 디렉터리의 임시 파일을 `fsync`한 뒤 atomic replace하며 atomic move를 지원하지 않으면 실패한다. Inventory는 raw native definition 대신 definition hash만 보존하고, artifact redaction guard는 JDBC URL·credential·private key 형태를 차단한다.
 
@@ -41,7 +41,7 @@ Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 �
 - **Driver**: bundled driver는 실제 driver class/code-source bytes, 외부 driver는 승인한 local JAR들의 SHA-256과 class를 결속한다.
 - **Discovery scope**: adapter ID, catalog/schema, system-object 포함 여부, 44개 object kind의 `REQUESTED`·`NOT_REQUESTED`·`NOT_APPLICABLE` manifest를 inventory에 고정한다.
 - **Implementation**: plan은 migration-tool module class/resource bytes, 핵심 ETL·validator·verifier·load-surface class, adapter identity/read-session policy와 선택 transformer digest를 고정한다.
-- **Target**: mapping이 참조하는 PostgreSQL table·column·PK metadata와 DB product/version을 fingerprint한다.
+- **Target**: mapping이 참조하는 PostgreSQL table·column·PK metadata, DB product/version, 자격증명을 제거한 설정·연결 JDBC 위치, cluster system identifier, DB OID·이름·기본 스키마, 허용 스키마 목록을 fingerprint한다. [TargetEndpointBinding](../../migration-tool/src/main/java/nuri/migration/artifact/TargetEndpointBinding.java)과 [fingerprintBound](../../migration-tool/src/main/java/nuri/migration/postgres/PostgresTargetSchemaFingerprinter.java)가 정본이며 identity 조회 실패 시 중단한다. 업무 테이블은 허용된 스키마를 명시해야 한다.
 - **Review**: 선택적 `review.yml`은 inventory·target·mapping·execution contract 네 digest에 결속되고, 객체 stable ID별 disposition과 검토 여부를 선언한다.
 
 > **첫 차단 요소 해소(2026-09-05):** [`MappingLoader.resolveDbConfig()`](../../migration-tool/src/main/java/nuri/migration/model/MappingLoader.java)는 환경 변수 치환 뒤에도 source/target `endpointId`를 보존한다. [`MappingLoaderEndpointBindingTest`](../../migration-tool/src/test/java/nuri/migration/model/MappingLoaderEndpointBindingTest.java)는 literal·환경 변수 `endpointId`를, [`MigrationWorkflowRunnerTest`](../../migration-tool/src/test/java/nuri/migration/MigrationWorkflowRunnerTest.java)는 실제 YAML 파일을 읽는 `discover` 경로와 inventory의 source endpoint binding을 회귀 검증한다. 이는 파일 loader 연결 결함을 닫은 증거이며 실제 DB rehearsal이나 production cutover 준비 완료를 뜻하지 않는다.
@@ -162,11 +162,11 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 다음 항목이 닫히기 전에는 plan의 `commitReady=true`나 load의 PASS를 운영 이관 승인으로 사용하지 않는다.
 
 1. **완료(2026-09-05):** `MappingLoader`가 source/target `endpointId`를 보존하도록 수정하고, [loader 회귀](../../migration-tool/src/test/java/nuri/migration/model/MappingLoaderEndpointBindingTest.java)와 [실제 YAML `discover` 회귀](../../migration-tool/src/test/java/nuri/migration/MigrationWorkflowRunnerTest.java)를 추가했다.
-2. target PostgreSQL은 현재 `endpointId` 라벨과 product/version·schema fingerprint만 결속한다. credential을 제거한 JDBC location/instance identity도 artifact에 결속해, 같은 `endpointId`와 동일 schema를 가진 다른 PostgreSQL로 URL이 바뀌어도 load가 통과할 수 있는 공백을 닫는다.
+2. **구현 완료:** target 접속 위치·cluster/DB identity·허용 스키마를 승인 digest에 결속한다. 실제 도입 환경의 identity 조회 권한과 복제본·접속 경로는 별도로 확인한다. 이전 스키마 전용 digest의 plan은 다시 작성·승인한다.
 3. PostgreSQL source/target과 Oracle·Tibero·MySQL·MariaDB·SQL Server adapter를 지원 버전·실제 driver·최소권한 계정으로 검증한다. 현재 vendor query 정의와 H2/mock 테스트는 실 DB 증거가 아니다.
 4. charset/collation/timezone, quoted identifier, LOB와 vendor-specific type, 대용량 스트리밍을 익명화된 대표 데이터로 rehearsal한다.
-5. canonical load 결과 JSON/Markdown artifact, 실행자·승인자·환경·시각·행수/checksum·실패 코드를 보존하고 독립 검증 절차를 둔다.
-6. chunk 부분 성공, self-reference 예약 keymap, commit ambiguity를 판별·조정하는 reconciliation과 backup/rollback runbook을 승인한다.
+5. **JSON 구현 완료:** 실행별 승인·mapping·target digest, 모드, 시각, 테이블별 건수·검증 상태를 보존한다. 원시 행·키·접속정보는 기록하지 않는다. `STARTED` 잔류는 결과 미확정이며 `DRY_RUN/PASS`는 실제 적재 완료가 아니다. 운영 승인자·백업·점검 창과의 결속은 배포 절차로 확보한다.
+6. [부분 적재 복구 런북](../04-operations/migration-recovery-runbook.md)과 PostgreSQL 회귀가 마련돼 있다. 실제 프로세스 종료 후 체크포인트 재개·무중복·변조 탐지도 검증했다. self-reference 예약 keymap, commit ambiguity와 운영 백업 복원·cutover는 인수 환경에서 별도 승인·실증한다.
 7. 기존 target 행 충돌·재실행·source 변경/삭제 정책을 정하고, 필요한 경우 staging 기반 제한적 upsert를 별도 설계한다. 현재 INSERT-only를 자동 overwrite로 확장하지 않는다.
 8. 초기 이관 뒤 증분 동기화가 필요하면 watermark/CDC, 순서·중복·삭제·cutover freeze와 재처리 의미를 별도 구현·검증한다.
 9. view·routine·trigger·grant 등 비데이터 객체의 `RECREATE_VIA_FLYWAY`·`REIMPLEMENT_IN_APP`·`EXTERNALIZE` disposition을 실제 Flyway/application 변경 및 owner 승인과 연결한다.
@@ -179,7 +179,7 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 ./gradlew :migration-tool:test
 ```
 
-현재 test inventory는 Java 테스트 소스 **82개**, `@Test` **403건**이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target fingerprint와 strict 종료를 검증한다. PostgreSQL Testcontainers 테스트는 migration runtime schema와 generated identity 경로를 확인하지만 Docker가 없으면 비활성화되며, source vendor 전수 workflow·운영 규모·권한·cutover/rollback 증거는 아니다.
+현재 테스트 목록은 [migration-tool/src/test/java](../../migration-tool/src/test/java)와 실행 보고서가 정본이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target 환경 결속과 strict 종료를 검사한다. [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 사용해 실제 자식 JVM 종료, 500행 체크포인트 재개, 재실행 무중복·변조 탐지를 검증한다. Docker가 필요한 경로와 로컬 실행 결과의 범위는 [검증 기록](../04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드)을 따른다. 다른 source vendor·운영 규모·권한·cutover/rollback 증거는 별도로 필요하다.
 
 ---
-*Verified against the current `MappingLoader`, real-YAML workflow regression, and GAP-MIG-001: 2026-09-05*
+*Source review: 2026-09-10 — target binding, execution JSON, PostgreSQL recovery tests. 운영 적용 여부는 별도 증거를 요구한다.*

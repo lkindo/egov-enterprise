@@ -30,7 +30,8 @@ PIT의 Launcher 자동 탐색도 임시 configuration을 해석한다. 현재는
 
 | 경로 | 역할 | 강제력 |
 |---|---|---|
-| [dependency-submission.yml](../../.github/workflows/dependency-submission.yml) | main의 Gradle dependency graph를 GitHub에 제출 | 제출 실패는 보이지만 merge required check는 아님 |
+| [dependency-submission.yml](../../.github/workflows/dependency-submission.yml) | main의 Gradle graph 제출 및 PR의 읽기 전용 graph artifact 생성 | producer 자체는 required context가 아니며 PR의 `secret-scan`이 snapshot readiness·dependency review를 요구 |
+| [dependency-submission-publish.yml](../../.github/workflows/dependency-submission-publish.yml) | 신뢰된 `workflow_run`에서 PR artifact를 검증·제출 | PR 코드를 checkout/run하지 않는 게시 경계 |
 | GitHub Dependabot alerts | GitHub Advisory DB와 제출 graph·lockfile을 대조 | 외부 가변 상태. dismissal이 코드 안전성을 만들지는 않음 |
 | [dependency-check.yml](../../.github/workflows/dependency-check.yml) | 주간·수동 NVD 기반 보조 스캔 | report 생성·모듈 범위는 검증하지만 CVE 결과 자체는 advisory |
 | `frontend/package.json`의 제한 범위 override | 전이 의존성의 알려진 취약 버전을 최소 상향 | lockfile·codegen·test 검증이 동반돼야 함 |

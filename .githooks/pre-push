@@ -75,11 +75,12 @@ npm run test:operational-contracts \
 SCOPE_DOCS_ONLY=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field docsOnly)
 SCOPE_BACKEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field backend)
 SCOPE_FRONTEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field frontend)
+SCOPE_ATLAS=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field atlas)
 echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / frontend=$SCOPE_FRONTEND"
 
 if [ -n "$CHANGED_FILES" ]; then
   # Atlas는 전용 docs-as-code 계약을 통과한 경우에만 문서 fast-pass를 허용한다.
-  if echo "$CHANGED_FILES" | grep -qx 'frontend/public/governance_harness_atlas.html'; then
+  if [ "$SCOPE_ATLAS" = "true" ]; then
     echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts"
     pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts \
       || { echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }

@@ -46,6 +46,6 @@
 
 ## 결정과 별개로 남은 실행 조건
 
-- CSP Phase 3(`style-src` 세분화)는 production build에서 sonner·framer-motion의 런타임 style 주입을 측정한 뒤 수행한다. nonce 기반 Phase 4는 PD-CSP-001 결정(DEC-OPS-011: PPR 포기·전 페이지 동적 렌더)으로 2026-08-20 집행 완료됐다 — 상세는 [known-gaps GAP-FE-001](../../.agent/memory/known-gaps.md)을 본다.
-- 외부 자격·환경 때문에 실행하지 못한 NVD 스캔, 실제 k6, 인증 ZAP은 [검증 사각지대 런북](verification-blindspots.md)의 `blocked-external` 규칙으로 관리한다.
+- CSP의 `style-src 'unsafe-inline'`은 2026-08-30 런타임 style 주입 검토 후 accepted-risk로 유지한다. nonce 기반 `script-src`는 적용돼 있으며 style 세분화 재개 조건은 [GAP-FE-001](../../.agent/memory/known-gaps.md)을 따른다.
+- 격리 PostgreSQL의 혼합 100 VU k6와 장애 복구는 [검증 기록](readiness-followups.md#혼합-부하와-장애-복구)에 있다. 운영 규모 부하·NVD 전체 스캔·인증 ZAP은 [검증 사각지대 런북](verification-blindspots.md)의 외부 증거 경계로 관리한다.
 - 단순 리팩터 아이디어나 완료 항목은 이 레지스트리에 두지 않는다. 필요해지면 구체적 목표·근거·소유자를 갖춘 이슈로 새로 만든다.

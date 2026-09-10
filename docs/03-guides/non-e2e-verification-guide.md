@@ -9,11 +9,15 @@ Playwright E2E는 브라우저 사용자 흐름을 검증하지만 서비스 분
 | 순수 도메인 분기·변환 | JUnit 단위 테스트 | 해당 모듈 `test --tests ...` | Spring wiring·DB dialect |
 | service·repository·web 계약 | Spring 통합/MockMvc | 모듈별 `test`, `@IntegrationTest` | 대부분 H2이므로 PostgreSQL 물리 정합 |
 | Flyway ↔ JPA 물리 스키마 | PostgreSQL Testcontainers | `./gradlew :api-server:schemaValidationTest` | 운영 데이터·실제 cutover |
-| 아키텍처·인가·계약 규칙 | ArchUnit·정적 하네스 | `./gradlew :api-server:harnessTest` | 동적 공격·미스캔 경로 |
+| 아키텍처·인가·계약 규칙 | ArchUnit·정적 하네스 | ArchUnit은 각 모듈 `test`, governance는 `./gradlew :api-server:harnessTest` | 동적 공격·미스캔 경로 |
 | 테스트의 결함 탐지력 | PIT mutation | 관련 Gradle PIT task, required `mutation-test` | 로컬 기본 실행은 CI strict 강도와 다를 수 있음 |
 | 브라우저 흐름·접근성·console | Playwright | 관련 spec, CI E2E shard | 미방문 화면·백그라운드 내부 상태 |
 | API 부하·지연 분포 | k6 | `test/load-tests/`, [부하 테스트 가이드](../04-operations/load-test-guide.md) | 대상 환경·계정·데이터 조건 |
-| 시크릿·의존성 취약점 | gitleaks·pnpm audit·Dependency-Check | CI/주간 workflow | 외부 DB·network 실패 시 unverified 가능 |
+| 시크릿 유출 | gitleaks | required `secret-scan`의 워킹트리·증분 스캔 | 소스의 보안 결함 분석은 별도 SAST |
+| 시큐어코딩 | CodeQL Java·JavaScript/TypeScript `security-extended` | required `secure-coding`, `npm run verify:sast -- java` / `javascript`(CodeQL 필요) | 정적 분석 범위 밖의 실행 경로·동적 공격 |
+| 의존성 취약점 | pnpm audit·dependency review·Dependency-Check | PR required 검사와 별도 주간 workflow | 주간 scan step의 비차단 경계는 [CI 가이드](cicd-pipeline.md#owasp-dependency-check-주간수동-전수-스캔) 참조 |
+| DB 장애 후 인증 복구 | 격리 PostgreSQL·API 장애 drill | [부하·장애 실행 가이드](../04-operations/load-test-guide.md) | 실제 운영 환경의 처리량·가용성 보장 |
+| 이관 중 프로세스 종료·재개 | 별도 JVM + PostgreSQL | `:migration-tool:test --tests '*EtlCrashRecoveryPostgresIntegrationTest'` | vendor별 LOB·운영 cutover 자격 |
 
 ## 변경 유형별 판단
 
@@ -62,13 +66,15 @@ Playwright E2E는 브라우저 사용자 흐름을 검증하지만 서비스 분
 
 # 아키텍처·계약 하네스
 ./gradlew :api-server:harnessTest
+# ArchUnit은 각 모듈 기본 test에서 실행
+./gradlew :business-core:test --tests '*ArchitectureTest'
 
 # PostgreSQL 물리 스키마(Docker 필요)
 ./gradlew :api-server:schemaValidationTest
 
 # 프런트 정적·단위 검증
 pnpm -C frontend exec tsc --noEmit
-pnpm -C frontend vitest run <target>
+pnpm -C frontend exec vitest run <target>
 
 # 관련 브라우저 spec
 pnpm -C frontend exec playwright test <spec>
@@ -77,3 +83,5 @@ pnpm -C frontend exec playwright test <spec>
 ## 완료 보고
 
 검증 대상, 사용한 층, 실행 명령, 결과, 의도적으로 제외한 범위를 함께 기록한다. 도구가 설치되어 있지 않거나 외부 환경이 없으면 `not-run`/`blocked-external`로 남기고, 예제 코드만으로 “하네스 도입 완료”라고 표현하지 않는다.
+
+*Last reviewed against current sources: 2026-09-10.*

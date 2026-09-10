@@ -21,8 +21,8 @@
   (24·25 스펙의 헤더 주석이 이 분업의 표준 사례다.)
 
 ### 2. 데이터 관리 및 명명 규칙 (Naming Convention)
-- **Prefix**: 테스트에서 생성하는 데이터(UserId, 제목 등)는 반드시 `user_test_` 또는 `test_` 접두사를 붙여야 합니다.
-- **Cleanup**: 테스트가 종료되면 가능한 한 직접 데이터를 삭제(Teardown)하거나, 아래의 클린업 명령어를 통해 가비지 데이터를 정리합니다.
+- **Prefix**: 생성 데이터는 해당 spec이 소유하는 고유 접두사를 사용한다. `user_test_`·`test_` 외에도 `E2E26_`, `ROLE_E2E_` 등 자원별 계약이 있으므로 현재 spec과 `cleanup-db.ts`를 대조한다.
+- **Cleanup**: 자신이 생성한 ID를 보존해 `finally`/teardown에서 삭제한다. 공용 cleanup은 명시된 접두사와 API만 처리하므로 신규 자원이 자동 정리된다고 가정하지 않고 대응 경로와 실패 검증을 함께 추가한다.
 
 ### 3. 구조적 설계 (POM & Fixtures)
 - **Page Object Model (POM)**: 복수 spec이 공유하거나 복잡한 화면 의미를 재사용할 때만 `e2e/pages`에 둔다. 단일 소비·미사용 POM은 유지비만 늘리므로 hygiene 계약이 차단한다.
@@ -72,9 +72,9 @@ CI의 `1/2`·`2/2`은 내부 실행 job label이고 브랜치 보호 required co
 
 E2E가 방문한 경로에서 기능 단언 외의 브라우저 오류를 놓치지 않도록 **Console Guard Architecture**를 공통 fixture로 운영합니다. 실행하지 않은 경로나 브라우저 밖의 백그라운드 작업까지 증명하지는 않습니다.
 
-### 1. Hydration Mismatch 전역 Fail-Fast 정책
+### 1. Hydration Mismatch 수집과 실패 판정
 - **배경**: Next.js의 SSR/RSC 렌더링 결과와 클라이언트 Hydration 결과가 어긋나는 경우, 브라우저가 직접 크래시(Crash)를 내지 않고 콘솔에 Warning/Error 형태의 불일치 로그를 남겨 은밀한 UI 훼손을 초래합니다.
-- **감지 및 차단**: `ConsoleErrorGuard`는 콘솔 출력 스트림을 실시간 감시하며, 아래의 정밀 키워드가 검출될 시 즉시 `🌊 [HYDRATION MISMATCH]` 에러로 가공해 테스트를 즉각 실패(Fail)시킵니다:
+- **감지 및 차단**: `ConsoleErrorGuard`는 콘솔 출력 스트림을 감시하며 아래 키워드를 `🌊 [HYDRATION MISMATCH]` 오류로 수집한다. `base-test.ts`의 fixture teardown에서 `verify()`를 호출해 실패시키므로 이벤트 발생 순간에 테스트나 빌드 프로세스를 중단하는 방식은 아니다:
   - `Hydration failed`
   - `Text content did not match`
   - `Prop ... did not match`
@@ -83,13 +83,13 @@ E2E가 방문한 경로에서 기능 단언 외의 브라우저 오류를 놓치
 
 ### 2. Silent HTTP API 에러 탐지 (Network Auditor)
 - **원리**: API fetch 실패(400 이상)나 리소스 로딩 오류가 발생하더라도 프론트엔드가 자체 에러 바운더리나 토스트 메시지로 우회하여 E2E 테스트 검증 요소를 통과하는 '무언의 에러(Silent API Failure)' 현상을 방지합니다.
-- **동작**: `response` 리스너를 통해 모든 4xx/5xx 실패를 잡아내어 에러 풀에 적재하고, 실패 시의 HTTP Method, 요청 URL, 리소스 타입을 명시해 빠른 디버깅을 유도합니다.
+- **동작**: `response` 리스너가 4xx/5xx를, `requestfailed`가 전송 실패를 수집한다. ledger에 정확히 등록한 예상 오류 외에는 fixture 종료 시 실패하며 HTTP method·URL·리소스 타입으로 진단한다. 이미지·인증 API를 전역 제외하지 않는다. 브라우저가 취소한 화면 탐색/RSC 요청 등 제한된 기본 필터는 [error-detector.ts](../../frontend/e2e/fixtures/error-detector.ts)가 정본이다.
 
 ### 3. 경고 및 콘솔 로그 오류 식별 정책 (Zero-Tolerance Policy)
-- **개념**: 운영 프로덕션 환경의 완전한 청정 상태(Clean State)를 보장하기 위해, 개발자가 소스 코드 상에 실수로 방치해 둔 일반 `console.log` 및 `console.warn` 출력을 잠재적인 오류 결함으로 간주합니다.
+- **개념**: E2E가 실제 방문한 화면의 예상하지 않은 `console.log`·`console.warn`을 결함 신호로 취급한다. 미방문 화면이나 운영 환경 전체의 무결성을 보장하지는 않는다.
 - **동작**:
-  - `console.warn` 감지 시 **`⚠️ [FORBIDDEN CONSOLE WARNING]`** 결함으로 식별하여 즉시 E2E 테스트를 실패 처리합니다.
-  - `console.log`/`console.info` 감지 시(단, Next.js 개발 서버의 Fast Refresh 및 빌드 도구의 내부 시스템 로깅 제외), **`⚠️ [FORBIDDEN CONSOLE LOG]`** 결함으로 간주하여 빌드를 즉시 중단 및 실패 처리합니다.
+  - 필터나 ledger에 해당하지 않는 warning은 **`⚠️ [FORBIDDEN CONSOLE WARNING]`**, log/info는 **`⚠️ [FORBIDDEN CONSOLE LOG]`**로 수집하고 fixture 종료 시 실패시킨다.
+  - Next.js 개발 도구·React DevTools·일부 전송 종료 로그 등의 기본 필터는 source에 좁은 조건으로 정의되어 있다. 문구를 넓혀 제품 오류를 숨기지 않는다.
 
 ### 4. 특정 테스트에서 의도된 오류를 등록하는 방법
 
@@ -118,7 +118,7 @@ test('API 500 복원력을 검증한다', async ({ page, consoleGuard }) => {
 
 ## 📊 계층형 테스트 구조 (Tiered Architecture)
 
-본 프로젝트의 25-Tier E2E 테스트 아키텍처의 상세 정의(Tier 1~25 파일, 검증 범위)는 **[테스트 종합 가이드](./testing-guide.md#e2e-테스트-playwright)**를 단일 진실 원천(SSOT)으로 참조한다.
+본 프로젝트의 26-Tier E2E 테스트 아키텍처의 상세 정의(Tier 1~26, 별도 게시판 마스터를 포함한 27개 spec)는 **[테스트 종합 가이드](./testing-guide.md#e2e-테스트-playwright)**를 참조한다. 실행 모집단의 정본은 spec discovery와 duration profile이며 문서가 이를 대신하지 않는다.
 
 > **계약 소유권**: Tier 번호는 파일 이름일 뿐 소유권을 뜻하지 않는다. 중복 시나리오를 늘리기 전에 아래 소유 파일의 인접 케이스로 추가한다.
 >
@@ -131,6 +131,7 @@ test('API 500 복원력을 검증한다', async ({ page, consoleGuard }) => {
 > | 조직 ↔ 일정 | **24** | |
 > | XSS 새니타이제이션 · malformed URL | **22** | |
 > | 게시판 마스터 생명주기 | **03-board-master** | |
+> | 부서 권한 일괄 적용·로그인 정책 쓰기 | **26** | 테스트 전용 자원에만 적용 |
 >
 > 새 테스트를 붙이기 전에 **그 계약의 소유 파일이 이미 있는지** 확인할 것.
 
@@ -165,7 +166,7 @@ pnpm -C frontend test:e2e:ui
 # 7. 스텝별 디버그 모드
 pnpm -C frontend test:e2e:debug
 
-# 8. 수동 DB 클린업 (테스트 데이터 강제 삭제)
+# 8. 수동 클린업 (격리 환경의 명시된 테스트 접두사를 관리자 API로 정리)
 pnpm -C frontend test:cleanup
 
 # 9. E2E 타입 검사 (서버 불필요 · pre-push 에 결속)
@@ -178,9 +179,9 @@ pnpm -C frontend type-check:e2e
 
 ## 🛠️ 유지보수 지침
 - **POM 활용**: 복수 spec이 공유하거나 복잡한 화면 의미를 캡슐화할 때만 `e2e/pages`에 추가한다. 생성만 하고 소비하지 않는 POM/fixture는 만들지 않으며 `base-test.ts` provider 등록과 실제 spec 소비를 같은 변경에서 증명한다.
-- **자동 클린업**: 테스트 종료 시 `globalTeardown`에 등록된 `cleanup-db.ts`가 가비지 데이터를 자동으로 정리합니다.
-- **에러 감시**: `ConsoleErrorGuard`가 모든 테스트에서 자동으로 동작하며, 하이드레이션 오류나 런타임 예외 발생 시 테스트를 즉시 실패 처리합니다.
+- **자동 클린업**: 정상 종료 경로에서 `globalTeardown`의 `cleanup-db.ts`가 명시된 테스트 데이터를 정리한다. `test:e2e:full`의 명령 연결은 `cleanup && playwright test && cleanup`이므로 Playwright 실패 뒤의 마지막 shell cleanup은 실행되지 않는다. 프로세스 강제 종료 시에는 teardown도 보장되지 않으므로 남은 자원을 확인해 표적 정리한다.
+- **에러 감시**: `base-test.ts`를 사용하는 테스트의 공용 page·adminPage·userPage fixture에 `ConsoleErrorGuard`가 설치된다. 별도로 만든 page/context는 자동 포함된다고 가정하지 않는다. 수집된 오류는 fixture 종료의 `verify()`가 판정한다.
 - **대기 방식**: `waitForTimeout`은 금지한다. locator 상태, URL, response, localStorage 등 관찰 가능한 조건을 기다리며 zero-tolerance ratchet이 재도입을 차단한다.
 
 ---
-*Last reviewed against current sources: 2026-08-19.*
+*Last reviewed against current sources: 2026-09-10.*

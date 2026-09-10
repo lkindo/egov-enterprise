@@ -15,10 +15,10 @@ REST Controller, 외부 요청·응답 DTO, 공통 응답, 예외 매핑 또는 
 - 공통 규칙: `AGENTS.md`와 백엔드 헌법
 - 응답 구현: `foundation/src/main/java/nuri/foundation/core/response/ApiResponse.java`
 - 오프라인 명세: `api-docs.json`
-- 생성물: `frontend/src/types/generated-api.d.ts`, `generated-zod.ts`
+- 생성물: `frontend/src/types/generated-api.d.ts`, `generated-zod.ts`, `generated-operations.ts`
 - 절차: `docs/03-guides/api-documentation-guide.md`
 
-일반 JSON API는 `ApiResponse<T>` 계약을 지킨다. 바이너리 download·stream·SSE처럼 wrapper가 부적합한 응답은 자동 변환하지 않는다. 현재 헌법에 예외 근거가 없으면 구현을 임의 정규화하지 말고 gap과 승인 필요성을 보고한다.
+일반 JSON API는 `ApiResponse<T>` 계약을 지킨다. 바이너리 download·stream의 승인된 예외는 [백엔드 헌법 제6조 3항](../../knowledge/backend-api-constitution/artifacts/constitution.md#제6조-응답-포맷의-통일)을 따른다. `Content-Disposition: attachment`, 명시적 미디어 타입, `ResponseContractLinterTest`의 파일명·핸들러 census를 함께 확인하며, wrapper로 기계 변환하지 않는다. SSE 등 이 승인 범위 밖의 새 응답 형태는 기존 예외로 간주하지 않고 별도 계약과 승인 근거를 확인한다.
 
 ## 검증 절차
 

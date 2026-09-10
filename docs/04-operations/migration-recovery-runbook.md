@@ -26,6 +26,8 @@ load는 plan 옆에 `<plan filename>.load-<UUID>.json`을 만든다. 적재 시�
 
 [PostgreSQL 복구 회귀 테스트](../../migration-tool/src/test/java/nuri/migration/EtlPartialLoadRecoveryPostgresIntegrationTest.java)는 501행 중 첫 500행 커밋 후 실패, 실패 행 수정, 같은 run 재개, 중복 없는 재실행과 대상 변조 탐지를 실행한다. 레거시 숫자/UUID 키의 검증 파라미터는 PostgreSQL이 실제 컬럼 타입으로 해석하도록 바인딩하며, typed 복합키는 기존 JDBC 타입을 보존한다.
 
+[프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 별도 JVM을 실제로 종료한 뒤 같은 run을 재개한다. 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea, 500행 체크포인트와 128MiB 자식 JVM 힙으로 재개·무중복·변조 탐지를 확인했다. 이 테스트의 실행과 PIT에는 `migration.drill.classpath`가 필요하며 [모듈 빌드](../../migration-tool/build.gradle)가 각각 주입한다. 운영 규모나 다른 vendor의 Blob/Clob까지 검증했다는 의미는 아니다([2026-09-10 검증 범위](readiness-followups.md#이관-프로세스-종료와-큰-필드)).
+
 ## 전체 롤백과 cutover
 
 부분 커밋을 일반 SQL `ROLLBACK` 한 번으로 되돌릴 수 없다. target의 업무 데이터를 자동 DELETE하거나 checkpoint만 제거하지 않는다. 재개가 불가능하면 승인된 **이관 전 DB·첨부·키 백업 세트**를 별도 격리 대상에 복원하고 무결성을 검증한다. 운영 접속 전환은 복원 검증·동일 버전 앱 확인·명시적 운영 승인 후 수행한다.

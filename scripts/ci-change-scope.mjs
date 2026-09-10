@@ -156,7 +156,10 @@ export function classifyChangedFiles(changedFiles) {
   const unknownFiles = files.filter(file => !isKnown(file));
   const full = files.length === 0 || unknownFiles.length > 0;
   const docsOnly = !full && files.every(isDocumentationOnly);
-  const atlas = files.includes('frontend/public/governance_harness_atlas.html');
+  const atlas = files.some(file => file === 'frontend/public/governance_harness_atlas.html'
+    || file.startsWith('frontend/atlas/')
+    || file === 'scripts/build-atlas.mjs'
+    || /^scripts\/atlas-[^/]+\.mjs$/.test(file));
   const backend = full || files.some(isBackend);
   const frontend = full || files.some(isFrontend) || files.includes('api-docs.json');
   const crossStack = full || files.some(file => matchesAny(file, CROSS_STACK_CONTRACT));
