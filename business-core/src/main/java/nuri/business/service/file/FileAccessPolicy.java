@@ -84,8 +84,7 @@ public class FileAccessPolicy {
         }
 
         // 5. 관리자 — 개인 귀속 참조원이 없을 때만.
-        boolean admin = SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN)
-                || SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM);
+        boolean admin = SecurityUtil.hasPermission("FILE_READ_ALL");
         if (admin && !grants.personalReference()) {
             return;
         }
@@ -143,8 +142,7 @@ public class FileAccessPolicy {
         }
 
         // 5. 관리자 — 개인 귀속 참조원이 없을 때만.
-        boolean admin = SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN)
-                || SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM);
+        boolean admin = SecurityUtil.hasPermission("FILE_DELETE_ALL");
         if (admin && !grants.personalReference()) {
             return;
         }

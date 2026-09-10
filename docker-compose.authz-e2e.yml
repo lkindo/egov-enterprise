@@ -1,0 +1,30 @@
+# Explicit disposable authorization cutover rehearsal; never include this overlay in deploy.sh.
+# CI jobs create this database locally. Ordinary development/production compose does not opt in.
+services:
+  db:
+    environment:
+      POSTGRES_DB: authz_e2e
+  api:
+    environment:
+      SPRING_PROFILES_ACTIVE: e2e
+      NURI_AUTHORIZATION_ISOLATED_CUTOVER: "true"
+      NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: CONFIRMED_DISPOSABLE_AUTHZ_DATABASE
+      SPRING_APPLICATION_JSON: >
+        {
+          "spring": {
+            "datasource": {
+              "url": "jdbc:postgresql://db:5432/authz_e2e",
+              "jdbc-url": "jdbc:postgresql://db:5432/authz_e2e",
+              "username": "egov",
+              "password": "egov123",
+              "hikari": { "jdbc-url": "jdbc:postgresql://db:5432/authz_e2e" }
+            },
+            "jpa": { "hibernate": { "ddl-auto": "validate" } }
+          },
+          "management": { "health": { "mail": { "enabled": false } } }
+        }
+volumes:
+  postgres_data:
+    name: "${COMPOSE_PROJECT_NAME:-egov-authz-e2e}-database"
+  attachment_storage:
+    name: "${COMPOSE_PROJECT_NAME:-egov-authz-e2e}-attachments"

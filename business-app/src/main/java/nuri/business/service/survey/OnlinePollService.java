@@ -68,7 +68,7 @@ public class OnlinePollService {
         applyItemVoteCounts(allItems);
 
         String currentLoginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse(null);
-        boolean isAdmin = nuri.business.security.util.SecurityUtil.isAdmin();
+        boolean isAdmin = nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL");
 
         // hasVoted 는 '내가 참여했는가' 이므로 관리자에게도 사실대로 채운다. 관리자 여부는
         // 득표수 은닉에만 쓰인다 — 두 축을 묶으면 관리자의 hasVoted 가 항상 false 인 거짓이 된다.
@@ -126,7 +126,7 @@ public class OnlinePollService {
         dto.setHasVoted(hasVoted);
 
         List<OnlinePollArticleDto> items = loadPollItems(pollSn);
-        if (hidesVoteCounts(entity, hasVoted, nuri.business.security.util.SecurityUtil.isAdmin(), today())) {
+        if (hidesVoteCounts(entity, hasVoted, nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL"), today())) {
             maskVoteCounts(items);
         }
         dto.setPollArticles(items);
@@ -135,7 +135,7 @@ public class OnlinePollService {
 
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
-        nuri.business.security.util.SecurityUtil.assertAdmin();
+        nuri.business.security.util.SecurityUtil.assertPermission("POLL_CREATE");
         
         String beginDe = normalizeDate(dto.getPollBgngYmd());
         String endDe = normalizeDate(dto.getPollEndYmd());
@@ -171,7 +171,7 @@ public class OnlinePollService {
 
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
-        nuri.business.security.util.SecurityUtil.assertAdmin();
+        nuri.business.security.util.SecurityUtil.assertPermission("POLL_UPDATE");
 
         String beginDe = normalizeDate(dto.getPollBgngYmd());
         String endDe = normalizeDate(dto.getPollEndYmd());
@@ -204,7 +204,7 @@ public class OnlinePollService {
 
     @Transactional
     public void deletePoll(Long pollSn) {
-        nuri.business.security.util.SecurityUtil.assertAdmin();
+        nuri.business.security.util.SecurityUtil.assertPermission("POLL_DELETE");
 
         // [V2_13 결속] 투표 결과 선정리 — fk_tb_onln_poll_rslt_*(NO ACTION) 하에서 결과 보유 투표 삭제가
         // 409 로 파손되던 기왕 부채 해소 (항목은 pollArticles cascade 가 정리)
@@ -224,7 +224,7 @@ public class OnlinePollService {
         List<OnlinePollArticleDto> items = loadPollItems(pollSn);
         boolean hasVoted = hasVoted(pollSn);
         OnlinePollManage poll = pollManageRepository.findById(Objects.requireNonNull(pollSn)).orElse(null);
-        if (hidesVoteCounts(poll, hasVoted, nuri.business.security.util.SecurityUtil.isAdmin(), today())) {
+        if (hidesVoteCounts(poll, hasVoted, nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL"), today())) {
             maskVoteCounts(items);
         }
         return items;

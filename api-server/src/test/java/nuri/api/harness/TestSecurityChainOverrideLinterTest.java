@@ -54,7 +54,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  *       {@code anyRequest().permitAll()} 이며 {@code IntegrationTest} 가 그것을 물린다.
  *       따라서 이 stereotype을 쓰는 MockMvc 테스트는 production 인증·인가 체인을 증명하지 않는다.</li>
  *   <li>{@code api-server} 의 {@code SecurityTestConfig} 는 {@code /api/v1/admin/** → hasRole("ADMIN")} 을
- *       하드코딩하는데 프로덕션 인가는 DB secure-paths 기반이라, 그 위의 admin 401/403 단언은 운영 계약이 아니다.</li>
+ *       하드코딩한다. 프로덕션은 명시적 operation permission과 현재 canonical principal을 판정하므로,
+ *       그 위의 admin 401/403 단언은 운영 계약이 아니다.</li>
  * </ul>
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(소스 텍스트 파싱).

@@ -54,6 +54,10 @@ class CommentApiControllerTest {
                     .esntlId("USRCNFRM_00000000001")
                     .userNm("홍길동")
                     .roleName("USER")
+                    .enabled(true)
+                    .groups(List.of("ROLE_USER"))
+                    .permissions(nuri.business.support.AuthorizationTestPrincipal.principal("writer01", "USRCNFRM_00000000001", "USER").getPermissions())
+                    .authorizationVersion("fixture")
                     .build();
 
     @BeforeEach

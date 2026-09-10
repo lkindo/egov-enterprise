@@ -25,13 +25,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController("noteNoteApiController")
 @RequestMapping("/api/v1/notes")
 @RequiredArgsConstructor
-@Authenticated
 public class NoteApiController {
 
     private final NoteService noteService;
 
     @Operation(summary = "수신 쪽지 목록 조회", description = "로그인한 사용자의 수신 쪽지 목록을 조회합니다.")
     @GetMapping("/received")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.note.NoteApiController#getReceivedNotes')")
     public ResponseEntity<ApiResponse<PageResponse<NoteDto>>> getReceivedNotes(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String searchWrd,
@@ -42,6 +42,7 @@ public class NoteApiController {
 
     @Operation(summary = "발신 쪽지 목록 조회", description = "로그인한 사용자의 발신 쪽지 목록을 조회합니다.")
     @GetMapping("/sent")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.note.NoteApiController#getSentNotes')")
     public ResponseEntity<ApiResponse<PageResponse<NoteDto>>> getSentNotes(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) String searchWrd,
@@ -52,6 +53,7 @@ public class NoteApiController {
 
     @Operation(summary = "쪽지 상세 조회", description = "쪽지 상세 정보를 조회합니다.")
     @GetMapping("/{noteSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.note.NoteApiController#getNote')")
     public ResponseEntity<ApiResponse<NoteDto>> getNote(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "쪽지 일련번호") @PathVariable Long noteSn,
@@ -64,6 +66,7 @@ public class NoteApiController {
 
     @Operation(summary = "쪽지 발송", description = "새로운 쪽지를 작성하여 발송합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.note.NoteApiController#sendNote')")
     public ResponseEntity<ApiResponse<Void>> sendNote(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody NoteDto noteDto) {
@@ -73,6 +76,7 @@ public class NoteApiController {
 
     @Operation(summary = "쪽지 삭제", description = "수신 또는 발신 목록에서 쪽지를 삭제합니다.")
     @DeleteMapping("/{relationSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.note.NoteApiController#deleteNote')")
     public ResponseEntity<ApiResponse<Void>> deleteNote(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "관계 일련번호") @PathVariable Long relationSn,

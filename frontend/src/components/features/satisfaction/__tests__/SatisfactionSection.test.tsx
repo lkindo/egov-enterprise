@@ -9,11 +9,12 @@ import { satisfactionCreateSchema } from '../satisfaction-form-validation';
 const testState = vi.hoisted(() => ({
   /** 기본은 일반 사용자. 관리자 경로(대리 삭제)는 개별 테스트가 바꾼다. */
   role: 'USER' as string | undefined,
+  permissions: [] as string[],
   confirm: vi.fn(),
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'u1', name: '홍길동', role: testState.role } }),
+  useAuth: () => ({ user: { id: 'u1', name: '홍길동', role: testState.role, permissions: testState.permissions, authorizationVersion: 'v1' } }),
 }));
 
 vi.mock('@/app/components/ui/confirm-modal', () => ({
@@ -55,6 +56,7 @@ describe('SatisfactionSection', () => {
     mocked.update.mockResolvedValue(undefined);
     mocked.moderate.mockResolvedValue(undefined);
     testState.role = 'USER';
+    testState.permissions = ['SATISFY_CREATE', 'SATISFY_UPDATE', 'SATISFY_DELETE'];
     testState.confirm.mockResolvedValue(true);
   });
 
@@ -313,6 +315,7 @@ describe('SatisfactionSection', () => {
 
   it('관리자의 삭제는 대리 삭제 경로로 나가고 대상을 밝힌 확인을 거친다', async () => {
     testState.role = 'ADMIN';
+    testState.permissions = ['SATISFY_MODERATE'];
     mocked.list.mockResolvedValue([
       { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '김철수', useYn: 'Y' },
     ]);
@@ -328,6 +331,7 @@ describe('SatisfactionSection', () => {
 
   it('관리자가 확인을 취소하면 아무것도 지우지 않는다', async () => {
     testState.role = 'ROLE_SYSTEM';
+    testState.permissions = ['SATISFY_MODERATE'];
     testState.confirm.mockResolvedValue(false);
     mocked.list.mockResolvedValue([
       { dgstfnSn: 7, dgstfnScr: 3, dgstfnCn: '보통', userNm: '김철수', useYn: 'Y' },

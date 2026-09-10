@@ -42,7 +42,7 @@ class AuthServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private UserAuthorityRepository userAuthorityRepository;
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
     @Mock
     private nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
@@ -64,10 +64,15 @@ class AuthServiceTest {
     @InjectMocks
     private AuthServiceImpl authService;
 
+    private AutoCloseable mocks;
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    void setUp() { mocks=MockitoAnnotations.openMocks(this); }
+    @org.junit.jupiter.api.AfterEach
+    void closeMocks() throws Exception { mocks.close(); }
+    private static nuri.foundation.security.service.CustomUserDetails principal(String id,String... groups) {
+        return (nuri.foundation.security.service.CustomUserDetails) nuri.business.support.AuthorizationTestPrincipal.authentication(id,id,groups).getPrincipal();
     }
+
 
     @Test
     @DisplayName("로그인 성공")
@@ -76,6 +81,7 @@ class AuthServiceTest {
         LoginRequest request = LoginRequest.builder().userId("user").password("password").build();
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("user");
+        when(authentication.getPrincipal()).thenReturn(principal("user","ROLE_USER"));
         when(authentication.getAuthorities()).thenAnswer(i -> Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
         
@@ -107,6 +113,7 @@ class AuthServiceTest {
                 .build();
         when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
         
+        when(userDetailsService.loadUserByUsername("user")).thenReturn(principal("user","ROLE_USER"));
         when(jwtTokenProvider.createAccessToken(eq("user"), anyString())).thenReturn("new_access_token");
 
         // When
@@ -128,13 +135,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.getUserId(refreshToken)).thenReturn(userId);
         
-        User user = mock(User.class);
-        when(user.getEsntlId()).thenReturn(esntlId);
-        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
-        
-        UserAuthority ua = mock(UserAuthority.class);
-        when(ua.getAuthrtId()).thenReturn("ROLE_ADMIN");
-        when(userAuthorityRepository.findById(esntlId)).thenReturn(java.util.Optional.of(ua));
+        when(userDetailsService.loadUserByUsername(userId)).thenReturn(principal(userId,"ROLE_ADMIN"));
 
         nuri.business.domain.auth.RefreshToken rt = nuri.business.domain.auth.RefreshToken.builder()
                 .userId(userId)
@@ -155,7 +156,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("토큰 재발급 성공 - 권한 정보가 없어 기본 역할 사용")
+    @DisplayName("토큰 재발급 - 그룹 0개이면 기본 권한을 부여하지 않는다")
     void testReissueSuccessWithDefaultRole() {
         // Given
         String refreshToken = "valid_refresh_token";
@@ -165,12 +166,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.getUserId(refreshToken)).thenReturn(userId);
 
-        User user = mock(User.class);
-        when(user.getEsntlId()).thenReturn(esntlId);
-        when(user.getRole()).thenReturn(Role.USER);
-        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
-
-        when(userAuthorityRepository.findById(esntlId)).thenReturn(java.util.Optional.empty());
+        when(userDetailsService.loadUserByUsername(userId)).thenReturn(principal(userId));
 
         nuri.business.domain.auth.RefreshToken rt = nuri.business.domain.auth.RefreshToken.builder()
                 .userId(userId)
@@ -179,14 +175,16 @@ class AuthServiceTest {
                 .build();
         when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
-        when(jwtTokenProvider.createAccessToken(eq(userId), eq("ROLE_USER"))).thenReturn("new_access_token_user");
+        when(jwtTokenProvider.createAccessToken(eq(userId), isNull())).thenReturn("new_access_token_user");
 
         // When
         TokenResponse response = authService.reissue(refreshToken);
 
         // Then
         assertNotNull(response);
-        assertEquals("ROLE_USER", response.getRole());
+        assertNull(response.getRole());
+        assertTrue(response.getGroups().isEmpty());
+        assertTrue(response.getPermissions().isEmpty());
     }
 
     @Test
@@ -196,6 +194,7 @@ class AuthServiceTest {
         LoginRequest request1 = LoginRequest.builder().userId("admin").password("pass").build();
         Authentication auth1 = mock(Authentication.class);
         when(auth1.getName()).thenReturn("admin");
+        when(auth1.getPrincipal()).thenReturn(principal("admin","ROLE_ADMIN"));
         when(auth1.getAuthorities()).thenAnswer(i -> Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
         when(authenticationManager.authenticate(any())).thenReturn(auth1);
         when(jwtTokenProvider.createAccessToken(any(), any())).thenReturn("token1");
@@ -207,6 +206,7 @@ class AuthServiceTest {
         LoginRequest request2 = LoginRequest.builder().userId("user").password("pass").build();
         Authentication auth2 = mock(Authentication.class);
         when(auth2.getName()).thenReturn("user");
+        when(auth2.getPrincipal()).thenReturn(principal("user","ROLE_USER"));
         when(auth2.getAuthorities()).thenAnswer(i -> Collections.singletonList(new SimpleGrantedAuthority("USER")));
         when(authenticationManager.authenticate(any())).thenReturn(auth2);
         when(jwtTokenProvider.createAccessToken(any(), any())).thenReturn("token2");
@@ -234,6 +234,7 @@ class AuthServiceTest {
         LoginRequest request = LoginRequest.builder().userId("otpUser").password("pass").build();
         Authentication auth = mock(Authentication.class);
         when(auth.getName()).thenReturn("otpUser");
+        when(auth.getPrincipal()).thenReturn(principal("otpUser","ROLE_USER"));
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
@@ -252,6 +253,7 @@ class AuthServiceTest {
         LoginRequest request = LoginRequest.builder().userId("otpUser").password("pass").otpCode(123456).build();
         Authentication auth = mock(Authentication.class);
         when(auth.getName()).thenReturn("otpUser");
+        when(auth.getPrincipal()).thenReturn(principal("otpUser","ROLE_USER"));
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
@@ -276,7 +278,8 @@ class AuthServiceTest {
         String esntlId = "USR_ESNTL_0001";
         LoginRequest request = LoginRequest.builder().userId(loginId).password("pass").build(); // otpCode 없음
         Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn(esntlId); // 인증 principal 이름 = esntlId
+        when(auth.getName()).thenReturn(esntlId);
+        when(auth.getPrincipal()).thenReturn(principal(esntlId,"ROLE_USER")); // 인증 principal 이름 = esntlId
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);
@@ -298,6 +301,7 @@ class AuthServiceTest {
         LoginRequest request = LoginRequest.builder().userId(loginId).password("pass").otpCode(123456).build();
         Authentication auth = mock(Authentication.class);
         when(auth.getName()).thenReturn(esntlId);
+        when(auth.getPrincipal()).thenReturn(principal(esntlId,"ROLE_USER"));
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
         nuri.business.domain.login.LoginPolicy policy = mock(nuri.business.domain.login.LoginPolicy.class);

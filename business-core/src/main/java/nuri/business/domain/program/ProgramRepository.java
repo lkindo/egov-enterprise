@@ -10,7 +10,6 @@ public interface ProgramRepository extends JpaRepository<Program, String> {
 
     @Query(value = """
             SELECT EXISTS (SELECT 1 FROM tb_menu_info WHERE prgrm_file_nm=:prgrmFileNm)
-                OR EXISTS (SELECT 1 FROM tb_role_prgrm_map WHERE prgrm_file_nm=:prgrmFileNm)
             """, nativeQuery = true)
     boolean hasReferences(@Param("prgrmFileNm") String prgrmFileNm);
 

@@ -64,8 +64,8 @@ public class SatisfactionApiController {
     */
 
     @Operation(summary = "만족도 목록", description = "해당 게시글의 사용 중(use_yn='Y') 만족도만 반환한다.")
-    @Authenticated
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#getList')")
     public ResponseEntity<ApiResponse<List<SatisfactionDto>>> getList(
             @PathVariable String bbsId, @PathVariable Long pstSn) {
         boardService.assertCommentAccess(bbsId, pstSn);
@@ -74,8 +74,8 @@ public class SatisfactionApiController {
 
     @Operation(summary = "만족도 평균",
             description = "평가가 하나도 없으면 average 는 null 이다 — 0 과 구분해야 한다.")
-    @Authenticated
     @GetMapping("/average")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#getAverage')")
     public ResponseEntity<ApiResponse<SatisfactionAverageResponse>> getAverage(
             @PathVariable String bbsId, @PathVariable Long pstSn) {
         // ⚠ null 을 0.0 으로 바꾸지 않는다. 종전에는 Map.of 가 null 값을 담지 못해 그럴 수밖에
@@ -86,8 +86,8 @@ public class SatisfactionApiController {
     }
 
     @Operation(summary = "만족도 등록")
-    @Authenticated
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#create')")
     public ResponseEntity<ApiResponse<Long>> create(
             @PathVariable String bbsId, @PathVariable Long pstSn,
             @Valid @RequestBody SatisfactionDto dto) {
@@ -100,8 +100,8 @@ public class SatisfactionApiController {
     }
 
     @Operation(summary = "만족도 수정", description = "인증된 작성자 또는 관리자만 수정할 수 있다.")
-    @Authenticated
     @PutMapping("/{dgstfnSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#update')")
     public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable String bbsId, @PathVariable Long pstSn,
             @PathVariable Long dgstfnSn, @Valid @RequestBody SatisfactionDto dto) {
@@ -111,8 +111,8 @@ public class SatisfactionApiController {
     }
 
     @Operation(summary = "만족도 삭제", description = "논리 삭제. 인증된 작성자 또는 관리자만 삭제할 수 있다.")
-    @Authenticated
     @DeleteMapping("/{dgstfnSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#delete')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable String bbsId, @PathVariable Long pstSn,
             @PathVariable Long dgstfnSn) {
@@ -122,8 +122,8 @@ public class SatisfactionApiController {
 
     @Operation(summary = "만족도 강제 삭제(관리자)",
             description = "비밀번호 없이 지운다. 욕설·스팸 정리를 위한 대리 삭제 경로다.")
-    @AdminOnly
     @DeleteMapping("/{dgstfnSn}/moderate")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#moderate')")
     public ResponseEntity<ApiResponse<Void>> moderate(
             @PathVariable String bbsId, @PathVariable Long pstSn, @PathVariable Long dgstfnSn) {
         satisfactionService.deleteByModerator(dgstfnSn);

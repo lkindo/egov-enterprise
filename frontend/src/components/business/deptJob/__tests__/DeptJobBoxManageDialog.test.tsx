@@ -13,6 +13,7 @@ import { DeptJobBoxManageDialog } from '../DeptJobBoxManageDialog';
  * disabled·aria-busy 이고 실패(서버 409 '산하 업무 존재' 포함)는 토스트로 드러난다.
  */
 const mocks = vi.hoisted(() => ({
+  permissions: [] as string[],
   getDeptJobBoxes: vi.fn(),
   createDeptJobBox: vi.fn(),
   updateDeptJobBox: vi.fn(),
@@ -20,6 +21,10 @@ const mocks = vi.hoisted(() => ({
   getDeptTree: vi.fn(),
   confirm: vi.fn(),
   toast: vi.fn(),
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { permissions: mocks.permissions, authorizationVersion: 'v1' } }),
 }));
 
 vi.mock('next/dynamic', () => ({
@@ -75,6 +80,7 @@ function renderDialog(onClose = vi.fn()) {
 describe('DeptJobBoxManageDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.permissions = ['DEPT_BOX_READ', 'DEPT_BOX_CREATE', 'DEPT_BOX_UPDATE', 'DEPT_BOX_DELETE'];
     mocks.getDeptJobBoxes.mockResolvedValue({ list: boxes, total: 2, page: 0, size: 10, totalPage: 1 });
     mocks.getDeptTree.mockResolvedValue([{ ognzId: 'D1', ognzNm: '기획부' }, { ognzId: 'D2', ognzNm: '인사부' }]);
     mocks.createDeptJobBox.mockResolvedValue(3);
@@ -90,6 +96,18 @@ describe('DeptJobBoxManageDialog', () => {
     expect(within(list).getByText('기획부 · 순서 1')).toBeInTheDocument();
     expect(within(list).getByText('부서 미지정')).toBeInTheDocument();
     expect(mocks.getDeptJobBoxes).toHaveBeenCalledWith({ page: 0, size: 10 });
+  });
+
+  it('조회 권한만 있으면 등록·수정·삭제를 표시하지 않는다', async () => {
+    mocks.permissions = ['DEPT_BOX_READ'];
+    renderDialog();
+    await screen.findByRole('list', { name: '업무함 목록' });
+    expect(screen.queryByRole('button', { name: '업무함 등록' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '기획 수정' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '기획 삭제' })).not.toBeInTheDocument();
+    expect(mocks.createDeptJobBox).not.toHaveBeenCalled();
+    expect(mocks.updateDeptJobBox).not.toHaveBeenCalled();
+    expect(mocks.deleteDeptJobBox).not.toHaveBeenCalled();
   });
 
   it('등록은 이름·부서를 보내고 빈 정렬 순서는 보내지 않는다', async () => {

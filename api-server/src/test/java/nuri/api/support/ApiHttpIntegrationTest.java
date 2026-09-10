@@ -32,9 +32,9 @@ import java.lang.annotation.Target;
  * {@code mock-security} 를 켜지 않으므로 운영 {@code ApiSecurityConfig} 가 로드된다.
  * 인가가 필요한 요청은 {@code @WithMockCustomUser(role = "ADMIN")} 등으로 주체를 실어야 통과한다.
  *
- * <p><b>정직한 한계</b>: 테스트 프로파일에는 {@code rbac.db-auth.enabled} 가 없어 URL 인가는
- * {@code ApiSecurityConfig} 의 하드코딩 분기를 탄다. DB secure-paths 경로까지 증명하려면
- * {@code RbacAuthorizationMatrixTest} 처럼 해당 속성을 명시해야 한다.
+ * <p><b>정직한 한계</b>: HTTP와 메서드는 같은 operation binding·permission 정책을 집행한다.
+ * 테스트 주체는 코드 catalog의 초기 그룹 배정을 확장한 canonical fixture이며 실제 OCI의 현재
+ * 그룹 배정이나 물리 스키마를 증명하지 않는다. 저장소·원자 감사·회수는 별도 인가 통합 검증 대상이다.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

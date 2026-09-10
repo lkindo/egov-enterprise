@@ -1,6 +1,7 @@
 package nuri.api.controller.foundation.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
 
 /**
  * 현재 로그인 사용자 정보(/api/v1/auth/me) 응답 DTO.
@@ -18,6 +19,17 @@ public record CurrentUserResponse(
         String name,
         String role,
         String userSe,
-        String email
+        String email,
+        List<String> groups,
+        List<String> permissions,
+        String authorizationVersion
 ) {
+    public CurrentUserResponse {
+        groups = groups == null ? List.of() : List.copyOf(groups);
+        permissions = permissions == null ? List.of() : List.copyOf(permissions);
+    }
+
+    public CurrentUserResponse(String id, String esntlId, String name, String role, String userSe, String email) {
+        this(id, esntlId, name, role, userSe, email, List.of(), List.of(), null);
+    }
 }

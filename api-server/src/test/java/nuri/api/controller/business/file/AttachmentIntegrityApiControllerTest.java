@@ -68,17 +68,11 @@ class AttachmentIntegrityApiControllerTest extends ControllerTestSupport {
         assertThat(report(1L, 0L).isHealthy()).isFalse();
     }
 
-    /**
-     * 이 엔드포인트의 인가는 {@code @AdminOrSystem} 메서드 애노테이션 <b>한 줄</b>에 걸려 있다.
-     * 그 줄이 사라지면 서버 저장소 경로가 인증 사용자 전원에게 열린다 — URL 게이트만으로는
-     * 막히지 않는 경로이므로 애노테이션의 존재 자체를 계약으로 고정한다.
-     */
+    /** Storage inspection requires its own operation grant at both HTTP and method boundaries. */
     @Test
-    @DisplayName("점검 엔드포인트는 ADMIN/SYSTEM 메서드 인가를 유지한다")
+    @DisplayName("저장소 점검은 FILE_AUDIT 메서드 인가를 유지한다")
     void scanKeepsAdminOrSystemMethodSecurity() throws NoSuchMethodException {
-        assertThat(AttachmentIntegrityApiController.class.getMethod("scan")
-                .isAnnotationPresent(nuri.foundation.security.annotation.AdminOrSystem.class))
-                .as("@AdminOrSystem 이 사라지면 저장소 절대 경로가 인증 사용자 전원에게 노출된다")
-                .isTrue();
+        nuri.security.support.MethodPermissionContract.assertOperation(
+                AttachmentIntegrityApiController.class.getMethod("scan"), "FILE_AUDIT", false);
     }
 }

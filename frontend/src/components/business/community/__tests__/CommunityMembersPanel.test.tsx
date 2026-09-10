@@ -12,11 +12,16 @@ import { CommunityMembersPanel } from '../CommunityMembersPanel';
  * disabled 이고 처리 중인 버튼만 aria-busy 다. 실패는 토스트로 드러나고 목록은 남는다. 이름이 없으면 esntlId 를 보여 준다.
  */
 const mocks = vi.hoisted(() => ({
+  permissions: [] as string[],
   getMembers: vi.fn(),
   approveMember: vi.fn(),
   rejectMember: vi.fn(),
   confirm: vi.fn(),
   toast: vi.fn(),
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { permissions: mocks.permissions, authorizationVersion: 'v1' } }),
 }));
 
 vi.mock('@/services/foundation/system/CommunityAdminService', () => ({
@@ -52,6 +57,7 @@ function renderPanel(onBack = vi.fn()) {
 describe('CommunityMembersPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.permissions = ['COMMUNITY_APPROVE', 'COMMUNITY_REJECT'];
     mocks.getMembers.mockImplementation((_sn: number, params: { status?: string }) => {
       if (params.status === 'REQUESTED') return Promise.resolve(page([requested, orphan]));
       if (params.status === 'APPROVED') return Promise.resolve(page([member]));
@@ -60,6 +66,16 @@ describe('CommunityMembersPanel', () => {
     mocks.approveMember.mockResolvedValue(undefined);
     mocks.rejectMember.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
+  });
+
+  it('조회만 가능한 사용자에게 승인·반려 버튼을 표시하지 않는다', async () => {
+    mocks.permissions = ['COMMUNITY_READ_ALL'];
+    renderPanel();
+    await screen.findByRole('list', { name: '회원 목록' });
+    expect(screen.queryByRole('button', { name: /가입 승인/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /가입 반려/ })).not.toBeInTheDocument();
+    expect(mocks.approveMember).not.toHaveBeenCalled();
+    expect(mocks.rejectMember).not.toHaveBeenCalled();
   });
 
   it('기본 필터는 가입 신청이고, 이름 없는 신청자는 esntlId 로 보여 주며, 회원 행에는 전이 버튼이 없다', async () => {

@@ -1,23 +1,22 @@
 package nuri.business.domain.menu;
 
-import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import static nuri.business.domain.menu.QMenu.menu;
-import static nuri.business.domain.program.QProgram.program;
-import static nuri.business.domain.auth.QMenuAuthority.menuAuthority;
-import static nuri.business.domain.auth.QUserAuthority.userAuthority;
 
 @RequiredArgsConstructor
 public class MenuRepositoryImpl implements MenuRepositoryCustom {
 
         private final JPAQueryFactory queryFactory;
+        private final NamedParameterJdbcTemplate jdbc;
 
         @Override
         public Page<Menu> searchMenus(String searchKeyword, Pageable pageable) {
@@ -40,54 +39,43 @@ public class MenuRepositoryImpl implements MenuRepositoryCustom {
 
         @Override
         public List<MenuProjection> selectMainMenuHead(String uniqId) {
-                return queryFactory
-                                .select(Projections.bean(MenuProjection.class,
-                                                 menu.menuSn.as("menuNo"),
-                                                 menu.menuOrdr.as("menuOrdr"),
-                                                 menu.menuNm.as("menuNm"),
-                                                 menu.upMenuSn.as("upperMenuId"),
-                                                 menu.menuExpln.as("menuDc"),
-                                                 menu.relImgPath.as("relateImagePath"),
-                                                 menu.relImgNm.as("relateImageNm"),
-                                                 menu.prgrmFileNm.as("progrmFileNm"),
-                                                 program.url.as("chkURL")))
-                                .from(menuAuthority)
-                                .join(menu).on(menuAuthority.id.menuSn.eq(menu.menuSn))
-                                .leftJoin(program).on(menu.prgrmFileNm.eq(program.prgrmFileNm))
-                                // [V2_16] 루트 판정 센티널 정정: up_menu_sn=0 행은 0건(실측)이고 P1 정규화가
-                                // 0→null 로 강제하므로 eq(0L)은 영구 빈 결과였다 — isNull 이 실제 루트 조건
-                                .where(menu.upMenuSn.isNull()
-                                                .and(menu.useYn.eq("Y"))
-                                                .and(menuAuthority.id.authrtCd.eq(
-                                                                queryFactory.select(userAuthority.authrtId)
-                                                                                .from(userAuthority)
-                                                                                .where(userAuthority.scrtyDcsnTrgtId
-                                                                                                .eq(uniqId)))))
-                                .orderBy(menu.menuOrdr.asc())
-                                .fetch();
+                return selectAssignedMenus(uniqId, true);
         }
 
         @Override
         public List<MenuProjection> selectMainMenuLeft(String uniqId) {
-                return queryFactory
-                                .select(Projections.bean(MenuProjection.class,
-                                                 menu.menuSn.as("menuNo"),
-                                                 menu.menuOrdr.as("menuOrdr"),
-                                                 menu.menuNm.as("menuNm"),
-                                                 menu.upMenuSn.as("upperMenuId"),
-                                                 menu.relImgPath.as("relateImagePath"),
-                                                 menu.relImgNm.as("relateImageNm"),
-                                                 program.url.as("chkURL")))
-                                .from(menuAuthority)
-                                .join(menu).on(menuAuthority.id.menuSn.eq(menu.menuSn))
-                                .leftJoin(program).on(menu.prgrmFileNm.eq(program.prgrmFileNm))
-                                .where(menu.useYn.eq("Y")
-                                                .and(menuAuthority.id.authrtCd.eq(
-                                                                queryFactory.select(userAuthority.authrtId)
-                                                                                .from(userAuthority)
-                                                                                .where(userAuthority.scrtyDcsnTrgtId.eq(uniqId)))))
-                                .orderBy(menu.menuOrdr.asc())
-                                .fetch();
+                return selectAssignedMenus(uniqId, false);
+        }
+
+        private List<MenuProjection> selectAssignedMenus(String uniqId, boolean rootsOnly) {
+                return jdbc.query("""
+                        SELECT menu_row.menu_sn,menu_row.menu_ordr,menu_row.menu_nm,menu_row.up_menu_sn,
+                               menu_row.menu_expln,menu_row.rel_img_path,menu_row.rel_img_nm,
+                               menu_row.prgrm_file_nm,program_row.url
+                          FROM tb_menu_info menu_row
+                          LEFT JOIN tb_prgrm_lst program_row
+                            ON program_row.prgrm_file_nm=menu_row.prgrm_file_nm
+                         WHERE menu_row.use_yn='Y'
+                           AND (:rootsOnly=false OR menu_row.up_menu_sn IS NULL)
+                           AND EXISTS (
+                               SELECT 1 FROM tb_authrt_user_map membership
+                               JOIN tb_authrt_grnt_map grant_row ON grant_row.authrt_cd=membership.authrt_cd
+                               WHERE membership.scrty_dcsn_trgt_id=:userId
+                                 AND grant_row.authrt_type_cd='NAVIGATION'
+                                 AND grant_row.authrt_grnt_cd=CAST(menu_row.menu_sn AS varchar(20))
+                           )
+                         ORDER BY menu_row.menu_ordr,menu_row.menu_sn
+                        """, Map.of("userId", uniqId, "rootsOnly", rootsOnly), (result, row) -> MenuProjection.builder()
+                        .menuNo(result.getLong("menu_sn"))
+                        .menuOrdr(result.getObject("menu_ordr", Integer.class))
+                        .menuNm(result.getString("menu_nm"))
+                        .upperMenuId(result.getObject("up_menu_sn", Long.class))
+                        .menuDc(rootsOnly ? result.getString("menu_expln") : null)
+                        .relateImagePath(result.getString("rel_img_path"))
+                        .relateImageNm(result.getString("rel_img_nm"))
+                        .progrmFileNm(rootsOnly ? result.getString("prgrm_file_nm") : null)
+                        .chkURL(result.getString("url"))
+                        .build());
         }
 
 

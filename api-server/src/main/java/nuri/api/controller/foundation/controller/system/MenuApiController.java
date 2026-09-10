@@ -29,6 +29,7 @@ public class MenuApiController {
 
     @Operation(summary = "메뉴 목록 조회", description = "시스템 전체 메뉴 목록을 페이징하여 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#getMenuList')")
     public ResponseEntity<ApiResponse<PageResponse<MenuDto>>> getMenuList(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
@@ -40,27 +41,29 @@ public class MenuApiController {
 
     @Operation(summary = "메뉴 전체 트리 조회", description = "시스템 메뉴를 트리 구조 구성을 위한 전체 목록으로 조회합니다.")
     @GetMapping("/all")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#getAllMenus')")
     public ResponseEntity<ApiResponse<List<MenuDto>>> getAllMenus() throws Exception {
         return ResponseEntity.ok(ApiResponse.success(menuService.getAllMenus()));
     }
 
     @Operation(summary = "메뉴 상세 조회", description = "특정 메뉴의 상세 정보를 조회합니다.")
     @GetMapping("/{menuNo}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#getMenu')")
     public ResponseEntity<ApiResponse<MenuDto>> getMenu(@PathVariable Long menuNo) throws Exception {
         return ResponseEntity.ok(ApiResponse.success(menuService.selectMenuManage(menuNo)));
     }
 
     @Operation(summary = "메뉴 등록", description = "새로운 시스템 메뉴를 등록합니다.")
-    @AdminOrSystem
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#createMenu')")
     public ResponseEntity<ApiResponse<Void>> createMenu(@Valid @RequestBody MenuDto dto) throws Exception {
         menuService.insertMenuManage(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "메뉴 정보 수정", description = "기존 시스템 메뉴 정보를 수정합니다.")
-    @AdminOrSystem
     @PutMapping("/{menuNo}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#updateMenu')")
     public ResponseEntity<ApiResponse<Void>> updateMenu(@PathVariable Long menuNo, @Valid @RequestBody MenuDto dto)
             throws Exception {
         dto.setMenuNo(menuNo);
@@ -70,8 +73,8 @@ public class MenuApiController {
 
     @Operation(summary = "메뉴 순서 일괄 변경",
             description = "여러 메뉴의 상위메뉴·순서만 일괄 반영합니다. 명칭·설명·아이콘 등 다른 컬럼은 변경하지 않습니다.")
-    @AdminOrSystem
     @PutMapping("/batch-order")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#updateMenuOrder')")
     public ResponseEntity<ApiResponse<Void>> updateMenuOrder(@Valid @RequestBody List<MenuDto> menuList) throws Exception {
         // 종전에는 노드마다 updateMenuManage 를 호출해, 페이로드에 없는 컬럼(menu_expln/rel_img_*)이
         // 정렬 저장 1회로 전 노드에서 소실됐다. 순서 전용 경로(단일 트랜잭션)로 위임한다.
@@ -80,8 +83,8 @@ public class MenuApiController {
     }
 
     @Operation(summary = "메뉴 삭제", description = "시스템 메뉴를 삭제합니다.")
-    @AdminOrSystem
     @DeleteMapping("/{menuNo}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#deleteMenu')")
     public ResponseEntity<ApiResponse<Void>> deleteMenu(@PathVariable Long menuNo) throws Exception {
         MenuDto dto = MenuDto.builder().menuNo(menuNo).build();
         menuService.deleteMenuManage(dto);
@@ -90,6 +93,7 @@ public class MenuApiController {
 
     @Operation(summary = "메뉴 생성 관리 목록 조회", description = "권한별 메뉴 생성 관리 목록을 조회합니다.")
     @GetMapping("/creation-manage")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#getMenuCreationManageList')")
     public ResponseEntity<ApiResponse<PageResponse<MenuCreateDto>>> getMenuCreationManageList(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
         
@@ -101,6 +105,7 @@ public class MenuApiController {
 
     @Operation(summary = "권한별 메뉴 목록 조회", description = "특정 권한에 할당된 메뉴 목록 및 상태를 조회합니다.")
     @GetMapping("/creation/{authorCode}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#getMenuCreationList')")
     public ResponseEntity<ApiResponse<List<MenuCreateDto>>> getMenuCreationList(@PathVariable String authorCode) throws Exception {
         MenuCreateDto vo = MenuCreateDto.builder().authrtCd(authorCode).build();
         List<MenuCreateDto> result = menuService.selectMenuCreatList(vo);
@@ -108,8 +113,8 @@ public class MenuApiController {
     }
 
     @Operation(summary = "권한별 메뉴 할당 저장", description = "특정 권한에 메뉴들을 할당하거나 해제합니다.")
-    @AdminOrSystem
     @PostMapping("/creation/{authorCode}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#createMenuCreation')")
     public ResponseEntity<ApiResponse<Void>> createMenuCreation(
             @PathVariable String authorCode,
             @RequestBody List<Long> menuNos) throws Exception {

@@ -3,9 +3,6 @@ package nuri.api.controller.foundation.controller.system.log;
 import nuri.business.service.log.UserLogManageService;
 import nuri.business.service.log.dto.UserLogDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.security.annotation.AdminOnly;
-import nuri.foundation.security.annotation.AdminOrSystem;
-import nuri.foundation.security.annotation.Authenticated;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +15,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,31 +44,12 @@ class UserLogApiControllerTest {
                 .build();
     }
 
-    /**
-     * 🔒 인가 등급을 <b>양방향</b>으로 못 박는다.
-     *
-     * <p>이 로그는 사용자 활동 집계라 웹·시스템·로그인 로그와 같은 {@code @AdminOrSystem} 등급이다.
-     * 개인정보 로그({@code @AdminOnly})와 달리 내용이 개인정보가 아니므로 좁힐 이유가 없고,
-     * 그렇다고 {@code @Authenticated} 로 열면 <b>일반 사용자가 타인의 활동 이력을 본다</b>.
-     *
-     * <p>standalone MockMvc 는 {@code @PreAuthorize} 를 강제하지 않으므로, 애노테이션을 지우거나
-     * 바꿔도 기능 테스트는 전부 초록이다. 그래서 리플렉션으로 직접 단언한다.
-     */
+    /** Permission is explicit; the SYSTEM privacy exclusion does not apply to activity counters. */
     @Test
-    @DisplayName("🔒 사용자 로그 열람은 @AdminOrSystem 이다 — 완화(@Authenticated)·과잉협소(@AdminOnly) 양방향 차단")
+    @DisplayName("사용자 활동 로그는 명시적 조회 권한으로 허용하고 무권한 그룹은 거부한다")
     void userLogListMustBeAdminOrSystem() throws Exception {
-        Method handler = UserLogApiController.class
-                .getDeclaredMethod("getUserLogList", nuri.business.domain.common.BaseSearchDto.class);
-
-        assertThat(handler.isAnnotationPresent(AdminOrSystem.class))
-                .as("사용자 활동 로그는 웹·시스템·로그인 로그와 동일한 관리자/시스템 등급이다")
-                .isTrue();
-        assertThat(handler.isAnnotationPresent(Authenticated.class))
-                .as("@Authenticated 는 인증만 보므로 일반 사용자가 타인의 활동 이력을 열람하게 된다")
-                .isFalse();
-        assertThat(handler.isAnnotationPresent(AdminOnly.class))
-                .as("@AdminOnly 로 좁히면 SYSTEM 롤의 운영 모니터링이 막힌다 — 이 로그는 개인정보가 아니다")
-                .isFalse();
+        nuri.security.support.MethodPermissionContract.assertOperation(UserLogApiController.class
+                .getDeclaredMethod("getUserLogList", nuri.business.domain.common.BaseSearchDto.class), "USER_LOG_READ", false);
     }
 
     /**

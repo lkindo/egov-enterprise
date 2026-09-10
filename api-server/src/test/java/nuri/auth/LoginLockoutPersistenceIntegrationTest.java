@@ -11,7 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -70,7 +72,8 @@ class LoginLockoutPersistenceIntegrationTest {
                 .pswd(passwordEncoder.encode(RIGHT_PASSWORD))
                 .userNm("Lock Victim")
                 .esntlId(ESNTL_ID)
-                .userSttsCd("A")
+                .userSttsCd("P")
+                .lckYn("N").lckCnt(0)
                 .build());
     }
 
@@ -95,7 +98,7 @@ class LoginLockoutPersistenceIntegrationTest {
         for (int i = 0; i < maxFailures; i++) {
             final int attempt = i;
             assertThatThrownBy(() -> attemptLogin("wrong-password-" + attempt))
-                    .isInstanceOf(AuthenticationException.class);
+                    .isInstanceOf(BadCredentialsException.class);
         }
 
         User reloaded = userRepository.findByUserId(USER_ID).orElseThrow();
@@ -114,12 +117,13 @@ class LoginLockoutPersistenceIntegrationTest {
         for (int i = 0; i < maxFailures; i++) {
             final int attempt = i;
             assertThatThrownBy(() -> attemptLogin("wrong-password-" + attempt))
-                    .isInstanceOf(AuthenticationException.class);
+                    .isInstanceOf(BadCredentialsException.class);
         }
 
         assertThatThrownBy(() -> attemptLogin(RIGHT_PASSWORD))
                 .as("잠금 상태에서 올바른 비밀번호가 통과했다 — 잠금이 발동하지 않았다는 뜻이다")
-                .isInstanceOf(AuthenticationException.class);
+                .isInstanceOf(AccountStatusException.class)
+                .isNotInstanceOf(DisabledException.class);
     }
 
     @Test
@@ -128,7 +132,7 @@ class LoginLockoutPersistenceIntegrationTest {
         for (int i = 0; i < maxFailures - 1; i++) {
             final int attempt = i;
             assertThatThrownBy(() -> attemptLogin("wrong-password-" + attempt))
-                    .isInstanceOf(AuthenticationException.class);
+                    .isInstanceOf(BadCredentialsException.class);
         }
 
         User reloaded = userRepository.findByUserId(USER_ID).orElseThrow();
@@ -142,4 +146,14 @@ class LoginLockoutPersistenceIntegrationTest {
                 .as("성공 로그인이 실패 카운터를 초기화하지 않았다")
                 .isZero();
     }
+    @Test
+    @DisplayName("정지 계정은 비밀번호와 무관하게 거부하고 실패 카운터를 올리지 않는다")
+    void inactiveAccountDoesNotMasqueradeAsPasswordLockout() {
+        User user = userRepository.findByUserId(USER_ID).orElseThrow();
+        user.updateStatus("A");
+        userRepository.saveAndFlush(user);
+        assertThatThrownBy(() -> attemptLogin(RIGHT_PASSWORD)).isInstanceOf(DisabledException.class);
+        assertThat(userRepository.findByUserId(USER_ID).orElseThrow().getLckCnt()).isZero();
+    }
+
 }

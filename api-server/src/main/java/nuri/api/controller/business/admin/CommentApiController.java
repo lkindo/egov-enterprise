@@ -26,6 +26,7 @@ public class CommentApiController {
 
     @Operation(summary = "댓글 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.CommentApiController#getComments')")
     public ResponseEntity<ApiResponse<PageResponse<CommentDto>>> getComments(
             @RequestParam(required = false) String searchKeyword,
             @RequestParam(required = false) String bbsId,
@@ -39,6 +40,7 @@ public class CommentApiController {
 
     @Operation(summary = "댓글 삭제")
     @DeleteMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.CommentApiController#deleteComment')")
     public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long id) {
         commentService.deleteComment(id);
         return ResponseEntity.ok(ApiResponse.success(null));

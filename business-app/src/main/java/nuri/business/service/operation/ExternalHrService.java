@@ -36,7 +36,7 @@ public class ExternalHrService {
 
     @Transactional
     public ExternalHrDto createExternalHr(ExternalHrDto dto) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("EXT_HR_CREATE");
         String actorLoginId = currentLoginId();
         ExternalHrId id = new ExternalHrId(dto.getEvntSn(), dto.getOtsdHrId());
         if (externalHrRepository.existsById(id)) {
@@ -67,7 +67,7 @@ public class ExternalHrService {
      */
     @Transactional
     public ExternalHrDto updateExternalHr(Long evntSn, String otsdHrId, ExternalHrDto dto) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("EXT_HR_UPDATE");
         String actorLoginId = currentLoginId();
         ExternalHr hr = findRequired(evntSn, otsdHrId);
         hr.update(dto.getGndrCd(), dto.getOtsdHrNm(), dto.getCrTypeCd(), dto.getOgdpInstNm(), dto.getBrdtYmd(),
@@ -78,7 +78,7 @@ public class ExternalHrService {
     /** 외부인사 삭제. 없는 대상은 RESOURCE_NOT_FOUND — 조용히 성공으로 끝내지 않는다. 등록·수정과 같은 관리자 경계다. */
     @Transactional
     public void deleteExternalHr(Long evntSn, String otsdHrId) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("EXT_HR_DELETE");
         externalHrRepository.delete(findRequired(evntSn, otsdHrId));
     }
 

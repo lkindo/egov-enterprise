@@ -19,6 +19,7 @@ public class HealthCheckApiController {
 
     @Operation(summary = "Check API Health Status", description = "API 서버의 동작 상태를 확인합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.HealthCheckApiController#checkHealth')")
     public ResponseEntity<ApiResponse<HealthStatusResponse>> checkHealth() {
         return ResponseEntity.ok(ApiResponse.success(
                 new HealthStatusResponse("UP", System.currentTimeMillis(), DISPLAY_VERSION)));

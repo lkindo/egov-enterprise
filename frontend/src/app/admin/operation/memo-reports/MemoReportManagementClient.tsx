@@ -12,7 +12,7 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { useToast } from '@/app/components/ui/toast';
@@ -87,7 +87,7 @@ export default function MemoReportManagementClient() {
   // [2026-08-28] 판정을 SSOT 로 옮긴다. 종전 리터럴 비교는 SYSTEM·ROLE_SYSTEM 을 빠뜨려
   //   **권한 있는 SYSTEM 관리자에게 '전체' 탭이 사라졌다** — 라우트는 열어 주는데 화면만
   //   막히는 비대칭이고, 조용히 죽는 결함이다(DEC-OPS-023).
-  const isAdmin = isAdministrativeRole(user?.role);
+  const isAdmin = canPermission(user, 'MEMO_RPT_READ_ALL');
   const { toast } = useToast();
   const confirm = useConfirm();
 

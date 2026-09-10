@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import { useUser } from '@/hooks/api/use-user';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import {
   NOTICE_BOARD_ID,
   QNA_BOARD_ID,
@@ -42,23 +42,13 @@ const SEEDED_FALLBACK_OPTIONS: readonly BoardOption[] = [
  * 라벨도 함께 어긋나 있었다 — 같은 `BBSMSTR_CCCCCCCCCCCC`(시드 제목 '업무게시판')를 한 화면은
  * '갤러리 게시판'이라고 불렀다. 하드코딩은 ID 와 이름 두 축 모두에서 원본과 어긋난다.
  *
- * ── 왜 관리자에게만 조회하는가 ───────────────────────────────────────────────
- * 게시판 마스터 목록 API 는 `/api/v1/admin/**` 아래에 있고 `ApiSecurityConfig` 가 그 경로를
- * ROLE_ADMIN·ROLE_SYSTEM 으로 강제한다. 그런데 이 훅을 쓰는 세 화면은 `proxy.ts` 의
- * `USER_ACCESSIBLE_ADMIN_PATHS`(`/admin/community`)로 **일반 사용자에게 열려 있다.**
- * 역할을 보지 않고 그냥 조회하면 일반 사용자에게는 403 이 떨어져 선택지가 통째로 비고,
- * "죽은 게시판이 섞여 있다"가 "아무 게시판도 못 고른다"로 **악화된다.**
- *
- * 그래서 관리자에게만 서버 목록을 조회하고, 일반 사용자에게는 시드가 보장하는 게시판만
- * 폴백으로 준다. 비관리자용 게시판 목록 API 를 새로 열지 않으며(인가 경계를 넓히지 않는다),
- * 관리자 전용 경로를 일반 사용자에게 개방하지도 않는다.
- *
- * ⚠ 이것은 **표시 판정**이지 인가가 아니다. 실제 인가는 proxy 의 라우트 게이트와 백엔드가
- *   수행한다. 여기서 관리자로 오판돼도 서버는 여전히 403 을 돌려주고, 그 경우 폴백이 쓰인다.
+ * 게시판 마스터 조회 기능권한이 있는 사용자만 관리 목록을 요청한다. 그 외 사용자와 조회
+ * 실패 시에는 기존 시드 선택지를 사용한다. 그룹 이름으로 조회 권한을 추정하지 않는다.
+ * 서버는 매 요청의 현재 권한을 최종 판정한다.
  */
 export function useBoardOptions() {
   const { data: user } = useUser();
-  const isAdmin = isAdministrativeRole(user?.role);
+  const isAdmin = canPermission(user, 'BBS_MST_READ');
 
   const query = useQuery({
     // 전체 선택지는 도메인 query option이 서버 상한(100) 안에서 모든 페이지를 수집한다.

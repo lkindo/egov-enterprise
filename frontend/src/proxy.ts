@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { canEnterRegisteredPage, loadPageAuthorization } from '@/lib/auth/page-authorization';
 
 // ────────────────────────────────────────────────────────────────────────────
 // [보안] JWT 서명 검증 (Edge 런타임 네이티브 Web Crypto, 외부 의존 없음)
@@ -39,7 +40,7 @@ const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', 
 let authDiagnosticLogged = false;
 
 /**
- * 토큰 검증 결과 — 역할과 **검증이 끝난 지점**을 함께 돌려준다.
+ * 토큰 검증 결과 — 신원과 **검증이 끝난 지점**을 함께 돌려준다.
  *
  * ⚠ 왜 응답 헤더로 내보내는가: console 진단이 세 번 침묵했다(dev 게이트 → env 게이트 → 무조건화
  *   후에도 CI 로그에 미출현). Edge 런타임 console 은 `next start` stdout 에 도달하지 않으므로
@@ -49,12 +50,11 @@ let authDiagnosticLogged = false;
  *   두 가지 결함이 있었다. 진단이 또 거짓 신호를 주면 조사가 다시 막히므로 구조를 바꾼다:
  *   ① **경쟁 조건** — 한 프로세스가 요청을 동시 처리하면(프리페치·RSC·병렬 탭) 다른 요청의
  *      결과가 섞여, 헤더에 실린 값이 그 응답의 것이라는 보장이 없었다.
- *   ② **`ok` 인데 거부되는 경로** — 서명·만료를 통과해도 payload 에 role 이 없으면 null 을
- *      돌려 미인증 처리되는데, outcome 은 `ok` 로 남아 **"검증 성공"이라 보고하면서 307** 을 냈다.
- *      관측자가 "ok 인데 왜 튕기지"에서 또 헤맬 구조라 `ok-no-role` 로 분리한다.
+ *   ② 서명·만료와 별개인 subject/type 검증 실패도 구분한다. 오래된 role claim은
+ *      권한 판정에 사용하지 않고, 보호 화면의 권한은 서버에서 다시 조회한다.
  *   시크릿·토큰 조각은 절대 싣지 않는다. 실리는 것은 "쿠키 유무 + 검증이 끝난 지점" 뿐이다.
  */
-type VerifyVerdict = { role: string | null; outcome: string };
+type VerifyVerdict = { subject: string | null; outcome: string };
 
 /**
  * 인증 검증 결과와 secret-free 설정 메타를 최초 1회만 남긴다.
@@ -122,10 +122,10 @@ function utf8ToBytes(input: string): Uint8Array<ArrayBuffer> {
 }
 
 /**
- * accessToken 의 HMAC 서명과 만료(exp)를 모두 검증하고 payload.role 을 반환한다.
+ * accessToken 의 HMAC 서명·만료·토큰 종류를 검증하고 서명된 subject만 반환한다.
  * 서명 위조·만료·구조 이상·알 수 없는 alg 는 전부 null(=미인증)로 처리한다.
  */
-async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
+async function verifyAndExtractSubject(token: string): Promise<VerifyVerdict> {
   // 예외가 났을 때 **어느 호출에서** 났는지까지 남긴다. 종전에는 예외 종류만 남겨
   // `throw-TypeError` 로만 보였는데, 그것만으로는 디코딩·키생성·검증 중 어디인지 알 수 없어
   // 원인 특정이 한 단계 더 필요했다(2026-07-29 CI 실측).
@@ -133,7 +133,7 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
-      return { role: null, outcome: `parts-${parts.length}` };
+      return { subject: null, outcome: `parts-${parts.length}` };
     }
     const [headerB64, payloadB64, sigB64] = parts;
 
@@ -142,7 +142,7 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
     const hash = HMAC_HASH[header.alg];
     if (!hash) {
       // alg=none·RS*(비대칭) 등 화이트리스트 밖은 거부
-      return { role: null, outcome: 'alg-unsupported' };
+      return { subject: null, outcome: 'alg-unsupported' };
     }
 
     stage = 'import-key';
@@ -163,24 +163,25 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
     stage = 'diagnostic';
     logAuthDiagnosticOnce(valid ? '성공' : '실패(서명 불일치)');
     if (!valid) {
-      return { role: null, outcome: 'sig-mismatch' };
+      return { subject: null, outcome: 'sig-mismatch' };
     }
 
     stage = 'decode-payload';
     const payload = JSON.parse(base64UrlDecodeToString(payloadB64));
-    if (payload.exp && Date.now() >= payload.exp * 1000) {
-      return { role: null, outcome: 'expired' }; // 만료(정상 흐름이므로 경고하지 않는다)
+    if (typeof payload.exp !== 'number' || !Number.isFinite(payload.exp) || Date.now() >= payload.exp * 1000) {
+      return { subject: null, outcome: 'expired' };
     }
-    // ⚠ 서명·만료를 통과했는데 role 클레임이 없으면 여기서 미인증이 된다. `ok` 로 뭉뚱그리면
-    //   "검증 성공인데 307" 이라는 해석 불가 신호가 되므로 반드시 구분한다.
-    if (!payload.role) {
-      return { role: null, outcome: 'ok-no-role' };
+    if (payload.typ !== 'access') {
+      return { subject: null, outcome: 'token-type' };
     }
-    return { role: payload.role, outcome: 'ok' };
+    if (typeof payload.sub !== 'string' || !payload.sub || payload.sub !== payload.sub.trim()) {
+      return { subject: null, outcome: 'ok-no-subject' };
+    }
+    return { subject: payload.sub, outcome: 'ok' };
   } catch (e) {
     // ⚠ 이 catch 가 지금까지 모든 신호를 삼켰다. 예외 종류 + 발생 단계를 남긴다
     //   (메시지는 남기지 않는다 — 토큰 조각이 섞여 나올 수 있다).
-    return { role: null, outcome: `throw-${(e as { name?: string })?.name ?? 'unknown'}@${stage}` };
+    return { subject: null, outcome: `throw-${(e as { name?: string })?.name ?? 'unknown'}@${stage}` };
   }
 }
 
@@ -194,7 +195,7 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
 // 기본값을 뒤집어, 아래 목록에 명시된 경로만 일반 사용자에게 연다.
 //
 // ⚠ 이 미들웨어는 1차 방어(관리자 UI 셸 진입 차단)일 뿐이며 진짜 방어선이 아니다. 권한의 authoritative
-//   집행자는 백엔드다 — ApiSecurityConfig 가 /api/v1/admin/** 를 ROLE_ADMIN·ROLE_SYSTEM 으로 강제하고,
+//   집행자는 백엔드다 — 현재 그룹의 명시적 기능권한과 요청별 자료 조건을 검증하고,
 //   컨트롤러/서비스의 @PreAuthorize 가 함수 단위로 재검증한다(백엔드 헌법 제8조).
 //   여기서 통과했다는 사실이 데이터 접근 권한을 뜻하지 않으며, 반대로 이 게이트가 뚫려도 데이터는 백엔드가 막는다.
 // ────────────────────────────────────────────────────────────────────────────
@@ -398,11 +399,11 @@ export async function proxy(request: NextRequest) {
   }
 
   const accessToken = request.cookies.get('accessToken')?.value;
-  // [보안] 서명 + 만료를 실제로 검증한다. 위조 토큰의 role=ADMIN 통과(관리자 UI 셸 열람)를 차단.
+  // [보안] 서명·만료·access token 종류를 검증한다. role claim은 권한으로 사용하지 않는다.
   const verdict: VerifyVerdict = accessToken
-    ? await verifyAndExtractRole(accessToken)
-    : { role: null, outcome: 'no-cookie' };
-  const userRole = verdict.role;
+    ? await verifyAndExtractSubject(accessToken)
+    : { subject: null, outcome: 'no-cookie' };
+  const userSubject = verdict.subject;
 
   // [진단] 검증이 끝난 지점을 응답 헤더로 남긴다. 비밀값 없음 — 쿠키 유무와 종료 지점뿐.
   //   ⚠ 성공 응답에도 붙인다: 그린일 때의 정상값(`v=ok`)을 모르면 red 를 해석할 수 없고,
@@ -412,7 +413,7 @@ export async function proxy(request: NextRequest) {
   // 3. 유효(서명·만료 검증 통과) 토큰이 없으면 로그인으로.
   //    ⚠ 쿠키를 삭제하지 않는다 — 여기서 삭제하면 프리페치/RSC/전환적 요청 한 번의 검증 실패가
   //    유효 세션을 영구 로그아웃시키는 함정이 된다(원본 동작 보존). 실제 무효 토큰은 백엔드 401 로도 처리된다.
-  if (!userRole) {
+  if (!userSubject) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     // 리다이렉트는 문서를 렌더하지 않지만, 헤더 일관성을 위해 CSP 를 함께 싣는다.
@@ -421,31 +422,23 @@ export async function proxy(request: NextRequest) {
     return redirect;
   }
 
-  // 4. /admin 접근 통제 — 기본 ADMIN 전용, USER_ACCESSIBLE_ADMIN_PATHS 에 명시된 경로만 일반 사용자 개방.
+  // 4. /admin 접근 통제 — 서버의 현재 기능 권한과 명시된 일반 사용자 경로를 적용한다.
   //    라우트 대소문자를 흉내낸 우회(/Admin/system)와 접두사 오매칭(/administrators)을 모두 막기 위해
   //    소문자로 정규화한 뒤 세그먼트 경계로 비교한다.
   const normalizedPath = pathname.toLowerCase();
   if (matchesPrefix(normalizedPath, '/admin')) {
-    const normalizedRole = userRole.toUpperCase();
-    // 백엔드(ApiSecurityConfig)가 ROLE_ADMIN 과 동급으로 취급하는 ROLE_SYSTEM 을 함께 인정한다.
-    // deny-by-default 로 뒤집힌 이상, 여기서 빠뜨리면 API 는 통과하는데 화면만 막히는 비대칭이 생긴다.
-    const isAdmin =
-      normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN' ||
-      normalizedRole === 'SYSTEM' || normalizedRole === 'ROLE_SYSTEM';
+    const authorization = accessToken ? await loadPageAuthorization(accessToken, userSubject) : null;
+    const isUserAccessible =
+      USER_ACCESSIBLE_ADMIN_PATHS.some((p) => matchesPrefix(normalizedPath, p)) &&
+      !ADMIN_ONLY_SUBPATHS.some((p) => matchesPrefix(normalizedPath, p));
 
-    if (!isAdmin) {
-      const isUserAccessible =
-        USER_ACCESSIBLE_ADMIN_PATHS.some((p) => matchesPrefix(normalizedPath, p)) &&
-        !ADMIN_ONLY_SUBPATHS.some((p) => matchesPrefix(normalizedPath, p));
-
-      if (!isUserAccessible) {
+    if (!authorization || (!isUserAccessible && !canEnterRegisteredPage(normalizedPath, authorization))) {
         const fallbackUrl = new URL('/', request.url);
         fallbackUrl.searchParams.set('auth_error', 'unauthorized');
         const denied = withNonce(NextResponse.redirect(fallbackUrl));
         // 인증은 됐고 **권한**이 부족한 경우다. /login 리다이렉트와 구분돼야 진단이 성립한다.
-        denied.headers.set('x-mw-auth', `${authDiag};deny=role`);
+        denied.headers.set('x-mw-auth', `${authDiag};deny=permission`);
         return denied;
-      }
     }
   }
 

@@ -546,13 +546,7 @@ class FileAccessPolicyTest {
     }
 
     private void authenticate(String loginId, String esntlId, String role) {
-        CustomUserDetails principal = CustomUserDetails.builder()
-                .userId(loginId)
-                .esntlId(esntlId)
-                .userNm("tester")
-                .password("N/A")
-                .authorityCodes(List.of(role))
-                .build();
+        CustomUserDetails principal = nuri.business.support.AuthorizationTestPrincipal.principal(loginId, esntlId, role);
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(new UsernamePasswordAuthenticationToken(
                 principal, null, principal.getAuthorities()));

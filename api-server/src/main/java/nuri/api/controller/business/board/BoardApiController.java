@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.List;
 
 @Tag(name = "Board", description = "게시판 관리 API")
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/boards")
 @RequiredArgsConstructor
@@ -38,6 +37,7 @@ public class BoardApiController {
 
     @Operation(summary = "게시글 목록 조회", description = "특정 게시판의 게시글 목록을 페이징하여 조회합니다.")
     @GetMapping("/{bbsId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#getPosts')")
     public ResponseEntity<ApiResponse<PageResponse<BoardDto>>> getPosts(
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
             @RequestParam(required = false, defaultValue = "0") String searchCnd,
@@ -72,6 +72,7 @@ public class BoardApiController {
                     검색어는 2자 이상이어야 하며(미달 시 빈 목록), 최대 20건까지 반환합니다.
                     비밀글은 작성자 본인과 관리자에게만 보입니다.""")
     @GetMapping("/search")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#searchPosts')")
     public ResponseEntity<ApiResponse<java.util.List<BoardSearchItemResponse>>> searchPosts(
             @Parameter(description = "제목 검색어(2자 이상)") @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -83,6 +84,7 @@ public class BoardApiController {
 
     @Operation(summary = "공개 FAQ 목록 조회", description = "활성 FAQ 게시판의 공개 글 제목만 검색하여 조회합니다.")
     @GetMapping("/public-faqs")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#getPublicFaqs')")
     public ResponseEntity<ApiResponse<PageResponse<PublicFaqListItemResponse>>> getPublicFaqs(
             @RequestParam(required = false, defaultValue = "") String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -93,6 +95,7 @@ public class BoardApiController {
 
     @Operation(summary = "공개 FAQ 상세 조회", description = "활성 FAQ 게시판의 공개 글 상세만 조회합니다.")
     @GetMapping("/public-faqs/{pstSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#getPublicFaqDetail')")
     public ResponseEntity<ApiResponse<PublicFaqDetailResponse>> getPublicFaqDetail(
             @Parameter(description = "FAQ 게시글 ID", example = "1") @PathVariable Long pstSn) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -101,6 +104,7 @@ public class BoardApiController {
 
     @Operation(summary = "게시판 통계 조회", description = "특정 게시판의 전체 게시글 수, 조회수 총합 등의 통계 정보를 조회합니다.")
     @GetMapping("/{bbsId}/stats")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#getStats')")
     public ResponseEntity<ApiResponse<BoardStatsResponse>> getStats(
             @Parameter(description = "게시판 ID", example = "BBSMSTR_AAAAAAAAAAAA") @PathVariable String bbsId) {
         return ResponseEntity.ok(ApiResponse.success(boardService.getBoardStats(bbsId)));
@@ -108,6 +112,7 @@ public class BoardApiController {
 
     @Operation(summary = "게시글 상세 조회", description = "특정 게시판의 게시글 상세 정보를 조회합니다.")
     @GetMapping("/{bbsId}/posts/{pstSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#getPost')")
     public ResponseEntity<ApiResponse<BoardDto>> getPost(
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
             @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn) {
@@ -116,6 +121,7 @@ public class BoardApiController {
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다. 첨부를 함께 올리려면 /{bbsId}/posts/with-files 를 사용합니다.")
     @PostMapping("/posts")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#createPost')")
     public ResponseEntity<ApiResponse<Long>> createPost(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody BoardSaveRequest request) {
@@ -133,6 +139,7 @@ public class BoardApiController {
      */
     @Operation(summary = "게시글 등록(첨부 포함)", description = "게시글과 첨부 파일을 함께 등록합니다.")
     @PostMapping(value = "/{bbsId}/posts/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#createPostWithFiles')")
     public ResponseEntity<ApiResponse<Long>> createPostWithFiles(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
@@ -147,6 +154,7 @@ public class BoardApiController {
 
     @Operation(summary = "게시글 수정", description = "기존 게시글 정보를 수정합니다. 첨부를 함께 올리려면 같은 경로에 /with-files 를 붙입니다.")
     @PutMapping("/{bbsId}/posts/{pstSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#updatePost')")
     public ResponseEntity<ApiResponse<Void>> updatePost(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
@@ -166,6 +174,7 @@ public class BoardApiController {
      */
     @Operation(summary = "게시글 수정(첨부 포함)", description = "게시글 정보와 새 첨부 파일을 함께 수정합니다.")
     @PutMapping(value = "/{bbsId}/posts/{pstSn}/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#updatePostWithFiles')")
     public ResponseEntity<ApiResponse<Void>> updatePostWithFiles(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
@@ -182,6 +191,7 @@ public class BoardApiController {
 
     @Operation(summary = "게시글 삭제", description = "게시글을 삭제합니다.")
     @DeleteMapping("/{bbsId}/posts/{pstSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#deletePost')")
     public ResponseEntity<ApiResponse<Void>> deletePost(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
@@ -192,6 +202,7 @@ public class BoardApiController {
 
     @Operation(summary = "게시글 좋아요(추천)", description = "게시글의 추천수를 1 증가시킵니다. (낙관적 업데이트 테스트용)")
     @PatchMapping("/{bbsId}/posts/{pstSn}/like")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#likePost')")
     public ResponseEntity<ApiResponse<Integer>> likePost(
             @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
             @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn) {

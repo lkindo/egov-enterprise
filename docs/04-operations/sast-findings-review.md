@@ -1,5 +1,35 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-10 권한 모델 전환 재검토
+
+구 배정 서비스의 무시 반환·직접 쓰기 분기가 폐기되어 SAST-FP-004·005의 소스가 사라졌다. 두 예외를 제거하여 전환 1차 재검토에서는 기존 ID 001·002·003·006·007의 **5건**을 유지했다. 이후 아래 PR #611의 실제 탐지 008을 별도로 검토해 현재 승인 목록은 **6건(Java 4·JavaScript 2)**이다. 기존 5건과 그 만료일은 변경하지 않았다.
+
+001·002는 HTTP의 Bearer 전용 토큰 해석·STATELESS·Origin 검증과 별도 legacy CSRF 활성화를 직접 대조했다. 추가된 SockJS 쿠키 인증은 지원하는 정확한 경로에만 적용되고, 데이터 전송은 필수 Origin을 정확한 허용목록과 대조한다. 일반 API에 쿠키 인증을 확장하지 않는다. 관련 필터와 WebSocket 설정을 001의 보완 방어 해시에 함께 결속했다. BFF는 기존 Strict·HttpOnly 쿠키 및 토큰을 제외한 응답 계약을 유지하며 현재 권한만 갱신한다. 변경된 소스의 해시와 001의 실제 행 번호를 재결속했고, 만료일·규칙·fingerprint는 유지했다. 전체 CodeQL 결과와의 일치는 해당 커밋의 required secure-coding CI에서 다시 검사한다.
+
+007은 테스트 프로필의 H2 메모리 DB·테스트 전용 의존성 경계를 다시 확인했다. 003과 006의 탐지 원문과 방어는 동일하다. 소스·fingerprint·건수 변화가 있으면 기존과 같이 실패하며, 이 문서의 검토만으로 새 CodeQL 실행을 통과했다고 간주하지 않는다.
+
+### PR #611의 SockJS 인증 거부 분기: SAST-FP-008
+
+[CI 34471391104](https://github.com/lkindo/egov-enterprise/actions/runs/34471391104)의 Java 분석에서 `java/user-controlled-bypass`(7.8)가 [WebSocketCookieAuthenticationFilter](../../api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java)의 69행 44~76열 `authentication.isAuthenticated()`를 가리켰다. 실제 fingerprint는 `3bdaa522982a3650:1`이다. [CodeQL 공식 설명](https://codeql.github.com/codeql-query-help/java/java-user-controlled-bypass/)의 중간 정밀도 쿼리이며, 사용자 입력에 따라 보안 검사의 실행 여부가 달라지는 흐름을 탐지한다.
+
+실제 SARIF 경로는 `Authorization` 헤더 → Bearer 문자열 해석 → 필터의 토큰 획득 → 64행 `token == null` 분기 → 69행 인증 상태 검사다. 토큰 누락으로 이 검사가 실행되지 않는 경우에는 `reject(INVALID_TOKEN)`가 **컨텍스트 제거·HTTP 401·즉시 반환**을 수행하므로 87행의 전송 체인에 진입하지 않는다. 누락 또는 무효 토큰을 허용하는 경로가 아니다. 71행의 현재 권한 버전 검사는 별도의 방어이며 이번 탐지 위치와 혼동하지 않는다.
+
+허용 경로의 [JWT provider](../../foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java)는 서명·토큰 종류를 검증하고, 서명 검증으로 얻은 식별자로 사용자 정보를 다시 읽는다. 계정 검사 후 서버가 3인자 `UsernamePasswordAuthenticationToken`을 구성한다. [JPA 인증 어댑터](../../business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java)와 [권한 스냅샷](../../business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java)이 현재 활성 상태·잠금·그룹·기능권한·버전을 제공한다. 필터는 인증 객체·정규 principal·활성 상태·비어 있지 않은 현재 버전을 확인한 뒤에만 체인을 호출한다. [API 체인](../../api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java)과 [operation 인가](../../business-core/src/main/java/nuri/business/security/authorization/OperationAuthorizationManager.java)의 보호도 유지한다.
+
+생산 소스의 조건을 이동하거나 제거하지 않고 이 탐지 하나만 승인 목록에 추가했다. 규칙·파일·69행·fingerprint·전체 소스와 위 방어 및 회귀 테스트의 해시에 결속한다. 열 범위는 검토 근거이며 현재 evaluator의 독립 판정 키는 아니다. 만료일은 기존과 같은 **2026-12-08**로 두어 승인 기간을 연장하지 않는다.
+
+검증은 다음과 같이 구분한다.
+
+- [SockJS 필터 회귀](../../api-server/src/test/java/nuri/config/websocket/WebSocketCookieAuthenticationFilterTest.java) **12/12 통과**, 실패·오류·skip 0. 기존 정상 경로와 함께 누락/무효 토큰, 이전 컨텍스트 잔존, 비인증 객체·잘못된 principal·빈 버전, 자격증명 없는 메타 요청과 cross-site 요청의 거부를 검사했다. `compileJava compileTestJava`도 통과했다.
+- [예외·정책·실행 연결 계약](../../scripts/sast-exceptions.test.mjs)과 관련 SAST 계약 **17/17 통과**. 새 fingerprint, 위조 suppression, 소스 변경, 누락·중복·만료는 계속 실패한다.
+- 위 CI의 정제된 실제 artifact를 현재 정책 CLI에 다시 입력하여 Java 110개 쿼리/4개 탐지와 JavaScript 101개 쿼리/2개 탐지 모두 정확한 승인 **6건**, 차단·정책 오류 0, 종료 코드 0을 확인했다. 같은 Java artifact에서 008의 fingerprint만 변경하면 **차단 1·정책 오류 1, 종료 코드 1**이고 변경된 탐지는 suppression 없이 게시본에 남는다.
+
+이 결과는 실제 CI 분석 산출물에 대한 로컬 정책 재생과 회귀 검증이다. 예외 등록 후의 새 required CI 전체 통과나 운영 배포 완료를 뜻하지 않는다.
+
+## 최초 승인 및 이전 재검토 기록
+
+아래 내용과 7건 표는 최초 승인 당시의 조사 기록이다.
+
 2026-09-09 후속 Java 전체 분석에서 종전 Medium 41건이 0건이 됐다. 110개 보안 쿼리의 결과는
 기존 승인 예외 5건뿐이며 차단·정책 오류는 0건이다. 예외 추가나 임계값 완화는 없다.
 

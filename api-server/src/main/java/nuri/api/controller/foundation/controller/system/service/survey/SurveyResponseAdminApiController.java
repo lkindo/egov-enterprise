@@ -37,8 +37,8 @@ public class SurveyResponseAdminApiController {
     private final SurveyResultService surveyResultService;
 
     @Operation(summary = "설문 응답 목록", description = "응답자명 부분일치로 검색한다.")
-    @AdminOrSystem
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#getResponses')")
     public ResponseEntity<ApiResponse<PageResponse<SurveyResultDto>>> getResponses(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -47,15 +47,15 @@ public class SurveyResponseAdminApiController {
     }
 
     @Operation(summary = "설문 응답 단건 조회")
-    @AdminOrSystem
     @GetMapping("/{srvyRspnsSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#getResponse')")
     public ResponseEntity<ApiResponse<SurveyResultDto>> getResponse(@PathVariable Long srvyRspnsSn) {
         return ResponseEntity.ok(ApiResponse.success(surveyResultService.getResponse(srvyRspnsSn)));
     }
 
     @Operation(summary = "설문 응답 삭제", description = "되돌릴 수 없다. ADMIN 만 수행할 수 있다.")
-    @AdminOnly
     @DeleteMapping("/{srvyRspnsSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#deleteResponse')")
     public ResponseEntity<ApiResponse<Void>> deleteResponse(@PathVariable Long srvyRspnsSn) {
         surveyResultService.deleteResponse(srvyRspnsSn);
         return ResponseEntity.ok(ApiResponse.success(null));

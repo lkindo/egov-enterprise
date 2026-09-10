@@ -434,7 +434,7 @@ class ConfigSafetyLinterTest {
             }
         } else if ("always".equalsIgnoreCase(unquote(showDetails))) {
             violations.add(label + ": " + KEY_SHOW_DETAILS + " = always 입니다 — /actuator/health 는"
-                    + " security.whitelist 에 있어 **미인증 접근이 허용**되므로 익명 사용자가 DB·디스크 컴포넌트"
+                    + " operation binding이 PUBLIC이어서 **미인증 접근이 허용**되므로 익명 사용자가 DB·디스크 컴포넌트"
                     + " 상세를 읽게 됩니다. 'when_authorized' 를 쓰십시오(컨테이너 healthcheck·CI 대기는 상태코드만 봅니다).");
         }
     }

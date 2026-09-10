@@ -12,6 +12,7 @@ export const handlers = [
         userNm: '관리자',
         esntlId: 'USRCNFRM_00000000001',
         role: 'ROLE_ADMIN',
+        groups: ['ROLE_ADMIN'], permissions: [], authorizationVersion: 'fixture-authorization-v1',
         emlAddr: 'admin@egov.go.kr'
       }
     });
@@ -53,6 +54,7 @@ export const handlers = [
       data: {
         accessToken: 'fixture-access-token',
         role: 'ROLE_ADMIN',
+        groups: ['ROLE_ADMIN'], permissions: [], authorizationVersion: 'fixture-authorization-v1',
       },
     });
   })

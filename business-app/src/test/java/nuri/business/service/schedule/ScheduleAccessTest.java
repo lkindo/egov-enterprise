@@ -45,9 +45,8 @@ class ScheduleAccessTest {
     @CsvSource({"owner,USER,true", "other,ADMIN,true", "other,USER,false", "anonymous,USER,false"})
     void detailUpdateAndDeleteRespectRealOwnership(String loginId, String role, boolean allowed) {
         if (!loginId.equals("anonymous")) {
-            var principal = CustomUserDetails.builder().userId(loginId).esntlId("different-internal-id").build();
-            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
-                    principal, null, List.of(new SimpleGrantedAuthority("ROLE_" + role))));
+            SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication(loginId, "different-internal-id", role));
         }
         var schedule = Schedule.builder().schdlSn(1L).schdlNm("original").schdlPicId("owner").build();
         schedule.setFrstRgtrId("owner");

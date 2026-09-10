@@ -20,7 +20,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Community User", description = "커뮤니티 사용자 API")
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/communities")
 @RequiredArgsConstructor
@@ -40,6 +39,7 @@ public class CommunityUserApiController {
      */
     @Operation(summary = "커뮤니티 목록 조회", description = "사용 중인 커뮤니티 목록을 페이징하여 조회합니다. 관리자가 사용 중지한 커뮤니티는 제외됩니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#getCommunities')")
     public ResponseEntity<ApiResponse<PageResponse<CommunityDto>>> getCommunities(
             @RequestParam(required = false) String searchCnd,
             @RequestParam(required = false) String searchWrd,
@@ -55,6 +55,7 @@ public class CommunityUserApiController {
      */
     @Operation(summary = "커뮤니티 상세 조회", description = "사용 중인 커뮤니티의 상세 정보를 조회합니다.")
     @GetMapping("/{cmntySn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#getCommunity')")
     public ResponseEntity<ApiResponse<CommunityDto>> getCommunity(
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
         return ResponseEntity.ok(ApiResponse.success(communityService.getActiveCommunity(cmntySn)));
@@ -66,6 +67,7 @@ public class CommunityUserApiController {
      */
     @Operation(summary = "내 커뮤니티 멤버십 상태", description = "현재 사용자의 특정 커뮤니티 멤버십 상태(NONE·REQUESTED·MEMBER)를 조회합니다.")
     @GetMapping("/{cmntySn}/membership")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#getMyMembership')")
     public ResponseEntity<ApiResponse<CommunityMembershipDto>> getMyMembership(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
@@ -82,6 +84,7 @@ public class CommunityUserApiController {
     @Operation(summary = "커뮤니티 게시판 목록",
             description = "커뮤니티에 귀속된 사용 중인 게시판 목록을 조회합니다. 승인된 회원만 조회할 수 있습니다.")
     @GetMapping("/{cmntySn}/boards")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#getCommunityBoards')")
     public ResponseEntity<ApiResponse<java.util.List<CommunityBoardDto>>> getCommunityBoards(
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
         return ResponseEntity.ok(ApiResponse.success(boardMasterService.getCommunityBoards(cmntySn)));
@@ -89,6 +92,7 @@ public class CommunityUserApiController {
 
     @Operation(summary = "커뮤니티 가입 신청", description = "사용자가 특정 커뮤니티에 가입을 신청합니다. 관리자가 승인하면 회원이 됩니다.")
     @PostMapping("/{cmntySn}/join")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.community.CommunityUserApiController#joinCommunity')")
     public ResponseEntity<ApiResponse<Void>> joinCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long cmntySn) {

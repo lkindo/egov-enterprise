@@ -87,7 +87,7 @@ const headMenus: MenuInfo[] = [
   },
 ];
 
-const CURRENT_USER: UserInfo = { id: 'staff-1', name: '홍길동', role: 'USER', userSe: 'USR' };
+const CURRENT_USER: UserInfo = { id: 'staff-1', name: '홍길동', role: 'USER', userSe: 'USR', groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
 
 function renderHeader() {
   testState.user = CURRENT_USER;

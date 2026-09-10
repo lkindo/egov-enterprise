@@ -22,7 +22,6 @@ import java.util.Map;
 @Tag(name = "Dashboard", description = "메인 대시보드 데이터 제공 API")
 @RestController
 @RequestMapping("/api/v1/dashboard")
-@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class DashboardApiController {
 
@@ -32,6 +31,7 @@ public class DashboardApiController {
 
     @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.main.DashboardApiController#getDashboardData')")
     public ResponseEntity<ApiResponse<DashboardResponse>> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
             return ResponseEntity.status(401).body(ApiResponse.error(CommonErrorCode.UNAUTHORIZED, "User not authenticated"));

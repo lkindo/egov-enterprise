@@ -35,7 +35,7 @@ class AuthorManageServiceTest {
     @BeforeEach
     void authenticateAdmin() {
         SecurityContextHolder.getContext().setAuthentication(
-                new TestingAuthenticationToken("admin", null, "ROLE_ADMIN"));
+                nuri.business.support.AuthorizationTestPrincipal.authentication("admin","ESNTL_ADMIN","ROLE_ADMIN"));
     }
 
     @AfterEach
@@ -45,15 +45,6 @@ class AuthorManageServiceTest {
 
     @Mock
     private AuthorityRepository authorityRepository;
-
-    @Mock
-    private nuri.business.domain.auth.AuthorityRoleRepository authorityRoleRepository;
-
-    @Mock
-    private nuri.business.domain.auth.MenuAuthorityRepository menuAuthorityRepository;
-
-    @Mock
-    private nuri.business.domain.auth.UserAuthorityRepository userAuthorityRepository;
 
     @InjectMocks
     private AuthorManageService authorManageService;
@@ -98,152 +89,6 @@ class AuthorManageServiceTest {
 
         assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND,
                 error.getErrorCode());
-    }
-
-    @Test
-    @DisplayName("권한 등록 테스트")
-    void insertAuthorTest() {
-        AuthorManageDto dto = AuthorManageDto.builder()
-                .authrtCd("ROLE_NEW")
-                .authrtNm("신규권한")
-                .build();
-        
-        authorManageService.insertAuthor(dto);
-
-        verify(authorityRepository).save(any());
-    }
-
-    @Test
-    @DisplayName("권한 수정 테스트")
-    void updateAuthorTest() {
-        AuthorManageDto dto = AuthorManageDto.builder()
-                .authrtCd("ROLE_EXIST")
-                .authrtNm("수정된이름")
-                .build();
-        
-        Authority authority = mock(Authority.class);
-        given(authorityRepository.findById("ROLE_EXIST")).willReturn(Optional.of(authority));
-
-        authorManageService.updateAuthor(dto);
-
-        verify(authority).update(eq("수정된이름"), any());
-    }
-
-    @Test
-    @DisplayName("권한 삭제 테스트")
-    void deleteAuthorTest() {
-        authorManageService.deleteAuthor("ROLE_ADMIN");
-        verify(authorityRepository).deleteById("ROLE_ADMIN");
-    }
-
-    @Test
-    @DisplayName("권한 일괄 삭제 테스트")
-    void deleteAuthorsTest() {
-        String[] codes = {"ROLE_1", "ROLE_2"};
-        authorManageService.deleteAuthors(codes);
-        verify(authorityRepository).deleteAllById(anyList());
-    }
-
-    /**
-     * [2026-08-29 GAP-AUTH-002] 보유자가 있으면 삭제하지 않는다.
-     *
-     * <p>tb_user_authrt_map 에는 tb_authrt_info 로의 FK 가 없어(V2_0 은 PK 만, V2_12 는
-     * tb_user_info FK 만 추가) 종전에는 삭제가 그대로 성공하고 사용자 행이 없어진 권한을
-     * 가리킨 채 남았다. 같은 코드로 권한을 다시 만들면 그 사용자들이 <b>아무도 배정하지 않은
-     * 권한을 그대로 물려받는다</b> — 권한 코드는 사용자가 입력하는 문자열이라 재사용이 흔하다.
-     *
-     * <p>회수(cascade delete)가 아니라 차단을 택했다. 회수는 오삭제 시 복구가 불가능하고
-     * 인가 의미를 조용히 지운다(H3).
-     */
-    @Test
-    @DisplayName("보유자가 있으면 권한을 삭제하지 않는다 — 끊긴 참조를 남기지 않는다")
-    void deleteAuthor_blockedWhenAssigned() {
-        given(userAuthorityRepository.countByAuthrtId("ROLE_ADMIN")).willReturn(3L);
-
-        assertThatThrownBy(() -> authorManageService.deleteAuthor("ROLE_ADMIN"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("3명");
-
-        // 어느 것도 지워지지 않아야 한다 — 부분 삭제는 권한을 반쯤 부순 상태로 남긴다.
-        verify(authorityRepository, never()).deleteById(anyString());
-        verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
-        verify(menuAuthorityRepository, never()).deleteByIdAuthrtCd(anyString());
-    }
-
-    @Test
-    @DisplayName("일괄 삭제는 한 건이라도 보유자가 있으면 전체를 중단한다")
-    void deleteAuthors_blockedWhenAnyAssigned() {
-        given(userAuthorityRepository.countByAuthrtId("ROLE_1")).willReturn(0L);
-        given(userAuthorityRepository.countByAuthrtId("ROLE_2")).willReturn(1L);
-
-        assertThatThrownBy(() -> authorManageService.deleteAuthors(new String[] {"ROLE_1", "ROLE_2"}))
-                .isInstanceOf(BusinessException.class);
-
-        // 일부만 지우면 어느 것이 남았는지 화면이 말할 수 없다.
-        verify(authorityRepository, never()).deleteAllById(anyList());
-        verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
-    }
-
-    @Test
-    @DisplayName("역할 계층의 상위·하위 권한으로 사용 중이면 삭제하지 않는다")
-    void deleteAuthor_blockedWhenUsedByRoleHierarchy() {
-        given(userAuthorityRepository.countByAuthrtId("ROLE_ADMIN")).willReturn(0L);
-        given(authorityRepository.countRoleHierarchyReferences("ROLE_ADMIN")).willReturn(2L);
-
-        assertThatThrownBy(() -> authorManageService.deleteAuthor("ROLE_ADMIN"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("역할 계층 2건");
-
-        verify(authorityRepository, never()).deleteById(anyString());
-        verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
-        verify(menuAuthorityRepository, never()).deleteByIdAuthrtCd(anyString());
-    }
-
-    @Test
-    @DisplayName("일괄 삭제도 역할 계층 참조가 하나라도 있으면 전체를 중단한다")
-    void deleteAuthors_blockedWhenAnyRoleHierarchyReferenceExists() {
-        given(authorityRepository.countRoleHierarchyReferences("ROLE_1")).willReturn(0L);
-        given(authorityRepository.countRoleHierarchyReferences("ROLE_2")).willReturn(1L);
-
-        assertThatThrownBy(() -> authorManageService.deleteAuthors(new String[] {"ROLE_1", "ROLE_2"}))
-                .isInstanceOf(BusinessException.class);
-
-        verify(authorityRepository, never()).deleteAllById(anyList());
-        verify(authorityRoleRepository, never()).deleteByIdAuthrtCd(anyString());
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // [2026-08-09 뮤테이션 보강] PIT 이 이 클래스에서 12개를 살려 보냈다.
-    //
-    //   그중 4개가 **삭제 시 매핑 선정리**(deleteAuthor·deleteAuthors)다.
-    //   authorityRoleRepository / menuAuthorityRepository 삭제 호출을 지워도 그린이었다 —
-    //   즉 "권한을 지웠는데 tb_authrt_role_map·tb_menu_crt_dtl 의 매핑이 남는" 회귀를
-    //   테스트가 감지하지 못한다. FK(NO ACTION) 때문에 삭제가 실패하거나,
-    //   최악의 경우 **삭제된 권한의 메뉴 접근 매핑이 잔존**한다.
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("삭제: 권한보다 먼저 역할·메뉴 매핑을 정리한다 (FK NO ACTION 통과 조건)")
-    void deleteAuthorClearsMappingsBeforeAuthority() {
-        authorManageService.deleteAuthor("ROLE_TEMP");
-
-        // 호출 하나라도 지운 뮤턴트가 여기서 죽는다.
-        org.mockito.InOrder order = inOrder(authorityRoleRepository, menuAuthorityRepository, authorityRepository);
-        order.verify(authorityRoleRepository).deleteByIdAuthrtCd("ROLE_TEMP");
-        order.verify(menuAuthorityRepository).deleteByIdAuthrtCd("ROLE_TEMP");
-        order.verify(authorityRepository).deleteById("ROLE_TEMP");
-    }
-
-    @Test
-    @DisplayName("일괄 삭제: 대상마다 매핑을 정리한 뒤 한 번에 삭제한다")
-    void deleteAuthorsClearsMappingsForEveryTarget() {
-        authorManageService.deleteAuthors(new String[] { "R1", "R2" });
-
-        for (String cd : new String[] { "R1", "R2" }) {
-            verify(authorityRoleRepository).deleteByIdAuthrtCd(cd);
-            verify(menuAuthorityRepository).deleteByIdAuthrtCd(cd);
-        }
-        verify(authorityRepository).deleteAllById(List.of("R1", "R2"));
     }
 
     @Test
@@ -298,18 +143,6 @@ class AuthorManageServiceTest {
     }
 
     @Test
-    @DisplayName("수정: 대상 권한이 없으면 예외로 끝난다 (조용한 무시 아님)")
-    void updateThrowsWhenAuthorityMissing() {
-        given(authorityRepository.findById("GHOST")).willReturn(Optional.empty());
-        // authrtNm 은 @NonNull — 빌더가 먼저 NPE 를 내면 서비스에 닿지도 못한다.
-        AuthorManageDto dto = AuthorManageDto.builder().authrtCd("GHOST").authrtNm("이름").build();
-
-        // orElseThrow 람다의 `replaced return value with null` 뮤턴트가 여기서 죽는다.
-        assertThrows(nuri.foundation.core.exception.BusinessException.class,
-                () -> authorManageService.updateAuthor(dto));
-    }
-
-    @Test
     @DisplayName("생성일 표기: 8자리 숫자만 하이픈으로 재조립하고 나머지는 손대지 않는다")
     void createdDateIsNormalizedOnlyForCompactEightDigits() {
         // ① 8자리·하이픈 없음 → 재조립.
@@ -323,12 +156,20 @@ class AuthorManageServiceTest {
         // ⑤ 앞뒤 공백은 제거된 뒤 판정된다.
         assertEquals("2026-08-09", dtoOf("  20260809  ").getAuthrtCrtYmd());
     }
-
-    /** toDto 는 private 이므로 목록 조회 경로로 간접 호출한다. */
-    private AuthorManageDto dtoOf(String crtYmd) {
-        // createRaw 는 null 을 defaultDate() 로 대체하지 않고 원본을 그대로 보존한다.
-        Authority entity = Authority.createRaw("ROLE_X", "이름", "설명", crtYmd);
+    private AuthorManageDto dtoOf(String createdDate) {
+        Authority entity = Authority.createRaw("ROLE_X", "이름", "설명", createdDate);
         given(authorityRepository.findById("ROLE_X")).willReturn(Optional.of(entity));
         return authorManageService.selectAuthor("ROLE_X");
+    }
+
+    @Test
+    void legacyUnversionedWritesAreRetiredWithoutRepositoryMutation() {
+        var dto=AuthorManageDto.builder().authrtCd("CUSTOM").authrtNm("그룹").build();
+        java.util.List<Runnable> calls=java.util.List.of(() -> authorManageService.insertAuthor(dto),
+            () -> authorManageService.updateAuthor(dto),()->authorManageService.deleteAuthor("CUSTOM"),
+            () -> authorManageService.deleteAuthors(new String[]{"CUSTOM"}));
+        for(var call:calls) assertThatThrownBy(call::run).isInstanceOfSatisfying(BusinessException.class,
+            error -> assertEquals(nuri.foundation.core.exception.CommonErrorCode.AUTHORIZATION_ENDPOINT_RETIRED,error.getErrorCode()));
+        verifyNoInteractions(authorityRepository);
     }
 }

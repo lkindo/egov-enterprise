@@ -47,7 +47,7 @@ public class DeptJobBoxService {
     public Long createDeptJobBox(String userId, DeptJobBoxDto dto) {
         // [헌법 제8조 이중검증] 컨트롤러 @PreAuthorize(1차) + 서비스 2차 가드. 부서 업무함은
         // 소유 모델이 없는 공유 관리 자원 → ADMIN/SYSTEM 전용(소유 스코프 승격 시 이 가드를 교체).
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("DEPT_BOX_CREATE");
         DeptJobBox entity = DeptJobBox.builder()
                 .deptTaskBoxNm(dto.getDeptTaskBoxNm())
                 .deptId(dto.getDeptId())
@@ -58,7 +58,7 @@ public class DeptJobBoxService {
 
     @Transactional
     public void updateDeptJobBox(Long deptTaskBoxSn, String userId, DeptJobBoxDto dto) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("DEPT_BOX_UPDATE");
         DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "부서업무함을 찾을 수 없습니다: " + deptTaskBoxSn));
 
@@ -82,7 +82,7 @@ public class DeptJobBoxService {
      */
     @Transactional
     public void deleteDeptJobBox(Long deptTaskBoxSn) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("DEPT_BOX_DELETE");
         Long boxSn = Objects.requireNonNull(deptTaskBoxSn);
 
         if (deptJobRepository.existsByDeptTaskBoxSn(boxSn)) {

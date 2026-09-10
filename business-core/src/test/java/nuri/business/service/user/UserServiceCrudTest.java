@@ -30,6 +30,9 @@ import static org.mockito.Mockito.mockStatic;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService (사용자 CRUD) 테스트")
 class UserServiceCrudTest {
+    @org.junit.jupiter.api.AfterEach
+    void clearAuthorization() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
+
 
   @Mock
   private UserRepository userRepository;
@@ -62,6 +65,12 @@ class UserServiceCrudTest {
   @InjectMocks
   private UserService userService;
 
+  @Mock
+  private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
+
+  @Mock
+  private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
+
   private User mockUser;
   private UserSignupRequest signupRequest;
 
@@ -87,9 +96,10 @@ class UserServiceCrudTest {
   @DisplayName("사용자 생성 성공")
   void createUser_success() {
     try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-      mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+      org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
       when(passwordEncoder.encode(any())).thenReturn("encoded");
-      when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+      when(userRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
 
       String result = userService.registerUser(UserDto.builder().userId("user").pswd("pw").userNm("name").pswdHint("h").pswdCrans("c").role("USER").build());
 
@@ -101,7 +111,8 @@ class UserServiceCrudTest {
   @DisplayName("사용자 생성 실패 - null 값 포함")
   void createUser_fail_withNullValues() {
     try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-      mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+      org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
       // 빌더는 @NonNull userId 에 null 검사를 생성해 NPE 를 먼저 던진다. 여기서 지켜야 할 것은
       // 서비스의 required() 가드(Jackson 역직렬화 경로에서 실제로 작동한다)이므로 목으로 직접 넘긴다.
       UserDto invalid = org.mockito.Mockito.mock(UserDto.class);
@@ -117,8 +128,8 @@ class UserServiceCrudTest {
   @DisplayName("사용자 상세 조회 성공 - 유효한 ID")
   void getUserById_success_withValidId() {
     when(userRepository.findById("testUser")).thenReturn(Optional.of(mockUser));
-    when(userAuthorityRepository.findById(any())).thenReturn(Optional.of(
-        UserAuthority.builder().scrtyDcsnTrgtId("USR_1234567890123456").authrtId("ROLE_USER").build()));
+    when(authorizationSnapshots.load("USR_1234567890123456")).thenReturn(
+        new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of("ROLE_USER"), List.of(), "version"));
 
     UserDto result = userService.getUserById("testUser");
 
@@ -139,6 +150,7 @@ class UserServiceCrudTest {
   @DisplayName("사용자 목록 조회 성공")
   void getUserList_success() {
     when(userRepository.findAllWithAuthorities()).thenReturn(java.util.Collections.singletonList(new Object[]{mockUser, null}));
+    when(authorizationSnapshots.loadAll(any())).thenReturn(java.util.Map.of("USR_1234567890123456",new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of("ROLE_USER"),List.of(),"version")));
 
     List<UserDto> result = userService.getUserList();
 
@@ -152,6 +164,7 @@ class UserServiceCrudTest {
     UserDto userDto = UserDto.builder().userId("testUser").userNm("테스트사용자").esntlId("USR_1234567890123456").build();
     Page<UserDto> page = new PageImpl<>(List.of(userDto));
     when(userRepository.getPagedUserList(any(), any())).thenReturn(page);
+    when(authorizationSnapshots.loadAll(any())).thenReturn(java.util.Map.of("USR_1234567890123456",new nuri.business.security.authorization.AuthorizationSnapshotService.Snapshot(List.of("ROLE_USER"),List.of(),"version")));
 
     Page<UserDto> result = userService.getUserPage(PageRequest.of(0, 10));
 
@@ -165,12 +178,12 @@ class UserServiceCrudTest {
   void signup_success() {
     when(userRepository.findByUserId(any())).thenReturn(Optional.empty());
     when(passwordEncoder.encode(any())).thenReturn("encoded");
-    when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    when(userRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
 
     UserResponse result = userService.signup(signupRequest);
 
     assertThat(result.userId()).isEqualTo("newUser");
-    verify(userRepository).save(any());
+    verify(userRepository).saveAndFlush(any());
   }
 
   @Test

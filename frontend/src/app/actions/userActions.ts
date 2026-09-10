@@ -57,19 +57,3 @@ export async function bulkDeleteUsersAction(userIds: string[]): Promise<ActionRe
     return { success: false, message: errorMessage };
   }
 }
-
-export async function bulkUpdateUserRoleAction(userIds: string[], role: string): Promise<ActionResponse> {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-    await userAdminService.updateUsersRole(userIds, role, axiosConfig);
-
-    revalidatePath('/admin/user/manage');
-    return { success: true, message: `${userIds.length}명의 사용자 권한이 변경되었습니다.` };
-  } catch (error) {
-    const errorMessage = extractErrorMessage(error, '권한 변경 중 오류 발생');
-    return { success: false, message: errorMessage };
-  }
-}

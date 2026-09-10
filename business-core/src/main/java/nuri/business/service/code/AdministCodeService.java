@@ -39,7 +39,7 @@ public class AdministCodeService {
 
     @Transactional
     public String createAdministCode(AdministCodeDto dto, String userId) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("ADMCODE_CREATE");
 
         AdministCode entity = AdministCode.builder()
                 .admdstCd(dto.getAdmdstCd())
@@ -54,7 +54,7 @@ public class AdministCodeService {
 
     @Transactional
     public void updateAdministCode(String code, AdministCodeDto dto, String userId) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("ADMCODE_UPDATE");
 
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "행정구역 코드를 찾을 수 없습니다: " + code));
@@ -77,7 +77,7 @@ public class AdministCodeService {
      */
     @Transactional
     public void deleteAdministCode(String code) {
-        SecurityUtil.assertAdmin();
+        SecurityUtil.assertPermission("ADMCODE_DELETE");
 
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new BusinessException(

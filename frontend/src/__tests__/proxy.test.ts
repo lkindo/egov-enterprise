@@ -1,7 +1,8 @@
 // @vitest-environment node
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 import type { NextRequest } from 'next/server';
+import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
 
 /**
  * Proxy 인증 게이트 회귀 테스트.
@@ -30,7 +31,7 @@ function signToken(
   alg: 'HS256' | 'HS384' | 'HS512' = 'HS384'
 ): string {
   const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
-  const data = `${b64({ alg, typ: 'JWT' })}.${b64(payload)}`;
+  const data = `${b64({ alg, typ: 'JWT' })}.${b64({ typ: 'access', ...payload })}`;
   const sig = createHmac(HASH[alg], Buffer.from(secret, 'utf8')).update(data).digest('base64url');
   return `${data}.${sig}`;
 }
@@ -41,6 +42,15 @@ const pastExp = () => Math.floor(Date.now() / 1000) - 3600;
 let proxy: (req: NextRequest) => Promise<Response>;
 let NextRequestCtor: typeof NextRequest;
 const originalSecret = process.env.JWT_SECRET;
+const fetchMock = vi.fn();
+const SUBJECT = 'USRCNFRM_fixture_001';
+
+beforeEach(() => {
+  fetchMock.mockReset().mockResolvedValue(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
+    id: 'webmaster', esntlId: SUBJECT, groups: ['USER'], permissions: [], authorizationVersion: 'v1',
+  } })));
+  vi.stubGlobal('fetch', fetchMock);
+});
 
 beforeAll(async () => {
   process.env.JWT_SECRET = SECRET;
@@ -50,6 +60,7 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
+  vi.unstubAllGlobals();
   if (originalSecret === undefined) delete process.env.JWT_SECRET;
   else process.env.JWT_SECRET = originalSecret;
 });
@@ -70,11 +81,12 @@ describe('proxy 인증 게이트', () => {
   it('같은 시크릿의 토큰은 통과하고 진단은 비밀 파생값 없이 필요한 메타만 남긴다', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
-      const res = await proxy(requestWith(signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET)));
+      const res = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET)));
       const messages = warn.mock.calls.map(([message]) => String(message));
       const hasMessage = (pattern: RegExp) => messages.some((message) => pattern.test(message));
 
       expect(redirectedToLogin(res)).toBe(false);
+      expect(res.status).toBe(200);
       expect(hasMessage(/JWT 검증 성공/u)).toBe(true);
       expect(hasMessage(/시크릿 출처=환경변수 JWT_SECRET/u)).toBe(true);
       expect(hasMessage(/JWT_SECRET=있음/u)).toBe(true);
@@ -86,19 +98,19 @@ describe('proxy 인증 게이트', () => {
   });
 
   it.each(['HS256', 'HS384', 'HS512'] as const)('%s 로 서명해도 통과한다(alg 화이트리스트)', async (alg) => {
-    const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET, alg);
-    expect(redirectedToLogin(await proxy(requestWith(token)))).toBe(false);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET, alg);
+    expect((await proxy(requestWith(token))).status).toBe(200);
   });
 
   it('[회귀] 다른 시크릿으로 서명된 토큰은 통과하지 못한다 — 좌우 시크릿 비대칭의 관측 형태', async () => {
     // 백엔드가 .env 값으로 서명하고 미들웨어가 dev 기본값으로 검증하던 상태가 정확히 이것이다.
     // 로그인 자체는 200 이므로(미들웨어를 우회한다) 사용자에겐 "인증 완료 후 로그인창" 으로만 보였다.
-    const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, OTHER_SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, OTHER_SECRET);
     expect(redirectedToLogin(await proxy(requestWith(token)))).toBe(true);
   });
 
   it('만료된 토큰은 통과하지 못한다', async () => {
-    const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: pastExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: pastExp() }, SECRET);
     expect(redirectedToLogin(await proxy(requestWith(token)))).toBe(true);
   });
 
@@ -109,7 +121,7 @@ describe('proxy 인증 게이트', () => {
   });
 
   it('서명부를 변조한 토큰은 거부한다', async () => {
-    const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
     const tampered = token.slice(0, -4) + 'AAAA';
     expect(redirectedToLogin(await proxy(requestWith(tampered)))).toBe(true);
   });
@@ -120,5 +132,54 @@ describe('proxy 인증 게이트', () => {
 
   it('로그인 페이지 자체는 게이트를 적용하지 않는다(리다이렉트 루프 방지)', async () => {
     expect(redirectedToLogin(await proxy(requestWith(null, '/login')))).toBe(false);
+  });
+
+  it('an old ADMIN claim cannot reopen a page after the server revokes its permission', async () => {
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const response = await proxy(requestWith(token, '/admin/system/menus'));
+    expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
+    expect(new URL(response.headers.get('location')!).pathname).toBe('/');
+  });
+
+  it.each([
+    '/admin/community/boards/master',
+    '/admin/community/boards/maker',
+    '/admin/community/templates',
+  ])('requires current management permission before serving the static route %s', async (route) => {
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const response = await proxy(requestWith(token, route));
+    expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
+    expect(new URL(response.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
+  });
+
+  it('a current functional grant opens its page without an administrator role claim', async () => {
+    const permissions = PAGE_PERMISSIONS['/admin/system/menus'];
+    expect(permissions.length).toBeGreaterThan(0);
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
+      id: 'webmaster', esntlId: SUBJECT, groups: ['MENU_EDITOR'], permissions, authorizationVersion: 'v2',
+    } })));
+    const token = signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET);
+    const response = await proxy(requestWith(token, '/admin/system/menus'));
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('content-security-policy')).toContain("script-src");
+  });
+
+  it('rejects a different essential ID even when the login ID equals the JWT subject', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
+      id: SUBJECT, esntlId: 'USRCNFRM_other_002', groups: ['MENU_EDITOR'], permissions: [...PAGE_PERMISSIONS['/admin/system/menus']], authorizationVersion: 'v2',
+    } })));
+    const response = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET), '/admin/system/menus'));
+    expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
+    expect(new URL(response.headers.get('location')!).pathname).toBe('/');
+  });
+
+  it.each([
+    { sub: SUBJECT, typ: 'refresh', exp: futureExp() },
+    { role: 'ADMIN', exp: futureExp() },
+    { sub: SUBJECT, role: 'ADMIN' },
+  ])('rejects the wrong token kind or incomplete signed identity before querying permissions', async (payload) => {
+    expect(redirectedToLogin(await proxy(requestWith(signToken(payload, SECRET))))).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

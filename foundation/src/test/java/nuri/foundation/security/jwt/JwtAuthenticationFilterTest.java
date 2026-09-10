@@ -83,6 +83,18 @@ class JwtAuthenticationFilterTest {
         // Then
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
+
+    @Test
+    void currentAccountRevocationClearsAnyPreviousSecurityContext() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(mock(Authentication.class));
+        when(tokenProvider.resolveToken(request)).thenReturn("existing-token");
+        when(tokenProvider.validateToken("existing-token")).thenReturn(true);
+        when(tokenProvider.getAuthentication("existing-token"))
+                .thenThrow(new org.springframework.security.authentication.DisabledException("inactive"));
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        assertThat(filterChain.getRequest()).isSameAs(request);
+    }
     @Test
     void unavailableIdentityStoreReturns503WithoutDiscardingTheClientTokenAndCanRecover() throws Exception {
         when(tokenProvider.resolveToken(request)).thenReturn("same-token");

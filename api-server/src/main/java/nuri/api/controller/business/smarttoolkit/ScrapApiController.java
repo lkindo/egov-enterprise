@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Scrap", description = "스크랩 관리 API")
 @Slf4j
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/scraps")
 @RequiredArgsConstructor
@@ -29,6 +28,7 @@ public class ScrapApiController {
 
     @Operation(summary = "나의 스크랩 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScrapApiController#getMyScrapList')")
     public ResponseEntity<ApiResponse<PageResponse<ScrapDto>>> getMyScrapList(
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageUnit) {
@@ -42,6 +42,7 @@ public class ScrapApiController {
 
     @Operation(summary = "스크랩 상세 조회")
     @GetMapping("/{scrapSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScrapApiController#getScrap')")
     public ResponseEntity<ApiResponse<ScrapDto>> getScrap(@PathVariable Long scrapSn) {
         ScrapDto result = egovScrapService.getScrap(scrapSn);
         return ResponseEntity.ok(ApiResponse.success(result));
@@ -49,6 +50,7 @@ public class ScrapApiController {
 
     @Operation(summary = "스크랩 등록")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScrapApiController#createScrap')")
     public ResponseEntity<ApiResponse<Long>> createScrap(@Valid @RequestBody ScrapDto dto) {
         String userId = currentLoginId();
         Long scrapSn = egovScrapService.createScrap(userId, dto);
@@ -57,6 +59,7 @@ public class ScrapApiController {
 
     @Operation(summary = "스크랩 수정")
     @PutMapping("/{scrapSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScrapApiController#updateScrap')")
     public ResponseEntity<ApiResponse<Void>> updateScrap(@PathVariable Long scrapSn, @Valid @RequestBody ScrapDto dto) {
         String userId = currentLoginId();
         egovScrapService.updateScrap(scrapSn, userId, dto);
@@ -65,6 +68,7 @@ public class ScrapApiController {
 
     @Operation(summary = "스크랩 삭제")
     @DeleteMapping("/{scrapSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScrapApiController#deleteScrap')")
     public ResponseEntity<ApiResponse<Void>> deleteScrap(@PathVariable Long scrapSn) {
         egovScrapService.deleteScrap(scrapSn);
         return ResponseEntity.ok(ApiResponse.success(null));

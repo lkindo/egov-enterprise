@@ -49,7 +49,7 @@ class AuthenticationControllerIntegrationTest {
                 .pswd(passwordEncoder.encode("password123!"))
                 .userNm("Test User")
                 .esntlId("USR_0000000000001")
-                .userSttsCd("A")
+                .userSttsCd("P")
                 .build();
         userRepository.save(testUser);
     }
@@ -66,7 +66,10 @@ class AuthenticationControllerIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken").exists());
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(jsonPath("$.data.groups").isEmpty())
+                .andExpect(jsonPath("$.data.permissions").isEmpty())
+                .andExpect(jsonPath("$.data.authorizationVersion").isString());
     }
 
     @Test

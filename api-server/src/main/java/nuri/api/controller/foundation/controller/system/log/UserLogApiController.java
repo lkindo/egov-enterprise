@@ -46,8 +46,8 @@ public class UserLogApiController {
 
     @Operation(summary = "사용자 활동 로그 목록",
             description = "사용자명 부분일치 검색과 페이징을 지원한다. 검색 대상은 연관 사용자의 이름이다.")
-    @AdminOrSystem
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.UserLogApiController#getUserLogList')")
     public ResponseEntity<ApiResponse<PageResponse<UserLogDto>>> getUserLogList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
         Page<UserLogDto> page = userLogManageService.selectUserLogList(searchDto);
@@ -76,8 +76,8 @@ public class UserLogApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = LogExcelExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @AdminOrSystem
     @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.UserLogApiController#exportUserLogs')")
     public ResponseEntity<StreamingResponseBody> exportUserLogs(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 

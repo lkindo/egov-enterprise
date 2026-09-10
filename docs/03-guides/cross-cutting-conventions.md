@@ -10,7 +10,7 @@
 
 | # | 횡단관심사 | 집행 게이트(기계강제) | 관례 문서 | 잔여 갭 |
 |:-:|---|---|:-:|---|
-| 1 | 인가(Authorization) | `SecurityAuthAnnotationLinterTest`(읽기·쓰기 명시 경계) | 본 §1 + BE헌법 제8조 | 애노테이션 의미·SpEL 역할문자열 |
+| 1 | 인가(Authorization) | `SecurityAuthAnnotationLinterTest`(읽기·쓰기 명시 경계) | 본 §1 + BE헌법 제8조 | 도메인 소유권·참여 관계의 실행 의미 |
 | 2 | 정체성(esntlId/loginId) | `IdentityAxisLinterTest`(deprecated API·직접 접근 동결) | [정체성 모델 가이드](./identity-model-guide.md) | 컬럼축 의미는 코드 리뷰·테스트 필요 |
 | 3 | 트랜잭션 경계 | `AsyncTransactionalListenerArchTest` + `ServiceReadOnlyTransactionalLinterTest` | 본 §3 | 동결 예외의 적정성은 별도 검토 |
 | 4 | 동시성(check-then-act) | `GlobalExceptionHandler`(409 backstop) + `UniqueConstraintMirrorLinterTest` | 본 §4 | 패턴 자체는 시맨틱 → 문서 |
@@ -23,10 +23,12 @@
 
 | 항목 | 내용 |
 |---|---|
-| **관례** | ① 비공개 읽기·쓰기 엔드포인트는 `@Authenticated`/`@PreAuthorize`/`@Secured` 또는 DB인가(`tb_prgrm_lst`)로 컨트롤러 경계를 명시한다. ② `/api/v1/admin/**`는 URL 시큐리티(`ApiSecurityConfig`)로 일괄 보호한다. ③ 개인 데이터는 컨트롤러 인증과 별개로 `SecurityUtil.assertOwnerOrAdmin`(loginId축), 참여자 스코프 쿼리, `assertAdmin` 등 서비스 2차 가드를 둔다. ④ 공개 API는 `@PublicApi`/공개 화이트리스트로 의도를 드러낸다. 클래스 단위 담요 면제는 사용하지 않는다. |
-| **근거** | 백엔드 헌법 제8조(서비스레이어 이중검증), orchestration §3.6 안티패턴. |
-| **집행 게이트(있음)** | `SecurityAuthAnnotationLinterTest`: (1) `auditSecurityAnnotationsOnRestControllers`는 `nuri.api.controller`의 읽기·쓰기를 순회해 공개 선언·명시 애노테이션·DB URL 인가 중 하나를 요구한다. (2) `auditWriteEndpointAuthorizationOnNonAdminPaths`는 비-admin 쓰기 엔드포인트의 명시 경계를 재검증한다. |
-| **미집행 갭** | ① `@Authenticated`의 존재만으로 객체 소유권까지 증명하지는 못하므로 개인 데이터는 서비스 음성 테스트가 계속 필요하다. ② `@PreAuthorize` **역할 SpEL 문자열**은 상수화 미도달(SpEL 파싱 특성상 린트 미도달). ③ `secure-paths` 문자열과 DB URL 인가는 별도 동기화 게이트에 의존한다. |
+| **관례** | ① 코드 카탈로그·정확한 HTTP method/path/handler binding을 원본으로 사용한다. ② 현재 DB 복수 그룹·OPERATION grant로 canonical principal을 만들며, 그룹 이름 자체는 권한이 아니다. ③ HTTP와 각 메서드는 같은 `permissionPolicy`를 사용하고 미등록 경로는 거부한다. ④ 소유자·참여자·비밀글·개인정보 제한은 기능 권한과 별도로 서비스에서 확인한다. 승인된 소유권 우회는 `assertOwnerOrPermission`의 정확한 기능 코드로 표시하며 owner-only에는 적용하지 않는다. ⑤ NAVIGATION은 메뉴 표시이며 API 허용이 아니다. |
+| **근거** | 백엔드 헌법 제8조와 [권한 단순화 설계](../02-architecture/authorization-simplification-design.md), [보안 실행 가이드](security-hardening-playbook.md). |
+| **집행 게이트(있음)** | `SecurityAuthAnnotationLinterTest`는 실제 MVC 집합·handler 가드·등록된 서비스의 정확한 permission 인자를 검사한다. `SecurePathsDeclarationSyncLinterTest`는 원장과 런타임 생성물 및 HTTP 필터 연결을 대조한다. `generate-permissions.test.mjs`는 생성물 freshness와 의도적 불일치 red를 로컬 verify/pre-push/CI operational 경로에서 실행한다. |
+| **미집행 갭** | 원장·소스 일치는 모든 객체 관계와 실행 분기의 올바름을 증명하지 않는다. 소유자 축, 커뮤니티 승인 회수, 비밀글, SYSTEM 혼합 그룹의 개인정보 배제는 서비스·HTTP 부정 테스트가 필요하다. OCI 전환은 [별도 절차와 운영 증거](../04-operations/authorization-cutover-runbook.md)로 확인한다. |
+
+인가 실행 경로 대조: 2026-09-10.
 
 ---
 

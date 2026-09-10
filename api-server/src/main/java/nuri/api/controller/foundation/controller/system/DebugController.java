@@ -17,6 +17,7 @@ public class DebugController {
 
     @Operation(summary = "강제 500 에러 발생", description = "GlobalExceptionHandler 작동 여부를 테스트하기 위해 500 에러를 강제로 발생시킵니다.")
     @GetMapping("/error")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.DebugController#triggerError')")
     public ResponseEntity<ApiResponse<Void>> triggerError() {
         throw new RuntimeException("Debug: This is a forced 500 error for verification.");
     }

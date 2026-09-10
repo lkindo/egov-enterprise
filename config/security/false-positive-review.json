@@ -7,16 +7,16 @@
       "language": "java",
       "ruleId": "java/spring-disabled-csrf-protection",
       "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
-      "line": 160,
+      "line": 139,
       "fingerprint": "dec982be271ed34f:1",
-      "sourceSha256": "28a5d4c75f0cfa7595e74bdb9b51954489897b2cdc3b4a800687bcc1ce00be2f",
+      "sourceSha256": "b3576653e52b11959528e24e1dd88c2cd97a5a51151bd5f050fa4ee5dd5c417c",
       "expiresOn": "2026-12-08",
-      "reason": "Stateless Bearer API chain; Origin validation; Strict refresh cookie; separate legacy CSRF chain.",
+      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled.",
       "id": "SAST-FP-001",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "9cba5bf23b01d52b67412d6452be6e4fd49c7b0e5320c1cada2abcd811ed34a2"
+          "sha256": "f39261ef5838cce5f2079f95ecafa463320a4bf53f179fc09fdb4ed8c5ce8c64"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -32,15 +32,15 @@
         },
         {
           "file": "frontend/src/proxy.ts",
-          "sha256": "90ea1df37e4f214396e7df17de2a3233bca80d92a900383fcf7da678186e5f00"
+          "sha256": "e9439cb5187d85e9be979974ab34db150d66d1b1fce0056d64121471f71f94fa"
         },
         {
           "file": "frontend/src/app/api/auth/login/route.ts",
-          "sha256": "f09d327d3641eba80f7da541fc47477afcc73e67723b89017d964f5718da0bd6"
+          "sha256": "31df84bde966072db66389f2bd938c56a62d80c044eda89331030b1cc1f350e1"
         },
         {
           "file": "frontend/src/app/api/auth/reissue/route.ts",
-          "sha256": "03420991ca47d9e7ac998c50fba829f2d25719f3cd85d550ac10d344775001ba"
+          "sha256": "75d917746432e351779e3d244c8de4f279f0098e12ff0cf2701deb79b2647f2a"
         },
         {
           "file": "frontend/src/lib/auth/session-cookie-policy.ts",
@@ -49,6 +49,14 @@
         {
           "file": "foundation/src/main/java/nuri/foundation/security/constants/SecurityConstants.java",
           "sha256": "ad698066bd649bd0d3ab697efc0982d7e63557e0ca2175c1b0674a09654796b3"
+        },
+        {
+          "file": "api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java",
+          "sha256": "9c0f4dea466d6be146e4fd31528d0cb1bba5e0af04561445d74dce18d298f7d3"
+        },
+        {
+          "file": "api-server/src/main/java/nuri/config/websocket/WebSocketConfig.java",
+          "sha256": "219ab242752fa3cd17dbdec7234762e52abfe08f366e08d9508f9420895a5de0"
         }
       ]
     },
@@ -59,14 +67,14 @@
       "file": "business-core/src/main/java/nuri/business/security/config/SecurityConfig.java",
       "line": 60,
       "fingerprint": "a46799a1753058c0:1",
-      "sourceSha256": "cd91c8ed183c01a826f0f075bda81d58675a24dc9f010f38ab0114d43165899c",
+      "sourceSha256": "abb96530b1ebe5fe31581177fc9afed0201d91e3447f65090a9495c18a4d46ed",
       "expiresOn": "2026-12-08",
       "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation.",
       "id": "SAST-FP-002",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "9cba5bf23b01d52b67412d6452be6e4fd49c7b0e5320c1cada2abcd811ed34a2"
+          "sha256": "f39261ef5838cce5f2079f95ecafa463320a4bf53f179fc09fdb4ed8c5ce8c64"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -82,7 +90,7 @@
         },
         {
           "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
-          "sha256": "28a5d4c75f0cfa7595e74bdb9b51954489897b2cdc3b4a800687bcc1ce00be2f"
+          "sha256": "b3576653e52b11959528e24e1dd88c2cd97a5a51151bd5f050fa4ee5dd5c417c"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/constants/SecurityConstants.java",
@@ -101,32 +109,6 @@
       "expiresOn": "2026-12-08",
       "reason": "API audit scope filtering does not grant access or bypass authentication.",
       "id": "SAST-FP-003",
-      "supportingSources": []
-    },
-    {
-      "status": "approved",
-      "language": "java",
-      "ruleId": "java/user-controlled-bypass",
-      "file": "business-core/src/main/java/nuri/business/service/auth/UserAuthorityManageService.java",
-      "line": 78,
-      "fingerprint": "93603e84e053fabb:1",
-      "sourceSha256": "7663957fa919135ce9d1d99acc525e21e17aa946052abe4e36de9cf3f76aa1ba",
-      "expiresOn": "2026-12-08",
-      "reason": "Empty or incomplete batch returns without writes; valid writes verify existing authorities.",
-      "id": "SAST-FP-004",
-      "supportingSources": []
-    },
-    {
-      "status": "approved",
-      "language": "java",
-      "ruleId": "java/user-controlled-bypass",
-      "file": "business-core/src/main/java/nuri/business/service/auth/UserAuthorityManageService.java",
-      "line": 154,
-      "fingerprint": "171880ca5d3380d9:1",
-      "sourceSha256": "7663957fa919135ce9d1d99acc525e21e17aa946052abe4e36de9cf3f76aa1ba",
-      "expiresOn": "2026-12-08",
-      "reason": "Empty or incomplete batch returns without writes; valid writes verify existing authorities.",
-      "id": "SAST-FP-005",
       "supportingSources": []
     },
     {
@@ -177,6 +159,44 @@
         {
           "file": "migration-tool/build.gradle",
           "sha256": "3cbfc6da78e570bb2b0c153c73dca7c3fb655e005f80cc670061043444d04a92"
+        }
+      ]
+    },
+    {
+      "status": "approved",
+      "language": "java",
+      "ruleId": "java/user-controlled-bypass",
+      "file": "api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java",
+      "line": 69,
+      "fingerprint": "3bdaa522982a3650:1",
+      "sourceSha256": "9c0f4dea466d6be146e4fd31528d0cb1bba5e0af04561445d74dce18d298f7d3",
+      "expiresOn": "2026-12-08",
+      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control.",
+      "id": "SAST-FP-008",
+      "supportingSources": [
+        {
+          "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
+          "sha256": "f39261ef5838cce5f2079f95ecafa463320a4bf53f179fc09fdb4ed8c5ce8c64"
+        },
+        {
+          "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",
+          "sha256": "547d3afad403d518de16b8574bfe2ede7585280a74989d3692b219165fd60231"
+        },
+        {
+          "file": "business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java",
+          "sha256": "b19e035ef52bf902ac29467dfd4b439899ae19948efd3e72f40936ae5ee0b01b"
+        },
+        {
+          "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
+          "sha256": "b3576653e52b11959528e24e1dd88c2cd97a5a51151bd5f050fa4ee5dd5c417c"
+        },
+        {
+          "file": "business-core/src/main/java/nuri/business/security/authorization/OperationAuthorizationManager.java",
+          "sha256": "414bee304a8497bea9b0311700be0f84bd1efc88152474b392a376134814ce19"
+        },
+        {
+          "file": "api-server/src/test/java/nuri/config/websocket/WebSocketCookieAuthenticationFilterTest.java",
+          "sha256": "7d9f1634e5a8c17de25396865a1e34dce13f9e773b285c356b20f8d83cc565ba"
         }
       ]
     }

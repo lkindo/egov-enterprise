@@ -232,7 +232,7 @@ management:
         include: "health,info,metrics,prometheus"
   endpoint:
     health:
-      # [W0-04] /actuator/health 는 security.whitelist 에 있어 **미인증 접근이 허용**된다.
+      # [W0-04] /actuator/health 는 명시적 PUBLIC operation으로 미인증 접근을 허용한다.
       #   always 면 익명 사용자가 DB·디스크 등 컴포넌트 상세를 읽는다.
       #   CI 대기 로직과 컨테이너 healthcheck 는 상태코드만 보므로(curl --head / wget --spider) 무해하다.
       show-details: when_authorized
@@ -264,11 +264,6 @@ Globals:
 cors:
   allowed-origins: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001"
 
-security:
-  # [Phase2 수정] @Value("${security.whitelist}") List<String> 는 YAML 시퀀스를 바인딩하지 못한다
-  # (Spring 이 인덱스 프로퍼티 security.whitelist[0]... 로 저장 → 비인덱스 placeholder 미해결).
-  # 정상 동작하는 cors.allowed-origins 와 동일하게 CSV 문자열로 정의한다.
-  whitelist: "/api/v1/health,/api/v1/auth/**,/api/v1/public/**,/api/v1/menus/**,/api/v1/images/**,/api/v1/users/signup,/api/v1/users/check-id,/actuator/health"
 
 # [W1-15] OpenAPI 스펙 위생
 #   ⚠ api-docs.json 은 테스트 컨텍스트에서 생성되는데, `src/test/resources/application.yml` 이
@@ -299,11 +294,3 @@ springdoc:
 #     좁히며 ConfigSafetyLinterTest 가 두 선언의 정합을 강제한다. 운영 홉이 바뀌면 함께 재판정한다.
 #   (실제 선언은 위 `nuri:` 블록 안에 있다 — 최상위 키를 두 번 쓰면 뒤엣것이 앞엣것을 통째로 덮어
 #    `nuri.log.retention.*` 이 조용히 사라진다.)
-
-# RBAC DB 인가 모드 (Phase 2: shadow → Phase 3: enforce)
-rbac:
-  shadow:
-    enabled: false  # true: 섀도우 평가 활성(enforce는 하드코딩 유지), false: 비활성
-  db-auth:
-    enabled: true   # true: DB 인가로 enforce 전환 (Phase 3), false: 하드코딩 유지
-    secure-paths: "/api/v1/admin/**,/actuator/**,/api/v1/help,/api/v1/help/**"

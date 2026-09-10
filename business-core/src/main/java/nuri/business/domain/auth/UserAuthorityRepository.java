@@ -7,9 +7,17 @@ import org.springframework.lang.NonNull;
 import java.util.List;
 import java.util.Optional;
 
-public interface UserAuthorityRepository extends JpaRepository<UserAuthority, String>, UserAuthorityRepositoryCustom {
-    @NonNull
-    Optional<UserAuthority> findById(@NonNull String scrtyDcsnTrgtId);
+public interface UserAuthorityRepository extends JpaRepository<UserAuthority, UserAuthorityId>, UserAuthorityRepositoryCustom {
+    List<UserAuthority> findByScrtyDcsnTrgtIdOrderByAuthrtId(String scrtyDcsnTrgtId);
+
+    /** Legacy display projection only; never an authorization decision. */
+    default Optional<UserAuthority> findById(@NonNull String scrtyDcsnTrgtId) {
+        return findByScrtyDcsnTrgtIdOrderByAuthrtId(scrtyDcsnTrgtId).stream().findFirst();
+    }
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM UserAuthority ua WHERE ua.scrtyDcsnTrgtId IN :ids")
+    void deleteByUserIds(@Param("ids") List<String> ids);
 
     @Query("SELECT ua FROM UserAuthority ua WHERE ua.scrtyDcsnTrgtId IN :scrtyDcsnTrgtIds")
     List<UserAuthority> findByScrtyDcsnTrgtIdIn(@Param("scrtyDcsnTrgtIds") List<String> scrtyDcsnTrgtIds);

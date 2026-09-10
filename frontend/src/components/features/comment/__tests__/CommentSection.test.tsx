@@ -32,7 +32,7 @@ vi.mock('date-fns', () => ({
 }));
 
 // 인증 주체 — 수정·삭제 버튼 노출 판정이 이 값과 등록자 로그인 ID 를 대조한다.
-const authMock = vi.hoisted(() => ({ user: { id: 'user01', name: '홍길동', role: 'ROLE_USER' } as { id: string; name: string; role: string } | null }));
+const authMock = vi.hoisted(() => ({ user: { id: 'user01', name: '홍길동', role: 'ROLE_USER', permissions: ['COMMENT_CREATE', 'COMMENT_UPDATE', 'COMMENT_DELETE'], authorizationVersion: 'v1' } as { id: string; name: string; role: string; permissions: string[]; authorizationVersion: string } | null }));
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: authMock.user }),
 }));
@@ -371,10 +371,10 @@ describe('CommentSection Component', () => {
     expect(screen.queryByTestId('comment-delete-button')).toBeNull();
   });
 
-  it('관리자는 남의 댓글도 관리할 수 있다 — 라우트 게이트와 같은 역할 집합', () => {
-    // 역할 문자열을 직접 비교하면 ROLE_ADMIN 원문을 가진 관리자에게 기능이 사라진다(DEC-OPS-023).
+  it('기본 동작 권한과 소유자 예외 권한을 함께 가진 사용자는 다른 댓글을 관리한다', () => {
+    // HTTP 동작 권한과 서비스의 소유자 예외 권한을 모두 반영한다.
     const previous = authMock.user;
-    authMock.user = { id: 'admin01', name: '관리자', role: 'ROLE_ADMIN' };
+    authMock.user = { id: 'admin01', name: '관리자', role: 'ROLE_ADMIN', permissions: ['COMMENT_UPDATE', 'COMMENT_DELETE', 'COMMENT_UPDATE_ALL', 'COMMENT_DELETE_ALL'], authorizationVersion: 'v1' };
     try {
       const othersComment: CommentVO = { ...mockComments[0], frstRgtrId: 'someone-else' };
 
@@ -385,6 +385,15 @@ describe('CommentSection Component', () => {
     } finally {
       authMock.user = previous;
     }
+  });
+  it('소유자 예외만 있고 기본 수정·삭제 권한이 없으면 버튼을 제공하지 않는다', () => {
+    const previous = authMock.user;
+    authMock.user = { id: 'admin01', name: '관리자', role: 'ROLE_ADMIN', permissions: ['COMMENT_UPDATE_ALL', 'COMMENT_DELETE_ALL'], authorizationVersion: 'v1' };
+    try {
+      render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[{ ...mockComments[0], frstRgtrId: 'another-owner' }]} />);
+      expect(screen.queryByTestId('comment-edit-button')).toBeNull();
+      expect(screen.queryByTestId('comment-delete-button')).toBeNull();
+    } finally { authMock.user = previous; }
   });
 });
 

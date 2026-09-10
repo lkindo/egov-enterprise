@@ -46,8 +46,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         properties = {
                 "spring.datasource.url=jdbc:h2:mem:matcher_boundary_testdb;DB_CLOSE_DELAY=-1;IGNORECASE=TRUE;NON_KEYWORDS=KEY,VALUE",
                 "spring.jpa.hibernate.ddl-auto=create-drop",
-                "rbac.db-auth.enabled=false",
-                "rbac.shadow.enabled=false"
         }
 )
 @AutoConfigureMockMvc
@@ -65,19 +63,13 @@ class RequestMatcherBoundaryTest {
     private JwtTokenProvider jwtTokenProvider;
 
     private static CustomUserDetails normalUser() {
-        return CustomUserDetails.builder()
-                .userId("user_test")
-                .esntlId("USR_001")
-                .userNm("테스트유저")
-                .roleName("USER")
-                .authorCode("ROLE_USER")
-                .build();
+        return nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");
     }
 
     @Test
     @DisplayName("🧭 경계① 관리자 경로는 후행 슬래시가 붙어도 여전히 차단된다 (USER → 403)")
     void adminPath_withTrailingSlash_isStillForbiddenForNormalUser() throws Exception {
-        // rbac.db-auth 를 끈 상태이므로 하드코딩 분기(/api/v1/admin/** → ADMIN/SYSTEM)가 판정한다.
+        // 현재 operation manifest의 미등록 method/path는 fail-closed로 거부한다.
         // 후행 슬래시가 붙었다고 이 경계가 뚫리면 안 된다.
         mockMvc.perform(get("/api/v1/admin/system/users/")
                         .with(user(normalUser()))
@@ -97,11 +89,11 @@ class RequestMatcherBoundaryTest {
     @DisplayName("🧭 경계② '/api/v1/adminX' 는 '/api/v1/admin/**' 의 부분 문자열일 뿐 매칭 대상이 아니다")
     void adminPrefix_isNotMatchedBySubstring() throws Exception {
         // 관리자 경계가 부분 문자열로 번지면 무관한 경로가 ADMIN 을 요구하게 된다.
-        // 존재하지 않는 경로라 404 여야 하며, 403(관리자 인가 요구)이면 매처가 과잉 매칭한 것이다.
+        // 현재는 미등록 경로를 명시적으로 거부한다. 부분 문자열이나 기본 역할로 열리지 않아야 한다.
         mockMvc.perform(get("/api/v1/adminX")
                         .with(user(normalUser()))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().is(org.hamcrest.Matchers.not(403)));
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -124,7 +116,11 @@ class RequestMatcherBoundaryTest {
     @Test
     @DisplayName("🧭 인증된 사용자의 SockJS 핸드셰이크만 WebSocket 핸들러에 도달한다")
     void websocketHandshake_acceptsAuthenticatedUser() throws Exception {
-        mockMvc.perform(get("/ws/info").with(user(normalUser())))
+        var principal = normalUser();
+        org.mockito.Mockito.when(jwtTokenProvider.validateToken("ws-fixture")).thenReturn(true);
+        org.mockito.Mockito.when(jwtTokenProvider.getAuthentication("ws-fixture")).thenReturn(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        mockMvc.perform(get("/ws/info").cookie(new jakarta.servlet.http.Cookie("accessToken", "ws-fixture")))
                 .andExpect(status().isOk());
     }
 }

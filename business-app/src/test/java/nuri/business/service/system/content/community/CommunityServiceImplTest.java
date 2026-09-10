@@ -372,9 +372,7 @@ class CommunityServiceImplTest {
     private static void authenticateWithRole(String role) {
         org.springframework.security.core.context.SecurityContext context =
                 org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                "principal", null,
-                List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority(role))));
+        context.setAuthentication(nuri.business.support.AuthorizationTestPrincipal.authentication("principal", "ESNTL_principal", role));
         org.springframework.security.core.context.SecurityContextHolder.setContext(context);
     }
 

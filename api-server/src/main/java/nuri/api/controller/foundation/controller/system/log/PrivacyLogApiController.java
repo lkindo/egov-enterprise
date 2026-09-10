@@ -60,8 +60,8 @@ public class PrivacyLogApiController {
 
     @Operation(summary = "개인정보 조회 로그 목록",
             description = "조회 대상 정보 부분일치 검색과 페이징을 지원한다. ADMIN 롤 전용이다.")
-    @PrivacyAdminOnly
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.PrivacyLogApiController#getPrivacyLogList')")
     public ResponseEntity<ApiResponse<PageResponse<PrivacyLogDto>>> getPrivacyLogList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
         Page<PrivacyLogDto> page = privacyLogManageService.selectPrivacyLogList(searchDto);
@@ -91,8 +91,8 @@ public class PrivacyLogApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = LogExcelExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @PrivacyAdminOnly
     @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.PrivacyLogApiController#exportPrivacyLogs')")
     public ResponseEntity<StreamingResponseBody> exportPrivacyLogs(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 

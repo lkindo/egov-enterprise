@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { administCodeSchema } from '@/app/admin/system/codes/administ/AdministCodeClient';
 import { bannerSchema, popupSchema } from '@/app/admin/system/banner/BannerAdminClient';
-import { authorSchema } from '@/components/admin/security/AuthorForm';
+import { authorizationGroupFormSchema } from '@/lib/auth/authorization-management-contract';
 import { programFormSchema } from '@/components/admin/system/ProgramForm';
 import { createUserSchema, userSchema } from '@/components/admin/user/UserManageForm';
 import {
@@ -13,13 +13,13 @@ import {
 } from '@/lib/validation/schemas';
 
 describe('generated DTO constraints stay attached to form schemas', () => {
-  it('keeps author max lengths while adding required rules', () => {
-    expect(authorSchema.safeParse({ authrtCd: 'A'.repeat(21), authrtNm: '관리자' }).success).toBe(false);
-    expect(authorSchema.safeParse({ authrtCd: 'ADMIN', authrtNm: '가'.repeat(61) }).success).toBe(false);
-    expect(authorSchema.safeParse({
-      authrtCd: 'ADMIN',
-      authrtNm: '관리자',
-      authrtExpln: '가'.repeat(201),
+  it('keeps canonical group physical lengths while adding required rules', () => {
+    expect(authorizationGroupFormSchema.safeParse({ code: 'A'.repeat(21), name: '관리자', description: '' }).success).toBe(false);
+    expect(authorizationGroupFormSchema.safeParse({ code: 'ADMIN', name: '가'.repeat(101), description: '' }).success).toBe(false);
+    expect(authorizationGroupFormSchema.safeParse({
+      code: 'ADMIN',
+      name: '관리자',
+      description: '가'.repeat(4001),
     }).success).toBe(false);
   });
 

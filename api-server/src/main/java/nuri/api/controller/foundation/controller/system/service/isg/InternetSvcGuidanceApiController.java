@@ -28,6 +28,7 @@ public class InternetSvcGuidanceApiController {
 
     @Operation(summary = "서비스 안내 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#getIsgList')")
     public ResponseEntity<ApiResponse<PageResponse<InternetSvcGuidanceDto>>> getIsgList(
             @RequestParam(required = false) String keyword, 
             Pageable pageable) {
@@ -37,12 +38,14 @@ public class InternetSvcGuidanceApiController {
 
     @Operation(summary = "서비스 안내 상세 조회")
     @GetMapping("/{itntSrvcSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#getIsg')")
     public ResponseEntity<ApiResponse<InternetSvcGuidanceDto>> getIsg(@PathVariable Long itntSrvcSn) {
         return ResponseEntity.ok(ApiResponse.success(isgService.getIntnetSvcGuidance(itntSrvcSn)));
     }
 
     @Operation(summary = "서비스 안내 등록")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#registerIsg')")
     public ResponseEntity<ApiResponse<Long>> registerIsg(@Valid @RequestBody InternetSvcGuidanceDto dto) {
         Long itntSrvcSn = isgService.registerIntnetSvcGuidance(dto);
         return ResponseEntity.ok(ApiResponse.success(itntSrvcSn));
@@ -50,6 +53,7 @@ public class InternetSvcGuidanceApiController {
 
     @Operation(summary = "서비스 안내 수정")
     @PutMapping("/{itntSrvcSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#updateIsg')")
     public ResponseEntity<ApiResponse<Void>> updateIsg(
             @PathVariable Long itntSrvcSn,
             @Valid @RequestBody InternetSvcGuidanceDto dto) {
@@ -60,6 +64,7 @@ public class InternetSvcGuidanceApiController {
 
     @Operation(summary = "서비스 안내 삭제")
     @DeleteMapping("/{itntSrvcSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#deleteIsg')")
     public ResponseEntity<ApiResponse<Void>> deleteIsg(@PathVariable Long itntSrvcSn) {
         isgService.deleteIntnetSvcGuidance(itntSrvcSn);
         return ResponseEntity.ok(ApiResponse.success(null));

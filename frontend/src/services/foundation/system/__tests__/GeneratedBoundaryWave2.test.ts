@@ -13,8 +13,9 @@ const client = vi.hoisted(() => ({
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
 import { codeAdminService } from '../CodeAdminService';
-import { roleAdminService } from '../RoleAdminService';
 import { userAdminService } from '../UserAdminService';
+
+const authorizationSnapshot = { groups: [], permissions: [], authorizationVersion: 'fixture-v1' };
 
 const success = <T,>(data: T) => ({
   success: true as const,
@@ -42,24 +43,6 @@ describe('foundation generated operation wave2 경계', () => {
     await expect(codeAdminService.getCmmnCode('USE_YN')).resolves.toStrictEqual(code);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/codes/cmmn/USE_YN', undefined);
   });
-
-  it('보안 롤 상세는 generated path/response 계약을 사용한다', async () => {
-    const role = {
-      roleId: 'ROLE_READ',
-      roleNm: '조회 롤',
-      rolePatrn: '/admin/**',
-      roleExpln: '조회 전용',
-      roleTypeCd: 'url',
-      roleSort: '1',
-    };
-    client.getRaw.mockResolvedValueOnce(success(role));
-
-    // [2026-09-07] 종전에는 security/SecurityAdminService 의 형제 RoleAdminService 로 검증했다.
-    //   그 파일이 정본(system/RoleAdminService)의 죽은 중복이라 걷히면서 정본으로 옮긴다.
-    await expect(roleAdminService.getRole('ROLE_READ')).resolves.toStrictEqual(role);
-    expect(client.getRaw).toHaveBeenCalledWith('admin/system/roles/ROLE_READ', undefined);
-  });
-
   it('사용자 상태 변경은 generated PATCH request 계약을 사용한다', async () => {
     await userAdminService.updateUsersStatus(['user_1'], 'A');
 
@@ -103,11 +86,12 @@ describe('foundation generated operation wave2 경계', () => {
       emlAddr: 'user1@example.com',
       userSttsCd: 'A',
     };
-    client.getRaw.mockResolvedValueOnce(success(safeUser));
+    client.getRaw.mockResolvedValueOnce(success({ ...safeUser, ...authorizationSnapshot }));
     await expect(userAdminService.getUser('user_1')).resolves.toStrictEqual(safeUser);
 
     client.getRaw.mockResolvedValueOnce(success({
       ...safeUser,
+      ...authorizationSnapshot,
       pswd: 'response-secret-marker',
     }));
     await expect(userAdminService.getUser('user_1')).rejects.toThrow(
@@ -121,7 +105,7 @@ describe('foundation generated operation wave2 경계', () => {
       userNm: '사용자2',
       userSttsCd: 'A',
     };
-    client.getRaw.mockResolvedValueOnce(success(userWithoutEmail));
+    client.getRaw.mockResolvedValueOnce(success({ ...userWithoutEmail, ...authorizationSnapshot }));
 
     await expect(userAdminService.getUser('user_2')).resolves.toStrictEqual(userWithoutEmail);
   });
@@ -138,7 +122,7 @@ describe('foundation generated operation wave2 경계', () => {
       size: 10,
       totalPage: 1,
     };
-    client.getRaw.mockResolvedValueOnce(success(page));
+    client.getRaw.mockResolvedValueOnce(success({ ...page, list: page.list.map((user) => ({ ...user, ...authorizationSnapshot })) }));
 
     await expect(userAdminService.getUserList({ page: 0, size: 10 })).resolves.toStrictEqual(page);
   });

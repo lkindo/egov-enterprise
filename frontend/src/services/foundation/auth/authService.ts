@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { reissueSession } from '@/lib/api/client';
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
+import { normalizeAuthorizationState, type AuthorizationState } from '@/lib/auth/authorization-state';
 import {
  authLoginDataSchema,
  authLoginResponseSchema,
@@ -19,7 +20,7 @@ import {
 
 export type LoginResponse = AuthLoginData;
 
-export interface AuthUser {
+export interface AuthUser extends AuthorizationState {
  id: string;
  /** Board.userId처럼 esntlId 축을 쓰는 도메인의 본인 판정 전용 불투명 식별자. */
  esntlId?: string;
@@ -57,7 +58,7 @@ export function normalizeAuthUser(value: unknown): AuthUser {
  const name = optionalText(value.name);
  if (!id || !name) throw new Error('현재 사용자 응답이 올바르지 않습니다.');
 
- const user: AuthUser = { id, name };
+ const user: AuthUser = { id, name, ...normalizeAuthorizationState(value) };
  const esntlId = identityText(value.esntlId);
  const role = identityText(value.role);
  const userSe = identityText(value.userSe);

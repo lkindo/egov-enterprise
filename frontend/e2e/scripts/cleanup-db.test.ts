@@ -126,6 +126,7 @@ describe('cleanup-db exit contract', () => {
       headers: {},
     });
     vi.spyOn(axios, 'get').mockImplementation(async (url: string) => {
+      if (url.endsWith('/admin/authorization/groups')) return { data: { data: [] }, headers: {} };
       if (url.endsWith('/users/me')) return { data: { data: {} }, headers: {} };
       if (url.endsWith('/admin/system/users')) {
         return { data: { data: { list: [{ userId: privateEntityMarker }] } }, headers: {} };
@@ -156,6 +157,7 @@ describe('cleanup-db exit contract', () => {
       headers: {},
     });
     const getSpy = vi.spyOn(axios, 'get').mockImplementation(async (url: string) => {
+      if (url.endsWith('/admin/authorization/groups')) return { data: { data: [] }, headers: {} };
       if (url.endsWith('/users/me')) {
         return { data: { data: {} }, headers: {} };
       }

@@ -39,7 +39,7 @@ public class ScrapService {
     public ScrapDto getScrap(@NonNull Long scrapSn) {
         Scrap entity = scrapRepository.findById(scrapSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 조회
+        SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCRAP_READ_ALL"); // [IDOR] 소유자/관리자만 조회
         return scrapMapper.toDto(entity);
     }
 
@@ -63,7 +63,7 @@ public class ScrapService {
     public void updateScrap(Long scrapSn, String userId, ScrapDto dto) {
         Scrap entity = scrapRepository.findById(Objects.requireNonNull(scrapSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정
+        SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCRAP_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정
         // 요청 DTO 값을 반영한다(과거에는 entity 의 기존 값을 자기 자신에게 재대입해 수정이 무동작이었다).
         // useYn 만은 미전달(null) 시 기존 값을 보존 — 누락된 요청이 목록 필터(useYn='Y')에서 행을 증발시키는 것을 막는다.
         String useYn = dto.getUseYn() != null ? dto.getUseYn() : entity.getUseYn();
@@ -75,7 +75,7 @@ public class ScrapService {
     public void deleteScrap(@NonNull Long scrapSn) {
         Scrap entity = scrapRepository.findById(scrapSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 삭제
+        SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCRAP_DELETE_ALL"); // [IDOR] 소유자/관리자만 삭제
         scrapRepository.delete(entity);
     }
 }

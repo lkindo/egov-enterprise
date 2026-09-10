@@ -34,8 +34,9 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 // [2026-09-08 PD-MYPG-001] 39 -> 38: /admin/workspace/my-page 를 걷었다. tb_indv_pg_conts 는 시드도
 //   생성 경로도 없고 **그 값을 읽는 화면조차 없어**(대시보드 위젯 SPI 구현 2개가 쓰지 않는다) 켜고
 //   꺼도 어디에도 나타나지 않았다. 되돌리기가 아니라 표면 제거이며 사용자 결정(PD-MYPG-001)에 따른다.
-const ADOPTERS = 38;
-const DIRECT_ONLY = 4;
+// The unified authority hub adopts WorkListPage and retires one direct table.
+const ADOPTERS = 39;
+const DIRECT_ONLY = 3;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';

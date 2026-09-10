@@ -212,9 +212,8 @@ Write-Utf8File "$serviceDir/${domainCap}Service.java" $serviceContent
 #    **요청은 정상적으로 받으면서** 인가 린터의 판정 범위 밖이었다 — 저장소의 공식 도구가
 #    신규 개발자를 게이트 사각지대로 안내하는 형태였다.
 #
-#    또한 생성 즉시 린터를 통과하도록 **인가 애노테이션을 기본 부착**한다(fail-closed).
-#    권한을 넓히는 것은 개발자의 명시적 결정이어야 하며, 그 반대(기본 공개 → 나중에 조이기)는
-#    조이는 시점이 오지 않는다.
+#    정확한 handler 가드를 생성한다. 기능 코드와 operation binding은 검토자가 등록해야 한다.
+#    미등록 상태에서는 HTTP/메서드 모두 거부하고 린터도 red이며, 기본 그룹에 권한을 자동 부여하지 않는다.
 $apiDir = "api-server/src/main/java/nuri/api/controller/business/$domainLower"
 New-Item -ItemType Directory -Force -Path $apiDir | Out-Null
 
@@ -229,8 +228,7 @@ import nuri.business.service.$domainLower.${domainCap}Dto;
 import nuri.business.service.$domainLower.${domainCap}Service;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.foundation.security.annotation.AdminOrSystem;
-import nuri.foundation.security.annotation.Authenticated;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -240,10 +238,10 @@ import org.springframework.web.bind.annotation.*;
 /**
  * $domainCap API (스캐폴드 생성 초안).
  *
- * <p><b>인가</b>: 읽기는 {@code @Authenticated}, 쓰기는 {@code @AdminOrSystem} 을 기본으로 붙였다.
- * 도메인 성격에 맞게 <b>좁히거나 넓히되, 지우지는 말 것</b> — 애노테이션이 없으면
- * SecurityAuthAnnotationLinterTest 가 위반으로 잡는다. 소유권 기반(본인 데이터만) 도메인이면
- * 컨트롤러 인증 경계는 유지하고 서비스 레이어에 소유권 가드와 음성 테스트를 함께 둔다.
+ * <p><b>인가</b>: 정확한 handler 가드만 생성하며 기능 코드나 그룹 권한을 자동 부여하지 않는다.
+ * permission-catalog.json과 authorization-policies.json의 operationBindings를 검토 등록하고
+ * node scripts/generate-permissions.mjs를 실행해야 한다. 미등록 경로는 거부되며 린터도 red다.
+ * 본인 데이터는 서비스 소유권/참여자 가드와 타 사용자 접근 거부 테스트를 별도로 추가한다.
  */
 @Tag(name = "$domainCap", description = "$domainCap API")
 @RestController
@@ -254,7 +252,7 @@ public class ${domainCap}ApiController {
     private final ${domainCap}Service service;
 
     @Operation(summary = "$domainCap 목록 조회")
-    @Authenticated
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#getList')")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<${domainCap}Dto>>> getList(
             @RequestParam(defaultValue = "1") int pageIndex,
@@ -265,21 +263,21 @@ public class ${domainCap}ApiController {
     }
 
     @Operation(summary = "$domainCap 상세 조회")
-    @Authenticated
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#get')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<${domainCap}Dto>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(service.get(id)));
     }
 
     @Operation(summary = "$domainCap 등록")
-    @AdminOrSystem
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#create')")
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> create(@Valid @RequestBody ${domainCap}Dto dto) {
         return ResponseEntity.ok(ApiResponse.success(service.create(dto)));
     }
 
     @Operation(summary = "$domainCap 수정")
-    @AdminOrSystem
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#update')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id, @Valid @RequestBody ${domainCap}Dto dto) {
         service.update(id, dto);
@@ -287,7 +285,7 @@ public class ${domainCap}ApiController {
     }
 
     @Operation(summary = "$domainCap 삭제")
-    @AdminOrSystem
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#delete')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         service.delete(id);
@@ -344,8 +342,9 @@ Write-Host ""
 Write-Host "다음 단계:" -ForegroundColor Cyan
 Write-Host "  1. 위 DDL 의 컬럼명을 표준 용어로 확정한 뒤 마이그레이션 파일로 배치" -ForegroundColor Gray
 Write-Host "  2. ./gradlew compileJava compileTestJava 로 컴파일 확인" -ForegroundColor Gray
-Write-Host "  3. 인가 애노테이션은 이미 붙어 있습니다 — 읽기 @Authenticated / 쓰기 @AdminOrSystem." -ForegroundColor Gray
-Write-Host "     도메인에 맞게 조정하되 **지우지 마십시오**. 컨트롤러가 nuri.api.controller 하위라" -ForegroundColor Gray
-Write-Host "     SecurityAuthAnnotationLinterTest 의 오딧 대상이며, 애노테이션이 없으면 게이트가 red 입니다." -ForegroundColor Gray
+Write-Host "  3. permission-catalog.json과 authorization-policies.json의 operationBindings에" -ForegroundColor Gray
+Write-Host "     실제 기능 코드 및 HTTP method/path/handler를 검토 등록하십시오. 기본 그룹 부여는 자동화하지 않습니다." -ForegroundColor Gray
+Write-Host "     node scripts/generate-permissions.mjs 실행 후 SecurityAuthAnnotationLinterTest로 검증하십시오." -ForegroundColor Gray
+Write-Host "     미등록 상태는 HTTP/메서드 거부 및 린터 red입니다. 생성 완료가 인가 검증 성공은 아닙니다." -ForegroundColor Gray
 Write-Host "  4. 본인 데이터만 다루는 도메인이면 컨트롤러 인증 경계를 유지한 채 서비스에" -ForegroundColor Gray
 Write-Host "     소유권 가드와 타 사용자 접근 거부 테스트를 함께 추가하십시오." -ForegroundColor Gray

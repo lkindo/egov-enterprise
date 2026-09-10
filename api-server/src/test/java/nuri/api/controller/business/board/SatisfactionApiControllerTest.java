@@ -6,8 +6,6 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.service.board.dto.SatisfactionDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
-import nuri.foundation.security.annotation.AdminOnly;
-import nuri.foundation.security.annotation.Authenticated;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,37 +58,22 @@ class SatisfactionApiControllerTest {
                 .build();
     }
 
-    /**
-     * 🔒 <b>관리자 대리 삭제만 {@code @AdminOnly} 여야 한다 — 양방향으로 못 박는다.</b>
-     *
-     * <p>넓히면(대리 삭제까지 열리면) 관리자 moderation 경계가 사라지고, 반대로 일반 삭제까지
-     * {@code @AdminOnly} 로 좁히면 <b>일반 사용자인 소유자가 자기 평가를 지울 수 없다</b>.
-     * standalone MockMvc 는 {@code @PreAuthorize} 를 강제하지 않아 어느 쪽으로
-     * 틀어져도 기능 테스트는 초록이므로, 애노테이션 배치를 리플렉션으로 직접 단언한다.
-     */
+    /** Owner CRUD and moderation have different exact permissions; service owner guards remain independent. */
     @Test
-    @DisplayName("🔒 @AdminOnly 는 대리 삭제(moderate) 하나뿐 — 다른 핸들러로 번지면 안 된다")
+    @DisplayName("본인 평가 변경과 관리자 대리 삭제는 별도 기능 권한이다")
     void onlyModerateIsAdminOnly() {
+        var permissions = java.util.Map.of("getList", "SATISFY_READ", "getAverage", "SATISFY_READ",
+                "create", "SATISFY_CREATE", "update", "SATISFY_UPDATE", "delete", "SATISFY_DELETE", "moderate", "SATISFY_MODERATE");
         List<Method> mapped = Arrays.stream(SatisfactionApiController.class.getDeclaredMethods())
-                .filter(m -> Arrays.stream(m.getAnnotations())
-                        .anyMatch(a -> a.annotationType().getName().startsWith("org.springframework.web.bind")))
+                .filter(m -> Arrays.stream(m.getAnnotations()).anyMatch(a -> a.annotationType().getName().startsWith("org.springframework.web.bind")))
                 .toList();
-
-        assertThat(mapped)
-                .as("매핑 핸들러 6개 — 늘어나면 이 단언이 먼저 깨져 인가 검토를 강제한다")
-                .hasSize(6);
-
-        for (Method m : mapped) {
-            boolean isModerate = m.getName().equals("moderate");
-            assertThat(m.isAnnotationPresent(AdminOnly.class))
-                    .as("%s 의 @AdminOnly 여부는 %s 여야 한다", m.getName(), isModerate)
-                    .isEqualTo(isModerate);
-            // 나머지 5개는 @Authenticated 여야 한다. 이걸 지우면 전역 규칙에만 기대게 되는데,
-            // 그 상태를 SecurityAuthAnnotationLinterTest 가 이미 위반으로 판정한 바 있다.
-            assertThat(m.isAnnotationPresent(Authenticated.class))
-                    .as("%s 의 @Authenticated 여부는 %s 여야 한다", m.getName(), !isModerate)
-                    .isEqualTo(!isModerate);
-        }
+        assertThat(mapped).hasSize(6);
+        for (Method method : mapped) nuri.security.support.MethodPermissionContract.assertOperation(method, permissions.get(method.getName()), false);
+        var owner = nuri.business.support.AuthorizationTestPrincipal.authentication("owner", "owner-id", "ROLE_USER");
+        var policy = new nuri.business.security.authorization.PermissionPolicy();
+        String prefix = SatisfactionApiController.class.getName() + "#";
+        assertThat(policy.allowed(owner, prefix + "delete")).isTrue();
+        assertThat(policy.allowed(owner, prefix + "moderate")).isFalse();
     }
 
     /** 경로가 조회 범위를 강제하는지 — 본문이 다른 게시글을 가리켜도 경로가 이겨야 한다. */

@@ -52,15 +52,7 @@ class ExternalHrServiceTest {
     }
 
     private static void authenticateAs(String loginId, String role) {
-        CustomUserDetails principal = CustomUserDetails.builder()
-                .userId(loginId)
-                .esntlId("ESNTL_" + loginId)
-                .userNm(loginId)
-                .password("unused")
-                .roleName(role)
-                .authorCode("ROLE_" + role)
-                .lockAt("N")
-                .build();
+        CustomUserDetails principal = nuri.business.support.AuthorizationTestPrincipal.principal(loginId, "ESNTL_" + loginId, role);
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(new UsernamePasswordAuthenticationToken(
                 principal, null, principal.getAuthorities()));

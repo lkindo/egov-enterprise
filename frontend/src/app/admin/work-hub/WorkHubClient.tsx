@@ -29,7 +29,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { DeptJobBoxManageDialog } from '@/components/business/deptJob/DeptJobBoxManageDialog';
 
 interface WorkHubClientProps {
@@ -98,7 +98,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   const { user } = useAuth();
   // [2026-09-06 DEC-OPS-037] 업무함 CRUD 는 서버가 @AdminOrSystem 이다. 표시 판정은 라우트 게이트와 같은 역할 집합
   //   (DEC-OPS-023 ②)을 쓴다 — 표시일 뿐 인가가 아니며, 관리자가 아니면 버튼 자체를 그리지 않는다(죽은 버튼 금지, G10).
-  const canManageBoxes = isAdministrativeRole(user?.role);
+  const canManageBoxes = canPermission(user, 'DEPT_BOX_READ');
   const [boxManageOpen, setBoxManageOpen] = useState(false);
   const { toast } = useToast();
 

@@ -14,6 +14,10 @@ import { Sidebar } from '../sidebar';
 import { LayoutProvider, useLayout } from '@/contexts/LayoutContext';
 import type { MenuInfo } from '@/types/foundation/menu';
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'layout-user', groups: ['USER'], permissions: [], authorizationVersion: 'v1' } }),
+}));
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
  usePathname: () => '/',

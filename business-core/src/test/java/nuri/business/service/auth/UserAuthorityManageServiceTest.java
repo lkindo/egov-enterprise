@@ -47,26 +47,6 @@ class UserAuthorityManageServiceTest {
     @InjectMocks
     private UserAuthorityManageService userAuthorityManageService;
 
-    /**
-     * 정상 경로 기본값 — 요청한 권한 코드는 실재한다고 본다.
-     *
-     * <p>[2026-08-30] 쓰기 경로에 존재 검증이 생겼다. 종전 fixture 는 그 검증이 없던 시절의
-     * 것이라, 검증을 넣자 "정상 저장" 테스트들이 알 수 없는 권한으로 거부됐다 — 테스트가
-     * 서버가 만들지 않는 상태를 쓰고 있었다는 뜻이다. 거부 케이스는 각 테스트가 덮어쓴다.
-     */
-    @org.junit.jupiter.api.BeforeEach
-    void stubKnownAuthorities() {
-        org.mockito.Mockito.lenient().when(authorityRepository.findAllById(any()))
-                .thenAnswer(invocation -> {
-                    Iterable<String> ids = invocation.getArgument(0);
-                    java.util.List<nuri.business.domain.auth.Authority> found = new java.util.ArrayList<>();
-                    for (String id : ids) {
-                        found.add(nuri.business.domain.auth.Authority.createRaw(id, id, null, null));
-                    }
-                    return found;
-                });
-    }
-
     @Test
     @DisplayName("사용자별 권한 목록 조회 테스트")
     void selectUserAuthorityListTest() {
@@ -81,153 +61,6 @@ class UserAuthorityManageServiceTest {
 
         verify(userAuthorityRepository).searchAuthorGroups(any(), any(), any(Pageable.class));
     }
-
-    @Test
-    @DisplayName("사용자의 권한 정보 저장 테스트 - 신규 등록")
-    void saveUserAuthoritiesNewTest() {
-        UserAuthorityDto dto = UserAuthorityDto.builder()
-                .scrtyDcsnTrgtId("USER1")
-                .authrtId("ROLE_ADMIN")
-                .build();
-        
-        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
-
-        userAuthorityManageService.saveUserAuthorities(List.of(dto));
-
-        verify(userAuthorityRepository).saveAll(anyList());
-    }
-
-    @Test
-    @DisplayName("사용자의 권한 정보 저장 테스트 - 기존 수정")
-    void saveUserAuthoritiesUpdateTest() {
-        UserAuthorityDto dto = UserAuthorityDto.builder()
-                .scrtyDcsnTrgtId("USER1")
-                .authrtId("ROLE_USER")
-                .build();
-        
-        UserAuthority existing = mock(UserAuthority.class);
-        given(existing.getScrtyDcsnTrgtId()).willReturn("USER1");
-        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of(existing));
-
-        userAuthorityManageService.saveUserAuthorities(List.of(dto));
-
-        verify(existing).update(eq("ROLE_USER"), any());
-        verify(userAuthorityRepository).saveAll(anyList());
-    }
-
-    @Test
-    @DisplayName("사용자의 권한 삭제 테스트")
-    void deleteUserAuthoritiesTest() {
-        List<String> ids = List.of("USER1", "USER2");
-        
-        userAuthorityManageService.deleteUserAuthorities(ids);
-
-        verify(userAuthorityRepository).deleteAllByIdInBatch(ids);
-    }
-
-    @Test
-    @DisplayName("부서별 권한 일괄 저장 테스트 - 모든 멤버")
-    void saveDeptAuthoritiesAllMembersTest() {
-        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
-        request.setDeptId("DEPT1");
-        request.setAuthrtId("ROLE_DEPT");
-        request.setAllMembers(true);
-        
-        User user = mock(User.class);
-        given(user.getEsntlId()).willReturn("USER1");
-        given(userRepository.findByOgnzId("DEPT1")).willReturn(List.of(user));
-        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
-
-        userAuthorityManageService.saveDeptAuthorities(request);
-
-        verify(userAuthorityRepository).saveAll(anyList());
-    }
-
-    @Test
-    @DisplayName("부서별 권한 일괄 저장 테스트 - 특정 멤버")
-    void saveDeptAuthoritiesSpecificMembersTest() {
-        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
-        request.setDeptId("DEPT1");
-        request.setAuthrtId("ROLE_DEPT");
-        request.setAllMembers(false);
-        request.setUserIds(List.of("USER1"));
-        
-        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
-
-        userAuthorityManageService.saveDeptAuthorities(request);
-
-        verify(userAuthorityRepository).saveAll(anyList());
-    }
-
-    @Test
-    @DisplayName("null 또는 빈 데이터 처리 테스트")
-    void handleEmptyDataTest() {
-        assertDoesNotThrow(() -> {
-            userAuthorityManageService.saveUserAuthorities(null);
-            userAuthorityManageService.saveUserAuthorities(List.of());
-            userAuthorityManageService.deleteUserAuthorities(null);
-            userAuthorityManageService.saveDeptAuthorities(null);
-            userAuthorityManageService.saveDeptAuthorities(new DeptAuthorBatchRequest());
-        });
-    }
-
-    @Test
-    @DisplayName("사용자의 권한 정보 저장 테스트 - 필터링")
-    void saveUserAuthoritiesFilterTest() {
-        UserAuthorityDto dto1 = mock(UserAuthorityDto.class);
-        lenient().when(dto1.getScrtyDcsnTrgtId()).thenReturn(null);
-        lenient().when(dto1.getAuthrtId()).thenReturn("ROLE_USER");
-
-        UserAuthorityDto dto2 = mock(UserAuthorityDto.class);
-        lenient().when(dto2.getScrtyDcsnTrgtId()).thenReturn("USER1");
-        lenient().when(dto2.getAuthrtId()).thenReturn(null);
-        
-        userAuthorityManageService.saveUserAuthorities(List.of(dto1, dto2));
-
-        verify(userAuthorityRepository).saveAll(argThat(l -> l != null && !l.iterator().hasNext()));
-    }
-
-    @Test
-    @DisplayName("부서별 권한 일괄 저장 테스트 - 빈 사용자 목록")
-    void saveDeptAuthoritiesEmptyUsersTest() {
-        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
-        request.setDeptId("DEPT1");
-        request.setAuthrtId("ROLE_DEPT");
-        request.setAllMembers(false);
-        request.setUserIds(List.of());
-
-        userAuthorityManageService.saveDeptAuthorities(request);
-
-        verify(userAuthorityRepository, never()).saveAll(anyList());
-    }
-
-    @Test
-    @DisplayName("부서별 권한 일괄 저장 테스트 - 기존 수정")
-    void saveDeptAuthoritiesUpdateTest() {
-        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
-        request.setDeptId("DEPT1");
-        request.setAuthrtId("ROLE_DEPT");
-        request.setUserIds(List.of("USER1"));
-        
-        UserAuthority existing = mock(UserAuthority.class);
-        given(existing.getScrtyDcsnTrgtId()).willReturn("USER1");
-        given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of(existing));
-
-        userAuthorityManageService.saveDeptAuthorities(request);
-
-        verify(existing).update(eq("ROLE_DEPT"), isNull());
-        verify(userAuthorityRepository).saveAll(anyList());
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // [2026-08-09 뮤테이션 보강] PIT 이 이 클래스에서 16개를 살려 보냈다.
-    //   그중 8개가 selectUserAuthorityList / selectDeptAuthorityList 의 **페이징 계산**이다
-    //   (selectDeptAuthorityList 는 통째로 NO_COVERAGE 였다).
-    //
-    //   ⚠ 이 페이징 계산은 이 코드베이스에 **13개소·10개 파일로 복제**돼 있다.
-    //   호출부마다 검증을 붙이지 않으면 뮤턴트가 계속 살아남는다 —
-    //   근본적으로는 공통 헬퍼 추출 후보다(프로덕션 변경이라 별건).
-    // ─────────────────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("사용자 권한 목록: 1-based pageIndex 가 0-based 로 변환된다")
@@ -294,167 +127,22 @@ class UserAuthorityManageServiceTest {
         assertEquals(3, captor.getValue().getPageNumber(), "1-based 4페이지는 0-based 3");
         assertEquals(10, captor.getValue().getPageSize(), "pageUnit 0 이면 기본 10");
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // [2026-08-09 뮤테이션 보강 2차] 저장 경로에 8개가 남아 있었다.
-    //   공통 원인은 **기존 엔티티가 있는 경로(update)를 한 번도 태우지 않은 것**이다.
-    //   findAllById 가 항상 빈 목록을 돌려주도록 스텁돼 있어서, "이미 권한이 있는 사용자를
-    //   갱신" 하는 분기가 통째로 비어 있었다 — 실제 운용에서 더 흔한 쪽이 그쪽이다.
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("사용자 권한 저장: 기존 권한이 있으면 새로 만들지 않고 갱신한다")
-    @SuppressWarnings("unchecked")
-    void saveUserAuthoritiesUpdatesExistingInsteadOfInserting() {
-        UserAuthority existing = UserAuthority.builder()
-                .scrtyDcsnTrgtId("U1").authrtId("ROLE_OLD").mbrTypeCd("01").build();
-        given(userAuthorityRepository.findAllById(anyIterable())).willReturn(List.of(existing));
-
-        UserAuthorityDto dto = new UserAuthorityDto();
-        dto.setScrtyDcsnTrgtId("U1");
-        dto.setAuthrtId("ROLE_NEW");
-        dto.setMbrTypeCd("02");
-        userAuthorityManageService.saveUserAuthorities(List.of(dto));
-
-        ArgumentCaptor<List<UserAuthority>> saved = ArgumentCaptor.forClass(List.class);
-        verify(userAuthorityRepository).saveAll(saved.capture());
-        assertEquals(1, saved.getValue().size());
-        // 같은 인스턴스여야 한다 — 새 엔티티를 만들면 PK 충돌이거나 중복 행이 된다.
-        assertSame(existing, saved.getValue().get(0));
-        assertEquals("ROLE_NEW", existing.getAuthrtId(), "권한이 실제로 갱신돼야 한다");
-        assertEquals("02", existing.getMbrTypeCd());
+    @org.junit.jupiter.api.BeforeEach
+    void authenticatedAdministrator() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+            nuri.business.support.AuthorizationTestPrincipal.authentication("admin","ESNTL_ADMIN","ADMIN"));
     }
-
+    @org.junit.jupiter.api.AfterEach
+    void clearContext() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
     @Test
-    @DisplayName("사용자 권한 저장: 기존 권한이 없으면 새 엔티티를 만든다")
-    @SuppressWarnings("unchecked")
-    void saveUserAuthoritiesCreatesWhenAbsent() {
-        given(userAuthorityRepository.findAllById(anyIterable())).willReturn(List.of());
-
-        UserAuthorityDto dto = new UserAuthorityDto();
-        dto.setScrtyDcsnTrgtId("U2");
-        dto.setAuthrtId("ROLE_NEW");
-        dto.setMbrTypeCd("01");
-        userAuthorityManageService.saveUserAuthorities(List.of(dto));
-
-        ArgumentCaptor<List<UserAuthority>> saved = ArgumentCaptor.forClass(List.class);
-        verify(userAuthorityRepository).saveAll(saved.capture());
-        // `replaced return value with null` 뮤턴트는 여기서 NPE 로 죽는다.
-        UserAuthority created = saved.getValue().get(0);
-        assertNotNull(created);
-        assertEquals("U2", created.getScrtyDcsnTrgtId());
-        assertEquals("ROLE_NEW", created.getAuthrtId());
-    }
-
-    @Test
-    @DisplayName("사용자 권한 저장: 조회 대상 ID 를 정확히 전달한다 (배치 조회 키)")
-    @SuppressWarnings("unchecked")
-    void saveUserAuthoritiesPassesExactIdsToBatchLookup() {
-        given(userAuthorityRepository.findAllById(anyIterable())).willReturn(List.of());
-
-        UserAuthorityDto a = new UserAuthorityDto();
-        a.setScrtyDcsnTrgtId("U1");
-        a.setAuthrtId("R");
-        UserAuthorityDto b = new UserAuthorityDto();
-        b.setScrtyDcsnTrgtId("U2");
-        b.setAuthrtId("R");
-        userAuthorityManageService.saveUserAuthorities(List.of(a, b));
-
-        ArgumentCaptor<Iterable<String>> ids = ArgumentCaptor.forClass(Iterable.class);
-        verify(userAuthorityRepository).findAllById(ids.capture());
-        // ID 추출 람다가 ""(빈 문자열)를 돌려주는 뮤턴트는 여기서 죽는다.
-        // 빈 키로 조회하면 기존 권한을 못 찾아 **전부 새 엔티티로 덮어쓴다**.
-        assertEquals(List.of("U1", "U2"), ids.getValue());
-    }
-
-    @Test
-    @DisplayName("부서 권한 저장: 부서 전체 지정이면 소속 사용자의 esntlId 로 조회한다")
-    @SuppressWarnings("unchecked")
-    void saveDeptAuthoritiesResolvesAllMembersByEsntlId() {
-        User u1 = User.builder().esntlId("E1").userId("u1").userNm("갑").build();
-        User u2 = User.builder().esntlId("E2").userId("u2").userNm("을").build();
-        given(userRepository.findByOgnzId("D1")).willReturn(List.of(u1, u2));
-        given(userAuthorityRepository.findAllById(anyIterable())).willReturn(List.of());
-
-        DeptAuthorBatchRequest req = new DeptAuthorBatchRequest();
-        req.setDeptId("D1");
-        req.setAuthrtId("ROLE_DEPT");
-        req.setAllMembers(true);
-        userAuthorityManageService.saveDeptAuthorities(req);
-
-        ArgumentCaptor<Iterable<String>> ids = ArgumentCaptor.forClass(Iterable.class);
-        verify(userAuthorityRepository).findAllById(ids.capture());
-        // esntlId 추출 람다가 "" 를 돌려주는 뮤턴트는 여기서 죽는다.
-        assertEquals(List.of("E1", "E2"), ids.getValue());
-    }
-
-    @Test
-    @DisplayName("부서 권한 저장: 기존 권한이 있으면 갱신하고, 없으면 생성한다")
-    @SuppressWarnings("unchecked")
-    void saveDeptAuthoritiesUpdatesExistingAndCreatesMissing() {
-        UserAuthority existing = UserAuthority.builder()
-                .scrtyDcsnTrgtId("E1").authrtId("ROLE_OLD").mbrTypeCd("01").build();
-        given(userAuthorityRepository.findAllById(anyIterable())).willReturn(List.of(existing));
-
-        DeptAuthorBatchRequest req = new DeptAuthorBatchRequest();
-        req.setDeptId("D1");
-        req.setAuthrtId("ROLE_DEPT");
-        req.setAllMembers(false);
-        req.setUserIds(List.of("E1", "E2"));
-        userAuthorityManageService.saveDeptAuthorities(req);
-
-        ArgumentCaptor<List<UserAuthority>> saved = ArgumentCaptor.forClass(List.class);
-        verify(userAuthorityRepository).saveAll(saved.capture());
-        assertEquals(2, saved.getValue().size());
-        // 기존 항목은 같은 인스턴스로 갱신 — 새로 만들면 중복 행이 된다.
-        assertSame(existing, saved.getValue().get(0));
-        assertEquals("ROLE_DEPT", existing.getAuthrtId());
-        // 신규 항목은 새 엔티티 — null 반환 뮤턴트는 여기서 죽는다.
-        assertNotNull(saved.getValue().get(1));
-        assertEquals("E2", saved.getValue().get(1).getScrtyDcsnTrgtId());
-        assertEquals("ROLE_DEPT", saved.getValue().get(1).getAuthrtId());
-    }
-
-    /**
-     * [2026-08-30 자기 검토 발견] 쓰기 경로에 존재 검증이 없어 <b>정규 API 로 끊긴 참조를
-     * 만들 수 있었다</b>. 삭제 쪽만 막은 것은 문을 한쪽만 잠근 것이었다.
-     *
-     * <p>{@code tb_user_authrt_map} 에는 {@code tb_authrt_info} FK 가 없고 JPA 연관도
-     * {@code NO_CONSTRAINT} 라 어떤 문자열이든 저장된다 — DB 가 막아 주지 않는다.
-     */
-    @Test
-    @DisplayName("존재하지 않는 권한으로는 사용자 할당을 저장하지 않는다")
-    void saveUserAuthorities_rejectsUnknownAuthority() {
-        org.mockito.Mockito.reset(authorityRepository);
-        given(authorityRepository.findAllById(any())).willReturn(java.util.List.of());
-
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                        userAuthorityManageService.saveUserAuthorities(java.util.List.of(
-                                UserAuthorityDto.builder()
-                                        .scrtyDcsnTrgtId("USER_1")
-                                        .authrtId("ROLE_GONE")
-                                        .build())))
-                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
-                .hasMessageContaining("ROLE_GONE");
-
-        verify(userAuthorityRepository, org.mockito.Mockito.never()).saveAll(any());
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 권한으로는 부서 일괄 할당도 저장하지 않는다")
-    void saveDeptAuthorities_rejectsUnknownAuthority() {
-        org.mockito.Mockito.reset(authorityRepository);
-        given(authorityRepository.findAllById(any())).willReturn(java.util.List.of());
-        DeptAuthorBatchRequest request = new DeptAuthorBatchRequest();
-        request.setDeptId("ORGNZT_1");
-        request.setAuthrtId("ROLE_GONE");
-        request.setUserIds(java.util.List.of("USER_1"));
-
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> userAuthorityManageService.saveDeptAuthorities(request))
-                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
-                .hasMessageContaining("ROLE_GONE");
-
-        verify(userAuthorityRepository, org.mockito.Mockito.never()).saveAll(any());
+    void unversionedAssignmentsAreRejectedBeforeAnyPersistence() {
+        java.util.List<Runnable> calls=java.util.List.of(
+            () -> userAuthorityManageService.saveUserAuthorities(java.util.List.of()),
+            () -> userAuthorityManageService.deleteUserAuthorities(java.util.List.of("USER")),
+            () -> userAuthorityManageService.saveDeptAuthorities(new DeptAuthorBatchRequest()));
+        for(var call:calls) org.assertj.core.api.Assertions.assertThatThrownBy(call::run)
+            .isInstanceOfSatisfying(nuri.foundation.core.exception.BusinessException.class,
+                e -> assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE,e.getErrorCode()));
+        verifyNoInteractions(userAuthorityRepository,userRepository,authorityRepository);
     }
 }

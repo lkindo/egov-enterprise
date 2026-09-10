@@ -28,7 +28,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useToast } from '@/app/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { 
   Dialog, 
   DialogContent, 
@@ -76,6 +76,8 @@ const DEFAULT_ATCH_PSBLTY_FILE_SZ = 5242880;
 export function BoardMasterListClient() {
   const router = useRouter();
   const { user } = useAuth();
+  const canUpdate = canPermission(user, 'BBS_MST_UPDATE');
+  const canDelete = canPermission(user, 'BBS_MST_DELETE');
   const confirm = useConfirm();
   const { toast } = useToast();
   const [searchWrd, setSearchWrd] = useState('');
@@ -111,6 +113,7 @@ export function BoardMasterListClient() {
    * 저장 시 필수 필드(@NotBlank bbsTypeCd/bbsAtrbCd, @NotNull atchPsbltyFileSz)가 유실되지 않는다.
    */
   const handleEdit = async (board: BoardMasterSummary) => {
+    if (!canUpdate) return;
     if (
       !board.bbsId
       || savePendingRef.current
@@ -134,6 +137,7 @@ export function BoardMasterListClient() {
   };
 
   const handleSave = async () => {
+    if (!canUpdate) return;
     if (!selectedBoard || !selectedBoard.bbsId) return;
     if (savePendingRef.current || deletePendingRef.current || bulkPendingRef.current) return;
 
@@ -209,6 +213,7 @@ export function BoardMasterListClient() {
   };
 
   const handleDelete = async (board: BoardMasterSummary) => {
+    if (!canDelete) return;
     if (!board.bbsId) return;
     if (deletePendingRef.current || bulkPendingRef.current || savePendingRef.current) return;
 
@@ -290,6 +295,7 @@ export function BoardMasterListClient() {
     status: 'Y' | 'N',
     action: Extract<BulkPendingAction, 'activate' | 'deactivate'>,
   ) => {
+    if (!canUpdate) return;
     const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
     if (ids.length === 0) return;
 
@@ -311,6 +317,7 @@ export function BoardMasterListClient() {
   };
 
   const handleBulkPurge = async (items: BoardMasterSummary[]) => {
+    if (!canDelete) return;
     const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
     if (ids.length === 0) return;
 
@@ -413,7 +420,7 @@ export function BoardMasterListClient() {
 
         return (
         <div className="flex items-center justify-end gap-3 pr-6">
-          <Button
+          {canUpdate && <Button
             onClick={() => void handleEdit(board)}
             disabled={isDetailLoading || isSaving || deletingBoardId !== null || bulkPendingAction !== null}
             size="icon"
@@ -423,8 +430,8 @@ export function BoardMasterListClient() {
             className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm"
           >
             <Settings2 size={20} />
-          </Button>
-          <Button 
+          </Button>}
+          {canDelete && <Button
             onClick={() => { void handleDelete(board); }}
             disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
             aria-busy={isDeleting}
@@ -442,7 +449,7 @@ export function BoardMasterListClient() {
             {isDeleting
               ? <Loader2 size={20} className="animate-spin" aria-hidden="true" />
               : <Trash2 size={20} aria-hidden="true" />}
-          </Button>
+          </Button>}
           <Button
             onClick={() => router.push(`/admin/community/boards/select-board-list?bbsId=${board.bbsId}`)}
             disabled={!isOpenable}
@@ -470,9 +477,7 @@ export function BoardMasterListClient() {
       filterStateKey="community-board-master"
       totalCount={isError ? undefined : totalCount}
       actions={
-        /* ⚠ 'ADMIN' 리터럴 하나만 보면 실제 관리자(role=ROLE_ADMIN)에게 진입이 사라진다.
-           라우트 게이트와 같은 집합을 쓴다. */
-        isAdministrativeRole(user?.role) && (
+        canPermission(user, 'BBS_MST_CREATE') && (
           <Button size="sm" onClick={() => router.push('/admin/community/boards/maker')} className="gap-2">
             <Plus className="w-4 h-4" aria-hidden="true" />
             생성 마법사
@@ -515,9 +520,10 @@ export function BoardMasterListClient() {
           error={isError ? error : null}
           onRetry={() => refetch()}
           isPremium={true}
-          enableSelection={true}
+          enableSelection={canUpdate || canDelete}
           keyField="bbsId"
           bulkActions={[
+            ...(canUpdate ? [
             {
               label: '일괄 활성화',
               icon: bulkPendingAction === 'activate'
@@ -526,7 +532,7 @@ export function BoardMasterListClient() {
               disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
               ariaBusy: bulkPendingAction === 'activate',
               pendingLabel: '활성화 처리 중...',
-              onClick: (items) => { void handleBulkStatusChange(items, 'Y', 'activate'); }
+              onClick: (items: BoardMasterSummary[]) => { void handleBulkStatusChange(items, 'Y', 'activate'); }
             },
             {
               label: '일괄 비활성',
@@ -536,19 +542,20 @@ export function BoardMasterListClient() {
               disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
               ariaBusy: bulkPendingAction === 'deactivate',
               pendingLabel: '비활성화 처리 중...',
-              onClick: (items) => { void handleBulkStatusChange(items, 'N', 'deactivate'); }
-            },
+              onClick: (items: BoardMasterSummary[]) => { void handleBulkStatusChange(items, 'N', 'deactivate'); }
+            }] : []),
+            ...(canDelete ? [
             {
               label: '완전 말소',
               icon: bulkPendingAction === 'purge'
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Trash2 size={16} aria-hidden="true" />,
-              variant: 'destructive',
+              variant: 'destructive' as const,
               disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
               ariaBusy: bulkPendingAction === 'purge',
               pendingLabel: '완전 말소 처리 중...',
-              onClick: (items) => { void handleBulkPurge(items); }
-            }
+              onClick: (items: BoardMasterSummary[]) => { void handleBulkPurge(items); }
+            }] : [])
           ]}
           accessibleLabel="게시판 마스터 목록"
           emptyMessage={emptyResultMessage(searchWrd, '등록된 게시판이 없습니다.')}
@@ -560,7 +567,7 @@ export function BoardMasterListClient() {
         업무 화면에서 마케팅 배너를 제거한다.
       */}
       {/* Settings Modal */}
-      <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
+      <Dialog open={isModalOpen && canUpdate} onOpenChange={handleModalOpenChange}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-2xl">
           <div className="bg-surface-inverse p-10 text-surface-inverse-foreground relative">
             <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">

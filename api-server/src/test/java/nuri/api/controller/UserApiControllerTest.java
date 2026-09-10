@@ -37,9 +37,7 @@ public class UserApiControllerTest extends BaseControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     
     // LoginUser 어노테이션 리졸버 모킹을 위해 CustomUserDetails 생성
-    private final CustomUserDetails mockUserDetails = new CustomUserDetails(
-            "testuser", "testuser", "테스트", "password", "USER", "N", "ROLE_USER"
-    );
+    private final CustomUserDetails mockUserDetails = nuri.business.support.AuthorizationTestPrincipal.principal("testuser", "testuser", "USER");
 
     @Override
     protected Object getController() {

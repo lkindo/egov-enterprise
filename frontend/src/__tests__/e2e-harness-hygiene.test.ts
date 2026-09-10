@@ -41,7 +41,8 @@ function withoutComments(source: string): string {
 // [2026-09-03 하향: 10 → 9] 알림 카드가 접근 가능한 button 으로 바뀐 뒤에도 남아 있던
 //   `div.group` 로케이터를 역할·이름 계약으로 교체했다. 정상 actionability 클릭이 실제 E2E 에서
 //   통과하므로 force 우회가 필요하지 않다.
-const FORCE_CLICK_BASELINE = 9;
+// Retired technical-role creation removed one force click.
+const FORCE_CLICK_BASELINE = 8;
 
 describe('E2E force-click 하향 래칫', () => {
   it('force 클릭 사용처가 baseline 을 넘지 않는다', () => {

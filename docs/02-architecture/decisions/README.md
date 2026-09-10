@@ -20,3 +20,4 @@
 | [ADR-0013](ADR-0013-standard-text-length-alignment.md) | 설계 보류 6개를 유지하며 표준 길이 24개와 SMS 정규화를 양단 계약에 적용 | Accepted |
 | [ADR-0014](ADR-0014-deferred-standard-design-alignment.md) | 보류 6개를 프로그램 선택적 참조·HHmmss·암호화 주민번호 표준으로 정합 | Accepted |
 | [ADR-0015](ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 | Accepted |
+| [ADR-0016](ADR-0016-explicit-permissions-and-multiple-groups.md) | 인가 핵심 3개와 감사 1개, 복수 그룹·명시 기능 권한 및 수동 전환 | Accepted |

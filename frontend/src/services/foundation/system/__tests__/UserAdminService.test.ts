@@ -21,7 +21,7 @@
  *    특히 `deleteUsers`(다중 삭제)는 경로가 아니라 **컬렉션 경로 + 본문(data)** 이라,
  *    단건 삭제와 경로가 뒤바뀌면 의도와 정반대의 대상이 지워진다.
  *
- * 4) HTTP 메서드 — 일괄 변경 3종과 비밀번호 변경은 PATCH 다. PUT 으로 바뀌면 부분 수정이
+ * 4) HTTP 메서드 — 일괄 변경 2종과 비밀번호 변경은 PATCH 다. PUT 으로 바뀌면 부분 수정이
  *    전체 치환이 되어 서버 측에서 누락 필드가 초기화될 수 있다.
  *
  * 5) config 전달 — 호출부가 넘긴 AxiosRequestConfig(timeout·AbortSignal 등)가 유실되면
@@ -56,6 +56,7 @@ const BASE = 'admin/system/users';
 const success = <T,>(data: T) => ({ success: true as const, code: 'S000', message: 'success', data });
 const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
 const safeUser = {
+  groups: [], permissions: [], authorizationVersion: 'fixture-v1',
   userId: 'USR001',
   userNm: '홍길동',
   emlAddr: 'hong@example.com',
@@ -164,7 +165,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { signal, params: {} });
     });
 
-    it('목록 조회는 클라이언트 응답을 가공 없이 그대로 반환한다', async () => {
+    it('목록 조회는 사용자 관리 공개 필드를 보존하고 인증 스냅샷은 폼으로 투영하지 않는다', async () => {
       const page: PageResponse<UserManage> = {
         list: [{ userId: 'USR001', userNm: '홍길동', emlAddr: 'hong@example.com', userSttsCd: 'A' }],
         total: 1,
@@ -172,7 +173,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
         size: 10,
         totalPage: 1,
       };
-      client.get.mockResolvedValueOnce(page);
+      client.get.mockResolvedValueOnce({ ...page, list: [{ ...safeUser }] });
 
       await expect(userAdminService.getUserList({})).resolves.toStrictEqual(page);
     });
@@ -297,7 +298,7 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
     });
   });
 
-  describe('일괄 변경 (updateUsersStatus / moveUsersToDept / updateUsersRole)', () => {
+  describe('일괄 변경 (updateUsersStatus / moveUsersToDept)', () => {
     it('상태 일괄 변경은 /status 로 PATCH 하며 본문 키는 userIds·status 다', async () => {
       const userIds = ['USR001', 'USR002'];
 
@@ -314,25 +315,12 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       expect(client.patch).toHaveBeenCalledWith(`${BASE}/dept`, { userIds, ognzId: 'ORG_0007' }, undefined);
     });
 
-    it('권한 일괄 변경은 /role 로 PATCH 하며 본문 키는 userIds·role 다', async () => {
-      const userIds = ['USR001', 'USR002', 'USR003'];
-
-      await userAdminService.updateUsersRole(userIds, 'ROLE_ADMIN', { timeout: 9000 });
-
-      expect(client.patch).toHaveBeenCalledWith(
-        `${BASE}/role`,
-        { userIds, role: 'ADMIN' },
-        { timeout: 9000 },
-      );
-    });
-
-    it('일괄 변경 3종은 서로 다른 하위 경로를 쓴다 — 하나라도 겹치면 다른 속성이 덮어써진다', async () => {
+    it('일괄 변경 2종은 서로 다른 하위 경로를 쓴다 — 하나라도 겹치면 다른 속성이 덮어써진다', async () => {
       await userAdminService.updateUsersStatus(['USR001'], 'P');
       await userAdminService.moveUsersToDept(['USR001'], 'ORG_0007');
-      await userAdminService.updateUsersRole(['USR001'], 'ROLE_ADMIN');
 
       const calledPaths = client.patch.mock.calls.map((call) => String(call[0]));
-      expect(calledPaths).toEqual([`${BASE}/status`, `${BASE}/dept`, `${BASE}/role`]);
+      expect(calledPaths).toEqual([`${BASE}/status`, `${BASE}/dept`]);
     });
   });
 
@@ -347,7 +335,6 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       await userAdminService.updatePassword('USR001', { newPassword: 'Password2!' });
       await userAdminService.updateUsersStatus(['USR001'], 'P');
       await userAdminService.moveUsersToDept(['USR001'], 'ORG_0001');
-      await userAdminService.updateUsersRole(['USR001'], 'ROLE_ADMIN');
 
       const calledPaths = [
         ...client.get.mock.calls,
@@ -357,8 +344,8 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
         ...client.delete.mock.calls,
       ].map((call) => String(call[0]));
 
-      // 위에서 호출한 메서드 수(10)와 실제 HTTP 호출 수가 같아야 한다(중복 발사·누락 방지).
-      expect(calledPaths).toHaveLength(10);
+      // 위에서 호출한 메서드 수(9)와 실제 HTTP 호출 수가 같아야 한다(중복 발사·누락 방지).
+      expect(calledPaths).toHaveLength(9);
       expect(calledPaths.every((path) => path === BASE || path.startsWith(`${BASE}/`))).toBe(true);
       // 선행 슬래시가 붙으면 axios baseURL 이 무시되어 도메인 루트로 나간다.
       expect(calledPaths.some((path) => path.startsWith('/'))).toBe(false);

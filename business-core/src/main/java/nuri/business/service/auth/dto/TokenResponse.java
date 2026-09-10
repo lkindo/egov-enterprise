@@ -5,12 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import nuri.foundation.security.service.CustomUserDetails;
+import java.util.List;
 
 @Getter
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
 @Schema(description = "토큰 응답 DTO")
 public class TokenResponse {
     @Schema(description = "Access Token", example = "eyJhbGciOiJIUzI1NiJ9...")
@@ -22,6 +22,31 @@ public class TokenResponse {
     @Schema(hidden = true)
     private String refreshToken;
 
-    @Schema(description = "User Role", example = "ROLE_USER")
+    @Schema(description = "표시 호환용 권한 코드. 인가 판단에는 permissions를 사용한다.", example = "ROLE_USER")
     private String role;
+
+    @Builder.Default
+    private List<String> groups = List.of();
+    @Builder.Default
+    private List<String> permissions = List.of();
+    private String authorizationVersion;
+
+    public TokenResponse(String accessToken, String refreshToken, String role) {
+        this(accessToken, refreshToken, role, List.of(), List.of(), null);
+    }
+
+    public TokenResponse(String accessToken, String refreshToken, String role, List<String> groups,
+                         List<String> permissions, String authorizationVersion) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.role = role;
+        this.groups = groups == null ? List.of() : List.copyOf(groups);
+        this.permissions = permissions == null ? List.of() : List.copyOf(permissions);
+        this.authorizationVersion = authorizationVersion;
+    }
+
+    public static TokenResponse from(String accessToken, String refreshToken, CustomUserDetails principal) {
+        return new TokenResponse(accessToken, refreshToken, principal.getAuthorCode(),
+                principal.getGroups(), principal.getPermissions(), principal.getAuthorizationVersion());
+    }
 }

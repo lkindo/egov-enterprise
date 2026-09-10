@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { menuService } from '@/services/business/user/MenuService';
 import { useLayout } from '@/contexts/LayoutContext';
+import { useMenuAuthorizationScope } from '@/hooks/api/use-menu-authorization-scope';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { MenuInfo } from '@/types/foundation/menu';
@@ -22,6 +23,7 @@ export function Sidebar({
   menusPromise?: Promise<MenuInfo[]>;
 }) {
   const resolvedMenus = menusPromise ? use(menusPromise) : initialMenus;
+  const menuAuthorization = useMenuAuthorizationScope();
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
   const sidebarRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -53,10 +55,11 @@ export function Sidebar({
   }, [isSidebarOpen, setSidebarOpen]);
 
   // initialData가 실제로 있을 때만 주입한다. 빈 배열을 데이터로 확정하면 복구 query가 실행되지 않는다.
-  const { data: topMenus = resolvedMenus } = useQuery({
-    queryKey: ['menus', 'head'],
+  const { data: topMenus = [] } = useQuery({
+    queryKey: ['menus', 'head', ...menuAuthorization.scope],
     queryFn: () => menuService.getHeadMenus(),
-    initialData: resolvedMenus.length > 0 ? resolvedMenus : undefined,
+    initialData: menuAuthorization.acceptsInitialMenus && resolvedMenus.length > 0 ? resolvedMenus : undefined,
+    enabled: menuAuthorization.authenticated,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -69,15 +72,14 @@ export function Sidebar({
   }, [activeMenuNo, effectiveActiveMenuNo, setActiveMenuNo]);
 
   const { data: menus = prefetchedLeftMenus, isLoading: loading } = useQuery({
-    queryKey: ['menus', 'left', effectiveActiveMenuNo],
+    queryKey: ['menus', 'left', effectiveActiveMenuNo, ...menuAuthorization.scope],
     queryFn: async () => {
       if (!effectiveActiveMenuNo) return [];
       if (prefetchedLeftMenus.length > 0) return prefetchedLeftMenus;
       return menuService.getLeftMenus(effectiveActiveMenuNo);
     },
-    enabled: !!effectiveActiveMenuNo,
+    enabled: menuAuthorization.authenticated && !!effectiveActiveMenuNo,
     initialData: prefetchedLeftMenus.length > 0 ? prefetchedLeftMenus : undefined,
-    placeholderData: (previous) => previous,
     staleTime: 5 * 60 * 1000,
   });
 

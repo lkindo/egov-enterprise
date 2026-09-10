@@ -8,31 +8,22 @@ export class SecurityAdminPage {
     }
 
     async gotoAuthorities() {
-        console.log('>>> Navigating to Authority Management');
         await this.page.goto('/admin/security/authority');
-        await expect(this.page.getByRole('heading', { name: '권한(보안) 정책 관리', level: 1, exact: true })).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '권한 그룹 관리', level: 1, exact: true })).toBeVisible();
     }
 
     async createAuthority(authCode: string, authNm: string) {
-        console.log(`>>> Creating Authority: ${authCode}`);
-        await this.page.getByRole('button', { name: '권한 새로 만들기', exact: true }).click();
-        const dialog = this.page.getByRole('dialog', { name: '신규 권한 등록' });
-        const codeInput = dialog.getByRole('textbox', { name: /보안 역할 식별자/ });
-        const nameInput = dialog.getByRole('textbox', { name: /역할 레이블 명칭/ });
-        const descriptionInput = dialog.getByRole('textbox', { name: /보안 정책 정보 명세/ });
-        await expect(codeInput).toBeVisible({ timeout: 10000 });
-
-        await codeInput.fill(authCode);
-        await nameInput.fill(authNm);
-        await descriptionInput.fill(`${authNm} description for E2E`);
-        
-        console.log(`>>> Clicking '권한 배포' button`);
-        await dialog.getByRole('button', { name: '권한 배포', exact: true }).click();
-        
-        console.log(`>>> Waiting for success toast`);
-        // The toast message in AuthorForm is "보안 권한 아키텍처가 성공적으로 반영되었습니다."
-        await expect(this.page.getByText(/성공적으로 반영되었습니다/i)).toBeVisible({ timeout: 15000 });
-        console.log(`>>> Authority Created Successfully`);
+        await this.page.getByRole('button', { name: '그룹 추가', exact: true }).click();
+        const form = this.page.getByRole('form', { name: '권한 그룹 등록' });
+        await form.getByRole('textbox', { name: '그룹 코드' }).fill(authCode);
+        await form.getByRole('textbox', { name: '그룹명' }).fill(authNm);
+        await form.getByRole('textbox', { name: '설명' }).fill(authNm + ' E2E');
+        const [response] = await Promise.all([
+            this.page.waitForResponse((entry) => entry.request().method() === 'POST' && entry.url().endsWith('/api/v1/admin/authorization/groups')),
+            form.getByRole('button', { name: '그룹 등록', exact: true }).click(),
+        ]);
+        expect(response.status()).toBe(200);
+        await expect(this.page.getByRole('region', { name: authNm + ' 권한 설정' })).toBeVisible();
     }
 
     async gotoGroups() {
@@ -59,30 +50,8 @@ export class SecurityAdminPage {
     }
 
     async gotoRoles() {
-        console.log('>>> Navigating to Role Management');
         await this.page.goto('/admin/security/role');
-        // [2026-08-24 A1 이행] 마케팅 제목('세분화 보안 롤(Role) 아키텍처')을 업무 제목으로 바꿨다(G14).
-        await expect(this.page.getByRole('heading', { name: '보안 롤 관리', exact: true })).toBeVisible();
-    }
-
-    async createRole(roleCode: string, roleNm: string) {
-        console.log(`>>> Creating Role: ${roleCode}`);
-        await this.page.locator('button:has-text("신규 보안 롤 설정")').first().click();
-        await expect(this.page.locator('#roleId')).toBeVisible({ timeout: 10000 });
-
-        await this.page.locator('#roleId').fill(roleCode);
-        await this.page.locator('#roleNm').fill(roleNm);
-        await this.page.locator('#rolePatrn').fill('/**'); 
-        await this.page.locator('#roleExpln').fill(`${roleNm} description for E2E`);
-        
-        // Select type (e.g., URL)
-        await this.page.locator('#roleTypeCd').selectOption('url');
-        await this.page.locator('#roleSort').fill('1');
-        
-        console.log(`>>> Clicking '롤 아키텍처 배포' button`);
-        await this.page.getByRole('button', { name: /롤 아키텍처 배포/i }).click({ force: true });
-        console.log(`>>> Waiting for success toast`);
-        await expect(this.page.getByText(/성공|완료|되었습니다|저장|반영/i).first()).toBeVisible({ timeout: 10000 });
-        console.log(`>>> Role Created Successfully`);
+        await expect(this.page).toHaveURL(/\/admin\/security\/authority$/);
+        await expect(this.page.getByRole('heading', { name: '권한 그룹 관리', exact: true })).toBeVisible();
     }
 }

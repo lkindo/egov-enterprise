@@ -26,6 +26,7 @@ public class ProgramApiController {
 
     @Operation(summary = "프로그램 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.ProgramApiController#getProgramList')")
     public ResponseEntity<ApiResponse<PageResponse<ProgramDto>>> getProgramList(
             @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
@@ -37,12 +38,14 @@ public class ProgramApiController {
 
     @Operation(summary = "프로그램 상세 조회")
     @GetMapping("/{progrmFileNm}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.ProgramApiController#getProgram')")
     public ResponseEntity<ApiResponse<ProgramDto>> getProgram(@PathVariable String progrmFileNm) throws Exception {
         return ResponseEntity.ok(ApiResponse.success(programService.selectProgrmById(progrmFileNm)));
     }
 
     @Operation(summary = "프로그램 등록")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.ProgramApiController#createProgram')")
     public ResponseEntity<ApiResponse<Void>> createProgram(
             @org.springframework.validation.annotation.Validated({jakarta.validation.groups.Default.class, ProgramDto.OnCreate.class})
             @RequestBody ProgramDto dto) throws Exception {
@@ -52,6 +55,7 @@ public class ProgramApiController {
 
     @Operation(summary = "프로그램 정보 수정")
     @PutMapping("/{progrmFileNm}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.ProgramApiController#updateProgram')")
     public ResponseEntity<ApiResponse<Void>> updateProgram(@PathVariable String progrmFileNm,
             @Valid @RequestBody ProgramDto dto) throws Exception {
         dto.setPrgrmFileNm(progrmFileNm);
@@ -61,6 +65,7 @@ public class ProgramApiController {
 
     @Operation(summary = "프로그램 삭제")
     @DeleteMapping("/{progrmFileNm}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.ProgramApiController#deleteProgram')")
     public ResponseEntity<ApiResponse<Void>> deleteProgram(@PathVariable String progrmFileNm) throws Exception {
         ProgramDto dto = new ProgramDto();
         dto.setPrgrmFileNm(progrmFileNm);

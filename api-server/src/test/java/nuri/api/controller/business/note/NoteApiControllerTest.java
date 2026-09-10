@@ -2,7 +2,6 @@ package nuri.api.controller.business.note;
 
 import nuri.business.service.note.NoteService;
 import nuri.business.service.note.dto.NoteDto;
-import nuri.foundation.security.annotation.Authenticated;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -33,7 +32,12 @@ class NoteApiControllerTest extends ControllerTestSupport {
     @Test
     @DisplayName("보안: 쪽지 API 전체는 인증된 사용자만 접근한다")
     void controllerRequiresAuthentication() {
-        assertThat(NoteApiController.class.isAnnotationPresent(Authenticated.class)).isTrue();
+        var permissions = java.util.Map.of("sendNote", "NOTE_SEND", "getReceivedNotes", "NOTE_READ",
+                "getSentNotes", "NOTE_READ", "getNote", "NOTE_READ", "deleteNote", "NOTE_DELETE");
+        var mapped = java.util.Arrays.stream(NoteApiController.class.getDeclaredMethods())
+                .filter(m -> java.util.Arrays.stream(m.getAnnotations()).anyMatch(a -> a.annotationType().getName().startsWith("org.springframework.web.bind"))).toList();
+        assertThat(mapped).hasSize(5);
+        for (var method : mapped) nuri.security.support.MethodPermissionContract.assertOperation(method, permissions.get(method.getName()), false);
     }
 
     @Test

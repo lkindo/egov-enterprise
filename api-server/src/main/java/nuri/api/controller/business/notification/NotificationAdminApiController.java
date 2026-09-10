@@ -41,8 +41,8 @@ public class NotificationAdminApiController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(ref = "#/components/schemas/ApiResponseVoid")))
     })
-    @AdminOrSystem
     @PostMapping("/dispatch")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.notification.NotificationAdminApiController#dispatchNotifications')")
     public ResponseEntity<ApiResponse<Integer>> dispatchNotifications(@Valid @RequestBody NotificationDispatchRequest request) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.dispatchToUsers(request)));
     }

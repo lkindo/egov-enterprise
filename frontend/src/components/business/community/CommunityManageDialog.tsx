@@ -3,6 +3,8 @@
 import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { Loader2, Pencil, Plus, Users, XCircle } from 'lucide-react';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
@@ -71,6 +73,10 @@ interface CommunityManageDialogProps {
  * 회원 목록(GAP-CMTY-001 의 dead write 를 읽는 첫 화면). 패널이 열린 동안 목록·폼은 감추고 footer 는 돌아가기만 둔다.
  */
 export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialogProps) {
+  const { user } = useAuth();
+  const canCreate = canPermission(user, 'COMMUNITY_CREATE_ALL');
+  const canUpdate = canPermission(user, 'COMMUNITY_UPDATE_ALL');
+  const canDelete = canPermission(user, 'COMMUNITY_DELETE_ALL');
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -112,6 +118,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   };
 
   const startEdit = (community: Community) => {
+    if (!canUpdate) return;
     setEditing(community);
     form.reset({
       cmntyNm: community.cmntyNm ?? '',
@@ -122,6 +129,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   };
 
   const onSubmit = async (values: CommunityFormValues) => {
+    if (!(editing ? canUpdate : canCreate)) return;
     if (submitLock.current) return;
     submitLock.current = true;
     setSaving(true);
@@ -154,6 +162,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
   };
 
   const handleClose = async (community: Community) => {
+    if (!canDelete) return;
     if (closePendingRef.current) return;
     closePendingRef.current = true;
     setPendingCloseSn(community.cmntySn);
@@ -215,9 +224,9 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
               수정 취소
             </Button>
           )}
-          <Button type="submit" form="community-manage-form" className="h-11 flex-[2]" disabled={saving || form.formState.isSubmitting}>
+          {(editing ? canUpdate : canCreate) && <Button type="submit" form="community-manage-form" className="h-11 flex-[2]" disabled={saving || form.formState.isSubmitting}>
             {saving ? '저장 중…' : editing ? '수정 저장' : '커뮤니티 등록'}
-          </Button>
+          </Button>}
         </div>
       }
     >
@@ -268,10 +277,10 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                     <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 회원 관리`} onClick={() => setMembersOf(community)} disabled={saving}>
                       <Users size={16} aria-hidden="true" />
                     </Button>
-                    <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 수정`} onClick={() => startEdit(community)} disabled={saving}>
+                    {canUpdate && <Button type="button" variant="ghost" size="icon" aria-label={`${community.cmntyNm} 수정`} onClick={() => startEdit(community)} disabled={saving}>
                       <Pencil size={16} aria-hidden="true" />
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canDelete && <Button
                       type="button"
                       variant="ghost"
                       size="icon"
@@ -282,7 +291,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                       className="text-destructive hover:text-destructive"
                     >
                       {isClosePending ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <XCircle size={16} aria-hidden="true" />}
-                    </Button>
+                    </Button>}
                   </li>
                 );
               })}
@@ -291,7 +300,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
           <PagePagination page={page} total={total} size={PAGE_SIZE} onPageChange={setPage} />
         </section>
 
-        <Form {...form}>
+        {(editing ? canUpdate : canCreate) && <Form {...form}>
           <form
             id="community-manage-form"
             noValidate
@@ -388,7 +397,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
               />
             )}
           </form>
-        </Form>
+        </Form>}
       </div>
     </StandardModal>
   );

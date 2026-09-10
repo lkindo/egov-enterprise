@@ -71,7 +71,7 @@ class BoardServiceTest {
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
         securityUtilMock = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS);
-        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole(anyString())).thenReturn(false);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(false);
         meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
         boardService = new BoardService(
                 boardRepository,
@@ -166,10 +166,7 @@ class BoardServiceTest {
 
         assertThat(captor.getValue().getViewerEsntlId()).isEqualTo("ESNTL_VIEWER");
         assertThat(captor.getValue().isSecretPostAdminOverride()).isFalse();
-        securityUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.hasRole(
-                AuthorityConstants.ROLE_ADMIN));
-        securityUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.hasRole(
-                AuthorityConstants.ROLE_SYSTEM));
+        securityUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"));
     }
 
     @Test
@@ -202,7 +199,7 @@ class BoardServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         given(boardMasterRepository.findById(bbsId))
                 .willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
-        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole(role))
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
                 .thenReturn(true);
         org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
                 org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
@@ -256,7 +253,7 @@ class BoardServiceTest {
     @DisplayName("게시글 수정 - 관리자가 아니지만 본인인 경우")
     void updateBoard_Self_Success() {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("user1"));
-        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(false);
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
@@ -275,7 +272,7 @@ class BoardServiceTest {
     @DisplayName("게시글 수정 - 타인이며 관리자도 아닌 경우 예외")
     void updateBoard_Fail_NoAuth() {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("user2"));
-        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(false);
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
@@ -289,7 +286,7 @@ class BoardServiceTest {
     @DisplayName("게시글 삭제 - 타인이며 관리자도 아닌 경우 예외")
     void deleteBoard_Fail_NoAuth() {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("user2"));
-        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(false);
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
@@ -630,7 +627,7 @@ class BoardServiceTest {
                 .scrtYn("Y")
                 .build();
         given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.of(detail));
-        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN"))
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
                 .thenReturn(true);
 
         assertThat(boardService.getPostDetail("BBS_01", pstSn).pstSn()).isEqualTo(pstSn);
@@ -667,7 +664,7 @@ class BoardServiceTest {
         given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.empty());
         given(boardRepository.findArticleDetailIncludingDeleted("BBS_01", pstSn))
                 .willReturn(Optional.of(deleted));
-        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN"))
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
                 .thenReturn(true);
 
         assertThat(boardService.getPostDetail("BBS_01", pstSn).pstCn()).isEqualTo("deleted content");
@@ -678,7 +675,7 @@ class BoardServiceTest {
     void getPostDetail_softDeletedHiddenFromNonAdmin() {
         Long pstSn = 16L;
         given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.empty());
-        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN"))
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL"))
                 .thenReturn(false);
 
         assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", pstSn))
@@ -1595,7 +1592,7 @@ class BoardServiceTest {
     @DisplayName("통합 검색 - 관리자에게는 비밀글 우회가 적용된다(게시판 목록과 동일)")
     void searchAcrossBoards_appliesAdminOverride() {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil
-                .hasRole(AuthorityConstants.ROLE_ADMIN)).thenReturn(true);
+                .hasPermission("BOARD_READ_ALL")).thenReturn(true);
         org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
                 org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
         given(boardRepository.searchArticles(captor.capture(), any(Pageable.class)))

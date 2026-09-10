@@ -30,6 +30,7 @@ public class ExternalHrApiController {
     @Operation(summary = "외부인사 목록 조회", description = "외부인사 정보를 페이징하여 조회한다. name 지정 시 성명 부분일치 검색.")
     @PrivacyAccess("외부인사 목록(생년월일·전화번호·이메일)")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.ExternalHrApiController#getAllExternalHr')")
     public ResponseEntity<ApiResponse<PageResponse<ExternalHrDto>>> getAllExternalHr(
             @RequestParam(required = false) String name,
             @PageableDefault(size = 10, sort = "crtDt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -46,8 +47,8 @@ public class ExternalHrApiController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(ref = "#/components/schemas/ApiResponseVoid")))
     })
-    @AdminOrSystem
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.ExternalHrApiController#createExternalHr')")
     public ResponseEntity<ApiResponse<ExternalHrDto>> createExternalHr(@Valid @RequestBody ExternalHrDto dto) {
         return ResponseEntity.ok(ApiResponse.success(externalHrService.createExternalHr(dto)));
     }
@@ -57,8 +58,8 @@ public class ExternalHrApiController {
      * 식별자는 복합키(evnt_sn, otsd_hr_id)라 경로에 둘 다 싣는다.
      */
     @Operation(summary = "외부인사 수정", description = "외부인사 정보를 수정한다. 식별자(evntSn·otsdHrId)는 바꾸지 않는다.")
-    @AdminOrSystem
     @PutMapping("/{evntSn}/{otsdHrId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.ExternalHrApiController#updateExternalHr')")
     public ResponseEntity<ApiResponse<ExternalHrDto>> updateExternalHr(
             @PathVariable Long evntSn,
             @PathVariable String otsdHrId,
@@ -67,8 +68,8 @@ public class ExternalHrApiController {
     }
 
     @Operation(summary = "외부인사 삭제", description = "외부인사 정보를 삭제한다.")
-    @AdminOrSystem
     @DeleteMapping("/{evntSn}/{otsdHrId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.ExternalHrApiController#deleteExternalHr')")
     public ResponseEntity<ApiResponse<Void>> deleteExternalHr(
             @PathVariable Long evntSn,
             @PathVariable String otsdHrId) {

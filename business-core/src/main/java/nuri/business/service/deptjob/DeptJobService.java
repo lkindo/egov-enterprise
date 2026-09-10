@@ -157,7 +157,7 @@ public class DeptJobService extends BaseAbstractService {
 
         // 소유권 검증(IDOR 방어): 담당자 본인 또는 관리자만 수정 가능.
         // URL 의 id 만으로 남의 업무를 고칠 수 없게 한다.
-        assertPicOrAdmin(deptJob);
+        assertPicOrAdmin(deptJob, "DEPT_JOB_UPDATE_ALL");
 
         if (dto.getAtchFileSn() != null
                 && !Objects.equals(dto.getAtchFileSn(), deptJob.getAtchFileSn())) {
@@ -189,7 +189,7 @@ public class DeptJobService extends BaseAbstractService {
         DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
-        assertPicOrAdmin(deptJob);
+        assertPicOrAdmin(deptJob, "DEPT_JOB_DELETE_ALL");
 
         deptJobRepository.delete(deptJob);
     }
@@ -215,15 +215,15 @@ public class DeptJobService extends BaseAbstractService {
      * @throws BusinessException ACCESS_DENIED(403) — 담당자도 관리자도 아닐 때.
      *         존재하지 않는 id 는 호출부에서 이미 RESOURCE_NOT_FOUND(404)로 갈린다.
      */
-    private void assertPicOrAdmin(DeptJob deptJob) {
+    private void assertPicOrAdmin(DeptJob deptJob, String overridePermission) {
         String picId = deptJob.getPicId();
         if (picId == null || picId.isBlank()) {
             // 담당자 공석 — 등록자 기준(loginId)으로 판정한다.
-            nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(deptJob.getFrstRgtrId());
+            nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(deptJob.getFrstRgtrId(), overridePermission);
             return;
         }
 
-        nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(picId);
+        nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(picId, overridePermission);
     }
 
     /** 인증된 CustomUserDetails에서만 생성 actor의 esntlId를 취한다. */

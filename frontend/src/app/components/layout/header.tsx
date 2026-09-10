@@ -22,7 +22,7 @@ import {
   CircleDot
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { useLayout } from '@/contexts/LayoutContext';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 import { AppNotificationDrawer } from '../ui/app-notification-drawer';
@@ -33,6 +33,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { useMenuAuthorizationScope } from '@/hooks/api/use-menu-authorization-scope';
 import { menuService } from '@/services/business/user/MenuService';
 import { MenuInfo } from '@/types/foundation/menu';
 import { HeaderSearchParamSync } from './HeaderSearchParamSync';
@@ -78,7 +79,8 @@ export function Header({
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
-  const isAdministrativeUser = isAdministrativeRole(user?.role);
+  const menuAuthorization = useMenuAuthorizationScope();
+  const canReadMenus = canPermission(user, 'MENU_READ');
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount, error: notificationsError, markAsRead, markAllAsRead, removeNotification, refresh: refreshNotifications } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -120,9 +122,10 @@ export function Header({
   // 기존에는 서버가 준 값을 그대로 쓰기만 해(const menus = resolvedMenus) 복구 수단이 전혀 없었다.
   // Sidebar 와 동일한 queryKey 를 사용하므로 캐시를 공유하며 중복 요청은 발생하지 않는다.
   const { data: menus = [] } = useQuery({
-    queryKey: ['menus', 'head'],
+    queryKey: ['menus', 'head', ...menuAuthorization.scope],
     queryFn: () => menuService.getHeadMenus(),
-    initialData: resolvedMenus.length > 0 ? resolvedMenus : undefined,
+    initialData: menuAuthorization.acceptsInitialMenus && resolvedMenus.length > 0 ? resolvedMenus : undefined,
+    enabled: menuAuthorization.authenticated,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -271,7 +274,7 @@ export function Header({
                       </div>
                       <div className="flex flex-col items-start mr-1 hidden sm:flex">
                         <span className="text-sm font-bold leading-none">{user.name}</span>
-                        <span className="text-xs text-muted-foreground font-semibold mt-0.5 tracking-tight">{isAdministrativeUser ? '관리자' : '사용자'}</span>
+                        <span className="text-xs text-muted-foreground font-semibold mt-0.5 tracking-tight">사용자</span>
                       </div>
                       <ChevronDown size={14} className="text-muted-foreground hidden sm:block" />
                     </Button>
@@ -282,7 +285,7 @@ export function Header({
                       <p className="text-sm text-muted-foreground truncate">{user.id}</p>
                     </div>
                     <div className="space-y-0.5">
-                      {isAdministrativeUser && (
+                      {canReadMenus && (
                         <>
                           <Link href="/admin/system/menus" aria-label="시스템 메뉴 관리 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
                             <span className="flex items-center gap-2"><Settings size={14} /> 시스템 메뉴 관리</span>

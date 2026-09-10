@@ -26,6 +26,7 @@ public class TemplateApiController {
 
     @Operation(summary = "템플릿 목록 조회", description = "시스템에 등록된 모든 게시판 템플릿 목록을 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#selectTmplatInfoList')")
     public ResponseEntity<ApiResponse<List<TemplateDto>>> selectTmplatInfoList() {
         List<TemplateDto> list = tmplatInfoService.selectTmplatInfoList();
         return ResponseEntity.ok(ApiResponse.success(list));
@@ -33,6 +34,7 @@ public class TemplateApiController {
 
     @Operation(summary = "템플릿 상세 조회", description = "특정 템플릿의 상세 정보를 조회합니다.")
     @GetMapping("/{tmpltId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#selectTmplatInfoDetail')")
     public ResponseEntity<ApiResponse<TemplateDto>> selectTmplatInfoDetail(@PathVariable("tmpltId") String tmpltId) {
         TemplateDto detail = tmplatInfoService.selectTmplatInfoDetail(tmpltId);
         return ResponseEntity.ok(ApiResponse.success(detail));
@@ -40,6 +42,7 @@ public class TemplateApiController {
 
     @Operation(summary = "템플릿 등록", description = "새로운 게시판 템플릿 정보를 등록합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo')")
     public ResponseEntity<ApiResponse<Void>> insertTmplatInfo(@Valid @RequestBody TemplateDto tmplatInfo) {
         tmplatInfoService.insertTmplatInfo(tmplatInfo);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -48,6 +51,7 @@ public class TemplateApiController {
     /* [2026-09-05 DEC-OPS-036] 수정·삭제 신설 — 종전에는 등록·조회만 가능했다(감사 D11-02). */
     @Operation(summary = "템플릿 수정", description = "템플릿 정보를 수정합니다. 템플릿 ID 는 바꾸지 않습니다.")
     @PutMapping("/{tmpltId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#updateTmplatInfo')")
     public ResponseEntity<ApiResponse<TemplateDto>> updateTmplatInfo(
             @PathVariable("tmpltId") String tmpltId,
             @Valid @RequestBody TemplateDto tmplatInfo) {
@@ -64,6 +68,7 @@ public class TemplateApiController {
                             schema = @Schema(ref = "#/components/schemas/ApiResponseVoid")))
     })
     @DeleteMapping("/{tmpltId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#deleteTmplatInfo')")
     public ResponseEntity<ApiResponse<Void>> deleteTmplatInfo(@PathVariable("tmpltId") String tmpltId) {
         tmplatInfoService.deleteTmplatInfo(tmpltId);
         return ResponseEntity.ok(ApiResponse.success(null));

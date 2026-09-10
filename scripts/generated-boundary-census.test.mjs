@@ -199,6 +199,26 @@ test('does not misclassify a static segment as an OpenAPI path parameter', () =>
   });
 });
 
+test('server fetch executor requires the canonical transport import and a generated descriptor', () => {
+  withFixture({
+    'frontend/src/types/generated-operations.ts': widgetGeneratedOperations.replaceAll('createWidget', 'getWidgets').replace('"post"', '"get"').replace('requestKind: "json"', 'requestKind: "none"'),
+    'frontend/src/lib/current-snapshot.ts': `
+      import { executeGeneratedFetchOperation } from '@/lib/api/generated-api-client';
+      import { getWidgetsOperation } from '@/types/generated-operations';
+      export const load = () => executeGeneratedFetchOperation(getWidgetsOperation, {}, {baseUrl:'http://internal/api/v1'});
+    `,
+  }, (root) => {
+    const baseline = buildBoundaryCensus({repoRoot:root});
+    assert.equal(baseline.records.length, 1);
+    assert.equal(baseline.records[0].classification, 'generated');
+    const target = join(root,'frontend/src/lib/current-snapshot.ts');
+    writeFileSync(target, readFileSync(target,'utf8').replace('@/lib/api/generated-api-client', '@/test-doubles/generated-api-client'));
+    const spoofed = buildBoundaryCensus({repoRoot:root});
+    assert.notEqual(spoofed.records[0]?.classification, 'generated');
+    assert.ok(compareBoundaryCensus(baseline,spoofed).length > 0);
+  });
+});
+
 test('a newly introduced legacy or raw boundary makes the ratchet red', () => {
   withFixture({
     'frontend/src/types/generated-operations.ts': widgetGeneratedOperations,

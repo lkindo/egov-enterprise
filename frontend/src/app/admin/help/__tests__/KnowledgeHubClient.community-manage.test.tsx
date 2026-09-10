@@ -13,6 +13,7 @@ const harness = vi.hoisted(() => ({
   replace: vi.fn(),
   search: 'tab=COMMUNITY',
   role: 'ROLE_ADMIN' as string,
+  permissions: ['COMMUNITY_READ_ALL', 'BBS_MST_READ'] as string[],
   dialogRenders: vi.fn(),
 }));
 
@@ -22,7 +23,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(harness.search),
 }));
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { role: harness.role } }),
+  useAuth: () => ({ user: { role: harness.role, permissions: harness.permissions, authorizationVersion: 'v1' } }),
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQuery: ({ queryKey }: { queryKey: string[] }) => {
@@ -59,6 +60,7 @@ describe('KnowledgeHubClient 커뮤니티 관리 진입', () => {
     vi.clearAllMocks();
     harness.search = 'tab=COMMUNITY';
     harness.role = 'ROLE_ADMIN';
+    harness.permissions = ['COMMUNITY_READ_ALL', 'BBS_MST_READ'];
   });
 
   it('관리자에게 커뮤니티 탭에서만 버튼을 그리고, 누르면 다이얼로그를 마운트한다', async () => {
@@ -79,6 +81,7 @@ describe('KnowledgeHubClient 커뮤니티 관리 진입', () => {
 
   it('비관리자에게는 버튼을 그리지 않는다(죽은 버튼 금지)', () => {
     harness.role = 'ROLE_USER';
+    harness.permissions = [];
     render(<KnowledgeHubClient defaultTab="COMMUNITY" />);
     expect(screen.queryByRole('button', { name: '커뮤니티 관리' })).not.toBeInTheDocument();
     expect(harness.dialogRenders).not.toHaveBeenCalled();

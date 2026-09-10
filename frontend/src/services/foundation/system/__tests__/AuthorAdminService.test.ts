@@ -1,37 +1,4 @@
-/**
- * AuthorAdminService 계약 테스트 (Contract Test)
- *
- * ── 왜 필요한가 ──────────────────────────────────────────────────────────────
- * `src/services/foundation/system/AuthorAdminService.ts` 는 권한 그룹(authorities)
- * 관리 화면 8개 파일(SecurityHubClient · SecurityDeptAuthorityClient ·
- * MenuByAuthorityClient · AdminDashboardClient · 각 page.tsx)이 공유하는 **유일한
- * 진입점**인데도 테스트가 한 건도 없었다. 로직이 얇아 "테스트할 게 없다"고 보이지만,
- * 아래 항목들은 **틀어져도 컴파일·tsc·ESLint 를 전부 통과한 채 런타임에서만 조용히
- * 깨진다.**
- *
- * 1) URL 조합 — `AdminService('/authorities')` 는 category 기본값 'system' 과 합쳐져
- *    ApiService 에서 `admin/system/authorities` 로 합성된다(선행 슬래시 제거 +
- *    `admin/{category}/` 접두). 한 글자만 어긋나도 결과는 404 이고 화면에는 실패
- *    토스트만 뜬다 — 어느 경로가 틀렸는지 아무도 모른다.
- *
- * 2) 페이징 변환 — 공개 호출의 `page`/`pageNo`/`size`를 generated query의
- *    `pageIndex`/`pageUnit`으로 한 번만 변환한다. OpenAPI에 없는 legacy 키는 전송하지 않는다.
- *
- * 3) 호출부 params 의 비(非)변형 — 별도 generated query를 만들어 React Query의
- *    queryKey 객체가 요청 과정에서 오염되지 않게 한다.
- *
- * 4) 경로 변수 치환 — update/delete 는 인자로 받은 권한 코드를 URL 에 박는다. 본문 필드
- *    (authrtNm 등)를 잘못 집으면 **엉뚱한 권한 그룹을 수정하거나 삭제한다** — 되돌릴 수
- *    없는 사고다. 특히 `deleteAuthor`(단건, `/{코드}`)와 `deleteAuthors`(다중, 컬렉션
- *    경로 + 본문 배열)는 URL 이 서로 달라 뒤바뀌면 전량 삭제/미삭제로 갈린다.
- *
- * 5) config 전달 — 호출부가 넘긴 AxiosRequestConfig(timeout·signal 등)가 유실되면 화면
- *    이탈 시 요청 취소(AbortSignal)가 동작하지 않고 SSR 의 쿠키 주입 config(page.tsx)도
- *    사라진다. 유실돼도 요청 자체는 성공하므로 아무도 눈치채지 못한다.
- *
- * 따라서 본 테스트는 "호출됐다"가 아니라 **어떤 URL·파라미터·본문·config 로 나가는지**를
- * 고정한다. 프로덕션 코드는 수정하지 않는다(관측만 한다).
- */
+/** Compatibility reads used by the dashboard and menu preview. All writes use AuthorizationAdminService. */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageResponse, SearchParams } from '@/types/foundation/system';
@@ -93,26 +60,6 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
 
       // params 를 안 넘겨도 서비스가 빈 객체를 만들어 config.params 로 실어 보낸다.
       expect(client.get).toHaveBeenCalledWith('admin/system/authorities', { params: {} });
-    });
-
-    it('모든 공개 메서드가 동일한 admin/system/authorities 접두 아래로만 나간다', async () => {
-      await authorAdminService.getAuthorList();
-      await authorAdminService.getAuthor('A');
-      await authorAdminService.getAuthorMenus('E');
-      await authorAdminService.createAuthor({ authrtCd: 'A', authrtNm: '권한 A' });
-      await authorAdminService.updateAuthor('B', { authrtCd: 'B', authrtNm: '권한 B' });
-      await authorAdminService.deleteAuthor('C');
-      await authorAdminService.deleteAuthors(['D']);
-
-      expect(client.get.mock.calls.map((call) => call[0])).toEqual([
-        BASE,
-        `${BASE}/A`,
-        `${BASE}/E/menus`,
-      ]);
-      expect(client.post.mock.calls.map((call) => call[0])).toEqual([BASE]);
-      expect(client.put.mock.calls.map((call) => call[0])).toEqual([`${BASE}/B`]);
-      // 단건 삭제는 /{코드}, 다중 삭제는 컬렉션 경로 — 둘의 URL 이 같아지면 전량 삭제 사고다.
-      expect(client.delete.mock.calls.map((call) => call[0])).toEqual([`${BASE}/C`, BASE]);
     });
   });
 
@@ -223,45 +170,6 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
   });
 
   describe('단건 조회 · 생성 · 수정 — 경로 변수 치환', () => {
-    it('단건 조회는 권한 코드를 경로 변수로 붙이고 config 를 그대로 넘긴다', async () => {
-      await authorAdminService.getAuthor('ROLE_ADMIN', { timeout: 1000 });
-
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/ROLE_ADMIN`, { timeout: 1000 });
-    });
-
-    it('config 를 생략하면 undefined 가 그대로 전달된다 (빈 객체로 대체하지 않는다)', async () => {
-      await authorAdminService.getAuthor('ROLE_ADMIN');
-
-      expect(client.get).toHaveBeenCalledWith(`${BASE}/ROLE_ADMIN`, undefined);
-    });
-
-    it('권한 생성은 컬렉션 경로에 payload 를 가공 없이 실어 POST 한다', async () => {
-      const payload: Partial<AuthorInfo> = {
-        authrtCd: 'ROLE_NEW',
-        authrtNm: '신규권한',
-        authrtExpln: '설명',
-      };
-
-      await authorAdminService.createAuthor(payload);
-
-      expect(client.post).toHaveBeenCalledWith(BASE, payload, undefined);
-      // Zod 경계 검증은 안전한 복사본을 전달하되 필드 값은 보존한다.
-      expect(client.post.mock.calls[0][1]).toStrictEqual(payload);
-    });
-
-    it('권한 수정의 경로는 첫 번째 인자(authorCode)로 결정되며 본문 필드가 경로를 바꾸지 않는다', async () => {
-      const payload: Partial<AuthorInfo> = { authrtCd: 'ROLE_ADMIN', authrtNm: 'ROLE_EDITOR' };
-
-      await authorAdminService.updateAuthor('ROLE_ADMIN', payload, { timeout: 2000 });
-
-      expect(client.put).toHaveBeenCalledWith(`${BASE}/ROLE_ADMIN`, payload, { timeout: 2000 });
-      // 본문의 authrtNm('ROLE_EDITOR')을 집으면 엉뚱한 권한 그룹을 덮어쓴다.
-      expect(client.put).not.toHaveBeenCalledWith(
-        `${BASE}/ROLE_EDITOR`,
-        expect.anything(),
-        expect.anything(),
-      );
-    });
 
     it('권한별 메뉴 조회는 /{권한코드}/menus 하위 경로로 나가고 응답 배열을 그대로 반환한다', async () => {
       const menus: AuthorMenuAssignment[] = [
@@ -273,58 +181,11 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(`${BASE}/ROLE_USER/menus`, undefined);
     });
   });
-
-  describe('삭제 — 단건과 다중은 URL·본문 규약이 다르다', () => {
-    it('단건 삭제는 지정한 코드 경로로만 나가고 컬렉션 전체를 대상으로 하지 않는다', async () => {
-      await authorAdminService.deleteAuthor('ROLE_TEMP');
-
-      expect(client.delete).toHaveBeenCalledWith(`${BASE}/ROLE_TEMP`, undefined);
-      expect(client.delete).not.toHaveBeenCalledWith(BASE, undefined);
-    });
-
-    it('다중 삭제는 컬렉션 경로로 나가며 코드 배열을 요청 본문(data)에 담는다', async () => {
-      const codes = ['ROLE_A', 'ROLE_B'];
-
-      await authorAdminService.deleteAuthors(codes);
-
-      expect(client.delete).toHaveBeenCalledWith(BASE, { data: codes });
-      // 경로 변수로 이어붙이면 'admin/system/authorities/ROLE_A,ROLE_B' 가 되어 404 다.
-      expect(client.delete).not.toHaveBeenCalledWith(`${BASE}/ROLE_A,ROLE_B`, expect.anything());
-    });
-
-    it('다중 삭제도 호출부 config 를 보존하며 data 와 병합한다', async () => {
-      const { signal } = new AbortController();
-
-      await authorAdminService.deleteAuthors(['ROLE_A'], { timeout: 5000, signal });
-
-      expect(client.delete).toHaveBeenCalledWith(BASE, {
-        timeout: 5000,
-        signal,
-        data: ['ROLE_A'],
-      });
-    });
-
-    it('단건 삭제와 다중 삭제는 서로 다른 URL 로 나간다 — 뒤바뀌면 전량 삭제 또는 미삭제가 된다', async () => {
-      await authorAdminService.deleteAuthor('ROLE_ONE');
-      await authorAdminService.deleteAuthors(['ROLE_TWO']);
-
-      expect(client.delete.mock.calls).toEqual([
-        [`${BASE}/ROLE_ONE`, undefined],
-        [BASE, { data: ['ROLE_TWO'] }],
-      ]);
-    });
-  });
-
   describe('싱글턴 export 표면', () => {
-    it('authorAdminService 는 화면 8개가 의존하는 7개 메서드를 모두 노출한다', () => {
+    it('legacy 읽기 서비스는 남아 있는 목록·메뉴 소비만 제공한다', () => {
       // 클래스는 export 되지 않으므로 이 싱글턴이 유일한 공개 계약면이다.
       // 메서드가 사라지거나 이름이 바뀌면 호출부가 런타임 TypeError 로만 드러난다.
       expect(typeof authorAdminService.getAuthorList).toBe('function');
-      expect(typeof authorAdminService.getAuthor).toBe('function');
-      expect(typeof authorAdminService.createAuthor).toBe('function');
-      expect(typeof authorAdminService.updateAuthor).toBe('function');
-      expect(typeof authorAdminService.deleteAuthor).toBe('function');
-      expect(typeof authorAdminService.deleteAuthors).toBe('function');
       expect(typeof authorAdminService.getAuthorMenus).toBe('function');
     });
   });

@@ -3,7 +3,6 @@ import { AdminService } from '@/services/core/ApiService';
 import type { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { UserManage, UserSearchParams } from '@/types/foundation/user';
 import type { components, operations } from '@/types/generated-api';
-import { toManagedUserRole } from '@/lib/auth/administrative-role';
 import {
   deleteUserOperation,
   deleteUsersOperation,
@@ -13,7 +12,6 @@ import {
   moveUsersToDeptOperation,
   updatePasswordByAdminOperation,
   updateUserOperation,
-  updateUsersRoleOperation,
   updateUsersStatusOperation,
 } from '@/types/generated-operations';
 
@@ -206,14 +204,6 @@ class UserAdminService extends AdminService {
   /** 사용자 부서 일괄 이동 */
   async moveUsersToDept(userIds: string[], ognzId: string, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(moveUsersToDeptOperation, { body: { userIds, ognzId }, config });
-  }
-
-  /** 사용자 권한 일괄 변경 */
-  async updateUsersRole(userIds: string[], role: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(updateUsersRoleOperation, {
-      body: { userIds, role: toManagedUserRole(role) },
-      config,
-    });
   }
 }
 

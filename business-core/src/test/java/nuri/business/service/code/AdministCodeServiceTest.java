@@ -39,7 +39,7 @@ class AdministCodeServiceTest {
     @BeforeEach
     void authenticateAdmin() {
         SecurityContextHolder.getContext().setAuthentication(
-                new TestingAuthenticationToken("admin", null, "ROLE_ADMIN"));
+                nuri.business.support.AuthorizationTestPrincipal.authentication("admin", "ESNTL_admin", "ROLE_ADMIN"));
     }
 
     @AfterEach
@@ -210,7 +210,7 @@ class AdministCodeServiceTest {
     @DisplayName("행정코드 쓰기는 서비스 계층에서도 일반 사용자를 거부한다")
     void administCodeWriteRequiresAdminAtServiceBoundary() {
         SecurityContextHolder.getContext().setAuthentication(
-                new TestingAuthenticationToken("user", null, "ROLE_USER"));
+                nuri.business.support.AuthorizationTestPrincipal.authentication("user", "ESNTL_user", "ROLE_USER"));
 
         BusinessException error = assertThrows(BusinessException.class,
                 () -> administCodeService.deleteAdministCode("1100000000"));

@@ -1,66 +1,51 @@
-/**
- * 화면은 **집행자가 없는 인가**를 주장하지 않는다.
- *
- * ── 무엇이 있었나 ──────────────────────────────────────────────────────────────
- * 지식 허브가 비관리자에게 "접근 권한 없음 · 시스템 관리자에게 권한을 요청하십시오" 를
- * 띄웠다. 그런데 그 벽을 집행하는 지점이 **어디에도 없었다**.
- *
- * - 서버: `BoardApiController` 는 클래스 레벨 인증뿐이고 GET 핸들러에 역할 인가가 없다.
- *   `rbac.db-auth.secure-paths` 에도 `/api/v1/boards` 가 없다.
- * - 제품: 비관리자 게시판 폴백 목록이 같은 게시판(WIKI)을 '일정 게시판' 으로 **의도적으로
- *   포함**하고, 같은 사용자가 `/admin/community/board` 에서 같은 엔드포인트를 부른다.
- * - 화면 자신: 벽 바로 옆 사이드바가 그 게시판의 제목·조회수를 렌더하고 상세까지 열었다.
- *
- * 즉 보호는 0이고 안내는 거짓이었다. 요청할 권한 자체가 존재하지 않는다.
- *
- * ── 왜 문자열 금지로는 부족한가 ────────────────────────────────────────────────
- * `not.toContain('접근 권한 없음')` 은 세 방향에서 샌다.
- * ① 다른 문구('열람 권한이 없습니다')로 바꾸면 통과한다.
- * ② 다른 화면에서 같은 결함이 재발해도 못 본다.
- * ③ **방향이 반대일 때 틀린다** — 나중에 진짜 board ACL 이 생기면 정직한 차단 문구가
- *    필요해지는데, 문자열 금지는 그 옳은 코드를 red 로 만든다. 그러면 다음 사람은 계약을 지운다.
- *
- * 그래서 **서버의 현재 상태를 계약의 입력으로 삼는다** — 서버가 열려 있는 동안에만 화면의
- * 거부 주장을 금지하고, 서버가 닫히는 순간 재판정을 요구하며 red 가 된다.
+/** 화면의 거부/허용 안내는 현재 기능 권한과 서버 자원 경계를 근거로 한다.
+ * 소스 연결 검사는 Java HTTP/메서드 보안 통합 테스트를 대신하지 않는다.
+ * 과거 인증만으로 열린 게시판을 전제로 한 검사는 현재 exact operation 정책으로 전환했다.
  */
-
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { canPermission } from '@/lib/auth/permissions';
 
 const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(path.join(ROOT, rel), 'utf8');
-
 const BOARD_CONTROLLER = 'api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java';
-const APPLICATION_YML = 'api-server/src/main/resources/application.yml';
-
-/** 거부 상태를 뜻하는 어휘 — 단일 문자열이 아니라 집합으로 둔다. */
-const DENIAL_VOCABULARY = [
-  '접근 권한',
-  '권한이 없',
-  '권한을 요청',
-  '접근할 수 없',
-  '열람 권한',
-  'Forbidden',
-];
-
-/** 역할 **부정** 술어. `isAdmin` 자체(기능 노출)는 대상이 아니다 — 거부는 부정형에서 나온다. */
+const BOARD_SERVICE = 'business-app/src/main/java/nuri/business/service/board/BoardService.java';
+const POLICY = 'business-core/src/main/java/nuri/business/security/authorization/PermissionPolicy.java';
+const HANDLER_PREFIX = 'nuri.api.controller.business.board.BoardApiController#';
+interface Binding { method: string; path: string; handler: string; access: string; permission: string | null; excludedGroups?: string[] }
+const bindings = (): Binding[] => JSON.parse(read('config/governance/authorization-policies.json')).operationBindings;
+const DENIAL_VOCABULARY = ['접근 권한', '권한이 없', '권한을 요청', '접근할 수 없', '열람 권한', 'Forbidden'];
 const ROLE_NEGATION = /![\s]*(?:isAdmin\b|isAdministrativeRole\s*\()/;
+const BOARD_OPERATIONS = [
+  ['POST', '/api/v1/boards/posts', 'createPost', 'BOARD_CREATE'],
+  ['GET', '/api/v1/boards/public-faqs', 'getPublicFaqs', 'BOARD_READ'],
+  ['GET', '/api/v1/boards/public-faqs/{pstSn}', 'getPublicFaqDetail', 'BOARD_READ'],
+  ['GET', '/api/v1/boards/search', 'searchPosts', 'BOARD_READ'],
+  ['GET', '/api/v1/boards/{bbsId}', 'getPosts', 'BOARD_READ'],
+  ['POST', '/api/v1/boards/{bbsId}/posts/with-files', 'createPostWithFiles', 'BOARD_CREATE'],
+  ['DELETE', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'deletePost', 'BOARD_DELETE'],
+  ['GET', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'getPost', 'BOARD_READ'],
+  ['PUT', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'updatePost', 'BOARD_UPDATE'],
+  ['PATCH', '/api/v1/boards/{bbsId}/posts/{pstSn}/like', 'likePost', 'BOARD_LIKE'],
+  ['PUT', '/api/v1/boards/{bbsId}/posts/{pstSn}/with-files', 'updatePostWithFiles', 'BOARD_UPDATE'],
+  ['GET', '/api/v1/boards/{bbsId}/stats', 'getStats', 'BOARD_READ'],
+] as const;
 
-/**
- * 서버가 게시판 읽기를 인증만으로 허용하는가.
- *
- * 상수로 박지 않고 매번 실측한다 — 이 값이 계약의 방향을 뒤집는다.
- */
-function boardReadIsOpenToAnyAuthenticatedUser(): boolean {
-  const controller = read(BOARD_CONTROLLER);
-  const methodAuthz = /@(?:PreAuthorize|AdminOrSystem|AdminOnly|Secured|RolesAllowed)\b/.test(controller);
+function assertBoardContract(controller: string, rows: Binding[]): void {
+  const actual = rows.filter(row => row.handler.startsWith(HANDLER_PREFIX));
+  expect(actual.map(row => [row.method, row.path, row.handler.slice(HANDLER_PREFIX.length), row.permission]).sort())
+    .toEqual([...BOARD_OPERATIONS].sort());
+  expect(actual.every(row => row.access === 'PERMISSION')).toBe(true);
+  const guards = [...controller.matchAll(/@(?:org\.springframework\.security\.access\.prepost\.)?PreAuthorize\("([^"]+)"\)/g)]
+    .map(match => match[1]);
+  expect(guards.sort()).toEqual(actual.map(row => `@permissionPolicy.allowed(authentication, '${row.handler}')`).sort());
+}
 
-  const securePaths = read(APPLICATION_YML).match(/secure-paths:\s*"([^"]*)"/);
-  expect(securePaths, 'rbac.db-auth.secure-paths 를 읽지 못했다 — 계약이 vacuous 하다').not.toBeNull();
-  const urlGated = securePaths![1].split(',').some((entry) => entry.trim().startsWith('/api/v1/boards'));
-
-  return !methodAuthz && !urlGated;
+function methodBody(source: string, method: string): string {
+  const start = source.search(new RegExp(`(?:public|protected|private)\\s+[\\w<>.]+\\s+${method}\\s*\\(`));
+  expect(start, `${method} method is missing`).toBeGreaterThanOrEqual(0);
+  return source.slice(start).split(/\n\s*(?:public|protected|private)\s/)[0];
 }
 
 /**
@@ -75,7 +60,7 @@ export function findUnenforcedDenial(source: string): string[] {
     .replace(/\/\/.*$/gm, ' ');
 
   const hits: string[] = [];
-  for (const match of stripped.matchAll(/\{([^{}]*?)\?([\s\S]{0,1600}?)\}\s*\n/g)) {
+  for (const match of stripped.matchAll(/\{([^{}]*?)\?([\s\S]{0,1600}?)\}/g)) {
     const [, condition, branch] = match;
     if (!ROLE_NEGATION.test(condition)) continue;
     const word = DENIAL_VOCABULARY.find((token) => branch.includes(token));
@@ -93,62 +78,83 @@ export function findUnenforcedDenial(source: string): string[] {
   return hits;
 }
 
-/** 게시판 읽기를 소비하는 화면들. */
 const BOARD_READ_SCREENS = [
   'frontend/src/app/admin/help/KnowledgeHubClient.tsx',
   'frontend/src/app/admin/community/board/CommunityBoardClient.tsx',
   'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx',
 ];
 
-describe('집행자 없는 인가 주장 금지', () => {
-  it('게시판 읽기의 서버 인가 상태를 실측한다', () => {
-    // 이 단언이 깨지는 것은 실패가 아니라 **재판정 신호**다 — 아래 규칙의 방향이 뒤집힌다.
-    expect(
-      boardReadIsOpenToAnyAuthenticatedUser(),
-      '게시판 읽기에 서버 인가가 생겼다. 이제 화면이 정직한 차단을 보여 줄 수 있고 보여 줘야 한다 — '
-      + '이 파일의 규칙을 "차단 금지"에서 "차단 필수"로 다시 판정하라.',
-    ).toBe(true);
+describe('현재 집행되는 인가와 화면 안내의 정합', () => {
+  it('게시판 읽기·쓰기 전체는 exact HTTP binding과 같은 PermissionPolicy handler를 사용한다', () => {
+    assertBoardContract(read(BOARD_CONTROLLER), bindings());
+    const config = read('api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java');
+    expect(config).toContain('auth.anyRequest().access(new nuri.business.security.authorization.OperationAuthorizationManager(');
+    const manager = read('business-core/src/main/java/nuri/business/security/authorization/OperationAuthorizationManager.java');
+    expect(manager).toContain('e.binding().method().equals(method) && e.pattern().matches(path)');
+    expect(manager).toContain('policy.allows(authentication.get(),e.binding())');
+    expect(manager).toContain('.orElseGet(() -> new AuthorizationDecision(false))');
+    expect(read(POLICY)).toContain('"PERMISSION".equals(binding.access()) && has(authentication, binding.permission())');
   });
 
-  it('서버가 열려 있는 동안 화면은 거부를 주장하지 않는다', () => {
-    if (!boardReadIsOpenToAnyAuthenticatedUser()) return;
+  it('그룹 이름이나 읽기 권한이 쓰기 권한을 만들지 않고 회수하면 표시 권한도 닫힌다', () => {
+    const reader = { groups: ['OPERATIONS_TEAM'], permissions: ['BOARD_READ'], authorizationVersion: 'current' };
+    expect(canPermission(reader, 'BOARD_READ')).toBe(true);
+    for (const code of ['BOARD_CREATE', 'BOARD_UPDATE', 'BOARD_DELETE', 'BOARD_READ_ALL']) expect(canPermission(reader, code)).toBe(false);
+    const revoked = { ...reader, groups: ['ROLE_ADMIN', 'ROLE_SYSTEM'], permissions: [] };
+    expect(canPermission(revoked, 'BOARD_READ')).toBe(false);
+    expect(canPermission({ permissions: ['BOARD_READ'] }, 'BOARD_READ')).toBe(false);
+    expect(canPermission(reader, 'UNKNOWN')).toBe(false);
+  });
 
-    for (const screen of BOARD_READ_SCREENS) {
-      const hits = findUnenforcedDenial(read(screen));
-      expect(
-        hits,
-        `${screen} 가 역할 부정 술어로 거부 상태를 렌더한다. 서버는 같은 데이터를 인증 사용자 `
-        + `누구에게나 준다 — 이 벽은 보호하지 않고 사용자에게 없는 권한을 요청하게 만든다.`,
-      ).toEqual([]);
+  it('비밀글·커뮤니티·소유자 축과 SYSTEM 개인정보 배제는 기능 권한과 별도로 유지한다', () => {
+    const service = read(BOARD_SERVICE);
+    const detail = methodBody(service, 'getPostDetail');
+    expect(detail).toContain('assertCommunityAccess(bbsId)');
+    expect(detail).toContain('if ("Y".equalsIgnoreCase(detail.getScrtYn()))');
+    expect(detail).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL")');
+    expect(methodBody(service, 'findOwnedPost')).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL")');
+    expect(methodBody(service, 'deletePost')).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL")');
+    const privacy = bindings().filter(row => row.handler.includes('PrivacyLogApiController#'));
+    expect(privacy.map(row => row.permission).sort()).toEqual(['PRIVACY_EXPORT', 'PRIVACY_READ']);
+    expect(privacy.every(row => row.access === 'PERMISSION' && row.excludedGroups?.join() === 'ROLE_SYSTEM')).toBe(true);
+    const policy = read(POLICY);
+    expect(policy).toContain('user.getGroups().stream().anyMatch(binding.excludedGroups()::contains)) return false');
+    expect(policy.indexOf('binding.excludedGroups()')).toBeLessThan(policy.indexOf('"PERMISSION".equals(binding.access())'));
+  });
+
+  it('기능 권한·실제 오류로 안내하며 역할 이름만으로 게시판 읽기 거부를 만들지 않는다', () => {
+    for (const screen of BOARD_READ_SCREENS) expect(findUnenforcedDenial(read(screen)), screen).toEqual([]);
+  });
+
+  it('누락된 handler 가드·잘못된 permission·공개 완화는 red다', () => {
+    const controller = read(BOARD_CONTROLLER);
+    const rows = bindings();
+    expect(() => assertBoardContract(controller, rows)).not.toThrow();
+    expect(() => assertBoardContract(controller.replace('#getPosts', '#getPost'), rows)).toThrow();
+    for (const change of [
+      (row: Binding) => { row.permission = 'BOARD_DELETE'; },
+      (row: Binding) => { row.access = 'PUBLIC'; },
+    ]) {
+      const changed = structuredClone(rows);
+      const target = changed.find(row => row.handler === `${HANDLER_PREFIX}getPosts`);
+      if (!target) throw new Error('getPosts fixture target missing');
+      change(target);
+      expect(() => assertBoardContract(controller, changed)).toThrow();
     }
   });
 
-  /**
-   * 위 검사는 현재 실제 위반이 0건이라 **탐지기가 고장 나도 통과한다**. 합성 소스로
-   * 탐지기 자체가 살아 있음을 증명한다(H5 — 의도적 위반이 red 가 되는지 확인).
-   */
-  it('탐지기가 합성 위반을 실제로 잡는다', () => {
-    const inlineTernary = `
-      export function Screen() {
-        return <div>{!isAdmin ? (<p>접근 권한 없음</p>) : (<Stream />)}</div>;
-      }
-    `;
-    expect(findUnenforcedDenial(inlineTernary)).not.toEqual([]);
-
-    const viaVariable = `
-      const isAccessRestricted = !isAdmin && (tab === 'WIKI');
-      export function Screen() {
-        return <div>{isAccessRestricted ? (<p>열람 권한이 없습니다</p>) : (<Stream />)}</div>;
-      }
-    `;
-    expect(findUnenforcedDenial(viaVariable)).not.toEqual([]);
-
-    // 거부 어휘가 없으면 위반이 아니다 — 역할로 기능을 나누는 것 자체는 정상이다.
-    const featureGate = `
-      export function Screen() {
-        return <div>{!isAdmin ? null : (<button>게시판 관리</button>)}</div>;
-      }
-    `;
-    expect(findUnenforcedDenial(featureGate)).toEqual([]);
+  it('거짓 역할 거부는 탐지하고 실제 기능 권한의 정직한 거부는 허용한다', () => {
+    expect(findUnenforcedDenial(`export function Screen() {
+      return <div>{!isAdmin ? (<p>접근 권한 없음</p>) : (<Stream />)}</div>;
+    }`)).not.toEqual([]);
+    expect(findUnenforcedDenial(`const restricted = !isAdmin && tab === 'WIKI';
+      export function Screen() { return <div>{restricted ? (<p>열람 권한이 없습니다</p>) : (<Stream />)}</div>; }
+    `)).not.toEqual([]);
+    expect(findUnenforcedDenial(`export function Screen() {
+      return <div>{!canPermission(user, 'BOARD_READ') ? (<p>접근 권한 없음</p>) : (<Stream />)}</div>;
+    }`)).toEqual([]);
+    expect(findUnenforcedDenial(`export function Screen() {
+      return <div>{!isAdmin ? null : (<button>게시판 관리</button>)}</div>;
+    }`)).toEqual([]);
   });
 });

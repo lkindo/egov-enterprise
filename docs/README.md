@@ -44,6 +44,9 @@
 | [erp-transformation-master-plan.html](02-architecture/erp-transformation-master-plan.html) | 공통 프레임워크 × ERP·공공 업무시스템 전환 6단계 마스터플랜(2026-08-23, 결정 D1~D10 포함) |
 | [work-screen-grammar-catalog.md](02-architecture/work-screen-grammar-catalog.md) | 포털형→업무형 전환의 화면 문법 SSOT — 공통 규칙 G1~G15·archetype 8종·밀도 계약(globals.css 결속) |
 | [url-state-approval-overlay-design.md](02-architecture/url-state-approval-overlay-design.md) | 비규범 `class-governed` URL-state 부류 컨테이너의 설계·운영 계약 — 4개 부류의 독립 승인 기록을 관리하며 `search-input`만 ADR-0009에 결속 |
+| [authorization-simplification-design.md](02-architecture/authorization-simplification-design.md) | 인가 핵심 3개·감사 1개, 복수 그룹·명시 기능·API·전환 전 소스 및 OCI 조사 범위 |
+| [authorization-source-inventory.json](02-architecture/authorization-source-inventory.json) | 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개; 현재 변경 파일 수가 아님 |
+| [authorization-db-evidence.json](02-architecture/authorization-db-evidence.json) | 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
 | [domain-resilience.md](02-architecture/domain-resilience.md) | 도메인 보안 및 회복탄력성 |
 | [jpa-performance-guardrail.md](02-architecture/jpa-performance-guardrail.md) | JPA N+1 쿼리 가드레일 |
 | [zero-downtime-migration.md](02-architecture/zero-downtime-migration.md) | 무중단 배포 4단계 이행 및 DDL 린터 |
@@ -82,6 +85,7 @@
 | [ADR-0013](02-architecture/decisions/ADR-0013-standard-text-length-alignment.md) | 표준 길이 24개와 SMS 수신번호 정규화를 단계별 배포·데이터 보존 검증에 연결 |
 | [ADR-0014](02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md) | 보류 6개의 프로그램 키·메뉴 FK·HHmmss·암호화 표준 정합 결정 |
 | [ADR-0015](02-architecture/decisions/ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 |
+| [ADR-0016](02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) | 복수 그룹·명시 기능 권한 및 수동 Contract 전환 |
 
 ## 03-guides — 개발 지침
 
@@ -119,6 +123,7 @@
 | [ui-quality-assisted-accessibility.md](04-operations/ui-quality-assisted-accessibility.md) | 수동 접근성 평가를 대체하지 않는 keyboard·viewport·forced-colors·reduced-motion 자동 보조 증거 |
 | [ui-ux-modernization-user-action-runbook.md](04-operations/ui-ux-modernization-user-action-runbook.md) | 자동화 완료 후 사용자·제품·운영 책임자가 남은 작업을 한 단계씩 검증·승인하는 마감 런북 |
 | [backup-and-restore-runbook.md](04-operations/backup-and-restore-runbook.md) | DB·첨부 실물·암호화 키를 한 세트로 백업/복원하는 절차와 복원 검증 4단계 (주기·RTO/RPO 는 미결정) |
+| [authorization-cutover-runbook.md](04-operations/authorization-cutover-runbook.md) | 구 writer 중지·백업·V2_98/99·검증·수동 Contract·새 앱 기동 및 복구 경계 |
 | [migration-recovery-runbook.md](04-operations/migration-recovery-runbook.md) | 대상 DB 환경 결속·스키마 허용 목록·실행 증거·부분 적재 재개·백업을 통한 전체 롤백 |
 | [improvement-validation-2026-09-09.md](04-operations/improvement-validation-2026-09-09.md) | 개선 우선순위 1~6의 검증 범위와 OCI 표준 불일치 적용 검토안 |
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |

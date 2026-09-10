@@ -29,6 +29,7 @@ public class InstitutionCodeApiController {
 
     @Operation(summary = "기관코드 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#getInstitutionCodeList')")
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeDto>>> getInstitutionCodeList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 
@@ -40,6 +41,7 @@ public class InstitutionCodeApiController {
 
     @Operation(summary = "기관코드 상세 조회")
     @GetMapping("/{code}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#getInstitutionCodeDetail')")
     public ResponseEntity<ApiResponse<InstitutionCodeDto>> getInstitutionCodeDetail(@PathVariable String code) {
         InstitutionCodeDto dto = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().instCd(code).build());
         return ResponseEntity.ok(ApiResponse.success(dto));
@@ -47,6 +49,7 @@ public class InstitutionCodeApiController {
 
     @Operation(summary = "기관코드 수신 내역 조회")
     @GetMapping("/receptions")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#getInstitutionCodeRecptnList')")
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeRecptnDto>>> getInstitutionCodeRecptnList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
 
@@ -59,6 +62,7 @@ public class InstitutionCodeApiController {
 
     @Operation(summary = "기관코드 수신 처리")
     @PostMapping("/receptions/process")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#processInstitutionCodeRecptn')")
     public ResponseEntity<ApiResponse<Void>> processInstitutionCodeRecptn(
             @Valid @RequestBody InstitutionCodeRecptnDto dto) throws Exception {
         

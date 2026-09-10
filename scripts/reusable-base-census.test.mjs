@@ -2,8 +2,32 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { analyzeRepository, validateReusableBase } from './reusable-base-census.mjs';
+import { buildIsolatedContractSql } from './generate-reusable-base-db.mjs';
+import { readFileSync } from 'node:fs';
 
 const baseline = analyzeRepository();
+
+test('base core preserves the four authorization tables and rejects legacy table resurrection', () => {
+  const manifest = structuredClone(baseline.manifest);
+  manifest.packs.core.database.tables = manifest.packs.core.database.tables.filter(table => table !== 'tb_authrt_chg_hstry');
+  manifest.packs.core.database.tables.push('tb_role_info');
+  const errors = validateReusableBase(manifest, baseline.repository).errors;
+  assert.ok(errors.some(error => error.includes("authorization core table 'tb_authrt_chg_hstry'")));
+  assert.ok(errors.some(error => error.includes("retired authorization table 'tb_role_info'")));
+});
+
+test('base generation uses actual Contract only for its disposable database and removes its rehearsal ledger', () => {
+  const contract = readFileSync(new URL('../api-server/src/main/resources/db/cutover/authorization-contract.sql', import.meta.url), 'utf8');
+  const sql = buildIsolatedContractSql('test_reusable_base_core_fixture', 'a'.repeat(64), contract);
+  assert.ok(sql.includes(contract));
+  assert.match(sql, /^BEGIN;/);
+  assert.match(sql, /current_database\(\) <> 'test_reusable_base_core_fixture'/);
+  assert.match(sql, /DROP TABLE flyway_schema_history;\s*COMMIT;$/);
+  assert.throws(() => buildIsolatedContractSql('egov', 'a'.repeat(64), contract), /disposable/);
+  assert.throws(() => buildIsolatedContractSql('test_reusable_base_x;DROP TABLE x', 'a'.repeat(64), contract), /disposable/);
+  assert.throws(() => buildIsolatedContractSql('test_reusable_base_fixture', 'unknown', contract), /catalog digest/);
+  assert.throws(() => buildIsolatedContractSql('test_reusable_base_fixture', 'a'.repeat(64), '-- Contract skipped'), /actual authorization Contract/);
+});
 
 test('current reusable-base profile contract matches the repository', () => {
   assert.deepEqual(baseline.result.errors, []);

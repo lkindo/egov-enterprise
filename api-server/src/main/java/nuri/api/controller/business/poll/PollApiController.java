@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Tag(name = "Poll", description = "온라인 설문 API")
-@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/polls")
 @RequiredArgsConstructor
@@ -30,6 +29,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 목록 조회", description = "온라인 설문 목록을 페이징하여 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#getPolls')")
     public ResponseEntity<ApiResponse<PageResponse<OnlinePollManageDto>>> getPolls(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -39,6 +39,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 상세 조회", description = "설문 상세 정보 및 항목 목록을 조회합니다.")
     @GetMapping("/{pollSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#getPoll')")
     public ResponseEntity<ApiResponse<OnlinePollManageDto>> getPoll(
             @Parameter(description = "설문 일련번호") @PathVariable Long pollSn) {
         return ResponseEntity.ok(ApiResponse.success(pollService.getPoll(pollSn)));
@@ -46,6 +47,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 등록", description = "새로운 설문을 등록합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#createPoll')")
     public ResponseEntity<ApiResponse<Void>> createPoll(@Valid @RequestBody OnlinePollManageRequest dto) {
         pollService.insertPoll(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -53,6 +55,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 수정", description = "기존 설문 정보를 수정합니다.")
     @PutMapping("/{pollSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#updatePoll')")
     public ResponseEntity<ApiResponse<Void>> updatePoll(
             @PathVariable Long pollSn,
             @Valid @RequestBody OnlinePollManageRequest dto) {
@@ -63,6 +66,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 삭제", description = "설문을 삭제합니다.")
     @DeleteMapping("/{pollSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#deletePoll')")
     public ResponseEntity<ApiResponse<Void>> deletePoll(@PathVariable Long pollSn) {
         pollService.deletePoll(pollSn);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -70,6 +74,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 참여(투표)", description = "특정 설문 항목에 투표합니다.")
     @PostMapping("/{pollSn}/vote/{pollArtclSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#vote')")
     public ResponseEntity<ApiResponse<Void>> vote(
             @PathVariable Long pollSn,
             @PathVariable Long pollArtclSn) {
@@ -84,6 +89,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 항목 목록 조회", description = "특정 설문의 항목 목록을 조회합니다.")
     @GetMapping("/{pollSn}/items")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#getPollItems')")
     public ResponseEntity<ApiResponse<List<OnlinePollArticleDto>>> getPollItems(@PathVariable Long pollSn) {
         return ResponseEntity.ok(ApiResponse.success(pollService.getPollItemList(pollSn)));
     }

@@ -63,7 +63,8 @@ describe('정책 열람 — 미등록을 본문으로 위장하지 않는다', (
 
   it('권한 벽을 일시적 장애로 위장하지 않는다', () => {
     // 403 은 기다려도 해소되지 않는다 — '잠시 후 다시 시도' 는 사용자를 새로고침 반복에 가둔다.
-    expect(page).toContain('관리자만 열람할 수 있습니다');
+    expect(page).toContain('이 정보를 열람할 권한이 필요합니다');
+    expect(page).not.toContain('관리자만 열람할 수 있습니다');
     expect(page).not.toContain('잠시 후 다시 시도');
   });
 });

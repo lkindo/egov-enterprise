@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   toast: vi.fn(),
   replace: vi.fn(),
-  user: { role: 'ROLE_ADMIN' } as { role: string } | null,
+  user: { role: 'ROLE_ADMIN', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' } as { role: string; permissions?: string[]; authorizationVersion?: string } | null,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -96,7 +96,7 @@ afterEach(() => {
 describe('메모보고 열람', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.user = { role: 'ROLE_ADMIN' };
+    mocks.user = { role: 'ROLE_ADMIN', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' };
     const page = { list: [ROW], total: 1 };
     mocks.getReceivedReports.mockResolvedValue(page);
     mocks.getMyReports.mockResolvedValue(page);
@@ -424,7 +424,7 @@ describe('메모보고 전체 탭 노출', () => {
      * /auth/me 의 role 은 authority id 원문이다. 종전 `role === 'ROLE_ADMIN' || 'ADMIN'` 은
      * SYSTEM·ROLE_SYSTEM 을 빠뜨려, 라우트는 통과하는데 화면 기능만 사라지는 비대칭을 만들었다.
      */
-    mocks.user = { role: 'ROLE_SYSTEM' };
+    mocks.user = { role: 'ROLE_SYSTEM', permissions: ['MEMO_RPT_READ_ALL'], authorizationVersion: 'v1' };
     renderClient();
 
     expect(await screen.findByRole('tab', { name: '전체' })).toBeInTheDocument();

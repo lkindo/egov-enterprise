@@ -316,8 +316,19 @@ function bulkActionContracts(controlNode) {
     const declaration = localDeclaration(controlNode.getSourceFile(), array.getText());
     array = declaration && Node.isVariableDeclaration(declaration) ? declaration.getInitializer() : null;
   }
-  if (!array || !Node.isArrayLiteralExpression(array)) return [];
-  return array.getElements().flatMap((element) => {
+  const collectObjects = (node, seen = new Set()) => {
+    if (!node || seen.has(node)) return [];
+    const nextSeen = new Set(seen).add(node);
+    if (Node.isParenthesizedExpression(node) || Node.isSpreadElement(node)) return collectObjects(node.getExpression(), nextSeen);
+    if (Node.isArrayLiteralExpression(node)) return node.getElements().flatMap((item) => collectObjects(item, nextSeen));
+    if (Node.isConditionalExpression(node)) return [...collectObjects(node.getWhenTrue(), nextSeen), ...collectObjects(node.getWhenFalse(), nextSeen)];
+    if (Node.isIdentifier(node)) {
+      const declaration = localDeclaration(controlNode.getSourceFile(), node.getText());
+      return declaration && Node.isVariableDeclaration(declaration) ? collectObjects(declaration.getInitializer(), nextSeen) : [];
+    }
+    return Node.isObjectLiteralExpression(node) ? [node] : [];
+  };
+  return [...new Set(collectObjects(array))].flatMap((element) => {
     if (!Node.isObjectLiteralExpression(element)) return [];
     const handlerInitializer = propertyInitializer(element, 'onClick');
     const labelInitializer = propertyInitializer(element, 'label');

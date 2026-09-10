@@ -28,6 +28,7 @@ public class EventApiController {
 
     @Operation(summary = "행사 목록 조회", description = "기능별 행사 정보를 페이징하여 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#getEventList')")
     public ResponseEntity<ApiResponse<PageResponse<EventInfoDto>>> getEventList(
             @RequestParam(required = false) String searchWrd,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -37,6 +38,7 @@ public class EventApiController {
 
     @Operation(summary = "행사 상세 조회", description = "행사 상세 정보를 조회합니다.")
     @GetMapping("/{evntSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#getEvent')")
     public ResponseEntity<ApiResponse<EventInfoDto>> getEvent(
             @Parameter(description = "행사 일련번호", example = "1") @PathVariable Long evntSn) {
         return ResponseEntity.ok(ApiResponse.success(eventInfoService.getEvent(evntSn)));
@@ -44,6 +46,7 @@ public class EventApiController {
 
     @Operation(summary = "행사 정보 등록", description = "새로운 행사 정보를 등록합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#createEvent')")
     public ResponseEntity<ApiResponse<Long>> createEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody EventInfoRequest request) {
@@ -52,6 +55,7 @@ public class EventApiController {
 
     @Operation(summary = "행사 정보 수정", description = "행사 정보를 수정합니다.")
     @PutMapping("/{evntSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#updateEvent')")
     public ResponseEntity<ApiResponse<Void>> updateEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long evntSn,
@@ -62,6 +66,7 @@ public class EventApiController {
 
     @Operation(summary = "행사 정보 삭제", description = "행사 정보를 삭제합니다.")
     @DeleteMapping("/{evntSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#deleteEvent')")
     public ResponseEntity<ApiResponse<Void>> deleteEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long evntSn) {

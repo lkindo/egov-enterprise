@@ -74,15 +74,10 @@ class AuthenticationBypassTest extends BaseSecurityTest {
         // principal 은 CustomUserDetails 여야 한다 — @LoginUser 아규먼트 리졸버가 그 타입을 주입하므로,
         // String principal 을 넣으면 핸들러가 null 을 받아 대조군이 엉뚱한 이유로 깨진다.
         nuri.foundation.security.service.CustomUserDetails principal =
-                nuri.foundation.security.service.CustomUserDetails.builder()
-                        .userId("testuser01")
-                        .esntlId("USR0000001")
-                        .userNm("테스트사용자")
-                        .roleName("USER")
-                        .build();
+                nuri.business.support.AuthorizationTestPrincipal.principal("testuser01", "USR0000001", "USER");
         when(jwtTokenProvider.getAuthentication(eq(VALID_TOKEN))).thenReturn(
                 new UsernamePasswordAuthenticationToken(
-                        principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+                        principal, null, principal.getAuthorities()));
     }
 
     // ────────────────────────────────────────────────────────────────────────

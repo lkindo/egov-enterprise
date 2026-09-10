@@ -38,9 +38,11 @@
           "revinfo",
           "tb_admdst_cd",
           "tb_auth_rfsh_tk",
+          "tb_authrt_chg_hstry",
+          "tb_authrt_grnt_map",
           "tb_authrt_group_info",
           "tb_authrt_info",
-          "tb_authrt_role_map",
+          "tb_authrt_user_map",
           "tb_bkmk_menu_mng_rslt",
           "tb_com_cd",
           "tb_com_clsf_cd",
@@ -54,19 +56,14 @@
           "tb_inst_cd_rcptn_log",
           "tb_login_log",
           "tb_login_policy",
-          "tb_menu_crt_dtl",
           "tb_menu_info",
           "tb_ognz_info",
           "tb_plcy_manage",
           "tb_prgrm_lst",
           "tb_privacy_log",
-          "tb_role_hierarchy",
-          "tb_role_info",
-          "tb_role_prgrm_map",
           "tb_stmp_info",
           "tb_sys_log",
           "tb_user_absn",
-          "tb_user_authrt_map",
           "tb_user_info",
           "tb_user_log",
           "tb_web_log"
@@ -275,15 +272,15 @@
     }
   ],
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository Flyway migrations through V2_90 (not OCI deployment state)",
-    "checkedAt": "2026-09-08T14:41:07.568Z",
-    "physicalTableCountExcludingFlyway": 81,
-    "physicalSequenceCount": 48,
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_99 and explicit authorization Contract (not OCI deployment state)",
+    "checkedAt": "2026-09-10T09:35:06.494Z",
+    "physicalTableCountExcludingFlyway": 78,
+    "physicalSequenceCount": 49,
     "physicalStandaloneSequenceCount": 3,
     "metaRows": {
       "meta_standard_words": 3386,
-      "meta_standard_terms": 13207,
-      "meta_standard_domains": 128
+      "meta_standard_terms": 13220,
+      "meta_standard_domains": 129
     }
   }
 }

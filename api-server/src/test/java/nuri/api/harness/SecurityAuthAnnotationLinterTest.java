@@ -1,18 +1,16 @@
 package nuri.api.harness;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nuri.business.security.authorization.PermissionPolicy;
+import nuri.business.security.authorization.PermissionCodes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.method.HandlerMethod;
@@ -25,14 +23,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -40,22 +36,29 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * 쓰기 인가 의미 정책 하네스.
+ * 기능 권한과 자원 관계 가드 정책 하네스.
  *
  * <p>종전 구현은 {@code @PreAuthorize}가 <em>존재</em>하기만 하면
  * {@code permitAll()} 같은 완화도 통과시켰고, 서비스의 수동 소유권 판정은 별도 census 밖이었다.
  * 이 구현은 {@code config/governance/authorization-policies.json}을 단일 정책표로 삼아 다음을 결속한다.
  *
  * <ol>
- *   <li>Spring MVC가 실제 등록한 모든 POST/PUT/PATCH/DELETE 경로, HTTP 메서드, handler</li>
+ *   <li>Spring MVC가 실제 등록한 모든 경로·HTTP 메서드·handler와 명시적 operation binding</li>
  *   <li>합성 애노테이션까지 펼친 정확한 {@code @PreAuthorize} SpEL과 URL 필터 게이트</li>
- *   <li>{@code STRICT_OWNER}, {@code OWNER_OR_ADMIN}, {@code ADMIN_OR_SYSTEM} 등 도메인 의미</li>
+ *   <li>기능 permission과 {@code STRICT_OWNER} 등 기존 자원 관계·개인정보 제약</li>
  *   <li>{@code SecurityUtil} 호출 전수와 Note/Memo/File 등 손수 작성한 guard의 메서드 내부 fingerprint</li>
  * </ol>
  *
- * <p><b>정직한 한계</b>: 엔드포인트/애노테이션은 Spring 런타임 리플렉션으로 exact-match한다. 서비스는
+ * <p><b>정직한 한계</b>: MVC 엔드포인트/애노테이션은 Spring 런타임 리플렉션으로 exact-match한다.
+ * EXTERNAL Actuator/SockJS 정책은 source/runtime registry와 HTTP 경계 배선을 검사하며, 프레임워크가
+ * 특정 환경에서 실제 노출하는 모든 transport URL의 런타임 census를 주장하지 않는다. 서비스는
  * 별도 Java AST 라이브러리를 추가하지 않고 주석을 제거한 소스의 메서드 body를 lexical 분석하므로,
  * 필요한 guard 문장이 같은 메서드에 남는 것은 증명하지만 모든 제어흐름에서 도달함까지 증명하지는 않는다.
  * 이 한계는 registry에도 기록하며, 실제 guard 완화/삭제 mutation이 red가 되는 것으로 유효성을 보완한다.
@@ -73,113 +76,11 @@ class SecurityAuthAnnotationLinterTest {
             "api-server/src/main/resources/db/migration/V2_84__open_survey_alias_to_authenticated.sql";
     private static final String ROLE_HIERARCHY_SEED_FILE =
             "api-server/src/main/resources/db/migration/V2_3__seed_role_hierarchy.sql";
-    private static final String MAIN_APPLICATION_FILE = "api-server/src/main/resources/application.yml";
     private static final String HELPER_ACTUAL_OUT = "build/harness/authorization-helper-census.actual.txt";
     private static final String MANUAL_ACTUAL_OUT = "build/harness/authorization-manual-deny-census.actual.txt";
     private static final String READ_SURFACE_ACTUAL_OUT = "build/harness/authorization-read-surface.actual.txt";
 
-    /**
-     * 읽기 인가 표면 동결 해시(2026-08-23 실측: endpoint 169건).
-     *
-     * <p>분포: RBAC_ADMIN_OR_SYSTEM 96 · DEFAULT_AUTHENTICATED 62 · RBAC_ALIAS_ADMIN_OR_SYSTEM 4 ·
-     * PUBLIC_FILTER 6({@code auth/me}, {@code health}, {@code menus/head}, {@code menus/left},
-     * {@code users/check-id}, {@code public/debug/error}). 마지막 항목은 {@code @Profile("!prod")}
-     * 라 운영에는 등재되지 않는다.
-     *
-     * <p>이 테스트는 {@code @ActiveProfiles("test")} 컨텍스트를 읽으므로 census 는 prod 등록 집합과
-     * 정확히 같지 않다. 그래도 회차 간에는 결정적이라 <b>표면의 변화</b>를 잡는 목적에는 충분하다.
-     *
-     * <p>갱신 시 사유를 커밋 메시지에 남긴다. 특히 PUBLIC_FILTER 가 늘거나 {@code @PreAuthorize} 가
-     * 사라지는 방향이면 그것은 인가 <b>완화</b>이므로 별도 승인 없이 갱신하지 않는다.
-     */
-    private static final String READ_SURFACE_SHA256 =
-            // [2026-08-20 V2_84 갱신] 설문 별칭 GET 6행의 gate 가 RBAC_ALIAS_ADMIN_OR_SYSTEM →
-            // DEFAULT_AUTHENTICATED 로 바뀌고 메서드 SpEL 이 부여됐다(목록·상세·문항·stats 는
-            // isAuthenticated — 제품 결정에 따른 의도된 개방 / 템플릿 2행은 hasAnyRole 로 관리 유지).
-            // [2026-08-22 공개 FAQ 경계 갱신] 고정 FAQ 게시판의 active/public 목록·상세 GET 2행을
-            // DEFAULT_AUTHENTICATED 로 추가했다. 비밀글·비활성 글은 서버 조회 경계에서 제외하며,
-            // 관리자 경로 공개 노출 하드 불변식은 계속 그린이다. endpoint 수 166 -> 168.
-            // [2026-08-23 로그인 로그 export 신설(D4)] GET /api/v1/admin/system/logs/login/export.xlsx
-            // 1행 추가 — RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM'). 기존 목록 API 와 같은
-            // ADMIN/SYSTEM 축에 @AdminOrSystem 메서드 인가를 더한 것이라 완화가 아니라 강화다.
-            // endpoint 수 168 -> 169.
-            // [2026-08-26 로그 4종 export 신설] GET .../logs/{system,user,web,privacy}/export.xlsx
-            // 4행 추가 — 모두 RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM') 로, 각 목록 API 와
-            // **같은 인가 축**에 @AdminOrSystem 메서드 인가를 더한 것이라 완화가 아니라 강화다
-            // (AGENTS H3 — 도메인 의미 보존). 로그인 로그 export 와 같은 규칙을 공유한다.
-            // [2026-08-26 첨부 정합성 진단 신설] GET /api/v1/admin/files/integrity 1행 추가 —
-            // RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM'). 응답에 저장 경로가 들어가므로
-            // 첨부 목록 조회와 **같은 ADMIN/SYSTEM 축**으로 제한했다(완화 아님, H3). endpoint 수
-            // 173 -> 174.
-            // [2026-08-27 개인정보 로그 SYSTEM 배제] GET .../logs/privacy 와 .../logs/privacy/export.xlsx
-            // 2행의 메서드 SpEL 이 hasRole('ADMIN') / hasAnyRole('ADMIN','SYSTEM') →
-            // hasRole('ADMIN') and !hasRole('SYSTEM') 로 바뀌었다. **인가 축소이며 완화가 아니다.**
-            // 배경: 이 저장소는 DB 역할 계층 ROLE_SYSTEM > ROLE_ADMIN 을 메서드 인가에도 주입하므로
-            // (RoleHierarchyConfig#methodSecurityExpressionHandler) hasRole('ADMIN') 이 SYSTEM 도
-            // 통과시켜, 컨트롤러 javadoc 이 명시한 "SYSTEM 제외"(2026-08-05 사용자 결정)가 실제로는
-            // 집행되지 않고 있었다. PrivacyLogSystemRoleExclusionTest 가 계층이 살아 있는 상태에서
-            // 두 경로의 SYSTEM 403 을 고정하며, 종전 애노테이션으로 되돌리면 red 가 되는 것을 확인했다.
-            // endpoint 수 174 로 불변(행 수 변화 없음, gate 는 URL 축이라 RBAC_ADMIN_OR_SYSTEM 유지).
-            // [2026-08-27 로그인 정책 인가 이중화] LoginPolicyApiController 의 GET 2행에 메서드 SpEL
-            // hasAnyRole('ADMIN','SYSTEM') 이 부여됐다. **완화가 아니라 강화다** — 종전에는 메서드 인가가
-            // 0건이고 URL 게이트(ADMIN_ALL) 한 겹뿐이라, 그 매핑 한 줄이 빠지면 접속 IP 제한·허용 시간대·
-            // OTP 설정이 함께 열리는 단일 실패점이었다. ADMIN_ALL 은 운영 시드에서 ROLE_ADMIN·ROLE_SYSTEM
-            // 두 롤에 매핑돼 있어 실효 접근 집합은 그대로다(동작 무변경). endpoint 수 174 불변.
-            // [2026-09-02 게시글 통합 검색 신설] GET /api/v1/boards/search 1행 추가 —
-            // DEFAULT_AUTHENTICATED|isAuthenticated(). 같은 컨트롤러의 다른 조회와 동일한 인가 축이며,
-            // **새 노출면을 만들지 않는다**: 서비스가 게시판 목록 조회와 같은 술어
-            // (BoardPredicate.searchBoard + 활성 게시판 조인 + 비밀글 가시성)를 그대로 재사용하므로
-            // 이 API 로 보이는 글은 모두 해당 게시판 목록에서 이미 보이는 글이다(H3 인가 의미 보존).
-            // 종전에는 이 엔드포인트가 없어 /search 화면의 게시글 탭이 항상 빈 결과였다.
-            // 변경이 이 한 줄뿐임을 실측으로 확인했다 — 이 행을 제거하면 직전 해시
-            // b88c86ca… 가 정확히 재현된다. endpoint 수 174 -> 175.
-            // [2026-09-02 SMS 발송 가능 상태 조회 신설] GET /api/v1/admin/operation/sms/delivery-status
-            // 1행 추가 — RBAC_ADMIN_OR_SYSTEM|-. 같은 컨트롤러의 다른 조회와 **동일한 URL 게이트**이며
-            // (컨트롤러 전체가 /api/v1/admin/operation/sms 아래), 응답은 게이트웨이 연결 여부와
-            // sender 구현체 단순 클래스명뿐이라 개인정보·자격이 실리지 않는다.
-            // 신설 이유: 발송 이력·수신자 결과는 **보낸 뒤에야** 알 수 있는데, 게이트웨이가 없는
-            // 배포에서는 모든 결과가 실패로 정해져 있다. 그 사실을 문안 작성 전에 알리기 위한
-            // 조회 창구다(종전 배너는 하드코딩이라 파생 제품에서 반대로 거짓말했다).
-            // 변경이 이 한 줄뿐임을 실측으로 확인했다 — 이 행을 제거하면 직전 해시 cd681f2a… 가
-            // 정확히 재현된다. endpoint 수 175 -> 176.
-            // [2026-09-05 결재 도메인 완결] GET /api/v1/approvals/{processed,task-types} 2행 추가 —
-            // 둘 다 DEFAULT_AUTHENTICATED|isAuthenticated() 로 같은 컨트롤러의 기존 GET(pending·my)과
-            // **같은 인가 축**이다. processed 는 결재자 본인 esntlId 로 좁힌 조회이고 task-types 는
-            // 공통코드 COM075 의 사용 중 상세코드(관리 데이터 아님)라 완화가 아니다(H3). endpoint 수 176 -> 178.
-            // [2026-09-06 DEC-OPS-041 투표 컨트롤러 통합] GET /api/v1/admin/system/polls{,/{pollSn}} 2행 **제거** —
-            // OnlinePollApiController 는 PollApiController(/api/v1/polls)의 부분집합으로 같은 OnlinePollService 를
-            // 감쌌다. 남는 /api/v1/polls 의 읽기는 종전과 같은 DEFAULT_AUTHENTICATED|isAuthenticated() 이고, 지운
-            // 2행은 RBAC_ADMIN_OR_SYSTEM 경로였으므로 공개 전환·완화가 아니라 표면 축소다(H3). 관리 화면은
-            // /polls 를 쓰며 등록·수정·삭제는 서비스 가드(assertAdmin)가 강제한다. endpoint 수 178 -> 176.
-            // [2026-09-06 DEC-OPS-043 커뮤니티 멤버십] GET 2행 추가 — endpoint 수 176 -> 178.
-            //   /api/v1/admin/content/community/{cmntySn}/members 는 RBAC_ADMIN_OR_SYSTEM 위에
-            //   hasAnyRole('ADMIN','SYSTEM') 메서드 인가를 더한 것(같은 컨트롤러의 다른 GET 은 URL 게이트만) —
-            //   완화가 아니라 강화다. /api/v1/communities/{cmntySn}/membership 은 다른 사용자용 GET 과 같은
-            //   DEFAULT_AUTHENTICATED|isAuthenticated() 이며 principal 자신의 행만 돌려준다(H3).
-            // [2026-09-06 DEC-OPS-044 게시글 API 표면 정리] GET 2행 **제거** — endpoint 수 178 -> 176.
-            //   GET /api/v1/bbs/{bbsId} 와 /api/v1/bbs/{bbsId}/posts/{pstSn} 은 /api/v1/boards 의 같은
-            //   BoardService 메서드(getBoardPosts·getPostDetail)를 부르는 순수 복제였고 프런트 소비자가
-            //   0건이었다. 남는 /api/v1/boards 의 읽기는 종전과 같은 DEFAULT_AUTHENTICATED|isAuthenticated()
-            //   이므로 공개 전환·완화가 아니라 표면 축소다(H3). 옮겨 온 multipart 쓰기 2본은 읽기가 아니라
-            //   이 census 에 잡히지 않는다.
-            // [2026-09-08 PD-SRVY-001 설문 응답자 표면 제거] GET 2행 **제거** — endpoint 수 176 -> 174.
-            //   /api/v1/admin/system/surveys/{srvySn}/respondents 목록·상세다. tb_srvy_rspdnt 는 성명·성별·
-            //   생년월일·전화번호를 담는데 응답 결과(tb_srvy_rslt)와 ID 로 연결되지 않고(결과는 rspns_nm 문자열만)
-            //   행을 만드는 코드 경로가 저장소에 없어 **화면이 항상 빈 목록**이었다. 사용자 결정(PD-SRVY-001)으로
-            //   API 5본·화면·서비스·DTO 를 함께 걷었다. 공개 전환이 아니라 개인정보 표면 축소다(H3).
-            //   엔티티·리포지토리·테이블은 남는다(설문 템플릿 변경 가드가 existsBySrvySn 을 쓴다).
-            // [2026-09-08 PD-MYPG-001 마이페이지 콘텐츠 표면 제거] GET 1행 **제거** — endpoint 수 174 -> 173.
-            //   /api/v1/admin/system/workspace/mypage/contents 목록이다. tb_indv_pg_conts 는 시드도 생성
-            //   경로도 없고 무엇보다 **그 값을 읽는 화면이 없다**(대시보드 위젯 SPI 구현 2개가 쓰지 않는다).
-            //   사용자 결정으로 소비처를 먼저 정하기로 하고 API·화면·서비스·DTO·엔티티를 걷었다.
-            //   공개 전환이 아니라 표면 축소다(H3). 테이블은 남으며 마이그레이션 검증도 그대로다.
-            // [2026-09-08 PD-CMTY-001 커뮤니티 귀속 게시판] GET 1행 추가 — endpoint 수 173 -> 174.
-            //   /api/v1/communities/{cmntySn}/boards 다. URL 축은 종전 커뮤니티 사용자 API 와 같은
-            //   DEFAULT_AUTHENTICATED 이고, **회원 판정은 서비스 가드**가 한다
-            //   (BoardMasterService#assertCommunityMember — manualGuardPolicies 에 등재).
-            //   즉 인증만으로 열리는 표면이 아니라 승인된 회원·관리자만 목록을 받는다(H3).
-            "59f242c20b6457d9aeefc0f381ad4f64e76dc522b81b10f110d6b6eaf5647b92";
-
+    // 2026-09-11: read surface hash is replaced by the full reviewed operationBindings exact set.
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;
 
@@ -210,20 +111,134 @@ class SecurityAuthAnnotationLinterTest {
             "PARTICIPANT_OR_ADMIN",
             "REACHABILITY_WITH_PRIVACY");
     private static final Pattern GUARD_CALL = Pattern.compile(
-            "SecurityUtil\\s*\\.\\s*(assertOwnerByEsntlId|assertOwnerOrAdminByEsntlId|assertOwnerOrAdmin|assertAdmin)\\s*\\(");
+            "SecurityUtil\\s*\\.\\s*(assertOwnerByEsntlId|assertOwnerOrAdminByEsntlId|assertOwnerOrAdmin|assertAdmin|assertPermission|assertOwnerOrPermissionByEsntlId|assertOwnerOrPermission)\\s*\\(");
     private static final Pattern MANUAL_DENY = Pattern.compile(
             "CommonErrorCode\\s*\\.\\s*(?:ACCESS_DENIED|HANDLE_ACCESS_DENIED)");
 
     @Autowired
     private WebApplicationContext context;
 
-    @Value("${security.whitelist:#{T(java.util.Collections).emptyList()}}")
-    private List<String> publicPaths;
+    @Autowired
+    private PermissionPolicy permissionPolicy;
+    private Map<String, List<Path>> guardSourcePaths;
 
-    @Value("${rbac.db-auth.secure-paths:#{T(java.util.Collections).emptyList()}}")
-    private List<String> securePaths;
+    @Test
+    @DisplayName("전체 HTTP 바인딩은 실행 중 handler·permission catalog·메서드 인가와 정확히 일치")
+    void auditAllOperationBindings() throws Exception {
+        PolicyRegistry registry = loadRegistry();
+        validateRegistryShape(registry);
+        List<String> violations = operationViolations(registry,
+                discoverEndpoints(Set.of(RequestMethod.values())));
+        Set<String> source = new TreeSet<>();
+        registry.operationBindings().forEach(row -> source.add(row.signature()));
+        Set<String> runtime = new TreeSet<>();
+        permissionPolicy.bindings().forEach(row -> runtime.add(new OperationBinding(row.method(), row.path(),
+                row.handler(), row.access(), row.permission(), row.excludedGroups()).signature()));
+        compareExact("source/runtime operation bindings", source, runtime, violations);
+        var catalog = new ObjectMapper().readTree(resolveFromRepoRoot(registry.permissionCatalog()).toFile());
+        Set<String> catalogCodes = new TreeSet<>();
+        for (var entry : catalog.path("permissions")) {
+            if (!catalogCodes.add(entry.path("code").asText())) {
+                violations.add("permission catalog 중복 코드: " + entry.path("code").asText());
+            }
+        }
+        compareExact("generated/source permission codes", catalogCodes, PermissionCodes.ALL, violations);
+        failIfAny("ALL OPERATION AUTHORIZATION BINDINGS", violations);
+    }
 
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+    @Test
+    @DisplayName("의도적 handler 누락·permitAll 완화·미등록 경로가 comparator에서 red")
+    void operationComparatorRejectsMissingWeakenedOrUnknownEndpoints() throws Exception {
+        PolicyRegistry registry = loadRegistry();
+        Map<String, ActualEndpoint> original = discoverEndpoints(Set.of(RequestMethod.values()));
+        assertTrue(operationViolations(registry, original).isEmpty(), "정상 runtime 집합이 먼저 green이어야 함");
+        ActualEndpoint target = original.values().stream()
+                .filter(row -> row.path().startsWith("/api/v1/admin/")).findFirst().orElseThrow();
+        Map<String, ActualEndpoint> missing = new LinkedHashMap<>(original);
+        missing.remove(target.key());
+        assertFalse(operationViolations(registry, missing).isEmpty(), "handler 누락이 green이 될 수 없음");
+        Map<String, ActualEndpoint> weakened = new LinkedHashMap<>(original);
+        weakened.put(target.key(), new ActualEndpoint(target.method(), target.path(), target.handler(),
+                "permitAll()", target.routeGate()));
+        assertFalse(operationViolations(registry, weakened).isEmpty(), "permitAll 완화 탐지");
+        Map<String, ActualEndpoint> unknown = new LinkedHashMap<>(original);
+        unknown.put("GET /api/v1/unregistered-probe", new ActualEndpoint("GET", "/api/v1/unregistered-probe",
+                target.handler(), target.methodSecurity(), target.routeGate()));
+        assertFalse(operationViolations(registry, unknown).isEmpty(), "unknown endpoint fail-closed");
+
+        List<OperationBinding> unknownPermission = new ArrayList<>(registry.operationBindings());
+        int index = java.util.stream.IntStream.range(0, unknownPermission.size())
+                .filter(i -> "PERMISSION".equals(unknownPermission.get(i).access())).findFirst().orElseThrow();
+        OperationBinding bound = unknownPermission.get(index);
+        unknownPermission.set(index, new OperationBinding(bound.method(), bound.path(), bound.handler(),
+                bound.access(), "NOT_IN_CATALOG", bound.excludedGroups()));
+        assertFalse(operationViolations(registry.withOperations(unknownPermission), original).isEmpty(),
+                "존재하지 않는 permission 코드 fail-closed");
+
+        List<OperationBinding> privacyExpanded = registry.operationBindings().stream()
+                .map(row -> row.handler().contains("PrivacyLogApiController#")
+                        ? new OperationBinding(row.method(), row.path(), row.handler(), row.access(), row.permission(), List.of())
+                        : row).toList();
+        assertFalse(operationViolations(registry.withOperations(privacyExpanded), original).isEmpty(),
+                "SYSTEM 개인정보 배제 조건 삭제 탐지");
+    }
+
+    private List<String> operationViolations(PolicyRegistry registry, Map<String, ActualEndpoint> actual) {
+        List<String> violations = new ArrayList<>();
+        Map<String, OperationBinding> expected = operationMap(registry, violations);
+        if (expected.size() < 350 || actual.size() < 350) {
+            violations.add("전체 operation endpoint 하한(350) 미달");
+        }
+        actual.values().forEach(endpoint -> validateOperationMatch(expected.get(endpoint.key()), endpoint, violations));
+        expected.values().stream().filter(row -> !row.external() && !actual.containsKey(row.key()))
+                .forEach(row -> violations.add("stale operation binding: " + row.key()));
+        return violations;
+    }
+
+    private static Map<String, OperationBinding> operationMap(PolicyRegistry registry, List<String> violations) {
+        Map<String, OperationBinding> expected = new LinkedHashMap<>();
+        for (OperationBinding row : registry.operationBindings()) {
+            if (expected.put(row.key(), row) != null) violations.add("중복 operation endpoint: " + row.key());
+            if (!Set.of("PUBLIC", "AUTHENTICATED", "PERMISSION", "DENY").contains(row.access())) {
+                violations.add("unknown operation access: " + row.key());
+            }
+            if ("PERMISSION".equals(row.access())
+                    ? row.permission() == null || !PermissionCodes.ALL.contains(row.permission())
+                    : row.permission() != null) {
+                violations.add("operation permission catalog drift: " + row.key());
+            }
+            if (row.path().startsWith("/api/v1/admin/")
+                    && !Set.of("PERMISSION", "DENY").contains(row.access())) {
+                violations.add("관리 기능을 명시적 permission 없이 공개: " + row.key());
+            }
+            if (row.handler().contains("PrivacyLogApiController#")
+                    && (row.excludedGroups() == null || !row.excludedGroups().equals(List.of("ROLE_SYSTEM")))) {
+                violations.add("개인정보 SYSTEM 배제 drift: " + row.key());
+            }
+            if (row.external() && !(row.path().equals("/actuator") || row.path().startsWith("/actuator/")
+                    || row.path().equals("/ws") || row.path().startsWith("/ws/"))) {
+                violations.add("MVC 경로를 EXTERNAL로 숨김: " + row.key());
+            }
+        }
+        return expected;
+    }
+
+    private static void validateOperationMatch(OperationBinding binding, ActualEndpoint endpoint,
+                                               List<String> violations) {
+        if (binding == null) {
+            violations.add("미등록 operation endpoint: " + endpoint.key());
+        } else {
+            if (!binding.handler().equals(endpoint.handler())) violations.add("operation handler drift: " + endpoint.key());
+            if (!methodGuard(binding.handler()).equals(endpoint.methodSecurity())) {
+                violations.add("operation method-security drift: " + endpoint.key() + " => " + endpoint.methodSecurity());
+            }
+            if (!binding.routeGate().equals(endpoint.routeGate())) violations.add("operation gate drift: " + endpoint.key());
+        }
+    }
+
+    private static String methodGuard(String handler) {
+        return "@permissionPolicy.allowed(authentication, '" + handler + "')";
+    }
 
     @Test
     @DisplayName("쓰기 endpoint/method/handler/SpEL/정책 의미 matrix exact-match")
@@ -272,89 +287,37 @@ class SecurityAuthAnnotationLinterTest {
         }
 
         validateEndpointSemantics(registry, violations);
-        validateRbacSourceSemantics(violations);
+        validateCurrentAndHistoricalAuthorizationSources(violations);
         failIfAny("WRITE AUTHORIZATION POLICY MATRIX", violations);
     }
 
-    /**
-     * 읽기(GET) endpoint 인가 표면 동결 census.
-     *
-     * <p>[왜 필요한가] 이 린터가 재작성되면서 판정 대상이 {@link #WRITE_METHODS} 로 좁혀졌다. 종전 구현은
-     * HTTP method 구분 없이 {@code nuri.api.controller} 의 <b>모든 handler</b> 를 순회하며 인가 선언을
-     * 강제했으므로, 좁히는 과정에서 <b>읽기 축이 통째로 사라졌고 이를 넘겨받은 게이트가 없었다.</b>
-     * 그 상태에서는 인가 선언 없는 GET 을 새로 추가해도 어떤 게이트도 반응하지 않는다.
-     *
-     * <p>[왜 census 인가] 읽기 endpoint 전량에 즉시 {@code @PreAuthorize} 를 요구하면 정당하게
-     * '인증만 요구' 인 조회까지 막게 되고, 그 대량 변경은 이 게이트의 목적(회귀 차단)과 무관하다.
-     * 대신 <b>인가 표면 자체를 동결</b>한다 — endpoint 가 늘거나 줄거나, 어떤 GET 의 route gate 가
-     * 바뀌거나, {@code @PreAuthorize} 가 붙거나 떨어지면 census 해시가 달라져 red 가 된다.
-     * 즉 막는 것이 아니라 <b>조용히 바뀔 수 없게</b> 만든다.
-     *
-     * <p>[함께 거는 하드 불변식] 관리자 경로({@code /api/v1/admin/**})의 GET 이 공개 필터로 빠지는 것은
-     * 어떤 경우에도 사고다. 이것만은 census 와 무관하게 즉시 실패시킨다.
-     */
+    /** Every current read route is bound to an explicit reviewed operation and method guard. */
     @Test
-    @DisplayName("읽기 endpoint 인가 표면 동결 census + 관리자 경로 공개 노출 차단")
+    @DisplayName("읽기 endpoint exact policy + 관리자 공개 노출 차단")
     void auditReadEndpointAuthorizationSurface() throws Exception {
-        Map<String, String> census = new TreeMap<>();
+        PolicyRegistry registry = loadRegistry();
         List<String> violations = new ArrayList<>();
-
-        // ⚠ 이 클래스가 주입받는 publicPaths 는 **test 프로파일** 값이다 —
-        //   api-server/src/test/resources/application.yml 이 main 을 shadow 하기 때문이다.
-        //   census 의 drift 판정에는 그것으로 충분하지만, '운영에서 관리자 경로가 공개로 열렸는가' 는
-        //   운영 설정으로 판정해야 한다. 실제로 main 의 whitelist 에 /api/v1/admin/system/** 을 넣어
-        //   보면 test 값만 보는 판정은 green 이었다(2026-08-19 실측). 그래서 운영 파일을 직접 읽는다.
-        List<String> productionPublicPaths = loadProductionWhitelist();
-        if (productionPublicPaths.isEmpty()) {
-            violations.add("운영 whitelist 를 읽지 못했습니다 — " + MAIN_APPLICATION_FILE
-                    + " 의 security.whitelist 파싱 실패(빈 목록을 통과로 처리하면 이 축이 vacuous 해집니다)");
+        Map<String, ActualEndpoint> actual = discoverEndpoints(Set.of(RequestMethod.GET));
+        Map<String, OperationBinding> expected = operationMap(registry, violations);
+        if (actual.size() < READ_ENDPOINT_FLOOR) {
+            violations.add("읽기 endpoint 스캔 하한 미달: " + actual.size());
         }
-
-        RequestMappingHandlerMapping mappings = context.getBean(
-                "requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
-        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : mappings.getHandlerMethods().entrySet()) {
-            HandlerMethod handler = entry.getValue();
-            if (!handler.getBeanType().getPackageName().startsWith("nuri.api.controller")) {
-                continue;
+        Set<String> census = new TreeSet<>();
+        for (ActualEndpoint endpoint : actual.values()) {
+            OperationBinding binding = expected.get(endpoint.key());
+            validateOperationMatch(binding, endpoint, violations);
+            if (endpoint.path().startsWith("/api/v1/admin/")
+                    && binding != null && !Set.of("PERMISSION", "DENY").contains(binding.access())) {
+                violations.add("관리자 GET 기능 권한 경계가 열림: " + endpoint.key());
             }
-            Set<RequestMethod> declared = entry.getKey().getMethodsCondition().getMethods();
-            // method 미선언 매핑은 GET 을 포함한 전 method 를 받는다. 읽기 축에서 빠뜨리면 안 된다.
-            if (!declared.isEmpty() && !declared.contains(RequestMethod.GET)) {
-                continue;
-            }
-            for (String path : entry.getKey().getPatternValues()) {
-                String gate = routeGate(path);
-                String preAuthorize = mergedPreAuthorizeValue(handler);
-                if (path.startsWith("/api/v1/admin/") && matchesAny(productionPublicPaths, path)) {
-                    violations.add("관리자 경로 GET 이 운영 whitelist 로 공개 노출됨: " + path
-                            + " (" + handler.getBeanType().getSimpleName()
-                            + "#" + handler.getMethod().getName() + ")");
-                }
-                census.put("GET " + path, gate + "|" + (preAuthorize.isEmpty() ? "-" : preAuthorize));
+            census.add(endpoint.describe());
+        }
+        for (OperationBinding binding : expected.values()) {
+            if (!binding.external() && "GET".equals(binding.method()) && !actual.containsKey(binding.key())) {
+                violations.add("삭제된 읽기 endpoint 정책: " + binding.key());
             }
         }
-
-        List<String> lines = census.entrySet().stream()
-                .map(e -> e.getKey() + " => " + e.getValue())
-                .toList();
-        writeActual(READ_SURFACE_ACTUAL_OUT, new TreeSet<>(lines));
-
-        // vacuous 통과 차단 — 스캔이 조용히 0 에 수렴하면 이 게이트는 없는 것과 같다.
-        if (census.size() < READ_ENDPOINT_FLOOR) {
-            violations.add("읽기 endpoint 스캔 하한 미달: " + census.size() + " < " + READ_ENDPOINT_FLOOR
-                    + " — 스캔 경로 파손 의심");
-        }
-
-        String actualHash = sha256Hex(String.join("\n", lines));
-        if (!READ_SURFACE_SHA256.equals(actualHash)) {
-            violations.add("읽기 인가 표면이 바뀌었습니다: endpoints=" + census.size()
-                    + ", sha256=" + actualHash
-                    + " (매니페스트=" + READ_SURFACE_SHA256 + ")."
-                    + " 산출물 " + READ_SURFACE_ACTUAL_OUT + " 을 diff 해 무엇이 바뀌었는지 확인하고,"
-                    + " 정당한 변경이면 사유와 함께 상수를 갱신하십시오."
-                    + " 인가를 약화하는 변경(공개 전환·@PreAuthorize 제거)인지 먼저 자문할 것.");
-        }
-
+        writeActual(READ_SURFACE_ACTUAL_OUT, census);
         failIfAny("READ ENDPOINT AUTHORIZATION SURFACE", violations);
     }
 
@@ -417,26 +380,31 @@ class SecurityAuthAnnotationLinterTest {
     }
 
     private Map<String, ActualEndpoint> discoverWriteEndpoints() {
+        return discoverEndpoints(WRITE_METHODS);
+    }
+
+    private Map<String, ActualEndpoint> discoverEndpoints(Set<RequestMethod> requestedMethods) {
         RequestMappingHandlerMapping mappings = context.getBean(
                 "requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
         Map<String, ActualEndpoint> actual = new LinkedHashMap<>();
 
         mappings.getHandlerMethods().entrySet().stream()
                 .sorted(Comparator.comparing(entry -> entry.getValue().toString()))
-                .forEach(entry -> collectEndpoint(entry, actual));
+                .forEach(entry -> collectEndpoint(entry, requestedMethods, actual));
         return actual;
     }
 
     private void collectEndpoint(Map.Entry<RequestMappingInfo, HandlerMethod> entry,
+            Set<RequestMethod> requestedMethods,
             Map<String, ActualEndpoint> sink) {
         HandlerMethod handler = entry.getValue();
         if (!handler.getBeanType().getPackageName().startsWith("nuri.api.controller")) {
             return;
         }
         Set<RequestMethod> declaredMethods = entry.getKey().getMethodsCondition().getMethods();
-        Set<RequestMethod> effectiveMethods = declaredMethods.isEmpty() ? WRITE_METHODS : declaredMethods;
+        Set<RequestMethod> effectiveMethods = declaredMethods.isEmpty() ? Set.of(RequestMethod.values()) : declaredMethods;
         for (RequestMethod method : effectiveMethods) {
-            if (!WRITE_METHODS.contains(method)) {
+            if (!requestedMethods.contains(method)) {
                 continue;
             }
             for (String path : entry.getKey().getPatternValues()) {
@@ -445,7 +413,7 @@ class SecurityAuthAnnotationLinterTest {
                         path,
                         handler.getBeanType().getName() + "#" + handler.getMethod().getName(),
                         mergedPreAuthorizeValue(handler),
-                        routeGate(path));
+                        routeGate(method.name(), path));
                 ActualEndpoint previous = sink.put(endpoint.key(), endpoint);
                 if (previous != null) {
                     fail("동일 HTTP method+path가 여러 handler에 등록됨: " + previous.describe()
@@ -464,20 +432,12 @@ class SecurityAuthAnnotationLinterTest {
         return type != null ? type.value() : "";
     }
 
-    private String routeGate(String path) {
-        if (matchesAny(publicPaths, path)) {
-            return "PUBLIC_FILTER";
-        }
-        if (matchesAny(securePaths, path)) {
-            return path.startsWith("/api/v1/admin/")
-                    ? "RBAC_ADMIN_OR_SYSTEM"
-                    : "RBAC_ALIAS_ADMIN_OR_SYSTEM";
-        }
-        return "DEFAULT_AUTHENTICATED";
-    }
-
-    private boolean matchesAny(List<String> patterns, String path) {
-        return patterns != null && patterns.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+    private String routeGate(String method, String path) {
+        return permissionPolicy.bindings().stream()
+                .filter(row -> row.method().equals(method) && row.path().equals(path))
+                .map(row -> new OperationBinding(row.method(), row.path(), row.handler(), row.access(),
+                        row.permission(), row.excludedGroups()).routeGate())
+                .findFirst().orElse("UNREGISTERED_DENY");
     }
 
     private void validateRegistryShape(PolicyRegistry registry) {
@@ -494,6 +454,12 @@ class SecurityAuthAnnotationLinterTest {
         }
         if (registry.endpointPolicies().size() < 180) {
             violations.add("endpoint registry 하한 미달: " + registry.endpointPolicies().size());
+        }
+        if (registry.operationBindings() == null || registry.operationBindings().size() < 350) {
+            violations.add("operation binding registry 하한 미달");
+        }
+        if (!"config/governance/permission-catalog.json".equals(registry.permissionCatalog())) {
+            violations.add("operation catalog 원본 경로 drift");
         }
         if (registry.serviceGuardPolicies().size() < 40) {
             violations.add("SecurityUtil guard registry 하한 미달: " + registry.serviceGuardPolicies().size());
@@ -540,16 +506,16 @@ class SecurityAuthAnnotationLinterTest {
             }
             validateHandlerBinding(endpoint, violations);
             if ("ADMIN_ROLE_WITH_HIERARCHY".equals(endpoint.policy())
-                    && !"hasRole('ADMIN')".equals(endpoint.methodSecurity())) {
-                violations.add(endpoint.key() + " ADMIN_ROLE_WITH_HIERARCHY는 hasRole('ADMIN') exact 필요");
+                    && (!methodGuard(endpoint.handler()).equals(endpoint.methodSecurity())
+                        || !"OPERATION_PERMISSION".equals(endpoint.routeGate()))) {
+                violations.add(endpoint.key() + " 관리자 기능의 명시적 operation 권한 경계 필요");
             }
             if ("ADMIN_OR_SYSTEM".equals(endpoint.policy())) {
-                boolean methodGate = "hasAnyRole('ADMIN','SYSTEM')".equals(endpoint.methodSecurity())
-                        || "hasRole('ADMIN')".equals(endpoint.methodSecurity());
-                boolean urlGate = endpoint.routeGate().startsWith("RBAC_");
+                boolean methodGate = methodGuard(endpoint.handler()).equals(endpoint.methodSecurity());
+                boolean urlGate = "OPERATION_PERMISSION".equals(endpoint.routeGate());
                 boolean serviceGate = endpoint.guardRef() != null
                         && "ADMIN_OR_SYSTEM".equals(guardPolicies.get(endpoint.guardRef()));
-                if (!methodGate && !urlGate && !serviceGate) {
+                if ((!methodGate || !urlGate) && !serviceGate) {
                     violations.add(endpoint.key() + " ADMIN_OR_SYSTEM 집행 근거(method/url/service) 없음");
                 }
             }
@@ -599,13 +565,16 @@ class SecurityAuthAnnotationLinterTest {
         }
     }
 
-    private void validateRbacSourceSemantics(List<String> violations) throws IOException {
-        YamlPropertiesFactoryBean yaml = new YamlPropertiesFactoryBean();
-        yaml.setResources(new FileSystemResource(resolveFromRepoRoot(MAIN_APPLICATION_FILE)));
-        Properties application = yaml.getObject();
-        if (application == null || !"true".equals(application.getProperty("rbac.db-auth.enabled"))) {
-            violations.add("main application.yml의 rbac.db-auth.enabled=true 선언 소실");
+    private void validateCurrentAndHistoricalAuthorizationSources(List<String> violations) throws IOException {
+        String config = normalizedSource(resolveFromRepoRoot(
+                "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java"));
+        for (String token : List.of(
+                "auth.anyRequest().access(new nuri.business.security.authorization.OperationAuthorizationManager(",
+                "pathMatcher(\"/api/v1/**\")", "pathMatcher(\"/actuator/**\")",
+                "pathMatcher(\"/ws\")", "pathMatcher(\"/ws/**\")")) {
+            if (!config.contains(normalize(token))) violations.add("현재 HTTP 인가 실행 경계 소실: " + token);
         }
+        // 불변 migration은 과거 데이터 계보만 증명한다. 현재 인가는 위 실행 경계와 operation registry로 판정한다.
         String rbac = normalizedSource(resolveFromRepoRoot(RBAC_SEED_FILE));
         for (String token : List.of(
                 "('ADMIN_ALL', '관리자 전체', '/api/v1/admin/**'",
@@ -623,7 +592,7 @@ class SecurityAuthAnnotationLinterTest {
         }
         String hierarchy = normalizedSource(resolveFromRepoRoot(ROLE_HIERARCHY_SEED_FILE));
         if (!hierarchy.contains(normalize("('ROLE_SYSTEM', 'ROLE_ADMIN', 'SYSTEM')"))) {
-            violations.add("ROLE_SYSTEM > ROLE_ADMIN hierarchy seed 소실 — ADMIN_ROLE_WITH_HIERARCHY 의미 drift");
+            violations.add("ROLE_SYSTEM > ROLE_ADMIN 역사적 hierarchy seed 소실");
         }
 
         // [2026-08-20 V2_84] 위 V2_11 토큰은 파일 계보(불변 마이그레이션)의 사실이고, DB 의 현재
@@ -701,7 +670,7 @@ class SecurityAuthAnnotationLinterTest {
     }
 
     private void validateHelperMeaning(ServiceGuardPolicy guard, GuardMechanism mechanism,
-            List<String> violations) {
+            List<String> violations) throws IOException {
         String expectedPolicy;
         String expectedAxis;
         switch (mechanism.helper()) {
@@ -709,17 +678,21 @@ class SecurityAuthAnnotationLinterTest {
                 expectedPolicy = "STRICT_OWNER";
                 expectedAxis = "ESNTL_ID";
             }
-            case "assertOwnerOrAdminByEsntlId" -> {
+            case "assertOwnerOrPermissionByEsntlId" -> {
                 expectedPolicy = "OWNER_OR_ADMIN";
                 expectedAxis = "ESNTL_ID";
             }
-            case "assertOwnerOrAdmin" -> {
+            case "assertOwnerOrPermission" -> {
                 expectedPolicy = "OWNER_OR_ADMIN";
                 expectedAxis = "LOGIN_ID";
             }
-            case "assertAdmin" -> {
+            case "assertAdmin", "assertOwnerOrAdmin", "assertOwnerOrAdminByEsntlId" -> {
+                violations.add(guard.target() + " retired role-based helper cannot authorize operations: " + mechanism.helper());
+                return;
+            }
+            case "assertPermission" -> {
                 expectedPolicy = "ADMIN_OR_SYSTEM";
-                expectedAxis = "ROLE";
+                expectedAxis = "PERMISSION";
             }
             default -> {
                 violations.add(guard.target() + " unknown SecurityUtil helper: " + mechanism.helper());
@@ -737,6 +710,154 @@ class SecurityAuthAnnotationLinterTest {
         if (mechanism.count() < 1) {
             violations.add(guard.target() + " helper count must be positive: " + mechanism.count());
         }
+        if (mechanism.helper().contains("Permission")) {
+            validatePermissionArguments(guard, mechanism, violations);
+        }
+    }
+
+    private void validatePermissionArguments(ServiceGuardPolicy guard, GuardMechanism mechanism,
+                                             List<String> violations) throws IOException {
+        String[] target = guard.target().split("#", 2);
+        String source = sourceForGuard(target[0]);
+        String body = extractMethodBody(source, target[1], guard.parameterCount());
+        if (body == null) {
+            violations.add(guard.target() + " permission guard body 부재");
+            return;
+        }
+        int argumentIndex = mechanism.helper().equals("assertPermission") ? 0 : 1;
+        String expected;
+        if (guard.permissionParameter() == null) {
+            if (mechanism.permission() == null || !PermissionCodes.ALL.contains(mechanism.permission())) {
+                violations.add(guard.target() + " permission 코드 누락/미등록");
+                return;
+            }
+            expected = "\"" + mechanism.permission() + "\"";
+        } else {
+            expected = guard.permissionParameter().name();
+            if (expected == null || !expected.matches("[a-zA-Z][a-zA-Z0-9]*")
+                    || guard.permissionParameter().callers() == null || guard.permissionParameter().callers().isEmpty()) {
+                violations.add(guard.target() + " permission parameter/caller 계약 부재");
+                return;
+            }
+            validatePermissionCallers(guard, source, target[1], violations);
+        }
+        if (!exactPermissionCalls(body, mechanism.helper(), argumentIndex, expected, mechanism.count())) {
+            violations.add(guard.target() + " " + mechanism.helper() + " exact permission argument/count drift");
+        }
+    }
+
+    private static boolean exactPermissionCalls(String body, String helper, int index, String expected, int count) {
+        List<List<String>> calls = callArguments(body, "SecurityUtil\\s*\\.\\s*" + Pattern.quote(helper));
+        return calls.size() == count && calls.stream()
+                .allMatch(args -> args.size() == index + 1 && expected.equals(args.get(index)));
+    }
+
+    @Test
+    @DisplayName("기능 guard 코드변경·삭제·인자순서 변경은 red, 중첩 owner getter는 정상 파싱")
+    void permissionArgumentComparatorRejectsChangedRemovedAndReorderedGrants() {
+        String valid = "SecurityUtil.assertOwnerOrPermission(owner.get(lookup(1, 2)), \"BOARD_UPDATE_ALL\");";
+        assertTrue(exactPermissionCalls(valid, "assertOwnerOrPermission", 1, "\"BOARD_UPDATE_ALL\"", 1));
+        assertFalse(exactPermissionCalls(valid.replace("BOARD_UPDATE_ALL", "BOARD_READ_ALL"),
+                "assertOwnerOrPermission", 1, "\"BOARD_UPDATE_ALL\"", 1));
+        assertFalse(exactPermissionCalls("return;", "assertOwnerOrPermission", 1, "\"BOARD_UPDATE_ALL\"", 1));
+        assertFalse(exactPermissionCalls("SecurityUtil.assertOwnerOrPermission(\"BOARD_UPDATE_ALL\", owner);",
+                "assertOwnerOrPermission", 1, "\"BOARD_UPDATE_ALL\"", 1));
+        assertEquals("AUTHRT_ASSIGN", literalCallerPermission(List.of("\"AUTHRT_ASSIGN\""), 0));
+        assertNull(literalCallerPermission(List.of("request.permission()"), 0));
+        assertNull(literalCallerPermission(List.of("\"AUTHRT_ASSIGN\"", "ignored"), 0));
+        assertNull(literalCallerPermission(List.of(), 0));
+    }
+
+    private void validatePermissionCallers(ServiceGuardPolicy guard, String source, String method,
+                                           List<String> violations) throws IOException {
+        Map<String, String> sources = new TreeMap<>();
+        if (guard.permissionParameter().qualifiedCallers()) {
+            for (String root : SOURCE_ROOTS) {
+                for (Path file : HarnessSourceIndex.javaSources(resolveFromRepoRoot(root))) {
+                    String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(file));
+                    if (!Pattern.compile(Pattern.quote(method) + "\\s*\\(").matcher(code).find()) continue;
+                    String className = file.getFileName().toString().replace(".java", "");
+                    if (sources.put(className, code) != null) violations.add("Ambiguous permission caller source: " + className);
+                }
+            }
+        } else sources.put("", source);
+        int index = guard.permissionParameter().argumentIndex() == null ? 1 : guard.permissionParameter().argumentIndex();
+        if (index < 0 || index > 1) { violations.add(guard.target() + " unsupported permission argument index"); return; }
+        Map<String, String> actual = new TreeMap<>();
+        for (var entry : sources.entrySet()) {
+            Matcher declarations = Pattern.compile("(?m)^\\s*(?:public|protected|private)\\s+(?:(?:static|final|synchronized)\\s+)*"
+                    + "[\\w.$<>?,\\[\\] ]+\\s+(\\w+)\\s*\\(").matcher(entry.getValue());
+            while (declarations.find()) {
+                String caller = declarations.group(1);
+                String body = extractMethodBody(entry.getValue(), caller);
+                if (body == null) continue;
+                for (List<String> args : callArguments(body, "(?<![\\w$])" + Pattern.quote(method))) {
+                    String permission = literalCallerPermission(args, index);
+                    if (permission == null) { violations.add(guard.target() + " 호출부의 literal permission 필요: " + caller); continue; }
+                    String key = entry.getKey().isEmpty() ? caller : entry.getKey() + "#" + caller;
+                    if (!PermissionCodes.ALL.contains(permission) || actual.put(key, permission) != null) {
+                        violations.add(guard.target() + " 중복/미등록 permission caller: " + key);
+                    }
+                }
+            }
+        }
+        if (!actual.equals(guard.permissionParameter().callers())) {
+            violations.add(guard.target() + " permission caller 집합/코드 drift: " + actual);
+        }
+    }
+
+    private static String literalCallerPermission(List<String> args, int index) {
+        if (args.size() != index + 1 || !args.get(index).matches("\"[A-Z][A-Z0-9_]*\"")) return null;
+        return args.get(index).substring(1, args.get(index).length() - 1);
+    }
+
+    private String sourceForGuard(String className) throws IOException {
+        if (guardSourcePaths == null) {
+            guardSourcePaths = new HashMap<>();
+            for (String root : SOURCE_ROOTS) {
+                for (Path file : HarnessSourceIndex.javaSources(resolveFromRepoRoot(root))) {
+                    guardSourcePaths.computeIfAbsent(file.getFileName().toString().replace(".java", ""),
+                            ignored -> new ArrayList<>()).add(file);
+                }
+            }
+        }
+        List<Path> matches = guardSourcePaths.getOrDefault(className, List.of());
+        if (matches.size() != 1) throw new IOException("Ambiguous or missing guard source: " + className);
+        return HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(matches.get(0)));
+    }
+
+    /** Balanced call parser keeps nested owner getters and quoted delimiters out of argument boundaries. */
+    private static List<List<String>> callArguments(String body, String calleePattern) {
+        List<List<String>> result = new ArrayList<>();
+        Matcher calls = Pattern.compile(calleePattern + "\\s*\\(").matcher(body);
+        while (calls.find()) {
+            List<String> arguments = new ArrayList<>();
+            int start = calls.end();
+            int depth = 0;
+            boolean quoted = false;
+            boolean escaped = false;
+            boolean closed = false;
+            for (int i = start; i < body.length(); i++) {
+                char ch = body.charAt(i);
+                if (escaped) { escaped = false; continue; }
+                if (quoted && ch == '\\') { escaped = true; continue; }
+                if (ch == '"') { quoted = !quoted; continue; }
+                if (quoted) continue;
+                if (ch == '(' || ch == '[' || ch == '{') depth++;
+                else if (ch == ')' && depth == 0) {
+                    arguments.add(body.substring(start, i).trim());
+                    closed = true;
+                    break;
+                } else if (ch == ')' || ch == ']' || ch == '}') depth--;
+                else if (ch == ',' && depth == 0) {
+                    arguments.add(body.substring(start, i).trim());
+                    start = i + 1;
+                }
+            }
+            if (!closed) throw new IllegalArgumentException("Unclosed authorization call");
+            result.add(arguments);
+        }
+        return result;
     }
 
     private void validateManualGuardBody(ManualGuardPolicy guard, List<String> violations)
@@ -768,15 +889,24 @@ class SecurityAuthAnnotationLinterTest {
     }
 
     private static String extractMethodBody(String code, String methodName) {
+        return extractMethodBody(code, methodName, null);
+    }
+
+    private static String extractMethodBody(String code, String methodName, Integer parameterCount) {
         Pattern declaration = Pattern.compile(
                 "(?m)^\\s*(?:public|protected|private)\\s+(?:(?:static|final|synchronized)\\s+)*"
                         + "[\\w.$<>?,\\[\\] ]+\\s+" + Pattern.quote(methodName) + "\\s*\\(");
         Matcher matcher = declaration.matcher(code);
-        if (!matcher.find()) {
-            return null;
+        int selectedEnd = -1;
+        while (matcher.find()) {
+            if (parameterCount != null && declarationParameterCount(code, matcher.end()) != parameterCount) continue;
+            if (selectedEnd >= 0) return null; // Same-arity overloads need a more precise contract, never first-match approval.
+            selectedEnd = matcher.end();
+            if (parameterCount == null) break;
         }
-        int open = code.indexOf('{', matcher.end());
-        int semicolon = code.indexOf(';', matcher.end());
+        if (selectedEnd < 0) return null;
+        int open = code.indexOf('{', selectedEnd);
+        int semicolon = code.indexOf(';', selectedEnd);
         if (open < 0 || (semicolon >= 0 && semicolon < open)) {
             return null;
         }
@@ -814,6 +944,53 @@ class SecurityAuthAnnotationLinterTest {
         return null;
     }
 
+    private static int declarationParameterCount(String code, int start) {
+        int parentheses = 0, brackets = 0, braces = 0, angles = 0, commas = 0;
+        boolean quoted = false, character = false, escaped = false;
+        for (int i = start; i < code.length(); i++) {
+            char ch = code.charAt(i);
+            if (escaped) { escaped = false; continue; }
+            if ((quoted || character) && ch == '\\') { escaped = true; continue; }
+            if (!character && ch == '"') { quoted = !quoted; continue; }
+            if (!quoted && ch == '\'') { character = !character; continue; }
+            if (quoted || character) continue;
+            if (ch == ')' && parentheses == 0) return code.substring(start, i).isBlank() ? 0 : commas + 1;
+            if (ch == '(') parentheses++;
+            else if (ch == ')') parentheses--;
+            else if (ch == '[') brackets++;
+            else if (ch == ']') brackets--;
+            else if (ch == '{') braces++;
+            else if (ch == '}') braces--;
+            else if (ch == '<') angles++;
+            else if (ch == '>') angles--;
+            else if (ch == ',' && parentheses == 0 && brackets == 0 && braces == 0 && angles == 0) commas++;
+        }
+        return -1;
+    }
+
+    @Test
+    @DisplayName("퇴역 overload가 실제 guard를 가리지 않고 잘못된 인자 개수·중복·guard 삭제는 red")
+    void permissionGuardSelectsOnlyTheDeclaredOverload() {
+        String source = """
+                public void grant(String group, String menus) { throw invalid(); }
+                public void grant(String group, String menus, String version) {
+                    SecurityUtil.assertPermission("AUTHRT_GRANT");
+                }
+                """;
+        String actual = extractMethodBody(source, "grant", 3);
+        assertNotNull(actual);
+        assertTrue(exactPermissionCalls(actual, "assertPermission", 0, "\"AUTHRT_GRANT\"", 1));
+        assertFalse(exactPermissionCalls(extractMethodBody(source, "grant", 2),
+                "assertPermission", 0, "\"AUTHRT_GRANT\"", 1));
+        assertNull(extractMethodBody(source, "grant", 4));
+        assertNull(extractMethodBody(source + "\npublic void grant(Long group, String menus, String version) {}", "grant", 3));
+        assertFalse(exactPermissionCalls(extractMethodBody(source.replace("SecurityUtil.assertPermission(\"AUTHRT_GRANT\");", ""), "grant", 3),
+                "assertPermission", 0, "\"AUTHRT_GRANT\"", 1));
+        assertEquals(2, declarationParameterCount("@Named(\"a,b\") Map<String, List<Long>> map, String[] names)", 0));
+        assertEquals(0, declarationParameterCount(")", 0));
+        assertEquals(-1, declarationParameterCount("String unterminated", 0));
+    }
+
     private PolicyRegistry loadRegistry() throws IOException {
         Path file = resolveFromRepoRoot(POLICY_FILE);
         if (!Files.isRegularFile(file)) {
@@ -842,38 +1019,6 @@ class SecurityAuthAnnotationLinterTest {
             if (!expected.contains(entry)) {
                 violations.add(label + " 미등록 신규/변경: " + entry);
             }
-        }
-    }
-
-    /** 운영 프로파일의 {@code security.whitelist}. test 리소스가 main 을 shadow 하므로 파일에서 직접 읽는다. */
-    private List<String> loadProductionWhitelist() {
-        YamlPropertiesFactoryBean yaml = new YamlPropertiesFactoryBean();
-        yaml.setResources(new FileSystemResource(resolveFromRepoRoot(MAIN_APPLICATION_FILE)));
-        Properties application = yaml.getObject();
-        if (application == null) {
-            return List.of();
-        }
-        String csv = application.getProperty("security.whitelist");
-        if (csv == null || csv.isBlank()) {
-            return List.of();
-        }
-        return Arrays.stream(csv.split(","))
-                .map(String::trim)
-                .filter(value -> !value.isEmpty())
-                .toList();
-    }
-
-    private static String sha256Hex(String value) {
-        try {
-            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
-                    .digest(value.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(digest.length * 2);
-            for (byte b : digest) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256을 사용할 수 없습니다", e);
         }
     }
 
@@ -915,7 +1060,31 @@ class SecurityAuthAnnotationLinterTest {
             Map<String, String> policyDefinitions,
             List<EndpointPolicy> endpointPolicies,
             List<ServiceGuardPolicy> serviceGuardPolicies,
-            List<ManualGuardPolicy> manualGuardPolicies) {
+            List<ManualGuardPolicy> manualGuardPolicies,
+            String permissionCatalog,
+            List<OperationBinding> operationBindings) {
+        PolicyRegistry withOperations(List<OperationBinding> operations) {
+            return new PolicyRegistry(schemaVersion, authority, description, analysisModel, policyDefinitions,
+                    endpointPolicies, serviceGuardPolicies, manualGuardPolicies, permissionCatalog, operations);
+        }
+    }
+
+    private record OperationBinding(String method, String path, String handler, String access, String permission,
+                                    List<String> excludedGroups) {
+        String key() { return method + " " + path; }
+        boolean external() { return handler.startsWith("EXTERNAL#"); }
+        String routeGate() {
+            return switch (access) {
+                case "PUBLIC" -> "PUBLIC_FILTER";
+                case "AUTHENTICATED" -> "EXPLICIT_AUTHENTICATED";
+                case "PERMISSION" -> "OPERATION_PERMISSION";
+                default -> "EXPLICIT_DENY";
+            };
+        }
+        String signature() {
+            return key() + "|" + handler + "|" + access + "|" + permission + "|"
+                    + (excludedGroups == null ? List.of() : excludedGroups.stream().sorted().toList());
+        }
     }
 
     private record AnalysisModel(
@@ -941,13 +1110,18 @@ class SecurityAuthAnnotationLinterTest {
     private record ServiceGuardPolicy(
             String target,
             String policy,
-            List<GuardMechanism> mechanisms) {
+            List<GuardMechanism> mechanisms,
+            PermissionParameter permissionParameter,
+            Integer parameterCount) {
     }
+
+    private record PermissionParameter(String name, Map<String, String> callers, Integer argumentIndex, boolean qualifiedCallers) {}
 
     private record GuardMechanism(
             String helper,
             int count,
-            String identityAxis) {
+            String identityAxis,
+            String permission) {
     }
 
     private record ManualGuardPolicy(

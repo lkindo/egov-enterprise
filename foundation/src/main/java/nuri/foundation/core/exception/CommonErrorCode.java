@@ -26,6 +26,7 @@ public enum CommonErrorCode implements ErrorCode {
     CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "C013", "Concurrent Modification Conflict"),
     /** 다른 자원이 참조 중이라 삭제/변경할 수 없을 때. (예: 소속 사용자나 하위 부서가 남아 있는 부서 삭제) */
     RESOURCE_IN_USE(HttpStatus.CONFLICT, "C014", "Resource In Use"),
+    AUTHORIZATION_ENDPOINT_RETIRED(HttpStatus.GONE, "C015", "Use the versioned authorization management API"),
 
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A001", "Unauthorized Access"),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A002", "Invalid JWT Token"),

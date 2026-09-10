@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TokenResponseResponseSchema } from '@/types/generated-zod';
+import { authorizationStateSchema } from '@/lib/auth/authorization-state';
 
 export { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 
@@ -9,6 +10,7 @@ export { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
  */
 export const authLoginDataSchema = TokenResponseResponseSchema.pick({ role: true }).extend({
   role: z.string().min(1),
+  ...authorizationStateSchema.shape,
 }).strict();
 
 const authLoginSuccessResponseSchema = z.strictObject({

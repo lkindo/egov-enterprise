@@ -85,7 +85,7 @@ public class BoardMasterService extends BaseAbstractService {
     }
 
     private void assertCommunityMember(Long cmntySn) {
-        if (nuri.business.security.util.SecurityUtil.isAdmin()) {
+        if (nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")) {
             return;
         }
         String esntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);

@@ -88,17 +88,6 @@ public class OpenApiConfig {
     private static final String ERROR_ENVELOPE_REF = "#/components/schemas/" + ERROR_ENVELOPE_SCHEMA;
 
     /**
-     * 미인증 접근이 허용되는 경로. {@code ApiSecurityConfig} 와 <b>같은 프로퍼티</b>를 읽는다 —
-     * SSOT 는 {@code application.yml} 의 {@code security.whitelist} 하나이며, 여기서 복제하지 않는다.
-     *
-     * <p>⚠ 이 스펙은 <b>테스트 컨텍스트</b>에서 산출된다({@code OpenApiDocumentationTest}).
-     * {@code src/test/resources/application.yml} 이 main 을 shadow 하므로 그쪽에도 같은 키가 선언돼
-     * 있어야 하며, 실제로 선언돼 있다(그 파일 주석 참조). 한쪽만 지우면 컨텍스트 로딩이 깨진다.
-     */
-    @org.springframework.beans.factory.annotation.Value("${security.whitelist}")
-    private java.util.List<String> whitelist;
-
-    /**
      * [2026-08-15] 공통 에러 응답을 스펙에 주입한다.
      *
      * <p>[문제] 실측 결과 <b>357개 오퍼레이션 전부가 {@code 200} 만 선언</b>하고 있었다.
@@ -117,7 +106,7 @@ public class OpenApiConfig {
      * 와 같은 원칙):
      * <ul>
      *   <li>{@code 400}·{@code 500} — 모든 오퍼레이션. 검증 실패와 서버 오류는 어느 경로에서나 난다.</li>
-     *   <li>{@code 401}·{@code 403} — <b>whitelist 에 매칭되지 않는</b> 경로만. permitAll 경로는
+     *   <li>{@code 401}·{@code 403} — <b>operation binding에서 PUBLIC이 아닌</b> method/path만. 공개 경로는
      *       미인증으로 401 을 내지 않으므로 붙이면 오히려 틀린 문서가 된다.</li>
      *   <li>{@code 404} — <b>경로 변수를 가진</b> 오퍼레이션만. 식별자로 조회하지 않는 목록 API 에
      *       404 를 광고할 이유가 없다.</li>
@@ -132,7 +121,8 @@ public class OpenApiConfig {
      * <b>경로 문자열</b>이 필요한데, {@code Operation} 객체는 자신이 어느 경로에 속하는지 모른다.
      */
     @Bean
-    public org.springdoc.core.customizers.OpenApiCustomizer commonErrorResponsesCustomizer() {
+    public org.springdoc.core.customizers.OpenApiCustomizer commonErrorResponsesCustomizer(
+            nuri.business.security.authorization.PermissionPolicy permissionPolicy) {
         return openApi -> {
             if (openApi.getPaths() == null) {
                 return;
@@ -141,14 +131,13 @@ public class OpenApiConfig {
                     && openApi.getComponents().getSchemas() != null
                     && openApi.getComponents().getSchemas().containsKey(ERROR_ENVELOPE_SCHEMA);
 
-            java.util.List<org.springframework.web.util.pattern.PathPattern> publicPatterns =
-                    parsePatterns(this.whitelist);
-
             openApi.getPaths().forEach((path, pathItem) -> {
-                boolean isPublic = matchesAny(publicPatterns, path);
                 boolean hasPathVariable = path.indexOf('{') >= 0;
 
-                pathItem.readOperations().forEach(operation -> {
+                pathItem.readOperationsMap().forEach((method, operation) -> {
+                    boolean isPublic = permissionPolicy.bindings().stream().anyMatch(binding ->
+                            binding.method().equals(method.name()) && binding.path().equals(path)
+                                    && "PUBLIC".equals(binding.access()));
                     io.swagger.v3.oas.models.responses.ApiResponses responses = operation.getResponses();
                     if (responses == null) {
                         return;
@@ -193,31 +182,6 @@ public class OpenApiConfig {
                             .schema(new io.swagger.v3.oas.models.media.Schema<>().$ref(ERROR_ENVELOPE_REF))));
         }
         responses.addApiResponse(statusCode, response);
-    }
-
-    /**
-     * whitelist 패턴을 파싱한다. 파싱 실패한 패턴은 <b>조용히 버리지 않고</b> 예외로 드러낸다 —
-     * 매칭에서 빠지면 그 경로에 401 이 잘못 붙는데, 그것은 문서가 틀리는 방향의 실패라 침묵시키면 안 된다.
-     */
-    private static java.util.List<org.springframework.web.util.pattern.PathPattern> parsePatterns(
-            java.util.List<String> patterns) {
-        if (patterns == null) {
-            return java.util.List.of();
-        }
-        org.springframework.web.util.pattern.PathPatternParser parser =
-                new org.springframework.web.util.pattern.PathPatternParser();
-        return patterns.stream()
-                .map(pattern -> pattern.trim())
-                .filter(pattern -> !pattern.isEmpty())
-                .map(pattern -> parser.parse(pattern))
-                .toList();
-    }
-
-    private static boolean matchesAny(
-            java.util.List<org.springframework.web.util.pattern.PathPattern> patterns, String path) {
-        org.springframework.http.server.PathContainer container =
-                org.springframework.http.server.PathContainer.parsePath(path);
-        return patterns.stream().anyMatch(pattern -> pattern.matches(container));
     }
 
     /**

@@ -37,7 +37,7 @@ class CommonCodeServiceTest {
     @BeforeEach
     void authenticateAdmin() {
         SecurityContextHolder.getContext().setAuthentication(
-                new TestingAuthenticationToken("admin", null, "ROLE_ADMIN"));
+                nuri.business.support.AuthorizationTestPrincipal.authentication("admin", "ESNTL_admin", "ROLE_ADMIN"));
     }
 
     @AfterEach
@@ -131,7 +131,7 @@ class CommonCodeServiceTest {
     @DisplayName("공통코드 쓰기는 서비스 계층에서도 일반 사용자를 거부한다")
     void commonCodeWriteRequiresAdminAtServiceBoundary() {
         SecurityContextHolder.getContext().setAuthentication(
-                new TestingAuthenticationToken("user", null, "ROLE_USER"));
+                nuri.business.support.AuthorizationTestPrincipal.authentication("user", "ESNTL_user", "ROLE_USER"));
         CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("분류1").build();
 
         BusinessException error = assertThrows(BusinessException.class,

@@ -97,13 +97,7 @@ class DeptJobServiceTest {
     }
 
     private static void authenticateAs(String loginId, String esntlId) {
-        CustomUserDetails principal = CustomUserDetails.builder()
-                .userId(loginId)
-                .esntlId(esntlId)
-                .userNm("tester")
-                .password("N/A")
-                .authorityCodes(List.of("ROLE_USER"))
-                .build();
+        CustomUserDetails principal = nuri.business.support.AuthorizationTestPrincipal.principal(loginId, esntlId, "USER");
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
@@ -268,13 +262,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("부서업무 생성 - 인증되지 않은 CustomUserDetails token은 actor로 신뢰하지 않는다")
     void createDeptJob_rejectsUnauthenticatedCustomPrincipal() {
-        CustomUserDetails principal = CustomUserDetails.builder()
-                .userId("tester")
-                .esntlId("USR_TESTER")
-                .userNm("tester")
-                .password("N/A")
-                .authorityCodes(List.of("ROLE_USER"))
-                .build();
+        CustomUserDetails principal = nuri.business.support.AuthorizationTestPrincipal.principal("tester", "USR_TESTER", "USER");
         SecurityContextHolder.getContext().setAuthentication(
                 UsernamePasswordAuthenticationToken.unauthenticated(principal, "N/A"));
         DeptJobDto dto = new DeptJobDto();
@@ -440,7 +428,7 @@ class DeptJobServiceTest {
         // 이 통과 자체가 축(axis) 검증이다 — 서비스가 esntlId 축 가드를 탔다면 getCurrentEsntlId() 가
         // 비어 있어 ACCESS_DENIED 로 떨어지므로 아래 assertDoesNotThrow 가 실패한다.
         try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mocked.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(any()))
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(any(), org.mockito.ArgumentMatchers.eq("DEPT_JOB_UPDATE_ALL")))
                     .thenAnswer(invocation -> null);
 
             assertDoesNotThrow(() -> deptJobService.updateDeptJob(2L, dto));

@@ -9,6 +9,10 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.handler.WebSocketHandlerDecorator;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -49,6 +53,36 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(authorizationInterceptor);
+    }
+
+    @Override
+    public void configureClientOutboundChannel(ChannelRegistration registration) {
+        registration.interceptors(authorizationInterceptor.outboundInterceptor());
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.addDecoratorFactory(handler -> new WebSocketHandlerDecorator(handler) {
+            @Override
+            public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+                authorizationInterceptor.trackTransport(session);
+                try {
+                    super.afterConnectionEstablished(session);
+                } catch (Exception failure) {
+                    authorizationInterceptor.forgetSession(session.getId());
+                    throw failure;
+                }
+            }
+
+            @Override
+            public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+                try {
+                    super.afterConnectionClosed(session, closeStatus);
+                } finally {
+                    authorizationInterceptor.forgetSession(session.getId());
+                }
+            }
+        });
     }
 
     public void registerStompEndpoints(StompEndpointRegistry registry) {

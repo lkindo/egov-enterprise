@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  */
 const mocks = vi.hoisted(() => ({
   role: 'ROLE_ADMIN' as string,
+  permissions: ['DEPT_BOX_READ'] as string[],
   tab: 'job' as string,
   dialogRenders: vi.fn(),
 }));
@@ -67,7 +68,7 @@ vi.mock('@/services/business/schedule/deptScheduleService', () => ({
   updateDeptSchedule: vi.fn(),
   deleteDeptSchedule: vi.fn(),
 }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: mocks.role } }) }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: mocks.role, permissions: mocks.permissions, authorizationVersion: 'v1' } }) }));
 vi.mock('@/components/business/deptJob/DeptJobBoxManageDialog', () => ({
   DeptJobBoxManageDialog: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     mocks.dialogRenders(isOpen);
@@ -85,6 +86,7 @@ describe('WorkHubClient 업무함 관리 진입', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.role = 'ROLE_ADMIN';
+    mocks.permissions = ['DEPT_BOX_READ'];
     mocks.tab = 'job';
   });
 
@@ -100,7 +102,7 @@ describe('WorkHubClient 업무함 관리 진입', () => {
     expect(screen.queryByRole('dialog', { name: '업무함 관리' })).not.toBeInTheDocument();
   });
 
-  it('SYSTEM 권한도 관리자 판정에 포함된다 — 리터럴 비교가 아니라 SSOT 집합이다', () => {
+  it('SYSTEM 그룹도 명시적인 업무함 조회 기능권한을 사용한다', () => {
     mocks.role = 'ROLE_SYSTEM';
     render(<WorkHubClient defaultTab="job" initialYmd="20260906" />);
     expect(screen.getByRole('button', { name: '업무함 관리' })).toBeInTheDocument();
@@ -108,6 +110,7 @@ describe('WorkHubClient 업무함 관리 진입', () => {
 
   it('비관리자에게는 버튼을 그리지 않는다(죽은 버튼 금지)', () => {
     mocks.role = 'ROLE_USER';
+    mocks.permissions = [];
     render(<WorkHubClient defaultTab="job" initialYmd="20260906" />);
     expect(screen.queryByRole('button', { name: '업무함 관리' })).not.toBeInTheDocument();
     expect(mocks.dialogRenders).not.toHaveBeenCalled();

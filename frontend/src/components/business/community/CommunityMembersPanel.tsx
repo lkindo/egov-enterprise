@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, UserCheck, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -48,6 +50,9 @@ interface CommunityMembersPanelProps {
  * - 이름은 서버가 esntlId 를 해석한 값이고 찾지 못하면 null 이라 식별자를 그대로 보여 준다.
  */
 export function CommunityMembersPanel({ community, onBack }: CommunityMembersPanelProps) {
+  const { user } = useAuth();
+  const canApprove = canPermission(user, 'COMMUNITY_APPROVE');
+  const canReject = canPermission(user, 'COMMUNITY_REJECT');
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -82,6 +87,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
   };
 
   const handleApprove = async (member: CommunityMember) => {
+    if (!canApprove) return;
     if (actionLockRef.current) return;
     actionLockRef.current = true;
     setPendingAction({ userId: member.userId, kind: 'approve' });
@@ -98,6 +104,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
   };
 
   const handleReject = async (member: CommunityMember) => {
+    if (!canReject) return;
     if (actionLockRef.current) return;
     actionLockRef.current = true;
     setPendingAction({ userId: member.userId, kind: 'reject' });
@@ -186,7 +193,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
                 </div>
                 {isRequested && (
                   <>
-                    <Button
+                    {canApprove && <Button
                       type="button"
                       size="sm"
                       aria-label={`${displayName(member)} 가입 승인`}
@@ -198,8 +205,8 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
                         ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
                         : <UserCheck size={14} aria-hidden="true" />}
                       승인
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canReject && <Button
                       type="button"
                       size="sm"
                       variant="outline"
@@ -213,7 +220,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
                         ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
                         : <UserX size={14} aria-hidden="true" />}
                       반려
-                    </Button>
+                    </Button>}
                   </>
                 )}
               </li>

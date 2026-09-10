@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 65,
-    "nativeFormFiles": 55,
+    "nativeFormOccurrences": 66,
+    "nativeFormFiles": 56,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 74,
-    "candidateCount": 161
+    "secondaryActionBoundaries": 67,
+    "candidateCount": 155
   },
   "entries": [
     {
@@ -63,6 +63,36 @@
       ]
     },
     {
+      "key": "formless-write:frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx#AuthorizationGroupEditor",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
+      "owner": "AuthorizationGroupEditor",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [
+            "deleteGroup",
+            "saveGrants"
+          ],
+          "component": "AuthorizationGroupForm",
+          "handler": "inline-action",
+          "writeSinks": [
+            "authorizationAdminService.updateGroup"
+          ]
+        }
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:AuthorizationGroupForm+versioned-grant-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
+      ]
+    },
+    {
       "key": "formless-write:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient",
       "kind": "formless-write",
       "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
@@ -70,47 +100,39 @@
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "composed-child-form-validation",
-      "schemaSource": "composed:AuthorForm+authority-mapping-actions",
+      "schemaSource": "composed:AuthorizationGroupForm",
       "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
       "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
       "pendingGuard": "composed-child-submit-and-action-locks",
       "composedChildContracts": [
         {
-          "actionHandlers": [
-            "bulkAction:선택 권한 삭제",
-            "handleAuthorDelete",
-            "handleSaveGlobal",
-            "handleSaveMenuMapping",
-            "handleSaveRoleMapping",
-            "handleSaveUserMapping"
-          ],
-          "component": "AuthorForm",
-          "handler": "onAuthorSubmit",
+          "actionHandlers": [],
+          "component": "AuthorizationGroupForm",
+          "handler": "inline-action",
           "writeSinks": [
-            "authorAdminService.createAuthor",
-            "authorAdminService.updateAuthor"
+            "authorizationAdminService.createGroup"
           ]
         }
       ],
       "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/AuthorRoleMapping.test.tsx",
         "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
         "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
       ]
     },
     {
-      "key": "formless-write:frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx#SecurityDeptAuthorityClient",
+      "key": "formless-write:frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx#DepartmentMembershipEditor",
       "kind": "formless-write",
       "file": "frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx",
-      "owner": "SecurityDeptAuthorityClient",
+      "owner": "DepartmentMembershipEditor",
       "classification": "mutation",
       "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:ChangeDepartmentGroupsRequestSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx",
         "frontend/src/app/admin/security/dept-authority/__tests__/SecurityDeptAuthorityClient.contract.test.tsx"
       ]
     },
@@ -128,23 +150,6 @@
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx",
-        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
-      ]
-    },
-    {
-      "key": "formless-write:frontend/src/app/admin/security/role/SecurityRoleClient.tsx#SecurityRoleClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
-      "owner": "SecurityRoleClient",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useManualFormValidation-zod",
-      "schemaSource": "generated-or-derived:securityRoleFormSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/security/role/__tests__/SecurityRoleClient.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
       ]
     },
@@ -273,7 +278,6 @@
           "actionHandlers": [
             "bulkAction:일괄 삭제",
             "handleBulkDeptMove",
-            "handleBulkRoleUpdate",
             "handleBulkStatusUpdate",
             "handleDeleteDept",
             "handleDeleteUser",
@@ -290,7 +294,6 @@
           "actionHandlers": [
             "bulkAction:일괄 삭제",
             "handleBulkDeptMove",
-            "handleBulkRoleUpdate",
             "handleBulkStatusUpdate",
             "handleDeleteDept",
             "handleDeleteUser",
@@ -306,7 +309,6 @@
           "actionHandlers": [
             "bulkAction:일괄 삭제",
             "handleBulkDeptMove",
-            "handleBulkRoleUpdate",
             "handleBulkStatusUpdate",
             "handleDeleteDept",
             "handleDeleteUser",
@@ -804,6 +806,37 @@
       "file": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
       "owner": "PatternGalleryClient",
       "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/security/authority/components/AuthorizationGroupForm.tsx#AuthorizationGroupForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/security/authority/components/AuthorizationGroupForm.tsx",
+      "owner": "AuthorizationGroupForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:CreateGroupRequestSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx",
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/security/authority/components/AuthorizationHistory.tsx#AuthorizationHistory[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/security/authority/components/AuthorizationHistory.tsx",
+      "owner": "AuthorizationHistory",
+      "classification": "search-filter",
       "status": "compliant",
       "validationMode": "not-applicable",
       "schemaSource": "not-applicable",
@@ -1378,24 +1411,6 @@
       "testEvidence": [
         "frontend/src/components/account/__tests__/ProfileEditForm.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
-      ]
-    },
-    {
-      "key": "native-form:frontend/src/components/admin/security/AuthorForm.tsx#AuthorForm[1]",
-      "kind": "native-form",
-      "file": "frontend/src/components/admin/security/AuthorForm.tsx",
-      "owner": "AuthorForm",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useAppForm-zod",
-      "schemaSource": "generated-or-derived:authorSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
-        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
     {
@@ -2000,14 +2015,13 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.bulkAction:선택 권한 삭제[1]",
+      "key": "secondary-action:frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx#AuthorizationGroupEditor.deleteGroup[1]",
       "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "bulkAction:선택 권한 삭제",
-      "triggerLabel": "선택 권한 삭제",
+      "file": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
+      "owner": "AuthorizationGroupEditor",
+      "handler": "deleteGroup",
       "writeSinks": [
-        "authorAdminService.deleteAuthors"
+        "authorizationAdminService.deleteGroup"
       ],
       "classification": "destructive",
       "status": "compliant",
@@ -2021,158 +2035,54 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleAuthorDelete[1]",
+      "key": "secondary-action:frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx#AuthorizationGroupEditor.saveGrants[1]",
       "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleAuthorDelete",
+      "file": "frontend/src/app/admin/security/authority/components/AuthorizationGroupEditor.tsx",
+      "owner": "AuthorizationGroupEditor",
+      "handler": "saveGrants",
       "writeSinks": [
-        "authorAdminService.deleteAuthor"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveGlobal[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleSaveGlobal",
-      "writeSinks": [
-        "menuAdminService.saveMenuCreation"
+        "authorizationAdminService.saveGroupGrants"
       ],
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:global-authority-menu-matrix",
+      "schemaSource": "structured-ui-state:complete-versioned-authorization-selection",
       "errorNavigation": "structured-state-action-feedback",
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Only changed authorities persist exactly the menu assignments represented by the global matrix.",
-      "structuredPayloads": [
-        "Array.from(globalMappings.get(code) ?? new Set<number>())",
-        "code"
-      ],
       "testEvidence": [
         "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
+      ],
+      "structuredPayloads": [
+        "{ grants: selectedGrants(selection, catalog), version: baseline.version, complete: true }",
+        "baseline.code"
+      ],
+      "stateInvariant": "Only a complete, current revision may replace the full selection; filtering preserves hidden assignments and unknown grants block saving."
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveMenuMapping[1]",
+      "key": "secondary-action:frontend/src/app/admin/security/authority/components/AuthorizationMembershipEditor.tsx#AuthorizationMembershipEditor.save[1]",
       "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleSaveMenuMapping",
+      "file": "frontend/src/app/admin/security/authority/components/AuthorizationMembershipEditor.tsx",
+      "owner": "AuthorizationMembershipEditor",
+      "handler": "save",
       "writeSinks": [
-        "menuAdminService.saveMenuCreation",
-        "saveMenuMappingMutation.mutate"
+        "authorizationAdminService.saveUserGroups"
       ],
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:authority-menu-assignment-set",
+      "schemaSource": "structured-ui-state:complete-versioned-authorization-selection",
       "errorNavigation": "structured-state-action-feedback",
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "The selected authority persists exactly the menu assignments represented by tempMenuMappings.",
-      "structuredPayloads": [
-        "Array.from(tempMenuMappings)",
-        "menuNos",
-        "selectedAuthorCode"
-      ],
       "testEvidence": [
         "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveRoleMapping[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleSaveRoleMapping",
-      "writeSinks": [
-        "authorAdminService.saveAuthorRoles",
-        "saveAuthorRoleMutation.mutate"
       ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:authority-role-assignment-set",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "The selected authority persists exactly the role assignments represented by tempRoleMappings — the server replaces the whole set, so a partial payload silently deletes the rest.",
       "structuredPayloads": [
-        "Array.from(tempRoleMappings)",
-        "roleIds",
-        "selectedAuthorCode"
+        "{ groups: [...selection].sort(), version: baseline.version, complete: true }",
+        "baseline.userId"
       ],
-      "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/AuthorRoleMapping.test.tsx",
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveUserMapping[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleSaveUserMapping",
-      "writeSinks": [
-        "saveUserMappingMutation.mutate",
-        "userAuthorityAdminService.deleteUserAuthorities",
-        "userAuthorityAdminService.saveUserAuthorities"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:user-authority-assignment-set",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Each user persists exactly the selected authority assignments after revoked mappings are removed.",
-      "structuredPayloads": [
-        "{\n        grantIds: Array.from(tempUserMappings),\n        revokeIds: revokeTargets,\n      }",
-        "mappings",
-        "revokeTargets"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx#SecurityDeptAuthorityClient.handleSave[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx",
-      "owner": "SecurityDeptAuthorityClient",
-      "handler": "handleSave",
-      "writeSinks": [
-        "deptAuthorityAdminService.updateDeptAuthorities",
-        "saveMutation.mutateAsync"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:department-authority-assignment",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "The selected department and all-member scope persist exactly the chosen authority assignment.",
-      "structuredPayloads": [
-        "{\n deptId: selectedDept!,\n authrtId,\n allMembers: true\n }",
-        "selectedAuthorCode"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/security/dept-authority/__tests__/SecurityDeptAuthorityClient.contract.test.tsx"
-      ]
+      "stateInvariant": "Only a complete, current revision may replace the full selection; filtering preserves hidden assignments and unknown grants block saving."
     },
     {
       "key": "secondary-action:frontend/src/app/admin/security/group/SecurityGroupClient.tsx#SecurityGroupClient.bulkAction:선택 그룹 삭제[1]",
@@ -2234,48 +2144,6 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/security/login-policy/__tests__/LoginPolicyAdminClient.behavior.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/role/SecurityRoleClient.tsx#SecurityRoleClient.bulkAction:선택 롤 삭제[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
-      "owner": "SecurityRoleClient",
-      "handler": "bulkAction:선택 롤 삭제",
-      "triggerLabel": "선택 롤 삭제",
-      "writeSinks": [
-        "roleAdminService.deleteRoles"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/security/role/__tests__/SecurityRoleClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/role/SecurityRoleClient.tsx#SecurityRoleClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
-      "owner": "SecurityRoleClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deleteMutation.mutate",
-        "roleAdminService.deleteRole"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/security/role/__tests__/SecurityRoleClient.test.tsx"
       ]
     },
     {
@@ -2673,31 +2541,6 @@
       "structuredPayloads": [
         "selectedBulkItems.map(u => u.userId)",
         "targetDeptId"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkRoleUpdate[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "owner": "UserOrgHubClient",
-      "handler": "handleBulkRoleUpdate",
-      "writeSinks": [
-        "bulkUpdateUserRoleAction"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:bulk-user-role-assignment",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Every selected user persists exactly the target role chosen in the bulk action.",
-      "structuredPayloads": [
-        "selectedBulkItems.map(u => u.userId)",
-        "targetRole"
       ],
       "testEvidence": [
         "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"

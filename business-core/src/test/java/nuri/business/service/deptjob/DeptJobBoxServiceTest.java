@@ -62,8 +62,7 @@ class DeptJobBoxServiceTest {
 
     private void setAuthorities(String authority) {
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("tester", "pw",
-                        List.of(new SimpleGrantedAuthority(authority))));
+                nuri.business.support.AuthorizationTestPrincipal.authentication("tester", "ESNTL_tester", authority));
     }
 
     @Test

@@ -55,6 +55,21 @@ class JdbcAttachmentReferenceResolverTest {
         }
 
         CapturingJdbc(Function<AttachmentSource, SourceCounts> countsBySource) {
+            when(template.query(anyString(),ArgumentMatchers.<RowMapper<Object>>any(),any(Object[].class)))
+                    .thenAnswer(invocation -> {
+                        sqls.add(invocation.getArgument(0));
+                        Object[] all=invocation.getArguments();
+                        params.add(java.util.Arrays.copyOfRange(all,2,all.length));
+                        var counts=countsBySource.apply(AttachmentSource.BOARD);
+                        if (counts.refCnt()==0) return List.of();
+                        ResultSet rs=mock(ResultSet.class);
+                        when(rs.getString("frst_rgtr_id")).thenReturn(counts.ownerCnt()>0?LOGIN_ID:"other");
+                        when(rs.getString("user_id")).thenReturn(counts.ownerCnt()>0?ESNTL_ID:"other-id");
+                        when(rs.getString("scrt_yn")).thenReturn(counts.sharedCnt()>0?"N":"Y");
+                        when(rs.getString("master_id")).thenReturn("BOARD");
+                        RowMapper<?> mapper=invocation.getArgument(1);
+                        return List.of(mapper.mapRow(rs,0));
+                    });
             when(template.queryForObject(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), any(Object[].class)))
                     .thenAnswer(invocation -> {
                         sqls.add(invocation.getArgument(0));
@@ -113,10 +128,10 @@ class JdbcAttachmentReferenceResolverTest {
 
         jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
-        // BOARD: frst_rgtr_id = ?(loginId) OR user_id = ?(esntlId), 그리고 마지막이 atchFileSn.
+        // BOARD는 원본 행을 읽고 커뮤니티 및 두 소유 축을 Java에서 비교한다.
         assertThat(jdbc.paramsFor(AttachmentSource.BOARD))
                 .as("순서가 어긋나면 남의 식별자로 소유권을 판정하게 된다")
-                .containsExactly(LOGIN_ID, ESNTL_ID, ATCH_FILE_SN);
+                .containsExactly(ATCH_FILE_SN);
 
         // NOTE: loginId 1개 + esntlId 2개(발신·수신 EXISTS) + atchFileSn.
         assertThat(jdbc.paramsFor(AttachmentSource.NOTE))
@@ -125,7 +140,7 @@ class JdbcAttachmentReferenceResolverTest {
         // 두 축이 모두 있으면 OR 로 이어야 한다. 구분자가 빠지면 SQL 이 깨지고,
         // AND 로 바뀌면 '작성자이면서 동시에 esntlId 소유자' 라는 성립 불가 조건이 된다.
         assertThat(jdbc.sqlFor(AttachmentSource.BOARD))
-                .contains("(frst_rgtr_id = ?) OR (user_id = ?)");
+                .contains("b.frst_rgtr_id,b.user_id", "m.cmnty_sn");
     }
 
     @Test
@@ -166,7 +181,7 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(jdbc.sqlFor(AttachmentSource.NOTE)).doesNotContain("tb_note_sndng");
         // 소유 술어가 비면 항상-거짓으로 채워야 한다. 비운 채로 두면 SQL 문법이 깨지고,
         // 참으로 채우면 미인증자에게 소유 근거가 서 버린다.
-        assertThat(jdbc.sqlFor(AttachmentSource.BOARD))
+        assertThat(jdbc.sqlFor(AttachmentSource.NOTE))
                 .contains("WHEN 1 = 0 THEN 1 ELSE 0 END) AS owner_cnt");
     }
 
@@ -310,9 +325,9 @@ class JdbcAttachmentReferenceResolverTest {
         jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         for (String sql : jdbc.sqls) {
-            assertThat(sql).contains("COUNT(*) AS ref_cnt");
+            if (!sql.contains("FROM tb_bbs_item ")) assertThat(sql).contains("COUNT(*) AS ref_cnt");
         }
-        assertThat(jdbc.sqlFor(AttachmentSource.BOARD)).contains("WHERE atch_file_sn = ?");
+        assertThat(jdbc.sqlFor(AttachmentSource.BOARD)).contains("WHERE b.atch_file_sn=?");
         // 팝업만 연결 방식이 다르다 — URL 문자열 정확 일치.
         assertThat(jdbc.sqlFor(AttachmentSource.POPUP))
                 .contains("WHERE (file_url = '/api/v1/files/' || ?");

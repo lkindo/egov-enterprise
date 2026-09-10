@@ -38,17 +38,32 @@ class ProgramServiceTest {
     @Spy
     private ProgramMapper programMapper = new ProgramMapperImpl();
 
-    /**
-     * 인가 캐시 무효화용 프로바이더. 쓰기 메서드가 커밋 후 evictCache() 를 호출하므로
-     * 목이 없으면 @InjectMocks 가 null 을 넣어 NPE 가 된다.
-     * 프로덕션에서는 api-server 의 ApiSecurityConfig 가 실제 빈을 공급한다.
-     */
-    @Mock
-    private org.springframework.beans.factory.ObjectProvider<
-            nuri.business.security.authorization.DbUrlAuthorizationManager> authorizationManagerProvider;
 
     @InjectMocks
     private ProgramService programService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void authenticateOperationPermissions() {
+        var user = nuri.foundation.security.service.CustomUserDetails.builder()
+                .esntlId("TESTER_001").userId("tester").enabled(true)
+                .permissions(List.of("PROGRAM_CREATE", "PROGRAM_UPDATE", "PROGRAM_DELETE")).build();
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(user, "", user.getAuthorities()));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearAuthentication() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void missingCapabilityRejectsProgramMutation() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        var error = assertThrows(BusinessException.class, () -> programService.insertProgrm(
+                ProgramDto.builder().prgrmFileNm("TEST").build()));
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        verifyNoInteractions(programRepository);
+    }
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.NullAndEmptySource
@@ -60,7 +75,7 @@ class ProgramServiceTest {
         programService.deleteProgrmManageList(null);
         verify(programRepository, never()).searchByKeyword(any(), any());
         verify(programRepository, never()).deleteAllByIdInBatch(any());
-        verifyNoInteractions(authorizationManagerProvider);
+        verify(programRepository, never()).save(any());
     }
 
     @Test
@@ -82,7 +97,7 @@ class ProgramServiceTest {
         search.setSearchKeyword("missing");
         assertThrows(BusinessException.class, () -> programService.selectProgrm(search));
         assertThrows(BusinessException.class, () -> programService.updateProgrm(ProgramDto.builder().prgrmFileNm("missing").build()));
-        verifyNoInteractions(authorizationManagerProvider);
+        verify(programRepository, never()).save(any());
     }
 
     @Test

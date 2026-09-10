@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import { authorizationStateSchema } from '@/lib/auth/authorization-state';
 
 const authReissueSuccessResponseSchema = z.strictObject({
   success: z.literal(true),
-  data: z.strictObject({}),
+  data: authorizationStateSchema,
 });
 
 const authReissueFailureResponseSchema = z.strictObject({

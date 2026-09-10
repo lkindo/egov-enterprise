@@ -3,19 +3,34 @@ package nuri.business.security.util;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
-import java.util.Collection;
 import nuri.foundation.security.service.CustomUserDetails;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.core.config.ApplicationContextProvider;
-import nuri.business.security.AuthorityConstants;
  
 @Component
 public class SecurityUtil {
+
+    public static boolean hasPermission(String permission) {
+        return nuri.business.security.authorization.PermissionPolicy.has(
+                SecurityContextHolder.getContext().getAuthentication(), permission);
+    }
+
+    public static void assertPermission(String permission) {
+        if (!hasPermission(permission)) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    public static void assertOwnerOrPermission(String ownerLoginId, String overridePermission) {
+        if (hasPermission(overridePermission)) return;
+        String current = getCurrentLoginId().orElse(null);
+        if (current == null || !current.equals(ownerLoginId)) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    public static void assertOwnerOrPermissionByEsntlId(String ownerEsntlId, String overridePermission) {
+        if (hasPermission(overridePermission)) return;
+        assertOwnerByEsntlId(ownerEsntlId);
+    }
  
     /**
      * 현재 인증 주체의 <b>esntlId</b>(시스템 내부 PK)를 반환한다.
@@ -27,14 +42,14 @@ public class SecurityUtil {
      * {@link #getCurrentLoginId()} 로 비교해야 한다.</p>
      *
      * <p><b>소유권(IDOR) 비교의 축은 도메인마다 다르다.</b> 소유자 필드가 감사 컬럼을
-     * 쓰는 표준 도메인은 {@link #assertOwnerOrAdmin(String)}(loginId 기준)로,
+     * 쓰는 표준 도메인은 {@link #assertOwnerOrPermission(String, String)}(loginId 기준)로,
      * 소유자 필드를 <b>esntlId 로 저장</b>하는 도메인({@code InformalSanction.aplcntId},
      * {@code Board.userId} 등)은 이 메서드({@code getCurrentEsntlId()})로 비교해야 축이 일치한다.
      * 상세 규약: {@code docs/03-guides/identity-model-guide.md} §2.</p>
      *
      * @return esntlId (User 엔티티 PK). 인증 정보 부재 시 {@code Optional.empty()}.
      * @see #getCurrentLoginId()
-     * @see #assertOwnerOrAdmin(String)
+     * @see #assertOwnerOrPermission(String, String)
      */
     public static Optional<String> getCurrentEsntlId() {
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -62,31 +77,7 @@ public class SecurityUtil {
         return getCurrentEsntlId();
     }
  
-    public static boolean hasRole(String role) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            return false;
-        }
- 
-        String targetAuthority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
- 
-        RoleHierarchy roleHierarchy = null;
-        try {
-            roleHierarchy = ApplicationContextProvider.getBean(RoleHierarchy.class);
-        } catch (Exception e) {
-            // ApplicationContext가 구성되지 않은 환경(테스트 등)에서의 fail-safe 폴백
-        }
- 
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        if (roleHierarchy != null) {
-            Collection<? extends GrantedAuthority> reachable = roleHierarchy.getReachableGrantedAuthorities(authorities);
-            return reachable.stream()
-                    .anyMatch(authority -> authority.getAuthority().equals(targetAuthority));
-        }
- 
-        return authorities.stream()
-                .anyMatch(authority -> authority.getAuthority().equals(targetAuthority));
-    }
+
 
     /**
      * 현재 인증 주체의 <b>로그인 ID</b>(CustomUserDetails.getUserId)를 반환한다.
@@ -103,40 +94,9 @@ public class SecurityUtil {
         return Optional.empty();
     }
 
-    /**
-     * 리소스 소유권(작성자) 검증. 관리자(ADMIN/SYSTEM)는 우회한다.
-     * 소유자 식별은 <b>loginId</b> 기준(frstRgtrId 저장값과 동일)이다. — IDOR 방어 표준 가드.
-     *
-     * @param ownerLoginId 리소스의 작성자 loginId (보통 {@code entity.getFrstRgtrId()})
-     * @throws BusinessException ACCESS_DENIED — 관리자가 아니고 현재 사용자가 소유자가 아닐 때
-     */
-    public static void assertOwnerOrAdmin(String ownerLoginId) {
-        if (hasRole(AuthorityConstants.ROLE_ADMIN) || hasRole(AuthorityConstants.ROLE_SYSTEM)) {
-            return;
-        }
-        String current = getCurrentLoginId().orElse(null);
-        if (current == null || !current.equals(ownerLoginId)) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
-    }
 
-    /**
-     * 리소스 소유권(작성자) 검증. 관리자(ADMIN/SYSTEM)는 우회한다.
-     * 소유자 식별은 <b>esntlId</b> 기준(User 엔티티 PK)이다. — IDOR 방어 표준 가드.
-     * ({@code InformalSanction.aplcntId}, {@code Board.userId} 등 esntlId 를 저장하는 도메인용)
-     *
-     * @param ownerEsntlId 리소스 작성자의 esntlId
-     * @throws BusinessException ACCESS_DENIED — 관리자가 아니고 현재 사용자가 소유자가 아닐 때
-     */
-    public static void assertOwnerOrAdminByEsntlId(String ownerEsntlId) {
-        if (hasRole(AuthorityConstants.ROLE_ADMIN) || hasRole(AuthorityConstants.ROLE_SYSTEM)) {
-            return;
-        }
-        String current = getCurrentEsntlId().orElse(null);
-        if (current == null || !current.equals(ownerEsntlId)) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
-    }
+
+
 
 
     /**
@@ -144,7 +104,7 @@ public class SecurityUtil {
      * 인격 귀속 행위(결재자 본인 승인, 신청자 본인 정정 등)용 엄격 가드.
      * 소유자 식별은 <b>esntlId</b> 기준(User 엔티티 PK)이다.
      *
-     * <p>관리자 우회가 필요한 일반 소유권 검증은 {@link #assertOwnerOrAdminByEsntlId(String)} 를 쓴다.
+     * <p>관리자 우회가 필요한 일반 소유권 검증은 {@link #assertOwnerOrPermissionByEsntlId(String, String)} 를 쓴다.
      * 두 헬퍼를 혼동해 이 자리에 관리자 우회를 도입하면 결재 무결성이 깨지므로 주의한다.</p>
      *
      * @param ownerEsntlId 리소스 귀속 주체의 esntlId
@@ -157,25 +117,7 @@ public class SecurityUtil {
         }
     }
 
-    /**
-     * 현재 인증 주체가 관리자(ADMIN 또는 SYSTEM) 권한을 보유하고 있는지 여부를 반환한다.
-     *
-     * @return 관리자 권한 보유 시 {@code true}, 그렇지 않으면 {@code false}
-     */
-    public static boolean isAdmin() {
-        return hasRole(AuthorityConstants.ROLE_ADMIN) || hasRole(AuthorityConstants.ROLE_SYSTEM);
-    }
 
-    /**
-     * 관리자(ADMIN/SYSTEM) 전용 자원에 대한 서비스 레이어 2차 인가 가드.
-     * 컨트롤러의 {@code @PreAuthorize}(1차)와 짝을 이루는 이중 검증(백엔드 헌법 제8조)이다.
-     * 소유 모델이 없는 공유 관리 자원(예: 부서 업무함)의 쓰기 경로에서 사용한다.
-     *
-     * @throws BusinessException ACCESS_DENIED — 현재 주체가 ADMIN/SYSTEM 이 아닐 때
-     */
-    public static void assertAdmin() {
-        if (!isAdmin()) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
-    }
+
+
 }

@@ -32,6 +32,7 @@ public class AuthApiController {
     private final ClientIpResolver clientIpResolver;
 
     @PostMapping("/login")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.AuthApiController#login')")
     public ApiResponse<TokenResponse> login(@Valid @RequestBody LoginRequest loginRequest,
             HttpServletRequest request,
             HttpServletResponse response) {
@@ -43,18 +44,18 @@ public class AuthApiController {
     }
 
     @PostMapping("/reissue")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.AuthApiController#reissue')")
     public ApiResponse<TokenResponse> reissue(
             @CookieValue(name = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response) {
         TokenResponse tokenResponse = authService.reissue(refreshToken);
-        // [Phase 3 대칭화] login 과 동일하게 refreshToken 을 HttpOnly 쿠키로 재발급한다. 현재 reissue 는
-        // 토큰을 회전하지 않아 사실상 동일 쿠키 재설정이지만, 향후 회전 도입 시 새 토큰의 전달 경로가
-        // 소멸하는 잠복 함정을 지금 닫는다(바디에서 refreshToken 을 뺐으므로 쿠키가 유일 전달 경로).
+        // 회전된 refreshToken은 로그인과 동일하게 HttpOnly 쿠키로만 전달한다.
         jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());
         return ApiResponse.success(tokenResponse);
     }
 
     @PostMapping("/logout")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.AuthApiController#logout')")
     public ApiResponse<String> logout(HttpServletResponse response) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
@@ -67,13 +68,12 @@ public class AuthApiController {
     private final nuri.business.service.user.UserService userService;
 
     @GetMapping("/me")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.AuthApiController#getCurrentUser')")
     public ApiResponse<CurrentUserResponse> getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser")) {
-            String userId = auth.getName();
-            if (auth.getPrincipal() instanceof CustomUserDetails) {
-                userId = ((CustomUserDetails) auth.getPrincipal()).getUserId();
-            }
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof CustomUserDetails principal) {
+            new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(principal);
+            String userId = principal.getUserId();
 
             nuri.business.service.user.dto.UserDto userDto = userService.getUserById(userId);
 
@@ -82,9 +82,12 @@ public class AuthApiController {
                     userDto.userId(),
                     userDto.esntlId(),
                     userDto.userNm(),
-                    userDto.role(),
+                    principal.getAuthorCode(),
                     userDto.userSe(),
-                    userDto.emlAddr());
+                    userDto.emlAddr(),
+                    principal.getGroups(),
+                    principal.getPermissions(),
+                    principal.getAuthorizationVersion());
             return ApiResponse.success(body);
         }
         throw new BusinessException(CommonErrorCode.INVALID_TOKEN);

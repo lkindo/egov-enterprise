@@ -29,6 +29,7 @@ public class BannerApiController {
 
     @Operation(summary = "배너 목록 조회", description = "시스템에 등록된 배너들을 검색 조건에 따라 페이징 조회합니다.")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#getBanners')")
     public ResponseEntity<ApiResponse<PageResponse<BannerDto>>> getBanners(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -38,6 +39,7 @@ public class BannerApiController {
 
     @Operation(summary = "배너 상세 조회", description = "특정 배너의 상세 정보를 조회합니다.")
     @GetMapping("/{bnrSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#getBanner')")
     public ResponseEntity<ApiResponse<BannerDto>> getBanner(
             @Parameter(description = "배너 일련번호") @PathVariable Long bnrSn) {
         return ResponseEntity.ok(ApiResponse.success(bannerService.getBanner(bnrSn)));
@@ -45,12 +47,14 @@ public class BannerApiController {
 
     @Operation(summary = "배너 등록", description = "새로운 배너 정보를 등록합니다.")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#insertBanner')")
     public ResponseEntity<ApiResponse<Long>> insertBanner(@Valid @RequestBody BannerDto dto) {
         return ResponseEntity.ok(ApiResponse.success(bannerService.insertBanner(dto)));
     }
 
     @Operation(summary = "배너 정보 수정", description = "기존 배너 정보를 수정합니다.")
     @PutMapping("/{bnrSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#updateBanner')")
     public ResponseEntity<ApiResponse<Void>> updateBanner(
             @PathVariable Long bnrSn,
             @Valid @RequestBody BannerDto dto) {
@@ -61,6 +65,7 @@ public class BannerApiController {
 
     @Operation(summary = "배너 삭제", description = "등록된 배너 정보를 삭제합니다.")
     @DeleteMapping("/{bnrSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#deleteBanner')")
     public ResponseEntity<ApiResponse<Void>> deleteBanner(@PathVariable Long bnrSn) {
         bannerService.deleteBanner(bnrSn);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -68,6 +73,7 @@ public class BannerApiController {
 
     @Operation(summary = "메인화면 호출용 배너 조회", description = "메인 화면에 노출하도록 설정된 배너 목록을 조회합니다.")
     @GetMapping("/reflected")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#getReflectedBanners')")
     public ResponseEntity<ApiResponse<List<BannerDto>>> getReflectedBanners() {
         return ResponseEntity.ok(ApiResponse.success(bannerService.getReflectedBanners()));
     }

@@ -26,6 +26,8 @@ import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUser
 import { deptAdminService } from '@/services/foundation/system/DeptAdminService';
 import type { DeptJobBxVO } from '@/types/business/deptJob';
 import { DeptJobBoxDtoSchema } from '@/types/generated-zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const StandardModal = dynamic(
   () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
@@ -67,6 +69,10 @@ interface DeptJobBoxManageDialogProps {
  * 실패 메시지를 그대로 드러낸다(고아 업무를 만들지 않는 서버 규칙을 화면이 우회하지 않는다).
  */
 export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDialogProps) {
+  const { user } = useAuth();
+  const canCreate = canPermission(user, 'DEPT_BOX_CREATE');
+  const canUpdate = canPermission(user, 'DEPT_BOX_UPDATE');
+  const canDelete = canPermission(user, 'DEPT_BOX_DELETE');
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -106,6 +112,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
   };
 
   const startEdit = (box: DeptJobBxVO) => {
+    if (!canUpdate) return;
     setEditing(box);
     form.reset({
       deptTaskBoxNm: box.deptTaskBoxNm ?? '',
@@ -115,6 +122,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
   };
 
   const onSubmit = async (values: DeptJobBoxFormValues) => {
+    if (!(editing ? canUpdate : canCreate)) return;
     if (submitLock.current) return;
     submitLock.current = true;
     setSaving(true);
@@ -146,6 +154,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
   };
 
   const handleDelete = async (box: DeptJobBxVO) => {
+    if (!canDelete) return;
     if (deletePendingRef.current) return;
     deletePendingRef.current = true;
     setDeletingSn(box.deptTaskBoxSn);
@@ -189,9 +198,9 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
               수정 취소
             </Button>
           )}
-          <Button type="submit" form="dept-job-box-form" className="h-11 flex-[2]" disabled={saving || form.formState.isSubmitting}>
+          {(editing ? canUpdate : canCreate) && <Button type="submit" form="dept-job-box-form" className="h-11 flex-[2]" disabled={saving || form.formState.isSubmitting}>
             {saving ? '저장 중…' : editing ? '수정 저장' : '업무함 등록'}
-          </Button>
+          </Button>}
         </div>
       }
     >
@@ -232,10 +241,10 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                         {box.sortOrdr !== undefined && box.sortOrdr !== null ? ` · 순서 ${box.sortOrdr}` : ''}
                       </span>
                     </div>
-                    <Button type="button" variant="ghost" size="icon" aria-label={`${box.deptTaskBoxNm} 수정`} onClick={() => startEdit(box)} disabled={saving}>
+                    {canUpdate && <Button type="button" variant="ghost" size="icon" aria-label={`${box.deptTaskBoxNm} 수정`} onClick={() => startEdit(box)} disabled={saving}>
                       <Pencil size={16} aria-hidden="true" />
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canDelete && <Button
                       type="button"
                       variant="ghost"
                       size="icon"
@@ -246,7 +255,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                       className="text-destructive hover:text-destructive"
                     >
                       {isDeleting ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Trash2 size={16} aria-hidden="true" />}
-                    </Button>
+                    </Button>}
                   </li>
                 );
               })}
@@ -255,7 +264,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
           <PagePagination page={page} total={total} size={PAGE_SIZE} onPageChange={setPage} />
         </section>
 
-        <Form {...form}>
+        {(editing ? canUpdate : canCreate) && <Form {...form}>
           <form
             id="dept-job-box-form"
             noValidate
@@ -332,7 +341,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
               )}
             />
           </form>
-        </Form>
+        </Form>}
       </div>
     </StandardModal>
   );

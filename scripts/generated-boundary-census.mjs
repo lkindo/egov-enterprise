@@ -48,6 +48,7 @@ const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', '
 const OPENAPI_METHODS = [...HTTP_METHODS, 'trace'];
 const GENERATED_EXECUTOR_EXPORTS = new Set([
   'executeGeneratedOperation',
+  'executeGeneratedFetchOperation',
   'executeGeneratedMultipartOperation',
 ]);
 const GENERATED_EXECUTOR_NAMES = new Set([

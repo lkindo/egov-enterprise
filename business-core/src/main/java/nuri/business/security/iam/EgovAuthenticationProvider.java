@@ -2,9 +2,6 @@ package nuri.business.security.iam;
 
 import nuri.business.security.service.EgovPasswordEncoder;
 import nuri.foundation.security.service.CustomUserDetails;
-import nuri.foundation.security.constants.SecurityConstants;
-
-import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class EgovAuthenticationProvider implements AuthenticationProvider {
     private final UserRepository userRepository;
-    private final UserAuthorityRepository userAuthorityRepository;
+    private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final EgovPasswordEncoder egovPasswordEncoder;
 
@@ -127,38 +127,15 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             
             userEntity.unlockAccount();
             userRepository.save(userEntity);
-            log.info(">>> Authenticating user: {}, esntlId: {}, Inherent Role: {}", 
-                    userEntity.getUserId(), userEntity.getEsntlId(), userEntity.getRole());
-
-            String authorCodeFromDb = userAuthorityRepository.findById(userEntity.getEsntlId())
-                    .map(ua -> ua.getAuthrtId())
-                    .orElse(null);
-
-            log.info(">>> Role from DB table (NEMPLYRSCRTYESTBS): {}", authorCodeFromDb);
-
-            String authorCode;
-            if (authorCodeFromDb != null) {
-                authorCode = authorCodeFromDb;
-            } else {
-                authorCode = userEntity.getRole() != null ? userEntity.getRole().name() : SecurityConstants.ROLE_USER;
+            // 로그인과 JWT/refresh가 동일한 저장소 기반 권한 계산 결과를 사용한다.
+            // 표시용 User.role을 다시 쓰거나, 배정 없음에서 USER로 승격하지 않는다.
+            var loaded = userDetailsService.loadUserByUsername(userEntity.getEsntlId());
+            if (!(loaded instanceof CustomUserDetails userDetails)
+                    || !userEntity.getEsntlId().equals(userDetails.getUsername())) {
+                throw new AuthenticationServiceException("Authentication principal contract is invalid");
             }
-
-            if (!authorCode.startsWith(SecurityConstants.ROLE_PREFIX)) {
-                authorCode = SecurityConstants.ROLE_PREFIX + authorCode;
-            }
-
-            log.info(">>> Final resolved authorCode for user {}: {}", userId, authorCode);
-            userEntity.changeRole(nuri.business.domain.user.entity.Role.fromAuthorCode(authorCode));
-            CustomUserDetails userDetails = CustomUserDetails.builder()
-                    .userId(userEntity.getUserId())
-                    .esntlId(userEntity.getEsntlId())
-                    .userNm(userEntity.getUserNm())
-                    .password(userEntity.getPswd())
-                    .roleName(userEntity.getRole() != null ? userEntity.getRole().name() : null)
-                    .lockAt(userEntity.getLckYn())
-                    .authorCode(authorCode)
-                    .build();
-            return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
+            new AccountStatusUserDetailsChecker().check(userDetails);
+            return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         } catch (AuthenticationException e) {
             // 실패한 로그인 ID와 예외 메시지를 운영 로그에 반복 복제하지 않는다.
             log.warn(">>> Authentication rejected: {}", e.getClass().getSimpleName());
@@ -208,6 +185,9 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
      * 공격자가 임의 계정에 실패를 퍼부어 정상 사용자를 영구 차단하는 DoS 가 성립한다.
      */
     private void validateAccountStatus(User user) {
+        if (!"P".equals(user.getUserSttsCd())) {
+            throw new DisabledException("User account is not active");
+        }
         if (!user.isLocked()) {
             return;
         }

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
-import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { canPermission } from '@/lib/auth/permissions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
@@ -41,24 +41,16 @@ interface BoardDetailClientProps {
   }>;
 }
 
-/*
-  [2026-08-29] 자체 role 집합을 걷고 공용 SSOT 로 판정한다.
-
-  종전 집합은 값은 같았지만 대소문자를 흡수하지 않았다(`has(user.role)` 원문 비교).
-  SSOT 와 proxy 의 라우트 게이트는 둘 다 대문자로 정규화하므로, 서버 표기가 흔들리면
-  **라우트는 열어 주는데 화면에서만 수정·삭제 버튼이 사라지는** 비대칭이 생긴다.
-  DEC-OPS-023 ② 가 기록한 조용히 죽는 결함과 같은 방향이다.
-
-  ⚠ 표시 판정이지 인가가 아니다 — 서버는 assertOwnerOrAdminByEsntlId 로 따로 집행한다.
-*/
+/** 표시 판정: 자기 글은 기능권한과 esntlId 소유자가 모두 필요하고, 전체 관리 권한은 별도다.
+ * 서버가 매 요청의 현재 권한과 게시글 소유권을 최종 판정한다. */
 
 export function canManageBoardArticle(
-  user: { id: string; esntlId?: string; role?: string } | null | undefined,
+  user: { id: string; esntlId?: string; role?: string; permissions?: readonly string[]; authorizationVersion?: string } | null | undefined,
   authorId: string | undefined,
+  action: 'UPDATE' | 'DELETE' = 'UPDATE',
 ): boolean {
-  if (!user) return false;
-  if (isAdministrativeRole(user.role)) return true;
-  return Boolean(authorId && user.esntlId && user.esntlId === authorId);
+  if (!user || !canPermission(user, `BOARD_${action}`)) return false;
+  return canPermission(user, `BOARD_${action}_ALL`) || Boolean(authorId && user.esntlId && user.esntlId === authorId);
 }
 
 import { motion } from 'framer-motion';
@@ -96,7 +88,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     initialData: initialData.article,
     enabled: !!initialData.article && hasValidPstSn,
   });
-  const canManageArticle = canManageBoardArticle(user, article?.userId);
+  const canUpdateArticle = canManageBoardArticle(user, article?.userId, 'UPDATE');
+  const canDeleteArticle = canManageBoardArticle(user, article?.userId, 'DELETE');
 
   // 감사 P1-5/P1-6: 첨부 영역은 과거 "Technical_Spec_Unit_XXXX.pdf · 3.4 MB" 라는 존재하지 않는 파일을
   // 하드코딩해 보여주고, 다운로드 아이콘에는 핸들러조차 없었다. 이미 있는 fileService 로 실제 목록을 배선한다.
@@ -284,7 +277,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           transition={{ delay: 0.3 }}
           className="flex items-center gap-4 relative z-10"
         >
-          {canManageArticle && (
+          {canUpdateArticle && (
             <Button
               variant="outline"
               onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstSn=${pstSn}`)}
@@ -343,7 +336,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             → 확인을 transition 밖(onClick)에서 먼저 받고, 확정된 뒤에 서버 액션을 호출한다.
               폼이 없어졌으므로 FormData 는 직접 구성한다(종전 hidden input 과 동일한 키).
           */}
-          {canManageArticle && (
+          {canDeleteArticle && (
             <Button
               type="button"
               variant="outline"

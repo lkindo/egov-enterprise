@@ -110,10 +110,10 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   //   목록·등록·수정·삭제. tb_indv_pg_conts 는 시드도 생성 경로도 없고 무엇보다 그 값을 읽는
   //   화면이 없다(대시보드 위젯 SPI 구현 2개가 쓰지 않는다) — 켜고 꺼도 어디에도 나타나지 않아
   //   소비처를 먼저 정하기로 했다(사용자 결정). 엔티티·테이블은 남는다.
-  // [2026-09-08 PD-CMTY-001 커뮤니티 귀속 게시판] getCommunityBoards 1본 신설 — 370 -> 371.
+  // Canonical authorization administration adds 14 operations; all descriptors must remain bound to OpenAPI.
   //   GET /api/v1/communities/{cmntySn}/boards. findByCmntySnAndUseYn 의 첫 소비자이며
   //   승인된 회원·관리자만 목록을 받는다(BoardMasterService#assertCommunityMember).
-  assert.equal(operations.length, 371);
+  assert.equal(operations.length, 385);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

@@ -27,6 +27,7 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 목록 조회")
     @GetMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#getBoardMasterList')")
     public ResponseEntity<ApiResponse<PageResponse<BoardMasterSummaryResponse>>> getBoardMasterList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
         Pageable pageable = searchDto.toPageable();
@@ -38,6 +39,7 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 상세 조회")
     @GetMapping("/{bbsId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#getBoardMaster')")
     public ResponseEntity<ApiResponse<BoardMasterDetailResponse>> getBoardMaster(@PathVariable String bbsId) {
         BoardMasterDto result = boardMasterService.getBoardMaster(bbsId);
         return ResponseEntity.ok(ApiResponse.success(BoardMasterDetailResponse.from(result)));
@@ -45,6 +47,7 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 등록")
     @PostMapping
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#createBoardMaster')")
     public ResponseEntity<ApiResponse<String>> createBoardMaster(@Valid @RequestBody BoardMasterDto dto) {
         String userId = currentLoginId();
         String bbsId = boardMasterService.createBoardMaster(userId, dto);
@@ -53,6 +56,7 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 수정")
     @PutMapping("/{bbsId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMaster')")
     public ResponseEntity<ApiResponse<Void>> updateBoardMaster(@PathVariable String bbsId, @Valid @RequestBody BoardMasterDto dto) {
         String userId = currentLoginId();
         dto.setBbsId(bbsId);
@@ -62,6 +66,7 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 삭제", description = "논리 삭제(비활성화)입니다. 행을 말소하려면 /{bbsId}/physical 을 사용합니다.")
     @DeleteMapping("/{bbsId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMaster')")
     public ResponseEntity<ApiResponse<Void>> deleteBoardMaster(@PathVariable String bbsId) {
         String userId = currentLoginId();
         boardMasterService.deleteBoardMaster(userId, bbsId);
@@ -71,6 +76,7 @@ public class BoardMasterApiController {
     @Operation(summary = "게시판 마스터 영구 삭제 가능 여부",
             description = "비활성(useYn='N') 이고 소속 게시글이 0건일 때만 true 입니다. 화면이 영구 삭제 전 사전 안내에 사용합니다.")
     @GetMapping("/{bbsId}/deletable")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#isBoardMasterDeletable')")
     public ResponseEntity<ApiResponse<Boolean>> isBoardMasterDeletable(@PathVariable String bbsId) {
         return ResponseEntity.ok(ApiResponse.success(boardMasterService.isDeletable(bbsId)));
     }
@@ -78,6 +84,7 @@ public class BoardMasterApiController {
     @Operation(summary = "게시판 마스터 영구 삭제",
             description = "행을 물리 삭제합니다. 활성 게시판이거나 게시글이 남아 있으면 거부됩니다(서비스 레이어 재검증).")
     @DeleteMapping("/{bbsId}/physical")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMasterPhysically')")
     public ResponseEntity<ApiResponse<Void>> deleteBoardMasterPhysically(@PathVariable String bbsId) {
         String userId = currentLoginId();
         boardMasterService.deleteBoardMasterPhysically(userId, bbsId);
@@ -86,6 +93,7 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 사용여부 일괄 변경")
     @PostMapping("/batch/status")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMasterStatusInBatch')")
     public ResponseEntity<ApiResponse<Void>> updateBoardMasterStatusInBatch(
             @Valid @RequestBody BoardMasterBatchStatusRequest request) {
         String userId = currentLoginId();
@@ -96,6 +104,7 @@ public class BoardMasterApiController {
     @Operation(summary = "게시판 마스터 일괄 영구 삭제",
             description = "대상마다 비활성·게시글 0건을 재검증하며, 하나라도 어긋나면 전체가 롤백됩니다.")
     @PostMapping("/batch/delete")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMastersInBatch')")
     public ResponseEntity<ApiResponse<Void>> deleteBoardMastersInBatch(
             @Valid @RequestBody BoardMasterBatchDeleteRequest request) {
         String userId = currentLoginId();

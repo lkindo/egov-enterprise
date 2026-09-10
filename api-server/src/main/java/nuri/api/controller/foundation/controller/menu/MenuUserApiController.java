@@ -24,6 +24,7 @@ public class MenuUserApiController {
 
     @Operation(summary = "GNB 메인 메뉴 목록 조회")
     @GetMapping("/head")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.menu.MenuUserApiController#getHeadMenu')")
     public ResponseEntity<ApiResponse<MenuListResponse>> getHeadMenu() {
         log.info("getHeadMenu called");
         List<MenuDto> resultList = menuService.getMenuHierarchy();
@@ -33,6 +34,7 @@ public class MenuUserApiController {
 
     @Operation(summary = "특정 메뉴의 하위 메뉴 목록 조회")
     @GetMapping("/left")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.menu.MenuUserApiController#getLeftMenu')")
     public ResponseEntity<ApiResponse<MenuListResponse>> getLeftMenu(
             @RequestParam("menuNo") Long menuNo) {
         log.info("getLeftMenu called with menuNo={}", menuNo);

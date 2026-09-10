@@ -111,7 +111,7 @@ class BoardMasterServiceTest {
     @DisplayName("게시판 마스터 생성")
     void createBoardMaster() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")).thenReturn(true);
             BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("New Board").build();
 
             String bbsId = boardMasterService.createBoardMaster("user1", dto);
@@ -125,7 +125,7 @@ class BoardMasterServiceTest {
     @DisplayName("게시판 마스터 수정")
     void updateBoardMaster() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")).thenReturn(true);
             BoardMaster master = BoardMaster.builder().bbsId("BBS_01").bbsTtl("Old Board").build();
             given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
@@ -140,7 +140,7 @@ class BoardMasterServiceTest {
     @DisplayName("게시판 마스터 삭제 (논리삭제)")
     void deleteBoardMaster() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")).thenReturn(true);
             BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
             given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
 
@@ -164,7 +164,7 @@ class BoardMasterServiceTest {
     @DisplayName("옵션 필드(댓글, 만족도)가 포함된 게시판 마스터 생성")
     void createBoardMaster_WithOptionalFields() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")).thenReturn(true);
             BoardMasterDto dto = BoardMasterDto.builder()
                     .bbsTtl("Full Board")
                     .ansYn("Y")

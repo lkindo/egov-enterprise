@@ -52,11 +52,16 @@ class EntityTableOwnershipLinterTest {
     //   따라서 이 census 는 78 Entity → 78 물리 테이블이 아니라, 매핑 없는 테이블 1개가 생긴 상태다.
     // [2026-09-08 ADR-0012] 블로그 퇴역으로 Blog/BlogUser와 tb_blog_info/tb_blog_user_map을 제거했다.
     //   Entity 78 → 76, distinct @Table 77 → 75. 조직의 의도된 공유 매핑과 나머지 모집단은 그대로다.
-    private static final int EXPECTED_ENTITY_COUNT = 76;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 75;
+    // 승인된 권한 단순화: 구 AuthorityRole/RoleInfo/RoleProgramMap/MenuAuthority 4종 제거,
+    // AuthorityGrant/AuthorizationChange 2종 추가. 74 Entity / distinct table 73종.
+    // 운영 전체 물리 표 78종과 Entity census는 다르다. V2_98 + 별도 Contract/ADR 근거.
+    private static final int EXPECTED_ENTITY_COUNT = 74;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 73;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
+    private static final Map<String,String> INSERT_ONLY_AUDIT_ENTITIES = Map.of(
+            "nuri.business.domain.auth.AuthorizationChange", "tb_authrt_chg_hstry");
 
     /** 물리 감사 4컬럼은 있었지만 BaseEntity 상속이 빠졌던 쓰기 모델과 해당 저장소. */
     private static final Map<String, String> CORRECTED_AUDIT_WRITE_ENTITIES = Map.of(
@@ -83,7 +88,7 @@ class EntityTableOwnershipLinterTest {
                     Set.of("up_ognz_id", "sort_ordr")));
 
     @Test
-    @DisplayName("76 Entity → 75 물리 테이블: 공유 테이블은 exact FQCN + 단일 쓰기 소유자다")
+    @DisplayName("74 Entity → 73 물리 테이블: 공유 테이블은 exact FQCN + 단일 쓰기 소유자다")
     void entityTableOwnershipIsUniqueExceptForExactDocumentedPairs() {
         EntityInventory inventory = scanEntities();
 
@@ -91,7 +96,7 @@ class EntityTableOwnershipLinterTest {
                 .as("Entity 스캔 모집단이 바뀌었습니다. 신규/삭제가 의도됐다면 물리 테이블 소유권을 재판정하십시오.")
                 .hasSize(EXPECTED_ENTITY_COUNT);
         assertThat(inventory.entitiesByTable())
-                .as("76 Entity의 distinct @Table 모집단")
+                .as("현재 Entity의 distinct @Table 모집단")
                 .hasSize(EXPECTED_PHYSICAL_TABLE_COUNT);
 
         List<String> violations = new ArrayList<>(duplicateOwnershipViolations(
@@ -131,7 +136,7 @@ class EntityTableOwnershipLinterTest {
     }
 
     @Test
-    @DisplayName("감사 컬럼: 76 Entity의 상속/수동 매핑과 Flyway 물리 컬럼이 모두 full-audit다")
+    @DisplayName("감사 컬럼: 쓰기 모델 감사 4개와 불변 권한 이력 insert 감사 2개가 물리 스키마와 일치한다")
     void auditColumnMappingsMatchFlywayPhysicalColumns() throws IOException {
         EntityInventory inventory = scanEntities();
         Map<String, Map<String, String>> schema =
@@ -147,10 +152,8 @@ class EntityTableOwnershipLinterTest {
             AuditShape entityShape = AuditShape.of(entityAudit);
             census.merge(entityShape, 1, Integer::sum);
 
-            if (entityShape != AuditShape.FULL) {
-                violations.add(fqcn + " → 비표준 감사 형태 " + entityShape + " " + entityAudit
-                        + " (현재 Entity/Flyway 모집단에는 감사 4컬럼 예외 없음)");
-            }
+            String shapeViolation=auditShapeViolation(fqcn,table,entityAudit,entity.isAnnotationPresent(Immutable.class));
+            if (shapeViolation!=null) violations.add(shapeViolation);
 
             Map<String, String> physicalColumns = schema.get(table);
             if (physicalColumns == null) {
@@ -165,7 +168,9 @@ class EntityTableOwnershipLinterTest {
             }
         }
 
-        assertThat(census.getOrDefault(AuditShape.FULL, 0)).as("full audit Entity census").isEqualTo(EXPECTED_ENTITY_COUNT);
+        assertThat(inventory.entitiesByName().keySet()).containsAll(INSERT_ONLY_AUDIT_ENTITIES.keySet());
+        assertThat(census.getOrDefault(AuditShape.FULL, 0)).as("full audit Entity census").isEqualTo(EXPECTED_ENTITY_COUNT-INSERT_ONLY_AUDIT_ENTITIES.size());
+        assertThat(census.getOrDefault(AuditShape.INSERT_ONLY, 0)).as("immutable insert audit Entity census").isEqualTo(INSERT_ONLY_AUDIT_ENTITIES.size());
         assertThat(census.getOrDefault(AuditShape.TIME_ONLY, 0)).as("time-only Entity는 허용하지 않음").isZero();
         assertThat(census.getOrDefault(AuditShape.NONE, 0)).as("no-audit Entity는 허용하지 않음").isZero();
         assertThat(census.getOrDefault(AuditShape.PARTIAL, 0)).as("partial audit Entity는 허용하지 않음").isZero();
@@ -177,6 +182,25 @@ class EntityTableOwnershipLinterTest {
         log.info("감사 컬럼 정합 OK — full {}, time-only {}, none {}, partial {}",
                 census.getOrDefault(AuditShape.FULL, 0), census.getOrDefault(AuditShape.TIME_ONLY, 0),
                 census.getOrDefault(AuditShape.NONE, 0), census.getOrDefault(AuditShape.PARTIAL, 0));
+    }
+
+    private static String auditShapeViolation(String fqcn,String table,Set<String> columns,boolean immutable) {
+        if (INSERT_ONLY_AUDIT_ENTITIES.containsKey(fqcn)) {
+            return INSERT_ONLY_AUDIT_ENTITIES.get(fqcn).equals(table) && immutable
+                    && columns.equals(Set.of("frst_rgtr_id","crt_dt")) ? null : fqcn+" → 불변 insert 감사 계약 위반";
+        }
+        return columns.equals(AUDIT_COLUMNS) ? null : fqcn+" → 비표준 감사 형태 "+columns;
+    }
+
+    @Test
+    void insertAuditRequiresTheExactImmutableAuthorizationHistoryMapping() {
+        Set<String> insert=Set.of("frst_rgtr_id","crt_dt");
+        String history="nuri.business.domain.auth.AuthorizationChange";
+        assertThat(auditShapeViolation(history,"tb_authrt_chg_hstry",insert,true)).isNull();
+        assertThat(auditShapeViolation(history,"tb_authrt_chg_hstry",insert,false)).isNotNull();
+        assertThat(auditShapeViolation(history,"tb_other",insert,true)).isNotNull();
+        assertThat(auditShapeViolation("sample.OtherImmutable","tb_other",insert,true)).isNotNull();
+        assertThat(auditShapeViolation(history,"tb_authrt_chg_hstry",Set.of("crt_dt"),true)).isNotNull();
     }
 
     @Test
@@ -435,6 +459,7 @@ class EntityTableOwnershipLinterTest {
 
     private enum AuditShape {
         FULL,
+        INSERT_ONLY,
         TIME_ONLY,
         NONE,
         PARTIAL;
@@ -443,6 +468,7 @@ class EntityTableOwnershipLinterTest {
             if (columns.equals(AUDIT_COLUMNS)) {
                 return FULL;
             }
+            if (columns.equals(Set.of("frst_rgtr_id","crt_dt"))) return INSERT_ONLY;
             if (columns.equals(Set.of("crt_dt", "mdfcn_dt"))) {
                 return TIME_ONLY;
             }

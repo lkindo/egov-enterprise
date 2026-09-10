@@ -17,7 +17,6 @@ import java.util.List;
 @Tag(name = "Popup User", description = "팝업 사용자 API")
 @RestController("systemPopupUserApiController")
 @RequestMapping("/api/v1/popups")
-@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class PopupUserApiController {
 
@@ -25,12 +24,14 @@ public class PopupUserApiController {
 
     @Operation(summary = "활성 팝업 목록 조회", description = "현재 게시 기간 내에 있는 활성 팝업 목록을 조회합니다.")
     @GetMapping("/active")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupUserApiController#getActivePopups')")
     public ResponseEntity<ApiResponse<List<PopupDto>>> getActivePopups() {
         return ResponseEntity.ok(ApiResponse.success(popupService.getActivePopups()));
     }
 
     @Operation(summary = "팝업 상세 조회", description = "특정 팝업의 상세 정보를 조회합니다.")
     @GetMapping("/{popupSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupUserApiController#getPopup')")
     public ResponseEntity<ApiResponse<PopupDto>> getPopup(
             @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn) {
         return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupSn)));

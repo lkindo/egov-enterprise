@@ -21,6 +21,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 🔗 신규 엔티티 PK 생성 표준 린터 — §2.A(레거시 현대화) D1(B) 규약 게이트.
@@ -188,9 +189,12 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "GroupManage", "InstitutionCode",
             "LoginPolicy", "OrganizationManage",
-            "Program", "RefreshToken", "RoleInfo",
+            // 승인된 권한 단순화: RoleInfo는 Contract로 퇴역하고 UserAuthority는
+            // V2_98 tb_authrt_user_map의 (사용자,그룹) 복합 조인 키로 전환한다.
+            // OCI 원본 보존 및 PostgreSQL Expand/Contract/FK 회귀로 검증; 감사 PK는 IDENTITY.
+            "Program", "RefreshToken",
             "SystemPolicy", "Template",
-            "User", "UserAbsence", "UserAuthority"
+            "User", "UserAbsence"
     ));
 
     @Test
@@ -290,6 +294,26 @@ class PkGenerationStandardLinterTest {
     private static String simpleNameOf(String fqcn) {
         int idx = fqcn.lastIndexOf('.');
         return idx >= 0 ? fqcn.substring(idx + 1) : fqcn;
+    }
+
+    @Test
+    void authorizationUsesCompositeMembershipAndGrantKeysPlusGeneratedHistoryIdentity() {
+        var membership=nuri.business.domain.auth.UserAuthority.class;
+        var grant=nuri.business.domain.auth.AuthorityGrant.class;
+        assertThat(membership.getAnnotation(jakarta.persistence.IdClass.class)).isNotNull();
+        assertThat(grant.getAnnotation(jakarta.persistence.IdClass.class)).isNotNull();
+        assertThat(Arrays.stream(membership.getDeclaredFields()).filter(field -> field.isAnnotationPresent(Id.class))
+                .map(field -> field.getAnnotation(jakarta.persistence.Column.class).name()).toList())
+                .containsExactlyInAnyOrder("scrty_dcsn_trgt_id","authrt_cd");
+        assertThat(Arrays.stream(grant.getDeclaredFields()).filter(field -> field.isAnnotationPresent(Id.class))
+                .map(field -> field.getAnnotation(jakarta.persistence.Column.class).name()).toList())
+                .containsExactlyInAnyOrder("authrt_cd","authrt_type_cd","authrt_grnt_cd");
+        var historyIds=Arrays.stream(nuri.business.domain.auth.AuthorizationChange.class.getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(Id.class)).toList();
+        assertThat(historyIds).hasSize(1);
+        assertThat(historyIds.getFirst().getType()).isEqualTo(Long.class);
+        assertThat(historyIds.getFirst().getAnnotation(GeneratedValue.class).strategy())
+                .isEqualTo(jakarta.persistence.GenerationType.IDENTITY);
     }
 
     /** 단일 @Id 필드에 @GeneratedValue 가 없으면 수동 PK. 복합키(@EmbeddedId·복수 @Id)는 면제. */

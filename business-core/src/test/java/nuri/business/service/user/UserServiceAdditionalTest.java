@@ -24,6 +24,9 @@ import static org.mockito.Mockito.mockStatic;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService (사용자 관리 추가 기능) 테스트")
 class UserServiceAdditionalTest {
+    @org.junit.jupiter.api.AfterEach
+    void clearAuthorization() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
+
 
     @Mock
     private UserRepository userRepository;
@@ -52,13 +55,15 @@ class UserServiceAdditionalTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
+    @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         userService = new UserService(userRepository, userAuthorityRepository, refreshTokenRepository,
                 loginPolicyRepository, userAbsenceRepository,
-                userLogRepository, deptJobRepository, passwordEncoder, eventPublisher);
+                userLogRepository, deptJobRepository, passwordEncoder, eventPublisher, authorizationSnapshots, authorizationAdministration);
     }
 
     private User.UserBuilder createBaseUser(String userId) {
@@ -80,7 +85,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 정보 수정 성공")
     void updateUser_success() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
             // Given
             String userId = "testUser";
@@ -121,7 +127,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 정보 수정 - 요청에 없는 필드는 기존 값이 보존된다 (필드 유실 회귀 방어)")
     void updateUser_preservesFieldsAbsentFromRequest() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
 
             String userId = "testUser";
@@ -168,7 +175,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 정보 수정 - 빈 문자열은 '지움' 의도이므로 반영된다")
     void updateUser_emptyStringClearsField() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
 
             String userId = "testUser";
@@ -192,7 +200,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 정보 수정 실패 - 존재하지 않는 사용자")
     void updateUser_fail_userNotFound() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
             // Given
             String userId = "nonexistent";
@@ -258,7 +267,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 삭제 성공 - 종속 데이터(권한매핑·토큰) 정리 후 이벤트 발행과 함께 삭제 (V2_12 FK 결속)")
     void deleteUser_success() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             String userId = "testUser";
             User user = createBaseUser(userId).build();
             when(userRepository.findByUserId(userId)).thenReturn(Optional.of(user));
@@ -267,7 +277,7 @@ class UserServiceAdditionalTest {
             userService.deleteUser(userId);
 
             // Then — FK(NO ACTION)를 통과하려면 종속 정리가 삭제 전에 모두 수행되어야 한다
-            verify(userAuthorityRepository).deleteAllByIdInBatch(java.util.List.of("ESNTL_" + userId));
+            verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_" + userId));
             // [P2 키 규약] 단건 삭제도 esntlId IN bulk 계약을 사용하며 loginId/건별 삭제로 우회하지 않는다.
             verify(refreshTokenRepository).deleteAllByEsntlIdIn(java.util.List.of("ESNTL_" + userId));
             verify(refreshTokenRepository, never()).deleteByUserId(anyString());
@@ -288,7 +298,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 삭제 실패 - 존재하지 않는 사용자")
     void deleteUser_fail_userNotFound() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             // Given
             String userId = "nonexistent";
             when(userRepository.existsById(userId)).thenReturn(false);
@@ -304,7 +315,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 삭제 금지 - 시스템 관리자(webmaster)는 콘텐츠 재귀속 종착 계정이므로 삭제 불가")
     void deleteUser_fail_systemAdminProtected() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User webmaster = User.builder()
                     .userId("webmaster")
                     .esntlId(nuri.foundation.constants.Constants.User.SYSTEM_ADMIN_ESNTL_ID)
@@ -324,7 +336,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 일괄 삭제 - loginId 목록을 esntlId 로 해석해 실제 삭제 (기존 침묵 no-op 버그 회귀 방지)")
     void deleteUserList_resolvesLoginIdsToEsntlIds() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User userA = createBaseUser("loginA").build();
             User userB = createBaseUser("loginB").build();
             when(userRepository.findByUserId("loginA")).thenReturn(Optional.of(userA));
@@ -334,7 +347,7 @@ class UserServiceAdditionalTest {
             userService.deleteUserList(java.util.List.of("loginA", "loginB"));
 
             // Then — PK(esntlId)로 확정된 실제 사용자들이 삭제되어야 한다
-            verify(userAuthorityRepository).deleteAllByIdInBatch(java.util.List.of("ESNTL_loginA", "ESNTL_loginB"));
+            verify(authorizationAdministration).removeDeletedUsers(java.util.List.of("ESNTL_loginA", "ESNTL_loginB"));
             verify(userRepository).deleteAllInBatch(java.util.List.of(userA, userB));
             verify(eventPublisher).publishEvent(any(nuri.business.service.user.event.UserDeletionEvent.class));
         }
@@ -344,7 +357,8 @@ class UserServiceAdditionalTest {
     @DisplayName("사용자 일괄 삭제 - 존재하지 않는 ID 는 멱등 의미론으로 건너뜀")
     void deleteUserList_skipsMissingIds() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
-            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User userA = createBaseUser("loginA").build();
             when(userRepository.findByUserId("loginA")).thenReturn(Optional.of(userA));
             when(userRepository.findByUserId("ghost")).thenReturn(Optional.empty());

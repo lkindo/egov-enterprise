@@ -3,17 +3,20 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.foundation.security.jwt.JwtTokenProvider;
+import nuri.foundation.security.service.CustomUserDetails;
 import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
-    private final UserAuthorityRepository userAuthorityRepository;
+    private final UserDetailsService userDetailsService;
     private final nuri.business.domain.auth.RefreshTokenRepository refreshTokenRepository;
     private final nuri.business.service.login.LoginPolicyManageService loginPolicyManageService;
     private final nuri.business.domain.login.LoginPolicyRepository loginPolicyRepository;
@@ -66,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
         // 사용자가 입력한 로그인 ID 는 request.getUserId() 다. 둘은 서로 다른 식별자이므로 명시적으로 분리한다.
         String esntlId = authentication.getName();   // User @Id · JWT subject · RefreshToken key
         String loginId = request.getUserId();        // TB_LOGIN_POLICY @Id
+        CustomUserDetails principal = requireCurrentPrincipal(authentication.getPrincipal(), esntlId);
 
         // 2. OTP 검증 (정책에 활성화된 경우) — LoginPolicy 는 로그인 ID(TB_LOGIN_POLICY.@Id=userId) 로 키잉된다.
         //    [버그 수정] 과거에는 esntlId 로 findById 하여 정책이 항상 empty → otpUseYn='Y' 여도 OTP 가 전원 무력화됐다.
@@ -87,13 +91,7 @@ public class AuthServiceImpl implements AuthService {
             }
         });
 
-        String role = authentication.getAuthorities().stream()
-                .map(auth -> auth.getAuthority())
-                .findFirst()
-                .orElse("ROLE_USER");
-        
-        String finalRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-        String accessToken = jwtTokenProvider.createAccessToken(esntlId, finalRole);
+        String accessToken = jwtTokenProvider.createAccessToken(esntlId, principal.getAuthorCode());
         String refreshToken = jwtTokenProvider.createRefreshToken(esntlId);
 
         // Refresh Token 저장/갱신 (esntlId 로 키잉 — 기존 거동 유지)
@@ -115,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
         //   비동기(logExecutor)이고 내부에서 예외를 흡수하므로 로그인 응답을 지연·차단하지 않는다.
         logService.logLogin(loginId, clientIp, "WEB", "N", null);
 
-        return new TokenResponse(accessToken, refreshToken, finalRole);
+        return TokenResponse.from(accessToken, refreshToken, principal);
     }
 
     @Override
@@ -137,14 +135,9 @@ public class AuthServiceImpl implements AuthService {
 
         String userId = storedToken.getUserId();
         
-        String authorCode = userRepository.findById(userId)
-                .map(user -> userAuthorityRepository.findById(user.getEsntlId())
-                        .map(ua -> ua.getAuthrtId())
-                        .orElseGet(() -> user.getRole().name()))
-                .orElse("ROLE_USER");
-
-        String finalRole = authorCode.startsWith("ROLE_") ? authorCode : "ROLE_" + authorCode;
-        String newAccessToken = jwtTokenProvider.createAccessToken(userId, finalRole);
+        CustomUserDetails principal = requireCurrentPrincipal(
+                userDetailsService.loadUserByUsername(userId), userId);
+        String newAccessToken = jwtTokenProvider.createAccessToken(userId, principal.getAuthorCode());
 
         // [W1-06] 리프레시 토큰 회전.
         //   종전에는 같은 리프레시 토큰을 계속 돌려줬다. 탈취된 토큰은 만료(최대 7일)까지 유효했고,
@@ -159,7 +152,16 @@ public class AuthServiceImpl implements AuthService {
         storedToken.updateToken(rotatedRefreshToken, absoluteExpiry);
         refreshTokenRepository.save(storedToken);
 
-        return new TokenResponse(newAccessToken, rotatedRefreshToken, finalRole);
+        return TokenResponse.from(newAccessToken, rotatedRefreshToken, principal);
+    }
+
+    private static CustomUserDetails requireCurrentPrincipal(Object candidate, String expectedId) {
+        if (!(candidate instanceof CustomUserDetails principal)
+                || expectedId == null || !expectedId.equals(principal.getUsername())) {
+            throw new AuthenticationServiceException("Authentication principal contract is invalid");
+        }
+        new AccountStatusUserDetailsChecker().check(principal);
+        return principal;
     }
 
     @Override

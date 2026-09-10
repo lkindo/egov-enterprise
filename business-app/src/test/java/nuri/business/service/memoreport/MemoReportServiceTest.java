@@ -68,7 +68,7 @@ class MemoReportServiceTest {
         // then
         assertThat(result.getContent()).hasSize(1);
         // 조직 전체 열람은 관리자 전용이어야 한다(컨트롤러 @PreAuthorize 와 짝을 이루는 2차 가드)
-        __secUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.assertAdmin());
+        __secUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.assertPermission("MEMO_RPT_READ_ALL"));
     }
 
     @Test
@@ -359,7 +359,7 @@ class MemoReportServiceTest {
         entity.setFrstRgtrId("login-me");
         given(memoReportRepository.findByUserId(eq("esntl-me"), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(entity)));
-        __secUtilMock.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(false);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")).thenReturn(false);
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
                 .thenReturn(Optional.of("login-me"));
 
@@ -376,7 +376,7 @@ class MemoReportServiceTest {
         entity.setFrstRgtrId("login-someone-else");
         given(memoReportRepository.findByRptrId(eq("esntl-me"), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(entity)));
-        __secUtilMock.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(false);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")).thenReturn(false);
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
                 .thenReturn(Optional.of("login-me"));
 
@@ -393,7 +393,7 @@ class MemoReportServiceTest {
         entity.setFrstRgtrId("login-someone-else");
         given(memoReportRepository.searchByTitle(eq(""), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(entity)));
-        __secUtilMock.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(true);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")).thenReturn(true);
 
         Page<MemoReportDto> result = memoReportService.getMemoReportList(null, pageable);
 
@@ -408,7 +408,7 @@ class MemoReportServiceTest {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-me").build();
         given(memoReportRepository.findByUserId(eq("esntl-me"), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(entity)));
-        __secUtilMock.when(nuri.business.security.util.SecurityUtil::isAdmin).thenReturn(false);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")).thenReturn(false);
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
                 .thenReturn(Optional.of("login-me"));
 
