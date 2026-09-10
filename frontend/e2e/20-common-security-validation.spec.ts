@@ -88,8 +88,22 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
             },
         ]);
         console.log('>>> Step 1: Navigating to a protected admin page');
+        const authenticatedMenus = page.waitForResponse(response =>
+            new URL(response.url()).pathname === '/api/v1/menus/head'
+            && response.request().method() === 'GET'
+            && response.status() === 200);
         await page.goto('/admin/community/boards/master');
         await expect(page).toHaveURL(/.*master/);
+        // main CI 34477985094: URL 도착 직후 쿠키를 지우면 첫 메뉴 조회가 hydration 뒤 401이 된다.
+        await expect(page.getByRole('button', { name: '사용자 계정 메뉴', exact: true })).toBeVisible();
+        await expect(page.getByRole('navigation', { name: '주메뉴 네비게이션', exact: true }).getByRole('link').first()).toBeVisible();
+        await expect(page.getByRole('heading', { name: '게시판 마스터 콘솔', exact: true })).toBeVisible();
+        // SSR initialData가 메뉴 조회를 생략해도 실제 인증 상태를 확인할 수 있도록 같은 출처로 조회한다.
+        const menuStatus = await page.evaluate(async () => (await fetch('/api/v1/menus/head', {
+            credentials: 'same-origin', cache: 'no-store',
+        })).status);
+        expect(menuStatus, '세션 소실 전 메뉴 조회는 인증된 상태로 성공해야 한다').toBe(200);
+        await authenticatedMenus;
 
         console.log('>>> Step 2: Clearing cookies and localStorage to simulate session expiration');
         // CI 34315391348 trace: 쿠키 삭제 뒤 GET /ws/083/zwtnev2m/eventsource가 401이고
