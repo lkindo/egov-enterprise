@@ -107,10 +107,48 @@ test('source hashes are portable between LF and CRLF checkouts', () => {
 
 test('the retained approved findings match current source and defenses; retired write branches have no exceptions', () => {
   assert.deepEqual(reviewedExceptions.findings.map(e => e.id),
-    ['SAST-FP-001', 'SAST-FP-002', 'SAST-FP-003', 'SAST-FP-006', 'SAST-FP-007']);
-  assert.equal(reviewedExceptions.findings.filter(e => e.language === 'java').length, 3);
+    ['SAST-FP-001', 'SAST-FP-002', 'SAST-FP-003', 'SAST-FP-006', 'SAST-FP-007', 'SAST-FP-008']);
+  assert.equal(reviewedExceptions.findings.filter(e => e.language === 'java').length, 4);
   for (const entry of reviewedExceptions.findings) {
     assert.equal(sourceHash(repoRoot, entry.file), entry.sourceSha256, entry.id);
     for (const source of entry.supportingSources) assert.equal(sourceHash(repoRoot, source.file), source.sha256, source.file);
   }
+});
+
+
+test('the reviewed SockJS denial branch never exempts a new authentication bypass finding', () => {
+  const entries = reviewedExceptions.findings.filter(entry => entry.language === 'java');
+  const approved = entries.find(entry => entry.id === 'SAST-FP-008');
+  assert.ok(approved);
+  assert.equal(approved.ruleId, 'java/user-controlled-bypass');
+  assert.equal(approved.file, 'api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java');
+  assert.equal(approved.line, 69);
+  assert.equal(approved.fingerprint, '3bdaa522982a3650:1');
+  assert.equal(approved.expiresOn, '2026-12-08');
+  assert.ok(approved.supportingSources.some(source =>
+    source.file === 'api-server/src/test/java/nuri/config/websocket/WebSocketCookieAuthenticationFilterTest.java'));
+  const report = { version: '2.1.0', runs: [{
+    tool: { driver: { name: 'CodeQL', version: policy.codeqlVersion,
+      rules: [...new Set(entries.map(entry => entry.ruleId))].map(id => ({
+        id, properties: { tags: ['security'], 'security-severity': '8.8' },
+      })) } }, invocations: [{ executionSuccessful: true }],
+    results: entries.map(entry => ({ ruleId: entry.ruleId, message: { text: 'Security finding' },
+      partialFingerprints: { primaryLocationLineHash: entry.fingerprint },
+      locations: [{ physicalLocation: { artifactLocation: { uri: entry.file }, region: { startLine: entry.line } } }],
+    })),
+  }] };
+  const apply = () => applyReviewedExceptions(report, evaluateSarif(report, 'java'), {
+    manifest: reviewedExceptions, root: repoRoot, today: '2026-09-10', codeqlVersion: policy.codeqlVersion,
+  });
+  assert.equal(gateExitCode(apply()), 0);
+  const extra = structuredClone(report.runs[0].results.find(result =>
+    result.partialFingerprints.primaryLocationLineHash === approved.fingerprint));
+  extra.partialFingerprints.primaryLocationLineHash = 'ffffffffffffffff:1';
+  extra.suppressions = [{ kind: 'external', status: 'accepted' }];
+  report.runs[0].results.push(extra);
+  const result = apply();
+  assert.equal(gateExitCode(result), 1);
+  assert.equal(result.reviewed.length, entries.length);
+  assert.equal(result.blocking.length, 1);
+  assert.equal(exceptionReports(sanitizeSarif(report), result).publish.runs[0].results.length, 1);
 });

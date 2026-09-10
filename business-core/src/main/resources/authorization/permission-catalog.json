@@ -251,6 +251,16 @@
       ]
     },
     {
+      "code": "BANNER_ADMIN_READ",
+      "domain": "BANNER",
+      "action": "ADMIN_READ",
+      "name": "배너 · 관리 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
       "code": "BANNER_CREATE",
       "domain": "BANNER",
       "action": "CREATE",
@@ -657,6 +667,16 @@
       "domain": "COMMUNITY",
       "action": "UPDATE_ALL",
       "name": "커뮤니티 · 수정 대행",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "DASHBOARD_ADMIN_READ",
+      "domain": "DASHBOARD",
+      "action": "ADMIN_READ",
+      "name": "대시보드 · 관리자 업무 현황 조회",
       "defaultGroups": [
         "ROLE_ADMIN",
         "ROLE_SYSTEM"
@@ -1101,6 +1121,16 @@
         "ROLE_ADMIN",
         "ROLE_SYSTEM",
         "ROLE_USER"
+      ]
+    },
+    {
+      "code": "INFORMAL_APPR_ADMIN",
+      "domain": "INFORMAL",
+      "action": "APPR_ADMIN",
+      "name": "간이 결재 · 관리 경로 본인 결재",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
       ]
     },
     {
@@ -1639,8 +1669,7 @@
       "name": "온라인 투표 · 등록",
       "defaultGroups": [
         "ROLE_ADMIN",
-        "ROLE_SYSTEM",
-        "ROLE_USER"
+        "ROLE_SYSTEM"
       ]
     },
     {
@@ -1650,8 +1679,7 @@
       "name": "온라인 투표 · 삭제",
       "defaultGroups": [
         "ROLE_ADMIN",
-        "ROLE_SYSTEM",
-        "ROLE_USER"
+        "ROLE_SYSTEM"
       ]
     },
     {
@@ -1692,8 +1720,7 @@
       "name": "온라인 투표 · 수정",
       "defaultGroups": [
         "ROLE_ADMIN",
-        "ROLE_SYSTEM",
-        "ROLE_USER"
+        "ROLE_SYSTEM"
       ]
     },
     {
@@ -1715,6 +1742,16 @@
         "ROLE_ADMIN",
         "ROLE_SYSTEM",
         "ROLE_USER"
+      ]
+    },
+    {
+      "code": "POPUP_ADMIN_READ",
+      "domain": "POPUP",
+      "action": "ADMIN_READ",
+      "name": "팝업 · 관리 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
       ]
     },
     {
@@ -2159,6 +2196,16 @@
       ]
     },
     {
+      "code": "STATS_ADMIN_READ",
+      "domain": "STATS",
+      "action": "ADMIN_READ",
+      "name": "통계 · 관리자 집계 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
       "code": "STATS_READ",
       "domain": "STATS",
       "action": "READ",
@@ -2422,6 +2469,16 @@
       ]
     },
     {
+      "code": "WORKFLOW_READ",
+      "domain": "WORKFLOW",
+      "action": "READ",
+      "name": "워크플로우 · 관리 데모 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
       "code": "WORK_RPT_CREATE",
       "domain": "WORK_RPT",
       "action": "CREATE",
@@ -2498,7 +2555,9 @@
   ],
   "pagePermissions": {
     "/": [],
-    "/admin": [],
+    "/admin": [
+      "DASHBOARD_ADMIN_READ"
+    ],
     "/admin/collaboration": [],
     "/admin/collaboration/address-book": [],
     "/admin/collaboration/address-book/insert-address-book": [],
@@ -2563,7 +2622,7 @@
       "TEMPLATE_READ"
     ],
     "/admin/sanctn/workflow": [
-      "APPROVAL_READ"
+      "WORKFLOW_READ"
     ],
     "/admin/security/audit": [
       "OPS_READ",
@@ -2588,22 +2647,22 @@
       "AUTHRT_READ"
     ],
     "/admin/stats": [
-      "STATS_READ"
+      "STATS_ADMIN_READ"
     ],
     "/admin/stats/board": [
-      "STATS_READ"
+      "STATS_ADMIN_READ"
     ],
     "/admin/stats/data-usage": [
-      "STATS_READ"
+      "STATS_ADMIN_READ"
     ],
     "/admin/stats/report": [
-      "STATS_READ"
+      "STATS_ADMIN_READ"
     ],
     "/admin/stats/screen": [
-      "STATS_READ"
+      "STATS_ADMIN_READ"
     ],
     "/admin/stats/user": [
-      "STATS_READ"
+      "STATS_ADMIN_READ"
     ],
     "/admin/survey": [
       "SURVEY_READ_ALL",
@@ -2628,12 +2687,10 @@
       "SURVEY_CREATE_ALL"
     ],
     "/admin/survey/polls": [
-      "POLL_READ"
+      "POLL_READ_ALL"
     ],
     "/admin/survey/polls/manage": [
-      "POLL_CREATE",
-      "POLL_UPDATE_ALL",
-      "POLL_DELETE_ALL"
+      "POLL_READ_ALL"
     ],
     "/admin/survey/polls/participate": [],
     "/admin/survey/questions": [
@@ -2655,7 +2712,7 @@
       "LOGIN_LOG_READ"
     ],
     "/admin/system/banner": [
-      "BANNER_READ"
+      "BANNER_ADMIN_READ"
     ],
     "/admin/system/codes/administ": [
       "ADMCODE_READ"
@@ -2753,7 +2810,7 @@
     ],
     "/admin/work-hub": [],
     "/admin/workflow": [
-      "APPROVAL_READ"
+      "WORKFLOW_READ"
     ],
     "/approvals": [],
     "/approvals/draft": [],

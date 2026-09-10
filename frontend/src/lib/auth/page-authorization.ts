@@ -6,8 +6,12 @@ import { getCurrentUserOperation } from '@/types/generated-operations';
 
 /** Exact page ownership: an authenticated parent shell never opens unregistered children. */
 export function canEnterRegisteredPage(pathname: string, subject: AuthorizationState): boolean {
-  const segments = pathname.replace(/\/$/, '').split('/');
-  const entry = Object.entries(PAGE_PERMISSIONS).find(([route]) => {
+  const normalizedPath = pathname.replace(/\/$/, '');
+  const segments = normalizedPath.split('/');
+  const exact = PAGE_PERMISSIONS[normalizedPath];
+  // Next resolves static routes before sibling dynamic routes such as [id].
+  // An authenticated detail route must never shadow a protected management page.
+  const entry = exact ? [normalizedPath, exact] as const : Object.entries(PAGE_PERMISSIONS).find(([route]) => {
     const routeSegments = route.replace(/\/$/, '').split('/');
     return routeSegments.length === segments.length && routeSegments.every((segment, index) =>
       /^\[[^.[\]]+\]$/.test(segment) ? segments[index].length > 0 : segment === segments[index],

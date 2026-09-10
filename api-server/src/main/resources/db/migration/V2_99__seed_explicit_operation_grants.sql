@@ -52,6 +52,7 @@ FROM (VALUES
     ('ROLE_ADMIN','AUTHRT_GRANT'),
     ('ROLE_ADMIN','AUTHRT_READ'),
     ('ROLE_ADMIN','AUTHRT_UPDATE'),
+    ('ROLE_ADMIN','BANNER_ADMIN_READ'),
     ('ROLE_ADMIN','BANNER_CREATE'),
     ('ROLE_ADMIN','BANNER_DELETE'),
     ('ROLE_ADMIN','BANNER_READ'),
@@ -92,6 +93,7 @@ FROM (VALUES
     ('ROLE_ADMIN','COMMUNITY_READ_ALL'),
     ('ROLE_ADMIN','COMMUNITY_REJECT'),
     ('ROLE_ADMIN','COMMUNITY_UPDATE_ALL'),
+    ('ROLE_ADMIN','DASHBOARD_ADMIN_READ'),
     ('ROLE_ADMIN','DASHBOARD_READ'),
     ('ROLE_ADMIN','DEPT_BOX_CREATE'),
     ('ROLE_ADMIN','DEPT_BOX_DELETE'),
@@ -135,6 +137,7 @@ FROM (VALUES
     ('ROLE_ADMIN','HELP_UPDATE'),
     ('ROLE_ADMIN','HELP_UPDATE_ALL'),
     ('ROLE_ADMIN','INFORMAL_APPROVE'),
+    ('ROLE_ADMIN','INFORMAL_APPR_ADMIN'),
     ('ROLE_ADMIN','INFORMAL_CREATE'),
     ('ROLE_ADMIN','INFORMAL_CREATE_ALL'),
     ('ROLE_ADMIN','INFORMAL_DELETE'),
@@ -194,6 +197,7 @@ FROM (VALUES
     ('ROLE_ADMIN','POLL_UPDATE'),
     ('ROLE_ADMIN','POLL_UPDATE_ALL'),
     ('ROLE_ADMIN','POLL_VOTE'),
+    ('ROLE_ADMIN','POPUP_ADMIN_READ'),
     ('ROLE_ADMIN','POPUP_CREATE'),
     ('ROLE_ADMIN','POPUP_DELETE'),
     ('ROLE_ADMIN','POPUP_READ'),
@@ -237,6 +241,7 @@ FROM (VALUES
     ('ROLE_ADMIN','SERVICE_UPDATE'),
     ('ROLE_ADMIN','SMS_READ'),
     ('ROLE_ADMIN','SMS_SEND'),
+    ('ROLE_ADMIN','STATS_ADMIN_READ'),
     ('ROLE_ADMIN','STATS_READ'),
     ('ROLE_ADMIN','SURVEY_CREATE_ALL'),
     ('ROLE_ADMIN','SURVEY_DELETE_ALL'),
@@ -263,6 +268,7 @@ FROM (VALUES
     ('ROLE_ADMIN','USER_UPDATE'),
     ('ROLE_ADMIN','WEB_LOG_EXPORT'),
     ('ROLE_ADMIN','WEB_LOG_READ'),
+    ('ROLE_ADMIN','WORKFLOW_READ'),
     ('ROLE_ADMIN','WORK_RPT_CREATE'),
     ('ROLE_ADMIN','WORK_RPT_DELETE'),
     ('ROLE_ADMIN','WORK_RPT_DELETE_ALL'),
@@ -294,6 +300,7 @@ FROM (VALUES
     ('ROLE_SYSTEM','AUTHRT_GRANT'),
     ('ROLE_SYSTEM','AUTHRT_READ'),
     ('ROLE_SYSTEM','AUTHRT_UPDATE'),
+    ('ROLE_SYSTEM','BANNER_ADMIN_READ'),
     ('ROLE_SYSTEM','BANNER_CREATE'),
     ('ROLE_SYSTEM','BANNER_DELETE'),
     ('ROLE_SYSTEM','BANNER_READ'),
@@ -334,6 +341,7 @@ FROM (VALUES
     ('ROLE_SYSTEM','COMMUNITY_READ_ALL'),
     ('ROLE_SYSTEM','COMMUNITY_REJECT'),
     ('ROLE_SYSTEM','COMMUNITY_UPDATE_ALL'),
+    ('ROLE_SYSTEM','DASHBOARD_ADMIN_READ'),
     ('ROLE_SYSTEM','DASHBOARD_READ'),
     ('ROLE_SYSTEM','DEPT_BOX_CREATE'),
     ('ROLE_SYSTEM','DEPT_BOX_DELETE'),
@@ -377,6 +385,7 @@ FROM (VALUES
     ('ROLE_SYSTEM','HELP_UPDATE'),
     ('ROLE_SYSTEM','HELP_UPDATE_ALL'),
     ('ROLE_SYSTEM','INFORMAL_APPROVE'),
+    ('ROLE_SYSTEM','INFORMAL_APPR_ADMIN'),
     ('ROLE_SYSTEM','INFORMAL_CREATE'),
     ('ROLE_SYSTEM','INFORMAL_CREATE_ALL'),
     ('ROLE_SYSTEM','INFORMAL_DELETE'),
@@ -436,6 +445,7 @@ FROM (VALUES
     ('ROLE_SYSTEM','POLL_UPDATE'),
     ('ROLE_SYSTEM','POLL_UPDATE_ALL'),
     ('ROLE_SYSTEM','POLL_VOTE'),
+    ('ROLE_SYSTEM','POPUP_ADMIN_READ'),
     ('ROLE_SYSTEM','POPUP_CREATE'),
     ('ROLE_SYSTEM','POPUP_DELETE'),
     ('ROLE_SYSTEM','POPUP_READ'),
@@ -477,6 +487,7 @@ FROM (VALUES
     ('ROLE_SYSTEM','SERVICE_UPDATE'),
     ('ROLE_SYSTEM','SMS_READ'),
     ('ROLE_SYSTEM','SMS_SEND'),
+    ('ROLE_SYSTEM','STATS_ADMIN_READ'),
     ('ROLE_SYSTEM','STATS_READ'),
     ('ROLE_SYSTEM','SURVEY_CREATE_ALL'),
     ('ROLE_SYSTEM','SURVEY_DELETE_ALL'),
@@ -503,6 +514,7 @@ FROM (VALUES
     ('ROLE_SYSTEM','USER_UPDATE'),
     ('ROLE_SYSTEM','WEB_LOG_EXPORT'),
     ('ROLE_SYSTEM','WEB_LOG_READ'),
+    ('ROLE_SYSTEM','WORKFLOW_READ'),
     ('ROLE_SYSTEM','WORK_RPT_CREATE'),
     ('ROLE_SYSTEM','WORK_RPT_DELETE'),
     ('ROLE_SYSTEM','WORK_RPT_DELETE_ALL'),
@@ -560,10 +572,7 @@ FROM (VALUES
     ('ROLE_USER','NOTI_CREATE'),
     ('ROLE_USER','NOTI_DELETE'),
     ('ROLE_USER','NOTI_READ'),
-    ('ROLE_USER','POLL_CREATE'),
-    ('ROLE_USER','POLL_DELETE'),
     ('ROLE_USER','POLL_READ'),
-    ('ROLE_USER','POLL_UPDATE'),
     ('ROLE_USER','POLL_VOTE'),
     ('ROLE_USER','POPUP_READ'),
     ('ROLE_USER','SATISFY_CREATE'),
@@ -589,7 +598,7 @@ FROM (VALUES
 
 INSERT INTO tb_authrt_chg_hstry(dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,
     authrt_type_cd,authrt_grnt_cd,chg_artcl_nm,chg_aftr_cn,chg_rsn,frst_rgtr_id,crt_dt)
-SELECT 'migration:2.99','c811a0a4d24432c0eb1e28c7b3e61985b2750bcbb5155a20a7d7d7d5cdc44359','GROUP_GRANT','MIGRATE',authrt_cd,
+SELECT 'migration:2.99','7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276','GROUP_GRANT','MIGRATE',authrt_cd,
     'OPERATION',authrt_grnt_cd,'initial_operation_grant',authrt_grnt_cd,
     '승인한 기능 카탈로그의 초기 그룹 권한을 명시적으로 배정','SYSTEM',CURRENT_TIMESTAMP
 FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION';
@@ -653,7 +662,7 @@ BEGIN
 END $$;
 
 -- Include in V2_99 before the OPERATION grant seed, in the same Flyway transaction.
--- Replace c811a0a4d24432c0eb1e28c7b3e61985b2750bcbb5155a20a7d7d7d5cdc44359 with the reviewed catalog SHA-256 literal.
+-- Replace 7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276 with the reviewed catalog SHA-256 literal.
 
 DO $$
 BEGIN
@@ -664,7 +673,7 @@ END $$;
 INSERT INTO tb_authrt_chg_hstry
     (dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,chg_artcl_nm,
      chg_bfr_cn,chg_aftr_cn,chg_rsn,frst_rgtr_id,crt_dt)
-SELECT 'migration:2.99','c811a0a4d24432c0eb1e28c7b3e61985b2750bcbb5155a20a7d7d7d5cdc44359','GROUP','MIGRATE','ROLE_ADMIN',
+SELECT 'migration:2.99','7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276','GROUP','MIGRATE','ROLE_ADMIN',
        'legacy_policy:tb_role_info',to_jsonb(legacy)::text,to_jsonb(legacy)::text,
        '구 인가 정책 원본 행의 전환 직전 비교용 스냅샷; 운영 백업을 대체하지 않음','SYSTEM',CURRENT_TIMESTAMP
 FROM tb_role_info legacy;
@@ -678,7 +687,7 @@ END $$;
 INSERT INTO tb_authrt_chg_hstry
     (dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,chg_artcl_nm,
      chg_bfr_cn,chg_aftr_cn,chg_rsn,frst_rgtr_id,crt_dt)
-SELECT 'migration:2.99','c811a0a4d24432c0eb1e28c7b3e61985b2750bcbb5155a20a7d7d7d5cdc44359','GROUP','MIGRATE','ROLE_ADMIN',
+SELECT 'migration:2.99','7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276','GROUP','MIGRATE','ROLE_ADMIN',
        'legacy_policy:tb_authrt_role_map',to_jsonb(legacy)::text,to_jsonb(legacy)::text,
        '구 인가 정책 원본 행의 전환 직전 비교용 스냅샷; 운영 백업을 대체하지 않음','SYSTEM',CURRENT_TIMESTAMP
 FROM tb_authrt_role_map legacy;
@@ -692,7 +701,7 @@ END $$;
 INSERT INTO tb_authrt_chg_hstry
     (dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,chg_artcl_nm,
      chg_bfr_cn,chg_aftr_cn,chg_rsn,frst_rgtr_id,crt_dt)
-SELECT 'migration:2.99','c811a0a4d24432c0eb1e28c7b3e61985b2750bcbb5155a20a7d7d7d5cdc44359','GROUP','MIGRATE','ROLE_ADMIN',
+SELECT 'migration:2.99','7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276','GROUP','MIGRATE','ROLE_ADMIN',
        'legacy_policy:tb_role_prgrm_map',to_jsonb(legacy)::text,to_jsonb(legacy)::text,
        '구 인가 정책 원본 행의 전환 직전 비교용 스냅샷; 운영 백업을 대체하지 않음','SYSTEM',CURRENT_TIMESTAMP
 FROM tb_role_prgrm_map legacy;
@@ -706,7 +715,7 @@ END $$;
 INSERT INTO tb_authrt_chg_hstry
     (dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,chg_artcl_nm,
      chg_bfr_cn,chg_aftr_cn,chg_rsn,frst_rgtr_id,crt_dt)
-SELECT 'migration:2.99','c811a0a4d24432c0eb1e28c7b3e61985b2750bcbb5155a20a7d7d7d5cdc44359','GROUP','MIGRATE','ROLE_ADMIN',
+SELECT 'migration:2.99','7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276','GROUP','MIGRATE','ROLE_ADMIN',
        'legacy_policy:tb_role_hierarchy',to_jsonb(legacy)::text,to_jsonb(legacy)::text,
        '구 인가 정책 원본 행의 전환 직전 비교용 스냅샷; 운영 백업을 대체하지 않음','SYSTEM',CURRENT_TIMESTAMP
 FROM tb_role_hierarchy legacy;
@@ -725,7 +734,7 @@ END $$;
 INSERT INTO tb_authrt_chg_hstry
     (dmnd_idntfr,plcy_ver_no,chg_trgt_type_cd,chg_type_cd,authrt_cd,chg_artcl_nm,
      chg_bfr_cn,chg_aftr_cn,chg_rsn,frst_rgtr_id,crt_dt)
-SELECT 'migration:2.99','c811a0a4d24432c0eb1e28c7b3e61985b2750bcbb5155a20a7d7d7d5cdc44359','GROUP','MIGRATE','ROLE_ADMIN','legacy_policy:program_url',
+SELECT 'migration:2.99','7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276','GROUP','MIGRATE','ROLE_ADMIN','legacy_policy:program_url',
        to_jsonb(legacy)::text,to_jsonb(legacy)::text,
        '연결 프로그램의 구 URL 인가 입력 보존; 프로그램 업무 메타데이터는 유지','SYSTEM',CURRENT_TIMESTAMP
 FROM (

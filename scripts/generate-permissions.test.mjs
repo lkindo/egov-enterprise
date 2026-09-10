@@ -39,6 +39,55 @@ test('reviewed permission sources exactly match runtime, frontend and fresh-base
   assert.ok(files.includes('business-core/src/main/resources/authorization/operation-bindings.json'));
 });
 
+test('LF and CRLF checkouts produce identical versions and artifacts', t => {
+  const dir = fixture(t);
+  for (const file of [catalogPath, policyPath, BASE_SEED]) {
+    const target = path.join(dir, file);
+    fs.writeFileSync(target, fs.readFileSync(target, 'utf8').replace(/\r\n/g, '\n'));
+  }
+  const lf = buildPermissionArtifacts(dir);
+  generatePermissions(dir);
+  for (const file of [catalogPath, policyPath, BASE_SEED]) {
+    const target = path.join(dir, file);
+    fs.writeFileSync(target, fs.readFileSync(target, 'utf8').replace(/\r?\n/g, '\r\n'));
+  }
+  assert.deepEqual(buildPermissionArtifacts(dir), lf);
+  assert.doesNotThrow(() => generatePermissions(dir, true));
+});
+
+test('administrative statistics and workflow pages preserve their distinct access boundaries', () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(root, catalogPath), 'utf8'));
+  const policy = JSON.parse(fs.readFileSync(path.join(root, policyPath), 'utf8'));
+  for (const code of ['STATS_ADMIN_READ', 'WORKFLOW_READ', 'BANNER_ADMIN_READ', 'POPUP_ADMIN_READ',
+    'INFORMAL_APPR_ADMIN', 'DASHBOARD_ADMIN_READ', 'POLL_CREATE', 'POLL_UPDATE', 'POLL_DELETE']) {
+    assert.deepEqual(catalog.permissions.find(row => row.code === code)?.defaultGroups, ['ROLE_ADMIN', 'ROLE_SYSTEM']);
+  }
+  for (const code of ['STATS_READ', 'APPROVAL_READ', 'POLL_READ', 'POLL_VOTE']) {
+    assert.ok(catalog.permissions.find(row => row.code === code)?.defaultGroups.includes('ROLE_USER'));
+  }
+  const adminStats = policy.operationBindings.filter(row => row.path.startsWith('/api/v1/admin/system/statistics/'));
+  assert.deepEqual(adminStats.map(row => row.path.split('/').at(-1)).sort(), ['bbs', 'connect', 'data-usage', 'report', 'summary', 'user']);
+  assert.ok(adminStats.every(row => row.method === 'GET' && row.permission === 'STATS_ADMIN_READ'));
+  assert.equal(policy.operationBindings.find(row => row.path === '/api/v1/statistics/connect')?.permission, 'STATS_READ');
+  for (const [route, codes] of Object.entries(catalog.pagePermissions)) {
+    if (route === '/admin/stats' || route.startsWith('/admin/stats/')) assert.deepEqual(codes, ['STATS_ADMIN_READ']);
+  }
+  for (const route of ['/admin/workflow', '/admin/sanctn/workflow']) {
+    assert.deepEqual(catalog.pagePermissions[route], ['WORKFLOW_READ']);
+  }
+  assert.deepEqual(catalog.pagePermissions['/admin'], ['DASHBOARD_ADMIN_READ']);
+  for (const route of ['/admin/survey/polls', '/admin/survey/polls/manage']) {
+    assert.deepEqual(catalog.pagePermissions[route], ['POLL_READ_ALL']);
+  }
+  const ordinary = new Set(catalog.permissions.filter(row => row.defaultGroups.includes('ROLE_USER')).map(row => row.code));
+  const administrative = policy.operationBindings.filter(row => row.path.startsWith('/api/v1/admin/'));
+  assert.ok(administrative.length > 200);
+  for (const binding of administrative) {
+    assert.equal(binding.access, 'PERMISSION', binding.path);
+    assert.equal(ordinary.has(binding.permission), false, binding.path);
+  }
+});
+
 test('source mutation changes the shared version and stale or missing artifacts fail closed', t => {
   const dir = fixture(t);
   const before = buildPermissionArtifacts(dir);

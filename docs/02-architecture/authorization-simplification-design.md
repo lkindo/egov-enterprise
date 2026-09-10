@@ -233,6 +233,9 @@ flowchart TD
 
 - `AuthContext`, `useUser`의 `['user','me']` 캐시, 메뉴 캐시, 프론트 proxy를 모두 갱신한다. `useUser`는 5분 stale time, 서버 메뉴는 authorities 기반 키, FE header/sidebar 메뉴는 사용자·권한 버전이 없는 고정 키를 사용한다. 각각의 갱신·계정 전환 격리를 새 계약으로 바꾼다.
 - 로그인 상태 확인 후 `/admin` 진입 여부를 실제 필요한 화면 기능으로 판정한다. 기존 USER 예외 경로·RSC·서버 액션·BFF 경로를 포함한다. proxy가 DB를 직접 읽거나 모든 permission을 쿠키에 넣는 설계는 피하고 서버의 현재 권한 응답을 사용한다.
+- 정적 관리 주소는 동적 상세 주소보다 우선한다. 예를 들어 `/admin/community/boards/master`를 `[id]` 상세 화면으로 해석해 열지 않는다. 일반 조회 API와 관리 기능의 경계도 유지한다. `STATS_READ`·`BANNER_READ`·`POPUP_READ`는 기존 사용자 조회에 남기고 관리자 통계·배너·팝업 API는 각각 `STATS_ADMIN_READ`·`BANNER_ADMIN_READ`·`POPUP_ADMIN_READ`로 판정한다. 관리 화면도 해당 관리 권한을 요구한다. 실제 개인 결재의 `APPROVAL_READ`와 관리 데모 화면의 `WORKFLOW_READ`는 구분한다.
+- 간이 결재의 `/api/v1/admin/system/ism/{informalSanctionId}/confirm` 별칭은 `INFORMAL_APPR_ADMIN`, 기존 사용자 경로는 `INFORMAL_APPROVE`를 요구한다. 두 경로 모두 서비스의 엄격한 결재자 본인 검사를 유지한다. 관리자 경로 권한이 타인의 결재를 허용하지 않는다. 이 관리 권한들의 초기 배정은 ADMIN/SYSTEM에만 두며, 이후 사용자 정의 그룹에도 명시적으로 위임할 수 있다.
+- `/admin`은 사용자·권한·보안감사를 읽는 관리 대시보드이므로 `DASHBOARD_ADMIN_READ`를 요구한다. 온라인 투표의 관리 화면은 결과 선열람 권한인 `POLL_READ_ALL`을 요구하며, 등록·수정·삭제 권한은 기존 관리자 전용 범위를 보존해 초기 USER 그룹에 부여하지 않는다. 일반 사용자의 조회·투표 권한과 종료 전 집계 비공개 조건은 유지한다.
 - 프론트는 권한 변경 응답·403·새 focus 시 현재 사용자/메뉴 데이터를 재조회하고 권한 상실 버튼을 숨긴다. 화면 캐시가 잠시 오래되더라도 API에서 차단해야 한다.
 - WebSocket/SSE의 연결 시점 principal만 신뢰하지 않는다. 보호된 메시지/전송 시 현재 권한을 확인하거나 권한 회수 후 세션을 종료하는 경로를 구현한다. 다중 인스턴스에서 회수가 전파되는지 검증한다.
 - 로그아웃의 access JWT 폐기와 그룹 권한 회수는 별개다. 현 logout의 refresh 삭제를 즉각적인 access-token 무효화라고 표현하지 않는다. 이 작업에서는 기존 access token이라도 매 요청 새 권한으로 판정하게 한다.

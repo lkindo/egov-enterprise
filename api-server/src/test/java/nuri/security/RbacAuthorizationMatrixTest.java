@@ -27,6 +27,7 @@ class RbacAuthorizationMatrixTest {
     @Autowired private MockMvc mockMvc;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtTokenProvider jwtTokenProvider;
+    @MockitoBean private nuri.business.service.stats.ReportStatsService reportStatsService;
     private static final List<String> PATHS = List.of(
             "/api/v1/admin/system/users", "/api/v1/admin/system/surveys", "/api/v1/admin/system/login-policies");
 
@@ -54,6 +55,35 @@ class RbacAuthorizationMatrixTest {
     @Test void unknownRouteDoesNotFallBackToAdministrativeGroup() throws Exception {
         var admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_test", "USR_999", "ADMIN");
         mockMvc.perform(get("/api/v1/admin/unregistered-operation").with(user(admin))).andExpect(status().isForbidden());
+    }
+    @Test void ordinaryStatisticsReaderCannotEnterAnyAdministrativeStatisticsEndpoint() throws Exception {
+        var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");
+        mockMvc.perform(get("/api/v1/statistics/connect").with(user(ordinary))).andExpect(status().isOk());
+        for (String suffix : List.of("bbs", "connect", "data-usage", "report", "summary", "user")) {
+            mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(ordinary)))
+                    .andExpect(status().isForbidden());
+        }
+        for (String path : List.of("/api/v1/admin/system/banners", "/api/v1/admin/system/banners/reflected",
+                "/api/v1/admin/system/banners/1", "/api/v1/admin/system/popups", "/api/v1/admin/system/popups/1")) {
+            mockMvc.perform(get(path).with(user(ordinary))).andExpect(status().isForbidden());
+        }
+        mockMvc.perform(patch("/api/v1/admin/system/ism/1/confirm").with(user(ordinary)))
+                .andExpect(status().isForbidden());
+    }
+    @Test void delegatedStatisticsPermissionAllowsAdministrativeReadsWithoutAnAdminGroup() throws Exception {
+        var delegated = explicit(List.of("REPORT_AUDIT"), List.of("STATS_ADMIN_READ"));
+        for (String suffix : List.of("bbs", "connect", "data-usage", "report", "summary", "user")) {
+            mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(delegated)))
+                    .andExpect(status().isOk());
+        }
+        mockMvc.perform(get("/api/v1/statistics/connect").with(user(delegated))).andExpect(status().isForbidden());
+    }
+    @Test void ordinaryPollParticipantCannotCreateUpdateOrDeletePolls() throws Exception {
+        var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");
+        mockMvc.perform(get("/api/v1/polls").with(user(ordinary))).andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/polls").with(user(ordinary))).andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/v1/polls/1").with(user(ordinary))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/polls/1").with(user(ordinary))).andExpect(status().isForbidden());
     }
     private static CustomUserDetails explicit(List<String> groups, List<String> permissions) {
         return CustomUserDetails.builder().userId("operator").esntlId("USR_OPERATOR").enabled(true)

@@ -161,6 +161,44 @@
           "sha256": "3cbfc6da78e570bb2b0c153c73dca7c3fb655e005f80cc670061043444d04a92"
         }
       ]
+    },
+    {
+      "status": "approved",
+      "language": "java",
+      "ruleId": "java/user-controlled-bypass",
+      "file": "api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java",
+      "line": 69,
+      "fingerprint": "3bdaa522982a3650:1",
+      "sourceSha256": "9c0f4dea466d6be146e4fd31528d0cb1bba5e0af04561445d74dce18d298f7d3",
+      "expiresOn": "2026-12-08",
+      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control.",
+      "id": "SAST-FP-008",
+      "supportingSources": [
+        {
+          "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
+          "sha256": "f39261ef5838cce5f2079f95ecafa463320a4bf53f179fc09fdb4ed8c5ce8c64"
+        },
+        {
+          "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",
+          "sha256": "547d3afad403d518de16b8574bfe2ede7585280a74989d3692b219165fd60231"
+        },
+        {
+          "file": "business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java",
+          "sha256": "b19e035ef52bf902ac29467dfd4b439899ae19948efd3e72f40936ae5ee0b01b"
+        },
+        {
+          "file": "api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java",
+          "sha256": "b3576653e52b11959528e24e1dd88c2cd97a5a51151bd5f050fa4ee5dd5c417c"
+        },
+        {
+          "file": "business-core/src/main/java/nuri/business/security/authorization/OperationAuthorizationManager.java",
+          "sha256": "414bee304a8497bea9b0311700be0f84bd1efc88152474b392a376134814ce19"
+        },
+        {
+          "file": "api-server/src/test/java/nuri/config/websocket/WebSocketCookieAuthenticationFilterTest.java",
+          "sha256": "7d9f1634e5a8c17de25396865a1e34dce13f9e773b285c356b20f8d83cc565ba"
+        }
+      ]
     }
   ],
   "codeqlVersion": "2.26.4",

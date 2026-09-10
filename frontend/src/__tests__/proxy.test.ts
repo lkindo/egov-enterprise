@@ -141,6 +141,17 @@ describe('proxy 인증 게이트', () => {
     expect(new URL(response.headers.get('location')!).pathname).toBe('/');
   });
 
+  it.each([
+    '/admin/community/boards/master',
+    '/admin/community/boards/maker',
+    '/admin/community/templates',
+  ])('requires current management permission before serving the static route %s', async (route) => {
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const response = await proxy(requestWith(token, route));
+    expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
+    expect(new URL(response.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
+  });
+
   it('a current functional grant opens its page without an administrator role claim', async () => {
     const permissions = PAGE_PERMISSIONS['/admin/system/menus'];
     expect(permissions.length).toBeGreaterThan(0);

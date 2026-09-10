@@ -162,6 +162,70 @@ class WebSocketCookieAuthenticationFilterTest {
         verifyNoInteractions(tokens);
     }
 
+    @Test
+    void missingOrInvalidCredentialsStopTheChainAndClearAnyPreviousAuthentication() throws Exception {
+        for (boolean missing : List.of(true, false)) {
+            var request = request("GET", "/ws/websocket");
+            if (missing) request.setCookies();
+            SecurityContextHolder.getContext().setAuthentication(current(true));
+            var response = new MockHttpServletResponse();
+            var chain = new MockFilterChain();
+
+            filter.doFilter(request, response, chain);
+
+            assertThat(response.getStatus()).isEqualTo(401);
+            assertThat(chain.getRequest()).isNull();
+            assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        }
+        org.mockito.Mockito.verify(tokens, org.mockito.Mockito.never())
+                .getAuthentication(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void invalidAuthenticationObjectsAndMissingSnapshotVersionsNeverEnterTheTransport() throws Exception {
+        when(tokens.validateToken("cookie-token")).thenReturn(true);
+        var unauthenticated = new UsernamePasswordAuthenticationToken(current(true).getPrincipal(), null);
+        var wrongPrincipal = new UsernamePasswordAuthenticationToken("untrusted-principal", null, List.of());
+        var invalid = java.util.Arrays.asList(null, unauthenticated, wrongPrincipal,
+                current(true, null), current(true, ""), current(true, "   "));
+        for (var authentication : invalid) {
+            when(tokens.getAuthentication("cookie-token")).thenReturn(authentication);
+            SecurityContextHolder.getContext().setAuthentication(current(true));
+            var response = new MockHttpServletResponse();
+            var chain = new MockFilterChain();
+
+            filter.doFilter(request("GET", "/ws/websocket"), response, chain);
+
+            assertThat(response.getStatus()).isEqualTo(401);
+            assertThat(chain.getRequest()).isNull();
+            assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        }
+    }
+
+    @Test
+    void originlessMetadataStillNeedsCredentialsAndRejectsCrossSiteRequests() throws Exception {
+        for (String path : List.of("/ws", "/ws/info")) {
+            var request = request("GET", path);
+            request.removeHeader("Origin");
+            request.setCookies();
+            request.addHeader("Sec-Fetch-Site", "same-origin");
+            var response = new MockHttpServletResponse();
+            var chain = new MockFilterChain();
+            filter.doFilter(request, response, chain);
+            assertThat(response.getStatus()).isEqualTo(401);
+            assertThat(chain.getRequest()).isNull();
+
+            request.removeHeader("Sec-Fetch-Site");
+            request.addHeader("Sec-Fetch-Site", "cross-site");
+            var crossSite = new MockHttpServletResponse();
+            var crossSiteChain = new MockFilterChain();
+            filter.doFilter(request, crossSite, crossSiteChain);
+            assertThat(crossSite.getStatus()).isEqualTo(403);
+            assertThat(crossSiteChain.getRequest()).isNull();
+        }
+        verifyNoInteractions(tokens);
+    }
+
     private static MockHttpServletRequest request(String method, String path) {
         var request = new MockHttpServletRequest(method, path);
         request.setServletPath(path);
@@ -171,8 +235,12 @@ class WebSocketCookieAuthenticationFilterTest {
     }
 
     private static UsernamePasswordAuthenticationToken current(boolean enabled) {
+        return current(enabled, "v1");
+    }
+
+    private static UsernamePasswordAuthenticationToken current(boolean enabled, String version) {
         var user = CustomUserDetails.builder().userId("fixture").esntlId("fixture-subject")
-                .enabled(enabled).groups(List.of()).authorizationVersion("v1").build();
+                .enabled(enabled).groups(List.of()).authorizationVersion(version).build();
         return new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
     }
 }

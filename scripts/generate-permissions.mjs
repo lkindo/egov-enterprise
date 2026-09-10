@@ -9,7 +9,8 @@ const BASE_BEGIN = '-- BEGIN GENERATED BASE OPERATION GRANTS';
 const BASE_END = '-- END GENERATED BASE OPERATION GRANTS';
 
 export function buildPermissionArtifacts(root = repoRoot) {
-const catalogText = fs.readFileSync(path.join(root, 'config/governance/permission-catalog.json'), 'utf8');
+// Git may check text out as CRLF on Windows. Hash and emit the same LF bytes on every platform.
+const catalogText = fs.readFileSync(path.join(root, 'config/governance/permission-catalog.json'), 'utf8').replace(/\r\n/g, '\n');
 const catalog = JSON.parse(catalogText);
 const policyText = fs.readFileSync(path.join(root, 'config/governance/authorization-policies.json'), 'utf8');
 const policy = JSON.parse(policyText);

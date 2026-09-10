@@ -24,6 +24,7 @@ export const PERMISSION_CODES = [
   "AUTHRT_GRANT",
   "AUTHRT_READ",
   "AUTHRT_UPDATE",
+  "BANNER_ADMIN_READ",
   "BANNER_CREATE",
   "BANNER_DELETE",
   "BANNER_READ",
@@ -64,6 +65,7 @@ export const PERMISSION_CODES = [
   "COMMUNITY_READ_ALL",
   "COMMUNITY_REJECT",
   "COMMUNITY_UPDATE_ALL",
+  "DASHBOARD_ADMIN_READ",
   "DASHBOARD_READ",
   "DEPT_BOX_CREATE",
   "DEPT_BOX_DELETE",
@@ -107,6 +109,7 @@ export const PERMISSION_CODES = [
   "HELP_UPDATE",
   "HELP_UPDATE_ALL",
   "INFORMAL_APPROVE",
+  "INFORMAL_APPR_ADMIN",
   "INFORMAL_CREATE",
   "INFORMAL_CREATE_ALL",
   "INFORMAL_DELETE",
@@ -166,6 +169,7 @@ export const PERMISSION_CODES = [
   "POLL_UPDATE",
   "POLL_UPDATE_ALL",
   "POLL_VOTE",
+  "POPUP_ADMIN_READ",
   "POPUP_CREATE",
   "POPUP_DELETE",
   "POPUP_READ",
@@ -209,6 +213,7 @@ export const PERMISSION_CODES = [
   "SERVICE_UPDATE",
   "SMS_READ",
   "SMS_SEND",
+  "STATS_ADMIN_READ",
   "STATS_READ",
   "SURVEY_CREATE_ALL",
   "SURVEY_DELETE_ALL",
@@ -235,6 +240,7 @@ export const PERMISSION_CODES = [
   "USER_UPDATE",
   "WEB_LOG_EXPORT",
   "WEB_LOG_READ",
+  "WORKFLOW_READ",
   "WORK_RPT_CREATE",
   "WORK_RPT_DELETE",
   "WORK_RPT_DELETE_ALL",
@@ -244,10 +250,12 @@ export const PERMISSION_CODES = [
   "WORK_RPT_UPDATE_ALL"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "c811a0a4d24432c0eb1e28c7b3e61985b2750bcbb5155a20a7d7d7d5cdc44359";
+export const PERMISSION_CATALOG_VERSION = "7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
-  "/admin": [],
+  "/admin": [
+    "DASHBOARD_ADMIN_READ"
+  ],
   "/admin/collaboration": [],
   "/admin/collaboration/address-book": [],
   "/admin/collaboration/address-book/insert-address-book": [],
@@ -312,7 +320,7 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "TEMPLATE_READ"
   ],
   "/admin/sanctn/workflow": [
-    "APPROVAL_READ"
+    "WORKFLOW_READ"
   ],
   "/admin/security/audit": [
     "OPS_READ",
@@ -337,22 +345,22 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "AUTHRT_READ"
   ],
   "/admin/stats": [
-    "STATS_READ"
+    "STATS_ADMIN_READ"
   ],
   "/admin/stats/board": [
-    "STATS_READ"
+    "STATS_ADMIN_READ"
   ],
   "/admin/stats/data-usage": [
-    "STATS_READ"
+    "STATS_ADMIN_READ"
   ],
   "/admin/stats/report": [
-    "STATS_READ"
+    "STATS_ADMIN_READ"
   ],
   "/admin/stats/screen": [
-    "STATS_READ"
+    "STATS_ADMIN_READ"
   ],
   "/admin/stats/user": [
-    "STATS_READ"
+    "STATS_ADMIN_READ"
   ],
   "/admin/survey": [
     "SURVEY_READ_ALL",
@@ -377,12 +385,10 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "SURVEY_CREATE_ALL"
   ],
   "/admin/survey/polls": [
-    "POLL_READ"
+    "POLL_READ_ALL"
   ],
   "/admin/survey/polls/manage": [
-    "POLL_CREATE",
-    "POLL_UPDATE_ALL",
-    "POLL_DELETE_ALL"
+    "POLL_READ_ALL"
   ],
   "/admin/survey/polls/participate": [],
   "/admin/survey/questions": [
@@ -404,7 +410,7 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "LOGIN_LOG_READ"
   ],
   "/admin/system/banner": [
-    "BANNER_READ"
+    "BANNER_ADMIN_READ"
   ],
   "/admin/system/codes/administ": [
     "ADMCODE_READ"
@@ -502,7 +508,7 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   ],
   "/admin/work-hub": [],
   "/admin/workflow": [
-    "APPROVAL_READ"
+    "WORKFLOW_READ"
   ],
   "/approvals": [],
   "/approvals/draft": [],

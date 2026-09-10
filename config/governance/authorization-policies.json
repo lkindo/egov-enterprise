@@ -3683,7 +3683,7 @@
       "path": "/api/v1/admin/system/banners",
       "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#getBanners",
       "access": "PERMISSION",
-      "permission": "BANNER_READ"
+      "permission": "BANNER_ADMIN_READ"
     },
     {
       "method": "POST",
@@ -3697,7 +3697,7 @@
       "path": "/api/v1/admin/system/banners/reflected",
       "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#getReflectedBanners",
       "access": "PERMISSION",
-      "permission": "BANNER_READ"
+      "permission": "BANNER_ADMIN_READ"
     },
     {
       "method": "DELETE",
@@ -3711,7 +3711,7 @@
       "path": "/api/v1/admin/system/banners/{bnrSn}",
       "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#getBanner",
       "access": "PERMISSION",
-      "permission": "BANNER_READ"
+      "permission": "BANNER_ADMIN_READ"
     },
     {
       "method": "PUT",
@@ -4166,7 +4166,7 @@
       "path": "/api/v1/admin/system/ism/{informalSanctionId}/confirm",
       "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
       "access": "PERMISSION",
-      "permission": "INFORMAL_APPROVE"
+      "permission": "INFORMAL_APPR_ADMIN"
     },
     {
       "method": "GET",
@@ -4417,7 +4417,7 @@
       "path": "/api/v1/admin/system/popups",
       "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#getPopups",
       "access": "PERMISSION",
-      "permission": "POPUP_READ"
+      "permission": "POPUP_ADMIN_READ"
     },
     {
       "method": "POST",
@@ -4438,7 +4438,7 @@
       "path": "/api/v1/admin/system/popups/{popupSn}",
       "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#getPopup",
       "access": "PERMISSION",
-      "permission": "POPUP_READ"
+      "permission": "POPUP_ADMIN_READ"
     },
     {
       "method": "PUT",
@@ -4529,42 +4529,42 @@
       "path": "/api/v1/admin/system/statistics/bbs",
       "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getBbsStats",
       "access": "PERMISSION",
-      "permission": "STATS_READ"
+      "permission": "STATS_ADMIN_READ"
     },
     {
       "method": "GET",
       "path": "/api/v1/admin/system/statistics/connect",
       "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getConnectStats",
       "access": "PERMISSION",
-      "permission": "STATS_READ"
+      "permission": "STATS_ADMIN_READ"
     },
     {
       "method": "GET",
       "path": "/api/v1/admin/system/statistics/data-usage",
       "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getDataUsageStats",
       "access": "PERMISSION",
-      "permission": "STATS_READ"
+      "permission": "STATS_ADMIN_READ"
     },
     {
       "method": "GET",
       "path": "/api/v1/admin/system/statistics/report",
       "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getReportStats",
       "access": "PERMISSION",
-      "permission": "STATS_READ"
+      "permission": "STATS_ADMIN_READ"
     },
     {
       "method": "GET",
       "path": "/api/v1/admin/system/statistics/summary",
       "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getSummary",
       "access": "PERMISSION",
-      "permission": "STATS_READ"
+      "permission": "STATS_ADMIN_READ"
     },
     {
       "method": "GET",
       "path": "/api/v1/admin/system/statistics/user",
       "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getUserStats",
       "access": "PERMISSION",
-      "permission": "STATS_READ"
+      "permission": "STATS_ADMIN_READ"
     },
     {
       "method": "GET",
