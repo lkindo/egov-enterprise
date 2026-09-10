@@ -79,6 +79,8 @@
 | [ADR-0010](02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md) | 프론트엔드 세션 쿠키의 Secure 예외를 명시적 평문 loopback으로 제한 |
 | [ADR-0011](02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 익명 만족도·비밀번호 소유 증명을 퇴역하고 자격증명 query를 제거 |
 | [ADR-0012](02-architecture/decisions/ADR-0012-retire-blog-domain.md) | 비사용 블로그 도메인·게시판 귀속 계약·물리 스키마를 제거하고 과거 Flyway 이력은 보존 |
+| [ADR-0013](02-architecture/decisions/ADR-0013-standard-text-length-alignment.md) | 표준 길이 24개와 SMS 수신번호 정규화를 단계별 배포·데이터 보존 검증에 연결 |
+| [ADR-0014](02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md) | 보류 6개의 프로그램 키·메뉴 FK·HHmmss·암호화 표준 정합 결정 |
 | [ADR-0015](02-architecture/decisions/ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 |
 
 ## 03-guides — 개발 지침
@@ -124,6 +126,7 @@
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [readiness-followups.md](04-operations/readiness-followups.md) | 날짜 입력·화면 연결·정기 첨부 점검의 운영 계약과 검증 경계 |
+| [standard-length-alignment-runbook.md](04-operations/standard-length-alignment-runbook.md) | 표준 길이의 단계별 스키마·애플리케이션 전환과 실패·복구 검증 |
 | [url-state-privacy-classification-draft.md](04-operations/url-state-privacy-classification-draft.md) | ADR-0009 이전 URL-state 프라이버시 분류의 **역사적 초안** — 현행 검색 정책은 ADR-0009, 부류별 검토 상태는 비규범 `class-governed` 컨테이너를 확인 |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
@@ -139,7 +142,7 @@
 
 ---
 
-## 📌 저장소 밖 주요 문서
+## 📌 docs 밖 주요 문서
 
 | 문서 | 위치 |
 |---|---|
@@ -153,9 +156,3 @@
 | 게이트 계층·훅 규약 | [.githooks/README.md](../.githooks/README.md) |
 | 3대 헌법 | [.agent/knowledge/](../.agent/knowledge/) |
 | Gemini 역사 지원 자산 | [.gemini/tasks/](../.gemini/tasks/) — 활성 세션 저널은 두지 않고 기존 census·archive 지원 자산만 유지 |
-
-[ADR-0013](02-architecture/decisions/ADR-0013-standard-text-length-alignment.md) — 표준 길이 24개 정합과 SMS 수신번호 정규화.
-
-[표준 길이 전환 런북](04-operations/standard-length-alignment-runbook.md) — 단계별 스키마·애플리케이션 전환과 실패·복구 검증.
-
-- [보류 6개 표준 설계 결정(ADR-0014)](02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md)

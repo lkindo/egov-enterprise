@@ -10,11 +10,11 @@
 ### 제1조 (모듈별 책임 분립)
 본 프로젝트는 멀티 모듈 구조를 가지며, 각 모듈은 다음의 책임을 엄격히 준수한다.
 1. **`foundation`**: 프로젝트 전반에 사용되는 공통 유틸리티, 예외 클래스, 상수와 함께 공통 응답 래퍼(`ApiResponse`·`PageResponse`)·에러 코드 체계(`ErrorCode`)·보안 백본(JWT/IAM/filter)·공통 엔티티(`BaseEntity`/`BaseTimeEntity`) 등 프레임워크 백본을 포함하며, 다른 어떤 모듈에도 의존하지 않는 최하위 모듈이다.
-2. **`business-core`**: 재사용 가능한 admin 코어 도메인(user·auth·menu·code·organization·system·survey 등)의 비즈니스 로직, 엔티티(Entity), 리포지토리(Repository) 및 공용 테스트 하네스를 포함하는 프레임워크의 심장부이다. 외부 통신(API)이나 UI 로직으로부터 완전히 격리되어야 한다.
-3. **`business-app`**: 개별 프로젝트 고유 도메인(board·informalsanction·schedule·notification·memoreport·operation 등)의 비즈니스 로직·엔티티·리포지토리를 포함하며, `business-core`를 기반으로 확장한다. 외부 통신(API)이나 UI 로직으로부터 완전히 격리되어야 한다.
+2. **`business-core`**: 재사용 가능한 admin 코어 도메인(user·auth·menu·code·organization·system 등)의 비즈니스 로직, 엔티티(Entity), 리포지토리(Repository) 및 공용 테스트 하네스를 포함하는 프레임워크의 심장부이다. 외부 통신(API)이나 UI 로직으로부터 완전히 격리되어야 한다.
+3. **`business-app`**: 개별 프로젝트 고유 도메인(board·informalsanction·schedule·notification·memoreport·operation·survey·banner·popup·community 등)의 비즈니스 로직·엔티티·리포지토리를 포함하며, `business-core`를 기반으로 확장한다. 외부 통신(API)이나 UI 로직으로부터 완전히 격리되어야 한다. survey·banner·popup·community의 모듈 경계는 [ADR-0001](../../../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md)과 `ServiceLayerIsolationTest`를 따른다.
 4. **`api-server`**: 외부 요청의 진입점으로서 컨트롤러(Controller)와 API 관련 DTO를 관리한다. 비즈니스 로직을 직접 구현하지 않고 `business-core`/`business-app`의 서비스를 호출하는 역할에 집중한다.
 5. **`migration-tool`**: 레거시 시스템을 표준 스키마로 이관하는 독립 실행형 ETL CLI 도구이다. 파생 프로젝트의 데이터 이관 시에만 선택적으로 포함하며, `foundation`에 의존하지 않는다.
-6. **프레임워크 재사용성 불변식(도메인 삭제가능성)**: `business-core`(재사용 admin 코어)는 신규 SI/재개발에서도 삭제되지 않는 **필수 커널**만을 담고, `business-app`의 개별 업무 도메인은 파생 프로젝트에 따라 **통째로 삭제·교체 가능**해야 한다(도메인 삭제가능성). 이를 물리적으로 보장하기 위해 ⓐ `business-app` 내 형제(sibling) 업무 도메인 간의 직접 상호참조와 ⓑ 재사용 코어 서비스의 샘플 도메인 의존을 금지한다. 이 불변식은 두 아키텍처 게이트로 기계 강제된다 — `DomainIsolationTest`(`business-app`: `nuri.business.domain` 형제 슬라이스 상호의존 금지, 코어·게시판 클러스터만 동결 예외)와 `ServiceLayerIsolationTest`(`business-core`: 재사용 코어 서비스의 샘플-in-core 의존 금지). 필수↔샘플 오케스트레이션은 `DashboardItemProvider`·`UserDeletionEvent` 등 `foundation` 포트(DIP)로 역전한다.
+6. **프레임워크 재사용성 불변식(도메인 삭제가능성)**: `business-core`(재사용 admin 코어)는 신규 SI/재개발에서도 삭제되지 않는 **필수 커널**만을 담고, `business-app`의 개별 업무 도메인은 파생 프로젝트에 따라 **통째로 삭제·교체 가능**해야 한다(도메인 삭제가능성). 이를 물리적으로 보장하기 위해 ⓐ `business-app` 내 형제(sibling) 업무 도메인 간의 직접 상호참조와 ⓑ 재사용 코어 서비스의 샘플 도메인 의존을 금지한다. 집행 범위는 구분한다 — [DomainIsolationTest](../../../../business-app/src/test/java/nuri/business/DomainIsolationTest.java)는 `nuri.business.domain`의 형제 슬라이스를 검사하며 코어 타깃과 게시판·보상 승인 클러스터의 기존 결합을 명시적으로 관리한다. [ServiceLayerIsolationTest](../../../../business-core/src/test/java/nuri/business/ServiceLayerIsolationTest.java)는 삭제 가능한 샘플 도메인의 `business-core` 재유입을 차단한다. 서비스 계층의 수평 결합은 별도 [CrossDomainCouplingLinterTest](../../../../api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java)가 import·signature·event·인라인 FQN을 포함한 exact census로 동결한다. 기존 app→app 결합은 해결된 것으로 간주하지 않으며, 필수↔샘플 오케스트레이션은 `DashboardItemProvider`·`UserDeletionEvent` 등 `foundation` 포트(DIP)로 역전한다.
 
 ### 제2조 (의존성 방향의 원칙)
 1. 의존성은 반드시 **하향식(`api-server` -> `business-app` -> `business-core` -> `foundation`)**으로만 흐르도록 설계한다. (`migration-tool`은 이 계층에 속하지 않는 독립 실행형 도구이다.)
@@ -66,7 +66,7 @@
 
 ### 제10조 (외부 연동 및 비동기 작업의 안전성)
 1. 외부 연동 등 비동기 작업 시 재시도(`@Retryable`, Spring Retry)를 적용하여 일시적 장애에 대한 회복탄력성을 확보한다. (현행: `MailAsyncProcessor` 가 `@Retryable`(maxAttempts=3)+`@Recover` 로 SMTP 외부 IO 실패를 재시도한다.) 서킷 브레이커 패턴은 전용 라이브러리(예: Resilience4j) 미도입 상태로, 현 시점에서는 의무가 아니라 **향후 도입 대상(권고)** 이다.
-2. 외부 서버 API나 타 기관 연동 구간은 한쪽의 병목이 전체 스레드 고갈로 전파되지 않도록 작업 공간을 격리한다. 현행 격리 수단은 `AsyncConfig` 의 `SimpleAsyncTaskExecutor` 동시성 상한(`setConcurrencyLimit`)으로, 무제한 스레드 생성을 차단하는 **벌크헤드 근사**를 제공한다. 아래의 호출 유형별 **차등 타임아웃**과 정식 **서킷 브레이커·벌크헤드**(예: Resilience4j)는 현재 미도입으로, 의무가 아니라 도입 시 준수를 지향하는 **권고 기준**이다.
+2. 외부 서버 API나 타 기관 연동 구간은 한쪽의 병목이 전체 스레드 고갈로 전파되지 않도록 작업 공간을 격리한다. 현행 실행자는 [foundation AsyncConfig](../../../../foundation/src/main/java/nuri/foundation/core/config/AsyncConfig.java)의 `logExecutor`(가상 스레드·동시성 상한), `auditExecutor`·`notificationExecutor`(각각 유계 풀·큐)와 [api-server AsyncConfig](../../../../api-server/src/main/java/nuri/config/AsyncConfig.java)의 외부 메일·SMS용 `taskExecutor`(유계 풀·큐)로 분리된다. 감사·알림의 수락 거부는 계측하고, 외부 발송의 거부는 요청 스레드에서 실행하지 않고 예외와 실패 상태로 드러낸다. 이 격리를 정식 서킷 브레이커 도입 완료로 해석하지 않는다. 아래의 호출 유형별 **차등 타임아웃**과 정식 **서킷 브레이커·벌크헤드**(예: Resilience4j)는 현재 미도입으로, 의무가 아니라 도입 시 준수를 지향하는 **권고 기준**이다.
    - **실시간 OLTP 동기 연동**: 최대 3초 이내 타임아웃 및 빠른 실패(Fail-Fast) 지향.
    - **외부 결제/인증 트랜잭션 (PG 등)**: 최대 10초 이내 타임아웃 적용.
    - **비동기/배치/대용량 파일 연동**: 전용 스레드 풀 및 MQ 등으로 작업 공간을 격리하고, 비즈니스 요건에 맞춰 타임아웃 상향 조정.
@@ -75,8 +75,9 @@
 
 ### 제11조 (인증 정보 보호 및 OWASP 준수)
 1. `.env` 파일과 설정 파일에 비밀번호, API Key 등 민감 정보를 하드코딩하지 않는다. 반드시 환경변수를 사용한다.
-2. 백엔드 빌드 시 `failBuildOnCVSS=7` 설정에 따라 보안 취약점이 발견되면 수정을 우선한다.
+2. 백엔드 의존성 취약점은 `dependencyCheckAnalyze`의 `failBuildOnCVSS=7` 기준으로 확인하고 발견 시 수정을 우선한다. 이 태스크와 일반 빌드의 실행 경로는 동일하지 않다. [주간·수동 OWASP workflow](../../../../.github/workflows/dependency-check.yml)의 스캔 단계는 `continue-on-error`인 advisory이며 리포트 부재는 별도 실패로 남긴다. PR의 신규 runtime High 이상 의존성 차단은 required `secret-scan`의 snapshot readiness·dependency review가 담당한다. 전체 스캔의 운영 증거와 후속 처리 차이는 [GAP-DEP-001](../../../memory/known-gaps.md)에 남기며, advisory green을 취약점 부재나 병합 차단 증거로 표현하지 않는다.
 3. 비밀번호, 세션 비밀, 인증·복구 토큰, 일회용 코드와 소유 증명용 비밀은 HTTP path 또는 query parameter 등 URL request-target로 받거나 전달하지 않는다. 인증된 주체와 서버측 권한 검증으로 대체할 수 없는 별도 비밀 증명이 실제로 필요하면 독립적인 제품·위협 검토를 먼저 거쳐 보호된 request body의 전용 DTO로 설계한다. 백엔드 진입 경계는 금지된 credential-like query 이름을 발견하면 값을 읽거나 로그하지 않고 `400 Bad Request`로 거부하며, 정적 API 계약은 같은 계열의 path·query endpoint 선언을 차단한다. 이 방어는 애플리케이션 앞단의 proxy·WAF·container가 이미 받은 request-target의 로그 잔존 가능성을 제거하지 않으므로 배포 계층의 query redaction·보존·접근 통제를 별도로 적용한다. 일반 개인정보성 업무 검색어를 제한적으로 허용하는 ADR-0009를 이 예외의 근거로 사용할 수 없다. 첫 적용인 만족도는 ADR-0011에 따라 익명 비밀번호 증명을 퇴역하고 수정·삭제를 인증 owner-or-admin과 서비스 계층 재검증으로 제한한다.
+4. 소스 시큐어코딩 점검은 승인된 [ADR-0015](../../../../docs/02-architecture/decisions/ADR-0015-secure-coding-ci.md)에 따라 required `secure-coding`이 수행한다. 코드·설정 변경은 Java와 JavaScript/TypeScript의 CodeQL `security-extended` 전체 분석에서 기존·신규 High/Critical(보안 점수 7.0 이상)을 차단하며, 분석·리포트 오류도 실패시킨다. 문서 전용 변경만 명시적 skip을 허용한다. 승인 오탐은 [개별 검토 목록](../../../../config/security/false-positive-review.json)의 위치·fingerprint·소스/방어 해시·만료일에 결속된 범위로만 관리한다. 시크릿·의존성 검사와 SAST는 서로 다른 검사이며, 상세 실행·예외 계약은 ADR과 [CI 가이드](../../../../docs/03-guides/cicd-pipeline.md#시큐어코딩-정적-분석-sast)를 따른다.
 
 ---
 
@@ -113,7 +114,11 @@
 2. 트랜잭션 충돌 비용이 극도로 높은 크리티컬 섹션 로직에 대해서는 **비관적 락(Pessimistic Lock)** 또는 Redis 기반 분산 락 정책을 명시적으로 설계하여 반영해야 한다.
 
 ### 제16조 (Data Validation 연쇄 동기화 및 돌연변이 테스트 증명)
-1. 백엔드 DTO 및 프론트엔드 Zod 유효성 검증의 최대 길이(max) 및 필수 여부(NotNull)는 DB 물리 스키마(meta_standard_domains)의 상한 제약조건을 초과할 수 없다. DB→DTO→Zod 로 이어지는 **계약의 동기화**(스펙 신선도 및 산출물 재생성 일치)는 빌드 단계에서 기계 강제된다 — CI(`.github/workflows/ci.yml`)가 커밋된 `api-docs.json` 의 신선도를 `git diff --exit-code api-docs.json` 으로 검증하고, 프론트엔드 `codegen:verify`(`generated-api.d.ts` 재생성 diff)·`codegen:verify:zod`(`generated-zod.ts` 재생성 diff)로 스펙↔산출물의 일치를 확인한다. 나아가 계약체인 **최상류**(백엔드 Controller `@*Mapping` ↔ `api-docs.json` 경로 커버리지)는 `ApiDocsPathCoverageLinterTest` 가 **오프라인(순수 정적, live 서버 불요)** 으로 보호하여, 컨트롤러는 존재하나 스펙에 누락된(또는 그 역의) 경로 드리프트를 차단한다. 다만 **물리 상한(max/NotNull) 초과 여부를 `meta_standard_domains` 와 직접 대조하는 전용 하네스는 현재 존재하지 않으므로**(인접 하네스 `UniqueConstraintMirrorLinterTest` 는 UNIQUE 제약 미러링만, `SchemaNamingLinterTest` 는 명명 규칙만 검증한다), 상한선 초과 방지는 설계·리뷰 단계의 규범 준수로 보증하며 이의 하네스화는 향후 과제로 둔다. 단, 비즈니스 사양에 의해 DB 한계보다 더 좁은 길이로 제한하거나 정규식 등의 논리 검증이 필요할 경우 각 레이어에서 독립적으로 선언하여 도메인 간의 결합도를 완화한다.
+1. 백엔드 DTO 및 프론트엔드 Zod 유효성 검증의 최대 길이(max) 및 필수 여부(NotNull)는 DB 물리 스키마와 표준 메타의 제약조건에 부합해야 한다. DB→Entity→DTO→OpenAPI→TypeScript/Zod 계약의 현행 검증 범위는 다음과 같다.
+   - [InputContractMirrorLinterTest](../../../../api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java)는 실제 저장 경로가 확인된 표적 필드의 Entity `@Column(length)`와 DTO `@Size(max)`, 필수·enum·중첩 검증·read-only·날짜 계약을 커밋된 OpenAPI와 대조한다. DTO 전체의 의미 계약을 전수 보장하는 게이트는 아니다.
+   - `ApiDocsPathCoverageLinterTest`는 Controller `@*Mapping`과 `api-docs.json`의 경로를 오프라인으로 대조한다. CI는 실제 추출 뒤 `git diff --exit-code api-docs.json`으로 신선도를, 프론트엔드 `codegen:verify`·`codegen:verify:zod`는 `generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`의 재생성 일치를 검증한다.
+   - `:api-server:schemaValidationTest`는 격리 PostgreSQL에 Flyway를 적용하고 Hibernate 매핑 및 표적 스키마·데이터 계약을 검증한다. 승인된 표준 정합의 회귀는 [StandardLengthMigrationIntegrationTest](../../../../api-server/src/test/java/nuri/api/schema/StandardLengthMigrationIntegrationTest.java)와 [DeferredStandardDesignMigrationIntegrationTest](../../../../api-server/src/test/java/nuri/api/schema/DeferredStandardDesignMigrationIntegrationTest.java)가 보호한다.
+   - **실행 대상 DB의 live 메타·물리 스키마와 모든 DTO 필수·길이 제약을 직접 전수 대조하는 하네스는 아니다.** 실제 대상의 `information_schema`와 `meta_standard_domains` 조회 및 설계 리뷰를 생략할 수 없다. 남은 의미 계약은 [GAP-CONTRACT-001](../../../memory/known-gaps.md)에 추적한다. 비즈니스 사양에 따라 DB 한계보다 좁은 길이 또는 논리 검증을 각 레이어에 선언할 수 있으나 물리 한계를 약화하지 않는다.
 2. 테스트 코드 무결성을 검증하기 위한 돌연변이 테스트(Mutation Testing)는 전체 모듈이 아닌 핵심 크리티컬 비즈니스 서비스(결제, 보안, 데이터 정합성 등) 및 Git Diff로 탐지된 변경분(Delta)에 한하여 증분식 검증(Incremental Mutation Strategy)을 수행하며, 핵심 서비스 기준 **Mutation Score 75% 이상**을 품질 기준으로 삼는다. 이 기준은 `build.gradle` 의 `mutationThreshold=75`(환경변수 `STRICT_MUTATION=true` 시)로 기계 강제한다. **현행 CI의 `mutation-scope` 매트릭스는 각 대상 스코프에 `STRICT_MUTATION=true`를 주입하여 75%를 하드 게이트하며, required check인 `mutation-test`가 매트릭스 전체 결과를 집계하므로 어느 한 스코프라도 미달하면 병합이 차단된다.** 로컬에서 `STRICT_MUTATION`을 지정하지 않은 PITest 실행은 `mutationThreshold=0`의 리포트 전용이다. 일반 보조 비즈니스 서비스 및 단순 CRUD 로직은 돌연변이 테스트 강제 의무에서 영구히 면제한다.
 
 
@@ -122,7 +127,7 @@
 ## 제8장 부칙 (Supplementary Provisions)
 
 ### 제17조 (명명 규칙과의 동기화)
-1. 백엔드 변수 및 필드 명칭은 **DB 표준화 헌법**에 정의된 용어 사전과 100% 일치해야 한다. (예: DB `reg_dt` -> Java `regDt`)
+1. 백엔드 변수 및 필드 명칭은 **DB 표준화 헌법**에 정의된 용어 사전과 100% 일치해야 한다. (예: DB `crt_dt` -> Java `crtDt`)
 
 ### 제18조 (시행일)
 본 헌법은 공포된 즉시 효력을 발생하며, 신규 기능 개발 및 기존 코드 리팩토링 시 최우선 지침으로 적용된다.

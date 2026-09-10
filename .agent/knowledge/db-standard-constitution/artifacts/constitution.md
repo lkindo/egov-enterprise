@@ -67,11 +67,13 @@
    - **Sync (동기화)**: 애플리케이션 수준에서 이중 쓰기(Double-Write)를 수행하거나 배치 마이그레이션을 통해 데이터를 신규 구조와 완벽히 동기화한다.
    - **Redirect (이관)**: 모든 비즈니스 로직과 API 참조 대상을 신규 구조로 일원화하고 프론트엔드 연동 상태를 재검증한다.
    - **Contract (축소)**: 구버전 구조의 잔재(Old Columns/Tables)를 안전하게 Drop하고 인덱스/제약조건 네이밍 표준화를 영구 이행한다.
-3. **[하네스 강제 연동 규범]** 본 헌법 제7조의 이행은 DDL 린터 하네스 `api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java` 가 배포 전(테스트 단계)에 기계적으로 강제한다. 본 하네스는 **환경별 차등이나 경고 전용(warn-only) 모드 없이**, 아래 파괴적 DDL 이 단 1건이라도 검출되면 로컬·CI 를 불문하고 무조건 빌드를 차단(Hard-Stop, JUnit `fail`)한다.
+3. **[하네스 강제 연동 규범]** 본 헌법 제7조의 파괴적 DDL 차단과 예외 수명 주기는 [ZeroDowntimeMigrationLinterTest](../../../../api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java)가 배포 전(테스트 단계)에 기계적으로 강제한다. 본 하네스는 **환경별 차등이나 경고 전용(warn-only) 모드 없이**, 아래 파괴적 DDL 또는 waiver registry 위반이 검출되면 로컬·CI를 불문하고 빌드를 차단(Hard-Stop, JUnit `fail`)한다. 승인된 예외와 checksum으로 동결된 기존 부채의 처리 범위는 아래와 같으며, 정적 검사 통과만으로 실제 무중단 이행을 증명하지 않는다.
    - **차단 대상(파괴적 DDL)**: `DROP COLUMN`, `ALTER COLUMN ... TYPE`(**VARCHAR 길이 증가를 포함한 모든 타입 변경**), `RENAME COLUMN`·`RENAME TABLE`, `DEFAULT` 없는 `ADD ... NOT NULL`, `DROP TABLE`, `DROP SEQUENCE`, `TRUNCATE`, `ALTER SEQUENCE ... RENAME`.
-   - **비대상(허용)**: `ADD CONSTRAINT`(UNIQUE·CHECK·FK 등), `CREATE INDEX`, `DROP CONSTRAINT`, `DROP NOT NULL`(NULL 제약 완화). 즉 부가적(additive)·비파괴적 변경과 제약/인덱스 조작은 자유로이 허용된다. (구 조문의 "VARCHAR 길이 증가·NULL 완화는 차단 제외" 서술은 오류였다 — NULL 완화만 허용이며 타입 변경은 VARCHAR 길이 증가를 포함해 차단된다.)
-   - **전수 스캔**: 검사 대상은 baseline(`V2_0`)을 포함한 마이그레이션 디렉토리 전체 `.sql` 이며(`Files.walk`), 신규 델타에 한정하지 않는다.
-   - **예외 처리(마커 기반)**: 무중단 4단계 중 Contract(축소) 릴리스 등 불가피한 파괴적 DDL 은 ① 해당 위반 라인 끝의 `-- linter:ignore`(사유 병기) 또는 ② 파일 상단의 `-- linter:disable-file` 마커로만 통과시킨다.
+   - **정적 차단 비대상**: `ADD CONSTRAINT`(UNIQUE·CHECK·FK 등), `CREATE INDEX`, `DROP CONSTRAINT`, `DROP NOT NULL`(NULL 제약 완화). 이 목록은 해당 린터의 탐지 범위를 설명하며 운영 승인·잠금·데이터 검증을 면제하지 않는다. (구 조문의 "VARCHAR 길이 증가·NULL 완화는 차단 제외" 서술은 오류였다 — NULL 완화만 비대상이며 타입 변경은 VARCHAR 길이 증가를 포함해 차단된다.)
+   - **전수 스캔**: 검사 대상은 baseline(`V2_0`)을 포함한 마이그레이션 디렉토리 전체 `.sql`이며, 신규 델타에 한정하지 않는다. 소스 열거는 `HarnessSourceIndex`를 사용한다.
+   - **신규 예외의 승인 결속**: 해당 위반 라인의 `-- linter:ignore ZDM-YYYY-NNNN <reason>` 또는 파일 전체의 `-- linter:disable-file ZDM-YYYY-NNNN <reason>`를 [zdm-waivers.json](../../../../config/governance/zdm-waivers.json)의 `id`·`path`·`directive`·`reason`·`owner`·`approvedAt`·`expiresAt`·`evidence`와 1:1로 결속한다. 마커만으로는 통과하지 않으며, 자유형 신규 마커·미등록·중복·사유 누락·만료·경로 불일치를 차단한다.
+   - **선행 Expand 검증**: Contract 성격의 `DROP TABLE`·`DROP SEQUENCE`·`DROP COLUMN`·테이블/컬럼 `RENAME` waiver에는 실제 선행 파일을 가리키는 `expandMigration`이 필요하다. 자기참조·후행 버전·해석 불가능한 Flyway 버전은 실패한다. 버전 선후 확인은 Sync·Redirect 완료나 실제 구버전 소비 종료의 자동 증명이 아니다.
+   - **기존 부채 보존**: 레지스트리 도입 전 자유형 마커는 `legacy-debt-unapproved`로 별도 동결한다. 파일 fingerprint·마커 수·owner·reviewBy를 검증하며, 이 동결을 소급 승인으로 해석하거나 적용 완료 Flyway의 checksum을 바꾸지 않는다. 실제 잠금·동기화·배포 순서의 증거는 [이행 가이드](../../../../docs/02-architecture/zero-downtime-migration.md)에 따라 별도 확보한다.
 
 
 ---

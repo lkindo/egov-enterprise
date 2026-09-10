@@ -105,9 +105,9 @@ public @interface IntegrationTest {
 
 ## E2E 테스트 (Playwright)
 
-### 계층형 아키텍처 (25-Tier Architecture)
+### 계층형 아키텍처 (26-Tier Architecture)
 
-본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **25개 계층(Tier)** / 26개 스펙 파일(별도 `03-board-master-management` 포함)로 테스트를 관리합니다.
+본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **26개 계층(Tier)** / 27개 스펙 파일(별도 `03-board-master-management` 포함)로 테스트를 관리합니다. 현재 파일 모집단은 `frontend/e2e`와 [실행시간 profile](../../frontend/e2e/shard-duration-profile.json)의 exact census가 정본입니다.
 
 > Playwright project는 `setup`과 `full-suite` 두 개다. 아래 Tier는 파일 식별자이며 project가 아니다. 계층별 실행은 파일 또는 제목으로 지정하고, 현재 구성은 `frontend/playwright.config.ts`를 확인한다.
 
@@ -116,6 +116,7 @@ public @interface IntegrationTest {
 | **Core** | 1 | `01-core-base.spec.ts` | 인증, 대시보드, 전역 레이아웃 |
 | | 2 | `02-admin-system.spec.ts` | 사용자 CRUD, 메뉴, 공통코드 |
 | **Business** | 3 | `03-board-community.spec.ts` | 게시판 생명주기 |
+| | 3 (별도) | `03-board-master-management.spec.ts` | 게시판 마스터 생성·수정·삭제 |
 | | 4 | `04-quality-resilience.spec.ts` | RBAC/CSRF, A11y, 시각적 회귀 |
 | | 5 | `05-public-experience.spec.ts` | 대국민 포털 연동 |
 | **Ops** | 6 | `06-ops-governance.spec.ts` | 감사 로그, 모니터링 |
@@ -138,6 +139,7 @@ public @interface IntegrationTest {
 | | 23 | `23-security-auth-supplement.spec.ts` | **인증·세션·접근통제 계약의 단일 소유자** — UI 로그인(E0)·위조토큰(E1)·로그인실패(E2)·API RBAC(E3)·미들웨어 경로정책 매트릭스(E4)·Origin 가드(E5)·a11y(E11)·empty-state(E12) |
 | **Integration** | 24 | `24-org-schedule-journey.spec.ts` | 조직 ↔ 일정 통합 사슬 회귀 방어 |
 | | 25 | `25-deptjob-workreport-journey.spec.ts` | 부서업무 ↔ 업무보고 통합 여정 |
+| **Security Admin** | 26 | `26-security-admin-coverage.spec.ts` | 전용 부서 권한 일괄 적용·로그인 정책 저장 및 재조회 |
 
 ### 실행 명령어
 
@@ -205,7 +207,7 @@ manifest의 현재 baseline 상태는 `unmeasured`이며 Playwright 성능값이
 
 | 경로 | 구성 | 증명하는 것 | 증명하지 못하는 것 |
 |---|---|---|---|
-| 빠른 단위·통합 테스트 | 모듈별 `application-test.yml`, 주로 H2 `create`(api-server; 공유 in-memory DB 를 컨텍스트 종료가 drop 하지 않도록 2026-09-06 에 `create-drop` 에서 전환) | 서비스·리포지토리·웹 계약과 테스트 격리 | 운영 PostgreSQL 물리 스키마와 Flyway 정합성 |
+| 빠른 단위·통합 테스트 | 모듈별 H2 `application-test.yml`: api-server는 `create`, business-core/business-app은 `create-drop`. api-server는 공유 in-memory DB의 컨텍스트 종료 시 drop을 막기 위해 2026-09-06 전환 | 서비스·리포지토리·웹 계약과 테스트 격리 | 운영 PostgreSQL 물리 스키마와 Flyway 정합성 |
 | 스키마 검증 | `api-server/src/test/resources/application-tc.yml`, PostgreSQL 17 Testcontainers + Flyway + `ddl-auto: validate` | 빈 PostgreSQL에 현재 migration 전량 적용, Entity↔물리 스키마 정합 | 운영 데이터 내용과 실제 배포 cutover |
 
 H2는 빠른 피드백 수단이지 물리 스키마 증거가 아니다. Entity·DDL·PK 전략 변경은 Docker가 가능한 환경에서 다음 전용 task를 실행한다.
@@ -240,11 +242,7 @@ open build/reports/jacoco/aggregated/index.html
 
 ### 커버리지 제외 항목
 
-- **Q 클래스**: QueryDSL Q 클래스
-- **DTO**: 데이터 전송 객체
-- **Config**: 설정 클래스
-- **Application**: 메인 애플리케이션 클래스
-- **VO**: 값 객체
+정확한 제외 패턴은 [build.gradle](../../build.gradle)의 `jacocoAggregateExcludes`와 [gate registry](../../config/governance/gates.json)의 quality population이 함께 고정한다. Q 클래스, Request/Response/DTO, Config/Application/VO, DAO/Mapper 및 Initializer/Advice 패턴 등이 포함된다. 이 문서의 분류를 근거로 제외 범위를 추가하지 않는다.
 
 ---
 
@@ -274,14 +272,15 @@ E2E 테스트 실행 중 브라우저 콘솔에 에러가 발생하거나 런타
 - **감지 항목**:
     - `console.error()`: 스크립트 실행 중 발생하는 비치명적 오류
     - `pageerror`: 런타임 예외 및 Uncaught Error
-    - `unhandledrejection`: 처리되지 않은 비동기(Promise) 오류
-    - **Hydration Mismatch**: React/Next.js 하이드레이션 불일치 로그가 감지되면 즉시 `🌊 [HYDRATION MISMATCH]` 에러로 강제 실패 처리 (Fail-Fast).
+    - **Hydration Mismatch**: React/Next.js 하이드레이션 불일치 로그를 `🌊 [HYDRATION MISMATCH]` 오류로 수집한다.
+
+가드는 이벤트를 수집하고 `base-test.ts`의 fixture teardown에서 `verify()`로 테스트를 실패시킨다. 별도 `unhandledrejection` 리스너는 없으며 Playwright의 `pageerror`로 전달된 미처리 오류가 관측 대상이다.
 
 ### 2. 네트워크 리소스 무결성 검사 (Network Auditor & Silent API 가드)
 이미지 404, 깨진 폰트, CSS 로딩 실패 및 백그라운드 API 호출 오류(Silent API Failure)를 자동으로 감지합니다.
-- **동작**: `response` 리스너를 통해 주요 리소스 및 API의 응답 상태 코드가 400 이상인 경우 E2E 테스트를 즉시 실패시킵니다.
+- **동작**: `response` 리스너가 리소스와 API의 400 이상 응답을 수집하고, `requestfailed`가 전송 실패를 수집하여 fixture teardown에서 판정합니다.
 - **세부 진단 정보**: 오류 발생 시 HTTP Method(`GET`, `POST` 등), 요청 URL, 상태 코드, 리소스 타입을 상세 로그로 출력하여 원인 파악을 극대화합니다.
-- **예외적 허용**: 기능 안정성을 해치지 않기 위해 이미지 로드 오류(`image`) 및 비인가 시나리오가 의도된 특정 인증 API(`isAuthExpected`)는 무시 필터링(Whitelist)을 적용합니다.
+- **의도한 오류**: 이미지·인증 API를 일괄 제외하지 않습니다. 개별 테스트의 오류는 scope·URL·method·status·발생 횟수·만료일을 가진 expected-error ledger로 등록합니다. 브라우저 탐색 취소·프레임워크 중복 로그 등 기본 필터의 정확한 조건은 [error-detector.ts](../../frontend/e2e/fixtures/error-detector.ts), 사용법은 [E2E 런북](e2e-test-guide.md#4-특정-테스트에서-의도된-오류를-등록하는-방법)을 따릅니다.
 
 ### 3. 정밀 시각 회귀 테스트 (VRT)
 UI 프레임워크나 테마 변경 시 발생하는 미세한 레이아웃 시프트를 감지합니다.
@@ -362,7 +361,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 ## 중앙 하네스 레지스트리와 실행 분리
 
-[governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 37개·ArchUnit 10개·schema-validation 39개, runner catalog 7개, execution profile 6개, quality population 3개와 quality ratchet 15개를 관리한다(2026-09-01 실측 — 정확한 현재 수는 이 문서가 아니라 registry 계약 실행 출력이 정본이다). [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
+[governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 38개·ArchUnit 10개·schema-validation 49개, runner catalog 7개, execution profile 7개, quality population 3개와 quality ratchet 15개를 관리한다(2026-09-10 실측 — 정확한 현재 수는 이 문서가 아니라 registry 계약 실행 출력이 정본이다). [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
 
 | 계층 | 발견 계약 | 실행 경로 |
 |---|---|---|
@@ -389,7 +388,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 CI의 `backend-scope`는 classifier가 schema 영향으로 판정한 경우 같은 PostgreSQL 스키마 검증 task를 실행하고, 안정 required context `backend-build`가 그 결과를 집계한다. required check 상태는 현재 커밋에서 직접 확인하며, 일반 `test`나 컴파일 green을 스키마 검증 대체물로 보고하지 않는다.
 
-35개 migration suite는 `SharedPostgresMigrationTestSupport`의 PostgreSQL 17 컨테이너 하나를 공유하되 테스트 클래스마다 격리 database를 생성·삭제한다. 공유는 startup 비용만 줄이며 DB 이름·Flyway 적용·connection lifecycle 격리 계약은 `SharedPostgresMigrationHarnessContractTest`가 보호한다. Spring `jdbc:tc` 기반 검증은 별도 컨테이너 경로이므로 전체 실행에서 PostgreSQL start는 최대 2개다.
+45개 스키마·migration 테스트 클래스는 `SharedPostgresMigrationTestSupport`의 PostgreSQL 17 컨테이너 하나를 공유하되 테스트 클래스마다 격리 database를 생성·삭제한다(2026-09-10 source census). 공유는 startup 비용만 줄이며 DB 이름·Flyway 적용·connection lifecycle 격리 계약은 `SharedPostgresMigrationHarnessContractTest`가 보호한다. Spring `jdbc:tc` 기반 검증은 별도 컨테이너 경로이므로 `schemaValidationTest` 전체 실행에서 PostgreSQL start는 최대 2개다. 독립 `migration-tool`의 프로세스 복구 테스트처럼 다른 task가 시작한 컨테이너는 이 수에 포함하지 않는다.
 
 ### 2. 로컬 훅 경계
 
@@ -407,5 +406,5 @@ CI의 `backend-scope`는 classifier가 schema 영향으로 판정한 경우 같�
 - [성능 최적화 가이드](../04-operations/performance-optimization-guide.md)
 
 ---
-*Last reviewed against current sources: 2026-08-19.*
+*Last reviewed against current sources: 2026-09-10.*
 

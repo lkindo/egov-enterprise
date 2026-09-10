@@ -198,6 +198,67 @@ function assertE2eShardContractMatches(context, requiredChecksText) {
   );
 }
 
+function assertCouplingMemoryMatches(gaps, source) {
+  const row = gaps.split(/\r?\n/).find((line) => line.startsWith('| GAP-ARCH-001 |'));
+  assert.ok(row, 'GAP-ARCH-001의 현재 결합 census가 필요합니다.');
+  for (const [label, constant] of [
+    ['app→app', 'APP_TO_APP_COUPLING'],
+    ['app→core', 'APP_TO_CORE_COUPLING'],
+  ]) {
+    const actual = row.match(new RegExp(`${label} \\*\\*(\\d+)건\\*\\*`, 'u'));
+    const expected = source.match(new RegExp(`private static final int ${constant} = (\\d+);`, 'u'));
+    assert.ok(actual && expected, `${label}: 메모리와 소스의 census를 읽을 수 없습니다.`);
+    assert.equal(Number(actual[1]), Number(expected[1]), `${label}: 공용 메모리 census가 현재 하네스와 다릅니다.`);
+  }
+}
+
+test('active coupling memory matches the current source census', () => {
+  assertCouplingMemoryMatches(
+    readRepoFile('.agent/memory/known-gaps.md'),
+    readRepoFile('api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java'),
+  );
+});
+
+test('coupling memory rejects stale and missing census claims', () => {
+  const gaps = readRepoFile('.agent/memory/known-gaps.md');
+  const source = readRepoFile('api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java');
+  for (const label of ['app→app', 'app→core']) {
+    const stale = gaps.replace(new RegExp(`${label} \\*\\*\\d+건\\*\\*`, 'u'), `${label} **999건**`);
+    assert.notEqual(stale, gaps);
+    assert.throws(() => assertCouplingMemoryMatches(stale, source), /현재 하네스와 다릅니다/u);
+  }
+  const missing = gaps.replace(/^\| GAP-ARCH-001 \|[^\n]*\n/mu, '');
+  assert.notEqual(missing, gaps);
+  assert.throws(() => assertCouplingMemoryMatches(missing, source), /현재 결합 census가 필요합니다/u);
+});
+
+function assertDocumentationAdrIndexMatches(index, ids) {
+  const section = index.split('### 02-architecture/decisions — ADR')[1]?.split('## 03-guides')[0] ?? '';
+  const linkedIds = [...section.matchAll(/^\| \[(ADR-\d{4})\]\(/gm)].map((match) => match[1]);
+  assert.equal(linkedIds.length, new Set(linkedIds).size, '문서 ADR 인덱스에 중복 ID가 있습니다.');
+  assertExactAdrSet(ids, linkedIds);
+}
+
+test('the documentation index links every Accepted ADR in its ADR section', () => {
+  assertDocumentationAdrIndexMatches(
+    readRepoFile('docs/README.md'),
+    acceptedAdrIds(readRepoFile('docs/02-architecture/decisions/README.md')),
+  );
+});
+
+test('the documentation ADR index rejects missing, misplaced, duplicate and ghost entries', () => {
+  const ids = acceptedAdrIds(readRepoFile('docs/02-architecture/decisions/README.md'));
+  const index = readRepoFile('docs/README.md');
+  const row = index.split(/\r?\n/).find((line) => line.startsWith(`| [${ids[0]}](`));
+  assert.ok(row);
+  const missing = index.replace(row, '');
+  assert.throws(() => assertDocumentationAdrIndexMatches(missing, ids), /missing=\[ADR-/u);
+  assert.throws(() => assertDocumentationAdrIndexMatches(`${missing}\n${row}`, ids), /missing=\[ADR-/u);
+  assert.throws(() => assertDocumentationAdrIndexMatches(index.replace(row, `${row}\n${row}`), ids), /중복 ID/u);
+  const ghost = index.replace(row, `${row}\n| [ADR-9999](synthetic.md) | synthetic |`);
+  assert.throws(() => assertDocumentationAdrIndexMatches(ghost, ids), /ghost=\[ADR-9999\]/u);
+});
+
 test('shared memory files have a stable schema and valid canonical sources', () => {
   const seenKinds = new Set();
 

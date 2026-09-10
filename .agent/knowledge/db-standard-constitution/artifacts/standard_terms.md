@@ -35,4 +35,6 @@ WHERE t.term_name = '사용자명';
 
 ## 검증 경계
 
-`schemaValidation`과 명명·도메인 하네스는 저장소 스키마의 회귀를 줄이지만 대상 환경의 live 메타 정합성을 대신하지 않는다. 운영 적용 전에는 대상 DB 메타 조회, Flyway 적용 결과, JPA 매핑을 각각 확인한다.
+`./gradlew :api-server:schemaValidationTest`는 격리 PostgreSQL에 Flyway를 적용하고 Hibernate 매핑·표적 DB 계약을 검증한다. `:api-server:harnessTest`의 명명·입력 계약·UNIQUE·DDL 검사는 소스와 생성 계약의 회귀를 차단한다. 어느 경로도 실행 대상 환경의 live 메타 전수 대조를 대신하지 않으므로, 운영 적용 전에는 대상 DB 메타 조회, Flyway 적용 결과, JPA 매핑을 각각 확인한다.
+
+표준 길이와 기존 설계 보류분의 승인 범위는 [ADR-0013](../../../../docs/02-architecture/decisions/ADR-0013-standard-text-length-alignment.md)과 후속 [ADR-0014](../../../../docs/02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md), 단계별 적용·재검증 방법은 [표준 정합 런북](../../../../docs/04-operations/standard-length-alignment-runbook.md)을 따른다. 이 링크는 실행 대상 DB의 현재 적용 완료를 의미하지 않는다.

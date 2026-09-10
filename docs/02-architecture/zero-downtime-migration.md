@@ -1,19 +1,19 @@
 # 무중단 배포 4단계 이행 및 DDL 린터 아키텍처 (Zero-Downtime Migration & Linter)
 
 ## 1. 아키텍처 개요
-PostgreSQL 기반의 eGov Enterprise 시스템에서 스키마 변경 시 발생할 수 있는 **테이블 락(Access Exclusive Lock)** 및 다운타임을 원천 차단하기 위해, "Expand-and-Contract" 패턴 기반의 물리적 DDL 오딧 린터를 구축하였습니다. 본 아키텍처는 [DB 표준화 헌법 제7조](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)(무중단 데이터 진화 / Expand-and-Contract)를 물리적으로 강제하는 하네스입니다.
+PostgreSQL 스키마 변경의 구버전 호환성 파손 위험을 줄이기 위해 Expand-and-Contract 절차와 정적 DDL 린터를 사용한다. 이 하네스는 [DB 표준화 헌법 제7조](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)의 명시된 SQL 패턴·예외 승인 계약을 검사한다. 실제 테이블 lock이나 downtime을 없애는 실행 장치는 아니므로 live schema·데이터 실측, 배포 순서·잠금 제한·롤백 증거가 별도로 필요하다.
 
 이 시스템은 개발자가 파괴적인 DDL(`DROP COLUMN`, `ALTER COLUMN TYPE` 등)을 Flyway SQL에 추가했을 때 하네스 테스트에서 차단한다.
 
 ## 2. DDL 린터 하네스 (`ZeroDowntimeMigrationLinterTest.java`)
-`nuri.api.harness` 패키지 내부에 구현된 이 정적 오딧 하네스는 빌드 및 통합 테스트가 실행될 때마다 모든 Flyway SQL 스크립트를 파싱하여 다음의 안티패턴을 감지합니다.
+[`ZeroDowntimeMigrationLinterTest`](../../api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java)는 `:api-server:harnessTest`를 통해 Flyway migration 디렉터리의 SQL을 검사한다. `check`·`localGate`·해당 CI 경로가 이 task를 소비하며, 모든 개별 통합 테스트 실행에 자동 포함되는 것은 아니다.
 
 ### 2.1. 차단되는 파괴적 DDL 규칙 (Forbidden Anti-Patterns)
 1. **`DROP COLUMN` 금지**
    - **원인**: 구버전 앱(A)이 여전히 해당 컬럼을 참조하고 있을 때 컬럼이 즉시 삭제되면 에러율이 급증함.
    - **대안**: 애플리케이션에서 컬럼 참조를 제거(Contract Phase 1)한 후, 최종 마이그레이션에서 삭제.
 2. **`ALTER COLUMN ... TYPE` 금지**
-   - **원인**: PostgreSQL은 타입 변경 시 테이블을 Full Rewrite하며 전체 Access Exclusive Lock을 걸기 때문에 수 분~수십 분의 다운타임을 유발.
+   - **원인**: 타입 변환은 변경 형태에 따라 재작성·잠금 비용과 호환성 위험이 달라지므로 정적 린터는 기본 차단한다. 모든 변경이 full rewrite라는 뜻은 아니다. 같은 VARCHAR 타입의 길이 확장처럼 개별 검토한 변경은 실제 schema·데이터와 잠금 제한을 확인하고 승인 waiver를 사용한다([IPv6 확장 검증](../../api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java)).
    - **대안**: 새로운 컬럼(Expand) 추가 ➔ 듀얼 라이팅(Dual Writing) ➔ 백필(Backfill) ➔ 구버전 컬럼 삭제.
 3. **`RENAME COLUMN` 금지**
    - **원인**: 컬럼 명을 바꾸면 구버전 앱에서 즉각적인 SQL 쿼리 실패 발생.
@@ -41,6 +41,7 @@ PostgreSQL 기반의 eGov Enterprise 시스템에서 스키마 변경 시 발생
 4. **Phase 4: Contract (축소 및 정리)**
    - 앱에서 기존 컬럼 참조가 완전히 제거된 후, 구버전 컬럼을 안전하게 `DROP`하고 인덱스/제약조건 네이밍 표준화를 이행.
    - **Linter Ignore (라인 단위)**: 신규 Contract 예외는 해당 SQL과 같은 라인에 `-- linter:ignore ZDM-YYYY-NNNN <인라인 사유>` 형식의 안정 ID와 사유를 두고, [`zdm-waivers.json`](../../config/governance/zdm-waivers.json)의 `waivers`에 같은 ID와 `path`, `directive`, `reason`, `owner`, `approvedAt`, `expiresAt`, `evidence`를 등록한다. marker와 레지스트리는 한 곳에만 1:1로 존재해야 하며, 미등록·중복·사유 누락·만료·경로 불일치는 하네스를 실패시킨다.
+   - **선행 Expand 결속**: 린터가 DROP/RENAME 등 Contract 성격으로 판정한 대상 SQL의 waiver는 `expandMigration`도 필요하다. 지목한 migration이 실제로 존재하고 대상보다 앞선 버전이어야 하며 같은 파일·후행 버전은 실패한다. 이는 버전 순서 검사이므로 두 migration을 서로 다른 release에 배포했다는 증거까지 대신하지 않는다.
    - **Linter Disable File (파일 단위)**: 파일 전체 면제가 불가피하면 `-- linter:disable-file ZDM-YYYY-NNNN <인라인 사유>`와 `directive: "disable-file"`을 같은 방식으로 등록한다. 모든 규칙을 끄므로 일반 해법으로 사용하지 않고 가능한 한 라인 단위 예외로 축소한다.
 
 ### 3.1 적용 완료 migration의 레거시 예외
@@ -60,4 +61,4 @@ PostgreSQL 기반의 eGov Enterprise 시스템에서 스키마 변경 시 발생
 다만 이 하네스는 정규식 기반 정적 검사이며, 레지스트리의 `evidence`도 증거 위치와 승인 수명 주기를 결속할 뿐 내용의 진실성을 자동 증명하지 않는다. 실제 lock 시간, 배포 순서, dual-write/backfill 완결성, 구버전 인스턴스의 참조 제거는 소비처 census와 실제 배포·롤백 증거로 별도 확인한다.
 
 ---
-*Verified against `ZeroDowntimeMigrationLinterTest` and its harness execution path: 2026-08-19*
+*Verified against `ZeroDowntimeMigrationLinterTest` and its harness execution path: 2026-09-10*

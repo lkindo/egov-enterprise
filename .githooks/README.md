@@ -11,7 +11,7 @@ git config core.hooksPath .githooks
 ## 동작
 | 훅 | 시점 | 동작 | 강도 |
 |----|------|------|------|
-| `pre-commit` | 커밋 | DTO/Controller/api-docs.json/생성타입 스테이징 시 `codegen:verify(:zod)` 드리프트 점검 | ⚠ 경고(비차단) |
+| `pre-commit` | 커밋 | 설치된 gitleaks로 staged 시크릿 검사 + DTO/Controller/api-docs.json/생성타입의 `codegen:verify(:zod)` 드리프트 점검 | 시크릿 탐지는 차단, gitleaks 미설치·codegen 드리프트는 경고 |
 | `pre-push` | 푸시 | remote branch/tag 삭제-only는 전송할 object가 없어 즉시 종료한다. 그 외 push에서는 운영 계약을 먼저 실행하고, 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행한다. 소스 변경은 공용 fail-closed 분류기로 backend/frontend 영향만 선택하며, 알 수 없는 파일은 양쪽 전체를 실행한다. 삭제와 일반 push가 섞이면 일반 push 범위는 그대로 검증한다. | ❌ 실행된 범위에서 차단 |
 
 현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 먼저 확인한 뒤 diff를 판정한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
@@ -20,14 +20,16 @@ git config core.hooksPath .githooks
 
 | 계층 | 명령 | 범위 | 상대 비용 |
 |---|---|---|---|
-| pre-commit | 자동 | 시크릿 스캔(미설치 시 **경고 출력**)·계약 드리프트 경고 | 낮음 |
-| pre-push 문서-only | 자동 | 공용 메모리 계약 + 문서 링크 무결성. Atlas HTML이면 전용 docs-as-code 계약 추가 | 낮음 |
-| pre-push 소스 변경 | 자동 | 운영 계약 + 변경 영향이 있는 Java compile/`harnessTest` 또는 FE/E2E tsc·lint·codegen·불변식 Vitest. 미분류 파일은 양쪽 실행 | 중간 |
+| pre-commit | 자동 | 설치된 gitleaks의 시크릿 탐지는 차단(미설치 시 **경고 출력**)·계약 드리프트는 경고 | 낮음 |
+| pre-push 문서-only | 자동 | 운영 계약 catalog 전체(공용 메모리·문서 링크 포함). Atlas HTML이면 전용 docs-as-code 계약 추가 | 낮음 |
+| pre-push 소스 변경 | 자동 | 운영 계약 + 변경 영향이 있는 Java compile/`harnessTest` 또는 FE/E2E tsc·lint·폼 census·codegen·불변식 Vitest. backend-only에도 cross-stack Vitest 실행. 미분류 파일은 양쪽 실행 | 중간 |
 | **Gradle 전수 lane** | `./gradlew localGate` | 하네스 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫. pre-push의 모든 정적 검사를 포함하는 superset은 아님 | 높음 |
 | **통합 전수 진입점** | `npm run verify` | 운영/문서 계약 + backend 전수 lane + FE codegen·lint·타입·build·bundle·coverage. E2E와 원격 ruleset은 각각 `verify:e2e`/`verify:ops` | 높음 |
-| CI | `.github/workflows/ci.yml` | **secret-scan(gitleaks)** + 전체 + 실PG 스키마 검증 + 프론트 gzip 번들 예산 + E2E + 뮤테이션 | 가장 높음 |
+| CI | `.github/workflows/ci.yml` | 변경 scope에 따른 빌드·실PG 스키마·번들·E2E·뮤테이션과 **secret-scan**·**secure-coding(CodeQL)**. 안정 required context 6개로 결과 집계 | 가장 높음 |
 
 [governance gates manifest](../config/governance/gates.json)가 governance JUnit tag·ArchUnit tag·schema-validation tag와 Node/Frontend/E2E/mutation runner catalog를 중앙 등록한다. 계약 테스트는 실제 source census, 실행 task, CI/훅 소비자와 quality ratchet을 대조하고 `baseline-manifest.properties`는 보호 파일의 tamper hash를 추가로 고정한다. pre-push 하나를 전체 하네스 실행 증거로 간주하지 말고 변경 범위에 맞는 registry consumer 결과를 확인한다.
+
+pre-push와 `npm run verify`는 CodeQL 분석을 직접 실행하지 않는다. 운영 계약 catalog의 SAST 정책 테스트와 실제 소스 분석을 구분한다. 로컬 분석은 `npm run verify:sast -- java` / `javascript`, 실제 탐지·거절 fixture는 `npm run verify:sast:probe -- java` / `javascript`로 실행하며 CodeQL 설치가 필요하다. [CI 시큐어코딩 안내](../docs/03-guides/cicd-pipeline.md#시큐어코딩-정적-분석-sast)를 따른다.
 
 ### 입력 의미 계약 게이트
 
@@ -53,13 +55,13 @@ git config core.hooksPath .githooks
 
 삭제-only push는 로컬 object가 없어 코드 검증 대상이 아니므로 운영 계약 실행 전에 종료한다. 삭제와 일반 ref update가 섞이면 삭제 ref만 범위에서 빼고 object를 전송하는 update를 정상 검증한다. stdin이 없거나 범위를 알 수 없는 경우의 fail-closed fallback은 그대로 유지한다.
 
-문서·이미지·폰트 등 **확실히 비코드인 확장자만** fast-pass하고 나머지는 소스 변경으로 간주한다. `.githooks/`, baseline manifest, Gradle 설정, wrapper, Dockerfile, 스크립트처럼 게이트를 바꿀 수 있는 파일은 확장자 유무와 관계없이 전체 소스 경로를 탄다. `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 통과한 경우에만 fast-pass한다.
+공용 [변경 분류기](../scripts/ci-change-scope.mjs)가 경로·확장자·삭제·rename 이전 경로를 함께 판정한다. 일반 문서·이미지·폰트는 fast-pass 대상이지만 `.githooks/`, 헌법, baseline manifest, Gradle 설정, wrapper, Dockerfile, 실행 스크립트처럼 게이트·규범에 영향을 주는 경로는 Markdown이라도 소스 경로를 탄다. `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 통과한 경우에만 fast-pass한다.
 
 ### 실 PostgreSQL 스키마 검증 (`./gradlew :api-server:schemaValidationTest`)
 
-빈 PostgreSQL 17 컨테이너에 **Flyway 마이그레이션 전량을 적용**한 뒤 Hibernate `ddl-auto: validate`로 엔티티 매핑을 대조한다(**Docker 필요**). 단위 테스트 프로파일의 H2 + `create-drop` 결과는 운영 물리 스키마 정합 증거가 아니다.
+빈 PostgreSQL 17 컨테이너에 **Flyway 마이그레이션 전량을 적용**한 뒤 Hibernate `ddl-auto: validate`로 엔티티 매핑을 대조한다(**Docker 필요**). 모듈별 H2 `create`/`create-drop` 결과는 운영 물리 스키마 정합 증거가 아니다.
 
-Docker 없는 환경을 깨지 않도록 기본 `test` 태스크에서는 `schema-validation` 태그로 제외되지만, **조용히 스킵되는 것이 아니라** 전용 태스크·`localGate`·CI 에서 반드시 실행된다.
+Docker 없는 환경을 깨지 않도록 기본 `api-server:test`에서는 `schema-validation` 태그를 제외한다. 전용 태스크·`localGate`·`verify:full`은 이를 실행하며 CI는 classifier의 `schema=true`인 경우 실행한다. 이 설명은 API 스키마 lane의 경계이며 독립 `migration-tool:test`의 PostgreSQL 테스트까지 Docker 불필요하다는 뜻은 아니다.
 
 > `docker version`은 성공하지만 Testcontainers가 엔진을 찾지 못하면 현재 Docker context와 `DOCKER_HOST` / `DOCKER_API_VERSION` 오버라이드를 확인한다. 특정 Docker 버전의 과거 기본값을 그대로 가정하지 않는다.
 
@@ -76,3 +78,5 @@ Docker 없는 환경을 깨지 않도록 기본 `test` 태스크에서는 `schem
 - 완전 해제: `git config --unset core.hooksPath`
 
 > pre-commit이 드리프트를 **경고만** 하는 이유: `api-docs.json` 자체가 stale이면 재생성이 오탐을 낳는다. 차단은 결정론적인 pre-push 게이트(컴파일 + 계약 codegen 드리프트)에만 둔다.
+
+*Last reviewed against current sources: 2026-09-10.*

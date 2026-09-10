@@ -16,6 +16,7 @@
 6. [캐싱 전략](#캐싱-전략)
 7. [로컬 테스트](#로컬-테스트)
 8. [릴리스 프런트엔드 런타임 인계](#릴리스-프런트엔드-런타임-인계)
+9. [시큐어코딩 정적 분석 (SAST)](#시큐어코딩-정적-분석-sast)
 
 ---
 
@@ -58,10 +59,10 @@ dependency-submission.yml (pull_request, contents:read)
 
 `workflow_run` publisher는 해당 workflow 파일이 기본 브랜치에 존재한 뒤부터 활성화된다. 따라서 정적 계약 검증만으로 public fork 경로의 운영 집행을 완료로 보지 않으며, 기본 브랜치 반영 후 고위험 runtime 의존성 probe PR로 artifact 제출·readiness·차단을 확인한다. `push`와 `workflow_dispatch`에서는 producer workflow의 trusted job이 그래프를 직접 제출한다.
 
-> **CI와 로컬 피드백의 경계**: pre-commit/pre-push는 빠른 범위별 피드백이며 일부 계약 검사를 선행할 수 있지만 우회 가능하다. required CI 6개가 병합 권위를 소유하며 현재 커밋의 실제 check 상태로 판정한다. `backend-build`·`frontend-build`·`e2e-test`·`mutation-test`는 scope가 선택되면 source 성공만, 선택되지 않으면 명시적 skip만 허용하는 안정 aggregate라 docs-only SHA에서도 완료 상태가 남는다.
+> **CI와 로컬 피드백의 경계**: pre-commit/pre-push는 빠른 범위별 피드백이며 일부 계약 검사를 선행할 수 있지만 우회 가능하다. required CI 6개가 병합 권위를 소유하며 현재 커밋의 실제 check 상태로 판정한다. `backend-build`·`frontend-build`·`e2e-test`·`mutation-test`·`secure-coding`은 scope가 선택되면 source 성공만, 선택되지 않으면 명시적 skip만 허용하는 안정 aggregate라 docs-only SHA에서도 완료 상태가 남는다.
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
-> - **스키마 무결성 (HARD, CI FAIL)**: 엔티티/마이그레이션 변경 감지 시 `Strict Schema Integrity Validation` 이 `--no-build-cache` 로 `:foundation:test` 를 강제 실행하며, Testcontainers 기반 `Real PostgreSQL 17 Schema Validation` 이 Flyway 전량 적용 + Hibernate `ddl-auto:validate` 로 물리 스키마 정합성을 검증.
-> - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 규칙 0건 유지(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
+> - **스키마 무결성 (HARD, CI FAIL)**: classifier가 schema 영향으로 판정하면 `Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)`이 Flyway 전량 적용 + Hibernate `ddl-auto:validate`로 물리 정합성을 검증한다. `:foundation:test --no-build-cache`를 재실행하는 `Cache-bypass regression gate (foundation, main only)`는 같은 schema 조건에 더해 `refs/heads/main`에서만 실행한다.
+> - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
 > - **증분 뮤테이션 (HARD, CI FAIL)**: `mutation-scope`는 10개 PIT 스코프 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. `mutation-test`는 매트릭스 전체 결론을 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
@@ -80,19 +81,12 @@ dependency-submission.yml (pull_request, contents:read)
 
 ### Gradle 설정
 
-```yaml
-- name: Setup Gradle
-  uses: gradle/actions/setup-gradle@v3
-  with:
-    cache-disabled: false
-    cache-read-only: false
-    cache-overwrite-existing: false
-```
+`backend-scope`는 JDK 21과 `gradle/actions/setup-gradle`을 사용하며 action 참조는 workflow의 검증된 commit SHA로 고정한다. 캐시 옵션과 wrapper 다운로드 재시도는 [ci.yml](../../.github/workflows/ci.yml)의 `Setup Gradle`·`Provision Gradle distribution with bounded retry` 단계가 정본이다.
 
 ### 실행 명령어
 
 ```bash
-# 1. fail-closed classifier가 schema 영향으로 판정했을 때
+# 1. main에서 classifier가 schema 영향으로 판정했을 때만 cache-bypass 재실행
 ./gradlew :foundation:test --no-build-cache
 
 # 2. 메인 빌드 및 테스트 (OpenAPI Spec 정적 추출 포함)
@@ -122,30 +116,21 @@ git diff --exit-code api-docs.json
 
 ### Node.js 설정
 
-```yaml
-- name: Set up pnpm
-  uses: pnpm/action-setup@v4
-  with:
-    version: 9
-
-- name: Set up Node.js
-  uses: actions/setup-node@v4
-  with:
-    node-version: ${{ env.NODE_VERSION }}
-    cache: "pnpm"
-    cache-dependency-path: frontend/pnpm-lock.yaml
-```
+Node 버전은 workflow의 `NODE_VERSION`, pnpm은 `version: 9`를 사용한다. `pnpm/action-setup`·`actions/setup-node`의 정확한 commit SHA와 캐시 옵션은 [ci.yml](../../.github/workflows/ci.yml)의 `frontend-scope`를 따른다. pnpm 캐시는 `frontend/pnpm-lock.yaml`에 결속한다.
 
 ### 실행 명령어
 
 ```bash
 cd frontend
 pnpm install --frozen-lockfile
+pnpm run test:form-validation # 폼 census·검증 계약과 red proof
 pnpm run codegen:verify        # 계약 드리프트 게이트 (spec ↔ 생성 타입)
 pnpm run codegen:verify:zod    # 계약 드리프트 게이트 (spec ↔ Zod)
+pnpm run type-check:e2e        # Next build가 제외하는 E2E 타입
 pnpm run lint                  # ESLint error 규칙 0건 게이트
 node ../scripts/frontend-audit-policy.mjs # pnpm audit JSON 단일 조회·정책 판정
 pnpm run build
+pnpm run bundle:check
 pnpm run test:coverage
 ```
 
@@ -160,9 +145,7 @@ pnpm run test:coverage
 
 ### 생성 아티팩트
 
-| 이름 | 경로 | 보존 기간 |
-|------|------|-----------|
-| `next-build-cache` | `frontend/.next/cache` | 7 일 |
+`frontend-scope`는 `next-build-cache` artifact를 업로드하지 않는다. 해당 업로드는 소비자가 없고 유효한 빌드 재사용 효과도 없어 2026-09-01 제거됐다. Next production build·bundle budget·Vitest coverage 결과는 각 실행 로그에서 확인한다.
 
 ---
 
@@ -200,7 +183,9 @@ strategy:
    pnpm run start:3001 &
    pnpm exec wait-on http://127.0.0.1:3001/login
    mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard 1/2)
-   pnpm exec playwright test --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line
+   export PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/e2e-results.json
+   pnpm exec playwright test --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line,json
+   node ../scripts/playwright-result-contract.mjs --report "$PLAYWRIGHT_JSON_OUTPUT_FILE" "${E2E_SPECS[@]}"
    ```
 
 ### 리포트 병합
@@ -211,32 +196,16 @@ strategy:
 
 #### 병합 리포트 생성 (`ci.yml`)
 
-병렬 VM 간 파일 시스템은 격리되어 있으므로, 반드시 각 Shard에서 리포트 파편을 업로드한 후 Merge Job에서 다운로드하여 병합해야 합니다.
+병렬 VM 간 파일 시스템은 격리되어 있으므로 각 shard의 blob을 업로드한 뒤 `e2e-merge-reports`에서 내려받아 병합한다. 정확한 action SHA와 shell은 [ci.yml](../../.github/workflows/ci.yml)이 소유한다.
 
-```yaml
-# 1. 각 Shard Job 마지막에 실행 (matrix.shard 별로 리포트 업로드)
-- name: Upload Playwright Report
-  uses: actions/upload-artifact@v4
-  if: always()
-  with:
-    name: playwright-report-shard-${{ matrix.shard }}
-    path: frontend/playwright-report/
-    retention-days: 30
-    include-hidden-files: true
+| 단계 | 현재 계약 |
+|---|---|
+| Shard 업로드 | `frontend/blob-report/` → `playwright-report-shard-${{ strategy.job-index }}`, 30일 보존. slash가 있는 `matrix.shard`를 artifact 이름에 쓰지 않는다. |
+| 다운로드 | `playwright-report-shard-*`를 `frontend/playwright-reports`의 shard별 디렉터리로 받는다. `merge-multiple: true`를 사용하지 않는다. |
+| 평탄화·병합 | shard 접두사를 붙여 파일명 충돌을 피한 뒤 `playwright merge-reports --reporter html ./playwright-reports` 실행 |
+| 최종 업로드 | `frontend/playwright-report` → `playwright-report-merged`, 30일 보존 |
 
-# 2. 독립된 Merge Job에서 실행
-- name: Download all reports
-  uses: actions/download-artifact@v4
-  with:
-    path: frontend/playwright-reports
-    pattern: playwright-report-shard-*
-    merge-multiple: true
-
-- name: Merge reports
-  run: |
-    pnpm exec playwright merge-reports --reporter html ./playwright-reports
-  working-directory: frontend
-```
+E2E JSON 결과는 [playwright-result-contract.mjs](../../scripts/playwright-result-contract.mjs)가 배정된 spec의 실제 실행을 확인한다. HTML 병합은 비필수 보조 job이며, E2E 성공 권위는 `e2e-tests`와 required `e2e-test`에 남는다.
 
 ---
 
@@ -248,7 +217,6 @@ strategy:
 |---|---|---|
 | Gradle dependency graph | PR read-only producer → trusted `workflow_run` publisher | write token을 가진 job은 PR 코드를 checkout하거나 실행하지 않는다. |
 | Snapshot readiness | `secret-scan`, backend/frontend 영향 PR | GitHub compare API의 base/head snapshot warning이 사라질 때까지 최대 600초 기다리고, 미완전·비재시도 API 오류·시간 초과를 실패 처리한다. 실패 시 **어느 쪽 SHA가 비었는지 분류하고 해소 명령을 함께 출력**한다. |
-
 | Dependency review | readiness 성공 뒤 `actions/dependency-review-action` | 새 runtime 의존성의 High 이상을 required `secret-scan`에서 차단한다. |
 | Frontend audit policy | `frontend-scope` | lockfile을 한 번 조회해 Critical 전체·운영 High를 차단하고 개발 High만 warning으로 남긴다. |
 
@@ -324,7 +292,7 @@ dependencyCheck {
 ### Gradle 캐싱
 
 - **위치**: GitHub Actions 캐시 + 로컬 `.gradle`
-- **키**: Gradle 래퍼 해시 + `build.gradle` 해시
+- **키·입력**: `setup-gradle` action의 캐시 구성과 Gradle task 입력 계약을 따른다. wrapper·build 파일 두 개만으로 전체 캐시 키를 설명하지 않는다.
 - **효과 확인**: 캐시 hit 여부와 실행 시간은 대상 workflow run에서 확인한다. 과거 측정치를 현재 성능 보장으로 사용하지 않는다.
 
 ### Next.js 캐싱 — E2E에서는 사용하지 않는다
@@ -391,7 +359,7 @@ git config core.hooksPath .githooks
 ```
 
 - **pre-push (차단)**: 변경 범위를 판정해 문서 계약 또는 소스 컴파일·타입·codegen·하네스 검증을 실행한다. 실제 명령 집합은 훅과 `.githooks/README.md`를 따른다.
-- **pre-commit (⚠ 경고, 비차단)**: DTO/Controller/api-docs.json/생성 타입 스테이징 시 codegen 드리프트 점검.
+- **pre-commit**: DTO/Controller/api-docs.json/생성 타입의 codegen 드리프트는 경고한다. 별도로 gitleaks가 설치되어 있으면 staged 시크릿 탐지는 커밋을 차단하고, 미설치면 스캔 생략 경고를 출력한다.
 - **우회**: `git push --no-verify` 또는 `SKIP_HOOKS=1 git push`.
 
 자세한 내용은 [.githooks/README.md](../../.githooks/README.md) 참조.
@@ -456,7 +424,7 @@ export NVD_API_KEY=your-key
 - [E2E 테스트 운영 런북](./e2e-test-guide.md)
 - [API 문서화 가이드](./api-documentation-guide.md)
 
-*Last reviewed against current sources: 2026-08-21.*
+*Last reviewed against current sources: 2026-09-10.*
 
 
 ## 시큐어코딩 정적 분석 (SAST)

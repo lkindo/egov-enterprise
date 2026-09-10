@@ -44,6 +44,7 @@
 ### 제5조 (Tailwind CSS 및 반응형 설계)
 1. 모든 스타일링은 **Tailwind CSS**의 유틸리티 클래스를 기반으로 한다.
 2. Mobile-First를 기본으로 하되 특정 breakpoint 이름을 품질의 대리 지표로 삼지 않는다. 지원 폭, 방향, 확대, 입력 방식과 긴 콘텐츠에서 정보·기능·핵심 액션이 보존되고 예상하지 않은 양방향 스크롤이 없어야 한다.
+3. 본문 데이터의 반응형 표현은 승인된 [ADR-0006](../../../../docs/02-architecture/decisions/ADR-0006-css-only-responsive-table.md)에 따라 단일 SSR DOM 위에서 CSS로 전환한다. `StandardDataTable`은 단일 `<table>`을 유지하며, 같은 데이터를 두 벌 렌더해 한쪽을 숨기거나 viewport 훅·`ssr: false`로 본문 표현을 분기하지 않는다. 이 결정의 실행 검증은 `standard-data-table-single-render.test.tsx`와 `dom-identity-invariants.test.ts`를 따른다.
 
 ### 제6조 (디자인 토큰 준수)
 1. 반복되는 색상·간격·타이포그래피·모션·상태 결정은 시맨틱 디자인 토큰으로 표현하고, 모든 지원 프로필과 모드에서 같은 의미와 접근성 하한을 유지한다. 토큰 구조와 구현 경로는 `docs/03-guides/design-tokens.md`가 소유한다.
@@ -79,7 +80,7 @@
 3. **[nonce CSP의 전제와 한계의 정직한 기록]** `script-src`의 `'unsafe-inline'`은 2026-08-20 요청별 nonce로 제거됐다(PPR 포기 제품 결정). 이 승격은 두 가지 실측 제약 위에 서 있으며, 본 조는 이를 은폐하지 않고 기록·추적할 것을 의무화한다.
    - **전 페이지 동적 렌더가 전제다**: 정적 프리렌더 HTML의 inline script에는 요청 nonce가 없어 통째로 차단된다(2026-08-20 CI e2e 실측). `cacheComponents`(PPR) 비활성과 루트 layout의 `force-dynamic`을 `csp-policy` 계약이 고정하며, 되돌리려면 nonce CSP 철회가 선행돼야 한다.
    - **`'strict-dynamic'`은 채택하지 않는다**: Next.js가 스트리밍 중 삽입하는 lazy chunk `<script src>`에 nonce가 없어 host 허용(`'self'`)이 꺼지면 앱이 전면 파손된다(2026-08-20 CI 실측). 방어는 `'self'`+nonce 조합으로 달성한다.
-   - **잔여 위험**: `style-src`의 `'unsafe-inline'`은 React style prop·라이브러리 런타임 `<style>` 주입 검증(Phase 3)이 끝날 때까지 잔존하며 별도 추적한다.
+   - **잔여 위험**: `style-src`의 `'unsafe-inline'`은 [GAP-FE-001](../../../memory/known-gaps.md)의 accepted-risk다. 2026-08-30 측정과 현재 [csp-policy 계약](../../../../frontend/src/__tests__/csp-policy.test.ts)은 React style prop과 sonner의 nonce 없는 `<style>` 주입 때문에 `style-src-elem`·`style-src-attr` 분리만으로 정책을 좁힐 수 없음을 기록한다. sonner의 nonce 지원 또는 교체 시 재측정하며, CSP 리포트 수집 채널 결정은 별도 추적한다.
 
 ---
 

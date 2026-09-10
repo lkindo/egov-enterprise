@@ -1366,7 +1366,7 @@
       <div class="sidebar-footer">
         <div>STATIC EVIDENCE ATLAS</div>
         <div>SSOT가 항상 우선</div>
-        <div>검증 기준 2026-08-20</div>
+        <div>소스 대조 2026-09-10</div>
       </div>
     </aside>
 
@@ -1388,7 +1388,7 @@
       <div class="freshness-banner" role="note" aria-label="문서 현행성 정보">
         <span class="status-dot" aria-hidden="true"></span>
         <div>
-          <strong>저장소·하네스·규칙 2026-08-20 검증 스냅샷</strong> · 이 페이지는 설명용 아틀라스이며 규칙 원본이 아닙니다.
+          <strong>저장소·하네스·규칙 2026-09-10 소스 스냅샷</strong> · 이 페이지는 설명용 아틀라스이며 규칙 원본이 아닙니다. 원격·운영 실측은 각 항목의 별도 확인일을 따릅니다.
           충돌 시 플랫폼·도구 글로벌 규칙 → <code>AGENTS.md</code> → orchestration protocol → 관련 헌법 → Accepted ADR·현재 코드/설정/DB 실측 순으로 확인하세요. 공용 메모리는 비규범 파생 인덱스입니다.
         </div>
         <a href="https://github.com/lkindo/egov-enterprise" target="_blank" rel="noopener noreferrer">저장소에서 최신 상태 확인</a>
@@ -1489,7 +1489,7 @@
           <div class="card-neon-glow"></div>
           <h3 class="glow-header">현재 요청·데이터 흐름의 대표 경로</h3>
           <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.5rem;">
-            Java 21 · Spring Boot 3.5.16 · Next.js 16.3.4 · PostgreSQL 17 기준입니다. 아래는 루트 통합 대시보드의 실제 호출 경로입니다. 이 경로가 React <code>cache</code>/<code>Suspense</code>를 사용해 프론트 헌법의 TanStack Query 기본 경로와 충돌한다는 점도 함께 표시합니다.
+            Java 21 · Spring Boot 3.5.16 · Next.js 16.3.4 · PostgreSQL 17 기준입니다. 루트 통합 대시보드는 React <code>cache</code>/<code>Suspense</code>로 서버 초기 데이터를 전달합니다. 프론트 헌법 제4조는 상태 소유권에 따라 server-only 조회와 클라이언트 캐시를 구분하며, 이 경로에 TanStack hydration을 일괄 요구하지 않습니다.
           </p>
 
           <div class="flow-timeline">
@@ -1529,8 +1529,8 @@
                   React Server Component (RSC)
                   <span class="flow-step-badge frontend">Next.js SSR</span>
                 </div>
-                <div class="flow-step-desc">HttpOnly 쿠키를 읽고 React <code>cache</code>로 dashboard 요청을 중복 제거한 뒤 <code>Suspense</code> 경계로 Promise를 전달합니다.</div>
-                <div class="flow-step-file">frontend/src/app/page.tsx</div>
+                <div class="flow-step-desc">server-only loader가 HttpOnly 쿠키를 읽고 React <code>cache</code>로 dashboard 요청을 중복 제거한 뒤 <code>Suspense</code> 경계로 Promise를 전달합니다. 계약 오류와 API 장애는 route error boundary로 전달합니다.</div>
+                <div class="flow-step-file">frontend/src/app/page.tsx → frontend/src/app/dashboard-data.ts</div>
               </div>
               <div class="flow-step-number">03</div>
             </div>
@@ -1540,11 +1540,11 @@
               <span class="flow-step-dot"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">
-                  Shared Axios Client
+                  Generated Operation Client
                   <span class="flow-step-badge frontend">API Client</span>
                 </div>
-                <div class="flow-step-desc">Server Component가 공통 Axios client로 <code>/dashboard</code>를 직접 호출하고 cookie token을 Authorization header로 전달합니다.</div>
-                <div class="flow-step-file">frontend/src/lib/api/client.ts</div>
+                <div class="flow-step-desc"><code>executeGeneratedOperation(getDashboardDataOperation)</code>이 공통 Axios client를 통해 요청하고 생성 Zod로 응답을 검증합니다. 서버 loader가 cookie token을 Authorization header로 전달합니다.</div>
+                <div class="flow-step-file">frontend/src/lib/api/generated-api-client.ts → frontend/src/lib/api/client.ts</div>
               </div>
               <div class="flow-step-number">04</div>
             </div>
@@ -1599,8 +1599,8 @@
                   API Response Contract
                   <span class="flow-step-badge backend">Spring BE DTO</span>
                 </div>
-                <div class="flow-step-desc">대시보드 경로는 현재 <code>ApiResponse&lt;Map&lt;String, Object&gt;&gt;</code>로 응답해 백엔드 헌법 제3조의 전용 DTO 의무와 충돌합니다. 승인된 예외로 간주하지 않습니다.</div>
-                <div class="flow-step-file">foundation/src/main/java/nuri/foundation/core/response/ApiResponse.java</div>
+                <div class="flow-step-desc">외부 응답은 <code>ApiResponse&lt;DashboardResponse&gt;</code>이며 할 일·공지 목록과 결재 대기 수를 고정 타입으로 제공합니다. 내부 provider SPI의 확장 Map은 유지하되 외부 핵심 필드는 DTO로 투영하고, 비정형 응답 census는 0건으로 동결합니다.</div>
+                <div class="flow-step-file">api-server/src/main/java/nuri/api/controller/business/main/DashboardResponse.java</div>
               </div>
               <div class="flow-step-number">08</div>
             </div>
@@ -1673,8 +1673,8 @@ npm run dev                   # Windows: .\start-dev.ps1
                 </tr>
                 <tr>
                   <td><code>v* release artifact</code> <span class="badge badge-warning">생성 절차</span></td>
-                  <td><code>core</code> · <code>collaboration</code> · <code>demo</code> 프로필을 릴리스 태그에서 생성·검증하도록 설계된 절차. 현재 git tag는 없습니다.</td>
-                  <td>향후 릴리스 산출물 생성 시 사용. artifact가 존재한다고 가정하지 말고 tag·checksum·검증 로그를 먼저 확인합니다.</td>
+                  <td><code>core</code> · <code>collaboration</code> · <code>demo</code> 프로필을 정확한 <code>v*</code> 릴리스 태그에서 생성·검증합니다. 태그의 현재 목록은 <code>git tag --list</code>로 확인합니다.</td>
+                  <td>태그마다 artifact·checksum·검증 로그를 확인합니다. 과거 릴리스 산출물을 현재 main의 기능과 동일하다고 가정하지 않습니다.</td>
                 </tr>
               </tbody>
             </table>
@@ -1701,7 +1701,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <tr><td>pre-push 훅</td><td><span class="badge badge-warning">LOCAL BLOCK</span></td><td>remote branch/tag 삭제-only는 전송할 object가 없어 로컬 검증 전에 종료하고, 일반 push와 섞이면 object-bearing ref 범위만 검증합니다. 그 외 push는 공용 규칙·메모리 계약과 문서 링크 검사를 먼저 실행합니다. docs-only는 두 경량 계약 후 fast-pass하고 Atlas 변경은 전용 계약도 추가합니다. 소스 범위는 재사용 base census · Java compile · 앱/E2E tsc · ESLint · 불변식 · codegen · 하네스 테스트를 실행하지만 <code>--no-verify</code>/<code>SKIP_HOOKS</code>/<code>SKIP_HARNESS</code>로 우회 가능하므로 병합 권위는 CI입니다.</td></tr>
                 <tr><td><code>localGate</code></td><td><span class="badge badge-error">HARD</span></td><td>하네스·실 PostgreSQL schema validation·JaCoCo를 포함하지만 pre-push의 모든 정적 검사를 포함하지는 않습니다.</td></tr>
                 <tr><td>CI required</td><td><span class="badge badge-primary">5 STABLE</span></td><td><code>backend-build</code> · <code>frontend-build</code> · <code>secret-scan</code> · <code>e2e-test</code> · <code>mutation-test</code>. 조건부 heavy job은 내부 <code>*-scope</code>로 분리하고 네 aggregate는 항상 완료되므로 docs-only SHA도 릴리스가 소비할 성공 증거를 남깁니다. E2E 내부 2 shard는 구현 세부사항이고 mutation은 <code>STRICT_MUTATION=true</code>, 75% 하드 게이트입니다.</td></tr>
-                <tr><td>원격 branch policy</td><td><span class="badge badge-success">정합</span></td><td>2026-08-20 기준 원격 ruleset이 위 required 5개·strict 최신 브랜치·force-push/삭제 차단과 exact-match하고, review 정책은 단독 운영 결정값(DEC-OPS-009: approval 0·code-owner/last-push/thread-resolution 비활성)에 양방향 동결돼 있습니다. <code>npm run verify:ops</code>가 이 전부를 원격 실측으로 대조하며, reviewer 확보 시 후속 DEC로 상향합니다.</td></tr>
+                <tr><td>원격 branch policy</td><td><span class="badge badge-success">정합 기록</span></td><td>2026-09-09 확인 기록에서 원격 ruleset이 위 required 6개·strict 최신 브랜치·force-push/삭제 차단과 exact-match했고, review 정책은 단독 운영 결정값(DEC-OPS-009: approval 0·code-owner/last-push/thread-resolution 비활성)에 양방향 동결돼 있습니다. 현재 원격 상태는 <code>npm run verify:ops</code>로 다시 대조하며, reviewer 확보 시 후속 DEC로 상향합니다.</td></tr>
               </tbody>
             </table>
           </div>
@@ -1767,7 +1767,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <div class="grid-3" id="constitutions-grid">
           <!-- Dynamic rendering -->
         </div>
-        <noscript><div class="callout"><strong>동적 카드 대체:</strong> DB·Backend·Frontend 헌법은 <a href="https://github.com/lkindo/egov-enterprise/tree/main/.agent/knowledge" target="_blank" rel="noopener noreferrer">3대 헌법 원문(새 창)</a>에서 확인하세요. 현재 핵심 공백은 baseline 누락, semantic ownership 사각지대, frontend proxy/lint/RSC cache 조문 drift입니다.</div></noscript>
+        <noscript><div class="callout"><strong>동적 카드 대체:</strong> DB·Backend·Frontend 헌법은 <a href="https://github.com/lkindo/egov-enterprise/tree/main/.agent/knowledge" target="_blank" rel="noopener noreferrer">3대 헌법 원문(새 창)</a>에서 확인하세요. 태그 census·인가 의미·응답 DTO 검사는 연결돼 있으며, 운영 DB 차이·배포 호환 창·운영 복구는 별도 실증이 필요합니다.</div></noscript>
       </section>
 
       <!-- [02] 공통 에이전트 규칙 -->
@@ -2040,7 +2040,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <span class="monitor-dot dot-yellow"></span>
                 <span class="monitor-dot dot-green"></span>
               </div>
-              <div class="monitor-label">ACTIVE CLI TERMINAL</div>
+              <div class="monitor-label">WORKFLOW EXAMPLE</div>
             </div>
 
             <div class="monitor-screen" id="mon-screen" role="status" aria-live="polite" aria-atomic="true">
@@ -2053,7 +2053,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <span class="monitor-param-val" id="mon-grade" style="color: var(--accent-secondary);">L2 (Critical)</span>
               </div>
               <div class="monitor-param">
-                <span class="monitor-param-key">기동 중인 가디언 (SKILL):</span>
+                <span class="monitor-param-key">참조 지침·하네스 (예시):</span>
                 <span class="monitor-param-val" id="mon-skill" style="color: var(--accent-primary);">DB Constitution + Migration Harness</span>
               </div>
               <div class="monitor-param">
@@ -2149,7 +2149,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="status-card">
             <span class="badge badge-warning">PARTIAL EVIDENCE</span>
             <h3>테스트·CI</h3>
-                <p>테스트 소스 85개·<code>@Test</code> 410건을 루트 <code>backend-build</code>가 실행합니다. PostgreSQL Testcontainers 일부 경로가 있지만 실제 source vendor 전수·cutover 증거는 아닙니다.</p>
+            <p>테스트 소스 85개·<code>@Test</code> 410건이 루트 <code>backend-build</code>의 검증 범위입니다. 이는 소스 census이며 개별 실행·skip 결과는 해당 run에서 확인합니다. PostgreSQL 복구 검증은 실제 source vendor 전수·cutover 증거를 대신하지 않습니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-success">FAIL-CLOSED</span>
@@ -2159,7 +2159,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="status-card">
             <span class="badge badge-error">PRODUCTION GAP</span>
             <h3>운영 준비도</h3>
-            <p>target 위치·클러스터·DB·허용 스키마 결속, 실행 JSON과 PostgreSQL 부분 적재 복구를 검증했습니다. DB 권한 수준 source read-only, 운영 규모 PostgreSQL·Oracle·Tibero E2E, upsert·CDC와 실제 cutover/rollback 입증은 남아 있습니다.</p>
+            <p>target 위치·클러스터·DB·허용 스키마 결속, 실행 JSON과 격리 PostgreSQL의 실제 JVM 강제 종료·재개를 검증했습니다. DB 권한 수준 source read-only, 운영 규모 PostgreSQL·Oracle·Tibero E2E, upsert·CDC와 실제 cutover/rollback 입증은 남아 있습니다.</p>
           </article>
         </div>
 
@@ -2244,13 +2244,13 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <tr>
                   <td>3. 승인 계획</td>
                   <td>inventory 전 객체 disposition, endpoint/driver/scope/mapping/target/implementation digest 결속</td>
-                  <td>실제 YAML의 <code>endpointId</code> 보존 회귀는 통과했다. owner review로 모든 객체와 visibility blocker를 판정</td>
-                  <td><span class="badge badge-error">BLOCKED</span></td>
+                  <td>실제 YAML의 <code>endpointId</code> 보존 회귀를 유지하고 owner review로 해당 도입 환경의 모든 객체와 visibility blocker를 판정</td>
+                  <td><span class="badge badge-error">MANUAL GATE</span></td>
                 </tr>
                 <tr>
                   <td>4. dry-run / commit</td>
                   <td>단일 source read session과 typed·composite·generated identity. commit은 500행 chunk의 data-keymap 원자성과 durable checksum resume를 제공하고, dry-run은 target을 쓰거나 대조하지 않습니다.</td>
-                  <td>chunk 부분 성공·self-reference 예약 keymap·commit ambiguity의 reconciliation, LOB/charset/규모, upsert·CDC 필요 여부와 실행 창을 rehearsal</td>
+                  <td>검증된 PostgreSQL 부분 커밋·JVM 종료 복구 범위를 실제 도입 환경에 재현하고, self-reference·commit ambiguity·vendor Blob/Clob·문자셋·운영 규모와 실행 창을 rehearsal</td>
                   <td><span class="badge badge-error">MANUAL GATE</span></td>
                 </tr>
                 <tr>
@@ -2268,19 +2268,20 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="glass-card">
             <h3 class="glow-header">현행 CI 증거</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">
-              루트 <code>./gradlew build</code>가 84개 Java 테스트 소스의 <code>@Test</code> 409건을 실행하고 JaCoCo에 포함합니다. required <code>mutation-test</code>에는 transform과 validate/verify 범위가 있으나 workflow·adapter·JDBC·실 DB cutover 전체를 보증하지 않습니다. PostgreSQL Testcontainers는 runtime schema·generated identity 외에도 서로 다른 대상 DB 판별과 501행 부분 커밋·재개·중복 방지·변조 탐지를 검증합니다. 운영 규모·vendor 전수 증거는 아닙니다.
+              루트 <code>./gradlew build</code>와 JaCoCo는 위 migration 테스트 census를 포함합니다. required <code>mutation-test</code>에는 transform과 validate/verify 범위가 있으나 workflow·adapter·JDBC·실 DB cutover 전체를 보증하지 않습니다. PostgreSQL Testcontainers는 501행 부분 커밋·재개 검증과 별도로 1,501행·30MB 초과 text/bytea를 적재하는 자식 JVM을 500행 커밋 후 강제 종료하여 재개·무중복·변조 탐지를 확인합니다. 일반 Test와 PIT minion 모두 자식 classpath를 전달하며, 자식 JVM 코드 자체가 PIT 변이 대상이라는 뜻은 아닙니다.
             </p>
           </article>
           <article class="glass-card">
             <h3 class="glow-header">권장 강화 순서</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem;">
-              <strong>P1</strong> 지원 vendor/version·최소권한 source read-only rehearsal과 운영 백업·중단/재개·cutover 입증 → <strong>P2</strong> LOB/문자셋·운영 규모, 제한적 upsert·증분/CDC 순입니다. target 환경 결속·실행 JSON·부분 성공 복구와 격리 백업 복원은 2026-09-09에 검증했으며 운영 RTO/RPO를 대체하지 않습니다. <code>endpointId</code> loader 보존과 실제 YAML <code>discover</code> 회귀는 2026-09-05에 완료했습니다. target은 PostgreSQL-only이고 비데이터 객체 DDL은 현재 프로젝트 Flyway가 소유합니다.
+              <strong>P1</strong> 지원 vendor/version·최소권한 source read-only rehearsal과 운영 백업·중단/재개·cutover 입증 → <strong>P2</strong> vendor Blob/Clob·문자셋·운영 규모, 제한적 upsert·증분/CDC 순입니다. 2026-09-10 격리 PostgreSQL의 실제 JVM 종료 복구·대형 text/bytea 검증과 2026-09-09 격리 백업 복원은 운영 RTO/RPO를 대체하지 않습니다. target은 PostgreSQL-only이고 비데이터 객체 DDL은 현재 프로젝트 Flyway가 소유합니다.
             </p>
           </article>
         </div>
 
         <div class="callout">
           <strong>근거:</strong>
+          <a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/04-operations/readiness-followups.md" target="_blank" rel="noopener noreferrer">후속 보강 검증 범위</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/04-operations/migration-recovery-runbook.md" target="_blank" rel="noopener noreferrer">재개·복구 런북</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md" target="_blank" rel="noopener noreferrer">설계·로드맵</a> ·
           <a href="https://github.com/lkindo/egov-enterprise/tree/main/migration-tool" target="_blank" rel="noopener noreferrer">구현 모듈</a> ·
@@ -2348,7 +2349,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           </p>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
             <strong style="color: var(--accent-success);">핵심 집행:</strong> 태그 기반 전수 census, 단일 source index, 의미 기반 인가 정책 matrix, Entity Lombok gate, schema suite의 공유 PostgreSQL, 구조화 E2E 오류 ledger·고정 대기 0건·실행시간 기반 shard, 85/70/75 exact ratchet이 실행 경로에 결속돼 있습니다.
-            <br><strong style="color: var(--accent-warning);">남은 핵심 공백:</strong> registry에 동결된 미승인 legacy DDL debt 188건, migration-tool의 실 DB/cutover 증거, dependency publisher의 public fork probe, 일부 헌법과 현행 구현의 의미 drift는 아래 로드맵에서 추적합니다.
+            <br><strong style="color: var(--accent-warning);">남은 핵심 공백:</strong> registry에 동결된 미승인 legacy DDL debt 188건, migration-tool의 vendor·운영 규모·cutover 증거, dependency publisher의 public fork probe, 배포 release·호환 창 모델은 아래 로드맵에서 추적합니다.
           </p>
         </div>
 
@@ -2361,9 +2362,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       <!-- [11] Verified gaps and recommended roadmap -->
       <section id="content-gaps" class="tab-content">
         <h2 class="section-title">확인된 공백 &amp; 개선 로드맵</h2>
-        <p class="section-subtitle">2026-08-20 저장소·실행 manifest·원격 ruleset을 교차 확인한 결과입니다. 완료된 보강은 현행 통제로, 외부 적용·헌법 승인·추가 구현이 필요한 항목만 활성 공백으로 구분합니다.</p>
+        <p class="section-subtitle">2026-09-10 현재 소스·헌법·실행 manifest를 대조한 결과입니다. 원격 ruleset과 운영 DB의 확인일은 별도로 표시하며, 실제 운영 증거가 필요한 항목은 계속 남깁니다.</p>
 
-        <div class="callout"><strong>현행 자동 통제:</strong> 중앙 <code>gates.json</code>, governance/architecture/schema 태그 census, source 접근 공통화, 의미 기반 인가 registry(설문 별칭은 DEC-OPS-010 메서드 인가), Entity Lombok 검사, 공유 PostgreSQL schema runner, E2E expected-error ledger·blind wait 0건 ratchet·duration shard, migration CLI fail-closed, PR dependency snapshot 신뢰 경계·readiness, 프론트 단일 audit policy, 요청별 nonce CSP와 csp-policy 계약 6축, k6 실행 명령 계약, DEC-OPS-009에 동결된 branch policy exact verifier(2026-08-20 원격 완전 정합)가 연결돼 있습니다.</div>
+        <div class="callout"><strong>현행 자동 통제:</strong> 중앙 <code>gates.json</code>, governance/architecture/schema 태그 census, 의미 기반 인가 registry, Entity Lombok 검사, 비정형 외부 응답 0건 census, 공유 PostgreSQL schema runner, E2E expected-error ledger·blind wait 0건 ratchet·duration shard, migration CLI fail-closed, PR dependency snapshot 신뢰 경계·readiness, CodeQL <code>secure-coding</code>, 프론트 단일 audit policy, 요청별 nonce CSP, k6 실행 명령 계약과 DEC-OPS-009 branch policy verifier가 연결돼 있습니다. 원격 ruleset의 최근 기록은 2026-09-09이며 현재 상태는 <code>verify:ops</code>로 다시 확인합니다.</div>
 
         <div class="glass-card">
           <h3 class="glow-header">우선순위별 권장안</h3>
@@ -2377,43 +2378,43 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                   <td><span class="badge badge-warning">P1</span></td>
                   <td>현재 SQL의 <code>linter:ignore</code> 228건/49파일 중 188건/43파일은 내용 hash·owner·reviewBy와 함께 <code>legacy-debt-unapproved</code>로 동결됨. 별도 범위 승인 waiver는 40건이며, 이 중 24건은 ADR-0013, 6건은 ADR-0014 표준 설계 정합 검증에 결속됨. legacy debt의 소급 승인이나 제거 완료를 뜻하지 않음</td>
                   <td>신규 예외는 안정 ID·reason·owner·approvedAt·expiresAt·evidence를 1:1 등록하고, legacy debt는 reviewBy 전에 재검토해 신규 보정 migration과 배포 증거로 위험을 단계적으로 상환</td>
-                  <td><strong>권장</strong> — “구조화 waiver·만료·선행 release 증거” 원칙만 조문에 추가, 세부 schema는 manifest로 분리</td>
+                  <td><strong>현행 통제</strong> — DB 헌법 제7조와 registry가 승인·만료·선행 migration을 설명하며, 배포 release 증거 모델은 아래 별도 과제</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
                   <td>승인형 discover/plan/validate/load, 44종 discovery·visibility, source endpoint/driver/scope·mapping·target schema·implementation 결속, typed identity와 chunk data-keymap-checkpoint 원자성·durable resume가 구현됐다. MappingLoader의 source/target <code>endpointId</code> 보존과 실제 YAML <code>discover</code> 회귀도 추가됐다. target JDBC location·클러스터·DB identity·허용 스키마 결속, 실행 JSON과 PostgreSQL 부분 적재 복구도 추가됐다. vendor adapter의 실 운영 DB 증거는 부족하며 target DBMS는 PostgreSQL-only다.</td>
-                  <td>최소권한 source 계정과 운영 규모 PostgreSQL·Oracle·Tibero E2E를 포함한 vendor rehearsal, 강제 종료/commit ambiguity reconciliation, 실제 운영 backup·cutover/rollback을 증명한다. 실행 JSON·부분 적재 복구 및 격리 PostgreSQL 복원 검증은 완료했으며, upsert와 CDC는 별도 설계한다.</td>
+                  <td>최소권한 source 계정과 운영 규모 PostgreSQL·Oracle·Tibero E2E를 포함한 vendor rehearsal, commit ambiguity reconciliation, 실제 운영 backup·cutover/rollback을 증명한다. 격리 PostgreSQL의 JVM 강제 종료·text/bytea·부분 적재 복구와 백업 복원은 검증했으며, vendor Blob/Clob·upsert·CDC는 별도 범위다.</td>
                   <td><strong>불필요</strong> — 문서·도구·하네스 현행화</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>Dashboard API가 <code>ApiResponse&lt;Map&lt;String,Object&gt;&gt;</code>를 외부 반환해 전용 DTO 조문과 충돌</td>
-                  <td>typed <code>DashboardResponse</code>로 이행하고 controller 응답 generic의 Map/Object를 탐지하는 source gate 도입</td>
-                  <td><strong>기본 불필요</strong> — 확장형 Map이 필수라면 제한 예외 조문화에 별도 승인 필요</td>
+                  <td>새 쓰기는 달력 날짜·기간 순서·행사명을 검증한다. 2026-09-10 OCI 집계에서는 온라인 설문 3행의 날짜가 잘린 <code>YYYY-MM-</code>이고 행사명 24행이 비어 있어 원본 확인이 필요하다.</td>
+                  <td>업무 소유자가 원래 날짜와 실제 행사명을 확인한 뒤 보정한다. 누락 값을 추정해 채우지 않으며 기존 조회는 보정할 수 있도록 유지한다.</td>
+                  <td><strong>불필요</strong> — 업무 데이터 확인·보정</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>백엔드 헌법은 모든 성공 응답의 <code>ApiResponse</code> wrapper를 요구하지만 file download는 정상적으로 <code>Resource</code>를 반환</td>
-                  <td>binary download/stream/SSE 성공은 정확한 Content-Type/Disposition 조건으로 wrapper 예외, 오류는 표준 ApiResponse 유지</td>
-                  <td><strong>권장</strong> — 백엔드 헌법 제6조에 제한 예외 명문화</td>
+                  <td>첨부 참조의 읽기 전용 정기 점검·결과 파일·메트릭과 100 VU 혼합 CRUD, DB 풀 고갈·중단 후 동일 세션 503→정상 복구를 구현·격리 검증했다. 운영 실행과 용량을 증명한 것은 아니다.</td>
+                  <td>실제 배포 환경의 정기 결과·보존 볼륨·메트릭과 승인된 운영 부하·복구 시험을 확인한다. 점검은 파일·업무 행을 자동 삭제하거나 보정하지 않는다.</td>
+                  <td><strong>불필요</strong> — 운영 적용·실증</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>read-only PR Gradle graph producer → checkout/run 없는 trusted <code>workflow_run</code> 제출 → required <code>secret-scan</code>의 600초 fail-closed readiness → runtime High 차단은 구현됨. 단 신규 publisher는 기본 브랜치 선반영이 필요해 public fork probe 전에는 live 집행 미증명이며, 헌법의 CVSS 7 build fail 서술과 주간 <code>continue-on-error</code> full scan의 outcome/SLA도 불일치</td>
-                  <td>producer/publisher를 기본 브랜치에 반영한 뒤 public fork 고위험 runtime 의존성 probe로 artifact 제출·readiness·dependency review 차단을 순서대로 확인. 주간 full scan은 별도로 triage·issue·해결 SLA와 헌법 outcome을 정렬</td>
+                  <td>read-only PR Gradle graph producer → checkout/run 없는 trusted <code>workflow_run</code> 제출 → required <code>secret-scan</code>의 600초 fail-closed readiness → runtime High 차단은 main에 연결돼 있다. public fork의 고위험 의존성 probe와 주간 <code>continue-on-error</code> full scan의 triage·해결 SLA는 별도 운영 증거·결정이 필요하다.</td>
+                  <td>public fork의 신규 고위험 runtime 의존성 probe로 artifact 제출·readiness·dependency review 차단을 확인한다. snapshot 부재와 양쪽 snapshot 미존재 가능성을 별도 진단하고, 주간 full scan의 triage·issue·해결 SLA를 확정한다.</td>
                   <td><strong>권장</strong> — 도구명보다 outcome·SLA 중심으로 보안 조문 개정</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>Expand와 Contract를 같은 migration/release에서 수행해도 Article 7이 단계 간 release 경계를 강제하지 않음</td>
-                  <td>contract migration에 선행 release ID·호환성 기간·backfill 완료 증거를 요구하고 동일 release 축소를 hard-stop</td>
-                  <td><strong>권장</strong> — DB 헌법 제7조에 phase/release 분리 명문화</td>
+                  <td>Contract waiver는 실제 선행 <code>expandMigration</code>과 더 이른 Flyway 버전을 요구하며 같은 migration 참조를 차단한다. 배포 release·관측 기간·backfill 완료의 전수 판정 모델은 아직 없다.</td>
+                  <td>릴리스 태그와 배포 원장 중 실제 배포 단위를 먼저 정하고 호환 창·backfill 증거를 결속한다. Flyway 버전 순서를 운영 무중단 증거로 간주하지 않는다.</td>
+                  <td><strong>설계 결정 필요</strong> — 배포 모델과 증거 계약 확정</td>
                 </tr>
                 <tr>
-                  <td><span class="badge badge-warning">P1</span></td>
-                  <td>root dashboard가 React <code>cache</code>/<code>Suspense</code> 경로를 사용해 프론트 헌법 제4조의 TanStack Query/dehydrate 표준 패턴과 충돌함 (파일 경로·lint 실행 서술 드리프트는 2026-08-20 정정 완료)</td>
-                  <td>root dashboard를 TanStack hydration으로 통일할지, RSC native cache/Suspense를 승인된 예외로 조문화할지 결정</td>
-                  <td><strong>승인 필요</strong> — 프론트 헌법 제4조 예외 조항 여부</td>
+                  <td><span class="badge badge-primary">P2</span></td>
+                  <td>설문 템플릿 상세·수정 화면 연결 후 미소비 operation 10개·화면 호출 없는 서비스 메서드 32개가 census에 남아 있다. 이름 기반 집계는 완전한 호출 그래프가 아니다.</td>
+                  <td>각 API의 소비 목적·대체 조회·개인정보 경계를 대조해 채택 여부를 결정한다. 미소비라는 이유로 일괄 연결하거나 삭제하지 않는다.</td>
+                  <td><strong>불필요</strong> — 제품별 API 소비 결정</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-primary">P2</span></td>
@@ -2435,7 +2436,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <tr>
                   <td><span class="badge badge-warning">CURRENT = DECIDED</span></td>
                   <td>approval 0 · codeOwner false · lastPush false · thread false · dismissStale false (DEC-OPS-009로 명세·계약에 양방향 동결)</td>
-                  <td>1인 운영에서도 PR 교착이 없고 자동 check만 통과하면 병합 가능. <code>verify:ops</code>가 상시 초록이라 신호 가치가 살아 있음</td>
+                  <td>1인 운영에서도 승인자 부재에 의한 PR 교착을 피하고 required checks를 병합 조건으로 유지. <code>verify:ops</code>는 현재 원격 drift를 다시 검사</td>
                   <td>사람 검토·CODEOWNERS 책임·최신 push 검증을 보증하지 못함 — 기록된 트레이드오프이며 reviewer 확보 시 후속 DEC로 상향</td>
                 </tr>
                 <tr>
@@ -2471,12 +2472,12 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           <article class="status-card">
             <span class="badge badge-warning">NEXT</span>
             <h3>Claim registry</h3>
-            <p>각 주장에 status, source, verifiedAt, evidenceCommand, owner를 강제하고 validator가 누락을 실패 처리합니다.</p>
+            <p>후속 설계안: 각 주장에 status, source, verifiedAt, evidenceCommand, owner를 기록하고 누락을 검사합니다. 현재 구현된 생성 파이프라인은 아닙니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-success">TARGET</span>
             <h3>생성형 Evidence Atlas</h3>
-            <p>manifest·빌드 설정·test census에서 데이터를 생성하고 HTML은 렌더링만 담당합니다.</p>
+            <p>후속 목표: manifest·빌드 설정·test census에서 데이터를 생성하고 HTML은 렌더링만 담당합니다. 현재는 정적 Atlas와 docs-as-code 계약을 함께 유지합니다.</p>
           </article>
         </div>
 
@@ -2504,6 +2505,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           "모든 환경·전체 Flyway SQL에 ZeroDowntimeMigrationLinter hard-stop 적용",
           "현행 공백: EntitySchema 검증은 repo migration을 기준으로 하며 live DB divergence는 직접 확인하지 않음",
           "기존 legacy linter:ignore 188건/43파일은 hash·owner·reviewBy를 가진 legacy-debt-unapproved inventory로 동결되며 소급 승인되지 않음",
+          "신규 waiver는 안정 ID·승인·만료·evidence를 registry에 결속하며 Contract는 선행 Expand 파일·버전을 대조; 실제 배포 호환 창은 별도 실증",
           "DB·ZDM 스킬은 live metadata 우선, CHAR 금지, read-only bridge 경계와 단계별 migration 절차로 교정됨"
         ]
       },
@@ -2516,6 +2518,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           "모듈 경계·DTO·트랜잭션·인가·정체성·JPA 성능 규칙을 ArchUnit/JUnit 하네스로 부분 집행",
           "JaCoCo LINE 85% / BRANCH 70%, CI mutation 75% hard gate",
           "OpenAPI snapshot→TypeScript/Zod codegen diff를 pre-push와 CI에서 검증",
+          "DashboardResponse로 외부 핵심 필드를 타입화했고 비정형 응답 census는 0건; 제6조의 binary/stream 예외는 헤더·미디어 타입·허용 census에 결속",
           "Entity 클래스 수준 Lombok 금지는 source gate가 전수 검사하고 실제 위반 3건을 제거함",
           "endpoint·helper·hand-written guard는 authorization policy registry와 semantic matrix가 약화 회귀를 차단함",
           "제8조 2항(2026-08-20 신설)이 @AdminOnly의 role hierarchy 의미(SYSTEM 포함)와 별칭·공개 경로에서 메서드 애노테이션=단독 방어선임을 명문화함 — DEC-OPS-010 설문 개방이 적용 사례"
@@ -2549,7 +2552,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       { layer: "DB 표준 단어", example: "<code>INQ_CNT</code> (조회수)", spec: "<code>meta_standard_words</code>와 migration의 실제 예시", audit: "<span class='badge badge-warning'>PARTIAL</span> SchemaNaming은 접두·snake_case·제약·audit 중심이며 모든 표준 단어 의미를 전수 검증하지 않습니다.", badge: "cyan" },
       { layer: "DB 물리 컬럼", example: "<code>tb_bbs_item.inq_cnt</code>", spec: "Flyway가 재현하는 PostgreSQL 17 스키마", audit: "<span class='badge badge-success'>HARD</span> schema-validation이 migration 적용·Hibernate validate·write smoke를 수행하고 49개 tag census를 중앙 registry가 exact-match합니다.", badge: "primary" },
       { layer: "Backend JPA", example: "<code>Board.inqCnt : Integer</code>", spec: "Entity ↔ 물리 컬럼 타입/nullable 계약", audit: "<span class='badge badge-success'>HARD</span> Hibernate validate 대상. live 운영 DB가 아니라 테스트 컨테이너의 repo migration 기준입니다.", badge: "success" },
-      { layer: "Frontend Zod", example: "<code>inqCnt: z.number().optional()</code>", spec: "OpenAPI snapshot에서 생성한 Zod 계약", audit: "<span class='badge badge-success'>HARD</span> codegen diff는 생성물 drift를 잡지만 도메인 의미·최솟값까지 자동 추론하는 것은 아닙니다.", badge: "warning" }
+      { layer: "Frontend Zod", example: "<code>inqCnt: z.number().int().optional()</code>", spec: "OpenAPI snapshot에서 생성한 BoardDto Zod 계약", audit: "<span class='badge badge-success'>HARD</span> codegen diff는 생성물 drift를 잡지만 도메인 의미·최솟값까지 자동 추론하는 것은 아닙니다.", badge: "warning" }
     ];
 
     const engines = [
@@ -2585,7 +2588,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 3,
         title: "실 PostgreSQL 스키마·쓰기 검증",
-        desc: "49개 schema-validation 클래스가 PostgreSQL 17에 Flyway 전량 적용, Hibernate validate, PK/constraint/type 및 쓰기 smoke를 수행합니다. 42개 migration suite는 컨테이너 1개를 공유하되 각자 격리 DB를 생성·삭제하고 registry가 전수 tag를 동결합니다.",
+        desc: "49개 schema-validation 클래스가 PostgreSQL 17에 Flyway 전량 적용, Hibernate validate, PK/constraint/type 및 쓰기 smoke를 수행합니다. 45개 migration suite는 테스트 JVM별 컨테이너 1개를 공유하되 각자 격리 DB를 생성·삭제하고 registry가 전수 tag를 동결합니다.",
         badge1: "Database", badge2: "CI Hard", badge3: "Shared + Isolated", type1: "error", type2: "success", type3: "success",
         impl: "SharedPostgresMigrationTestSupport.java · SharedPostgresMigrationHarnessContractTest.java · :api-server:schemaValidationTest",
         doc: "Schema validation guide", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/getting-started.md",
@@ -2630,7 +2633,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 8,
         title: "Legacy ETL 정확성·이관 안전성",
-        desc: "migration-tool은 discover→plan→validate→load 승인형 CLI, 44종 객체·visibility inventory, source endpoint/driver/scope와 mapping·PostgreSQL target fingerprint·실행 구현 결속, typed/composite/generated identity 및 chunk data-keymap-checkpoint 원자성과 durable checksum resume를 구현했습니다. MappingLoader의 source/target endpointId 보존과 실제 YAML discover 회귀도 추가했습니다. target 접속 환경·허용 스키마 결속, 실행 JSON과 PostgreSQL 부분 적재 복구도 검증했습니다. vendor 실 운영 DB·최소권한·강제 종료·cutover, upsert·CDC와 실제 RTO/RPO 증거는 아직 PARTIAL입니다.",
+        desc: "migration-tool은 discover→plan→validate→load 승인형 CLI, 44종 객체·visibility inventory, source endpoint/driver/scope와 mapping·PostgreSQL target fingerprint·실행 구현 결속, typed/composite/generated identity 및 chunk data-keymap-checkpoint 원자성과 durable checksum resume를 구현했습니다. target 환경 결속·실행 JSON에 더해 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 별도 JVM 강제 종료 후 재개·무중복·변조 탐지까지 검증했습니다. vendor 실 운영 DB·최소권한·Blob/Clob·cutover, upsert·CDC와 실제 RTO/RPO 증거는 아직 PARTIAL입니다.",
         badge1: "Data Migration", badge2: "Fail-closed Core", badge3: "Production Partial", type1: "cyan", type2: "success", type3: "warning",
         impl: "migration-tool/src/test · ci.yml migration-transform/migration-validate-verify · :migration-tool:test",
         doc: "Legacy migration design", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md",
@@ -2639,7 +2642,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 9,
         title: "운영 manifest·의존성 신뢰 경계·원격 branch protection",
-        desc: "안정 required check 5개와 DEC-OPS-009 review 정책을 manifest/verifier가 exact-match하며, 2026-08-20 원격 ruleset 실측(verify:ops)이 완전 정합입니다. Gradle PR graph도 read-only producer→trusted workflow_run 제출→600초 readiness→runtime High review로 분리돼 있습니다. 남은 것은 public fork에서 고위험 runtime 의존성 probe로 live 차단을 증명하는 일입니다.",
+        desc: "안정 required check 6개와 DEC-OPS-009 review 정책을 manifest/verifier가 exact-match합니다. 원격 ruleset의 최근 확인 기록은 2026-09-09이며 현재 상태는 verify:ops로 다시 대조합니다. Gradle PR graph도 read-only producer→trusted workflow_run 제출→600초 readiness→runtime High review로 분리돼 있습니다. secure-coding은 Java·JavaScript/TypeScript CodeQL 결과를 집계하며, public fork 고위험 runtime 의존성 probe는 별도 실증 과제입니다.",
         badge1: "Operations", badge2: "Live Verified", type1: "primary", type2: "success",
         impl: ".github/required-checks.json · scripts/verify-branch-protection.mjs · GitHub ruleset 12501346",
         doc: "Required checks manifest", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/.github/required-checks.json",
@@ -2898,10 +2901,10 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         skill: 'OWASP Security Auditor',
         steps: [
           "사용자 요청: 401 Unauthorized 인증 실패 트러블슈팅 분석 시작.",
-          "[Grading] 읽기 전용 진단은 L1. SecurityFilterChain·proxy·보안 core 수정이 필요해지면 L2로 재분류.",
+          "[Grading] 읽기 전용 진단은 등급 대상이 아님. 수정 범위 확정 후 L1 여부를 판정하고 SecurityFilterChain·proxy·보안 core 수정은 L2로 분류.",
           "[Rules] 백엔드 헌법 제8·11조와 프론트 헌법 제4조의 HttpOnly cookie·proxy 인증 경계를 확인.",
           "[Context] JVM SecurityFilterChain, frontend/src/proxy.ts, 세션 API 소비자를 실제 파일 기준으로 매핑.",
-          "[Diagnosis] HttpOnly 쿠키, proxy 인증 전달, 현재 사용자 세션 API의 경계를 순서대로 확인.",
+          "[Diagnosis] HttpOnly 쿠키, proxy 인증 전달, 현재 사용자 세션 API의 경계를 확인하고 자격 오류 401과 저장소 장애 503을 구분.",
           "[Security Test] 만료·서명 오류 JWT와 CSRF 가설을 관련 테스트로 반증하며, 실행 전에는 정상 방어를 단정하지 않음.",
           "최소 수정 후 관련 인증 테스트와 Playwright 로그인 경로를 재실행하고 잔여 범위를 기록."
         ]
@@ -2910,7 +2913,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         grade: 'L1 (Standard)',
         skill: 'Visual Auditor',
         steps: [
-          "사용자 요청: 게시판 댓글 UI에 글래스모피즘 에스테틱 및 마이크로 애니메이션 추가 적용.",
+          "사용자 요청: 게시판 댓글의 가독성과 키보드 조작, 오류·로딩 상태를 개선.",
           "[Grading] 비즈니스 로직 수정이 없고 프론트 마크업 변경이므로 L1 (Standard) 판정.",
           "[Rules] 프론트 헌법 제1·2·5·6·9·15조의 정보 구조, 반응형, motion, 접근성, light/dark 대비를 확인.",
           "[Implement] 하드코딩 효과값을 복제하지 않고 globals.css의 의미 토큰과 기존 component primitive를 재사용.",
@@ -2926,9 +2929,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           "요청 범위: 관리자 secure-path 위임이 annotation 누락을 숨기는지 하네스 사각지대 검증.",
           "[Grading] 인가 정책과 gate 자체를 변경하므로 L2 (Critical)로 판정.",
           "[Rules] 백엔드 헌법 제8조의 controller 역할 검증과 service 소유권 재검증 의미를 확인.",
-          "[Inspect] 현 linter가 AST가 아니라 Spring HandlerMapping/리플렉션과 path 목록을 사용하며 annotation 내용은 검사하지 않음을 확인.",
-          "[Red Test] 격리 fixture에 의미상 잘못된 secure endpoint를 주입해 기존 gate가 green인지 재현하고 blind spot을 증거화.",
-          "[Design] endpoint×service 정책 matrix와 STRICT_OWNER/OWNER_OR_ADMIN/ADMIN_ONLY 의미 registry를 제안.",
+          "[Inspect] 현 linter의 HandlerMapping·리플렉션과 authorization-policies.json이 endpoint/helper/manual guard 의미 및 annotation 표현식을 대조하는 경로를 확인.",
+          "[Red Test] 격리 fixture에 annotation·owner guard 완화를 주입해 현재 semantic gate가 red인지 확인하고 미탐지 경로가 있으면 증거화.",
+          "[Design] 기존 정책 matrix의 STRICT_OWNER/OWNER_OR_ADMIN/ADMIN_ONLY 의미를 보존하고 실제 변경 endpoint와 소비자만 갱신.",
           "[Verify] 신규 semantic test의 red→green을 확인하고 임시 위반 fixture를 제거한 뒤 전체 harness를 재실행."
         ]
       }

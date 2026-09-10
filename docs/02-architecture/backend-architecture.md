@@ -72,7 +72,7 @@ sequenceDiagram
 
 1. **JPA Entity 은닉**: 
    - `nuri.business.domain.*` 패키지에 위치한 모든 JPA Entity 클래스는 Controller의 메서드 파라미터나 반환 타입으로 절대 사용할 수 없다.
-   - 외부 JSON 계약은 전용 DTO(`BoardRequestDto`, `BoardResponseDto`)를 목표로 한다. 다만 현재 일부 dashboard·menu·health·satisfaction 응답에는 `Map` generic이 남아 있고 file download는 `Resource`를 반환한다. Entity 직접 노출 금지와 “모든 응답이 이미 전용 DTO”라는 주장을 구분하며, 예외는 [활성 gap](../../.agent/memory/known-gaps.md)에서 추적한다.
+   - 외부 JSON 계약은 전용 DTO를 사용한다. dashboard·menu·health·satisfaction은 각각 `DashboardResponse`·`MenuListResponse`·`HealthStatusResponse`·`SatisfactionAverageResponse`로 응답하며, [ResponseContractLinterTest](../../api-server/src/test/java/nuri/api/harness/ResponseContractLinterTest.java)의 외부 `Map`/`Object` payload census는 0건이다. 내부 대시보드 SPI의 `Map`은 응답 전에 DTO로 변환한다. 파일·스트림은 헌법 제6조의 승인된 별도 전송 계약을 따른다.
    - DTO는 불변성과 가독성을 위해 Java **Record** 클래스 사용을 권장한다. [백엔드 헌법 제12조]
 2. **DTO 매퍼(Mapper) 적용**:
    - Entity ➔ DTO 변환은 서비스 레이어의 종결 시점(Service Method return 직전)에 수행한다.
@@ -133,11 +133,12 @@ public class BoardService {
 - 비즈니스·검증 예외는 `GlobalExceptionHandler`가 `ApiResponse.error(...)`로 변환한다. 오류 envelope는 `success`, 실제 HTTP 상태와 맞춘 `status`, `code`, `message`, `data`, `timestamp`를 가지며 검증 실패에는 선택적으로 `errors`가 추가된다.
 
 ### 4.3 API 응답 래퍼 표준 (ApiResponse)
-- 모든 정상 응답은 전사 공통 래퍼 클래스인 `ApiResponse<T>`를 통해 반환한다. 컨트롤러에서 Entity나 DTO를 직접 반환하지 않고 반드시 `ApiResponse.success(data)` 형태로 감싸야 한다. [백엔드 헌법 제6조]
+- JSON 정상 응답은 공통 래퍼 `ApiResponse<T>`를 사용한다. 파일 다운로드·전체 결과 스트림은 [백엔드 헌법 제6조](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md)의 승인 예외이며, `ResponseContractLinterTest`가 정확한 파일·핸들러 목록과 전송 계약을 검사한다. Entity 직접 반환은 금지한다.
 
 ### 4.4 Validation 연쇄 동기화 (DB ➔ BE ➔ FE)
 - DTO의 유효성 검증 규칙(`@Size`, `@NotNull` 등)은 DB 물리 제약조건과 100% 동일하게 연쇄 동기화되어야 한다. [백엔드 헌법 제16조]
 - **동기화 파이프라인**: `PostgreSQL 물리 스키마` ➔ `Spring Boot DTO Validation` ➔ `Next.js Zod Schema`
+- 현재 집행 범위는 표적 Entity→DTO→OpenAPI 계약과 생성 타입·Zod 정합 검사, 실제 PostgreSQL 스키마 검증이다. 전체 필드의 업무 의미까지 자동 증명하지 않으며 날짜·기간·기존 데이터 경계는 [입력 계약 검증 범위](../04-operations/readiness-followups.md#날짜입력-계약)를 따른다.
 
 ---
 

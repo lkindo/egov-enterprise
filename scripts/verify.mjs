@@ -71,7 +71,7 @@ function frontendBuildEnvironment() {
 
 function runBackendFull() {
   runRepositoryContracts();
-  // `:foundation:check` 는 foundation 커버리지 ratchet(INSTRUCTION 0.60 · CLASS-LINE 0.50)의
+  // `:foundation:check` 는 foundation/build.gradle이 소유하는 INSTRUCTION·CLASS-LINE ratchet의
   // 유일한 로컬 실행 경로다 — jacocoTestCoverageVerification 이 check 에만 결속돼 있어,
   // 이 태스크 없이 green 이면 local-full tier 선언이 거짓이 된다(2026-08-31 실측 정합).
   run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);

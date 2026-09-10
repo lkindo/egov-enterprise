@@ -71,6 +71,9 @@ describe('Governance Atlas docs-as-code contract', () => {
     expect(migrationText).toContain('OPTIONAL / PARTIAL');
     expect(migrationText).toContain(`테스트 소스 ${migrationTests.length}개`);
     expect(migrationText).toContain(`@Test ${migrationTestCount}건`);
+    const testCountClaims = [...migrationText.matchAll(/@Test\s+(\d+)건/g)];
+    expect(testCountClaims.length).toBeGreaterThan(0);
+    for (const [, count] of testCountClaims) expect(Number(count)).toBe(migrationTestCount);
     expect(migrationText).toContain('dry-run');
     expect(migrationText).toContain('commit');
     expect(migrationText).toContain('PASS / WARN / FAIL');
@@ -151,6 +154,30 @@ describe('Governance Atlas docs-as-code contract', () => {
     expect(requiredPanel).not.toBeNull();
     expect(Number(requiredPanel?.dataset.requiredCount)).toBe(expectedContexts.length);
     expect(renderedContexts).toEqual(expectedContexts);
+    const proseCounts = [...ATLAS_TEXT.matchAll(/required\s+(?:check\s+|context\s+)?(\d+)개/g)];
+    expect(proseCounts.length).toBeGreaterThan(0);
+    for (const [claim, count] of proseCounts) expect(Number(count), claim).toBe(expectedContexts.length);
+  });
+
+  it('mirrors the shared PostgreSQL suite and current dashboard response path', () => {
+    const schemaTests = filesEndingWith(join(REPO_DIR, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'schema'), '.java');
+    const sharedSuiteCount = schemaTests.filter(path =>
+      /class\s+\w+\s+extends\s+SharedPostgresMigrationTestSupport\b/.test(readFileSync(path, 'utf8')),
+    ).length;
+    const suiteClaims = [...ATLAS_HTML.matchAll(/(\d+)개 migration suite/g)];
+    expect(sharedSuiteCount).toBeGreaterThan(0);
+    expect(suiteClaims.length).toBeGreaterThan(0);
+    for (const [claim, count] of suiteClaims) expect(Number(count), claim).toBe(sharedSuiteCount);
+
+    const controller = readFileSync(join(REPO_DIR, 'api-server', 'src', 'main', 'java', 'nuri', 'api', 'controller', 'business', 'main', 'DashboardApiController.java'), 'utf8');
+    const loader = readFileSync(join(FRONTEND_DIR, 'src', 'app', 'dashboard-data.ts'), 'utf8');
+    expect(controller).toContain('ApiResponse<DashboardResponse>');
+    expect(loader).toContain('executeGeneratedOperation(getDashboardDataOperation');
+    expect(ATLAS_TEXT).toContain('ApiResponse<DashboardResponse>');
+    expect(ATLAS_TEXT).toContain('executeGeneratedOperation(getDashboardDataOperation)');
+    expect(ATLAS_TEXT).not.toContain('TanStack Query 기본 경로와 충돌');
+    expect(ATLAS_TEXT).not.toContain('TanStack Query/dehydrate 표준 패턴과 충돌');
+    expect(ATLAS_TEXT).not.toContain('전용 DTO 조문과 충돌');
   });
 
   it('mirrors dependency, frontend audit and load-runner control boundaries', () => {
