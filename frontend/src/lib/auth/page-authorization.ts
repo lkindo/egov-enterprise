@@ -29,7 +29,7 @@ export async function loadPageAuthorization(accessToken: string, subject: string
       headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
       signal: controller.signal,
     });
-    if (!data || typeof data !== 'object' || !('id' in data) || data.id !== subject) return null;
+    if (!data || typeof data !== 'object' || !('esntlId' in data) || data.esntlId !== subject) return null;
     const values = data as Record<string, unknown>;
     const parsed = authorizationStateSchema.safeParse({
       groups: values.groups,

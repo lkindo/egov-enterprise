@@ -6,7 +6,7 @@ authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-09-10
-verified_against: b1b4ba4bd21939cdaa5351447611486f647efa1e
+verified_against: f4eda1407b1f730fe509d6e14feb887560146516
 canonical_sources:
   - ../../docs/04-operations/authorization-cutover-runbook.md
   - ../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md

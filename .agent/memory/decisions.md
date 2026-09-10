@@ -6,7 +6,7 @@ authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-09-10
-verified_against: b1b4ba4bd21939cdaa5351447611486f647efa1e
+verified_against: f4eda1407b1f730fe509d6e14feb887560146516
 canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md
   - ../../docs/02-architecture/decisions/ADR-0015-secure-coding-ci.md

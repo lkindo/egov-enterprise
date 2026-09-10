@@ -78,10 +78,12 @@ async function departmentSnapshot(request: APIRequestContext, headers: Headers, 
 test.describe('Tier 26: 보안 관리 쓰기 경로', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
-    test('부서 그룹 추가·회수는 선택한 사용자에게만 적용하고 다른 그룹을 보존한다', async ({ page, request, baseURL }) => {
+    test('부서 그룹 추가·회수는 선택한 사용자에게만 적용하고 다른 그룹을 보존한다', async ({ page, playwright, baseURL }) => {
         if (!baseURL || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseURL).hostname)) {
             throw new Error('Department authorization fixtures require the isolated loopback E2E stack.');
         }
+        // Own this context so a browser timeout cannot dispose the API before fixture cleanup.
+        const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
         const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
         const suffix = randomBytes(4).toString('hex');
         const departmentName = `E2E26 Dept ${suffix}`;
@@ -122,6 +124,7 @@ test.describe('Tier 26: 보안 관리 쓰기 경로', () => {
             expect(await departmentSnapshot(request, auth, departmentId)).toEqual(before);
 
             await page.goto('/admin/security/dept-authority');
+            await expect(page).toHaveURL(/\/admin\/security\/dept-authority$/);
             await page.getByRole('textbox', { name: '부서 검색', exact: true }).fill(departmentName);
             await page.getByRole('region', { name: '부서 목록', exact: true }).getByRole('button', { name: departmentName, exact: true }).click();
             const editor = page.getByRole('region', { name: '부서 구성원 그룹 배정', exact: true });
@@ -157,7 +160,7 @@ test.describe('Tier 26: 보안 관리 쓰기 경로', () => {
             const after = await departmentSnapshot(request, auth, departmentId);
             expect(after.users.find(member => member.loginId === userA)?.groups).toEqual(['ROLE_USER']);
             expect(after.users.find(member => member.loginId === userB)).toEqual(before.users.find(member => member.loginId === userB));
-            await page.goto('/dashboard');
+            await page.goto('/');
         } catch (error) {
             primaryFailure = error;
             throw error;
@@ -182,6 +185,7 @@ test.describe('Tier 26: 보안 관리 쓰기 경로', () => {
                     if (removed.status() !== 200) cleanupFailures.push(`department fixture cleanup status=${removed.status()}`);
                 } catch { cleanupFailures.push('department fixture cleanup request failed'); }
             }
+            await request.dispose();
             if (cleanupFailures.length > 0) {
                 const cleanupError = new Error(cleanupFailures.join('; '));
                 if (primaryFailure !== undefined) throw new AggregateError([primaryFailure, cleanupError], 'Department authorization test and fixture cleanup failed');
@@ -296,7 +300,7 @@ test.describe('복수 권한 그룹의 실제 API와 편집 화면', () => {
                 });
                 expect(stale.status(), '오래된 그룹 버전은 다른 변경을 덮어쓸 수 없음').toBe(409);
                 expect(await group(request, administrator, groupA)).toEqual(afterUi);
-                await page.goto('/dashboard');
+                await page.goto('/');
             });
             await replaceGrants(request, administrator, groupA, grantsA);
 
