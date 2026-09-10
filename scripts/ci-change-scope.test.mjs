@@ -40,6 +40,27 @@ test('backend production changes select backend, e2e, and mutation', () => {
   assert.equal(result.mutation, true);
 });
 
+test('Atlas source and generator inputs select Atlas contracts without weakening source scopes', () => {
+  const source = classifyChangedFiles(['frontend/atlas/render.mjs']);
+  assert.equal(source.atlas, true);
+  assert.equal(source.docsOnly, false);
+  assert.equal(source.frontend, true);
+  assert.equal(source.e2e, true);
+  assert.equal(source.sast, true);
+  for (const file of ['scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs', 'scripts/atlas-generation.test.mjs']) {
+    const result = classifyChangedFiles([file]);
+    assert.equal(result.atlas, true, file);
+    assert.deepEqual(result.unknownFiles, [file]);
+    for (const field of ['backend', 'frontend', 'schema', 'e2e', 'mutation', 'sast']) {
+      assert.equal(result[field], true, `${file}: ${field} must remain fail closed`);
+    }
+  }
+  assert.equal(classifyChangedFiles(['docs/03-guides/testing-guide.md']).atlas, false);
+  const hook = fs.readFileSync(path.join(repoRoot, '.githooks/pre-push'), 'utf8');
+  assert.match(hook, /--stdin --field atlas/);
+  assert.match(hook, /if \[ "\$SCOPE_ATLAS" = "true" \]; then/);
+});
+
 test('backend tests rerun mutation evidence but do not spend browser E2E time', () => {
   const result = classifyChangedFiles([
     'business-core/src/test/java/nuri/business/service/auth/AuthServiceImplTest.java',

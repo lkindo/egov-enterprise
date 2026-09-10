@@ -57,6 +57,10 @@ pre-push와 `npm run verify`는 CodeQL 분석을 직접 실행하지 않는다. 
 
 공용 [변경 분류기](../scripts/ci-change-scope.mjs)가 경로·확장자·삭제·rename 이전 경로를 함께 판정한다. 일반 문서·이미지·폰트는 fast-pass 대상이지만 `.githooks/`, 헌법, baseline manifest, Gradle 설정, wrapper, Dockerfile, 실행 스크립트처럼 게이트·규범에 영향을 주는 경로는 Markdown이라도 소스 경로를 탄다. `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 통과한 경우에만 fast-pass한다.
 
+Atlas의 `frontend/atlas/**` 원본과 `scripts/build-atlas.mjs`·`scripts/atlas-*.mjs`도 동일한 Atlas 계약을 선택한다. 이 경로들은 소스 검사 범위를 유지하며 문서 fast-pass로 분류하지 않는다. 생성물 신선도 검사는 운영 계약 catalog에 연결한다.
+
+문서 링크 계약은 루트·`docs`·훅·공용 메모리와 소유한 3대 헌법의 Markdown artifact 및 metadata 참조를 검사한다. 파일뿐 아니라 Markdown 절·HTML ID·순수 앵커도 대조한다. 코드 블록·인라인 코드의 예시는 링크로 실행하지 않으며, `table://` 메타 표준 참조는 DB 실측 증거를 대신하는 파일 경로로 취급하지 않는다.
+
 ### 실 PostgreSQL 스키마 검증 (`./gradlew :api-server:schemaValidationTest`)
 
 빈 PostgreSQL 17 컨테이너에 **Flyway 마이그레이션 전량을 적용**한 뒤 Hibernate `ddl-auto: validate`로 엔티티 매핑을 대조한다(**Docker 필요**). 모듈별 H2 `create`/`create-drop` 결과는 운영 물리 스키마 정합 증거가 아니다.

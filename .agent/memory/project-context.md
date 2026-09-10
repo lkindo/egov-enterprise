@@ -67,6 +67,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-011 | 프론트 의존성 감사는 `pnpm audit --json`을 한 번 조회해 Critical 전체와 운영 의존성 High를 차단하고 개발 전용 High는 warning으로 남긴다. JSON 형식·집계 불일치와 실행/네트워크 오류는 fail-closed다. | [audit policy](../../scripts/frontend-audit-policy.mjs), [policy contract](../../scripts/frontend-audit-policy.test.mjs), [CI workflow](../../.github/workflows/ci.yml) | 2026-08-19 |
 | CTX-012 | 로컬 k6 wrapper는 `K6_SCENARIO=users-<load>` 환경 계약으로 100/500/1000 시나리오를 선택하고 알 수 없는 값은 실패한다. 잘못된 `--scenario` 재도입은 저비용 운영 계약이 pre-push·CI에서 차단하지만 실제 부하 결과는 대상 환경이 필요한 별도 증거다. | [load wrapper](../../scripts/run-load-test.ps1), [scenario selector](../../test/load-tests/scenarios/load-levels.js), [command contract](../../scripts/load-test-command-contract.test.mjs) | 2026-08-19 |
 | CTX-013 | 블로그 도메인은 사용자 요청에 따라 제품·재사용 profile에서 제외하는 것으로 확정했다. 게시판의 블로그 계약과 비사용 물리 스키마는 새 Flyway로 제거하며, 데이터가 있는 환경은 제거가 중단된다. 과거 migration과 공유 표준 사전은 보존한다. | [ADR-0012](../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md), [재사용 profile](../../config/reusable-base-profiles.json) | 2026-09-08 |
+| CTX-014 | Atlas는 프로젝트·업무·규칙·검증·운영을 연결하는 비규범 파생 지도다. 원본은 frontend/atlas와 기존 source catalog이며 atlas:build로 정적 HTML을 생성하고 atlas:check·운영/Atlas 계약으로 드리프트를 확인한다. 생성물은 운영 실측 증거를 자동 갱신하지 않는다. | [Atlas 가이드](../../docs/03-guides/governance-atlas-guide.md), [생성기](../../scripts/build-atlas.mjs) | 2026-09-10 |
 
 ## 개발·검증·배포 흐름
 

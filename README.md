@@ -7,6 +7,8 @@
 
 ## 📑 프로젝트 개요 (Overview)
 
+프로젝트 구조·업무 흐름·헌법·검증·운영은 [Governance & Harness Atlas](frontend/public/governance_harness_atlas.html)에서 탐색할 수 있습니다. 설명의 원본과 생성·현행화 방법은 [Atlas 가이드](docs/03-guides/governance-atlas-guide.md)를 참고하세요.
+
 본 프로젝트는 전자정부 표준프레임워크의 방대한 공통 컴포넌트를 최신 기술 스택으로 재구축하여, 엔터프라이즈 환경에서의 확장성, 유연성, 그리고 사용자 경험(UX)을 극대화하는 것을 목표로 합니다.
 
 - **Frontend**: 차세대 React 프레임워크인 Next.js 16을 활용한 고성능 UI/UX 구현.

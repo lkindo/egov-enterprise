@@ -89,6 +89,8 @@
 |---|---|
 | [getting-started.md](03-guides/getting-started.md) | **온보딩 런북** — 새 프로젝트 시작 |
 | [orchestration-protocol.md](03-guides/orchestration-protocol.md) | **SOP** — 작업 등급·위임·감사·증거 기반 검증 |
+| [governance-atlas-guide.md](03-guides/governance-atlas-guide.md) | Atlas 읽기·소스 생성·현행화·검증 및 증거 경계 |
+| [governance-atlas-improvement-plan.md](03-guides/governance-atlas-improvement-plan.md) | Atlas 보강 조사·설계·적용 결과와 검증 경계 |
 | [testing-guide.md](03-guides/testing-guide.md) | **테스트 SSOT** — 단위/통합/E2E 전략 |
 | [e2e-test-guide.md](03-guides/e2e-test-guide.md) | E2E 운영 Runbook |
 | [non-e2e-verification-guide.md](03-guides/non-e2e-verification-guide.md) | E2E 범위 밖 기능의 정밀 검증 |
@@ -153,6 +155,7 @@
 | 공용 프로젝트 컨텍스트 | [.agent/memory/project-context.md](../.agent/memory/project-context.md) |
 | 공용 결정 인덱스 | [.agent/memory/decisions.md](../.agent/memory/decisions.md) |
 | 공용 활성 gap 인덱스 | [.agent/memory/known-gaps.md](../.agent/memory/known-gaps.md) |
+| 거버넌스·하네스 설명 지도 | [Governance & Harness Atlas](../frontend/public/governance_harness_atlas.html) — 설명용 파생 문서 |
 | 게이트 계층·훅 규약 | [.githooks/README.md](../.githooks/README.md) |
 | 3대 헌법 | [.agent/knowledge/](../.agent/knowledge/) |
 | Gemini 역사 지원 자산 | [.gemini/tasks/](../.gemini/tasks/) — 활성 세션 저널은 두지 않고 기존 census·archive 지원 자산만 유지 |

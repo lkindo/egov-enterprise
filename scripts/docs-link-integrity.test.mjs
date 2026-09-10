@@ -1,123 +1,107 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-
-/**
- * 소유 문서의 상대 링크와 이식성 경계를 검사한다.
- *
- * `http(s):`·`mailto:`·순수 앵커는 파일 존재 검사 밖이며, `path#anchor`는 경로 부분만 확인한다.
- * 작성자 머신에만 유효한 `file://` 링크는 금지한다. 범위는 `docs/**`, 루트 Markdown,
- * `.githooks/**`, `.agent/memory/**`이고 벤더링된 범용 skill 예시는 제외한다.
- * 실행 경로는 문서 pre-push fast path와 CI 계약 테스트 묶음이다.
- */
+import {
+  CONSTITUTION_ROOTS, documentAnchors, documentationLinks, isOwnedDoc,
+  ownedMarkdown, validateDocumentationLinks,
+} from './docs-link-integrity.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-/** 우리가 소유한 문서인가. */
-function isOwnedDoc(file) {
-  if (file.startsWith('build/')) return false;
-  if (file.startsWith('docs/')) return true;
-  if (file.startsWith('.githooks/')) return true;
-  if (file.startsWith('.agent/memory/')) return true;
-  return !file.includes('/'); // 저장소 루트의 *.md (README·GEMINI·CLAUDE·AGENTS …)
-}
-
-function trackedMarkdown() {
-  const out = execFileSync('git', ['ls-files', '*.md'], { cwd: repoRoot, encoding: 'utf8' });
-  // `git ls-files`는 커밋 전 삭제 예정 파일도 index 기준으로 반환한다. 현재 워킹트리에
-  // 존재하는 문서만 읽되, 남아 있는 문서가 삭제 대상을 링크하면 아래 존재 검사에서 실패한다.
-  const tracked = out.trim().split('\n')
-    .filter(Boolean)
-    .filter(isOwnedDoc)
-    .filter(file => fs.existsSync(path.join(repoRoot, file)));
-  const memoryRoot = path.join(repoRoot, '.agent', 'memory');
-  const memory = fs.existsSync(memoryRoot)
-    ? fs.readdirSync(memoryRoot)
-      .filter(file => file.endsWith('.md'))
-      .map(file => path.posix.join('.agent', 'memory', file))
-    : [];
-  return [...new Set([...tracked, ...memory])];
-}
-
-/** `](target)` 에서 target 을 뽑는다. 공백 없는 형태만 — 마크다운 타이틀 문법은 이 저장소에 없다. */
-const LINK = /\]\(([^)\s]+)\)/g;
-
-/** 스캔 경로·링크 추출이 조용히 0건으로 붕괴하지 않게 두는 보수적 vacuity 하한. */
+// Existing coverage floors remain; anchor checks cannot narrow the old catalog.
 const MIN_DOCS = 30;
 const MIN_LINKS = 200;
 
-test('owned documentation has no phantom relative links', () => {
-  const files = trackedMarkdown();
-  assert.ok(
-    files.length >= MIN_DOCS,
-    `게이트 무결성 파손: 스캔 문서 수(${files.length})가 하한(${MIN_DOCS}) 미만 — 경로/스캔 파손 의심. 조용한 skip 은 false-green 입니다.`,
-  );
-
-  let linkCount = 0;
-  const broken = [];
-  const fileScheme = [];
-
-  for (const file of files) {
-    const dir = path.dirname(path.join(repoRoot, file));
-    const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
-
-    for (const match of text.matchAll(LINK)) {
-      const raw = match[1];
-
-      if (/^file:\/\//i.test(raw)) {
-        fileScheme.push(`${file}  ->  ${raw}`);
-        continue;
-      }
-      if (/^(https?:|mailto:|#)/i.test(raw)) continue;
-
-      const target = raw.split('#')[0];
-      if (!target) continue; // 순수 앵커
-
-      linkCount++;
-      let resolved;
-      try {
-        resolved = path.resolve(dir, decodeURIComponent(target));
-      } catch {
-        resolved = path.resolve(dir, target);
-      }
-      if (!fs.existsSync(resolved)) broken.push(`${file}  ->  ${target}`);
-    }
+test('owned documentation paths, headings and constitution metadata references resolve', () => {
+  const files = ownedMarkdown(repoRoot);
+  assert.ok(files.length >= MIN_DOCS, `documentation census collapsed: ${files.length}`);
+  for (const root of CONSTITUTION_ROOTS) {
+    assert.ok(files.includes(`${root}/artifacts/constitution.md`), `missing constitution: ${root}`);
   }
+  const result = validateDocumentationLinks({ repoRoot, files });
+  assert.ok(result.localLinks >= MIN_LINKS, `local link census collapsed: ${result.localLinks}`);
+  assert.deepEqual(result.errors, [], `Broken documentation links:\n${result.errors.join('\n')}`);
+});
 
-  assert.ok(
-    linkCount >= MIN_LINKS,
-    `게이트 무결성 파손: 로컬 링크 수(${linkCount})가 하한(${MIN_LINKS}) 미만 — 링크 추출 정규식 부식 의심.`,
-  );
+test('owned scope includes all constitution artifacts without absorbing vendored skill examples', () => {
+  for (const root of CONSTITUTION_ROOTS) assert.equal(isOwnedDoc(`${root}/artifacts/example.md`), true);
+  assert.equal(isOwnedDoc('.agent/skills/generic/SKILL.md'), false);
+  assert.equal(isOwnedDoc('build/probe.md'), false);
+  assert.equal(isOwnedDoc('docs/archived/PRD.MD'), true);
+});
 
-  assert.deepEqual(
-    fileScheme,
-    [],
-    `📎 file:// 절대경로 링크는 작성자 기계에서만 열립니다. 저장소 상대경로로 바꾸십시오.\n  ${fileScheme.join('\n  ')}`,
-  );
+test('heading anchors preserve Korean and inline code, distinguish duplicates, and support HTML IDs', () => {
+  const source = [
+    '# 변경과 `검증` (API)', '## 반복', '## 반복', '## 반복-1',
+    '<a id="explicit-한글"></a>', '<a name="legacy"></a>', 'Setext 제목', '---',
+    '```md', '# 보이지 않음', '<div id="fake"></div>', '```',
+    '`<span id="sample"></span>`', '<!-- <div id="hidden"></div> -->',
+    '<div data-id="not-an-id"></div>', '<input name="not-an-anchor">',
+    '<script>const decoy = \'<div id="not-rendered"></div>\';</script>',
+  ].join('\n');
+  assert.deepEqual([...documentAnchors(source)], [
+    'explicit-한글', 'legacy', '변경과-검증-api', '반복', '반복-1', '반복-1-1', 'setext-제목',
+  ]);
+});
 
-  assert.deepEqual(
-    broken,
-    [],
-    `📎 [DOC LINK] 존재하지 않는 대상을 가리키는 링크가 ${broken.length}건 있습니다.\n`
-      + `코드가 이동·삭제됐다면 현재 경로로 고치고, 대상이 사라진 이력 서술이라면 링크를 해제하고\n`
-      + `소멸 사실을 본문에 남기십시오(없는 파일을 가리키는 링크는 독자를 오도합니다).\n  `
-      + broken.join('\n  '),
-  );
+test('link extraction ignores fenced and inline examples while preserving real titled and reference links', () => {
+  const source = [
+    '[real](guide(part-two).md#한국어 "Title")', '[space](<some guide.md#detail>)',
+    '[named][ref]', '[ref]: other.md#section "Reference"', '<a href="#explicit">jump</a>',
+    '![image](diagram.svg)', '`[sample](missing.md)`',
+    '````md', '[fenced](absent.md)', '```', '[still fenced](absent2.md)', '````',
+    '~~~', '[tilde](absent3.md)', '~~~', '<!-- [comment](absent4.md) -->',
+  ].join('\n');
+  assert.deepEqual(documentationLinks(source), [
+    'guide(part-two).md#한국어', 'some guide.md#detail', 'other.md#section', 'diagram.svg', '#explicit',
+  ]);
+});
+
+function fixture(t) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owned-doc-links-'));
+  t.after(() => {
+    const absolute = path.resolve(root);
+    assert.ok(absolute.startsWith(path.resolve(os.tmpdir()) + path.sep));
+    assert.ok(path.basename(absolute).startsWith('owned-doc-links-'));
+    fs.rmSync(absolute, { recursive: true, force: true });
+  });
+  fs.writeFileSync(path.join(root, 'README.md'), '# 시작\n\n[본문](guide.md#본문)\n[자체](#시작)\n');
+  fs.writeFileSync(path.join(root, 'guide.md'), '# 본문\n<a id="explicit"></a>\n');
+  for (const constitution of CONSTITUTION_ROOTS) {
+    fs.mkdirSync(path.join(root, constitution), { recursive: true });
+    fs.writeFileSync(path.join(root, constitution, 'metadata.json'), JSON.stringify({
+      references: ['guide.md#explicit', 'table://public.meta_standard_terms'],
+    }));
+  }
+  return root;
+}
+
+test('missing target, changed heading and pure-anchor drift are reproducible red', t => {
+  const root = fixture(t);
+  const run = () => validateDocumentationLinks({ repoRoot: root, files: ['README.md'] });
+  assert.deepEqual(run().errors, []);
+  fs.writeFileSync(path.join(root, 'guide.md'), '# 바뀐 제목\n<a id="explicit"></a>\n');
+  assert.match(run().errors.join('\n'), /guide\.md#본문: missing heading/);
+  fs.writeFileSync(path.join(root, 'README.md'), '# 다른 시작\n[자체](#시작)\n');
+  assert.match(run().errors.join('\n'), /#시작: missing heading/);
+  fs.writeFileSync(path.join(root, 'README.md'), '[missing](absent.md)\n[file](file:///private/doc.md)\n');
+  assert.match(run().errors.join('\n'), /absent\.md: missing target/);
+  assert.match(run().errors.join('\n'), /machine-local file URL/);
+});
+
+test('constitution metadata missing file or fragment cannot silently pass', t => {
+  const root = fixture(t);
+  const metadata = path.join(root, CONSTITUTION_ROOTS[0], 'metadata.json');
+  fs.writeFileSync(metadata, JSON.stringify({ references: ['guide.md#absent', 'missing.java'] }));
+  const result = validateDocumentationLinks({ repoRoot: root, files: ['README.md'] });
+  assert.match(result.errors.join('\n'), /metadata\.json -> guide\.md#absent: missing heading/);
+  assert.match(result.errors.join('\n'), /metadata\.json -> missing\.java: missing target/);
 });
 
 test('owned documentation does not revive the retired CI billing-block narrative', () => {
-  const stale = [];
-  for (const file of trackedMarkdown()) {
-    const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
-    if (/CI\s*과금\s*차단|과금차단/i.test(text)) stale.push(file);
-  }
-
-  assert.deepEqual(
-    stale,
-    [],
-    `CI 상태는 과거 과금 문구가 아니라 현재 workflow 실행 증거로 판정해야 합니다: ${stale.join(', ')}`,
-  );
+  const stale = ownedMarkdown(repoRoot).filter(file =>
+    /CI\s*과금\s*차단|과금차단/i.test(fs.readFileSync(path.join(repoRoot, file), 'utf8')));
+  assert.deepEqual(stale, [], `Use current workflow evidence instead of retired billing claims: ${stale.join(', ')}`);
 });
