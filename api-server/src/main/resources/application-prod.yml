@@ -111,3 +111,12 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+# Read-only, bounded daily storage/reference audit; snapshots contain aggregate counts only.
+nuri:
+  attachment:
+    integrity:
+      enabled: ${ATTACHMENT_INTEGRITY_ENABLED:true}
+      cron: ${ATTACHMENT_INTEGRITY_CRON:0 15 3 * * *}
+      max-items: ${ATTACHMENT_INTEGRITY_MAX_ITEMS:50000}
+      report-directory: ${ATTACHMENT_INTEGRITY_REPORT_DIRECTORY:storage/diagnostics/attachment-integrity}

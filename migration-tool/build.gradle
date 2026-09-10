@@ -23,3 +23,15 @@ bootJar {
     mainClass = 'nuri.migration.MigrationToolApplication'
 }
 jar { enabled = false }
+
+// The crash drill starts a fresh JVM; Gradle's worker java.class.path is not the test runtime classpath.
+tasks.named('test', Test) {
+    doFirst { systemProperty 'migration.drill.classpath', classpath.asPath }
+}
+
+// PIT runs the same crash drill in its own minion JVM, outside Gradle's Test task.
+pitest {
+    jvmArgs.add(providers.provider {
+        "-Dmigration.drill.classpath=${sourceSets.test.runtimeClasspath.asPath}".toString()
+    })
+}

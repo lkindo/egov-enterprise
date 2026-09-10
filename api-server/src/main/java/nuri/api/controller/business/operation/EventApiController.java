@@ -5,6 +5,7 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.operation.EventInfoService;
 import nuri.business.service.operation.dto.EventInfoDto;
+import nuri.business.service.operation.dto.EventInfoRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,7 +46,7 @@ public class EventApiController {
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> createEvent(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody EventInfoDto request) {
+            @Valid @RequestBody EventInfoRequest request) {
         return ResponseEntity.ok(ApiResponse.success(eventInfoService.createEvent(userDetails.getUsername(), request)));
     }
 
@@ -54,7 +55,7 @@ public class EventApiController {
     public ResponseEntity<ApiResponse<Void>> updateEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long evntSn,
-            @Valid @RequestBody EventInfoDto request) {
+            @Valid @RequestBody EventInfoRequest request) {
         eventInfoService.updateEvent(evntSn, userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -1,5 +1,6 @@
 package nuri.business.service.survey.dto;
 
+
 import jakarta.validation.constraints.*;
 
 import nuri.business.domain.survey.OnlinePollManage;
@@ -41,9 +42,13 @@ public class OnlinePollManageDto {
     private String pollKndCd;
 
     @Schema(description = "설문 폐기 여부")
+    @Pattern(regexp = "[YN]")
+    @Size(max = 1)
     private String pollDsuseYn;
 
     @Schema(description = "설문 자동 폐기 여부")
+    @Pattern(regexp = "[YN]")
+    @Size(max = 1)
     private String pollAtmcDsuseYn;
 
     @Schema(description = "생성자 ID")

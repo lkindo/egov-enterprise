@@ -21,7 +21,7 @@ test('HTTP 200 alone cannot make malformed, legacy or unsuccessful payloads pass
 });
 
 test('both load entry points make check failures fail the run and consume the actual response contract', () => {
-  for (const file of ['users-list-test.js', 'load-levels.js']) {
+  for (const file of ['users-list-test.js', 'load-levels.js', 'mixed-workload.js']) {
     const source = fs.readFileSync(`test/load-tests/scenarios/${file}`, 'utf8');
     assert.match(source, /checks:\s*\['rate==1'\]/);
     assert.match(source, /hasPageResponse\(r\.body\)/);

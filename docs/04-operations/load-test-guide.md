@@ -125,6 +125,16 @@ secret 미설정 fallback은 개발 compose용일 뿐 운영 성능 계정 정�
 4. 단일 병목 가설만 바꾸고 같은 환경·시나리오로 재실행한다.
 5. 개선 효과가 noise보다 큰지 여러 회차로 확인하고, 부작용이 있으면 원복한다.
 
+## 격리 혼합 부하·장애 복구
+
+`node scripts/run-isolated-readiness.mjs`는 별도의 loopback PostgreSQL과 API를 생성해
+사용자·대시보드 조회 및 일정 CRUD를 섞어 검사한다. 100 VU 시험과 별도로 연결 풀 고갈,
+DB pause/unpause를 실행하고 같은 토큰의 복구를 확인한다. 운영 `.env`를 적재하지 않으며
+자신이 생성한 프로세스와 컨테이너만 정리한다. 이 경로는 위 주간 workflow와 별도다.
+
+사전 classpath 생성 명령, 실행 환경, 실제 결과와 한계는
+[완성도 후속 보강의 혼합 부하와 장애 복구](readiness-followups.md#혼합-부하와-장애-복구)에 있다.
+
 ## 현재 한계
 
 - `login-test.js`, `post-create-test.js` 등 개별 legacy 시나리오는 통합 시나리오와 API 필드·경로가 다를 수 있다.

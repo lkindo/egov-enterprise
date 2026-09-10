@@ -290,6 +290,40 @@ class InputContractMirrorLinterTest {
     private static final int MIN_READ_ONLY_FIELDS = 45;
 
     @Test
+    @DisplayName("달력 날짜 입력 제약이 OpenAPI와 생성 Zod의 원본까지 전파된다")
+    void calendarDatePatternsReachCommittedOpenApi() throws Exception {
+        var targets = java.util.Map.of(
+                ScheduleDto.class, List.of("schdlBgngYmd", "schdlEndYmd"),
+                nuri.business.service.operation.dto.EventInfoDto.class, List.of("evntBgngYmd", "evntEndYmd", "evntAprvYmd"),
+                nuri.business.service.survey.dto.SurveyInfoDto.class, List.of("srvyBgngYmd", "srvyEndYmd"),
+                nuri.business.service.survey.dto.OnlinePollManageRequest.class, List.of("pollBgngYmd", "pollEndYmd"),
+                WorkReportDto.class, List.of("rptYmd"),
+                MemoReportDto.class, List.of("memoRptYmd"),
+                ExternalHrDto.class, List.of("brdtYmd"));
+        JsonNode schemas = new ObjectMapper().readTree(HarnessSourceIndex.read(resolveApiDocs()))
+                .path("components").path("schemas");
+        List<String> violations = new ArrayList<>();
+        for (var entry : targets.entrySet()) {
+            for (String name : entry.getValue()) {
+                Pattern pattern;
+                try {
+                    pattern = entry.getKey().getDeclaredField(name).getAnnotation(Pattern.class);
+                } catch (NoSuchFieldException inherited) {
+                    pattern = entry.getKey().getMethod("get" + Character.toUpperCase(name.charAt(0)) + name.substring(1)).getAnnotation(Pattern.class);
+                }
+                if (pattern == null || !nuri.foundation.core.validation.Ymd.OPTIONAL_PATTERN.equals(pattern.regexp())) {
+                    violations.add(entry.getKey().getSimpleName() + "." + name + " — calendar constraint missing");
+                }
+                JsonNode property = openApiProperty(schemas, entry.getKey(), name, violations);
+                if (property != null && !nuri.foundation.core.validation.Ymd.OPTIONAL_PATTERN.equals(property.path("pattern").asText())) {
+                    violations.add(entry.getKey().getSimpleName() + "." + name + " — OpenAPI calendar pattern drift");
+                }
+            }
+        }
+        if (!violations.isEmpty()) fail(String.join("\n", violations));
+    }
+
+    @Test
     @DisplayName("입력 DTO 길이와 enum 제약이 Entity 저장 계약을 넘지 않는다")
     void targetedDtoConstraintsMirrorEntityStorageContract() {
         int lengthFieldCount = LENGTH_BINDINGS.stream().mapToInt(binding -> binding.fields().size()).sum();

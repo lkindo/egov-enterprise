@@ -1,0 +1,10 @@
+gradle.projectsEvaluated {
+    def apiProject = gradle.rootProject.project(':api-server')
+    apiProject.tasks.register('readinessRuntimeClasspath') {
+        doLast {
+            def target = gradle.rootProject.file('build/readiness-followups/runtime-classpath.txt')
+            target.parentFile.mkdirs()
+            target.text = apiProject.sourceSets.main.runtimeClasspath.asPath
+        }
+    }
+}

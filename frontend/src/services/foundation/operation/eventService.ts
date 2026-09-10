@@ -40,15 +40,15 @@ export const eventService = {
   getEvent: async (evntSn: number) => {
     return executeGeneratedOperation(getEventOperation, { path: { evntSn } }) as Promise<EventInfo>;
   },
-  createEvent: async (data: Partial<EventInfo>) => {
+  createEvent: async (data: components['schemas']['EventInfoRequest']) => {
     return executeGeneratedOperation(createEventOperation, {
-      body: data as components['schemas']['EventInfoDto'],
+      body: data,
     });
   },
-  updateEvent: async (evntSn: number, data: Partial<EventInfo>) => {
+  updateEvent: async (evntSn: number, data: components['schemas']['EventInfoRequest']) => {
     return executeGeneratedOperation(updateEventOperation, {
       path: { evntSn },
-      body: data as components['schemas']['EventInfoDto'],
+      body: data,
     });
   },
   deleteEvent: async (evntSn: number) => {

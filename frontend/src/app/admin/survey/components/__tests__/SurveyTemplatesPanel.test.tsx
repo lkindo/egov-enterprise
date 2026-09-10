@@ -12,6 +12,8 @@ vi.mock('@/services/foundation/system/SurveyAdminService', () => ({
     createTemplate: vi.fn(),
     deleteTemplate: vi.fn(),
     getTemplateList: vi.fn(),
+    getSurveyTemplate: vi.fn(),
+    updateTemplate: vi.fn(),
   },
 }));
 
@@ -35,6 +37,7 @@ describe('SurveyTemplatesPanel validation contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocked.createTemplate.mockResolvedValue(undefined);
+    mocked.updateTemplate.mockResolvedValue(undefined);
     mocked.deleteTemplate.mockResolvedValue(undefined);
     mocked.getTemplateList.mockResolvedValue({
       list: [],
@@ -147,4 +150,39 @@ describe('SurveyTemplatesPanel validation contract', () => {
     expect(await screen.findByText('템플릿 삭제 권한이 없습니다.')).toBeVisible();
     expect(screen.getByRole('button', { name: '기본 템플릿 템플릿 삭제' })).toBeEnabled();
   });
+  it('수정은 최신 상세를 한 번 읽고 숨겨진 경로를 보존해 저장한다', async () => {
+    const user = userEvent.setup();
+    mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 11, srvyTmpltTypeCd: 'OLD', srvyTmpltExpln: '목록 설명' }], total: 1, page: 1, size: 50, totalPage: 1 });
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: '/templates/preserved' });
+    renderPanel();
+    const edit = await screen.findByRole('button', { name: '목록 설명 템플릿 수정' });
+    act(() => { edit.click(); edit.click(); });
+    await waitFor(() => expect(screen.getByLabelText('템플릿 유형 코드')).toHaveValue('FRESH'));
+    expect(mocked.getSurveyTemplate).toHaveBeenCalledTimes(1);
+    expect(mocked.getSurveyTemplate).toHaveBeenCalledWith(11);
+    await user.clear(screen.getByLabelText('템플릿 설명'));
+    await user.type(screen.getByLabelText('템플릿 설명'), '수정 설명');
+    await user.click(screen.getByRole('button', { name: '템플릿 수정 저장' }));
+    await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledWith(11, { srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved' }));
+    expect(mocked.createTemplate).not.toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: '템플릿 추가' })).toBeEnabled();
+  });
+
+  it('상세 조회 실패는 오래된 목록 값으로 수정하지 않고 다시 시도할 수 있다', async () => {
+    const user = userEvent.setup();
+    mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 12, srvyTmpltExpln: '대상' }], total: 1, page: 1, size: 50, totalPage: 1 });
+    mocked.getSurveyTemplate.mockRejectedValueOnce(new Error('상세 조회 실패'));
+    renderPanel();
+    await user.click(await screen.findByRole('button', { name: '대상 템플릿 수정' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('상세 조회 실패');
+    expect(screen.queryByRole('button', { name: '템플릿 수정 저장' })).not.toBeInTheDocument();
+    expect(mocked.updateTemplate).not.toHaveBeenCalled();
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 12, srvyTmpltTypeCd: 'T', srvyTmpltExpln: '복구' });
+    await user.click(screen.getByRole('button', { name: '대상 템플릿 수정' }));
+    expect(await screen.findByRole('button', { name: '수정 취소' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: '수정 취소' }));
+    expect(screen.getByLabelText('템플릿 설명')).toHaveValue('');
+    expect(mocked.updateTemplate).not.toHaveBeenCalled();
+  });
+
 });

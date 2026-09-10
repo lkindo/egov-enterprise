@@ -1,5 +1,7 @@
 package nuri.business.service.memoreport.dto;
 
+import nuri.foundation.core.validation.Ymd;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 
@@ -29,6 +31,7 @@ public class MemoReportDto {
 
     @Schema(description = "보고일자")
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String memoRptYmd;
 
     @Schema(description = "작성자아이디", nullable = true, types = {"string", "null"},

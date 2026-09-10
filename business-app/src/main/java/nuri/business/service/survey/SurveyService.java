@@ -230,7 +230,7 @@ public class SurveyService {
     }
 
     private void validateSurveyDates(String beginDe, String endDe) {
-        if (beginDe != null && endDe != null) {
+        if (beginDe != null && !beginDe.isEmpty() && endDe != null && !endDe.isEmpty()) {
             // Remove dashes for comparison if present
             String start = beginDe.replace("-", "");
             String end = endDe.replace("-", "");

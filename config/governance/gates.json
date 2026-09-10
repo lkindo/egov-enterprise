@@ -704,6 +704,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/AddressBookBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-ATTACHMENT-REFERENCE-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/AttachmentReferenceIntegrityPostgresTest.java"
+        },
+        {
           "id": "DB-MIG-AUTHORITY-REFERENCE-FK",
           "source": "api-server/src/test/java/nuri/api/schema/AuthorityReferenceFkIntegrationTest.java"
         },

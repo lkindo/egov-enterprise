@@ -34,5 +34,6 @@ public interface FileDetailRepository extends JpaRepository<FileDetail, java.uti
                     + "fd.fileMaster.atchFileSn, fd.fileStrgPath, fd.strgFileNm) "
                     + "FROM FileDetail fd WHERE fd.fileMaster.atchFileSn IN :atchFileSns")
     List<nuri.business.service.file.dto.StoredFileKey> findStoredKeysByAtchFileSnIn(
-            @org.springframework.data.repository.query.Param("atchFileSns") java.util.Collection<Long> atchFileSns);
+            @org.springframework.data.repository.query.Param("atchFileSns") java.util.Collection<Long> atchFileSns,
+            org.springframework.data.domain.Pageable pageable);
 }

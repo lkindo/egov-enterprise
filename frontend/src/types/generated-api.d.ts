@@ -4891,8 +4891,8 @@ export interface components {
              */
             crtDt?: string;
         };
-        /** @description 온라인 설문 관리 DTO (표준화) */
-        OnlinePollManageDto: {
+        /** @description 온라인 설문 등록·수정 입력 */
+        OnlinePollManageRequest: {
             /**
              * Format: int64
              * @description 설문 일련번호
@@ -5845,8 +5845,8 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        /** @description 행사 정보 상세 DTO */
-        EventInfoDto: {
+        /** @description 행사 등록·수정 입력 */
+        EventInfoRequest: {
             /**
              * Format: int64
              * @description 행사 내부 일련번호
@@ -5857,7 +5857,7 @@ export interface components {
              * @description 행사 명칭
              * @example 사내 인공지능 해커톤 캠페인
              */
-            evntNm?: string;
+            evntNm: string;
             /**
              * @description 행사 연도
              * @example 2026
@@ -6842,6 +6842,37 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 온라인 설문 관리 DTO (표준화) */
+        OnlinePollManageDto: {
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            pollSn?: number;
+            /** @description 설문 제목 */
+            pollNm: string;
+            /** @description 설문 시작일 */
+            pollBgngYmd?: string;
+            /** @description 설문 종료일 */
+            pollEndYmd?: string;
+            /** @description 설문 종류 코드 */
+            pollKndCd?: string;
+            /** @description 설문 폐기 여부 */
+            pollDsuseYn?: string;
+            /** @description 설문 자동 폐기 여부 */
+            pollAtmcDsuseYn?: string;
+            /** @description 생성자 ID */
+            frstRgtrId?: string;
+            /**
+             * Format: date-time
+             * @description 생성 일시
+             */
+            crtDt?: string;
+            /** @description 설문 항목 목록 */
+            pollArticles?: components["schemas"]["OnlinePollArticleDto"][];
+            /** @description 현재 사용자의 투표 참여 여부 */
+            hasVoted?: boolean;
         };
         PageResponseOnlinePollManageDto: {
             list?: components["schemas"]["OnlinePollManageDto"][];
@@ -9118,6 +9149,91 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
+        /** @description 행사 정보 상세 DTO */
+        EventInfoDto: {
+            /**
+             * Format: int64
+             * @description 행사 내부 일련번호
+             * @example 1
+             */
+            evntSn?: number;
+            /**
+             * @description 행사 명칭
+             * @example 사내 인공지능 해커톤 캠페인
+             */
+            evntNm?: string;
+            /**
+             * @description 행사 연도
+             * @example 2026
+             */
+            bizYr?: string;
+            /**
+             * @description 행사 상세내용
+             * @example 기업용 차세대 거울 동기화 실증을 위한 전사 활동입니다.
+             */
+            evntCn?: string;
+            /**
+             * @description 행사 시작일
+             * @example 20260525
+             */
+            evntBgngYmd?: string;
+            /**
+             * @description 행사 종료일
+             * @example 20260526
+             */
+            evntEndYmd?: string;
+            /**
+             * Format: int64
+             * @description 참여 정원 (Capacity)
+             * @example 150
+             */
+            evntUseCnt?: number;
+            /**
+             * @description 담당자명
+             * @example 홍길동
+             */
+            picNm?: string;
+            /**
+             * @description 준비 사항
+             * @example 개인 노트북 지참 및 API 토큰 설정
+             */
+            prepMttr?: string;
+            /**
+             * @description 행사 유형 코드
+             * @example EVT01
+             */
+            evntTypeCd?: string;
+            /**
+             * @description 승인 여부
+             * @example Y
+             */
+            evntAprvYn?: string;
+            /**
+             * @description 승인 일자
+             * @example 20260525
+             */
+            evntAprvYmd?: string;
+            /**
+             * @description 최초 등록자 ID
+             * @example webmaster
+             */
+            frstRgtrId?: string;
+            /**
+             * Format: date-time
+             * @description 최초 등록 일시
+             */
+            crtDt?: string;
+            /**
+             * @description 최종 수정자 ID
+             * @example webmaster
+             */
+            lastMdfrId?: string;
+            /**
+             * Format: date-time
+             * @description 최종 수정 일시
+             */
+            mdfcnDt?: string;
+        };
         PageResponseEventInfoDto: {
             list?: components["schemas"]["EventInfoDto"][];
             /** Format: int64 */
@@ -10159,7 +10275,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OnlinePollManageDto"];
+                "application/json": components["schemas"]["OnlinePollManageRequest"];
             };
         };
         responses: {
@@ -18302,7 +18418,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EventInfoDto"];
+                "application/json": components["schemas"]["EventInfoRequest"];
             };
         };
         responses: {
@@ -19398,7 +19514,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OnlinePollManageDto"];
+                "application/json": components["schemas"]["OnlinePollManageRequest"];
             };
         };
         responses: {
@@ -26118,7 +26234,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EventInfoDto"];
+                "application/json": components["schemas"]["EventInfoRequest"];
             };
         };
         responses: {

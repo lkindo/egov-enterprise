@@ -1,5 +1,8 @@
 package nuri.business.service.survey.dto;
 
+import nuri.foundation.core.validation.Ymd;
+import nuri.foundation.core.validation.YmdRange;
+
 import jakarta.validation.constraints.*;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,6 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "설문정보 DTO (표준화)")
+@YmdRange(start = "srvyBgngYmd", end = "srvyEndYmd")
 public class SurveyInfoDto {
 
     @Schema(description = "설문 일련번호")
@@ -34,10 +38,12 @@ public class SurveyInfoDto {
 
     @Schema(description = "설문 시작 일자")
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String srvyBgngYmd;
 
     @Schema(description = "설문 종료 일자")
     @Size(max = 8)
+    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String srvyEndYmd;
 
     @Schema(description = "설문 대상")

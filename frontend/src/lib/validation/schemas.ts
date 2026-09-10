@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  OnlinePollManageDtoSchema,
+  OnlinePollManageRequestSchema,
   SmsDtoSchema,
   SmsRecptnDtoSchema,
   MenuDtoSchema,
@@ -24,11 +24,11 @@ export const commonRules = {
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD 형식이 아닙니다.'),
 };
 
-export const pollSchema = OnlinePollManageDtoSchema.extend({
-  pollNm: OnlinePollManageDtoSchema.shape.pollNm.min(1),
-  pollDsuseYn: OnlinePollManageDtoSchema.shape.pollDsuseYn.default('N'),
-  pollBgngYmd: OnlinePollManageDtoSchema.shape.pollBgngYmd,
-  pollEndYmd: OnlinePollManageDtoSchema.shape.pollEndYmd,
+export const pollSchema = OnlinePollManageRequestSchema.extend({
+  pollNm: OnlinePollManageRequestSchema.shape.pollNm.trim().min(1),
+  pollDsuseYn: OnlinePollManageRequestSchema.shape.pollDsuseYn.default('N'),
+  pollBgngYmd: OnlinePollManageRequestSchema.shape.pollBgngYmd,
+  pollEndYmd: OnlinePollManageRequestSchema.shape.pollEndYmd,
 }).refine(data => {
   if (data.pollBgngYmd && data.pollEndYmd) {
     // API/DB 계약의 YYYYMMDD 저장 형식은 문자열 정렬과 날짜 정렬이 동일하다.

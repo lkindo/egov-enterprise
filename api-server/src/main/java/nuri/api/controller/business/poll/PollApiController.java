@@ -6,6 +6,7 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.survey.OnlinePollService;
 import nuri.business.service.survey.dto.OnlinePollArticleDto;
 import nuri.business.service.survey.dto.OnlinePollManageDto;
+import nuri.business.service.survey.dto.OnlinePollManageRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,7 +46,7 @@ public class PollApiController {
 
     @Operation(summary = "설문 등록", description = "새로운 설문을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createPoll(@Valid @RequestBody OnlinePollManageDto dto) {
+    public ResponseEntity<ApiResponse<Void>> createPoll(@Valid @RequestBody OnlinePollManageRequest dto) {
         pollService.insertPoll(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -54,7 +55,7 @@ public class PollApiController {
     @PutMapping("/{pollSn}")
     public ResponseEntity<ApiResponse<Void>> updatePoll(
             @PathVariable Long pollSn,
-            @Valid @RequestBody OnlinePollManageDto dto) {
+            @Valid @RequestBody OnlinePollManageRequest dto) {
         dto.setPollSn(pollSn);
         pollService.updatePoll(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
