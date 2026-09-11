@@ -2,6 +2,7 @@ package nuri.business.domain.user.repository;
 
 import nuri.business.domain.user.entity.*;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,13 +23,18 @@ public class DeptManageRepositoryImpl implements DeptManageRepositoryCustom {
 
     @Override
     public Page<DeptManage> searchDeptManages(String keyword, Pageable pageable) {
-        List<DeptManage> content = queryFactory
+        JPAQuery<DeptManage> query = queryFactory
                 .selectFrom(deptManage)
                 .where(keywordContains(keyword))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(deptManage.ognzNm.asc())
-                .fetch();
+                .orderBy(deptManage.ognzNm.asc());
+
+        if (pageable.isPaged()) {
+            query.offset(pageable.getOffset()).limit(pageable.getPageSize());
+        }
+        List<DeptManage> content = query.fetch();
+        if (pageable.isUnpaged()) {
+            return new PageImpl<>(content);
+        }
 
         long total = queryFactory
                 .select(deptManage.count())

@@ -41,8 +41,8 @@ vi.mock('next/dynamic', () => ({
 }));
 // Radix Select 는 jsdom 에서 pointer 이벤트로 열리지 않는다 — 네이티브 select 로 대체해 값 전달만 검사한다.
 vi.mock('@/components/ui/select', () => ({
-  Select: ({ value, onValueChange, children }: { value?: string; onValueChange: (value: string) => void; children: ReactNode }) => (
-    <select data-testid="mock-select" value={value ?? ''} onChange={(event) => onValueChange(event.target.value)}>{children}</select>
+  Select: ({ value, onValueChange, children, disabled }: { value?: string; onValueChange: (value: string) => void; children: ReactNode; disabled?: boolean }) => (
+    <select data-testid="mock-select" disabled={disabled} value={value ?? ''} onChange={(event) => onValueChange(event.target.value)}>{children}</select>
   ),
   SelectTrigger: () => null,
   SelectValue: () => null,
@@ -70,17 +70,18 @@ const boxes = [
 
 function renderDialog(onClose = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const result = render(
     <QueryClientProvider client={client}>
       <DeptJobBoxManageDialog isOpen onClose={onClose} />
     </QueryClientProvider>,
   );
+  return { ...result, client };
 }
 
 describe('DeptJobBoxManageDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.permissions = ['DEPT_BOX_READ', 'DEPT_BOX_CREATE', 'DEPT_BOX_UPDATE', 'DEPT_BOX_DELETE'];
+    mocks.permissions = ['DEPT_BOX_READ', 'DEPT_BOX_CREATE', 'DEPT_BOX_UPDATE', 'DEPT_BOX_DELETE', 'DEPT_READ'];
     mocks.getDeptJobBoxes.mockResolvedValue({ list: boxes, total: 2, page: 0, size: 10, totalPage: 1 });
     mocks.getDeptTree.mockResolvedValue([{ ognzId: 'D1', ognzNm: '기획부' }, { ognzId: 'D2', ognzNm: '인사부' }]);
     mocks.createDeptJobBox.mockResolvedValue(3);
@@ -149,6 +150,108 @@ describe('DeptJobBoxManageDialog', () => {
     await waitFor(() => expect(mocks.updateDeptJobBox).toHaveBeenCalledTimes(1));
     expect(mocks.updateDeptJobBox).toHaveBeenCalledWith(1, { deptTaskBoxNm: '기획조정', deptId: 'D1', sortOrdr: 1 });
     expect(mocks.createDeptJobBox).not.toHaveBeenCalled();
+  });
+
+  it('부서 초기 조회 중에는 선택과 저장을 막고 조회 완료 뒤 작성한 이름을 유지한다', async () => {
+    let resolveDepartments!: (departments: Array<{ ognzId: string; ognzNm: string }>) => void;
+    mocks.getDeptTree.mockReturnValueOnce(new Promise((resolve) => { resolveDepartments = resolve; }));
+    const user = userEvent.setup();
+    renderDialog();
+    await screen.findByRole('list', { name: '업무함 목록' });
+    const nameInput = screen.getByRole('textbox', { name: /업무함 이름/ });
+    await user.type(nameInput, '대외협력');
+    expect(screen.getByRole('status')).toHaveTextContent('담당 부서를 불러오는 중입니다.');
+    expect(screen.getByTestId('mock-select')).toBeDisabled();
+    expect(screen.getByRole('button', { name: '업무함 등록' })).toBeDisabled();
+    fireEvent.submit(screen.getByRole('form', { name: '업무함 등록' }));
+    await act(async () => {});
+    expect(mocks.createDeptJobBox).not.toHaveBeenCalled();
+
+    await act(async () => resolveDepartments([{ ognzId: 'D2', ognzNm: '인사부' }]));
+    await waitFor(() => expect(screen.getByTestId('mock-select')).toBeEnabled());
+    expect(nameInput).toHaveValue('대외협력');
+    expect(screen.getByRole('button', { name: '업무함 등록' })).toBeEnabled();
+  });
+
+  it('부서 조회 실패를 표시하고 해당 조회만 재시도하며 이름과 순서를 보존한다', async () => {
+    mocks.getDeptTree.mockRejectedValueOnce(new Error('부서 조회 실패'));
+    const user = userEvent.setup();
+    renderDialog();
+    expect(await screen.findByRole('alert', { name: '담당 부서 조회 오류' })).toHaveTextContent('담당 부서를 불러오지 못했습니다.');
+    const nameInput = screen.getByRole('textbox', { name: /업무함 이름/ });
+    const orderInput = screen.getByRole('textbox', { name: '정렬 순서' });
+    await user.type(nameInput, '지원');
+    await user.type(orderInput, '3');
+    expect(screen.getByTestId('mock-select')).toBeDisabled();
+    expect(screen.getByRole('button', { name: '업무함 등록' })).toBeDisabled();
+    fireEvent.submit(screen.getByRole('form', { name: '업무함 등록' }));
+    await act(async () => {});
+    expect(mocks.createDeptJobBox).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: '부서 다시 조회' }));
+    await waitFor(() => expect(screen.getByTestId('mock-select')).toBeEnabled());
+    expect(mocks.getDeptTree).toHaveBeenCalledTimes(2);
+    expect(mocks.getDeptJobBoxes).toHaveBeenCalledTimes(1);
+    expect(nameInput).toHaveValue('지원');
+    expect(orderInput).toHaveValue('3');
+    await user.selectOptions(screen.getByTestId('mock-select'), 'D2');
+    await user.click(screen.getByRole('button', { name: '업무함 등록' }));
+    await waitFor(() => expect(mocks.createDeptJobBox).toHaveBeenCalledWith({ deptTaskBoxNm: '지원', deptId: 'D2', sortOrdr: 3 }));
+  });
+
+  it('기존 부서 데이터가 남아 있는 재조회 실패도 저장을 막고 수정 중 선택을 재시도 뒤 보존한다', async () => {
+    const user = userEvent.setup();
+    const { client } = renderDialog();
+    const list = await screen.findByRole('list', { name: '업무함 목록' });
+    await user.click(within(list).getByRole('button', { name: '기획 수정' }));
+    await waitFor(() => expect(screen.getByRole('option', { name: '인사부' })).toBeInTheDocument());
+    await user.selectOptions(screen.getByTestId('mock-select'), 'D2');
+    const nameInput = screen.getByRole('textbox', { name: /업무함 이름/ });
+    await user.clear(nameInput);
+    await user.type(nameInput, '기획조정');
+    mocks.getDeptTree.mockRejectedValueOnce(new Error('새로고침 실패'));
+    await act(async () => { await client.invalidateQueries({ queryKey: ['dept-tree', 'box-manage'] }); });
+    expect(await screen.findByRole('alert', { name: '담당 부서 조회 오류' })).toHaveTextContent('담당 부서를 불러오지 못했습니다.');
+    expect(screen.getByRole('option', { name: '인사부' })).toBeInTheDocument();
+    expect(screen.getByTestId('mock-select')).toHaveValue('D2');
+    expect(screen.getByTestId('mock-select')).toBeDisabled();
+    expect(screen.getByRole('button', { name: '수정 저장' })).toBeDisabled();
+    fireEvent.submit(screen.getByRole('form', { name: '업무함 수정' }));
+    await act(async () => {});
+    expect(mocks.updateDeptJobBox).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: '부서 다시 조회' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '수정 저장' })).toBeEnabled());
+    expect(nameInput).toHaveValue('기획조정');
+    expect(screen.getByTestId('mock-select')).toHaveValue('D2');
+    await user.click(screen.getByRole('button', { name: '수정 저장' }));
+    await waitFor(() => expect(mocks.updateDeptJobBox).toHaveBeenCalledWith(1, { deptTaskBoxNm: '기획조정', deptId: 'D2', sortOrdr: 1 }));
+  });
+
+  it('부서 조회 권한이 없으면 API를 부르지 않고 신규 미지정 안내와 수정의 기존 부서를 보존한다', async () => {
+    mocks.permissions = ['DEPT_BOX_READ', 'DEPT_BOX_CREATE', 'DEPT_BOX_UPDATE'];
+    const user = userEvent.setup();
+    renderDialog();
+    const list = await screen.findByRole('list', { name: '업무함 목록' });
+    expect(screen.getByRole('status')).toHaveTextContent('새 업무함은 부서 미지정으로 등록됩니다.');
+    expect(screen.getByTestId('mock-select')).toBeDisabled();
+    await user.type(screen.getByRole('textbox', { name: /업무함 이름/ }), '공동');
+    await user.click(screen.getByRole('button', { name: '업무함 등록' }));
+    await waitFor(() => expect(mocks.createDeptJobBox).toHaveBeenCalledWith({ deptTaskBoxNm: '공동', deptId: undefined }));
+    await waitFor(() => expect(screen.getByRole('textbox', { name: /업무함 이름/ })).toHaveValue(''));
+
+    await user.click(within(list).getByRole('button', { name: '기획 수정' }));
+    expect(screen.getByRole('status')).toHaveTextContent('기존 담당 부서는 유지되며 이름과 정렬 순서만 수정할 수 있습니다.');
+    expect(screen.getByTestId('mock-select')).toHaveValue('D1');
+    expect(screen.getByRole('option', { name: '기획부' })).toBeInTheDocument();
+    const nameInput = screen.getByRole('textbox', { name: /업무함 이름/ });
+    await user.clear(nameInput);
+    await user.type(nameInput, '기획조정');
+    // 이벤트를 강제로 보내도 조회 권한 없는 수정에서 기존 소속을 제거할 수 없다.
+    fireEvent.change(screen.getByTestId('mock-select'), { target: { value: '__none__' } });
+    await user.click(screen.getByRole('button', { name: '수정 저장' }));
+    await waitFor(() => expect(mocks.updateDeptJobBox).toHaveBeenCalledWith(1, { deptTaskBoxNm: '기획조정', deptId: 'D1', sortOrdr: 1 }));
+    expect(mocks.getDeptTree).not.toHaveBeenCalled();
   });
 
   it('삭제는 확인 뒤 한 번만 부르고 pending 동안 disabled·aria-busy 이며, 실패(산하 업무 409)는 토스트로 드러내고 행을 남긴다', async () => {

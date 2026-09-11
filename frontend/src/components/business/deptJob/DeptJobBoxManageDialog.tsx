@@ -9,6 +9,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormErrorSummary,
   FormField as ShadcnFormField,
   FormItem,
@@ -73,6 +74,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
   const canCreate = canPermission(user, 'DEPT_BOX_CREATE');
   const canUpdate = canPermission(user, 'DEPT_BOX_UPDATE');
   const canDelete = canPermission(user, 'DEPT_BOX_DELETE');
+  const canReadDepartments = canPermission(user, 'DEPT_READ');
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -90,12 +92,22 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
     queryFn: () => deptJobUserService.getDeptJobBoxes({ page: page - 1, size: PAGE_SIZE }),
     enabled: isOpen,
   });
-  const { data: departments } = useQuery({
+  const {
+    data: departments,
+    isPending: departmentsPending,
+    isError: departmentsError,
+    isFetching: departmentsFetching,
+    refetch: refetchDepartments,
+  } = useQuery({
     queryKey: ['dept-tree', 'box-manage'],
     queryFn: () => deptAdminService.getDeptTree(),
-    enabled: isOpen,
+    enabled: isOpen && canReadDepartments && (canCreate || canUpdate),
     staleTime: 5 * 60 * 1000,
+    retry: false,
+    throwOnError: false,
   });
+
+  const departmentsUnavailable = canReadDepartments && (departmentsPending || departmentsError);
 
   const boxes = data?.list ?? [];
   const total = data?.total ?? 0;
@@ -123,13 +135,15 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
 
   const onSubmit = async (values: DeptJobBoxFormValues) => {
     if (!(editing ? canUpdate : canCreate)) return;
+    if (departmentsUnavailable) return;
     if (submitLock.current) return;
     submitLock.current = true;
     setSaving(true);
     try {
       const payload = {
         deptTaskBoxNm: values.deptTaskBoxNm,
-        deptId: values.deptId || undefined,
+        // 부서 조회 권한은 업무함 수정 권한과 별개다. 조회 불가 시 기존 소속을 변경하지 않는다.
+        deptId: (canReadDepartments ? values.deptId : editing?.deptId) || undefined,
         ...(values.sortOrdr ? { sortOrdr: Number(values.sortOrdr) } : {}),
       };
       if (editing) {
@@ -198,7 +212,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
               수정 취소
             </Button>
           )}
-          {(editing ? canUpdate : canCreate) && <Button type="submit" form="dept-job-box-form" className="h-11 flex-[2]" disabled={saving || form.formState.isSubmitting}>
+          {(editing ? canUpdate : canCreate) && <Button type="submit" form="dept-job-box-form" className="h-11 flex-[2]" disabled={saving || form.formState.isSubmitting || departmentsUnavailable}>
             {saving ? '저장 중…' : editing ? '수정 저장' : '업무함 등록'}
           </Button>}
         </div>
@@ -303,6 +317,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                   <Select
                     value={field.value ?? NO_DEPT}
                     onValueChange={(value) => field.onChange(value === NO_DEPT ? undefined : value)}
+                    disabled={!canReadDepartments || departmentsUnavailable || saving}
                   >
                     <FormControl>
                       <SelectTrigger className="h-11 rounded-lg" aria-label="담당 부서">
@@ -311,11 +326,34 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
                     </FormControl>
                     <SelectContent>
                       <SelectItem value={NO_DEPT}>부서 미지정</SelectItem>
-                      {(departments ?? []).map((dept) => (
+                      {field.value && (!canReadDepartments || !departments?.some((dept) => dept.ognzId === field.value)) && (
+                        <SelectItem value={field.value}>
+                          {editing?.deptId === field.value ? editing.deptNm || '현재 지정 부서' : '선택한 부서'}
+                        </SelectItem>
+                      )}
+                      {(canReadDepartments ? departments ?? [] : []).map((dept) => (
                         <SelectItem key={dept.ognzId} value={dept.ognzId}>{dept.ognzNm}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {!canReadDepartments ? (
+                    <FormDescription role="status">
+                      {editing
+                        ? '부서 조회 권한이 없습니다. 기존 담당 부서는 유지되며 이름과 정렬 순서만 수정할 수 있습니다.'
+                        : '부서 조회 권한이 없습니다. 새 업무함은 부서 미지정으로 등록됩니다.'}
+                    </FormDescription>
+                  ) : departmentsPending || (departmentsError && departmentsFetching) ? (
+                    <FormDescription role="status">담당 부서를 불러오는 중입니다. 조회가 끝나면 저장할 수 있습니다.</FormDescription>
+                  ) : departmentsError ? (
+                    <FormDescription role="alert" aria-label="담당 부서 조회 오류" className="flex flex-wrap items-center gap-2 text-destructive-emphasis">
+                      <span>담당 부서를 불러오지 못했습니다. 다시 조회한 뒤 저장해 주세요. 작성한 내용은 유지됩니다.</span>
+                      <Button type="button" variant="outline" size="sm" onClick={() => void refetchDepartments()}>
+                        부서 다시 조회
+                      </Button>
+                    </FormDescription>
+                  ) : (
+                    <FormDescription>담당 부서 선택은 선택 사항입니다.</FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
