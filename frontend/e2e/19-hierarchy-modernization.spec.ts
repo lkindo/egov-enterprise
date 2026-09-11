@@ -220,7 +220,7 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         console.log('\n>>> Testing Department Topology Tree in Hub');
         await page.goto('/admin/user/departments');
 
-        await expect(page.getByRole('heading', { level: 1, name: '부서 관리' })).toBeVisible({ timeout: 20000 });
+        await expect(page.getByRole('heading', { level: 1, name: '부서 및 조직 관리', exact: true })).toBeVisible({ timeout: 20000 });
         await expect(page.getByText('조직 구조', { exact: true })).toHaveCount(1);
         await expect(page.getByRole('textbox', { name: '부서 검색' })).toHaveCount(1);
         await expect(page.getByTestId('master-detail-incremental-layout')).toHaveCount(1);

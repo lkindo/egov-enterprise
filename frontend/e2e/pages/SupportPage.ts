@@ -12,13 +12,13 @@ export class SupportPage {
     async gotoFAQ() {
         console.log('>>> [Support] Navigating to FAQ Hub');
         await this.page.goto('/admin/help/faq');
-        await expect(this.page.getByText(/지식 매트릭스|Knowledge Hub/i).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { level: 1, name: '자주 묻는 질문', exact: true })).toBeVisible({ timeout: 15000 });
     }
 
     async gotoQna() {
         console.log('>>> [Support] Navigating to Q&A Hub');
         await this.page.goto('/admin/help/qna');
-        await expect(this.page.getByText(/지식 매트릭스|Knowledge Hub/i).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { level: 1, name: '질의응답(Q&A)', exact: true })).toBeVisible({ timeout: 15000 });
     }
 
     async createManual(title: string, content: string) {
