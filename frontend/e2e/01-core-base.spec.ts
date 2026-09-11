@@ -56,8 +56,10 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         // Axe 감사에만 reduced-motion을 적용한다. 일반 UI 회귀는 실제 motion 경로를 계속 검증한다.
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.goto('/login?e2e=true');
-        await expect(page.getByRole('dialog', { name: '엔터프라이즈' })).toBeVisible({ timeout: 30000 });
-        await expect(page.getByRole('heading', { level: 1, name: '엔터프라이즈' })).toBeVisible();
+        await expect(page.getByRole('heading', { level: 1, name: '엔터프라이즈' })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('main')).toHaveCount(1);
+        await expect(page.getByRole('dialog')).toHaveCount(0);
+        await expect(page.locator('header, #primary-sidebar')).toHaveCount(0);
         await expect(page.getByRole('textbox', { name: '아이디' })).toBeVisible();
         await expect(page.locator('[role="status"]').filter({
             hasText: /^(?:로딩 중|로그인 화면을 불러오는 중|애플리케이션을 준비하는 중|보안 세션을 확인하는 중)/,
@@ -77,7 +79,7 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         test('Widgets and Charts Rendering', async ({ page }) => {
             console.log('>>> Step 1: Verifying Stat Cards');
             await expect(page.getByText('등록 사용자', { exact: true }).first()).toBeVisible();
-            await expect(page.getByText('등록 권한', { exact: true }).first()).toBeVisible();
+            await expect(page.getByText('권한 그룹', { exact: true }).first()).toBeVisible();
 
             console.log('>>> Step 2: Verifying Audit Intelligence Widget');
             // [2026-07-27 정정] 종전에는 `.recharts-surface` 를 기다렸으나 **대시보드에는 recharts 가 없다**.

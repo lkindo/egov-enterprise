@@ -8,9 +8,8 @@ export class CommunityPage {
         // [2026-09-06 DEC-OPS-040] /admin/community 는 /admin/help?tab=COMMUNITY 로의 page-redirect 별칭이 됐다
         //   (같은 KnowledgeHubClient COMMUNITY 탭을 중복 렌더하던 주소). 정본으로 직접 들어간다.
         await this.page.goto('/admin/help?tab=COMMUNITY');
-        // [2026-07-27 정정] 제목에서 '엔터프라이즈' 접두어가 제거됐다(브랜딩 정리 잔재). 실제 렌더는
-        // KnowledgeHubClient 의 '지식 매트릭스' 이며, /admin/community 는 이 클라이언트를 그대로 렌더한다.
-        await expect(this.page.getByRole('heading', { name: /지식 매트릭스/i })).toBeVisible({ timeout: 15000 });
+        // 선택한 지식 카테고리가 페이지의 유일한 h1이다.
+        await expect(this.page.getByRole('heading', { level: 1, name: '커뮤니티', exact: true })).toBeVisible({ timeout: 15000 });
     }
 
     async selectCategory(category: 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY') {
@@ -24,7 +23,7 @@ export class CommunityPage {
         const categoryMap: Record<string, string> = {
             'WIKI': '위키',
             'FAQ': '자주 묻는 질문',
-            'QNA': '기술 Q&A',
+            'QNA': '질의응답(Q&A)',
             'COMMUNITY': '커뮤니티'
         };
         console.log(`>>> [Community] Selecting category: ${category}`);

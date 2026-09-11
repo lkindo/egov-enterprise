@@ -289,6 +289,21 @@ test.describe('복수 권한 그룹의 실제 API와 편집 화면', () => {
                 const program = editor.getByRole('row').filter({ has: page.getByText('PROGRAM_READ', { exact: true }) }).getByRole('checkbox');
                 await expect(program).not.toBeChecked();
                 await program.check();
+                // 실제 Next 라우터에서도 hash 이동은 편집을 유지하고,
+                // Back/다른 화면 이동을 취소하면 같은 편집기와 선택이 남아야 한다.
+                await editor.getByRole('link', { name: '메뉴표시', exact: true }).click();
+                await expect(page).toHaveURL(/\/admin\/security\/authority#group-navigation$/);
+                await expect(page.getByRole('dialog', { name: '저장하지 않은 변경' })).toHaveCount(0);
+                await page.evaluate(() => history.back());
+                const discard = page.getByRole('dialog', { name: '저장하지 않은 변경' });
+                await expect(discard).toBeVisible();
+                await discard.getByRole('button', { name: '계속 편집', exact: true }).click();
+                await expect(page).toHaveURL(/\/admin\/security\/authority#group-navigation$/);
+                await expect(program).toBeChecked();
+                await page.getByRole('link', { name: '통합 검색', exact: true }).click();
+                await expect(discard).toBeVisible();
+                await discard.getByRole('button', { name: '계속 편집', exact: true }).click();
+                await expect(program).toBeChecked();
                 const saved = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupA}/grants`
                     && response.request().method() === 'PUT');
                 await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();

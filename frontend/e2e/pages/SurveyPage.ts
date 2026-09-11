@@ -33,8 +33,8 @@ export class SurveyPage {
         //   허브가 `<SurveyManageClient embedded />` 로 마운트하면서 그 PageHeader 를 렌더하지 않는다.
         //   이는 회귀가 아니라 **h1 중복 제거**다(종전에는 허브 h1 과 함께 2개가 떴고 테스트가 그
         //   중복에 의존했다). shell-accessibility-contract.test.ts 가 embedded 를 계약으로 고정한다.
-        //   실제 도달 화면의 h1(hub/page.tsx:42)으로 단언한다.
-        await expect(this.page.getByRole('heading', { name: '설문 통합 관리 워크벤치', exact: true })).toBeVisible({ timeout: 30000 });
+        //   현재는 선택한 작업의 h1을 허브 클라이언트가 렌더한다.
+        await expect(this.page.getByRole('heading', { level: 1, name: '여론조사 관리', exact: true })).toBeVisible({ timeout: 30000 });
     }
 
     async gotoCreate() {
