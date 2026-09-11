@@ -185,6 +185,7 @@
           "src/app/approvals",
           "src/app/cop/cmy",
           "src/app/help",
+          "src/app/smart-toolkit/dept-job/layout.tsx",
           "src/app/smart-toolkit/schedule",
           "src/app/smart-toolkit/work-report",
           "src/components/business/report",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
 import * as z from 'zod';
 import { Form, FormControl, FormErrorSummary, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -45,9 +45,11 @@ interface ReportCreateFormProps {
     onCancel: () => void;
     /** 합성 화면이 소유하는 저장/삭제 상호 배제 상태. */
     isPending?: boolean;
+    /** 합성 화면이 닫기 가드를 걸 수 있도록 편집 상태를 올려 준다(DeptJobForm 과 같은 계약). */
+    onEditStateChange?: (state: { dirty: boolean; pending: boolean }) => void;
 }
 
-export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onSubmit, onCancel, isPending = false }: ReportCreateFormProps) {
+export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onSubmit, onCancel, isPending = false, onEditStateChange }: ReportCreateFormProps) {
     const isEdit = mode === 'edit';
     const submitPendingRef = useRef(false);
     const [isSubmitPending, setSubmitPending] = useState(false);
@@ -64,6 +66,10 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
 
     const { isSubmitting } = form.formState;
     const isSavePending = isSubmitting || isSubmitPending || isPending;
+
+    useEffect(() => {
+        onEditStateChange?.({ dirty: form.formState.isDirty, pending: isSavePending });
+    }, [form.formState.isDirty, isSavePending, onEditStateChange]);
 
     const handleSubmit = async (values: ReportFormValues) => {
         if (submitPendingRef.current) return;

@@ -9,10 +9,21 @@ const mocks = vi.hoisted(() => ({
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
   invalidateQueries: vi.fn(),
+  /** push 가 불린 **그 순간**의 guard 판정을 포착한다 — 버그는 finally 가 상태를 되돌리기
+   *  전, 정확히 이 시점에만 관측된다. 나중에 호출하면 activeAction 이 이미 null 이라 공허하다. */
+  guardAtPush: null as null | { dirty: boolean; pending?: boolean },
+  routerPush: vi.fn(),
+  /** 화면이 UnsavedChangesProvider 에 등록한 guard 콜백. 아래 계약이 직접 호출해 판정한다. */
+  unsavedGuard: null as null | (() => { dirty: boolean; pending?: boolean }),
   jobResponse: {} as Record<string, unknown>,
 }));
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: mocks.routerPush }) }));
+// 실제 Provider 를 렌더하지 않고 guard 콜백만 가로챈다 — 이 화면이 '지금 이동해도 되는가'로
+// 무엇을 보고하는지가 계약의 대상이다.
+vi.mock('@/contexts/UnsavedChangesContext', () => ({
+  useUnsavedChanges: (guard: () => { dirty: boolean; pending?: boolean }) => { mocks.unsavedGuard = guard; },
+}));
 vi.mock('next/link', () => ({
   default: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => <a {...props}>{children}</a>,
 }));
@@ -54,6 +65,8 @@ import DeptJobDetailClient from './DeptJobDetailClient';
 describe('DeptJobDetailClient server validation ownership', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.guardAtPush = null;
+    mocks.routerPush.mockImplementation(() => { mocks.guardAtPush = mocks.unsavedGuard?.() ?? null; });
     mocks.jobResponse = { deptTaskSn: 7, deptTaskNm: '기존 업무', deptTaskCn: '작성 중인 내용' };
     mocks.confirm.mockResolvedValue(true);
     mocks.deleteDeptJob.mockResolvedValue(undefined);
@@ -185,5 +198,43 @@ describe('DeptJobDetailClient server validation ownership', () => {
     expect(screen.getByText('기존 업무')).toBeInTheDocument();
     expect(remove).not.toBeDisabled();
     expect(remove).not.toHaveAttribute('aria-busy');
+  });
+
+  /*
+    [회귀] 삭제 성공 뒤의 목록 복귀가 **자기 미저장 가드에 막히던** 결함.
+
+    UnsavedChangesProvider 의 navigate() 는 pending 인 guard 가 하나라도 있으면 이동을
+    취소하고 '저장 중입니다…' 토스트만 띄운다. 그런데 삭제 성공 콜백이 router.push 를
+    부르는 시점에는 activeAction 이 아직 'delete' 다(해제는 finally). 그래서 가드를 처음
+    달았을 때 화면이 삭제된 업무에 그대로 머물렀다.
+
+    ⚠ 이 결함을 단위 테스트가 놓친 이유: 종전 mock 은 useRouter 를 매번 새 vi.fn() 으로 주고
+    Provider 를 렌더하지 않아 **보호 라우터 경로 자체가 없었다**. e2e 25 가 잡았다.
+    그래서 여기서는 guard 콜백을 가로채 '완료 후에는 pending 을 보고하지 않는다' 를 고정한다.
+  */
+  it('삭제가 성공하면 목록으로 이동하고, 그 이동을 막을 pending 을 더는 보고하지 않는다', async () => {
+    render(<DeptJobDetailClient deptTaskSn={7} />);
+    expect(mocks.unsavedGuard, '화면이 미저장 가드를 등록해야 한다').not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /삭제/ }));
+
+    await waitFor(() => expect(mocks.deleteDeptJob).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.routerPush).toHaveBeenCalledWith('/smart-toolkit/dept-job'));
+    // 핵심: **push 가 불린 그 순간** pending 이 서 있으면 Provider 가 이동을 취소한다.
+    expect(mocks.guardAtPush, 'push 시점의 guard 판정을 포착하지 못했다').not.toBeNull();
+    expect(mocks.guardAtPush!.pending, '완료 후 pending 이 서 있으면 목록 복귀가 막힌다').toBe(false);
+    expect(mocks.guardAtPush!.dirty).toBe(false);
+  });
+
+  it('삭제가 실패하면 이동하지 않고 화면을 유지한다', async () => {
+    mocks.deleteDeptJob.mockRejectedValueOnce(new Error('권한 없음'));
+    render(<DeptJobDetailClient deptTaskSn={7} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /삭제/ }));
+
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith(
+      '삭제에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.',
+    ));
+    expect(mocks.routerPush).not.toHaveBeenCalledWith('/smart-toolkit/dept-job');
   });
 });

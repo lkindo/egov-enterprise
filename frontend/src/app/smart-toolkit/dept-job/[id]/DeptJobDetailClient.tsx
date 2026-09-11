@@ -14,6 +14,8 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { DeptJobForm, DeptJobFormValues, PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
+import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 
 /**
  * 부서 업무 상세·수정 화면.
@@ -35,6 +37,38 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     const actionPendingRef = React.useRef(false);
     const [activeAction, setActiveAction] = React.useState<'update' | 'delete' | null>(null);
 
+    /*
+      [미저장 보호] 종전에는 이 화면에 가드가 없었다. 같은 DeptJobForm 을 쓰는 등록 화면
+      (DeptJobCreateClient)은 useUnsavedChanges 를 등록하는데 수정 경로만 비어 있어서,
+      수정 토글을 켜고 입력하다 '목록으로'·브레드크럼을 누르면 경고 없이 사라졌다.
+      보호는 화면 형태가 아니라 '편집 중인가'에 걸려야 한다.
+    */
+    const [editState, setEditState] = React.useState({ dirty: false, pending: false });
+    const exitEdit = React.useCallback(() => {
+        setEditing(false);
+        setEditState({ dirty: false, pending: false });
+    }, []);
+    /*
+      ⚠ 작업이 **성공으로 끝난 뒤의 이동**은 가드가 막으면 안 된다.
+
+      UnsavedChangesProvider 의 navigate() 는 pending 인 guard 가 하나라도 있으면
+      '저장 중입니다…' 토스트만 띄우고 이동을 **취소**한다. 그런데 삭제 성공 콜백이
+      router.push 를 부르는 시점에는 activeAction 이 아직 'delete' 다(해제는 handleDelete
+      의 finally 에서 일어난다). 그래서 가드를 처음 달았을 때 삭제 후 목록 복귀가
+      조용히 막혔다 — e2e 25 'UI 삭제가 실제 삭제로 이어져야 한다' 가 이것을 잡았다.
+
+      등록 화면(DeptJobCreateClient)이 쓰는 completedRef 패턴을 그대로 따른다.
+    */
+    const completedRef = React.useRef(false);
+    // 라우터 이탈용 가드(다른 화면으로 나갈 때).
+    useUnsavedChanges(() => ({
+        dirty: isEditing && editState.dirty && !completedRef.current,
+        pending: activeAction !== null && !completedRef.current,
+    }));
+    // 같은 화면에 머문 채 편집만 끄는 '취소'는 라우터 전이가 아니라 가드가 보지 못한다 —
+    // 같은 문구의 확인을 직접 건다.
+    const requestExitEdit = useDirtyCloseGuard(isEditing && editState.dirty, exitEdit);
+
     const { data: job, isLoading, isError } = useQuery({
         queryKey: ['dept-job', deptTaskSn],
         queryFn: () => deptJobUserService.getDeptJob(deptTaskSn),
@@ -45,7 +79,8 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
         mutationFn: (values: DeptJobFormValues) => deptJobUserService.updateDeptJob(deptTaskSn, values),
         onSuccess: () => {
             toast.success('업무가 수정되었습니다.');
-            setEditing(false);
+            // 저장했으므로 확인 없이 편집을 끄고 dirty 를 함께 내린다.
+            exitEdit();
             queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
             // 업무 워크플로우 탭의 목록도 갱신 대상이다.
             queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
@@ -62,6 +97,8 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
         onSuccess: () => {
             toast.success('업무가 삭제되었습니다.');
             queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
+            // 이 이동은 '작업 완료 후 복귀'다 — 미저장 가드가 막으면 화면이 삭제된 업무에 머문다.
+            completedRef.current = true;
             router.push('/smart-toolkit/dept-job');
         },
         onError: () => toast.error('삭제에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.'),
@@ -191,7 +228,8 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                             mode="edit"
                             initialData={job}
                             onSubmit={handleUpdate}
-                            onCancel={() => setEditing(false)}
+                            onCancel={requestExitEdit}
+                            onEditStateChange={setEditState}
                             isPending={activeAction === 'update'}
                         />
                     ) : (

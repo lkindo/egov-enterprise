@@ -131,10 +131,10 @@ public class DeptJobService extends BaseAbstractService {
         String creatorEsntlId = currentEsntlIdOrDeny();
         assertAttachmentIsAssignable(dto.getAtchFileSn());
 
-        // [담당자 기본값] 등록 폼에 담당자 지정 UI 가 아직 없다. 미지정 시 등록자를 담당자로 둔다
-        //   (null 로 두면 목록의 담당자 칸이 비고 검색조건 '담당자ID'가 무의미해진다).
-        //   축은 이 컨트롤러의 형제 메서드들과 동일하게 esntlId 다. 담당자 지정 UI 가 생기면
-        //   그때 사용자 선택 값을 그대로 받는다.
+        // [담당자 기본값] 등록 폼(DeptJobForm)에는 비동기 검색 담당자 피커가 있고 선택 값이
+        //   picId 로 그대로 온다. 다만 담당자는 선택 항목이라 미지정으로 올 수 있으므로,
+        //   그때는 등록자를 담당자로 둔다(null 로 두면 목록의 담당자 칸이 비고 검색조건
+        //   '담당자ID'가 무의미해진다). 축은 이 컨트롤러의 형제 메서드들과 동일하게 esntlId 다.
         String picId = (dto.getPicId() != null && !dto.getPicId().isBlank())
                 ? dto.getPicId()
                 : creatorEsntlId;
@@ -251,9 +251,9 @@ public class DeptJobService extends BaseAbstractService {
         // dept_task_box_sn·dept_id·pic_id 는 모두 물리 스키마상 nullable 이다. 그런데 종전에는
         // 세 곳 모두 required()(null 이면 즉시 예외)로 감싸고 있어, 업무함을 지정하지 않은 업무가
         // 하나라도 있으면 목록·상세 조회가 통째로 400 으로 떨어졌다.
-        // 등록 폼에는 업무함 선택 UI 가 없어 새로 만든 업무는 항상 이 상태가 된다 —
-        // 즉 "데이터가 생기는 순간 조회가 깨지는" 구조였다. (컨트롤러 매핑이 없어 등록 자체가
-        // 불가능했던 탓에 이 모순이 지금까지 드러나지 않았다.)
+        // 등록 폼에 업무함 선택 UI 가 생긴 지금도 업무함은 **선택 항목**이라 미지정 업무가
+        // 계속 만들어진다 — 즉 "데이터가 생기는 순간 조회가 깨지는" 구조였다.
+        // (종전에는 컨트롤러 매핑이 없어 등록 자체가 불가능했던 탓에 이 모순이 드러나지 않았다.)
         // required() 는 프로그래밍 오류를 잡는 가드이지, 비어 있을 수 있는 도메인 값에 쓸 것이 아니다.
         // 아래 ifPresent 들이 이미 부재를 정상 흐름으로 다루므로 id 가 없으면 조회를 건너뛴다.
         if (entity.getDeptTaskBoxSn() != null) {

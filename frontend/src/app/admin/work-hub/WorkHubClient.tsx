@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { FolderCog, Plus, FileText } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -13,30 +13,31 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 ;
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 ;
-import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { reportService, type WorkReport } from '@/services/business/user/ReportService';
 import { Calendar } from '@/components/ui/calendar';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { ScheduleCreateForm, type ScheduleFormValues } from '@/components/business/schedule/ScheduleCreateForm';
 import { ReportCreateForm, type ReportFormValues } from '@/components/business/report/ReportCreateForm';
-import { PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
+import { DeptJobListSection } from '@/components/business/deptJob/DeptJobListSection';
 // sonner 직접 호출은 문자열 정규화 페일세이프가 없어 객체가 들어오면 '[object Object]' 가 노출된다.
 import { useToast } from '@/app/components/ui/toast';
 import { getDeptScheduleMonthList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
-import { DeptJobBoxManageDialog } from '@/components/business/deptJob/DeptJobBoxManageDialog';
 
 interface WorkHubClientProps {
   defaultTab?: string;
   /** 서버가 Asia/Seoul 기준으로 계산한 yyyyMMdd. SSR과 첫 클라이언트 렌더가 같은 날짜를 쓴다. */
   initialYmd: string;
 }
+
+const TAB_LABEL = { job: '업무 관리', report: '업무 보고', calendar: '일정' } as const;
 
 /** 일정 날짜 컬럼(schdlBgngYmd/schdlEndYmd)은 varchar(8) 'yyyyMMdd' 다. 시각 정보는 스키마에 없다. */
 function parseYmd(ymd?: string | null): Date | null {
@@ -63,16 +64,15 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         (defaultTab || '').toLowerCase().includes('calendar') || (defaultTab || '').toLowerCase().includes('schedule') ? 'calendar' : 'job') as 'job' | 'report' | 'calendar';
 
   const [activeTab, setTabState] = useState<'job' | 'report' | 'calendar'>(initialTab);
+  // 조회어. KeywordFilter 는 '조회' 버튼·Enter 로만 제출하는 명시 제출 컴포넌트이므로
+  // 이 값은 타이핑이 아니라 onSearch 에서만 갱신된다 — 디바운스가 필요 없고 실제로도 없다.
+  // (종전 주석은 '300ms 디바운스한다'고 적었으나 그런 코드가 없었다.)
+  // ⚠ 업무 탭은 이 상태를 공유하지 않는다 — 그 목록은 core 소유 `DeptJobListSection` 으로
+  //   분리됐고 자기 조회 상태를 스스로 소유한다.
   const [searchKeyword, setSearchKeyword] = useState('');
-  // 타이핑 한 글자마다 서버 요청이 나가던 것을 300ms 디바운스한다.
-  // 입력 컨트롤에는 원본 상태를, queryKey/요청 파라미터에는 디바운스 값만 쓴다.
 
   // 목록 페이지(1-based). 종전에는 페이저가 없어 상위 N건만 보이고 나머지는 도달할 수 없었다.
-  const [jobPage, setJobPage] = useState(1);
   const [reportPage, setReportPage] = useState(1);
-  // 업무 목록의 소유 스코프. 기본은 '내 업무'(내가 담당자인 업무)이고, 토글로 부서 전체를 볼 수 있다.
-  // 서버도 scope 미지정을 'mine' 으로 해석하므로 기본값이 양쪽에서 일치한다.
-  const [jobScope, setJobScope] = useState<'mine' | 'dept'>('mine');
   /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
   const [pageUnit, setPageUnit] = useState(10);
   // 캘린더 탭의 표시 기준 월. 월 이동 시 해당 월의 일정을 다시 조회한다.
@@ -90,17 +90,41 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   // 업무 보고 등록 다이얼로그. 종전에는 이 탭의 '새 업무 생성' 버튼에 onClick 이 없었다.
   const [isReportModalOpen, setReportModalOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<WorkReport | null>(null);
+  // 두 폼의 미저장 여부. 닫기 가드가 이 값만 본다 — 저장 중 차단은 StandardModal 의
+  // closeDisabled 가 따로 소유하므로 여기서 pending 을 다시 판정하지 않는다.
+  const [scheduleDirty, setScheduleDirty] = useState(false);
+  const [reportDirty, setReportDirty] = useState(false);
+  // 형제 탭과 같은 모양 — 진행 중인 동작의 종류와 대상 행을 함께 들고
+  // 행별 aria-busy 를 정확히 찍는다.
   const reportActionPendingRef = React.useRef(false);
   const scheduleActionPendingRef = React.useRef(false);
   const [reportAction, setReportAction] = useState<{ type: 'save' | 'delete'; id?: number } | null>(null);
   const [scheduleAction, setScheduleAction] = useState<{ type: 'save' | 'delete'; id?: number } | null>(null);
   const confirm = useConfirm();
   const { user } = useAuth();
-  // [2026-09-06 DEC-OPS-037] 업무함 CRUD 는 서버가 @AdminOrSystem 이다. 표시 판정은 라우트 게이트와 같은 역할 집합
-  //   (DEC-OPS-023 ②)을 쓴다 — 표시일 뿐 인가가 아니며, 관리자가 아니면 버튼 자체를 그리지 않는다(죽은 버튼 금지, G10).
+  // [2026-09-06 DEC-OPS-037] 표시 판정은 라우트 게이트와 같은 역할 집합(DEC-OPS-023 ②)을 쓴다 —
+  //   표시일 뿐 인가가 아니며, 관리자가 아니면 버튼 자체를 그리지 않는다(죽은 버튼 금지, G10).
   const canManageBoxes = canPermission(user, 'DEPT_BOX_READ');
-  const [boxManageOpen, setBoxManageOpen] = useState(false);
   const { toast } = useToast();
+
+  // 모달 닫기. 성공 저장은 이 함수를 직접 부르고(이미 저장했으므로 물어볼 것이 없다),
+  // 사용자의 닫기 요청은 아래 가드를 거친다.
+  const closeScheduleModal = React.useCallback(() => {
+    setScheduleModalOpen(false);
+    setEditingSchedule(null);
+    setScheduleDirty(false);
+  }, []);
+  const closeReportModal = React.useCallback(() => {
+    setReportModalOpen(false);
+    setEditingReport(null);
+    setReportDirty(false);
+  }, []);
+  // 미저장 입력을 들고 닫으려 하면 확인을 받는다 — 전용 페이지(DeptJobCreateClient)가 라우터
+  // 가드로 받는 것과 같은 보호를, 같은 문구로 모달에도 준다.
+  const requestCloseSchedule = useDirtyCloseGuard(scheduleDirty, closeScheduleModal);
+  const requestCloseReport = useDirtyCloseGuard(reportDirty, closeReportModal);
+  const handleScheduleEditState = React.useCallback((s: { dirty: boolean }) => setScheduleDirty(s.dirty), []);
+  const handleReportEditState = React.useCallback((s: { dirty: boolean }) => setReportDirty(s.dirty), []);
 
   // URL 의 tab 쿼리와 탭 상태를 동기화한다.
   // activeTab 은 useState(initialTab) 이라 '최초 마운트' 때만 쿼리를 읽는다. 그래서 이미 이 화면에
@@ -112,49 +136,6 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       setTabState((prev) => (prev === q ? prev : q));
     }
   }, [searchParams]);
-
-  // 탭 ↔ 라우트 대응. 세 탭은 각자 고유 경로를 가지며, 그 경로가 그대로 사이드바 메뉴 항목이다.
-  //
-  // [왜 경로인가] 종전에는 setTab 이 '/admin/work-hub?tab=...' 을 **하드코딩**해 두 가지 문제가 있었다.
-  //  ① 스마트 툴킷 허브 쪽 경로(/smart-toolkit/*)로 들어와 탭을 누르면 URL 이 /admin/work-hub 로
-  //     튕겨나가 돌아올 UI 경로가 없었다(편도 진입점).
-  //  ② 세 메뉴가 같은 경로에 쿼리만 달라, 사이드바의 활성 표시가 쿼리 일치에 의존하는 취약한
-  //     구조였다. "다른 메뉴를 눌렀는데 엉뚱한 메뉴가 활성" 증상의 근본 원인이 이것이었다.
-  // 탭마다 실제 경로를 부여하면 두 문제가 함께 사라지고, 북마크·딥링크도 자연스러워진다.
-  const TAB_ROUTES: Record<'job' | 'report' | 'calendar', string> = {
-    job: '/smart-toolkit/dept-job',
-    report: '/smart-toolkit/work-report',
-    calendar: '/smart-toolkit/schedule',
-  };
-
-  const setTab = (tab: 'job' | 'report' | 'calendar') => {
-    setTabState(tab);
-    router.push(TAB_ROUTES[tab], { scroll: false });
-  };
-
-  // ⚠ 종전에는 getDeptJobBoxes(업무'함')를 조회했다. 그런데 이 탭의 '업무 등록' 버튼은
-  //   부서 업무(DeptJob)를 만든다 — 서로 다른 엔티티라, 등록한 업무가 목록에 영원히 나타나지 않았다.
-  //   탭 설명("부서별 업무 흐름")과 등록 동작이 모두 부서 업무를 가리키므로 목록을 그쪽에 맞춘다.
-  //   업무함은 부서 단위 구조물이고 CRUD 가 관리자 전용(@AdminOrSystem)이라 이 화면의 대상이 아니다.
-  const {
-    data: jobData,
-    isLoading: isJobLoading,
-    isError: isJobError,
-    error: jobError,
-    refetch: refetchJobs,
-  } = useQuery({
-    // jobScope 를 queryKey 에 포함해야 토글 시 재조회된다. 빠뜨리면 캐시된 이전 스코프 결과가
-    // 그대로 남아 "토글이 먹지 않는" 것처럼 보인다.
-    queryKey: ['work-jobs', searchKeyword, jobPage, jobScope, pageUnit],
-    // [2026-08-29] searchCondition 을 함께 보낸다. 서버(DeptJobService)는 조건이
-    //   '0'(부서업무명)·'1'(내용)·'2'(담당자ID) 일 때만 술어를 붙이고, 그 밖에는 **아무것도
-    //   거르지 않는다**. 종전에는 조건 없이 키워드만 보내 무엇을 입력해도 전체 목록이 그대로
-    //   나왔고, 화면은 그것을 검색 결과처럼 보여 줬다.
-    queryFn: () => deptJobUserService.getDeptJobList({ searchCondition: '0', searchWrd: searchKeyword, pageIndex: jobPage, pageUnit, scope: jobScope }),
-    enabled: activeTab === 'job'
-  });
-  const jobs = jobData?.list || [];
-  const jobTotalPages = jobData?.totalPage ?? 1;
 
   const {
     data: reportData,
@@ -206,6 +187,70 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     });
   }, [schedules, selectedDate]);
 
+  // 탭 ↔ 라우트 대응. 세 탭은 각자 고유 경로를 가지며, 그 경로가 그대로 사이드바 메뉴 항목이다.
+  //
+  // [왜 경로인가] 종전에는 setTab 이 '/admin/work-hub?tab=...' 을 **하드코딩**해 두 가지 문제가 있었다.
+  //  ① 스마트 툴킷 허브 쪽 경로(/smart-toolkit/*)로 들어와 탭을 누르면 URL 이 /admin/work-hub 로
+  //     튕겨나가 돌아올 UI 경로가 없었다(편도 진입점).
+  //  ② 세 메뉴가 같은 경로에 쿼리만 달라, 사이드바의 활성 표시가 쿼리 일치에 의존하는 취약한
+  //     구조였다. "다른 메뉴를 눌렀는데 엉뚱한 메뉴가 활성" 증상의 근본 원인이 이것이었다.
+  // 탭마다 실제 경로를 부여하면 두 문제가 함께 사라지고, 북마크·딥링크도 자연스러워진다.
+  const TAB_ROUTES: Record<'job' | 'report' | 'calendar', string> = {
+    job: '/smart-toolkit/dept-job',
+    report: '/smart-toolkit/work-report',
+    calendar: '/smart-toolkit/schedule',
+  };
+
+  const setTab = (tab: 'job' | 'report' | 'calendar') => {
+    setTabState(tab);
+    router.push(TAB_ROUTES[tab], { scroll: false });
+  };
+
+  const tabStrip = (
+    <div role="tablist" aria-label="워크허브 영역 선택" className="flex rounded-md border border-border p-0.5">
+      {(['job', 'report', 'calendar'] as const).map((tab) => (
+        <button
+          key={tab}
+          type="button"
+          role="tab"
+          id={`work-hub-tab-${tab}`}
+          aria-selected={activeTab === tab}
+          aria-controls="work-hub-tabpanel"
+          onClick={() => setTab(tab)}
+          className={cn(
+            'flex h-[var(--control-h-sm)] items-center rounded px-4 text-xs font-bold transition-colors',
+            activeTab === tab ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {TAB_LABEL[tab]}
+        </button>
+      ))}
+    </div>
+  );
+
+  /*
+    업무 탭은 core 소유 섹션이 통째로 소유한다.
+
+    [왜 분리인가] 부서 업무 테이블(tb_dept_task_info·tb_dept_job_bx)은 core 소유인데 이 파일은
+    demo pack 소유다(`src/app/admin/work-hub`). 재사용 base 생성기의 frontend projection 이
+    removePaths 를 전이 cascade 로 제거하므로, `/smart-toolkit/dept-job` 목록 라우트가 이 파일을
+    import 한다는 이유만으로 core·collaboration 프로필에서 함께 빠졌다. 목록 UI 를
+    `components/business/deptJob`(어느 pack 의 removePaths 에도 없다)로 옮기고, 이 허브는
+    탭 스트립만 슬롯으로 넘긴다.
+
+    ⚠ 모든 훅 호출 **뒤에** 분기한다 — 훅 개수·순서가 탭에 따라 달라지면 안 된다.
+    /admin/work-hub 의 동작은 종전과 같다(3탭 + 업무 목록).
+  */
+  if (activeTab === 'job') {
+    return (
+      <DeptJobListSection
+        leadingActions={tabStrip}
+        breadcrumbItems={[{ label: '나의 업무' }, { label: TAB_LABEL.job }]}
+        filterStateKey="work-hub"
+      />
+    );
+  }
+
   /** 업무 보고 등록. 작성자(userId)는 서버가 인증 주체로 채우므로 보내지 않는다. */
   const handleSubmitReport = async (values: ReportFormValues) => {
     if (reportActionPendingRef.current) return;
@@ -219,8 +264,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         await reportService.createReport(values);
         toast('업무 보고가 등록되었습니다.', 'success');
       }
-      setReportModalOpen(false);
-      setEditingReport(null);
+      // 저장에 성공했으므로 가드를 거치지 않고 곧장 닫는다(물어볼 미저장 변경이 없다).
+      closeReportModal();
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } catch (error) {
       if (extractFieldErrors(error)) throw error;
@@ -271,8 +316,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         await createDeptSchedule(values as Parameters<typeof createDeptSchedule>[0]);
         toast('일정이 등록되었습니다.', 'success');
       }
-      setScheduleModalOpen(false);
-      setEditingSchedule(null);
+      // 저장에 성공했으므로 가드를 거치지 않고 곧장 닫는다(물어볼 미저장 변경이 없다).
+      closeScheduleModal();
       // 저장 오류는 ScheduleCreateForm이 필드 귀속/일반 안내를 단독 처리한다.
       // 성공한 경우에만 현재 보고 있는 달의 일정을 다시 불러온다.
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
@@ -360,55 +405,6 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     },
   ];
 
-  const jobColumns: Column<any>[] = [
-    {
-      header: '번호',
-      accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
-      className: 'w-20 text-center'
-    },
-    {
-      header: '업무명',
-      accessor: (item) => (
-        <Link href={`/smart-toolkit/dept-job/${item.deptTaskSn}`} className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.deptTaskNm}</span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-            {item.deptTaskBoxNm || '업무함 미지정'}
-          </span>
-        </Link>
-      )
-    },
-    {
-      header: '담당자',
-      accessor: (item) => <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.picNm || '미지정'}</span>,
-      className: 'w-32'
-    },
-    {
-      header: '우선순위',
-      accessor: (item) => (
-        <span className="text-xs font-bold tracking-tight">{PRIORITY_LABEL[item.prrtyRnk ?? ''] ?? '-'}</span>
-      ),
-      className: 'w-28'
-    },
-    {
-      // 종전에는 onClick 이 없는 死버튼이었다. 상세 화면이 수정·삭제를 모두 제공하므로 그리로 보낸다.
-      header: '관리',
-      accessor: (item) => (
-        <div className="flex justify-end pr-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9 font-bold text-[11px]"
-            aria-label={`${item.deptTaskNm || '업무'} 상세 보기`}
-            onClick={() => router.push(`/smart-toolkit/dept-job/${item.deptTaskSn}`)}
-          >
-            상세
-          </Button>
-        </div>
-      ),
-      className: 'w-24 text-right'
-    }
-  ];
-
   const reportColumns: Column<WorkReport>[] = [
     {
       header: '번호',
@@ -472,9 +468,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     }
   ];
 
-  const TAB_LABEL = { job: '업무 관리', report: '업무 보고', calendar: '일정' } as const;
-  const activeTotal = activeTab === 'job' ? jobData?.total : activeTab === 'report' ? reportData?.total : schedules.length;
-  const activeError = activeTab === 'job' ? isJobError : activeTab === 'report' ? isReportError : isScheduleError;
+  const activeTotal = activeTab === 'report' ? reportData?.total : schedules.length;
+  const activeError = activeTab === 'report' ? isReportError : isScheduleError;
 
   return (
     <>
@@ -483,9 +478,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       description={
         activeTab === 'calendar'
           ? '월간 일정을 조회합니다. 날짜를 선택하면 그 날짜의 일정만 표시합니다.'
-          : activeTab === 'job'
-            ? '부서 업무의 담당자·우선순위·업무함을 조회합니다.'
-            : '내가 작성한 업무 보고를 조회합니다. 관리자 권한이면 전체 보고가 조회됩니다.'
+          : '내가 작성한 업무 보고를 조회합니다. 관리자 권한이면 전체 보고가 조회됩니다.'
       }
       breadcrumbItems={[{ label: '나의 업무' }, { label: TAB_LABEL[activeTab] }]}
       filterStateKey="work-hub"
@@ -493,41 +486,9 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       totalCount={activeError ? undefined : activeTotal}
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <div role="tablist" aria-label="워크허브 영역 선택" className="flex rounded-md border border-border p-0.5">
-            {(['job', 'report', 'calendar'] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                id={`work-hub-tab-${tab}`}
-                aria-selected={activeTab === tab}
-                aria-controls="work-hub-tabpanel"
-                onClick={() => setTab(tab)}
-                className={cn(
-                  'flex h-[var(--control-h-sm)] items-center rounded px-4 text-xs font-bold transition-colors',
-                  activeTab === tab ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {TAB_LABEL[tab]}
-              </button>
-            ))}
-          </div>
-          {/* 탭마다 '등록'의 대상이 다르다. 일정·보고는 다이얼로그로 받고,
-              업무는 전용 등록 화면이 이미 있어 그리로 보낸다. */}
-          {activeTab === 'job' ? (
-            <>
-              {canManageBoxes && (
-                <Button size="sm" variant="outline" onClick={() => setBoxManageOpen(true)}>
-                  <FolderCog size={16} aria-hidden="true" /> 업무함 관리
-                </Button>
-              )}
-              <Button asChild size="sm">
-                <Link href="/smart-toolkit/dept-job/create">
-                  <Plus size={16} aria-hidden="true" /> 업무 등록
-                </Link>
-              </Button>
-            </>
-          ) : activeTab === 'report' ? (
+          {tabStrip}
+          {/* 탭마다 '등록'의 대상이 다르다. 일정·보고는 다이얼로그로 받는다. */}
+          {activeTab === 'report' ? (
             <>
               {/* [게이트] '/admin/operation' 은 USER_ACCESSIBLE_ADMIN_PATHS 에 없어 일반 사용자는
                   라우트에서 홈으로 튕긴다(`/?auth_error=unauthorized`). 라우트 게이트와 같은 역할
@@ -565,40 +526,14 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           <KeywordFilter
             /*
               [2026-08-29] 라벨을 실제 검색 축으로 고친다.
-              - 업무: 서버가 붙일 수 있는 축은 업무명·내용·담당자ID 셋인데 담당자 축은 이름이
-                아니라 picId(계정 식별자)다. 이름으로 찾으리라 기대하면 계속 0건이 나오므로
-                약속하지 않는다. 지금 보내는 축은 업무명이다.
-              - 업무 보고: WorkReportRepositoryImpl 의 술어는 `rptTtl.contains(searchWrd)`
-                하나뿐이라 작성자로는 좁혀지지 않는다.
+              업무 보고: WorkReportRepositoryImpl 의 술어는 `rptTtl.contains(searchWrd)`
+              하나뿐이라 작성자로는 좁혀지지 않는다.
             */
-            label={activeTab === 'job' ? '업무명' : '보고 제목'}
+            label="보고 제목"
             placeholder="검색어를 입력하십시오..."
             value={searchKeyword}
-            onSearch={(keyword) => { setSearchKeyword(keyword); setJobPage(1); setReportPage(1); }}
-          >
-            {/* 업무 탭에만 소유 범위 조건을 둔다. 보고 탭은 별도 소유 모델이라 대상이 아니다. */}
-            {activeTab === 'job' && (
-              <div className="space-y-1">
-                <span id="job-scope-label" className="block text-[length:var(--font-size-body)] font-medium">조회 범위</span>
-                <div role="group" aria-labelledby="job-scope-label" className="flex rounded-md border border-border p-0.5">
-                  {(['mine', 'dept'] as const).map((scope) => (
-                    <button
-                      key={scope}
-                      type="button"
-                      aria-pressed={jobScope === scope}
-                      onClick={() => { setJobScope(scope); setJobPage(1); }}
-                      className={cn(
-                        'flex h-[var(--control-h-sm)] items-center rounded px-4 text-xs font-bold transition-colors',
-                        jobScope === scope ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      {scope === 'mine' ? '내 업무' : '부서 전체'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </KeywordFilter>
+            onSearch={(keyword) => { setSearchKeyword(keyword); setReportPage(1); }}
+          />
         )
       }
       toolbarActions={
@@ -606,9 +541,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
           {activeTab === 'calendar'
             ? `${format(currentDate, 'yyyy년 M월', { locale: ko })} 기준`
-            : activeTab === 'job'
-              ? (jobScope === 'mine' ? '내가 담당인 업무' : '부서 전체 업무')
-              : '내가 작성한 보고(관리자는 전체)'}
+            : '내가 작성한 보고(관리자는 전체)'}
         </span>
       }
     >
@@ -664,29 +597,6 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
               />
             </div>
           </div>
-        ) : activeTab === 'job' ? (
-          <StandardDataTable
-            columns={jobColumns}
-            data={jobs}
-            loading={isJobLoading}
-            // 목록이 '내 업무'로 좁혀진 상태의 빈 화면은 데이터 유실처럼 보이기 쉽다.
-            // 왜 비었는지와 다음 행동('부서 전체' 선택)을 문구로 알려 준다.
-            emptyMessage={
-              jobScope === 'mine'
-                ? '내가 담당자인 업무가 없습니다. 부서 전체를 보려면 조회 범위에서 \'부서 전체\'를 선택하십시오.'
-                : emptyResultMessage(searchKeyword, '등록된 업무가 없습니다.')
-            }
-            error={isJobError ? (jobError instanceof Error ? jobError : new Error('업무 목록을 불러오지 못했습니다.')) : null}
-            onRetry={() => void refetchJobs()}
-            pagination={{
-              currentPage: jobPage,
-              totalPages: Math.max(1, jobTotalPages),
-              onPageChange: setJobPage,
-              // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-              pageSize: pageUnit,
-              onPageSizeChange: (size) => { setPageUnit(size); setJobPage(1); },
-            }}
-          />
         ) : (
           <StandardDataTable
             columns={reportColumns}
@@ -711,7 +621,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       {/* 일정 등록 다이얼로그 — 캘린더에서 선택한 날짜가 기본값이 된다. */}
       <StandardModal
         isOpen={isScheduleModalOpen}
-        onClose={() => { setScheduleModalOpen(false); setEditingSchedule(null); }}
+        onClose={requestCloseSchedule}
         closeDisabled={scheduleAction?.type === 'save'}
         title={editingSchedule ? '일정 수정' : '일정 등록'}
         maxWidth="lg"
@@ -723,7 +633,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           initialData={editingSchedule ?? undefined}
           defaultYmd={format(selectedDate ?? currentDate, 'yyyyMMdd')}
           onSubmit={handleSubmitSchedule}
-          onCancel={() => { setScheduleModalOpen(false); setEditingSchedule(null); }}
+          onCancel={requestCloseSchedule}
+          onEditStateChange={handleScheduleEditState}
           isPending={scheduleAction?.type === 'save'}
         />
       </StandardModal>
@@ -731,7 +642,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       {/* 업무 보고 등록 다이얼로그 */}
       <StandardModal
         isOpen={isReportModalOpen}
-        onClose={() => { setReportModalOpen(false); setEditingReport(null); }}
+        onClose={requestCloseReport}
         closeDisabled={reportAction?.type === 'save'}
         title={editingReport ? '업무 보고 수정' : '업무 보고 등록'}
         maxWidth="lg"
@@ -741,16 +652,20 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           key={editingReport?.rptpSn ?? 'new'}
           mode={editingReport ? 'edit' : 'create'}
           initialData={editingReport ?? undefined}
-          defaultYmd={format(currentDate, 'yyyyMMdd')}
+          /*
+            ⚠ 종전에는 캘린더 탭이 소유한 currentDate 를 읽었다. 그 값은 onMonthChange 에서
+            react-day-picker 가 주는 startOfMonth 로 갱신되므로, 캘린더에서 다른 달로 넘긴 뒤
+            보고 탭에서 등록하면 기본 보고 일자가 **오늘이 아니라 그 달 1일**이 됐다.
+            세 라우트가 한 컴포넌트의 state 를 공유해 생긴 오염이다 — 보고의 기본값은
+            캘린더 상태와 무관한 '오늘'(서버 렌더 시점 initialYmd)이어야 한다.
+          */
+          defaultYmd={initialYmd}
           onSubmit={handleSubmitReport}
-          onCancel={() => { setReportModalOpen(false); setEditingReport(null); }}
+          onCancel={requestCloseReport}
+          onEditStateChange={handleReportEditState}
           isPending={reportAction?.type === 'save'}
         />
       </StandardModal>
-      {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
-      {canManageBoxes && boxManageOpen && (
-        <DeptJobBoxManageDialog isOpen onClose={() => setBoxManageOpen(false)} />
-      )}
     </>
   );
 }

@@ -24,6 +24,9 @@ vi.mock('sonner', () => ({
   toast: { error: harness.toastError, success: vi.fn() },
 }));
 
+import { parseGeneratedOperationRequest } from '@/lib/api/generated-operation';
+import { updateScheduleOperation } from '@/types/generated-operations';
+
 import ScheduleDeptClient from '../ScheduleDeptClient';
 
 describe('ScheduleDeptClient 조회 실패 정직성', () => {
@@ -312,5 +315,113 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     expect(title).toHaveValue('보존할 신규 일정');
     expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent('이미 사용 중인 일정명입니다.');
     expect(cancel).toBeEnabled();
+  });
+});
+
+/*
+  수정 저장 본문 계약.
+
+  ⚠ 이 결함이 세 겹(타입·zod·생성 클라이언트)을 통과해 운영에 남은 경로가 정확히 이 파일이었다.
+  종전 `handleEdit` 은 목록 행을 통째로 `setFormData(schedule)` 했고, 행에는 서버가 소유하는
+  schdlSn·schdlPicId·frstRgtrId·crtDt·lastMdfrId·mdfcnDt·schdlDeptId·schdlIpAddr 가 실려 있다.
+  이 8개는 전부 `updateScheduleOperation.requestForbiddenPaths` 인데,
+  폼 검증 스키마가 `ScheduleDtoSchema.extend(...)` 라 그 키들이 **선언된 키**여서
+  zod 가 걷어내지 않고 그대로 통과시켰고, 결국 생성 API 클라이언트의
+  `assertForbiddenPathsAbsent` 가 **HTTP 요청을 보내기 전에** throw 했다.
+  즉 부서 일정 수정은 구조적으로 항상 '저장 중 오류가 발생했습니다.' 로 죽어 있었다.
+
+  그런데 기존 단위 테스트는 `updateDeptSchedule` 을 `vi.fn()` 으로 모킹해
+  그 마지막 방어선을 **건너뛰었다** — 그래서 화면이 죽은 채로 green 이었다.
+  같은 모킹을 유지하되(네트워크를 태울 수는 없다) **전달된 본문의 키를 검사**해 그 사각을 닫는다.
+  금지 키는 테스트에 베끼지 않고 생성 계약에서 파생시킨다 — 계약이 바뀌면 이 계약도 따라가야 한다.
+*/
+/** 서버 `GET /schedules/dept` 가 실제로 내려주는 모양의 행(응답 전용 필드 포함). */
+const SERVER_SHAPED_ROW = {
+  schdlSn: 42,
+  schdlSeCd: '1',
+  schdlNm: '부서 정기 회의',
+  schdlCn: '주간 업무 보고',
+  schdlBgngYmd: '20260825',
+  schdlEndYmd: '20260826',
+  schdlPlcNm: '회의실 A',
+  // 폼이 묻지 않지만 서버 Schedule.updateAll 이 10필드를 통째로 덮어쓰므로 왕복이 필요한 코드 3종.
+  schdlKndCd: '02',
+  schdlImprtCd: 'B',
+  reptSeCd: '1',
+  // 아래 8개가 updateScheduleOperation.requestForbiddenPaths — 서버 소유이며 요청에 실리면 안 된다.
+  schdlPicId: 'picuser01',
+  schdlDeptId: 'DEPT001',
+  schdlIpAddr: '10.0.0.7',
+  frstRgtrId: 'writer01',
+  crtDt: '2026-08-20T09:30:00Z',
+  lastMdfrId: 'editor01',
+  mdfcnDt: '2026-08-21T10:00:00Z',
+};
+
+/** 생성 계약이 선언한 금지 경로의 최상위 키. 하드코딩하면 계약 변경을 놓친다. */
+const FORBIDDEN_REQUEST_KEYS = updateScheduleOperation.requestForbiddenPaths.map((path) => path[0]);
+
+describe('ScheduleDeptClient 수정 본문 계약', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    harness.getDeptScheduleList.mockResolvedValue({ list: [SERVER_SHAPED_ROW] });
+    harness.createDeptSchedule.mockResolvedValue(undefined);
+    harness.updateDeptSchedule.mockResolvedValue(undefined);
+    harness.deleteDeptSchedule.mockResolvedValue(undefined);
+    harness.confirm.mockResolvedValue(true);
+  });
+
+  /** 목록 행의 수정 액션으로 폼을 열고 일정명만 고쳐 저장한 뒤, 전달된 본문을 돌려준다. */
+  const editAndSave = async (): Promise<[number, Record<string, unknown>]> => {
+    render(<ScheduleDeptClient />);
+    await screen.findByText('부서 정기 회의');
+    await userEvent.click(screen.getByRole('button', { name: '부서 정기 회의 수정' }));
+    fireEvent.change(screen.getByRole('textbox', { name: /일정명/ }), {
+      target: { value: '부서 정기 회의(수정)' },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(harness.updateDeptSchedule).toHaveBeenCalledTimes(1));
+    return harness.updateDeptSchedule.mock.calls[0] as [number, Record<string, unknown>];
+  };
+
+  it('목록 행으로 연 수정 폼의 저장 본문에 생성 계약이 금지한 서버 소유 필드가 하나도 없다', async () => {
+    const [schdlSn, body] = await editAndSave();
+
+    expect(schdlSn).toBe(42);
+    // 파생이 비어 버리면(계약 오독·생성기 변경) 이 테스트가 조용히 무의미해진다.
+    expect(FORBIDDEN_REQUEST_KEYS.length).toBeGreaterThan(0);
+    // 픽스처가 금지 키를 실제로 품고 있어야 "안 실렸다"가 증거가 된다.
+    // 생성 계약에 금지 키가 추가되면 여기가 먼저 red 가 되어 픽스처 갱신을 강제한다.
+    for (const key of FORBIDDEN_REQUEST_KEYS) {
+      expect(Object.hasOwn(SERVER_SHAPED_ROW, key)).toBe(true);
+    }
+
+    expect(Object.keys(body).filter((key) => FORBIDDEN_REQUEST_KEYS.includes(key))).toEqual([]);
+    // 모킹이 건너뛴 진짜 방어선을 직접 태운다 — 실제 클라이언트가 요청 전에 걸던 검사다.
+    expect(() => parseGeneratedOperationRequest(updateScheduleOperation, body)).not.toThrow();
+  });
+
+  it('폼이 묻지 않는 코드 3종을 기존 값 그대로 왕복시켜 전체 치환에서 지워지지 않게 한다', async () => {
+    const [, body] = await editAndSave();
+
+    // 서버 PUT 은 부분 수정이 아니다(Schedule.updateAll 이 10필드를 덮어쓴다).
+    // 폼이 묻지 않는 이 3개를 빼고 보내면 null 로 지워진다 — 금지 키 제거를
+    // '폼 필드만 남기기'로 구현하면 정확히 그 회귀가 난다.
+    expect(body).toMatchObject({
+      schdlKndCd: '02',
+      schdlImprtCd: 'B',
+      reptSeCd: '1',
+    });
+    // 편집한 값과 기존 값이 함께 실려야 한다(왕복이 편집을 덮어쓰면 안 된다).
+    expect(body).toMatchObject({
+      schdlNm: '부서 정기 회의(수정)',
+      schdlCn: '주간 업무 보고',
+      schdlBgngYmd: '20260825',
+      schdlEndYmd: '20260826',
+      schdlPlcNm: '회의실 A',
+      schdlSeCd: '1',
+    });
   });
 });
