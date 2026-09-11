@@ -39,6 +39,13 @@ const SURVEY_TABS = ['manage', 'questions', 'templates', 'stats'] as const;
 type SurveyTab = (typeof SURVEY_TABS)[number];
 
 const DEFAULT_TAB: SurveyTab = 'manage';
+const TAB_TITLE: Record<SurveyTab, string> = { manage: '여론조사 관리', questions: '설문지·문항 관리', templates: '설문 템플릿 관리', stats: '여론조사 통계' };
+const TAB_DESCRIPTION: Record<SurveyTab, string> = {
+ manage: '여론조사를 조회하고 관리합니다. 만족도 조사 등록은 네 단계 만족도 응답을 사용하며, 문항을 직접 구성하려면 설문지·문항 관리를 이용하세요.',
+ questions: '템플릿을 선택해 설문지를 만든 뒤 문항과 선택 항목을 구성합니다.',
+ templates: '문항형 설문지에서 사용할 템플릿을 관리합니다.',
+ stats: '여론조사 응답 수와 기간별 상태를 확인합니다. 문항형 설문 결과는 아래 진행 순서의 결과 확인에서 조회하세요.',
+};
 
 /**
  * 알 수 없는 tab 값(오타·구메뉴·감춘 탭)이 와도 빈 화면 대신 기본 탭을 렌더한다.
@@ -111,52 +118,70 @@ export function SurveyHubClient() {
  initial="hidden"
  animate="visible"
  variants={hubContainerVariants}
- className="space-y-12 pb-24"
+ className="space-y-6 pb-8"
  >
- {/* 1. Dynamic Hub Header */}
- <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 px-2">
- <div className="space-y-3">
- <div className="flex items-center gap-3">
- <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
- <span className="text-xs font-bold tracking-tight text-rose-500 leading-none px-3 py-1 bg-rose-500/5 rounded-lg border border-rose-500/10">설문 매트릭스</span>
+ <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+   <div><h1 className="text-2xl font-bold tracking-tight">{TAB_TITLE[currentTab]}</h1><p className="mt-2 text-sm text-muted-foreground">{TAB_DESCRIPTION[currentTab]}</p></div>
+   {currentTab === 'manage' && <Button onClick={() => router.push('/admin/survey/manage/create')} className="shrink-0 gap-2"><Plus size={16} /> 만족도 조사 등록</Button>}
  </div>
- {/* 페이지 h1 은 hub/page.tsx 가 이미 렌더한다 — 여기서는 h2 로 둬야 문서 개요가 어긋나지 않는다. */}
- <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tighter leading-none">
- 설문 <span className="text-rose-500">인사이트</span>
- </h2>
- <p className="text-sm font-bold text-muted-foreground max-w-lg leading-relaxed tracking-tight">
- 전사 의견 수렴 결과를 수집·분석하는 통합 설문 관리 화면입니다.
- </p>
+ <nav aria-label="문항형 설문 진행 순서" className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+   <span className="font-medium">문항형 설문:</span>
+   <Link href="/admin/survey/hub?tab=templates" className="text-primary underline">1. 템플릿 준비</Link><span aria-hidden="true">→</span>
+   <Link href="/admin/survey/hub?tab=questions" className="text-primary underline">2. 설문지·문항 구성</Link><span aria-hidden="true">→</span>
+   <Link href="/survey" className="text-primary underline">3. 설문 참여</Link><span aria-hidden="true">→</span>
+   <Link href="/survey/stats" className="text-primary underline">4. 결과 확인</Link>
+ </nav>
+ {/* 3. Navigation Matrix */}
+ <motion.div variants={hubItemVariants} className="px-2">
+ <Tabs value={currentTab} onValueChange={onTabChange} className="space-y-4">
+ <div className="hub-glass-premium p-2 rounded-lg border-2 border-border/50 shadow-xl inline-flex w-full md:w-auto overflow-x-auto scrollbar-hide">
+ <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
+ <TabTrigger value="manage" icon={LayoutGrid} label="여론조사 관리" />
+ <TabTrigger value="questions" icon={ListChecks} label="설문지·문항" />
+ <TabTrigger value="templates" icon={LayoutTemplate} label="템플릿" />
+ <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
+ </TabsList>
  </div>
- <div className="flex items-center gap-4">
- <div className="hidden sm:flex flex-col items-end mr-4">
- {/*
-     [2026-08-28] 라벨을 값의 출처에 맞춘다. 이 수치는 surveyAdminService.getSurveyList
-     (tb_srvy)에서 오고, 아래 '설문 관리' 탭이 보여 주는 표는 getPollList(tb_onln_poll_manage)라
-     **다른 엔티티**다. 둘 다 '설문'이라고 부르면 "등록된 설문 3건" 아래에 12행이 보여도
-     관리자가 맞출 방법이 없다. 문항·템플릿·응답자 탭이 다루는 것이 이 '설문지'다.
-   */}
- <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">등록된 설문지</span>
- {isSurveyLoading ? (
-   <Skeleton className="h-8 w-20 mt-1" />
- ) : (
-   // 종전 '{n} / 50' 의 분모 50 은 근거 없는 고정값이라 제거했다(P1-5).
-   <span className="text-xl font-bold text-foreground tabular-nums mt-1">
-     {totalSurveys === null ? '—' : `${totalSurveys.toLocaleString()}건`}
-   </span>
- )}
- </div>
- <Button
- onClick={() => router.push('/admin/survey/manage/create')}
- className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
+ {/* [2026-09-06 DEC-OPS-041] 온라인 투표(항목 하나 고르기)는 문항형 설문조사와 다른 제품이라 허브 탭이 아니라
+     별도 화면으로 안내한다(감사 D12-02 — 종전에는 허브 어디에도 투표로 가는 길이 없었다). */}
+ <Link
+   href="/admin/survey/polls"
+   className="inline-flex items-center gap-2 px-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
  >
- {/* 이 버튼의 목적지(/admin/survey/manage/create)는 h1 이 '만족도 설문 등록'이고
-     tb_onln_poll_manage 행을 만든다 — 저장소가 이미 쓰는 말인 '여론조사'로 부른다. */}
- <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> 신규 여론조사 등록
- </Button>
- </div>
- </motion.div>
+   <Vote size={16} aria-hidden="true" /> 온라인 투표 관리로 이동
+ </Link>
 
+ <div className="mt-4">
+ <AnimatePresence mode="wait">
+ <motion.div
+ key={currentTab}
+ initial={{ opacity: 0, y: 20 }}
+ animate={{ opacity: 1, y: 0 }}
+ exit={{ opacity: 0, y: -20 }}
+ transition={{ duration: 0.4, ease: "circOut" }}
+ >
+ <TabsContent value="manage" className="m-0 focus-visible:outline-none">
+ <SurveyManageClient embedded />
+ </TabsContent>
+
+ <TabsContent value="questions" className="m-0 focus-visible:outline-none">
+ <SurveyQuestionsPanel />
+ </TabsContent>
+
+ <TabsContent value="templates" className="m-0 focus-visible:outline-none">
+ <SurveyTemplatesPanel />
+ </TabsContent>
+
+
+ <TabsContent value="stats" className="m-0 focus-visible:outline-none">
+ <SurveyStatsClient embedded />
+ </TabsContent>
+ </motion.div>
+ </AnimatePresence>
+ </div>
+ </Tabs>
+ </motion.div>
+ <details className="rounded-lg border p-4 space-y-4"><summary className="cursor-pointer font-medium">설문지 및 서비스 이용 현황{hasError ? ' — 일부 조회 실패' : ''}</summary>
  {/* 2. 지표 — 조회 실패 시 0 을 보여주지 않고 실패 사실을 드러낸다(P1-1) */}
  {hasError && (
    <motion.div
@@ -202,56 +227,8 @@ export function SurveyHubClient() {
  )}
  </motion.div>
 
- {/* 3. Navigation Matrix */}
- <motion.div variants={hubItemVariants} className="px-2">
- <Tabs value={currentTab} onValueChange={onTabChange} className="space-y-10">
- <div className="hub-glass-premium p-2 rounded-lg border-2 border-border/50 shadow-xl inline-flex w-full md:w-auto overflow-x-auto scrollbar-hide">
- <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
- <TabTrigger value="manage" icon={LayoutGrid} label="여론조사 관리" />
- <TabTrigger value="questions" icon={ListChecks} label="문항 관리" />
- <TabTrigger value="templates" icon={LayoutTemplate} label="템플릿" />
- <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
- </TabsList>
- </div>
- {/* [2026-09-06 DEC-OPS-041] 온라인 투표(항목 하나 고르기)는 문항형 설문조사와 다른 제품이라 허브 탭이 아니라
-     별도 화면으로 안내한다(감사 D12-02 — 종전에는 허브 어디에도 투표로 가는 길이 없었다). */}
- <Link
-   href="/admin/survey/polls"
-   className="inline-flex items-center gap-2 px-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
- >
-   <Vote size={16} aria-hidden="true" /> 온라인 투표 관리로 이동
- </Link>
 
- <div className="mt-10">
- <AnimatePresence mode="wait">
- <motion.div
- key={currentTab}
- initial={{ opacity: 0, y: 20 }}
- animate={{ opacity: 1, y: 0 }}
- exit={{ opacity: 0, y: -20 }}
- transition={{ duration: 0.4, ease: "circOut" }}
- >
- <TabsContent value="manage" className="m-0 focus-visible:outline-none">
- <SurveyManageClient embedded />
- </TabsContent>
-
- <TabsContent value="questions" className="m-0 focus-visible:outline-none">
- <SurveyQuestionsPanel />
- </TabsContent>
-
- <TabsContent value="templates" className="m-0 focus-visible:outline-none">
- <SurveyTemplatesPanel />
- </TabsContent>
-
-
- <TabsContent value="stats" className="m-0 focus-visible:outline-none">
- <SurveyStatsClient embedded />
- </TabsContent>
- </motion.div>
- </AnimatePresence>
- </div>
- </Tabs>
- </motion.div>
+ </details>
  </motion.div>
  );
 }
@@ -260,7 +237,7 @@ function TabTrigger({ value, icon: Icon, label }: { value: string, icon: React.E
  return (
  <TabsTrigger
  value={value}
- className="data-[state=active]:bg-surface-inverse data-[state=active]:text-surface-inverse-foreground data-[state=active]:shadow-2xl rounded-lg h-11 px-8 font-bold text-xs tracking-tight gap-3 transition-all border border-transparent data-[state=active]:border-surface-inverse-border hover:bg-muted"
+ className="data-[state=active]:bg-surface-inverse data-[state=active]:text-surface-inverse-foreground data-[state=active]:shadow-2xl rounded-lg h-11 px-4 font-bold text-xs tracking-tight gap-3 transition-all border border-transparent data-[state=active]:border-surface-inverse-border hover:bg-muted"
  >
  <Icon size={16} /> {label}
  </TabsTrigger>

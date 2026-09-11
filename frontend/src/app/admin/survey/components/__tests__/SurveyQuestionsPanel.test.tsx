@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import SurveyQuestionsPanel from '../SurveyQuestionsPanel';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
+import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
+import { ToastProvider } from '@/app/components/ui/toast';
 import {
   surveyItemCreateSchema,
   surveyQuestionCreateSchema,
@@ -35,7 +37,7 @@ function renderPanel() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <SurveyQuestionsPanel />
+      <ToastProvider><UnsavedChangesProvider><SurveyQuestionsPanel /></UnsavedChangesProvider></ToastProvider>
     </QueryClientProvider>
   );
 }
@@ -637,6 +639,24 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
 
     await waitFor(() => expect(screen.queryByLabelText('설문지 제목 수정')).toBeNull());
     expect(mocked.updateSurvey).not.toHaveBeenCalled();
+  });
+
+  it('다른 문항의 항목 추가로 이동할 때 취소하면 입력 중인 항목을 유지한다', async () => {
+    mocked.getQuestions.mockResolvedValue([QUESTION_WITH_ITEM, { ...QUESTION_WITH_ITEM, srvyQstnSn: 302, qstnCn: '두 번째 문항', items: [] }] as never);
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+    await user.click((await screen.findAllByRole('button', { name: /항목 추가/ }))[0]);
+    fireEvent.change(screen.getByLabelText('새 항목 내용'), { target: { value: '보존할 항목' } });
+    confirmMock.mockResolvedValueOnce(false);
+    await user.click(screen.getByRole('button', { name: /항목 추가/ }));
+    expect(screen.getByLabelText('새 항목 내용')).toHaveValue('보존할 항목');
+    expect(confirmMock).toHaveBeenCalledWith(expect.objectContaining({ title: '저장하지 않은 변경' }));
+    confirmMock.mockResolvedValueOnce(true);
+    await user.click(screen.getByRole('button', { name: /항목 추가/ }));
+    await waitFor(() => expect(screen.getByLabelText('새 항목 내용')).toHaveValue(''));
+    expect(screen.getByLabelText('새 항목 내용').closest('li')).toHaveTextContent('두 번째 문항');
+    expect(mocked.createItem).not.toHaveBeenCalled();
   });
 
   it('저장 실패는 화면에 드러내고 편집 상태를 유지한다', async () => {

@@ -28,7 +28,7 @@ describe('Hub 공통 컴포넌트', () => {
     );
 
     expect(screen.getByRole('heading', { level: 1, name: '시스템 허브' })).toBeInTheDocument();
-    expect(screen.getByTestId('forward-icon')).toHaveAttribute('data-size', '32');
+    expect(screen.getByTestId('forward-icon')).toHaveAttribute('data-size', '22');
     expect(screen.getByRole('button', { name: '새로고침' })).toBeInTheDocument();
   });
 

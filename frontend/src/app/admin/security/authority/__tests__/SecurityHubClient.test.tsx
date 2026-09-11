@@ -1,3 +1,4 @@
+import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
 import type { ReactNode } from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -43,7 +44,7 @@ const membership = { userId: 'ESNTL_A', groups: ['CONTENT'], version: 'member-v1
 const page = (list: unknown[], total = list.length) => ({ list, total, page: 1, size: 20, totalPage: Math.ceil(total / 20) });
 function setup() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  const view = render(<QueryClientProvider client={client}><SecurityHubClient /></QueryClientProvider>);
+  const view = render(<QueryClientProvider client={client}><UnsavedChangesProvider><SecurityHubClient /></UnsavedChangesProvider></QueryClientProvider>);
   return { client, ...view };
 }
 async function openGroup() {
@@ -80,6 +81,37 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     expect(screen.getByRole('alert')).toHaveTextContent('조회 권한이 없습니다');
     expect(mocks.getGroups).not.toHaveBeenCalled();
     expect(mocks.getHistory).not.toHaveBeenCalled();
+  });
+
+  it('미저장 기능권한은 그룹 또는 영역 전환을 취소하면 보존하고 승인한 전환만 실행한다', async () => {
+    await openGroup();
+    await userEvent.click(screen.getByRole('checkbox', { name: /게시글 등록/ }));
+    mocks.confirm.mockResolvedValue(false);
+    await userEvent.click(screen.getByRole('button', { name: /설문 담당.*SURVEY/ }));
+    expect(screen.getByRole('region', { name: '콘텐츠 담당 권한 설정' })).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: /게시글 등록/ })).toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: '사용자 배정' }));
+    expect(screen.getByRole('region', { name: '콘텐츠 담당 권한 설정' })).toBeVisible();
+    mocks.confirm.mockResolvedValue(true);
+    await userEvent.click(screen.getByRole('button', { name: /설문 담당.*SURVEY/ }));
+    expect(await screen.findByRole('region', { name: '설문 담당 권한 설정' })).toBeVisible();
+    expect(saveGroupGrants).not.toHaveBeenCalled();
+  });
+
+  it('미저장 그룹명과 사용자 배정도 선택 전환에서 보호한다', async () => {
+    const view = await openGroup();
+    fireEvent.change(screen.getByRole('textbox', { name: '그룹명' }), { target: { value: '편집 중 그룹' } });
+    mocks.confirm.mockResolvedValue(false);
+    await userEvent.click(screen.getByRole('button', { name: '사용자 배정' }));
+    expect(screen.getByRole('textbox', { name: '그룹명' })).toHaveValue('편집 중 그룹');
+    expect(screen.getByRole('checkbox', { name: /게시글 등록/ })).toBeDisabled();
+    view.unmount();
+    await openMembership();
+    await userEvent.click(screen.getByRole('checkbox', { name: /설문 담당/ }));
+    await userEvent.click(screen.getByRole('button', { name: '사용자 나 · login-b' }));
+    expect(screen.getByRole('heading', { name: '사용자 가' })).toBeVisible();
+    expect(screen.getByRole('checkbox', { name: /설문 담당/ })).toBeChecked();
+    expect(saveUserGroups).not.toHaveBeenCalled();
   });
 
   it('조회 전용 그룹은 읽을 수 있지만 생성·수정·할당·삭제 버튼이 없다', async () => {
@@ -200,6 +232,9 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     updateGroup.mockImplementation(() => new Promise((_resolve, reject) => { rejectWrite = reject; }));
     await openGroup();
     await userEvent.click(screen.getByRole('checkbox', { name: /게시글 등록/ }));
+    expect(screen.getByRole('textbox', { name: '그룹명' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: '입력 취소 · 최신 정보 적용' }));
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '그룹명' })).not.toBeDisabled());
     fireEvent.change(screen.getByRole('textbox', { name: '그룹명' }), { target: { value: '콘텐츠 운영' } });
     const submit = screen.getByRole('button', { name: '그룹 정보 저장' });
     await userEvent.click(submit);

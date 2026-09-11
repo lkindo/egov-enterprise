@@ -326,7 +326,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     renderHub('DEPTS');
 
     const layout = await screen.findByTestId('master-detail-incremental-layout');
-    expect(screen.getByRole('heading', { level: 1, name: '부서 관리' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: '부서 및 조직 관리' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '부서 조직 구조' })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('왼쪽 조직 구조에서 확인하거나 편집할 부서를 선택하세요.');
 

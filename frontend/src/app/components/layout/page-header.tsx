@@ -30,7 +30,7 @@ export function PageHeader({ title, breadcrumbs, actions, className, animateEntr
 
   return (
     <div className={cn(
-      "flex flex-col gap-6 mb-12",
+      "flex flex-col gap-3 mb-6",
       animateEntrance && "animate-in fade-in slide-in-from-left-4 duration-700",
       className,
     )}>
@@ -49,7 +49,7 @@ export function PageHeader({ title, breadcrumbs, actions, className, animateEntr
       {/* 정적 제목 shell은 Server Component에서도 렌더 가능하고, breadcrumb만 client leaf다. */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div className="space-y-4 min-w-0">
-           <h1 className="text-3xl md:text-5xl font-[number:var(--font-weight-hub-title)] tracking-tighter text-foreground truncate leading-[1.1]">
+           <h1 className="text-2xl md:text-3xl font-[number:var(--font-weight-hub-title)] tracking-tighter text-foreground break-words leading-snug">
             {title}
           </h1>
           {/* Hub-style premium accent bar */}

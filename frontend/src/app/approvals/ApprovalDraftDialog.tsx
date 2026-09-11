@@ -139,7 +139,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated }: ApprovalDraf
 
   return (
     <>
-      <StandardModal isOpen={isOpen} onClose={onClose} title="새 결재 기안" maxWidth="md">
+      <StandardModal isOpen={isOpen} onClose={onClose} title="새 결재 기안" maxWidth="md" closeDisabled={isSubmitting}>
         <form onSubmit={handleSubmit} noValidate className="space-y-5" aria-label="결재 기안 폼">
           <FormErrorSummary
             errors={validation.errors}

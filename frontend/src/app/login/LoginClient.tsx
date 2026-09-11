@@ -71,7 +71,6 @@ function LoginContent() {
     const shouldReduceMotion = useReducedMotion();
     const loginRootRef = React.useRef<HTMLDivElement>(null);
     const progressRef = React.useRef<HTMLDivElement>(null);
-    const returnFocusRef = React.useRef<HTMLElement | null>(null);
 
     const searchParams = useSearchParams();
     // URL parser가 제거하는 제어문자까지 먼저 거부한 뒤, 고정된 검증 origin으로 파싱해
@@ -100,73 +99,7 @@ function LoginContent() {
         focusTargets: { userId: () => idInputRef.current },
     });
 
-    // 로그인은 전역 AppShell 안에서 렌더되지만 시각적으로는 독립된 modal surface다. 배경의
-    // skip link/header/sidebar/footer가 보이면서도 키보드·접근성 트리에는 남아 있으면 사용자가 로그인
-    // 폼을 벗어나 비활성 shell을 탐색하게 된다. mount 동안만 외부 landmark를 격리하고 기존
-    // 속성을 정확히 복원한다. (로그인 콘텐츠 내부 landmark가 생겨도 격리하지 않는다.)
-    React.useEffect(() => {
-        const loginRoot = loginRootRef.current;
-        if (!loginRoot) return;
-
-        returnFocusRef.current = document.activeElement instanceof HTMLElement
-            ? document.activeElement
-            : null;
-        const shellLandmarks = [...new Set(document.querySelectorAll<HTMLElement>(
-            '[data-sidebar-modal-background], header, aside, footer',
-        ))].filter((element) => (
-            !loginRoot.contains(element) && !element.contains(loginRoot)
-        ));
-        const snapshots = shellLandmarks.map((element) => ({
-            element,
-            ariaHidden: element.getAttribute('aria-hidden'),
-            hadInertAttribute: element.hasAttribute('inert'),
-            inertAttributeValue: element.getAttribute('inert'),
-        }));
-
-        for (const { element } of snapshots) {
-            element.setAttribute('aria-hidden', 'true');
-            element.setAttribute('inert', '');
-        }
-
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key !== 'Tab') return;
-            const focusable = [...loginRoot.querySelectorAll<HTMLElement>(
-                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-            )].filter((element) => !element.closest('[inert]') && element.getAttribute('aria-hidden') !== 'true');
-
-            if (focusable.length === 0) {
-                event.preventDefault();
-                (progressRef.current ?? loginRoot).focus();
-                return;
-            }
-
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (event.shiftKey && (document.activeElement === first || !loginRoot.contains(document.activeElement))) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && (document.activeElement === last || !loginRoot.contains(document.activeElement))) {
-                event.preventDefault();
-                first.focus();
-            }
-        };
-
-        document.addEventListener('keydown', onKeyDown);
-        idInputRef.current?.focus();
-
-        return () => {
-            document.removeEventListener('keydown', onKeyDown);
-            for (const { element, ariaHidden, hadInertAttribute, inertAttributeValue } of snapshots) {
-                if (ariaHidden === null) element.removeAttribute('aria-hidden');
-                else element.setAttribute('aria-hidden', ariaHidden);
-                if (hadInertAttribute) element.setAttribute('inert', inertAttributeValue ?? '');
-                else element.removeAttribute('inert');
-            }
-            const returnTarget = returnFocusRef.current;
-            if (returnTarget?.isConnected) returnTarget.focus();
-            returnFocusRef.current = null;
-        };
-    }, []);
+    React.useEffect(() => { idInputRef.current?.focus(); }, []);
 
     React.useEffect(() => {
         if (isSubmitting) progressRef.current?.focus();
@@ -234,14 +167,12 @@ function LoginContent() {
     return (
         <div
             ref={loginRootRef}
-            role="dialog"
-            aria-modal="true"
             aria-labelledby="login-title"
             tabIndex={-1}
-            className="min-h-screen flex items-center justify-center bg-muted bg-[url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')] bg-repeat"
+            className="w-full py-6"
         >
             {/* Background Overlay from previous design style */}
-            <div className="absolute inset-0 bg-surface-inverse/40 backdrop-blur-[2px]" />
+
 
             <motion.div
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
@@ -250,7 +181,7 @@ function LoginContent() {
                     duration: 0.8,
                     ease: [0.16, 1, 0.3, 1]
                 }}
-                className="w-full max-w-md relative z-10 px-4"
+                className="relative z-10 mx-auto w-full max-w-md"
             >
                 <Card
                     data-login-card
@@ -460,9 +391,7 @@ function LoginContent() {
                         </CardFooter>
                     </form>
                 </Card>
-                <p className="mt-8 text-center text-xs font-bold text-foreground tracking-tight">
-                    &copy; 2026 관리 통합 시스템.
-                </p>
+
             </motion.div>
         </div>
     );
@@ -471,7 +400,7 @@ function LoginContent() {
 export default function LoginClient() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-muted">
+            <div className="flex min-h-64 items-center justify-center">
                 <h1 className="sr-only">로그인 화면을 불러오는 중</h1>
                 <p role="status">로딩 중...</p>
             </div>

@@ -252,7 +252,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
       ];
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-6 pb-8">
       {/* --- Header --- */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2 md:px-4">
         <div className="flex items-center gap-4">
@@ -261,7 +261,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tighter">
-              통계 <span className="text-primary">현황</span>
+              {TAB_TITLE[activeTab]}
             </h1>
             <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
               최근 1개월 집계 및 항목별 통계
@@ -285,16 +285,16 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8 px-2">
+      <div className="space-y-6">
 
         {/* --- Left Column: Navigation (20%) --- */}
-        <div className="col-span-12 lg:col-span-3 space-y-6">
+        <div className="space-y-3">
           {/*
             탭이 곧 라우트이므로(각 항목이 서로 다른 URL 로 이동) role="tablist" 가 아니라
             내비게이션 시맨틱 + aria-current 가 정확한 표현이다(감사 P2 탭 시맨틱).
           */}
           <nav aria-label="통계 분석 뷰" className="block">
-            <Card className="rounded-lg border-0 bg-card shadow-2xl p-4 ring-1 ring-border">
+            <Card className="flex flex-wrap gap-2 rounded-lg border bg-card p-2">
               <NavButton icon={<LayoutDashboard size={20} />} label="통계 개요" active={activeTab === 'DASHBOARD'} onClick={() => handleSelectTab('DASHBOARD')} />
               <NavButton icon={<Users size={20} />} label="사용자 통계" active={activeTab === 'USER_STATS'} onClick={() => handleSelectTab('USER_STATS')} />
               <NavButton icon={<Box size={20} />} label="콘텐츠 지표" active={activeTab === 'CONTENT_STATS'} onClick={() => handleSelectTab('CONTENT_STATS')} />
@@ -305,25 +305,25 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             </Card>
           </nav>
 
-          <Card className="rounded-lg border-0 bg-surface-inverse text-surface-inverse-foreground shadow-2xl p-6 md:p-10 space-y-8 relative overflow-hidden group">
+          <Card className="rounded-lg border bg-surface-inverse text-surface-inverse-foreground p-3 relative overflow-hidden group">
             <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
-            <div className="relative z-10 space-y-6">
-              <h3 className="text-xs font-bold text-surface-inverse-muted tracking-tight leading-tight">_ 최근 1개월 총 접속</h3>
+            <div className="relative z-10 flex flex-wrap items-center gap-3">
+              <h3 className="text-xs font-bold text-surface-inverse-muted tracking-tight leading-tight">최근 1개월 총 접속</h3>
               <div className="flex items-center gap-4">
-                <span className="text-5xl md:text-6xl font-bold tracking-tighter tabular-nums">
+                <span className="text-xl font-bold tabular-nums">
                   {isSummaryLoading ? '…' : isSummaryError ? '—' : totalConnect.toLocaleString()}
                 </span>
                 <Zap size={32} className="text-primary fill-primary" />
               </div>
               <p className="text-xs text-surface-inverse-muted font-bold tracking-tight">
-                {isSummaryError ? '접속 통계를 불러오지 못했습니다' : '접속 통계(/connect) 집계 합계'}
+                {isSummaryError ? '접속 통계를 불러오지 못했습니다' : '최근 1개월 접속 통계 합계'}
               </p>
             </div>
           </Card>
         </div>
 
         {/* --- Center/Right Columns: Interactive Data (80%) --- */}
-        <div className="col-span-12 lg:col-span-9 space-y-8">
+        <div className="space-y-6">
 
           {isSummaryLoading ? (
             <HubMetricSkeleton />
@@ -521,19 +521,19 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        "w-full group p-6 rounded-lg border-2 transition-all flex items-center gap-5 mb-2",
+        "group p-2 rounded-lg border transition-colors flex items-center gap-2",
         active
           ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-xl"
           : "bg-card border-transparent hover:border-border text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-lg flex items-center justify-center transition-all",
+        "w-8 h-8 rounded-md flex items-center justify-center",
         active ? "bg-white/10 text-surface-inverse-foreground" : "bg-muted text-muted-foreground group-hover:bg-muted"
       )}>
         {icon}
       </div>
-      <span className="text-xs font-bold tracking-tight">_ {label}</span>
+      <span className="text-xs font-bold tracking-tight">{label}</span>
     </button>
   );
 }

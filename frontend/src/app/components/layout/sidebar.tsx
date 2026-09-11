@@ -107,7 +107,7 @@ export function Sidebar({
         ref={sidebarRef}
         aria-label="주 메뉴"
         className={cn(
-          'fixed left-0 top-0 z-[100] h-full w-72 border-r bg-card transition-[transform,visibility] duration-500 lg:top-16 lg:h-[calc(100vh-4rem)]',
+          'fixed left-0 top-0 z-[100] h-full w-[var(--app-sidebar-width)] border-r bg-card transition-[transform,visibility] duration-500 lg:top-[var(--app-header-height)] lg:h-[calc(100dvh-var(--app-header-height))]',
           isSidebarOpen
             ? 'visible translate-x-0 shadow-2xl'
             : 'invisible -translate-x-full lg:visible lg:translate-x-0',

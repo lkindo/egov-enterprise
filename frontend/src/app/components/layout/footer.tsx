@@ -10,17 +10,15 @@ interface FooterProps {
 
 export function Footer({ className }: FooterProps) {
   return (
-    <footer className={cn("border-t py-8 px-4 md:px-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)}>
+    <footer className={cn("border-t py-4 px-4 md:px-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)}>
       <div className={cn(
-        "flex flex-col items-center justify-between gap-6 md:flex-row max-w-7xl mx-auto",
+        "flex flex-col items-center justify-between gap-2 md:flex-row max-w-7xl mx-auto",
       )}>
         <div className="flex flex-col gap-1 text-center md:text-left">
           <p className="text-balance text-xs font-bold leading-relaxed text-muted-foreground tracking-tight">
             {SITE_IDENTITY.copyright}
           </p>
-          <p className="text-xs font-bold text-muted-foreground tracking-tight">
-            전사 업무와 협업 기능을 위한 포털
-          </p>
+
         </div>
         {/*
           '이용약관'·'개인정보처리방침' 링크는 연결할 원문이 없어 제거했다(전부 href="#" 死링크였다).

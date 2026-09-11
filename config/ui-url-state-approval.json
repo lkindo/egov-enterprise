@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-url-state-approval.schema.json",
   "manifestRef": {
     "path": "config/ui-url-state-census.json",
-    "sha256": "437efc386cfd0ee664242af7e58521cca5d73cd8e66031b24ac9107f427609f1"
+    "sha256": "1f2fc3361932f3245710ee3ff5b1025d30739eab94016279e87eda00b7ff890b"
   },
   "classes": [
     {

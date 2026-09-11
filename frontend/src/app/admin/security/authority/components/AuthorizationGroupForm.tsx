@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useAppForm } from '@/hooks/useAppForm';
 import { Form, FormControl, FormErrorSummary, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -7,16 +9,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { authorizationGroupFormSchema, type AuthorizationGroupFormValues } from '@/lib/auth/authorization-management-contract';
 
-export function AuthorizationGroupForm({ initial, creating, externalBusy, onSubmit }: {
+export function AuthorizationGroupForm({ initial, creating, externalBusy, onSubmit, onDirtyChange }: {
   initial: AuthorizationGroupFormValues;
   creating: boolean;
   externalBusy: boolean;
   onSubmit: (values: AuthorizationGroupFormValues) => Promise<void>;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const form = useAppForm(authorizationGroupFormSchema, { defaultValues: initial });
+  useUnsavedChanges({ dirty: form.formState.isDirty, pending: form.formState.isSubmitting });
+  useEffect(() => { onDirtyChange?.(form.formState.isDirty); }, [form.formState.isDirty, onDirtyChange]);
   const submit = form.handleSubmit(async (values) => {
     if (externalBusy) return;
-    try { await onSubmit(values); }
+    try { await onSubmit(values); form.reset(values); }
     catch (error) { form.applyServerErrors(error); }
   });
   return (

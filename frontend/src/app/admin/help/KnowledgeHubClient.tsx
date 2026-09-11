@@ -24,6 +24,7 @@ import { canPermission } from '@/lib/auth/permissions';
 import { isQnaSolved } from '@/services/business/user/help/HelpUserService';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { PagePagination } from '@/components/common/PagePagination';
 import { CommunityManageDialog } from '@/components/business/community/CommunityManageDialog';
 
 // --- Types ---
@@ -32,7 +33,7 @@ type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
 const CATEGORY_LABEL: Record<KnowledgeCategory, string> = {
  WIKI: '위키',
  FAQ: '자주 묻는 질문',
- QNA: '기술 Q&A',
+ QNA: '질의응답(Q&A)',
  COMMUNITY: '커뮤니티',
 };
 
@@ -54,6 +55,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  // 입력 컨트롤에는 원본 상태를 바인딩해야 입력 지연이 생기지 않는다.
  const debouncedQuery = useDebouncedValue(searchQuery, 300);
  const [sortBy, setSortBy] = useState<'latest' | 'views'>('latest');
+ const [pagination, setPagination] = useState({ context: '', page: 1 });
 
  const resolveCategory = (): KnowledgeCategory => {
  const bbsId = searchParams.get('bbsId');
@@ -73,6 +75,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
  // 카테고리는 URL 파생값이다. 상태를 따로 두면 공유·새로고침·뒤로가기에서 복원되지 않는다.
  const activeCategory: KnowledgeCategory = resolveCategory();
+ const pageContext = JSON.stringify([activeCategory, debouncedQuery, sortBy]);
+ const page = pagination.context === pageContext ? pagination.page : 1;
 
  const selectCategory = (next: KnowledgeCategory) => {
  const params = new URLSearchParams(searchParams.toString());
@@ -124,12 +128,13 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  error: articlesError,
  refetch: refetchArticles,
  } = useQuery({
- queryKey: ['knowledge-articles', activeCategory, debouncedQuery, sortBy],
+ queryKey: ['knowledge-articles', activeCategory, debouncedQuery, sortBy, page],
  queryFn: () => knowledgeService.getArticles({
  bbsId: currentBbsId,
  category: activeCategory,
- page: 0,
+ page: page - 1,
  size: 20,
+ orderBy: sortBy === 'views' ? 'views' : 'date',
  searchCnd: debouncedQuery ? '0' : undefined,
  searchWrd: debouncedQuery || undefined
  }),
@@ -150,13 +155,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  queryFn: () => knowledgeService.getActivities(currentBbsId),
  });
 
- const displayItems: KnowledgeDto[] = React.useMemo(() => {
- const items = articlesData?.list || [];
- if (sortBy === 'views') {
- return [...items].sort((a, b) => (b.inqCnt || 0) - (a.inqCnt || 0));
- }
- return items;
- }, [articlesData, sortBy]);
+ const displayItems: KnowledgeDto[] = articlesData?.list || [];
 
  const hotItems: KnowledgeDto[] = hotData?.list || [];
  const isSearching = searchQuery !== debouncedQuery || isFetching;
@@ -166,144 +165,52 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  initial="hidden"
  animate="visible"
  variants={hubContainerVariants}
- className="space-y-12 pb-24"
+ className="space-y-6 pb-8"
  >
- {/* 1. Global Navigation Matrix */}
- <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 px-2">
- <div className="space-y-1.5 md:space-y-2">
- <div className="flex items-center gap-2 md:gap-3">
- <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary animate-pulse" />
- <span className="text-xs md:text-xs font-bold tracking-tight text-primary leading-none">지식 허브 콘솔</span>
+ <div className="flex flex-wrap items-center justify-between gap-4">
+ <div>
+ <h1 className="text-2xl font-bold text-foreground">{CATEGORY_LABEL[activeCategory]}</h1>
+ <p className="mt-1 text-sm text-muted-foreground">문서를 검색하고 필요한 내용을 확인하세요.</p>
  </div>
- <h2 className="text-2xl md:text-4xl font-bold text-foreground tracking-tighter leading-none">지식 매트릭스</h2>
+ <div className="flex flex-wrap gap-2">
+ {canReadBoardMasters && <Button variant="outline" onClick={() => router.push('/admin/community/boards/master')}><Settings2 size={16} aria-hidden="true" /> 게시판 관리</Button>}
+ {canManageCommunities && activeCategory === 'COMMUNITY' && <Button variant="outline" onClick={() => setCommunityManageOpen(true)}><Users size={16} aria-hidden="true" /> 커뮤니티 관리</Button>}
+ <Button onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}><Plus size={16} aria-hidden="true" /> 신규 등록</Button>
  </div>
- <div className="flex items-center gap-3 md:gap-4 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
- {canReadBoardMasters && (
- <Button
- onClick={() => router.push('/admin/community/boards/master')}
- variant="outline"
- className="h-12 md:h-11 px-4 md:px-8 rounded-lg border-2 border-border bg-card text-foreground font-bold tracking-tight text-xs hover:bg-muted hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
- >
- <Settings2 className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-180 transition-transform text-primary" /> 게시판 관리
- </Button>
- )}
- {canManageCommunities && activeCategory === 'COMMUNITY' && (
- <Button
- onClick={() => setCommunityManageOpen(true)}
- variant="outline"
- className="h-12 md:h-11 px-4 md:px-8 rounded-lg border-2 border-border bg-card text-foreground font-bold tracking-tight text-xs hover:bg-muted transition-all gap-2 md:gap-3 whitespace-nowrap"
- >
- <Users className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] text-primary" aria-hidden="true" /> 커뮤니티 관리
- </Button>
- )}
- <Button
- onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}
- className="h-12 md:h-11 px-4 md:px-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-xl gap-2 md:gap-3 group whitespace-nowrap"
- >
- <Plus className="w-[14px] md:w-[18px] h-[14px] md:h-[18px] group-hover:rotate-90 transition-transform" /> 신규 등록
- </Button>
  </div>
- </motion.div>
-
- {/* 2. Intelligent Search Matrix */}
- <motion.div variants={hubItemVariants} className="relative h-[280px] md:h-[360px] rounded-lg bg-surface-inverse overflow-hidden flex flex-col items-center justify-center p-6 md:p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-none mx-2">
- <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-rose-500/10 opacity-60" />
-
- {isSearching && (
- <motion.div
- initial={{ top: '-10%' }}
- animate={{ top: '110%' }}
- transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
- className="absolute left-0 right-0 h-[2px] bg-primary/40 blur-sm z-10"
- />
- )}
-
- <div className="relative z-20 text-center w-full max-w-4xl space-y-8 px-2 font-sans">
- <div className="space-y-3">
- <h1 className="text-3xl md:text-5xl font-bold text-surface-inverse-foreground tracking-tighter leading-none">지식 베이스</h1>
- <p className="text-xs md:text-sm font-bold text-surface-inverse-muted">{CATEGORY_LABEL[activeCategory]} 데이터셋</p>
+ <section aria-label="지식 조회 조건" className="space-y-3 rounded-lg border border-border bg-card p-4">
+ <label htmlFor="knowledge-search" className="text-sm font-medium">지식 검색어</label>
+ <div className="relative">
+ <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+ <Input id="knowledge-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="pl-10 placeholder:text-muted-foreground" placeholder="제목·내용 검색..." />
  </div>
-
- <div className="space-y-6">
- <div className="relative group max-w-3xl mx-auto w-full">
- <label htmlFor="knowledge-search" className="sr-only">지식 검색어</label>
- <Search className={cn(
- "absolute left-6 md:left-8 top-1/2 -translate-y-1/2 transition-all scale-110 md:scale-150 duration-500 pointer-events-none",
- isSearching ? "text-primary" : "text-surface-inverse-muted group-focus-within:text-primary",
- "w-[18px] md:w-[20px] h-[18px] md:h-[20px]"
- )} />
- <Input
- id="knowledge-search"
- value={searchQuery}
- onChange={(e) => setSearchQuery(e.target.value)}
- className="h-14 md:h-20 bg-white/5 border-2 border-white/5 rounded-lg px-16 md:px-24 text-surface-inverse-foreground text-lg md:text-2xl font-bold placeholder:text-surface-inverse-muted focus:bg-card focus:text-foreground transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] focus:ring-primary/10 tracking-tight"
- placeholder="제목·내용 검색..."
- />
- </div>
-
- <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
- <div className="flex items-center gap-1.5 p-1 bg-white/5 border border-white/10 rounded-lg backdrop-blur-xl">
+ <div className="flex flex-wrap items-center justify-between gap-3">
+ <div className="flex gap-2" aria-label="문서 정렬">
  <FilterButton active={sortBy === 'latest'} onClick={() => setSortBy('latest')} label="최신순" />
  <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="조회순" />
  </div>
- <div className="h-6 w-[1px] bg-white/10 hidden sm:block" />
- <div className="text-xs font-bold text-surface-inverse-muted tracking-tight">
- {isArticlesError ? '조회 실패' : `총 ${(articlesData?.total ?? 0).toLocaleString()}건`}
+ <p role="status" className="text-sm text-muted-foreground">{isArticlesError ? '조회 실패' : isSearching ? '검색 중…' : `총 ${(articlesData?.total ?? 0).toLocaleString()}건`}</p>
  </div>
- </div>
- </div>
- </div>
- </motion.div>
-
- {/* 3. Stats & Insights Matrix — 백엔드 /boards/{bbsId}/stats 실측값만 표기한다.
- 종전의 '+12% Critical' 류 증감 배지는 산출 근거가 없어 제거했다. */}
- <motion.div variants={hubItemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 px-2">
- {/*
-   [2026-08-29] '지식 지수 NN/100 · 게시판 활성도 지표' 를 걷고 실제로 센 값을 보여 준다.
-   그 점수는 측정값이 아니라 게시글 수에 상수를 더한 것이다 —
-   BoardService.getBoardStats: `int intelligenceScore = (int) Math.min(100,
-   (stats.totalArticles() * 2) + 70);` 이고 바로 위 주석이 "Logic derived from frontend"
-   라고 적고 있다(화면이 지어낸 식을 서버로 옮겼을 뿐이다). 글이 하나도 없는 게시판이
-   70/100 이고 15건이면 100 에 붙어 더 이상 움직이지 않는다. 100 점 만점처럼 보이는
-   숫자는 관리자가 게시판 건강도로 읽는다.
-   ⚠ 서버의 intelligenceScore 필드는 이 커밋에서 건드리지 않았다(응답 계약 변경은 별건).
-   이 카드가 유일한 소비처였으므로 지금은 아무도 읽지 않는다.
- */}
- <StatsCard
- label="게시글 수"
- value={isStatsError ? '조회 실패' : (statsData?.totalArticles ?? 0).toLocaleString()}
- desc="이 게시판에 등록된 글"
- />
- <StatsCard
- label="누적 조회수"
- value={isStatsError ? '조회 실패' : (statsData?.totalViews ?? 0).toLocaleString()}
- desc="이 게시판의 전체 조회수"
- />
- <StatsCard
- label="최다 기여자"
- value={isStatsError ? '조회 실패' : (statsData?.topContributor || '-')}
- desc="게시글 등록이 가장 많은 사용자"
- />
- </motion.div>
+ </section>
 
  {/* 4. Category Matrix — 건수는 집계 API 가 없어 표기하지 않는다(종전 142/28/567/12 는 하드코딩이었다). */}
  <motion.div variants={hubItemVariants} className="px-2 overflow-hidden">
  <div
  role="tablist"
  aria-label="지식 카테고리"
- className="grid grid-flow-col auto-cols-[85%] sm:auto-cols-auto sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 overflow-x-auto"
+ className="grid grid-cols-2 gap-2 md:grid-cols-4"
  >
  <CategoryCard title="위키" desc="기술 사양" icon={<Library size={28} />} color="primary" active={activeCategory === 'WIKI'} onClick={() => selectCategory('WIKI')} />
  <CategoryCard title="자주 묻는 질문" desc="빠른 답변" icon={<BookOpen size={28} />} color="amber" active={activeCategory === 'FAQ'} onClick={() => selectCategory('FAQ')} />
- <CategoryCard title="기술 Q&A" desc="포럼 해결" icon={<MessageCircleQuestion size={28} />} color="rose" active={activeCategory === 'QNA'} onClick={() => selectCategory('QNA')} />
+ <CategoryCard title="질의응답(Q&A)" desc="질문과 답변" icon={<MessageCircleQuestion size={28} />} color="rose" active={activeCategory === 'QNA'} onClick={() => selectCategory('QNA')} />
  <CategoryCard title="커뮤니티" desc="활성 게시판" icon={<Users size={28} />} color="emerald" active={activeCategory === 'COMMUNITY'} onClick={() => selectCategory('COMMUNITY')} />
  </div>
  </motion.div>
 
  {/* 5. Main Content Matrix */}
- <motion.div variants={hubItemVariants} className="grid grid-cols-12 gap-10 px-2 mt-4 relative z-0">
+ <motion.div variants={hubItemVariants} className="grid grid-cols-12 gap-6 relative z-0">
  <div className="col-span-12 lg:col-span-8 space-y-10">
- <HubSectionCard title="지식 스트림" description="선택한 카테고리의 최신 등록 문서입니다." icon={Layers} id="knowledge-stream-panel">
+ <HubSectionCard title="문서 목록" description={sortBy === 'views' ? '전체 검색 결과의 조회수 순입니다.' : '전체 검색 결과의 최신 등록 순입니다.'} icon={Layers} id="knowledge-stream-panel">
  <div className="space-y-6">
  <AnimatePresence mode="popLayout">
  {isArticlesError ? (
@@ -338,7 +245,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  animate={{ opacity: 1, y: 0 }}
  onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&pstSn=${item.pstSn}`)}
  aria-label={`${item.pstTtl} 상세 보기`}
- className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-card border border-border/40 rounded-lg hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl text-left"
+ className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card border border-border rounded-lg hover:border-primary transition-colors cursor-pointer group text-left"
  >
  <div className="flex gap-4 md:gap-6 items-start">
  {/* 종전 '영향력 85~99' 배지는 조회수에서 임의 산출한 가짜 지표라 실제 조회수로 대체했다. */}
@@ -351,7 +258,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <span className="text-xs font-bold text-primary tracking-tight bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap">{CATEGORY_LABEL[activeCategory]}</span>
  <span className="text-xs font-bold text-muted-foreground">{item.frstRegisterPnttmStr}</span>
  </div>
- <h4 className="text-lg md:text-2xl font-bold text-foreground tracking-tighter leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h4>
+ <h4 className="text-base font-semibold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h4>
  <div className="flex items-center gap-3 md:gap-4 text-muted-foreground">
  <div className="flex items-center gap-1.5"><User size={12} className="text-primary" /><span className="text-xs font-bold truncate max-w-[120px]">{item.frstRegisterNm || item.frstRgtrId || '-'}</span></div>
  <div className="flex items-center gap-1.5"><Eye size={12} /><span className="text-xs font-bold">{(item.inqCnt || 0).toLocaleString()}</span></div>
@@ -372,6 +279,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </>
  )}
  </AnimatePresence>
+ {!isArticlesError && <PagePagination total={articlesData?.total ?? 0} page={page} size={20} onPageChange={(next) => setPagination({ context: pageContext, page: next })} />}
  </div>
  </HubSectionCard>
  </div>
@@ -405,25 +313,22 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </div>
  </HubSectionCard>
 
- <HubSectionCard title="최근 활동" description="최근 등록된 문서 흐름" icon={History} className="hub-card-dark shadow-2xl relative">
- <div className="absolute top-0 right-0 p-8 opacity-[0.05] pointer-events-none grayscale rotate-12">
- <History size={120} />
- </div>
+ <HubSectionCard title="최근 활동" description="최근 등록된 문서 흐름" icon={History}>
  <div className="space-y-6 relative z-10 font-sans">
  {isActivityError ? (
- <p role="alert" className="py-8 text-center text-xs font-bold text-rose-400">최근 활동을 불러오지 못했습니다.</p>
+ <p role="alert" className="py-8 text-center text-xs font-bold text-destructive-emphasis">최근 활동을 불러오지 못했습니다.</p>
  ) : (activityData || []).length === 0 ? (
- <p className="py-8 text-center text-xs font-bold text-surface-inverse-muted">표시할 활동이 없습니다.</p>
+ <p className="py-8 text-center text-xs font-bold text-muted-foreground">표시할 활동이 없습니다.</p>
  ) : (activityData || []).slice(0, 5).map((activity: { id: string; title: string; user: string; time: string }) => (
- <div key={activity.id} className="flex items-center gap-5 p-5 bg-white/5 border border-white/5 rounded-lg hover:bg-white/10 transition-all group/activity shadow-lg backdrop-blur-3xl">
+ <div key={activity.id} className="flex items-center gap-5 p-5 bg-muted border border-border rounded-lg group/activity">
  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover/activity:rotate-12 transition-all">
  <Zap size={18} />
  </div>
  <div className="flex-1 min-w-0">
- <p className="text-xs font-bold text-white/90 tracking-tight truncate leading-none mb-1.5">{activity.title}</p>
- <div className="flex items-center gap-3 text-surface-inverse-muted">
+ <p className="text-xs font-bold text-foreground tracking-tight truncate leading-none mb-1.5">{activity.title}</p>
+ <div className="flex items-center gap-3 text-muted-foreground">
  <span className="text-xs font-bold tracking-tight">{activity.user}</span>
- <div className="w-1 h-1 rounded-full bg-white/60" />
+ <div className="w-1 h-1 rounded-full bg-muted-foreground" />
  <span className="text-xs font-bold tracking-tight tabular-nums">{activity.time}</span>
  </div>
  </div>
@@ -433,6 +338,39 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </HubSectionCard>
  </div>
  </motion.div>
+ <details className="rounded-lg border border-border bg-card p-4"><summary className="cursor-pointer text-sm font-semibold">게시판 이용 현황</summary>
+ {/* 3. Stats & Insights Matrix — 백엔드 /boards/{bbsId}/stats 실측값만 표기한다.
+ 종전의 '+12% Critical' 류 증감 배지는 산출 근거가 없어 제거했다. */}
+ <motion.div variants={hubItemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 px-2">
+ {/*
+   [2026-08-29] '지식 지수 NN/100 · 게시판 활성도 지표' 를 걷고 실제로 센 값을 보여 준다.
+   그 점수는 측정값이 아니라 게시글 수에 상수를 더한 것이다 —
+   BoardService.getBoardStats: `int intelligenceScore = (int) Math.min(100,
+   (stats.totalArticles() * 2) + 70);` 이고 바로 위 주석이 "Logic derived from frontend"
+   라고 적고 있다(화면이 지어낸 식을 서버로 옮겼을 뿐이다). 글이 하나도 없는 게시판이
+   70/100 이고 15건이면 100 에 붙어 더 이상 움직이지 않는다. 100 점 만점처럼 보이는
+   숫자는 관리자가 게시판 건강도로 읽는다.
+   ⚠ 서버의 intelligenceScore 필드는 이 커밋에서 건드리지 않았다(응답 계약 변경은 별건).
+   이 카드가 유일한 소비처였으므로 지금은 아무도 읽지 않는다.
+ */}
+ <StatsCard
+ label="게시글 수"
+ value={isStatsError ? '조회 실패' : (statsData?.totalArticles ?? 0).toLocaleString()}
+ desc="이 게시판에 등록된 글"
+ />
+ <StatsCard
+ label="누적 조회수"
+ value={isStatsError ? '조회 실패' : (statsData?.totalViews ?? 0).toLocaleString()}
+ desc="이 게시판의 전체 조회수"
+ />
+ <StatsCard
+ label="최다 기여자"
+ value={isStatsError ? '조회 실패' : (statsData?.topContributor || '-')}
+ desc="게시글 등록이 가장 많은 사용자"
+ />
+ </motion.div>
+
+ </details>
  {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
  {canManageCommunities && communityManageOpen && (
  <CommunityManageDialog isOpen onClose={() => setCommunityManageOpen(false)} />
@@ -451,7 +389,7 @@ function FilterButton({ active, onClick, label }: { active: boolean; onClick: ()
  "px-6 py-2 rounded-lg text-xs font-bold tracking-tight transition-all",
  active
  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
- : "text-surface-inverse-muted hover:text-surface-inverse-foreground hover:bg-white/5"
+ : "text-muted-foreground hover:text-foreground hover:bg-muted"
  )}
  >
  {label}
@@ -528,20 +466,20 @@ function CategoryCard({ title, desc, icon, color, active, onClick }: {
  aria-controls="knowledge-stream-panel"
  onClick={onClick}
  className={cn(
- "relative p-8 rounded-lg border-2 transition-all duration-500 cursor-pointer group flex flex-col gap-6 text-left w-full",
+ "relative p-3 rounded-lg border transition-colors cursor-pointer group flex items-center gap-3 text-left w-full",
  active
- ? "border-primary bg-primary/5 shadow-2xl scale-105"
- : "border-border/40 bg-card hover:border-primary/20 hover:ring-[20px] hover:ring-primary/5"
+ ? "border-primary bg-primary/5"
+ : "border-border bg-card hover:border-primary"
  )}
  >
- <div className={cn("w-16 h-16 rounded-lg flex items-center justify-center shadow-inner", colorMap[color])}>
+ <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", colorMap[color])}>
  {icon}
  </div>
  <div className="space-y-1">
- <h3 className="font-bold text-2xl tracking-tighter text-foreground leading-none">{title}</h3>
+ <h3 className="font-semibold text-sm text-foreground">{title}</h3>
  <p className="text-xs font-bold text-muted-foreground tracking-tight">{desc}</p>
  </div>
- <div className={cn("absolute bottom-8 right-8 w-1 h-8 rounded-lg transition-transform", active ? "bg-primary scale-y-100" : "bg-border scale-y-0 group-hover:scale-y-50")} />
+
  </button>
  );
 }
@@ -555,7 +493,7 @@ function HubSectionCard({ title, description, icon: Icon, children, className, i
  id?: string;
 }) {
  return (
- <div id={id} className={cn("hub-card-premium p-10 space-y-8", className)}>
+ <div id={id} className={cn("rounded-lg border border-border bg-card p-4 space-y-4", className)}>
  <div className="flex items-center justify-between border-b border-border/40 pb-6">
  <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-primary shadow-inner border border-border/50">

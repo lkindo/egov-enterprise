@@ -472,14 +472,14 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     }
   ];
 
-  const TAB_LABEL = { job: '업무 워크플로우', report: '업무 보고', calendar: '일정 캘린더' } as const;
+  const TAB_LABEL = { job: '업무 관리', report: '업무 보고', calendar: '일정' } as const;
   const activeTotal = activeTab === 'job' ? jobData?.total : activeTab === 'report' ? reportData?.total : schedules.length;
   const activeError = activeTab === 'job' ? isJobError : activeTab === 'report' ? isReportError : isScheduleError;
 
   return (
     <>
     <WorkListPage
-      title="워크플로우 및 자산 관리"
+      title={TAB_LABEL[activeTab]}
       description={
         activeTab === 'calendar'
           ? '월간 일정을 조회합니다. 날짜를 선택하면 그 날짜의 일정만 표시합니다.'
@@ -487,7 +487,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             ? '부서 업무의 담당자·우선순위·업무함을 조회합니다.'
             : '내가 작성한 업무 보고를 조회합니다. 관리자 권한이면 전체 보고가 조회됩니다.'
       }
-      breadcrumbItems={[{ label: '업무관리' }, { label: '워크허브' }]}
+      breadcrumbItems={[{ label: '나의 업무' }, { label: TAB_LABEL[activeTab] }]}
       filterStateKey="work-hub"
       /* 일정은 월 단위 조회라 서버 총계가 없다 — 현재 월 건수임을 툴바 문구가 밝힌다. */
       totalCount={activeError ? undefined : activeTotal}

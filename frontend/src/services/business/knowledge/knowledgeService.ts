@@ -72,6 +72,7 @@ class KnowledgeService extends ApiService {
     searchCnd?: string;
     page?: number;
     size?: number;
+    orderBy?: 'date' | 'views';
   } = {}): Promise<PageResponse<KnowledgeDto>> {
     let targetBbsId = params.bbsId;
     if (!targetBbsId) {
@@ -88,6 +89,7 @@ class KnowledgeService extends ApiService {
       searchCnd: params.searchCnd || '0',
       page: params.page || 0,
       size: params.size || 20,
+      orderBy: params.orderBy,
     };
 
     return this.executeGenerated(getPostsOperation, {

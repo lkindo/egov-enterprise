@@ -953,12 +953,12 @@ export default function UserOrgHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="space-y-10 pb-24">
+      <div className="space-y-6 pb-8">
       <PageHeader
-        title={activeTab === 'DEPTS' ? '부서 관리' : '조직 및 사용자 관리'}
+        title={activeTab === 'DEPTS' ? '부서 및 조직 관리' : activeTab === 'ABSENCES' ? '부재 상태 관리' : activeTab === 'POLICIES' ? '조직 정책' : '계정 및 사용자 관리'}
         breadcrumbs={activeTab === 'DEPTS'
           ? [{ label: '사용자 관리' }, { label: '부서 관리' }]
-          : [{ label: '사용자 관리' }, { label: '조직 통합 허브' }]}
+          : [{ label: '사용자 관리' }, { label: activeTab === 'ABSENCES' ? '부재 상태 관리' : activeTab === 'POLICIES' ? '조직 정책' : '계정 및 사용자 관리' }]}
         className={activeTab === 'DEPTS' ? 'mb-4 [animation:none]' : undefined}
         animateEntrance={activeTab !== 'DEPTS'}
         actions={activeTab === 'DEPTS' ? (
@@ -970,7 +970,7 @@ export default function UserOrgHubClient({
           >
             <LayoutGrid size={18} aria-hidden="true" /> 부서 등록
           </Button>
-        ) : activeTab !== 'POLICIES' ? (
+        ) : activeTab !== 'POLICIES' && activeTab !== 'ABSENCES' ? (
           <Button
             type="button"
             onClick={handleOpenUserCreate}

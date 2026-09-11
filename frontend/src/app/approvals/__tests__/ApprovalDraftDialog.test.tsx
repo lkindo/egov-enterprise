@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,10 +20,10 @@ vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
   },
 }));
 
-// 모달 셸은 열림 여부와 접근 가능한 이름만 계약이다.
+// 실제 X/Escape/backdrop 동작은 StandardModal 테스트가 맡고 이 호출부는 pending 전달을 검증한다.
 vi.mock('@/app/components/ui/standard-modal', () => ({
-  StandardModal: ({ isOpen, title, children }: { isOpen: boolean; title: string; children: React.ReactNode }) => (
-    isOpen ? <div role="dialog" aria-label={title}>{children}</div> : null
+  StandardModal: ({ isOpen, title, children, closeDisabled, onClose }: { isOpen: boolean; title: string; children: React.ReactNode; closeDisabled?: boolean; onClose: () => void }) => (
+    isOpen ? <div role="dialog" aria-label={title}><button disabled={closeDisabled} onClick={onClose}>모달 닫기</button>{children}</div> : null
   ),
 }));
 
@@ -163,5 +163,21 @@ describe('ApprovalDraftDialog', () => {
     expect(onClose).not.toHaveBeenCalled();
     expect(select).toHaveValue('01');
     expect(screen.getByTestId('approval-draft-approver')).toHaveTextContent('김결재');
+  });
+
+  it('상신 요청 중 모달 닫기를 잠그고 실패 뒤 다시 닫을 수 있다', async () => {
+    let reject!: (reason: Error) => void;
+    mocks.createDraft.mockImplementation(() => new Promise((_resolve, rejectPromise) => { reject = rejectPromise; }));
+    const { onClose } = renderDialog();
+    fireEvent.change(await screen.findByRole('combobox', { name: '업무 구분' }), { target: { value: '01' } });
+    fireEvent.click(screen.getByRole('button', { name: /결재자 선택/ }));
+    fireEvent.click(screen.getByRole('button', { name: '피커에서 김결재 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
+    await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledTimes(1));
+    const close = screen.getByRole('button', { name: '모달 닫기' });
+    expect(close).toBeDisabled(); fireEvent.click(close); expect(onClose).not.toHaveBeenCalled();
+    await act(async () => reject(new Error('synthetic request failed')));
+    await waitFor(() => expect(close).not.toBeDisabled());
+    expect(screen.getByRole('combobox', { name: '업무 구분' })).toHaveValue('01');
   });
 });

@@ -55,8 +55,10 @@ describe('설문 허브: 수치와 목록이 서로 다른 표라는 사실이 �
     expect(hub).not.toMatch(/등록된 설문(?!지)/);
   });
 
-  it('여론조사를 만드는 버튼과 여론조사를 보여 주는 탭은 여론조사라고 부른다', () => {
-    expect(hub).toContain('신규 여론조사 등록');
+  it('만족도 등록 동작과 여론조사 목록, 문항형 설문 결과를 구분한다', () => {
+    expect(hub).toContain('만족도 조사 등록');
+    expect(hub).toContain("router.push('/admin/survey/manage/create')");
+    expect(hub).toContain('href="/survey/stats"');
     expect(hub).toContain('여론조사 관리');
     // 같은 화면에서 poll 축을 다시 '설문'으로 부르면 구분이 무너진다.
     expect(hub).not.toContain('신규 설문 등록');

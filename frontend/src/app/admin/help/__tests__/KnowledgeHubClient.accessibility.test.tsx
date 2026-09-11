@@ -71,12 +71,12 @@ describe('KnowledgeHubClient accessibility semantics', () => {
     harness.search = 'tab=FAQ';
   });
 
-  it('uses contrast-safe semantic foregrounds for inverse surfaces and FAQ status text', () => {
+  it('uses semantic foregrounds on matching card surfaces and preserves truthful FAQ status', () => {
     render(<KnowledgeHubClient defaultTab="FAQ" />);
 
-    expect(screen.getByText('자주 묻는 질문 데이터셋'))
-      .toHaveClass('text-surface-inverse-muted');
-    expect(screen.getByText('총 1건')).toHaveClass('text-surface-inverse-muted');
+    expect(screen.getByRole('heading', { level: 1, name: '자주 묻는 질문' })).toBeVisible();
+    expect(screen.getByText('문서를 검색하고 필요한 내용을 확인하세요.')).toHaveClass('text-muted-foreground');
+    expect(screen.getByText('총 1건')).toHaveClass('text-muted-foreground');
     expect(screen.getByRole('button', { name: '최신순' }))
       .toHaveClass('text-primary-foreground');
     /*
@@ -91,10 +91,11 @@ describe('KnowledgeHubClient accessibility semantics', () => {
      */
     expect(screen.queryByText('공개')).toBeNull();
     expect(screen.queryByText('상태')).toBeNull();
-    expect(screen.getByText('방금 전').parentElement).toHaveClass('text-surface-inverse-muted');
+    expect(screen.getByText('방금 전').parentElement).toHaveClass('text-muted-foreground');
+    expect(screen.getByRole('heading', { name: '최근 활동' }).closest('.bg-card')).not.toHaveClass('hub-card-dark');
 
     const search = screen.getByRole('textbox', { name: '지식 검색어' });
-    expect(search).toHaveClass('placeholder:text-surface-inverse-muted');
+    expect(search).toHaveClass('placeholder:text-muted-foreground');
 
     const hotItem = screen.getAllByRole('button', { name: '합성 FAQ 문서 상세 보기' })
       .find((button) => button.querySelector('span.text-3xl'));

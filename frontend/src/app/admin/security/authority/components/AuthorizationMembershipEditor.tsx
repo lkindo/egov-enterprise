@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import type { AuthorizationGroupSummary, AuthorizationMembership } from '@/lib/auth/authorization-management-contract';
@@ -27,6 +28,7 @@ export function AuthorizationMembershipEditor({ snapshot, groups, refreshing, on
   const complete = baseline.complete === true && baseline.version.length > 0 && baseline.groups.every((code) => groups.some((group) => group.code === code));
   const writable = canPermission(user, 'AUTHRT_ASSIGN') && currentBaseline && complete && !pending && !refreshing && !saved;
   const dirty = selection.size !== baseline.groups.length || baseline.groups.some((group) => !selection.has(group));
+  const navigate = useUnsavedChanges(() => ({ dirty: dirty && !saved, pending: pendingRef.current }));
   const save = async () => {
     if (!writable || !dirty || pendingRef.current) return;
     pendingRef.current = true;
@@ -46,7 +48,7 @@ export function AuthorizationMembershipEditor({ snapshot, groups, refreshing, on
   };
   return (
     <section aria-label="사용자 권한 그룹 배정" className="space-y-4 rounded-lg border border-border bg-card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">사용자 권한 그룹</h3><Button type="button" variant="outline" disabled={pending || refreshing} onClick={reload}>선택 취소 · 최신 정보 적용</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">사용자 권한 그룹</h3><Button type="button" variant="outline" disabled={pending || refreshing} onClick={() => void navigate(reload)}>선택 취소 · 최신 정보 적용</Button></div>
       <p className="text-sm text-muted-foreground">여러 그룹을 함께 배정할 수 있으며 기능권한을 합산합니다. 사용자 분류 그룹과는 별도입니다.</p>
       {(!currentBaseline || saved) && <p role="status">배정 정보가 변경되었습니다. 최신 정보를 적용한 뒤 다시 편집하세요.</p>}
       {!complete && <p role="alert">전체 그룹 정보를 확인하지 못해 저장할 수 없습니다. 다시 조회해 주세요.</p>}

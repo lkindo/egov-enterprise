@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from './components/theme-provider';
 import Providers from './providers';
+import { ApplicationFrame } from './components/layout/ApplicationFrame';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
 import { Footer } from './components/layout/footer';
@@ -54,45 +55,17 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   const menusPromise = getInitialMenus(accessToken);
   
   return (
-    <div className="relative flex min-h-screen flex-col bg-background/50 selection:bg-primary/20 selection:text-primary">
-      {/* Skip Navigation: 본문 바로가기 링크 추가 (웹 접근성 준수) */}
-      <a
-        href="#main-content"
-        data-sidebar-modal-background="skip-link"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-surface-inverse focus:text-surface-inverse-foreground focus:px-5 focus:py-3 focus:rounded-[var(--radius-hub-item)] focus:font-bold focus:shadow-2xl focus:border focus:border-white/10 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300"
-      >
-        본문 바로가기
-      </a>
-      <Suspense fallback={<div className="h-11 border-b border-border bg-white/80" />}>
-        <Header menusPromise={menusPromise} />
-      </Suspense>
-      <div className="flex flex-1">
-        <Suspense fallback={<aside className="hidden lg:block w-72 border-r bg-card h-full" />}>
-          <Sidebar menusPromise={menusPromise} />
+    <ApplicationFrame
+      header={<Suspense fallback={<div className="h-[var(--app-header-height)] border-b border-border bg-card" />}><Header menusPromise={menusPromise} /></Suspense>}
+      sidebar={<Suspense fallback={<aside className="hidden h-full w-[var(--app-sidebar-width)] border-r bg-card lg:block" />}><Sidebar menusPromise={menusPromise} /></Suspense>}
+      footer={<Footer />}
+    >
+      <PageTransition>
+        <Suspense fallback={<div className="flex min-h-64 items-center justify-center text-muted-foreground"><h1 className="sr-only">페이지 콘텐츠를 불러오는 중</h1><p role="status">페이지 콘텐츠를 불러오는 중...</p></div>}>
+          {children}
         </Suspense>
-        {/* id="main-content" 및 tabIndex={-1} 속성을 주입하여 Skip Navigation 타겟 바인딩 (포커스 outline은 기본 제거) */}
-        <main
-          id="main-content"
-          data-sidebar-modal-background="main"
-          tabIndex={-1}
-          className="flex-1 lg:pl-72 pt-1 min-w-0 scroll-mt-16 transition-opacity duration-300 overflow-x-hidden outline-none"
-        >
-          <div className="max-w-[var(--page-max-w)] mx-auto p-[var(--page-pad)] md:p-[var(--page-pad-md)] lg:p-[var(--page-pad-lg)] min-h-[calc(100vh-11rem)]">
-            <PageTransition>
-              <Suspense fallback={
-                <div className="flex h-full w-full flex-col items-center justify-center min-h-[500px] text-muted-foreground font-medium">
-                  <h1 className="sr-only">페이지 콘텐츠를 불러오는 중</h1>
-                  <p role="status" aria-live="polite">페이지 콘텐츠를 불러오는 중...</p>
-                </div>
-              }>
-                {children}
-              </Suspense>
-            </PageTransition>
-          </div>
-          <Footer className="border-t border-border/20 py-8 mb-4 px-6" />
-        </main>
-      </div>
-    </div>
+      </PageTransition>
+    </ApplicationFrame>
   );
 }
 

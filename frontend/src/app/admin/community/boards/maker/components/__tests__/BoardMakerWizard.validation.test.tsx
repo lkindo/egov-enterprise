@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BoardMakerWizard, boardMakerFormSchema } from '../BoardMakerWizard';
 
-const { createBoardMaster, createMenu, communities } = vi.hoisted(() => ({
+const { createBoardMaster, createMenu, getAllMenus, communities } = vi.hoisted(() => ({
   createBoardMaster: vi.fn(),
   createMenu: vi.fn(),
+  getAllMenus: vi.fn(),
   // [2026-09-08 PD-CMTY-001] 귀속 후보 목록. 사용 중지된 커뮤니티는 후보에서 빠진다.
   communities: {
     current: {
@@ -31,7 +32,7 @@ vi.mock('@/services/foundation/system/BoardAdminService', () => ({
   boardAdminService: { createBoardMaster },
 }));
 vi.mock('@/services/foundation/system/MenuAdminService', () => ({
-  menuAdminService: { createMenu },
+  menuAdminService: { createMenu, getAllMenus },
 }));
 vi.mock('../BoardPreview', () => ({ BoardPreview: () => null }));
 
@@ -59,6 +60,7 @@ describe('BoardMakerWizard validation', () => {
     createBoardMaster.mockReset();
     createMenu.mockReset();
     createMenu.mockResolvedValue(undefined);
+    getAllMenus.mockReset().mockResolvedValue([]);
   });
 
   it('preserves board/menu DTO text and integer boundaries', () => {
@@ -67,6 +69,33 @@ describe('BoardMakerWizard validation', () => {
     expect(boardMakerFormSchema.safeParse({ ...validDraft, bbsExpln: '가'.repeat(4001) }).success).toBe(false);
     expect(boardMakerFormSchema.safeParse({ ...validDraft, menuNm: '가'.repeat(101) }).success).toBe(false);
     expect(boardMakerFormSchema.safeParse({ ...validDraft, menuOrdr: 1.5 }).success).toBe(false);
+  });
+
+  it.each(['absent', 'already-created', 'read-error'])('retries only the menu after board creation succeeds: %s', async (outcome) => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    createMenu.mockRejectedValueOnce(new Error('synthetic response lost'));
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '사내 소식' } });
+    for (const step of ['템플릿 선택', '접근 권한 안내', '메뉴 배포']) {
+      fireEvent.click(screen.getByRole('button', { name: /다음 단계로/ }));
+      await screen.findByRole('heading', { name: step });
+    }
+    fireEvent.click(screen.getByRole('button', { name: '게시판 생성 및 메뉴 배포' }));
+    const retry = await screen.findByRole('button', { name: '메뉴 등록 다시 시도' });
+    await waitFor(() => expect(retry).not.toBeDisabled());
+    expect(screen.getByText(/게시판은 생성되었습니다/)).toBeVisible();
+    if (outcome === 'already-created') getAllMenus.mockResolvedValue([{ modernRoute: '/admin/community/boards/select-board-list?bbsId=BBSMSTR_AAAAAAAAAAAA', useYn: 'N' }]);
+    if (outcome === 'read-error') getAllMenus.mockRejectedValue(new Error('synthetic read failed'));
+    fireEvent.click(retry);
+    await waitFor(() => expect(getAllMenus).toHaveBeenCalledTimes(1));
+    if (outcome === 'read-error') {
+      await waitFor(() => expect(retry).not.toBeDisabled());
+      expect(screen.queryByRole('button', { name: '생성한 메뉴 설정하기' })).not.toBeInTheDocument();
+    } else {
+      await screen.findByRole('button', { name: '생성한 메뉴 설정하기' });
+    }
+    expect(createBoardMaster).toHaveBeenCalledTimes(1);
+    expect(createMenu).toHaveBeenCalledTimes(outcome === 'absent' ? 2 : 1);
   });
 
   it('does not advance on an invalid first step and exposes summary, inline error, and focus', async () => {

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
 import { DashboardTask } from '@/types/foundation/dashboard';
+import { NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
 
 // Optimization: Priority 2 - Dynamic Imports for heavy components
 /* reusable-base:demo:start */
@@ -45,9 +46,8 @@ interface UnifiedDashboardClientProps {
  * 목록 카드 순서라, "내가 지금 처리해야 할 것"이 화면 한참 아래에 있었다. 순서를 뒤집어
  * **처리 대기 → 내 목록 → 상태·활동 → 홍보**로 놓는다.
  *
- * ⚠ 목록 항목은 링크가 아니다 — 대시보드 응답(DashboardTask)에는 항목별 목적지가 없다.
- *   종전 카드는 `cursor-pointer` 로 클릭 가능한 것처럼 보였지만 핸들러가 없었다(G10 죽은 어포던스).
- *   목적지가 있는 것만 링크로 만들고, 나머지는 섹션 단위 '전체 보기'로 보낸다.
+ * 서버가 제공한 게시판·게시글 식별자가 있는 항목만 상세로 연결한다.
+ * 식별자가 없는 응답에 임의 목적지를 붙이지 않고 전체 보기로 안내한다.
  */
 
 interface HomeListSectionProps {
@@ -79,7 +79,9 @@ function HomeListSection({ title, items, moreHref, moreLabel, emptyMessage }: Ho
           {items.slice(0, 6).map((item, index) => (
             <li key={item.id || `${title}-${index}`} className="flex items-baseline justify-between gap-3 px-4 py-2">
               <span className="min-w-0 flex-1 truncate text-[length:var(--font-size-body)] text-foreground">
-                {item.title}
+                {item.bbsId && item.pstSn
+                  ? <Link href={`/admin/community/boards/detail?bbsId=${encodeURIComponent(item.bbsId)}&pstSn=${item.pstSn}`} className="underline-offset-4 hover:text-primary hover:underline">{item.title}</Link>
+                  : item.title}
                 {item.isNew && (
                   <span className="ml-2 rounded bg-info px-1.5 py-0.5 text-xs font-bold text-info-foreground">신규</span>
                 )}
@@ -179,14 +181,14 @@ export default function UnifiedDashboardClient({
         <HomeListSection
           title="업무게시판 최근 글"
           items={taskList}
-          moreHref="/admin/community/boards"
+          moreHref={`/admin/community/boards/select-board-list?bbsId=${TASK_BOARD_ID}`}
           moreLabel="업무게시판 전체 보기"
           emptyMessage="업무게시판에 등록된 글이 없습니다."
         />
         <HomeListSection
           title="최근 공지사항"
           items={notiList}
-          moreHref="/admin/community/boards"
+          moreHref={`/admin/community/boards/select-board-list?bbsId=${NOTICE_BOARD_ID}`}
           moreLabel="공지 전체 보기"
           emptyMessage="새 공지사항이 없습니다."
         />

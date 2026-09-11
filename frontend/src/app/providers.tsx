@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { WebSocketProvider } from '@/contexts/websocket-context';
 import { LayoutProvider } from '@/contexts/LayoutContext';
+import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
 import { ToastProvider } from '@/app/components/ui/toast';
 import { ConfirmProvider } from '@/app/components/ui/confirm-modal';
 import { GlobalShortcutProvider } from '@/app/components/ui/global-shortcut-provider';
@@ -123,6 +124,7 @@ export default function Providers({
       <MotionConfig reducedMotion="user">
         <ToastProvider>
           <ConfirmProvider>
+            <UnsavedChangesProvider>
             <GlobalShortcutProvider>
               <AuthProvider initialUser={initialUser}>
                 <LayoutProvider>
@@ -141,6 +143,7 @@ export default function Providers({
                 </LayoutProvider>
               </AuthProvider>
             </GlobalShortcutProvider>
+            </UnsavedChangesProvider>
           </ConfirmProvider>
         </ToastProvider>
       </MotionConfig>

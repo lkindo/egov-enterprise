@@ -80,6 +80,7 @@ interface DeptJobFormProps {
     onCancel: () => void;
     /** 합성 화면이 소유하는 mutation 잠금. 부모의 저장/삭제 상호 배제를 실제 폼 제어에 전달한다. */
     isPending?: boolean;
+    onEditStateChange?: (state: { dirty: boolean; pending: boolean }) => void;
 }
 
 /** 업무함 미지정을 나타내는 Select 값. Radix Select 는 빈 문자열 value 를 허용하지 않는다. */
@@ -91,7 +92,7 @@ const NO_BOX = '__none__';
  */
 const PIC_SEARCH_MIN_KEYWORD = 2;
 
-export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, isPending = false }: DeptJobFormProps) {
+export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, isPending = false, onEditStateChange }: DeptJobFormProps) {
     const isEdit = mode === 'edit';
 
     // 업무함 목록. 조회는 관리자 전용이 아니므로 일반 사용자도 선택할 수 있다
@@ -147,6 +148,9 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
 
     const { isSubmitting } = form.formState;
     const isSavePending = isSubmitting || isPending;
+    React.useEffect(() => {
+        onEditStateChange?.({ dirty: form.formState.isDirty, pending: isSavePending });
+    }, [form.formState.isDirty, isSavePending, onEditStateChange]);
 
     const handleSubmit = async (values: DeptJobFormValues) => {
         try {

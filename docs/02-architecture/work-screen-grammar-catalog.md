@@ -100,6 +100,8 @@
 
 `comfortable`(기본 배포)은 오버라이드가 없어 프로필 선언값 그대로다. **위 합격선은 `compact` 배포에만 적용한다.** 대민 프로필에 업무 밀도를 주입하지 않는다.
 
+셸의 헤더 높이와 사이드바 폭은 밀도 축 밖의 `--app-header-height`(3.5rem)·`--app-sidebar-width`(16rem)를 공유한다. [구현 안내](../03-guides/ui-ux-task-flow-optimization.md#1-화면의-기본-구성)를 참고한다.
+
 ## 5. Archetype 8종
 
 각 archetype은 `목적 / 골격 / 필수 / 금지 / 키보드 / 합격` 6줄로 규정한다. 공통 규칙 G1~G15는 전부 상속하며 아래에는 **추가·예외만** 적는다.
@@ -142,7 +144,7 @@
 - **금지:** 확인 없이 실행되는 일괄 액션, 상태를 색으로만 구분하기(색 단독 의미 전달 금지).
 - **키보드:** `Space` 선택 토글 · `Ctrl+A` 전체 선택(현재 페이지 한정 명시) · 일괄 액션 `Enter`.
 - **합격:** 일괄 처리 N건 중 M건 실패가 건별로 보고됨 · 대기 건수가 진입 즉시 보임.
-- **현재 화면(2026-08-24 판정):** **이 저장소에 A4 실소비자는 없다.** `/approvals`(결재 허브)는 결재 API 가 건별 `confirm(approvalId, status)` 하나뿐이라 "선택 → 일괄 처리 → 부분 실패 보고"가 성립하지 않고, 실제 과업이 문서 선택 → 결재선·의견 확인 → 처리라서 **A2 로 이행했다**. `/admin/sanctn/workflow` 는 컨트롤이 전부 비활성인 정적 데모다. 일괄 처리(`bulkActions`)는 게시판 마스터·사용자 조직 두 화면에 **A1/A2 에 붙는 기능 축**으로 존재한다. 따라서 소비자 없는 A4 셸을 미리 만들지 않는다 — 실제 일괄 처리 API 가 생기면 그때 이 스펙으로 만든다.
+- **현재 화면(2026-09-11 확인):** `/admin/security/authority`는 그룹 목록 → 선택한 그룹의 기본정보·기능권한·메뉴 트리를 편집하는 A2 구조다. 역할 × 메뉴 격자는 현재 운영 화면의 소비자가 아니다. 남아 있는 [SecurityMatrixVisualizer](../../frontend/src/app/admin/security/authority/components/SecurityMatrixVisualizer.tsx)와 [matrix-a5-contract](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx)는 A5 컴포넌트 수준의 계약이며 현행 권한 관리 전체의 검증으로 세지 않는다. 실제 화면은 [SecurityHubClient 테스트](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx)가 버전 충돌·복수 그룹 배정·메뉴 계층·미저장 이동을 검증한다. [UI/UX 작업 동선](../03-guides/ui-ux-task-flow-optimization.md)을 함께 참고한다.
 
 ### A5. 권한 매트릭스 (Matrix Grid)
 
