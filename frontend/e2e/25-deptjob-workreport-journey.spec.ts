@@ -29,6 +29,11 @@ import path from 'path';
  *   · StandardDataTable 이 지원하는 pagination prop 을 전달하지 않아 페이저가 아예 없었다.
  *   · 보고 행의 '관리' 컬럼이 onClick 없는 死버튼이었다(수정·삭제 진입점 부재).
  *
+ * ── 업무함 관리의 부서 조회
+ *   · 허브 진입과 다이얼로그 단위 테스트는 성공 mock만 사용해, 실제 /departments/tree의
+ *     Pageable.unpaged() 조회가 500을 내는 결함을 놓쳤다. 관리창을 열고 실제 부서를 선택해
+ *     업무함 등록·수정·삭제까지 완료하는 경로를 별도로 검증한다.
+ *
  * [검증 전략] 계약(채번·검색·페이징·소유권)은 API 로, 화면 배선(목록이 무엇을 보여주는가·
  *   등록 후 어디에 착지하는가·행에서 수정/삭제로 갈 수 있는가)은 UI 로 확인한다.
  *   API 로 확인할 수 있는 것을 UI 로 되풀이하지 않는다.
@@ -52,6 +57,8 @@ function getAdminBearerToken(): string {
 }
 
 const JOB_API = '/api/v1/dept-jobs';
+const BOX_API = `${JOB_API}/boxes`;
+const DEPT_API = '/api/v1/admin/system/departments';
 const REPORT_API = '/api/v1/work-reports';
 
 /** 이 스펙이 만든 자원만 지우기 위한 접두사. 다른 tier·cleanup 정책과 겹치지 않는 고유값을 쓴다. */
@@ -68,6 +75,123 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
 
     test.beforeAll(() => {
         auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
+    });
+
+    test('업무함 관리: 부서 전량 조회 → 부서 지정 등록 → 수정 → 삭제', async ({ page, request }) => {
+        const suffix = Date.now();
+        const departmentName = `${PREFIX}BoxDept_${suffix}`;
+        const boxName = `${PREFIX}Box_${suffix}`;
+        const editedName = `${boxName}_edited`;
+        let departmentId = '';
+        let boxSn = 0;
+        let boxDeleted = false;
+
+        try {
+            // 선택지를 기존 seed에 의존하지 않는다. 이 테스트가 만든 부서만 사용한다.
+            const departmentCreate = await request.post(DEPT_API, {
+                headers: auth,
+                data: { ognzNm: departmentName },
+            });
+            expect(departmentCreate.status(), '업무함 테스트용 부서 생성이 성공해야 한다').toBe(200);
+            departmentId = (await departmentCreate.json()).data as string;
+            expect(departmentId).toMatch(/^ORGNZT_/);
+
+            const deptJobPage = new DeptJobPage(page);
+            await deptJobPage.gotoJobList();
+
+            // 응답 상태를 waiter 조건에 넣지 않는다. 500도 즉시 받아 실패 원인을 드러낸다.
+            const [treeResponse, boxesResponse] = await Promise.all([
+                page.waitForResponse((response) =>
+                    new URL(response.url()).pathname === `${DEPT_API}/tree`
+                    && response.request().method() === 'GET'),
+                page.waitForResponse((response) =>
+                    new URL(response.url()).pathname === BOX_API
+                    && response.request().method() === 'GET'),
+                page.getByRole('button', { name: '업무함 관리', exact: true }).click(),
+            ]);
+            expect(treeResponse.status(), '관리창의 부서 전량 조회는 500 없이 성공해야 한다').toBe(200);
+            expect((await treeResponse.json()).data).toEqual(expect.arrayContaining([
+                expect.objectContaining({ ognzId: departmentId, ognzNm: departmentName }),
+            ]));
+            expect(boxesResponse.status(), '관리창의 업무함 목록 조회가 성공해야 한다').toBe(200);
+
+            const dialog = page.getByRole('dialog', { name: '업무함 관리', exact: true });
+            await expect(dialog).toBeVisible();
+            await dialog.getByRole('combobox', { name: '담당 부서', exact: true }).click();
+            const departmentOption = page.getByRole('option', { name: departmentName, exact: true });
+            await expect(departmentOption, '서버에서 읽은 부서가 실제 선택지로 나타나야 한다').toBeVisible();
+            await departmentOption.click();
+            await dialog.getByRole('textbox', { name: /업무함 이름/ }).fill(boxName);
+            await dialog.getByRole('textbox', { name: '정렬 순서', exact: true }).fill('0');
+
+            const [createdResponse] = await Promise.all([
+                page.waitForResponse((response) =>
+                    new URL(response.url()).pathname === BOX_API
+                    && response.request().method() === 'POST'),
+                dialog.getByRole('button', { name: '업무함 등록', exact: true }).click(),
+            ]);
+            expect(createdResponse.status(), '화면에서 업무함 등록이 성공해야 한다').toBe(200);
+            boxSn = (await createdResponse.json()).data as number;
+            expect(boxSn).toBeGreaterThan(0);
+
+            const list = dialog.getByRole('list', { name: '업무함 목록', exact: true });
+            const row = list.getByRole('listitem').filter({ hasText: boxName });
+            await expect(row, '등록 후 관리 목록이 갱신되어야 한다').toBeVisible();
+            const createdDetail = await request.get(`${BOX_API}/${boxSn}`, { headers: auth });
+            expect(createdDetail.status()).toBe(200);
+            expect((await createdDetail.json()).data).toMatchObject({
+                deptTaskBoxNm: boxName, deptId: departmentId, sortOrdr: 0,
+            });
+
+            await row.getByRole('button', { name: `${boxName} 수정`, exact: true }).click();
+            await expect(dialog.getByRole('combobox', { name: '담당 부서', exact: true }))
+                .toHaveText(departmentName);
+            await expect(dialog.getByRole('textbox', { name: /업무함 이름/ })).toHaveValue(boxName);
+            await dialog.getByRole('textbox', { name: /업무함 이름/ }).fill(editedName);
+            const [updatedResponse] = await Promise.all([
+                page.waitForResponse((response) =>
+                    new URL(response.url()).pathname === `${BOX_API}/${boxSn}`
+                    && response.request().method() === 'PUT'),
+                dialog.getByRole('button', { name: '수정 저장', exact: true }).click(),
+            ]);
+            expect(updatedResponse.status(), '화면에서 업무함 수정이 성공해야 한다').toBe(200);
+            const editedRow = list.getByRole('listitem').filter({ hasText: editedName });
+            await expect(editedRow).toBeVisible();
+            const updatedDetail = await request.get(`${BOX_API}/${boxSn}`, { headers: auth });
+            expect(updatedDetail.status()).toBe(200);
+            expect((await updatedDetail.json()).data).toMatchObject({
+                deptTaskBoxNm: editedName, deptId: departmentId, sortOrdr: 0,
+            });
+
+            await editedRow.getByRole('button', { name: `${editedName} 삭제`, exact: true }).click();
+            const confirmation = page.getByRole('dialog', { name: '업무함 삭제', exact: true });
+            const [deletedResponse] = await Promise.all([
+                page.waitForResponse((response) =>
+                    new URL(response.url()).pathname === `${BOX_API}/${boxSn}`
+                    && response.request().method() === 'DELETE'),
+                confirmation.getByRole('button', { name: '삭제', exact: true }).click(),
+            ]);
+            expect(deletedResponse.status(), '삭제 확인이 실제 삭제로 이어져야 한다').toBe(200);
+            boxDeleted = true;
+            await expect(editedRow).toHaveCount(0);
+            const gone = await request.get(`${BOX_API}/${boxSn}`, { headers: auth });
+            expect(gone.status(), '삭제한 업무함을 다시 조회하면 404여야 한다').toBe(404);
+            await dialog.getByRole('button', { name: '닫기', exact: true }).click();
+            await expect(dialog).toBeHidden();
+        } finally {
+            // 실패 중에도 이 테스트가 채번한 자원만 정리하고, 정리 실패를 숨기지 않는다.
+            try {
+                if (boxSn > 0 && !boxDeleted) {
+                    const cleanupBox = await request.delete(`${BOX_API}/${boxSn}`, { headers: auth });
+                    expect(cleanupBox.status(), '테스트 업무함 정리가 성공해야 한다').toBe(200);
+                }
+            } finally {
+                if (departmentId) {
+                    const cleanupDepartment = await request.delete(`${DEPT_API}/${departmentId}`, { headers: auth });
+                    expect(cleanupDepartment.status(), '테스트 부서 정리가 성공해야 한다').toBe(200);
+                }
+            }
+        }
     });
 
     // ─────────────────────────────────────────────────────────────────────────

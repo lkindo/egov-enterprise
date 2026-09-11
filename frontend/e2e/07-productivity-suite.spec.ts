@@ -53,7 +53,7 @@ test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
 
     // [2026-08-10 중복제거] 삭제됨: 'Smart Toolkit: Business Extensions (Dept Job & Work Report)'.
     //
-    //   25-deptjob-workreport-journey 가 이 도메인 전체를 8건으로 소유한다. 그 스펙은
+    //   25-deptjob-workreport-journey 가 부서 업무 CRUD·목록과 업무 보고 검색·페이징·수정/삭제를 검증한다. 그 스펙은
     //   '부서 업무 목록은 업무함(box)이 아니라 부서 업무(DeptJob)를 보여준다' 에서
     //   **API 로 업무를 만들고 → 목록에서 찾고 → 행의 링크가 그 업무의 상세로 향하는지까지** 검증한다.
     //   여기서 하던 "만들고 → 목록에 보이는지"는 그 앞부분과 정확히 같으면서 더 약했다.

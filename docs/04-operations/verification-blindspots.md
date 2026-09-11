@@ -54,6 +54,24 @@ green 이었다. 새 게이트를 만들거나 기존 게이트를 고칠 때 �
 이 절차의 결과는 커밋 메시지에 남긴다. `red 실측` 이라고만 적지 말고 **무엇을 주입해 어떤
 메시지로 red 가 났는지** 적는다.
 
+## 커버리지 100%와 전체 조회 입력의 누락
+
+업무함 관리창은 `/api/v1/admin/system/departments/tree`로 부서 선택지를 읽는다. 이 API가 전달한 `Pageable.unpaged()`를 Repository가 일반 페이지처럼 취급해 `getOffset()`을 호출하면 `UnsupportedOperationException`으로 HTTP 500이 발생한다. SQL 실행 전의 입력 계약 오류이므로 스키마 검증으로는 검출되지 않는다.
+
+2026-09-11 [PR #614의 CI 실행](https://github.com/lkindo/egov-enterprise/actions/runs/34588047616)에서 `DeptManageRepositoryImpl`의 PIT 보고서는 라인 15/15, mutation 2/2였다. 기존 테스트는 일반 `PageRequest`만 전달했고, 생성된 mutation은 검색 조건 뒤집기와 null 반환뿐이었다. 따라서 **라인·분기·mutation 점수는 실행한 입력 조합의 완전성을 증명하지 않는다.** CI와 하네스가 실제 실행돼도 검증 대상 동작이 빠지면 오류가 남는다.
+
+재발 확인은 [Repository 회귀 테스트](../../business-core/src/test/java/nuri/business/domain/user/repository/DeptManageRepositoryPagingTest.java)의 전체 조회·검색·빈 결과·두 번째 페이지 조회를 기준으로 한다. 결함 구현에서 전체 조회 세 사례가 `UnsupportedOperationException`으로 실패하고, 전체 조회와 페이지 조회를 구분한 구현에서 네 사례가 통과하는 red/green을 확인했다. 서비스가 mock인 [Controller 테스트](../../api-server/src/test/java/nuri/api/controller/system/DeptApiControllerTest.java)는 `unpaged` 전달과 envelope까지만 확인하므로, [기존 업무 E2E](../../frontend/e2e/25-deptjob-workreport-journey.spec.ts)에서 실제 관리창의 부서 조회와 선택·저장 동선을 함께 검사한다. E2E의 통과 여부는 해당 실행 결과로 별도 판정한다.
+
+```bash
+# 서버 없이 실제 Repository 쿼리와 입력 계약 확인(H2)
+./gradlew :business-core:test --tests '*DeptManageRepositoryPagingTest'
+
+# 격리 E2E 서버·DB·테스트 계정 준비 후 실제 API와 UI 동선 확인
+pnpm -C frontend exec playwright test e2e/25-deptjob-workreport-journey.spec.ts --project=full-suite
+```
+
+두 검증은 기존 `business-core:test`와 도메인 E2E 실행 경로에 포함한다. [CI](../../.github/workflows/ci.yml)의 `build ... check`와 E2E shard가 이를 소비하므로 같은 목적의 workflow를 추가할 필요가 없다. [PageableConstructionLinterTest](../../api-server/src/test/java/nuri/api/harness/PageableConstructionLinterTest.java)는 DTO 페이징 변환과 `@Valid`를 검사하는 정적 하네스이며, `unpaged`의 런타임 동작까지 보장한다고 해석하지 않는다. 기능 완료 판정은 [검증 범위 체크리스트](../03-guides/testing-guide.md#기능-완료를-판정하는-검증-범위)를 따른다.
+
 ## 현재 비결정적·외부 의존 검증
 
 | 경로 | 저장소 실행 계약 | 성공 판정 | 남는 사각지대 |

@@ -31,6 +31,26 @@ public class DeptApiControllerTest extends BaseControllerTest {
     }
 
     @Test
+    public void getDeptTree_ShouldReturnListUsingUnpagedSearch() throws Exception {
+        DeptManageDto dto = DeptManageDto.builder()
+                .ognzId("DEPT_TREE_TEST")
+                .ognzNm("검색 부서")
+                .build();
+        when(deptManageService.getDeptManageList(eq("검색"), argThat(Pageable::isUnpaged)))
+                .thenReturn(new PageImpl<>(Collections.singletonList(dto)));
+
+        mockMvc.perform(get("/api/v1/admin/system/departments/tree")
+                .param("keyword", "검색")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].ognzId").value("DEPT_TREE_TEST"));
+
+        verify(deptManageService).getDeptManageList(eq("검색"), argThat(Pageable::isUnpaged));
+    }
+
+    @Test
     public void getDepts_ShouldReturnPagedDepts() throws Exception {
         DeptManageDto dto = DeptManageDto.builder()
                 .ognzId("ORGNZT_0000000000001")
