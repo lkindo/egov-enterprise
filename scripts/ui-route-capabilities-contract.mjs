@@ -287,21 +287,77 @@ export function discoverPageRoutes(repoRoot = ROOT) {
   return pages;
 }
 
-function extractConstStringArray(source, constantName) {
-  const escaped = constantName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const declaration = new RegExp(`const\\s+${escaped}\\s*=\\s*\\[([\\s\\S]*?)\\]\\s*as\\s+const`);
-  const match = declaration.exec(source);
-  if (!match) return null;
-  return [...match[1].matchAll(/['"]([^'"]+)['"]/g)].map((item) => item[1]);
+// Root operational contracts run before frontend dependencies are installed.
+// Keep this small source-binding check dependency-free; quoted examples and comments
+// must not count as executable evidence. Proxy runtime tests own actual HTTP behavior.
+const literalToken = (value) => `__literal_${Buffer.from(value).toString('hex')}__`;
+function bindingCode(source) {
+  return source.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\/\/[^\r\n]*|\/\*[\s\S]*?\*\//g, (part) => {
+    if (part.startsWith('//') || part.startsWith('/*')) return '';
+    if (part.startsWith('`')) return '__template__';
+    return literalToken(part.slice(1, -1));
+  }).replace(/\s+/g, '');
+}
+
+export function validatePageAuthorizationBinding(proxySource, helperSource) {
+  const proxy = bindingCode(proxySource);
+  const helper = bindingCode(helperSource);
+  const errors = [];
+  if (!proxy.includes(`import{canEnterRegisteredPage,loadPageAuthorization}from${literalToken('@/lib/auth/page-authorization')};`)) {
+    errors.push('proxy must import the registered page authorization implementation');
+  }
+  const guardedBranch = `constnormalizedPath=pathname.toLowerCase();if(matchesPrefix(normalizedPath,${literalToken('/admin')})){`
+    + 'constauthorization=accessToken?awaitloadPageAuthorization(accessToken,userSubject):null;'
+    + 'if(!authorization||!canEnterRegisteredPage(pathname,authorization)){'
+    + `constfallbackUrl=newURL(${literalToken('/')},request.url);`
+    + `fallbackUrl.searchParams.set(${literalToken('auth_error')},${literalToken('unauthorized')});`
+    + 'constdenied=withNonce(NextResponse.redirect(fallbackUrl));'
+    + `denied.headers.set(${literalToken('x-mw-auth')},__template__);returndenied;}}`;
+  if (!proxy.includes(guardedBranch)) {
+    errors.push('proxy must apply current authorization and the original pathname to every admin page before returning permission denial');
+  }
+  if (!helper.includes(`import{PAGE_PERMISSIONS}from${literalToken('@/types/generated-permissions')};`)
+    || !helper.includes('constexact=PAGE_PERMISSIONS[normalizedPath];')
+    || !helper.includes('if(!entry)returnfalse;constrequired=entry[1];returnrequired.length===0||canAnyPermission(subject,required);')) {
+    errors.push('page helper must consume generated PAGE_PERMISSIONS, prefer exact routes, and deny unregistered pages');
+  }
+  return errors;
+}
+
+export function parsePageAuthorizationSources(source, helper, catalog, generated) {
+  const generatedMatch = /^export const PAGE_PERMISSIONS:[^=]+?=\s*(\{[\s\S]*?\});\s*$/m.exec(generated);
+  const generatedPages = generatedMatch ? JSON.parse(generatedMatch[1]) : null;
+  const bindingErrors = validatePageAuthorizationBinding(source, helper);
+  const pagePermissions = catalog.pagePermissions;
+  const codes = new Set((catalog.permissions ?? []).map(({ code }) => code));
+  if (!pagePermissions || typeof pagePermissions !== 'object' || Array.isArray(pagePermissions)
+    || Object.keys(pagePermissions).length === 0
+    || Object.entries(pagePermissions).some(([route, required]) => !route.startsWith('/') || !Array.isArray(required)
+      || required.some((code) => !codes.has(code)) || new Set(required).size !== required.length)) {
+    bindingErrors.push('page permission registry is missing, empty or invalid');
+  }
+  if (JSON.stringify(pagePermissions) !== JSON.stringify(generatedPages)) {
+    bindingErrors.push('generated PAGE_PERMISSIONS must exactly match the source page permission registry');
+  }
+  return { pagePermissions, bindingErrors };
 }
 
 export function readProxyAccessRules(repoRoot = ROOT) {
   const sourcePath = path.join(repoRoot, 'frontend', 'src', 'proxy.ts');
-  const source = fs.readFileSync(sourcePath, 'utf8');
+  const policySource = 'config/governance/permission-catalog.json';
+  const generatedSource = 'frontend/src/types/generated-permissions.ts';
+  const helperSource = 'frontend/src/lib/auth/page-authorization.ts';
   return {
     source: normalize(path.relative(repoRoot, sourcePath)),
-    userAccessibleAdminPaths: extractConstStringArray(source, 'USER_ACCESSIBLE_ADMIN_PATHS'),
-    adminOnlySubpaths: extractConstStringArray(source, 'ADMIN_ONLY_SUBPATHS'),
+    policySource,
+    generatedSource,
+    helperSource,
+    ...parsePageAuthorizationSources(
+      fs.readFileSync(sourcePath, 'utf8'),
+      fs.readFileSync(path.join(repoRoot, helperSource), 'utf8'),
+      JSON.parse(fs.readFileSync(path.join(repoRoot, policySource), 'utf8')),
+      fs.readFileSync(path.join(repoRoot, generatedSource), 'utf8'),
+    ),
   };
 }
 
@@ -312,12 +368,18 @@ function matchesPrefix(route, prefix) {
 export function expectedShellAccess(route, proxyRules) {
   if (route === '/login') return 'public';
   if (!matchesPrefix(route.toLowerCase(), '/admin')) return 'authenticated';
-  const normalized = route.toLowerCase();
-  const userAccessible = proxyRules.userAccessibleAdminPaths
-    .some((prefix) => matchesPrefix(normalized, prefix.toLowerCase()));
-  const adminOnly = proxyRules.adminOnlySubpaths
-    .some((prefix) => matchesPrefix(normalized, prefix.toLowerCase()));
-  return userAccessible && !adminOnly ? 'authenticated' : 'admin-system';
+  const normalized = route.replace(/\/$/, '');
+  const pages = proxyRules.pagePermissions ?? {};
+  const exact = pages[normalized];
+  const segments = normalized.split('/');
+  const required = exact ?? Object.entries(pages).find(([candidate]) => {
+    const candidates = candidate.replace(/\/$/, '').split('/');
+    return candidates.length === segments.length && candidates.every((part, index) =>
+      /^\[[^.[\]]+\]$/.test(part) ? segments[index].length > 0 : part === segments[index]);
+  })?.[1];
+  // admin-system is a legacy census label for a gated shell, not an ADMIN/SYSTEM
+  // role monopoly. Unknown pages stay gated: no registered permission can open them.
+  return Array.isArray(required) && required.length === 0 ? 'authenticated' : 'admin-system';
 }
 
 function pathOnly(route) {
@@ -515,6 +577,7 @@ export function buildUnreviewedBaselineManifest(
     scope: 'frontend/src/app/**/page.{js,jsx,ts,tsx}',
     notes: [
       'shellAccess is a proxy UI-shell admission class, not a domain capability authorization claim.',
+      'admin-system is a compatibility label for an explicit OPERATION-gated admin shell, not an ADMIN/SYSTEM role restriction; unregistered admin paths are denied. NAVIGATION controls menu display separately.',
       'directProjectionProfiles is a direct removePaths observation, not positive semantic profile ownership and not a full transitive artifact proof.',
       'unverified values are bounded review exceptions and keep G1 gateReady=false.',
       'Capability evidence levels are E0 entry, E1 reachable code, E2 authoritative source/policy, E3 executable contract definition, E4 current UI-to-server roundtrip artifact, and E5 deployed provenance/owner confirmation.',
@@ -523,6 +586,9 @@ export function buildUnreviewedBaselineManifest(
     sources: {
       pages: 'frontend/src/app/**/page.{js,jsx,ts,tsx}',
       proxy: repository.proxy.source,
+      pagePermissions: repository.proxy.policySource,
+      generatedPagePermissions: repository.proxy.generatedSource,
+      pageAuthorization: repository.proxy.helperSource,
       redirects: repository.configRedirects.source,
       profiles: repository.profileSource,
     },
@@ -611,9 +677,17 @@ export function validateRouteCapabilities(manifest, repository, nowMs = Date.now
   if (manifest?.schemaVersion !== 1) errors.push('manifest schemaVersion must be 1');
   if (!validIsoDate(manifest?.asOf)) errors.push('manifest asOf must be a real YYYY-MM-DD date');
   if (pages.length === 0) errors.push('route population is empty');
-  if (!Array.isArray(repository?.proxy?.userAccessibleAdminPaths)
-    || !Array.isArray(repository?.proxy?.adminOnlySubpaths)) {
-    errors.push('proxy access arrays could not be parsed');
+  if (!Array.isArray(repository?.proxy?.bindingErrors)) errors.push('proxy page authorization binding was not inspected');
+  else errors.push(...repository.proxy.bindingErrors);
+  if (!exactArray(Object.keys(repository?.proxy?.pagePermissions ?? {}).sort(), pages.map(({ route }) => route).sort())) {
+    errors.push('page permission registry must cover exactly the filesystem route population');
+  }
+  for (const [key, expected] of Object.entries({
+    pagePermissions: repository?.proxy?.policySource,
+    generatedPagePermissions: repository?.proxy?.generatedSource,
+    pageAuthorization: repository?.proxy?.helperSource,
+  })) {
+    if (!expected || manifest?.sources?.[key] !== expected) errors.push(`sources.${key} must bind the current page authorization source`);
   }
   validateMenuSnapshot(manifest?.menuSnapshot, nowMs, errors);
 

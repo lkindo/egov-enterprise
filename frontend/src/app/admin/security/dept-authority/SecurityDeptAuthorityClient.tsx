@@ -31,7 +31,7 @@ export default function SecurityDeptAuthorityClient() {
   const error = departments.error || groups.error || roster.error;
   const refresh = async () => { await queryClient.invalidateQueries({ queryKey: ['authorization'] }); };
   return (
-    <WorkListPage title="부서별 권한 그룹 배정" description="부서 구성원을 확인한 뒤 선택한 사용자에게 그룹을 추가하거나 회수합니다." breadcrumbItems={[{ label: '보안' }, { label: '부서별 권한 그룹' }]}
+    <WorkListPage title="부서별 그룹 배정" description="부서 구성원을 확인한 뒤 선택한 사용자에게 그룹을 추가하거나 회수합니다." breadcrumbItems={[{ label: '보안' }, { label: '부서별 권한 그룹' }]}
       actions={<Button type="button" variant="outline" onClick={() => void refresh()}>새로 조회</Button>}
       filter={<label className="block max-w-sm space-y-1 text-sm">부서 검색<Input value={filter} onChange={(event) => setFilter(event.target.value)} /></label>}>
       {!canRead ? <p role="alert">권한 관리 조회 권한이 없습니다.</p> : <>

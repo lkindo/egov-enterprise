@@ -5,6 +5,7 @@
   "scope": "frontend/src/app/**/page.{js,jsx,ts,tsx}",
   "notes": [
     "shellAccess is a proxy UI-shell admission class, not a domain capability authorization claim.",
+    "admin-system is a compatibility label for an explicit OPERATION-gated admin shell, not an ADMIN/SYSTEM role restriction; unregistered admin paths are denied. NAVIGATION controls menu display separately.",
     "directProjectionProfiles is a direct removePaths observation, not positive semantic profile ownership and not a full transitive artifact proof.",
     "unverified values are bounded review exceptions and keep G1 gateReady=false.",
     "Capability evidence levels are E0 entry, E1 reachable code, E2 authoritative source/policy, E3 executable contract definition, E4 current UI-to-server roundtrip artifact, and E5 deployed provenance/owner confirmation.",
@@ -13,6 +14,9 @@
   "sources": {
     "pages": "frontend/src/app/**/page.{js,jsx,ts,tsx}",
     "proxy": "frontend/src/proxy.ts",
+    "pagePermissions": "config/governance/permission-catalog.json",
+    "generatedPagePermissions": "frontend/src/types/generated-permissions.ts",
+    "pageAuthorization": "frontend/src/lib/auth/page-authorization.ts",
     "redirects": "frontend/next.config.ts",
     "profiles": "config/reusable-base-profiles.json"
   },
@@ -5137,7 +5141,7 @@
     {
       "route": "/admin/system/ism",
       "source": "frontend/src/app/admin/system/ism/page.tsx",
-      "sourceShellAccess": "admin-system",
+      "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
         "UNVERIFIED"

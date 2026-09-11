@@ -12,7 +12,7 @@
 
 ## Expand → 검증 → Contract → 새 앱
 
-1. 중지 상태에서 배포 도구로 Flyway V2_98·V2_99를 적용한다. V2_98은 기존 배정과 감사 필드를 복제하고 V2_99는 검토한 OPERATION 부여, 구 정책 4개 테이블의 원본, 연결 프로그램 17개의 이름·URL 스냅샷을 기록한다. 프로그램 17개와 ADMIN/SYSTEM 배정 34개가 검토한 허용집합과 다르면 중단한다. 두 마이그레이션은 구 테이블을 제거하지 않는다.
+1. 중지 상태에서 배포 도구의 target을 `2.99`로 고정해 Flyway V2_98·V2_99를 적용한다. V2_100은 Contract 이후 메뉴를 변경하므로 이 단계에서 latest로 실행하지 않는다. V2_98은 기존 배정과 감사 필드를 복제하고 V2_99는 검토한 OPERATION 부여, 구 정책 4개 테이블의 원본, 연결 프로그램 17개의 이름·URL 스냅샷을 기록한다. 프로그램 17개와 ADMIN/SYSTEM 배정 34개가 검토한 허용집합과 다르면 중단한다. 두 마이그레이션은 구 테이블을 제거하지 않는다.
 2. 새 앱을 기동하지 않고 사용자·메뉴 배정, 카탈로그 부여, 원본 행 스냅샷을 다시 비교한다. Expand 뒤 구 writer가 값을 바꿨다면 아래 SQL은 중단한다. 승인된 재동기화 마이그레이션을 마련해 복제·감사를 보완한 뒤 다시 검증한다. 이 경우 V2 파일을 수정하거나 guard를 우회하지 않는다.
 3. 같은 PostgreSQL 연결에서 아래 세션 설정에 실제 검증한 해시를 바인딩하고 [authorization-contract.sql](../../api-server/src/main/resources/db/cutover/authorization-contract.sql)을 실행한다. 매개변수 바인딩을 사용하고 셸에 비밀을 넣지 않는다.
 
@@ -24,7 +24,8 @@
 
    SQL은 단일 원자적 문장이다. V2_98·V2_99 성공, 신규 운영 변경 없음, 배정의 양방향 일치, 원본 스냅샷, OPERATION 감사 일치를 검사한다. 필요한 테이블 잠금을 즉시 얻지 못하거나 외부 FK가 남아 있으면 전체 실패한다. `CASCADE`는 사용하지 않는다. 재실행은 이미 제거된 테이블에서 실패하므로 성공 여부를 먼저 확인한다.
 4. 구 테이블 6개 부재, 신규 FK 3개 유효, Contract 감사 1건과 카탈로그 버전을 확인한다. 현재 조사 대상 10개에서 구 6개를 제거하고 새 3개를 추가하므로 **대상 집합은 7개**, 권한 운영 핵심·감사는 **4개**가 된다. 메뉴·프로그램·분류 테이블과 사용자 등 지원 테이블은 각각 유지한다.
-5. 새 앱을 기동한다. 앱의 Flyway 후·JPA 초기화 전 배리어가 Contract 미완료를 거절해야 한다. 로그인·복수 그룹 합집합·ADMIN 메뉴 회수·403·구 관리 API 410·메뉴와 사용자 삭제·감사 이력을 smoke 검증한 뒤 트래픽을 재개한다.
+5. [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)이 승인된 전체 제품에서는 Contract 완료 후 Flyway target을 해제하고 V2_100 이후를 적용한다. 메뉴 입력·NAV 동등성 guard가 실패하면 원인을 검토하고 재실행한다. V2_98·V2_99의 기존 스냅샷을 수정하거나 이력을 repair해 통과시키지 않는다.
+6. 새 앱을 기동한다. 앱의 Flyway 후·JPA 초기화 전 배리어가 Contract 미완료를 거절해야 한다. 로그인·복수 그룹 합집합·ADMIN 메뉴 회수·403·구 관리 API 410·메뉴와 사용자 삭제·감사 이력을 smoke 검증한 뒤 트래픽을 재개한다.
 
 ## 실패와 복구
 
@@ -39,10 +40,30 @@
 
 ## 격리 검증과 새 프로젝트 초기화
 
-`schemaValidationTest`의 PostgreSQL fixture는 `tc` 프로필에서 명시적으로 import한 `AuthorizationSchemaRehearsalTestConfiguration`을 통해 Flyway 다음에 같은 Contract SQL을 실행한다. 일반 테스트·운영 컴포넌트 스캔에는 이 fixture가 포함되지 않는다.
+`schemaValidationTest`의 PostgreSQL fixture는 `tc` 프로필에서 명시적으로 import한 `AuthorizationSchemaRehearsalTestConfiguration`을 통해 V2_99까지 적용하고, 같은 Contract SQL을 실행한 다음 latest까지 진행한다. 일반 테스트·운영 컴포넌트 스캔에는 이 fixture가 포함되지 않는다.
 
 CI E2E·부하·시각 기준선·ZAP과 동일한 로컬 Docker 리허설은 `docker compose -f docker-compose.yml -f docker-compose.authz-e2e.yml up -d --build`로 실행한다. 오버레이는 별도 볼륨과 `authz_e2e` DB를 사용한다. `IsolatedAuthorizationRehearsalConfig`는 정확한 `e2e` 단독 프로필, 로컬 또는 Compose DB 호스트, `authz_e2e` 이름 규칙, 명시적인 disposable 확인 값, 실제 연결 대상을 모두 검증한 후에만 Contract를 리허설한다. `prod` 동시 프로필이나 일반 DB 이름은 실패한다. 일반 Compose와 운영 배포에는 이 opt-in이 없다. 리허설 해시는 폐기 가능한 fixture 표식이며 운영 백업 증거로 제출할 수 없다.
 
 Flyway는 모든 versioned SQL 뒤에 repeatable을 실행한다. 빈 DB의 초기 관리자와 dev 전용 계정이 V2_98 뒤에 생성될 때는 bootstrap이 구·신 membership과 원본 감사 행을 같은 트랜잭션으로 만든다. Contract는 이 두 알려진 bootstrap 원본과 V2_98 원본을 함께 비교한다. 기존 계정의 구·신 배정 차이를 자동 보정하거나 운영자 회수를 되돌리지 않는다.
 
-재사용 base 생성기는 직접 만든 `test_reusable_base_*` DB에서 versioned SQL과 초기 데이터를 적용하고, 실제 Contract를 리허설한 최종 스키마만 덤프한다. SQL 실행 성공을 기록한 임시 리허설 원장은 덤프 전에 제거하며 실제 Flyway 이력이나 운영 배포 증거로 취급하지 않는다. 새 빈 base에는 그룹·명시 OPERATION/NAVIGATION·초기 회원 배정과 감사가 초기화된다. 빈 base의 repeatable bootstrap 자체는 구 테이블을 제거하지 않으며, 권한 변경 이력이 있는 DB에서는 초기 권한을 재부여하지 않는다. `sq_authrt_chg_hstry_sn`은 감사 테이블에 소유된 identity 시퀀스이므로 생성기의 standalone 시퀀스 목록에 중복 등록하지 않는다.
+재사용 base 생성기는 직접 만든 `test_reusable_base_*` DB에서 V2_99까지와 초기 데이터를 적용하고, 실제 Contract를 리허설한 뒤 후속 versioned SQL을 적용한다. 검증된 최종 스키마만 덤프한다. 축약 base는 전체 제품 메뉴를 이식하지 않고 10개 기반 메뉴(중복 롤 제외, 그룹별 메뉴 현황 유지)를 초기화한다. SQL 실행 성공을 기록한 임시 리허설 원장은 덤프 전에 제거하며 실제 Flyway 이력이나 운영 배포 증거로 취급하지 않는다. 새 빈 base에는 그룹·명시 OPERATION/NAVIGATION·초기 회원 배정과 감사가 초기화된다. 빈 base의 repeatable bootstrap 자체는 구 테이블을 제거하지 않으며, 권한 변경 이력이 있는 DB에서는 초기 권한을 재부여하지 않는다. `sq_authrt_chg_hstry_sn`은 감사 테이블에 소유된 identity 시퀀스이므로 생성기의 standalone 시퀀스 목록에 중복 등록하지 않는다.
+
+## 2026-09-11 OCI 메뉴 재편 적용 결과
+
+사용자가 승인한 [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)의 메뉴 재편을 2026-09-11 13:09 KST에 적용했다. 실행 전 OCI에서 V2_99, 구 6개 테이블 부재와 기존 Contract 감사 1건을 확인했다. 이번 실행은 이미 완료된 Contract나 계정 활성화를 반복하지 않았다.
+
+실측한 기존 메뉴·배정, SQL·카탈로그·실행 라이브러리 해시를 결속하고, 격리 PostgreSQL 17에서 동일 Flyway 실행을 의도적으로 실패시켜 테이블 데이터와 Flyway 이력이 모두 롤백되는 것을 먼저 확인했다. OCI에는 [V2_100](../../api-server/src/main/resources/db/migration/V2_100__reorganize_menu_information_architecture.sql)(checksum `633945878`)과 변경된 base repeatable(checksum `1544001697`)만 한 트랜잭션으로 적용했다. 잠금은 NOWAIT, 잠금 대기 제한은 5초, 문장 제한은 60초였다.
+
+| 확인 항목 | 적용 전 | 커밋 후 독립 조회 |
+|---|---:|---:|
+| 전체 / 활성 메뉴 | 84 / 79 | 77 / 71 |
+| 최상위 영역 / 최대 깊이 | 3 / 4 | 4 / 3 |
+| NAVIGATION 배정 | 111 | 102 |
+| OPERATION 배정 | 566 | 566 |
+| 사용자 그룹 배정 / 그룹 | 7 / 4 | 7 / 4 |
+| 감사 이력 | 756 | 773 |
+| Flyway version | 2.99 | 2.100 |
+
+최상위 영역은 **나의 업무 / 소통·지식 / 참여 / 관리 센터**다. NAVIGATION 추가 4건·삭제 13건은 `dmnd_idntfr='migration:2.100'`으로 기록됐다. 기존 감사 행, OPERATION, 사용자·그룹 배정, 프로그램과 변경 대상 외 75개 테이블의 내용 해시가 보존됐으며, Flyway validation과 별도 read-only 조회가 통과했다. 네 그룹의 모든 조합 16개에서 승인된 중복 통합·예제 숨김을 반영한 도착 화면 집합이 동일한지도 SQL이 검사했다.
+
+검증 증거 묶음 SHA-256은 `91ffd81d387447a942735b815fc9145785003d3d0e874231cad499def827c2e1`이다. 접속 비밀·계정 식별자·원시 데이터를 이 문서에 복제하지 않는다. 소스 기준으로 PostgreSQL schema 검증 59개, 메뉴·권한 브라우저 검증 48개와 프론트 빌드·타입 검사가 통과했다. **이는 OCI DB 적용 증거다. 운영 앱 배포와 외부 구 writer의 영구 종료, 운영 사용자 세션 검증은 별도의 배포 증거가 필요하며 이 결과만으로 완료를 주장하지 않는다.**

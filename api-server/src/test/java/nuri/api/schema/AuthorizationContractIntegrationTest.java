@@ -15,7 +15,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AuthorizationContractIntegrationTest extends SharedPostgresMigrationTestSupport {
     @Test
     void refusesMissingEvidenceDriftAndUnexpectedDependencyBeforeAtomicCutover() throws Exception {
-        flyway(null).migrate();
+        // This test deliberately inspects the immutable pre-Contract state, not the current schema.
+        flyway(org.flywaydb.core.api.MigrationVersion.fromVersion("2.99")).migrate();
         try (Connection connection = openConnection(); Statement statement = connection.createStatement()) {
             assertThatThrownBy(() -> AuthorizationCutoverTestSupport.execute(connection))
                     .isInstanceOf(SQLException.class).hasMessageContaining("requires approved evidence");

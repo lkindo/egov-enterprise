@@ -226,6 +226,45 @@ function versionedMigrations() {
     .map((name) => ({ name, sql: readFileSync(join(migrationRoot, name)) }));
 }
 
+/** Plan only: immutable expansion evidence must survive until the actual Contract is checked. */
+export function planAuthorizationMigrationStages(migrations) {
+  const expansion = 'V2_98__expand_authorization_grants_and_history.sql';
+  const operationSeed = 'V2_99__seed_explicit_operation_grants.sql';
+  const names = migrations.map(migration => migration.name);
+  if (new Set(names).size !== names.length) fail('Duplicate versioned migration in Contract rehearsal.');
+  const parts = name => {
+    const version = /^V([0-9]+(?:_[0-9]+)*)__.*\.sql$/.exec(name)?.[1];
+    if (!version) fail('Unknown versioned migration in Contract rehearsal.');
+    return version.split('_').map(Number);
+  };
+  const compare = (left, right) => {
+    const a = parts(left), b = parts(right);
+    for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+      const order = (a[index] ?? 0) - (b[index] ?? 0);
+      if (order) return order;
+    }
+    return 0;
+  };
+  for (let index = 1; index < names.length; index += 1) {
+    if (compare(names[index - 1], names[index]) >= 0) fail('Migration order must be strictly increasing before planning Contract.');
+  }
+  const cutoverIndex = names.indexOf(operationSeed);
+  if (cutoverIndex < 0 || names.indexOf(expansion) < 0 || names.indexOf(expansion) >= cutoverIndex) {
+    fail('Contract rehearsal requires the exact V2_98 expansion and V2_99 seed.');
+  }
+  return { beforeContract: migrations.slice(0, cutoverIndex + 1), afterContract: migrations.slice(cutoverIndex + 1) };
+}
+
+/** Synchronous restore failures stop the sequence; later migrations cannot precede Contract. */
+export function runAuthorizationMigrationStages(migrations, actions) {
+  const stages = planAuthorizationMigrationStages(migrations);
+  for (const migration of stages.beforeContract) actions.migrate(migration);
+  actions.repeatables();
+  actions.contract();
+  for (const migration of stages.afterContract) actions.migrate(migration);
+  actions.repeatables();
+}
+
 function restore(container, user, database, sql) {
   dockerExec(
     container,
@@ -288,16 +327,18 @@ function main() {
     createDatabase(args.container, user, workingDb);
     workingCreated = true;
     const migrations = versionedMigrations();
-    for (const migration of migrations) restore(args.container, user, workingDb, `BEGIN;\n${migration.sql.toString('utf8')}\nCOMMIT;`);
-    // Flyway applies repeatables after every versioned migration. Rehearse that order, then
-    // execute the same guarded Contract before counting/dumping the final physical model.
-    for (const seed of ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql']) {
-      restore(args.container, user, workingDb, readFileSync(join(ROOT, 'api-server/src/main/resources/db/migration', seed)));
-    }
     const permissionSource = readFileSync(join(ROOT, 'business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java'), 'utf8');
     const catalogVersion = permissionSource.match(/CATALOG_VERSION\s*=\s*"([a-f0-9]{64})"/)?.[1];
     const contractSql = readFileSync(join(ROOT, 'api-server/src/main/resources/db/cutover/authorization-contract.sql'), 'utf8');
-    restore(args.container, user, workingDb, buildIsolatedContractSql(workingDb, catalogVersion, contractSql));
+    runAuthorizationMigrationStages(migrations, {
+      migrate: migration => restore(args.container, user, workingDb, `BEGIN;\n${migration.sql.toString('utf8')}\nCOMMIT;`),
+      repeatables: () => {
+        for (const seed of ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql']) {
+          restore(args.container, user, workingDb, readFileSync(join(ROOT, 'api-server/src/main/resources/db/migration', seed)));
+        }
+      },
+      contract: () => restore(args.container, user, workingDb, buildIsolatedContractSql(workingDb, catalogVersion, contractSql)),
+    });
 
     const sourceTables = listObjects(args.container, user, workingDb, 'table');
     assertSameSet(sourceTables, sourceExpectedTables, '현재 migration table snapshot');

@@ -39,7 +39,7 @@ class InformalSanctionBigintMigrationIntegrationTest extends SharedPostgresMigra
                     """);
         }
 
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

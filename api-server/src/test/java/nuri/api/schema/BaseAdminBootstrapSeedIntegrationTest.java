@@ -44,6 +44,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
             "/admin/security/authority",
             "/admin/security/group",
             "/admin/system/menus",
+            "/admin/system/menus/by-authority",
             "/admin/system/programs",
             "/admin/system/common-code",
             "/admin/system/logs");
@@ -51,11 +52,10 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     @Test
     @DisplayName("제품 권한은 보존하고 빈 base에만 초기 명시 권한과 메뉴를 만든다")
     void bootstrapSeedIsProfileSafeAndUnlocksAdmin() throws Exception {
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
         String frameworkSeedSql = readSeedSql(FRAMEWORK_SEED_RESOURCE);
         String adminBootstrapSeedSql = readSeedSql(ADMIN_BOOTSTRAP_SEED_RESOURCE);
         try (Connection connection = openConnection(); Statement statement = connection.createStatement()) {
-            AuthorizationCutoverTestSupport.apply(connection);
             Map<String, Long> before = snapshotSeedTargets(statement);
             statement.execute(frameworkSeedSql);
             statement.execute(adminBootstrapSeedSql);
@@ -77,6 +77,8 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
             assertThat(singleLong(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE chg_type_cd='UPDATE' "
                     + "AND chg_artcl_nm='legacy_authorization_contract'")).isEqualTo(1);
             assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info WHERE up_menu_sn IS NULL AND use_yn='Y' AND del_yn='N'")).isEqualTo(1);
+            assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info WHERE up_menu_sn IS NULL AND modern_route IS NOT NULL")).isZero();
+            assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info WHERE modern_route='/admin/security/role'")).isZero();
             assertThat(new TreeSet<>(stringColumn(statement,"SELECT modern_route FROM tb_menu_info WHERE up_menu_sn IS NOT NULL")))
                     .isEqualTo(new TreeSet<>(EXPECTED_LEAF_ROUTES));
             assertThat(singleLong(statement,"SELECT count(*) FROM tb_menu_info WHERE use_yn <> 'Y' OR del_yn <> 'N'")).isZero();

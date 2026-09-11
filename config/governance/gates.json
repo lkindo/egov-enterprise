@@ -816,6 +816,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/MenuIdentityMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-MENU-INFORMATION-ARCHITECTURE",
+          "source": "api-server/src/test/java/nuri/api/schema/MenuInformationArchitectureMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-MY-PAGE-CONTENT-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/MyPageContentBigintMigrationIntegrationTest.java"
         },

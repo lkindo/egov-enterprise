@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useRef } from 'react';
+import { use, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { Database, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -63,13 +63,13 @@ export function Sidebar({
     staleTime: 5 * 60 * 1000,
   });
 
-  const effectiveActiveMenuNo = activeMenuNo || topMenus[0]?.menuNo || null;
+  const effectiveActiveMenuNo = topMenus.some((menu) => menu.menuNo === activeMenuNo)
+    ? activeMenuNo : topMenus[0]?.menuNo ?? null;
   const activeTopMenu = topMenus.find((menu) => menu.menuNo === effectiveActiveMenuNo);
   const prefetchedLeftMenus = activeTopMenu?.children ?? [];
 
-  useEffect(() => {
-    if (!activeMenuNo && effectiveActiveMenuNo) setActiveMenuNo(effectiveActiveMenuNo);
-  }, [activeMenuNo, effectiveActiveMenuNo, setActiveMenuNo]);
+  // 전역 영역 선택은 HeaderSearchParamSync가 현재 URL로 동기화한다.
+  // 여기서 첫 영역을 저장하면 같은 commit의 정확한 URL 선택을 덮어쓸 수 있다.
 
   const { data: menus = prefetchedLeftMenus, isLoading: loading } = useQuery({
     queryKey: ['menus', 'left', effectiveActiveMenuNo, ...menuAuthorization.scope],
@@ -82,6 +82,8 @@ export function Sidebar({
     initialData: prefetchedLeftMenus.length > 0 ? prefetchedLeftMenus : undefined,
     staleTime: 5 * 60 * 1000,
   });
+  const menuTree = useMemo(() => topMenus.map((menu) => menu.menuNo === effectiveActiveMenuNo
+    ? { ...menu, children: menus } : menu), [topMenus, effectiveActiveMenuNo, menus]);
 
   return (
     <>
@@ -196,7 +198,7 @@ export function Sidebar({
                 <p className="text-sm font-bold tracking-tight">메뉴를 불러올 수 없습니다.</p>
               </div>
             ) : (
-              <NavQueryScope menus={menus}>
+              <NavQueryScope menus={menuTree}>
                 {menus.map((item, index) => (
                   <NavItem key={item.menuNo || `menu-${index}`} item={item} />
                 ))}

@@ -7,7 +7,7 @@ export class OperationalExtensionPage {
     async gotoRewards() {
         console.log('>>> Navigating to Rewards Management');
         await this.page.goto('/admin/operation/rewards');
-        await expect(this.page.getByText('상훈 및 포상 관리 체계')).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '포상 기록 관리', exact: true })).toBeVisible();
     }
 
     async searchRewards(keyword: string) {

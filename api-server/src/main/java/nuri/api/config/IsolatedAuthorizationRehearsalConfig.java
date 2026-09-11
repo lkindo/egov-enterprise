@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import nuri.business.security.authorization.AuthorizationSnapshotService;
 import nuri.business.security.authorization.PermissionCodes;
+import org.flywaydb.core.Flyway;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
@@ -41,7 +42,9 @@ public class IsolatedAuthorizationRehearsalConfig {
             } catch (java.sql.SQLException failure) {
                 throw new IllegalStateException("Cannot verify disposable authorization datasource",failure);
             }
-            flyway.migrate();
+            // The immutable Contract compares V2_98/V2_99 snapshots exactly. Later migrations
+            // may update navigation only after that Contract has committed.
+            Flyway.configure().configuration(flyway.getConfiguration()).target("2.99").load().migrate();
             try (var connection=flyway.getConfiguration().getDataSource().getConnection()) {
                 connection.setAutoCommit(false);
                 try {
@@ -69,6 +72,7 @@ public class IsolatedAuthorizationRehearsalConfig {
             } catch (java.sql.SQLException failure) {
                 throw new IllegalStateException("Disposable authorization rehearsal connection failed",failure);
             }
+            flyway.migrate();
         };
     }
 

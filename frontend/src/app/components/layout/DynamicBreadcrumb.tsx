@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Home, ChevronRight } from 'lucide-react';
 import { menuService } from '@/services/business/user/MenuService';
 import { cn } from '@/lib/utils';
-import type { MenuInfo } from '@/types/foundation/menu';
+import { findActiveMenu } from '@/lib/navigation/active-menu';
 import {
   normalizeInternalRoute,
   resolveMenuInternalRoute,
@@ -33,44 +33,9 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
           return;
         }
         
-        // 게시판 ID(bbsId)가 쿼리 스트링에 있는 경우, 해당 메뉴를 우선 탐색
-        const bbsIdParam = searchParams.get('bbsId');
-        
-        // 1. 메뉴 트리에서 현재 경로 또는 BBS ID가 연결된 메뉴 찾기
-        const findPath = (menuList: MenuInfo[], targetPath: string, searchBbsId?: string | null): boolean => {
-          for (const menu of menuList) {
-            const route = resolveMenuInternalRoute(menu);
-            const routePath = route?.split(/[?#]/, 1)[0];
-            const routeBbsId = route
-              ? new URL(route, 'https://egov.invalid').searchParams.get('bbsId')
-              : null;
-            const isMatch = Boolean(
-              routePath
-              && (
-                targetPath === routePath
-                || targetPath.startsWith(`${routePath}/`)
-                || (searchBbsId && routeBbsId === searchBbsId)
-              )
-            );
-
-            if (isMatch) {
-              path.push({ name: menu.menuNm, href: route ?? undefined });
-              return true;
-            }
-            if (menu.children && findPath(menu.children, targetPath, searchBbsId)) {
-              path.unshift({ name: menu.menuNm, href: route ?? undefined });
-              return true;
-            }
-          }
-          return false;
-        };
-
-        findPath(menus, pathname || '', bbsIdParam);
-        
-        // 만약 메뉴 트리에서 못 찾았다면 (관리자/특수 페이지 등)
-        if (path.length === 0) {
-          if (pathname?.includes('/admin/system')) path.push({ name: '시스템 관리' });
-          if (pathname?.includes('/community/boards')) path.push({ name: '커뮤니티 및 콘텐츠' });
+        const match = findActiveMenu(menus, pathname || '', searchParams);
+        for (const menu of match?.path ?? []) {
+          path.push({ name: menu.menuNm, href: resolveMenuInternalRoute(menu) ?? undefined });
         }
 
         setItems(path);

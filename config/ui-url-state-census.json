@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "f2b5d83cb1b667c31385183cb6abc27a3bdd569638e9a686919a5131704a7536"
+    "inventoryHash": "ccea5b78d2e9fd2787a191d8ff28612b3be0aae78f6ef677c885c3e4c50baf26"
   },
   "summary": {
-    "sourceFileCount": 532,
-    "records": 378,
-    "syntaxOccurrences": 448,
-    "ambiguousRecords": 351,
-    "unverifiedRecords": 378,
+    "sourceFileCount": 534,
+    "records": 377,
+    "syntaxOccurrences": 446,
+    "ambiguousRecords": 350,
+    "unverifiedRecords": 377,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 56,
-      "navigation-producer": 160,
+      "navigation-producer": 159,
       "page-redirect": 12,
       "query-builder": 21,
       "query-consumer": 56,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 369,
+      "navigation": 368,
       "request-telemetry": 9
     }
   },
@@ -12039,7 +12039,7 @@
       "evidence": {
         "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 3
+        "occurrenceCount": 2
       }
     },
     {
@@ -12118,56 +12118,6 @@
       "evidence": {
         "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-31BBB50AD337B3",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "get",
-      "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        }
-      ],
-      "currentBehavior": "URL search parameter is consumed with get().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
-        "detector": "url-search-param-method",
         "occurrenceCount": 1
       }
     },
@@ -12442,6 +12392,44 @@
       "evidence": {
         "source": "frontend/src/app/components/layout/header.tsx",
         "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-83B538D0558198",
+      "surface": "navigation",
+      "kind": "query-builder",
+      "operation": "construct-query",
+      "source": "frontend/src/app/components/layout/HeaderSearchParamSync.tsx",
+      "producerFile": "frontend/src/app/components/layout/HeaderSearchParamSync.tsx",
+      "consumerFile": "frontend/src/app/components/layout/HeaderSearchParamSync.tsx",
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/layout/HeaderSearchParamSync.tsx",
+        "detector": "url-search-params-constructor",
         "occurrenceCount": 1
       }
     },
@@ -16323,84 +16311,6 @@
       }
     },
     {
-      "id": "URL-1A6763C12279E4",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "href-field",
-      "source": "frontend/src/lib/navigation/active-menu.ts",
-      "producerFile": "frontend/src/lib/navigation/active-menu.ts",
-      "consumerFile": null,
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/lib/navigation/active-menu.ts",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-12F042E70FDA8D",
-      "surface": "navigation",
-      "kind": "query-builder",
-      "operation": "construct-query",
-      "source": "frontend/src/lib/navigation/active-menu.ts",
-      "producerFile": "frontend/src/lib/navigation/active-menu.ts",
-      "consumerFile": "frontend/src/lib/navigation/active-menu.ts",
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/lib/navigation/active-menu.ts",
-        "detector": "url-search-params-constructor",
-        "occurrenceCount": 2
-      }
-    },
-    {
       "id": "URL-5027DC0742A7FC",
       "surface": "navigation",
       "kind": "query-consumer",
@@ -16449,6 +16359,56 @@
         "source": "frontend/src/lib/navigation/active-menu.ts",
         "detector": "url-search-param-method",
         "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-1B7C66A1997FD5",
+      "surface": "navigation",
+      "kind": "query-consumer",
+      "operation": "get",
+      "source": "frontend/src/lib/navigation/active-menu.ts",
+      "producerFile": null,
+      "consumerFile": "frontend/src/lib/navigation/active-menu.ts",
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "bbsId",
+          "dataClass": "unverified",
+          "recommendation": "deny",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "record-locator-name-signal"
+          ]
+        }
+      ],
+      "currentBehavior": "URL search parameter is consumed with get().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/lib/navigation/active-menu.ts",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 2
       }
     },
     {

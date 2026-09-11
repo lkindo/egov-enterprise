@@ -29,8 +29,8 @@ export default function NotificationsClient() {
   return (
     <div className="space-y-10 pb-20">
       <PageHeader
-        title="스마트 알림 및 메시징 허브"
-        breadcrumbs={[{ label: '시스템 관리' }, { label: '메시징 센터' }]}
+        title="알림 센터"
+        breadcrumbs={[{ label: '나의 업무' }, { label: '알림 센터' }]}
         actions={canDispatch ? (
           <Button size="sm" className="gap-2" onClick={() => setDispatchOpen(true)}>
             <Send size={16} aria-hidden="true" /> 알림 보내기

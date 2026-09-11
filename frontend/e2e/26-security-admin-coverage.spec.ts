@@ -13,6 +13,8 @@ type Grant = { type: 'OPERATION' | 'NAVIGATION'; code: string };
 type Group = { code: string; name: string; description: string | null; grants: Grant[]; version: string; complete: boolean };
 type Membership = { userId: string; groups: string[]; version: string; complete: boolean };
 type CurrentUser = { id: string; esntlId: string; groups: string[]; permissions: string[]; authorizationVersion: string };
+type Navigation = { code: string; name: string; parentCode: string | null };
+type MenuNode = { id: number; children: MenuNode[] };
 
 async function data<T>(response: APIResponse, label: string): Promise<T> {
     // Assert status only: response headers, credentials and login bodies are never diagnostic output.
@@ -267,9 +269,9 @@ test.describe('복수 권한 그룹의 실제 API와 편집 화면', () => {
             const esntlId = initial.esntlId;
             if (!esntlId) throw new Error('Fixture user has no internal identifier.');
 
-            const catalog = await data<{ navigation: { code: string }[] }>(
+            const catalog = await data<{ navigation: Navigation[] }>(
                 await request.get(`${AUTHORIZATION}/catalog`, { headers: administrator }), '권한 카탈로그 조회');
-            const menu = catalog.navigation[0]?.code;
+            const menu = catalog.navigation.find(entry => entry.parentCode === null)?.code;
             if (!menu) throw new Error('The migrated menu catalog is empty.');
             const grantsA: Grant[] = [{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'NAVIGATION', code: menu }];
             const grantsB: Grant[] = [{ type: 'OPERATION', code: 'MENU_READ' }, { type: 'OPERATION', code: 'PROGRAM_READ' }];
@@ -319,6 +321,62 @@ test.describe('복수 권한 그룹의 실제 API와 편집 화면', () => {
             })).status(), '업무 그룹은 권한관리 변경 불가').toBe(403);
             expect(await group(request, administrator, groupA)).toEqual(protectedGroup);
 
+            await test.step('메뉴 계층 회수는 하위 표시까지 제거하고 기능 권한과 직접 URL 인가는 별도로 유지한다', async () => {
+                const visible = await data<{ list: MenuNode[] }>(
+                    await request.get('/api/v1/menus/head', { headers: administrator }), '관리자 메뉴 트리 조회');
+                const visibleRoot = visible.list.find(entry => entry.children.length > 0);
+                if (!visibleRoot) throw new Error('A visible parent and child are required for the hierarchy fixture.');
+                const visibleChild = visibleRoot.children[0];
+                const leaf = visibleChild.children[0] ?? visibleChild;
+                const rootMenu = catalog.navigation.find(entry => entry.code === String(visibleRoot.id));
+                if (!rootMenu) throw new Error('Visible root is missing from the complete navigation catalog.');
+                await replaceGrants(request, administrator, groupA, [{ type: 'OPERATION', code: 'MENU_READ' }]);
+
+                await page.goto('/admin/security/authority');
+                await page.getByRole('textbox', { name: '그룹 검색', exact: true }).fill(groupA);
+                await page.getByRole('region', { name: '권한 그룹 목록', exact: true }).getByRole('button').filter({ hasText: groupA }).click();
+                const editor = page.getByRole('region', { name: `${groupNameA} 권한 설정`, exact: true });
+                const tree = editor.getByRole('list', { name: '메뉴 표시 권한', exact: true });
+                const rootCheckbox = tree.getByRole('checkbox', { name: new RegExp(`${visibleRoot.id}$`) });
+                const leafCheckbox = tree.getByRole('checkbox', { name: new RegExp(`${leaf.id}$`) });
+                await expect(rootCheckbox).not.toBeChecked();
+                await leafCheckbox.check();
+                await expect(rootCheckbox, '하위 선택은 필요한 모든 상위 선택을 함께 추가한다').toBeChecked();
+                await expect(tree.getByRole('checkbox', { name: new RegExp(`${visibleChild.id}$`) })).toBeChecked();
+                const collapse = tree.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 접기`, exact: true });
+                await collapse.click();
+                await expect(tree.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true })).toHaveAttribute('aria-expanded', 'false');
+                await rootCheckbox.uncheck();
+                await tree.getByRole('button', { name: `${rootMenu.name} 하위 메뉴 펼치기`, exact: true }).click();
+                await expect(leafCheckbox, '접혀 있던 하위 선택도 부모와 함께 회수된다').not.toBeChecked();
+                // Leave a parent selected and then revoke it so the persisted change is observable.
+                await leafCheckbox.check();
+                const saveSelected = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupA}/grants` && response.request().method() === 'PUT');
+                await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
+                expect((await saveSelected).status()).toBe(200);
+                await expect(editor.getByRole('button', { name: '입력 취소 · 최신 정보 적용', exact: true })).toBeEnabled();
+                await editor.getByRole('button', { name: '입력 취소 · 최신 정보 적용', exact: true }).click();
+                await expect(rootCheckbox).toBeChecked();
+                await rootCheckbox.uncheck();
+                const saveRevoked = page.waitForResponse(response => new URL(response.url()).pathname === `${AUTHORIZATION}/groups/${groupA}/grants` && response.request().method() === 'PUT');
+                await editor.getByRole('button', { name: '권한 변경 저장', exact: true }).click();
+                expect((await saveRevoked).status()).toBe(200);
+                const withoutNavigation = await group(request, administrator, groupA);
+                expect(withoutNavigation.grants).toEqual([{ type: 'OPERATION', code: 'MENU_READ' }]);
+                expect((await data<{ list: MenuNode[] }>(await request.get('/api/v1/menus/head', { headers: user }), '회수 후 메뉴 조회')).list).toEqual([]);
+                expect((await data<{ list: MenuNode[] }>(await request.get('/api/v1/menus/left', { headers: user, params: { menuNo: visibleRoot.id } }), '숨긴 상위의 하위 메뉴 직접 조회')).list).toEqual([]);
+                expect((await request.get(MENUS, { headers: user })).status(), '메뉴 표시 회수는 기능권한을 회수하지 않는다').toBe(200);
+                const directPage = await request.get('/admin/system/menus', { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
+                expect(directPage.status(), '기능권한 보유자는 메뉴를 숨겨도 등록 화면 URL에 접근할 수 있다').toBe(200);
+                const orphan = await request.put(`${AUTHORIZATION}/groups/${groupA}/grants`, {
+                    headers: administrator, data: { grants: [...withoutNavigation.grants, { type: 'NAVIGATION', code: String(leaf.id) }], version: withoutNavigation.version, complete: true },
+                });
+                expect(orphan.status(), '상위 없이 하위만 부여하는 직접 API 요청은 거절한다').toBe(400);
+                expect(await group(request, administrator, groupA)).toEqual(withoutNavigation);
+                await replaceGrants(request, administrator, groupA, grantsA);
+                await page.goto('/');
+            });
+
             // The same login token is reused throughout: every request must load current grants.
             await replaceGrants(request, administrator, groupB, [{ type: 'OPERATION', code: 'PROGRAM_READ' }]);
             expect((await current()).permissions).toEqual(['MENU_READ', 'PROGRAM_READ']);
@@ -327,6 +385,9 @@ test.describe('복수 권한 그룹의 실제 API와 편집 화면', () => {
             expect(onlyB.groups).toEqual([groupB]);
             expect((await current()).permissions).toEqual(['PROGRAM_READ']);
             expect((await request.get(MENUS, { headers: user })).status(), 'A 회수는 다음 요청부터 반영').toBe(403);
+            const revokedPage = await request.get('/admin/system/menus', { headers: { Cookie: `accessToken=${token}` }, maxRedirects: 0 });
+            expect(revokedPage.status(), '기능권한 회수 후 같은 토큰으로 직접 URL 진입도 거절한다').toBe(307);
+            expect(new URL(revokedPage.headers().location, baseURL).searchParams.get('auth_error')).toBe('unauthorized');
             expect((await request.get(PROGRAMS, { headers: user })).status(), '다른 그룹 B의 권한 보존').toBe(200);
             const staleMembership = await request.put(`${AUTHORIZATION}/users/${esntlId}/groups`, {
                 headers: administrator, data: { groups: [], version: combined.version, complete: true },

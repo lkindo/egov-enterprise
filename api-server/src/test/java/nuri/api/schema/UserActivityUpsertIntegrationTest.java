@@ -55,7 +55,7 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
     @Test
     @DisplayName("같은 키를 반복 적재하면 행 하나에 카운터가 누적된다")
     void accumulatesCountersOnConflict() throws SQLException {
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
@@ -75,7 +75,7 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
     @Test
     @DisplayName("기존 카운터가 NULL 이어도 누적이 리셋되지 않는다")
     void nullCountersDoNotResetAccumulation() throws SQLException {
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection()) {
             String esntlId = seedUser(connection, "USRACT_0002", "nulltester");
@@ -99,7 +99,7 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
     @Test
     @DisplayName("존재하지 않는 사용자로는 적재할 수 없다 — 미인증 요청 배제의 근거")
     void rejectsUnknownUser() throws SQLException {
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection()) {
             assertThatThrownBy(() -> upsert(connection, "ANONYMOUS", 0, 0, 1, 0, 0, 0))

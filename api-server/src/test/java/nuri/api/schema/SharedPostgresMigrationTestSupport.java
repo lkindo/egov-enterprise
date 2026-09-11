@@ -96,6 +96,11 @@ public abstract class SharedPostgresMigrationTestSupport {
         return configuration.load();
     }
 
+    /** Current physical model: preserve the exact expansion snapshots until Contract succeeds. */
+    protected final void migrateThroughAuthorizationCutover() throws SQLException {
+        AuthorizationCutoverTestSupport.migrate(flyway(null));
+    }
+
     public static String databaseNameFor(String testClassSimpleName, String uniquenessToken) {
         String classPart = normalizeIdentifierPart(testClassSimpleName);
         String tokenPart = normalizeIdentifierPart(uniquenessToken);

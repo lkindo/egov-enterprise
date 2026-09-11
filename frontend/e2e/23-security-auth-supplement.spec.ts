@@ -311,19 +311,21 @@ test.describe('Tier 23-E3: RBAC negative at API (authenticated non-admin forbidd
 //   22-deep-security-guard(`Access Denied for Direct User ID Manipulation`)가 각자 다시 검사했다.
 //   네 파일이 같은 한 줄(미들웨어 §4)을 서로 모르게 중복 검증하면서, 정작 아래 것들은
 //   **한 번도 검증된 적이 없었다**:
-//     · USER_ACCESSIBLE_ADMIN_PATHS 5건 중 4건 (특히 로그인 기본 착지점 `/admin/work-hub`)
-//     · ADMIN_ONLY_SUBPATHS 3건 중 2건 (`boards/maker`, `templates`)
+//     · 일반 사용자에게 열려 있어야 하는 화면(특히 로그인 기본 착지점 `/admin/work-hub`)
+//     · 커뮤니티 안의 개별 관리 화면(`boards/maker`, `templates`)
 //     · 대소문자 우회(`/Admin/...`) — middleware 가 toLowerCase() 로 막고 있다고 주석에 적힌 방어
 //     · 접두사 오매칭(`/admin/helpdesk` 가 허용경로 `/admin/help` 에 편승하지 못하는가)
 //   즉 중복은 많고 커버리지는 비어 있었다. 정책을 **매트릭스 한 곳**으로 모으고 공백을 메운다.
+//   현재는 PAGE_PERMISSIONS의 개별 페이지 등록과 서버의 현재 기능권한으로 판단한다.
+//   상위 화면의 인증 전용 선언([])은 등록되지 않은 하위 경로를 허용하지 않는다.
 //
 // [검증 층위] 이 계약의 집행자는 미들웨어이고 관측 지점은 리다이렉트 응답이다. 그래서 브라우저를
 //   띄우지 않고 HTTP 로 직접 묻는다 — 페이지 렌더·하이드레이션·ConsoleGuard 가 개입하지 않아
 //   판정이 결정적이고, 경로 1건당 비용이 페이지 로드에서 단순 요청으로 내려간다.
 //   브라우저 경로(실제 쿠키가 미들웨어까지 도달하는가)는 아래 카나리아 1건이 따로 지킨다.
 //
-// ⚠ 이 게이트는 1차 방어(관리자 UI 셸 진입 차단)일 뿐이다. 권한의 authoritative 집행자는
-//   백엔드이며 그쪽은 E3 가 검증한다(middleware.ts §4 주석과 정합).
+// ⚠ 이 게이트는 화면 진입을 검증한다. 자료 조회·변경의 최종 집행자는 백엔드이며,
+//   기능권한과 자료별 조건은 E3 등 API 검증이 담당한다.
 test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix)', () => {
     // ⚠ storageState 를 지정하지 않는다. Playwright 의 `request` 픽스처는 storageState 를 상속하므로,
     //   지정하면 컨텍스트 쿠키와 아래에서 명시한 Cookie 헤더가 섞여 '어느 토큰으로 판정됐는지'가
@@ -347,8 +349,8 @@ test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix
     });
 
     // ── 차단되어야 하는 경로 ────────────────────────────────────────────────
-    // 앞의 6건은 관리 콘솔(기본 차단), 뒤의 3건은 허용 경로 안쪽에서 다시 도려낸 carve-out 이다.
-    // carve-out 은 ADMIN_ONLY_SUBPATHS 전량이다 — 목록에서 하나가 빠지면 여기서 red 가 된다.
+    // 일반 사용자 기본 그룹에 없는 기능권한을 요구하는 개별 관리 화면이다.
+    // 커뮤니티 상위 화면이 열려 있어도 게시판·템플릿 관리 화면은 각자의 권한이 필요하다.
     //
     // ⚠ [2026-08-10 CI 실증] 이 목록에는 **next.config 의 redirects() 에 등록된 경로를 넣지 않는다.**
     //   Next 의 파이프라인은 `redirects()` 를 **미들웨어보다 먼저** 실행하므로, 설정 리다이렉트가
@@ -366,9 +368,9 @@ test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix
         '/admin/security/authority',
         '/admin/stats',
         '/admin/workflow',
-        '/admin/community/boards/master',   // carve-out: 게시판 마스터 콘솔
-        '/admin/community/boards/maker',    // carve-out: 게시판 생성 마법사
-        '/admin/community/templates',       // carve-out: 템플릿 관리
+        '/admin/community/boards/master',   // 게시판 마스터 콘솔
+        '/admin/community/boards/maker',    // 게시판 생성 마법사
+        '/admin/community/templates',       // 템플릿 관리
     ];
 
     for (const p of deniedPaths) {
@@ -380,7 +382,7 @@ test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix
     }
 
     // ── 열려 있어야 하는 경로(과잉차단 회귀 방어) ───────────────────────────
-    // USER_ACCESSIBLE_ADMIN_PATHS 전량. 여기서 하나라도 막히면 일반 사용자는 그 화면을 잃는다.
+    // PAGE_PERMISSIONS에 인증 전용([])으로 등록된 대표 화면이다. 하위 경로로 권한을 상속하지 않는다.
     // 특히 `/admin/work-hub` 는 로그인 기본 착지점이라, 막히는 순간 로그인 직후가 곧바로 깨진다.
     const allowedPaths = [
         '/admin/work-hub',
@@ -409,10 +411,12 @@ test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix
     });
 
     test('허용 경로의 접두사에 편승할 수 없다', async ({ request }) => {
-        // matchesPrefix 는 세그먼트 경계까지 맞춘다. 단순 startsWith 로 되돌아가면
-        // `/admin/helpdesk` 가 허용 경로 `/admin/help` 에 편승해 열린다.
-        const { location } = await verdictAsUser(request, '/admin/helpdesk');
-        expect(location, '/admin/helpdesk 가 /admin/help 허용에 편승했다').toContain('auth_error=unauthorized');
+        // 비슷한 이름뿐 아니라 인증 전용 화면 아래의 미등록 경로도 개별 페이지 등록을 우회할 수 없다.
+        for (const p of ['/admin/helpdesk', '/admin/help/faq/not-registered', '/admin/collaboration/not-registered', '/admin/work-hub/not-registered']) {
+            const { status, location } = await verdictAsUser(request, p);
+            expect([302, 307], `미등록 경로가 권한 거부로 리다이렉트되지 않음: ${p} (status ${status})`).toContain(status);
+            expect(location, `미등록 경로 ${p} 가 상위 화면 허용에 편승했다`).toContain('auth_error=unauthorized');
+        }
     });
 
     test('쿼리스트링으로 경로 판정을 흐릴 수 없다', async ({ request }) => {

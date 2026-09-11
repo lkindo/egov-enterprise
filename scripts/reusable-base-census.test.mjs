@@ -2,10 +2,67 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { analyzeRepository, validateReusableBase } from './reusable-base-census.mjs';
-import { buildIsolatedContractSql } from './generate-reusable-base-db.mjs';
-import { readFileSync } from 'node:fs';
+import { buildIsolatedContractSql, planAuthorizationMigrationStages, runAuthorizationMigrationStages } from './generate-reusable-base-db.mjs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 const baseline = analyzeRepository();
+
+test('base migration stages preserve exact expansion proof before any post-Contract migration', () => {
+  const names = readdirSync(new URL('../api-server/src/main/resources/db/migration/', import.meta.url))
+    .filter(name => /^V[0-9_]+__.*\.sql$/.test(name))
+    .sort((left, right) => {
+      const a = left.match(/^V([0-9_]+)__/)[1].split('_').map(Number);
+      const b = right.match(/^V([0-9_]+)__/)[1].split('_').map(Number);
+      for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+        if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) - (b[i] ?? 0);
+      }
+      return 0;
+    });
+  const future = 'V3_0__future_contract_consumer.sql';
+  const migrations = [...names, future].map(name => ({ name, sql: Buffer.from(name) }));
+  const { beforeContract, afterContract } = planAuthorizationMigrationStages(migrations);
+  assert.equal(beforeContract.at(-1).name, 'V2_99__seed_explicit_operation_grants.sql');
+  assert.equal(afterContract.at(-1).name, future);
+  assert.deepEqual([...beforeContract, ...afterContract], migrations, 'no migration or SQL content may disappear');
+  assert.ok(afterContract.every(migration => !beforeContract.includes(migration)));
+  for (const bad of [
+    migrations.filter(migration => !migration.name.startsWith('V2_98__')),
+    migrations.filter(migration => !migration.name.startsWith('V2_99__')),
+    [...migrations].reverse(),
+    [...migrations, migrations.at(-1)],
+    [{ name: 'unknown.sql', sql: Buffer.alloc(0) }, ...migrations],
+  ]) assert.throws(() => planAuthorizationMigrationStages(bad), /requires the exact|strictly increasing|Duplicate|Unknown/);
+});
+
+test('base execution completes real Contract before later migrations and stops on failed evidence', () => {
+  const migrations = ['V2_98__expand_authorization_grants_and_history.sql',
+    'V2_99__seed_explicit_operation_grants.sql', 'V2_100__reorganize_menu_information_architecture.sql']
+    .map(name => ({ name, sql: Buffer.from(name) }));
+  const trace = [];
+  runAuthorizationMigrationStages(migrations, {
+    migrate: migration => trace.push(migration.name),
+    repeatables: () => trace.push('repeatables'),
+    contract: () => trace.push('actual Contract'),
+  });
+  assert.deepEqual(trace, [migrations[0].name, migrations[1].name, 'repeatables',
+    'actual Contract', migrations[2].name, 'repeatables']);
+  for (const failureStep of [migrations[0].name, 'repeatables', 'actual Contract']) {
+    const executed = [];
+    const execute = name => {
+      executed.push(name);
+      if (name === failureStep) throw new Error('evidence failure');
+    };
+    assert.throws(() => runAuthorizationMigrationStages(migrations, {
+      migrate: migration => execute(migration.name), repeatables: () => execute('repeatables'),
+      contract: () => execute('actual Contract'),
+    }), /evidence failure/);
+    assert.ok(!executed.includes(migrations[2].name), 'post-Contract migration must never run on failure');
+    assert.equal(executed.at(-1), failureStep);
+  }
+  const generator = readFileSync(new URL('./generate-reusable-base-db.mjs', import.meta.url), 'utf8');
+  assert.match(generator, /runAuthorizationMigrationStages\(migrations, \{/);
+  assert.match(generator, /contract: \(\) => restore\(args.container, user, workingDb, buildIsolatedContractSql\(workingDb, catalogVersion, contractSql\)\)/);
+});
 
 test('base core preserves the four authorization tables and rejects legacy table resurrection', () => {
   const manifest = structuredClone(baseline.manifest);

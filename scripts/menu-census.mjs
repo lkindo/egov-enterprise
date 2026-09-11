@@ -1,183 +1,202 @@
 #!/usr/bin/env node
 /**
- * menu-census — 메뉴(`tb_menu_info`)와 실제 Next.js 라우트의 정합을 기계로 측정한다.
- *
- * 왜 필요한가: 원장(`docs/04-operations/pending-decisions.md`)의 D-6 은 "중복 18메뉴 · 고아
- * 19라우트 · 부모/자식 동일경로" 라고 적고 있으나, 그 수치는 과거 시점의 값이다.
- * 이번 세션에서 원장 수치가 여러 번 틀린 것으로 드러났고(D-3 의 존재하지 않는 테이블,
- * D-5 의 "4종" → 실제 3종, D-12 의 "실물 있음" → 실제 0행), 게다가 V2_30/V2_42/V2_43 이
- * 메뉴를 직접 바꿨다. **재편 설계보다 먼저 현재 값을 재는 도구가 필요하다.**
- *
- * 이 스크립트는 판정하지 않고 **측정만** 한다. 무엇을 지우고 무엇을 합칠지는 정보구조 결정이며,
- * 그 결정은 정확한 현재 값 위에서 내려야 한다.
- *
- * 사용법:
- *   node scripts/menu-census.mjs           # 사람이 읽는 표
- *   node scripts/menu-census.mjs --json    # 기계 판독용
- *
- * DB 접속은 기존 db-bridge 를 그대로 쓴다(별도 접속 설정 없음).
- * 조회 전용(SELECT)이라 AGENTS.md의 db-bridge 진단 허용 범위이며 승인 없이 실행 가능하다.
+ * Read-only menu/source census. Structural evidence does not prove effective
+ * NAVIGATION/OPERATION authorization or justify deleting a route.
+ * CLI: node scripts/menu-census.mjs [--json]. Imports never query the database.
  */
 import { execFileSync } from 'node:child_process';
-import { readdirSync, statSync, existsSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import { discoverPageRoutes, discoverConfigRedirects, expectedRouting } from './ui-route-capabilities-contract.mjs';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const APP_DIR = join(ROOT, 'frontend', 'src', 'app');
-const JSON_MODE = process.argv.includes('--json');
+const SCRIPT_PATH = fileURLToPath(import.meta.url);
+const ROOT = resolve(dirname(SCRIPT_PATH), '..');
+const ORIGIN = 'https://menu-census.invalid';
 
-/** db-bridge 를 통해 SELECT 한 결과를 객체 배열로 받는다. */
-function query(sql) {
-  const out = execFileSync(
-    process.execPath,
-    [join(ROOT, '.agent', 'scripts', 'db-bridge.js'), sql, '--json'],
-    { encoding: 'utf8', cwd: ROOT, maxBuffer: 32 * 1024 * 1024 }
-  );
-  // db-bridge 는 경고 배너를 함께 찍으므로 첫 '[' 부터 파싱한다.
-  const start = out.indexOf('[');
-  if (start < 0) return [];
-  return JSON.parse(out.slice(start));
+export function parseMenuRows(output) {
+  const start = output.indexOf('[');
+  if (start < 0) throw new Error('db-bridge did not return a JSON menu array');
+  const rows = JSON.parse(output.slice(start));
+  if (!Array.isArray(rows)) throw new Error('db-bridge menu response is not an array');
+  return rows;
 }
 
-/**
- * `app/` 아래 실제 라우트를 수집한다.
- * - `page.tsx` 가 있는 디렉터리가 곧 라우트다.
- * - 라우트 그룹 `(x)` 은 URL 에 나타나지 않으므로 제거한다.
- * - 동적 세그먼트 `[id]` 는 그대로 둔다(메뉴가 정적 경로를 갖는지 보는 것이 목적).
- */
-function collectRoutes(dir, out = []) {
-  let entries;
-  try { entries = readdirSync(dir); } catch { return out; }
-  if (entries.includes('page.tsx') || entries.includes('page.ts')) {
-    const rel = relative(APP_DIR, dir).split(sep).filter(Boolean);
-    const segments = rel.filter((s) => !(s.startsWith('(') && s.endsWith(')')));
-    out.push('/' + segments.join('/'));
+export function inspectMenuRoutes(repoRoot = ROOT) {
+  const pages = discoverPageRoutes(repoRoot);
+  const repository = { repoRoot, configRedirects: discoverConfigRedirects(repoRoot) };
+  const routing = new Map(pages.map(({ route, source }) => [route, {
+    ...expectedRouting(repository, route, source), source,
+  }]));
+  // Config redirects precede page rendering and can lack their own page entry.
+  for (const [route, redirect] of repository.configRedirects.redirects) {
+    if (/[:*]/.test(route)) throw new Error('unsupported configured redirect pattern: ' + route);
+    routing.set(route, { ...redirect, source: repository.configRedirects.source });
   }
-  for (const e of entries) {
-    const p = join(dir, e);
-    let st; try { st = statSync(p); } catch { continue; }
-    if (st.isDirectory()) collectRoutes(p, out);
-  }
-  return out;
+  return { pages, routing };
 }
 
-/** `?tab=x` 같은 쿼리를 떼어 경로만 남긴다. */
-const pathOf = (route) => (route || '').split('?')[0].replace(/\/+$/, '') || '/';
-
-/** 동적 세그먼트를 가진 라우트가 정적 경로를 덮는지 판정한다. */
-function routeMatches(menuPath, routes) {
-  if (routes.has(menuPath)) return true;
-  for (const r of routes) {
-    if (!r.includes('[')) continue;
-    const re = new RegExp('^' + r.replace(/\[[^\]]+\]/g, '[^/]+') + '$');
-    if (re.test(menuPath)) return true;
+function internalUrl(value) {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')
+    || /[\\\u0000-\u0020\u007f]/.test(value) || /%(?![a-f\d]{2})/i.test(value)) {
+    throw new Error('unsupported internal destination');
   }
-  return false;
+  const url = new URL(value, ORIGIN);
+  if (url.origin !== ORIGIN) throw new Error('external destination');
+  url.pathname = url.pathname.replace(/\/+$/, '') || '/';
+  // Stable sort preserves repeated value order; first-value consumers may depend on it.
+  url.searchParams.sort();
+  return url;
 }
 
-const menus = query(`
-  SELECT menu_sn, up_menu_sn, menu_nm, modern_route, prgrm_file_nm, use_yn, del_yn
-  FROM tb_menu_info ORDER BY menu_sn
-`);
-const routeList = collectRoutes(APP_DIR);
-const routes = new Set(routeList);
+const urlKey = (url) => url.pathname + url.search + url.hash;
 
-const active = menus.filter((m) => m.use_yn === 'Y' && m.del_yn !== 'Y');
-
-// ① 깨진 메뉴 — 활성인데 가리키는 라우트가 없다(사용자가 눌러도 404/폴백)
-const broken = active.filter((m) => {
-  const p = pathOf(m.modern_route);
-  return m.modern_route && !routeMatches(p, routes);
-});
-
-// ② 중복 — 같은 경로(쿼리 포함)를 가리키는 활성 메뉴가 둘 이상
-const byRoute = new Map();
-for (const m of active) {
-  // 빈 문자열도 falsy 라 여기서 함께 걸러진다 — 폴더 표기가 NULL/'' 로 혼재해도 안전하다.
-  if (!m.modern_route) continue;
-  const k = m.modern_route;
-  if (!byRoute.has(k)) byRoute.set(k, []);
-  byRoute.get(k).push(m);
-}
-const duplicates = [...byRoute.entries()].filter(([, v]) => v.length > 1);
-
-// ③ 부모/자식 동일 경로 — 트리에서 같은 곳을 두 번 가리킨다
-const bySn = new Map(menus.map((m) => [String(m.menu_sn), m]));
-const parentChildSame = active.filter((m) => {
-  const parent = bySn.get(String(m.up_menu_sn));
-  return parent && parent.modern_route && parent.modern_route === m.modern_route;
-});
-
-// ④ 고아 라우트 — 실제 화면인데 어떤 활성 메뉴도 가리키지 않는다.
-//    단, 메뉴가 가리키는 화면의 **하위 경로**(상세·등록·수정 등)는 메뉴 대상이 아닌 것이 정상이므로
-//    분리해서 센다. 이 구분을 하지 않으면 "고아 65건" 같은 노이즈 숫자가 나와 판단을 흐린다.
-// pathOf('') === '/' 가 되므로 빈 문자열은 먼저 제거한다(폴더는 경로가 아니다).
-const menuPaths = new Set(active.filter((m) => m.modern_route).map((m) => pathOf(m.modern_route)));
-const hasMenuedAncestor = (r) => {
-  const segs = r.split('/').filter(Boolean);
-  for (let i = segs.length - 1; i > 0; i--) {
-    if (menuPaths.has('/' + segs.slice(0, i).join('/'))) return true;
+function findRoute(pathname, routing) {
+  if (routing.has(pathname)) return {
+    route: pathname, rule: routing.get(pathname),
+    params: Object.fromEntries([...pathname.matchAll(/\[([^.[\]]+)\]/g)].map((match) => [match[1], match[0]])),
+  };
+  const segments = pathname.split('/');
+  const matches = [];
+  for (const [route, rule] of routing) {
+    if (!route.includes('[')) continue;
+    const parts = route.split('/');
+    if (parts.length !== segments.length) continue;
+    const params = {};
+    if (parts.every((part, index) => {
+      const parameter = /^\[([^.[\]]+)\]$/.exec(part);
+      if (!parameter) return part === segments[index];
+      if (!segments[index]) return false;
+      params[parameter[1]] = segments[index];
+      return true;
+    })) matches.push({ route, rule, params });
   }
-  return false;
-};
-const notMenued = routeList.filter((r) => !menuPaths.has(r));
-const subRoutes = notMenued.filter(hasMenuedAncestor);       // 하위 화면 — 정상
-const orphanRoutes = notMenued.filter((r) => !hasMenuedAncestor(r)); // 진짜 고아 — 검토 대상
-
-// ⑤ 감춰진 메뉴 — use_yn='N'. 되살릴 대상인지 지울 대상인지 판단 필요
-const hidden = menus.filter((m) => m.use_yn !== 'Y' && m.del_yn !== 'Y');
-
-const result = {
-  measuredAt: null, // 호출부에서 스탬프 — 스크립트는 시간을 만들지 않는다
-  totals: {
-    menusAll: menus.length,
-    menusActive: active.length,
-    menusHidden: hidden.length,
-    routes: routeList.length,
-  },
-  brokenMenus: broken.map((m) => ({ menuSn: m.menu_sn, menuNm: m.menu_nm, route: m.modern_route })),
-  duplicateRoutes: duplicates.map(([route, v]) => ({
-    route,
-    menus: v.map((m) => ({ menuSn: m.menu_sn, menuNm: m.menu_nm })),
-  })),
-  parentChildSameRoute: parentChildSame.map((m) => ({
-    menuSn: m.menu_sn, menuNm: m.menu_nm, route: m.modern_route, upMenuSn: m.up_menu_sn,
-  })),
-  orphanRoutes,
-  subRoutes,
-  hiddenMenus: hidden.map((m) => ({ menuSn: m.menu_sn, menuNm: m.menu_nm, route: m.modern_route })),
-};
-
-if (JSON_MODE) {
-  console.log(JSON.stringify(result, null, 2));
-} else {
-  const line = (s = '') => console.log(s);
-  line('menu-census — tb_menu_info ↔ frontend/src/app 라우트 정합');
-  line('='.repeat(72));
-  line(`  메뉴 전체 ${result.totals.menusAll}  (활성 ${result.totals.menusActive} · 숨김 ${result.totals.menusHidden})`);
-  line(`  실제 라우트 ${result.totals.routes}`);
-  line();
-  line(`① 깨진 메뉴 — 활성인데 라우트 없음: ${broken.length}건`);
-  for (const m of result.brokenMenus) line(`     ${m.menuSn}  ${m.menuNm}  →  ${m.route}`);
-  line();
-  line(`② 중복 경로 — 같은 곳을 가리키는 활성 메뉴 2개 이상: ${duplicates.length}건`);
-  for (const d of result.duplicateRoutes) {
-    line(`     ${d.route}`);
-    for (const m of d.menus) line(`        ${m.menuSn}  ${m.menuNm}`);
-  }
-  line();
-  line(`③ 부모/자식 동일 경로: ${parentChildSame.length}건`);
-  for (const m of result.parentChildSameRoute) line(`     ${m.menuSn}  ${m.menuNm}  →  ${m.route}  (부모 ${m.upMenuSn})`);
-  line();
-  line(`④ 진짜 고아 라우트 — 활성 메뉴도, 메뉴가 있는 상위 경로도 없음: ${orphanRoutes.length}건`);
-  for (const r of orphanRoutes) line(`     ${r}`);
-  line(`   (참고) 메뉴가 있는 화면의 하위 경로 ${subRoutes.length}건은 메뉴 대상이 아닌 것이 정상이라 제외했다.`);
-  line();
-  line(`⑤ 숨김 메뉴(use_yn='N'): ${hidden.length}건`);
-  for (const m of result.hiddenMenus) line(`     ${m.menuSn}  ${m.menuNm}  →  ${m.route}`);
-  line();
-  line('※ 이 스크립트는 판정하지 않고 측정만 한다. 고아 라우트가 곧 삭제 대상은 아니다 —');
-  line('   문자열 URL 참조는 정적 분석으로 잡히지 않으며, 과거 라우트 13개 오삭제 전례가 있다(V2_30).');
+  if (matches.length > 1) throw new Error('ambiguous dynamic destination');
+  return matches[0];
 }
+
+/** Resolve observed source redirects. Do not infer client default tabs or API permissions. */
+export function resolveMenuDestination(value, snapshot) {
+  const chain = [];
+  const visited = new Set();
+  try {
+    let current = internalUrl(value);
+    while (true) {
+      const key = urlKey(current);
+      if (visited.has(key)) return { status: 'unresolved', reason: 'redirect-cycle', chain };
+      visited.add(key);
+      const found = findRoute(current.pathname, snapshot.routing);
+      if (!found) return { status: 'missing', reason: 'no-page-or-redirect', route: key, chain };
+      const { route, rule, params } = found;
+      if (rule.kind === 'page') return { status: 'resolved', route: key, pageRoute: route, chain };
+      if (!['config-redirect', 'page-redirect'].includes(rule.kind)) {
+        return { status: 'unresolved', reason: 'unsupported-routing-kind', chain };
+      }
+      // The shared source census recognizes literals and simple interpolated IDs.
+      const destination = rule.target?.replace(/\$\{([^}]+)\}/g, (token, name) => params[name] ?? token);
+      if (!destination || destination.includes('$' + '{')) {
+        return { status: 'unresolved', reason: 'unsupported-redirect-expression', chain };
+      }
+      const next = internalUrl(destination);
+      if (rule.kind === 'config-redirect') {
+        // Next prepareDestination merges source query then explicit destination query.
+        for (const name of new Set(current.searchParams.keys())) {
+          if (!next.searchParams.has(name)) {
+            for (const original of current.searchParams.getAll(name)) next.searchParams.append(name, original);
+          }
+        }
+        next.searchParams.sort();
+      }
+      // A literal redirect() does not forward incoming searchParams.
+      chain.push({ from: key, to: urlKey(next), kind: rule.kind, source: rule.source });
+      current = next;
+    }
+  } catch {
+    return { status: 'unresolved', reason: 'unsupported-or-invalid-destination', chain };
+  }
+}
+
+export function analyzeMenuCensus(menus, snapshot) {
+  if (!Array.isArray(menus) || !Array.isArray(snapshot.pages) || !(snapshot.routing instanceof Map)) {
+    throw new Error('menu census requires rows and a complete route snapshot');
+  }
+  const identities = new Set();
+  for (const menu of menus) {
+    if (!menu || menu.menu_sn == null || identities.has(String(menu.menu_sn))) {
+      throw new Error('menu census has a missing or duplicate menu identity');
+    }
+    identities.add(String(menu.menu_sn));
+  }
+  const active = menus.filter((menu) => menu.use_yn === 'Y' && menu.del_yn !== 'Y');
+  const hidden = menus.filter((menu) => menu.use_yn !== 'Y' && menu.del_yn !== 'Y');
+  const destinations = new Map(active.filter((menu) => menu.modern_route)
+    .map((menu) => [String(menu.menu_sn), resolveMenuDestination(menu.modern_route, snapshot)]));
+  const summary = (menu) => ({ menuSn: menu.menu_sn, menuNm: menu.menu_nm, route: menu.modern_route });
+  const byDestination = new Map();
+  for (const menu of active) {
+    const destination = destinations.get(String(menu.menu_sn));
+    if (destination?.status !== 'resolved') continue;
+    const entries = byDestination.get(destination.route) ?? [];
+    entries.push({ ...summary(menu), redirects: destination.chain });
+    byDestination.set(destination.route, entries);
+  }
+  const menuPaths = new Set([...destinations.values()].filter((entry) => entry.status === 'resolved')
+    .map((entry) => entry.pageRoute));
+  const hasMenuedAncestor = (route) => [...menuPaths].some((parent) => route.startsWith(parent + '/'));
+  const aliasRoutes = [];
+  const unresolvedRoutes = [];
+  const canonical = [];
+  for (const { route } of snapshot.pages) {
+    const destination = resolveMenuDestination(route, snapshot);
+    if (destination.status !== 'resolved') unresolvedRoutes.push({ sourceRoute: route, ...destination });
+    else if (destination.chain.length) aliasRoutes.push({ route, destination: destination.route });
+    else canonical.push(route);
+  }
+  const notMenued = canonical.filter((route) => !menuPaths.has(route));
+  return {
+    measuredAt: null, // Caller binds actual environment/time; source generation cannot refresh live evidence.
+    scope: 'Source routing and raw active menu rows only; effective navigation and API authorization are not measured.',
+    queryPolicy: 'Explicit query keys/values and fragments are preserved; client default tab equivalence is not inferred.',
+    totals: { menusAll: menus.length, menusActive: active.length, menusHidden: hidden.length, routes: snapshot.pages.length },
+    brokenMenus: active.filter((menu) => destinations.get(String(menu.menu_sn))?.status === 'missing')
+      .map((menu) => ({ ...summary(menu), destination: destinations.get(String(menu.menu_sn)) })),
+    unresolvedMenus: active.filter((menu) => destinations.get(String(menu.menu_sn))?.status === 'unresolved')
+      .map((menu) => ({ ...summary(menu), destination: destinations.get(String(menu.menu_sn)) })),
+    duplicateRoutes: [...byDestination].filter(([, entries]) => entries.length > 1)
+      .map(([route, entries]) => ({ route, menus: entries })),
+    parentChildSameRoute: active.filter((menu) => {
+      const child = destinations.get(String(menu.menu_sn));
+      const parent = destinations.get(String(menu.up_menu_sn));
+      return child?.status === 'resolved' && parent?.status === 'resolved' && child.route === parent.route;
+    }).map((menu) => ({ ...summary(menu), upMenuSn: menu.up_menu_sn, destination: destinations.get(String(menu.menu_sn)).route })),
+    orphanRoutes: notMenued.filter((route) => !hasMenuedAncestor(route)),
+    subRoutes: notMenued.filter(hasMenuedAncestor),
+    aliasRoutes,
+    unresolvedRoutes,
+    hiddenMenus: hidden.map(summary),
+  };
+}
+
+function main() {
+  const output = execFileSync(process.execPath, [join(ROOT, '.agent', 'scripts', 'db-bridge.js'),
+    'SELECT menu_sn, up_menu_sn, menu_nm, modern_route, prgrm_file_nm, use_yn, del_yn FROM tb_menu_info ORDER BY menu_sn', '--json'],
+  { encoding: 'utf8', cwd: ROOT, maxBuffer: 32 * 1024 * 1024 });
+  const result = analyzeMenuCensus(parseMenuRows(output), inspectMenuRoutes());
+  if (process.argv.includes('--json')) console.log(JSON.stringify(result, null, 2));
+  else {
+    console.log('menu-census — 메뉴와 소스 라우팅 측정 (실효 권한·운영 성공 증거 아님)');
+    console.log('전체 ' + result.totals.menusAll + ', 활성 ' + result.totals.menusActive
+      + ', 숨김 ' + result.totals.menusHidden + ', 화면 ' + result.totals.routes);
+    for (const [label, entries] of [
+      ['없는 목적지', result.brokenMenus], ['해석 미확정 메뉴', result.unresolvedMenus],
+      ['같은 최종 목적지', result.duplicateRoutes], ['부모·자식 동일 목적지', result.parentChildSameRoute],
+      ['메뉴 없는 정본 화면', result.orphanRoutes], ['메뉴 하위 화면', result.subRoutes],
+      ['호환 별칭 화면', result.aliasRoutes], ['해석 미확정 화면', result.unresolvedRoutes], ['숨김 메뉴', result.hiddenMenus],
+    ]) {
+      console.log('\n' + label + ': ' + entries.length + '건');
+      for (const entry of entries) console.log(typeof entry === 'string' ? entry : JSON.stringify(entry));
+    }
+    console.log('\n별칭을 따라가되 query/tab은 보존합니다. 메뉴 없는 화면은 삭제 대상 판정이 아닙니다.');
+  }
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === SCRIPT_PATH) main();

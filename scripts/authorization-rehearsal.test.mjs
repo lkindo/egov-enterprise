@@ -58,7 +58,10 @@ function assertWiring(sources) {
   assert.match(java, /!profiles\.equals\(Set\.of\("e2e"\)\)/);
   assert.match(java, /!ACK\.equals\(ack\)/);
   assert.match(java, /!expected\.equals\(actual\)/);
-  assert.ok(java.indexOf('validateTarget(profiles,connection.getMetaData().getURL(),ack)') < java.indexOf('flyway.migrate()'));
+  const stagedMigrate = 'Flyway.configure().configuration(flyway.getConfiguration()).target("2.99").load().migrate();';
+  assert.ok(java.indexOf('validateTarget(profiles,connection.getMetaData().getURL(),ack)') < java.indexOf(stagedMigrate));
+  assert.ok(java.indexOf(stagedMigrate) < java.indexOf('statement.execute(new String(input.readAllBytes(),StandardCharsets.UTF_8))'));
+  assert.ok(java.indexOf('connection.commit()') < java.indexOf('flyway.migrate()'));
 }
 
 test('authorization cutover rehearsal is explicit in four CI jobs and isolated local readiness only', () => {
@@ -77,6 +80,8 @@ test('missing execution wiring, unsafe defaults and removed isolation checks are
     [readiness, s => s.replace('  assertOwned();', '  // ownership removed')],
     [config, s => s.replace('!profiles.equals(Set.of("e2e"))', 'false')],
     [config, s => s.replace('!expected.equals(actual)', 'false')],
+    [config, s => s.replace('.target("2.99")', '.target("latest")')],
+    [config, s => s.replace('            flyway.migrate();', '').replace('            // Check the effective datasource', '            flyway.migrate();\n            // Check the effective datasource')],
   ];
   for (const [file, mutate] of mutations) {
     const fixture = read();

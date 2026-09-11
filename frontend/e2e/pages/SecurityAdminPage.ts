@@ -30,12 +30,12 @@ export class SecurityAdminPage {
         console.log('>>> Navigating to Group Management');
         await this.page.goto('/admin/security/group');
         // [2026-08-24 A1 이행] 마케팅 제목('보안 그룹 아키텍처 거버넌스')을 업무 제목으로 바꿨다(G14).
-        await expect(this.page.getByRole('heading', { name: '보안 그룹 관리', exact: true })).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '사용자 분류 그룹', exact: true })).toBeVisible();
     }
 
     async createGroup(groupId: string, groupNm: string) {
         console.log(`>>> Creating Group: ${groupId}`);
-        await this.page.getByRole('button', { name: /신규 보안 그룹 설정/i }).click();
+        await this.page.getByRole('button', { name: /분류 그룹 등록/i }).click();
         await expect(this.page.locator('#groupId')).toBeVisible({ timeout: 10000 });
 
         await this.page.locator('#groupId').fill(groupId);

@@ -277,8 +277,8 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  return (
  <div className="space-y-12 pb-24">
  <PageHeader
- title="권한 기반 메뉴 거버넌스"
- breadcrumbs={[{ label: '시스템 관리' }, { label: '메뉴 관리' }, { label: '권한별 메뉴' }]}
+ title="그룹별 메뉴 현황"
+ breadcrumbs={[{ label: '관리 센터' }, { label: '그룹별 메뉴 현황' }]}
         actions={
  <div className="flex gap-4 p-2 items-center">
  <Button
@@ -292,10 +292,10 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  </Button>
  <Button
  onClick={() => router.push('/admin/security/authority')}
- title="보안 거버넌스 허브의 역할 인벤토리로 이동합니다"
+ title="권한 그룹 관리에서 기능권한과 메뉴 표시를 편집합니다"
  className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
  >
- <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 권한 인벤토리
+ <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 권한 그룹 관리
  </Button>
  </div>
  }
@@ -323,7 +323,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
 
  {/* 근거 없는 고정 지표('보안_상태 최적' · '계층_깊이 팩터_준비')는 삭제하고, 실제 트리에서 계산되는 값만 남긴다. */}
  <HubMetricGrid className="lg:grid-cols-3">
- <HubMetricCard title="등록 역할" value={authorities.length} icon={Database} color="primary" />
+ <HubMetricCard title="조회된 권한 그룹" value={authorities.length} icon={Database} color="primary" />
  {/* [2026-08-29] rawMenus.length 는 '메뉴 전체' 수라 권한과 무관하게 늘 같은 값이었다.
      서버가 전체 메뉴에 할당 플래그를 붙여 내려주기 때문이다(from(menu) leftJoin). */}
  <HubMetricCard title="할당 메뉴" value={assignedMenuSns.size} icon={LayoutGrid} color="amber" />
@@ -332,15 +332,15 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
 
  <div className="grid grid-cols-12 gap-12">
  <div className="col-span-12 lg:col-span-4 h-full space-y-8">
- <HubSectionCard title="역할 선택" description="메뉴 구조를 분석할 보안 역할을 식별하세요" icon={Lock}>
+ <HubSectionCard title="권한 그룹 선택" description="메뉴 배정과 계층을 확인할 권한 그룹을 선택하세요" icon={Lock}>
  <div className="space-y-8">
  <div className="space-y-4 pt-4">
- <label htmlFor="authority-select" className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] ml-2">보안 역할</label>
+ <label htmlFor="authority-select" className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] ml-2">권한 그룹</label>
  <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
  <SelectTrigger id="authority-select" className="h-11 px-8 rounded-lg bg-muted/50 border-none shadow-inner text-sm font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
  <div className="flex items-center gap-4">
  <Fingerprint size={20} className="text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
- <SelectValue placeholder="역할을 선택하십시오..." />
+ <SelectValue placeholder="권한 그룹을 선택하세요" />
  </div>
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl p-2 bg-surface-inverse text-surface-inverse-foreground">
@@ -367,7 +367,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  </div>
  <div className="space-y-3">
  <h4 className="text-2xl font-bold tracking-tighter leading-tight uppercase">메뉴 매핑<br />인텔리전스</h4>
- <p className="text-xs text-surface-inverse-muted font-bold tracking-[0.3em] uppercase font-mono">선택한 역할의 메뉴 계층 실시간 분석</p>
+ <p className="text-xs text-surface-inverse-muted font-bold tracking-[0.3em] uppercase font-mono">선택한 권한 그룹의 메뉴 계층</p>
  </div>
  </div>
  </div>
@@ -377,7 +377,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
 
  <div className="col-span-12 lg:col-span-8 h-full">
  <HubSectionCard 
- title={currentAuth ? `[${currentAuth.authrtNm}] 메뉴 아키텍처` : "아키텍처 분석"}
+ title={currentAuth ? `[${currentAuth.authrtNm}] 메뉴 계층` : "메뉴 계층"}
  description="선택된 권한에 할당된 전체 메뉴의 위계적 구조입니다." 
  icon={Network}
  >
@@ -402,7 +402,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <Milestone size={48} className="opacity-20" />
  </div>
  <h3 className="text-2xl font-bold text-slate-300 tracking-tighter uppercase mb-2">권한 미선택</h3>
- <p className="text-xs font-bold text-slate-200 tracking-[0.5em] uppercase">메뉴 구조를 분석할 역할을 먼저 선택하십시오.</p>
+ <p className="text-xs font-bold text-slate-200 tracking-[0.5em] uppercase">메뉴를 확인할 권한 그룹을 먼저 선택하세요.</p>
  </motion.div>
  ) : isMenuLoading ? (
  <motion.div 
@@ -451,4 +451,3 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  </div>
  );
 }
-

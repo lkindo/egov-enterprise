@@ -142,6 +142,31 @@ describe('proxy 인증 게이트', () => {
   });
 
   it.each([
+    '/admin/work-hub/not-registered',
+    '/admin/collaboration/not-registered',
+    '/admin/help/faq/not-registered',
+    '/admin/community/boards/master/not-registered',
+    '/admin/survey/polls/participate/not-registered',
+  ])('does not inherit a parent shell allowance for a direct URL to %s', async (route) => {
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const response = await proxy(requestWith(token, route));
+    expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
+    expect(new URL(response.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
+  });
+
+  it.each([
+    '/admin/work-hub',
+    '/admin/help/faq',
+    '/admin/community/fixture-community',
+    '/admin/collaboration/scraps/insertScrap',
+    '/admin/collaboration/scraps/selectScrapDetail/fixture-scrap',
+  ])('preserves explicitly registered authenticated routes, including case-sensitive paths: %s', async (route) => {
+    const response = await proxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }, SECRET), route));
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+  });
+
+  it.each([
     '/admin/community/boards/master',
     '/admin/community/boards/maker',
     '/admin/community/templates',

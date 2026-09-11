@@ -142,14 +142,14 @@ describe('SecurityGroupClient', () => {
       target: { value: '관리자' },
     });
     await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 0, size: 10, searchKeyword: '관리자' }));
-    fireEvent.click(screen.getByRole('button', { name: '보안 그룹 목록 새로고침' }));
+    fireEvent.click(screen.getByRole('button', { name: '사용자 분류 그룹 목록 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '그룹 목록 재시도' }));
   });
 
   it('creates a group from controlled form fields', async () => {
     renderClient();
     await screen.findByText('관리자 그룹');
-    fireEvent.click(screen.getByRole('button', { name: /신규 보안 그룹 설정/ }));
+    fireEvent.click(screen.getByRole('button', { name: /분류 그룹 등록/ }));
 
     fireEvent.change(screen.getByPlaceholderText('그룹 식별자'), { target: { value: 'GROUP_NEW' } });
     fireEvent.change(screen.getByPlaceholderText('그룹 명칭 입력'), { target: { value: '신규 그룹' } });
@@ -167,7 +167,7 @@ describe('SecurityGroupClient', () => {
     mocks.create.mockReturnValueOnce(pending.promise);
     renderClient();
     await screen.findByText('관리자 그룹');
-    fireEvent.click(screen.getByRole('button', { name: /신규 보안 그룹 설정/ }));
+    fireEvent.click(screen.getByRole('button', { name: /분류 그룹 등록/ }));
     fireEvent.change(screen.getByPlaceholderText('그룹 식별자'), { target: { value: 'GROUP_NEW' } });
     fireEvent.change(screen.getByPlaceholderText('그룹 명칭 입력'), { target: { value: '신규 그룹' } });
     const submit = screen.getByRole('button', { name: /신규 그룹 배포/ });
@@ -198,7 +198,7 @@ describe('SecurityGroupClient', () => {
     };
     renderClient();
     await screen.findByText('관리자 그룹');
-    fireEvent.click(screen.getByRole('button', { name: /신규 보안 그룹 설정/ }));
+    fireEvent.click(screen.getByRole('button', { name: /분류 그룹 등록/ }));
     fireEvent.change(screen.getByLabelText('도메인 그룹 식별자(Group ID)'), {
       target: { value: 'GROUP_NEW' },
     });
@@ -216,7 +216,7 @@ describe('SecurityGroupClient', () => {
     expect(groupName).toHaveAttribute('aria-invalid', 'true');
     expect(groupName).toHaveAttribute('aria-errormessage', 'groupNm-error');
     await waitFor(() => expect(groupName).toHaveFocus());
-    expect(screen.getByRole('region', { name: '신규 보안 도메인 그룹 설정' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '분류 그룹 등록' })).toBeInTheDocument();
     expect(cancel).toBeEnabled();
     expect(mocks.toast).not.toHaveBeenCalledWith(expect.any(String), 'error');
   });
@@ -224,7 +224,7 @@ describe('SecurityGroupClient', () => {
   it('blocks invalid group values and moves focus to the first field that needs correction', async () => {
     renderClient();
     await screen.findByText('관리자 그룹');
-    fireEvent.click(screen.getByRole('button', { name: /신규 보안 그룹 설정/ }));
+    fireEvent.click(screen.getByRole('button', { name: /분류 그룹 등록/ }));
 
     const groupId = screen.getByLabelText('도메인 그룹 식별자(Group ID)');
     fireEvent.click(screen.getByRole('button', { name: /신규 그룹 배포/ }));
@@ -248,7 +248,7 @@ describe('SecurityGroupClient', () => {
     await screen.findByText('관리자 그룹');
 
     fireEvent.click(screen.getByRole('button', { name: '관리자 그룹 그룹 수정' }));
-    expect(screen.getByRole('region', { name: '보안 그룹 아키텍처 수정' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '분류 그룹 수정' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('그룹 식별자')).toBeDisabled();
     fireEvent.change(screen.getByPlaceholderText('그룹 명칭 입력'), { target: { value: '수정 관리자' } });
     fireEvent.click(screen.getByRole('button', { name: 'Zap그룹 수정' }));
@@ -342,7 +342,7 @@ describe('SecurityGroupClient', () => {
     expect(busy).toBeDisabled();
     expect(busy).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByRole('button', { name: '관리자 그룹 그룹 수정' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /신규 보안 그룹 설정/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /분류 그룹 등록/ })).toBeDisabled();
 
     await act(async () => pending.reject(new Error('그룹 삭제 API 장애')));
 

@@ -25,7 +25,7 @@ export default async function AbsenceManagePage() {
     });
 
   return (
-    <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse"><h1 className="sr-only">부재 관리를 불러오는 중</h1>사용자·조직 데이터를 불러오는 중입니다...</div>}>
+    <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse"><h1 className="sr-only">부재 상태를 불러오는 중</h1>사용자·조직 데이터를 불러오는 중입니다...</div>}>
       <UserOrgHubClient 
         defaultTab="ABSENCES" 
         usersPromise={usersPromise} 
