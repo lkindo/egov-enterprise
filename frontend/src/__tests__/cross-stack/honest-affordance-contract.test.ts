@@ -378,7 +378,11 @@ describe('없는 것을 있다고 말하지 않는다', () => {
     // 없는 축. 컬럼이 생기면(Flyway) 이 단언을 뒤집고 문구를 되살려라.
     expect(entity).not.toMatch(/dueDt|deadline|sttsCd/);
 
-    const screen = stripComments(readRepo('frontend/src/app/admin/work-hub/WorkHubClient.tsx'));
+    // [2026-09-12] 문구의 소유자가 워크허브에서 core 소유 섹션으로 옮겨갔다
+    // (`DeptJobListSection` — 재사용 base 프로필 cascade 제거 정합). 단언은 그대로다.
+    const screen = stripComments(
+      readRepo('frontend/src/components/business/deptJob/DeptJobListSection.tsx'),
+    );
     expect(screen).not.toContain('담당·기한·처리 상태');
     expect(screen).toContain('담당자·우선순위·업무함');
   });
@@ -808,13 +812,18 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   });
 
   it('업무 허브·게시판 마스터의 조회 조건이 서버 술어와 일치한다', () => {
+    // [2026-09-12] 부서 업무 목록은 core 소유 섹션으로 옥겨갔고 보고 목록만 허브에 남았다.
+    // 두 소유자를 각각 읽고 단언은 종전과 같은 것을 그대로 유지한다.
+    const jobList = stripComments(readSrc('components/business/deptJob/DeptJobListSection.tsx'));
     const hub = stripComments(readSrc('app/admin/work-hub/WorkHubClient.tsx'));
+    expect(jobList, '부서 업무 목록을 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
     expect(hub, '업무 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
     // 담당자·작성자 축은 서버에 없다(업무는 picId, 보고는 rptTtl 단일).
+    expect(jobList).not.toContain('업무명·담당자');
     expect(hub).not.toContain('업무명·담당자');
     expect(hub).not.toContain('보고 제목·작성자');
     // 조건을 보내지 않으면 서버가 아무것도 거르지 않는다.
-    expect(hub, '부서업무 조회가 다시 조건 없이 나간다 — 검색어가 무시된다').toContain("searchCondition: '0'");
+    expect(jobList, '부서업무 조회가 다시 조건 없이 나간다 — 검색어가 무시된다').toContain("searchCondition: '0'");
 
     const reportRepo = stripComments(
       readRepo('business-app/src/main/java/nuri/business/domain/report/WorkReportRepositoryImpl.java'),

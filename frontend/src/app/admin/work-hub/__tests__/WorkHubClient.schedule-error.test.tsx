@@ -1,3 +1,24 @@
+/**
+ * 워크허브(WorkHubClient)의 **합성(composed) write 계약** 전반을 지키는 스펙.
+ *
+ * 이 허브는 자기 폼을 갖지 않고 자식 폼 둘(ScheduleCreateForm·ReportCreateForm)의 제출과
+ * 자기 소유 삭제 액션(보고·일정)을 함께 조율한다. 폼 검증 census 는 그 경계를
+ * `composed-child-form-validation` 으로 등재하면서 **한 증거 파일이 자식 계약 전부를** 증명할 것을
+ * 요구한다(frontend/scripts/frontend-form-validation-census.mjs 의 evidenceProvesComposedBehavior —
+ * childContracts.every). 그래서 일정 오류 소유권에서 출발한 이 파일이 두 계약의 정본 증거다.
+ *
+ * ⚠ [2026-09-12] 세 번째 자식이던 DeptJobForm 과 업무 삭제 액션은 core 소유
+ *   `components/business/deptJob/DeptJobListSection.tsx` 로 옮겨 갔다(재사용 base 의
+ *   core·collaboration 프로필에서 부서 업무 목록이 cascade 로 빠지던 문제). 그 계약의 정본 증거는
+ *   `components/business/deptJob/__tests__/DeptJobListSection.test.tsx` 다.
+ *
+ * 계약마다 고정하는 것은 두 방향이다.
+ *  ① 정방향 — 자식 제출이 부모 sink 를 정확히 한 번만 부르고, 진행 중에는 제어가
+ *     disabled·aria-busy 이며, 실패해도 모달과 입력값이 남고 필드 오류는 폼에 귀속된다.
+ *     그동안 형제 액션(보고·일정 삭제)은 나가지 못한다.
+ *  ② 역방향 — 형제 액션이 진행 중이면 자식 제출이 아예 나가지 않는다.
+ * 한 방향만 고정하면 "한쪽만 막는" 비대칭 잠금이 조용히 들어와도 아무 게이트가 알리지 않는다.
+ */
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -30,6 +51,7 @@ vi.mock('next/link', () => ({
 vi.mock('lucide-react', () => ({
   Plus: () => <span aria-hidden="true" />,
   FileText: () => <span aria-hidden="true" />,
+  FolderCog: () => <span aria-hidden="true" />,
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -84,6 +106,11 @@ vi.mock('@/app/components/ui/standard-modal', () => ({
   ) : null,
 }));
 
+/*
+  WorkHubClient 는 업무 탭에서 core 소유 DeptJobListSection 을 렌더한다. 이 스펙은 보고·일정만
+  보므로 업무 탭에 들어가지 않지만, 정적 import 체인은 그대로 로드되므로 부서 업무 모듈을
+  가볍게 대역으로 세워 둔다(PRIORITY_LABEL 은 그 섹션의 목록 컬럼이 직접 쓴다).
+*/
 vi.mock('@/components/business/deptJob/DeptJobForm', () => ({ PRIORITY_LABEL: {} }));
 vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({ deptJobUserService: {} }));
 vi.mock('@/services/business/user/ReportService', () => ({

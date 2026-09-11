@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
 import * as z from 'zod';
 import {
@@ -102,9 +102,11 @@ interface ScheduleCreateFormProps {
   onCancel: () => void;
   /** 합성 화면이 소유하는 저장/삭제 상호 배제 상태. */
   isPending?: boolean;
+  /** 합성 화면이 닫기 가드를 걸 수 있도록 편집 상태를 올려 준다(DeptJobForm 과 같은 계약). */
+  onEditStateChange?: (state: { dirty: boolean; pending: boolean }) => void;
 }
 
-export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', onSubmit, onCancel, isPending = false }: ScheduleCreateFormProps) {
+export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', onSubmit, onCancel, isPending = false, onEditStateChange }: ScheduleCreateFormProps) {
   const isEdit = mode === 'edit';
   const { toast } = useToast();
   const submitPendingRef = useRef(false);
@@ -118,12 +120,25 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
       schdlPlcNm: initialData?.schdlPlcNm ?? '',
       // 기본은 개인 일정('2'). 체크 시 부서 공유('1')로 등록되어 같은 부서원에게도 보인다.
       schdlSeCd: initialData?.schdlSeCd ?? '2',
+      // ⚠ [전체 치환] PUT /schedules/{schdlSn} 는 부분 수정이 아니다 — Schedule.updateAll 이
+      //   10개 필드를 통째로 덮어쓰므로, 이 폼이 묻지 않는 필드를 빠뜨리면 null 로 지워진다.
+      //   담당자(schdlPicId)는 서버가 기존 값으로 고정하고 첨부(atchFileSn)는 updateAll 대상이
+      //   아니지만, 아래 3개는 전달하지 않으면 사라진다. 특히 schdlImprtCd 는
+      //   /smart-toolkit/schedule/dept 가 'A' 로 저장하는 값이라, 같은 일정을 이 모달에서
+      //   수정하면 교차 화면 데이터 유실이 된다(ReportCreateForm 의 rptSeCd 왕복과 같은 계약).
+      schdlKndCd: initialData?.schdlKndCd ?? undefined,
+      schdlImprtCd: initialData?.schdlImprtCd ?? undefined,
+      reptSeCd: initialData?.reptSeCd ?? undefined,
     },
   });
 
   const { isSubmitting } = form.formState;
   const isSavePending = isSubmitting || isSubmitPending || isPending;
   const isDeptShared = form.watch('schdlSeCd') === '1';
+
+  useEffect(() => {
+    onEditStateChange?.({ dirty: form.formState.isDirty, pending: isSavePending });
+  }, [form.formState.isDirty, isSavePending, onEditStateChange]);
 
   const handleSubmit = async (values: ScheduleFormValues) => {
     if (submitPendingRef.current) return;

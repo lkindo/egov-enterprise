@@ -7,9 +7,9 @@
     "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 67,
-    "candidateCount": 154
+    "formlessWriteBoundaries": 22,
+    "secondaryActionBoundaries": 68,
+    "candidateCount": 156
   },
   "entries": [
     {
@@ -514,6 +514,34 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/survey/response/__tests__/SurveyResponseClient.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/components/business/deptJob/DeptJobListSection.tsx#DeptJobListSection",
+      "kind": "formless-write",
+      "file": "frontend/src/components/business/deptJob/DeptJobListSection.tsx",
+      "owner": "DeptJobListSection",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [
+            "handleDeleteJob"
+          ],
+          "component": "DeptJobForm",
+          "handler": "handleSubmitJob",
+          "writeSinks": [
+            "deptJobUserService.createDeptJob"
+          ]
+        }
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:DeptJobForm+dept-job-list-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": [
+        "frontend/src/components/business/deptJob/__tests__/DeptJobListSection.test.tsx"
       ]
     },
     {
@@ -2947,6 +2975,26 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/components/business/deptJob/__tests__/DeptJobBoxManageDialog.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/business/deptJob/DeptJobListSection.tsx#DeptJobListSection.handleDeleteJob[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/business/deptJob/DeptJobListSection.tsx",
+      "owner": "DeptJobListSection",
+      "handler": "handleDeleteJob",
+      "writeSinks": [
+        "deptJobUserService.deleteDeptJob"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/business/deptJob/__tests__/DeptJobListSection.test.tsx"
       ]
     },
     {

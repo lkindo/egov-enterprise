@@ -141,7 +141,32 @@ export default function ScheduleDeptClient() {
     const handleEdit = (schedule: DeptSchedule) => {
         if (savingRef.current || deletePendingRef.current) return;
         setEditingSchedule(schedule);
-        setFormData(schedule);
+        /*
+          ⚠ 목록 행을 통째로 넣으면 **수정이 항상 실패한다**.
+
+          종전 구현은 `setFormData(schedule)` 이었다. 목록 행에는 schdlSn·schdlPicId·frstRgtrId·
+          crtDt·lastMdfrId·mdfcnDt·schdlDeptId·schdlIpAddr 가 실려 있고, 이 8개는 전부
+          `updateScheduleOperation.requestForbiddenPaths` 다(generated-operations.ts).
+          검증 스키마가 `ScheduleDtoSchema.extend(...)` 라 그 키들은 **선언된 키**이므로
+          zod 가 걷어내지 않고 그대로 통과시키고, 생성 API 클라이언트가
+          `assertForbiddenPathsAbsent` 로 **HTTP 요청을 보내기 전에** throw 했다.
+          그래서 등록은 되는데 수정만 '저장 중 오류가 발생했습니다.' 로 죽어 있었다.
+
+          폼이 소유하는 필드 + 서버 updateAll 이 덮어쓰므로 왕복이 필요한 필드만 남긴다.
+          (atchFileSn 은 updateAll 대상이 아니라 서버가 보존하므로 보내지 않는다.)
+        */
+        setFormData({
+            schdlNm: schedule.schdlNm ?? '',
+            schdlCn: schedule.schdlCn ?? '',
+            schdlBgngYmd: schedule.schdlBgngYmd ?? '',
+            schdlEndYmd: schedule.schdlEndYmd ?? '',
+            schdlPlcNm: schedule.schdlPlcNm ?? '',
+            // 이 화면은 부서 일정 전용이다 — GET /schedules/dept 가 schdlSeCd='1' 로 필터한다.
+            schdlSeCd: schedule.schdlSeCd ?? '1',
+            schdlImprtCd: schedule.schdlImprtCd ?? 'A',
+            schdlKndCd: schedule.schdlKndCd,
+            reptSeCd: schedule.reptSeCd,
+        });
         validation.setFormErrors({}, false);
         setIsDialogOpen(true);
     };

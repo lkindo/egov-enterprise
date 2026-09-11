@@ -27,10 +27,10 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "bb6da522aee83b941c5f2e798fba462b2ce5d2757afcf1c19053257fc1a17ac7"
+    "inventoryHash": "e4a7fece9ecffdab886f4adb1d4f1b492e20b399a2151bd17c76c57b1d27f95a"
   },
   "summary": {
-    "sourceFileCount": 536,
+    "sourceFileCount": 540,
     "records": 392,
     "syntaxOccurrences": 464,
     "ambiguousRecords": 365,
@@ -12139,122 +12139,6 @@
       }
     },
     {
-      "id": "URL-EDBB6F12B17AD0",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/work-hub",
-      "targetCandidate": "/smart-toolkit/dept-job/[computed]",
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/smart-toolkit/dept-job/[computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-60B06A3C7CC585",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/work-hub",
-      "targetCandidate": "/smart-toolkit/dept-job/create",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/smart-toolkit/dept-job/create",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-559DC883BD4AC0",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/work-hub",
-      "targetCandidate": "/smart-toolkit/dept-job/[computed]",
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/smart-toolkit/dept-job/[computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-F60E1E9DD183E6",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -14830,6 +14714,45 @@
       }
     },
     {
+      "id": "URL-82D10FB13519DB",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/app/smart-toolkit/dept-job/layout.tsx",
+      "producerFile": "frontend/src/app/smart-toolkit/dept-job/layout.tsx",
+      "consumerFile": null,
+      "routePattern": "/smart-toolkit/dept-job",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/smart-toolkit/dept-job/layout.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-D28763D08DF60C",
       "surface": "navigation",
       "kind": "dynamic-segment",
@@ -16038,6 +15961,86 @@
       "evidence": {
         "source": "frontend/src/components/business/deptJob/DeptJobForm.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-2A1DF4808B7CC5",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/components/business/deptJob/DeptJobListSection.tsx",
+      "producerFile": "frontend/src/components/business/deptJob/DeptJobListSection.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/smart-toolkit/dept-job/[computed]",
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/smart-toolkit/dept-job/[computed]",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/deptJob/DeptJobListSection.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-AEB92D9E002C83",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/components/business/deptJob/DeptJobListSection.tsx",
+      "producerFile": "frontend/src/components/business/deptJob/DeptJobListSection.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/smart-toolkit/dept-job/[computed]",
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/smart-toolkit/dept-job/[computed]",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/deptJob/DeptJobListSection.tsx",
+        "detector": "router-navigation",
         "occurrenceCount": 1
       }
     },
