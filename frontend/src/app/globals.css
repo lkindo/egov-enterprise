@@ -78,6 +78,11 @@
   }
 }
 
+:root {
+  --app-header-height: 3.5rem;
+  --app-sidebar-width: 16rem;
+}
+
 /* --- 밀도 축(data-density) 오버라이드 (D1, DEC-OPS-015) ---
    밀도는 브랜드와 직교하고 컬러 모드에 불변이므로 프로필 파일이 아니라 여기 한 곳에서
    같은 커스텀 프로퍼티를 덮어쓴다. comfortable(기본)은 오버라이드가 전혀 없어 프로필

@@ -108,6 +108,18 @@ describe('DashboardPage Server Component', () => {
     await expect(loadDashboardData()).rejects.toThrow('dashboard unavailable');
   });
 
+  it('홈 게시물 상세 이동에 필요한 서버 식별자를 보존한다', async () => {
+    vi.mocked(cookies).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'mock-token' }) } as unknown as Awaited<ReturnType<typeof cookies>>);
+    vi.mocked(client.getRaw).mockResolvedValue(success({
+      notiList: [{ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41, pstTtl: '바로 열 공지' }],
+      taskList: [{ pstSn: 42, pstTtl: '게시판 정보가 없는 자료' }], pendingApprovalCount: 0,
+    }));
+    const result = await loadDashboardData();
+    expect(result.initialNotiList[0]).toMatchObject({ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41 });
+    expect(result.initialTaskList[0]).not.toHaveProperty('bbsId');
+    expect(result.initialTaskList[0]).not.toHaveProperty('pstSn');
+  });
+
   it('필수 pendingApprovalCount가 없는 응답을 0건으로 표시하지 않습니다.', async () => {
     vi.mocked(cookies).mockResolvedValue({
       get: vi.fn().mockReturnValue({ value: 'mock-token' }),

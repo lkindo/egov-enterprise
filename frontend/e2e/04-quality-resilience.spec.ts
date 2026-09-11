@@ -333,7 +333,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
         /** 최종 route h1까지 명시해 Suspense/셸 폴백을 완료 화면으로 오인하지 않는다. */
         const ROUTES = [
             { path: '/admin', finalHeading: '관리자 업무 현황' },
-            { path: '/admin/work-hub', finalHeading: '워크플로우 및 자산 관리' },
+            { path: '/admin/work-hub', finalHeading: '업무 관리' },
         ] as const;
 
         // Tailwind 기본 브레이크포인트 기준: sm 640 · md 768 · lg 1024 · xl 1280.

@@ -31,9 +31,8 @@ export class DeptJobPage {
     async gotoJobList() {
         console.log('>>> Navigating to Dept Job list (work-hub job tab)');
         await this.page.goto('/smart-toolkit/dept-job?e2e=true');
-        // [2026-08-25 A1 이행] 섹션 카드 제목('업무 워크플로우 매트릭스')이 사라지고
-        // 화면 제목 + 선택된 탭이 현재 영역을 나타낸다.
-        await expect(this.page.getByRole('tab', { name: '업무 워크플로우' }))
+        // 화면 제목과 선택된 업무 탭이 현재 영역을 나타낸다.
+        await expect(this.page.getByRole('tab', { name: '업무 관리', exact: true }))
             .toHaveAttribute('aria-selected', 'true', { timeout: 30000 });
     }
 

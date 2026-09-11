@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BoardPreview } from './BoardPreview';
@@ -183,6 +184,8 @@ export function BoardMakerWizard() {
  const [isSuccess, setIsSuccess] = useState(false);
  const [status, setStatus] = useState('');
  const submittingRef = React.useRef(false);
+ const createdBoardRef = React.useRef<string | null>(null);
+ const [createdBoardId, setCreatedBoardId] = useState<string | null>(null);
  // 감사 P1-1/삼킴 금지: 배포 실패 시 status 문자열만 바꿨는데 그 문자열은 isSubmitting 중에만 렌더돼
  // 제출이 끝나는 순간 사라졌다(= 실패가 화면에 전혀 남지 않음). 별도 상태로 오류를 계속 노출한다.
  const [submitError, setSubmitError] = useState<string | null>(null);
@@ -210,7 +213,8 @@ export function BoardMakerWizard() {
  if (targetStep) setCurrentStep(targetStep);
  },
  });
- const { register, handleSubmit, formState: { errors }, watch, setValue } = form;
+ const { register, handleSubmit, formState: { errors, isDirty }, watch, setValue } = form;
+ useUnsavedChanges(() => ({ dirty: !isSuccess && (isDirty || createdBoardRef.current !== null), pending: submittingRef.current }));
 
  /*
    [2026-09-08 PD-CMTY-001] 귀속 후보 목록. 관리자 화면이므로 관리자용 목록을 쓴다
@@ -262,11 +266,12 @@ export function BoardMakerWizard() {
  submittingRef.current = true;
  setIsSubmitting(true);
  setSubmitError(null);
- setStatus('게시판을 생성하는 중...');
+ setStatus(createdBoardRef.current ? '생성된 게시판의 메뉴를 확인하는 중...' : '게시판을 생성하는 중...');
 
  try {
  // 1. Create Board Master
- const bbsId = await boardAdminService.createBoardMaster({
+ const retryingMenu = createdBoardRef.current !== null;
+ const bbsId = createdBoardRef.current ?? await boardAdminService.createBoardMaster({
  bbsTtl: data.bbsTtl,
  bbsExpln: data.bbsExpln,
  bbsTypeCd: data.bbsTypeCd,
@@ -289,12 +294,20 @@ export function BoardMakerWizard() {
  });
 
  if (!bbsId) throw new Error("Failed to get bbsId");
+ createdBoardRef.current = bbsId;
+ setCreatedBoardId(bbsId);
+ const route = `/admin/community/boards/select-board-list?bbsId=${bbsId}`;
+ // A response can be lost after the menu was committed. Check the full administrative
+ // list (including inactive menus) before retrying; a failed read must not become an insert.
+ const existingMenus = retryingMenu ? await menuAdminService.getAllMenus() : [];
+ const existingMenu = existingMenus.some((menu) => menu.modernRoute === route);
+ setStatus('비활성 메뉴를 등록하는 중...');
 
- await menuAdminService.createMenu({
+ if (!existingMenu) await menuAdminService.createMenu({
  menuNm: data.menuNm || data.bbsTtl,
  upMenuSn: Number(data.upperMenuNo),
  menuOrdr: data.menuOrdr,
- modernRoute: `/admin/community/boards/select-board-list?bbsId=${bbsId}`,
+ modernRoute: route,
  menuExpln: `Auto-generated menu for board ${data.bbsTtl}`,
  useYn: 'N'
  });
@@ -307,6 +320,10 @@ export function BoardMakerWizard() {
  setIsSuccess(true);
  } catch (error: unknown) {
  setStatus('');
+ if (createdBoardRef.current) {
+   setCurrentStep(4);
+   setSubmitError('게시판은 생성되었습니다. 메뉴 등록 결과를 확인하지 못했습니다. 메뉴 등록 다시 시도는 기존 메뉴를 먼저 조회하며 게시판을 새로 만들지 않습니다.');
+ }
  const serverErrors = extractFieldErrors(error);
  if (serverErrors && Object.keys(serverErrors).length > 0) {
  let firstNavigableField: string | null = null;
@@ -322,7 +339,7 @@ export function BoardMakerWizard() {
  }
  if (firstNavigableField) void form.focusError(firstNavigableField, 'server');
  } else if (!form.applyServerErrors(error)) {
- setSubmitError('게시판 생성 및 메뉴 배포에 실패했습니다. 입력값은 유지되므로 내용을 확인한 뒤 다시 시도해 주세요.');
+ if (!createdBoardRef.current) setSubmitError('게시판 생성 결과를 확인하지 못했습니다. 게시판 목록에서 생성 여부를 확인한 뒤 다시 시도해 주세요. 입력값은 유지됩니다.');
  }
  } finally {
  submittingRef.current = false;
@@ -344,6 +361,7 @@ export function BoardMakerWizard() {
  </p>
  </div>
  <div className="flex flex-col gap-4 w-full max-w-sm">
+ <Button onClick={() => router.push('/admin/system/menus')}>생성한 메뉴 설정하기</Button>
  <Button
  onClick={() => router.push('/admin/community/boards/master')}
  className="h-11 rounded-lg bg-primary text-xl font-bold hover:scale-105 transition-all shadow-xl shadow-primary/20 tracking-tighter"
@@ -672,8 +690,8 @@ export function BoardMakerWizard() {
  <SelectValue placeholder="상위 메뉴를 선택하세요" className="text-left" />
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl">
- <SelectItem value="2000000" className="py-4 text-lg font-bold">작업 커뮤니티 및 콘텐츠</SelectItem>
- <SelectItem value="2030000" className="py-4 text-lg font-bold">정보섹션 및 사용자지원</SelectItem>
+ <SelectItem value="2000000" className="py-4 text-lg font-bold">소통·지식</SelectItem>
+ <SelectItem value="2030000" className="py-4 text-lg font-bold">관리 센터 &gt; 업무 지원</SelectItem>
  <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (최상위 메뉴)</SelectItem>
  </SelectContent>
  </Select>
@@ -740,7 +758,7 @@ export function BoardMakerWizard() {
  variant="ghost"
  size="lg"
  onClick={prevStep}
- disabled={currentStep === 1 || isSubmitting}
+ disabled={currentStep === 1 || isSubmitting || createdBoardId !== null}
  className="h-11 px-10 rounded-lg font-bold text-muted-foreground hover:bg-card hover:text-foreground transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
  >
  <ChevronLeft className="w-6 h-6" aria-hidden="true" /> 이전 단계
@@ -768,7 +786,7 @@ export function BoardMakerWizard() {
  </div>
  ) : (
  <span className="flex items-center gap-3">
- {currentStep === STEPS.length ? '게시판 생성 및 메뉴 배포' : '다음 단계로'}
+ {currentStep === STEPS.length ? createdBoardId ? '메뉴 등록 다시 시도' : '게시판 생성 및 메뉴 배포' : '다음 단계로'}
  <ChevronRight className="w-6 h-6" aria-hidden="true" />
  </span>
  )}

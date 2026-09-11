@@ -3,6 +3,7 @@
 import React, { useRef, useState } from 'react';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import {
   Send,
   ArrowLeft,
@@ -78,6 +79,7 @@ export default function MailSendHubClient() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
+  const completedRef = useRef(false);
   const [recipientSearch, setRecipientSearch] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<RecipientSelection[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -97,6 +99,10 @@ export default function MailSendHubClient() {
     emailCn: ''
   });
   const validation = useManualFormValidation(mailSendSchema, { labels: mailValidationLabels });
+  useUnsavedChanges(() => ({
+    dirty: !completedRef.current && Boolean(form.sj || form.emailCn || selectedRecipients.length || recipientSearch),
+    pending: submitPendingRef.current && !completedRef.current,
+  }));
 
   /**
    * 수신자 추가.
@@ -154,6 +160,7 @@ export default function MailSendHubClient() {
     setIsSubmitting(true);
     try {
       await mailService.sendMail(validated);
+      completedRef.current = true;
       toast('메일이 발송 요청되었습니다.', 'success');
       router.push('/admin/collaboration/mail-history');
     } catch (error: unknown) {

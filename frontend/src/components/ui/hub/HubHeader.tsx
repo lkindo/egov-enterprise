@@ -25,20 +25,20 @@ export function HubHeader({
   const Heading = headingLevel === 1 ? 'h1' : 'h2';
 
   return (
-    <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between px-6 gap-8 mb-8 animate-in fade-in slide-in-from-top-8 duration-700", className)}>
-      <div className="flex items-center gap-6">
-        <div className="hub-icon-box shadow-xl shadow-primary/20 hover:scale-110 transition-transform">
-          <div className="text-white dark:text-foreground">
-            {renderHubIcon(icon, 32)}
+    <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6", className)}>
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 shrink-0 rounded-lg bg-primary flex items-center justify-center">
+          <div className="text-primary-foreground">
+            {renderHubIcon(icon, 22)}
           </div>
         </div>
         <div className="space-y-1">
           {/* 시각 스케일은 동일하게 유지하고, effective route에서의 역할만 명시적으로 고른다. */}
-          <Heading className="hub-title-main flex items-center gap-3">
+          <Heading className="text-2xl font-bold tracking-tight flex flex-wrap items-center gap-2">
              {title} {highlight && <span className="text-primary">{highlight}</span>}
           </Heading>
           {subtitle && (
-            <p className="hub-subtitle-label mt-2 tracking-tight">
+            <p className="text-sm text-muted-foreground mt-1">
                {subtitle}
             </p>
           )}

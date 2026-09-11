@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { permissionDomainLabel, permissionActionLabel } from '@/lib/auth/permission-labels';
 import { notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
@@ -35,6 +36,7 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
   const pending = pendingAction !== null;
   const [saved, setSaved] = useState(false);
   const [formRevision, setFormRevision] = useState(0);
+  const [metadataDirty, setMetadataDirty] = useState(false);
   const pendingRef = useRef(false);
   const currentBaseline = baseline.version === snapshot.version && catalogVersion === catalog.catalogVersion;
   const complete = hasCompleteCatalog(baseline, catalog);
@@ -47,12 +49,13 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
   const visible = catalog.operations.filter((operation) => (!domain || operation.domain === domain) && `${operation.name} ${operation.code} ${operation.domain} ${operation.action}`.toLowerCase().includes(filter.toLowerCase()));
   const navigationOnly = [...selection].some((key) => key.startsWith('NAVIGATION:')) && ![...selection].some((key) => key.startsWith('OPERATION:'));
   const dirty = selection.size !== baseline.grants.length || baseline.grants.some((grant) => !selection.has(grantKey(grant)));
+  const navigate = useUnsavedChanges(() => ({ dirty: dirty && !saved, pending: pendingRef.current }));
   const toggle = (key: string) => {
-    if (!writable || !canGrant || (baseline.code === 'ROLE_ANONYMOUS' && key.startsWith('OPERATION:') && !selection.has(key))) return;
+    if (!writable || metadataDirty || !canGrant || (baseline.code === 'ROLE_ANONYMOUS' && key.startsWith('OPERATION:') && !selection.has(key))) return;
     setSelection((previous) => { const next = new Set(previous); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   };
   const toggleNavigation = (code: string, checked: boolean) => {
-    if (!writable || !canGrant) return;
+    if (!writable || metadataDirty || !canGrant) return;
     setSelection((previous) => toggleNavigationPermission(navigationTree, previous, code, checked));
   };
   const write = async (action: () => Promise<unknown>, message: string) => {
@@ -79,7 +82,7 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
     setFormRevision((revision) => revision + 1);
   };
   const saveGrants = async () => {
-    if (!writable || !canGrant || !dirty || navigationGaps.length > 0 || pendingRef.current) return;
+    if (!writable || metadataDirty || !canGrant || !dirty || navigationGaps.length > 0 || pendingRef.current) return;
     pendingRef.current = true; setPendingAction('grants');
     try {
       await authorizationAdminService.saveGroupGrants(baseline.code, { grants: selectedGrants(selection, catalog), version: baseline.version, complete: true });
@@ -104,14 +107,20 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
     <section aria-label={`${snapshot.name} 권한 설정`} className="space-y-6 rounded-lg border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{snapshot.name}</h2>
-        <Button type="button" variant="outline" disabled={pending || refreshing} onClick={reload}>입력 취소 · 최신 정보 적용</Button>
+        <Button type="button" variant="outline" disabled={pending || refreshing} onClick={() => void navigate(reload)}>입력 취소 · 최신 정보 적용</Button>
       </div>
       {(!currentBaseline || saved) && <p role="status" className="text-sm text-muted-foreground">그룹 정보가 변경되었습니다. 최신 정보를 적용한 뒤 다시 편집하세요.</p>}
       {!complete && <p role="alert" className="text-sm text-destructive">전체 권한 또는 현재 기능 목록과의 일치를 확인하지 못해 저장할 수 없습니다. 다시 조회해 주세요.</p>}
-      {canUpdate ? <AuthorizationGroupForm key={`${baseline.version}:${formRevision}`} initial={{ code: baseline.code, name: baseline.name, description: baseline.description ?? '' }} creating={false} externalBusy={!writable}
+      <nav aria-label="그룹 설정 바로가기" className="flex flex-wrap gap-4 text-sm"><a href="#group-metadata" className="text-primary underline">기본정보</a><a href="#group-operations" className="text-primary underline">기능권한</a><a href="#group-navigation" className="text-primary underline">메뉴표시</a></nav>
+      <div id="group-metadata" className="scroll-mt-20">
+      <h3 className="mb-3 font-semibold">기본정보</h3>
+      <p className="mb-3 text-sm text-muted-foreground">그룹명·설명은 기능권한·메뉴표시와 별도로 저장합니다. 한 영역의 변경을 저장하거나 취소한 뒤 다른 영역을 편집하세요.</p>
+      {canUpdate ? <AuthorizationGroupForm key={`${baseline.version}:${formRevision}`} initial={{ code: baseline.code, name: baseline.name, description: baseline.description ?? '' }} creating={false} externalBusy={!writable || dirty} onDirtyChange={setMetadataDirty}
         onSubmit={async (values) => { if (!canUpdate) return; await write(() => authorizationAdminService.updateGroup(baseline.code, { name: values.name, description: values.description, version: baseline.version }), '그룹 정보를 저장했습니다.'); }} />
         : <p className="text-sm text-muted-foreground">{snapshot.description || '등록된 설명이 없습니다.'}</p>}
-      <div className="space-y-3">
+      </div>
+      {metadataDirty && <p role="status" className="text-sm text-muted-foreground">기본정보를 먼저 저장하거나 입력을 취소한 뒤 기능권한·메뉴표시를 변경하세요.</p>}
+      <div id="group-operations" className="scroll-mt-20 space-y-3">
         <h3 className="font-semibold">기능권한</h3>
         <p className="text-sm text-muted-foreground">API와 화면 동작에 적용됩니다. 본인 자료·공개 범위 등 자료별 조건은 함께 적용됩니다.</p>
         {baseline.code === 'ROLE_ANONYMOUS' && <p role="status" className="text-sm text-muted-foreground">공개 메뉴 그룹은 메뉴 표시만 설정하며 로그인 사용자에게 배정하지 않습니다.</p>}
@@ -120,12 +129,12 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
         <p className="text-sm text-muted-foreground">표시 {visible.length} / 전체 {catalog.operations.length}개 · 검색 결과 밖의 선택도 유지됩니다.</p>
         <div className="max-h-96 overflow-auto rounded-md border border-border">
           <table className="w-full text-left text-sm"><caption className="sr-only">그룹별 기능권한 선택</caption><thead className="sticky top-0 bg-muted"><tr><th className="p-3">선택 · 기능</th><th className="p-3">도메인</th><th className="p-3">행위</th></tr></thead><tbody>
-            {visible.map((operation) => <tr key={operation.code} className="border-t border-border"><td className="p-3"><label className="flex items-center gap-3"><Checkbox checked={selection.has(`OPERATION:${operation.code}`)} disabled={!writable || !canGrant || (baseline.code === 'ROLE_ANONYMOUS' && !selection.has(`OPERATION:${operation.code}`))} onCheckedChange={() => toggle(`OPERATION:${operation.code}`)} /><span>{operation.name}<span className="block text-xs text-muted-foreground">{operation.code}</span></span></label></td><td className="p-3">{permissionDomainLabel(operation.domain)}</td><td className="p-3">{permissionActionLabel(operation.action)}</td></tr>)}
+            {visible.map((operation) => <tr key={operation.code} className="border-t border-border"><td className="p-3"><label className="flex items-center gap-3"><Checkbox checked={selection.has(`OPERATION:${operation.code}`)} disabled={!writable || metadataDirty || !canGrant || (baseline.code === 'ROLE_ANONYMOUS' && !selection.has(`OPERATION:${operation.code}`))} onCheckedChange={() => toggle(`OPERATION:${operation.code}`)} /><span>{operation.name}<span className="block text-xs text-muted-foreground">{operation.code}</span></span></label></td><td className="p-3">{permissionDomainLabel(operation.domain)}</td><td className="p-3">{permissionActionLabel(operation.action)}</td></tr>)}
           </tbody></table>
         </div>
         {visible.length === 0 && <p role="status">검색 결과가 없습니다.</p>}
       </div>
-      <div className="space-y-3">
+      <div id="group-navigation" className="scroll-mt-20 space-y-3">
         <h3 className="font-semibold">메뉴 표시</h3>
         <p className="text-sm text-muted-foreground">메뉴가 표시되려면 해당 메뉴와 모든 상위 메뉴가 선택되어 있고 사용 중이어야 합니다.</p>
         <p className="text-sm text-muted-foreground">메뉴 숨김은 기능권한을 회수하지 않습니다. 기능권한이 있으면 직접 URL로 화면을 열 수 있으며, 실제 조회·변경에는 기능권한과 자료별 접근 조건이 적용됩니다.</p>
@@ -133,12 +142,14 @@ export function AuthorizationGroupEditor({ snapshot, catalog, refreshing, onRefr
         {navigationOnly && baseline.code !== 'ROLE_ANONYMOUS' && <p role="alert" className="text-sm text-destructive">메뉴만 선택되어 있고 기능권한이 없습니다. 필요한 업무 영역의 조회 기능을 확인하세요. 권한은 자동으로 추가되지 않습니다.</p>}
         {navigationTree.error && <p role="alert" className="text-sm text-destructive">{navigationTree.error} 저장할 수 없습니다. 메뉴 설정을 확인한 뒤 다시 조회해 주세요.</p>}
         {navigationGaps.length > 0 && <p role="alert" className="text-sm text-destructive">상위 메뉴가 선택되지 않은 메뉴가 있습니다: {navigationGaps.join(', ')}. 상위 메뉴를 선택하거나 해당 하위 메뉴를 해제한 뒤 저장하세요.</p>}
-        <NavigationPermissionTree tree={navigationTree} selection={selection} disabled={!writable || !canGrant} onToggle={toggleNavigation} />
+        <NavigationPermissionTree tree={navigationTree} selection={selection} disabled={!writable || metadataDirty || !canGrant} onToggle={toggleNavigation} />
       </div>
-      {dirty && <p role="status" className="text-sm text-muted-foreground">저장 시 권한·메뉴 추가 {[...selection].filter((key) => !baseline.grants.some((grant) => grantKey(grant) === key)).length}개 · 회수 {baseline.grants.filter((grant) => !selection.has(grantKey(grant))).length}개. 이 그룹을 배정받은 사용자에게 적용되며 다른 그룹이 제공하는 같은 권한은 유지됩니다.</p>}
+      <div className={`space-y-3 border-t border-border bg-card py-4${dirty && !saved ? ' sticky bottom-0 z-10' : ''}`}>
+      {dirty && !saved && <p role="status" className="text-sm text-muted-foreground">저장 시 권한·메뉴 추가 {[...selection].filter((key) => !baseline.grants.some((grant) => grantKey(grant) === key)).length}개 · 회수 {baseline.grants.filter((grant) => !selection.has(grantKey(grant))).length}개. 이 그룹을 배정받은 사용자에게 적용되며 다른 그룹이 제공하는 같은 권한은 유지됩니다.</p>}
       <div className="flex flex-wrap justify-between gap-3">
-        {canGrant && <Button type="button" disabled={pending || !writable || !dirty || navigationGaps.length > 0} aria-busy={pendingAction === 'grants'} onClick={() => void saveGrants()}>권한 변경 저장</Button>}
+        {canGrant && <Button type="button" disabled={pending || metadataDirty || !writable || !dirty || navigationGaps.length > 0} aria-busy={pendingAction === 'grants'} onClick={() => void saveGrants()}>권한 변경 저장</Button>}
         {canDelete && !RESERVED.has(baseline.code) && <Button type="button" variant="destructive" disabled={pending || !writable} aria-busy={pendingAction === 'delete'} onClick={() => void deleteGroup()}>그룹 삭제</Button>}
+      </div>
       </div>
     </section>
   );

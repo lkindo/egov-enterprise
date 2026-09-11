@@ -6,6 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 import SurveyTemplatesPanel from '../SurveyTemplatesPanel';
 import { surveyTemplateCreateSchema } from '../survey-panel-form-validation';
+import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
+import { ToastProvider } from '@/app/components/ui/toast';
+
+const confirmMock = vi.hoisted(() => vi.fn());
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => confirmMock }));
 
 vi.mock('@/services/foundation/system/SurveyAdminService', () => ({
   surveyAdminService: {
@@ -28,7 +33,7 @@ function renderPanel() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <SurveyTemplatesPanel />
+      <ToastProvider><UnsavedChangesProvider><SurveyTemplatesPanel /></UnsavedChangesProvider></ToastProvider>
     </QueryClientProvider>,
   );
 }
@@ -36,6 +41,7 @@ function renderPanel() {
 describe('SurveyTemplatesPanel validation contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    confirmMock.mockResolvedValue(false);
     mocked.createTemplate.mockResolvedValue(undefined);
     mocked.updateTemplate.mockResolvedValue(undefined);
     mocked.deleteTemplate.mockResolvedValue(undefined);
@@ -166,6 +172,22 @@ describe('SurveyTemplatesPanel validation contract', () => {
     await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledWith(11, { srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved' }));
     expect(mocked.createTemplate).not.toHaveBeenCalled();
     expect(await screen.findByRole('button', { name: '템플릿 추가' })).toBeEnabled();
+  });
+
+  it('입력 중 다른 템플릿 선택을 취소하면 상세 조회와 입력 교체를 하지 않는다', async () => {
+    mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 12, srvyTmpltExpln: '다른 대상' }], total: 1, page: 1, size: 50, totalPage: 1 });
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 12, srvyTmpltTypeCd: 'NEXT', srvyTmpltExpln: '다른 설명' });
+    const user = userEvent.setup();
+    renderPanel();
+    await user.type(screen.getByLabelText('템플릿 설명'), '보존할 초안');
+    await user.click(await screen.findByRole('button', { name: '다른 대상 템플릿 수정' }));
+    expect(confirmMock).toHaveBeenCalledWith(expect.objectContaining({ title: '저장하지 않은 변경' }));
+    expect(mocked.getSurveyTemplate).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('템플릿 설명')).toHaveValue('보존할 초안');
+    confirmMock.mockResolvedValueOnce(true);
+    await user.click(screen.getByRole('button', { name: '다른 대상 템플릿 수정' }));
+    await waitFor(() => expect(screen.getByLabelText('템플릿 설명')).toHaveValue('다른 설명'));
+    expect(mocked.getSurveyTemplate).toHaveBeenCalledTimes(1);
   });
 
   it('상세 조회 실패는 오래된 목록 값으로 수정하지 않고 다시 시도할 수 있다', async () => {

@@ -19,9 +19,11 @@ import {
   ShieldCheck,
   KeyRound,
   UserCog,
-  CircleDot
+  CircleDot,
+  Search
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { useLayout } from '@/contexts/LayoutContext';
 import { useNotifications } from '@/lib/hooks/use-notifications';
@@ -55,7 +57,7 @@ const StandardModal = dynamic(
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
   1000000: LayoutGrid, // 워크스페이스
   2000000: Users, // 커뮤니티
-  3000000: HeartHandshake, // 고객지원센터
+  9040401: HeartHandshake, // 참여
   9000000: ShieldCheck, // 통합 관리 센터
 };
 
@@ -70,6 +72,8 @@ export function Header({
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
+  const navigate = useUnsavedChanges({ dirty: false });
+  const loggingOut = useRef(false);
   const menuAuthorization = useMenuAuthorizationScope();
   const canReadMenus = canPermission(user, 'MENU_READ');
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
@@ -120,15 +124,18 @@ export function Header({
     staleTime: 5 * 60 * 1000,
   });
 
-  const handleLogout = async () => {
+  const handleLogout = () => void navigate(async (originalRouter) => {
+    if (loggingOut.current) return;
+    loggingOut.current = true;
     try {
       await logout();
     } catch {
       // 네트워크 실패가 현재 화면의 캐시된 사용자 데이터를 계속 노출하게 두지 않는다.
     } finally {
-      router.replace('/login');
+      (originalRouter ?? router).replace('/login');
+      loggingOut.current = false;
     }
-  };
+  });
 
   return (
     <header
@@ -139,7 +146,7 @@ export function Header({
       <React.Suspense fallback={null}>
         <HeaderSearchParamSync menus={menus} activeMenuNo={activeMenuNo} setActiveMenuNo={setActiveMenuNo} />
       </React.Suspense>
-      <div className="flex h-11 items-center px-4 md:px-6 gap-3 sm:gap-4">
+      <div className="flex h-[calc(var(--app-header-height)-1px)] items-center px-4 md:px-6 gap-3 sm:gap-4">
         {/* Mobile Sidebar Toggle */}
         <Button 
           variant="ghost" 
@@ -172,7 +179,7 @@ export function Header({
               const targetRoute = resolveMenuInternalRoute(menu);
               const canBrowseChildren = !targetRoute && !!menu.children?.length;
               const itemClassName = cn(
-                "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-tight transition-all rounded-[var(--radius-hub-item)] gap-2.5",
+                "inline-flex items-center justify-center whitespace-nowrap px-3 h-9 font-bold text-xs tracking-tight transition-all rounded-[var(--radius-hub-item)] gap-2.5",
                 isActive
                   ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl"
                   : "text-muted-foreground hover:text-foreground hover:bg-card"
@@ -217,6 +224,7 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-1 md:gap-2">
+          <Link href="/search" aria-label="통합 검색" title="통합 검색" className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "text-muted-foreground")}><Search size={20} aria-hidden="true" /></Link>
           <Link
             href="/help"
             title="도움말"
@@ -401,4 +409,3 @@ export function Header({
     </header>
   );
 }
-

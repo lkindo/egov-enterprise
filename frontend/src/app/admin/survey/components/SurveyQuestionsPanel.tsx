@@ -1,6 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 import { Survey, SurveyQuestion } from '@/types/business/survey';
@@ -135,7 +137,12 @@ export default function SurveyQuestionsPanel() {
   */
   const [editingTarget, setEditingTarget] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
+  const [originalEditingText, setOriginalEditingText] = useState('');
   const editPendingRef = useRef(false);
+  const navigate = useUnsavedChanges(() => ({
+    dirty: Boolean(newSurveyTitle || newQuestion || newItemText || (editingTarget && editingText !== originalEditingText)),
+    pending: surveyPendingRef.current || surveyDeletePendingRef.current || questionPendingRef.current || itemPendingRef.current || deletePendingRef.current || editPendingRef.current,
+  }));
 
   /*
     편집 검증도 등록과 같은 규격을 쓴다 — 오류 요약·첫 오류 포커스·서버 필드 오류 매핑·
@@ -161,6 +168,7 @@ export default function SurveyQuestionsPanel() {
     if (editPendingRef.current) return;
     setEditingTarget(target);
     setEditingText(current);
+    setOriginalEditingText(current);
     setError(null);
     clearEditErrors();
   };
@@ -415,7 +423,7 @@ export default function SurveyQuestionsPanel() {
         {templateOptions.length === 0 ? (
           // 템플릿이 필수인데 없으면 등록이 원리적으로 불가능하다. 그 사실을 먼저 말한다.
           <p className="text-xs text-muted-foreground">
-            등록된 템플릿이 없습니다. ‘템플릿’ 탭에서 먼저 템플릿을 만들어야 설문지를 등록할 수 있습니다.
+            등록된 템플릿이 없습니다. <Link href="/admin/survey/hub?tab=templates" className="text-primary underline">템플릿 만들기</Link> 후 설문지를 등록하세요.
           </p>
         ) : null}
       </form>
@@ -428,10 +436,15 @@ export default function SurveyQuestionsPanel() {
           id="questions-srvy"
           value={srvySn ?? ''}
           onChange={(e) => {
-            setSrvySn(e.target.value ? Number(e.target.value) : null);
+            const next = e.target.value ? Number(e.target.value) : null;
+            void navigate(() => {
+            setSrvySn(next);
+            setNewQuestion(''); setNewItemFor(null); setNewItemText('');
+            setEditingTarget(null); setEditingText('');
             setError(null);
             questionValidation.setFormErrors({}, false);
             itemValidation.setFormErrors({}, false);
+            });
           }}
           className="border rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
         >
@@ -808,9 +821,13 @@ export default function SurveyQuestionsPanel() {
                         className="text-xs h-7"
                         disabled={addQuestion.isPending || addItem.isPending || deletingTarget !== null}
                         onClick={() => {
+                          const open = () => {
                           itemValidation.setFormErrors({}, false);
                           setNewItemFor(q.srvyQstnSn);
                           setNewItemText('');
+                          };
+                          if (newItemText) void navigate(open);
+                          else open();
                         }}
                       >
                         <Plus className="h-3 w-3 mr-1" /> 항목 추가

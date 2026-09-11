@@ -248,7 +248,7 @@ describe('MonitoringHubClient', () => {
     expect(screen.queryByRole('textbox', { name: LOG_SEARCH_LABEL })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: LOGIN_SEARCH_LABEL })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '서비스 피드백 관리 44 상세 열기' }));
+    fireEvent.click(screen.getByRole('button', { name: '사용자 의견 관리 44 상세 열기' }));
     expect(document.querySelector('button button')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '댓글 삭제' }));
 
@@ -268,7 +268,7 @@ describe('MonitoringHubClient', () => {
     renderHub('tab=comments');
 
     expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: '서비스 피드백 관리 44 상세 열기' }));
+    fireEvent.click(screen.getByRole('button', { name: '사용자 의견 관리 44 상세 열기' }));
     const remove = screen.getByRole('button', { name: '댓글 삭제' });
 
     act(() => {

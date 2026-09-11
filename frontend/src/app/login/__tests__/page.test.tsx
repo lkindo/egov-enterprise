@@ -200,66 +200,25 @@ describe('LoginPage Component', () => {
     });
   });
 
-  it('isolates visible application chrome while the login dialog is mounted and restores it on unmount', () => {
-    const shell = document.createElement('div');
-    shell.setAttribute('data-login-test-shell', 'true');
-    shell.innerHTML = [
-      '<a href="#main" data-sidebar-modal-background="skip-link" data-testid="shell-skip">본문 바로가기</a>',
-      '<header data-testid="shell-header"></header>',
-      '<aside data-testid="shell-sidebar"></aside>',
-      '<footer data-testid="shell-footer"></footer>',
-    ].join('');
-    document.body.append(shell);
-    const { unmount } = render(<LoginPage />);
-
-    for (const landmark of ['shell-skip', 'shell-header', 'shell-sidebar', 'shell-footer']) {
-      const element = screen.getByTestId(landmark) as HTMLElement & { inert: boolean };
-      expect(element).toHaveAttribute('aria-hidden', 'true');
-      expect(element).toHaveAttribute('inert');
+  it('renders authentication as a page without hiding other page landmarks', () => {
+    render(<><main data-testid="login-main"><LoginPage /></main><footer data-testid="login-footer">도움말</footer></>);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: '엔터프라이즈' })).toBeVisible();
+    for (const id of ['login-main', 'login-footer']) {
+      expect(screen.getByTestId(id)).not.toHaveAttribute('inert');
+      expect(screen.getByTestId(id)).not.toHaveAttribute('aria-hidden');
     }
-    expect(screen.getByRole('dialog', { name: '엔터프라이즈' })).toHaveAttribute('aria-modal', 'true');
-
-    unmount();
-    for (const landmark of ['shell-skip', 'shell-header', 'shell-sidebar', 'shell-footer']) {
-      const element = screen.getByTestId(landmark) as HTMLElement & { inert: boolean };
-      expect(element).not.toHaveAttribute('aria-hidden');
-      expect(element).not.toHaveAttribute('inert');
-    }
-    shell.remove();
-  });
-
-  it('does not inert the shell main element that contains the login dialog', () => {
-    const { unmount } = render(
-      <>
-        <header data-sidebar-modal-background="header" data-testid="nested-shell-header" />
-        <main data-sidebar-modal-background="main" data-testid="login-containing-main">
-          <LoginPage />
-        </main>
-      </>,
-    );
-
-    const containingMain = screen.getByTestId('login-containing-main');
-    expect(containingMain).not.toHaveAttribute('aria-hidden');
-    expect(containingMain).not.toHaveAttribute('inert');
-    expect(screen.getByRole('dialog', { name: '엔터프라이즈' })).toBeVisible();
     expect(screen.getByRole('textbox', { name: '아이디' })).toHaveFocus();
-    expect(screen.getByTestId('nested-shell-header')).toHaveAttribute('inert');
-
-    unmount();
   });
 
-  it('moves initial focus into the dialog and traps forward and reverse Tab navigation', async () => {
+  it('allows Tab to leave the login form for the public footer', async () => {
     const user = userEvent.setup();
-    render(<LoginPage />);
-
-    const idInput = screen.getByRole('textbox', { name: '아이디' });
-    const submit = screen.getByRole('button', { name: /로그인/ });
-    expect(idInput).toHaveFocus();
-
-    await user.tab({ shift: true });
-    expect(submit).toHaveFocus();
+    render(<><LoginPage /><a href="/help">공개 도움말</a></>);
+    screen.getByRole('button', { name: /로그인/ }).focus();
     await user.tab();
-    expect(idInput).toHaveFocus();
+    expect(screen.getByRole('link', { name: '공개 도움말' })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: /로그인/ })).toHaveFocus();
   });
 
   it('announces submission progress and makes the covered form inert', async () => {

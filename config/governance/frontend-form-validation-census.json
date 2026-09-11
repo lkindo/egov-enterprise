@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 66,
-    "nativeFormFiles": 56,
+    "nativeFormOccurrences": 65,
+    "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
     "secondaryActionBoundaries": 67,
-    "candidateCount": 155
+    "candidateCount": 154
   },
   "entries": [
     {
@@ -1356,20 +1356,6 @@
       "kind": "native-form",
       "file": "frontend/src/app/search/SearchClient.tsx",
       "owner": "SearchResultsContent",
-      "classification": "search-filter",
-      "status": "compliant",
-      "validationMode": "not-applicable",
-      "schemaSource": "not-applicable",
-      "errorNavigation": "not-applicable",
-      "serverErrors": "not-applicable",
-      "pendingGuard": "not-applicable",
-      "testEvidence": []
-    },
-    {
-      "key": "native-form:frontend/src/app/survey/stats/SurveyStatsClient.tsx#StatsContent[1]",
-      "kind": "native-form",
-      "file": "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
-      "owner": "StatsContent",
       "classification": "search-filter",
       "status": "compliant",
       "validationMode": "not-applicable",

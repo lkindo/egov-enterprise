@@ -1,5 +1,7 @@
 export interface DashboardTask {
   id: string | number;
+  bbsId?: string;
+  pstSn?: number;
   nttId?: string | number;
   title?: string;
   nttSj?: string;

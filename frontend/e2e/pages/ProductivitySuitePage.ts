@@ -44,7 +44,7 @@ export class ProductivitySuitePage {
 
     async verifyCalendarSynchronization() {
         console.log(`>>> Verifying Calendar Module`);
-        await expect(this.page.getByRole('heading', { name: /워크플로우 및 자산 관리|업무 및/i }).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { level: 1, name: '일정', exact: true })).toBeVisible({ timeout: 15000 });
     }
 
     // 부서 업무 (Dept Job)
@@ -52,14 +52,14 @@ export class ProductivitySuitePage {
         console.log(`>>> Navigating to Departmental Jobs`);
         await this.page.goto('/admin/work-hub?tab=job');
         // Both Dept Job and Work Report now use Workflow Hub layout
-        await expect(this.page.locator('h1, h2').filter({ hasText: /워크플로우/i }).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { level: 1, name: '업무 관리', exact: true })).toBeVisible({ timeout: 15000 });
     }
 
     // 업무 보고 (Work Report)
     async gotoWorkReport() {
         console.log(`>>> Navigating to Work Reports`);
         await this.page.goto('/admin/work-hub?tab=report');
-        await expect(this.page.locator('h1, h2').filter({ hasText: /워크플로우/i }).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { level: 1, name: '업무 보고', exact: true })).toBeVisible({ timeout: 15000 });
     }
 
     async verifyWorkflowHubTabs() {

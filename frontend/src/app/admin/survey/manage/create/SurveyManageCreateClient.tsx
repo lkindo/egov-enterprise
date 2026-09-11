@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +46,7 @@ export default function SurveyManageCreateClient() {
   const { success, error: toastError } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
+  const completedRef = useRef(false);
   const [formData, setFormData] = useState<OnlinePollManageVO>({
     pollNm: '',
     pollBgngYmd: '',
@@ -57,6 +59,10 @@ export default function SurveyManageCreateClient() {
   const [endDate, setEndDate] = useState<Date | undefined>();
   const validation = useManualFormValidation(pollFormSchema, { labels: pollValidationLabels });
 
+  useUnsavedChanges(() => ({
+    dirty: !completedRef.current && Boolean(formData.pollNm || beginDate || endDate || formData.pollKndCd !== '001' || formData.pollDsuseYn !== 'N'),
+    pending: savingRef.current && !completedRef.current,
+  }));
   const handleSave = async () => {
     if (savingRef.current) return;
     const validated = validation.validate({
@@ -83,6 +89,7 @@ export default function SurveyManageCreateClient() {
     setIsSaving(true);
     try {
       await createPoll(payload);
+      completedRef.current = true;
       success('설문이 등록되었습니다.');
       router.push('/admin/survey/manage');
     } catch (error) {

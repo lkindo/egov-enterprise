@@ -1,6 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -23,10 +25,16 @@ import { extractFieldErrors } from '@/app/actions/actionUtils';
 export default function DeptJobCreateClient() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const completedRef = useRef(false);
+  const pendingRef = useRef(false);
+  const [editState, setEditState] = useState({ dirty: false, pending: false });
+  useUnsavedChanges(() => ({ dirty: editState.dirty && !completedRef.current, pending: (pendingRef.current || editState.pending) && !completedRef.current }));
 
   const handleSubmit = async (values: DeptJobFormValues) => {
+    pendingRef.current = true;
     try {
       const newSn = await deptJobUserService.createDeptJob(values);
+      completedRef.current = true;
       toast.success('업무가 등록되었습니다.');
       await queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
       // 응답에 식별자가 없으면(구버전 서버 등) 목록으로 되돌린다.
@@ -34,7 +42,7 @@ export default function DeptJobCreateClient() {
     } catch (error) {
       if (extractFieldErrors(error)) throw error;
       toast.error(error instanceof Error ? error.message : '업무 등록에 실패했습니다.');
-    }
+    } finally { pendingRef.current = false; }
   };
 
   return (
@@ -54,6 +62,7 @@ export default function DeptJobCreateClient() {
           <DeptJobForm
             mode="create"
             onSubmit={handleSubmit}
+            onEditStateChange={setEditState}
             onCancel={() => router.push('/smart-toolkit/dept-job')}
           />
         </CardContent>

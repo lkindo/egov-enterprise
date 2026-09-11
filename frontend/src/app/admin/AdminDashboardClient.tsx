@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/tooltip";
 
 import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
-import { InsightBanner } from './components/InsightBanner';
 
 /** 'yyyyMMdd'(varchar 8) 발생일자를 표시용으로 변환한다. 스키마에 시각 정보는 없다. */
 function formatOcrnYmd(ymd?: string): string {
@@ -150,7 +149,7 @@ export default function AdminDashboardClient() {
         </div>
       )}
 
-      <InsightBanner />
+      <div className="flex flex-wrap gap-3 text-sm"><Link href="/admin/user/manage" className="text-primary underline">사용자 확인</Link><Link href="/admin/security/authority" className="text-primary underline">권한 그룹 관리</Link><Link href="/admin/system/monitoring/hub?tab=security" className="text-primary underline">보안 감사 로그</Link></div>
 
       {/*
         지표 카드는 실제 조회값만 표기한다.
@@ -167,13 +166,13 @@ export default function AdminDashboardClient() {
           description="등록된 전체 사용자 수"
         />
         <DashboardStatCard
-          title="등록 권한"
+          title="권한 그룹"
           e2eLabel="CLUSTER_POLICY"
-          value={isAuthorsError ? '조회 실패' : `${authorsData?.total?.toLocaleString() ?? '-'}개 역할`}
+          value={isAuthorsError ? '조회 실패' : `${authorsData?.total?.toLocaleString() ?? '-'}개 그룹`}
           icon={<ShieldCheck className="w-5 h-5" />}
           color="emerald"
           link="/admin/security/authority"
-          description="등록된 권한(역할) 수"
+          description="등록된 권한 그룹 수"
         />
         <DashboardStatCard
           title="보안 감사 이력"

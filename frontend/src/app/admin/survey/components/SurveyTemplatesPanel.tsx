@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService, SurveyTemplate } from '@/services/foundation/system/SurveyAdminService';
 import { PageResponse } from '@/types/foundation/system';
@@ -32,6 +33,10 @@ export default function SurveyTemplatesPanel() {
   const [deletingTemplate, setDeletingTemplate] = useState<number | null>(null);
   const createPendingRef = useRef(false);
   const deletePendingRef = useRef(false);
+  const navigate = useUnsavedChanges(() => ({
+    dirty: newType !== (editing?.srvyTmpltTypeCd ?? '') || newExpln !== (editing?.srvyTmpltExpln ?? ''),
+    pending: createPendingRef.current || editPendingRef.current || deletePendingRef.current,
+  }));
   const validation = useManualFormValidation(surveyTemplateCreateSchema, {
     labels: surveyTemplateValidationLabels,
   });
@@ -218,7 +223,7 @@ export default function SurveyTemplatesPanel() {
                 aria-label={`${t.srvyTmpltExpln || t.srvyTmpltSn} 템플릿 수정`}
                 aria-busy={loadingTemplate === t.srvyTmpltSn}
                 disabled={loadingTemplate !== null || create.isPending || deletingTemplate !== null}
-                onClick={() => { if (t.srvyTmpltSn) void beginEdit(t.srvyTmpltSn); }}
+                onClick={() => { if (t.srvyTmpltSn && editing?.srvyTmpltSn !== t.srvyTmpltSn) void navigate(() => { void beginEdit(t.srvyTmpltSn!); }); }}
               >
                 {loadingTemplate === t.srvyTmpltSn
                   ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

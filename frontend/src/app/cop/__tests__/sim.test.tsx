@@ -44,6 +44,6 @@ describe('ScheduleListPage', () => {
   {page}
   </QueryClientProvider>
   );
-  expect(await screen.findByText(/허브/i)).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { level: 1, name: '일정' })).toBeInTheDocument();
  });
 });

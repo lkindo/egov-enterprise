@@ -19,6 +19,9 @@ function toDashboardTask(item: DashboardItem): DashboardTask {
     title: String(item.title || item.pstTtl || ''),
     date: String(item.frstRegisterPnttmStr || item.date || ''),
     isNew: Boolean(item.isNew || false),
+    ...(typeof item.bbsId === 'string' && item.bbsId.length > 0 && item.bbsId.length <= 20
+      && typeof item.pstSn === 'number' && Number.isSafeInteger(item.pstSn) && item.pstSn > 0
+      ? { bbsId: item.bbsId, pstSn: item.pstSn } : {}),
   };
 }
 

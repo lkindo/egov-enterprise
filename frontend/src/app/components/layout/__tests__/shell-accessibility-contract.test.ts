@@ -46,6 +46,7 @@ describe('app shell accessibility source contract', () => {
 
   it('sticky header와 skip target이 focus occlusion 여유를 갖고 모바일 trigger를 dialog에 연결한다', () => {
     const layout = readAppSource('layout.tsx');
+    const frame = readAppSource('components', 'layout', 'ApplicationFrame.tsx');
     const header = readAppSource('components', 'layout', 'header.tsx');
     const sidebar = readAppSource('components', 'layout', 'sidebar.tsx');
     const headerClasses = header.match(/<header\b[\s\S]*?className="([^"]+)"/)?.[1] ?? '';
@@ -54,9 +55,10 @@ describe('app shell accessibility source contract', () => {
     expect(headerClasses.split(/\s+/)).not.toContain('relative');
     expect(headerClasses.split(/\s+/)).not.toContain('overflow-hidden');
     expect(layout).toContain('<html lang="ko" className="scroll-pt-16"');
-    expect(layout).toMatch(/id="main-content"[\s\S]*?className="[^"]*scroll-mt-16/);
-    expect(layout).toContain('data-sidebar-modal-background="skip-link"');
-    expect(layout).toContain('data-sidebar-modal-background="main"');
+    expect(frame).toContain('scroll-mt-[var(--app-header-height)]');
+    expect(frame).toContain('id="main-content"');
+    expect(frame).toContain('data-sidebar-modal-background="skip-link"');
+    expect(frame).toContain('data-sidebar-modal-background="main"');
     expect(header).toContain('data-sidebar-modal-background="header"');
     expect(header).toContain('aria-controls="primary-sidebar"');
     expect(sidebar).toContain('id="primary-sidebar"');

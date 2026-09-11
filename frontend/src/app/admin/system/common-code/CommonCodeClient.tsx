@@ -1186,7 +1186,7 @@ export default function CommonCodeClient({
  masterTitle="코드 분류 및 그룹"
  masterDescription={`분류 ${clCodes.length}개 · 그룹 ${groups.length}개`}
  masterTools={(
- <div className="flex items-center gap-2">
+ <div className="flex flex-wrap items-center gap-2">
  <Button type="button" variant="outline" size="sm" onClick={openCreateCluster}>
  분류 등록
  </Button>

@@ -805,7 +805,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               emptyMessage: '조회 조건에 해당하는 시스템 로그가 없습니다.',
               exportName: '시스템로그',
               exportHeaders: SYS_LOG_EXPORT_HEADERS,
-              label: '시스템 로그 엔진'
+              label: '시스템 로그'
             };
           case 'LOGIN':
             return {
@@ -822,7 +822,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               emptyMessage: '조회 조건에 해당하는 접속 이력이 없습니다.',
               exportName: '접속이력',
               exportHeaders: LOGIN_LOG_EXPORT_HEADERS,
-              label: '인증 접속 히스토리'
+              label: '접속 이력'
             };
           case 'COMMENTS':
             return {
@@ -840,7 +840,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               emptyMessage: '등록된 댓글이 없습니다.',
               exportName: '댓글목록',
               exportHeaders: COMMENT_EXPORT_HEADERS,
-              label: '서비스 피드백 관리'
+              label: '사용자 의견 관리'
             };
           case 'SECURITY':
           default:
@@ -858,7 +858,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               emptyMessage: '조회 조건에 해당하는 감사 로그가 없습니다.',
               exportName: '보안감사로그',
               exportHeaders: SYS_LOG_EXPORT_HEADERS,
-              label: '보안 감사 매트릭스'
+              label: '보안 감사 로그'
             };
         }
       })()
@@ -891,13 +891,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   };
 
   const NAV_ITEMS: Array<{ tab: MonitoringTab; icon: React.ReactNode; label: string }> = [
-    { tab: 'SECURITY', icon: <ShieldAlert size={14} />, label: '보안 감사 매트릭스' },
-    { tab: 'SYSTEM', icon: <Terminal size={14} />, label: '시스템 로그 엔진' },
-    { tab: 'LOGIN', icon: <LogIn size={14} />, label: '인증 접속 히스토리' },
-    { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '인프라 가동성 정보' },
-    { tab: 'TOPOLOGY', icon: <Share2 size={14} />, label: '인프라 토폴로지 맵' },
-    { tab: 'HARNESS', icon: <Zap size={14} />, label: '에이전트 하네스 아틀라스' },
-    { tab: 'COMMENTS', icon: <MessageSquare size={14} />, label: '서비스 피드백 관리' },
+    { tab: 'SECURITY', icon: <ShieldAlert size={14} />, label: '보안 감사 로그' },
+    { tab: 'SYSTEM', icon: <Terminal size={14} />, label: '시스템 로그' },
+    { tab: 'LOGIN', icon: <LogIn size={14} />, label: '접속 이력' },
+    { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '가동 상태' },
+    { tab: 'TOPOLOGY', icon: <Share2 size={14} />, label: '인프라 구성도' },
+    { tab: 'HARNESS', icon: <Zap size={14} />, label: '하네스 아틀라스' },
+    { tab: 'COMMENTS', icon: <MessageSquare size={14} />, label: '사용자 의견 관리' },
   ];
 
   /** 선택 항목의 상세. 종전에는 우측 3열 패널이었고, 미선택 시 '인텔리전스 대기 중' 장식이 자리를 채웠다. */
@@ -908,9 +908,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   return (
     <>
     <WorkListPage
-      title="시스템 인텔리전스 거버넌스"
+      title={NAV_ITEMS.find((item) => item.tab === activeTab)?.label ?? '시스템 모니터링'}
       description={TAB_DESCRIPTION[activeTab]}
-      breadcrumbItems={[{ label: '시스템관리' }, { label: '모니터링 허브' }]}
+      breadcrumbItems={[{ label: '시스템관리' }, { label: NAV_ITEMS.find((item) => item.tab === activeTab)?.label ?? '시스템 모니터링' }]}
       filterStateKey="system-monitoring"
       totalCount={listConfig && !listConfig.error ? listConfig.totalCount : undefined}
       actions={
