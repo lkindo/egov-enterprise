@@ -33,8 +33,9 @@ class BackupRestoreDrillIntegrationTest {
 
     @Test
     void restoresFullMigratedDatabaseAttachmentsAndMatchingEncryptionKey() throws Exception {
-        Flyway.configure().dataSource(SOURCE.getJdbcUrl(), SOURCE.getUsername(), SOURCE.getPassword())
-                .locations("classpath:db/migration").load().migrate();
+        AuthorizationCutoverTestSupport.migrate(Flyway.configure()
+                .dataSource(SOURCE.getJdbcUrl(), SOURCE.getUsername(), SOURCE.getPassword())
+                .locations("classpath:db/migration").load());
         String key = UUID.randomUUID().toString();
         ProjectCryptoConfig configuration = new ProjectCryptoConfig();
         ReflectionTestUtils.setField(configuration, "algorithmKey", key);

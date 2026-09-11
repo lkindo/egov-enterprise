@@ -9,7 +9,7 @@ export class OpsGovernancePage {
         this.page = page;
 
         // Menu by Authority selectors
-        this.roleSelectTrigger = page.locator('button[role="combobox"]').filter({ hasText: '보안 역할' }).or(page.locator('button[role="combobox"]'));
+        this.roleSelectTrigger = page.getByRole('combobox', { name: '권한 그룹', exact: true });
         this.roleSelectContent = page.locator('[role="listbox"]');
     }
 
@@ -39,7 +39,7 @@ export class OpsGovernancePage {
     async gotoMenuByAuthority() {
         console.log(`>>> Navigating to Menu By Authority`);
         await this.page.goto('/admin/system/menus/by-authority');
-        await expect(this.page.getByText('권한 기반 메뉴 거버넌스')).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '그룹별 메뉴 현황', exact: true })).toBeVisible();
     }
 
     async verifyMenuRoleMapping(roleName: string) {
@@ -55,7 +55,7 @@ export class OpsGovernancePage {
         
         // Wait for tree to load
         console.log(`>>> Verifying menu tree for role`);
-        await expect(this.page.getByText(/시스템 메뉴|기능 노드 트리/i)).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: /메뉴 계층$/ })).toBeVisible();
         
         // Check that either nodes are rendered or the "no menus" message is visible
         const nodeIcons = this.page.locator('.lucide-folder, .lucide-file');

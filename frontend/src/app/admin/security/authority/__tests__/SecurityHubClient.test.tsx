@@ -32,6 +32,13 @@ const catalog = {
   navigation: [{ code: 'MENU_1', name: '게시판', parentCode: null }], catalogVersion: 'catalog-v1',
 };
 const snapshot = { ...groups[0], complete: true, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'NAVIGATION', code: 'MENU_1' }] };
+const treeCatalog = { ...catalog, navigation: [
+  { code: 'ROOT', name: '업무 메뉴', parentCode: null },
+  { code: 'BRANCH', name: '게시판 관리', parentCode: 'ROOT' },
+  { code: 'LEAF', name: '게시글 목록', parentCode: 'BRANCH' },
+  { code: 'SIBLING', name: '통계 메뉴', parentCode: 'ROOT' },
+  { code: 'OTHER', name: '다른 메뉴', parentCode: null },
+] };
 const membership = { userId: 'ESNTL_A', groups: ['CONTENT'], version: 'member-v1', complete: true };
 const page = (list: unknown[], total = list.length) => ({ list, total, page: 1, size: 20, totalPage: Math.ceil(total / 20) });
 function setup() {
@@ -348,6 +355,99 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     expect(screen.getByText(/메뉴만 선택되어 있고 기능권한이 없습니다/)).toHaveAttribute('role', 'alert');
     await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
     expect(saveGroupGrants).toHaveBeenCalledWith('CONTENT', { grants: [{ type: 'NAVIGATION', code: 'MENU_1' }], version: 'v1', complete: true });
+  });
+
+  it('접힌 상위 메뉴를 해제해도 모든 하위 선택을 회수하고 기능권한과 다른 메뉴는 보존한다', async () => {
+    mocks.getCatalog.mockResolvedValue(treeCatalog);
+    mocks.getGroup.mockResolvedValue({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, ...treeCatalog.navigation.map((menu) => ({ type: 'NAVIGATION', code: menu.code }))] });
+    await openGroup();
+    const children = screen.getByRole('list', { name: '업무 메뉴 하위 메뉴' });
+    expect(within(children).getByRole('checkbox', { name: /게시글 목록/ })).toBeChecked();
+    const disclosure = screen.getByRole('button', { name: '업무 메뉴 하위 메뉴 접기' });
+    disclosure.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(disclosure).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('checkbox', { name: /게시글 목록/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('checkbox', { name: /업무 메뉴/ }));
+    await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
+    expect(saveGroupGrants).toHaveBeenCalledWith('CONTENT', { grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'NAVIGATION', code: 'OTHER' }], version: 'v1', complete: true });
+  });
+
+  it('하위 메뉴를 키보드로 선택하면 모든 상위 메뉴만 함께 저장하고 형제는 선택하지 않는다', async () => {
+    mocks.getCatalog.mockResolvedValue(treeCatalog);
+    mocks.getGroup.mockResolvedValue({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }] });
+    await openGroup();
+    screen.getByRole('checkbox', { name: /게시글 목록/ }).focus();
+    await userEvent.keyboard('[Space]');
+    for (const name of [/업무 메뉴/, /게시판 관리/, /게시글 목록/]) expect(screen.getByRole('checkbox', { name })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /통계 메뉴/ })).not.toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
+    expect(saveGroupGrants).toHaveBeenCalledWith('CONTENT', { grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, ...['ROOT', 'BRANCH', 'LEAF'].map((code) => ({ type: 'NAVIGATION', code }))], version: 'v1', complete: true });
+  });
+
+  it('상위 메뉴만 선택하면 하위 메뉴는 자동 선택되지 않는다', async () => {
+    mocks.getCatalog.mockResolvedValue(treeCatalog);
+    mocks.getGroup.mockResolvedValue({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }] });
+    await openGroup();
+    await userEvent.click(screen.getByRole('checkbox', { name: /업무 메뉴/ }));
+    expect(screen.getByRole('checkbox', { name: /게시판 관리/ })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /게시글 목록/ })).not.toBeChecked();
+    expect(screen.getByText(/상위 메뉴만 선택하면 하위 메뉴는 자동으로 선택되지 않습니다/)).toBeInTheDocument();
+  });
+
+  it.each(['parent', 'child'])('기존 상위 누락은 자동 수정하지 않고 저장을 막되 %s 선택 수정으로 복구할 수 있다', async (repair) => {
+    mocks.getCatalog.mockResolvedValue(treeCatalog);
+    mocks.getGroup.mockResolvedValue({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'NAVIGATION', code: 'LEAF' }] });
+    await openGroup();
+    expect(screen.getByText(/상위 메뉴가 선택되지 않은 메뉴가 있습니다/)).toHaveAttribute('role', 'alert');
+    expect(screen.getByRole('checkbox', { name: /게시글 목록/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /업무 메뉴/ })).not.toBeChecked();
+    await userEvent.click(screen.getByRole('checkbox', { name: /게시글 등록/ }));
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('checkbox', { name: repair === 'parent' ? /게시판 관리/ : /게시글 목록/ }));
+    expect(screen.queryByText(/상위 메뉴가 선택되지 않은 메뉴가 있습니다/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '권한 변경 저장' }));
+    const navigation = repair === 'parent' ? ['ROOT', 'BRANCH', 'LEAF'] : [];
+    expect(saveGroupGrants).toHaveBeenCalledWith('CONTENT', { grants: [{ type: 'OPERATION', code: 'BOARD_READ' }, { type: 'OPERATION', code: 'BOARD_CREATE' }, ...navigation.map((code) => ({ type: 'NAVIGATION', code }))], version: 'v1', complete: true });
+  });
+
+  it('조회 권한만 있어도 메뉴 계층은 펼칠 수 있지만 선택을 바꾸거나 저장할 수 없다', async () => {
+    mocks.permissions = ['AUTHRT_READ'];
+    mocks.getCatalog.mockResolvedValue(treeCatalog);
+    mocks.getGroup.mockResolvedValue({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }] });
+    await openGroup();
+    for (const checkbox of within(screen.getByRole('list', { name: '메뉴 표시 권한' })).getAllByRole('checkbox')) expect(checkbox).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: '업무 메뉴 하위 메뉴 접기' }));
+    await userEvent.click(screen.getByRole('button', { name: '업무 메뉴 하위 메뉴 펼치기' }));
+    expect(screen.getByRole('checkbox', { name: /게시글 목록/ })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '권한 변경 저장' })).not.toBeInTheDocument();
+    expect(saveGroupGrants).not.toHaveBeenCalled();
+  });
+
+  it('메뉴를 선택한 뒤 그룹 revision이 바뀌면 선택은 보존하고 추가 변경·저장을 막는다', async () => {
+    mocks.getCatalog.mockResolvedValue(treeCatalog);
+    const original = { ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }] };
+    mocks.getGroup.mockResolvedValue(original);
+    const view = await openGroup();
+    await userEvent.click(screen.getByRole('checkbox', { name: /게시글 목록/ }));
+    act(() => view.client.setQueryData(['authorization', 'operator', 'auth-v1', 'group', 'CONTENT'], { ...original, version: 'v2' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled());
+    expect(screen.getByRole('checkbox', { name: /게시글 목록/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /게시글 목록/ })).toBeDisabled();
+    expect(saveGroupGrants).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ code: 'INVALID', name: '없는 상위 메뉴', parentCode: 'MISSING' }],
+    [{ code: 'INVALID', name: '순환 메뉴', parentCode: 'INVALID' }],
+  ])('손상된 메뉴 계층은 기능·메뉴 변경과 저장을 모두 막는다: %j', async (item) => {
+    mocks.getCatalog.mockResolvedValue({ ...catalog, navigation: [item] });
+    mocks.getGroup.mockResolvedValue({ ...snapshot, grants: [{ type: 'OPERATION', code: 'BOARD_READ' }] });
+    await openGroup();
+    expect(screen.getByText(/메뉴 설정을 확인한 뒤 다시 조회해 주세요/)).toHaveAttribute('role', 'alert');
+    expect(screen.getByRole('checkbox', { name: /게시글 등록/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '권한 변경 저장' })).toBeDisabled();
+    expect(saveGroupGrants).not.toHaveBeenCalled();
   });
 
 });

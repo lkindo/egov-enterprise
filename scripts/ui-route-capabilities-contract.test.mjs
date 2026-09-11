@@ -10,7 +10,9 @@ import {
   discoverPageRoutes,
   expectedShellAccess,
   inspectRouteRepository,
+  parsePageAuthorizationSources,
   parseConfigRedirectsSource,
+  validatePageAuthorizationBinding,
   validateRouteCapabilities,
 } from './ui-route-capabilities-contract.mjs';
 
@@ -107,6 +109,67 @@ test('redirect parser rejects computed or partially parsed redirect declarations
   assert.throws(() => parseConfigRedirectsSource(computed), /could not parse every redirect declaration/);
 });
 
+const proxySource = fs.readFileSync(path.join(ROOT, 'frontend/src/proxy.ts'), 'utf8');
+const pageHelperSource = fs.readFileSync(path.join(ROOT, 'frontend/src/lib/auth/page-authorization.ts'), 'utf8');
+const pageCatalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/governance/permission-catalog.json'), 'utf8'));
+const generatedPageSource = fs.readFileSync(path.join(ROOT, 'frontend/src/types/generated-permissions.ts'), 'utf8');
+
+test('page shell evidence binds the complete source registry, generated map and actual proxy admission branch', () => {
+  assert.deepEqual(repository.proxy.bindingErrors, []);
+  assert.deepEqual(Object.keys(repository.proxy.pagePermissions).sort(), repository.pages.map(({ route }) => route).sort());
+  for (const [route, required] of Object.entries(pageCatalog.pagePermissions)) {
+    if (!route.startsWith('/admin/') && route !== '/admin') continue;
+    assert.equal(expectedShellAccess(route, repository.proxy), required.length === 0 ? 'authenticated' : 'admin-system', route);
+  }
+});
+
+test('page admission binding rejects old prefix bypass, wrong casing input, disabled denial and non-executable examples', () => {
+  assert.deepEqual(validatePageAuthorizationBinding(proxySource, pageHelperSource), []);
+  const mutationPairs = [
+    ['!canEnterRegisteredPage(pathname, authorization)', '(!isUserAccessible && !canEnterRegisteredPage(pathname, authorization))'],
+    ['canEnterRegisteredPage(pathname, authorization)', 'canEnterRegisteredPage(normalizedPath, authorization)'],
+    ['return denied;', 'return nextWithCsp();'],
+    ['await loadPageAuthorization(accessToken, userSubject)', 'cachedAuthorization'],
+  ];
+  for (const [before, after] of mutationPairs) {
+    assert.ok(proxySource.includes(before), `red probe target missing: ${before}`);
+    assert.notDeepEqual(validatePageAuthorizationBinding(proxySource.replace(before, after), pageHelperSource), [], before);
+  }
+  assert.notDeepEqual(validatePageAuthorizationBinding(`/* ${proxySource} */`, pageHelperSource), []);
+  assert.notDeepEqual(validatePageAuthorizationBinding(`const example = ${JSON.stringify(proxySource)};`, pageHelperSource), []);
+});
+
+test('page helper cannot change unknown denial or shadow exact static pages with dynamic siblings', () => {
+  for (const [before, after] of [
+    ['if (!entry) return false;', 'if (!entry) return true;'],
+    ['const exact = PAGE_PERMISSIONS[normalizedPath];', 'const exact = undefined;'],
+    ["from '@/types/generated-permissions'", "from '@/types/unreviewed-permissions'"],
+  ]) {
+    assert.ok(pageHelperSource.includes(before), `red probe target missing: ${before}`);
+    assert.notDeepEqual(validatePageAuthorizationBinding(proxySource, pageHelperSource.replace(before, after)), [], before);
+  }
+  assert.equal(expectedShellAccess('/admin/work-hub/unregistered-child', repository.proxy), 'admin-system');
+  assert.equal(expectedShellAccess('/admin/community/boards/master', repository.proxy), 'admin-system');
+  assert.equal(expectedShellAccess('/admin/community/boards/fixture-id', repository.proxy), 'authenticated');
+  assert.equal(expectedShellAccess('/admin/collaboration/scraps/selectScrapDetail/fixture-id', repository.proxy), 'authenticated');
+  assert.equal(expectedShellAccess('/admin/collaboration/scraps/selectscrapdetail/fixture-id', repository.proxy), 'admin-system');
+});
+
+test('missing registry pages, unknown permissions and generated-page drift are red without changing the population', () => {
+  const removed = structuredClone(pageCatalog);
+  delete removed.pagePermissions['/admin/system/menus'];
+  assert.match(parsePageAuthorizationSources(proxySource, pageHelperSource, removed, generatedPageSource).bindingErrors.join('\n'), /exactly match/);
+  const changed = structuredClone(pageCatalog);
+  changed.pagePermissions['/admin/system/menus'] = ['UNREGISTERED_PERMISSION'];
+  assert.match(parsePageAuthorizationSources(proxySource, pageHelperSource, changed, generatedPageSource).bindingErrors.join('\n'), /registry is missing, empty or invalid/);
+  const lowered = structuredClone(pageCatalog);
+  lowered.pagePermissions['/admin/system/menus'] = [];
+  assert.match(parsePageAuthorizationSources(proxySource, pageHelperSource, lowered, generatedPageSource).bindingErrors.join('\n'), /exactly match/);
+  const { manifest } = currentAnalysis();
+  const incompleteRepository = { ...repository, proxy: { ...repository.proxy, pagePermissions: removed.pagePermissions } };
+  assert.match(validateRouteCapabilities(manifest, incompleteRepository, NOW).errors.join('\n'), /exactly the filesystem route population/);
+});
+
 test('proxy shell access is measured separately from unresolved capability roles', () => {
   const analysis = currentAnalysis();
   const sourceShellCounts = Object.groupBy(
@@ -119,7 +182,9 @@ test('proxy shell access is measured separately from unresolved capability roles
   );
 
   assert.equal(sourceShellCounts.public?.length, 1);
-  assert.equal(sourceShellCounts.authenticated?.length, 49);
+  // 2026-09-11: the exact permission registry already admits the /admin/system/ism
+  // alias as authenticated; retire the old prefix-derived source classification.
+  assert.equal(sourceShellCounts.authenticated?.length, 50);
   // [2026-09-07] 70 -> 71. /admin/system/isg 신설 — 백엔드 5본이 완비인데 프런트 호출부가 0 이라
   //   등록 경로조차 없던 도메인을 배선했다(고아 도메인 종결).
   // [2026-09-08 PD-SRVY-001] 71 -> 70. /admin/survey/respondents 를 걷었다 — tb_srvy_rspdnt 는
@@ -128,7 +193,7 @@ test('proxy shell access is measured separately from unresolved capability roles
   // [2026-09-08 PD-MYPG-001] 70 -> 69. /admin/workspace/my-page 를 걷었다 — tb_indv_pg_conts 는 시드도
   //   생성 경로도 없고 무엇보다 **그 값을 읽는 화면이 없다**(대시보드 위젯 SPI 구현 2개가 이 값을
   //   쓰지 않는다). 켜고 꺼도 어디에도 나타나지 않아 소비처를 먼저 정하기로 했다(사용자 결정).
-  assert.equal(sourceShellCounts['admin-system']?.length, 69);
+  assert.equal(sourceShellCounts['admin-system']?.length, 68);
   assert.equal(effectiveShellCounts.public?.length, 1);
   // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
   //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.

@@ -41,7 +41,7 @@ class WebLogBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSu
                     .isEqualTo(LEGACY_ROW_COUNT);
         }
 
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

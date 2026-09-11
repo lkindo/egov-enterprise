@@ -260,9 +260,9 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음' 이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
   return (
     <WorkListPage
-      title="상훈 및 포상 관리 체계"
+      title="포상 기록 관리"
       description="조직 내 성과 및 공헌에 대한 포상 기록을 조회·등록합니다."
-      breadcrumbItems={[{ label: '운영지원' }, { label: '상훈관리' }, { label: '포상관리' }]}
+      breadcrumbItems={[{ label: '관리 센터' }, { label: '업무지원' }, { label: '포상 기록 관리' }]}
       filterStateKey="operation-rewards"
       totalCount={isError ? undefined : totalItems}
       actions={

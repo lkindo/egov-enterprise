@@ -86,6 +86,7 @@
 | [ADR-0014](02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md) | 보류 6개의 프로그램 키·메뉴 FK·HHmmss·암호화 표준 정합 결정 |
 | [ADR-0015](02-architecture/decisions/ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 |
 | [ADR-0016](02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) | 복수 그룹·명시 기능 권한 및 수동 Contract 전환 |
+| [ADR-0017](02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 과업 중심 메뉴 재편·중복 통합·권한 보존 |
 
 ## 03-guides — 개발 지침
 

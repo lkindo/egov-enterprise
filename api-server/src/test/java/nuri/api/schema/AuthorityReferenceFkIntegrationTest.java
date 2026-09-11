@@ -19,7 +19,8 @@ class AuthorityReferenceFkIntegrationTest extends SharedPostgresMigrationTestSup
     @Test
     @DisplayName("fresh schema에서는 세 권한 FK가 검증되고 신규 고아 역할을 차단한다")
     void validatesAuthorityReferencesAndRejectsNewOrphans() throws SQLException {
-        flyway(null).migrate();
+        // Historical V2_85 constraints belong to the legacy tables removed by the later Contract.
+        flyway(org.flywaydb.core.api.MigrationVersion.fromVersion("2.99")).migrate();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

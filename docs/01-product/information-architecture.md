@@ -9,7 +9,7 @@
 - **Route evidence reviewBy:** 2026-10-31 — 현재 route manifest의 bounded exception 기한
 - **Decision reviewBy:** 미정 — 제품 소유자와 대상 배포 맥락이 지정될 때 정한다
 - **Last evidence review:** 2026-08-21
-- **Last policy alignment:** 2026-09-05 — ADR-0007의 참조-기본 지위, ADR-0009 및 class-level URL-state registry
+- **Last policy alignment:** 2026-09-11 — [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)은 현재 제품의 구체적인 메뉴 재편을 승인한다. ADR-0009와 URL-state registry의 범위는 유지한다.
 
 > 이 문서는 승인자가 판단할 수 있는 선택지·권고안·연구·검증·rollback 계약을 제공한다. [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md)는 구조 근거를 남기고, ADR-0007은 그 잠정 지위를 참조-기본 범위에서 종료했다. 실제 사용자 선호와 live 메뉴·권한·AT 증거는 기관 채택 시 다시 검증하며 route disposition은 계속 개별 승인한다. URL 개인정보 정책 중 **일반 개인정보성 업무 검색어**는 ADR-0009가 정확한 화면·키 계약 아래 승인했으며, 나머지 URL-state 세 부류는 계속 미해결이다.
 
@@ -33,7 +33,9 @@
 
 이 안은 현재 경로를 일괄 개명하는 안보다 rollback이 쉽고, 역할별 포털을 완전히 분리하는 안보다 교차 역할 과업의 단절이 적다. 참조-기본 구조 승인은 완료됐지만 기관별 label/tree/role 검증이나 route disposition의 일괄 승인 결과는 아니다.
 
-### 1.2 지금 안전하게 확정할 수 없는 것
+### 1.2 현재 제품의 승인된 이행과 연구 증거 경계
+
+2026-09-11 사용자는 OCI 메뉴 84개·활성 79개와 실제 구현을 조사한 재편안을 승인했다. **나의 업무 / 소통·지식 / 참여 / 관리 센터**의 전체 배치, 중복 4개 통합, 불필요한 분류 5개 제거, 분류 2개 추가와 화면 구성 예제 숨김의 정본은 [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)이다. 해당 범위의 메뉴 SQL·NAV 이행·화면 탐색 변경은 승인됐다. 아래 2026-08-21 수치는 역사적 조사이며 오늘의 OCI 상태로 사용하지 않는다. 기관 사용자 연구와 전체 route disposition 승인은 별개다.
 
 - 2026-08-21 live test target의 read-only 구조 census에서 메뉴 88건·활성 77건·숨김 11건, broken 0건, 중복 route group 9건, 부모/자식 동일 route 5건, orphan route 41건을 관측했다. 별도 authority aggregate에서 `ROLE_ADMIN`은 활성 메뉴 77건/배정 사용자 1명, `ROLE_USER`는 33건/23명, `ROLE_ANONYMOUS`와 `ROLE_SYSTEM`은 각 0건으로 관측됐다. endpoint·사용자 식별자·credential은 보존하지 않았다. 이 값은 release SHA에 결속된 synthetic sample-user effective-menu artifact가 아니므로 G1 승인 증거로 승격하지 않는다.
 - [route capability manifest](../../config/ui-route-capabilities.json)의 119개 구현 경로 모두 `roles=["UNVERIFIED"]`, `menuExposure="unverified"`, `decisionSafe=false`다.
@@ -41,6 +43,8 @@
 - 따라서 위 live 구조·authority aggregate는 예비 입력으로만 사용하며, “사용자가 이 구조를 선호한다” 또는 “G1 통과”라고 쓰지 않는다.
 
 ### 1.3 현재 허용되는 일과 금지되는 일
+
+아래 승인 경계에서 ADR-0017에 명시된 현재 제품의 메뉴 재편은 승인 완료 범위다. 다른 메뉴·기능·기관의 구조 변경으로 확대하지 않는다.
 
 | 허용 | 승인 전 금지 |
 |---|---|
@@ -62,7 +66,7 @@
 | UI shell 입장 경계 | [proxy.ts](../../frontend/src/proxy.ts) | `sourceShellAccess`와 `shellAccess`를 계산한다. 도메인 권한의 증거로 승격하지 않는다. |
 | config redirect | [next.config.ts](../../frontend/next.config.ts) | source, target, permanent와 query target을 확인한다. |
 | live 메뉴 구조 | [menu-census.mjs](../../scripts/menu-census.mjs) + live `tb_menu_info` | 현재 도구는 구조 예비 진단용이다. 자체 route collector 대신 manifest와 다시 join해야 한다. |
-| authority-menu assignment | live `tb_menu_crt_dtl`을 읽는 별도 assignment census | JWT coarse role 또는 실제 사용자 노출과 동일시하지 않는다. |
+| authority-menu assignment | live `tb_authrt_grnt_map`의 `NAVIGATION` 배정과 그룹 합집합 census | JWT coarse role 또는 실제 사용자 노출과 동일시하지 않는다. |
 | effective 사용자 메뉴 | 사용자-authority 매핑과 실제 menu service projection + route manifest | 현재 구현·실행 artifact가 없다. migration이나 authority row만으로 대체하지 않는다. |
 | 제품·연구 범위 | [UI/UX modernization brief](ui-ux-modernization-brief.md) | adopter와 end user, top-task 가설, 개인정보 연구 경계를 상속한다. |
 | 상태·URL 규범 | [frontend UX constitution](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md), [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md), [URL-state class registry](../../config/ui-url-state-approval.json) | ADR-0009가 ADR-0003 §Decision 5의 검색어 절대 금지 부분을 대체한다. 정확한 route/key와 고위험 용도의 전용 URL state·입력 유도 금지 경계는 `search-input` 기록에서, 다른 부류의 승인은 각 class 근거에서 확인한다. |
@@ -79,7 +83,7 @@
 | effective shell access | `shellAccess` | terminal target을 반영한 UI shell 입장 분류 | API·객체·action 권한 |
 | capability role | `roles`, `capabilities[].actorScope` | 도메인 증거로 확인해야 하는 수행 주체 | proxy 통과 역할을 그대로 복사한 값 |
 | 기능 진실 상태 | route `status`, capability별 `status` | `live/partial/demo/unavailable/unverified`와 세부 action 상태 | 화면이 예쁘거나 API 문자열이 있다는 사실만으로 `live` |
-| 메뉴 노출 | `menuExposure` + authority assignment + effective sample-user menu artifact | 현재 역할/authority별 탐색 노출 | `tb_menu_info` 구조, `tb_menu_crt_dtl` row, proxy role 중 하나만으로 확인된 노출 |
+| 메뉴 노출 | `menuExposure` + authority assignment + effective sample-user menu artifact | 현재 역할/authority별 탐색 노출 | `tb_menu_info` 구조, NAVIGATION 배정 row, proxy role 중 하나만으로 확인된 노출 |
 | 프로필 | `profileOwners`, `directProjectionProfiles` | 전자는 의미 소유권, 후자는 direct removePaths 관측 | 직접 projection이 positive ownership이라는 뜻 |
 
 `shellAccess`는 첫 번째 UI 문을 설명할 뿐이다. 실제 기능 권한은 백엔드 URL 인가, 도메인 action, 객체 소유권을 함께 검증해야 한다. 메뉴 visibility도 보안 경계가 아니며 숨김은 접근 거부를 대체할 수 없다.

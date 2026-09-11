@@ -41,7 +41,7 @@ class CommunityBigintMigrationIntegrationTest extends SharedPostgresMigrationTes
                     """)).isEqualTo(1);
         }
 
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

@@ -55,7 +55,7 @@ describe('포상 관리 화면 — e2e 결속 문구', () => {
     renderClient(<RewardManageClient initialPage={INITIAL_PAGE} />);
 
     // OperationalExtensionPage.gotoRewards()
-    expect(screen.getByRole('heading', { level: 1, name: '상훈 및 포상 관리 체계' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: '포상 기록 관리' })).toBeInTheDocument();
     // OperationalExtensionPage.searchRewards()
     expect(screen.getByPlaceholderText('포상 명칭으로 검색')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '조회' })).toBeInTheDocument();

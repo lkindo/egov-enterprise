@@ -137,6 +137,8 @@ class AuthorizationAdministrationServiceTest {
         });
         assertThat(catalog.navigation()).containsExactly(new Navigation("1", "Root menu", null), new Navigation("2", "Child menu", "1"));
         assertThat(PermissionCodes.ALL).doesNotContain("1", "2");
+        assertThat(db.calls).anySatisfy(sql -> assertThat(sql)
+                .contains("CASE WHEN up_menu_sn IS NULL OR up_menu_sn=0 THEN NULL", "ORDER BY menu_ordr NULLS LAST,menu_sn"));
     }
 
     @Test
@@ -256,7 +258,7 @@ class AuthorizationAdministrationServiceTest {
 
     @Test
     void emptyCompleteGrantSnapshotRevokesEveryGrantAndMissingNavigationIsRejected() {
-        error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.replaceGrants("G_A", new ReplaceGrants(List.of(new Grant("NAVIGATION", "9")), "v", true)));
+        error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.replaceGrants("G_A", new ReplaceGrants(List.of(new Grant("NAVIGATION", "9")), service.group("G_A").version(), true)));
         assertThat(db.writes).isEmpty();
         service.replaceGrants("G_A", new ReplaceGrants(List.of(), service.group("G_A").version(), true));
         assertThat(db.writesTo("tb_authrt_grnt_map")).hasSize(2).allSatisfy(w -> assertThat(w.sql()).startsWith("DELETE"));
@@ -377,15 +379,65 @@ class AuthorizationAdministrationServiceTest {
     }
 
     @Test
-    void menuReplacementPreservesOperationsAndLocksUniqueMenusInStableOrder() {
+    void menuReplacementPreservesOperationsAndPrunesChildrenOfRevokedParents() {
         service.replaceNavigationGrants("G_A", List.of(3L, 2L, 2L), service.group("G_A").version());
-        assertThat(db.menuLocks).containsExactly(2L, 3L);
-        assertThat(db.writesTo("tb_authrt_grnt_map")).hasSize(3).allSatisfy(w -> assertThat(w.values().get(1)).isEqualTo("NAVIGATION"));
-        assertThat(db.writesTo("tb_authrt_grnt_map")).extracting(w -> w.values().get(2)).containsExactly("1", "2", "3");
+        assertThat(db.menuLocks).containsExactly(1L, 2L, 3L);
+        assertThat(db.writesTo("tb_authrt_grnt_map")).hasSize(2).allSatisfy(w -> assertThat(w.values().get(1)).isEqualTo("NAVIGATION"));
+        assertThat(db.writesTo("tb_authrt_grnt_map")).extracting(w -> w.values().get(2)).containsExactly("1", "3");
+    }
+
+    @Test
+    void navigationReplacementRejectsNewChildOnlyAndPreviouslyOrphanedAssignments() {
+        var child=new Grant("NAVIGATION", "2");
+        error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.replaceGrants("G_B",
+                new ReplaceGrants(List.of(child,READ),service.group("G_B").version(),true)));
+        db.groups.put("G_B",new GroupData("Team B",null,List.of(child)));
+        error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.replaceNavigationGrants("G_B",List.of(2L),service.group("G_B").version()));
+        assertThat(db.writes).isEmpty();
+    }
+
+    @Test
+    void removingAncestorPrunesEveryDescendantWithOneAuditedRequestAndNoOperationChange() {
+        db.menuParents.put("3","2");
+        var child=new Grant("NAVIGATION","2"); var leaf=new Grant("NAVIGATION","3");
+        db.groups.put("G_A",new GroupData("Team A",null,List.of(NAV_ONE,child,leaf,READ)));
+        service.replaceGrants("G_A",new ReplaceGrants(List.of(child,leaf,READ),service.group("G_A").version(),true));
+        assertThat(db.writesTo("tb_authrt_grnt_map")).extracting(Write::values).containsExactly(
+                List.of("G_A","NAVIGATION","1"),List.of("G_A","NAVIGATION","2"),List.of("G_A","NAVIGATION","3"));
+        assertThat(db.audits()).hasSize(3).allSatisfy(w -> assertThat(w.values().get(3)).isEqualTo("REMOVE"));
+        assertThat(db.audits().stream().map(w -> w.values().getFirst()).distinct()).hasSize(1);
+        int menus=db.calls.indexOf("SELECT menu_sn::text,up_menu_sn::text FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE");
+        int group=db.calls.indexOf("SELECT authrt_cd FROM tb_authrt_info WHERE authrt_cd='ROLE_ADMIN' FOR UPDATE");
+        assertThat(menus).isLessThan(group);
+    }
+
+    @Test
+    void navigationStructureAcceptsCompleteTreesAndRejectsMissingParentsAndCycles() {
+        var complete=List.of(NAV_ONE,new Grant("NAVIGATION","2"));
+        service.replaceGrants("G_B",new ReplaceGrants(complete,service.group("G_B").version(),true));
+        assertThat(db.writesTo("tb_authrt_grnt_map")).hasSize(2);
+        db.writes.clear(); db.menuParents.put("1","9");
+        error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.replaceGrants("G_B",new ReplaceGrants(complete,service.group("G_B").version(),true)));
+        db.menuParents.put("1","2");
+        error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.replaceGrants("G_B",new ReplaceGrants(complete,service.group("G_B").version(),true)));
+        assertThat(db.writes).isEmpty();
+        db.menuParents.put("1","0");
+        service.replaceGrants("G_B",new ReplaceGrants(complete,service.group("G_B").version(),true));
+        assertThat(db.writesTo("tb_authrt_grnt_map")).hasSize(2);
+    }
+
+    @Test
+    void newMenuDoesNotRestoreARevokedAncestorGrant() {
+        service.grantNewMenuToCompatibilityAdmin(2L);
+        assertThat(db.writes).isEmpty();
+        service.grantNewMenuToCompatibilityAdmin(3L);
+        assertThat(db.writesTo("tb_authrt_grnt_map")).singleElement().satisfies(w ->
+                assertThat(w.values().get(2)).isEqualTo("3"));
     }
 
     @Test
     void newMenuCompatibilityGrantIsExplicitAndIdempotentAndDeletionRemovesEveryGroupGrant() {
+        db.groups.put("ROLE_ADMIN",new GroupData("Administrators",null,List.of(NAV_ONE)));
         service.grantNewMenuToCompatibilityAdmin(2L);
         assertThat(db.writesTo("tb_authrt_grnt_map")).singleElement().satisfies(w ->
                 assertThat(w.values()).containsExactly("ROLE_ADMIN", "NAVIGATION", "2", "operator_login", "operator_login"));
@@ -477,6 +529,7 @@ class AuthorizationAdministrationServiceTest {
         final List<Write> writes = new ArrayList<>();
         final List<List<Object>> reauthorizationRequests = new ArrayList<>();
         final List<Long> menuLocks = new ArrayList<>();
+        final Map<String,String> menuParents = new LinkedHashMap<>();
         final Deque<Long> managerCounts = new ArrayDeque<>(List.of(1L));
         List<Object> lastUserSearch;
         long auditSequence;
@@ -485,6 +538,8 @@ class AuthorizationAdministrationServiceTest {
         Boolean databaseAllowed = true;
         RuntimeException reauthorizationFailure;
         RuntimeException auditFailure;
+
+        Boundary() { menuParents.put("1",null); menuParents.put("2","1"); menuParents.put("3",null); }
 
         List<Write> writesTo(String table) { return writes.stream().filter(w -> w.sql().contains(table)).toList(); }
         List<Write> audits() { return writesTo("tb_authrt_chg_hstry"); }
@@ -537,7 +592,14 @@ class AuthorizationAdministrationServiceTest {
                     var group = groups.get(parameters.getFirst());
                     rows = group == null ? List.of() : group.grants().stream().map(g -> new Object[]{g.type(), g.code()}).toList();
                 } else if (sql.contains("tb_ognz_info")) rows = rows(new Object[]{"D_1", "Department one"});
-                else if (sql.contains("tb_menu_info")) rows = rows(new Object[]{"1", "Root menu", null}, new Object[]{"2", "Child menu", "1"});
+                else if (sql.contains("tb_menu_info")) {
+                    if (sql.contains("FOR NO KEY UPDATE")) {
+                        rows=menuParents.entrySet().stream().map(entry -> {
+                            menuLocks.add(Long.valueOf(entry.getKey()));
+                            return new Object[]{entry.getKey(),entry.getValue()};
+                        }).toList();
+                    } else rows = rows(new Object[]{"1", "Root menu", null}, new Object[]{"2", "Child menu", "1"});
+                }
                 else if (sql.contains("tb_user_info")) {
                     if (sql.contains("user_id LIKE")) lastUserSearch = parameters;
                     rows = rows(new Object[]{"U_1", "login_one", "User one", "D_1"}, new Object[]{"U_2", "login_two", "User two", "D_1"});

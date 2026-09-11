@@ -185,49 +185,11 @@ async function verifyAndExtractSubject(token: string): Promise<VerifyVerdict> {
   }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// [보안] /admin 접근 통제 — 기본값 = ADMIN 전용 (deny-by-default)
-//
-// 과거에는 5개 접두사(system/user/security/stats/workflow)만 ADMIN 을 요구하는 화이트리스트였다.
-// 그 결과 /admin 아래 세그먼트 17개 중 12개(collaboration·community·help·notifications·
-// observability·operation·sanctn·survey·uss·work-hub·workspace·components)가 게이트 밖이었고,
-// 무엇보다 **관리 화면을 새로 추가할 때마다 "로그인만 하면 누구나 진입"이 기본값**이었다.
-// 기본값을 뒤집어, 아래 목록에 명시된 경로만 일반 사용자에게 연다.
-//
-// ⚠ 이 미들웨어는 1차 방어(관리자 UI 셸 진입 차단)일 뿐이며 진짜 방어선이 아니다. 권한의 authoritative
-//   집행자는 백엔드다 — 현재 그룹의 명시적 기능권한과 요청별 자료 조건을 검증하고,
-//   컨트롤러/서비스의 @PreAuthorize 가 함수 단위로 재검증한다(백엔드 헌법 제8조).
-//   여기서 통과했다는 사실이 데이터 접근 권한을 뜻하지 않으며, 반대로 이 게이트가 뚫려도 데이터는 백엔드가 막는다.
-// ────────────────────────────────────────────────────────────────────────────
+// /admin 화면은 생성된 PAGE_PERMISSIONS의 정확한 등록과 현재 기능 권한으로 판단한다.
+// 메뉴 표시나 상위 화면의 인증 전용 선언은 하위 화면 접근을 부여하지 않는다.
+// 자료 조회·변경의 최종 인가는 백엔드의 기능 권한과 소유권·공개 범위 검사가 수행한다.
 
-/**
- * 일반 사용자(비-ADMIN)에게 열어 두는 /admin 하위 경로.
- *
- * 🚨 여기에 경로를 추가하면 로그인한 모든 사용자에게 그 화면이 열린다. 추가 전 반드시 확인할 것:
- *   ① 그 화면이 AdminService(= `/api/v1/admin/**`, 백엔드가 ROLE_ADMIN 강제)를 호출하지 않는가?
- *      호출한다면 열어 봐야 화면만 뜨고 데이터는 403 이다 — 열지 마라.
- *   ② 전사 데이터 CRUD·일괄 발송·정책 변경 같은 '관리 콘솔'이 아닌가?
- * 판단이 애매하면 추가하지 마라. 빠뜨리면 관리자만 쓰지만, 잘못 넣으면 전원에게 열린다.
- */
-const USER_ACCESSIBLE_ADMIN_PATHS = [
-  '/admin/work-hub',                  // 개인·부서 업무/보고/일정 (dept-jobs·work-reports). 로그인 기본 착지점
-  '/admin/collaboration',             // 쪽지·주소록·스크랩·메일 (notes·address-books·scraps·mails)
-  '/admin/help',                      // 지식/FAQ/Q&A 열람 (게시판 읽기는 서버도 인증만 요구한다 — 화면 내 별도 제한 없음)
-  '/admin/community',                 // 커뮤니티 게시판 열람·작성 (관리 콘솔은 아래에서 도려낸다)
-  '/admin/survey/polls/participate',  // 온라인 여론조사 '참여'(투표). 설문 '관리'는 열지 않는다
-] as const;
-
-/**
- * 위 허용 경로 안쪽이지만 관리자 전용으로 되돌리는 예외 — 허용 목록보다 우선한다.
- * (허용한 세그먼트가 하위에 관리 콘솔을 품고 있는 경우에만 사용)
- */
-const ADMIN_ONLY_SUBPATHS = [
-  '/admin/community/boards/master',   // 게시판 마스터 콘솔 (boardAdminService)
-  '/admin/community/boards/maker',    // 게시판 생성 마법사 (boardAdminService)
-  '/admin/community/templates',       // 템플릿 관리 (templateAdminService)
-] as const;
-
-/** 세그먼트 경계까지 맞춰 비교한다 — '/admin/help' 가 '/admin/helpdesk' 를 잡지 않도록. */
+/** '/admin' 경계를 비교하여 '/administrators'와 혼동하지 않는다. */
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
@@ -422,17 +384,14 @@ export async function proxy(request: NextRequest) {
     return redirect;
   }
 
-  // 4. /admin 접근 통제 — 서버의 현재 기능 권한과 명시된 일반 사용자 경로를 적용한다.
+  // 4. /admin 접근 통제 — 모든 화면을 등록된 개별 정책과 서버의 현재 기능 권한으로 판단한다.
   //    라우트 대소문자를 흉내낸 우회(/Admin/system)와 접두사 오매칭(/administrators)을 모두 막기 위해
   //    소문자로 정규화한 뒤 세그먼트 경계로 비교한다.
   const normalizedPath = pathname.toLowerCase();
   if (matchesPrefix(normalizedPath, '/admin')) {
     const authorization = accessToken ? await loadPageAuthorization(accessToken, userSubject) : null;
-    const isUserAccessible =
-      USER_ACCESSIBLE_ADMIN_PATHS.some((p) => matchesPrefix(normalizedPath, p)) &&
-      !ADMIN_ONLY_SUBPATHS.some((p) => matchesPrefix(normalizedPath, p));
-
-    if (!authorization || (!isUserAccessible && !canEnterRegisteredPage(normalizedPath, authorization))) {
+    // Next 라우트의 대소문자는 보존한다. insertScrap 같은 등록된 경로를 소문자로 바꾸지 않는다.
+    if (!authorization || !canEnterRegisteredPage(pathname, authorization)) {
         const fallbackUrl = new URL('/', request.url);
         fallbackUrl.searchParams.set('auth_error', 'unauthorized');
         const denied = withNonce(NextResponse.redirect(fallbackUrl));

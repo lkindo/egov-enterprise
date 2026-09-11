@@ -995,7 +995,7 @@ export default function UserOrgHubClient({
       >
         <NavButton icon={<Users size={16} />} label="사용자" active={activeTab === 'USERS'} onClick={() => handleTabChange('USERS')} />
         <NavButton icon={<Network size={16} />} label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => handleTabChange('DEPTS')} />
-        <NavButton icon={<UserMinus size={16} />} label="부재 관리" active={activeTab === 'ABSENCES'} onClick={() => handleTabChange('ABSENCES')} />
+        <NavButton icon={<UserMinus size={16} />} label="부재 상태 관리" active={activeTab === 'ABSENCES'} onClick={() => handleTabChange('ABSENCES')} />
         <NavButton icon={<ShieldCheck size={16} />} label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => handleTabChange('POLICIES')} />
       </nav>
 
@@ -1355,7 +1355,7 @@ export default function UserOrgHubClient({
                           </div>
                           <div>
                             <h4 className="text-xs font-semibold text-muted-foreground leading-none mb-1.5">접근 제어</h4>
-                            <p className="text-sm font-black text-foreground tracking-tighter leading-none">권한 정책 관리</p>
+                            <p className="text-sm font-black text-foreground tracking-tighter leading-none">권한 그룹 관리</p>
                           </div>
                         </div>
                         {/* 종전에는 onClick 없는 死버튼이었고, 아래에는 실제 권한과 무관한
@@ -1369,7 +1369,7 @@ export default function UserOrgHubClient({
                         </button>
                       </div>
                       <p className="text-xs font-bold text-muted-foreground leading-relaxed">
-                        사용자별 권한은 <span className="text-foreground">권한 정책 관리</span> 화면에서 부여·회수합니다.
+                        사용자별 권한은 <span className="text-foreground">권한 그룹 관리</span> 화면에서 부여·회수합니다.
                       </p>
                     </div>}
                   </div>
@@ -1690,8 +1690,8 @@ function OrgPolicyPanel({ onNavigate }: { onNavigate: (href: string) => void }) 
     },
     {
       href: '/admin/security/authority',
-      title: '권한 정책 관리',
-      description: '역할별 권한과 사용자 매핑을 관리합니다.',
+      title: '권한 그룹 관리',
+      description: '그룹별 기능권한과 메뉴 표시를 설정하고 사용자에게 하나 이상의 권한 그룹을 배정합니다.',
     },
   ];
 

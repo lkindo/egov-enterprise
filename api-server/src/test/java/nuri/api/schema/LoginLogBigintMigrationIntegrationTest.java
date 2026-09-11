@@ -31,7 +31,7 @@ class LoginLogBigintMigrationIntegrationTest extends SharedPostgresMigrationTest
                     """);
         }
 
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

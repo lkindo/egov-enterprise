@@ -45,7 +45,7 @@ class BoardCommentCountReconciliationMigrationIntegrationTest extends SharedPost
         assertWriterContentionFailsFastWithoutPartialChanges("tb_bbs_item");
         assertUnownedActiveCommentFailsWithoutPartialChanges();
 
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
@@ -68,7 +68,7 @@ class BoardCommentCountReconciliationMigrationIntegrationTest extends SharedPost
             }
 
             long startedAt = System.nanoTime();
-            assertThatThrownBy(() -> flyway(null).migrate())
+            assertThatThrownBy(() -> migrateThroughAuthorizationCutover())
                     .as("%s 쓰기와 경합하면 snapshot을 추측하지 않고 V2_87 전체가 실패해야 한다",
                             blockedTable)
                     .isInstanceOf(FlywayException.class);
@@ -102,7 +102,7 @@ class BoardCommentCountReconciliationMigrationIntegrationTest extends SharedPost
                     """);
         }
 
-        assertThatThrownBy(() -> flyway(null).migrate())
+        assertThatThrownBy(() -> migrateThroughAuthorizationCutover())
                 .as("귀속 불명 활성 댓글을 제외해 false-green을 만들면 안 된다")
                 .isInstanceOf(FlywayException.class)
                 .hasMessageContaining("active board comment has no matching");

@@ -11,6 +11,7 @@ const testState = vi.hoisted(() => ({
   logout: vi.fn(async () => undefined),
   routerPush: vi.fn(),
   routerReplace: vi.fn(),
+  setActiveMenuNo: vi.fn(),
 }));
 
 vi.mock('next-themes', () => ({
@@ -30,7 +31,7 @@ vi.mock('@/contexts/LayoutContext', () => ({
     isSidebarOpen: false,
     toggleSidebar: vi.fn(),
     activeMenuNo: 1000000,
-    setActiveMenuNo: vi.fn(),
+    setActiveMenuNo: testState.setActiveMenuNo,
   }),
 }));
 
@@ -174,7 +175,7 @@ describe('Header account navigation authorization', () => {
     expect(testState.routerReplace).toHaveBeenCalledWith('/login');
   });
 
-  it('동적 route가 위험하면 검증된 도메인 route fallback만 링크로 사용한다', async () => {
+  it('위험한 route는 메뉴 ID에 고정된 경로로 우회하지 않고 이동을 막는다', async () => {
     renderHeader(
       { id: 'ordinary-user', name: '일반 사용자', role: 'USER', userSe: 'USR' },
       [menuWithRoute({
@@ -185,15 +186,13 @@ describe('Header account navigation authorization', () => {
       })],
     );
 
-    expect(await screen.findByRole('link', { name: '업무 공간' })).toHaveAttribute(
-      'href',
-      '/admin/work-hub',
-    );
+    expect(await screen.findByRole('button', { name: '업무 공간 이동 불가' })).toBeDisabled();
+    expect(screen.queryByRole('link', { name: '업무 공간' })).not.toBeInTheDocument();
     expect(document.querySelector('a[href="//evil.example/phish"]')).not.toBeInTheDocument();
     expect(document.querySelector('a[href="/unsafe-silent-fallback"]')).not.toBeInTheDocument();
   });
 
-  it('동적 route와 고정 fallback이 모두 없으면 비이동 disabled 항목으로 렌더한다', async () => {
+  it('이동할 경로와 하위 메뉴가 없으면 비이동 disabled 항목으로 렌더한다', async () => {
     renderHeader(
       { id: 'ordinary-user', name: '일반 사용자', role: 'USER', userSe: 'USR' },
       [menuWithRoute({
@@ -205,6 +204,19 @@ describe('Header account navigation authorization', () => {
 
     expect(await screen.findByRole('button', { name: '계약 밖 메뉴 이동 불가' })).toBeDisabled();
     expect(screen.queryByRole('link', { name: '계약 밖 메뉴' })).not.toBeInTheDocument();
+  });
+
+  it('주소가 없는 상위 폴더는 이동 없이 해당 영역의 메뉴를 보여 준다', async () => {
+    renderHeader(
+      { id: 'ordinary-user', name: '일반 사용자', role: 'USER', userSe: 'USR' },
+      [menuWithRoute({ menuNo: 42, menuNm: '참여', modernRoute: '', children: [
+        menuWithRoute({ menuNo: 43, menuNm: '설문 참여', modernRoute: '/survey' }),
+      ] })],
+    );
+    await userEvent.click(await screen.findByRole('button', { name: '참여 메뉴 보기' }));
+    expect(testState.setActiveMenuNo).toHaveBeenCalledWith(42);
+    expect(testState.routerPush).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: '참여' })).not.toBeInTheDocument();
   });
 
   it('relative legacy .do route는 내부 경로로 정규화한다', async () => {

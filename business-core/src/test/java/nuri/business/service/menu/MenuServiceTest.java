@@ -70,8 +70,12 @@ class MenuServiceTest {
     }
 
     private void useGroup(String group) {
+        useGroups(group);
+    }
+
+    private void useGroups(String... groups) {
         CustomUserDetails principal = CustomUserDetails.builder().userId("tester").esntlId("TESTER_001")
-                .groups(List.of(group)).permissions(List.of("MENU_CREATE", "MENU_UPDATE", "MENU_DELETE", "AUTHRT_GRANT"))
+                .groups(List.of(groups)).permissions(List.of("MENU_CREATE", "MENU_UPDATE", "MENU_DELETE", "AUTHRT_GRANT"))
                 .enabled(true).build();
         lenient().when(authentication.isAuthenticated()).thenReturn(true);
         lenient().when(authentication.getPrincipal()).thenReturn(principal);
@@ -137,6 +141,55 @@ class MenuServiceTest {
                 .thenReturn(java.util.Set.of(1L)).thenReturn(java.util.Set.of());
         assertThat(menuService.getMenuHierarchy()).hasSize(1);
         assertThat(menuService.getMenuHierarchy()).isEmpty();
+    }
+
+    @Test
+    void submenuLookupCannotExposeDescendantsOfARevokedAncestor() {
+        Menu root=Menu.builder().menuSn(1L).menuNm("Hidden root").build();
+        Menu child=Menu.builder().menuSn(2L).menuNm("Child").upMenuSn(1L).build();
+        Menu leaf=Menu.builder().menuSn(3L).menuNm("Leaf").upMenuSn(2L).build();
+        stubNavigation(List.of(new MenuGrantFixture(root,null),new MenuGrantFixture(child,"ROLE_ADMIN"),
+                new MenuGrantFixture(leaf,"ROLE_ADMIN")));
+        assertThat(menuService.getMenuHierarchy()).isEmpty();
+        assertThat(menuService.getSubMenus(1L)).isEmpty();
+        assertThat(menuService.getSubMenus(2L)).isEmpty();
+    }
+
+    @Test
+    void submenuLookupCannotExposeDescendantsOfAnInactiveAncestor() {
+        Menu root=Menu.builder().menuSn(1L).menuNm("Inactive root").useYn("N").build();
+        Menu child=Menu.builder().menuSn(2L).menuNm("Child").upMenuSn(1L).build();
+        Menu leaf=Menu.builder().menuSn(3L).menuNm("Leaf").upMenuSn(2L).build();
+        stubNavigation(List.of(new MenuGrantFixture(root,"ROLE_ADMIN"),new MenuGrantFixture(child,"ROLE_ADMIN"),
+                new MenuGrantFixture(leaf,"ROLE_ADMIN")));
+        assertThat(menuService.getMenuHierarchy()).isEmpty();
+        assertThat(menuService.getSubMenus(2L)).isEmpty();
+    }
+
+    @Test
+    void brokenAndCyclicParentsStayHiddenWhileIndependentRootsRemainVisible() {
+        Menu cycleA=Menu.builder().menuSn(1L).menuNm("Cycle A").upMenuSn(2L).build();
+        Menu cycleB=Menu.builder().menuSn(2L).menuNm("Cycle B").upMenuSn(1L).build();
+        Menu orphan=Menu.builder().menuSn(3L).menuNm("Missing parent").upMenuSn(99L).build();
+        Menu root=Menu.builder().menuSn(4L).menuNm("Valid root").build();
+        stubNavigation(List.of(new MenuGrantFixture(cycleA,"ROLE_ADMIN"),new MenuGrantFixture(cycleB,"ROLE_ADMIN"),
+                new MenuGrantFixture(orphan,"ROLE_ADMIN"),new MenuGrantFixture(root,"ROLE_ADMIN")));
+        assertThat(menuService.getMenuHierarchy()).extracting(MenuDto::getId).containsExactly(4L);
+        assertThat(menuService.getSubMenus(1L)).isEmpty();
+        assertThat(menuService.getSubMenus(3L)).isEmpty();
+    }
+
+    @Test
+    void parentAndChildGrantsFromDifferentGroupsAreCombinedBeforeBuildingHierarchy() {
+        useGroups("GROUP_PARENT","GROUP_CHILD");
+        Menu root=Menu.builder().menuSn(1L).menuNm("Root").build();
+        Menu child=Menu.builder().menuSn(2L).menuNm("Child").upMenuSn(1L).build();
+        stubNavigation(List.of(new MenuGrantFixture(root,"GROUP_PARENT"),new MenuGrantFixture(child,"GROUP_CHILD")));
+        assertThat(menuService.getSubMenus(1L)).extracting(MenuDto::getId).containsExactly(2L);
+        useGroups("GROUP_CHILD");
+        assertThat(menuService.getSubMenus(1L)).isEmpty();
+        useGroups("GROUP_PARENT","GROUP_CHILD");
+        assertThat(menuService.getSubMenus(1L)).extracting(MenuDto::getId).containsExactly(2L);
     }
 
     @Test

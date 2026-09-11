@@ -116,7 +116,7 @@ export default function OnlinePollParticipateClient() {
  return (
  <div className="space-y-12 pb-24">
  <PageHeader
- title="여론조사 센터"
+ title="투표 참여"
  breadcrumbs={[{ label: '커뮤니티' }, { label: '여론조사 참여' }]}
  />
 

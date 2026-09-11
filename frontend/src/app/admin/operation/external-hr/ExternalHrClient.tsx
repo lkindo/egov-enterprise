@@ -405,9 +405,9 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
 
   return (
     <WorkListPage
-      title="외부 인사 인벤토리"
-      description="조직과 협력하는 외부 전문가 및 인사 정보를 조회·등록합니다."
-      breadcrumbItems={[{ label: '운영지원' }, { label: '행사관리' }, { label: '외부인사정보' }]}
+      title="행사 외부인사 관리"
+      description="행사에 참여하는 외부 인사의 연락처와 연결된 행사 정보를 관리합니다."
+      breadcrumbItems={[{ label: '관리 센터' }, { label: '업무지원' }, { label: '행사 외부인사 관리' }]}
       filterStateKey="operation-external-hr"
       // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
       totalCount={isError ? undefined : totalItems}

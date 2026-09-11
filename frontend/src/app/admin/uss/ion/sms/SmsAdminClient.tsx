@@ -463,7 +463,7 @@ export default function SmsAdminClient({
 
       {/* Send Message Composition Dialog */}
       <Dialog open={isSendOpen} onOpenChange={handleSendOpenChange}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl relative">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl">
           <Form {...form}>
             <form
               noValidate

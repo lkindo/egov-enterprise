@@ -141,7 +141,7 @@ test('the recommended hybrid is selected only as a bounded provisional direction
   );
 });
 
-test('the proposed overlay drafts dispositions over the sparse 120 + 2 review population', () => {
+test('the proposed overlay drafts dispositions over the discovered pages and external aliases', () => {
   const initial = createUnreviewedProposal(manifest, manifestRaw);
   const manifestLf = manifestRaw.toString('utf8').replace(/\r\n?/gu, '\n');
   assert.equal(initial.provisionalDirection, null);

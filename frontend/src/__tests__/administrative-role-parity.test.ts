@@ -18,7 +18,7 @@ const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 function proxyUsesCurrentPermissions(): boolean {
   const proxy = readFileSync(join(SRC_DIR, 'proxy.ts'), 'utf8');
   return proxy.includes('await loadPageAuthorization(accessToken, userSubject)') &&
-    proxy.includes('canEnterRegisteredPage(normalizedPath, authorization)') &&
+    proxy.includes('canEnterRegisteredPage(pathname, authorization)') &&
     !proxy.includes('normalizedRole');
 }
 

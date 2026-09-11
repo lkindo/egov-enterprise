@@ -37,10 +37,7 @@ import { useMenuAuthorizationScope } from '@/hooks/api/use-menu-authorization-sc
 import { menuService } from '@/services/business/user/MenuService';
 import { MenuInfo } from '@/types/foundation/menu';
 import { HeaderSearchParamSync } from './HeaderSearchParamSync';
-import {
-  normalizeInternalRoute,
-  resolveMenuInternalRoute,
-} from '@/lib/navigation/internal-route';
+import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import dynamic from 'next/dynamic';
 import { userService } from '@/services/business/user/userService';
@@ -60,12 +57,6 @@ const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; class
   2000000: Users, // 커뮤니티
   3000000: HeartHandshake, // 고객지원센터
   9000000: ShieldCheck, // 통합 관리 센터
-};
-
-const DOMAIN_ROUTE_MAP: Record<number, string> = {
-  1000000: '/admin/work-hub',
-  2000000: '/admin/collaboration',
-  9000000: '/admin/system/menus',
 };
 
 export function Header({ 
@@ -178,8 +169,8 @@ export function Header({
               const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
               const isActive = activeMenuNo === menu.menuNo;
               
-              const targetRoute = resolveMenuInternalRoute(menu)
-                ?? normalizeInternalRoute(DOMAIN_ROUTE_MAP[menu.menuNo]);
+              const targetRoute = resolveMenuInternalRoute(menu);
+              const canBrowseChildren = !targetRoute && !!menu.children?.length;
               const itemClassName = cn(
                 "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-tight transition-all rounded-[var(--radius-hub-item)] gap-2.5",
                 isActive
@@ -211,10 +202,12 @@ export function Header({
                 <button
                   key={menu.menuNo || `head-${index}`}
                   type="button"
-                  disabled
-                  aria-disabled="true"
-                  aria-label={`${menu.menuNm} 이동 불가`}
-                  className={cn(itemClassName, 'cursor-not-allowed opacity-50')}
+                  disabled={!canBrowseChildren}
+                  aria-disabled={!canBrowseChildren ? 'true' : undefined}
+                  aria-label={canBrowseChildren ? `${menu.menuNm} 메뉴 보기` : `${menu.menuNm} 이동 불가`}
+                  aria-pressed={canBrowseChildren ? isActive : undefined}
+                  onClick={canBrowseChildren ? () => setActiveMenuNo(menu.menuNo) : undefined}
+                  className={cn(itemClassName, !canBrowseChildren && 'cursor-not-allowed opacity-50')}
                 >
                   {itemContent}
                 </button>
@@ -226,8 +219,8 @@ export function Header({
         <div className="flex items-center gap-1 md:gap-2">
           <Link
             href="/help"
-            title="메뉴구성 설명"
-            aria-label="메뉴구성 설명"
+            title="도움말"
+            aria-label="도움말"
             className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "hidden md:flex text-muted-foreground")}
           >
             <Info size={20} />

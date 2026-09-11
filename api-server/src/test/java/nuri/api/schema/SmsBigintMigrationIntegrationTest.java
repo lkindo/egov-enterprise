@@ -48,7 +48,7 @@ class SmsBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSuppo
                     """);
         }
 
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

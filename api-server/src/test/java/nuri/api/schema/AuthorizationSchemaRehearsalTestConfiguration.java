@@ -16,17 +16,9 @@ public class AuthorizationSchemaRehearsalTestConfiguration {
             throw new IllegalStateException("Authorization schema rehearsal requires its disposable Testcontainers datasource");
         }
         return flyway -> {
-            flyway.migrate();
-            try (var connection=flyway.getConfiguration().getDataSource().getConnection()) {
-                var jdbc=new org.springframework.jdbc.core.JdbcTemplate(
-                        new org.springframework.jdbc.datasource.SingleConnectionDataSource(connection,true));
-                Long legacy=jdbc.queryForObject("SELECT count(*) FROM information_schema.tables WHERE table_schema='public' "
-                        + "AND table_name IN ('tb_user_authrt_map','tb_authrt_role_map','tb_menu_crt_dtl','tb_role_prgrm_map','tb_role_hierarchy','tb_role_info')",Long.class);
-                if (legacy!=null && legacy>0) AuthorizationCutoverTestSupport.apply(connection);
-                Long marker=jdbc.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry "
-                        + "WHERE chg_artcl_nm='legacy_authorization_contract' AND chg_type_cd='UPDATE'",Long.class);
-                if (marker==null || marker!=1) throw new IllegalStateException("Authorization rehearsal evidence is missing");
-            } catch (java.sql.SQLException | java.io.IOException failure) {
+            try {
+                AuthorizationCutoverTestSupport.migrate(flyway);
+            } catch (java.sql.SQLException failure) {
                 throw new IllegalStateException("Explicit authorization schema rehearsal failed",failure);
             }
         };

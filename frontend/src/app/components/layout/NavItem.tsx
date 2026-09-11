@@ -26,13 +26,7 @@ import { motion } from 'framer-motion';
 import { useLayout } from '@/contexts/LayoutContext';
 import { MenuInfo } from '@/types/foundation/menu';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
-import {
-  NO_QUERY_DISCRIMINATORS,
-  collectQueryDiscriminators,
-  matchesLocation,
-  subtreeMatchesLocation,
-  type QueryDiscriminators,
-} from '@/lib/navigation/active-menu';
+import { findActiveMenu, type ActiveMenuMatch } from '@/lib/navigation/active-menu';
 
 const ICON_MAP: Record<string, ElementType> = {
   '대시보드': LayoutDashboard,
@@ -68,20 +62,17 @@ function UserCheckIcon(props: ComponentProps<typeof Users>) {
   return <Users {...props} />;
 }
 
-/**
- * 같은 경로를 쿼리로 나눠 쓰는 메뉴 목록. 사이드바·모바일 내비가 자기 메뉴 트리로 채운다.
- *
- * 이 값이 없으면(기본 빈 Map) 쿼리 없는 메뉴는 아무에게도 양보하지 않는다 — 즉 화면이 붙인
- * 표 페이지·검색어·필터 쿼리 때문에 활성 표시를 잃는 일이 없다. 판정 규칙은 active-menu.ts 참조.
- */
-const QueryDiscriminatorContext = createContext<QueryDiscriminators>(NO_QUERY_DISCRIMINATORS);
+/** 상단과 같은 판정으로 정본 한 개만 선택하고, 조상은 펼침·강조에만 사용한다. */
+const ActiveMenuContext = createContext<ActiveMenuMatch | null | undefined>(undefined);
 
 export function NavQueryScope({ menus, children }: { menus: readonly MenuInfo[]; children: ReactNode }) {
-  const discriminators = useMemo(() => collectQueryDiscriminators(menus), [menus]);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const match = useMemo(() => findActiveMenu(menus, pathname, searchParams), [menus, pathname, searchParams]);
   return (
-    <QueryDiscriminatorContext.Provider value={discriminators}>
+    <ActiveMenuContext.Provider value={match}>
       {children}
-    </QueryDiscriminatorContext.Provider>
+    </ActiveMenuContext.Provider>
   );
 }
 
@@ -93,7 +84,7 @@ interface NavItemProps {
 export function NavItem({ item, depth = 0 }: NavItemProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const discriminators = useContext(QueryDiscriminatorContext);
+  const scopedMatch = useContext(ActiveMenuContext);
   const { setSidebarOpen } = useLayout();
   const hasChildren = item.children && item.children.length > 0;
   const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
@@ -101,18 +92,10 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   // URL normalization and mapping
   const href = resolveMenuInternalRoute(item);
 
-  // 자신 또는 후손이 현재 위치(경로 + 쿼리)와 일치할 때 활성. 판정 규칙은 active-menu.ts 주석 참조.
-  const isActive = useMemo(
-    () => subtreeMatchesLocation(item, String(pathname), searchParams, discriminators),
-    [item, pathname, searchParams, discriminators]
-  );
-
-  // aria-current="page" 는 IA §7.3 의 canonical node 선언이다. isActive(자손 포함)에 달면
-  // 조상 그룹까지 '현재 페이지'를 사칭하므로 자기 자신 일치에만 단다.
-  const isCurrentPage = useMemo(
-    () => matchesLocation(href, String(pathname), searchParams, discriminators),
-    [href, pathname, searchParams, discriminators]
-  );
+  const match = useMemo(() => scopedMatch === undefined ? findActiveMenu([item], pathname, searchParams) : scopedMatch,
+    [scopedMatch, item, pathname, searchParams]);
+  const isCurrentPage = match?.menuNo === item.menuNo;
+  const isActive = isCurrentPage || !!match?.ancestorMenuNos.includes(item.menuNo);
   const [isOpen, setIsOpen] = useState(isActive && hasChildren);
 
   useEffect(() => {
@@ -147,6 +130,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
         {Icon && depth === 0 && (
           <Icon
             size={18}
+            aria-hidden="true"
             className={cn(
               "transition-transform duration-200 group-hover:scale-110",
               isActive ? "text-primary" : "text-muted-foreground"
@@ -180,7 +164,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   );
 
   return (
-    <div className="w-full relative">
+    <ActiveMenuContext.Provider value={match}><div className="w-full relative">
       {isNonNavigable ? (
         <button
           type="button"
@@ -232,6 +216,6 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
           ))}
         </div>
       )}
-    </div>
+    </div></ActiveMenuContext.Provider>
   );
 }

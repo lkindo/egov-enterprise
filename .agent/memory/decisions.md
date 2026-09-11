@@ -5,9 +5,10 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-10
-verified_against: f4eda1407b1f730fe509d6e14feb887560146516
+verified_at: 2026-09-11
+verified_against: 5811096e5769b6e08ba1d6c67902f8f92d76f8ea
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md
   - ../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md
   - ../../docs/02-architecture/decisions/ADR-0015-secure-coding-ci.md
   - ../../docs/02-architecture/decisions/ADR-0013-standard-text-length-alignment.md
@@ -54,6 +55,7 @@ refresh_triggers:
 | ADR-0014 | accepted | 프로그램 키 300자와 선택적 메뉴 FK, 변경일자와 분리된 HHmmss, USER_ENRRNO/V256 암호화 표준으로 보류 6개를 정합한다. | 사용자가 OCI 실측 기반 권장안을 채택했다. 기존 경로·권한·암호문 보존과 단계적 전환을 검증한다. | [ADR-0014](../../docs/02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md) | 2026-09-09 | ADR-0013의 6개 보류 |
 | ADR-0015 | accepted | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결한다. | 사용자 시큐어코딩 점검 도입 요청에 따라 기존 시크릿·의존성 검사의 소스 분석 공백을 보완한다. | [ADR-0015](../../docs/02-architecture/decisions/ADR-0015-secure-coding-ci.md) | 2026-09-09 | - |
 | ADR-0016 | accepted | 인가를 그룹·복수 사용자배정·유형별 기능/메뉴배정 3개와 같은 트랜잭션 감사 1개로 통합하고 구 writer 종료 후 수동 전환한다. | 최소 테이블과 동일한 권한 의미·회수·감사·동시 수정 보호를 함께 유지한다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) | 2026-09-10 | DEC-OPS-023 ②·037·042·046·064의 역할 판정과 DEC-OPS-067의 구 권한·롤 UI 부분 |
+| ADR-0017 | accepted | 현재 제품을 과업 중심 4개 메뉴 영역으로 재편하고 중복 진입점을 통합하며 기존 기능 권한을 보존한다. | 사용자가 OCI·소스 실측에 따른 메뉴 이동·추가·병합안을 승인했다. | [ADR-0017](../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 2026-09-11 | - |
 
 ## 운영 결정 index
 

@@ -49,7 +49,8 @@ class MenuIdentityMigrationIntegrationTest extends SharedPostgresMigrationTestSu
                     .isEqualTo(1L);
         }
 
-        flyway(null).migrate();
+        // Preserve the legacy menu IDs and map checked by this historical identity migration test.
+        flyway(MigrationVersion.fromVersion("2.99")).migrate();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
@@ -120,7 +121,7 @@ class MenuIdentityMigrationIntegrationTest extends SharedPostgresMigrationTestSu
     @Order(2)
     @DisplayName("프로그램 미연결 메뉴는 허용하고 존재하지 않는 연결과 연결 중 삭제를 거부한다")
     void optionalProgramReferenceEnforcesIntegrity() throws Exception {
-        flyway(null).migrate();
+        flyway(MigrationVersion.fromVersion("2.99")).migrate();
         try (Connection c = openConnection(); Statement s = c.createStatement()) {
             s.executeUpdate("INSERT INTO tb_prgrm_lst(prgrm_file_nm) VALUES ('FK_TEST_PROGRAM')");
             long id = singleLong(s, "INSERT INTO tb_menu_info(menu_nm,menu_ordr,prgrm_file_nm) "

@@ -7,7 +7,7 @@ export class OperationalExtensionPage {
     async gotoRewards() {
         console.log('>>> Navigating to Rewards Management');
         await this.page.goto('/admin/operation/rewards');
-        await expect(this.page.getByText('상훈 및 포상 관리 체계')).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '포상 기록 관리', exact: true })).toBeVisible();
     }
 
     async searchRewards(keyword: string) {
@@ -51,8 +51,9 @@ export class OperationalExtensionPage {
         // [2026-08-04] 전환 잔상 대기 — MailPage.verifyMailInHistory 와 같은 원인이다.
         //   App Router 가 나가는 화면을 잠시 마운트한 채로 두어 같은 제목이 2개 잡혔다(CI 실측).
         //   하나로 수렴할 때까지 기다린다 — 수렴하지 않으면 실제 중복이므로 여전히 실패한다.
-        await expect(this.page.getByText('외부 인사 인벤토리')).toHaveCount(1, { timeout: 10000 });
-        await expect(this.page.getByText('외부 인사 인벤토리')).toBeVisible();
+        const heading = this.page.getByRole('heading', { name: '행사 외부인사 관리', exact: true });
+        await expect(heading).toHaveCount(1, { timeout: 10000 });
+        await expect(heading).toBeVisible();
     }
 
     async searchExternalHr(name: string) {

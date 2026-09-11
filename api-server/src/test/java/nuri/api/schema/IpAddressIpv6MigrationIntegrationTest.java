@@ -60,7 +60,7 @@ class IpAddressIpv6MigrationIntegrationTest extends SharedPostgresMigrationTestS
         assertMetadataContentionIsBoundedWithoutPartialChanges();
         assertTableContentionFailsFastWithoutPartialChanges();
 
-        flyway(null).migrate();
+        migrateThroughAuthorizationCutover();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
@@ -114,7 +114,7 @@ class IpAddressIpv6MigrationIntegrationTest extends SharedPostgresMigrationTestS
             }
 
             long startedAt = System.nanoTime();
-            assertThatThrownBy(() -> flyway(null).migrate())
+            assertThatThrownBy(() -> migrateThroughAuthorizationCutover())
                     .as("메타 행 경합은 lock_timeout 안에 전체 실패해야 한다")
                     .isInstanceOf(FlywayException.class);
             Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);
@@ -135,7 +135,7 @@ class IpAddressIpv6MigrationIntegrationTest extends SharedPostgresMigrationTestS
             }
 
             long startedAt = System.nanoTime();
-            assertThatThrownBy(() -> flyway(null).migrate())
+            assertThatThrownBy(() -> migrateThroughAuthorizationCutover())
                     .as("한 대상 테이블이라도 사용 중이면 V2_86은 NOWAIT로 전체 실패해야 한다")
                     .isInstanceOf(FlywayException.class);
             Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);

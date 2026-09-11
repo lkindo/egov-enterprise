@@ -62,6 +62,26 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         //   메뉴 트리의 실질 계약(비활성 메뉴가 LNB 에 새지 않는가)은 바로 아래
         //   'Menu useYn State Filtering' 이 API 응답을 재귀 검증하며 소유한다.
 
+        // Real seeded IA: pure folders select an area, and the canonical authority page
+        // has one current leaf across the same sidebar tree after the legacy redirect.
+        await page.setViewportSize({ width: 1440, height: 1000 });
+        const areas = page.getByRole('navigation', { name: '주메뉴 네비게이션', exact: true });
+        await expect(areas.getByRole('link', { name: '나의 업무', exact: true })).toBeVisible();
+        for (const name of ['소통·지식', '참여', '관리 센터']) {
+            await expect(areas.getByRole('button', { name: `${name} 메뉴 보기`, exact: true })).toBeVisible();
+        }
+        await areas.getByRole('button', { name: '참여 메뉴 보기', exact: true }).click();
+        await expect(page).toHaveURL(/\/admin\/system\/menus$/);
+        const sidebar = page.getByRole('navigation', { name: '주 메뉴 탐색', exact: true });
+        await expect(sidebar.getByRole('link', { name: '설문 참여', exact: true })).toBeVisible();
+        await expect(sidebar.getByRole('link', { name: '투표 참여', exact: true })).toBeVisible();
+        await page.goto('/admin/security/role');
+        await expect(page).toHaveURL(/\/admin\/security\/authority$/);
+        await expect(areas.getByRole('button', { name: '관리 센터 메뉴 보기', exact: true })).toHaveAttribute('aria-pressed', 'true');
+        await expect(sidebar.locator('[aria-current="page"]')).toHaveCount(1);
+        await expect(sidebar.locator('[aria-current="page"]')).toHaveText('권한 그룹 관리');
+        await expect(sidebar.getByRole('link', { name: '롤관리', exact: true })).toHaveCount(0);
+
         console.log('>>> Menu Tree UI: PASS');
     });
 
@@ -94,6 +114,20 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             }
         };
         checkNoInactiveMenus(rootNodes);
+        expect(rootNodes.map(node => node.menuNm)).toEqual(['나의 업무', '소통·지식', '참여', '관리 센터']);
+        const visible: any[] = [];
+        const collect = (nodes: any[], depth: number) => {
+            expect(depth).toBeLessThanOrEqual(3);
+            for (const node of nodes) {
+                visible.push(node);
+                if (node.children?.length) collect(node.children, depth + 1);
+            }
+        };
+        collect(rootNodes, 1);
+        expect(visible).toHaveLength(71);
+        expect(visible.filter(node => node.modernRoute === '/admin/security/authority')).toHaveLength(1);
+        expect(visible.some(node => node.menuNm === '화면 구성 예제')).toBe(false);
+
         console.log('>>> useYn Filtering verified via API (menus/head): PASS');
     });
 

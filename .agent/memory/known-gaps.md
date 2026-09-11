@@ -5,8 +5,8 @@ status: active
 authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-10
-verified_against: f4eda1407b1f730fe509d6e14feb887560146516
+verified_at: 2026-09-11
+verified_against: 5811096e5769b6e08ba1d6c67902f8f92d76f8ea
 canonical_sources:
   - ../../docs/04-operations/authorization-cutover-runbook.md
   - ../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md
@@ -36,7 +36,7 @@ refresh_triggers:
 
 | GAP-ID | 우선순위 | 상태 | 영역 | 요약 | 근거 | 다음 행동/재개 조건 | 결정권자 | 검증일 |
 |---|---|---|---|---|---|---|---|---|
-| GAP-AUTH-003 | P1 | blocked-external | authorization deployment | 소스의 3개 인가 테이블+감사1 전환과 운영 OCI 적용은 별개다. 전환 전 읽기 조사만으로 외부 writer 종료·백업·Contract·운영 동등성을 증명하지 않는다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md), [전환 런북](../../docs/04-operations/authorization-cutover-runbook.md) | 대상 배포의 모든 구 writer를 중지하고 백업·사전 비교·수동 Contract 후 새 앱 인증/회수/메뉴를 검증한다. 복수 배정 후 구 단일 배정 버전의 무손실 롤백은 불가하다. | DB/배포 운영 | 2026-09-10 |
+| GAP-AUTH-003 | P1 | needs-revalidation | authorization deployment | OCI의 구 6개 테이블 부재·Contract 감사 1건을 확인했고 V2_100 메뉴 재편도 적용했다. 운영 앱 버전·외부 구 writer의 영구 종료·운영 사용자 세션 동작은 DB 적용만으로 증명되지 않는다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md), [전환 런북과 OCI 결과](../../docs/04-operations/authorization-cutover-runbook.md) | 운영 앱 배포 시 버전과 구 writer 종료를 확인하고 로그인·복수 그룹·권한 회수·메뉴를 검증한다. 이미 완료한 Contract를 재실행하거나 구 단일 그룹 모델로 되돌리지 않는다. | DB/배포 운영 | 2026-09-11 |
 | GAP-MIG-001 | P1 | open | migration-tool | target 위치·cluster/DB identity·schema allowlist 결속과 실행 artifact를 유지한다. 격리 PostgreSQL 1,501행·30MB 초과 text/bytea에서 실제 JVM 강제 종료, 500행 체크포인트 재개, 무중복·변조 탐지를 검증했다. PostgreSQL source는 EXPERIMENTAL, 다른 vendor와 외부 driver commit은 미검증으로 차단된다. 운영 규모·vendor Blob/Clob·권한·snapshot·cutover 증거는 남았다. | [검증 범위](../../docs/04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드), [JVM 강제 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java), [승인·재개·롤백 런북](../../docs/04-operations/migration-recovery-runbook.md) | 실제 도입 source 버전·최소권한·LOB·운영 규모와 cutover를 검증한다. 전체 rollback은 승인된 백업 복원이며 upsert/CDC는 별도 설계다. | 사용자/DB 운영 | 2026-09-10 |
 | GAP-ARCH-001 | P2 | open | module boundaries | `business-app` 서비스 계층의 exact type-reference census는 app→app **4건**·app→core **34건**이다. import·signature·event·인라인 FQN을 포함하며 잔여 app→app은 dashboard→notification, stats→board, informalsanction→sms/mail이다. `DomainIsolationTest`의 엔티티 격리와 서비스 결합 검사를 구분한다. | [CrossDomainCouplingLinterTest](../../api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java), [도메인 격리](../../business-app/src/test/java/nuri/business/DomainIsolationTest.java) | 잔여 app→app을 port/event로 역전하고 실측 census를 낮춘다. app→core 참조는 허용된 방향이지만 정확한 목록을 계속 검사한다. | 아키텍처 소유자 | 2026-09-10 |
 | GAP-CONTRACT-001 | P2 | open | API/DTO | 기존 길이 127·필수 42·읽기 전용 45필드, enum 14·중첩 검증 2개에 날짜 12필드의 달력 형식 전파와 4종 기간 순서를 보강했다. 행사 이름·정원과 온라인 설문 이름·Y/N도 표적 검증한다. 전체 쓰기 DTO의 공백·교차 필드 의미까지 전수 보장하지 않는다. | [입력 계약 게이트](../../api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java), [날짜 계약](../../docs/04-operations/readiness-followups.md#날짜입력-계약) | 실제 저장 경로를 확인해 남은 DTO를 표적에 추가한다. | API 소유자 | 2026-09-10 |

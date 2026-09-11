@@ -290,9 +290,9 @@ export default function SecurityGroupClient() {
 
  return (
  <WorkListPage
- title="보안 그룹 관리"
- description="보안 그룹을 조회·등록·수정·삭제합니다. 그룹 자체는 권한·메뉴 접근을 부여하지 않습니다."
- breadcrumbItems={[{ label: '보안 관리' }, { label: '그룹 관리' }]}
+ title="사용자 분류 그룹"
+ description="사용자를 분류하는 그룹을 조회·등록·수정·삭제합니다. 권한 그룹과 달리 기능권한이나 메뉴 접근을 부여하지 않습니다."
+ breadcrumbItems={[{ label: '관리 센터' }, { label: '사용자 분류 그룹' }]}
  filterStateKey="security-group"
  totalCount={error ? undefined : pagination?.totalRecordCount}
  actions={
@@ -301,14 +301,14 @@ export default function SecurityGroupClient() {
  variant="outline"
  size="sm"
  onClick={() => refetch()}
- aria-label="보안 그룹 목록 새로고침"
+ aria-label="사용자 분류 그룹 목록 새로고침"
  className="gap-2"
  >
  <RefreshCcw size={16} aria-hidden="true" />
  새로고침
  </Button>
  <Button size="sm" onClick={handleCreate} disabled={isDeletePending || isSubmitPending} className="gap-2">
- <Plus size={16} aria-hidden="true" /> 신규 보안 그룹 설정
+ <Plus size={16} aria-hidden="true" /> 분류 그룹 등록
  </Button>
  </>
  }
@@ -328,7 +328,7 @@ export default function SecurityGroupClient() {
  }
  >
  <StandardDataTable
- accessibleLabel="보안 그룹 목록"
+ accessibleLabel="사용자 분류 그룹 목록"
  enableSelection
  bulkActions={[{
    label: '선택 그룹 삭제',
@@ -344,7 +344,7 @@ export default function SecurityGroupClient() {
  loading={isLoading}
  error={error as Error | null}
  onRetry={() => refetch()}
- emptyMessage={emptyResultMessage(searchKeyword, '등록된 보안 그룹이 없습니다.')}
+ emptyMessage={emptyResultMessage(searchKeyword, '등록된 사용자 분류 그룹이 없습니다.')}
  pagination={{
  currentPage: page,
  totalPages: pagination?.totalPageCount ?? 1,
@@ -358,7 +358,7 @@ export default function SecurityGroupClient() {
  <StandardModal
  isOpen={isDialogOpen}
  onClose={handleCloseDialog}
- title={editingGroup ? '보안 그룹 아키텍처 수정' : '신규 보안 도메인 그룹 설정'}
+ title={editingGroup ? '분류 그룹 수정' : '분류 그룹 등록'}
  maxWidth="xl"
  >
  <div className="p-4 space-y-12">
@@ -407,7 +407,7 @@ export default function SecurityGroupClient() {
  </FormField>
  </div>
 
- <FormField htmlFor="groupDc" label="그룹 정책 상세 명세" error={validation.errors.groupDc} description="해당 보안 그룹의 비즈니스 목적 및 데이터 접근 범위 명세">
+ <FormField htmlFor="groupDc" label="그룹 정책 상세 명세" error={validation.errors.groupDc} description="사용자를 분류하는 목적과 기준을 입력하세요. 접근권한은 별도로 설정합니다.">
  <div className="relative group/dc">
  <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
  <Textarea

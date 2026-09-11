@@ -132,7 +132,7 @@ public class AuthorizationAdministrationService {
                 operations.add(new Operation(item.path("code").asText(),item.path("domain").asText(),item.path("action").asText(),item.path("name").asText()));
             }
         } catch (IOException ex) { throw new IllegalStateException("Permission catalog unavailable",ex); }
-        var navigation = jdbc.query("SELECT menu_sn::text,menu_nm,up_menu_sn::text FROM tb_menu_info ORDER BY menu_sn",
+        var navigation = jdbc.query("SELECT menu_sn::text,menu_nm,CASE WHEN up_menu_sn IS NULL OR up_menu_sn=0 THEN NULL ELSE up_menu_sn::text END FROM tb_menu_info ORDER BY menu_ordr NULLS LAST,menu_sn",
                 (rs,n) -> new Navigation(rs.getString(1),rs.getString(2),rs.getString(3)));
         return new Catalog(List.copyOf(operations),navigation,PermissionCodes.CATALOG_VERSION);
     }
@@ -191,9 +191,10 @@ public class AuthorizationAdministrationService {
         SecurityUtil.assertPermission("AUTHRT_GRANT");
         if (!request.complete() || request.grants()==null) invalid("전체 권한을 조회한 뒤 저장해 주세요.");
         TreeSet<Grant> desired = validateGrants(request.grants());
-        lockMenus(desired.stream().filter(g -> "NAVIGATION".equals(g.type())).map(g -> Long.valueOf(g.code())).toList());
+        var parents = lockMenuParents();
         lockAndAuthorize("AUTHRT_GRANT");
         var before = readGroup(code); requireVersion(before.version(),request.version());
+        normalizeNavigationGrants(before.grants(),desired,parents);
         long managers = managerCount();
         applyGrants(UUID.randomUUID().toString(),code,before.grants(),desired);
         protectLastManager(managers);
@@ -219,6 +220,42 @@ public class AuthorizationAdministrationService {
             var found = jdbc.queryForList("SELECT menu_sn FROM tb_menu_info WHERE menu_sn=? FOR UPDATE",Long.class,id);
             if (found.isEmpty()) invalid("존재하지 않는 메뉴입니다.");
         });
+    }
+
+    private record MenuParent(String code, String parentCode) {}
+
+    /** Stabilize parent links before ADMIN; allow the deferred self-FK's KEY SHARE during a move. */
+    private Map<String,String> lockMenuParents() {
+        var rows = jdbc.query("SELECT menu_sn::text,up_menu_sn::text FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE",
+                (rs,n) -> new MenuParent(rs.getString(1),rs.getString(2)));
+        var parents = new HashMap<String,String>();
+        rows.forEach(row -> parents.put(row.code(),row.parentCode()));
+        return parents;
+    }
+
+    /** Revocation may only narrow a request. Missing ancestors never cause an implicit grant. */
+    private void normalizeNavigationGrants(List<Grant> before, Set<Grant> desired, Map<String,String> parents) {
+        var selected = new HashSet<String>();
+        desired.stream().filter(grant -> "NAVIGATION".equals(grant.type())).forEach(grant -> selected.add(grant.code()));
+        var removed = new HashSet<String>();
+        before.stream().filter(grant -> "NAVIGATION".equals(grant.type()) && !selected.contains(grant.code()))
+                .forEach(grant -> removed.add(grant.code()));
+        for (Grant grant: new ArrayList<>(desired)) {
+            if (!"NAVIGATION".equals(grant.type())) continue;
+            var visited = new HashSet<String>();
+            String current = grant.code();
+            boolean ancestorRemoved = false;
+            boolean ancestorMissing = false;
+            while (current!=null && !"0".equals(current)) {
+                if (!visited.add(current)) invalid("순환하는 메뉴 계층은 배정할 수 없습니다.");
+                if (!parents.containsKey(current)) invalid("존재하지 않는 메뉴 또는 상위 메뉴입니다.");
+                ancestorRemoved |= removed.contains(current);
+                ancestorMissing |= !selected.contains(current);
+                current = parents.get(current);
+            }
+            if (ancestorRemoved) desired.remove(grant);
+            else if (ancestorMissing) invalid("하위 메뉴를 표시하려면 상위 메뉴를 함께 선택해 주세요.");
+        }
     }
 
     private void applyGrants(String request, String group, List<Grant> before, Set<Grant> desired) {
@@ -283,19 +320,32 @@ public class AuthorizationAdministrationService {
     @Transactional
     public void replaceNavigationGrants(String group, List<Long> ids, String expectedVersion) {
         SecurityUtil.assertPermission("AUTHRT_GRANT");
-        lockMenus(ids); lockAndAuthorize("AUTHRT_GRANT"); var before=readGroup(group); requireVersion(before.version(),expectedVersion);
+        var parents=lockMenuParents(); lockAndAuthorize("AUTHRT_GRANT"); var before=readGroup(group); requireVersion(before.version(),expectedVersion);
         var desired=new TreeSet<Grant>();
         before.grants().stream().filter(g -> "OPERATION".equals(g.type())).forEach(desired::add);
         ids.forEach(id -> desired.add(new Grant("NAVIGATION",id.toString())));
+        normalizeNavigationGrants(before.grants(),desired,parents);
         applyGrants(UUID.randomUUID().toString(),group,before.grants(),desired);
     }
 
     @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
     public void grantNewMenuToCompatibilityAdmin(Long menuId) {
         SecurityUtil.assertPermission("MENU_CREATE");
-        lockMenus(List.of(menuId)); lockAndAuthorize("MENU_CREATE");
+        var parents=lockMenuParents(); lockAndAuthorize("MENU_CREATE");
         var grant=new Grant("NAVIGATION",menuId.toString());
-        if (!readGrants("ROLE_ADMIN").contains(grant)) addGrant(UUID.randomUUID().toString(),"ROLE_ADMIN",grant);
+        var before=readGrants("ROLE_ADMIN");
+        if (before.contains(grant)) return;
+        var selected=new TreeSet<>(before); selected.add(grant);
+        // A new child must not restore a parent whose navigation grant was explicitly revoked.
+        String current=parents.get(grant.code());
+        var visited=new HashSet<String>(); visited.add(grant.code());
+        if (!parents.containsKey(grant.code())) invalid("존재하지 않는 메뉴입니다.");
+        while (current!=null && !"0".equals(current)) {
+            if (!visited.add(current) || !parents.containsKey(current)) invalid("상위 메뉴 계층이 올바르지 않습니다.");
+            if (!selected.contains(new Grant("NAVIGATION",current))) return;
+            current=parents.get(current);
+        }
+        addGrant(UUID.randomUUID().toString(),"ROLE_ADMIN",grant);
     }
 
     @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)

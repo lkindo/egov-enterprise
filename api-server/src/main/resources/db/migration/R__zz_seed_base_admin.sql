@@ -82,14 +82,14 @@ BEGIN
         INSERT INTO tb_menu_info
             (menu_sn, up_menu_sn, menu_ordr, menu_nm, prgrm_file_nm, menu_expln, modern_route, use_yn, del_yn, frst_rgtr_id, crt_dt)
         VALUES
-            (910, NULL, 1,  '시스템 관리 센터',   NULL, 'base 부트스트랩 관리자 메뉴', '/admin/user/manage',               'Y', 'N', 'SYSTEM', NOW()),
+            (910, NULL, 1,  '관리 센터',          NULL, 'base 부트스트랩 관리자 메뉴', NULL,                               'Y', 'N', 'SYSTEM', NOW()),
             (911, 910,  1,  '사용자 관리',        NULL,  NULL,                          '/admin/user/manage',               'Y', 'N', 'SYSTEM', NOW()),
             (912, 910,  2,  '부서 및 조직 관리',  NULL,  NULL,                          '/admin/user/departments',          'Y', 'N', 'SYSTEM', NOW()),
-            (913, 910,  3,  '권한(보안) 정책 관리', NULL, NULL,                         '/admin/security/authority',        'Y', 'N', 'SYSTEM', NOW()),
+            (913, 910,  3,  '권한 그룹 관리',     NULL,  NULL,                          '/admin/security/authority',        'Y', 'N', 'SYSTEM', NOW()),
             (914, 910,  4,  '롤 관리',            NULL,  NULL,                          '/admin/security/role',             'Y', 'N', 'SYSTEM', NOW()),
-            (915, 910,  5,  '그룹 관리',          NULL,  NULL,                          '/admin/security/group',            'Y', 'N', 'SYSTEM', NOW()),
+            (915, 910,  5,  '사용자 분류 그룹',   NULL,  NULL,                          '/admin/security/group',            'Y', 'N', 'SYSTEM', NOW()),
             (916, 910,  6,  '메뉴 관리',          NULL,  NULL,                          '/admin/system/menus',              'Y', 'N', 'SYSTEM', NOW()),
-            (917, 910,  7,  '권한별 메뉴 관리',    NULL,  NULL,                          '/admin/system/menus/by-authority', 'Y', 'N', 'SYSTEM', NOW()),
+            (917, 910,  7,  '그룹별 메뉴 현황',   NULL,  NULL,                          '/admin/system/menus/by-authority', 'Y', 'N', 'SYSTEM', NOW()),
             (918, 910,  8,  '프로그램 관리',      NULL,  NULL,                          '/admin/system/programs',           'Y', 'N', 'SYSTEM', NOW()),
             (919, 910,  9,  '공통코드 관리',      NULL,  NULL,                          '/admin/system/common-code',        'Y', 'N', 'SYSTEM', NOW()),
             (920, 910,  10, '로그 및 감사',       NULL,  NULL,                          '/admin/system/logs',               'Y', 'N', 'SYSTEM', NOW())
@@ -101,8 +101,8 @@ BEGIN
              WHERE menu_sn BETWEEN 910 AND 920
             ON CONFLICT (menu_sn,authrt_cd) DO NOTHING;
         ELSIF fresh_authorization THEN
-            -- 신규 base는 통합 권한 화면을 제공하므로 폐기된 두 관리 화면을 다시 노출하지 않는다.
-            DELETE FROM tb_menu_info WHERE menu_sn IN (914,917);
+            -- 통합 권한 화면과 중복되는 롤 별칭만 제외한다. 그룹별 메뉴 현황은 별도 읽기 화면이다.
+            DELETE FROM tb_menu_info WHERE menu_sn = 914;
             INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt)
             SELECT 'ROLE_ADMIN','NAVIGATION',menu_sn::text,'SYSTEM',CURRENT_TIMESTAMP,'SYSTEM',CURRENT_TIMESTAMP
               FROM tb_menu_info WHERE menu_sn BETWEEN 910 AND 920;

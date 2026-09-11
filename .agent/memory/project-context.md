@@ -5,9 +5,10 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-10
-verified_against: f4eda1407b1f730fe509d6e14feb887560146516
+verified_at: 2026-09-11
+verified_against: 5811096e5769b6e08ba1d6c67902f8f92d76f8ea
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md
   - ../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md
   - ../../config/governance/permission-catalog.json
   - ../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md
@@ -70,7 +71,8 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-012 | 로컬 k6 wrapper는 `K6_SCENARIO=users-<load>` 환경 계약으로 100/500/1000 시나리오를 선택하고 알 수 없는 값은 실패한다. 잘못된 `--scenario` 재도입은 저비용 운영 계약이 pre-push·CI에서 차단하지만 실제 부하 결과는 대상 환경이 필요한 별도 증거다. | [load wrapper](../../scripts/run-load-test.ps1), [scenario selector](../../test/load-tests/scenarios/load-levels.js), [command contract](../../scripts/load-test-command-contract.test.mjs) | 2026-08-19 |
 | CTX-013 | 블로그 도메인은 사용자 요청에 따라 제품·재사용 profile에서 제외하는 것으로 확정했다. 게시판의 블로그 계약과 비사용 물리 스키마는 새 Flyway로 제거하며, 데이터가 있는 환경은 제거가 중단된다. 과거 migration과 공유 표준 사전은 보존한다. | [ADR-0012](../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md), [재사용 profile](../../config/reusable-base-profiles.json) | 2026-09-08 |
 | CTX-014 | Atlas는 프로젝트·업무·규칙·검증·운영을 연결하는 비규범 파생 지도다. 원본은 frontend/atlas와 기존 source catalog이며 atlas:build로 정적 HTML을 생성하고 atlas:check·운영/Atlas 계약으로 드리프트를 확인한다. 생성물은 운영 실측 증거를 자동 갱신하지 않는다. | [Atlas 가이드](../../docs/03-guides/governance-atlas-guide.md), [생성기](../../scripts/build-atlas.mjs) | 2026-09-10 |
-| CTX-015 | 인가 소스는 복수 그룹과 명시 OPERATION/NAVIGATION으로 전환했다. 인가 핵심 3개+변경 이력 1개이며 단일 role은 표시 호환용이다. 실제 OCI 적용과 구6표 Contract는 배포 런북의 별도 실행이며 main 병합으로 완료되지 않는다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md), [인가 원본](../../config/governance/permission-catalog.json), [런북](../../docs/04-operations/authorization-cutover-runbook.md) | 2026-09-10 |
+| CTX-015 | 인가는 복수 그룹과 명시 OPERATION/NAVIGATION을 사용하며 핵심 3개+변경 이력 1개다. OCI에서 구 6개 테이블 부재와 Contract 감사 1건을 재확인했다. DB 적용과 운영 앱 배포의 증거는 구분한다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md), [인가 원본](../../config/governance/permission-catalog.json), [런북](../../docs/04-operations/authorization-cutover-runbook.md) | 2026-09-11 |
+| CTX-016 | 전체 제품 메뉴는 나의 업무·소통·지식·참여·관리 센터의 4개 영역이며, OCI V2_100 적용 후 전체 77개·활성 71개·최대 3단계다. OPERATION과 사용자 배정은 보존하고 메뉴 선택·상위 회수를 계층 단위로 처리한다. 신규 격리 초기화는 V2_99 → Contract → latest 순서다. | [ADR-0017](../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md), [적용 결과](../../docs/04-operations/authorization-cutover-runbook.md#2026-09-11-oci-메뉴-재편-적용-결과) | 2026-09-11 |
 
 ## 개발·검증·배포 흐름
 

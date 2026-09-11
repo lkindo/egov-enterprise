@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ScrollToTop } from '../scroll-to-top';
 import { Sidebar } from '../sidebar';
+import { HeaderSearchParamSync } from '../HeaderSearchParamSync';
 import { LayoutProvider, useLayout } from '@/contexts/LayoutContext';
 import type { MenuInfo } from '@/types/foundation/menu';
 
@@ -18,9 +19,13 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'layout-user', groups: ['USER'], permissions: [], authorizationVersion: 'v1' } }),
 }));
 
+const navigation = vi.hoisted(() => ({ pathname: '/' }));
+
+beforeEach(() => { navigation.pathname = '/'; });
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
- usePathname: () => '/',
+ usePathname: () => navigation.pathname,
  useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -71,6 +76,14 @@ function renderSidebar(ui: React.ReactNode) {
   );
 }
 
+function SynchronizedSidebar() {
+  const { activeMenuNo, setActiveMenuNo } = useLayout();
+  return <>
+    <HeaderSearchParamSync menus={sidebarMenus} activeMenuNo={activeMenuNo} setActiveMenuNo={setActiveMenuNo} />
+    <Sidebar initialMenus={sidebarMenus} />
+  </>;
+}
+
 /**
  * ScrollToTop 계약 테스트.
  *
@@ -118,6 +131,24 @@ describe('Layout Components', () => {
 });
 
 describe('Sidebar responsive primary navigation', () => {
+  it('정본 URL로 처음 진입할 때 좌측 기본 영역이 상단의 현재 위치 선택을 덮어쓰지 않는다', async () => {
+    navigation.pathname = '/admin/collaboration';
+    const user = userEvent.setup();
+    renderSidebar(<SynchronizedSidebar />);
+    const navigationTree = await screen.findByRole('navigation', { name: '주 메뉴 탐색' });
+    const community = within(navigationTree).getByRole('button', { name: '커뮤니티' });
+    const workspace = within(navigationTree).getByRole('button', { name: '업무 공간' });
+
+    await waitFor(() => expect(community).toHaveAttribute('aria-pressed', 'true'));
+    expect(within(navigationTree).getByRole('link', { name: '커뮤니티 홈', current: 'page' })).toBeInTheDocument();
+    expect(within(navigationTree).getAllByRole('link', { current: 'page' })).toHaveLength(1);
+
+    // 같은 페이지에서 다른 영역을 펼치는 동작은 유지한다.
+    await user.click(workspace);
+    expect(workspace).toHaveAttribute('aria-pressed', 'true');
+    expect(within(navigationTree).getByRole('link', { name: '업무 홈' })).toBeInTheDocument();
+  });
+
   it('서비스 영역과 하위 메뉴를 하나의 semantic nav tree에 한 번씩 렌더한다', async () => {
     const user = userEvent.setup();
     renderSidebar(<Sidebar initialMenus={sidebarMenus} />);
