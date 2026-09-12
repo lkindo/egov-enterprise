@@ -55,9 +55,19 @@ describe('설문 허브: 수치와 목록이 서로 다른 표라는 사실이 �
     expect(hub).not.toMatch(/등록된 설문(?!지)/);
   });
 
-  it('만족도 등록 동작과 여론조사 목록, 문항형 설문 결과를 구분한다', () => {
-    expect(hub).toContain('만족도 조사 등록');
-    expect(hub).toContain("router.push('/admin/survey/manage/create')");
+  it('등록 진입점은 목록의 모달 하나이며 퇴역한 전용 등록 라우트로 보내지 않는다', () => {
+    /*
+      [2026-09-12 §A3-1] `/admin/survey/manage/create` 는 목록으로 보내는 page-redirect 가 됐고
+      `/admin/survey/manage` 는 next.config 가 다시 이 허브로 되돌린다. 그래서 허브에서 그 경로를
+      push 하면 **제자리로 돌아올 뿐 등록 폼이 열리지 않는다** — 실제로 그렇게 회귀했다(G10 죽은
+      어포던스). 등록은 manage 탭이 embed 하는 목록의 모달이 단독으로 소유한다.
+    */
+    expect(hub, '허브가 퇴역한 전용 등록 라우트로 보냅니다').not.toContain('/admin/survey/manage/create');
+    expect(hub, 'manage 탭이 목록을 embed 하지 않습니다').toContain('<SurveyManageClient embedded />');
+    expect(manage, '목록이 등록 모달을 소유하지 않습니다').toContain('<SurveyFormDialog');
+    expect(manage).toContain('여론조사 등록');
+    // 등록이 만드는 것이 네 단계 만족도 조사라는 사실은 허브 설명이 계속 말해야 한다.
+    expect(hub).toContain('네 단계 만족도 응답');
     expect(hub).toContain('href="/survey/stats"');
     expect(hub).toContain('여론조사 관리');
     // 같은 화면에서 poll 축을 다시 '설문'으로 부르면 구분이 무너진다.

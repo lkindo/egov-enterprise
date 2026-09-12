@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "d1f38d27950ee8142f2f2e1968d47bd51e4391dce21836de1e2b18f7931ab9fd"
+    "inventoryHash": "1bbed15ce445da1fc5f72953bc1eae62d630fc8685c6e87bbee75d8ff9e6754a"
   },
   "summary": {
     "sourceFileCount": 541,
-    "records": 392,
-    "syntaxOccurrences": 462,
-    "ambiguousRecords": 361,
-    "unverifiedRecords": 392,
+    "records": 391,
+    "syntaxOccurrences": 461,
+    "ambiguousRecords": 360,
+    "unverifiedRecords": 391,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 170,
+      "navigation-producer": 169,
       "page-redirect": 16,
       "query-builder": 21,
       "query-consumer": 56,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 382,
+      "navigation": 381,
       "request-telemetry": 10
     }
   },
@@ -7837,44 +7837,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-A77DB9B581EDC8",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/survey/hub",
-      "targetCandidate": "/admin/survey/manage/create",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/survey/manage/create",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
-        "detector": "router-navigation",
         "occurrenceCount": 1
       }
     },
