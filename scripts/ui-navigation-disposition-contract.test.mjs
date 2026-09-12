@@ -110,7 +110,31 @@ function isWave2Approval(approval) {
     && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
 }
 // overlay 는 manifest(파일시스템 스캔) 순서를 따르므로 승인 집합도 같은 정렬로 비교한다.
-const APPROVED_ROUTES = [...WAVE1_APPROVED_ROUTES, ...WAVE2_APPROVED_ROUTES].sort();
+// 웨이브 3 (2026-09-12, DEC-OPS-079): 업무 화면 문법 §A3-1(인라인 ≥ 모달 > 전용 페이지) 이행이다.
+// 전용 입력 페이지를 목록 위 모달로 옮기면 그 라우트는 입력 기능을 잃고 정본 목록으로 보내는
+// page-redirect 가 된다 — DEC-OPS-034·040 과 같은 형태이므로 같은 처분(consolidate-to-canonical)을 쓴다.
+// ⚠ 이 웨이브의 근거는 IA 재편이 아니라 **맥락 손실 실측**이다: 목록의 조회 상태가 useState·URL
+//   미탑재라 페이지 이동만으로 검색어·페이지가 전손됐다.
+const WAVE3_APPROVED_ROUTES = [
+  '/admin/collaboration/address-book/insert-address-book',
+];
+const WAVE3_REVIEWER = 'lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)';
+const WAVE3_REVIEWED_AT = '2026-09-12';
+
+function isWave3Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE3_REVIEWER
+    && approval.reviewedAt === WAVE3_REVIEWED_AT
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+
+const APPROVED_ROUTES = [
+  ...WAVE1_APPROVED_ROUTES,
+  ...WAVE2_APPROVED_ROUTES,
+  ...WAVE3_APPROVED_ROUTES,
+].sort();
 
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
   assert.equal(overlay.state, 'proposed');
@@ -187,6 +211,16 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
         && record.capabilityReview === 'verified'
         && record.profileOwnershipReview === 'verified'
         && Object.values(record.approvals).every(isWave2Approval);
+    }
+    if (WAVE3_APPROVED_ROUTES.includes(record.route)) {
+      return shared
+        && record.reviewState === 'approved'
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && ['verified', 'not-applicable'].includes(record.effectiveMenuExposureReview)
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave3Approval);
     }
     return shared
       && record.reviewState === 'proposed'

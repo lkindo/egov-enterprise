@@ -27,26 +27,26 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "e4a7fece9ecffdab886f4adb1d4f1b492e20b399a2151bd17c76c57b1d27f95a"
+    "inventoryHash": "2fae226b35622a6fb658c93bd5f12916b7b3c176eaeae69d3aa6f363ecb32d75"
   },
   "summary": {
     "sourceFileCount": 542,
     "records": 392,
     "syntaxOccurrences": 464,
-    "ambiguousRecords": 365,
+    "ambiguousRecords": 364,
     "unverifiedRecords": 392,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
       "configRedirects": 13,
-      "pageRedirects": 12
+      "pageRedirects": 13
     },
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 174,
-      "page-redirect": 12,
+      "navigation-producer": 173,
+      "page-redirect": 13,
       "query-builder": 21,
       "query-consumer": 56,
       "query-producer": 40,
@@ -1088,14 +1088,14 @@
       }
     },
     {
-      "id": "URL-F5CC030931D714",
+      "id": "URL-EC911527C900B0",
       "surface": "navigation",
       "kind": "form-producer",
       "operation": "intercepted-submit",
-      "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
+      "source": "frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx",
       "consumerFile": null,
-      "routePattern": "/admin/collaboration/address-book/insert-address-book",
+      "routePattern": "/admin/collaboration/address-book",
       "targetCandidate": null,
       "stateItems": [],
       "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
@@ -1120,18 +1120,18 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
+        "source": "frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
     {
-      "id": "URL-8D620D0E54F906",
+      "id": "URL-F1B0B0D62DB429",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/address-book/insert-address-book",
       "targetCandidate": "/admin/collaboration/address-book/select-address-book-list",
@@ -1158,8 +1158,46 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
-        "detector": "router-navigation",
+        "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-47ADB9388F0BC0",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
+      "consumerFile": "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
+      "routePattern": "/admin/collaboration/address-book/insert-address-book",
+      "targetCandidate": "/admin/collaboration/address-book/select-address-book-list",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/collaboration/address-book/select-address-book-list",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
@@ -1521,44 +1559,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-BF32378312070E",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration/address-book/select-address-book-list",
-      "targetCandidate": "/admin/collaboration/address-book/insert-address-book",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/collaboration/address-book/insert-address-book",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
-        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

@@ -4,16 +4,9 @@
   "description": "업무 화면 문법 카탈로그 §A3-1(인라인 ≥ 모달 > 전용 페이지)의 exact census. frontend/src/app 아래에서 모달도 목록도 없이 폼만 렌더하는 라우트 = 전용 입력 페이지 후보이며, 전부 판정과 함께 등재돼야 한다. 정당화는 기계로 대조된다.",
   "generatedAt": "2026-09-12",
   "expected": {
-    "debtMax": 5
+    "debtMax": 4
   },
   "entries": [
-    {
-      "route": "/admin/collaboration/address-book/insert-address-book",
-      "verdict": "violation",
-      "conditions": [],
-      "reason": "명함 등록 입력만 있는 전용 페이지다. 리치 텍스트·첨부·마법사·공유 URL·대형 구조물 어느 조건도 충족하지 않고, 이 경로를 가리키는 메뉴 행도 없다. 진입은 주소록 목록이므로 §A3-1 기본값인 모달이어야 한다.",
-      "remedy": "주소록 목록(/admin/collaboration/address-book/select-address-book-list)에 등록 모달을 두고, 이 라우트는 목록으로 page-redirect 한다(DEC-OPS-034 선례 — 문자열 URL 참조 때문에 라우트를 물리 삭제하지 않는다). 라우트 처분은 ADR-0007 §Decision 4 의 owner 승인 경계다."
-    },
     {
       "route": "/admin/collaboration/mail-send",
       "verdict": "excluded-menu-leaf",

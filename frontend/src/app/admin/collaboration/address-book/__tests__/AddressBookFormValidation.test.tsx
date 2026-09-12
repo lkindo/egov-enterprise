@@ -7,7 +7,7 @@ import {
   addressBookCreateFormSchema,
   addressBookEditFormSchema,
 } from '../address-book-form-validation';
-import AddressBookInsertHubClient from '../insert-address-book/AddressBookInsertHubClient';
+import { AddressBookCreateDialog } from '../AddressBookCreateDialog';
 import SelectAddressBookDetailClient from '../select-address-book-detail/[id]/SelectAddressBookDetailClient';
 
 const mocks = vi.hoisted(() => ({
@@ -115,7 +115,7 @@ describe('address-book form validation contract', () => {
 
   it('등록 길이 오류는 write 없이 인라인으로 연결하고 첫 입력으로 이동한다', async () => {
     const user = userEvent.setup();
-    render(<AddressBookInsertHubClient />);
+    render(<AddressBookCreateDialog isOpen onClose={() => {}} onCreated={() => {}} />);
     const name = screen.getByRole('textbox', { name: /주소록 명칭/ });
     fireEvent.change(name, { target: { value: '가'.repeat(101) } });
 
@@ -136,7 +136,7 @@ describe('address-book form validation contract', () => {
       },
     });
     const user = userEvent.setup();
-    render(<AddressBookInsertHubClient />);
+    render(<AddressBookCreateDialog isOpen onClose={() => {}} onCreated={() => {}} />);
     const name = screen.getByRole('textbox', { name: /주소록 명칭/ });
     const phone = screen.getByRole('textbox', { name: '전화번호' });
     const email = screen.getByRole('textbox', { name: '이메일' });
@@ -166,7 +166,8 @@ describe('address-book form validation contract', () => {
     mocks.createAddressBook.mockReturnValueOnce(new Promise((resolve) => {
       resolveCreate = () => resolve({ adbkSn: 8 });
     }));
-    render(<AddressBookInsertHubClient />);
+    const onCreated = vi.fn();
+    render(<AddressBookCreateDialog isOpen onClose={() => {}} onCreated={onCreated} />);
     const name = screen.getByRole('textbox', { name: /주소록 명칭/ });
     fireEvent.change(name, { target: { value: '중복 방지 주소록' } });
     fireEvent.change(screen.getByRole('textbox', { name: /구성원 성명/ }), { target: { value: '홍길동' } });
@@ -180,7 +181,8 @@ describe('address-book form validation contract', () => {
     expect(mocks.createAddressBook).toHaveBeenCalledTimes(1);
     expect(submit).toBeDisabled();
     resolveCreate();
-    await waitFor(() => expect(mocks.push).toHaveBeenCalled());
+    // [2026-09-12 §A3-1] 모달은 라우터로 이동하지 않는다 — 목록을 다시 읽는 것이 이행의 실질이다.
+    await waitFor(() => expect(onCreated).toHaveBeenCalled());
   });
 
   it('수정 길이 오류는 write 없이 인라인으로 연결하고 첫 입력으로 이동한다', async () => {

@@ -562,10 +562,10 @@
       ]
     },
     {
-      "key": "native-form:frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx#AddressBookInsertHubClient[1]",
+      "key": "native-form:frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx#AddressBookCreateDialog[1]",
       "kind": "native-form",
-      "file": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
-      "owner": "AddressBookInsertHubClient",
+      "file": "frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx",
+      "owner": "AddressBookCreateDialog",
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "useManualFormValidation-zod",

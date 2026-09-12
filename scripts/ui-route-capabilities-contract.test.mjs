@@ -211,7 +211,12 @@ test('proxy shell access is measured separately from unresolved capability roles
   // [2026-09-08 PD-SRVY-001] 23 → 22. /admin/survey/respondents 의 config redirect 를 함께 걷었다 —
   //   목적지였던 허브 응답자 탭도 제거했으므로 남겨 두면 존재하지 않는 탭으로 보낸다.
   // Technical role editing now redirects to canonical authorization groups.
-  assert.equal(analysis.result.summary.effectiveAliases, 23);
+  // [2026-09-12 §A3-1 · DEC-OPS-079] 23 → 24. /admin/collaboration/address-book/insert-address-book 이
+  //   주소록 목록으로의 page-redirect 별칭이 됐다. 등록 폼을 목록 위 모달로 옮긴 결과이며(전용 입력
+  //   페이지가 §A3-1 의 정당화 조건을 하나도 충족하지 않았다), 별칭이 **늘어나는** 방향이지만 은폐가
+  //   아니다 — 같은 입력을 맥락 손실 없이 받는 그릇으로 옮긴 결과이고 disposition 은 overlay 에서
+  //   consolidate-to-canonical 로 승인 기록됐다.
+  assert.equal(analysis.result.summary.effectiveAliases, 24);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(
