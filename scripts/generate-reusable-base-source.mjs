@@ -521,9 +521,8 @@ function installDatabaseBundle(output, dbBundle) {
 function pruneZeroDowntimeWaivers(output) {
   const registryRelative = 'config/governance/zdm-waivers.json';
   const registryPath = join(output, ...registryRelative.split('/'));
-  if (!existsSync(registryPath)) fail(`ZDM waiver registry 가 투영본에 없다: ${registryRelative}`);
-
-  const raw = readFileSync(registryPath, 'utf8');
+  const raw = readTextIfPresent(registryPath);
+  if (raw === undefined) fail(`ZDM waiver registry 가 투영본에 없다: ${registryRelative}`);
   const registry = JSON.parse(raw);
   const survives = (entry) => {
     const relative = typeof entry?.path === 'string' ? entry.path : '';
@@ -794,6 +793,23 @@ function findJavaStatementEnd(source, from) {
   return -1;
 }
 
+/**
+ * 텍스트를 읽되 부재는 {@code undefined} 로 돌려준다.
+ *
+ * <p>⚠ `existsSync` 로 먼저 확인하고 읽는 것은 **TOCTOU 경쟁**이며 CodeQL `js/file-system-race`(7.7,
+ * blocking)가 이 파일에서 이미 한 번 차단했다(adaptGeneratedHarness). 확인과 사용 사이에 대상이 바뀔 수
+ * 있으므로 **읽기를 시도하고 ENOENT 만 골라** 처리한다 — 다른 오류(권한·I/O)는 그대로 던져 조용한
+ * 건너뜀으로 위장되지 않게 한다.
+ */
+function readTextIfPresent(path) {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+    return undefined;
+  }
+}
+
 function shortHash(value) {
   return createHash('sha256').update(value).digest('hex').slice(0, 12);
 }
@@ -873,19 +889,17 @@ export function computeHarnessBaselineEntries(root) {
   entries.set('__harness.classes', [...classes].sort().join(','));
 
   for (const hook of GATE_HOOKS) {
-    const hookPath = join(root, ...hook.split('/'));
+    const hookText = readTextIfPresent(join(root, ...hook.split('/')));
     entries.set(
       `__hooks.${basename(hook)}`,
-      existsSync(hookPath) ? shortHash(readFileSync(hookPath, 'utf8').replaceAll('\r\n', '\n')) : 'MISSING',
+      hookText === undefined ? 'MISSING' : shortHash(hookText.replaceAll('\r\n', '\n')),
     );
   }
   for (const registry of GATE_REGISTRIES) {
-    const registryPath = join(root, ...registry.split('/'));
+    const registryText = readTextIfPresent(join(root, ...registry.split('/')));
     entries.set(
       `__registry.${registry}`,
-      existsSync(registryPath)
-        ? shortHash(readFileSync(registryPath, 'utf8').replaceAll('\r\n', '\n'))
-        : 'MISSING',
+      registryText === undefined ? 'MISSING' : shortHash(registryText.replaceAll('\r\n', '\n')),
     );
   }
   return entries;
