@@ -127,12 +127,11 @@ describe('app shell accessibility source contract', () => {
 
   it('실제 UI route의 검증된 주 제목은 h1이고 preview 제목은 페이지 제목을 사칭하지 않는다', () => {
     const routeHeadingSources = [
-      ['admin', 'collaboration', 'scraps', 'insertScrap', 'InsertScrapClient.tsx'],
-      ['admin', 'collaboration', 'scraps', 'selectScrapDetail', '[id]', 'SelectScrapDetailClient.tsx'],
+      // [2026-09-12 §A3-1] 스크랩 등록·수정 전용 화면 2개는 목록 위 모달로 이행했다 —
+      // 제목 소유 계약은 아래 '모달 이행' 검사로 옮겼다(지운 것이 아니다).
       ['admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx'],
       ['admin', 'sanctn', 'WorkflowHubClient.tsx'],
       ['admin', 'stats', 'IntelligenceHubClient.tsx'],
-      ['admin', 'survey', 'manage', 'create', 'SurveyManageCreateClient.tsx'],
       ['admin', 'survey', 'manage', '[id]', 'SurveyManageDetailClient.tsx'],
       ['admin', 'system', 'common-code', 'codes', 'CommonCodeCodesClient.tsx'],
       ['smart-toolkit', 'dept-job', 'create', 'DeptJobCreateClient.tsx'],
@@ -148,6 +147,46 @@ describe('app shell accessibility source contract', () => {
 
     const preview = readAppSource('admin', 'community', 'boards', 'maker', 'components', 'BoardPreview.tsx');
     expect(preview).not.toMatch(/<h1\b/);
+  });
+
+  /*
+    [2026-09-12 §A3-1 · DEC-OPS-079] 스크랩 등록·수정과 설문 등록은 전용 페이지를 떠나 목록 위
+    모달로 이행했다. 제목 계약은 사라진 것이 아니라 **소유자가 옮겨 갔다** — 라우트에는 redirect 만
+    남고, 제목은 `StandardModal` 의 `title`(Radix `DialogTitle`)이 갖는다. 두 축을 함께 고정하지
+    않으면 "페이지가 없어졌으니 제목 검사도 지운다" 가 되어 신호가 조용히 줄어든다(H2).
+  */
+  it('§A3-1 모달 이행 라우트는 redirect 만 남기고 제목은 모달이 소유한다', () => {
+    const redirected: Array<[string[], string]> = [
+      [['admin', 'collaboration', 'scraps', 'insertScrap', 'page.tsx'],
+        '/admin/collaboration/scraps/selectScrapList'],
+      [['admin', 'collaboration', 'scraps', 'selectScrapDetail', '[id]', 'page.tsx'],
+        '/admin/collaboration/scraps/selectScrapList'],
+      [['admin', 'survey', 'manage', 'create', 'page.tsx'], '/admin/survey/manage'],
+      [['admin', 'collaboration', 'address-book', 'insert-address-book', 'page.tsx'],
+        '/admin/collaboration/address-book/select-address-book-list'],
+    ];
+
+    for (const [pathParts, target] of redirected) {
+      const source = readAppSource(...pathParts);
+      expect(source, `${pathParts.join('/')}: redirect 목적지가 사라졌습니다`)
+        .toContain(`redirect('${target}')`);
+      expect(source, `${pathParts.join('/')}: 삭제한 전용 입력 화면이 되살아났습니다`)
+        .not.toMatch(/<h1\b/);
+    }
+
+    for (const pathParts of [
+      ['admin', 'collaboration', 'scraps', 'ScrapFormDialog.tsx'],
+      ['admin', 'survey', 'manage', 'SurveyFormDialog.tsx'],
+      ['admin', 'collaboration', 'address-book', 'AddressBookCreateDialog.tsx'],
+    ]) {
+      const source = readAppSource(...pathParts);
+      expect(source, `${pathParts.join('/')}: StandardModal 을 경유하지 않습니다`)
+        .toMatch(/<StandardModal\b/);
+      expect(source, `${pathParts.join('/')}: 모달이 접근 가능한 제목을 선언하지 않습니다`)
+        .toMatch(/\btitle=(?:\{|")\S/);
+      expect(source, `${pathParts.join('/')}: 모달 안에서 페이지 제목(h1)을 사칭합니다`)
+        .not.toMatch(/<h1\b/);
+    }
   });
 
   it('PageHeader가 없는 standalone HubHeader route만 명시적으로 h1을 소유한다', () => {
