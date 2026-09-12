@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "738de4e7d85d4785b3bb79e5a5d29cce8f9462737942045711fa2628ee70996c"
+    "inventoryHash": "8ac10571c0d53e830ed29de2979529b370c1ef6aabcdb55ae4f260f3f8126537"
   },
   "summary": {
     "sourceFileCount": 541,
-    "records": 389,
+    "records": 388,
     "syntaxOccurrences": 458,
-    "ambiguousRecords": 358,
-    "unverifiedRecords": 389,
+    "ambiguousRecords": 357,
+    "unverifiedRecords": 388,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 167,
+      "navigation-producer": 166,
       "page-redirect": 16,
       "query-builder": 21,
       "query-consumer": 56,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 379,
+      "navigation": 378,
       "request-telemetry": 10
     }
   },
@@ -5198,45 +5198,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/error.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-064162BCAEBB4F",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/error.tsx",
-      "producerFile": "frontend/src/app/admin/error.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin",
-      "targetCandidate": "/admin/work-hub",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/work-hub",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/error.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 3
+        "occurrenceCount": 4
       }
     },
     {

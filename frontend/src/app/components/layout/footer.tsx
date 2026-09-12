@@ -29,9 +29,11 @@ export function Footer({ className }: FooterProps) {
           되살릴 때: 정책 본문을 채우고 공개(비관리자) 조회 경로를 연 뒤
           <Link href="/help/policies/PRIVACY"> 로 연결한다(PK 가 대문자라 대소문자 일치 필수).
         */}
+        {/* reusable-base:demo:start */}
         <div className="flex items-center gap-8 text-xs font-bold text-muted-foreground tracking-tight">
           <Link href="/help" className="hover:text-primary hover:opacity-100 transition-all font-bold">고객지원</Link>
         </div>
+        {/* reusable-base:demo:end */}
       </div>
 
 

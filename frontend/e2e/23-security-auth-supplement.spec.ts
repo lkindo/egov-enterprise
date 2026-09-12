@@ -122,8 +122,16 @@ test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double
         ]);
         expect(loginResp.status(), 'UI 로그인이 Route Handler 200 을 받지 못함(이중 프리픽스 회귀 의심)').toBe(200);
 
-        // 인증 성공 시 /admin 영역으로 진입하고 /login 을 벗어난다.
-        await expect(page).toHaveURL(/\/admin/, { timeout: 20000 });
+        /*
+          인증 성공 시 기본 착지로 이동하고 /login 을 벗어난다.
+
+          [2026-09-12] 기본 착지가 `/admin/work-hub` 에서 `/` 로 바뀌었다 — 워크허브는 demo pack
+          소유라 파생 제품에서 제거되는데, 그 값이면 **로그인 착지부터 404** 였다(DEC-OPS-083).
+          그래서 `/admin` 정규식 대신 **기본 착지 자체**를 고정한다. `not.toHaveURL(/login/)` 만
+          남기면 어디로 가든 통과하므로 착지 회귀를 못 잡는다.
+        */
+        // origin 바로 뒤가 끝이어야 한다 — `\/(?:\?.*)?$` 로는 `/admin/` 같은 경로도 통과한다.
+        await expect(page).toHaveURL(/^https?:\/\/[^/]+\/(?:\?[^#]*)?(?:#.*)?$/, { timeout: 20000 });
         await expect(page).not.toHaveURL(/\/login/);
 
         // Route Handler가 accessToken을 제품 쿠키 속성으로 심었는지 확인한다.
@@ -311,7 +319,8 @@ test.describe('Tier 23-E3: RBAC negative at API (authenticated non-admin forbidd
 //   22-deep-security-guard(`Access Denied for Direct User ID Manipulation`)가 각자 다시 검사했다.
 //   네 파일이 같은 한 줄(미들웨어 §4)을 서로 모르게 중복 검증하면서, 정작 아래 것들은
 //   **한 번도 검증된 적이 없었다**:
-//     · 일반 사용자에게 열려 있어야 하는 화면(특히 로그인 기본 착지점 `/admin/work-hub`)
+//     · 일반 사용자에게 열려 있어야 하는 화면(`/admin/work-hub` — 당시 로그인 기본 착지점이었다.
+//       2026-09-12 DEC-OPS-083 으로 착지는 `/` 로 옮겼고, 이 화면은 인증 전용 표본으로 남는다)
 //     · 커뮤니티 안의 개별 관리 화면(`boards/maker`, `templates`)
 //     · 대소문자 우회(`/Admin/...`) — middleware 가 toLowerCase() 로 막고 있다고 주석에 적힌 방어
 //     · 접두사 오매칭(`/admin/helpdesk` 가 허용경로 `/admin/help` 에 편승하지 못하는가)
@@ -383,7 +392,9 @@ test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix
 
     // ── 열려 있어야 하는 경로(과잉차단 회귀 방어) ───────────────────────────
     // PAGE_PERMISSIONS에 인증 전용([])으로 등록된 대표 화면이다. 하위 경로로 권한을 상속하지 않는다.
-    // 특히 `/admin/work-hub` 는 로그인 기본 착지점이라, 막히는 순간 로그인 직후가 곧바로 깨진다.
+    // [2026-09-12] 종전 주석은 `/admin/work-hub` 를 "로그인 기본 착지점" 이라 설명했으나 착지는 `/` 로
+    // 옮겼다(DEC-OPS-083 — 워크허브는 demo 소유라 파생 제품에서 404 였다). 이 목록에 남는 이유는
+    // 여전히 **인증 전용으로 등록된 대표 화면**이라 과잉차단 회귀를 재는 표본이기 때문이다.
     const allowedPaths = [
         '/admin/work-hub',
         '/admin/collaboration',

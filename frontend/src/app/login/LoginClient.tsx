@@ -20,7 +20,17 @@ const LOGIN_FORM_LABELS = {
     userId: '아이디',
     password: '비밀번호',
 };
-const DEFAULT_POST_LOGIN_PATH = '/admin/work-hub';
+/**
+ * 로그인 후 기본 착지 — 요청된 redirect 가 없거나 안전하지 않을 때의 안전한 목적지다.
+ *
+ * ⚠ `/admin/work-hub` 이면 **파생 제품은 로그인 착지부터 404** 다 — 워크허브는 demo pack 소유라
+ *   core·collaboration 프로필에서 제거되는데, `generated-permissions` 에는 항목이 남아 프록시가
+ *   통과시키고 Next 가 404 를 낸다(아무것도 실패하지 않으므로 조용하다).
+ *
+ * `/` 는 모든 프로필에 남고, **프록시가 이미 권한 부족 시 보내는 곳**이며(proxy.ts 의 /admin 게이트),
+ * 의미도 업무 홈이다. 즉 제품이 이미 안전 착지로 쓰는 값과 같아진다.
+ */
+const DEFAULT_POST_LOGIN_PATH = '/';
 const REDIRECT_VALIDATION_ORIGIN = 'https://internal.invalid';
 
 export function resolveInternalRedirect(rawRedirect: string | null): string {

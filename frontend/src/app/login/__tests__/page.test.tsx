@@ -248,19 +248,29 @@ describe('LoginPage Component', () => {
     }
   });
 
+  /*
+    [2026-09-12] 안전 착지가 '/admin/work-hub' 에서 '/' 로 바뀌었다 — 워크허브는 demo pack 소유라
+    파생 제품(core·collaboration)에서 제거되고, 그 값이면 **로그인 착지부터 404** 였다.
+
+    ⚠ 이 표가 보는 것은 목적지 문자열이 아니라 **외부 출처·CRLF·traversal 을 거부하고 안전 착지로
+      떨어진다**는 성질이다. 그 성질은 무변경이며, 마지막 행은 정상 내부 경로가 그대로 통과하는지를
+      보는 대조군이라 목적지가 바뀌어도 값이 유지된다(있는 그대로의 경로를 돌려줘야 한다).
+  */
+  const SAFE_LANDING = '/';
+
   it.each([
-    ['https://evil.example/path', '/admin/work-hub'],
-    ['//evil.example/path', '/admin/work-hub'],
-    ['/\\evil.example/path', '/admin/work-hub'],
-    ['/%0A/evil.example', '/admin/work-hub'],
-    ['/%0D/evil.example', '/admin/work-hub'],
-    ['/%09/evil.example', '/admin/work-hub'],
-    ['/\n/evil.example', '/admin/work-hub'],
-    ['/\r/evil.example', '/admin/work-hub'],
-    ['/\t/evil.example', '/admin/work-hub'],
-    ['/%2e%2e//evil.example', '/admin/work-hub'],
-    ['/.%2e//evil.example', '/admin/work-hub'],
-    ['/a/..//evil.example', '/admin/work-hub'],
+    ['https://evil.example/path', SAFE_LANDING],
+    ['//evil.example/path', SAFE_LANDING],
+    ['/\\evil.example/path', SAFE_LANDING],
+    ['/%0A/evil.example', SAFE_LANDING],
+    ['/%0D/evil.example', SAFE_LANDING],
+    ['/%09/evil.example', SAFE_LANDING],
+    ['/\n/evil.example', SAFE_LANDING],
+    ['/\r/evil.example', SAFE_LANDING],
+    ['/\t/evil.example', SAFE_LANDING],
+    ['/%2e%2e//evil.example', SAFE_LANDING],
+    ['/.%2e//evil.example', SAFE_LANDING],
+    ['/a/..//evil.example', SAFE_LANDING],
     ['/admin/work-hub?tab=my#pending', '/admin/work-hub'],
   ])('only accepts a canonical same-origin redirect path: %j', (rawRedirect, expected) => {
     expect(resolveInternalRedirect(rawRedirect)).toBe(expected);

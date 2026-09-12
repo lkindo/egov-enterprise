@@ -222,6 +222,7 @@ export function Header({
 
         <div className="flex items-center gap-1 md:gap-2">
           <Link href="/search" aria-label="통합 검색" title="통합 검색" className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "text-muted-foreground")}><Search size={20} aria-hidden="true" /></Link>
+          {/* reusable-base:demo:start */}
           <Link
             href="/help"
             title="도움말"
@@ -230,6 +231,7 @@ export function Header({
           >
             <Info size={20} />
           </Link>
+          {/* reusable-base:demo:end */}
 
           <Button
             variant="ghost"

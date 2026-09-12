@@ -49,6 +49,7 @@ export default function Error({
                     </Link>
                 </div>
 
+                {/* reusable-base:demo:start */}
                 <div className="pt-8 border-t border-destructive/5 flex flex-col items-center gap-2">
                     <p className="text-sm text-muted-foreground font-bold">문제가 지속된다면 기술 지원팀에 문의하세요</p>
                     <Link
@@ -58,6 +59,7 @@ export default function Error({
                         <MessageSquare size={14} /> 기술 지원 문의하기
                     </Link>
                 </div>
+                {/* reusable-base:demo:end */}
             </div>
         </div>
     );
