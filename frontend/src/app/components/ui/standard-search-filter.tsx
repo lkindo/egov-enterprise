@@ -128,7 +128,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-2 rounded-lg border-2 border-border shadow-2xl overflow-hidden bg-background" align="start">
                       <Calendar
-                        initialFocus
+                        autoFocus
                         mode="range"
                         defaultMonth={values[field.name]?.from}
                         selected={values[field.name]}
