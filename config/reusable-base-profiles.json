@@ -272,6 +272,7 @@
           "src/app/admin/community/[id]",
           "src/app/admin/community/board",
           "src/app/admin/community/page.tsx",
+          "src/app/admin/community/boards/page.tsx",
           "src/app/admin/community/templates",
           "src/app/admin/help",
           "src/app/admin/operation",

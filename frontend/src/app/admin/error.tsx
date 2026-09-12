@@ -92,7 +92,7 @@ export default function AdminError({
         actions={
           <>
             <ActionButton primary icon={<ArrowLeft size={18} />} label="이전으로" onClick={() => window.history.back()} />
-            <ActionButton icon={<Home size={18} />} label="메인으로" href="/admin/work-hub" />
+            <ActionButton icon={<Home size={18} />} label="메인으로" href="/" />
           </>
         }
       />
@@ -110,7 +110,7 @@ export default function AdminError({
         actions={
           <>
             <ActionButton primary icon={<ArrowLeft size={18} />} label="이전으로" onClick={() => window.history.back()} />
-            <ActionButton icon={<Home size={18} />} label="메인으로" href="/admin/work-hub" />
+            <ActionButton icon={<Home size={18} />} label="메인으로" href="/" />
           </>
         }
       />
@@ -128,7 +128,7 @@ export default function AdminError({
       actions={
         <>
           <ActionButton primary icon={<RefreshCcw size={18} />} label="다시 시도" onClick={handleReset} />
-          <ActionButton icon={<Home size={18} />} label="메인으로" href="/admin/work-hub" />
+          <ActionButton icon={<Home size={18} />} label="메인으로" href="/" />
         </>
       }
     />

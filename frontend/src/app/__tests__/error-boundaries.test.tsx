@@ -97,6 +97,15 @@ describe('application error boundaries', () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByRole('link', { name: '메인으로' })).toHaveAttribute('href', '/admin/work-hub');
+    /*
+      [2026-09-12] 목적지가 '/admin/work-hub' 에서 '/' 로 바뀌었다.
+      종전 값을 고른 이유는 워크허브의 페이지 권한이 `[]`(인증된 누구나)여서였는데, 그것은
+      demo pack 소유라 파생 제품에서 제거되면 404 가 된다. '/' 는 모든 프로필에 남고
+      **`/admin` 게이트 밖**이라 권한 판정 자체를 거치지 않는다 — 403 복구 목적지로 더 안전하다.
+      값만 보지 않고 성질(게이트 밖)도 함께 고정한다.
+    */
+    const landing = screen.getByRole('link', { name: '메인으로' });
+    expect(landing).toHaveAttribute('href', '/');
+    expect(landing.getAttribute('href')?.startsWith('/admin')).toBe(false);
   });
 });
