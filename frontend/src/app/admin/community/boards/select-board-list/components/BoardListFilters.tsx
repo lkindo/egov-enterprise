@@ -134,7 +134,7 @@ export const BoardListFilters = ({
                       mode="single"
                       selected={startDate}
                       onSelect={setStartDate}
-                      initialFocus
+                      autoFocus
                       locale={ko}
                       className="p-3"
                     />
@@ -142,7 +142,7 @@ export const BoardListFilters = ({
                       mode="single"
                       selected={endDate}
                       onSelect={setEndDate}
-                      initialFocus
+                      autoFocus
                       locale={ko}
                       className="p-3"
                     />
