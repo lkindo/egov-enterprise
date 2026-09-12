@@ -37,10 +37,6 @@
         {
           "file": "api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java",
           "reason": "RBAC 매트릭스가 stats 서비스를 참조한다. ⚠ core 에 RBAC 매트릭스 게이트가 하나도 남지 않는다 — 알려진 손실(GAP-PACK-001)."
-        },
-        {
-          "file": "business-app/src/test/java/nuri/business/harness/QueryCountGuardrailIntegrationTest.java",
-          "reason": "쿼리 수 가드레일이 AddressBookService 를 참조한다. ⚠ core 에 N+1 가드가 남지 않는다 — 알려진 손실(GAP-PACK-001)."
         }
       ],
       "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심의 최소 프레임워크"
@@ -76,10 +72,6 @@
         {
           "file": "api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java",
           "reason": "RBAC 매트릭스가 stats 서비스를 참조한다. ⚠ collaboration 에 RBAC 매트릭스 게이트가 하나도 남지 않는다 — 알려진 손실(GAP-PACK-001)."
-        },
-        {
-          "file": "business-app/src/test/java/nuri/business/harness/QueryCountGuardrailIntegrationTest.java",
-          "reason": "쿼리 수 가드레일이 AddressBookService 를 참조한다. ⚠ collaboration 에 N+1 가드가 남지 않는다 — 알려진 손실(GAP-PACK-001)."
         }
       ],
       "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS"
