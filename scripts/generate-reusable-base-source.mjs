@@ -408,11 +408,20 @@ function adaptGeneratedHarness(output) {
   */
   const skipped = [];
   for (const replacement of replacements) {
-    if (!existsSync(replacement.path)) {
+    /*
+      ⚠ `existsSync` 로 먼저 확인하고 읽으면 **TOCTOU 경쟁**이다(CodeQL js/file-system-race,
+      7.7 blocking — 실제로 이 자리에서 잡혔다). 확인과 사용 사이에 대상이 바뀔 수 있으므로
+      **읽기를 시도하고 ENOENT 만 골라 처리**한다. 다른 오류(권한·I/O)는 그대로 던져
+      조용한 건너뜀으로 위장되지 않게 한다.
+    */
+    let source;
+    try {
+      source = readFileSync(replacement.path, 'utf8');
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
       skipped.push(normalize(relative(output, replacement.path)));
       continue;
     }
-    const source = readFileSync(replacement.path, 'utf8');
     if (!source.includes(replacement.from)) fail(`generated harness 조정 지점을 찾지 못했다: ${replacement.from}`);
     writeFileSync(replacement.path, source.replace(replacement.from, replacement.to), 'utf8');
   }
