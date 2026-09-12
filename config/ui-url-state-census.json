@@ -27,12 +27,12 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "00e48ff9aaeecbd16c38c018ce463e1f34ce3499851b977011d38e5b27b0e3cf"
+    "inventoryHash": "fbd2abbf0738fec07816026c1d89d80469c91c339540a2ffdb7020b47e545546"
   },
   "summary": {
     "sourceFileCount": 541,
     "records": 389,
-    "syntaxOccurrences": 459,
+    "syntaxOccurrences": 458,
     "ambiguousRecords": 358,
     "unverifiedRecords": 389,
     "exactPopulations": {
@@ -8097,7 +8097,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 3
+        "occurrenceCount": 2
       }
     },
     {
