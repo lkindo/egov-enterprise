@@ -1,7 +1,16 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import SurveyManageCreateClient from '../create/SurveyManageCreateClient';
+/*
+  [2026-09-12 §A3-1] 등록이 전용 페이지에서 목록 위 모달로 바뀌었다.
+  계약(검증 인라인 연결·서버 필드 오류 귀속·동기 잠금)은 그대로이고 그릇만 바뀐다.
+*/
+import { SurveyFormDialog } from '../SurveyFormDialog';
+
+const onSaved = vi.fn();
+const SurveyManageCreateClient = () => (
+  <SurveyFormDialog isOpen mode="create" onClose={() => {}} onSaved={onSaved} />
+);
 import SurveyManageDetailClient from '../[id]/SurveyManageDetailClient';
 
 const mocks = vi.hoisted(() => ({

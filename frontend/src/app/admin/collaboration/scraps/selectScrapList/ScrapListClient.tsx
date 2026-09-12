@@ -2,13 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ScrapFormDialog, type ScrapFormValues } from '../ScrapFormDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Scrap } from '@/services/business/user/ScrapService';
 import { scrapMutationOptions, scrapQueryOptions } from '@/queries/scrap-query-options';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 
@@ -79,6 +80,12 @@ const ScrapListClient = () => {
     const [pageNo, setPageNo] = React.useState(1);
     const [pageUnit, setPageUnit] = React.useState(DEFAULT_PAGE_UNIT);
     const deletePendingRef = React.useRef(false);
+    /*
+      [2026-09-12 §A3-1] 등록·수정을 전용 페이지에서 목록 위 모달로 옮겼다. 목록의 page·pageSize 는
+      useState 이고 URL 에 실리지 않아, 라우트를 떠나면 조회 맥락이 전손됐다.
+    */
+    const [formMode, setFormMode] = React.useState<'create' | 'edit' | null>(null);
+    const [editTarget, setEditTarget] = React.useState<{ scrapSn: number; values: ScrapFormValues } | null>(null);
     const [deletingScrapSn, setDeletingScrapSn] = React.useState<number | null>(null);
 
     // 백엔드(ScrapApiController)는 pageIndex(1-base)/pageUnit 파라미터를 직접 읽는다.
@@ -135,15 +142,30 @@ const ScrapListClient = () => {
             className: 'w-20 text-center'
         },
         {
-            // G4 — 행을 식별하고 상세로 들어가는 진입점은 이 열이다.
+            /*
+              G4 — 행을 식별하고 편집으로 들어가는 진입점은 이 열이다.
+              [2026-09-12 §A3-1] 종전 목적지 `selectScrapDetail/[id]` 는 이름과 달리 **열람 표면이 0** 인
+              수정 전용 페이지였다(제목·입력 3개·삭제·저장뿐). 그래서 상세 라우트가 아니라 수정 모달을 연다.
+            */
             header: '스크랩명',
             accessor: (item) => (
-                <Link
-                    href={`/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}`}
-                    className="font-bold text-foreground hover:text-primary transition-colors"
+                <button
+                    type="button"
+                    onClick={() => {
+                        setEditTarget({
+                            scrapSn: item.scrapSn as number,
+                            values: {
+                                scrapNm: item.scrapNm ?? '',
+                                scrapUrl: item.scrapUrl ?? '',
+                                scrapExpln: item.scrapExpln ?? '',
+                            },
+                        });
+                        setFormMode('edit');
+                    }}
+                    className="font-bold text-foreground hover:text-primary transition-colors text-left"
                 >
                     {item.scrapNm}
-                </Link>
+                </button>
             ),
             sortKey: 'scrapNm',
             className: 'w-[250px]'
@@ -200,7 +222,27 @@ const ScrapListClient = () => {
         {
             header: '관리',
             accessor: (item) => (
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center gap-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`${item.scrapNm ?? '스크랩'} 수정`}
+                        disabled={deletingScrapSn !== null}
+                        onClick={() => {
+                            setEditTarget({
+                                scrapSn: item.scrapSn as number,
+                                values: {
+                                    scrapNm: item.scrapNm ?? '',
+                                    scrapUrl: item.scrapUrl ?? '',
+                                    scrapExpln: item.scrapExpln ?? '',
+                                },
+                            });
+                            setFormMode('edit');
+                        }}
+                        className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
+                    >
+                        <Pencil className="w-4 h-4" />
+                    </Button>
                     <Button
                         variant="ghost"
                         size="icon"
@@ -236,11 +278,9 @@ const ScrapListClient = () => {
                         <RefreshCcw className="w-4 h-4" aria-hidden="true" />
                         새로고침
                     </Button>
-                    {/* 링크 안 버튼 중첩(상호작용 2중)을 피한다 — 이동은 link 역할이 옳다. */}
-                    <Button asChild size="sm" className="gap-2">
-                        <Link href="/admin/collaboration/scraps/insertScrap">
-                            <Plus className="w-4 h-4" aria-hidden="true" /> 신규 등록
-                        </Link>
+                    {/* [2026-09-12 §A3-1] 페이지 이동이 아니라 모달이므로 button 역할이 옳다. */}
+                    <Button size="sm" className="gap-2" onClick={() => { setEditTarget(null); setFormMode('create'); }}>
+                        <Plus className="w-4 h-4" aria-hidden="true" /> 신규 등록
                     </Button>
                 </>
             }
@@ -266,6 +306,17 @@ const ScrapListClient = () => {
                     },
                 }}
             />
+            {formMode ? (
+                <ScrapFormDialog
+                    isOpen
+                    mode={formMode}
+                    scrapSn={editTarget?.scrapSn}
+                    initialValues={editTarget?.values}
+                    onClose={() => { setFormMode(null); setEditTarget(null); }}
+                    // 저장 후 목록만 다시 읽는다 — 현재 페이지가 보존되는 것이 이 이행의 실질이다.
+                    onSaved={() => { void refetch(); }}
+                />
+            ) : null}
         </WorkListPage>
     );
 };

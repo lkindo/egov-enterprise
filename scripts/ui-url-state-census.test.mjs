@@ -85,10 +85,10 @@ test('current URL-state census exactly covers critical route and URL producer po
     // [2026-09-05 DEC-OPS-034] 5 → 7: boards/write · boards/[id] 가 insert-board-article 로의 page-redirect 가 됐다.
     // [2026-09-06 DEC-OPS-040] 7 → 11: /admin/system/ism → /approvals, /admin/community · /admin/community/boards →
     //   /admin/help?tab=COMMUNITY, /admin/system/monitoring → /admin/system/monitoring/hub 가 page-redirect 가 됐다.
-    // [2026-09-12 §A3-1 · DEC-OPS-079] 12 → 13. address-book/insert-address-book 이 주소록 목록으로의
-    //   page-redirect 가 됐다 — 등록 폼을 목록 위 모달로 옮겼다. URL 상태는 **늘지 않는다**:
+    // [2026-09-12 §A3-1 · DEC-OPS-079] 12 → 16. 주소록 등록·스크랩 등록/수정·설문 등록 4개가 각 정본 목록으로의
+    //   page-redirect 가 됐다 — 입력 폼을 목록 위 모달로 옮겼다. URL 상태는 **늘지 않는다**:
     //   모달은 주소에 아무것도 싣지 않고, 오히려 목록의 navigation-producer 한 건이 사라졌다.
-    pageRedirects: 13,
+    pageRedirects: 16,
   });
   assert.equal(actual.summary.records, actual.records.length);
   assert.equal(actual.summary.unverifiedRecords, actual.records.length);

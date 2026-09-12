@@ -144,7 +144,8 @@ test('pilot composers do not expose internal deployment language or log form pay
     'utf8',
   );
   const surveyComposer = fs.readFileSync(
-    path.join(ROOT, 'frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx'),
+    // [2026-09-12 §A3-1] 등록이 전용 페이지에서 목록 위 모달로 옮겨 갔다 — 같은 문구 계약을 모달에 건다.
+    path.join(ROOT, 'frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx'),
     'utf8',
   );
   const boardDetail = fs.readFileSync(

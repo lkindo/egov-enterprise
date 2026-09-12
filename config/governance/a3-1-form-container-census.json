@@ -4,7 +4,7 @@
   "description": "업무 화면 문법 카탈로그 §A3-1(인라인 ≥ 모달 > 전용 페이지)의 exact census. frontend/src/app 아래에서 모달도 목록도 없이 폼만 렌더하는 라우트 = 전용 입력 페이지 후보이며, 전부 판정과 함께 등재돼야 한다. 정당화는 기계로 대조된다.",
   "generatedAt": "2026-09-12",
   "expected": {
-    "debtMax": 4
+    "debtMax": 1
   },
   "entries": [
     {
@@ -15,20 +15,6 @@
       "reason": "V2_2__seed_framework_data.sql 의 메뉴 1020200('메일발송', use_yn='Y')이 이 경로를 정본으로 가리킨다. §A3-1 판정 절차 2단계에 따라 목록의 자식 폼이 아니라 1급 목적지이며, 모달 전환은 프런트 리팩터가 아니라 Flyway·IA 변경이 된다(ADR-0017).",
       "evidence": "api-server/src/main/resources/db/migration/V2_2__seed_framework_data.sql:310 — menu_sn 1020200 '메일발송', modern_route='/admin/collaboration/mail-send', use_yn='Y', del_yn='N'. 최신 메뉴 재편 V2_100:49 가 folder=false 로 존속시키고 retired 목록에 없다.",
       "remedy": ""
-    },
-    {
-      "route": "/admin/collaboration/scraps/insertScrap",
-      "verdict": "violation",
-      "conditions": [],
-      "reason": "스크랩 등록 입력만 있는 전용 페이지(215줄)다. 정당화 조건 0개이고 메뉴 행도 없다. 진입은 스크랩 목록이다.",
-      "remedy": "스크랩 목록(/admin/collaboration/scraps/selectScrapList)에 등록 모달을 두고 이 라우트는 목록으로 page-redirect 한다."
-    },
-    {
-      "route": "/admin/collaboration/scraps/selectScrapDetail/[id]",
-      "verdict": "violation",
-      "conditions": [],
-      "reason": "⚠ 초기 판정은 partial-violation(열람 겸용)이었으나 전수 확인 결과 **읽기 전용 표면이 0** 이다 — 303줄 렌더 트리는 `<form onSubmit>`(:152) 안의 제목과 입력 3개(scrapNm·scrapUrl·scrapExpln), 삭제 버튼, '수정 완료' 제출뿐이고 등록일·소유자·대상 링크 같은 열람 필드가 없다. 즉 상세가 아니라 수정 전용 페이지이며 §A3-1 의 '라우트를 없애지 않는다'(열람 상세 보존) 의무가 발생하지 않는다.",
-      "remedy": "스크랩 목록의 행 액션에서 수정 모달을 열도록 옮긴다. 열람 표면이 없으므로 라우트는 목록으로 page-redirect 할 수 있으나, 라우트 처분은 ADR-0007 §Decision 4 의 owner 승인 경계다."
     },
     {
       "route": "/admin/community/boards/insert-board-article",
@@ -46,13 +32,6 @@
       "conditions": [],
       "reason": "설문 상세 열람 라우트인데 수정 입력을 겸한다(useManualFormValidation 3곳, 474줄). 리치 텍스트·첨부·마법사 어느 조건도 충족하지 않는다.",
       "remedy": "열람은 라우트에 남기고 수정 입력 컨트롤만 모달로 올린다."
-    },
-    {
-      "route": "/admin/survey/manage/create",
-      "verdict": "violation",
-      "conditions": [],
-      "reason": "설문 등록 입력만 있는 전용 페이지(266줄)다. 정당화 조건 0개이고 메뉴 행도 없다. 진입은 설문 관리 목록이다.",
-      "remedy": "설문 관리 목록에 등록 모달을 두고 이 라우트는 목록으로 page-redirect 한다."
     },
     {
       "route": "/login",

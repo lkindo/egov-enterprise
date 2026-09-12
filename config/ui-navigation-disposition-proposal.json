@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "7e76e8fbd65edea3dad9f4b657f7cd620c19d360791c69a27a3d818018b201e6"
+    "sha256": "3949bb7e313dc5e99c3558f945fcb3ef8536b4958c112ea16a02b95f7fbe5e18"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -286,38 +286,102 @@
     },
     {
       "route": "/admin/collaboration/scraps/insertScrap",
-      "reviewState": "proposed",
-      "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "reviewState": "approved",
+      "disposition": "consolidate-to-canonical",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx — redirect('/admin/collaboration/scraps/selectScrapList') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/insertScrap] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx — redirect('/admin/collaboration/scraps/selectScrapList') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/insertScrap] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx — redirect('/admin/collaboration/scraps/selectScrapList') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/insertScrap] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx — redirect('/admin/collaboration/scraps/selectScrapList') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/insertScrap] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        }
       }
     },
     {
       "route": "/admin/collaboration/scraps/selectScrapDetail/[id]",
-      "reviewState": "proposed",
-      "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "reviewState": "approved",
+      "disposition": "consolidate-to-canonical",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx — redirect('/admin/collaboration/scraps/selectScrapList') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/selectScrapDetail/[id]] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx — redirect('/admin/collaboration/scraps/selectScrapList') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/selectScrapDetail/[id]] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx — redirect('/admin/collaboration/scraps/selectScrapList') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/selectScrapDetail/[id]] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx — redirect('/admin/collaboration/scraps/selectScrapList') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/selectScrapDetail/[id]] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        }
       }
     },
     {
@@ -1314,20 +1378,52 @@
     },
     {
       "route": "/admin/survey/manage/create",
-      "reviewState": "proposed",
-      "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "reviewState": "approved",
+      "disposition": "consolidate-to-canonical",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/survey/manage/create/page.tsx — redirect('/admin/survey/manage') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/survey/manage/create] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/survey/manage/create/page.tsx — redirect('/admin/survey/manage') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/survey/manage/create] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/survey/manage/create/page.tsx — redirect('/admin/survey/manage') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/survey/manage/create] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)",
+          "reviewedAt": "2026-09-12",
+          "evidence": [
+            "frontend/src/app/admin/survey/manage/create/page.tsx — redirect('/admin/survey/manage') (§A3-1 이행)",
+            "config/ui-route-capabilities.json routes[/admin/survey/manage/create] — routing.kind=page-redirect",
+            "등록·수정 폼이 목록 위 모달로 이동(검색어·페이지 보존)"
+          ]
+        }
       }
     },
     {

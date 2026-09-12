@@ -27,26 +27,26 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "2fae226b35622a6fb658c93bd5f12916b7b3c176eaeae69d3aa6f363ecb32d75"
+    "inventoryHash": "d1f38d27950ee8142f2f2e1968d47bd51e4391dce21836de1e2b18f7931ab9fd"
   },
   "summary": {
-    "sourceFileCount": 542,
+    "sourceFileCount": 541,
     "records": 392,
-    "syntaxOccurrences": 464,
-    "ambiguousRecords": 364,
+    "syntaxOccurrences": 462,
+    "ambiguousRecords": 361,
     "unverifiedRecords": 392,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
       "configRedirects": 13,
-      "pageRedirects": 13
+      "pageRedirects": 16
     },
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 173,
-      "page-redirect": 13,
+      "navigation-producer": 170,
+      "page-redirect": 16,
       "query-builder": 21,
       "query-consumer": 56,
       "query-producer": 40,
@@ -2182,50 +2182,12 @@
       }
     },
     {
-      "id": "URL-BCF5084E312D09",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration/scraps/insertScrap",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-E85C1199828718",
+      "id": "URL-B05372FD905DAA",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/scraps/insertScrap",
       "targetCandidate": "/admin/collaboration/scraps/selectScrapList",
@@ -2252,8 +2214,84 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
-        "detector": "router-navigation",
+        "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-9E9E66A7C49C07",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
+      "consumerFile": "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
+      "routePattern": "/admin/collaboration/scraps/insertScrap",
+      "targetCandidate": "/admin/collaboration/scraps/selectScrapList",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/collaboration/scraps/selectScrapList",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
+        "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-E04E2CFEF14F8C",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/collaboration/scraps",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
@@ -2311,92 +2349,15 @@
       }
     },
     {
-      "id": "URL-87B5063988D901",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration/scraps/selectScrapDetail/[id]",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-7CD9F310E25348",
+      "id": "URL-6CDBB903619C87",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration/scraps/selectScrapDetail/[id]",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 3
-      }
-    },
-    {
-      "id": "URL-DCB119FF909511",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration/scraps/selectScrapList",
-      "targetCandidate": "/admin/collaboration/scraps/insertScrap",
+      "targetCandidate": "/admin/collaboration/scraps/selectScrapList",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
@@ -2405,7 +2366,7 @@
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/collaboration/scraps/insertScrap",
+        "routeCandidate": "/admin/collaboration/scraps/selectScrapList",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -2420,31 +2381,30 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-        "detector": "href-navigation",
+        "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
+        "detector": "server-redirect-call",
         "occurrenceCount": 1
       }
     },
     {
-      "id": "URL-3CB7CA70FDBFBE",
+      "id": "URL-B795A174760B0D",
       "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration/scraps/selectScrapList",
-      "targetCandidate": "/admin/collaboration/scraps/selectScrapDetail/[computed]",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
+      "consumerFile": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
+      "routePattern": "/admin/collaboration/scraps/selectScrapDetail/[id]",
+      "targetCandidate": "/admin/collaboration/scraps/selectScrapList",
       "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
       ],
-      "resolutionStatus": "ambiguous",
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
       "canonical": {
-        "routeCandidate": "/admin/collaboration/scraps/selectScrapDetail/[computed]",
+        "routeCandidate": "/admin/collaboration/scraps/selectScrapList",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -2459,8 +2419,8 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
-        "detector": "href-navigation",
+        "source": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
@@ -8256,12 +8216,12 @@
       }
     },
     {
-      "id": "URL-747C371A465FC0",
+      "id": "URL-16EAE272409695",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx",
-      "producerFile": "frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/survey/manage/create/page.tsx",
+      "producerFile": "frontend/src/app/admin/survey/manage/create/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/survey/manage/create",
       "targetCandidate": "/admin/survey/manage",
@@ -8288,8 +8248,84 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx",
-        "detector": "router-navigation",
+        "source": "frontend/src/app/admin/survey/manage/create/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-7CF2BA809039A4",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/survey/manage/create/page.tsx",
+      "producerFile": "frontend/src/app/admin/survey/manage/create/page.tsx",
+      "consumerFile": "frontend/src/app/admin/survey/manage/create/page.tsx",
+      "routePattern": "/admin/survey/manage/create",
+      "targetCandidate": "/admin/survey/manage",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/survey/manage",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/survey/manage/create/page.tsx",
+        "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-E2A85D6DAF1D14",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx",
+      "producerFile": "frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/survey/manage",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
@@ -8313,44 +8349,6 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/admin/survey/manage/[computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/survey/manage/SurveyManageClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-323F3B832E1126",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/survey/manage/SurveyManageClient.tsx",
-      "producerFile": "frontend/src/app/admin/survey/manage/SurveyManageClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/survey/manage",
-      "targetCandidate": "/admin/survey/manage/create",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/survey/manage/create",
         "status": "unverified"
       },
       "authorizationBoundary": {

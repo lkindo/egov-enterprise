@@ -117,6 +117,9 @@ function isWave2Approval(approval) {
 //   미탑재라 페이지 이동만으로 검색어·페이지가 전손됐다.
 const WAVE3_APPROVED_ROUTES = [
   '/admin/collaboration/address-book/insert-address-book',
+  '/admin/collaboration/scraps/insertScrap',
+  '/admin/collaboration/scraps/selectScrapDetail/[id]',
+  '/admin/survey/manage/create',
 ];
 const WAVE3_REVIEWER = 'lkindo (사용자 위임 2026-08-23 · DEC-OPS-079)';
 const WAVE3_REVIEWED_AT = '2026-09-12';

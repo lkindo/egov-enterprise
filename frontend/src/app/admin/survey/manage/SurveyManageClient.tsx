@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCcw } from "lucide-react";
+import { SurveyFormDialog } from './SurveyFormDialog';
 import { getPollList } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO } from '@/types/business/poll';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -22,6 +23,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
   const router = useRouter();
   // 기준일은 저장 포맷과 동일한 'yyyyMMdd' 문자열로 고정한다.
   // (SSR 시점 시각을 쓰면 하이드레이션 불일치가 나므로 마운트 후 세팅)
+  const [createOpen, setCreateOpen] = useState(false);
   const [todayYmd, setTodayYmd] = useState<string>('');
   useEffect(() => {
     setTodayYmd(todayStorageYmd());
@@ -149,7 +151,8 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
             <RefreshCcw size={16} className={isLoading ? 'animate-spin' : undefined} aria-hidden="true" />
             새로고침
           </Button>
-          <Button size="sm" onClick={() => router.push('/admin/survey/manage/create')} className="gap-2">
+          {/* [2026-09-12 §A3-1] 페이지 이동이 아니라 모달이다 — 검색어·페이지가 보존된다. */}
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 여론조사 등록
           </Button>
         </>
@@ -182,6 +185,15 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
           onPageSizeChange: (size) => { setPageSize(size); setPage(0); },
         }}
       />
+      {createOpen ? (
+        <SurveyFormDialog
+          isOpen
+          mode="create"
+          onClose={() => setCreateOpen(false)}
+          // 등록 후 목록만 다시 읽는다 — 현재 페이지·검색어가 보존되는 것이 이 이행의 실질이다.
+          onSaved={() => { void refetch(); }}
+        />
+      ) : null}
     </WorkListPage>
   );
 }
