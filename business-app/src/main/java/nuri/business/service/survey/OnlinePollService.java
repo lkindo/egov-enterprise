@@ -180,10 +180,28 @@ public class OnlinePollService {
         OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         
-        entity.update(dto.getPollNm().length() > 100 ? dto.getPollNm().substring(0, 100) : dto.getPollNm(), 
+        /*
+         * 자동폐기 여부(pollAtmcDsuseYn)는 **요청에 없으면 기존 값을 유지한다.**
+         *
+         * update 는 전체 치환이고 insert 만 null→"N" 을 보정했는데(아래 insertPoll), 이 필드를 묻는
+         * 화면이 하나도 없어 요청에는 언제나 빠져 있었다. 그대로 넘기면 **저장할 때마다 NULL** 이 된다
+         * — 컬럼은 NULL 을 받고(V2_0 baseline) CHECK(IN ('Y','N')) 도 NULL 은 통과시키므로 아무것도
+         * 실패하지 않는다. 즉 조용한 소실이었다(GAP-POLL-001).
+         *
+         * ⚠ 여기서 insert 와 같은 "null → N" 보정을 하면 안 된다 — 화면이 값을 안 보내므로 저장마다
+         *   'Y'(자동폐기 설정됨)가 'N' 으로 뒤집힌다. NULL 소실을 더 나쁜 결함으로 바꾸는 셈이다.
+         *
+         * 나머지 다섯 필드는 화면이 전부 실어 보내므로 전체 치환 그대로 둔다. 이 비대칭은 의도이며,
+         * 값을 묻는 컨트롤이 생기면 그때 이 분기를 걷는다.
+         */
+        String atmcDsuseYn = dto.getPollAtmcDsuseYn() != null
+                ? dto.getPollAtmcDsuseYn()
+                : entity.getPollAtmcDsuseYn();
+
+        entity.update(dto.getPollNm().length() > 100 ? dto.getPollNm().substring(0, 100) : dto.getPollNm(),
                 beginDe, endDe,
-                dto.getPollKndCd() != null && dto.getPollKndCd().length() > 12 ? dto.getPollKndCd().substring(0, 12) : dto.getPollKndCd(), 
-                dto.getPollDsuseYn(), dto.getPollAtmcDsuseYn());
+                dto.getPollKndCd() != null && dto.getPollKndCd().length() > 12 ? dto.getPollKndCd().substring(0, 12) : dto.getPollKndCd(),
+                dto.getPollDsuseYn(), atmcDsuseYn);
         
         String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentLoginId().orElse("SYSTEM");
         if (currentUserId.length() > 20) currentUserId = currentUserId.substring(0, 20);
