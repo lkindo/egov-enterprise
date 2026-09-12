@@ -8,15 +8,25 @@
   },
   "profiles": {
     "core": {
-      "packs": ["core"],
+      "packs": [
+        "core"
+      ],
       "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심의 최소 프레임워크"
     },
     "collaboration": {
-      "packs": ["core", "collaboration"],
+      "packs": [
+        "core",
+        "collaboration"
+      ],
       "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS"
     },
     "demo": {
-      "packs": ["core", "collaboration", "survey", "demo"],
+      "packs": [
+        "core",
+        "collaboration",
+        "survey",
+        "demo"
+      ],
       "description": "현재 제품의 전체 참조 기능"
     }
   },
@@ -24,7 +34,11 @@
     "core": {
       "rank": 0,
       "backend": {
-        "modules": ["foundation", "business-core", "api-server"],
+        "modules": [
+          "foundation",
+          "business-core",
+          "api-server"
+        ],
         "appDomains": []
       },
       "database": {
@@ -82,6 +96,26 @@
           "notification",
           "scrap",
           "sms"
+        ]
+      },
+      "frontend": {
+        "removePaths": [
+          "src/app/components/layout/header-notifications.tsx",
+          "src/app/components/ui/app-notification-drawer.tsx",
+          "src/lib/hooks/use-notifications.ts",
+          "src/services/foundation/system/NotificationAdminService.ts",
+          "src/app/actions/boardActions.ts",
+          "src/services/business/user/board/BoardUserService.ts",
+          "src/services/foundation/system/BoardAdminService.ts",
+          "src/services/business/board/SatisfactionService.ts",
+          "src/services/business/knowledge/knowledgeService.ts",
+          "src/app/actions/commentActions.ts",
+          "src/services/business/comment/commentService.ts",
+          "src/services/foundation/system/CommentAdminService.ts",
+          "src/services/business/mail/MailService.ts",
+          "src/services/business/user/NoteService.ts",
+          "src/services/business/user/ScrapService.ts",
+          "src/services/foundation/operation/SmsAdminService.ts"
         ]
       },
       "database": {
@@ -247,20 +281,32 @@
     {
       "id": "board",
       "pack": "collaboration",
-      "domains": ["board", "comment", "scrap"],
+      "domains": [
+        "board",
+        "comment",
+        "scrap"
+      ],
       "reason": "Comment 엔티티의 게시글 연관과 BoardErrorCode 참조, 스크랩 FK 때문에 함께 선택한다. (댓글 수 동기화는 2026-08-29 foundation 이벤트로 역전돼 더는 결합 근거가 아니다.)"
     },
     {
       "id": "approval",
       "pack": "demo",
-      "domains": ["informalsanction", "operation"],
+      "domains": [
+        "informalsanction",
+        "operation"
+      ],
       "reason": "RewardManage가 InformalSanction을 직접 참조하므로 함께 선택한다."
     },
     {
       "id": "realtime-stats",
       "pack": "collaboration",
-      "domains": ["dashboard"],
-      "requiresDomains": ["board", "notification"],
+      "domains": [
+        "dashboard"
+      ],
+      "requiresDomains": [
+        "board",
+        "notification"
+      ],
       "reason": "DB 통계 도메인과 무관한 인메모리 RealTimeDashboardService가 게시판 및 알림 이벤트를 집계한다."
     }
   ],
@@ -268,7 +314,10 @@
     {
       "table": "tb_tmplt_info",
       "ownerPack": "collaboration",
-      "consumers": ["board", "template"],
+      "consumers": [
+        "board",
+        "template"
+      ],
       "reason": "BoardTemplate과 독립 template 도메인이 같은 물리 테이블을 매핑한다."
     }
   ],

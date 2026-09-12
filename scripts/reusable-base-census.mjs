@@ -162,6 +162,33 @@ export function validateReusableBase(manifest, repository) {
     errors.push(`business-app source root '${sourceRoot}'가 domain/service 소유 경계 밖에 있다.`);
   }
 
+  /*
+    [프런트 소유 선언 의무] backend.appDomains 를 선언한 pack 은 frontend 소유도 선언해야 한다.
+
+    생성기는 제외 pack 의 appDomains 로 **백엔드만** 지운다(pruneJava). 프런트는 그 pack 의
+    frontend.removePaths 가 있어야 함께 빠진다(pruneFrontend). 그래서 backend 만 선언하면
+    파생 프로필이 **API 없는 화면을 그대로 배포**한다 — 메뉴는 있는데 진입 즉시 실패한다.
+
+    2026-09-12 실측: collaboration pack 이 appDomains 8개·tables 15개를 선언하면서 frontend
+    키가 없어, core 프로필에 게시판·댓글·메일·쪽지·스크랩·문자·알림 화면이 API 없이 남았다
+    (생존 파일 15개가 제거된 operation 을 호출). DEC-OPS-018(survey 승격 시 셋을 같은 변경에서
+    선언)·DEC-OPS-048 ⑤(백엔드가 demo 소유면 프런트 경로도 편입)가 이미 정한 원칙인데
+    collaboration 에만 적용되지 않았다.
+
+    ⚠ 이 검사는 '선언했는가' 만 본다. 목록이 **옳은가**(빠진 화면이 없는가)는 생성기를 실제로
+    돌려 투영본에서 확인해야 한다 — 정적 census 가 판정할 수 있는 범위를 넘는다.
+  */
+  for (const [packName, pack] of Object.entries(manifest.packs ?? {})) {
+    const domains = pack.backend?.appDomains ?? [];
+    const frontendPaths = pack.frontend?.removePaths ?? [];
+    if (domains.length > 0 && frontendPaths.length === 0) {
+      errors.push(
+        `pack '${packName}'이 backend.appDomains ${domains.length}개를 선언하면서 frontend 소유를 선언하지 않았다 — `
+        + '제외 프로필에서 백엔드만 사라지고 화면이 남아 없는 API 를 부른다.',
+      );
+    }
+  }
+
   for (const domain of repository.appDomains) {
     if (!domainOwners.has(domain)) errors.push(`business-app domain '${domain}'의 pack 소유자가 없다.`);
   }
