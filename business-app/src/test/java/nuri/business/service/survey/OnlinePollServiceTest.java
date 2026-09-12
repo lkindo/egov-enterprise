@@ -382,6 +382,73 @@ class OnlinePollServiceTest {
         }
     }
 
+    /*
+     * GAP-POLL-001 — 자동폐기 여부는 이 필드를 묻는 화면이 하나도 없어 요청에 언제나 빠져 있다.
+     * update 가 전체 치환이므로 그대로 넘기면 저장할 때마다 NULL 이 되는데, 컬럼이 NULL 을 받고
+     * CHECK(IN ('Y','N')) 도 NULL 은 통과시켜 아무것도 실패하지 않는다 — 조용한 소실이다.
+     *
+     * 두 방향을 함께 고정한다. 유지만 검사하면 "항상 기존 값을 쓴다" 는 구현도 통과하고,
+     * 변경만 검사하면 종전의 NULL 소실이 그대로 통과한다.
+     */
+    @Test
+    @DisplayName("설문 수정 - 요청에 자동폐기 여부가 없으면 기존 값을 유지한다")
+    void updatePoll_KeepsAutoDisposeWhenAbsent() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("admin"));
+
+            OnlinePollManage entity = OnlinePollManage.builder()
+                    .pollSn(1L)
+                    .pollNm("자동폐기 설정된 설문")
+                    .pollAtmcDsuseYn("Y")
+                    .pollArticles(new ArrayList<>())
+                    .build();
+            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+
+            // 화면이 보내는 실제 모양 — 제목만 고치고 자동폐기 여부는 싣지 않는다.
+            OnlinePollManageDto dto = OnlinePollManageDto.builder()
+                    .pollSn(1L)
+                    .pollNm("제목만 고친 설문")
+                    .pollBgngYmd("20240101")
+                    .pollEndYmd("20241231")
+                    .build();
+
+            onlinePollService.updatePoll(dto);
+
+            assertThat(entity.getPollNm()).isEqualTo("제목만 고친 설문");
+            assertThat(entity.getPollAtmcDsuseYn()).isEqualTo("Y");
+        }
+    }
+
+    @Test
+    @DisplayName("설문 수정 - 자동폐기 여부를 명시하면 그 값으로 바뀐다")
+    void updatePoll_AppliesExplicitAutoDispose() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("admin"));
+
+            OnlinePollManage entity = OnlinePollManage.builder()
+                    .pollSn(1L)
+                    .pollNm("자동폐기 설정된 설문")
+                    .pollAtmcDsuseYn("Y")
+                    .pollArticles(new ArrayList<>())
+                    .build();
+            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+
+            OnlinePollManageDto dto = OnlinePollManageDto.builder()
+                    .pollSn(1L)
+                    .pollNm("자동폐기 설정된 설문")
+                    .pollBgngYmd("20240101")
+                    .pollEndYmd("20241231")
+                    .pollAtmcDsuseYn("N")
+                    .build();
+
+            onlinePollService.updatePoll(dto);
+
+            assertThat(entity.getPollAtmcDsuseYn()).isEqualTo("N");
+        }
+    }
+
     @Test
     @DisplayName("설문 수정 - 성공 (Articles null)")
     void updatePoll_Success_NullArticles() {
