@@ -5,7 +5,6 @@ import { useTheme } from 'next-themes';
 import {
   Moon,
   Sun,
-  Bell,
   User,
   LogOut,
   Settings,
@@ -26,11 +25,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { useLayout } from '@/contexts/LayoutContext';
-import { useNotifications } from '@/lib/hooks/use-notifications';
-import { AppNotificationDrawer } from '../ui/app-notification-drawer';
+/* reusable-base:collaboration:start */
+import { HeaderNotifications } from './header-notifications';
+/* reusable-base:collaboration:end */
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -77,8 +76,6 @@ export function Header({
   const menuAuthorization = useMenuAuthorizationScope();
   const canReadMenus = canPermission(user, 'MENU_READ');
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
-  const { notifications, unreadCount, error: notificationsError, markAsRead, markAllAsRead, removeNotification, refresh: refreshNotifications } = useNotifications();
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
   /*
     [2026-09-08] 본인 비밀번호 변경. 서버(PUT /users/me/password)와 userService.changePassword 는
     있었는데 호출부가 0 이었다 — DEC-OPS-032 가 관리자 초기화만 열었고, 정작 사용자가 자기
@@ -246,24 +243,9 @@ export function Header({
             <Sun size={20} aria-hidden="true" className="hidden dark:block" />
           </Button>
 
-          <Button
-            id="e2e-bell-button"
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsNotifOpen(true)}
-            aria-label={unreadCount > 0 ? `알림, 읽지 않음 ${unreadCount}건` : "알림"}
-            className={cn(
-              "relative text-muted-foreground transition-all group",
-              unreadCount > 0 && "text-primary bg-primary/5 ring-4 ring-primary/5"
-            )}
-          >
-            <Bell size={20} className={cn(unreadCount > 0 && "animate-bounce-subtle")} />
-            {unreadCount > 0 && (
-              <Badge aria-hidden="true" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-bold text-xs shadow-lg">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </Badge>
-            )}
-          </Button>
+          {/* reusable-base:collaboration:start */}
+          <HeaderNotifications />
+          {/* reusable-base:collaboration:end */}
 
           <div className="flex items-center gap-2 pl-2 md:pl-3 border-l ml-1 md:ml-2">
             {user ? (
@@ -330,31 +312,6 @@ export function Header({
           </div>
         </div>
       </div>
-
-      <AppNotificationDrawer
-        isOpen={isNotifOpen}
-        onClose={() => setIsNotifOpen(false)}
-        onMarkRead={markAsRead}
-        onMarkAllRead={markAllAsRead}
-        onDelete={removeNotification}
-        // [2026-08-04] 조회 실패를 드로어까지 전달한다. 이 배선이 없으면 훅이 오류를 알아도
-        //   화면은 여전히 '활성화된 알림이 없습니다' 를 렌더한다(상태만 만들고 배선하지 않는 것은
-        //   고친 것이 아니다 — 12축 감사 클러스터 D).
-        error={notificationsError}
-        onRetry={refreshNotifications}
-        notifications={(notifications || []).filter(Boolean).map((n) => ({
-          id: n.notiSn,
-          title: n.notiTtlNm,
-          message: n.notiCn,
-          time: n.notiDt,
-          isRead: n.readYn === 'Y',
-          type: n.type,
-          // [2026-09-02] 서버가 계산해 저장한 목적지를 화면까지 나른다. 훅이 이미 내부 경로로
-          //   검증했으므로(normalizeInternalRoute) 신뢰할 수 없는 값은 null 로 온다.
-          linkUrl: n.linkUrl ?? null,
-        }))}
-      />
-
       <StandardModal
         isOpen={profileInitial !== null}
         onClose={() => { if (!isProfilePending) setProfileInitial(null); }}

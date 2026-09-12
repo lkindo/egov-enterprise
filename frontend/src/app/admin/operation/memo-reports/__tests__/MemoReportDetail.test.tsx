@@ -242,6 +242,59 @@ describe('메모보고 열람', () => {
     });
   });
 
+  /*
+    [회귀 · P1 데이터 파괴] 상세 편집 상태가 **대상 전환 때 따라오던** 결함.
+
+    `detailTarget` 은 어느 보고를 보는지이고 `isEditing`·editForm 은 그 보고에 대한 작성
+    상태인데, 닫기 3경로와 행 클릭이 앞의 것만 바꿨다. 그래서 보고 A 를 수정하다 닫고 B 를
+    열면 B 가 '수정 중' 상태로 **A 의 제목·본문·수신자** 를 담고 열렸고, 그대로 저장하면
+    서버 update 가 전체 치환이라 B 의 원본이 복구 불가로 사라졌다(수신자까지 A 의 것으로
+    재배정). 관리자는 모든 보고가 editable 이라 남의 보고도 덮어썼다.
+
+    같은 파일의 '보고 작성' 은 openCompose 가 열 때마다 reset 해 이미 이 규율을 지켰다.
+  */
+  it('수정 중 닫고 다른 보고를 열면 읽기 상태로 열리고 앞 보고의 입력을 들고 가지 않는다', async () => {
+    const OTHER = { ...ROW, memoRptSn: 9, rptTtl: '보안 점검 보고', rptCn: '패치 적용 완료', rptrId: 'USR_C' };
+    mocks.getReceivedReports.mockResolvedValue({ list: [ROW, OTHER], total: 2 });
+    mocks.getMemoReport.mockImplementation(async (sn: number) =>
+      sn === OTHER.memoRptSn ? { ...OTHER, editable: true } : { ...ROW, editable: true });
+
+    renderClient();
+
+    // A 를 열어 수정 모드로 들어가 제목을 고친다(저장하지 않는다).
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    await screen.findByText('서버 증설이 필요합니다.');
+    fireEvent.click(screen.getByRole('button', { name: '수정' }));
+    fireEvent.change(await screen.findByDisplayValue('3분기 운영 보고'), {
+      target: { value: '저장하지 않을 임시 제목' },
+    });
+
+    // 저장하지 않고 닫는다.
+    const footerClose = screen.getAllByRole('button', { name: '닫기' });
+    fireEvent.click(footerClose[footerClose.length - 1]);
+
+    // B 를 연다.
+    fireEvent.click(await screen.findByRole('button', { name: '보안 점검 보고 보고 열기' }));
+    await screen.findByText('패치 적용 완료');
+
+    // ① 읽기 상태로 열려야 한다 — '수정' 버튼이 보이고 저장 버튼은 없다.
+    expect(screen.getByRole('button', { name: '수정' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '저장' }), 'B 가 수정 모드로 열리면 안 된다').toBeNull();
+    // ② 앞 보고의 입력이 남아 있으면 안 된다.
+    expect(screen.queryByDisplayValue('저장하지 않을 임시 제목'), 'A 의 입력이 B 로 따라왔다').toBeNull();
+
+    // ③ B 에서 수정을 열면 B 자신의 값이 보여야 한다.
+    fireEvent.click(screen.getByRole('button', { name: '수정' }));
+    expect(await screen.findByDisplayValue('보안 점검 보고')).toBeVisible();
+
+    // ④ 저장 본문이 B 의 수신자로 나가야 한다 — A 의 rptrId 가 실리면 수신자 재배정이다.
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    await waitFor(() => expect(mocks.updateMemoReport).toHaveBeenCalledTimes(1));
+    const [sn, body] = mocks.updateMemoReport.mock.calls[0];
+    expect(sn).toBe(OTHER.memoRptSn);
+    expect(body).toMatchObject({ rptTtl: '보안 점검 보고', rptrId: OTHER.rptrId });
+  });
+
   it('삭제는 중복 실행을 막고 진행을 드러내며 실패 사유를 그대로 알린다', async () => {
     let reject: (error: unknown) => void = () => undefined;
     mocks.deleteMemoReport.mockReturnValue(new Promise((_resolve, next) => { reject = next; }));

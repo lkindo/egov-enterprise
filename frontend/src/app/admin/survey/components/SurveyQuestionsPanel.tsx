@@ -10,10 +10,16 @@ import { Survey, SurveyQuestion } from '@/types/business/survey';
 /*
   전체 치환(PUT) payload 타입. 서버가 이 필드들을 그대로 엔티티에 덮어쓰므로 하나라도 빠지면
   그 값이 null 이 된다 — 목록 행의 기존 값을 함께 실어 보내기 위한 명시적 계약이다.
+
+  ⚠ **되돌려 싣는 필드는 optional 이다.** 목록 행의 값이 null 이면 `omitNulls` 가 그 키를
+  떨어뜨리기 때문이다(요청 스키마가 null 을 거부한다 — omit-nulls.ts 의 docblock 참조).
+  수제 `Survey`·`SurveyQuestion` 타입은 이 필드들을 non-null 로 선언하지만 **그 선언이 사실과
+  다르다** — 그래서 TypeScript 는 이 결함을 한 번도 잡지 못했다.
 */
-type SurveyInfoUpdate = Pick<Survey,
-  'srvyTtl' | 'srvyPrps' | 'srvyWrtGdCn' | 'srvyBgngYmd' | 'srvyEndYmd' | 'srvyTrgt' | 'srvyTmpltSn'>;
-type SurveyQuestionUpdate = Pick<SurveyQuestion, 'qstnSn' | 'qstnTypeCd' | 'qstnCn' | 'maxChcCnt'>;
+type SurveyInfoUpdate = Pick<Survey, 'srvyTtl' | 'srvyTmpltSn'>
+  & Partial<Pick<Survey, 'srvyPrps' | 'srvyWrtGdCn' | 'srvyBgngYmd' | 'srvyEndYmd' | 'srvyTrgt'>>;
+type SurveyQuestionUpdate = Pick<SurveyQuestion, 'qstnCn'>
+  & Partial<Pick<SurveyQuestion, 'qstnSn' | 'qstnTypeCd' | 'maxChcCnt'>>;
 type SurveyItemUpdate = { artclSn?: number; artclCn: string; etcAnsYn?: string };
 import { PageResponse } from '@/types/foundation/system';
 import { Button } from '@/components/ui/button';
@@ -23,6 +29,7 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { omitNulls } from '@/lib/api/omit-nulls';
 import {
   surveyInfoCreateSchema,
   surveyInfoValidationLabels,
@@ -492,16 +499,30 @@ export default function SurveyQuestionsPanel() {
             submitEdit(titleEditValidation, { srvyTtl: editingText }, (validated) =>
               editSurvey.mutate({
                 srvySn: selectedSurvey.srvySn!,
-                // 제목 외 6필드는 목록 행의 기존 값을 그대로 되돌려 보낸다 — 전체 치환이라
-                // 빠뜨리면 기간·목적·작성안내·대상이 지워진다.
+                /*
+                  제목 외 6필드는 목록 행의 기존 값을 그대로 되돌려 보낸다 — 전체 치환이라
+                  빠뜨리면 기간·목적·작성안내·대상이 지워진다.
+
+                  ⚠ 그중 **null 인 값은 떨어뜨려야 한다.** 생성 계약은 이 5필드를 요청에서
+                  `.optional()`(null 거부), 응답에서 `.optional().nullable()` 로 선언한다
+                  (DEC-OPS-028 의 방향 비대칭 — omit-nulls.ts). 그런데 이 화면의 **등록** 폼은
+                  제목·템플릿 2개만 보내므로 서버가 나머지 5개를 null 로 저장한다. 그래서 이
+                  화면으로 만든 설문지를 수정하려 하면 null 이 그대로 요청에 실려
+                  `parseGeneratedOperationRequest` 가 **HTTP 요청 전에** throw 했다 — 제목 한
+                  글자도 고칠 수 없었고, 서버에 닿지 않아 로그에도 단서가 없었다.
+
+                  srvyTmpltSn 은 요청·응답 모두 required 라 비대칭이 아니다 — 그대로 싣는다.
+                */
                 body: {
                   srvyTtl: validated.srvyTtl,
-                  srvyPrps: selectedSurvey.srvyPrps,
-                  srvyWrtGdCn: selectedSurvey.srvyWrtGdCn,
-                  srvyBgngYmd: selectedSurvey.srvyBgngYmd,
-                  srvyEndYmd: selectedSurvey.srvyEndYmd,
-                  srvyTrgt: selectedSurvey.srvyTrgt,
                   srvyTmpltSn: selectedSurvey.srvyTmpltSn,
+                  ...omitNulls({
+                    srvyPrps: selectedSurvey.srvyPrps,
+                    srvyWrtGdCn: selectedSurvey.srvyWrtGdCn,
+                    srvyBgngYmd: selectedSurvey.srvyBgngYmd,
+                    srvyEndYmd: selectedSurvey.srvyEndYmd,
+                    srvyTrgt: selectedSurvey.srvyTrgt,
+                  }),
                 },
               }));
           }}
@@ -607,12 +628,20 @@ export default function SurveyQuestionsPanel() {
                           submitEdit(questionEditValidation, { qstnCn: editingText }, (validated) =>
                             editQuestion.mutate({
                               srvyQstnSn: q.srvyQstnSn!,
-                              // 내용 외 3필드 round-trip — 빠뜨리면 순번·유형·최대선택수가 지워진다.
+                              /*
+                                내용 외 3필드 round-trip — 빠뜨리면 순번·유형·최대선택수가 지워진다.
+                                ⚠ null 은 떨어뜨린다(요청 `.optional()` vs 응답
+                                `.optional().nullable()` 비대칭 — omit-nulls.ts). 이 화면의 등록
+                                폼은 maxChcCnt 를 보내지 않아 서버가 null 로 저장하므로, 걸러
+                                내지 않으면 **이 화면으로 만든 문항은 내용 수정이 영영 막힌다**.
+                              */
                               body: {
                                 qstnCn: validated.qstnCn,
-                                qstnSn: q.qstnSn,
-                                qstnTypeCd: q.qstnTypeCd,
-                                maxChcCnt: q.maxChcCnt,
+                                ...omitNulls({
+                                  qstnSn: q.qstnSn,
+                                  qstnTypeCd: q.qstnTypeCd,
+                                  maxChcCnt: q.maxChcCnt,
+                                }),
                               },
                             }));
                         }}
@@ -689,11 +718,19 @@ export default function SurveyQuestionsPanel() {
                                   submitEdit(itemEditValidation, { artclCn: editingText }, (validated) =>
                                     editItem.mutate({
                                       srvyArtclSn: item.srvyArtclSn!,
-                                      // 내용 외 2필드 round-trip — 빠뜨리면 순번·기타답변여부가 지워진다.
+                                      /*
+                                        내용 외 2필드 round-trip — 빠뜨리면 순번·기타답변여부가
+                                        지워진다. ⚠ null 은 떨어뜨린다(요청·응답 비대칭 —
+                                        omit-nulls.ts). 등록 폼이 artclSn·etcAnsYn 을 **둘 다**
+                                        보내지 않아 이 화면으로 만든 항목은 두 값이 모두 null 이다
+                                        — 걸러 내지 않으면 항목 내용 수정이 전부 막힌다.
+                                      */
                                       body: {
                                         artclCn: validated.artclCn,
-                                        artclSn: item.artclSn,
-                                        etcAnsYn: item.etcAnsYn,
+                                        ...omitNulls({
+                                          artclSn: item.artclSn,
+                                          etcAnsYn: item.etcAnsYn,
+                                        }),
                                       },
                                     }));
                                 }}

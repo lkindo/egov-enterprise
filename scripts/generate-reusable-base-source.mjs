@@ -393,10 +393,40 @@ function adaptGeneratedHarness(output) {
       to: 'private static final int MIGRATION_SQL_FLOOR = 3;',
     },
   ];
+  /*
+    ⚠ 조정 대상이 **이미 제거됐을 수 있다.** 하네스 린터는 자기가 검사하는 코드와 서로의
+    FQN 을 문자열로 품고 있어, 어떤 domain 을 제외하면 pruneJava 의 전이 제거가 린터까지
+    끌고 간다(core 프로필 실측: harness 39개 중 11개 제거).
+
+    종전에는 readFileSync 가 그대로 ENOENT 를 던져 **생성이 통째로 죽었다** — 그것도
+    "no such file or directory" 라는, 원인을 짐작할 수 없는 메시지로. core 프로필 생성이
+    그 때문에 불가능했다.
+
+    없는 파일은 건너뛰되 **조용히 넘기지 않는다** — 무엇을 건너뛰었는지 로그로 남긴다.
+    파일이 있는데 조정 지점을 못 찾는 것은 종전대로 fail 이다(하한을 낮추지 못한 채
+    투영본이 나가면 축소된 프로필에서 그 하네스가 영구 red 다).
+  */
+  const skipped = [];
   for (const replacement of replacements) {
-    const source = readFileSync(replacement.path, 'utf8');
+    /*
+      ⚠ `existsSync` 로 먼저 확인하고 읽으면 **TOCTOU 경쟁**이다(CodeQL js/file-system-race,
+      7.7 blocking — 실제로 이 자리에서 잡혔다). 확인과 사용 사이에 대상이 바뀔 수 있으므로
+      **읽기를 시도하고 ENOENT 만 골라 처리**한다. 다른 오류(권한·I/O)는 그대로 던져
+      조용한 건너뜀으로 위장되지 않게 한다.
+    */
+    let source;
+    try {
+      source = readFileSync(replacement.path, 'utf8');
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+      skipped.push(normalize(relative(output, replacement.path)));
+      continue;
+    }
     if (!source.includes(replacement.from)) fail(`generated harness 조정 지점을 찾지 못했다: ${replacement.from}`);
     writeFileSync(replacement.path, source.replace(replacement.from, replacement.to), 'utf8');
+  }
+  if (skipped.length) {
+    console.log(`[base-source] harness 조정 건너뜀(투영에서 제거됨) ${skipped.length}건: ${skipped.join(', ')}`);
   }
   adaptOwnershipGuardBaseline(output);
 }
