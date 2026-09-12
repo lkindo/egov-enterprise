@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "authority": "work-screen-grammar-a3-1-form-container",
+  "description": "업무 화면 문법 카탈로그 §A3-1(인라인 ≥ 모달 > 전용 페이지)의 exact census. frontend/src/app 아래에서 모달도 목록도 없이 폼만 렌더하는 라우트 = 전용 입력 페이지 후보이며, 전부 판정과 함께 등재돼야 한다. 정당화는 기계로 대조된다.",
+  "generatedAt": "2026-09-12",
+  "expected": {
+    "debtMax": 5
+  },
+  "entries": [
+    {
+      "route": "/admin/collaboration/address-book/insert-address-book",
+      "verdict": "violation",
+      "conditions": [],
+      "reason": "명함 등록 입력만 있는 전용 페이지다. 리치 텍스트·첨부·마법사·공유 URL·대형 구조물 어느 조건도 충족하지 않고, 이 경로를 가리키는 메뉴 행도 없다. 진입은 주소록 목록이므로 §A3-1 기본값인 모달이어야 한다.",
+      "remedy": "주소록 목록(/admin/collaboration/address-book/select-address-book-list)에 등록 모달을 두고, 이 라우트는 목록으로 page-redirect 한다(DEC-OPS-034 선례 — 문자열 URL 참조 때문에 라우트를 물리 삭제하지 않는다). 라우트 처분은 ADR-0007 §Decision 4 의 owner 승인 경계다."
+    },
+    {
+      "route": "/admin/collaboration/mail-send",
+      "verdict": "excluded-menu-leaf",
+      "conditions": [],
+      "menuSn": 1020200,
+      "reason": "V2_2__seed_framework_data.sql 의 메뉴 1020200('메일발송', use_yn='Y')이 이 경로를 정본으로 가리킨다. §A3-1 판정 절차 2단계에 따라 목록의 자식 폼이 아니라 1급 목적지이며, 모달 전환은 프런트 리팩터가 아니라 Flyway·IA 변경이 된다(ADR-0017).",
+      "evidence": "api-server/src/main/resources/db/migration/V2_2__seed_framework_data.sql:310 — menu_sn 1020200 '메일발송', modern_route='/admin/collaboration/mail-send', use_yn='Y', del_yn='N'. 최신 메뉴 재편 V2_100:49 가 folder=false 로 존속시키고 retired 목록에 없다.",
+      "remedy": ""
+    },
+    {
+      "route": "/admin/collaboration/scraps/insertScrap",
+      "verdict": "violation",
+      "conditions": [],
+      "reason": "스크랩 등록 입력만 있는 전용 페이지(215줄)다. 정당화 조건 0개이고 메뉴 행도 없다. 진입은 스크랩 목록이다.",
+      "remedy": "스크랩 목록(/admin/collaboration/scraps/selectScrapList)에 등록 모달을 두고 이 라우트는 목록으로 page-redirect 한다."
+    },
+    {
+      "route": "/admin/collaboration/scraps/selectScrapDetail/[id]",
+      "verdict": "violation",
+      "conditions": [],
+      "reason": "⚠ 초기 판정은 partial-violation(열람 겸용)이었으나 전수 확인 결과 **읽기 전용 표면이 0** 이다 — 303줄 렌더 트리는 `<form onSubmit>`(:152) 안의 제목과 입력 3개(scrapNm·scrapUrl·scrapExpln), 삭제 버튼, '수정 완료' 제출뿐이고 등록일·소유자·대상 링크 같은 열람 필드가 없다. 즉 상세가 아니라 수정 전용 페이지이며 §A3-1 의 '라우트를 없애지 않는다'(열람 상세 보존) 의무가 발생하지 않는다.",
+      "remedy": "스크랩 목록의 행 액션에서 수정 모달을 열도록 옮긴다. 열람 표면이 없으므로 라우트는 목록으로 page-redirect 할 수 있으나, 라우트 처분은 ADR-0007 §Decision 4 의 owner 승인 경계다."
+    },
+    {
+      "route": "/admin/community/boards/insert-board-article",
+      "verdict": "justified",
+      "conditions": [
+        "1a",
+        "1b"
+      ],
+      "reason": "DEC-OPS-034 가 작성 화면 3종을 수렴시킨 정본이다. 조건 1a — RichTextEditor 로 게시글 본문을 편집한다(BoardRegistClient.tsx:37,125). 조건 1b — StandardFileUploader 로 새 첨부를 올리고 수정 모드에서 기존 첨부를 건별 삭제한다(같은 파일 480행). 둘 다 모달 높이를 구조적으로 넘는다.",
+      "remedy": ""
+    },
+    {
+      "route": "/admin/survey/manage/[id]",
+      "verdict": "partial-violation",
+      "conditions": [],
+      "reason": "설문 상세 열람 라우트인데 수정 입력을 겸한다(useManualFormValidation 3곳, 474줄). 리치 텍스트·첨부·마법사 어느 조건도 충족하지 않는다.",
+      "remedy": "열람은 라우트에 남기고 수정 입력 컨트롤만 모달로 올린다."
+    },
+    {
+      "route": "/admin/survey/manage/create",
+      "verdict": "violation",
+      "conditions": [],
+      "reason": "설문 등록 입력만 있는 전용 페이지(266줄)다. 정당화 조건 0개이고 메뉴 행도 없다. 진입은 설문 관리 목록이다.",
+      "remedy": "설문 관리 목록에 등록 모달을 두고 이 라우트는 목록으로 page-redirect 한다."
+    },
+    {
+      "route": "/login",
+      "verdict": "excluded-not-resource-input",
+      "conditions": [],
+      "reason": "인증 진입점이며 자원의 등록·수정 입력이 아니다(§A3-1 판정 절차 1단계). 목록에서 진입하지 않으므로 잃을 목록 맥락도 없다.",
+      "evidence": "frontend/src/app/login/login-form-validation.ts:4-14 — 폼 스키마가 LoginRequestSchema.pick({userId,password}) 로 자격증명 2필드다. frontend/src/app/login/LoginClient.tsx:142 — 제출이 login({id,password}) 하나이며 자원 행을 만들거나 고치는 mutation 이 없다(산출물은 세션 쿠키). config/ui-route-capabilities.json — 라우트 census 도 surface='authentication', supportedActions=[] 로 분류한다.",
+      "remedy": ""
+    },
+    {
+      "route": "/search",
+      "verdict": "excluded-not-resource-input",
+      "conditions": [],
+      "reason": "통합 검색의 네이티브 GET 폼이며 자원의 등록·수정 입력이 아니다(SearchClient.tsx:242 `<form action=\"/search\" method=\"get\">`). 이 폼이 GET·SSR·공유·새로고침 복원을 보존하는 것은 DEC-OPS-029 Q1 이 확정한 설계다.",
+      "evidence": "frontend/src/app/search/SearchClient.tsx:242 — `<form action=\"/search\" method=\"get\">` 네이티브 GET 검색 폼이다. 결과는 .map() 렌더이며 자원 등록·수정 mutation 이 없다. 이 형태가 GET·SSR·공유·새로고침 복원을 보존하는 것은 DEC-OPS-029 Q1 이 확정한 설계다.",
+      "remedy": ""
+    }
+  ]
+}

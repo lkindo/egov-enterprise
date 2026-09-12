@@ -163,6 +163,17 @@
 4. **그릇을 고른다** — 위 우선순위와 조건표.
 5. **pack 소유권을 확인한다** — 목록과 폼이 서로 다른 pack에 걸쳐 [cascade 제거](../../scripts/generate-reusable-base-source.mjs)가 갈리면, 파생 프로필에서 한쪽만 사라진다. 이 경우 형태 통일보다 소유권 정리가 선행이다([GAP-PACK-001](../../.agent/memory/known-gaps.md)).
 
+**집행 게이트** — 이 규칙은 [A3-1 폼 그릇 census](../../config/governance/a3-1-form-container-census.json)가
+집행한다. `frontend/src/app` 아래에서 **모달도 목록도 없이 폼만 렌더하는 라우트**를 전부 찾아
+판정(`violation`·`partial-violation`·`justified`·`excluded-*`)과 함께 등재하도록 요구하고, 부채는 단조 감소
+래칫에 건다. 정당화는 산문이 아니라 **기계로 대조**된다 — 조건 1a 는 편집기가, 1b 는 기존 첨부 관리가
+라우트 소스에 실재해야 하고, 메뉴 리프 제외는 주석을 제거한 Flyway 시드에서 경로가 **정확히** 일치하며
+그 메뉴가 이후 삭제·비활성되지 않았어야 한다. 실행은 `npm run a31:census` 이고 CI 는
+`npm run test:operational-contracts`(required `secret-scan`)로 돈다.
+
+⚠ 게이트가 없던 기간(규칙 신설 ~ 2026-09-12)에 들어온 부채가 **5건**이다. 게이트는 그것을 지우지 않고
+**세어서 드러낸다** — 줄이는 것은 별개의 이행 작업이고, 래칫이 되돌아가는 것을 막는 것이 게이트의 일이다.
+
 **왜 모달이 기본인가** — 셋 다 이 저장소의 실측이다.
 
 | 근거 | 실측 |
