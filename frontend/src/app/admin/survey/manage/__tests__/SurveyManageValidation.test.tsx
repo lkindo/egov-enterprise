@@ -11,13 +11,33 @@ const onSaved = vi.fn();
 const SurveyManageCreateClient = () => (
   <SurveyFormDialog isOpen mode="create" onClose={() => {}} onSaved={onSaved} />
 );
-import SurveyManageDetailClient from '../[id]/SurveyManageDetailClient';
+
+/*
+  [2026-09-12 §A3-1] 수정도 전용 라우트를 떠나 같은 모달이 소유한다. 상세 라우트는 열람만 남는다.
+  계약(검증 인라인 연결·서버 필드 오류 귀속·동기 잠금)은 그대로이고 그릇만 바뀐다 —
+  그래서 이 3건은 **삭제가 아니라 소유자 이동**이다.
+*/
+const SurveyManageEditClient = () => (
+  <SurveyFormDialog
+    isOpen
+    mode="edit"
+    pollSn={7}
+    initialValues={{
+      pollNm: '기존 설문',
+      pollKndCd: '001',
+      pollDsuseYn: 'N',
+      beginDate: new Date(2026, 7, 26),
+      endDate: new Date(2026, 7, 27),
+    }}
+    onClose={() => {}}
+    onSaved={onSaved}
+  />
+);
 
 const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   push: vi.fn(),
   create: vi.fn(),
-  detail: vi.fn(),
   update: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
@@ -30,7 +50,6 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/services/business/user/poll/PollUserService', () => ({
   createPoll: mocks.create,
   pollUserService: {
-    getPollDetail: mocks.detail,
     updatePoll: mocks.update,
   },
 }));
@@ -73,14 +92,6 @@ describe('survey manage validation', () => {
     vi.clearAllMocks();
     mocks.create.mockResolvedValue(undefined);
     mocks.update.mockResolvedValue(undefined);
-    mocks.detail.mockResolvedValue({
-      pollSn: 7,
-      pollNm: '기존 설문',
-      pollBgngYmd: '20260826',
-      pollEndYmd: '20260827',
-      pollKndCd: '001',
-      pollDsuseYn: 'N',
-    });
   });
 
   it('does not create an invalid poll and focuses the first invalid field', async () => {
@@ -95,12 +106,12 @@ describe('survey manage validation', () => {
     await waitFor(() => expect(title).toHaveFocus());
   });
 
-  it('keeps detail values and focuses the invalid title instead of calling update', async () => {
-    renderWithQueryClient(<SurveyManageDetailClient />);
+  it('수정 모달은 빈 설문명을 보내지 않고 그 입력으로 포커스를 옮긴다', async () => {
+    renderWithQueryClient(<SurveyManageEditClient />);
 
     const title = await screen.findByLabelText('설문명 (필수)');
     fireEvent.change(title, { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: /설정 저장/ }));
+    fireEvent.click(screen.getByRole('button', { name: /설문 수정/ }));
 
     expect(mocks.update).not.toHaveBeenCalled();
     expect(await screen.findByText('설문명을 입력해 주세요.')).toBeInTheDocument();
@@ -128,12 +139,12 @@ describe('survey manage validation', () => {
     await act(async () => pending.resolve());
   });
 
-  it('detail 저장은 같은 tick에 한 번만 전송한다', async () => {
+  it('수정 저장은 같은 tick에 한 번만 전송한다', async () => {
     const pending = deferred<void>();
     mocks.update.mockReturnValueOnce(pending.promise);
-    renderWithQueryClient(<SurveyManageDetailClient />);
+    renderWithQueryClient(<SurveyManageEditClient />);
     await screen.findByDisplayValue('기존 설문');
-    const submit = screen.getByRole('button', { name: /설정 저장/ });
+    const submit = screen.getByRole('button', { name: /설문 수정/ });
 
     act(() => {
       submit.click();
@@ -166,15 +177,15 @@ describe('survey manage validation', () => {
     expect(mocks.error).not.toHaveBeenCalled();
   });
 
-  it('detail 서버 필드 오류를 inline으로 연결하고 수정값을 유지한 채 해당 필드로 이동한다', async () => {
+  it('수정 모달이 서버 필드 오류를 inline으로 연결하고 수정값을 유지한 채 해당 필드로 이동한다', async () => {
     mocks.update.mockRejectedValueOnce({
       response: { data: { errors: [{ field: 'pollNm', message: '수정할 수 없는 설문명입니다.' }] } },
     });
-    renderWithQueryClient(<SurveyManageDetailClient />);
+    renderWithQueryClient(<SurveyManageEditClient />);
     const title = await screen.findByLabelText('설문명 (필수)');
     fireEvent.change(title, { target: { value: '사용자가 수정한 설문명' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /설정 저장/ }));
+    fireEvent.click(screen.getByRole('button', { name: /설문 수정/ }));
 
     expect(await screen.findByText('수정할 수 없는 설문명입니다.')).toBeVisible();
     expect(title).toHaveValue('사용자가 수정한 설문명');

@@ -42,6 +42,7 @@ vi.mock('@/app/components/ui/toast', () => ({
 }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/business/user/poll/PollUserService', () => ({
+  createPoll: vi.fn(),
   pollUserService: {
     getPollDetail: mocks.getPollDetail,
     updatePoll: mocks.updatePoll,
@@ -64,11 +65,13 @@ const POLL = {
 
 function renderClient() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const invalidate = vi.spyOn(client, 'invalidateQueries');
+  const view = render(
     <QueryClientProvider client={client}>
       <SurveyManageDetailClient />
     </QueryClientProvider>,
   );
+  return { ...view, client, invalidate };
 }
 
 describe('여론조사 상세 — 폐기와 삭제', () => {
@@ -88,12 +91,68 @@ describe('여론조사 상세 — 폐기와 삭제', () => {
     expect(screen.getByText('이 화면에서는 바꿀 수 없습니다', { exact: false })).toBeInTheDocument();
   });
 
-  it('진행 상태를 바꿀 수 있다 — 종전에는 컨트롤이 없어 항상 사용 중으로 굳었다', async () => {
+  /*
+    [2026-09-12 §A3-1] 입력 컨트롤이 수정 모달로 올라갔다. 그래서 이 계약은 "컨트롤이 화면에
+    있다" 가 아니라 **"수정 어포던스를 눌러 그 컨트롤에 도달한다"** 를 본다 — 버튼이 죽어도
+    컨트롤 존재 단언은 통과하기 때문이다(이번 주 회귀 4건이 정확히 그 형태였다).
+  */
+  it('수정을 누르면 진행 상태 컨트롤에 도달한다 — 진행 중 투표를 멈추는 유일한 되돌릴 수 있는 경로다', async () => {
     renderClient();
 
+    fireEvent.click(await screen.findByTestId('poll-edit-button'));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
     // 서버가 실제로 집행하는 값이라(vote 가 'Y' 면 거부) 컨트롤이 없으면 멈출 방법이 없다.
-    expect(await screen.findByLabelText('진행 상태')).toBeInTheDocument();
+    expect(screen.getByLabelText('진행 상태')).toBeInTheDocument();
     expect(screen.getByText('폐기하면 새 투표를 받지 않습니다.', { exact: false })).toBeInTheDocument();
+  });
+
+  /*
+    수정 모달은 **열릴 때만 마운트한다**. 상시 마운트해 두고 isOpen 만 토글하면 모달의
+    useState-from-props 초기값이 갱신되지 않아 먼저 연 대상의 값이 남는다.
+  */
+  it('수정 모달은 열기 전에는 DOM 에 없다', async () => {
+    renderClient();
+
+    await screen.findByTestId('poll-edit-button');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  /*
+    저장 뒤 목록과 상세를 **둘 다** 비우지 않으면, 전역 staleTime(60초) 때문에 방금 고친 값
+    대신 예전 값이 최대 1분간 그대로 보인다. 오류가 아니므로 화면은 아무 신호도 주지 않는다.
+  */
+  it('수정 저장 뒤 목록과 이 상세를 함께 다시 읽는다', async () => {
+    const { invalidate } = renderClient();
+
+    fireEvent.click(await screen.findByTestId('poll-edit-button'));
+    fireEvent.click(await screen.findByTestId('poll-submit-button'));
+
+    await waitFor(() => expect(mocks.updatePoll).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
+      expect(keys).toContain(JSON.stringify(['admin-polls']));
+      expect(keys).toContain(JSON.stringify(['poll-detail', 7]));
+    });
+  });
+
+  /*
+    대조군 — 서버는 득표를 숨길 때 null 을 보낸다(maskVoteCounts). 종전 화면은 `?? 0` 으로
+    "0표" 라고 적었는데 그것은 "아무도 고르지 않았다" 는 **사실 주장**이다. 숨김을 0 으로
+    뭉개면 화면이 거짓말을 한다. 기존 픽스처(pollIemCo: 3)로는 이 결함을 영영 못 잡는다.
+  */
+  it('득표가 숨겨진 항목을 0표라고 말하지 않는다', async () => {
+    mocks.getPollDetail.mockResolvedValue({
+      ...POLL,
+      pollArticles: [
+        { pollSn: 7, pollArtclSn: 71, pollArtclNm: '매우 만족', pollIemCo: null },
+      ],
+    });
+    renderClient();
+
+    expect(await screen.findByText('매우 만족')).toBeInTheDocument();
+    expect(screen.getByText('집계 비공개')).toBeInTheDocument();
+    expect(screen.queryByText('0표')).toBeNull();
   });
 
   it('삭제 확인은 결과가 함께 사라진다는 것과 폐기라는 대안을 말한다', async () => {
