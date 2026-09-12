@@ -4,7 +4,6 @@ export class SurveyPage {
     readonly page: Page;
     readonly createButton: Locator;
     readonly titleInput: Locator;
-    readonly typeSelect: Locator;
     readonly submitButton: Locator;
     readonly searchInput: Locator;
     readonly startDateTrigger: Locator;
@@ -14,7 +13,6 @@ export class SurveyPage {
         this.page = page;
         this.createButton = page.getByRole('button', { name: /신규 설문 생성|등록/ });
         this.titleInput = page.locator('#pollNm, input[placeholder*="주제"]');
-        this.typeSelect = page.getByRole('combobox');
         this.submitButton = page.getByRole('button', { name: /설문 등록 완료|등록|저장/ });
         this.searchInput = page.locator('input[placeholder*="검색"]');
         // Selectors for date triggers by index, resilient to text changes

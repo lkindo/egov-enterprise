@@ -140,8 +140,15 @@ export default function UnifiedDashboardClient({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/*
+            [2026-09-12] 종전 목적지 `/admin/community/boards` 는 DEC-OPS-040 이후 지식 허브
+            커뮤니티 탭으로 보내는 page-redirect 다 — **글쓰기 버튼이 탭 화면에 떨어졌다**.
+            리다이렉트가 200 을 돌려주므로 아무것도 실패하지 않아 조용했다.
+            정본 작성 화면으로 직접 보내고, bbsId 를 싣는다 — 그 화면은 bbsId 가 없으면
+            **공지사항**으로 기본값을 잡는데, 업무 홈에서 누른 글쓰기가 공지 방송이 되면 안 된다.
+          */}
           <Button asChild size="sm" variant="outline">
-            <Link href="/admin/community/boards">
+            <Link href={`/admin/community/boards/insert-board-article?bbsId=${TASK_BOARD_ID}`}>
               <Plus size={16} aria-hidden="true" /> 새 게시글 작성
             </Link>
           </Button>
