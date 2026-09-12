@@ -101,6 +101,25 @@ function discoverRepository(root = ROOT) {
     }
   }
 
+  /*
+    [게이트 제거 승인 검증용] 승인 목록이 가리키는 파일이 아직 실재하는지 보려면 테스트 소스
+    전체 목록이 필요하다. 개명·삭제로 대상이 사라지면 승인 항목은 아무것도 지키지 않는 죽은
+    줄이 되고, 다음 제거를 조용히 통과시킨다.
+  */
+  const testSourceRoots = [
+    'api-server/src/test/java',
+    'business-app/src/test/java',
+    'business-core/src/test/java',
+    'business-core/src/testFixtures/java',
+    'foundation/src/test/java',
+    'migration-tool/src/test/java',
+  ];
+  const testSources = uniqueSorted(
+    testSourceRoots.flatMap((testRoot) =>
+      walk(join(root, ...testRoot.split('/')), (path) => JAVA_SOURCE.test(path))
+        .map((path) => normalize(relative(root, path)))),
+  );
+
   return {
     appDomains,
     appDomainRoots,
@@ -108,6 +127,7 @@ function discoverRepository(root = ROOT) {
     entityTables,
     crossDomainEdges,
     unexpectedAppSourceRoots,
+    testSources,
   };
 }
 
@@ -232,7 +252,29 @@ export function validateReusableBase(manifest, repository) {
     }
   }
 
+  /*
+    [게이트 제거 승인의 형식·실재] 생성기는 투영 시점에 "제거된 게이트 == 승인 목록" 을 exact
+    대조한다. 그런데 생성기는 DB bundle 과 docker 가 필요해 CI 에서 돌지 않는다 — 그래서 여기서
+    승인 목록 **자체**의 건전성만 저비용으로 지킨다(형식·중복·대상 실재). 이게 없으면 승인 항목이
+    개명·삭제로 죽은 뒤에도 아무도 모르고, 죽은 승인은 다음 제거를 조용히 통과시킨다.
+  */
+  const knownTestSources = new Set(repository.testSources ?? []);
   for (const [profileName, profile] of Object.entries(manifest.profiles ?? {})) {
+    const seen = new Set();
+    for (const entry of profile.acknowledgedRemovedGates ?? []) {
+      if (typeof entry?.file !== 'string' || !entry.file.trim()
+          || typeof entry?.reason !== 'string' || !entry.reason.trim()) {
+        errors.push(`profile '${profileName}'의 acknowledgedRemovedGates 항목은 { file, reason } 이어야 한다: ${JSON.stringify(entry)}`);
+        continue;
+      }
+      if (seen.has(entry.file)) {
+        errors.push(`profile '${profileName}'의 acknowledgedRemovedGates 에 '${entry.file}'이 중복 등재됐다.`);
+      }
+      seen.add(entry.file);
+      if (knownTestSources.size > 0 && !knownTestSources.has(entry.file)) {
+        errors.push(`profile '${profileName}'이 실재하지 않는 게이트 '${entry.file}'의 제거를 승인한다 (개명·삭제된 승인은 다음 제거를 조용히 통과시킨다).`);
+      }
+    }
     const ranks = [];
     for (const packName of profile.packs ?? []) {
       if (!manifest.packs?.[packName]) errors.push(`profile '${profileName}'이 없는 pack '${packName}'을 참조한다.`);

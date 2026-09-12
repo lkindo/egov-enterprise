@@ -178,3 +178,50 @@ test('rejects a source root outside domain/service ownership', () => {
 
   assert.ok(result.errors.some((error) => error.includes("source root 'repository'")));
 });
+
+/**
+ * [2026-09-12 신설] 재사용 base 투영은 제외 domain 을 지우면서 그 domain 을 참조하는 **거버넌스
+ * 게이트까지 연쇄로** 지운다. 그 뒤 생성기가 살아남은 것만으로 harness baseline 을 다시 써서,
+ * 파생 제품의 메타 게이트는 사라진 게이트를 처음부터 없었던 것으로 본다 — 조용한 손실이다.
+ *
+ * <p>생성기는 그 제거를 manifest 의 {@code acknowledgedRemovedGates} 와 exact 대조하지만,
+ * 생성기 자체는 DB bundle·docker 가 필요해 CI 에서 돌지 않는다. 그래서 여기서는 **승인 목록의
+ * 건전성**(형식·중복·대상 실재)만 지킨다 — 죽은 승인은 다음 제거를 조용히 통과시키기 때문이다.
+ */
+test('acknowledged gate removals name a real gate source and a reason', () => {
+  const entries = Object.entries(baseline.manifest.profiles ?? {})
+    .flatMap(([profileName, profile]) =>
+      (profile.acknowledgedRemovedGates ?? []).map((entry) => ({ profileName, ...entry })));
+
+  assert.ok(entries.length > 0, '승인 목록이 비면 이 계약은 아무것도 지키지 않는다 — 실제 제거가 0건이 되면 이 단언부터 지울 것');
+  for (const entry of entries) {
+    assert.ok(baseline.repository.testSources.includes(entry.file),
+      `${entry.profileName} 의 승인 대상이 실재하지 않는다: ${entry.file}`);
+    assert.ok(typeof entry.reason === 'string' && entry.reason.trim().length > 0,
+      `${entry.profileName} 의 승인 항목에 사유가 없다: ${entry.file}`);
+  }
+  assert.deepEqual(baseline.result.errors, []);
+});
+
+test('rejects an acknowledged gate that no longer exists, has no reason, or is listed twice', () => {
+  const profileName = Object.keys(baseline.manifest.profiles).find(
+    (name) => (baseline.manifest.profiles[name].acknowledgedRemovedGates ?? []).length > 0);
+  assert.ok(profileName, '승인 목록을 가진 profile 이 하나는 있어야 부정 테스트가 성립한다');
+  const original = baseline.manifest.profiles[profileName].acknowledgedRemovedGates[0];
+
+  const renamed = structuredClone(baseline.manifest);
+  renamed.profiles[profileName].acknowledgedRemovedGates[0].file =
+    original.file.replace(/\.java$/, 'Renamed.java');
+  assert.ok(validateReusableBase(renamed, baseline.repository).errors
+    .some((error) => error.includes('실재하지 않는 게이트')));
+
+  const reasonless = structuredClone(baseline.manifest);
+  reasonless.profiles[profileName].acknowledgedRemovedGates[0].reason = '   ';
+  assert.ok(validateReusableBase(reasonless, baseline.repository).errors
+    .some((error) => error.includes('{ file, reason }')));
+
+  const duplicated = structuredClone(baseline.manifest);
+  duplicated.profiles[profileName].acknowledgedRemovedGates.push(structuredClone(original));
+  assert.ok(validateReusableBase(duplicated, baseline.repository).errors
+    .some((error) => error.includes('중복 등재')));
+});

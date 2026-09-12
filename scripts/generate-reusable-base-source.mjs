@@ -126,6 +126,23 @@ function removePath(path, removed) {
   }
 }
 
+/**
+ * 게이트 술어 — 메타 게이트({@code HarnessBaselineIntegrityTest#isGateSource})와 **같은 모집단**을 본다.
+ * 여기가 좁으면 투영이 게이트를 지우고도 "제거 0건" 이라고 보고한다(= 조용한 손실).
+ */
+const GATE_FILE_PATTERN =
+  /(?:LinterTest|ArchTest|MatrixTest|GuardrailIntegrationTest|ValidationIntegrationTest|Archunit\w*|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules)\.java$/;
+const GATE_TAGS = ['@Tag("governance-harness")', '@Tag("schema-validation")', '@ArchTag("architecture-gate")'];
+/** frontend 거버넌스 계약이 사는 곳 — census·guard·cross-stack 계약이 전부 이 아래다. */
+const FRONTEND_GATE_DIR = 'frontend/src/__tests__/';
+
+function isJavaGateSource(path, source) {
+  const normalized = normalize(path);
+  if (normalized.includes('/harness/') || GATE_FILE_PATTERN.test(normalized)) return true;
+  // 태그는 문자열 리터럴이므로 **리터럴은 보존한 채 주석만** 지운다(javadoc 인용의 오탐 차단).
+  return GATE_TAGS.some((tag) => stripJavaComments(source).includes(tag));
+}
+
 function javaType(path) {
   const source = readFileSync(path, 'utf8');
   const packageName = source.match(/\bpackage\s+([\w.]+)\s*;/)?.[1];
@@ -141,13 +158,16 @@ function referencedRemovedJavaType(path, removedTypes) {
   const source = readFileSync(path, 'utf8');
   const imported = importedJavaTypes(path).find((type) => removedTypes.has(type));
   if (imported) return imported;
+  // 의존은 **코드에서만** 판정한다 — 주석·문자열 리터럴 속 클래스 이름은 참조가 아니다.
+  //   (census·정규식이 게이트 이름을 문자열로 열거하는 관용 때문에 오탐이 연쇄한다.)
+  const code = stripJavaCommentsAndStringLiterals(source);
   const packageName = source.match(/\bpackage\s+([\w.]+)\s*;/)?.[1];
   for (const type of removedTypes) {
     if (!type) continue;
-    if (source.includes(type)) return type;
+    if (code.includes(type)) return type;
     if (!packageName || !type.startsWith(`${packageName}.`)) continue;
     const simpleName = type.slice(packageName.length + 1);
-    if (new RegExp(`\\b${simpleName}\\b`).test(source)) return type;
+    if (new RegExp(`\\b${simpleName}\\b`).test(code)) return type;
   }
   return undefined;
 }
@@ -159,7 +179,13 @@ function pruneJava(output, manifest, profile) {
     .flatMap(([, pack]) => pack.backend?.appDomains ?? []);
   const allBefore = walk(output, (path) => path.endsWith('.java'));
   const pathToType = new Map(allBefore.map((path) => [path, javaType(path)]));
+  /*
+    투영이 무엇을 게이트로 지웠는지는 **지우기 전에** 판정해야 한다 — 파일이 사라진 뒤에는
+    소스를 읽을 수 없어 "몇 개 지웠다" 조차 말할 수 없다(그게 종전의 조용한 손실이다).
+  */
+  const gateSources = new Set(allBefore.filter((path) => isJavaGateSource(path, readFileSync(path, 'utf8'))));
   const removed = new Set();
+  const removalReason = new Map();
 
   for (const domain of excludedDomains) {
     for (const sourceSet of ['main', 'test']) {
@@ -169,6 +195,9 @@ function pruneJava(output, manifest, profile) {
           removed,
         );
       }
+    }
+    for (const path of removed) {
+      if (!removalReason.has(path)) removalReason.set(path, `제외 domain ${domain} 직접 제거`);
     }
   }
 
@@ -188,6 +217,7 @@ function pruneJava(output, manifest, profile) {
         fail(`자동 소유권을 판정할 수 없는 Java 참조: ${rel} -> ${dangling}`);
       }
       removed.add(path);
+      removalReason.set(path, `${dangling} 참조`);
       removedTypes.add(pathToType.get(path));
       changed = true;
     }
@@ -198,7 +228,14 @@ function pruneJava(output, manifest, profile) {
     const dangling = referencedRemovedJavaType(path, removedTypes);
     if (dangling) fail(`Java projection dangling import: ${normalize(relative(output, path))} -> ${dangling}`);
   }
-  return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size };
+  const removedGates = [...removed]
+    .filter((path) => gateSources.has(path))
+    .map((path) => ({
+      file: normalize(relative(output, path)),
+      reason: removalReason.get(path) ?? '(사유 미상)',
+    }))
+    .sort((left, right) => left.file.localeCompare(right.file));
+  return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates };
 }
 
 function resolveFrontendImport(frontendRoot, importer, specifier, knownFiles) {
@@ -293,6 +330,8 @@ function pruneFrontend(output, manifest, profile) {
   const knownFiles = new Set(sourceFiles);
   const removed = new Set();
   for (const rel of directPaths) removePath(join(frontendRoot, rel), removed);
+  // 선언된 removePaths 는 manifest 에 의도가 남는다. 문제는 **연쇄로 딸려 가는 것**이라 나눠 센다.
+  const directRemoved = new Set(removed);
 
   let changed = true;
   while (changed) {
@@ -313,7 +352,76 @@ function pruneFrontend(output, manifest, profile) {
     const dangling = importedFrontendFiles(frontendRoot, path, knownFiles).filter((dependency) => removed.has(dependency));
     if (dangling.length) fail(`frontend projection dangling import: ${normalize(relative(frontendRoot, path))}`);
   }
-  return { directPaths: directPaths.sort(), removedFiles: removed.size };
+  const removedGates = [...removed]
+    .map((path) => normalize(relative(output, path)))
+    .filter((rel) => rel.startsWith(FRONTEND_GATE_DIR))
+    .sort((left, right) => left.localeCompare(right));
+  return {
+    directPaths: directPaths.sort(),
+    removedFiles: removed.size,
+    cascadedFiles: removed.size - directRemoved.size,
+    removedGates,
+  };
+}
+
+/**
+ * 제거된 거버넌스 게이트를 **말하고**, manifest 의 명시적 승인과 exact 대조한다.
+ *
+ * <p>[왜] 투영은 제외 domain 을 지우면서 그 domain 을 문자열로 품은 하네스 린터까지 연쇄로 지운다.
+ * 그 뒤 {@code writeHarnessBaseline} 이 **살아남은 것만으로** baseline 을 다시 써서, 파생 제품의
+ * 메타 게이트는 사라진 게이트를 처음부터 없었던 것으로 본다 — 즉 "게이트 삭제 차단" 게이트가
+ * 자기 자신의 삭제를 기록하지 못한 채 재동결된다(H2 가 금지하는 신호 은폐와 같은 구조).
+ *
+ * <p>여기서 막는 것은 삭제 자체가 아니라 **조용한** 삭제다. 정당한 제거는 manifest 의
+ * {@code profiles.<name>.acknowledgedRemovedGates} 에 파일 경로를 적고 사유를 커밋에 남긴다 —
+ * 그러면 게이트가 사라지는 변경에서 서로 다른 두 파일이 함께 움직여 diff 에 의도가 드러난다.
+ * 승인 목록은 **양방향**이다: 등재하지 않은 제거도, 제거되지 않는데 남은 등재(부실 승인)도 red 다.
+ */
+function assertRemovedGatesAcknowledged(profileName, profile, java, frontend) {
+  const removedGates = [
+    ...java.removedGates.map((gate) => ({ ...gate, side: 'backend' })),
+    ...frontend.removedGates.map((file) => ({ file, reason: 'frontend pack 제외/연쇄', side: 'frontend' })),
+  ].sort((left, right) => left.file.localeCompare(right.file));
+
+  if (removedGates.length === 0) {
+    console.log('[base-source] 투영에서 제거된 거버넌스 게이트: 0건');
+  } else {
+    console.log(`[base-source] 투영에서 제거된 거버넌스 게이트: ${removedGates.length}건`);
+    for (const gate of removedGates) console.log(`  - ${gate.file}  <- ${gate.reason}`);
+  }
+
+  /*
+    승인은 **사유를 포함한 객체**로만 받는다. 파일 경로만 나열하면 목록이 곧 서랍이 되고,
+    다음 사람이 "이건 왜 빠져도 되는가" 를 판정할 근거가 manifest 밖(커밋 메시지)에만 남는다.
+  */
+  const acknowledgedEntries = profile.acknowledgedRemovedGates ?? [];
+  for (const entry of acknowledgedEntries) {
+    if (typeof entry?.file !== 'string' || !entry.file || typeof entry?.reason !== 'string' || !entry.reason.trim()) {
+      fail(
+        `profile '${profileName}' 의 acknowledgedRemovedGates 항목은 { file, reason } 이어야 한다: ` +
+          JSON.stringify(entry),
+      );
+    }
+  }
+  const acknowledged = acknowledgedEntries.map((entry) => entry.file);
+  const actual = removedGates.map((gate) => gate.file);
+  const unacknowledged = actual.filter((file) => !acknowledged.includes(file));
+  const stale = acknowledged.filter((file) => !actual.includes(file));
+  if (unacknowledged.length) {
+    fail(
+      `profile '${profileName}' 이 승인하지 않은 거버넌스 게이트를 제거한다 (${unacknowledged.length}건):\n` +
+        unacknowledged.map((file) => `  - ${file}`).join('\n') +
+        `\n정당한 제거라면 config/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedRemovedGates 에 등재하고 사유를 커밋에 남길 것.`,
+    );
+  }
+  if (stale.length) {
+    fail(
+      `profile '${profileName}' 의 acknowledgedRemovedGates 에 더 이상 제거되지 않는 항목이 남아 있다 (${stale.length}건):\n` +
+        stale.map((file) => `  - ${file}`).join('\n') +
+        '\n승인 목록은 실제 제거와 exact 일치해야 한다 — 낡은 승인은 다음 제거를 조용히 통과시킨다.',
+    );
+  }
+  return removedGates;
 }
 
 function installDatabaseBundle(output, dbBundle) {
@@ -437,6 +545,43 @@ function skipJavaLiteral(source, open, quote) {
     else if (source[index] === quote) return index;
   }
   return source.length - 1;
+}
+
+/**
+ * **타입 의존 판정용** 소스 — 주석에 더해 문자열 리터럴의 *내용*까지 지운다.
+ *
+ * `stripJavaComments` 는 리터럴을 **보존**한다(해시·본문 동결에는 그게 맞다). 그러나
+ * "이 파일이 저 타입에 의존하는가" 를 볼 때 리터럴 속 이름은 참조가 아니다 — census·정규식이
+ * 클래스 이름을 문자열로 열거하는 것은 이 저장소의 흔한 관용이다.
+ *
+ * 실제 피해(2026-09-12 core 프로필 실측): `HarnessBaselineIntegrityTest` 가
+ * `Pattern.compile("(?:…|InputContractMirrorLinterTest|…)")` 라는 **정규식 문자열** 하나 때문에
+ * 제거 대상으로 판정됐고, 그 클래스에 얹힌 공용 유틸을 쓰던 린터 6개가 뒤따라 빠졌다.
+ * 하네스 11개 중 **7개가 이 오탐 하나에서** 비롯됐다 — 그중에는 메서드 인가·인가 배선 동기화·
+ * 시큐리티 체인 우회 차단 같은 보안 게이트가 포함된다.
+ *
+ * 리터럴은 빈 껍데기로 바꿔 자리만 남긴다 — 완전히 지우면 토큰이 붙어 새 식별자가 생긴다.
+ */
+function stripJavaCommentsAndStringLiterals(source) {
+  let output = '';
+  for (let index = 0; index < source.length;) {
+    const char = source[index];
+    if (char === '"' || char === "'") {
+      const close = skipJavaLiteral(source, index, char);
+      output += char === '"' ? '""' : "''";
+      index = close + 1;
+    } else if (char === '/' && source[index + 1] === '/') {
+      const newline = source.indexOf('\n', index + 2);
+      index = newline < 0 ? source.length : newline;
+    } else if (char === '/' && source[index + 1] === '*') {
+      const close = source.indexOf('*/', index + 2);
+      index = close < 0 ? source.length : close + 2;
+    } else {
+      output += char;
+      index += 1;
+    }
+  }
+  return output;
 }
 
 function stripJavaComments(source) {
@@ -602,6 +747,7 @@ function main() {
   const java = pruneJava(output, manifest, profile);
   const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
+  const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend);
   installDatabaseBundle(output, dbBundle);
   writeProjectedManifest(output, manifest, args.profile, profile, dbLock);
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
@@ -618,6 +764,7 @@ function main() {
     generatedAt: new Date().toISOString(),
     java,
     frontend,
+    removedGates,
     removedHistoricalMigrationTests,
     databaseLock: dbLock,
   };
@@ -630,7 +777,10 @@ function main() {
       `- packs: ${profile.packs.join(', ')}\n` +
       `- 제외 backend domains: ${java.excludedDomains.join(', ') || '(없음)'}\n` +
       `- 제거 Java files: ${java.removedFiles}\n` +
-      `- 제거 frontend files: ${frontend.removedFiles}\n\n` +
+      `- 제거 frontend files: ${frontend.removedFiles}` +
+        ` (선언 ${frontend.removedFiles - frontend.cascadedFiles} · 연쇄 ${frontend.cascadedFiles})\n` +
+      `- 제거된 거버넌스 게이트: ${removedGates.length}건` +
+        (removedGates.length ? `\n${removedGates.map((gate) => `  - ${gate.file} <- ${gate.reason}`).join('\n')}\n\n` : '\n\n') +
       `DB migration은 신규 빈 PostgreSQL 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
     'utf8',
   );

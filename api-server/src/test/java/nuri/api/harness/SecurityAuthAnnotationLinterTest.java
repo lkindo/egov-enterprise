@@ -551,7 +551,7 @@ class SecurityAuthAnnotationLinterTest {
             violations.add(endpoint.key() + " handler source 부재: " + source);
             return;
         }
-        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(source));
+        String code = HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(source));
         String body = extractMethodBody(code, methodName);
         if (body == null) {
             violations.add(endpoint.key() + " handler body 탐지 실패: " + endpoint.handler());
@@ -632,7 +632,7 @@ class SecurityAuthAnnotationLinterTest {
     }
 
     private void collectSourceCensus(Path file, Set<String> helpers, Set<String> denials) throws IOException {
-        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+        String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(file));
         String className = file.getFileName().toString().replace(".java", "");
         Map<String, Integer> helperCounts = new HashMap<>();
@@ -774,7 +774,7 @@ class SecurityAuthAnnotationLinterTest {
         if (guard.permissionParameter().qualifiedCallers()) {
             for (String root : SOURCE_ROOTS) {
                 for (Path file : HarnessSourceIndex.javaSources(resolveFromRepoRoot(root))) {
-                    String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(file));
+                    String code = HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(file));
                     if (!Pattern.compile(Pattern.quote(method) + "\\s*\\(").matcher(code).find()) continue;
                     String className = file.getFileName().toString().replace(".java", "");
                     if (sources.put(className, code) != null) violations.add("Ambiguous permission caller source: " + className);
@@ -823,7 +823,7 @@ class SecurityAuthAnnotationLinterTest {
         }
         List<Path> matches = guardSourcePaths.getOrDefault(className, List.of());
         if (matches.size() != 1) throw new IOException("Ambiguous or missing guard source: " + className);
-        return HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(matches.get(0)));
+        return HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(matches.get(0)));
     }
 
     /** Balanced call parser keeps nested owner getters and quoted delimiters out of argument boundaries. */
@@ -868,7 +868,7 @@ class SecurityAuthAnnotationLinterTest {
             return;
         }
         String methodName = guard.target().substring(guard.target().indexOf('#') + 1);
-        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+        String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(source));
         String body = extractMethodBody(code, methodName);
         if (body == null) {
@@ -1000,7 +1000,7 @@ class SecurityAuthAnnotationLinterTest {
     }
 
     private static String normalizedSource(Path path) throws IOException {
-        return normalize(HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+        return normalize(HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(path)));
     }
 
