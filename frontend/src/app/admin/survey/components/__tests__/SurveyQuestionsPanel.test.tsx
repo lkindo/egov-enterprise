@@ -10,6 +10,12 @@ import {
   surveyItemCreateSchema,
   surveyQuestionCreateSchema,
 } from '../survey-panel-form-validation';
+import { parseGeneratedOperationRequest } from '@/lib/api/generated-operation';
+import {
+  updateItemOperation,
+  updateQuestionOperation,
+  updateSurveyOperation,
+} from '@/types/generated-operations';
 
 const confirmMock = vi.hoisted(() => vi.fn());
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => confirmMock }));
@@ -674,5 +680,183 @@ describe('SurveyQuestionsPanel 수정 배선', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('설문 서버 오류');
     // 입력을 잃지 않는다 — 다시 타이핑하게 만들지 않는다.
     expect(screen.getByLabelText('설문지 제목 수정')).toHaveValue('새 제목');
+  });
+});
+describe('SurveyQuestionsPanel 전체 치환 왕복의 null 안전', () => {
+  /*
+    [2026-09-12] 요청·응답 스키마 **방향 비대칭** 회귀 계약.
+
+    DEC-OPS-028 은 응답 방향의 non-required 필드에만 `.nullable()` 을 붙였다. 그래서 같은 필드가
+    요청에서는 `z.string().optional()`(null 거부), 응답에서는 `.optional().nullable()` 이다.
+    화면이 상세·목록에서 읽은 값을 전체 치환 PUT 에 되돌려 싣는 이 저장소의 왕복 패턴은,
+    **그 값이 null 인 행**에서 `parseGeneratedOperationRequest` 에 걸려 HTTP 요청 전에 죽는다.
+
+    아래 픽스처의 null 은 꾸며 낸 값이 아니라 **이 화면의 등록 경로가 실제로 만드는 행**이다 —
+    등록 폼이 보내지 않는 필드를 서버 insert 가 dto 값(=null) 그대로 저장한다. 즉 이 화면으로
+    만든 설문지·문항·항목은 이후 어떤 수정도 받지 못했다.
+
+    ⚠ 서비스가 모킹돼 있어 진짜 방어선(요청 스키마 파싱)이 테스트에서 건너뛰어진다 —
+    그래서 전달된 본문을 직접 `parseGeneratedOperationRequest` 에 태운다.
+  */
+
+  /** 등록 폼이 제목·템플릿만 보내 나머지 5필드가 null 로 저장된 설문지. */
+  const NULL_SURVEYS = {
+    list: [{
+      srvySn: 201,
+      srvyTtl: '만족도 조사',
+      srvyPrps: null,
+      srvyWrtGdCn: null,
+      srvyBgngYmd: null,
+      srvyEndYmd: null,
+      srvyTrgt: null,
+      srvyTmpltSn: 11,
+    }],
+    total: 1,
+    page: 1,
+    size: 100,
+    totalPage: 1,
+  };
+
+  /**
+   * maxChcCnt 만 null 인 문항(등록 폼이 순번·유형은 보내고 최대선택수는 보내지 않는다).
+   * 항목 2개는 대조군이다 — 하나는 등록이 만든 null 쌍, 하나는 값이 있는 행.
+   */
+  const NULL_QUESTION = {
+    srvyQstnSn: 301,
+    srvySn: 201,
+    qstnSn: 1,
+    qstnTypeCd: '1',
+    qstnCn: '만족하십니까',
+    maxChcCnt: null,
+    srvyTmpltSn: 11,
+    items: [
+      { srvyArtclSn: 401, srvyQstnSn: 301, srvySn: 201, artclSn: null, artclCn: '등록으로 만든 항목', etcAnsYn: null },
+      { srvyArtclSn: 402, srvyQstnSn: 301, srvySn: 201, artclSn: 2, artclCn: '값이 있는 항목', etcAnsYn: 'N' },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    confirmMock.mockResolvedValue(true);
+    mocked.getTemplateList.mockResolvedValue(TEMPLATES as never);
+    mocked.getSurveyList.mockResolvedValue(NULL_SURVEYS as never);
+    mocked.getQuestions.mockResolvedValue([NULL_QUESTION] as never);
+    mocked.updateSurvey.mockResolvedValue(undefined as never);
+    mocked.updateQuestion.mockResolvedValue(undefined as never);
+    mocked.updateItem.mockResolvedValue(undefined as never);
+  });
+
+  it('설문지 제목 수정은 기존 null 을 요청에 싣지 않는다 — 등록으로 만든 설문지도 고칠 수 있다', async () => {
+    // 픽스처가 실제로 null 을 품고 있어야 "안 실렸다"가 증거가 된다.
+    const source = NULL_SURVEYS.list[0];
+    expect(Object.entries(source).filter(([, v]) => v === null).map(([k]) => k))
+      .toEqual(['srvyPrps', 'srvyWrtGdCn', 'srvyBgngYmd', 'srvyEndYmd', 'srvyTrgt']);
+
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    const input = await screen.findByLabelText('설문지 제목 수정');
+    await user.clear(input);
+    await user.type(input, '만족도 조사 2026');
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
+    const [srvySn, body] = mocked.updateSurvey.mock.calls[0];
+    expect(srvySn).toBe(201);
+    expect(Object.values(body)).not.toContain(null);
+    // 편집한 값과, 비대칭이 아니라 그대로 실리는 srvyTmpltSn 은 살아 있어야 한다.
+    expect(body).toMatchObject({ srvyTtl: '만족도 조사 2026', srvyTmpltSn: 11 });
+    // 모킹이 건너뛴 진짜 방어선을 직접 태운다 — 실제 클라이언트가 요청 전에 걸던 검사다.
+    expect(() => parseGeneratedOperationRequest(updateSurveyOperation, body)).not.toThrow();
+  });
+
+  it('설문지 수정은 값이 있는 필드를 그대로 왕복시킨다 — 전체 치환이라 빠뜨리면 지워진다', async () => {
+    mocked.getSurveyList.mockResolvedValue(SURVEYS as never);
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: '만족도 조사 제목 수정' }));
+    const input = await screen.findByLabelText('설문지 제목 수정');
+    await user.clear(input);
+    await user.type(input, '만족도 조사 2026');
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    await waitFor(() => expect(mocked.updateSurvey).toHaveBeenCalledTimes(1));
+    const [, body] = mocked.updateSurvey.mock.calls[0];
+    expect(body).toEqual({
+      srvyTtl: '만족도 조사 2026',
+      srvyPrps: '서비스 개선',
+      srvyWrtGdCn: '솔직하게 답해 주세요',
+      srvyBgngYmd: '20260901',
+      srvyEndYmd: '20260930',
+      srvyTrgt: '전 직원',
+      srvyTmpltSn: 11,
+    });
+    expect(() => parseGeneratedOperationRequest(updateSurveyOperation, body)).not.toThrow();
+  });
+
+  it('문항 수정은 null maxChcCnt 를 싣지 않고 값이 있는 순번·유형은 왕복시킨다', async () => {
+    expect(NULL_QUESTION.maxChcCnt).toBeNull();
+
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: /문항 수정$/ }));
+    const input = await screen.findByLabelText('문항 내용');
+    await user.clear(input);
+    await user.type(input, '수정된 문항');
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    await waitFor(() => expect(mocked.updateQuestion).toHaveBeenCalledTimes(1));
+    const [, srvyQstnSn, body] = mocked.updateQuestion.mock.calls[0];
+    expect(srvyQstnSn).toBe(301);
+    expect(Object.values(body)).not.toContain(null);
+    expect(body).not.toHaveProperty('maxChcCnt');
+    expect(body).toEqual({ qstnCn: '수정된 문항', qstnSn: 1, qstnTypeCd: '1' });
+    expect(() => parseGeneratedOperationRequest(updateQuestionOperation, body)).not.toThrow();
+  });
+
+  it('선택 항목 수정은 등록이 남긴 null 순번·기타답변여부를 싣지 않는다', async () => {
+    const created = NULL_QUESTION.items[0];
+    expect([created.artclSn, created.etcAnsYn]).toEqual([null, null]);
+
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: '등록으로 만든 항목 항목 수정' }));
+    const input = await screen.findByLabelText('선택 항목 내용');
+    await user.clear(input);
+    await user.type(input, '수정된 항목');
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    await waitFor(() => expect(mocked.updateItem).toHaveBeenCalledTimes(1));
+    const [srvyArtclSn, body] = mocked.updateItem.mock.calls[0];
+    expect(srvyArtclSn).toBe(401);
+    expect(Object.values(body)).not.toContain(null);
+    expect(body).toEqual({ artclCn: '수정된 항목' });
+    expect(() => parseGeneratedOperationRequest(updateItemOperation, body)).not.toThrow();
+  });
+
+  it('선택 항목 수정은 값이 있는 순번·기타답변여부를 그대로 왕복시킨다', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    await user.click(await screen.findByRole('button', { name: '값이 있는 항목 항목 수정' }));
+    const input = await screen.findByLabelText('선택 항목 내용');
+    await user.clear(input);
+    await user.type(input, '수정된 항목');
+    await user.click(screen.getByRole('button', { name: /저장/ }));
+
+    await waitFor(() => expect(mocked.updateItem).toHaveBeenCalledTimes(1));
+    const [srvyArtclSn, body] = mocked.updateItem.mock.calls[0];
+    expect(srvyArtclSn).toBe(402);
+    expect(body).toEqual({ artclCn: '수정된 항목', artclSn: 2, etcAnsYn: 'N' });
+    expect(() => parseGeneratedOperationRequest(updateItemOperation, body)).not.toThrow();
   });
 });

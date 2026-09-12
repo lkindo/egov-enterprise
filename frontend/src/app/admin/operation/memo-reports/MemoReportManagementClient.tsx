@@ -208,6 +208,35 @@ export default function MemoReportManagementClient() {
     defaultValues: { rptTtl: '', rptCn: '', rptrId: '' },
   });
 
+  /*
+    [상세 편집 상태의 수명] `detailTarget` 은 어느 보고를 보는지이고, `isEditing`·`editForm`·
+    `instructionForm` 은 **그 보고에 대한** 작성 상태다. 종전에는 앞의 것만 바뀌고 뒤의 셋이
+    그대로 남았다 — 보고 A 를 수정하다 닫고 B 를 열면 B 가 '수정 중' 상태로 **A 의 제목·본문·
+    수신자를 담고** 열렸고, 그대로 저장하면 서버 update 가 전체 치환이라 B 의 원본이 복구
+    불가로 사라졌다(수신자까지 A 의 것으로 재배정). 관리자는 모든 보고가 editable 이라
+    남의 보고도 덮어썼고 화면은 '보고를 수정했습니다' 성공 토스트만 냈다.
+
+    같은 파일의 '보고 작성' 은 openCompose 가 열 때마다 reset 해 이미 이 규율을 지킨다 —
+    수정·지시 경로만 빠져 있었다. 대상이 바뀌는 **모든** 경로를 아래 두 함수로 수렴시킨다.
+  */
+  const resetDetailEditState = () => {
+    setIsEditing(false);
+    editForm.reset({ rptTtl: '', rptCn: '', rptrId: '' });
+    instructionForm.reset({ drctnMttr: '' });
+  };
+
+  /** 상세를 닫는다(모달 X·ESC·'닫기'·삭제 성공 공통). */
+  const closeDetail = () => {
+    setDetailTarget(null);
+    resetDetailEditState();
+  };
+
+  /** 다른 보고로 갈아탄다 — 앞 보고의 편집 상태를 들고 가지 않는다. */
+  const openDetail = (report: MemoReportInfo) => {
+    resetDetailEditState();
+    setDetailTarget(report);
+  };
+
   const openEdit = () => {
     if (editingRef.current || deleteReportRef.current || detail == null) return;
     editForm.reset({
@@ -260,7 +289,7 @@ export default function MemoReportManagementClient() {
 
       await memoReportService.deleteMemoReport(detailTarget.memoRptSn);
       toast('보고를 삭제했습니다.', 'success');
-      setDetailTarget(null);
+      closeDetail();
       await refetch();
     } catch (error: unknown) {
       toast(extractErrorMessage(error, '보고를 삭제하지 못했습니다.'), 'error');
@@ -474,7 +503,7 @@ export default function MemoReportManagementClient() {
           error={isError ? (error as Error) : null}
           onRetry={() => refetch()}
           emptyMessage={emptyResultMessage(debouncedKeyword, '등록된 메모 보고가 없습니다.')}
-          onRowClick={(report) => setDetailTarget(report)}
+          onRowClick={openDetail}
           rowActionLabel={(report) => `${report.rptTtl || `${report.memoRptSn}번`} 보고 열기`}
           keyField="memoRptSn"
           pagination={{
@@ -493,7 +522,7 @@ export default function MemoReportManagementClient() {
       {detailTarget !== null && (
         <StandardModal
           isOpen
-          onClose={() => setDetailTarget(null)}
+          onClose={closeDetail}
           title={detailTarget.rptTtl || `${detailTarget.memoRptSn}번 보고`}
           maxWidth="2xl"
           footer={
@@ -525,7 +554,7 @@ export default function MemoReportManagementClient() {
                   </Button>
                 </>
               ) : null}
-              <Button type="button" variant="outline" onClick={() => setDetailTarget(null)} className="flex-1">
+              <Button type="button" variant="outline" onClick={closeDetail} className="flex-1">
                 닫기
               </Button>
             </div>

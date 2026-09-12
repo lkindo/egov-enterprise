@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 import SurveyTemplatesPanel from '../SurveyTemplatesPanel';
 import { surveyTemplateCreateSchema } from '../survey-panel-form-validation';
+import { parseGeneratedOperationRequest } from '@/lib/api/generated-operation';
+import { updateTemplateOperation } from '@/types/generated-operations';
 import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
 import { ToastProvider } from '@/app/components/ui/toast';
 
@@ -205,6 +207,56 @@ describe('SurveyTemplatesPanel validation contract', () => {
     await user.click(screen.getByRole('button', { name: '수정 취소' }));
     expect(screen.getByLabelText('템플릿 설명')).toHaveValue('');
     expect(mocked.updateTemplate).not.toHaveBeenCalled();
+  });
+
+  /*
+    [2026-09-12] 요청·응답 스키마 **방향 비대칭** 회귀 계약(DEC-OPS-028).
+
+    srvyTmpltPathNm 은 요청에서 `.optional()`(null 거부), 응답에서 `.optional().nullable()` 이다.
+    이 화면에는 그 입력칸이 없고 등록 폼은 유형 코드·설명 2개만 보내므로 서버 insertTmplat 이
+    경로를 null 로 저장한다 — 즉 **이 화면으로 만든 템플릿은 전부 null 경로**이고, 그 값을
+    되돌려 실으면 `parseGeneratedOperationRequest` 가 HTTP 전에 throw 해 수정이 막혔다.
+
+    ⚠ 서비스가 모킹돼 있어 그 방어선이 테스트에서 건너뛰어진다 — 본문을 직접 태운다.
+  */
+  it('경로가 null 인 템플릿도 수정할 수 있다 — null 을 요청에 되돌려 싣지 않는다', async () => {
+    const user = userEvent.setup();
+    mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 11, srvyTmpltTypeCd: 'OLD', srvyTmpltExpln: '목록 설명' }], total: 1, page: 1, size: 50, totalPage: 1 });
+    // 등록 폼이 경로를 보내지 않아 서버가 null 로 저장한 행 — 이 화면이 실제로 만드는 모양이다.
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: null } as never);
+    renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: '목록 설명 템플릿 수정' }));
+    await waitFor(() => expect(screen.getByLabelText('템플릿 유형 코드')).toHaveValue('FRESH'));
+    await user.clear(screen.getByLabelText('템플릿 설명'));
+    await user.type(screen.getByLabelText('템플릿 설명'), '수정 설명');
+    await user.click(screen.getByRole('button', { name: '템플릿 수정 저장' }));
+
+    await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledTimes(1));
+    const [srvyTmpltSn, body] = mocked.updateTemplate.mock.calls[0];
+    expect(srvyTmpltSn).toBe(11);
+    expect(Object.values(body)).not.toContain(null);
+    expect(body).toMatchObject({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명' });
+    // 모킹이 건너뛴 진짜 방어선을 직접 태운다.
+    expect(() => parseGeneratedOperationRequest(updateTemplateOperation, body)).not.toThrow();
+  });
+
+  it('경로가 있으면 그대로 왕복시킨다 — 전체 치환이라 빠뜨리면 지워진다', async () => {
+    const user = userEvent.setup();
+    mocked.getTemplateList.mockResolvedValue({ list: [{ srvyTmpltSn: 11, srvyTmpltTypeCd: 'OLD', srvyTmpltExpln: '목록 설명' }], total: 1, page: 1, size: 50, totalPage: 1 });
+    mocked.getSurveyTemplate.mockResolvedValue({ srvyTmpltSn: 11, srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '최신 설명', srvyTmpltPathNm: '/templates/preserved' });
+    renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: '목록 설명 템플릿 수정' }));
+    await waitFor(() => expect(screen.getByLabelText('템플릿 유형 코드')).toHaveValue('FRESH'));
+    await user.clear(screen.getByLabelText('템플릿 설명'));
+    await user.type(screen.getByLabelText('템플릿 설명'), '수정 설명');
+    await user.click(screen.getByRole('button', { name: '템플릿 수정 저장' }));
+
+    await waitFor(() => expect(mocked.updateTemplate).toHaveBeenCalledTimes(1));
+    const [, body] = mocked.updateTemplate.mock.calls[0];
+    expect(body).toEqual({ srvyTmpltTypeCd: 'FRESH', srvyTmpltExpln: '수정 설명', srvyTmpltPathNm: '/templates/preserved' });
+    expect(() => parseGeneratedOperationRequest(updateTemplateOperation, body)).not.toThrow();
   });
 
 });

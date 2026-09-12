@@ -56,7 +56,18 @@ export default function SurveyTemplatesPanel() {
       editing?.srvyTmpltSn
         ? surveyAdminService.updateTemplate(editing.srvyTmpltSn, {
           ...payload,
-          srvyTmpltPathNm: editing.srvyTmpltPathNm,
+          /*
+            화면에 입력칸이 없는 이미지 경로를 상세에서 읽어 되돌려 싣는다 — 전체 치환이라
+            빠뜨리면 지워진다.
+
+            ⚠ null 이면 **보내지 않는다.** 생성 계약이 이 필드를 요청에서 `.optional()`(null
+            거부), 응답에서 `.optional().nullable()` 로 선언하기 때문이다(DEC-OPS-028 의 방향
+            비대칭 — omit-nulls.ts). 등록 폼은 유형 코드·설명 2개만 보내고 서버
+            `insertTmplat` 이 경로를 dto 값 그대로(=null) 저장하므로, **이 화면으로 만든
+            템플릿은 전부 null 이다** — 걸러 내지 않으면 그 템플릿은 수정이 영영 막힌다.
+            차단은 `parseGeneratedOperationRequest` 안이라 서버 로그에 흔적이 없다.
+          */
+          srvyTmpltPathNm: editing.srvyTmpltPathNm ?? undefined,
         })
         : surveyAdminService.createTemplate(payload),
     onSuccess: () => {

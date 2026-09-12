@@ -123,6 +123,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { omitNulls } from '@/lib/api/omit-nulls';
 
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -210,11 +211,21 @@ export default function EventManagementClient() {
     setIsSubmitting(true);
     try {
       if (editingEvent) {
-        // 원본을 먼저 펼치고 편집분을 덮는다 — 화면에 없는 필드를 지우지 않기 위해서다.
+        /*
+          원본을 먼저 펼치고 편집분을 덮는다 — 화면에 없는 필드를 지우지 않기 위해서다.
+
+          ⚠ 원본의 null 은 **떨어뜨려야** 한다. 생성 계약의 요청 스키마는 이 필드들을
+          `.optional()`(null 거부)로, 응답 스키마는 `.optional().nullable()` 로 선언한다
+          (DEC-OPS-028 의 방향 비대칭). 이 화면의 **등록** 경로는 evntTypeCd·evntAprvYn·
+          evntAprvYmd 를 보내지 않아 서버가 null 로 저장하므로, 그렇게 만든 행을 수정하려
+          하면 null 이 그대로 요청에 실려 `parseGeneratedOperationRequest` 가 **HTTP 전에**
+          throw 했다 — 즉 이 화면으로 만든 행사는 이름 한 글자도 고칠 수 없었고, 서버에
+          요청이 닿지 않아 로그에도 단서가 없었다.
+        */
         await updateMutation.mutateAsync({
           evntSn: editingEvent.evntSn,
           data: {
-            ...editingEvent,
+            ...omitNulls(editingEvent),
             ...validated,
             bizYr: validated.evntBgngYmd.slice(0, 4),
           },
