@@ -16,9 +16,27 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Real HTTP and method authorization use explicit current grants; no retired URL-role tables are seeded. */
+/**
+ * RBAC 매트릭스 — **core 도메인만** 표적으로 하는 인가 판정 계약.
+ *
+ * Real HTTP and method authorization use explicit current grants; no retired URL-role tables are seeded.
+ *
+ * ── 왜 core 전용인가 ────────────────────────────────────────────────────────
+ * 종전에는 이 한 클래스가 stats·설문·투표·배너/팝업·약식결재까지 함께 검사했고, 그 때문에
+ * {@code nuri.business.service.stats.ReportStatsService} 를 {@code @MockitoBean} 으로 들고 있었다.
+ * 재사용 base 투영은 **타입 참조**로 연쇄 제거를 판정하므로, 그 한 줄 때문에 축소 프로필
+ * (core·collaboration)에서 **RBAC 매트릭스 게이트가 하나도 남지 않았다**(GAP-PACK-001 ④).
+ *
+ * 그래서 pack 경계로 나눈다. 이 클래스는 모든 프로필에 남는 표면만 본다 —
+ * 사용자 관리·로그인 정책, 익명 접근, 미등록 라우트, 그룹 이름과 실제 권한의 분리.
+ * demo 소유 표면은 {@link RbacDemoSurfaceAuthorizationMatrixTest} 가 가져간다.
+ *
+ * ⚠ H2 DB 이름을 분리 클래스와 다르게 둔다({@code rbac_core_testdb}). 같은 이름을 공유하면
+ *   {@code create-drop} + {@code @DirtiesContext} 조합에서 컨텍스트 축출 순서에 따라 앞선
+ *   클래스가 스키마를 지운 뒤 다른 클래스가 그 DB 를 만나 42S02 로 죽는다(저장소 실측 이력).
+ */
 @SpringBootTest(classes = nuri.ApiServerApplication.class, properties = {
-        "spring.datasource.url=jdbc:h2:mem:rbac_testdb;DB_CLOSE_DELAY=-1;IGNORECASE=TRUE;NON_KEYWORDS=KEY,VALUE",
+        "spring.datasource.url=jdbc:h2:mem:rbac_core_testdb;DB_CLOSE_DELAY=-1;IGNORECASE=TRUE;NON_KEYWORDS=KEY,VALUE",
         "spring.jpa.hibernate.ddl-auto=create-drop"})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -27,9 +45,10 @@ class RbacAuthorizationMatrixTest {
     @Autowired private MockMvc mockMvc;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtTokenProvider jwtTokenProvider;
-    @MockitoBean private nuri.business.service.stats.ReportStatsService reportStatsService;
+
+    /** core 프로필에도 남는 관리 표면만 둔다 — 설문(`/admin/system/surveys`)은 survey pack 소유라 뺐다. */
     private static final List<String> PATHS = List.of(
-            "/api/v1/admin/system/users", "/api/v1/admin/system/surveys", "/api/v1/admin/system/login-policies");
+            "/api/v1/admin/system/users", "/api/v1/admin/system/login-policies");
 
     @Test void initialAdminGrantSnapshotAllowsRegisteredAdministrativeReads() throws Exception {
         var admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_test", "USR_999", "ADMIN");
@@ -43,7 +62,7 @@ class RbacAuthorizationMatrixTest {
         for (String path : PATHS) mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
     }
     @Test void domainGroupWithOnlyExplicitReadGrantsWorksWithoutAdministrativeGroup() throws Exception {
-        var operator = explicit(List.of("OPERATIONS_TEAM"), List.of("USER_READ", "SURVEY_READ_ALL", "LOGIN_POL_READ"));
+        var operator = explicit(List.of("OPERATIONS_TEAM"), List.of("USER_READ", "LOGIN_POL_READ"));
         for (String path : PATHS) mockMvc.perform(get(path).with(user(operator))).andExpect(status().isOk());
         mockMvc.perform(post(PATHS.get(0)).with(user(operator))).andExpect(status().isForbidden());
         mockMvc.perform(delete(PATHS.get(0)).with(user(operator))).andExpect(status().isForbidden());
@@ -56,36 +75,7 @@ class RbacAuthorizationMatrixTest {
         var admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_test", "USR_999", "ADMIN");
         mockMvc.perform(get("/api/v1/admin/unregistered-operation").with(user(admin))).andExpect(status().isForbidden());
     }
-    @Test void ordinaryStatisticsReaderCannotEnterAnyAdministrativeStatisticsEndpoint() throws Exception {
-        var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");
-        mockMvc.perform(get("/api/v1/statistics/connect").with(user(ordinary))).andExpect(status().isOk());
-        for (String suffix : List.of("bbs", "connect", "data-usage", "report", "summary", "user")) {
-            mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(ordinary)))
-                    .andExpect(status().isForbidden());
-        }
-        for (String path : List.of("/api/v1/admin/system/banners", "/api/v1/admin/system/banners/reflected",
-                "/api/v1/admin/system/banners/1", "/api/v1/admin/system/popups", "/api/v1/admin/system/popups/1")) {
-            mockMvc.perform(get(path).with(user(ordinary))).andExpect(status().isForbidden());
-        }
-        mockMvc.perform(patch("/api/v1/admin/system/ism/1/confirm").with(user(ordinary)))
-                .andExpect(status().isForbidden());
-    }
-    @Test void delegatedStatisticsPermissionAllowsAdministrativeReadsWithoutAnAdminGroup() throws Exception {
-        var delegated = explicit(List.of("REPORT_AUDIT"), List.of("STATS_ADMIN_READ"));
-        for (String suffix : List.of("bbs", "connect", "data-usage", "report", "summary", "user")) {
-            mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(delegated)))
-                    .andExpect(status().isOk());
-        }
-        mockMvc.perform(get("/api/v1/statistics/connect").with(user(delegated))).andExpect(status().isForbidden());
-    }
-    @Test void ordinaryPollParticipantCannotCreateUpdateOrDeletePolls() throws Exception {
-        var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");
-        mockMvc.perform(get("/api/v1/polls").with(user(ordinary))).andExpect(status().isOk());
-        mockMvc.perform(post("/api/v1/polls").with(user(ordinary))).andExpect(status().isForbidden());
-        mockMvc.perform(put("/api/v1/polls/1").with(user(ordinary))).andExpect(status().isForbidden());
-        mockMvc.perform(delete("/api/v1/polls/1").with(user(ordinary))).andExpect(status().isForbidden());
-    }
-    private static CustomUserDetails explicit(List<String> groups, List<String> permissions) {
+    static CustomUserDetails explicit(List<String> groups, List<String> permissions) {
         return CustomUserDetails.builder().userId("operator").esntlId("USR_OPERATOR").enabled(true)
                 .groups(groups).permissions(permissions).authorizationVersion("fixture").build();
     }
