@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import type { Scrap } from '@/services/business/user/ScrapService';
+import { ScrapFormDialog, type ScrapFormValues } from './scraps/ScrapFormDialog';
 import { scrapQueryOptions } from '@/queries/scrap-query-options';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -70,6 +71,28 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
 
  const scrapsQuery = useQuery(scrapQueryOptions.list({ pageIndex: 1, pageUnit: 50 }));
  const scraps: ScrapItem[] = scrapsQuery.data?.list ?? [];
+
+ /*
+   [2026-09-12 §A3-1] 등록·수정이 전용 라우트에서 목록 위 모달로 옮겨 갔다.
+   이 허브도 같은 자원을 다루므로 같은 그릇을 쓴다 — 종전에는 `insertScrap`(등록)과
+   `selectScrapDetail/[id]`(수정)으로 보냈는데 둘 다 page-redirect 가 되면서
+   **등록 버튼은 목록으로 떨어지고 행 클릭은 어느 스크랩을 눌렀는지 잃었다**.
+   저장 후 재조회는 `scrapMutationOptions` 가 scrapKeys.lists() 를 무효화해 처리한다.
+ */
+ const [scrapFormMode, setScrapFormMode] = useState<'create' | 'edit' | null>(null);
+ const [scrapEditTarget, setScrapEditTarget] = useState<{ scrapSn: number; values: ScrapFormValues } | null>(null);
+
+ const openScrapEdit = useCallback((item: ScrapItem) => {
+   setScrapEditTarget({
+     scrapSn: item.scrapSn as number,
+     values: {
+       scrapNm: item.scrapNm ?? '',
+       scrapUrl: item.scrapUrl ?? '',
+       scrapExpln: item.scrapExpln ?? '',
+     },
+   });
+   setScrapFormMode('edit');
+ }, []);
 
  /** 조회 실패를 "데이터 없음"으로 위장하지 않기 위해 테이블에 그대로 전달한다(P1-1). */
  const tableError: Error | null =
@@ -168,11 +191,13 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/collaboration/address-book/select-address-book-list">주소록 관리</Link>
           </Button>
+          {/* [2026-09-12 §A3-1] 스크랩 등록은 페이지 이동이 아니라 모달이므로 button 역할이 옳다. */}
           {activeTab === 'SCRAPS' ? (
-            <Button asChild size="sm">
-              <Link href="/admin/collaboration/scraps/insertScrap">
-                <Plus size={16} aria-hidden="true" /> 스크랩 등록
-              </Link>
+            <Button
+              size="sm"
+              onClick={() => { setScrapEditTarget(null); setScrapFormMode('create'); }}
+            >
+              <Plus size={16} aria-hidden="true" /> 스크랩 등록
             </Button>
           ) : (
             <Button asChild size="sm">
@@ -228,12 +253,22 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
             loading={activeLoading}
             error={tableError}
             onRetry={handleRetry}
-            onRowClick={(item) => router.push(`/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}`)}
+            onRowClick={(item) => openScrapEdit(item)}
             rowActionLabel={(item) => `${item.scrapNm || `${item.scrapSn}번`} 스크랩 열기`}
             emptyMessage="저장된 스크랩이 없습니다."
           />
         )}
       </div>
+      {scrapFormMode ? (
+        <ScrapFormDialog
+          isOpen
+          mode={scrapFormMode}
+          scrapSn={scrapEditTarget?.scrapSn}
+          initialValues={scrapEditTarget?.values}
+          onClose={() => { setScrapFormMode(null); setScrapEditTarget(null); }}
+          onSaved={() => { setScrapFormMode(null); setScrapEditTarget(null); }}
+        />
+      ) : null}
     </WorkListPage>
   );
 }

@@ -77,9 +77,13 @@ export class CollabPage {
         await this.page.getByRole('link', { name: '주소록 관리', exact: true }).click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/select-address-book-list/);
 
-        // [2026-08-24 A1 이행] 링크 안 버튼 중첩을 없애 role 이 link 로 바뀌었다(페이지 이동).
-        await this.page.getByRole('link', { name: '주소록 등록', exact: true }).first().click();
-        await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insert-address-book/);
+        /*
+          [2026-09-12 §A3-1] 등록이 전용 페이지에서 목록 위 모달로 바뀌었다 — 라우트 이동이 없으므로
+          role 이 다시 button 이고, URL 단언 대신 모달이 떴는지 본다. 목록의 검색어·페이지가
+          보존되는 것이 이 이행의 실질이다.
+        */
+        await this.page.getByRole('button', { name: '주소록 등록', exact: true }).first().click();
+        await expect(this.page.getByRole('dialog')).toBeVisible();
         
         // soft-nav 전환 중 이전/이후 라우트 DOM이 잠깐 공존해 testid가 2개로 잡히므로 first()로 방어
         const nameInput = this.page.getByTestId('identity-name-input').first();

@@ -365,9 +365,12 @@
       "menuExposure": "unverified",
       "decisionSafe": false,
       "routing": {
-        "kind": "page"
+        "kind": "page-redirect",
+        "target": "/admin/collaboration/address-book/select-address-book-list"
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/collaboration/address-book/select-address-book-list"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
@@ -781,9 +784,12 @@
       "menuExposure": "unverified",
       "decisionSafe": false,
       "routing": {
-        "kind": "page"
+        "kind": "page-redirect",
+        "target": "/admin/collaboration/scraps/selectScrapList"
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/collaboration/scraps/selectScrapList"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
@@ -851,9 +857,12 @@
       "menuExposure": "unverified",
       "decisionSafe": false,
       "routing": {
-        "kind": "page"
+        "kind": "page-redirect",
+        "target": "/admin/collaboration/scraps/selectScrapList"
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/collaboration/scraps/selectScrapList"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
@@ -4044,9 +4053,12 @@
       "menuExposure": "unverified",
       "decisionSafe": false,
       "routing": {
-        "kind": "page"
+        "kind": "page-redirect",
+        "target": "/admin/survey/manage"
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/survey/manage"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {

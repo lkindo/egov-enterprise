@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, BarChart3, Users, Plus, Layers, Activity, AlertTriangle, RefreshCcw, ListChecks, LayoutTemplate, Vote } from "lucide-react";
+import { LayoutGrid, BarChart3, Users, Layers, Activity, AlertTriangle, RefreshCcw, ListChecks, LayoutTemplate, Vote } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
@@ -41,7 +41,7 @@ type SurveyTab = (typeof SURVEY_TABS)[number];
 const DEFAULT_TAB: SurveyTab = 'manage';
 const TAB_TITLE: Record<SurveyTab, string> = { manage: '여론조사 관리', questions: '설문지·문항 관리', templates: '설문 템플릿 관리', stats: '여론조사 통계' };
 const TAB_DESCRIPTION: Record<SurveyTab, string> = {
- manage: '여론조사를 조회하고 관리합니다. 만족도 조사 등록은 네 단계 만족도 응답을 사용하며, 문항을 직접 구성하려면 설문지·문항 관리를 이용하세요.',
+ manage: '여론조사를 조회하고 등록합니다. 여기서 등록하는 조사는 네 단계 만족도 응답으로 고정되며, 문항을 직접 구성하려면 설문지·문항 관리를 이용하세요.',
  questions: '템플릿을 선택해 설문지를 만든 뒤 문항과 선택 항목을 구성합니다.',
  templates: '문항형 설문지에서 사용할 템플릿을 관리합니다.',
  stats: '여론조사 응답 수와 기간별 상태를 확인합니다. 문항형 설문 결과는 아래 진행 순서의 결과 확인에서 조회하세요.',
@@ -122,7 +122,13 @@ export function SurveyHubClient() {
  >
  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
    <div><h1 className="text-2xl font-bold tracking-tight">{TAB_TITLE[currentTab]}</h1><p className="mt-2 text-sm text-muted-foreground">{TAB_DESCRIPTION[currentTab]}</p></div>
-   {currentTab === 'manage' && <Button onClick={() => router.push('/admin/survey/manage/create')} className="shrink-0 gap-2"><Plus size={16} /> 만족도 조사 등록</Button>}
+   {/*
+     [2026-09-12 §A3-1] 종전 이 자리의 '만족도 조사 등록' 버튼을 걷는다.
+     `/admin/survey/manage/create` 는 목록으로 보내는 page-redirect 가 됐고
+     `/admin/survey/manage` 는 next.config 가 다시 이 허브로 되돌린다 — 즉 누르면
+     아무 일도 없었던 것처럼 제자리로 돌아오는 죽은 어포던스였다(G10).
+     등록은 manage 탭이 embed 하는 목록의 `SurveyFormDialog` 모달이 단독으로 소유한다.
+   */}
  </div>
  <nav aria-label="문항형 설문 진행 순서" className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
    <span className="font-medium">문항형 설문:</span>

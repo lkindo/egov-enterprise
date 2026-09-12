@@ -358,7 +358,7 @@
       "id": "content-survey-create",
       "route": "/admin/survey/manage/create",
       "roles": ["ADMIN", "SYSTEM"],
-      "sources": ["frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx"],
+      "sources": ["frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx"],
       "evidenceLevel": "static-source-and-contract-test",
       "status": "partial",
       "owner": "content-design",

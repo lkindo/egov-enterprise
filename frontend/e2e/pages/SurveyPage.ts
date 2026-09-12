@@ -37,9 +37,16 @@ export class SurveyPage {
         await expect(this.page.getByRole('heading', { level: 1, name: '여론조사 관리', exact: true })).toBeVisible({ timeout: 30000 });
     }
 
+    /**
+     * [2026-09-12 §A3-1] 등록이 전용 페이지에서 목록 위 모달로 바뀌었다 — `/admin/survey/manage/create`
+     * 는 이제 목록으로 보내는 page-redirect 다. 그래서 목록으로 가서 버튼으로 모달을 연다.
+     * ⚠ 호출부가 0건이지만 삭제하지 않는다 — 등록 흐름의 진입 방법을 page object 가 계속 말해야
+     *   다음 사람이 모달이라는 사실을 찾을 수 있다(死코드 판단은 별도 정리 대상).
+     */
     async gotoCreate() {
-        await this.page.goto('/admin/survey/manage/create');
-        await expect(this.page.getByText(/설문.*등록|Create.*Survey/i).first()).toBeVisible();
+        await this.page.goto('/admin/survey/manage');
+        await this.page.getByRole('button', { name: /설문 등록|여론조사 등록/ }).first().click();
+        await expect(this.page.getByRole('dialog')).toBeVisible();
     }
 
     // [2026-08-10 제거] `selectDate(trigger, isStartDate)` — 호출부가 하나도 없는 死코드였다.

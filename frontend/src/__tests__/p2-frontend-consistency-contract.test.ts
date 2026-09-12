@@ -30,8 +30,8 @@ describe('P2 frontend consistency source contract', () => {
   it('scrap 화면은 API client와 query key를 직접 소유하지 않는다', () => {
     const clients = [
       source('app', 'admin', 'collaboration', 'scraps', 'selectScrapList', 'ScrapListClient.tsx'),
-      source('app', 'admin', 'collaboration', 'scraps', 'selectScrapDetail', '[id]', 'SelectScrapDetailClient.tsx'),
-      source('app', 'admin', 'collaboration', 'scraps', 'insertScrap', 'InsertScrapClient.tsx'),
+      // [2026-09-12 §A3-1] 등록·수정 전용 페이지 2개가 목록 위 모달 하나로 합쳐졌다.
+      source('app', 'admin', 'collaboration', 'scraps', 'ScrapFormDialog.tsx'),
     ];
 
     for (const client of clients) {

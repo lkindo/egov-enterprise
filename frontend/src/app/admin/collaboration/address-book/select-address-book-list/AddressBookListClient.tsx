@@ -2,6 +2,7 @@
 
 import React, { use, useRef, useState } from 'react';
 import Link from 'next/link';
+import { AddressBookCreateDialog } from '../AddressBookCreateDialog';
 import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -46,6 +47,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd);
  const [loading, setLoading] = useState(false);
  const [deletingAddressBookSn, setDeletingAddressBookSn] = useState<number | null>(null);
+ const [createOpen, setCreateOpen] = useState(false);
  const deletePendingRef = useRef(false);
  // [P1-1] 조회 실패를 "데이터 없음"으로 위장하지 않는다. 서버 컴포넌트의 실패도 그대로 이어받는다.
  const [fetchError, setFetchError] = useState<Error | null>(
@@ -215,12 +217,11 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  <RefreshCcw size={16} aria-hidden="true" />
  새로고침
  </Button>
- {/* 링크 안에 버튼을 중첩하면 접근성 트리에 상호작용 요소가 2개가 된다(HTML 명세 위반).
- asChild 로 링크 하나만 렌더한다 — 페이지 이동이므로 link 가 옳은 역할이다. */}
- <Button asChild size="sm" className="gap-2">
- <Link href="/admin/collaboration/address-book/insert-address-book">
+ {/* [2026-09-12 §A3-1] 종전에는 전용 등록 페이지로 보내는 링크였다. 그 이동에서 목록의
+ pageNo·searchWrd·pageUnit(전부 useState, URL 미탑재)이 전손돼 1페이지·빈 검색어로
+ 돌아왔다. 모달은 맥락을 잃지 않으므로 버튼이 옳은 역할이다. */}
+ <Button size="sm" className="gap-2" onClick={() => setCreateOpen(true)}>
  <Plus size={16} aria-hidden="true" /> 주소록 등록
- </Link>
  </Button>
  </>
  }
@@ -275,6 +276,14 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  onPageSizeChange: handlePageSizeChange
  }}
  />
+ {createOpen ? (
+ <AddressBookCreateDialog
+ isOpen={createOpen}
+ onClose={() => setCreateOpen(false)}
+ // 등록 성공 후 현재 페이지·검색어 그대로 다시 읽는다 — 이 보존이 모달 이행의 실질이다.
+ onCreated={() => { void fetchList(pageNo, searchWrd); }}
+ />
+ ) : null}
  </WorkListPage>
  );
 }

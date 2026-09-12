@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,8 +7,7 @@ import {
   scrapCreateFormSchema,
   scrapEditFormSchema,
 } from '../scrap-form-validation';
-import InsertScrapClient from '../insertScrap/InsertScrapClient';
-import SelectScrapDetailClient from '../selectScrapDetail/[id]/SelectScrapDetailClient';
+import { ScrapFormDialog } from '../ScrapFormDialog';
 
 const mocks = vi.hoisted(() => ({
   back: vi.fn(),
@@ -61,13 +60,26 @@ vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({
   DynamicBreadcrumb: () => <nav aria-label="현재 위치" />,
 }));
 
+/*
+  [2026-09-12 §A3-1] 등록·수정이 전용 페이지 2개에서 목록 위 모달 하나로 합쳐졌다.
+  계약(검증 인라인 연결·서버 필드 오류 귀속·동기 잠금)은 그대로이고 그릇만 바뀐다.
+*/
+const onSaved = vi.fn();
+
 function renderDetail() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <SelectScrapDetailClient />
+      <ScrapFormDialog
+        isOpen
+        mode="edit"
+        scrapSn={17}
+        initialValues={{ scrapNm: '참고 자료', scrapUrl: 'https://example.com/reference', scrapExpln: '설명' }}
+        onClose={() => {}}
+        onSaved={onSaved}
+      />
     </QueryClientProvider>,
   );
 }
@@ -76,7 +88,7 @@ function renderInsert() {
   const queryClient = new QueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
-      <InsertScrapClient />
+      <ScrapFormDialog isOpen mode="create" onClose={() => {}} onSaved={onSaved} />
     </QueryClientProvider>,
   );
 }
@@ -173,7 +185,7 @@ describe('scrap form validation contract', () => {
     await waitFor(() => expect(mocks.post).toHaveBeenCalledTimes(1));
     expect(submit).toBeDisabled();
     resolvePost();
-    await waitFor(() => expect(mocks.push).toHaveBeenCalled());
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
   });
 
   it('수정 URL 오류는 write 없이 인라인으로 연결하고 URL 입력으로 이동한다', async () => {
@@ -228,39 +240,13 @@ describe('scrap form validation contract', () => {
     await waitFor(() => expect(mocks.put).toHaveBeenCalledTimes(1));
     expect(submit).toBeDisabled();
     resolvePut();
-    await waitFor(() => expect(mocks.push).toHaveBeenCalled());
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
   });
 
-  it('삭제를 동기 잠금하고 pending 제어를 알리며 실패 시 편집값을 보존한다', async () => {
-    const deleteMutation = mocks.delete;
-    let rejectDelete!: (reason?: unknown) => void;
-    deleteMutation.mockReturnValueOnce(new Promise<void>((_, reject) => {
-      rejectDelete = reject;
-    }));
-    renderDetail();
-    const name = await screen.findByDisplayValue('참고 자료');
-    fireEvent.change(name, { target: { value: '보존할 스크랩' } });
-    const remove = screen.getByRole('button', { name: '보존할 스크랩 삭제' });
-
-    act(() => {
-      fireEvent.click(remove);
-      fireEvent.click(remove);
-    });
-
-    await waitFor(() => expect(deleteMutation).toHaveBeenCalledTimes(1));
-    expect(remove).toBeDisabled();
-    expect(remove).toHaveAttribute('aria-busy', 'true');
-    expect(remove).toHaveAccessibleName('보존할 스크랩 삭제 중');
-
-    rejectDelete(new Error('스크랩 삭제 서버 오류'));
-
-    await waitFor(() => {
-      expect(mocks.toast).toHaveBeenCalledWith('스크랩 삭제 서버 오류', 'error');
-    });
-    expect(name).toHaveValue('보존할 스크랩');
-    expect(remove).not.toBeDisabled();
-    expect(remove).not.toHaveAttribute('aria-busy');
-    expect(remove).toHaveAccessibleName('보존할 스크랩 삭제');
-    expect(mocks.push).not.toHaveBeenCalled();
-  });
+  /*
+    [2026-09-12 §A3-1] 삭제 계약은 여기서 사라지지 않고 **소유자가 옮겨 갔다** —
+    `ScrapListClient.pending.test.tsx` 의 "confirm 전에 동기 선점하고 정확한 삭제 제어를 안내하며
+    실패 뒤 목록을 유지한다" 가 같은 보장을 목록에서 검증한다. 삭제는 종전에도 목록이 갖고 있었고,
+    수정 전용 페이지가 사라지면서 이 파일에는 대상이 남지 않는다.
+  */
 });

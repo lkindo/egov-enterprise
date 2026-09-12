@@ -7,9 +7,9 @@
     "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 22,
-    "secondaryActionBoundaries": 68,
-    "candidateCount": 156
+    "formlessWriteBoundaries": 21,
+    "secondaryActionBoundaries": 67,
+    "candidateCount": 154
   },
   "entries": [
     {
@@ -171,10 +171,10 @@
       ]
     },
     {
-      "key": "formless-write:frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx#SurveyManageCreateClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx",
-      "owner": "SurveyManageCreateClient",
+      "key": "native-form:frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx#SurveyFormDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx",
+      "owner": "SurveyFormDialog",
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "useManualFormValidation-zod",
@@ -562,10 +562,10 @@
       ]
     },
     {
-      "key": "native-form:frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx#AddressBookInsertHubClient[1]",
+      "key": "native-form:frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx#AddressBookCreateDialog[1]",
       "kind": "native-form",
-      "file": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
-      "owner": "AddressBookInsertHubClient",
+      "file": "frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx",
+      "owner": "AddressBookCreateDialog",
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "useManualFormValidation-zod",
@@ -627,31 +627,14 @@
       ]
     },
     {
-      "key": "native-form:frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx#InsertScrapClient[1]",
+      "key": "native-form:frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx#ScrapFormDialog[1]",
       "kind": "native-form",
-      "file": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
-      "owner": "InsertScrapClient",
+      "file": "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
+      "owner": "ScrapFormDialog",
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "useManualFormValidation-zod",
       "schemaSource": "generated-or-derived:scrapCreateFormSchema",
-      "errorNavigation": "summary-inline-focus-first-invalid",
-      "serverErrors": "field-errors-mapped-with-value-retention",
-      "pendingGuard": "synchronous-submit-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
-        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
-      ]
-    },
-    {
-      "key": "native-form:frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx#SelectScrapDetailClient[1]",
-      "kind": "native-form",
-      "file": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-      "owner": "SelectScrapDetailClient",
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "useManualFormValidation-zod",
-      "schemaSource": "generated-or-derived:scrapEditFormSchema",
       "errorNavigation": "summary-inline-focus-first-invalid",
       "serverErrors": "field-errors-mapped-with-value-retention",
       "pendingGuard": "synchronous-submit-lock-and-disabled",
@@ -1700,26 +1683,6 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/collaboration/mail-history/__tests__/MailHistoryHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx#SelectScrapDetailClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
-      "owner": "SelectScrapDetailClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deleteMutation.mutateAsync"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx"
       ]
     },
     {
