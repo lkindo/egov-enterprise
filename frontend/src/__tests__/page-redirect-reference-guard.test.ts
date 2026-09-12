@@ -25,6 +25,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const REPO = path.resolve(__dirname, '..', '..', '..');
+const SRC = path.resolve(__dirname, '..');
+/**
+ * 라우트 소유 판정에만 쓴다(그 라우트의 redirect 파일 자신은 목적지를 알아야 한다).
+ * 스캔은 `src/app` 이 아니라 **`src` 전체**다 — 내비게이션은 화면 파일에만 있지 않다.
+ * 실측: `components/business/deptJob/DeptJobListSection.tsx` 가 행 클릭으로 라우트를 민다.
+ * 범위를 app 으로 좁히면 그런 공용 컴포넌트의 역참조가 영원히 보이지 않는다.
+ */
 const APP = path.resolve(__dirname, '..', 'app');
 
 type RouteRow = { route: string; routing?: { kind?: string; target?: string } };
@@ -115,7 +122,9 @@ function ownsRoute(relFromApp: string, route: string): boolean {
 
 export function findViolations(): string[] {
   const found: string[] = [];
-  for (const file of collectSources(APP)) {
+  for (const file of collectSources(SRC)) {
+    // 표시는 src 기준, 라우트 소유 판정은 app 기준(app 밖 파일은 어떤 라우트도 소유하지 않는다).
+    const relFromSrc = path.relative(SRC, file).replace(/\\/g, '/');
     const rel = path.relative(APP, file).replace(/\\/g, '/');
     const source = stripComments(fs.readFileSync(file, 'utf8'));
     for (const match of source.matchAll(NAV)) {
@@ -126,7 +135,7 @@ export function findViolations(): string[] {
       const hit = resolveRoute(targetPath);
       if (!hit || hit.kind !== 'page-redirect') continue;
       if (ownsRoute(rel, hit.route)) continue;
-      const entry = `${rel} → ${raw}  (라우트 ${hit.route} 는 ${hit.target} 로 보내는 page-redirect)`;
+      const entry = `${relFromSrc} → ${raw}  (라우트 ${hit.route} 는 ${hit.target} 로 보내는 page-redirect)`;
       if (!found.includes(entry)) found.push(entry);
     }
   }
