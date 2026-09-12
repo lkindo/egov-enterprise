@@ -39,7 +39,7 @@ jobs:
       # ci.yml 의 frontend-build 와 같은 순서다 — setup-node 의 cache:"pnpm" 이
       #   캐시 경로를 알아내려고 pnpm 실행 파일을 호출하므로 설치가 먼저여야 한다.
       - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86  # v6.0.10
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413  # v6.1.0
         with:
           version: 9
           run_install: false
