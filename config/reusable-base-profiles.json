@@ -35,8 +35,8 @@
           "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
         },
         {
-          "file": "api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java",
-          "reason": "RBAC 매트릭스가 stats 서비스를 참조한다. ⚠ core 에 RBAC 매트릭스 게이트가 하나도 남지 않는다 — 알려진 손실(GAP-PACK-001)."
+          "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
+          "reason": "demo 소유 표면(통계·배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다. core 표면(사용자·로그인 정책·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 stats 참조를 걷어 모든 프로필에 남는다."
         }
       ],
       "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심의 최소 프레임워크"
@@ -70,8 +70,8 @@
           "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
         },
         {
-          "file": "api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java",
-          "reason": "RBAC 매트릭스가 stats 서비스를 참조한다. ⚠ collaboration 에 RBAC 매트릭스 게이트가 하나도 남지 않는다 — 알려진 손실(GAP-PACK-001)."
+          "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
+          "reason": "demo 소유 표면(통계·배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다. core 표면(사용자·로그인 정책·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 stats 참조를 걷어 모든 프로필에 남는다."
         }
       ],
       "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS"
