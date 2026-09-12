@@ -136,6 +136,29 @@ const GATE_TAGS = ['@Tag("governance-harness")', '@Tag("schema-validation")', '@
 /** frontend 거버넌스 계약이 사는 곳 — census·guard·cross-stack 계약이 전부 이 아래다. */
 const FRONTEND_GATE_DIR = 'frontend/src/__tests__/';
 
+/**
+ * 하네스 baseline 미러 상수 — 전부 메타 게이트({@code HarnessBaselineIntegrityTest})의 동명 선언과
+ * **같은 값이어야 한다**. 어긋나면 투영본 매니페스트가 메타 게이트의 actual 과 달라져 산출물이
+ * 통째로 red 가 된다(2026-09-12 실측: 신설 136 · 누락 54 · 소멸 54).
+ */
+const HARNESS_SCAN_ROOTS = [
+  'api-server/src/test/java',
+  'business-app/src/test/java',
+  'business-core/src/test/java',
+  'business-core/src/testFixtures/java',
+  'foundation/src/test/java',
+  'migration-tool/src/test/java',
+];
+const ARCH_RULE_FILE_PATTERN =
+  /(?:AttachmentSourceRegistryLinterTest|InputContractMirrorLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
+const GATE_REGISTRIES = [
+  'config/governance/authorization-policies.json',
+  'config/governance/gates.json',
+  'config/governance/zdm-waivers.json',
+  'config/security/false-positive-review.json',
+];
+const GATE_HOOKS = ['.githooks/pre-push', '.githooks/pre-commit'];
+
 function isJavaGateSource(path, source) {
   const normalized = normalize(path);
   if (normalized.includes('/harness/') || GATE_FILE_PATTERN.test(normalized)) return true;
@@ -377,18 +400,30 @@ function pruneFrontend(output, manifest, profile) {
  * 그러면 게이트가 사라지는 변경에서 서로 다른 두 파일이 함께 움직여 diff 에 의도가 드러난다.
  * 승인 목록은 **양방향**이다: 등재하지 않은 제거도, 제거되지 않는데 남은 등재(부실 승인)도 red 다.
  */
-function assertRemovedGatesAcknowledged(profileName, profile, java, frontend) {
+/**
+ * 생성기 **규칙**으로 제거되는 게이트 묶음 — 프로필 선택이 아니라 투영 방식 자체가 원인이라 파일 단위
+ * 승인 대신 규칙 단위 승인을 받는다. 파일 단위로 두면 migration 검증이 하나 늘 때마다 세 프로필의
+ * 매니페스트가 함께 흔들려 소음만 남고 신호가 죽는다.
+ */
+const GATE_REMOVAL_RULES = {
+  'historical-migration-tests':
+    '투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 대체해 역사적 migration 검증이 검사 대상을 잃는다',
+};
+
+function assertRemovedGatesAcknowledged(profileName, profile, java, frontend, ruleRemovals) {
   const removedGates = [
     ...java.removedGates.map((gate) => ({ ...gate, side: 'backend' })),
     ...frontend.removedGates.map((file) => ({ file, reason: 'frontend pack 제외/연쇄', side: 'frontend' })),
   ].sort((left, right) => left.file.localeCompare(right.file));
+  const activeRules = Object.entries(ruleRemovals ?? {}).filter(([, files]) => files.length > 0);
+  const ruleGateCount = activeRules.reduce((total, [, files]) => total + files.length, 0);
 
-  if (removedGates.length === 0) {
-    console.log('[base-source] 투영에서 제거된 거버넌스 게이트: 0건');
-  } else {
-    console.log(`[base-source] 투영에서 제거된 거버넌스 게이트: ${removedGates.length}건`);
-    for (const gate of removedGates) console.log(`  - ${gate.file}  <- ${gate.reason}`);
+  const total = removedGates.length + ruleGateCount;
+  console.log(`[base-source] 투영에서 제거된 거버넌스 게이트: ${total}건`);
+  for (const [rule, files] of activeRules) {
+    console.log(`  - (규칙) ${rule}: ${files.length}건 — ${GATE_REMOVAL_RULES[rule] ?? '(사유 미등록)'}`);
   }
+  for (const gate of removedGates) console.log(`  - ${gate.file}  <- ${gate.reason}`);
 
   /*
     승인은 **사유를 포함한 객체**로만 받는다. 파일 경로만 나열하면 목록이 곧 서랍이 되고,
@@ -403,6 +438,37 @@ function assertRemovedGatesAcknowledged(profileName, profile, java, frontend) {
       );
     }
   }
+  const acknowledgedRules = profile.acknowledgedGateRemovalRules ?? [];
+  for (const entry of acknowledgedRules) {
+    if (typeof entry?.rule !== 'string' || !GATE_REMOVAL_RULES[entry.rule]
+        || typeof entry?.reason !== 'string' || !entry.reason.trim()) {
+      fail(
+        `profile '${profileName}' 의 acknowledgedGateRemovalRules 항목은 { rule, reason } 이어야 하고 `
+          + `rule 은 생성기가 아는 규칙(${Object.keys(GATE_REMOVAL_RULES).join(', ')})이어야 한다: `
+          + JSON.stringify(entry),
+      );
+    }
+  }
+  const acknowledgedRuleIds = acknowledgedRules.map((entry) => entry.rule);
+  const unacknowledgedRules = activeRules.map(([rule]) => rule).filter((rule) => !acknowledgedRuleIds.includes(rule));
+  const staleRules = acknowledgedRuleIds.filter(
+    (rule) => !activeRules.some(([active]) => active === rule),
+  );
+  if (unacknowledgedRules.length) {
+    fail(
+      `profile '${profileName}' 이 승인하지 않은 규칙으로 거버넌스 게이트를 제거한다: `
+        + unacknowledgedRules.map((rule) => `${rule}(${ruleRemovals[rule].length}건)`).join(', ')
+        + `\nconfig/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedGateRemovalRules 에 `
+        + '{ rule, reason } 으로 등재할 것.',
+    );
+  }
+  if (staleRules.length) {
+    fail(
+      `profile '${profileName}' 의 acknowledgedGateRemovalRules 에 더 이상 적용되지 않는 규칙이 남아 있다: `
+        + staleRules.join(', '),
+    );
+  }
+
   const acknowledged = acknowledgedEntries.map((entry) => entry.file);
   const actual = removedGates.map((gate) => gate.file);
   const unacknowledged = actual.filter((file) => !acknowledged.includes(file));
@@ -421,7 +487,11 @@ function assertRemovedGatesAcknowledged(profileName, profile, java, frontend) {
         '\n승인 목록은 실제 제거와 exact 일치해야 한다 — 낡은 승인은 다음 제거를 조용히 통과시킨다.',
     );
   }
-  return removedGates;
+  return {
+    files: removedGates,
+    rules: activeRules.map(([rule, files]) => ({ rule, reason: GATE_REMOVAL_RULES[rule], count: files.length, files })),
+    total,
+  };
 }
 
 function installDatabaseBundle(output, dbBundle) {
@@ -434,11 +504,72 @@ function installDatabaseBundle(output, dbBundle) {
   }
 }
 
+/**
+ * ZDM waiver registry 를 **투영본에 실재하는 migration** 으로 가지친다.
+ *
+ * <p>[왜] 투영본은 원본 V2 체인을 검증된 V1 번들로 통째로 교체한다(installDatabaseBundle).
+ * 그러면 {@code zdm-waivers.json} 의 legacyDebt·waivers 가 **존재하지 않는 migration** 을 지목하게
+ * 되고 {@code ZeroDowntimeMigrationLinterTest} 가 fail-closed 로 red 가 된다(2026-09-12 실측).
+ *
+ * <p>지우는 것은 **이미 사라진 파일에 대한 승인 기록**뿐이다 — 그 승인이 보호하던 대상이 투영본에
+ * 존재하지 않으므로 보호가 줄지 않는다. adopter 가 새로 추가하는 migration 은 종전대로 전부 감사된다
+ * (전방 보호 무변경). 본체 저장소의 registry 는 손대지 않는다.
+ *
+ * <p>가지친 결과는 {@code __registry.config/governance/zdm-waivers.json} 해시로 baseline 에 실린다 —
+ * 즉 이 가지치기도 매니페스트에 흔적을 남긴다.
+ */
+function pruneZeroDowntimeWaivers(output) {
+  const registryRelative = 'config/governance/zdm-waivers.json';
+  const registryPath = join(output, ...registryRelative.split('/'));
+  if (!existsSync(registryPath)) fail(`ZDM waiver registry 가 투영본에 없다: ${registryRelative}`);
+
+  const raw = readFileSync(registryPath, 'utf8');
+  const registry = JSON.parse(raw);
+  const survives = (entry) => {
+    const relative = typeof entry?.path === 'string' ? entry.path : '';
+    return relative !== '' && existsSync(join(output, ...relative.split('/')));
+  };
+
+  const before = {
+    legacyDebt: (registry.legacyDebt ?? []).length,
+    waivers: (registry.waivers ?? []).length,
+  };
+  registry.legacyDebt = (registry.legacyDebt ?? []).filter(survives);
+  registry.waivers = (registry.waivers ?? []).filter(survives);
+  const removed = {
+    legacyDebt: before.legacyDebt - registry.legacyDebt.length,
+    waivers: before.waivers - registry.waivers.length,
+  };
+
+  if (removed.legacyDebt || removed.waivers) {
+    const eol = raw.includes('\r\n') ? '\r\n' : '\n';
+    const serialized = `${JSON.stringify(registry, null, 2)}\n`.replaceAll('\n', eol);
+    writeFileSync(registryPath, serialized, 'utf8');
+    console.log(
+      `[base-source] ZDM waiver registry 가지치기: legacyDebt ${before.legacyDebt}→${registry.legacyDebt.length},`
+        + ` waivers ${before.waivers}→${registry.waivers.length} (번들에 없는 migration 지목분 제거)`,
+    );
+  }
+  return { ...removed, remaining: { ...{ legacyDebt: registry.legacyDebt.length, waivers: registry.waivers.length } } };
+}
+
+/**
+ * 역사적 migration 검증을 제거한다 — 투영본은 원본 V2 체인을 검증된 V1 번들로 교체하므로 그것들이
+ * 검사할 대상이 사라진다.
+ *
+ * <p>⚠ **이 42개는 전부 게이트 소스다**(`@Tag("schema-validation")` 실측 42/42). 그래서 제거 사실을
+ * 승인 census 에 합류시켜야 한다 — 종전에는 이 함수가 {@code assertRemovedGatesAcknowledged} **뒤에**
+ * 돌아, census 가 "제거된 게이트 0건" 이라고 말하면서 게이트 42개가 사라졌다(2026-09-12 실측).
+ * 조용한 손실을 막으려고 만든 census 자신에 남아 있던 같은 구멍이다.
+ */
 function pruneHistoricalMigrationTests(output) {
   const schemaTestRoot = join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'schema');
   const tests = walk(schemaTestRoot, (path) => /MigrationIntegrationTest\.java$/.test(path));
   for (const path of tests) rmSync(path);
-  return tests.length;
+  return {
+    count: tests.length,
+    files: tests.map((path) => normalize(relative(output, path))).sort((a, b) => a.localeCompare(b)),
+  };
 }
 
 function adaptOwnershipGuardBaseline(output) {
@@ -499,6 +630,44 @@ function adaptGeneratedHarness(output) {
       path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SeedLocationLinterTest.java'),
       from: 'private static final int MIGRATION_SQL_FLOOR = 25;',
       to: 'private static final int MIGRATION_SQL_FLOOR = 3;',
+    },
+    /*
+      투영본은 역사적 migration 검증 42개를 통째로 제거한다(pruneHistoricalMigrationTests —
+      그 테스트들이 검증하는 V2 체인이 V1 번들로 교체되므로 남겨 두면 전부 red 다). 그래서 이
+      동결 census 의 모집단이 42 → 0 이 된다. 수치를 낮추는 것이 아니라 **사실을 따라가는** 것이며,
+      adopter 가 migration 검증을 새로 만들면 0 을 넘어 red 가 되어 다시 동결을 요구한다.
+      DisplayName 도 함께 고친다 — 0건을 세면서 "42개" 라고 말하면 화면이 사실과 다른 말을 한다.
+    */
+    {
+      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SharedPostgresMigrationHarnessContractTest.java'),
+      from: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 42;',
+      to: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 0;',
+    },
+    {
+      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SharedPostgresMigrationHarnessContractTest.java'),
+      from: '@DisplayName("42개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
+      to: '@DisplayName("migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
+    },
+    /*
+      legacy debt census 는 **역사적 V2 migration 안의 자유형 ignore marker** 인벤토리다(43파일·188건).
+      투영본은 그 migration 을 V1 번들로 교체하므로 인벤토리가 사실상 0 이 되고, pruneZeroDowntimeWaivers
+      가 registry 도 같은 상태로 맞춘다. 동결 수치를 사실에 맞춰 내리는 것이며 — 0 을 넘는 자유형 marker 가
+      새로 들어오면 다시 red 다. 빈 census 의 해시는 sha256('') 이다.
+    */
+    {
+      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'ZeroDowntimeMigrationLinterTest.java'),
+      from: '"ee36a95c7e73bd0db853130e11ec5398e6a266ce934277b61d1d504106b54b69";',
+      to: '"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";',
+    },
+    {
+      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'ZeroDowntimeMigrationLinterTest.java'),
+      from: 'private static final int LEGACY_DEBT_FILE_COUNT = 43;',
+      to: 'private static final int LEGACY_DEBT_FILE_COUNT = 0;',
+    },
+    {
+      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'ZeroDowntimeMigrationLinterTest.java'),
+      from: 'private static final int LEGACY_DEBT_IGNORE_COUNT = 188;',
+      to: 'private static final int LEGACY_DEBT_IGNORE_COUNT = 0;',
     },
   ];
   /*
@@ -584,6 +753,12 @@ function stripJavaCommentsAndStringLiterals(source) {
   return output;
 }
 
+/**
+ * 주석만 제거하고 문자열 리터럴은 보존한다 — 메타 게이트의
+ * {@code HarnessBaselineIntegrityTest#stripCommentsPreservingStrings} 와 **동일해야 한다**.
+ * 블록 주석을 공백 한 칸으로 바꾸는 것도 그 동등성의 일부다(지워 버리면 앞뒤 토큰이 붙어
+ * 없던 식별자가 생기고, 상수 해시·__sourceHash 가 메타 게이트와 달라진다).
+ */
 function stripJavaComments(source) {
   let output = '';
   for (let index = 0; index < source.length;) {
@@ -598,6 +773,7 @@ function stripJavaComments(source) {
     } else if (char === '/' && source[index + 1] === '*') {
       const close = source.indexOf('*/', index + 2);
       index = close < 0 ? source.length : close + 2;
+      output += ' ';
     } else {
       output += char;
       index += 1;
@@ -624,7 +800,13 @@ function shortHash(value) {
 
 function extractHarnessConstants(source) {
   const code = stripJavaComments(source);
-  const declaration = /static\s+final\s+(?:[A-Za-z_$][\w$]*\s*\.\s*)*(?:String|Set|List|Collection|Map|Pattern)\s*(?:<[^=;]*>)?\s*(?:\[\s*\])?\s+([A-Za-z_$][\w$]*)\s*=/g;
+  /*
+    ⚠ 이 정규식은 메타 게이트의 CONST_DECL 과 **한 글자도 어긋나면 안 된다**.
+    DEC-OPS-027(2026-09-01)이 숫자·boolean 을 편입했는데(anti-vacuity 플로어·census·부채 동결이
+    전부 숫자다) 이 생성기는 따라가지 않아, 투영본 매니페스트에 숫자 상수 키가 통째로 빠져 있었다
+    — 메타 게이트가 '신설 감지' 로 red 가 된다. 동등성은 harness-baseline-mirror 계약이 강제한다.
+  */
+  const declaration = /static\s+final\s+(?:[A-Za-z_$][\w$]*\s*\.\s*)*(?:String|Set|List|Collection|Map|Pattern|int|long|short|byte|double|float|boolean|char)\s*(?:<[^=;]*>)?\s*(?:\[\s*\])?\s+([A-Za-z_$][\w$]*)\s*=/g;
   const result = new Map();
   for (const match of code.matchAll(declaration)) {
     const end = findJavaStatementEnd(code, match.index + match[0].length);
@@ -637,35 +819,80 @@ function extractHarnessConstants(source) {
   return result;
 }
 
-function writeHarnessBaseline(output) {
-  const roots = [
-    ['api-server', 'api-server/src/test/java'],
-    ['business-app', 'business-app/src/test/java'],
-    ['business-core', 'business-core/src/test/java'],
-    ['foundation', 'foundation/src/test/java'],
-  ];
-  const gatePattern = /(?:LinterTest|ArchTest|MatrixTest|GuardrailIntegrationTest|ValidationIntegrationTest|Archunit\w*)\.java$/;
-  const entries = new Map();
-  const classes = [];
-  for (const [module, rel] of roots) {
-    for (const path of walk(join(output, rel), (candidate) => candidate.endsWith('.java'))) {
-      const normalized = normalize(path);
-      if (!normalized.includes('/harness/') && !gatePattern.test(normalized)) continue;
+/**
+ * 메타 게이트가 실행 시점에 만드는 {@code actual} 맵을 **그대로 재현**한다.
+ *
+ * <p>[왜 거울이어야 하는가] 투영본에서는 게이트가 일부 제거되므로 저장소에 커밋된 매니페스트를
+ * 그대로 쓸 수 없어 생성기가 다시 쓴다. 그런데 그 계산이 메타 게이트와 조금이라도 어긋나면
+ * **산출물이 통째로 red** 가 된다 — 2026-09-12 demo 투영본 실측에서 신설 136 · 누락 54 · 소멸 54.
+ * 원인은 DEC-OPS-027 이 넓힌 census(ArchUnit 계층·게이트 태그·__sourceHash·__registry.*·
+ * testFixtures·migration-tool·숫자 상수)를 이 생성기가 따라가지 않은 것이었다.
+ *
+ * <p>드리프트 재발은 {@code scripts/harness-baseline-mirror-contract.test.mjs} 가 막는다 —
+ * **저장소 자신에 대해** 이 함수의 출력이 커밋된 매니페스트와 정확히 같아야 하며, 메타 게이트가
+ * 바뀌면 그 계약이 main 에서 즉시 red 가 된다(산출물 생성 시점까지 기다리지 않는다).
+ */
+export function computeHarnessBaselineEntries(root) {
+  const gateSources = new Map();
+  for (const rel of HARNESS_SCAN_ROOTS) {
+    const dir = join(root, ...rel.split('/'));
+    // 메타 게이트는 스캔 루트 부재를 fail 로 본다(조용한 skip 은 false-green). 같은 판정을 쓴다.
+    if (!existsSync(dir)) fail(`하네스 스캔 루트를 찾을 수 없다: ${rel}`);
+    const module = rel.split('/')[0];
+    for (const path of walk(dir, (candidate) => candidate.endsWith('.java'))) {
+      const source = readFileSync(path, 'utf8');
+      if (!isJavaGateSource(path, source)) continue;
       const className = `${module}/${basename(path, '.java')}`;
-      classes.push(className);
-      for (const [name, value] of extractHarnessConstants(readFileSync(path, 'utf8'))) {
-        entries.set(`${className}.${name}`, value);
+      /*
+        메타 게이트도 이 생성기도 키를 `module/단순명` 으로 만든다 — 같은 이름의 게이트가 두 루트에
+        있으면 **뒤가 앞을 덮어써** 한쪽의 동결이 조용히 사라진다. 통과시키지 않는다.
+      */
+      if (gateSources.has(className)) {
+        fail(
+          `게이트 클래스명 충돌: ${className} — ${normalize(relative(root, gateSources.get(className).path))}`
+            + ` 와 ${normalize(relative(root, path))} 가 같은 동결 키를 갖는다(한쪽의 동결이 사라진다).`,
+        );
       }
+      gateSources.set(className, { path, source });
     }
   }
-  entries.set('__harness.classes', classes.sort().join(','));
-  for (const hook of ['pre-push', 'pre-commit']) {
-    const hookPath = join(output, '.githooks', hook);
-    const value = existsSync(hookPath)
-      ? shortHash(readFileSync(hookPath, 'utf8').replaceAll('\r\n', '\n'))
-      : 'MISSING';
-    entries.set(`__hooks.${hook}`, value);
+
+  const entries = new Map();
+  const classes = [];
+  for (const [className, { path, source }] of gateSources) {
+    classes.push(className);
+    const code = stripJavaComments(source);
+    for (const [name, value] of extractHarnessConstants(source)) {
+      entries.set(`${className}.${name}`, value);
+    }
+    // ArchUnit·표적 의미 게이트는 규칙이 상수 밖(메서드 본문)에 살아 소스 전체를 동결한다.
+    if (ARCH_RULE_FILE_PATTERN.test(basename(path))) {
+      entries.set(`${className}.__sourceHash`, shortHash(code.replaceAll('\r\n', '\n')));
+    }
   }
+  entries.set('__harness.classes', [...classes].sort().join(','));
+
+  for (const hook of GATE_HOOKS) {
+    const hookPath = join(root, ...hook.split('/'));
+    entries.set(
+      `__hooks.${basename(hook)}`,
+      existsSync(hookPath) ? shortHash(readFileSync(hookPath, 'utf8').replaceAll('\r\n', '\n')) : 'MISSING',
+    );
+  }
+  for (const registry of GATE_REGISTRIES) {
+    const registryPath = join(root, ...registry.split('/'));
+    entries.set(
+      `__registry.${registry}`,
+      existsSync(registryPath)
+        ? shortHash(readFileSync(registryPath, 'utf8').replaceAll('\r\n', '\n'))
+        : 'MISSING',
+    );
+  }
+  return entries;
+}
+
+function writeHarnessBaseline(output) {
+  const entries = computeHarnessBaselineEntries(output);
   const lines = [
     '# 자동 산출 — reusable-base source projection 기준.',
     '# 남은 게이트/동결 목록을 생성 시점에 고정한다.',
@@ -747,10 +974,15 @@ function main() {
   const java = pruneJava(output, manifest, profile);
   const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
-  const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend);
-  installDatabaseBundle(output, dbBundle);
-  writeProjectedManifest(output, manifest, args.profile, profile, dbLock);
+  // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
+  //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
+  const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend, {
+    'historical-migration-tests': removedHistoricalMigrationTests.files,
+  });
+  installDatabaseBundle(output, dbBundle);
+  const zdmWaivers = pruneZeroDowntimeWaivers(output);
+  writeProjectedManifest(output, manifest, args.profile, profile, dbLock);
   adaptGeneratedHarness(output);
   writeHarnessBaseline(output);
 
@@ -765,7 +997,8 @@ function main() {
     java,
     frontend,
     removedGates,
-    removedHistoricalMigrationTests,
+    removedHistoricalMigrationTests: removedHistoricalMigrationTests.count,
+    zdmWaivers,
     databaseLock: dbLock,
   };
   writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
@@ -779,8 +1012,13 @@ function main() {
       `- 제거 Java files: ${java.removedFiles}\n` +
       `- 제거 frontend files: ${frontend.removedFiles}` +
         ` (선언 ${frontend.removedFiles - frontend.cascadedFiles} · 연쇄 ${frontend.cascadedFiles})\n` +
-      `- 제거된 거버넌스 게이트: ${removedGates.length}건` +
-        (removedGates.length ? `\n${removedGates.map((gate) => `  - ${gate.file} <- ${gate.reason}`).join('\n')}\n\n` : '\n\n') +
+      `- 제거된 거버넌스 게이트: ${removedGates.total}건` +
+        (removedGates.total
+          ? `\n${[
+            ...removedGates.rules.map((rule) => `  - (규칙) ${rule.rule}: ${rule.count}건 — ${rule.reason}`),
+            ...removedGates.files.map((gate) => `  - ${gate.file} <- ${gate.reason}`),
+          ].join('\n')}\n\n`
+          : '\n\n') +
       `DB migration은 신규 빈 PostgreSQL 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
     'utf8',
   );
@@ -788,9 +1026,13 @@ function main() {
   console.log(`[base-source] removed java=${java.removedFiles}, frontend=${frontend.removedFiles}`);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(`[base-source] FAIL: ${error.message}`);
-  process.exitCode = 1;
+/* 계약 테스트가 이 모듈을 import 해도 생성이 시작되면 안 된다(부작용 있는 import 금지). */
+const isMain = process.argv[1] && resolve(process.argv[1]) === resolve(SCRIPT_PATH);
+if (isMain) {
+  try {
+    main();
+  } catch (error) {
+    console.error(`[base-source] FAIL: ${error.message}`);
+    process.exitCode = 1;
+  }
 }

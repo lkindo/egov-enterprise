@@ -133,38 +133,59 @@ class ZeroDowntimeMigrationLinterTest {
      * 증명하려고 만든 예외가 영구히 남는다. 검증 로직이 순수 함수라 JSON 만으로 green 과 red 를
      * 모두 보일 수 있다.
      *
+     * <p><b>[2026-09-12] 픽스처를 저장소의 실제 migration 에서 격리 sandbox 로 옮겼다.</b> 종전에는
+     * {@code V2_16}·{@code V2_13}·{@code V2_18}·{@code V2_10} 을 <b>이름으로</b> 지목했는데, 재사용 base
+     * 투영본은 원본 V2 체인을 검증된 V1 baseline 으로 통째로 교체하므로 그 파일들이 없어 네 판정이
+     * 모두 vacuous 해지고 이 테스트가 red 였다(demo 투영본 실측). 규칙은 저장소 내용과 무관하므로
+     * 임시 디렉터리에 픽스처를 만들어 증명한다 — 본체에서도 투영본에서도 <b>같은 네 판정이 실제로</b>
+     * 실행되며, 역사적 migration 의 개명·삭제에 더 이상 끌려다니지 않는다.
+     *
      * <p>[무엇이 red 여야 하는가] ① Contract DDL 인데 expandMigration 이 없다 ② 자기 자신을
      * 지목한다(같은 마이그레이션에서 Expand 와 Contract 를 함께 하는 것) ③ 지목한 Expand 가
      * 오히려 뒤 버전이다. 셋 다 무중단을 깨는 형태다.
      */
     @Test
     @DisplayName("Contract waiver는 선행 Expand 마이그레이션을 지목해야 한다")
-    void contractWaiverRequiresPrecedingExpand() {
-        Path repoRoot = HarnessSourceIndex.repoRoot();
-        Path migrationDir = SchemaNamingLinterTest.resolveMigrationDir().toAbsolutePath().normalize();
-        String contractSql = "api-server/src/main/resources/db/migration/"
-                + "V2_16__drop_orphans_align_cross_types.sql";
-        String earlier = "api-server/src/main/resources/db/migration/V2_13__align_ref_column_types.sql";
-        String later = "api-server/src/main/resources/db/migration/V2_18__normalize_column_lengths_finalize.sql";
+    void contractWaiverRequiresPrecedingExpand() throws IOException {
+        Path sandbox = Files.createTempDirectory("zdm-expand-rule").toAbsolutePath().normalize();
+        Path migrationDir = sandbox.resolve("db").resolve("migration");
+        Files.createDirectories(migrationDir);
+        String contractSql = "db/migration/V2_16__contract_drop_column.sql";
+        String earlier = "db/migration/V2_13__expand_add_column.sql";
+        String later = "db/migration/V2_18__expand_after_contract.sql";
+        String additive = "db/migration/V2_10__add_foreign_key_only.sql";
+        // Contract 성격(열 제거)과 비-Contract 성격(추가만)을 CONTRACT_PHASE_DDL 이 실제로 가르는지까지 본다.
+        writeFixture(sandbox, contractSql, "ALTER TABLE tb_zdm_fixture DROP COLUMN legacy_col;");
+        writeFixture(sandbox, earlier, "ALTER TABLE tb_zdm_fixture ADD COLUMN new_col varchar(30);");
+        writeFixture(sandbox, later, "ALTER TABLE tb_zdm_fixture ADD COLUMN later_col varchar(30);");
+        writeFixture(sandbox, additive,
+                "ALTER TABLE tb_zdm_fixture ADD CONSTRAINT fk_zdm_fixture FOREIGN KEY (new_col)"
+                        + " REFERENCES tb_zdm_parent(id);");
 
         // 앞선 Expand 를 지목하면 이 규칙에서 걸리지 않는다.
-        assertThat(expandViolations(repoRoot, migrationDir, contractSql, earlier)).isEmpty();
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, earlier)).isEmpty();
 
         // ① 지목이 없다.
-        assertThat(expandViolations(repoRoot, migrationDir, contractSql, null))
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, null))
                 .anySatisfy(message -> assertThat(message).contains("expandMigration"));
 
         // ② 자기 자신을 지목한다 — 같은 마이그레이션에서 Expand 와 Contract 를 함께 한 것이다.
-        assertThat(expandViolations(repoRoot, migrationDir, contractSql, contractSql))
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, contractSql))
                 .anySatisfy(message -> assertThat(message).contains("같습니다"));
 
         // ③ 지목한 Expand 가 오히려 뒤 버전이다.
-        assertThat(expandViolations(repoRoot, migrationDir, contractSql, later))
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, later))
                 .anySatisfy(message -> assertThat(message).contains("앞선 버전"));
 
         // Contract 성격이 아닌 파일에는 이 규칙을 적용하지 않는다 — 과잉 요구를 막는다.
-        String additive = "api-server/src/main/resources/db/migration/V2_10__add_cmnty_user_map_fk.sql";
-        assertThat(expandViolations(repoRoot, migrationDir, additive, null)).isEmpty();
+        assertThat(expandViolations(sandbox, migrationDir, additive, null)).isEmpty();
+    }
+
+    /** 격리 sandbox 픽스처 기록 — 저장소를 건드리지 않고 JVM 종료 시 함께 사라진다. */
+    private static void writeFixture(Path sandbox, String relativePath, String sql) throws IOException {
+        Path target = sandbox.resolve(relativePath);
+        Files.writeString(target, sql + System.lineSeparator(), StandardCharsets.UTF_8);
+        target.toFile().deleteOnExit();
     }
 
     /** 버전 비교가 자릿수에 속지 않는지 — 문자열 비교면 V2_9 가 V2_72 보다 뒤로 판정된다. */

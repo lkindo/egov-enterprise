@@ -11,6 +11,12 @@
       "packs": [
         "core"
       ],
+      "acknowledgedGateRemovalRules": [
+        {
+          "rule": "historical-migration-tests",
+          "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        }
+      ],
       "acknowledgedRemovedGates": [
         {
           "file": "api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java",
@@ -43,6 +49,12 @@
       "packs": [
         "core",
         "collaboration"
+      ],
+      "acknowledgedGateRemovalRules": [
+        {
+          "rule": "historical-migration-tests",
+          "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        }
       ],
       "acknowledgedRemovedGates": [
         {
@@ -78,6 +90,12 @@
         "collaboration",
         "survey",
         "demo"
+      ],
+      "acknowledgedGateRemovalRules": [
+        {
+          "rule": "historical-migration-tests",
+          "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        }
       ],
       "description": "현재 제품의 전체 참조 기능"
     }
