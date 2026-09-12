@@ -11,12 +11,76 @@
       "packs": [
         "core"
       ],
+      "acknowledgedGateRemovalRules": [
+        {
+          "rule": "historical-migration-tests",
+          "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        }
+      ],
+      "acknowledgedRemovedGates": [
+        {
+          "file": "api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java",
+          "reason": "app→app 결합 census 가 informalsanction 이벤트 타입을 직접 열거한다. core 에는 business-app 도메인이 하나도 남지 않아 검사 대상이 0이다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java",
+          "reason": "표적 DTO 목록이 addressbook 등 제외 도메인 DTO 를 직접 참조한다. ⚠ core 에 남는 DTO 의 길이·필수 미러 검사까지 함께 사라진다 — 알려진 손실(GAP-PACK-001)."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/harness/PrivacyAccessCensusLinterTest.java",
+          "reason": "@PrivacyAccess census 가 AddressBookDto 를 직접 참조한다. ⚠ core 에 남는 개인정보 접근 census 까지 함께 사라진다 — 알려진 손실(GAP-PACK-001)."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
+          "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java",
+          "reason": "RBAC 매트릭스가 stats 서비스를 참조한다. ⚠ core 에 RBAC 매트릭스 게이트가 하나도 남지 않는다 — 알려진 손실(GAP-PACK-001)."
+        },
+        {
+          "file": "business-app/src/test/java/nuri/business/harness/QueryCountGuardrailIntegrationTest.java",
+          "reason": "쿼리 수 가드레일이 AddressBookService 를 참조한다. ⚠ core 에 N+1 가드가 남지 않는다 — 알려진 손실(GAP-PACK-001)."
+        }
+      ],
       "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심의 최소 프레임워크"
     },
     "collaboration": {
       "packs": [
         "core",
         "collaboration"
+      ],
+      "acknowledgedGateRemovalRules": [
+        {
+          "rule": "historical-migration-tests",
+          "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        }
+      ],
+      "acknowledgedRemovedGates": [
+        {
+          "file": "api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java",
+          "reason": "app→app 결합 census 가 informalsanction 이벤트 타입을 직접 열거한다. ⚠ collaboration 에는 board·comment·mail·note·notification·scrap·sms 7개 도메인이 남으므로 결합 census 손실이 실질적이다 — 알려진 손실(GAP-PACK-001)."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java",
+          "reason": "표적 DTO 목록이 addressbook 등 제외 도메인 DTO 를 직접 참조한다. ⚠ collaboration 에 남는 DTO 의 길이·필수 미러 검사까지 함께 사라진다 — 알려진 손실(GAP-PACK-001)."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/harness/PrivacyAccessCensusLinterTest.java",
+          "reason": "@PrivacyAccess census 가 AddressBookDto 를 직접 참조한다. ⚠ collaboration 에 남는 개인정보 접근 census 까지 함께 사라진다 — 알려진 손실(GAP-PACK-001)."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
+          "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java",
+          "reason": "RBAC 매트릭스가 stats 서비스를 참조한다. ⚠ collaboration 에 RBAC 매트릭스 게이트가 하나도 남지 않는다 — 알려진 손실(GAP-PACK-001)."
+        },
+        {
+          "file": "business-app/src/test/java/nuri/business/harness/QueryCountGuardrailIntegrationTest.java",
+          "reason": "쿼리 수 가드레일이 AddressBookService 를 참조한다. ⚠ collaboration 에 N+1 가드가 남지 않는다 — 알려진 손실(GAP-PACK-001)."
+        }
       ],
       "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS"
     },
@@ -26,6 +90,12 @@
         "collaboration",
         "survey",
         "demo"
+      ],
+      "acknowledgedGateRemovalRules": [
+        {
+          "rule": "historical-migration-tests",
+          "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+        }
       ],
       "description": "현재 제품의 전체 참조 기능"
     }

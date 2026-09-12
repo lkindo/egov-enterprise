@@ -49,7 +49,7 @@ class SecurePathsDeclarationSyncLinterTest {
         JsonNode catalog = read(root.resolve(CATALOG));
         if (!catalog.equals(read(root.resolve(RUNTIME_CATALOG)))) problems.add("permission catalog 생성물 drift");
         if (catalog.path("permissions").size() < 200) problems.add("permission catalog 하한 미달");
-        String config = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+        String config = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(root.resolve(API_CONFIG))).replaceAll("\\s+", "");
         for (String token : List.of(".anyRequest().access(newnuri.business.security.authorization.OperationAuthorizationManager(",
                 "WebSocketCookieAuthenticationFilter(", "JwtAuthenticationFilter.class")) {

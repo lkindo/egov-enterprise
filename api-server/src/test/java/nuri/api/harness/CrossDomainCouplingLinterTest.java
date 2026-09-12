@@ -154,7 +154,7 @@ class CrossDomainCouplingLinterTest {
             String ownerDomain = relative.contains("/") ? relative.substring(0, relative.indexOf('/')) : "";
             if (ownerDomain.isEmpty()) continue;
 
-            String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+            String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                     HarnessSourceIndex.read(source));
             List<CouplingReference> references = scanReferences(repoRoot, relative, code);
             crossDomainReferences += references.size();

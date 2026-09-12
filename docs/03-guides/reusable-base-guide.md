@@ -117,6 +117,42 @@ npm run base:generate-source -- \
 그 도메인에 의존하는 소비자, 프런트 라우트와 전이 importer를 제거한다. 원본 마이그레이션 체인은
 검증된 V1 번들로 교체하고 `REUSABLE_BASE.md`와 `reusable-base-lock.json`을 기록한다.
 
+### 3.6 제거되는 거버넌스 게이트와 승인
+
+투영은 제외 도메인만 지우는 것이 아니라 **그 도메인을 참조하는 거버넌스 게이트까지 연쇄로** 지운다.
+하네스 린터는 검사 대상의 FQN 을 소스에 직접 품기 때문이다. 그 뒤 생성기가 살아남은 게이트만으로
+`baseline-manifest.properties` 를 다시 쓰므로, 파생 제품의 메타 게이트는 사라진 게이트를 **처음부터
+없었던 것으로** 본다 — 아무 red 도 남지 않는 조용한 손실이다.
+
+그래서 소스 생성기는 제거된 게이트를 항상 **말하고**(콘솔 · `REUSABLE_BASE.md` · `reusable-base-lock.json`
+의 `removedGates`), 매니페스트의 명시적 승인과 exact 대조한다.
+
+```json
+"profiles": {
+  "core": {
+    "packs": ["core"],
+    "acknowledgedRemovedGates": [
+      { "file": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java",
+        "reason": "표적 DTO 목록이 addressbook 등 제외 도메인 DTO 를 직접 참조한다. ⚠ core 에 남는 DTO 의 미러 검사까지 함께 사라진다." }
+    ]
+  }
+}
+```
+
+- 승인하지 않은 게이트가 제거되면 생성이 **FAIL** 한다.
+- 제거되지 않는데 승인 목록에 남은 항목(낡은 승인)도 **FAIL** 한다 — 죽은 승인은 다음 제거를 조용히 통과시킨다.
+- `reason` 이 비면 **FAIL** 한다. 목록이 곧 서랍이 되지 않도록 사유를 매니페스트 안에 남긴다.
+- 승인은 삭제를 **허용**하는 장치가 아니라 **조용할 수 없게** 만드는 장치다. 게이트가 사라지는 변경에서는
+  매니페스트와 커밋 메시지가 함께 움직여 diff 에 의도가 드러난다.
+
+생성기는 DB 번들과 Docker 가 필요해 CI 에서 돌지 않는다. 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
+`npm run test:base-profile`(CI 의 `test:operational-contracts` 에 포함)이 별도로 지킨다.
+
+⚠ 현재 core·collaboration 프로필은 각각 게이트 6건을 잃는다. 그중 `InputContractMirrorLinterTest`,
+`PrivacyAccessCensusLinterTest`, `RbacAuthorizationMatrixTest`, `QueryCountGuardrailIntegrationTest` 는
+제외 도메인 전용 게이트가 아니라 **남는 코드도 검사하던 횡단 게이트**다. 참조 한 줄 때문에 통째로 빠지는
+구조이며, 프로필별 적응(`adaptGeneratedHarness` 방식)은 아직 없다 — GAP-PACK-001 의 잔여 축이다.
+
 ## 4. 산출물 검증
 
 생성된 디렉터리에서 아래 게이트를 모두 통과시킨다.
@@ -132,6 +168,33 @@ pnpm -C frontend exec tsc --noEmit
 Windows에서는 `./gradlew` 대신 `.\gradlew.bat`을 사용한다. 배포 아카이브를 만들 때는 Git index의
 `gradlew` 실행 비트(100755)를 보존한다. 생성 디렉터리는 검증 후 별도 릴리스 자산으로 보관하며,
 이를 다시 장기 브랜치의 정본으로 승격하지 않는다.
+
+### 4.1 하네스 게이트의 프로필별 기대치 (2026-09-12 실측)
+
+`:api-server:harnessTest` 의 통과 기대치는 **프로필마다 다르다**. 축소 프로필은 전체 제품 기준으로
+동결된 수치를 그대로 들고 가므로 일부 게이트가 구조적으로 어긋난다 — 이것은 생성기 결함이 아니라
+파생 제품이 기준선을 다시 동결해야 한다는 [DEC-OPS-019 재동결 절차](../04-operations/adopter-baseline-refreeze.md)의
+적용 대상이다.
+
+| 프로필 | 제거 java | harnessTest | 성격 |
+|---|---|---|---|
+| `demo` | 0 | **green이어야 한다** | 아무것도 제거하지 않으므로 어긋날 이유가 없다. red 면 생성기 결함이다. |
+| `collaboration` | 238 | 일부 red | 축소 제품 ↔ 동결 census 불일치 |
+| `core` | 435 | 73건 중 19건 red | 위와 같음 |
+
+축소 프로필의 red 는 세 부류이며 해소 주체가 다르다(전수 분류·실측은 GAP-BASE-001).
+
+1. **anti-vacuity 플로어가 축소 제품 규모보다 높다** — 요청 컨트롤러 30 < 하한 40, `@Entity` 0 < 20,
+   재생 테이블 35 < 50, 핸들러 153 < 250 등. 플로어는 "스캔이 조용히 붕괴하면 실패" 장치이므로
+   축소 제품에서는 실제 규모로 다시 동결해야 한다.
+2. **exact 동결 census 가 제거된 타입을 지목한다** — Entity 74→31, PK 동결 목록의 `BoardMaster`,
+   `@Transactional(readOnly)` 동결 목록의 `BoardService`, BaseSearchDto 28→26 등. 재동결 대상이다.
+3. **횡단 게이트가 제거된 도메인 소스를 필수로 읽는다** — 첨부 assignment census 가 `BoardService`
+   소스를, springdoc 동기화 게이트가 cascade 로 제거된 `OpenApiDocumentationTest` 를 요구한다.
+   이쪽은 재동결로 풀리지 않고 표적 목록을 소스 밖으로 옮겨야 한다(GAP-PACK-001 ④).
+
+⚠ 수치를 **추론하지 말고 실제로 돌려라.** 2026-09-12 이전에는 아무도 투영본에서 harnessTest 를 돌리지
+않아 생성기 드리프트 4축이 v0.1.0(2026-08-24) 이후 계속 쌓여 있었고, `demo` 조차 red 였다.
 
 ## 5. 로컬 개발 검증
 
@@ -158,6 +221,8 @@ npm run base:generate-source -- \
 3. `npm run test:base-profile`에서 누락·중복·상향 의존이 없는지 확인한다.
 4. core, collaboration, demo DB 번들을 각각 생성해 빈 DB 재적용을 통과시킨다.
 5. 영향을 받는 소스 projection을 생성해 §4 게이트를 통과시킨다.
+6. 제거되는 거버넌스 게이트가 달라졌으면 `profiles.<name>.acknowledgedRemovedGates`를 사유와 함께
+   갱신한다(§3.6). 승인 없이 게이트가 빠지면 생성이 FAIL한다.
 
 기존 운영 DB를 작은 프로필로 변환하는 용도로 이 파이프라인을 사용하지 않는다. 운영 데이터 축소는
 별도의 데이터 이관·백업·롤백 계획과 명시 승인을 요구한다.

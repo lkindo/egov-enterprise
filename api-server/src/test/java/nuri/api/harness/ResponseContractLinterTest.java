@@ -135,7 +135,7 @@ class ResponseContractLinterTest {
         int handlers = 0;
 
         for (Path source : sources) {
-            String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+            String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                     HarnessSourceIndex.read(source));
             String relative = HarnessSourceIndex.repoRoot().relativize(source).toString().replace('\\', '/');
 
@@ -235,7 +235,7 @@ class ResponseContractLinterTest {
 
         for (Path source : HarnessSourceIndex.javaSources(base)) {
             String relative = repoRoot.relativize(source).toString().replace('\\', '/');
-            String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+            String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                     HarnessSourceIndex.read(source));
             Matcher handler = HANDLER_MAPPING.matcher(code);
             while (handler.find()) {

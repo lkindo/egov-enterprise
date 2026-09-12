@@ -76,6 +76,18 @@ class SecurityAuthAnnotationLinterTest {
             "api-server/src/main/resources/db/migration/V2_84__open_survey_alias_to_authenticated.sql";
     private static final String ROLE_HIERARCHY_SEED_FILE =
             "api-server/src/main/resources/db/migration/V2_3__seed_role_hierarchy.sql";
+    /** Flyway migration 디렉터리 — 재사용 base 투영본 판별에 쓴다. */
+    private static final String MIGRATION_DIR = "api-server/src/main/resources/db/migration";
+    /**
+     * 재사용 base 투영본 표지 — 생성기가 원본 V2 체인을 검증된 V1 baseline 번들로 통째로 교체한다.
+     * 이 파일이 있고 V2 가 하나도 없으면 이 저장소는 파생 base 이며, 아래 역사 계보 파일은
+     * <b>존재할 수 없다</b>.
+     */
+    private static final String BASE_BASELINE_MIGRATION =
+            "api-server/src/main/resources/db/migration/V1_0__baseline.sql";
+    /** base 부트스트랩 시드 — 투영본에서 V2_11·V2_3 과 같은 의미의 인가 anchor 를 심는다. */
+    private static final String BASE_BOOTSTRAP_SEED_FILE =
+            "api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql";
     private static final String HELPER_ACTUAL_OUT = "build/harness/authorization-helper-census.actual.txt";
     private static final String MANUAL_ACTUAL_OUT = "build/harness/authorization-manual-deny-census.actual.txt";
     private static final String READ_SURFACE_ACTUAL_OUT = "build/harness/authorization-read-surface.actual.txt";
@@ -551,7 +563,7 @@ class SecurityAuthAnnotationLinterTest {
             violations.add(endpoint.key() + " handler source 부재: " + source);
             return;
         }
-        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(source));
+        String code = HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(source));
         String body = extractMethodBody(code, methodName);
         if (body == null) {
             violations.add(endpoint.key() + " handler body 탐지 실패: " + endpoint.handler());
@@ -574,6 +586,33 @@ class SecurityAuthAnnotationLinterTest {
                 "pathMatcher(\"/ws\")", "pathMatcher(\"/ws/**\")")) {
             if (!config.contains(normalize(token))) violations.add("현재 HTTP 인가 실행 경계 소실: " + token);
         }
+        /*
+          [2026-09-12] 재사용 base 투영본에는 아래 역사 계보 파일(V2_11·V2_3·V2_84)이 **존재하지 않는다**
+          — 생성기가 원본 V2 체인을 검증된 V1 baseline 번들로 통째로 교체하기 때문이다. 종전에는 그
+          자리에서 NoSuchFileException 이 나 이 보안 게이트가 투영본에서 통째로 red 였다(demo 실측).
+
+          ⚠ "파일이 없으면 통과" 로 두면 본체에서 V2_11 을 지우는 은폐 경로가 열린다. 그래서 판별은
+            **V1 baseline 이 있고 V2 가 하나도 없을 때만** 성립한다 — 본체에는 V2 가 101개 있으므로
+            V2_11 하나를 지워도 이 분기로 새지 않고 종전대로 red 다.
+          ⚠ 그리고 건너뛰지 않는다. 투영본에서는 같은 의미의 인가 anchor 를 base 부트스트랩 시드에서
+            검사한다 — 그 파일마저 없으면 읽기 실패로 fail-closed 다. 설문·도움말 별칭 토큰은
+            요구하지 않는다: 부트스트랩 시드는 ADMIN_ALL·ACTUATOR_ALL 만 심으며(별칭 없음),
+            설문 별칭 게이트는 V2_84 가 제거한 것이 제품 결정이다(DEC-OPS-010).
+        */
+        if (isProjectedReusableBase()) {
+            String bootstrap = normalizedSource(resolveFromRepoRoot(BASE_BOOTSTRAP_SEED_FILE));
+            for (String token : List.of(
+                    "('ADMIN_ALL', '관리자 전체', '/api/v1/admin/**'",
+                    "('ROLE_ADMIN', 'ADMIN_ALL')",
+                    "('ROLE_SYSTEM', 'ADMIN_ALL')",
+                    "('ROLE_SYSTEM', 'ROLE_ADMIN', 'SYSTEM')")) {
+                if (!bootstrap.contains(normalize(token))) {
+                    violations.add("base bootstrap 인가 anchor 소실: " + token);
+                }
+            }
+            return;
+        }
+
         // 불변 migration은 과거 데이터 계보만 증명한다. 현재 인가는 위 실행 경계와 operation registry로 판정한다.
         String rbac = normalizedSource(resolveFromRepoRoot(RBAC_SEED_FILE));
         for (String token : List.of(
@@ -632,7 +671,7 @@ class SecurityAuthAnnotationLinterTest {
     }
 
     private void collectSourceCensus(Path file, Set<String> helpers, Set<String> denials) throws IOException {
-        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+        String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(file));
         String className = file.getFileName().toString().replace(".java", "");
         Map<String, Integer> helperCounts = new HashMap<>();
@@ -774,7 +813,7 @@ class SecurityAuthAnnotationLinterTest {
         if (guard.permissionParameter().qualifiedCallers()) {
             for (String root : SOURCE_ROOTS) {
                 for (Path file : HarnessSourceIndex.javaSources(resolveFromRepoRoot(root))) {
-                    String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(file));
+                    String code = HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(file));
                     if (!Pattern.compile(Pattern.quote(method) + "\\s*\\(").matcher(code).find()) continue;
                     String className = file.getFileName().toString().replace(".java", "");
                     if (sources.put(className, code) != null) violations.add("Ambiguous permission caller source: " + className);
@@ -823,7 +862,7 @@ class SecurityAuthAnnotationLinterTest {
         }
         List<Path> matches = guardSourcePaths.getOrDefault(className, List.of());
         if (matches.size() != 1) throw new IOException("Ambiguous or missing guard source: " + className);
-        return HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(matches.get(0)));
+        return HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(matches.get(0)));
     }
 
     /** Balanced call parser keeps nested owner getters and quoted delimiters out of argument boundaries. */
@@ -868,7 +907,7 @@ class SecurityAuthAnnotationLinterTest {
             return;
         }
         String methodName = guard.target().substring(guard.target().indexOf('#') + 1);
-        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+        String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(source));
         String body = extractMethodBody(code, methodName);
         if (body == null) {
@@ -999,8 +1038,24 @@ class SecurityAuthAnnotationLinterTest {
         return new ObjectMapper().readValue(file.toFile(), PolicyRegistry.class);
     }
 
+    /**
+     * 재사용 base 투영본인가 — V1 baseline 이 있고 역사적 V2 체인이 하나도 없는 상태.
+     *
+     * <p>두 조건을 <b>함께</b> 요구하는 것이 핵심이다. 파일 부재만 보면 본체에서 역사 파일을 지우는
+     * 은폐가 통과하고, V1 존재만 보면 V1 을 하나 심는 것으로 검사를 끌 수 있다.
+     */
+    private static boolean isProjectedReusableBase() throws IOException {
+        if (!Files.isRegularFile(resolveFromRepoRoot(BASE_BASELINE_MIGRATION))) {
+            return false;
+        }
+        Path migrationDir = resolveFromRepoRoot(MIGRATION_DIR);
+        return Files.isDirectory(migrationDir)
+                && HarnessSourceIndex.filesUnder(migrationDir,
+                        path -> path.getFileName().toString().startsWith("V2_")).isEmpty();
+    }
+
     private static String normalizedSource(Path path) throws IOException {
-        return normalize(HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+        return normalize(HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(path)));
     }
 

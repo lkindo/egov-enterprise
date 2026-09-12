@@ -113,6 +113,63 @@ final class HarnessSourceIndex {
         }
     }
 
+    /**
+     * 주석만 제거하고 문자열 리터럴은 보존한다. 단순 정규식 치환은 {@code "http://…"} 같은 리터럴을
+     * 주석으로 오인해 목록 내용을 훼손하므로 상태 기계로 처리한다(오탐 = 거짓 red = 신뢰 붕괴).
+     *
+     * <p>[2026-09-12] 하네스 동결 목록 메타 게이트에서 이리로 옮겼다 — 6개 린터가 이
+     * 헬퍼 하나 때문에 <b>그 메타 게이트를 컴파일 의존</b>으로 붙들고 있었고, 재사용 base 투영에서
+     * 메타 게이트가 제거되면 그 6개가 연쇄로 함께 사라졌다(실측: core 프로필에서 하네스 39개 중
+     * 11개 소멸, 그중 7개가 이 결합에서 비롯). 판정 유틸은 게이트가 아니므로 중립 인덱스가 소유한다.
+     *
+     * <p>⚠ 이 파일의 주석에는 게이트 클래스명을 적지 않는다 — 거의 모든 린터가 이 인덱스를
+     * import 하므로, 투영 판정이 주석을 참조로 오인하는 순간 <b>하네스 전체</b>가 연쇄로 사라진다
+     * (실측: 주석 제거를 되돌리면 core 투영에서 게이트 39/39 소멸).
+     */
+    static String stripCommentsPreservingStrings(String src) {
+        StringBuilder out = new StringBuilder(src.length());
+        int i = 0;
+        while (i < src.length()) {
+            char c = src.charAt(i);
+            if (c == '"' || c == '\'') {
+                int close = skipLiteral(src, i, c);
+                out.append(src, i, close + 1);
+                i = close + 1;
+                continue;
+            }
+            if (c == '/' && i + 1 < src.length() && src.charAt(i + 1) == '/') {
+                while (i < src.length() && src.charAt(i) != '\n') {
+                    i++;
+                }
+                continue;
+            }
+            if (c == '/' && i + 1 < src.length() && src.charAt(i + 1) == '*') {
+                int close = src.indexOf("*/", i + 2);
+                i = (close < 0) ? src.length() : close + 2;
+                out.append(' ');
+                continue;
+            }
+            out.append(c);
+            i++;
+        }
+        return out.toString();
+    }
+
+    /** 여는 따옴표 위치를 받아 닫는 따옴표 위치를 반환 */
+    static int skipLiteral(String code, int open, char quote) {
+        for (int i = open + 1; i < code.length(); i++) {
+            char c = code.charAt(i);
+            if (c == '\\') {
+                i++;
+                continue;
+            }
+            if (c == quote) {
+                return i;
+            }
+        }
+        return code.length() - 1;
+    }
+
     private record ScanKey(Path root, int maxDepth) {
     }
 }

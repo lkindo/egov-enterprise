@@ -204,7 +204,7 @@ class TestSecurityChainOverrideLinterTest {
                 }
                 // 주석을 먼저 지운다 — 그러지 않으면 '이 stereotype 을 쓰지 말라' 고 설명하는
                 // 주석까지 사용처로 잡혀 census 가 부풀고, 게이트가 자기 문서를 위반으로 신고한다.
-                String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+                String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                         HarnessSourceIndex.read(file));
                 if (!USES_MOCK_CHAIN_STEREOTYPE.matcher(code).find()) continue;
                 integrationTestUsers++;
@@ -277,7 +277,7 @@ class TestSecurityChainOverrideLinterTest {
     }
 
     private static void collect(Path file, java.util.Map<String, Integer> sink) throws IOException {
-        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+        String code = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(file));
         String className = file.getFileName().toString().replace(".java", "");
 

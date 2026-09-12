@@ -226,7 +226,7 @@ class HarnessBaselineIntegrityTest {
             String className = entry.getKey();
             Path src = entry.getValue();
             actualClasses.add(className);
-            String code = stripCommentsPreservingStrings(HarnessSourceIndex.read(src));
+            String code = HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(src));
             for (Map.Entry<String, String> e : extractConstants(code).entrySet()) {
                 actual.put(className + "." + e.getKey(), e.getValue());
             }
@@ -387,7 +387,7 @@ class HarnessBaselineIntegrityTest {
             return true;
         }
         try {
-            String code = stripCommentsPreservingStrings(HarnessSourceIndex.read(p));
+            String code = HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(p));
             return GATE_TAGS.stream().anyMatch(code::contains);
         } catch (IOException e) {
             // 읽기 실패를 '게이트 아님' 으로 넘기면 조용한 census 탈락이 된다 — fail-closed.
@@ -418,11 +418,11 @@ class HarnessBaselineIntegrityTest {
         for (int i = from; i < code.length(); i++) {
             char c = code.charAt(i);
             if (c == '"') {
-                i = skipLiteral(code, i, '"');
+                i = HarnessSourceIndex.skipLiteral(code, i, '"');
                 continue;
             }
             if (c == '\'') {
-                i = skipLiteral(code, i, '\'');
+                i = HarnessSourceIndex.skipLiteral(code, i, '\'');
                 continue;
             }
             if (c == '(' || c == '{' || c == '[') {
@@ -436,53 +436,6 @@ class HarnessBaselineIntegrityTest {
         return -1;
     }
 
-    /** 여는 따옴표 위치를 받아 닫는 따옴표 위치를 반환 */
-    private static int skipLiteral(String code, int open, char quote) {
-        for (int i = open + 1; i < code.length(); i++) {
-            char c = code.charAt(i);
-            if (c == '\\') {
-                i++;
-                continue;
-            }
-            if (c == quote) {
-                return i;
-            }
-        }
-        return code.length() - 1;
-    }
-
-    /**
-     * 주석만 제거하고 문자열 리터럴은 보존한다. 단순 정규식 치환은 {@code "http://…"} 같은 리터럴을
-     * 주석으로 오인해 목록 내용을 훼손하므로 상태 기계로 처리한다(오탐 = 거짓 red = 신뢰 붕괴).
-     */
-    static String stripCommentsPreservingStrings(String src) {
-        StringBuilder out = new StringBuilder(src.length());
-        int i = 0;
-        while (i < src.length()) {
-            char c = src.charAt(i);
-            if (c == '"' || c == '\'') {
-                int close = skipLiteral(src, i, c);
-                out.append(src, i, close + 1);
-                i = close + 1;
-                continue;
-            }
-            if (c == '/' && i + 1 < src.length() && src.charAt(i + 1) == '/') {
-                while (i < src.length() && src.charAt(i) != '\n') {
-                    i++;
-                }
-                continue;
-            }
-            if (c == '/' && i + 1 < src.length() && src.charAt(i + 1) == '*') {
-                int close = src.indexOf("*/", i + 2);
-                i = (close < 0) ? src.length() : close + 2;
-                out.append(' ');
-                continue;
-            }
-            out.append(c);
-            i++;
-        }
-        return out.toString();
-    }
 
     private static String sha256Short(String text) {
         try {
