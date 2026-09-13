@@ -29,7 +29,7 @@ dependencies {
     runtimeOnly libs.jjwt.jackson
 
     // API Docs / Validation
-    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.27'
+    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.55'
 
     // QueryDSL
     // [2026-08-07 이관] com.querydsl -> io.github.openfeign.querydsl (CVE-2024-49203).
@@ -112,7 +112,7 @@ dependencies {
     testImplementation libs.archunit
 
     // Logging bridge for Egovframe (Commons Logging -> SLF4J)
-    testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.18'
+    testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.19'
 
 }
 
