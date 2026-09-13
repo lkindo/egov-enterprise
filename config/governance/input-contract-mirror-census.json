@@ -1,0 +1,1062 @@
+{
+  "schemaVersion": 1,
+  "description": "입력 계약 미러(InputContractMirrorLinterTest)의 표적 원장. 요청 DTO 의 길이·enum·필수·읽기 전용·중첩 검증·달력 날짜 제약을 엔티티 저장 계약·api-docs.json 과 대조할 표적을 동결한다. 타입은 이진 이름(중첩은 $)이며, pack 은 참조 타입 소스가 모두 살아남는 가장 작은 재사용 pack 으로 scripts/input-contract-mirror-census-contract.test.mjs 가 생성기 제거 계획과 대조한다. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
+  "packs": [
+    "core",
+    "collaboration",
+    "survey",
+    "demo"
+  ],
+  "lengthBindings": [
+    {
+      "entity": "nuri.business.domain.system.content.banner.Banner",
+      "dto": "nuri.business.service.system.content.banner.dto.BannerDto",
+      "fields": [
+        "bnrNm",
+        "linkUrl",
+        "bnrImgNm",
+        "bnrExpln",
+        "rfltYn"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.system.content.popup.Popup",
+      "dto": "nuri.business.service.system.content.popup.dto.PopupDto",
+      "fields": [
+        "popupTtlNm",
+        "fileUrl",
+        "popupWdthPstn",
+        "popupVrtcPstn",
+        "popupVrtcSz",
+        "popupWdthSz",
+        "stopvewSetupYn",
+        "ntceYn"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.system.content.community.Community",
+      "dto": "nuri.business.service.system.content.community.dto.CommunityDto",
+      "fields": [
+        "cmntyNm",
+        "cmntyIntroCn",
+        "regSeCd",
+        "tmpltId",
+        "useYn"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.user.entity.User",
+      "dto": "nuri.business.service.user.dto.UserDto",
+      "fields": [
+        "userId",
+        "certDnVl"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.code.CommonCodeCategory",
+      "dto": "nuri.business.service.code.dto.CmmnClCodeDto",
+      "fields": [
+        "clsfCd",
+        "clsfCdNm",
+        "clsfCdExpln",
+        "useYn"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.code.CommonCodeGroup",
+      "dto": "nuri.business.service.code.dto.CmmnCodeDto",
+      "fields": [
+        "cdId",
+        "cdIdNm",
+        "cdIdExpln",
+        "clsfCd",
+        "useYn"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.code.CommonCode",
+      "dto": "nuri.business.service.code.dto.CmmnDetailCodeDto",
+      "fields": [
+        "cdId",
+        "dtlCd",
+        "dtlCdNm",
+        "dtlCdExpln",
+        "useYn"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.group.GroupManage",
+      "dto": "nuri.business.service.group.dto.GroupManageDto",
+      "fields": [
+        "groupId",
+        "groupNm",
+        "groupDc"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.auth.Authority",
+      "dto": "nuri.business.service.auth.dto.AuthorizationDto$CreateGroup",
+      "fields": [
+        "code",
+        "name",
+        "description"
+      ],
+      "entityFields": {
+        "code": "authrtCd",
+        "name": "authrtNm",
+        "description": "authrtExpln"
+      },
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.auth.AuthorityGrant",
+      "dto": "nuri.business.service.auth.dto.AuthorizationDto$Grant",
+      "fields": [
+        "type",
+        "code"
+      ],
+      "entityFields": {
+        "type": "authrtTypeCd",
+        "code": "authrtGrntCd"
+      },
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.auth.Authority",
+      "dto": "nuri.business.service.auth.dto.AuthorManageDto",
+      "fields": [
+        "authrtCd",
+        "authrtNm",
+        "authrtExpln"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.user.entity.DeptManage",
+      "dto": "nuri.business.service.department.dto.DeptManageDto",
+      "fields": [
+        "ognzId",
+        "ognzNm",
+        "ognzExpln",
+        "upOgnzId"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.board.BoardMaster",
+      "dto": "nuri.business.service.board.dto.BoardMasterDto",
+      "fields": [
+        "bbsId",
+        "bbsTtl",
+        "bbsExpln",
+        "bbsTypeCd",
+        "bbsAtrbCd",
+        "ansPsbltyYn",
+        "fileAtchPsbltyYn",
+        "tmpltId",
+        "useYn",
+        "ansYn",
+        "stsfdgYn"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.template.Template",
+      "dto": "nuri.business.service.template.dto.TemplateDto",
+      "fields": [
+        "tmpltId",
+        "tmpltNm",
+        "tmpltSeCd",
+        "tmpltPath",
+        "useYn"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.sms.Sms",
+      "dto": "nuri.business.service.sms.dto.SmsDto",
+      "fields": [
+        "sndngTelno",
+        "sndngCn"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.sms.SmsRecptnId",
+      "dto": "nuri.business.service.sms.dto.SmsRecptnDto",
+      "fields": [
+        "rcptnTelno"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.scrap.Scrap",
+      "dto": "nuri.business.service.scrap.dto.ScrapDto",
+      "fields": [
+        "scrapNm",
+        "scrapUrl",
+        "scrapExpln",
+        "useYn"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.addressbook.AddressBook",
+      "dto": "nuri.business.service.addressbook.dto.AddressBookDto",
+      "fields": [
+        "adbkNm",
+        "rlsScopeCd",
+        "trgetOgnzId",
+        "useYn"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.addressbook.AddressBookUser",
+      "dto": "nuri.business.service.addressbook.dto.AddressBookUserDto",
+      "fields": [
+        "userId",
+        "nm",
+        "emlAddr",
+        "homeTelno",
+        "mblTelno",
+        "ofcTelno",
+        "faxNo"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.operation.ExternalHr",
+      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "fields": [
+        "otsdHrId",
+        "gndrCd",
+        "otsdHrNm",
+        "crTypeCd",
+        "ogdpInstNm",
+        "brdtYmd",
+        "areaNo",
+        "mdTelno",
+        "endTelno",
+        "emlAddr"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.memoreport.MemoReport",
+      "dto": "nuri.business.service.memoreport.dto.MemoReportDto",
+      "fields": [
+        "rptTtl",
+        "memoRptYmd",
+        "rptrId",
+        "rptCn"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.report.WorkReport",
+      "dto": "nuri.business.service.report.dto.WorkReportDto",
+      "fields": [
+        "rptTtl",
+        "rptCn",
+        "rptSeCd",
+        "rptYmd"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.deptjob.DeptJobBox",
+      "dto": "nuri.business.service.deptjob.dto.DeptJobBoxDto",
+      "fields": [
+        "deptTaskBoxNm",
+        "deptId"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.deptjob.DeptJob",
+      "dto": "nuri.business.service.deptjob.dto.DeptJobDto",
+      "fields": [
+        "deptTaskNm",
+        "deptTaskCn",
+        "picId",
+        "prrtyRnk"
+      ],
+      "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.isg.InternetSvcGuidance",
+      "dto": "nuri.business.service.isg.dto.InternetSvcGuidanceDto",
+      "fields": [
+        "itntSvcNm",
+        "itntSvcExpln",
+        "rfltYn"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.schedule.Schedule",
+      "dto": "nuri.business.service.schedule.dto.ScheduleDto",
+      "fields": [
+        "schdlSeCd",
+        "schdlNm",
+        "schdlCn",
+        "reptSeCd",
+        "schdlBgngYmd",
+        "schdlEndYmd",
+        "schdlKndCd",
+        "schdlPlcNm",
+        "schdlImprtCd"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.notification.Notification",
+      "dto": "nuri.business.service.notification.dto.NotificationDto",
+      "fields": [
+        "notiTtlNm",
+        "notiCn",
+        "linkUrl"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "entity": "nuri.business.domain.program.Program",
+      "dto": "nuri.business.service.program.dto.ProgramDto",
+      "fields": [
+        "prgrmFileNm",
+        "prgrmStrgPath",
+        "prgrmKornNm",
+        "url",
+        "prgrmExpln"
+      ],
+      "pack": "core"
+    }
+  ],
+  "enumBindings": [
+    {
+      "dto": "nuri.business.service.auth.dto.AuthorizationDto$Grant",
+      "field": "type",
+      "allowedValues": [
+        "OPERATION",
+        "NAVIGATION"
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.system.content.banner.dto.BannerDto",
+      "field": "rfltYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.system.content.popup.dto.PopupDto",
+      "field": "stopvewSetupYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.system.content.popup.dto.PopupDto",
+      "field": "ntceYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.system.content.community.dto.CommunityDto",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.code.dto.CmmnClCodeDto",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.code.dto.CmmnCodeDto",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.code.dto.CmmnDetailCodeDto",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.board.dto.BoardMasterDto",
+      "field": "ansPsbltyYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.board.dto.BoardMasterDto",
+      "field": "fileAtchPsbltyYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.board.dto.BoardMasterDto",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.board.dto.BoardMasterDto",
+      "field": "ansYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.board.dto.BoardMasterDto",
+      "field": "stsfdgYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.scrap.dto.ScrapDto",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.addressbook.dto.AddressBookDto",
+      "field": "useYn",
+      "allowedValues": [
+        "Y",
+        "N"
+      ],
+      "pack": "demo"
+    }
+  ],
+  "nestedValidationBindings": [
+    {
+      "parent": "nuri.business.service.auth.dto.AuthorizationDto$ReplaceGrants",
+      "field": "grants",
+      "item": "nuri.business.service.auth.dto.AuthorizationDto$Grant",
+      "pack": "core"
+    },
+    {
+      "parent": "nuri.business.service.sms.dto.SmsDto",
+      "field": "recipients",
+      "item": "nuri.business.service.sms.dto.SmsRecptnDto",
+      "pack": "collaboration"
+    },
+    {
+      "parent": "nuri.business.service.addressbook.dto.AddressBookDto",
+      "field": "adbkMan",
+      "item": "nuri.business.service.addressbook.dto.AddressBookUserDto",
+      "pack": "demo"
+    }
+  ],
+  "requiredBindings": [
+    {
+      "dto": "nuri.business.service.system.content.banner.dto.BannerDto",
+      "fields": [
+        {
+          "field": "bnrNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.system.content.popup.dto.PopupDto",
+      "fields": [
+        {
+          "field": "popupTtlNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.system.content.community.dto.CommunityDto",
+      "fields": [
+        {
+          "field": "cmntyNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.user.dto.UserDto",
+      "fields": [
+        {
+          "field": "pswd",
+          "constraint": "NotBlank",
+          "groups": [
+            "nuri.business.service.user.dto.UserValidationGroups$OnCreate"
+          ]
+        },
+        {
+          "field": "userId",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "userNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.code.dto.CmmnClCodeDto",
+      "fields": [
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.code.dto.CmmnCodeDto",
+      "fields": [
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.code.dto.CmmnDetailCodeDto",
+      "fields": [
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.group.dto.GroupManageDto",
+      "fields": [],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.auth.dto.AuthorizationDto$CreateGroup",
+      "fields": [
+        {
+          "field": "code",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "name",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.auth.dto.AuthorizationDto$Grant",
+      "fields": [
+        {
+          "field": "type",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "code",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.auth.dto.AuthorManageDto",
+      "fields": [
+        {
+          "field": "authrtCd",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "authrtNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.department.dto.DeptManageDto",
+      "fields": [
+        {
+          "field": "ognzNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.board.dto.BoardMasterDto",
+      "fields": [
+        {
+          "field": "atchPsbltyFileSz",
+          "constraint": "NotNull",
+          "groups": []
+        },
+        {
+          "field": "bbsAtrbCd",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "bbsTtl",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "bbsTypeCd",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.template.dto.TemplateDto",
+      "fields": [
+        {
+          "field": "tmpltId",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "tmpltNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "tmpltPath",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "tmpltSeCd",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.sms.dto.SmsDto",
+      "fields": [
+        {
+          "field": "recipients",
+          "constraint": "NotEmpty",
+          "groups": []
+        },
+        {
+          "field": "sndngCn",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "sndngTelno",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.sms.dto.SmsRecptnDto",
+      "fields": [],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.scrap.dto.ScrapDto",
+      "fields": [
+        {
+          "field": "useYn",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.addressbook.dto.AddressBookDto",
+      "fields": [
+        {
+          "field": "adbkNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "rlsScopeCd",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.addressbook.dto.AddressBookUserDto",
+      "fields": [
+        {
+          "field": "userId",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "fields": [
+        {
+          "field": "evntSn",
+          "constraint": "NotNull",
+          "groups": []
+        },
+        {
+          "field": "otsdHrId",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.memoreport.dto.MemoReportDto",
+      "fields": [
+        {
+          "field": "rptTtl",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "rptrId",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.report.dto.WorkReportDto",
+      "fields": [
+        {
+          "field": "rptTtl",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.deptjob.dto.DeptJobBoxDto",
+      "fields": [
+        {
+          "field": "deptTaskBoxNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.deptjob.dto.DeptJobDto",
+      "fields": [],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.isg.dto.InternetSvcGuidanceDto",
+      "fields": [
+        {
+          "field": "itntSvcNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "itntSvcExpln",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.schedule.dto.ScheduleDto",
+      "fields": [
+        {
+          "field": "schdlNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.notification.dto.NotificationDto",
+      "fields": [
+        {
+          "field": "notiTtlNm",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "collaboration"
+    },
+    {
+      "dto": "nuri.business.service.program.dto.ProgramDto",
+      "fields": [
+        {
+          "field": "prgrmFileNm",
+          "constraint": "NotBlank",
+          "groups": [
+            "nuri.business.service.program.dto.ProgramDto$OnCreate"
+          ]
+        }
+      ],
+      "pack": "core"
+    }
+  ],
+  "requiredResponseFields": [
+    {
+      "dto": "nuri.business.service.user.dto.UserDto",
+      "fields": [
+        "groups",
+        "permissions",
+        "authorizationVersion"
+      ],
+      "pack": "core"
+    }
+  ],
+  "readOnlyBindings": [
+    {
+      "dto": "nuri.business.service.user.dto.UserDto",
+      "fields": [
+        "groups",
+        "permissions",
+        "authorizationVersion"
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.memoreport.dto.MemoReportDto",
+      "fields": [
+        "memoRptSn",
+        "userId",
+        "wrterNm",
+        "rptrNm",
+        "drctnMttr",
+        "drctnMttrRegDt",
+        "rptrInqDt",
+        "crtDt"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.report.dto.WorkReportDto",
+      "fields": [
+        "rptpSn",
+        "userId",
+        "userNm",
+        "rptSttsCd",
+        "rptTypeCd"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.deptjob.dto.DeptJobBoxDto",
+      "fields": [
+        "deptTaskBoxSn",
+        "deptNm",
+        "frstRgtrId",
+        "crtDt",
+        "lastMdfrId",
+        "mdfcnDt"
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.deptjob.dto.DeptJobDto",
+      "fields": [
+        "deptTaskSn",
+        "deptTaskBoxNm",
+        "deptId",
+        "deptNm",
+        "picNm",
+        "frstRgtrId",
+        "crtDt",
+        "lastMdfrId",
+        "mdfcnDt"
+      ],
+      "pack": "core"
+    },
+    {
+      "dto": "nuri.business.service.isg.dto.InternetSvcGuidanceDto",
+      "fields": [
+        "itntSrvcSn",
+        "lastMdfrId",
+        "mdfcnDt"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.schedule.dto.ScheduleDto",
+      "fields": [
+        "schdlSn",
+        "schdlPicId",
+        "schdlDeptId",
+        "frstRgtrId",
+        "crtDt",
+        "lastMdfrId",
+        "mdfcnDt",
+        "schdlIpAddr"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.notification.dto.NotificationDto",
+      "fields": [
+        "notiSn",
+        "notiDt",
+        "notiIvlVal",
+        "rcvrId",
+        "readYn",
+        "crtDt"
+      ],
+      "pack": "collaboration"
+    }
+  ],
+  "calendarDateBindings": [
+    {
+      "dto": "nuri.business.service.schedule.dto.ScheduleDto",
+      "fields": [
+        "schdlBgngYmd",
+        "schdlEndYmd"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.operation.dto.EventInfoDto",
+      "fields": [
+        "evntBgngYmd",
+        "evntEndYmd",
+        "evntAprvYmd"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.survey.dto.SurveyInfoDto",
+      "fields": [
+        "srvyBgngYmd",
+        "srvyEndYmd"
+      ],
+      "pack": "survey"
+    },
+    {
+      "dto": "nuri.business.service.survey.dto.OnlinePollManageRequest",
+      "fields": [
+        "pollBgngYmd",
+        "pollEndYmd"
+      ],
+      "pack": "survey"
+    },
+    {
+      "dto": "nuri.business.service.report.dto.WorkReportDto",
+      "fields": [
+        "rptYmd"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.memoreport.dto.MemoReportDto",
+      "fields": [
+        "memoRptYmd"
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "fields": [
+        "brdtYmd"
+      ],
+      "pack": "demo"
+    }
+  ]
+}

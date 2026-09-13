@@ -119,7 +119,7 @@ class HarnessBaselineIntegrityTest {
      * 실질 계약이므로 전체 해시로 보호한다.
      */
     private static final Pattern ARCH_RULE_FILE = Pattern.compile(
-            "(?:AttachmentSourceRegistryLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules"
+            "(?:AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules"
                     + "|Archunit\\w*)\\.java$");
 
     /** 소스 전체 해시 키 접미 — {@code <module>/<Class>.__sourceHash} */
@@ -159,7 +159,9 @@ class HarnessBaselineIntegrityTest {
      */
     private static final List<String> GATE_REGISTRIES = List.of(
             "config/governance/authorization-policies.json",
+            "config/governance/cross-domain-coupling-census.json",
             "config/governance/gates.json",
+            "config/governance/input-contract-mirror-census.json",
             "config/governance/privacy-access-census.json",
             "config/governance/zdm-waivers.json",
             "config/security/false-positive-review.json");

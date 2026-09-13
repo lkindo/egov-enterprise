@@ -371,6 +371,8 @@
         "api-server/src/test/java/nuri/api/harness",
         "api-server/src/test/resources/harness/baseline-manifest.properties",
         "config/governance/authorization-policies.json",
+        "config/governance/cross-domain-coupling-census.json",
+        "config/governance/input-contract-mirror-census.json",
         "config/governance/privacy-access-census.json",
         "config/governance/zdm-waivers.json"
       ],

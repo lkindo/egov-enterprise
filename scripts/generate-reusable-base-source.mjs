@@ -150,10 +150,12 @@ const HARNESS_SCAN_ROOTS = [
   'migration-tool/src/test/java',
 ];
 const ARCH_RULE_FILE_PATTERN =
-  /(?:AttachmentSourceRegistryLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
+  /(?:AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
 const GATE_REGISTRIES = [
   'config/governance/authorization-policies.json',
+  'config/governance/cross-domain-coupling-census.json',
   'config/governance/gates.json',
+  'config/governance/input-contract-mirror-census.json',
   'config/governance/privacy-access-census.json',
   'config/governance/zdm-waivers.json',
   'config/security/false-positive-review.json',
@@ -174,8 +176,10 @@ function javaType(path) {
 }
 
 function importedJavaTypes(path) {
-  const source = readFileSync(path, 'utf8');
-  return [...source.matchAll(/\bimport\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;/g)].map((match) => match[1]);
+  // import 선언도 **코드에서만** 읽는다 — 테스트 픽스처 텍스트 블록·주석 속 `import …;` 는 의존이 아니다.
+  //   (원문에 적용하던 종전 판정은 red-proof 텍스트 블록 한 줄 때문에 결합 census 게이트를 통째로 지웠다.)
+  const code = stripJavaCommentsAndStringLiterals(readFileSync(path, 'utf8'));
+  return [...code.matchAll(/\bimport\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;/g)].map((match) => match[1]);
 }
 
 function referencedRemovedJavaType(path, removedTypes) {
@@ -186,11 +190,18 @@ function referencedRemovedJavaType(path, removedTypes) {
   //   (census·정규식이 게이트 이름을 문자열로 열거하는 관용 때문에 오탐이 연쇄한다.)
   const code = stripJavaCommentsAndStringLiterals(source);
   const packageName = source.match(/\bpackage\s+([\w.]+)\s*;/)?.[1];
+  // 와일드카드 import(`import a.b.*;`)는 패키지를 들여오므로 같은 패키지 파일과 똑같이 단순명으로 본다.
+  //   종전에는 패키지 이름이 제거 타입 집합에 없어 조용히 놓쳤다 — 살아남은 파일이 투영에서 컴파일되지 않는 경로다.
+  const visiblePackages = new Set([
+    packageName,
+    ...[...code.matchAll(/\bimport\s+([\w.]+)\.\*\s*;/g)].map((match) => match[1]),
+  ].filter(Boolean));
   for (const type of removedTypes) {
     if (!type) continue;
     if (code.includes(type)) return type;
-    if (!packageName || !type.startsWith(`${packageName}.`)) continue;
-    const simpleName = type.slice(packageName.length + 1);
+    const typePackage = type.slice(0, type.lastIndexOf('.'));
+    if (!visiblePackages.has(typePackage)) continue;
+    const simpleName = type.slice(typePackage.length + 1);
     if (new RegExp(`\\b${simpleName}\\b`).test(code)) return type;
   }
   return undefined;
@@ -756,6 +767,15 @@ function skipJavaLiteral(source, open, quote) {
   return source.length - 1;
 }
 
+/** 텍스트 블록 `"""…"""` 의 마지막 따옴표 위치. 이스케이프된 따옴표(`\"`)는 닫는 구분자가 아니다. */
+function skipJavaTextBlock(source, open) {
+  for (let index = open + 3; index < source.length; index += 1) {
+    if (source[index] === '\\') index += 1;
+    else if (source.startsWith('"""', index)) return index + 2;
+  }
+  return source.length - 1;
+}
+
 /**
  * **타입 의존 판정용** 소스 — 주석에 더해 문자열 리터럴의 *내용*까지 지운다.
  *
@@ -770,12 +790,19 @@ function skipJavaLiteral(source, open, quote) {
  * 시큐리티 체인 우회 차단 같은 보안 게이트가 포함된다.
  *
  * 리터럴은 빈 껍데기로 바꿔 자리만 남긴다 — 완전히 지우면 토큰이 붙어 새 식별자가 생긴다.
+ *
+ * 텍스트 블록(`"""`)은 여기서만 따로 인식한다. 공용 {@link skipJavaLiteral} 은 메타 게이트의 해시용
+ * 주석 제거와 **동일해야** 하므로 바꾸지 않는다 — 그 함수로는 텍스트 블록 안의 `"` 가 리터럴 경계로 읽혀
+ * 따옴표 사이 조각이 코드로 남는다(JSON 픽스처 등).
  */
-function stripJavaCommentsAndStringLiterals(source) {
+export function stripJavaCommentsAndStringLiterals(source) {
   let output = '';
   for (let index = 0; index < source.length;) {
     const char = source[index];
-    if (char === '"' || char === "'") {
+    if (source.startsWith('"""', index)) {
+      output += '""""""';
+      index = skipJavaTextBlock(source, index) + 1;
+    } else if (char === '"' || char === "'") {
       const close = skipJavaLiteral(source, index, char);
       output += char === '"' ? '""' : "''";
       index = close + 1;
