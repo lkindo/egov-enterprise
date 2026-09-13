@@ -85,6 +85,18 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # [2026-09-13] zod 4.5 이상은 제안하지 않는다. zod 4.6.2 가 core 에 JIT 컴파일러 등을 더해
+      #   단일 JS 청크 번들 예산(150,000B)을 넘겼고(152,335B), 그래서 package.json 이 `~4.4.3` 으로
+      #   고정돼 있다(경위: frontend/scripts/check-bundle-budget.mjs 머리주석, PR #634).
+      #   이 규칙이 없으면 minor 그룹 PR 이 매주 zod 를 다시 싣고, 같은 예산 게이트에서 그룹 전체가 막힌다.
+      #   4.4.x 패치는 범위 밖이라 계속 제안된다.
+      # ⚠ 트레이드오프: GitHub 옵션 문서상 ignore 는 security update 에도 적용된다. 4.5 이상에서만
+      #   고쳐지는 zod 취약점이 나오면 Dependabot 이 PR 을 열지 않는다. 그 경우는 CI 의 frontend
+      #   audit 정책(High 이상 차단)이 모든 PR 을 막아 드러나며, 그때 예산 재산정 또는 zod 소비 방식
+      #   변경(zod/mini 등)을 함께 결정한다. 고정을 풀면 이 규칙도 같은 변경에서 걷는다.
+      - dependency-name: "zod"
+        versions: [">=4.5.0"]
     groups:
       # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —
       #   실측 22건 중 20건이 단건이었고, 이 파일 머리주석(11행)이 경계한 '아무도 보지 않는
