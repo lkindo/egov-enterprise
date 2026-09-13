@@ -134,6 +134,47 @@ test('structured content contract has an exact bounded pilot population and hone
   assert.deepEqual(validateContract(contract), []);
 });
 
+function collectReviewDates(node, found = []) {
+  if (Array.isArray(node)) {
+    node.forEach((item) => collectReviewDates(item, found));
+  } else if (node && typeof node === 'object') {
+    for (const [key, value] of Object.entries(node)) {
+      if (key === 'reviewBy' && typeof value === 'string') found.push(value);
+      else collectReviewDates(value, found);
+    }
+  }
+  return found;
+}
+
+// [2026-09-13 신설] 위 테스트는 고정 NOW(2026-08-21)로만 검증해 reviewBy 만료가 실제로는
+//   영원히 발화하지 않았다(ui-route-capabilities 가 2026-08-31 에 닫은 결함과 같은 형태 —
+//   DEC-OPS-027 ③). 만료 red 의 해소는 실제 재검토, 또는 사유를 남긴 명시적 기한 재설정 커밋이다.
+test('review horizons hold against the real clock, not only the pinned fixture date', () => {
+  const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
+  const now = new Date();
+
+  const horizon = now.getTime() + 60 * 24 * 60 * 60 * 1000;
+  const expiring = collectReviewDates(contract).filter((value) => {
+    const deadline = Date.parse(`${value}T23:59:59Z`);
+    return deadline >= now.getTime() && deadline <= horizon;
+  });
+  if (expiring.length > 0) {
+    console.warn(
+      `⚠ [frontend-visible-terms] review 기한 60일 이내 만료 예정 ${expiring.length}건 (기한: ${[...new Set(expiring)].sort().join(', ')}) — `
+      + '만료 시 이 게이트가 red 가 됩니다. 재검토를 완료하거나 기한 재설정을 사유와 함께 커밋하세요.',
+    );
+  }
+
+  assert.deepEqual(validateContract(contract, { now }), []);
+});
+
+test('the validator honours the injected clock, so the real-clock test can actually go red', () => {
+  const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
+  const errors = validateContract(contract, { now: new Date('2099-01-01T00:00:00Z') }).join('\n');
+  assert.match(errors, /contract needs owner and non-stale reviewBy/);
+  assert.ok(collectReviewDates(contract).length >= 2, 'review date scan collapsed');
+});
+
 test('pilot composers do not expose internal deployment language or log form payloads', () => {
   const boardComposer = fs.readFileSync(
     path.join(ROOT, 'frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'),

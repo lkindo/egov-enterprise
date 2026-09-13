@@ -23,7 +23,6 @@ spring:
     jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5433/egovdb}
     username: ${DB_USERNAME:egov}
     password: ${DB_PASSWORD:egov123}
-#    password: ${SUPABASE_DB_PASSWORD:}  # 유출됨 — 로테이션 필요 (실제 값 제거됨)
     driver-class-name: org.postgresql.Driver
 
   jpa:

@@ -13,7 +13,7 @@
 # 종전 CI 는 `gitleaks detect --source .` 로 히스토리 전량을 스캔했고, 신설된 날부터 계속 red 였다.
 # 실측(2026-08-03): leak 1351건이 전부 **이미 공개된 과거**에서 나온다 —
 #   playwright 인증상태 json 2092 · api-server/LOG_FILE_IS_UNDEFINED 로그 366 ·
-#   테스트 출력 txt · dump/supabase_full.sql 등. 전부 현재 HEAD 에는 없는 파일이다.
+#   테스트 출력 txt · DB 덤프 sql 등. 전부 현재 HEAD 에는 없는 파일이다.
 # 되돌릴 수 없는 과거 때문에 게이트가 원리적으로 초록이 될 수 없으면, 아무도 보지 않게 되어
 # 신설 목적(신규 유입 차단)이 사라진다. 그래서 CI 게이트는 **워킹트리 + 증분**만 본다.
 # 히스토리 전량 스캔은 `secret-scan-history.yml`(수동 실행)로 분리했다 — 감사에는 쓰되 머지 게이트로는 안 쓴다.

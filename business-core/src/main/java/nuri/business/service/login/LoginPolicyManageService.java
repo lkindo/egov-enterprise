@@ -17,7 +17,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,6 +31,23 @@ public class LoginPolicyManageService {
 
     private final LoginPolicyRepository loginPolicyRepository;
     private final UserRepository userRepository;
+
+    /**
+     * 접속 허용 시간창 판정의 기준 시계. 운영에서는 항상 Asia/Seoul 시스템 시계다.
+     *
+     * <p>[2026-09-13] 종전에는 판정이 {@code LocalTime.now(Asia/Seoul)} 를 직접 불러 테스트가 고정 시각을
+     * 넣을 수 없었다. 그래서 시간창 테스트들이 현재 시각 기준 상대 창을 만들고 자정 부근·저녁 시간대에는
+     * {@code assumeTrue} 로 <b>건너뛰었다</b> — 필수 mutation 게이트(business-core-auth)가 실행하는 테스트 집합이
+     * CI 실행 시각에 따라 달라졌다(실측: KST 19:04 에 'HHmm' 차단 테스트 1건이 skip, 자정 부근에는 더 많은 창 테스트가 skip).
+     * 생성자 주입으로 바꾸면 스프링 빈 구성과 기존 생성 경로가 함께 흔들리므로, 기본값을 둔 필드와
+     * 같은 패키지 전용 교체 지점만 연다.
+     */
+    private Clock clock = Clock.system(ZoneId.of("Asia/Seoul"));
+
+    /** 테스트 전용 — 시간창 판정의 기준 시각을 고정한다. */
+    void useClock(Clock clock) {
+        this.clock = Objects.requireNonNull(clock, "clock");
+    }
 
     public List<LoginPolicyDto> selectLoginPolicyList(BaseSearchDto searchVO) {
         Pageable pageable = searchVO.toPageable();
@@ -135,7 +155,7 @@ public class LoginPolicyManageService {
             }
             if (policy.getBgngTm() != null && !policy.getBgngTm().isEmpty() && policy.getEndTm() != null && !policy.getEndTm().isEmpty()) {
                 try {
-                    java.time.LocalTime now = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
+                    java.time.LocalTime now = java.time.LocalTime.now(clock);
                     String bgng = policy.getBgngTm();
                     String end = policy.getEndTm();
                     if (!bgng.contains(":") && bgng.length() >= 4) {

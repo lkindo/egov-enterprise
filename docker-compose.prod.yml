@@ -78,6 +78,43 @@ services:
       # 로그 파기는 base 기본값이 켜짐(true)이라 전달이 없어도 동작한다. 인수처가 개월 수를 바꾸려면
       #   application-prod.yml 또는 SPRING_APPLICATION_JSON 으로 nuri.log.retention.* 을 준다.
       LOG_RETENTION_ENABLED: ${LOG_RETENTION_ENABLED:-true}
+      # [2026-09-13] 운영 조정 변수 전달. 아래는 앱이 `${VAR:기본값}` 등으로 읽는데 이 오버레이에 줄이 없어
+      #   **호스트에 값을 넣어도 컨테이너에 닿지 않던** 변수들이다(DEC-OPS-045 가 보존 변수 3개를 고친 뒤의 재발).
+      #   예: 첨부 점검은 문서가 "ATTACHMENT_INTEGRITY_ENABLED 로 끈다" 고 안내했지만 끌 수 없었고,
+      #   결재 결과 문자는 NOTIFICATION_SENDER_TEL 을 줄 방법이 없어 운영에서 늘 건너뛰었다.
+      #
+      #   ⚠ 형태는 **값 없는 `VAR:`** 로 둔다(docker compose v2.40 실측). 호스트/.env 에 변수가 없으면 컨테이너에도
+      #     없어 앱 기본값이 그대로 산다. `VAR: ${VAR}` 로 쓰면 미설정 시 **빈 문자열이 설정돼** 앱 기본값이 사라진다.
+      #     기본값을 여기에 복제하지 않는 이유도 같다 — 두 곳이 갈라지면 어느 쪽이 사실인지 알 수 없다.
+      #   ⚠ 단, 호스트/.env 에 **빈 값으로 설정**하면(`VAR=`) 이 형태도 "" 를 전달해 앱 기본값을 덮는다
+      #     (예: `ATTACHMENT_INTEGRITY_ENABLED=` 는 점검을 끄고, `LOGIN_MAX_FAILURES=` 는 기동 실패). 기본값을
+      #     쓰려면 .env 에서 줄 자체를 두지 않는다.
+      #   ⚠ 이 목록과 앱이 읽는 변수(application*.yml·globals.properties·@Value·완화 바인딩 선언)의 양방향 정합은
+      #     scripts/deploy-env-forwarding-contract.test.mjs 가 고정한다. 새 변수를 읽게 하면 여기에도 추가하거나,
+      #     전달하지 않는 사유를 그 계약에 남겨야 한다. 앱이 더 이상 읽지 않는 전달도 red 다.
+      MAIL_FROM:
+      MAIL_PORT:
+      # application-prod.yml 이 인증 릴레이 자격을 Spring 완화 바인딩으로 받으라고 안내하는 두 변수
+      #   (placeholder 가 없어 계약의 API_FORWARDED_WITHOUT_PLACEHOLDER 선언이 존재를 강제한다).
+      SPRING_MAIL_USERNAME:
+      SPRING_MAIL_PASSWORD:
+      NOTIFICATION_SENDER_TEL:
+      CORS_ORIGIN_1:
+      CORS_ORIGIN_2:
+      LOGIN_MAX_FAILURES:
+      LOGIN_LOCK_MINUTES:
+      JWT_REFRESH_TOKEN_VALIDITY_MS:
+      DB_POOL_CONNECTION_TIMEOUT_MS:
+      DB_POOL_MAX_SIZE:
+      DB_POOL_MIN_IDLE:
+      FILE_UPLOAD_MAX_SIZE:
+      FILE_UPLOAD_MAX_REQUEST_SIZE:
+      # 첨부 정기 점검(readiness-followups.md). 보고서 경로를 바꿀 때는 영속 볼륨(/app/storage) 안이어야
+      #   컨테이너 재생성 후에도 결과가 남는다(기본값 storage/diagnostics/... 는 WORKDIR /app 기준).
+      ATTACHMENT_INTEGRITY_ENABLED:
+      ATTACHMENT_INTEGRITY_CRON:
+      ATTACHMENT_INTEGRITY_MAX_ITEMS:
+      ATTACHMENT_INTEGRITY_REPORT_DIRECTORY:
     # [W1-12 보완] 관리 포트를 분리하면 /actuator/** 는 **8080 에서 사라진다**(Spring Boot 가
     #   management 를 별도 웹서버 컨텍스트로 띄운다). base compose 의 헬스체크는
     #   `http://localhost:8080/actuator/health` 를 찌르므로, 오버레이를 얹은 운영 배포에서만
@@ -103,3 +140,16 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+
+  # [2026-09-13] 프런트 서버 런타임 변수 전달. `NEXT_PUBLIC_*` 는 빌드 시점에 번들에 인라인되므로 여기서
+  #   바꿀 수 없고, 아래는 서버가 요청 시점에 읽는 변수다. 형태가 값 없는 `VAR:` 인 이유는 api 블록 주석과 같다.
+  #   ⚠ ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE 는 넣지 않는다(ADR-0010 — loopback 개발 전용).
+  #     scripts/deploy-env-forwarding-contract.test.mjs 가 이 오버레이에 나타나면 red 로 막는다.
+  frontend:
+    environment:
+      # 브랜드 프로필·밀도 축(DEC-OPS-015, docs/03-guides/design-tokens.md). 미설정이면 기본 프로필·comfortable.
+      BRAND_THEME:
+      UI_DENSITY:
+      LOG_LEVEL:
+      # BACKEND_ACTUATOR_URL 은 전달하지 않는다 — 현재 호출 경로(클라이언트 조회 → /actuator rewrite)에서 읽히지 않고,
+      #   운영의 actuator 404 는 관리 포트 분리(W1-12)의 의도된 형상이다. 9090 연결은 next.config 가 금지한 권한 완화다.

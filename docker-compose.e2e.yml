@@ -2,12 +2,12 @@ version: "3.8"
 
 # ====================================================
 # EGOV Enterprise E2E Test Environment
-# 실제 Supabase DB 스냅샷을 로컬 PostgreSQL에 복원하여
+# DB 스냅샷을 로컬 PostgreSQL에 복원하여
 # 실제 데이터와 동일한 환경에서 E2E 테스트를 수행합니다.
 # ====================================================
 
 services:
-  # ── 1. 로컬 PostgreSQL (Supabase 스냅샷 복원) ──────────────────
+  # ── 1. 로컬 PostgreSQL (스냅샷 복원) ──────────────────
   db-e2e:
     image: postgres:17@sha256:a426e44bac0b759c95894d68e1a0ac03ecc20b619f498a91aae373bf06d8508d
     container_name: egov-e2e-postgres
@@ -19,7 +19,7 @@ services:
       POSTGRES_USER: egov
       POSTGRES_PASSWORD: egov123
     volumes:
-      - ./dump/supabase_e2e_full.sql:/docker-entrypoint-initdb.d/01_full_dump.sql:ro
+      - ./dump/e2e_full.sql:/docker-entrypoint-initdb.d/01_full_dump.sql:ro
       - ./dump/init_users.sql:/docker-entrypoint-initdb.d/02_init_users.sql:ro
       - ./dump/03_seed_extra.sql:/docker-entrypoint-initdb.d/03_seed_extra.sql:ro
       - e2e_postgres_data:/var/lib/postgresql/data

@@ -146,18 +146,14 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 유효성 검증 - 시간 불일치 (이전)")
     void validateLoginPolicyTimeBeforeTest() {
-        // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
-        // 테스트가 JVM 기본 시간대를 쓰면 UTC 러너(CI)에서 9시간 어긋나 허용창 밖이 된다
-        // — 2026-07-26 CI 실패의 원인. 서비스와 동일한 기준시로 창을 계산한다.
-        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        String start = now.plusHours(1).format(DateTimeFormatter.ofPattern("HH:mm"));
-        String end = now.plusHours(2).format(DateTimeFormatter.ofPattern("HH:mm"));
-
+        // [2026-09-13] 판정 시계를 고정한다. 종전의 "현재 시각(Asia/Seoul) 기준 상대 창" 은 UTC 러너
+        //   9시간 어긋남(2026-07-26 CI 실패)을 피하려던 우회였고, 시계 주입으로 그 원인 자체가 사라졌다.
+        fixClockAt(12, 0);
         LoginPolicy policy = LoginPolicy.builder()
                 .userId("USER1")
                 .lmtYn("N")
-                .bgngTm(start)
-                .endTm(end)
+                .bgngTm("13:00")
+                .endTm("14:00")
                 .build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
 
@@ -169,32 +165,16 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 유효성 검증 - 성공")
     void validateLoginPolicySuccessTest() {
-        // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
-        // 테스트가 JVM 기본 시간대를 쓰면 UTC 러너(CI)에서 9시간 어긋나 허용창 밖이 된다
-        // — 2026-07-26 CI 실패의 원인. 서비스와 동일한 기준시로 창을 계산한다.
-        // [2026-08-09 플레이크 제거] LocalTime.MIN/MAX 특수화를 걷어낸다.
-        //   MAX 는 23:59:59.999999999 인데 "HH:mm" 으로 포맷하면 **"23:59" 로 잘린다.**
-        //   그래서 서비스의 now 가 23:59:00.001~23:59:59.999 이면 endTime(23:59:00) 보다
-        //   뒤가 되어 창 밖으로 판정되고 BusinessException 이 난다 —
-        //   **하루의 마지막 1분에만 터지는 시계 의존 플레이크**다.
-        //   (실측: CI run 이 KST 23:59 구간에 걸려 이 테스트 2건이 red 였다.)
-        //
-        //   서비스는 자정을 넘는 창(start > end)을 이미 지원하므로 특수화 자체가 불필요하다.
-        //   ±1시간이면 0시·23시에도 유효한 야간 창이 만들어진다.
-        //   전 시각 4320개 지점(분 전체 × 초 경계 0/30/59) 시뮬레이션에서 실패 0건 확인.
-        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        LocalTime startTimeVal = now.minusHours(1);
-        LocalTime endTimeVal = now.plusHours(1);
-
-        String start = startTimeVal.format(DateTimeFormatter.ofPattern("HH:mm"));
-        String end = endTimeVal.format(DateTimeFormatter.ofPattern("HH:mm"));
-
+        // [2026-09-13] 판정 시계를 고정한다. 종전의 상대 창은 UTC 러너 9시간 어긋남(2026-07-26)과
+        //   "HH:mm" 절단으로 KST 23:59 한 분 동안만 실패하던 플레이크(2026-08-09)를 차례로 겪었다 —
+        //   둘 다 테스트가 실제 시계를 읽었기 때문이며, 시계 주입으로 원인 자체가 사라졌다.
+        fixClockAt(12, 0);
         LoginPolicy policy = LoginPolicy.builder()
                 .userId("USER1")
                 .lmtYn("N")
                 .ipAddr("127.0.0.1")
-                .bgngTm(start)
-                .endTm(end)
+                .bgngTm("11:00")
+                .endTm("13:00")
                 .build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
 
@@ -266,23 +246,13 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 유효성 검증 - 콜론 없는 4자리 시간 처리")
     void validateLoginPolicyTimeNoColonTest() {
-        // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
-        // 테스트가 JVM 기본 시간대를 쓰면 UTC 러너(CI)에서 9시간 어긋나 허용창 밖이 된다
-        // — 2026-07-26 CI 실패의 원인. 서비스와 동일한 기준시로 창을 계산한다.
-        // 위 validateLoginPolicySuccessTest 와 같은 이유로 MIN/MAX 특수화를 쓰지 않는다.
-        //   (23:59 대의 마지막 1분에만 실패하는 시계 의존 플레이크)
-        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        LocalTime startTimeVal = now.minusHours(1);
-        LocalTime endTimeVal = now.plusHours(1);
-
-        String start = startTimeVal.format(DateTimeFormatter.ofPattern("HHmm"));
-        String end = endTimeVal.format(DateTimeFormatter.ofPattern("HHmm"));
-
+        // [2026-09-13] 판정 시계 고정 — validateLoginPolicySuccessTest 와 같은 이유.
+        fixClockAt(12, 0);
         LoginPolicy policy = LoginPolicy.builder()
                 .userId("USER1")
                 .lmtYn("N")
-                .bgngTm(start)
-                .endTm(end)
+                .bgngTm("1100")
+                .endTm("1300")
                 .build();
         given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(policy));
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("USER1", "127.0.0.1"));
@@ -296,12 +266,18 @@ class LoginPolicyManageServiceTest {
     //   자정을 넘는 창(예: 22:00~06:00)은 start > end 라 판정식이 반대가 되는데,
     //   그 갈림길이 검증된 적이 없었다.
     //
-    //   ⚠ LocalTime.now(Asia/Seoul) 의존이라 고정 시각을 넣을 수 없다.
-    //   대신 **현재 시각을 기준으로 항상 성립/불성립하는 창**을 만들어 판정을 고정한다.
+    //   [2026-09-13] 종전에는 서비스가 LocalTime.now(Asia/Seoul) 를 직접 불러 고정 시각을 넣을 수 없었고,
+    //   현재 시각 기준 상대 창 + assumeTrue(자정 부근·저녁 skip)로 우회했다. 그래서 필수 mutation 게이트가
+    //   죽이는 뮤턴트가 CI 실행 시각에 따라 달라졌다. 이제 서비스의 판정 시계를 고정해 **어느 시각에 돌려도
+    //   같은 판정**을 검증한다. 기준 시각은 KST 12:00 이며, 경계(정확히 시작·끝 시각)도 함께 고정한다.
     // ─────────────────────────────────────────────────────────────────────────
 
-    private static String hhmm(java.time.LocalTime t) {
-        return String.format("%02d:%02d", t.getHour(), t.getMinute());
+    private static final java.time.ZoneId SEOUL = java.time.ZoneId.of("Asia/Seoul");
+
+    /** 서비스의 판정 시계를 KST 기준 특정 시각으로 고정한다. */
+    private void fixClockAt(int hour, int minute) {
+        loginPolicyManageService.useClock(java.time.Clock.fixed(
+                java.time.LocalDate.of(2026, 9, 13).atTime(hour, minute).atZone(SEOUL).toInstant(), SEOUL));
     }
 
     private LoginPolicy policyWithWindow(String bgng, String end) {
@@ -311,15 +287,8 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("시간창: 현재가 창 안이면 통과한다 (정상 순서 창)")
     void timeWindow_insideNormalWindow_passes() {
-        java.time.LocalTime now = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        // now 를 확실히 포함하는 창. 경계에 걸리지 않도록 넉넉히 잡는다.
-        String bgng = hhmm(now.minusHours(2));
-        String end = hhmm(now.plusHours(2));
-        // 자정을 걸치면 start > end 가 되어 다른 분기다 — 그 경우는 아래 테스트가 다룬다.
-        org.junit.jupiter.api.Assumptions.assumeTrue(
-                now.minusHours(2).isBefore(now.plusHours(2)), "자정 인접 시각에서는 이 케이스를 건너뛴다");
-
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow(bgng, end)));
+        fixClockAt(12, 0);
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("10:00", "14:00")));
 
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
     }
@@ -327,56 +296,67 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("시간창: 현재가 창 밖이면 차단한다 (정상 순서 창)")
     void timeWindow_outsideNormalWindow_blocks() {
-        java.time.LocalTime now = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        // now 를 확실히 제외하는 짧은 창(과거 구간).
-        String bgng = hhmm(now.minusHours(4));
-        String end = hhmm(now.minusHours(3));
-        org.junit.jupiter.api.Assumptions.assumeTrue(
-                now.minusHours(4).isBefore(now.minusHours(3)) && now.minusHours(3).isBefore(now),
-                "자정 인접 시각에서는 이 케이스를 건너뛴다");
-
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow(bgng, end)));
+        fixClockAt(12, 0);
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("08:00", "09:00")));
 
         // 조건을 뒤집은 뮤턴트는 통과시켜 여기서 죽는다.
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
         assertTrue(ex.getMessage().contains("제한된 접속 시간"));
+        assertEquals(CommonErrorCode.LOGIN_POLICY_TIME_RESTRICTED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("시간창: 시작·끝 시각과 정확히 같은 순간은 창 안이다 (양끝 포함)")
+    void timeWindow_boundariesAreInclusive() {
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("10:00", "14:00")));
+
+        // `!now.isBefore(start)` / `!now.isAfter(end)` 의 경계 뮤턴트(isBefore↔isAfter, 부정 제거)가 여기서 죽는다.
+        fixClockAt(10, 0);
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
+        fixClockAt(14, 0);
+        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
+
+        fixClockAt(9, 59);
+        assertThrows(BusinessException.class, () -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
+        fixClockAt(14, 1);
+        assertThrows(BusinessException.class, () -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
     }
 
     @Test
     @DisplayName("시간창: 자정을 넘는 창(start > end)도 현재가 안이면 통과한다")
     void timeWindow_insideOvernightWindow_passes() {
-        java.time.LocalTime now = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        // start = now+1h, end = now+... 로 만들면 start > end 인 '자정 넘는 창' 이 되고,
-        // now 는 [start,24:00) ∪ [00:00,end] 중 뒤쪽 구간에 든다.
-        String bgng = hhmm(now.plusHours(1));
-        String end = hhmm(now.plusMinutes(30));
-        org.junit.jupiter.api.Assumptions.assumeTrue(
-                now.plusHours(1).isAfter(now.plusMinutes(30)) == false
-                        ? false
-                        : true, "구성 전제");
-
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow(bgng, end)));
+        fixClockAt(12, 0);
+        // 13:00~12:30 은 start > end 인 '자정 넘는 창' 이고, 12:00 은 [00:00, 12:30] 구간에 든다.
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("13:00", "12:30")));
 
         // startTime.isBefore(endTime) 분기 선택이 틀리면 여기서 차단되어 죽는다.
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
     }
 
     @Test
+    @DisplayName("시간창: 자정을 넘는 창의 바깥(end 와 start 사이)은 차단한다")
+    void timeWindow_outsideOvernightWindow_blocks() {
+        fixClockAt(12, 0);
+        // 22:00~06:00 창에서 12:00 은 두 구간 모두 밖이다. 이 케이스는 OR↔AND 나 분기 선택 뮤턴트와는
+        // 결과가 같아 그것들을 죽이지 못한다(그 몫은 자정 넘김 '안' 테스트들이다). 여기서 죽는 것은
+        // 자정 넘김 창에서 차단 자체를 없애는 뮤턴트(`!withinWindow` 부정·throw 제거)다.
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("22:00", "06:00")));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
+        assertEquals(CommonErrorCode.LOGIN_POLICY_TIME_RESTRICTED, ex.getErrorCode());
+    }
+
+    @Test
     @DisplayName("시간창: HHmm(콜론 없음) 형식도 파싱한다")
     void timeWindow_acceptsCompactFormat() {
-        java.time.LocalTime now = java.time.LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        org.junit.jupiter.api.Assumptions.assumeTrue(
-                now.minusHours(2).isBefore(now.plusHours(2)), "자정 인접 시각에서는 건너뛴다");
+        fixClockAt(12, 0);
+        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow("1000", "1400")));
 
-        String bgng = String.format("%02d%02d", now.minusHours(2).getHour(), now.minusHours(2).getMinute());
-        String end = String.format("%02d%02d", now.plusHours(2).getHour(), now.plusHours(2).getMinute());
-
-        given(loginPolicyRepository.findById("U1")).willReturn(Optional.of(policyWithWindow(bgng, end)));
-
-        // `!bgng.contains(":") && length >= 4` 조건을 뒤집으면 파싱이 깨져 catch 로 빠지고,
-        // catch 는 예외를 삼키므로 통과한다 — 그러면 이 테스트는 여전히 통과한다.
-        // 따라서 여기서는 '정상 파싱 시 통과' 만 고정하고, 차단 판정은 위 테스트가 맡는다.
+        // `!bgng.contains(":") && length >= 4` 조건을 뒤집으면 파싱이 깨져 catch 로 빠진다.
+        // 2026-08-09 fail-closed 전환 이후 catch 는 형식 오류로 **차단**하므로, 허용이어야 할 이 케이스가
+        // 예외를 던져 변환 분기 뮤턴트가 여기서 죽는다.
         assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("U1", "127.0.0.1"));
     }
 
@@ -398,12 +378,13 @@ class LoginPolicyManageServiceTest {
     //   가장 위험한 것은 validateLoginPolicy 의 **시간 형식 변환 분기**(L118·L121)다.
     //   기존 테스트는 전부 "HH:mm" 형식을 넣어서, "HHmm"(콜론 없음) 을 받아
     //   "HH:mm" 으로 재조립하는 분기에 **닿은 적이 없었다**.
-    //   그 분기를 뒤집으면 parse 가 실패하고 → 아래 `catch (Exception)` 이 삼켜서
-    //   → **접속 시간 제한이 통째로 무력화된 채 로그인이 성공한다**.
-    //   실패가 예외로 드러나지 않고 '허용'으로 끝나는 구조라 더 위험하다.
+    //   그 분기를 뒤집으면 parse 가 실패하고 → 당시의 `catch (Exception)` 이 삼켜서
+    //   → **접속 시간 제한이 통째로 무력화된 채 로그인이 성공했다**(같은 날 fail-closed 로 전환).
+    //   지금은 catch 가 같은 에러 코드(LOGIN_POLICY_TIME_RESTRICTED)의 **형식 오류 메시지**로 차단하므로,
+    //   차단 테스트는 코드만이 아니라 메시지로 '정상 시간 제한' 과 '형식 오류' 를 구분해야 뮤턴트를 죽인다.
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** 콜론 없는 "HHmm" 형식으로 지금 시각을 배제하는 창을 만든다. */
+    /** 콜론 없는 "HHmm" 형식의 시간창 정책을 만든다. */
     private static LoginPolicy policyWithCompactTimeWindow(LocalTime start, LocalTime end) {
         DateTimeFormatter compact = DateTimeFormatter.ofPattern("HHmm");
         return LoginPolicy.create("tester", null, "Y", "N",
@@ -413,27 +394,24 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("시간정책: 'HHmm'(콜론 없음) 형식도 해석해 제한 시간을 실제로 차단한다")
     void compactTimeFormatIsParsedAndEnforced() {
-        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        // 지금을 확실히 벗어난 창: [now+2h, now+4h]. 자정 넘김을 피해 오전 구간에서만 수행.
-        org.junit.jupiter.api.Assumptions.assumeTrue(now.getHour() < 19,
-                "자정 넘김 창과 섞이지 않도록 19시 이전에만 수행한다");
-        LoginPolicy policy = policyWithCompactTimeWindow(now.plusHours(2), now.plusHours(4));
+        // 12:00 을 확실히 벗어난 창 [14:00, 16:00]. 종전에는 상대 창이라 KST 19시 이후 skip 됐다.
+        fixClockAt(12, 0);
+        LoginPolicy policy = policyWithCompactTimeWindow(LocalTime.of(14, 0), LocalTime.of(16, 0));
         given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(policy));
 
-        // 변환 분기(!contains(":") / length >= 4)를 뒤집은 뮤턴트는 parse 실패 →
-        // catch 가 삼켜 **예외 없이 통과**한다. 그래서 여기서 죽는다.
+        // 변환 분기(!contains(":") / length >= 4)를 뒤집은 뮤턴트는 parse 실패 → catch 가 형식 오류로 차단한다.
+        // 에러 코드는 같으므로, 정상적인 '시간 밖' 차단임을 메시지로 확인해야 이 테스트가 그 뮤턴트를 죽인다.
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> loginPolicyManageService.validateLoginPolicy("tester", "127.0.0.1"));
         assertEquals(CommonErrorCode.LOGIN_POLICY_TIME_RESTRICTED, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("제한된 접속 시간"), ex.getMessage());
     }
 
     @Test
     @DisplayName("시간정책: 'HHmm' 형식이 허용 창일 때는 통과한다 (변환이 양방향으로 옳다)")
     void compactTimeFormatAllowsWithinWindow() {
-        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        org.junit.jupiter.api.Assumptions.assumeTrue(now.getHour() >= 1 && now.getHour() < 22,
-                "창 양끝이 자정을 넘지 않는 시간대에만 수행한다");
-        LoginPolicy policy = policyWithCompactTimeWindow(now.minusHours(1), now.plusHours(1));
+        fixClockAt(12, 0);
+        LoginPolicy policy = policyWithCompactTimeWindow(LocalTime.of(11, 0), LocalTime.of(13, 0));
         given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(policy));
 
         // 통과가 '검증이 없어서'가 아니라 '창 안이라서'임을 확인한다.
@@ -599,15 +577,14 @@ class LoginPolicyManageServiceTest {
     //
     //   ⚠ 창을 now 기준 상대시각으로 잡으면 자정 부근에서 자동 스킵(assumeTrue)이 걸려
     //   CI 실행 시각에 따라 뮤턴트가 살았다 죽었다 한다 — 게이트가 흔들린다.
-    //   그래서 창을 **하루 양 끝의 고정 시각**으로 고정해 스킵 구간을 1~2분으로 줄였다.
+    //   종전에는 창을 하루 양 끝의 고정 시각으로 두어 스킵 구간을 1~2분으로 줄였고,
+    //   [2026-09-13] 판정 시계를 고정해 스킵 자체를 없앴다.
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("자정 넘김 창: 자정 이후 구간(now ≤ end)만으로 허용된다")
     void overnightWindowAllowsViaEndBoundaryAlone() {
-        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        org.junit.jupiter.api.Assumptions.assumeTrue(now.isBefore(LocalTime.of(23, 58)),
-                "23:58 이후에는 창 자체가 성립하지 않는다");
+        fixClockAt(12, 0);
         // start(23:59) > end(23:58) → 자정 넘김 창. now 는 start 이전이므로 첫 항은 false.
         given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(
                 LoginPolicy.create("tester", null, "Y", "N", "23:59", "23:58", "N")));
@@ -619,9 +596,7 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("자정 넘김 창: 자정 이전 구간(now ≥ start)만으로 허용된다")
     void overnightWindowAllowsViaStartBoundaryAlone() {
-        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        org.junit.jupiter.api.Assumptions.assumeTrue(!now.isBefore(LocalTime.of(0, 1)),
-                "00:01 이전에는 창 자체가 성립하지 않는다");
+        fixClockAt(12, 0);
         // start(00:01) > end(00:00) → 자정 넘김 창. now 는 end 이후이므로 둘째 항은 false.
         given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(
                 LoginPolicy.create("tester", null, "Y", "N", "00:01", "00:00", "N")));
