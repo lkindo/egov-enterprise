@@ -198,30 +198,33 @@ function assertE2eShardContractMatches(context, requiredChecksText) {
   );
 }
 
+/** 결합 census 는 원장(config/governance/cross-domain-coupling-census.json)의 edge 를 대상 모듈별로 센다(DEC-OPS-090). */
 function assertCouplingMemoryMatches(gaps, source) {
   const row = gaps.split(/\r?\n/).find((line) => line.startsWith('| GAP-ARCH-001 |'));
   assert.ok(row, 'GAP-ARCH-001의 현재 결합 census가 필요합니다.');
-  for (const [label, constant] of [
-    ['app→app', 'APP_TO_APP_COUPLING'],
-    ['app→core', 'APP_TO_CORE_COUPLING'],
+  const edges = JSON.parse(source).edges;
+  assert.ok(Array.isArray(edges) && edges.length > 0, '결합 census 원장의 edge를 읽을 수 없습니다.');
+  for (const [label, module] of [
+    ['app→app', 'business-app'],
+    ['app→core', 'business-core'],
   ]) {
     const actual = row.match(new RegExp(`${label} \\*\\*(\\d+)건\\*\\*`, 'u'));
-    const expected = source.match(new RegExp(`private static final int ${constant} = (\\d+);`, 'u'));
-    assert.ok(actual && expected, `${label}: 메모리와 소스의 census를 읽을 수 없습니다.`);
-    assert.equal(Number(actual[1]), Number(expected[1]), `${label}: 공용 메모리 census가 현재 하네스와 다릅니다.`);
+    assert.ok(actual, `${label}: 메모리의 census를 읽을 수 없습니다.`);
+    const expected = edges.filter((edge) => edge.module === module).length;
+    assert.equal(Number(actual[1]), expected, `${label}: 공용 메모리 census가 현재 하네스와 다릅니다.`);
   }
 }
 
 test('active coupling memory matches the current source census', () => {
   assertCouplingMemoryMatches(
     readRepoFile('.agent/memory/known-gaps.md'),
-    readRepoFile('api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java'),
+    readRepoFile('config/governance/cross-domain-coupling-census.json'),
   );
 });
 
 test('coupling memory rejects stale and missing census claims', () => {
   const gaps = readRepoFile('.agent/memory/known-gaps.md');
-  const source = readRepoFile('api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java');
+  const source = readRepoFile('config/governance/cross-domain-coupling-census.json');
   for (const label of ['app→app', 'app→core']) {
     const stale = gaps.replace(new RegExp(`${label} \\*\\*\\d+건\\*\\*`, 'u'), `${label} **999건**`);
     assert.notEqual(stale, gaps);

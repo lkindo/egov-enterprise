@@ -19,14 +19,6 @@
       ],
       "acknowledgedRemovedGates": [
         {
-          "file": "api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java",
-          "reason": "생성기 importedJavaTypes 가 주석·문자열을 지우기 전 원문에 import 정규식을 적용해, red-proof 텍스트 블록 속 import 문자열(informalsanction 이벤트 타입)을 간선으로 읽고 제거한다(GAP-PACK-001 ④). core 에는 business-app 도메인이 하나도 남지 않아 검사 대상이 0이다."
-        },
-        {
-          "file": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java",
-          "reason": "표적 DTO 목록이 addressbook 등 제외 도메인 DTO 를 직접 참조한다. ⚠ core 에 남는 DTO 의 길이·필수 미러 검사까지 함께 사라진다 — 알려진 손실(GAP-PACK-001)."
-        },
-        {
           "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
           "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
         },
@@ -49,14 +41,6 @@
         }
       ],
       "acknowledgedRemovedGates": [
-        {
-          "file": "api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java",
-          "reason": "생성기 importedJavaTypes 가 주석·문자열을 지우기 전 원문에 import 정규식을 적용해, red-proof 텍스트 블록 속 import 문자열(informalsanction 이벤트 타입)을 간선으로 읽고 제거한다(GAP-PACK-001 ④). ⚠ collaboration 에는 board·comment·mail·note·notification·scrap·sms 7개 도메인이 남으므로 결합 census 손실이 실질적이다 — 알려진 손실(GAP-PACK-001)."
-        },
-        {
-          "file": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java",
-          "reason": "표적 DTO 목록이 addressbook 등 제외 도메인 DTO 를 직접 참조한다. ⚠ collaboration 에 남는 DTO 의 길이·필수 미러 검사까지 함께 사라진다 — 알려진 손실(GAP-PACK-001)."
-        },
         {
           "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
           "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
