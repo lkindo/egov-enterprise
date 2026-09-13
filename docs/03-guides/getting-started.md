@@ -63,7 +63,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 | `JWT_SECRET` | JWT 서명키 | 고엔트로피 값 필수 |
 | `ALGORITHM_KEY` | PII(주민번호 등) 암복호화 마스터키 | **운영 필수**, 로테이션 시 재암호화 선행 |
 | `OLD_ALGORITHM_KEY` | PII 키 회전 중 구키 복호화 폴백 | 평상시 미설정, 회전 창에서만 임시 주입 후 폐기 |
-| `CORS_ORIGIN_1` / `CORS_ORIGIN_2` | 운영 CORS 오리진 | `application-prod.yml` |
+
+운영에서 반드시 설정하지만 fail-fast 는 아닌 값: `CORS_ORIGIN_1` / `CORS_ORIGIN_2`(운영 CORS 오리진). 미설정 시 `application-prod.yml` 의 `example.com` 기본값으로 **기동은 된다**. `docker-compose.prod.yml` 은 이 값과 메일 발신자·로그인 잠금·첨부 점검 등 운영 조정 변수를 값 없는 형태로 전달하며, 호스트/`.env` 에 값이 있을 때만 컨테이너에 들어간다(빈 값 `VAR=` 은 앱 기본값을 덮으므로 쓰지 않는다). 전달 목록은 `scripts/deploy-env-forwarding-contract.test.mjs` 가 앱이 읽는 변수와 대조한다.
  
 > 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하거나, `bootstrap`이 구성하는 `.env` 및 `application-local.yml`로 구동되지만, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).
 

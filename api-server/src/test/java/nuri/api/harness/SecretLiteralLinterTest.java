@@ -86,6 +86,9 @@ class SecretLiteralLinterTest {
             "JWT_SECRET",
             "MAIL_PASSWORD",
             "POSTGRES_PASSWORD",
+            // [2026-09-13] 운영 오버레이가 인증 릴레이 자격을 완화 바인딩 이름으로 전달하기 시작했다.
+            //   MAIL_PASSWORD 만으로는 `${SPRING_MAIL_PASSWORD:-리터럴}` 이 이름 경계에서 매칭되지 않는다.
+            "SPRING_MAIL_PASSWORD",
             "SMS_API_KEY",
             "SSH_PRIVATE_KEY"));
 
