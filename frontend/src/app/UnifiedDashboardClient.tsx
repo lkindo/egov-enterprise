@@ -155,8 +155,12 @@ export default function UnifiedDashboardClient(
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-foreground">업무 홈</h1>
+          {/* 처리할 업무 목록은 collaboration 구역이다 — 그 구역이 없는 프로필에서 '오늘 처리할 업무' 를 약속하지 않는다. */}
           <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
-            안녕하세요, {user.name}님. 오늘 처리할 업무입니다.
+            안녕하세요, {user.name}님.
+            {/* reusable-base:collaboration:start */}
+            {' '}오늘 처리할 업무입니다.
+            {/* reusable-base:collaboration:end */}
           </p>
         </div>
         {/* reusable-base:collaboration:start */}
@@ -186,7 +190,8 @@ export default function UnifiedDashboardClient(
 
       {/* reusable-base:collaboration:start */}
       {/* 처리 대기 요약 — 목적지가 있는 항목만 링크한다(G10). */}
-      <ul className="grid gap-2 sm:grid-cols-3">
+      {/* 열 수를 항목 수에 맞춘다 — 결재 항목(demo)이 빠진 프로필에서 빈 열이 남지 않는다. */}
+      <ul className="grid gap-2 sm:grid-flow-col sm:auto-cols-fr">
       {/* reusable-base:collaboration:end */}
         {/* reusable-base:demo:start */}
         <li className="rounded-md border border-border bg-card px-4 py-3">
@@ -233,7 +238,8 @@ export default function UnifiedDashboardClient(
       </div>
       {/* reusable-base:collaboration:end */}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* 실시간 구역(collaboration)이 빠진 프로필에서는 활동 구역 하나가 전체 폭을 쓴다. */}
+      <div className="grid gap-4 lg:grid-flow-col lg:auto-cols-fr">
         {/* reusable-base:collaboration:start */}
         <section aria-labelledby="home-realtime" className="rounded-md border border-border bg-card p-4">
           <h2 id="home-realtime" className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">

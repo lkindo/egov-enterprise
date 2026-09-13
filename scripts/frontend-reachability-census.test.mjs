@@ -7,7 +7,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -16,6 +16,11 @@ import {
   CURRENT_REPOSITORY_ASSERTIONS,
   validateReachabilityAssertions,
 } from './frontend-reachability-census.mjs';
+import {
+  frontendImportSpecifiers,
+  projectFrontendPackMarkers,
+  resolveFrontendImport,
+} from './generate-reusable-base-source.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const temporaryRoots = [];
@@ -130,38 +135,78 @@ test('recipient picker and its collaboration consumers survive the collaboration
 });
 
 /**
- * 생성기(generate-reusable-base-source.mjs importedFrontendFiles)는 주석을 지우지 않은 **원문 전체**에 import 정규식을
- * 적용한다. census 토크나이저는 주석을 건너뛰므로, 피커 주석에 옛 import 문장을 인용하는 회귀는 위 단언을 통과하면서
- * 실제 생성기에서만 cascade 를 일으킨다. 그래서 생성기와 같은 정규식으로 피커 원문을 한 번 더 본다.
+ * 생성기(generate-reusable-base-source.mjs)는 제외 pack 마커 블록을 먼저 지운 뒤, 주석을 지우지 않은 **원문 전체**에
+ * import 정규식을 적용하고 `@/`·상대 경로를 풀어 cascade 를 판정한다. census 토크나이저는 주석을 건너뛰므로, 생존 파일
+ * 주석에 옛 import 를 인용하는 회귀는 위 단언을 통과하면서 실제 생성기에서만 cascade 를 일으킨다. 그래서 **생성기의
+ * 투영·판정 함수 자체**로 생존 파일을 한 번 더 본다 — 흉내 낸 정규식이 아니라 같은 코드다.
  */
-function demoOwnedFrontendImports(source, demoRemovePaths) {
-  const specifiers = [
-    ...source.matchAll(/\b(?:import|export)\s+(?:[^'";]+?\s+from\s+)?['"]([^'"]+)['"]/g),
-    ...source.matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g),
-  ].map((match) => match[1]);
-  return specifiers.filter((specifier) => {
-    if (!specifier.startsWith('@/')) return false;
-    const target = `src/${specifier.slice(2)}`;
-    return demoRemovePaths.some((removePath) => target === removePath
-      || target.startsWith(`${removePath}/`)
-      || `${target}.ts` === removePath
-      || `${target}.tsx` === removePath);
-  });
+function excludedOwnedImports({ frontendRoot, file, source, knownPacks, excludedPacks, excludedRemovePaths }) {
+  const projected = projectFrontendPackMarkers(source, { knownPacks, excludedPacks, label: file }).source;
+  return frontendImportSpecifiers(projected)
+    .map((specifier) => resolveFrontendImport(frontendRoot, file, specifier, new Set()))
+    .filter(Boolean)
+    .map((resolved) => relative(frontendRoot, resolved).split(sep).join('/'))
+    .filter((target) => excludedRemovePaths.some((removePath) => target === removePath
+      || target.startsWith(`${removePath}/`)));
 }
 
-test('the shared recipient picker source never references a demo-owned module, comments included', () => {
-  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
-  const demoRemovePaths = manifest.packs.demo.frontend.removePaths;
-  const picker = readFileSync(join(repoRoot, 'frontend/src/app/components/ui/recipient-picker.tsx'), 'utf8');
+function profileExclusion(manifest, profileName) {
+  const included = new Set(manifest.profiles[profileName].packs);
+  const excludedPacks = new Set(Object.keys(manifest.packs).filter((packName) => !included.has(packName)));
+  return {
+    knownPacks: new Set(Object.keys(manifest.packs)),
+    excludedPacks,
+    excludedRemovePaths: [...excludedPacks].flatMap((packName) => manifest.packs[packName].frontend?.removePaths ?? []),
+  };
+}
 
-  assert.deepEqual(demoOwnedFrontendImports(picker, demoRemovePaths), []);
-  // 가드 자체가 비어 있지 않음을 고정한다 — 주석 속 옛 import 인용과 타입 파일 경로를 모두 잡아야 한다.
+test('files that must survive the collaboration projection never reference an excluded pack, comments included', () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const exclusion = profileExclusion(manifest, 'collaboration');
+  const frontendRoot = join(repoRoot, 'frontend');
+  assert.ok(exclusion.excludedRemovePaths.length > 0, 'collaboration must exclude at least one frontend pack path');
+
+  for (const survivor of COLLABORATION_SURVIVORS) {
+    const file = join(repoRoot, survivor);
+    assert.deepEqual(
+      excludedOwnedImports({ frontendRoot, file, source: readFileSync(file, 'utf8'), ...exclusion }),
+      [],
+      `${survivor} references a pack excluded from collaboration`,
+    );
+  }
+});
+
+test('the survivor guard catches alias, relative and comment-only quotes, but not imports inside an excluded pack block', () => {
+  const pickerSource = [
+    "/** import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService'; */",
+    "// import { addressbookUserService } from '../../../services/business/user/addressbook/AddressbookUserService';",
+    "import type { NameCard } from '@/types/business/addressbook';",
+    '/* reusable-base:demo:start */',
+    "import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';",
+    '/* reusable-base:demo:end */',
+    'export const Picker = () => null;',
+  ].join('\n');
+  const root = createFixture({
+    'frontend/src/services/business/user/addressbook/AddressbookUserService.ts': 'export const addressbookUserService = {};',
+    'frontend/src/services/business/user/addressbook/recipient-address-book-source.ts': 'export const recipientAddressBookSource = {};',
+    'frontend/src/types/business/addressbook.ts': 'export interface NameCard { nm: string }',
+    'frontend/src/app/components/ui/picker.tsx': pickerSource,
+  });
+  const frontendRoot = join(root, 'frontend');
+  const exclusion = {
+    knownPacks: new Set(['core', 'collaboration', 'survey', 'demo']),
+    excludedPacks: new Set(['survey', 'demo']),
+    excludedRemovePaths: ['src/services/business/user/addressbook', 'src/types/business/addressbook.ts'],
+  };
+
+  // 마커 블록 안의 어댑터 import 는 생성기가 블록째 지우므로 간선이 아니다 — 블록 밖의 인용 셋만 잡혀야 한다.
   assert.deepEqual(
-    demoOwnedFrontendImports(
-      "/** import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService'; */\nimport type { NameCard } from '@/types/business/addressbook';",
-      demoRemovePaths,
-    ),
-    ['@/services/business/user/addressbook/AddressbookUserService', '@/types/business/addressbook'],
+    excludedOwnedImports({ frontendRoot, file: join(frontendRoot, 'src/app/components/ui/picker.tsx'), source: pickerSource, ...exclusion }),
+    [
+      'src/services/business/user/addressbook/AddressbookUserService.ts',
+      'src/services/business/user/addressbook/AddressbookUserService.ts',
+      'src/types/business/addressbook.ts',
+    ],
   );
 });
 

@@ -261,7 +261,7 @@ function pruneJava(output, manifest, profile) {
   return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates };
 }
 
-function resolveFrontendImport(frontendRoot, importer, specifier, knownFiles) {
+export function resolveFrontendImport(frontendRoot, importer, specifier, knownFiles) {
   let base;
   if (specifier.startsWith('@/')) base = join(frontendRoot, 'src', specifier.slice(2));
   else if (specifier.startsWith('./') || specifier.startsWith('../')) base = resolve(dirname(importer), specifier);
@@ -274,13 +274,71 @@ function resolveFrontendImport(frontendRoot, importer, specifier, knownFiles) {
   return candidates.find((path) => knownFiles.has(path) || (existsSync(path) && statSync(path).isFile()));
 }
 
-function importedFrontendFiles(frontendRoot, path, knownFiles) {
-  const source = readFileSync(path, 'utf8');
-  const specifiers = [
+/**
+ * cascade 가 간선으로 읽는 import 지정자. 주석·문자열을 지우지 않은 **원문**에 적용한다 — 주석 속 import 인용도 간선이다.
+ * 계약 테스트가 같은 판정을 재사용하도록 순수 함수로 export 한다.
+ */
+export function frontendImportSpecifiers(source) {
+  return [
     ...source.matchAll(/\b(?:import|export)\s+(?:[^'";]+?\s+from\s+)?['"]([^'"]+)['"]/g),
     ...source.matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g),
   ].map((match) => match[1]);
-  return specifiers.map((specifier) => resolveFrontendImport(frontendRoot, path, specifier, knownFiles)).filter(Boolean);
+}
+
+function importedFrontendFiles(frontendRoot, path, knownFiles) {
+  const source = readFileSync(path, 'utf8');
+  return frontendImportSpecifiers(source)
+    .map((specifier) => resolveFrontendImport(frontendRoot, path, specifier, knownFiles))
+    .filter(Boolean);
+}
+
+/**
+ * 한 파일의 pack 마커 블록을 투영한다. 제외 pack 블록은 마커 줄과 함께 지우고 허용 pack 블록은 그대로 둔다.
+ * 한 줄에 마커 둘·알 수 없는 pack·중첩·짝 불일치·미닫힘은 FAIL 이다. 계약 테스트가 같은 투영을 재사용하도록 export 한다.
+ */
+export function projectFrontendPackMarkers(source, { knownPacks, excludedPacks, label }) {
+  const lines = source.match(/[^\n]*\n|[^\n]+$/g) ?? [];
+  const projected = [];
+  let openMarker;
+  let strippedBlocks = 0;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const markers = [...line.matchAll(/reusable-base:([a-z0-9_-]+):(start|end)/g)];
+    if (markers.length > 1) {
+      fail(`frontend pack marker는 한 줄에 하나만 허용한다: ${label}:${index + 1}`);
+    }
+    const marker = markers[0];
+    if (!marker) {
+      if (!openMarker?.strip) projected.push(line);
+      continue;
+    }
+
+    const [, packName, boundary] = marker;
+    if (!knownPacks.has(packName)) {
+      fail(`알 수 없는 frontend pack marker: ${packName} (${label}:${index + 1})`);
+    }
+    if (boundary === 'start') {
+      if (openMarker) {
+        fail(`frontend pack marker 중첩은 허용하지 않는다: ${label}:${index + 1}`);
+      }
+      openMarker = { packName, line: index + 1, strip: excludedPacks.has(packName) };
+      if (!openMarker.strip) projected.push(line);
+      continue;
+    }
+
+    if (!openMarker || openMarker.packName !== packName) {
+      fail(`짝이 맞지 않는 frontend pack marker: ${packName} (${label}:${index + 1})`);
+    }
+    if (!openMarker.strip) projected.push(line);
+    else strippedBlocks += 1;
+    openMarker = undefined;
+  }
+
+  if (openMarker) {
+    fail(`닫히지 않은 frontend pack marker: ${openMarker.packName} (${label}:${openMarker.line})`);
+  }
+  return { source: projected.join(''), strippedBlocks };
 }
 
 function stripExcludedFrontendPackBlocks(output, manifest, profile) {
@@ -293,47 +351,13 @@ function stripExcludedFrontendPackBlocks(output, manifest, profile) {
 
   for (const path of walk(frontendRoot, (candidate) => SOURCE_EXTENSIONS.includes(extname(candidate)))) {
     const source = readFileSync(path, 'utf8');
-    const lines = source.match(/[^\n]*\n|[^\n]+$/g) ?? [];
-    const projected = [];
-    let openMarker;
-
-    for (let index = 0; index < lines.length; index += 1) {
-      const line = lines[index];
-      const markers = [...line.matchAll(/reusable-base:([a-z0-9_-]+):(start|end)/g)];
-      if (markers.length > 1) {
-        fail(`frontend pack marker는 한 줄에 하나만 허용한다: ${normalize(relative(frontendRoot, path))}:${index + 1}`);
-      }
-      const marker = markers[0];
-      if (!marker) {
-        if (!openMarker?.strip) projected.push(line);
-        continue;
-      }
-
-      const [, packName, boundary] = marker;
-      if (!knownPacks.has(packName)) {
-        fail(`알 수 없는 frontend pack marker: ${packName} (${normalize(relative(frontendRoot, path))}:${index + 1})`);
-      }
-      if (boundary === 'start') {
-        if (openMarker) {
-          fail(`frontend pack marker 중첩은 허용하지 않는다: ${normalize(relative(frontendRoot, path))}:${index + 1}`);
-        }
-        openMarker = { packName, line: index + 1, strip: excludedPacks.has(packName) };
-        if (!openMarker.strip) projected.push(line);
-        continue;
-      }
-
-      if (!openMarker || openMarker.packName !== packName) {
-        fail(`짝이 맞지 않는 frontend pack marker: ${packName} (${normalize(relative(frontendRoot, path))}:${index + 1})`);
-      }
-      if (!openMarker.strip) projected.push(line);
-      else strippedBlocks += 1;
-      openMarker = undefined;
-    }
-
-    if (openMarker) {
-      fail(`닫히지 않은 frontend pack marker: ${openMarker.packName} (${normalize(relative(frontendRoot, path))}:${openMarker.line})`);
-    }
-    const nextSource = projected.join('');
+    const projection = projectFrontendPackMarkers(source, {
+      knownPacks,
+      excludedPacks,
+      label: normalize(relative(frontendRoot, path)),
+    });
+    strippedBlocks += projection.strippedBlocks;
+    const nextSource = projection.source;
     if (nextSource !== source) {
       writeFileSync(path, nextSource, 'utf8');
       changedFiles += 1;

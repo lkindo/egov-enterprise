@@ -20,7 +20,7 @@
       "acknowledgedRemovedGates": [
         {
           "file": "api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java",
-          "reason": "app→app 결합 census 가 informalsanction 이벤트 타입을 직접 열거한다. core 에는 business-app 도메인이 하나도 남지 않아 검사 대상이 0이다."
+          "reason": "생성기 importedJavaTypes 가 주석·문자열을 지우기 전 원문에 import 정규식을 적용해, red-proof 텍스트 블록 속 import 문자열(informalsanction 이벤트 타입)을 간선으로 읽고 제거한다(GAP-PACK-001 ④). core 에는 business-app 도메인이 하나도 남지 않아 검사 대상이 0이다."
         },
         {
           "file": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java",
@@ -55,7 +55,7 @@
       "acknowledgedRemovedGates": [
         {
           "file": "api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java",
-          "reason": "app→app 결합 census 가 informalsanction 이벤트 타입을 직접 열거한다. ⚠ collaboration 에는 board·comment·mail·note·notification·scrap·sms 7개 도메인이 남으므로 결합 census 손실이 실질적이다 — 알려진 손실(GAP-PACK-001)."
+          "reason": "생성기 importedJavaTypes 가 주석·문자열을 지우기 전 원문에 import 정규식을 적용해, red-proof 텍스트 블록 속 import 문자열(informalsanction 이벤트 타입)을 간선으로 읽고 제거한다(GAP-PACK-001 ④). ⚠ collaboration 에는 board·comment·mail·note·notification·scrap·sms 7개 도메인이 남으므로 결합 census 손실이 실질적이다 — 알려진 손실(GAP-PACK-001)."
         },
         {
           "file": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java",
