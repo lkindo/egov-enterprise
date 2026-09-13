@@ -44,7 +44,7 @@ mapstruct = "1.6.3"
 #   같은 advisory 가 포크에서는 5.6.1 / 6.10.1 로 패치돼 있다.
 #   5.x 라인을 고른 이유: 자바 패키지가 `com.querydsl.*` 로 동일하고 `jakarta` classifier 가
 #   존재해 **소스 94개 파일을 건드리지 않고 groupId 만 교체**된다(6.x/7.x 는 API 변경 동반).
-querydsl = "5.6.1"
+querydsl = "7.6"
 lombok-mapstruct-binding = "0.2.0"
 
 
