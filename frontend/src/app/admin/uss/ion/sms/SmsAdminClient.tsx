@@ -18,6 +18,9 @@ import { Send,
   Users,
   X } from 'lucide-react';
 import { RecipientPicker, recipientKey, type RecipientSelection } from '@/app/components/ui/recipient-picker';
+/* reusable-base:demo:start */
+import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
+/* reusable-base:demo:end */
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,7 +57,7 @@ const smsValidationLabels: Record<string, string> = {
 
 /**
  * 작성 다이얼로그의 폼 스키마. 공유 `smsSchema` 는 수신 번호 1건 필수 축(다른 화면)을 그대로 두고,
- * 이 화면만 **수신 번호 직접 입력 또는 수신자 찾기(사용자·주소록)** 중 하나면 되도록 번호를 선택 항목으로
+ * 이 화면만 **수신 번호 직접 입력 또는 수신자 찾기(사용자, 전체 제품에서는 주소록 포함)** 중 하나면 되도록 번호를 선택 항목으로
  * 낮춘다(2026-09-05 DEC-OPS-035). "둘 다 없음" 은 제출 핸들러가 수신 번호 필드 오류로 드러낸다.
  */
 const smsComposeSchema = smsSchema.extend({
@@ -620,6 +623,9 @@ export default function SmsAdminClient({
         <RecipientPicker
           isOpen={isPickerOpen}
           channel="sms"
+          /* reusable-base:demo:start */
+          addressBook={recipientAddressBookSource}
+          /* reusable-base:demo:end */
           onClose={() => setIsPickerOpen(false)}
           onConfirm={mergeRecipients}
         />

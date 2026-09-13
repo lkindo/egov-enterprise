@@ -5,8 +5,10 @@ import { Search,
   LogOut, 
   ShieldCheck, 
   LayoutDashboard, 
-  Zap, 
-  Users } from 'lucide-react';
+  Zap } from 'lucide-react';
+/* reusable-base:collaboration:start */
+import { Users } from 'lucide-react';
+/* reusable-base:collaboration:end */
 import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
 import { menuService } from '@/services/business/user/MenuService';
@@ -140,7 +142,10 @@ export function GlobalCommandCenter() {
   }, [logout, router]);
 
   const quickActions: CommandItem[] = useMemo(() => [
-    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '주소록과 협업 기능으로 이동' },
+    // 협업 허브는 collaboration pack 소유다 — 그 pack 이 빠진 프로필에서 404 로 가는 바로가기를 남기지 않는다.
+    /* reusable-base:collaboration:start */
+    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '쪽지·메일·스크랩 등 협업 기능으로 이동' },
+    /* reusable-base:collaboration:end */
     { id: 'sys-logout', name: '로그아웃', action: logoutAndLeaveAuthenticatedSurface, icon: <LogOut size={16} />, category: '시스템' },
   ], [logoutAndLeaveAuthenticatedSurface]);
 

@@ -5,8 +5,11 @@ import dynamic from 'next/dynamic';
 import { BookUser, Search, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
-import { addressbookUserService, type AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
-import type { NameCard } from '@/types/business/addressbook';
+import type {
+  RecipientAddressBook,
+  RecipientAddressBookContact,
+  RecipientAddressBookSource,
+} from '@/types/recipient-address-book';
 import { logErrorSafely } from '@/lib/safe-error-log';
 
 /**
@@ -50,12 +53,21 @@ interface RecipientPickerProps {
   /** 확인 시 한 번 호출된다. 호출부가 기존 선택과 합치며 중복은 `recipientKey` 로 거른다. */
   onConfirm: (recipients: RecipientSelection[]) => void;
   title?: string;
+  /**
+   * 주소록 탭의 데이터 출처. 주입될 때만 주소록 탭이 보인다(`notification` 채널은 주입돼도 보이지 않는다).
+   *
+   * ⚠ [2026-09-13 GAP-PACK-001 ②] 주소록 구현은 demo pack 소유다. 이 파일이 그 구현을 직접 import 하면
+   *   재사용 base 생성기가 collaboration 프로필에서 이 피커와 소비 화면 전체를 import 그래프로 함께 지운다.
+   *   생성기는 주석 속 import 문장도 간선으로 읽으므로, 이 파일의 주석에도 그 모듈 경로를 적지 않는다.
+   *   구현은 조합 지점(메일·문자 화면)이 `reusable-base:demo` 마커 블록 안에서 넘긴다.
+   */
+  addressBook?: RecipientAddressBookSource;
 }
 
 /** 채널이 요구하는 연락처가 명함에 있는가. 없으면 고를 수 없다 — 서버로 보내 봐야 거부된다. */
-function contactFor(channel: RecipientChannel, card: NameCard): string | undefined {
+function contactFor(channel: RecipientChannel, card: RecipientAddressBookContact): string | undefined {
   if (channel === 'notification') return undefined;
-  const value = channel === 'mail' ? card.emlAddr : card.mblTelno;
+  const value = channel === 'mail' ? card.email : card.phone;
   return value && value.trim() ? value.trim() : undefined;
 }
 
@@ -65,7 +77,7 @@ function contactFor(channel: RecipientChannel, card: NameCard): string | undefin
  * [2026-09-05 DEC-OPS-035] 쪽지는 사용자 검색 피커로 사람을 고르는데 메일·문자는 이메일 주소와 번호를 손으로
  * 치게 했고(D09-02·D09-04), 주소록은 어떤 발송 화면에서도 쓰이지 않는 고립된 CRUD 였다(D09-03). 두 탭으로
  * 그 셋을 잇는다 — '사용자 검색'(성명 부분일치, 다중 선택) · '주소록'(내 주소록의 명함, 채널에 맞는 연락처가
- * 있는 것만 선택 가능).
+ * 있는 것만 선택 가능). 주소록 탭은 호출부가 `addressBook` 을 주입할 때만 보인다.
  *
  * ⚠ 호출부는 `{open && <RecipientPicker … />}` 로 **조건부 마운트**한다. 열 때마다 새로 마운트되므로 검색어·
  *   선택 상태가 effect 없이 초기화된다(react-hooks/set-state-in-effect 회피).
@@ -76,6 +88,7 @@ export function RecipientPicker({
   channel,
   onConfirm,
   title = '수신자 찾기',
+  addressBook,
 }: RecipientPickerProps) {
   const [tab, setTab] = useState<'users' | 'addressbook'>('users');
   const [selected, setSelected] = useState<Map<string, RecipientSelection>>(() => new Map());
@@ -86,10 +99,10 @@ export function RecipientPicker({
   const [userSearchState, setUserSearchState] = useState<'idle' | 'loading' | 'error' | 'done'>('idle');
 
   // --- 주소록 탭 ---
-  const [books, setBooks] = useState<AddressBook[]>([]);
+  const [books, setBooks] = useState<RecipientAddressBook[]>([]);
   const [booksState, setBooksState] = useState<'idle' | 'loading' | 'error' | 'done'>('idle');
   const [selectedBookSn, setSelectedBookSn] = useState<string>('');
-  const [members, setMembers] = useState<NameCard[]>([]);
+  const [members, setMembers] = useState<RecipientAddressBookContact[]>([]);
   const [membersState, setMembersState] = useState<'idle' | 'loading' | 'error' | 'done'>('idle');
 
   const toggle = useCallback((recipient: RecipientSelection, checked: boolean) => {
@@ -119,33 +132,35 @@ export function RecipientPicker({
   }, [keyword]);
 
   const loadBooks = useCallback(async () => {
+    if (!addressBook) return;
     setBooksState('loading');
     try {
-      const page = await addressbookUserService.getAddressBooks({ page: 0, size: 50 });
-      setBooks(page.list ?? []);
+      setBooks(await addressBook.listBooks());
       setBooksState('done');
     } catch (error) {
       logErrorSafely('Address book list failed', error);
       setBooks([]);
       setBooksState('error');
     }
-  }, []);
+  }, [addressBook]);
 
-  const loadMembers = useCallback(async (adbkSn: number) => {
+  const loadMembers = useCallback(async (bookId: number) => {
+    if (!addressBook) return;
     setMembersState('loading');
     try {
-      const book = await addressbookUserService.getAddressBook(adbkSn);
-      setMembers(book.adbkMan ?? []);
+      setMembers(await addressBook.listContacts(bookId));
       setMembersState('done');
     } catch (error) {
       logErrorSafely('Address book detail failed', error);
       setMembers([]);
       setMembersState('error');
     }
-  }, []);
+  }, [addressBook]);
+
+  const addressBookTabAvailable = addressBook !== undefined && channel !== 'notification';
 
   const handleTabChange = (value: string) => {
-    const next = value === 'addressbook' ? 'addressbook' : 'users';
+    const next = value === 'addressbook' && addressBookTabAvailable ? 'addressbook' : 'users';
     setTab(next);
     // 주소록 목록은 탭을 처음 열 때만 읽는다(효과 대신 이벤트에서 기동).
     if (next === 'addressbook' && booksState === 'idle') void loadBooks();
@@ -167,7 +182,7 @@ export function RecipientPicker({
   const sourceTabs = ([
     { value: 'users', label: '사용자 검색', icon: <User size={14} aria-hidden="true" /> },
     { value: 'addressbook', label: '주소록', icon: <BookUser size={14} aria-hidden="true" /> },
-  ] as const).filter((item) => channel !== 'notification' || item.value === 'users');
+  ] as const).filter((item) => item.value === 'users' || addressBookTabAvailable);
 
   return (
     <StandardModal
@@ -284,7 +299,7 @@ export function RecipientPicker({
         </div>
         )}
 
-        {tab === 'addressbook' && (
+        {tab === 'addressbook' && addressBookTabAvailable && (
         <div role="tabpanel" id="recipient-panel-addressbook" aria-labelledby="recipient-tab-addressbook" className="space-y-3">
           <label htmlFor="recipient-address-book" className="block text-xs font-bold text-muted-foreground">주소록 선택</label>
           {booksState === 'loading' ? (
@@ -303,7 +318,7 @@ export function RecipientPicker({
             >
               <option value="">주소록을 고르세요</option>
               {books.map((book) => (
-                <option key={book.adbkSn} value={String(book.adbkSn)}>{book.adbkNm}</option>
+                <option key={book.id} value={String(book.id)}>{book.name}</option>
               ))}
             </select>
           )}
@@ -325,12 +340,12 @@ export function RecipientPicker({
                   const contact = contactFor(channel, card);
                   const recipient: RecipientSelection = {
                     kind: 'contact',
-                    name: card.nm,
+                    name: card.name,
                     email: channel === 'mail' ? contact : undefined,
                     phone: channel === 'sms' ? contact : undefined,
                   };
                   const key = recipientKey(recipient);
-                  const checkboxId = `recipient-card-${card.adbkMbrSn ?? index}`;
+                  const checkboxId = `recipient-card-${card.id ?? index}`;
                   return (
                     <li key={checkboxId} className="flex items-center gap-3 px-4 py-3">
                       <input
@@ -340,10 +355,10 @@ export function RecipientPicker({
                         checked={selected.has(key)}
                         disabled={!contact}
                         onChange={(event) => toggle(recipient, event.target.checked)}
-                        aria-label={`${card.nm} 선택`}
+                        aria-label={`${card.name} 선택`}
                       />
                       <label htmlFor={checkboxId} className={`flex-1 ${contact ? 'cursor-pointer' : 'opacity-60'}`}>
-                        <span className="block text-sm font-bold text-foreground">{card.nm}</span>
+                        <span className="block text-sm font-bold text-foreground">{card.name}</span>
                         <span className="block text-xs text-muted-foreground">
                           {contact ?? `${channelLabel} 없음 — 선택할 수 없습니다`}
                         </span>

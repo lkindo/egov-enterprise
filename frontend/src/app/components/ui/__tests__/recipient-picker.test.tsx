@@ -10,11 +10,14 @@ import { RecipientPicker, recipientKey } from '../recipient-picker';
  * [2026-09-05 DEC-OPS-035] 판정은 "무엇을 돌려주는가" 다. 사용자 탭은 esntlId 만 싣고(연락처는 서버가 해석),
  * 주소록 탭은 채널에 맞는 연락처가 있는 명함만 고를 수 있으며 그 값을 그대로 싣는다. 조회 실패는 "결과 없음"
  * 으로 위장하지 않는다.
+ *
+ * [2026-09-13 GAP-PACK-001 ②] 주소록 탭은 호출부가 주소록 출처를 **주입할 때만** 보인다. 피커는 주소록 구현을
+ * 알지 못하므로 이 테스트도 가짜 출처를 넘긴다 — 그래야 주소록 구현이 없는 프로필에서도 이 계약이 그대로 돈다.
  */
 const mocks = vi.hoisted(() => ({
   searchAssignableUsers: vi.fn(),
-  getAddressBooks: vi.fn(),
-  getAddressBook: vi.fn(),
+  listBooks: vi.fn(),
+  listContacts: vi.fn(),
   onConfirm: vi.fn(),
   onClose: vi.fn(),
 }));
@@ -37,18 +40,25 @@ vi.mock('@/services/business/user/UserSearchService', () => ({
   userSearchService: { searchAssignableUsers: (...args: unknown[]) => mocks.searchAssignableUsers(...args) },
 }));
 
-vi.mock('@/services/business/user/addressbook/AddressbookUserService', () => ({
-  addressbookUserService: {
-    getAddressBooks: (...args: unknown[]) => mocks.getAddressBooks(...args),
-    getAddressBook: (...args: unknown[]) => mocks.getAddressBook(...args),
-  },
-}));
-
 vi.mock('@/lib/safe-error-log', () => ({ logErrorSafely: vi.fn() }));
 
-function renderPicker(channel: 'mail' | 'sms' = 'mail') {
+const fakeAddressBook = {
+  listBooks: (...args: unknown[]) => mocks.listBooks(...args),
+  listContacts: (...args: unknown[]) => mocks.listContacts(...args),
+};
+
+function renderPicker(
+  channel: 'mail' | 'sms' | 'notification' = 'mail',
+  { withAddressBook = true }: { withAddressBook?: boolean } = {},
+) {
   return render(
-    <RecipientPicker isOpen channel={channel} onClose={mocks.onClose} onConfirm={mocks.onConfirm} />,
+    <RecipientPicker
+      isOpen
+      channel={channel}
+      onClose={mocks.onClose}
+      onConfirm={mocks.onConfirm}
+      addressBook={withAddressBook ? fakeAddressBook : undefined}
+    />,
   );
 }
 
@@ -64,16 +74,12 @@ describe('RecipientPicker', () => {
       { esntlId: 'USR_A', userNm: '김갑', deptNm: '총무과' },
       { esntlId: 'USR_B', userNm: '김을', deptNm: undefined },
     ]);
-    mocks.getAddressBooks.mockResolvedValue({ list: [{ adbkSn: 7, adbkNm: '협력사 명단' }], total: 1, page: 0, size: 50, totalPage: 1 });
-    mocks.getAddressBook.mockResolvedValue({
-      adbkSn: 7,
-      adbkNm: '협력사 명단',
-      adbkMan: [
-        { adbkMbrSn: 1, userId: 'ext1', nm: '박외부', emlAddr: 'park@partner.example', mblTelno: '01012345678' },
-        { adbkMbrSn: 2, userId: 'ext2', nm: '이번호없음', emlAddr: 'lee@partner.example', mblTelno: '' },
-        { adbkMbrSn: 3, userId: 'ext3', nm: '최메일없음', emlAddr: '', mblTelno: '01099998888' },
-      ],
-    });
+    mocks.listBooks.mockResolvedValue([{ id: 7, name: '협력사 명단' }]);
+    mocks.listContacts.mockResolvedValue([
+      { id: 1, name: '박외부', email: 'park@partner.example', phone: '01012345678' },
+      { id: 2, name: '이번호없음', email: 'lee@partner.example', phone: '' },
+      { id: 3, name: '최메일없음', email: '', phone: '01099998888' },
+    ]);
   });
 
   it('사용자 탭은 성명으로 검색해 여러 명을 고르고 esntlId 만 돌려준다 — 연락처는 화면이 알지 못한다', async () => {
@@ -118,12 +124,12 @@ describe('RecipientPicker', () => {
     const user = userEvent.setup();
     renderPicker('mail');
 
-    expect(mocks.getAddressBooks).not.toHaveBeenCalled();
+    expect(mocks.listBooks).not.toHaveBeenCalled();
     await user.click(screen.getByRole('tab', { name: /주소록/ }));
-    await waitFor(() => expect(mocks.getAddressBooks).toHaveBeenCalledWith({ page: 0, size: 50 }));
+    await waitFor(() => expect(mocks.listBooks).toHaveBeenCalledTimes(1));
 
     await user.selectOptions(await screen.findByLabelText('주소록 선택'), '7');
-    await waitFor(() => expect(mocks.getAddressBook).toHaveBeenCalledWith(7));
+    await waitFor(() => expect(mocks.listContacts).toHaveBeenCalledWith(7));
     const list = await screen.findByRole('list', { name: '주소록 명함' });
 
     expect(within(list).getByRole('checkbox', { name: '최메일없음 선택' })).toBeDisabled();
@@ -155,6 +161,23 @@ describe('RecipientPicker', () => {
     expect(mocks.onConfirm.mock.calls[0][0]).toEqual([
       { kind: 'contact', name: '최메일없음', email: undefined, phone: '01099998888' },
     ]);
+  });
+
+  it.each(['mail', 'sms'] as const)('주소록 출처가 주입되지 않으면 %s 채널도 사용자 검색 탭만 보인다', (channel) => {
+    renderPicker(channel, { withAddressBook: false });
+
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs).toHaveLength(1);
+    expect(tabs[0]).toHaveAccessibleName(/사용자 검색/);
+    expect(screen.queryByRole('tab', { name: /주소록/ })).not.toBeInTheDocument();
+  });
+
+  it('앱 내 알림 채널은 주소록 출처가 주입돼도 주소록 탭을 보이지 않고 목록을 읽지 않는다', () => {
+    renderPicker('notification', { withAddressBook: true });
+
+    expect(screen.getAllByRole('tab')).toHaveLength(1);
+    expect(screen.queryByRole('tab', { name: /주소록/ })).not.toBeInTheDocument();
+    expect(mocks.listBooks).not.toHaveBeenCalled();
   });
 
   it('취소는 아무것도 돌려주지 않고 닫기만 한다', async () => {

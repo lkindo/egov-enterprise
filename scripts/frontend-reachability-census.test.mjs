@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +16,11 @@ import {
   CURRENT_REPOSITORY_ASSERTIONS,
   validateReachabilityAssertions,
 } from './frontend-reachability-census.mjs';
+import {
+  frontendImportSpecifiers,
+  projectFrontendPackMarkers,
+  resolveFrontendImport,
+} from './generate-reusable-base-source.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const temporaryRoots = [];
@@ -92,6 +98,116 @@ test('current repository keeps the known live chain and user hub split explicit'
   assert.equal(shadowedLoginPolicy.routing.shadowedBy.kind, 'config-redirect');
   assert.equal(shadowedLoginPolicy.reachability.runtime, true);
   assert.equal(shadowedLoginPolicy.reachability.effectiveProduct, false);
+});
+
+// [2026-09-13 GAP-PACK-001 ②] 공용 수신자 피커가 demo 소유 주소록을 정적 import 해, collaboration 프로필에서
+//   피커와 쪽지·메일·문자·알림 발송 화면이 import 그래프로 함께 사라지고 있었다. 피커는 이제 주소록 출처를 주입받고,
+//   조합 지점(메일·문자)만 demo 마커 블록 안에서 어댑터를 넘긴다. 아래 두 단언이 그 경계를 main CI 에서 지킨다.
+const COLLABORATION_SURVIVORS = [
+  'frontend/src/app/components/ui/recipient-picker.tsx',
+  'frontend/src/types/recipient-address-book.ts',
+  'frontend/src/app/note/page.tsx',
+  'frontend/src/app/admin/collaboration/mail-send/page.tsx',
+  'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx',
+  'frontend/src/app/admin/uss/ion/sms/page.tsx',
+  'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx',
+  'frontend/src/app/admin/notifications/page.tsx',
+  'frontend/src/app/admin/notifications/NotificationsClient.tsx',
+  'frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx',
+];
+
+test('recipient picker and its collaboration consumers survive the collaboration projection', () => {
+  const census = buildFrontendReachabilityCensus({ repoRoot });
+  for (const file of COLLABORATION_SURVIVORS) {
+    const collaborationRemoval = byFile(census, file).profileRemovalConstraints
+      .find((constraint) => constraint.profile === 'collaboration');
+    assert.equal(
+      collaborationRemoval,
+      undefined,
+      `${file} is removed from the collaboration profile via ${JSON.stringify(collaborationRemoval?.evidencePath)}`,
+    );
+  }
+  const adapter = byFile(census, 'frontend/src/services/business/user/addressbook/recipient-address-book-source.ts');
+  assert.equal(
+    adapter.profileRemovalConstraints.find((constraint) => constraint.profile === 'collaboration')?.removal,
+    'direct',
+  );
+});
+
+/**
+ * 생성기(generate-reusable-base-source.mjs)는 제외 pack 마커 블록을 먼저 지운 뒤, 주석을 지우지 않은 **원문 전체**에
+ * import 정규식을 적용하고 `@/`·상대 경로를 풀어 cascade 를 판정한다. census 토크나이저는 주석을 건너뛰므로, 생존 파일
+ * 주석에 옛 import 를 인용하는 회귀는 위 단언을 통과하면서 실제 생성기에서만 cascade 를 일으킨다. 그래서 **생성기의
+ * 투영·판정 함수 자체**로 생존 파일을 한 번 더 본다 — 흉내 낸 정규식이 아니라 같은 코드다.
+ */
+function excludedOwnedImports({ frontendRoot, file, source, knownPacks, excludedPacks, excludedRemovePaths }) {
+  const projected = projectFrontendPackMarkers(source, { knownPacks, excludedPacks, label: file }).source;
+  return frontendImportSpecifiers(projected)
+    .map((specifier) => resolveFrontendImport(frontendRoot, file, specifier, new Set()))
+    .filter(Boolean)
+    .map((resolved) => relative(frontendRoot, resolved).split(sep).join('/'))
+    .filter((target) => excludedRemovePaths.some((removePath) => target === removePath
+      || target.startsWith(`${removePath}/`)));
+}
+
+function profileExclusion(manifest, profileName) {
+  const included = new Set(manifest.profiles[profileName].packs);
+  const excludedPacks = new Set(Object.keys(manifest.packs).filter((packName) => !included.has(packName)));
+  return {
+    knownPacks: new Set(Object.keys(manifest.packs)),
+    excludedPacks,
+    excludedRemovePaths: [...excludedPacks].flatMap((packName) => manifest.packs[packName].frontend?.removePaths ?? []),
+  };
+}
+
+test('files that must survive the collaboration projection never reference an excluded pack, comments included', () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const exclusion = profileExclusion(manifest, 'collaboration');
+  const frontendRoot = join(repoRoot, 'frontend');
+  assert.ok(exclusion.excludedRemovePaths.length > 0, 'collaboration must exclude at least one frontend pack path');
+
+  for (const survivor of COLLABORATION_SURVIVORS) {
+    const file = join(repoRoot, survivor);
+    assert.deepEqual(
+      excludedOwnedImports({ frontendRoot, file, source: readFileSync(file, 'utf8'), ...exclusion }),
+      [],
+      `${survivor} references a pack excluded from collaboration`,
+    );
+  }
+});
+
+test('the survivor guard catches alias, relative and comment-only quotes, but not imports inside an excluded pack block', () => {
+  const pickerSource = [
+    "/** import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService'; */",
+    "// import { addressbookUserService } from '../../../services/business/user/addressbook/AddressbookUserService';",
+    "import type { NameCard } from '@/types/business/addressbook';",
+    '/* reusable-base:demo:start */',
+    "import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';",
+    '/* reusable-base:demo:end */',
+    'export const Picker = () => null;',
+  ].join('\n');
+  const root = createFixture({
+    'frontend/src/services/business/user/addressbook/AddressbookUserService.ts': 'export const addressbookUserService = {};',
+    'frontend/src/services/business/user/addressbook/recipient-address-book-source.ts': 'export const recipientAddressBookSource = {};',
+    'frontend/src/types/business/addressbook.ts': 'export interface NameCard { nm: string }',
+    'frontend/src/app/components/ui/picker.tsx': pickerSource,
+  });
+  const frontendRoot = join(root, 'frontend');
+  const exclusion = {
+    knownPacks: new Set(['core', 'collaboration', 'survey', 'demo']),
+    excludedPacks: new Set(['survey', 'demo']),
+    excludedRemovePaths: ['src/services/business/user/addressbook', 'src/types/business/addressbook.ts'],
+  };
+
+  // 마커 블록 안의 어댑터 import 는 생성기가 블록째 지우므로 간선이 아니다 — 블록 밖의 인용 셋만 잡혀야 한다.
+  assert.deepEqual(
+    excludedOwnedImports({ frontendRoot, file: join(frontendRoot, 'src/app/components/ui/picker.tsx'), source: pickerSource, ...exclusion }),
+    [
+      'src/services/business/user/addressbook/AddressbookUserService.ts',
+      'src/services/business/user/addressbook/AddressbookUserService.ts',
+      'src/types/business/addressbook.ts',
+    ],
+  );
 });
 
 test('census distinguishes every evidence axis without promoting non-runtime references', () => {

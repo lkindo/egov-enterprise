@@ -29,11 +29,25 @@ import { MailRecipientDtoSchema, SentMailDtoSchema } from '@/types/generated-zod
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { RecipientPicker, recipientKey, type RecipientSelection } from '@/app/components/ui/recipient-picker';
+/* reusable-base:demo:start */
+import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
+/* reusable-base:demo:end */
+
+/**
+ * '수신자 찾기' 가 실제로 제공하는 출처. 주소록은 demo pack 소유라 그 pack 이 빠진 프로필에서는 마커 블록과 함께
+ * 사라지고, 입력 안내도 그 사실을 따른다(GAP-PACK-001 ② — 화면이 없는 출처를 약속하지 않는다).
+ */
+const PICKER_SOURCE_LABEL = [
+  '사용자',
+  /* reusable-base:demo:start */
+  '주소록',
+  /* reusable-base:demo:end */
+].join('·');
 
 /**
  * 직접 입력 수신자 검증용. 서버가 이 값을 그대로 SMTP 수신 주소로 쓰므로, 주소 형태가 아닌 값은
- * 애초에 받지 않는다. 사람을 고르려면 '수신자 찾기'(사용자 검색·주소록)를 쓴다 — 그쪽은 esntlId 를 실어
- * 서버가 주소를 해석한다(DEC-OPS-035).
+ * 애초에 받지 않는다. 사람을 고르려면 '수신자 찾기'(사용자 검색, 전체 제품에서는 주소록 포함)를 쓴다 — 그쪽은
+ * esntlId 를 실어 서버가 주소를 해석한다(DEC-OPS-035).
  */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -286,7 +300,7 @@ export default function MailSendHubClient() {
                     id="mail-recipient-search"
                     {...validation.fieldProps('recipients')}
                     data-testid="mail-recipient-input"
-                    placeholder="이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 사용자·주소록에서 고르세요"
+                    placeholder={`이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 ${PICKER_SOURCE_LABEL}에서 고르세요`}
                     className="h-11 text-xl font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
                     value={recipientSearch}
                     onChange={(e) => {
@@ -326,6 +340,9 @@ export default function MailSendHubClient() {
           <RecipientPicker
             isOpen={isPickerOpen}
             channel="mail"
+            /* reusable-base:demo:start */
+            addressBook={recipientAddressBookSource}
+            /* reusable-base:demo:end */
             onClose={() => setIsPickerOpen(false)}
             onConfirm={mergeRecipients}
           />

@@ -3,12 +3,17 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import MailSendHubClient from '../MailSendHubClient';
+/* reusable-base:demo:start */
+import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
+/* reusable-base:demo:end */
 
 const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   push: vi.fn(),
   sendMail: vi.fn(),
   toast: vi.fn(),
+  /** 피커 stub 이 마지막으로 받은 주소록 출처. 조합 지점이 무엇을 주입했는지 동일성으로 본다. */
+  pickerProps: { addressBook: undefined as unknown },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -28,7 +33,9 @@ vi.mock('@/app/components/ui/recipient-picker', async () => {
   const actual = await vi.importActual<typeof import('@/app/components/ui/recipient-picker')>('@/app/components/ui/recipient-picker');
   return {
     ...actual,
-    RecipientPicker: ({ onConfirm, onClose }: { onConfirm: (r: unknown[]) => void; onClose: () => void }) => (
+    RecipientPicker: ({ onConfirm, onClose, addressBook }: { onConfirm: (r: unknown[]) => void; onClose: () => void; addressBook?: unknown }) => {
+      mocks.pickerProps.addressBook = addressBook;
+      return (
       <div role="dialog" aria-label="수신자 찾기">
         <button
           type="button"
@@ -45,7 +52,8 @@ vi.mock('@/app/components/ui/recipient-picker', async () => {
           피커 선택 확정
         </button>
       </div>
-    ),
+      );
+    },
   };
 });
 
@@ -60,6 +68,38 @@ async function enterValidMail(user: ReturnType<typeof userEvent.setup>) {
   await user.type(content, '정상 메일 본문');
   return { recipient, subject, content };
 }
+
+/**
+ * [2026-09-13 GAP-PACK-001 ②] 주소록은 demo pack 소유라, 이 화면은 demo 마커 블록 안에서만 주소록 출처를 주입하고
+ * 입력 안내도 같은 블록으로 '주소록' 을 덧붙인다. demo 가 빠진 프로필에서는 두 블록이 함께 잘려 피커는 사용자 검색만,
+ * 안내는 '사용자' 만 말한다. 아래 demo 블록 테스트도 그 프로필에서는 함께 잘린다.
+ */
+describe('MailSendHubClient 재사용 base 조합 지점', () => {
+  it('입력 안내는 수신자 찾기가 실제로 주는 출처만 말한다', () => {
+    render(<MailSendHubClient />);
+    const placeholder = screen.getByRole('textbox', { name: '수신자 선택' }).getAttribute('placeholder') ?? '';
+
+    // 기대값도 같은 마커로 조립한다 — demo 가 빠진 프로필에서도 '주소록' 이 없다는 사실을 정확한 문자열로 단언한다.
+    let expectedSources = '사용자';
+    /* reusable-base:demo:start */
+    expectedSources = '사용자·주소록';
+    /* reusable-base:demo:end */
+    expect(placeholder).toBe(`이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 ${expectedSources}에서 고르세요`);
+  });
+
+  /* reusable-base:demo:start */
+  it('전체 제품에서는 메일 수신자 피커에 주소록 어댑터를 그대로 주입한다', async () => {
+    const user = userEvent.setup();
+    mocks.pickerProps.addressBook = 'not-rendered';
+    render(<MailSendHubClient />);
+
+    await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
+    await screen.findByRole('button', { name: '피커 선택 확정' });
+
+    expect(mocks.pickerProps.addressBook).toBe(recipientAddressBookSource);
+  });
+  /* reusable-base:demo:end */
+});
 
 describe('MailSendHubClient validation', () => {
   beforeEach(() => {

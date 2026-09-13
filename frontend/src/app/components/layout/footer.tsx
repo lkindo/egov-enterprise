@@ -1,4 +1,6 @@
+/* reusable-base:demo:start */
 import Link from "next/link";
+/* reusable-base:demo:end */
 
 import { cn } from "@/lib/utils";
 import { SITE_IDENTITY } from "@/config/site-identity";

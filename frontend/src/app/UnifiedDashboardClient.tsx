@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, use } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect } from 'react';
+/* reusable-base:collaboration:start */
+import { use } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
 import { DashboardTask } from '@/types/foundation/dashboard';
 import { NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
+/* reusable-base:collaboration:end */
+import dynamic from 'next/dynamic';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
 
 // Optimization: Priority 2 - Dynamic Imports for heavy components
 /* reusable-base:demo:start */
@@ -24,6 +27,7 @@ const ActivityFeed = dynamic(() => import('@/app/components/dashboard/ActivityFe
   loading: () => <div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>,
   ssr: false
 });
+/* reusable-base:collaboration:start */
 const RealTimeDashboard = dynamic(() => import('@/components/features/dashboard/RealTimeDashboard').then(mod => mod.RealTimeDashboard), {
   loading: () => <Skeleton className="h-[150px] w-full rounded-lg" />,
   ssr: false
@@ -36,6 +40,7 @@ interface UnifiedDashboardClientProps {
     pendingApprovalCount: number;
   }>;
 }
+/* reusable-base:collaboration:end */
 
 /**
  * 업무 홈 — 포털형 랜딩의 대체.
@@ -48,8 +53,16 @@ interface UnifiedDashboardClientProps {
  *
  * 서버가 제공한 게시판·게시글 식별자가 있는 항목만 상세로 연결한다.
  * 식별자가 없는 응답에 임의 목적지를 붙이지 않고 전체 보기로 안내한다.
+ *
+ * [2026-09-13 GAP-PACK-001 ③] 이 화면은 모든 재사용 base 프로필에 남는다(로그인 착지, DEC-OPS-083).
+ * 게시판·대시보드 API·실시간 구독은 collaboration pack, 결재는 demo pack 소유라 각 구역을 그 pack 의 마커 블록으로
+ * 감싼다. 링크뿐 아니라 그 구역의 import·지역 선언·데이터 조회도 같은 블록에 둔다 — 링크만 감싸면 축소 프로필에서
+ * 미사용 import 로 타입 검사가 깨지거나(noUnusedLocals), 제거된 API 를 부르는 화면이 남는다.
+ * 마커는 중첩할 수 없어 여닫는 태그를 연속 블록으로 나눈다. demo 블록은 collaboration 블록의 import(Link·Button)에
+ * 기댄다 — 프로필은 rank 하향 폐쇄라(demo 를 담으면 collaboration 도 담는다) 안전하며, 반대 방향 의존은 금지다.
  */
 
+/* reusable-base:collaboration:start */
 interface HomeListSectionProps {
   title: string;
   items: DashboardTask[];
@@ -98,14 +111,21 @@ function HomeListSection({ title, items, moreHref, moreLabel, emptyMessage }: Ho
     </section>
   );
 }
+/* reusable-base:collaboration:end */
 
-export default function UnifiedDashboardClient({
-  dataPromise
-}: UnifiedDashboardClientProps) {
+export default function UnifiedDashboardClient(
+  /* reusable-base:collaboration:start */
+  { dataPromise }: UnifiedDashboardClientProps,
+  /* reusable-base:collaboration:end */
+) {
+  /* reusable-base:collaboration:start */
   const data = use(dataPromise);
   const notiList = data.initialNotiList || [];
   const taskList = data.initialTaskList || [];
+  /* reusable-base:collaboration:end */
+  /* reusable-base:demo:start */
   const pendingCount = data.pendingApprovalCount || 0;
+  /* reusable-base:demo:end */
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -135,10 +155,15 @@ export default function UnifiedDashboardClient({
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-foreground">업무 홈</h1>
+          {/* 처리할 업무 목록은 collaboration 구역이다 — 그 구역이 없는 프로필에서 '오늘 처리할 업무' 를 약속하지 않는다. */}
           <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
-            안녕하세요, {user.name}님. 오늘 처리할 업무입니다.
+            안녕하세요, {user.name}님.
+            {/* reusable-base:collaboration:start */}
+            {' '}오늘 처리할 업무입니다.
+            {/* reusable-base:collaboration:end */}
           </p>
         </div>
+        {/* reusable-base:collaboration:start */}
         <div className="flex flex-wrap items-center gap-2">
           {/*
             [2026-09-12] 종전 목적지 `/admin/community/boards` 는 DEC-OPS-040 이후 지식 허브
@@ -152,20 +177,31 @@ export default function UnifiedDashboardClient({
               <Plus size={16} aria-hidden="true" /> 새 게시글 작성
             </Link>
           </Button>
+        {/* reusable-base:collaboration:end */}
+          {/* reusable-base:demo:start */}
           <Button asChild size="sm">
             <Link href="/approvals">결재함 열기</Link>
           </Button>
+          {/* reusable-base:demo:end */}
+        {/* reusable-base:collaboration:start */}
         </div>
+        {/* reusable-base:collaboration:end */}
       </header>
 
+      {/* reusable-base:collaboration:start */}
       {/* 처리 대기 요약 — 목적지가 있는 항목만 링크한다(G10). */}
-      <ul className="grid gap-2 sm:grid-cols-3">
+      {/* 열 수를 항목 수에 맞춘다 — 결재 항목(demo)이 빠진 프로필에서 빈 열이 남지 않는다. */}
+      <ul className="grid gap-2 sm:grid-flow-col sm:auto-cols-fr">
+      {/* reusable-base:collaboration:end */}
+        {/* reusable-base:demo:start */}
         <li className="rounded-md border border-border bg-card px-4 py-3">
           <Link href="/approvals" className="group block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             <span className="text-[length:var(--font-size-body)] text-muted-foreground group-hover:text-primary">결재 대기</span>
             <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{pendingCount}건</span>
           </Link>
         </li>
+        {/* reusable-base:demo:end */}
+      {/* reusable-base:collaboration:start */}
         {/*
           [2026-08-29] '배정된 업무'·'신규' 두 표현을 걷는다.
           이 값은 나에게 배정된 것도, 총 건수도 아니다 — BoardDashboardProvider:35 가
@@ -200,14 +236,18 @@ export default function UnifiedDashboardClient({
           emptyMessage="새 공지사항이 없습니다."
         />
       </div>
+      {/* reusable-base:collaboration:end */}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* 실시간 구역(collaboration)이 빠진 프로필에서는 활동 구역 하나가 전체 폭을 쓴다. */}
+      <div className="grid gap-4 lg:grid-flow-col lg:auto-cols-fr">
+        {/* reusable-base:collaboration:start */}
         <section aria-labelledby="home-realtime" className="rounded-md border border-border bg-card p-4">
           <h2 id="home-realtime" className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">
             실시간 상태
           </h2>
           <RealTimeDashboard />
         </section>
+        {/* reusable-base:collaboration:end */}
         <section aria-labelledby="home-activity" className="rounded-md border border-border bg-card p-4">
           <h2 id="home-activity" className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">
             최근 활동
