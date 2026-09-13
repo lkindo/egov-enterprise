@@ -79,7 +79,7 @@ function safeOutputPath(requested, profile, shortSha) {
   return output;
 }
 
-function trackedAndUntrackedFiles() {
+export function trackedAndUntrackedFiles() {
   return run('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'])
     .toString('utf8')
     .split('\0')
@@ -150,10 +150,11 @@ const HARNESS_SCAN_ROOTS = [
   'migration-tool/src/test/java',
 ];
 const ARCH_RULE_FILE_PATTERN =
-  /(?:AttachmentSourceRegistryLinterTest|InputContractMirrorLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
+  /(?:AttachmentSourceRegistryLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
 const GATE_REGISTRIES = [
   'config/governance/authorization-policies.json',
   'config/governance/gates.json',
+  'config/governance/privacy-access-census.json',
   'config/governance/zdm-waivers.json',
   'config/security/false-positive-review.json',
 ];
@@ -195,12 +196,19 @@ function referencedRemovedJavaType(path, removedTypes) {
   return undefined;
 }
 
-function pruneJava(output, manifest, profile) {
+/**
+ * Java 투영의 **제거 계획**을 부작용 없이 계산한다 — 파일을 읽기만 하고 지우지 않는다.
+ *
+ * 투영({@link pruneJava})과 계약 테스트가 같은 판정을 쓰도록 분리했다. 계약은 저장소 루트에서
+ * `copySourceTree` 와 같은 파일 모집단(`javaFiles`)으로 이 함수를 불러 "이 타입이 이 프로필에서 사라지는가" 를
+ * 생성기 실행 없이 확인한다 — 같은 패키지 중간 클래스를 거치는 간접 참조까지 생성기와 똑같이 따라간다.
+ */
+export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, (path) => path.endsWith('.java'))) {
   const allowedPacks = new Set(profile.packs);
   const excludedDomains = Object.entries(manifest.packs)
     .filter(([packName]) => !allowedPacks.has(packName))
     .flatMap(([, pack]) => pack.backend?.appDomains ?? []);
-  const allBefore = walk(output, (path) => path.endsWith('.java'));
+  const allBefore = javaFiles;
   const pathToType = new Map(allBefore.map((path) => [path, javaType(path)]));
   /*
     투영이 무엇을 게이트로 지웠는지는 **지우기 전에** 판정해야 한다 — 파일이 사라진 뒤에는
@@ -209,14 +217,15 @@ function pruneJava(output, manifest, profile) {
   const gateSources = new Set(allBefore.filter((path) => isJavaGateSource(path, readFileSync(path, 'utf8'))));
   const removed = new Set();
   const removalReason = new Map();
+  const directDirectories = [];
 
   for (const domain of excludedDomains) {
     for (const sourceSet of ['main', 'test']) {
       for (const layer of ['domain', 'service']) {
-        removePath(
-          join(output, 'business-app', 'src', sourceSet, 'java', 'nuri', 'business', layer, domain),
-          removed,
-        );
+        const directory = join(root, 'business-app', 'src', sourceSet, 'java', 'nuri', 'business', layer, domain);
+        if (!existsSync(directory)) continue;
+        directDirectories.push(directory);
+        for (const file of walk(directory, () => true)) removed.add(file);
       }
     }
     for (const path of removed) {
@@ -229,10 +238,10 @@ function pruneJava(output, manifest, profile) {
   while (changed) {
     changed = false;
     for (const path of allBefore) {
-      if (removed.has(path) || !existsSync(path)) continue;
+      if (removed.has(path)) continue;
       const dangling = referencedRemovedJavaType(path, removedTypes);
       if (!dangling) continue;
-      const rel = normalize(relative(output, path));
+      const rel = normalize(relative(root, path));
       if (rel.startsWith('foundation/') || rel.startsWith('business-core/')) {
         fail(`필수 모듈이 제외 domain을 참조한다: ${rel} -> ${dangling}`);
       }
@@ -246,7 +255,15 @@ function pruneJava(output, manifest, profile) {
     }
   }
 
+  return { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories };
+}
+
+function pruneJava(output, manifest, profile) {
+  const { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories } =
+    planJavaRemoval(output, manifest, profile);
+
   for (const path of removed) if (existsSync(path)) rmSync(path);
+  for (const directory of directDirectories) if (existsSync(directory)) rmSync(directory, { recursive: true });
   for (const path of walk(output, (candidate) => candidate.endsWith('.java'))) {
     const dangling = referencedRemovedJavaType(path, removedTypes);
     if (dangling) fail(`Java projection dangling import: ${normalize(relative(output, path))} -> ${dangling}`);
