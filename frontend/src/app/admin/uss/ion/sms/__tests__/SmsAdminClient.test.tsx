@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
   queries: {} as Record<string, { queryFn?: () => unknown }>,
   /** 발송 가능 상태 조회 결과. undefined = 아직 판정 못 함(배너를 띄워야 하는 쪽). */
   deliveryStatusData: undefined as { deliveryConfigured?: boolean } | undefined,
+  /** 피커 stub 이 마지막으로 받은 주소록 출처. 조합 지점이 무엇을 주입했는지 동일성으로 본다. */
+  pickerProps: { addressBook: undefined as unknown },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -64,7 +66,22 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({ StandardDataTable: () => <div /> }));
 
+// 피커 자체의 계약은 recipient-picker.test.tsx 가 본다. 여기서는 조합 지점이 무엇을 넘기는지만 기록한다.
+vi.mock('@/app/components/ui/recipient-picker', async () => {
+  const actual = await vi.importActual<typeof import('@/app/components/ui/recipient-picker')>('@/app/components/ui/recipient-picker');
+  return {
+    ...actual,
+    RecipientPicker: ({ addressBook }: { addressBook?: unknown }) => {
+      mocks.pickerProps.addressBook = addressBook;
+      return <div data-testid="sms-recipient-picker-stub" />;
+    },
+  };
+});
+
 import SmsAdminClient from '../SmsAdminClient';
+/* reusable-base:demo:start */
+import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
+/* reusable-base:demo:end */
 
 async function openSmsForm(user: ReturnType<typeof userEvent.setup>) {
   render(<SmsAdminClient initialSmsList={null} />);
@@ -126,6 +143,25 @@ describe('SMS 조회 조건 전달', () => {
     expect(screen.queryByText(/발신번호/)).toBeNull();
   });
 });
+
+/* reusable-base:demo:start */
+/**
+ * [2026-09-13 GAP-PACK-001 ②] 주소록은 demo pack 소유라 이 화면은 demo 마커 블록 안에서만 주소록 출처를 주입한다.
+ * demo 가 빠진 프로필에서는 주입 줄과 이 테스트가 함께 잘리고, 피커는 사용자 검색 탭만 보인다.
+ */
+describe('SmsAdminClient 재사용 base 조합 지점', () => {
+  it('전체 제품에서는 문자 수신자 피커에 주소록 어댑터를 그대로 주입한다', async () => {
+    const user = userEvent.setup();
+    mocks.pickerProps.addressBook = 'not-rendered';
+    await openSmsForm(user);
+
+    await user.click(screen.getByTestId('sms-recipient-picker-btn'));
+    await screen.findByTestId('sms-recipient-picker-stub');
+
+    expect(mocks.pickerProps.addressBook).toBe(recipientAddressBookSource);
+  });
+});
+/* reusable-base:demo:end */
 
 describe('SmsAdminClient send validation', () => {
   beforeEach(() => {

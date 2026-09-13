@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -92,6 +93,76 @@ test('current repository keeps the known live chain and user hub split explicit'
   assert.equal(shadowedLoginPolicy.routing.shadowedBy.kind, 'config-redirect');
   assert.equal(shadowedLoginPolicy.reachability.runtime, true);
   assert.equal(shadowedLoginPolicy.reachability.effectiveProduct, false);
+});
+
+// [2026-09-13 GAP-PACK-001 ②] 공용 수신자 피커가 demo 소유 주소록을 정적 import 해, collaboration 프로필에서
+//   피커와 쪽지·메일·문자·알림 발송 화면이 import 그래프로 함께 사라지고 있었다. 피커는 이제 주소록 출처를 주입받고,
+//   조합 지점(메일·문자)만 demo 마커 블록 안에서 어댑터를 넘긴다. 아래 두 단언이 그 경계를 main CI 에서 지킨다.
+const COLLABORATION_SURVIVORS = [
+  'frontend/src/app/components/ui/recipient-picker.tsx',
+  'frontend/src/types/recipient-address-book.ts',
+  'frontend/src/app/note/page.tsx',
+  'frontend/src/app/admin/collaboration/mail-send/page.tsx',
+  'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx',
+  'frontend/src/app/admin/uss/ion/sms/page.tsx',
+  'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx',
+  'frontend/src/app/admin/notifications/page.tsx',
+  'frontend/src/app/admin/notifications/NotificationsClient.tsx',
+  'frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx',
+];
+
+test('recipient picker and its collaboration consumers survive the collaboration projection', () => {
+  const census = buildFrontendReachabilityCensus({ repoRoot });
+  for (const file of COLLABORATION_SURVIVORS) {
+    const collaborationRemoval = byFile(census, file).profileRemovalConstraints
+      .find((constraint) => constraint.profile === 'collaboration');
+    assert.equal(
+      collaborationRemoval,
+      undefined,
+      `${file} is removed from the collaboration profile via ${JSON.stringify(collaborationRemoval?.evidencePath)}`,
+    );
+  }
+  const adapter = byFile(census, 'frontend/src/services/business/user/addressbook/recipient-address-book-source.ts');
+  assert.equal(
+    adapter.profileRemovalConstraints.find((constraint) => constraint.profile === 'collaboration')?.removal,
+    'direct',
+  );
+});
+
+/**
+ * 생성기(generate-reusable-base-source.mjs importedFrontendFiles)는 주석을 지우지 않은 **원문 전체**에 import 정규식을
+ * 적용한다. census 토크나이저는 주석을 건너뛰므로, 피커 주석에 옛 import 문장을 인용하는 회귀는 위 단언을 통과하면서
+ * 실제 생성기에서만 cascade 를 일으킨다. 그래서 생성기와 같은 정규식으로 피커 원문을 한 번 더 본다.
+ */
+function demoOwnedFrontendImports(source, demoRemovePaths) {
+  const specifiers = [
+    ...source.matchAll(/\b(?:import|export)\s+(?:[^'";]+?\s+from\s+)?['"]([^'"]+)['"]/g),
+    ...source.matchAll(/\bimport\(\s*['"]([^'"]+)['"]\s*\)/g),
+  ].map((match) => match[1]);
+  return specifiers.filter((specifier) => {
+    if (!specifier.startsWith('@/')) return false;
+    const target = `src/${specifier.slice(2)}`;
+    return demoRemovePaths.some((removePath) => target === removePath
+      || target.startsWith(`${removePath}/`)
+      || `${target}.ts` === removePath
+      || `${target}.tsx` === removePath);
+  });
+}
+
+test('the shared recipient picker source never references a demo-owned module, comments included', () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const demoRemovePaths = manifest.packs.demo.frontend.removePaths;
+  const picker = readFileSync(join(repoRoot, 'frontend/src/app/components/ui/recipient-picker.tsx'), 'utf8');
+
+  assert.deepEqual(demoOwnedFrontendImports(picker, demoRemovePaths), []);
+  // 가드 자체가 비어 있지 않음을 고정한다 — 주석 속 옛 import 인용과 타입 파일 경로를 모두 잡아야 한다.
+  assert.deepEqual(
+    demoOwnedFrontendImports(
+      "/** import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService'; */\nimport type { NameCard } from '@/types/business/addressbook';",
+      demoRemovePaths,
+    ),
+    ['@/services/business/user/addressbook/AddressbookUserService', '@/types/business/addressbook'],
+  );
 });
 
 test('census distinguishes every evidence axis without promoting non-runtime references', () => {

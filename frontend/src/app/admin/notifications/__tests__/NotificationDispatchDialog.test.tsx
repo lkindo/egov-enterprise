@@ -30,11 +30,11 @@ vi.mock('@/app/components/ui/recipient-picker', async () => {
   const actual = await vi.importActual<typeof import('@/app/components/ui/recipient-picker')>('@/app/components/ui/recipient-picker');
   return {
     ...actual,
-    RecipientPicker: ({ isOpen, onConfirm, onClose, channel }: {
-      isOpen: boolean; channel: string; onClose: () => void;
+    RecipientPicker: ({ isOpen, onConfirm, onClose, channel, addressBook }: {
+      isOpen: boolean; channel: string; onClose: () => void; addressBook?: unknown;
       onConfirm: (recipients: Array<{ kind: 'user'; esntlId: string; name: string; deptNm?: string }>) => void;
     }) => isOpen ? (
-      <div data-testid="picker" data-channel={channel}>
+      <div data-testid="picker" data-channel={channel} data-address-book={addressBook ? 'injected' : 'none'}>
         <button type="button" onClick={() => { onConfirm([{ kind: 'user', esntlId: 'USER_1', name: '홍길동', deptNm: '기획부' }]); onClose(); }}>
           홍길동 선택
         </button>
@@ -79,6 +79,8 @@ describe('NotificationDispatchDialog', () => {
     const { onClose } = renderDialog();
     fireEvent.click(screen.getByRole('button', { name: '수신자 찾기' }));
     expect(screen.getByTestId('picker')).toHaveAttribute('data-channel', 'notification');
+    // 앱 내 알림은 계정으로 전달되므로 주소록(명함)을 주입하지 않는다 — 어느 프로필에서도 같다.
+    expect(screen.getByTestId('picker')).toHaveAttribute('data-address-book', 'none');
     fireEvent.click(screen.getByRole('button', { name: '홍길동 선택' }));
     expect(screen.getByRole('list', { name: '선택된 수신자' })).toHaveTextContent('홍길동');
 
