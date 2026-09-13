@@ -20,6 +20,13 @@
  * 97.8% 를 쓴 때에 **똑같이 ✅ 만 찍었기** 때문이다. 그래서 사용률·남은 여유를 항상 출력하고,
  * 정책 하한 미만이면 경고를 낸다. 경고는 차단하지 않는다 — 해소 방향(번들 축소 vs 예산 재산정)은
  * frontend-platform 소유자의 결정이고, 이 스크립트가 대신 정할 일이 아니다.
+ *
+ * [2026-09-13] **zod 는 `~4.4.3` 으로 고정한다.** dependabot minor 그룹의 zod 4.6.2 가 단일 청크
+ * 예산을 넘겼다(최대 청크 132,684B → 152,335B, +19,651B). 4.5~4.6 이 core 에 JIT 컴파일러
+ * (`v4/core/compile.js`)·memoizer·visit 등을 더해 core 배포 크기가 220KB→412KB 로 늘었고,
+ * `import { z } from 'zod'` 는 tree-shaking 되지 않아 생성 스키마(`generated-zod.ts`)와 함께 한
+ * 청크에 그대로 실린다. zod 만 4.4.3 으로 되돌린 동일 빌드의 최대 청크는 132,691B 였다(원인 격리 실측).
+ * 4.5+ 기능을 쓰는 코드는 없다. 고정을 풀려면 예산 재산정 또는 zod 소비 방식 변경(`zod/mini` 등)이 선행이다.
  */
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
