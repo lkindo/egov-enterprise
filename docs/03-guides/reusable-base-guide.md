@@ -148,11 +148,20 @@ npm run base:generate-source -- \
 생성기는 DB 번들과 Docker 가 필요해 CI 에서 돌지 않는다. 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
 `npm run test:base-profile`(CI 의 `test:operational-contracts` 에 포함)이 별도로 지킨다.
 
-⚠ 현재 core·collaboration 프로필은 각각 파일 게이트 5건(`acknowledgedRemovedGates`)과 migration 검증 규칙
+⚠ 현재 core·collaboration 프로필은 각각 파일 게이트 4건(`acknowledgedRemovedGates`)과 migration 검증 규칙
 42건을 잃는다. `QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는
-pack 경계로 옮겨 모든 프로필에 되살렸다. 남은 `InputContractMirrorLinterTest`·`PrivacyAccessCensusLinterTest`·
+pack 경계로 옮겨 모든 프로필에 되살렸고, `PrivacyAccessCensusLinterTest`(DEC-OPS-089)는 판정 원장을
+`config/governance/privacy-access-census.json` 으로 옮겨 되살렸다. 남은 `InputContractMirrorLinterTest`·
 `CrossDomainCouplingLinterTest` 는 제외 도메인 전용 게이트가 아니라 **남는 코드도 검사하던 횡단 게이트**다.
 참조 한 줄 때문에 통째로 빠지는 구조이며 GAP-PACK-001 ④ 의 잔여 축이다. 승인 목록의 정본은 매니페스트다.
+
+**횡단 게이트를 되살리는 방식(DEC-OPS-089 선례).** 표적 목록을 게이트 소스의 상수·타입 참조에서 JSON 원장으로
+옮기고 항목마다 소유 pack 을 적는다. 게이트는 현재 트리 manifest 에 남은 pack 의 항목만 기대하되, 빠진 pack
+항목은 **클래스가 정말 없을 때만**(`ClassNotFoundException`) 부재로 인정한다 — 클래스가 남아 있거나 링크 오류가
+나면 red 다. 태그가 생성기의 실제 제거와 맞는지는 `planJavaRemoval` 을 rank 누적 프로필마다 불러 대조하는
+node 계약이 CI 에서 지키고, 원장 해시는 메타 게이트의 `GATE_REGISTRIES`, 판정 본문은 `__sourceHash` 가 동결한다.
+게이트 소스에는 도메인 타입을 참조하지 않으며, 주석에도 제외 도메인의 import 문장을 인용하지 않는다(생성기의
+import 판정은 주석을 지우지 않은 원문을 본다).
 
 ### 3.7 프런트 pack 마커 작성 규칙
 
@@ -221,6 +230,9 @@ Windows에서는 `./gradlew` 대신 `.\gradlew.bat`을 사용한다. 배포 아�
 3. **횡단 게이트가 제거된 도메인 소스를 필수로 읽는다** — 첨부 assignment census 가 `BoardService`
    소스를, springdoc 동기화 게이트가 cascade 로 제거된 `OpenApiDocumentationTest` 를 요구한다.
    이쪽은 재동결로 풀리지 않고 표적 목록을 소스 밖으로 옮겨야 한다(GAP-PACK-001 ④).
+
+2026-09-13 재측정(DEC-OPS-089 적용 후, 실제 생성기 투영): core 는 java 434개가 제거되고 harnessTest 76건 중
+19건 red 다 — 개인정보 census 3건이 새로 살아남아 모두 통과했고 red 수는 그대로다. `demo` 는 86건 전부 green 이다.
 
 ⚠ 수치를 **추론하지 말고 실제로 돌려라.** 2026-09-12 이전에는 아무도 투영본에서 harnessTest 를 돌리지
 않아 생성기 드리프트 4축이 v0.1.0(2026-08-24) 이후 계속 쌓여 있었고, `demo` 조차 red 였다.
