@@ -1,6 +1,9 @@
 'use client';
 
-import { AlertCircle, RotateCcw, Home, MessageSquare } from 'lucide-react';
+import { AlertCircle, RotateCcw, Home } from 'lucide-react';
+/* reusable-base:demo:start */
+import { MessageSquare } from 'lucide-react';
+/* reusable-base:demo:end */
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';

@@ -9,7 +9,6 @@ import {
   LogOut,
   Settings,
   ChevronDown,
-  Info,
   Menu,
   X,
   LayoutGrid,
@@ -21,6 +20,9 @@ import {
   CircleDot,
   Search
 } from 'lucide-react';
+/* reusable-base:demo:start */
+import { Info } from 'lucide-react';
+/* reusable-base:demo:end */
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canPermission } from '@/lib/auth/permissions';

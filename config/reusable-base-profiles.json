@@ -165,6 +165,8 @@
           "src/app/components/layout/header-notifications.tsx",
           "src/app/components/ui/app-notification-drawer.tsx",
           "src/lib/hooks/use-notifications.ts",
+          "src/app/dashboard-data.ts",
+          "src/components/features/dashboard/RealTimeDashboard.tsx",
           "src/services/foundation/system/NotificationAdminService.ts",
           "src/app/actions/boardActions.ts",
           "src/services/business/user/board/BoardUserService.ts",

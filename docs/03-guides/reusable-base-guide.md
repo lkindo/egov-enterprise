@@ -148,10 +148,36 @@ npm run base:generate-source -- \
 생성기는 DB 번들과 Docker 가 필요해 CI 에서 돌지 않는다. 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
 `npm run test:base-profile`(CI 의 `test:operational-contracts` 에 포함)이 별도로 지킨다.
 
-⚠ 현재 core·collaboration 프로필은 각각 게이트 6건을 잃는다. 그중 `InputContractMirrorLinterTest`,
-`PrivacyAccessCensusLinterTest`, `RbacAuthorizationMatrixTest`, `QueryCountGuardrailIntegrationTest` 는
-제외 도메인 전용 게이트가 아니라 **남는 코드도 검사하던 횡단 게이트**다. 참조 한 줄 때문에 통째로 빠지는
-구조이며, 프로필별 적응(`adaptGeneratedHarness` 방식)은 아직 없다 — GAP-PACK-001 의 잔여 축이다.
+⚠ 현재 core·collaboration 프로필은 각각 파일 게이트 5건(`acknowledgedRemovedGates`)과 migration 검증 규칙
+42건을 잃는다. `QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는
+pack 경계로 옮겨 모든 프로필에 되살렸다. 남은 `InputContractMirrorLinterTest`·`PrivacyAccessCensusLinterTest`·
+`CrossDomainCouplingLinterTest` 는 제외 도메인 전용 게이트가 아니라 **남는 코드도 검사하던 횡단 게이트**다.
+참조 한 줄 때문에 통째로 빠지는 구조이며 GAP-PACK-001 ④ 의 잔여 축이다. 승인 목록의 정본은 매니페스트다.
+
+### 3.7 프런트 pack 마커 작성 규칙
+
+모든 프로필에 남는 파일이 특정 pack 소유 코드를 쓸 때는 `reusable-base:<pack>:start` / `…:end` 마커 블록으로
+감싼다. 생성기는 **마커 제거 → import cascade** 순서로 투영한다(`stripExcludedFrontendPackBlocks` → `pruneFrontend`).
+
+1. **링크만이 아니라 그 구역 전체를 같은 블록에 둔다** — 전용 import·지역 선언·데이터 조회·보조 함수·타입까지.
+   링크만 감싸면 축소 프로필에서 미사용 import 로 타입 검사가 깨지거나(`noUnusedLocals`), 제거된 API 를 부르는
+   화면이 남는다(2026-09-13 실측: core 의 `/` 가 사라진 `/api/v1/dashboard` 를 불러 오류 화면이 됐다).
+2. **마커는 줄 단위이고 한 줄에 하나, 중첩 금지다.** 여닫는 태그가 다른 블록에 걸리면 연속 블록으로 나눈다.
+   JSX 자식 위치는 `{/* … */}`, import·배열·객체·JSX 속성 위치는 `/* … */` 를 쓴다. 속성 목록 조립이 복잡하면
+   props 객체를 만들어 spread 한다.
+3. **설명 주석에 마커 토큰을 쓰지 않는다** — 짝이 맞지 않는 마커로 생성이 FAIL 한다.
+4. **주석에 제거되는 모듈의 import 문장·경로를 인용하지 않는다.** 생성기의 cascade 판정은 주석을 지우지 않은
+   원문에 import 정규식을 적용하므로, 주석 속 인용 한 줄이 파일 전체를 제거한다. (도달성 census 토크나이저는
+   주석을 건너뛰어 이 차이를 보지 못한다 — 수신자 피커는 원문 가드 테스트로 막는다.)
+5. **상위 rank pack 블록은 하위 rank pack 블록의 import 에 기댈 수 있다**(예: demo 블록이 collaboration 블록의
+   `Link` 를 쓴다). 프로필은 rank 하향 폐쇄라 안전하다(`base:census` 가 강제). 반대 방향은 금지다.
+6. **공용 컴포넌트는 pack 소유 구현을 import 하지 않고 주입받는다.** 수신자 피커는 주소록 출처를 prop 으로 받고,
+   조합 지점(메일·문자 화면)만 demo 블록 안에서 어댑터를 넘긴다 — 공용 파일에 마커를 흩뿌리지 않는다.
+7. **대상이 cascade 로 잘못 사라진 링크는 가리지 않는다.** 그 링크를 마커로 숨기면 신호를 은폐하게 된다(H2).
+   원인(잘못된 import)을 고친다.
+8. **판정은 투영본 `tsc --noEmit` 이다.** 마커 편집은 전체 제품 빌드에서 드러나지 않으며, 이 규칙을 기계로 막는
+   CI 게이트는 아직 없다(GAP-PACK-001 ③). 마커를 추가·수정한 변경은 §4 절차로 core·collaboration 을 투영해
+   base 커밋 대비 신규 타입 오류가 0 인지 확인한다.
 
 ## 4. 산출물 검증
 

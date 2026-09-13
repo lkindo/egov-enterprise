@@ -188,9 +188,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
               </button>
             ))}
           </div>
+          {/* 주소록은 demo pack 소유다 — 그 pack 이 빠진 프로필에서 404 로 가는 버튼을 남기지 않는다(GAP-PACK-001 ③). */}
+          {/* reusable-base:demo:start */}
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/collaboration/address-book/select-address-book-list">주소록 관리</Link>
           </Button>
+          {/* reusable-base:demo:end */}
           {/* [2026-09-12 §A3-1] 스크랩 등록은 페이지 이동이 아니라 모달이므로 button 역할이 옳다. */}
           {activeTab === 'SCRAPS' ? (
             <Button
