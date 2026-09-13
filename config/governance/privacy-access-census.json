@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "description": "개인정보 접근 증적(@PrivacyAccess) census 의 판정 원장. PrivacyAccessCensusLinterTest 가 읽고, scripts/privacy-access-census-contract.test.mjs 가 pack 태그를 재사용 base 생성기의 실제 제거 계획과 대조한다. 핸들러는 FQN#method 로 식별한다. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
+  "packs": ["core", "collaboration", "survey", "demo"],
+  "declaredHandlers": [
+    {
+      "controller": "nuri.api.controller.UserApiController",
+      "method": "getUsers",
+      "pack": "core"
+    },
+    {
+      "controller": "nuri.api.controller.UserApiController",
+      "method": "getUser",
+      "pack": "core"
+    },
+    {
+      "controller": "nuri.api.controller.business.operation.ExternalHrApiController",
+      "method": "getAllExternalHr",
+      "pack": "demo"
+    },
+    {
+      "controller": "nuri.api.controller.business.sms.SmsApiController",
+      "method": "getSmsRecipients",
+      "pack": "collaboration",
+      "note": "[2026-09-02] SMS 도메인에서 타인 연락처가 나가는 유일한 창구다. 목록·상세는 읽기 매퍼가 recipients 를 빈 배열로 채워 연락처를 싣지 않는다."
+    },
+    {
+      "controller": "nuri.api.controller.business.addressbook.AddressBookApiController",
+      "method": "getAddressBook",
+      "pack": "demo"
+    },
+    {
+      "controller": "nuri.api.controller.business.addressbook.AddressBookApiController",
+      "method": "searchUsers",
+      "pack": "demo",
+      "note": "[2026-09-08 PD-SRVY-001] 설문 응답자 2건이 여기서 빠졌다 — 그 관리 표면(API 5본·화면)을 걷었기 때문이다. tb_srvy_rspdnt 는 성명·성별·생년월일·전화번호를 담는데 응답 결과와 ID 로 연결되지 않고 행을 만드는 경로도 없어 화면이 항상 빈 목록이었다. 테이블·엔티티는 남으므로 표면이 되살아나면 이 census 도 함께 복구한다."
+    }
+  ],
+  "sensitiveGetExemptions": [
+    {
+      "controller": "nuri.api.controller.UserApiController",
+      "method": "getMe",
+      "pack": "core",
+      "reason": "인증 주체 본인의 프로필 조회"
+    },
+    {
+      "controller": "nuri.api.controller.business.addressbook.AddressBookApiController",
+      "method": "getAddressBooks",
+      "pack": "demo",
+      "reason": "목록 매퍼가 구성원 연락처를 채우지 않는 소유자 범위 조회"
+    },
+    {
+      "controller": "nuri.api.controller.business.sms.SmsApiController",
+      "method": "getSmsList",
+      "pack": "collaboration",
+      "reason": "읽기 매퍼가 수신자 목록을 빈 배열로 고정"
+    },
+    {
+      "controller": "nuri.api.controller.business.sms.SmsApiController",
+      "method": "getSms",
+      "pack": "collaboration",
+      "reason": "읽기 매퍼가 수신자 목록을 빈 배열로 고정"
+    },
+    {
+      "controller": "nuri.api.controller.business.mail.MailApiController",
+      "method": "getSentMails",
+      "pack": "collaboration",
+      "reason": "recipients 는 발송 요청 전용(WRITE_ONLY) — 읽기 매퍼가 채우지 않아 응답에 실리지 않음 (DEC-OPS-035)"
+    },
+    {
+      "controller": "nuri.api.controller.business.mail.MailApiController",
+      "method": "getSentMail",
+      "pack": "collaboration",
+      "reason": "recipients 는 발송 요청 전용(WRITE_ONLY) — 읽기 매퍼가 채우지 않아 응답에 실리지 않음 (DEC-OPS-035)"
+    }
+  ],
+  "knownSensitiveResponseTypes": [
+    { "type": "nuri.business.service.user.dto.UserDto", "pack": "core" },
+    { "type": "nuri.business.service.operation.dto.ExternalHrDto", "pack": "demo" },
+    { "type": "nuri.business.service.sms.dto.SmsRecptnDto", "pack": "collaboration" },
+    { "type": "nuri.business.service.addressbook.dto.AddressBookDto", "pack": "demo" },
+    { "type": "nuri.business.service.addressbook.dto.AddressBookUserDto", "pack": "demo" }
+  ]
+}
