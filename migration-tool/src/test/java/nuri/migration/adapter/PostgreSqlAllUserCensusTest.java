@@ -165,7 +165,7 @@ class PostgreSqlAllUserCensusTest {
         given(metadata.getDriverName()).willReturn("PostgreSQL JDBC Driver");
         given(metadata.getDriverVersion()).willReturn("test");
         ResultSet tableRows = emptyRows();
-        given(metadata.getTables(isNull(), isNull(), anyString(), any())).willReturn(tableRows);
+        given(metadata.getTables(isNull(), any(), anyString(), any())).willReturn(tableRows);
 
         given(connection.prepareStatement(anyString())).willAnswer(invocation -> {
             String sql = invocation.getArgument(0);

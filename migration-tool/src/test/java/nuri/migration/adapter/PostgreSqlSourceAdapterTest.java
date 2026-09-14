@@ -93,8 +93,8 @@ class PostgreSqlSourceAdapterTest {
         assertThat(snapshot.objects())
                 .extracting(CatalogObject::kind)
                 .doesNotContain(ObjectKind.ROUTINE);
-        verify(database.metadata(), never()).getProcedures(null, null, "%");
-        verify(database.metadata(), never()).getFunctions(null, null, "%");
+        verify(database.metadata(), never()).getProcedures(any(), any(), any());
+        verify(database.metadata(), never()).getFunctions(any(), any(), any());
         verify(database.metadata(), never()).getUDTs(isNull(), isNull(), eq("%"), any(int[].class));
     }
 

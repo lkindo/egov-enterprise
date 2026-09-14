@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -67,11 +68,11 @@ class PostgreSqlBaselineEnrichmentMergeTest {
         ResultSet columnRows = columnRow();
         ResultSet primaryKeyRows = emptyRows();
         ResultSet indexRows = indexRow();
-        given(metadata.getTables(null, null, "%", null)).willReturn(tableRows);
+        given(metadata.getTables(isNull(), any(), eq("%"), isNull())).willReturn(tableRows);
         given(metadata.getColumns(eq("legacy"), eq("app"), eq("orders"), eq("%")))
                 .willReturn(columnRows);
         given(metadata.getPrimaryKeys("legacy", "app", "orders")).willReturn(primaryKeyRows);
-        given(metadata.getIndexInfo("legacy", "app", "orders", false, false))
+        given(metadata.getIndexInfo("legacy", "app", "orders", false, true))
                 .willReturn(indexRows);
 
         given(connection.prepareStatement(anyString())).willAnswer(invocation -> {

@@ -145,7 +145,7 @@ class PostgreSqlScopedVisibilityTest {
         given(metadata.getDriverName()).willReturn("PostgreSQL JDBC Driver");
         given(metadata.getDriverVersion()).willReturn("test");
         ResultSet tables = tablePresent ? tableRow() : emptyRows();
-        given(metadata.getTables(isNull(), isNull(), anyString(), any())).willReturn(tables);
+        given(metadata.getTables(isNull(), any(), anyString(), any())).willReturn(tables);
 
         given(connection.prepareStatement(anyString())).willAnswer(invocation -> {
             String sql = invocation.getArgument(0);
