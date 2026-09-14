@@ -1,7 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!--
+      [2026-09-14] 구조화(JSON) 콘솔 로그 opt-in — `json-logs` 프로파일을 prod 와 함께 켠다
+      (docker-compose.prod.yml 의 `SPRING_PROFILES_ACTIVE: prod,json-logs`).
+
+      · 왜 기본값이 아닌가: 수집 스택이 아직 정해지지 않았다(PD-OPS-001). `docker logs` 를 사람이 읽는 동안은
+        텍스트가 낫고, 수집기(Filebeat·Fluent Bit·Loki 등)를 붙이는 시점에 JSON 으로 바꾼다.
+      · 왜 환경변수가 아니라 프로파일인가: logback 은 janino 없이 값으로 분기하지 못한다. 값으로 appender 이름을
+        조립하면 오타 하나에 root 가 appender 를 잃어 **로그가 조용히 전부 사라진다**. 프로파일 이름을 잘못 적으면
+        텍스트 로그로 남을 뿐이다 — 틀려도 로그를 잃지 않는 쪽을 택했다.
+      · 형식은 ECS(Elastic Common Schema)가 기본이다. `logging.structured.format.console`(ecs·logstash·gelf)을
+        설정하면 그 형식을 쓴다. MDC 의 traceId·spanId 도 함께 실린다.
+        ⚠ 기본값을 `${CONSOLE_LOG_STRUCTURED_FORMAT:-ecs}` 로 두면 안 된다 — 그 속성이 없을 때 Boot 가 **빈 문자열**을
+          넣어 두어 `:-` 기본값이 적용되지 않고, encoder 가 `Unknown format ''` 으로 **기동을 실패시킨다**(실측).
+          그래서 Spring 환경에서 직접 읽고 없을 때만 ecs 를 쓴다.
+      · 두 분기 모두 appender 이름은 CONSOLE 이다 — 아래 root 참조를 바꾸지 않는다.
+      · LogbackConsoleFormatTest 가 두 분기의 encoder 와 실제 출력 형식을 고정한다.
+    -->
+    <springProfile name="json-logs">
+        <springProperty name="consoleStructuredFormat" source="logging.structured.format.console" defaultValue="ecs"/>
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>${CONSOLE_LOG_THRESHOLD}</level>
+            </filter>
+            <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+                <format>${consoleStructuredFormat}</format>
+                <charset>${CONSOLE_LOG_CHARSET}</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+    <springProfile name="!json-logs">
+        <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    </springProfile>
 
     <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="egov-api-server"/>
 

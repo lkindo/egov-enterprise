@@ -1,0 +1,37 @@
+# eGov Enterprise — Prometheus 경보 규칙 예시
+#
+# 적재: Prometheus 설정의 rule_files 에 이 파일을 넣고, api 의 관리 포트(api:9090/actuator/prometheus)를
+#   스크레이프한다. 관리 포트는 컨테이너 네트워크 안에서만 연다(docker-compose.prod.yml [W1-12]).
+#   절차와 한계는 docs/04-operations/observability-baseline.md 가 정본이다.
+#
+# ⚠ 임계값과 지속 시간은 **시작점**이다. 운영 트래픽을 1~2주 관측한 뒤 조정한다 — 이 저장소는 운영 부하 분포를
+#   갖고 있지 않다(GAP-OPS-001). 수신처(Alertmanager 라우팅)는 인수처가 정한다(PD-OPS-001).
+#
+# ⚠ 규칙이 참조하는 메트릭 이름·태그는 scripts/observability-alert-rules-contract.test.mjs 가 코드·테스트와
+#   대조한다. 코드에서 이름이 바뀌면 경보는 오류 없이 영원히 조용해지므로, 그 대조가 red 로 알린다.
+groups:
+  - name: egov-api-security
+    rules:
+      # 요청 제한 필터는 HTTP 관측보다 먼저 응답을 끝내므로 429 는 http_server_requests 에 잡히지 않는다.
+      #   원천은 RateLimitFilter 의 전용 카운터다. bucket 은 login(로그인 전용 한도)·all(전체 한도)이다.
+      #   오래 이어지면 공격이거나 한도가 실제 사용량보다 낮다 — 한도를 낮춘 직후라면 후자를 먼저 의심한다
+      #   (application.yml 의 nuri.security.rate-limit 순서 주석).
+      - alert: EgovRateLimitRejectionsSustained
+        expr: sum by (application, bucket) (rate(security_ratelimit_rejected_total[5m])) * 60 > 30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "요청 제한(429) 거절이 10분째 분당 30건을 넘습니다 (bucket={{ $labels.bucket }})"
+          description: "api 로그의 [RATE-LIMIT] 줄에서 ip·uri 를 확인해 공격인지 한도 부족인지 판정합니다."
+
+      # 로그인 실패(401)는 표준 요청 메트릭의 uri·status 태그로 본다. 계정 잠금·잘못된 비밀번호가 여기에 들어간다.
+      #   특정 계정이 아니라 전체 비율이 오르면 비밀번호 대입(credential stuffing)을 의심한다.
+      - alert: EgovLoginFailureSpike
+        expr: sum by (application) (rate(http_server_requests_seconds_count{uri="/api/v1/auth/login", status="401"}[5m])) * 60 > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "로그인 실패(401)가 5분째 분당 20건을 넘습니다"
+          description: "요청 제한 로그인 버킷 거절(EgovRateLimitRejectionsSustained, bucket=login)과 함께 오르는지 확인합니다."
