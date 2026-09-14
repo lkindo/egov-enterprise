@@ -62,14 +62,17 @@ services:
       MANAGEMENT_ADDRESS: ${MANAGEMENT_ADDRESS:-0.0.0.0}
       # [W1-J1] 신뢰 프록시 대역. 이 한 줄이 레이트리밋 키·로그인 잠금 IP 판정·감사 IP 를 함께 정한다.
       #   base 기본값(application.yml)은 개발 프록시를 위해 사설 대역을 포함하지만, 운영은 아래
-      #   egov-net 대역만 신뢰해 '홉이 전부 신뢰 대역' 분기를 실제 프록시 요청에 한정한다.
+      #   Next(frontend) 고정 주소 하나만 신뢰해 '홉이 전부 신뢰 대역' 분기를 실제 프록시 요청에 한정한다.
+      #   ⚠ [2026-09-14 GAP-SEC-004] 종전 기본값은 egov-net 서브넷 전체(172.28.0.0/24)였다. 그러면 도커 게이트웨이도
+      #     신뢰되어, 공개 포트로 직접 온 요청이 게이트웨이 주소로 들어오는 환경에서 X-Forwarded-For 위조로
+      #     로그인 기록 IP 와 로그인 IP 제한이 우회됐다(격리 리허설 실측). 서브넷으로 되돌리지 말 것.
       #   ⚠ 비우면(XFF 전면 불신) 백엔드가 보는 IP 가 Next 서버 1개로 수렴해 레이트리밋이 전역 단일
       #     버킷이 된다. **용량 조정을 같은 배포에 넣지 말 것**(순서 지뢰 1).
-      #   ⚠ 값은 docker-compose.yml 의 `egov-net` 서브넷과 **함께** 바뀌어야 한다(둘이 갈라지면
+      #   ⚠ 값은 docker-compose.yml 의 frontend `ipv4_address` 와 **함께** 바뀌어야 한다(둘이 갈라지면
       #     프록시가 신뢰 목록에서 빠져 모든 클라이언트 IP 가 Next 컨테이너 하나로 수렴한다).
       #     ConfigSafetyLinterTest 가 그 정합을 기계로 고정한다.
       #   ⚠ 앞단에 LB·nginx·CDN 을 추가하면 홉이 늘어난다 — 그때 이 값을 다시 판정할 것.
-      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.28.0.0/24}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.28.0.10/32}
       # [2026-09-06 DEC-OPS-045] 읽은 알림 보존·정리(PD-NOTE-003). 스케줄러·삭제 술어·하한 가드는 이미
       #   있는데 이 두 줄이 없어 **호스트 환경에 값을 넣어도 컨테이너에 닿지 않았다** — compose 는 여기
       #   나열된 변수만 전달한다. 즉 인수처가 보존 개월을 정해도 이미지를 고치지 않고는 켤 수 없었다.
@@ -169,7 +172,9 @@ services:
 
   # [2026-09-14 ADR-0019 · GAP-SEC-004] 클라이언트 IP 신뢰 경계. 설정과 이유는 config/edge/default.conf.template 머리주석.
   #   api 8080 은 그대로 공개한다(브라우저 직접 도달 형상 — docker-compose.yml egov-net 주석). 직접 온 요청은
-  #   백엔드 신뢰 대역 밖이라 X-Forwarded-For 를 무시하고 접속 주소를 쓰므로 위조 경로가 아니다.
+  #   백엔드가 신뢰하는 Next 고정 주소(TRUSTED_PROXIES)가 아니므로 X-Forwarded-For 를 무시하고 접속 주소를 쓴다.
+  #   ⚠ 이 성질은 신뢰 목록이 /32 일 때만 성립한다 — 서브넷을 신뢰하던 종전 형상은 게이트웨이 경유 직접 요청에서
+  #     위조가 통했다(2026-09-14 리허설 실측, GAP-SEC-004).
   edge:
     # nginx 1.30.4 stable-alpine, 비루트(uid 101), 컨테이너 포트 8080.
     image: nginxinc/nginx-unprivileged@sha256:adf5042a17f4ecdd200c595fa9ffd1be37efb18f89a830bd1a00e4ab4d59d42c
