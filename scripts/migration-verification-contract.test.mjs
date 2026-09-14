@@ -61,7 +61,9 @@ function validateWorkflow(source) {
   const jobs = parseWorkflowJobs(executable);
   const job = jobs.get('migration-tool') ?? '';
   if (jobs.size !== 1 || !job) errors.push('workflow must have exactly the independent migration-tool job');
-  if (/^ {4}if:|continue-on-error:|secrets\./m.test(job)) errors.push('migration verification may not be skipped or forgive failures');
+  if (/^ {4}if:/m.test(job) || job.includes('continue-on-error:') || job.includes('secrets.')) {
+    errors.push('migration verification may not be skipped or forgive failures');
+  }
   if (!/^    runs-on: ubuntu-latest\s*$/m.test(job)
       || !/^    timeout-minutes: 30\s*$/m.test(job)) errors.push('migration verification needs its bounded Docker-capable runner');
   const steps = job.split(/(?=^      - )/m).slice(1);
@@ -70,7 +72,8 @@ function validateWorkflow(source) {
   if (JSON.stringify(commands) !== JSON.stringify(['chmod +x gradlew',
     ...(standaloneProduct ? ['node --test scripts/adoption-execute.test.mjs'] : []), 'node scripts/verify.mjs migration'])
       || /^ {4}defaults:/m.test(job)
-      || runSteps.some((step) => /^        if:|continue-on-error:|working-directory:|^        shell:/m.test(step))) {
+      || runSteps.some((step) => /^        (?:if|shell):/m.test(step)
+        || step.includes('continue-on-error:') || step.includes('working-directory:'))) {
     errors.push('CI must execute the same migration scope unconditionally without npm, frontend, or load commands');
   }
   const actions = [...job.matchAll(/^\s+(?:-\s+)?uses:\s*([^\s#]+)/gm)].map((match) => match[1]);
@@ -85,7 +88,9 @@ function validateWorkflow(source) {
   const artifact = steps.find((step) => step.includes('uses: actions/upload-artifact@')) ?? '';
   if (!/^          path: migration-tool\/build\/libs\/\*\.jar\s*$/m.test(artifact)
       || !/^          if-no-files-found: error\s*$/m.test(artifact)
-      || /^        if:|continue-on-error:/m.test(artifact)) errors.push('verified bootJar artifact must be retained and missing output must fail');
+      || /^        if:/m.test(artifact) || artifact.includes('continue-on-error:')) {
+    errors.push('verified bootJar artifact must be retained and missing output must fail');
+  }
 
   for (const event of ['push', 'pull_request']) {
     const eventBlock = executable.match(new RegExp(`^  ${event}:\\n([\\s\\S]*?)(?=^  [a-z_]+:|^\\S|(?![\\s\\S]))`, 'm'))?.[1] ?? '';
@@ -143,4 +148,19 @@ test('missing or conditional execution, broad dependencies, write permissions, a
     (source) => source.replace('if-no-files-found: error', 'if-no-files-found: ignore'),
     (source) => source.replace(/actions\/checkout@[a-f0-9]{40}/, 'actions/checkout@main'),
   ]) assert.notDeepEqual(validateWorkflow(mutate(workflow)), []);
+});
+
+test('job, command and artifact guards keep rejecting nested bypass tokens after splitting anchored checks', () => {
+  for (const [before, after, message] of [
+    ['    runs-on:', '    if: false\n    runs-on:', 'migration verification may not be skipped'],
+    ['    steps:', '    continue-on-error: true\n    steps:', 'migration verification may not be skipped'],
+    ['    steps:', "    env:\n      TOKEN: '${{ secrets.DEPLOY_TOKEN }}'\n    steps:", 'migration verification may not be skipped'],
+    ['run: node scripts/verify.mjs migration', 'continue-on-error: true\n        run: node scripts/verify.mjs migration', 'CI must execute the same migration scope'],
+    ['run: node scripts/verify.mjs migration', 'working-directory: another-product\n        run: node scripts/verify.mjs migration', 'CI must execute the same migration scope'],
+    ['if-no-files-found: error', 'if-no-files-found: error\n        continue-on-error: true', 'verified bootJar artifact must be retained'],
+  ]) {
+    const changed = workflow.replace(before, after);
+    assert.notEqual(changed, workflow);
+    assert.ok(validateWorkflow(changed).some(error => error.includes(message)), message);
+  }
 });

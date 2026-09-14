@@ -291,6 +291,19 @@ retained/removed Java 소스·FQCN 집합을 실제 산출물과 정확히 대�
 검사하며 파일 부재만으로 임의의 검사를 생략하지 않는다. 기관 고유 코드 변경은
 [adopter 재동결 절차](../04-operations/adopter-baseline-refreeze.md)로 별도 검토한다.
 
+2026-09-14에는 실제 생성한 세 프로필에서 Java 전체 컴파일과 아래 검사를 실행해
+실패·건너뜀 0건을 확인했다. 이에 따라 축소 하네스 붕괴 `GAP-BASE-001`은 활성 gap에서 제거했다.
+
+| 프로필 | `harnessTest` | 실제 PostgreSQL `schemaValidationTest` |
+|---|---|---|
+| `core` | 91/91 | 11/11 |
+| `collaboration` | 91/91 | 11/11 |
+| `demo` | 91/91 | 13/13 |
+
+소스 모집단·필수 실행 단계의 누락, 잘못된 프로필과 보안 부정 테스트 변조가 red가 되는 것도
+확인했다. 이 로컬 기술 검증과 현재 커밋의 required CI는 별개이며, 병합에는
+세 프로필 matrix를 포함한 required CI 통과가 필요하다. 기관의 운영·업무 승인은 별도다.
+
 아래 수치는 **2026-09-12의 역사적 진단**이며 현재 허용되는 실패 수가 아니다.
 
 | 프로필 | 제거 java | harnessTest | 성격 |
