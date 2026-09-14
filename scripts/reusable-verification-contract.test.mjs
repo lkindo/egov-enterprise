@@ -8,6 +8,10 @@ import { verifyReusableBase } from './verify-reusable-base.mjs';
 import { parseWorkflowJobs, validateStaticContract } from './required-checks-contract.mjs';
 import { installReusableVerification } from './generate-reusable-base-source.mjs';
 
+function assertFinalServerReadiness(args, container) {
+  assert.deepEqual(args, ['exec', container, 'pg_isready', '-h', '127.0.0.1', '-p', '5432', '-U', 'verify', '-d', 'verify']);
+}
+
 function fixture(t) {
   const base = resolve(tmpdir());
   const root = mkdtempSync(join(base, 'egov-profile-contract-'));
@@ -53,13 +57,19 @@ test('producer generates all stages into a fresh artifact and only removes its o
     const calls = [];
     let label;
     let output;
+    let readinessAttempts = 0;
     const run = (command, args) => {
       calls.push([command, args]);
       if (command === 'docker') {
         if (args[0] === 'run') { label = args[args.indexOf('--label') + 1].split('=')[1]; return 'a'.repeat(64); }
         if (args[0] === 'inspect') return label;
+        if (args[0] === 'exec') {
+          readinessAttempts += 1;
+          if (readinessAttempts === 1) throw new Error('final TCP server has not started');
+        }
         return '';
       }
+      assert.equal(readinessAttempts, 2, 'generation must wait for a successful readiness retry');
       if (command === 'node' && args[0].endsWith('source.mjs')) {
         output = args[args.indexOf('--output') + 1];
         mkdirSync(output, { recursive: true });
@@ -74,8 +84,27 @@ test('producer generates all stages into a fresh artifact and only removes its o
     assert.ok(calls.some(([cmd, args]) => cmd === 'node' && args[0].endsWith('db.mjs')));
     assert.ok(calls.some(([cmd]) => cmd === 'npm'));
     assert.ok(calls.some(([cmd]) => cmd === 'pnpm'));
+    const readiness = calls.filter(([cmd, args]) => cmd === 'docker' && args[0] === 'exec');
+    assert.equal(readiness.length, 2);
+    for (const [, args] of readiness) assertFinalServerReadiness(args, 'a'.repeat(64));
     assert.deepEqual(calls.at(-1), ['docker', ['rm', '--force', 'a'.repeat(64)]]);
   }
+});
+
+test('socket-only, remote, wrong-port and wrong-database readiness mutations are reproducible reds', () => {
+  const container = 'a'.repeat(64);
+  const command = ['exec', container, 'pg_isready', '-h', '127.0.0.1', '-p', '5432', '-U', 'verify', '-d', 'verify'];
+  assertFinalServerReadiness(command, container);
+  for (const args of [
+    command.filter((_, index) => index !== 3 && index !== 4),
+    command.filter((_, index) => index !== 5 && index !== 6),
+    command.with(4, '/var/run/postgresql'),
+    command.with(4, 'shared-database'),
+    command.with(6, '5433'),
+    command.with(8, 'postgres'),
+    command.with(10, 'postgres'),
+    command.with(1, 'someone-else'),
+  ]) assert.throws(() => assertFinalServerReadiness(args, container), assert.AssertionError);
 });
 
 test('producer never accepts an invalid profile or uses a shared container after failure', async (t) => {
