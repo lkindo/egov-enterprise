@@ -24,7 +24,9 @@ export async function verifyReusableBase({ root, profile, run = runCommand, veri
     if (!/^[a-f0-9]{64}$/.test(container)) throw new Error('Docker did not return a container identity');
     let ready = false;
     for (let attempt = 0; attempt < 60; attempt += 1) {
-      try { docker(['exec', container, 'pg_isready', '-U', 'verify', '-d', 'verify']); ready = true; break; }
+      // The image's initialization server only opens a Unix socket and stops before
+      // the final server starts. TCP readiness excludes that temporary server.
+      try { docker(['exec', container, 'pg_isready', '-h', '127.0.0.1', '-p', '5432', '-U', 'verify', '-d', 'verify']); ready = true; break; }
       catch { await new Promise(resolve => setTimeout(resolve, 500)); }
     }
     if (!ready) throw new Error('isolated PostgreSQL readiness failed');
