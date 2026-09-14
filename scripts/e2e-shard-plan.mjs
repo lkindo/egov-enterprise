@@ -6,8 +6,18 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const PROFILE_PATH = path.join(REPO_ROOT, 'frontend', 'e2e', 'shard-duration-profile.json');
 const SPEC_ROOT = path.join(REPO_ROOT, 'frontend', 'e2e');
 const ISO_CAPTURED_AT = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))?$/;
-/** 프로파일 신선도 상한(일) — 초과하면 red. 해소는 최근 성공 run 기반 재생성이다. */
-const MAX_PROFILE_AGE_DAYS = 120;
+/** 재측정 주기다. 노후화는 보고하며 실제 spec/provenance 오류는 계속 차단한다. */
+export const MAX_PROFILE_AGE_DAYS = 120;
+
+export function durationProfileFreshness(profile, nowMs = Date.now()) {
+  const errors = validateSourceEvidence(profile?.source, nowMs);
+  if (errors.length) throw new Error(errors.join('\n'));
+  const remeasureAt = Date.parse(profile.source.capturedAt) + MAX_PROFILE_AGE_DAYS * 86_400_000;
+  return { source: 'frontend/e2e/shard-duration-profile.json', capturedAt: profile.source.capturedAt,
+    remeasureAt: new Date(remeasureAt).toISOString(),
+    freshness: nowMs > remeasureAt ? 'overdue' : remeasureAt - nowMs <= 30 * 86_400_000 ? 'due-soon' : 'scheduled',
+    blocksSourceBuild: false, actualRuntimeBalanceVerified: false };
+}
 
 function toPosix(value) {
   return value.split(path.sep).join('/');
@@ -55,18 +65,12 @@ function validateSourceEvidence(source, nowMs) {
     ? Date.parse(source.capturedAt)
     : Number.NaN;
   const validCalendarDate = Number.isFinite(capturedAtMs)
-    && (source.capturedAt.length !== 10
-      || new Date(capturedAtMs).toISOString().slice(0, 10) === source.capturedAt);
+    && new Date(`${source.capturedAt.slice(0, 10)}T00:00:00Z`).toISOString().slice(0, 10) === source.capturedAt.slice(0, 10)
+    && (source.capturedAt.length === 10 || Number(source.capturedAt.slice(11, 13)) < 24);
   if (!Number.isFinite(capturedAtMs) || !validCalendarDate) {
     errors.push('source.capturedAt must be a valid ISO date or timestamp');
   } else if (capturedAtMs > nowMs) {
     errors.push('source.capturedAt must not be in the future');
-  } else if (capturedAtMs < nowMs - MAX_PROFILE_AGE_DAYS * 24 * 60 * 60 * 1000) {
-    // [2026-08-31] provenance 는 있었지만 신선도 상한이 없었다 — ≤15% 균형 불변식이
-    // 임의로 낡은 실행시간을 기준으로 검사될 수 있었다. 해소는 최근 성공 e2e run 의
-    // 실행시간으로 프로파일을 재생성하는 것이다(run id·commit·capturedAt 함께 갱신).
-    errors.push(`source.capturedAt is older than ${MAX_PROFILE_AGE_DAYS} days`
-      + ' — regenerate shard-duration-profile.json from a recent successful e2e run');
   }
 
   if (typeof source.runner !== 'string' || source.runner.trim().length === 0) {
@@ -152,7 +156,11 @@ function cli() {
     throw new Error('usage: node scripts/e2e-shard-plan.mjs --shard current/total');
   }
   const { current, total } = parseShard(process.argv[argumentIndex + 1]);
-  const plan = buildDurationBalancedPlan(loadDurationProfile(), total);
+  const profile = loadDurationProfile();
+  const plan = buildDurationBalancedPlan(profile, total);
+  if (durationProfileFreshness(profile).freshness === 'overdue') {
+    process.stderr.write('E2E duration evidence requires remeasurement; the plan remains an estimate.\n');
+  }
   const selected = plan[current - 1];
   const summary = plan.map(shard => `${shard.index}/${total}=${(shard.estimatedMs / 1000).toFixed(1)}s`).join(', ');
   process.stderr.write(`Duration-balanced E2E plan: ${summary}\n`);

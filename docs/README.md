@@ -88,6 +88,7 @@
 | [ADR-0015](02-architecture/decisions/ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 |
 | [ADR-0016](02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) | 복수 그룹·명시 기능 권한 및 수동 Contract 전환 |
 | [ADR-0017](02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 과업 중심 메뉴 재편·중복 통합·권한 보존 |
+| [ADR-0018](02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관 승인 분리와 프로필별 근거 투영·산출물 검증 |
 
 ## 03-guides — 개발 지침
 
@@ -96,6 +97,7 @@
 | [getting-started.md](03-guides/getting-started.md) | **온보딩 런북** — 새 프로젝트 시작 |
 | [orchestration-protocol.md](03-guides/orchestration-protocol.md) | **SOP** — 작업 등급·위임·감사·증거 기반 검증 |
 | [governance-atlas-guide.md](03-guides/governance-atlas-guide.md) | Atlas 읽기·소스 생성·현행화·검증 및 증거 경계 |
+| [governance-review-lifecycle.md](03-guides/governance-review-lifecycle.md) | 실제 시계 검토 보고, 기관 도입 preflight, 프로필 원장·메모리 투영과 무결성, 독립 이관 검증 |
 | [governance-atlas-improvement-plan.md](03-guides/governance-atlas-improvement-plan.md) | Atlas 보강 조사·설계·적용 결과와 검증 경계 |
 | [testing-guide.md](03-guides/testing-guide.md) | **테스트 SSOT** — 단위/통합/E2E 전략 |
 | [e2e-test-guide.md](03-guides/e2e-test-guide.md) | E2E 운영 Runbook |
@@ -110,7 +112,7 @@
 | [frontend-content-style.md](03-guides/frontend-content-style.md) | 한국어 우선 UI 문구·오류·복구·도메인 용어 계약 |
 | [frontend-form-validation-loop.md](03-guides/frontend-form-validation-loop.md) | 입력·수정 화면의 제약 보존, 오류 위치 이동, 서버 field error, 중복 제출 잠금과 exact census 운영 루프 |
 | [ui-ux-modernization-execution-loop-prompt.md](03-guides/ui-ux-modernization-execution-loop-prompt.md) | UI/UX 현대화 계획을 승인 경계·검증·재개 루프로 끝까지 실행하는 복사형 프롬프트 |
-| [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 재사용 Base 생성 가이드 |
+| [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 릴리스 생성과 세 프로필 DB·소스 기술 검증, 근거 투영·기관 도입 경계 |
 
 ## 04-operations — 운영
 

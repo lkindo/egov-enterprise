@@ -126,7 +126,7 @@ class EntitySchemaConformanceLinterTest {
         Map<String, Map<String, String>> schema = replayMigrations();
 
         // 게이트 무결성(false-green 방지): 파싱이 조용히 붕괴하면 모든 대조가 무의미해진다
-        if (schema.size() < 50) {
+        if (schema.size() < ReusableHarnessProfile.current().count("schemaTables", 50)) {
             fail("게이트 무결성 파손: 마이그레이션 재생 결과 테이블 수(" + schema.size() + ")가 예상 하한(50) 미만 — SQL 파서/경로 파손 의심.");
         }
 

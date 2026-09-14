@@ -2385,6 +2385,8 @@ test('authoritative runner consumes the captured execution contract and finaliza
     /function toolingHashes\(buildSha\)[\s\S]*?runnerHash:\s*boundSourceFileHash\(buildSha,/,
     'tooling provenance must bind actual worktree bytes to buildSha before durable readback',
   );
+  assert.match(executableSource, /scenarioContractHash:\s*scenarioContractSourceHash\(relativePath => boundSourceFileHash\(buildSha, relativePath\)\)/,
+    'scenario validation and its regression contract must share one bound source inventory');
   assert.match(
     executableSource,
     /createAutomatedRunProjection\(\{[\s\S]*?executionPlan:\s*plan,[\s\S]*?stateResults,[\s\S]*?performanceResults,[\s\S]*?scenarioSummaries:\s*runSummaries,[\s\S]*?\}\)/,

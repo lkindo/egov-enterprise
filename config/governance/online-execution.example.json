@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "product": "online",
+  "profile": "core",
+  "environmentId": null,
+  "images": {
+    "api": null,
+    "frontend": null
+  }
+}

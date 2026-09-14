@@ -120,7 +120,7 @@ class WriteSmokeIntegrationTest {
         // 게이트 무결성(false-green 방지): 스캔이 조용히 0 에 수렴하면 vacuous 통과가 된다.
         assertThat(ynColumns)
                 .as("_yn 컬럼 스캔이 비정상 — 실측 기준값은 59컬럼대(V2_24)다")
-                .hasSizeGreaterThan(30);
+                .hasSizeGreaterThanOrEqualTo(nuri.api.harness.ReusableHarnessProfile.current().count("booleanFlagColumns", 31));
 
         List<String> checked = jdbcTemplate.queryForList(
                 "SELECT DISTINCT rel.relname || '.' || att.attname"

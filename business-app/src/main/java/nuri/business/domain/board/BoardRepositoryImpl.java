@@ -201,7 +201,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         public BoardStatsResult aggregateVisibleStats(@NonNull BoardSearchCondition condition) {
                 BooleanBuilder visibility = BoardPredicate.searchBoard(condition);
                 NumberExpression<Long> articleCount = QBoard.board.count();
-                NumberExpression<Long> viewSum = QBoard.board.inqCnt.longValue().sum();
+                NumberExpression<Long> viewSum = QBoard.board.inqCnt.longValue().sumLong();
 
                 Tuple totals = queryFactory
                                 .select(articleCount, viewSum)

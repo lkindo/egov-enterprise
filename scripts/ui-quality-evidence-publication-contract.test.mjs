@@ -8,9 +8,11 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
+import { SCENARIO_CONTRACT_SOURCES, scenarioContractSourceHash } from './ui-quality-scenario-contract-hash.mjs';
 
 import {
   buildExecutionPlan,
+  captureCommittedWorktreeFileHash,
   createProductionBuildInputTreeHash,
   PRODUCTION_BUILD_INPUT_PATHS,
   REQUIRED_PRODUCTION_BUILD_INPUT_FILES,
@@ -1364,6 +1366,8 @@ test('combined v2 becomes measured only after clean committed protocol, build-in
     runGit(root, ['init']);
     runGit(root, ['config', 'user.name', 'Repository Governance']);
     runGit(root, ['config', 'user.email', 'repository-governance@example.invalid']);
+    // Exercise Windows checkout conversion on every platform. Bound tooling must keep blob bytes.
+    runGit(root, ['config', 'core.autocrlf', 'true']);
     const protocolPath = 'docs/04-operations/ui-ux-baseline-protocol.md';
     const manifestPath = 'config/ui-quality-scenarios.json';
     const routeTruthPath = 'config/ui-route-capabilities.json';
@@ -1374,18 +1378,41 @@ test('combined v2 becomes measured only after clean committed protocol, build-in
       scenarioContractHash: 'scripts/ui-quality-scenarios-contract.test.mjs',
     };
     const buildPaths = new Set([
+      '.gitattributes',
       ...REQUIRED_PRODUCTION_BUILD_INPUT_FILES,
       protocolPath,
       manifestPath,
       routeTruthPath,
       ...Object.values(toolingPaths),
+      ...SCENARIO_CONTRACT_SOURCES,
     ]);
     for (const relativePath of buildPaths) {
       writeRepositoryFile(root, relativePath, readFileSync(new URL(`../${relativePath}`, import.meta.url)));
     }
     runGit(root, ['add', '--', '.']);
     runGit(root, ['commit', '-m', 'fixture: freeze r13 execution inputs']);
+    runGit(root, ['checkout-index', '--all', '--force']);
     const buildSha = runGit(root, ['rev-parse', 'HEAD']);
+    const attributes = readFileSync(join(root, '.gitattributes'), 'utf8');
+    for (const relativePath of SCENARIO_CONTRACT_SOURCES) {
+      const capture = () => captureCommittedWorktreeFileHash({
+        readWorktreeFile: () => readFileSync(join(root, ...relativePath.split('/'))),
+        readCommittedFile: () => runGitBuffer(root, ['show', `${buildSha}:${relativePath}`]),
+      });
+      assert.doesNotThrow(capture);
+      const missingRule = attributes.split('\n').filter(line => !line.startsWith(`${relativePath} `)).join('\n');
+      assert.notEqual(missingRule, attributes);
+      writeRepositoryFile(root, '.gitattributes', missingRule);
+      runGit(root, ['add', '--', '.gitattributes']);
+      rmSync(join(root, ...relativePath.split('/')));
+      runGit(root, ['checkout-index', '--force', '--', relativePath]);
+      assert.throws(capture, /worktree source differs from the bound build commit/u);
+      writeRepositoryFile(root, '.gitattributes', attributes);
+      runGit(root, ['add', '--', '.gitattributes']);
+      rmSync(join(root, ...relativePath.split('/')));
+      runGit(root, ['checkout-index', '--force', '--', relativePath]);
+      assert.doesNotThrow(capture);
+    }
     const selectedBuildInputs = selectProductionBuildInputPaths(runGitBuffer(root, [
       'ls-tree', '-r', '--name-only', '-z', buildSha, '--', ...PRODUCTION_BUILD_INPUT_PATHS,
     ]).toString('utf8').split('\0').filter(Boolean));
@@ -1411,11 +1438,17 @@ test('combined v2 becomes measured only after clean committed protocol, build-in
       buildInputTreeHash,
       ...Object.fromEntries(Object.entries(toolingPaths).map(([key, relativePath]) => [
         key,
-        sha256Hex(readFileSync(join(root, ...relativePath.split('/')))),
+        key === 'scenarioContractHash'
+          ? scenarioContractSourceHash(source => sha256Hex(readFileSync(join(root, ...source.split('/')))))
+          : sha256Hex(readFileSync(join(root, ...relativePath.split('/')))),
       ])),
     };
     const combined = sampleCombinedSummary({ provenanceOverrides });
     assert.doesNotThrow(() => assertCombinedRepositoryProvenance(root, combined));
+    const wrongScenarioHash = structuredClone(combined);
+    wrongScenarioHash.provenance.scenarioContractHash = '0'.repeat(64);
+    assert.throws(() => assertCombinedRepositoryProvenance(root, wrongScenarioHash),
+      /combined scenarioContractHash does not match the clean build commit/u);
     const r12 = assertCanonicalJsonBytes(readFileSync(new URL(
       `../config/ui-quality-baseline/summaries/sha256-${R12_PUBLISHED_DIGEST}.json`,
       import.meta.url,

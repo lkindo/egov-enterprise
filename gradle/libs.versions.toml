@@ -25,16 +25,16 @@ commons-io = "2.22.0"
 commons-lang3 = "3.20.0"
 commons-net = "3.13.0"
 commons-email = "1.6.0"
-guava = "33.6.0-jre"
+guava = "33.7.1-jre"
 icu4j = "75.1"
 parsson = "1.1.9"
-archunit = "1.4.2"
+archunit = "1.5.0"
 scribejava = "8.3.3"
-xmlbeans = "5.3.0"
+xmlbeans = "5.4.0"
 jdom2 = "2.0.6.1"
 dbcp2 = "2.14.0"
 jjwt = "0.13.0"
-h2 = "2.4.240"
+h2 = "2.5.250"
 caffeine = "3.2.4"
 testcontainers = "1.21.4"
 mapstruct = "1.6.3"
@@ -42,9 +42,9 @@ mapstruct = "1.6.3"
 #   원본은 5.1.0 이 마지막 릴리스이고 CVE-2024-49203(HQL injection via orderBy, CVSS 8.2)의
 #   패치가 **영원히 나오지 않는다**(GHSA-6q3q-6v5j-h6vg, 취약 범위 `<= 5.1.0`, first_patched=null).
 #   같은 advisory 가 포크에서는 5.6.1 / 6.10.1 로 패치돼 있다.
-#   5.x 라인을 고른 이유: 자바 패키지가 `com.querydsl.*` 로 동일하고 `jakarta` classifier 가
-#   존재해 **소스 94개 파일을 건드리지 않고 groupId 만 교체**된다(6.x/7.x 는 API 변경 동반).
-querydsl = "5.6.1"
+#   최초 이관은 jakarta classifier 가 있는 5.6.1을 선택했다. 7.6은 com.querydsl.* 패키지를
+#   유지하고 JPA 본체에 Jakarta API를 사용하므로 JPA classifier를 제거하며 APT jakarta는 유지한다.
+querydsl = "7.6"
 lombok-mapstruct-binding = "0.2.0"
 
 

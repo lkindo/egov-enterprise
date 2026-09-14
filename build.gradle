@@ -4,8 +4,8 @@ buildscript {
             // Build plugins have their own classpath; application BOM overrides do not protect it.
             // Dependency-Check 12.2.2 / Boot buildpack support resolve vulnerable HttpComponents.
             // Keep compatible patch floors until upstream plugins supply these versions.
-            classpath('org.apache.httpcomponents.client5:httpclient5:5.6.3')
-            classpath('org.apache.httpcomponents.client5:httpclient5-cache:5.6.3')
+            classpath('org.apache.httpcomponents.client5:httpclient5:5.6.4')
+            classpath('org.apache.httpcomponents.client5:httpclient5-cache:5.6.4')
             classpath('org.apache.httpcomponents.core5:httpcore5:5.4.3')
             classpath('org.apache.httpcomponents.core5:httpcore5-h2:5.4.3')
         }
@@ -18,7 +18,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '8.12.2' apply false
     id 'jacoco'
-    id 'org.owasp.dependencycheck' version '12.2.2'
+    id 'org.owasp.dependencycheck' version '13.0.0'
     id 'info.solidsoft.pitest' version '1.19.0' apply false
 }
 
@@ -68,6 +68,8 @@ allprojects {
         //   XML 추가 근거: dependency-check.yml 의 업로드 스텝이 dependency-check-report.xml 을 참조하는데
         //   HTML/JUNIT 만으로는 그 파일이 생성되지 않아 XML 아티팩트가 항상 비어 있었다.
         formats = ['HTML', 'JUNIT', 'XML']
+        // Dependency-Check 13 defaults to reports/dependency-check; retain the CI collector's module paths.
+        outputDirectory = layout.buildDirectory.dir('reports').get().asFile
         
         // 스캔 제외 파일 패턴
         // [2026-08-09 경로 정정] 종전 `file(...)` 은 **각 서브프로젝트 디렉터리 기준**으로 해석된다.
@@ -100,6 +102,13 @@ allprojects {
             nvdEnabled = true
         }
         */
+    }
+
+    // DC 13 creates a task-local DataExtension with an explicit default, which overrides
+    // its convention from dependencyCheck.data.directory. Preserve the configured cache provider.
+    def dependencyCheckDataDirectory = extensions.getByName('dependencyCheck').data.directory
+    tasks.withType(org.owasp.dependencycheck.gradle.tasks.ConfiguredTask).configureEach { task ->
+        task.data.directory.set(dependencyCheckDataDirectory)
     }
 }
 

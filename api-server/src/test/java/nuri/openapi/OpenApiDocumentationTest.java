@@ -71,38 +71,7 @@ class OpenApiDocumentationTest {
   }
 
   @Test
-  @DisplayName("공개 FAQ 전용 경로와 closed response schema가 OpenAPI에 노출된다")
-  void publicFaqQueryContract_isDocumented() throws Exception {
-    String content = mockMvc.perform(get("/v3/api-docs")
-        .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$['paths']['/api/v1/boards/public-faqs']['get']").exists())
-        .andExpect(jsonPath("$['paths']['/api/v1/boards/public-faqs/{pstSn}']['get']").exists())
-        .andExpect(jsonPath(
-            "$['paths']['/api/v1/boards/{bbsId}']['get']['parameters'][?(@['name'] == 'publicOnly')]")
-            .isEmpty())
-        .andExpect(jsonPath("$.components.schemas.PublicFaqListItemResponse.properties.pstCn").doesNotExist())
-        .andExpect(jsonPath("$.components.schemas.PublicFaqListItemResponse.properties.userId").doesNotExist())
-        .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.properties.userId").doesNotExist())
-        .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.required")
-            .value(hasItem("bbsId")))
-        .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.required")
-            .value(hasItem("useYn")))
-        .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.required")
-            .value(hasItem("scrtYn")))
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-
-    com.fasterxml.jackson.databind.JsonNode schemas =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
-            .path("components").path("schemas");
-    assertNullableProperties(schemas.path("PublicFaqListItemResponse"),
-        "pstTtl", "inqCnt", "crtDt");
-    assertNullableProperties(schemas.path("PublicFaqDetailResponse"),
-        "pstTtl", "pstCn", "inqCnt", "crtDt");
-  }
-
-  @Test
-  @DisplayName("게시판 응답과 사용자 권한 LEFT JOIN projection은 실제 null 생산 필드를 nullable로 문서화한다")
+  @DisplayName("사용자 권한 LEFT JOIN projection은 실제 null 생산 필드를 nullable로 문서화한다")
   void generatedResponseNullabilityContract_isDocumented() throws Exception {
     String content = mockMvc.perform(get("/v3/api-docs")
         .contentType(MediaType.APPLICATION_JSON))
@@ -112,11 +81,6 @@ class OpenApiDocumentationTest {
     com.fasterxml.jackson.databind.JsonNode schemas =
         new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
             .path("components").path("schemas");
-    assertNullableProperties(schemas.path("BoardDto"),
-        "ansSn", "pstTtl", "pstCn", "upPstSn", "sortOrdr", "ttlBoldYn", "inqCnt",
-        "useYn", "pstBgngYmd", "pstEndYmd", "userId", "userNm", "atchFileSn", "scrtYn",
-        "evntDt", "qnaSttsCd", "qnaCatCd", "likeCnt", "commentCnt", "fileCnt",
-        "crtDt", "frstRegisterNm", "ansLv");
     assertNullableProperties(schemas.path("AuthorGroupProjection"),
         "groupId", "mberTyNm", "authrtId");
     assertNullableProperties(schemas.path("DeptAuthorProjection"), "authrtId");
@@ -158,65 +122,6 @@ class OpenApiDocumentationTest {
   }
 
   @Test
-  @DisplayName("Survey의 실제 JSON null 생산 방식과 OpenAPI nullable 계약이 일치한다")
-  void generatedSurveyJsonNullabilityContract_matchesRuntimeSerialization() throws Exception {
-    String content = mockMvc.perform(get("/v3/api-docs")
-        .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode schemas = objectMapper.readTree(content)
-        .path("components").path("schemas");
-
-    nuri.business.service.survey.dto.SurveyResultDto survey =
-        nuri.business.service.survey.dto.SurveyResultDto.builder()
-            .srvyRspnsSn(1L)
-            .srvySn(2L)
-            .srvyTmpltSn(3L)
-            .srvyQstnSn(4L)
-            .srvyArtclSn(5L)
-            .build();
-    com.fasterxml.jackson.databind.JsonNode surveyJson = objectMapper.valueToTree(survey);
-    assertThat(surveyJson.path("rspdntAnsCn").isNull()).isTrue();
-    assertThat(surveyJson.path("rspnsNm").isNull()).isTrue();
-    assertThat(surveyJson.path("etcAnsCn").isNull()).isTrue();
-    assertThat(surveyJson.path("frstRgtrId").isNull()).isTrue();
-    assertThat(surveyJson.path("crtDt").isNull()).isTrue();
-    assertNullableProperties(schemas.path("SurveyResultDto"),
-        "rspdntAnsCn", "rspnsNm", "etcAnsCn", "frstRgtrId", "crtDt");
-  }
-
-  @Test
-  @DisplayName("댓글 DTO는 응답 nullable 필드와 요청 비밀번호 방향을 정확히 문서화한다")
-  void commentDtoNullabilityAndAccessContract_isDocumented() throws Exception {
-    String content = mockMvc.perform(get("/v3/api-docs")
-        .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-
-    com.fasterxml.jackson.databind.JsonNode properties =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
-            .path("components").path("schemas").path("CommentDto").path("properties");
-    java.util.Set<String> nullableProperties = new java.util.HashSet<>();
-    java.util.Set<String> readOnlyProperties = new java.util.HashSet<>();
-    properties.properties().forEach(entry -> {
-      if (isNullableSchema(entry.getValue())) {
-        nullableProperties.add(entry.getKey());
-      }
-      if (entry.getValue().path("readOnly").asBoolean(false)) {
-        readOnlyProperties.add(entry.getKey());
-      }
-    });
-
-    assertThat(nullableProperties)
-        .containsExactlyInAnyOrder("wrterId", "wrterNm", "frstRgtrId", "crtDt");
-    assertThat(readOnlyProperties)
-        .containsExactlyInAnyOrder("wrterId", "wrterNm", "frstRgtrId", "crtDt");
-    assertThat(properties.path("pswd").path("writeOnly").asBoolean(false)).isTrue();
-    assertThat(properties.path("pswd").path("readOnly").asBoolean(false)).isFalse();
-    assertThat(isNullableSchema(properties.path("pswd"))).isFalse();
-  }
-
-  @Test
   @DisplayName("조직 계층 일괄 저장은 전용 최소 요청 계약을 문서화한다")
   void departmentHierarchyRequestContract_isDocumented() throws Exception {
     String content = mockMvc.perform(get("/v3/api-docs")
@@ -242,44 +147,7 @@ class OpenApiDocumentationTest {
     assertThat(schema.path("properties").has("ognzNm")).isFalse();
   }
 
-  @Test
-  @DisplayName("게시글 등록은 JSON이 아니라 실제 multipart 요청 계약을 문서화한다")
-  void boardPostMultipartContract_isDocumented() throws Exception {
-    String content = mockMvc.perform(get("/v3/api-docs")
-        .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode operation =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
-            .path("paths").path("/api/v1/boards/{bbsId}/posts/with-files").path("post");
-    com.fasterxml.jackson.databind.JsonNode mediaTypes = operation.path("requestBody").path("content");
 
-    assertThat(mediaTypes.has("multipart/form-data")).isTrue();
-    assertThat(mediaTypes.has("application/json")).isFalse();
-    assertThat(mediaTypes.path("multipart/form-data").path("schema").path("properties").has("board"))
-        .isTrue();
-  }
-
-  @Test
-  @DisplayName("게시판 마스터 조회는 쓰기 DTO가 아닌 실제 응답 projection을 문서화한다")
-  void boardMasterReadContracts_areDocumented() throws Exception {
-    String content = mockMvc.perform(get("/v3/api-docs")
-        .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode schemas =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content)
-            .path("components").path("schemas");
-    com.fasterxml.jackson.databind.JsonNode summary = schemas.path("BoardMasterSummaryResponse");
-    com.fasterxml.jackson.databind.JsonNode detail = schemas.path("BoardMasterDetailResponse");
-
-    assertThat(summary.path("properties").has("bbsId")).isTrue();
-    assertThat(summary.path("properties").has("atchPsbltyFileSz")).isFalse();
-    assertThat(detail.path("properties").has("atchPsbltyFileSz")).isTrue();
-    assertThat(detail.path("required").valueStream()
-        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList())
-        .doesNotContain("atchPsbltyFileSz");
-  }
 
   @Test
   @DisplayName("사용자 수정은 등록 DTO가 아닌 비밀번호 없는 프로필 요청 계약을 문서화한다")
@@ -318,53 +186,7 @@ class OpenApiDocumentationTest {
     assertThat(adminSchema.path("properties").has("pstinstCd")).isTrue();
   }
 
-  @Test
-  @DisplayName("대시보드는 Map이 아닌 필수 필드가 있는 응답 DTO를 문서화한다")
-  void dashboardResponseContract_isDocumented() throws Exception {
-    String content = mockMvc.perform(get("/v3/api-docs")
-        .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode document =
-        new com.fasterxml.jackson.databind.ObjectMapper().readTree(content);
-    com.fasterxml.jackson.databind.JsonNode schema = document.path("components")
-        .path("schemas").path("DashboardResponse");
-    java.util.List<String> required = schema.path("required").valueStream()
-        .map(com.fasterxml.jackson.databind.JsonNode::asText).toList();
 
-    assertThat(schema.isMissingNode()).isFalse();
-    assertThat(schema.path("properties").has("taskList")).isTrue();
-    assertThat(schema.path("properties").has("notiList")).isTrue();
-    assertThat(schema.path("properties").has("pendingApprovalCount")).isTrue();
-    assertThat(schema.path("properties").has("extensions")).isFalse();
-    assertThat(required).contains("taskList", "notiList", "pendingApprovalCount");
-  }
-
-  @Test
-  @DisplayName("외부인사 중복 등록의 409 오류 봉투를 OpenAPI에 문서화한다")
-  void externalHrDuplicateConflict_isDocumented() throws Exception {
-    String content = mockMvc.perform(get("/v3/api-docs")
-        .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    com.fasterxml.jackson.databind.JsonNode document = objectMapper.readTree(content);
-    com.fasterxml.jackson.databind.JsonNode responses = document
-        .path("paths").path("/api/v1/admin/operation/external-hr").path("post")
-        .path("responses");
-    com.fasterxml.jackson.databind.JsonNode success = responses.path("200");
-    com.fasterxml.jackson.databind.JsonNode conflict = responses.path("409");
-
-    assertThat(success.path("content").path("application/json")
-        .path("schema").path("$ref").asText())
-        .isEqualTo("#/components/schemas/ApiResponseExternalHrDto");
-    assertThat(document.path("components").path("schemas")
-        .path("ApiResponseExternalHrDto").isObject()).isTrue();
-    assertThat(conflict.isObject()).isTrue();
-    assertThat(conflict.path("description").asText()).contains("중복");
-    assertThat(conflict.path("content").path("application/json")
-        .path("schema").path("$ref").asText())
-        .isEqualTo("#/components/schemas/ApiResponseVoid");
-  }
 
   @Test
   @DisplayName("자격증명·소유 증명 값은 OpenAPI path/query request-target에 존재하지 않는다")
@@ -566,7 +388,7 @@ class OpenApiDocumentationTest {
       java.util.List<String> violations) {
   }
 
-  private static boolean isNullableSchema(com.fasterxml.jackson.databind.JsonNode schema) {
+  static boolean isNullableSchema(com.fasterxml.jackson.databind.JsonNode schema) {
     if (schema.path("nullable").asBoolean(false)) {
       return true;
     }
@@ -581,7 +403,7 @@ class OpenApiDocumentationTest {
     return containsNullType(schema.path("anyOf")) || containsNullType(schema.path("oneOf"));
   }
 
-  private static void assertNullableProperties(
+  static void assertNullableProperties(
       com.fasterxml.jackson.databind.JsonNode schema, String... propertyNames) {
     assertThat(schema.isMissingNode()).isFalse();
     com.fasterxml.jackson.databind.JsonNode properties = schema.path("properties");

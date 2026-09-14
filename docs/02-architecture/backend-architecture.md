@@ -6,7 +6,7 @@
 
 ## 1. 멀티 모듈 아키텍처 & 단방향 의존성 흐름
 
-eGov Enterprise 백엔드는 현재 wrapper 기준 **Gradle 9.6.1**의 계층형 멀티 모듈 구조(`foundation` ← `business-core` ← `business-app` ← `api-server`)로 격리되어 있으며, 상위 모듈이 하위 모듈을 참조하는 **엄격한 단방향 의존성(Strict Directed Acyclic Graph)**을 준수한다. 레거시 이관 CLI인 `migration-tool`은 이 계층에 의존하지 않는 독립 모듈로 분리되어 있다.
+eGov Enterprise 백엔드는 현재 wrapper 기준 **Gradle 9.7.1**의 계층형 멀티 모듈 구조(`foundation` ← `business-core` ← `business-app` ← `api-server`)로 격리되어 있으며, 상위 모듈이 하위 모듈을 참조하는 **엄격한 단방향 의존성(Strict Directed Acyclic Graph)**을 준수한다. 레거시 이관 CLI인 `migration-tool`은 이 계층에 의존하지 않는 독립 모듈로 분리되어 있다.
 
 ```mermaid
 graph TD

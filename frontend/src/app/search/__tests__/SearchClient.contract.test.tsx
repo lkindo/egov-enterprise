@@ -202,4 +202,17 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
 
     expect(screen.getByRole('textbox', { name: '통합검색어' })).toBeInTheDocument();
   });
+
+  it('URL 입력 오류를 검색 0건으로 위장하지 않고 API 요청을 보내지 않는다', async () => {
+    render(<SearchResultsContent initialResults={emptyResults} query="" queryError="검색어는 200자 이내로 입력해 주세요." />);
+    expect(screen.getByRole('alert')).toHaveTextContent('200자 이내');
+    expect(screen.getByRole('textbox', { name: '통합검색어' })).toHaveAttribute('maxlength', '200');
+    expect(screen.getByRole('textbox', { name: '통합검색어' })).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByText('일치하는 결과가 없습니다.')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(mocks.searchAssignableUsers).not.toHaveBeenCalled();
+      expect(mocks.searchPosts).not.toHaveBeenCalled();
+      expect(mocks.getHeadMenus).not.toHaveBeenCalled();
+    });
+  });
 });

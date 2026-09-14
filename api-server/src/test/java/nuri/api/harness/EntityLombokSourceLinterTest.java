@@ -62,14 +62,14 @@ class EntityLombokSourceLinterTest {
                 }
             }
             countsByRoot.put(relativeRoot, count);
-            if (count < ENTITY_COUNT_FLOORS.get("perRoot")) {
+            if (count < ReusableHarnessProfile.current().count("entities:" + relativeRoot.split("/")[0], ENTITY_COUNT_FLOORS.get("perRoot"))) {
                 fail("게이트 무결성 파손: " + relativeRoot + " @Entity 스캔 " + count
                         + "건 — 하한(" + ENTITY_COUNT_FLOORS.get("perRoot") + ") 미만으로 vacuous 통과 위험");
             }
         }
 
         int totalEntities = countsByRoot.values().stream().mapToInt(Integer::intValue).sum();
-        if (totalEntities < ENTITY_COUNT_FLOORS.get("total")) {
+        if (totalEntities < ReusableHarnessProfile.current().count("entities", ENTITY_COUNT_FLOORS.get("total"))) {
             fail("게이트 무결성 파손: 전체 @Entity 스캔 " + totalEntities
                     + "건 — 하한(" + ENTITY_COUNT_FLOORS.get("total") + ") 미만, roots=" + countsByRoot);
         }

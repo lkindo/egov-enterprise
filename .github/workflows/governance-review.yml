@@ -1,0 +1,31 @@
+name: Governance review calendar
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '22'
+      - name: Report governance review freshness
+        run: |
+          mkdir -p build/reports/governance
+          node scripts/governance-review.mjs --product online --mode report > build/reports/governance/review.json
+          node scripts/governance-review-summary.mjs build/reports/governance/review.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload governance review report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: governance-review
+          path: build/reports/governance/review.json
+          if-no-files-found: error
+          retention-days: 30

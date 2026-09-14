@@ -2,6 +2,12 @@
 
 2026-09-09 검증. 이 절차는 [ADR-0008](../02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md)의 승인형 CLI를 구체화한다. 운영 변경은 대상·영향·점검 창을 명시해 승인받은 뒤 실행한다.
 
+기관 실행 진입점은 [ADR-0018 검토 수명 가이드](../03-guides/governance-review-lifecycle.md)를 따른다.
+`migration-adoption-review.json`의 실제 기관 승인과 `execution-artifacts` 근거에 JAR·mapping·inventory·plan,
+환경·mode·adapter·source schema·freeze 확인을 결속한다. `npm run adoption:check -- --execution config/governance/execution.json --environment <기관-환경-ID>`는 기술 검증과 승인 재확인만 하며,
+승인된 실행에만 `--execute`를 추가한다. 미승인·만료·소스/근거/실행 파일 변경은 load 호출 전에 실패한다.
+기존 discover → plan → validate → load 승인과 실제 source/target 재검증은 그대로 필요하다.
+
 ## 대상 고정과 승인
 
 1. 소스 쓰기 중지, 대상 쓰기 중지, DB·첨부·암호화 키의 일관된 백업을 준비한다. [백업·복원 런북](backup-and-restore-runbook.md)을 따르며, 외부 OCI DB에는 번들 Compose 절차를 그대로 실행하지 않는다.

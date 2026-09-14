@@ -6,173 +6,48 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTRACT_PATH = path.join(ROOT, 'config/frontend-visible-terms.json');
-const NOW = new Date('2026-08-21T00:00:00Z');
 
-const REQUIRED_STATES = [
-  'demo',
-  'filtered-zero',
-  'first-use-empty',
-  'loading',
-  'offline',
-  'partial-failure',
-  'permission-denied',
-  'server-error',
-  'success',
-  'unavailable',
-  'unsaved',
-  'validation-error',
-];
-
-const REQUIRED_PILOT_ROUTES = [
-  '/',
-  '/admin',
-  '/admin/community/boards/insert-board-article',
-  '/admin/survey/manage/create',
-  '/admin/system/logs/user',
-  '/admin/user/manage',
-  '/login',
-  '/smart-toolkit/schedule',
-];
-
-function duplicates(values) {
-  return [...new Set(values.filter((value, index) => values.indexOf(value) !== index))];
-}
-
-function validReviewBy(value, now) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value ?? '') && Date.parse(`${value}T23:59:59Z`) >= now.getTime();
-}
-
-function validateContract(contract, { root = ROOT, now = NOW } = {}) {
-  const errors = [];
-  if (contract.schemaVersion !== '1.0.0') errors.push('unsupported schemaVersion');
-  if (contract.status !== 'draft-blocked-input') errors.push('status must preserve the approval boundary');
-  if (contract.language !== 'ko-KR') errors.push('language must match ADR-0002');
-  if (!contract.owner || !validReviewBy(contract.reviewBy, now)) errors.push('contract needs owner and non-stale reviewBy');
-
-  const stateIds = (contract.stateVocabulary ?? []).map(({ id }) => id);
-  if (duplicates(stateIds).length) errors.push(`duplicate state id: ${duplicates(stateIds).join(', ')}`);
-  if (JSON.stringify([...stateIds].sort()) !== JSON.stringify(REQUIRED_STATES)) {
-    errors.push('state vocabulary is incomplete or contains an unknown state');
-  }
-  for (const state of contract.stateVocabulary ?? []) {
-    if (!state.canonicalLabel || !state.requiredInformation?.length || !state.mustNotImply?.length) {
-      errors.push(`state is unbounded: ${state.id ?? '<missing>'}`);
-    }
-  }
-
-  const populationRoutes = [...(contract.population?.exactRoutes ?? [])].sort();
-  if (JSON.stringify(populationRoutes) !== JSON.stringify(REQUIRED_PILOT_ROUTES)) {
-    errors.push('pilot population drift');
-  }
-  const pilots = contract.pilotCensus ?? [];
-  const pilotIds = pilots.map(({ id }) => id);
-  const pilotRoutes = pilots.map(({ route }) => route);
-  if (duplicates(pilotIds).length) errors.push(`duplicate pilot id: ${duplicates(pilotIds).join(', ')}`);
-  if (duplicates(pilotRoutes).length) errors.push(`duplicate pilot route: ${duplicates(pilotRoutes).join(', ')}`);
-  if (JSON.stringify([...pilotRoutes].sort()) !== JSON.stringify(REQUIRED_PILOT_ROUTES)) {
-    errors.push('pilot census does not exactly cover its population');
-  }
-
-  for (const pilot of pilots) {
-    if (!pilot.owner || !validReviewBy(pilot.reviewBy, now)) errors.push(`pilot is unbounded: ${pilot.id}`);
-    if (!pilot.roles?.length || !pilot.sources?.length || !pilot.evidenceLevel || !pilot.status) {
-      errors.push(`pilot evidence is incomplete: ${pilot.id}`);
-    }
-    for (const source of pilot.sources ?? []) {
-      if (!fs.existsSync(path.join(root, source))) errors.push(`pilot source is missing: ${source}`);
-    }
-    for (const finding of pilot.findings ?? []) {
-      if (!finding.kind || !finding.evidence || !finding.status || !finding.owner || !validReviewBy(finding.reviewBy, now)) {
-        errors.push(`finding is unbounded: ${pilot.id}/${finding.kind ?? '<missing>'}`);
-      }
-      const sourceText = (pilot.sources ?? [])
-        .map((source) => fs.readFileSync(path.join(root, source), 'utf8'))
-        .join('\n');
-      if (finding.status === 'remediated-local') {
-        if (!finding.removedSourceEvidence?.length) {
-          errors.push(`remediated finding needs removed literal evidence: ${pilot.id}/${finding.kind}`);
-          continue;
-        }
-        for (const snippet of finding.removedSourceEvidence) {
-          if (sourceText.includes(snippet)) {
-            errors.push(`remediated finding source evidence still present: ${pilot.id}/${finding.kind}/${snippet}`);
-          }
-        }
-      } else {
-        if (!finding.sourceEvidence?.length) {
-          errors.push(`active finding needs literal source evidence: ${pilot.id}/${finding.kind}`);
-          continue;
-        }
-        for (const snippet of finding.sourceEvidence) {
-          if (!sourceText.includes(snippet)) {
-            errors.push(`finding source evidence drift: ${pilot.id}/${finding.kind}/${snippet}`);
-          }
-        }
-      }
-    }
-  }
-
-  const termIds = (contract.terms ?? []).map(({ id }) => id);
-  if (termIds.length === 0 || duplicates(termIds).length) errors.push('term ids must be non-empty and unique');
-  for (const term of contract.terms ?? []) {
-    if (!term.sourceTerms?.length || !term.decision || !term.preferred || !term.rationale) {
-      errors.push(`term decision is incomplete: ${term.id ?? '<missing>'}`);
-    }
-  }
-
-  for (const source of contract.normativeSources ?? []) {
-    if (!fs.existsSync(path.join(root, source))) errors.push(`normative source is missing: ${source}`);
-  }
-  if (contract.approval?.contentOwnerApproved || contract.approval?.productOwnerApproved || contract.approval?.userValidated) {
-    errors.push('approval cannot be asserted without reviewer evidence in this draft schema');
-  }
-  return errors;
-}
+import { validateVisibleTerms as validateContract } from './frontend-visible-terms-contract.mjs';
 
 test('structured content contract has an exact bounded pilot population and honest approval state', () => {
   const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
   assert.deepEqual(validateContract(contract), []);
 });
 
-function collectReviewDates(node, found = []) {
-  if (Array.isArray(node)) {
-    node.forEach((item) => collectReviewDates(item, found));
-  } else if (node && typeof node === 'object') {
-    for (const [key, value] of Object.entries(node)) {
-      if (key === 'reviewBy' && typeof value === 'string') found.push(value);
-      else collectReviewDates(value, found);
-    }
-  }
-  return found;
-}
-
-// [2026-09-13 신설] 위 테스트는 고정 NOW(2026-08-21)로만 검증해 reviewBy 만료가 실제로는
-//   영원히 발화하지 않았다(ui-route-capabilities 가 2026-08-31 에 닫은 결함과 같은 형태 —
-//   DEC-OPS-027 ③). 만료 red 의 해소는 실제 재검토, 또는 사유를 남긴 명시적 기한 재설정 커밋이다.
-test('review horizons hold against the real clock, not only the pinned fixture date', () => {
+// ADR-0018: calendar freshness belongs to governance-review; elapsed time neither
+// invalidates the recorded source contract nor approves this draft.
+test('content technical evidence and its draft boundary survive review deadlines', (t) => {
   const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
-  const now = new Date();
-
-  const horizon = now.getTime() + 60 * 24 * 60 * 60 * 1000;
-  const expiring = collectReviewDates(contract).filter((value) => {
-    const deadline = Date.parse(`${value}T23:59:59Z`);
-    return deadline >= now.getTime() && deadline <= horizon;
-  });
-  if (expiring.length > 0) {
-    console.warn(
-      `⚠ [frontend-visible-terms] review 기한 60일 이내 만료 예정 ${expiring.length}건 (기한: ${[...new Set(expiring)].sort().join(', ')}) — `
-      + '만료 시 이 게이트가 red 가 됩니다. 재검토를 완료하거나 기한 재설정을 사유와 함께 커밋하세요.',
-    );
+  const baseline = validateContract(contract);
+  assert.deepEqual(baseline, []);
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse(`${contract.lastReviewedAt}T12:00:00Z`) });
+  for (const timestamp of [
+    `${contract.lastReviewedAt}T12:00:00Z`,
+    '2026-11-01T00:00:00Z',
+    '2036-01-01T00:00:00Z',
+  ]) {
+    t.mock.timers.setTime(Date.parse(timestamp));
+    assert.deepEqual(validateContract(contract), baseline, timestamp);
+    const falseApproval = structuredClone(contract);
+    falseApproval.approval.contentOwnerApproved = true;
+    assert.match(validateContract(falseApproval).join('\n'), /approval cannot be asserted/);
   }
-
-  assert.deepEqual(validateContract(contract, { now }), []);
 });
 
-test('the validator honours the injected clock, so the real-clock test can actually go red', () => {
+test('content review metadata rejects impossible dates, missing owners, and review order violations', () => {
   const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
-  const errors = validateContract(contract, { now: new Date('2099-01-01T00:00:00Z') }).join('\n');
-  assert.match(errors, /contract needs owner and non-stale reviewBy/);
-  assert.ok(collectReviewDates(contract).length >= 2, 'review date scan collapsed');
+  for (const target of ['contract', 'pilot', 'finding']) {
+    for (const [field, value] of [['reviewBy', '2026-11-31'], ['reviewBy', '2026-08-20'], ['owner', ' ']]) {
+      const fixture = structuredClone(contract);
+      const record = target === 'contract' ? fixture
+        : target === 'pilot' ? fixture.pilotCensus[0] : fixture.pilotCensus[0].findings[0];
+      record[field] = value;
+      assert.match(validateContract(fixture).join('\n'), /contract needs owner|pilot is unbounded|finding is unbounded/, `${target}.${field}`);
+    }
+  }
+  const invalidReview = structuredClone(contract);
+  invalidReview.lastReviewedAt = '2026-02-30';
+  assert.match(validateContract(invalidReview).join('\n'), /lastReviewedAt must be a real YYYY-MM-DD date/);
 });
 
 test('pilot composers do not expose internal deployment language or log form payloads', () => {
@@ -280,7 +155,7 @@ test('global metadata and loading copy do not claim unapproved KRDS or intellige
   assert.match(globalSources, /전사 업무 포털/);
 });
 
-test('duplicate, missing, stale, and falsely approved content evidence are reproducible reds', () => {
+test('duplicate, missing, misordered, and falsely approved content evidence are reproducible reds', () => {
   const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
 
   const duplicate = structuredClone(contract);
@@ -291,9 +166,9 @@ test('duplicate, missing, stale, and falsely approved content evidence are repro
   missingState.stateVocabulary.pop();
   assert.match(validateContract(missingState).join('\n'), /state vocabulary is incomplete/);
 
-  const stale = structuredClone(contract);
-  stale.pilotCensus[0].reviewBy = '2026-08-20';
-  assert.match(validateContract(stale).join('\n'), /pilot is unbounded/);
+  const predatesReview = structuredClone(contract);
+  predatesReview.pilotCensus[0].reviewBy = '2026-08-20';
+  assert.match(validateContract(predatesReview).join('\n'), /pilot is unbounded/);
 
   const unboundedFinding = structuredClone(contract);
   delete unboundedFinding.pilotCensus[0].findings[0].owner;

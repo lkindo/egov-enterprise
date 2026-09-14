@@ -41,46 +41,11 @@ const CENSUS_AUTHORITY = 'generated-url-state-census-not-policy';
 const URL_STATE_DECISION_REF = 'docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md';
 const URL_STATE_OVERLAY_AUTHORITY = 'non-normative-url-state-class-registry';
 const URL_SEARCH_STATE_ITEM_NAMES = ['q', 'searchCnd', 'searchWrd'];
-/*
-  [2026-09-04] 2026-10-31 → 2026-12-31 연장. **사유 없는 인상은 H2 위반이므로 여기에 남긴다.**
-
-  무엇이 막혔나 — 이 census 는 재검토를 닫을 수단이 **구조적으로 없다.** :1105·:1110·:1112·:1117 이
-  review.status·canonical.status·capabilityRoles·objectAuthorization·dataClass·approvalStatus 를 전부
-  'unverified' 로 강제하고, 생성기(:440-446, :488-501)도 그 값을 하드코딩한다. 즉 재검토를 아무리
-  해도 결과를 적을 곳이 없다.
-
-  그 강제는 결함이 아니라 의도다 — 기계 생성물이 스스로를 승인하지 못하게 막는다
-  (:1110 주석 "cannot be approved by syntax"). 따라서 해결책은 이 제약을 푸는 것이 아니라
-  **사람이 쓰는 승인 오버레이를 만드는 것**이며, 그 선례가 이미 있다
-  (내비게이션 disposition overlay — reviewState·approvals·ADR 해시 결속).
-
-  ⚠ 그 overlay 의 파일 경로를 여기 리터럴로 적지 마라. DEC-OPS-020 의 소비자 등록 게이트가
-    경로 문자열을 스캔하는데 **주석까지 함께 본다** — 이 파일은 overlay 를 읽지 않는데도
-    "proposed executable consumer is not registered" 로 red 가 된다(실측).
-
-  새 날짜의 근거 — 승인 오버레이 설계·신설과 370 record 의 부류별 분류 승인을 담을 창이다.
-  DEC-OPS-027 이 이 만료를 "의도된 강제 재검토 지점" 으로 남긴 취지를 지키기 위해 무기한이 아닌
-  2개월로 잡았다. 상한은 없으므로(:1106 은 형식·만료만 본다) 이 값은 의식적 선택이다.
-
-  부분 승인 범위 — Q1~Q4 는 2026-09-04 에 종결됐다(DEC-OPS-029). 남은 것은 Q5 뿐이며,
-  이 연장은 **Q5 를 미루는 것이 아니라 Q5 를 기록할 수단을 만들 시간**을 확보한다.
-
-  ⚠ 이 상수를 바꾸면 반드시 `node scripts/ui-url-state-census.mjs --write` 를 함께 실행한다.
-    상수만 바꾸면 커밋본과 어긋나 drift red 가 **당일 즉시** 난다(:1176-1181).
-*/
+// ADR-0018: 기존 검토 일정은 보존한다. 날짜 경과는 별도 운영 검토에서 보고하며,
+// 코드·승인 계약을 무효화하지 않는다. 생성물이 검토 날짜나 승인을 자동 갱신하지 않는다.
 const DEFAULT_REVIEW_BY = '2026-12-31';
 
-/**
- * 실재하는 ISO 날짜인지 왕복 검증한다.
- *
- * ⚠ [2026-09-04] 종전에는 정규식 `^\d{4}-\d{2}-\d{2}$` 만 봤다. 그래서 **`2026-13-45` 같은
- *   비실재 날짜가 통과했고**, 그 값은 `Date.parse` 가 NaN 을 돌려주는데 `NaN < nowMs` 는 항상
- *   false 라 **만료 검사가 조용히 무력화**됐다(형식은 맞으니 형식 검사도 통과). 즉 오타 하나로
- *   그 record 는 영원히 만료되지 않는 상태가 된다.
- *
- *   형제 게이트인 ui-route-capabilities-contract.mjs 의 `validIsoDate`(:546-550)는 같은 자리에서
- *   이미 왕복 검증을 한다. 두 게이트가 같은 required job 에서 도는데 한쪽만 구멍이 있었다.
- */
+/** 운영 검토 일정이 NaN이나 날짜 자동 보정으로 무효화되지 않도록 실제 ISO 날짜를 확인한다. */
 function isRealIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false;
   const parsed = new Date(`${value}T00:00:00Z`);
@@ -1195,15 +1160,15 @@ function expectedSummary(records, summary) {
  *
  * ⚠ **이 census 는 여전히 스스로를 승인하지 못한다.** 아래 record 검증부의 7축 `unverified`
  *   강제는 그대로다. registry는 그 값을 바꾸는 것이 아니라, "이 부류는 사람이 근거와 함께
- *   승인했다" 는 **별도 사실**을 만료 검사와 exact 검색 경계에 전달한다.
+ *   승인했다" 는 **별도 사실**을 exact 검색 경계와 운영 검토 보고에 전달한다.
  *
  * fail-closed 규칙 셋 — 하나라도 어긋나면 **아무것도 승인되지 않은 것으로 본다.**
- *   1. 오버레이가 없으면 빈 집합(현재 상태에서 만료가 그대로 작동해야 한다)
- *   2. 파싱 실패·형식 이상도 빈 집합(깨진 오버레이가 면제를 만들면 안 된다)
+ *   1. 오버레이가 없으면 빈 집합(승인이 생겼다고 추정하지 않는다)
+ *   2. 파싱 실패·형식 이상도 빈 집합(깨진 오버레이가 승인을 만들면 안 된다)
  *   3. `manifestRef.sha256` 이 지금 census 와 다르면 빈 목록 — **승인은 자기가 본 census 에만
  *      유효하다.** census 가 재생성됐는데 오버레이가 그대로면 그 승인은 다른 문서에 대한 것이다.
- *   4. 오버레이·승인축·만료일·selector가 불완전하면 빈 목록. 자유 입력은 exact recordIds 없이
- *      이름만으로 승인할 수 없다.
+ *   4. 오버레이·승인축·검토 일정·selector가 불완전하면 빈 목록. 자유 입력은 exact recordIds 없이
+ *      이름만으로 승인할 수 없다. ADR-0018에 따라 reviewBy 경과만으로 승인을 폐기하지 않는다.
  *
  * 계약은 scripts/ui-url-state-approval-contract.test.mjs 가 별도로 검사한다.
  */
@@ -1213,7 +1178,7 @@ function approvalCensusSha256(census) {
     .digest('hex');
 }
 
-export function approvedStateItemSelectors(overlay, census, nowMs = Date.now()) {
+export function approvedStateItemSelectors(overlay, census) {
   const empty = [];
   if (!Array.isArray(overlay?.classes)) return empty;
   if (Object.hasOwn(overlay, 'decisionRef')
@@ -1245,8 +1210,8 @@ export function approvedStateItemSelectors(overlay, census, nowMs = Date.now()) 
       || !['verified', 'not-applicable'].includes(cls?.authorizationReview)) return empty;
     if (cls.dataClass === 'user-typed-free-text'
       && (cls.privacyReview !== 'accepted-risk' || cls.authorizationReview !== 'not-applicable')) return empty;
-    if (!isRealIsoDate(cls?.reviewBy)) return empty;
-    if (Date.parse(`${cls.reviewBy}T23:59:59.999Z`) < nowMs) continue;
+    if (typeof cls?.owner !== 'string' || cls.owner.trim() === ''
+      || !isRealIsoDate(cls?.reviewBy)) return empty;
 
     const approvals = [cls?.approvals?.securityPrivacy, cls?.approvals?.domain];
     if (approvals.some((approval) => !approval
@@ -1313,16 +1278,10 @@ function readStateApprovalOverlay(repoRoot) {
 /**
  * 이 record 가 **분류할 URL 상태를 갖지 않음이 확인됐는가**.
  *
- * ⚠ [2026-09-05] 만료 면제 규칙이 `stateItems.length > 0` 을 요구해, `/admin/system/audit` 로 가는
- *   평범한 링크처럼 **애초에 분류할 것이 없는 record 가 어떤 승인으로도 면제되지 않았다.**
- *   369건 중 그런 record 가 절반 가까이였다. 만료 red 를 그 record 들이 채우면 정작 판정이
- *   필요한 record 가 묻힌다.
+ * 운영 검토에서 평범한 정적 링크와 미해소 상태를 구별한다. 빈 배열의 `every`는 참이므로
+ * stateItem을 추출하지 못한 record를 상태가 없는 것으로 오판하지 않도록 별도 증거가 필요하다.
  *
- *   `length > 0` 조건 자체는 정당했다 — 빈 배열에 `every` 는 참이라 그것 없이는 **stateItem 을
- *   추출하지 못한 record 가 전부 조용히 면제**된다. 문제는 "상태가 없다" 와 "상태를 못 읽었다" 를
- *   구분하지 못한 것이다. census 는 그 둘을 구분할 신호를 갖고 있다.
- *
- * **면제하려면 다섯 가지가 모두 성립해야 한다.** 하나라도 어긋나면 상태가 있을 수 있다는 뜻이다.
+ * **다섯 가지가 모두 성립해야 한다.** 하나라도 어긋나면 상태가 있을 수 있다는 뜻이다.
  *   1. `targetCandidate` 가 해소됐다 — null 이면 detector 가 타깃을 읽지 못한 것이다
  *   2. 쿼리 구분자가 없다 — `?`·`&` 가 있으면 쿼리 상태를 나른다
  *   3. 경로에 `[computed]` 가 없다 — 해소하지 못한 보간은 **이름 없는 record locator** 다
@@ -1330,10 +1289,10 @@ function readStateApprovalOverlay(repoRoot) {
  *   4. `riskSignals` 가 비어 있다 — 미해소 위험 신호가 붙은 record 는 판정 대상이다
  *   5. 프래그먼트가 없다 — `#` 뒤도 주소창에 남는다
  *
- * ⚠ 이 함수를 넓히면 만료 신호가 줄어든다. 조건을 완화하기 전에 **그 record 가 정말 URL 에
+ * ⚠ 이 함수를 넓히면 검토 대상이 줄어든다. 조건을 완화하기 전에 **그 record 가 정말 URL 에
  *   아무것도 싣지 않는지** 실물로 확인하라. 계약이 부정 케이스를 고정한다.
  */
-function hasNoClassifiableUrlState(record) {
+export function hasNoClassifiableUrlState(record) {
   if ((record?.stateItems ?? []).length > 0) return false;
 
   /*
@@ -1355,26 +1314,18 @@ function hasNoClassifiableUrlState(record) {
   return true;
 }
 
-/** Validate fail-closed semantics independently from the generated snapshot comparison. */
+/** Calendar-independent source contract; review freshness is reported separately (ADR-0018). */
 export function validateUrlStateCensus(census, options = {}) {
   const repoRoot = resolve(options.repoRoot ?? DEFAULT_REPO_ROOT);
-  // 기본은 실시간 시계다. 종전에는 reviewBy 만료를 어디서도 실제 시각으로 검사하지 않아
-  // 재검토 기한이 영구히 장식이었다(고정 NOW 픽스처만 존재). 만료 red 의 해소는
-  // 재검토 완료 또는 DEFAULT_REVIEW_BY 의 의식적 연장 + --write 재생성이며,
-  // 둘 다 diff 에 드러난다 — 조용한 연장은 불가능하다.
-  const nowMs = options.nowMs ?? Date.now();
   const errors = [];
   // approvalOverlay는 합성 census와 hash가 일치하는 overlay를 주입해 exact record 경계를
   // 검증하기 위한 순수 테스트 seam이다. CLI/운영 경로는 항상 디스크 registry를 읽는다.
   const approvalOverlay = options.approvalOverlay === undefined
     ? readStateApprovalOverlay(repoRoot)
     : options.approvalOverlay;
-  const approvalSelectors = approvalOverlay === null
-    ? []
-    : approvedStateItemSelectors(approvalOverlay, census, nowMs);
   // 새 census 후보를 만들 때 전체 manifest hash가 바뀌어도 기존 exact 검색 record는 판정할 수
-  // 있어야 한다. 만료 면제는 위의 원래 hash-bound selector를 그대로 쓰고, 즉시 검색 경계만
-  // candidate hash로 재결속한 search-input class를 사용한다. 새 recordId/key는 여전히 red다.
+  // 있어야 한다. 즉시 검색 경계는 candidate hash로 재결속한 search-input class를 사용한다.
+  // 실제 승인 원장의 hash 정합은 별도 approval 계약이 검사한다. 새 recordId/key는 여전히 red다.
   const searchPolicySelectors = approvalOverlay === null
     ? []
     : approvedStateItemSelectors({
@@ -1383,7 +1334,7 @@ export function validateUrlStateCensus(census, options = {}) {
         ...approvalOverlay.manifestRef,
         sha256: approvalCensusSha256(census),
       },
-    }, census, nowMs).filter(({ classId }) => classId === 'search-input');
+    }, census).filter(({ classId }) => classId === 'search-input');
   if (census?.schemaVersion !== 1) errors.push('schemaVersion must be 1');
   if (census?.authority !== CENSUS_AUTHORITY) errors.push('authority must remain generated evidence, not policy');
   if (census?.decision?.searchPolicyAcceptedRef !== URL_STATE_DECISION_REF
@@ -1415,46 +1366,6 @@ export function validateUrlStateCensus(census, options = {}) {
     }
     if (record?.review?.status !== 'unverified' || record?.review?.decisionSafe !== false) errors.push(`${label}: review must remain unverified and decisionSafe=false`);
     if (!record?.review?.owner || !isRealIsoDate(record?.review?.reviewBy)) errors.push(`${label}: owner and bounded reviewBy are required`);
-    else if (Date.parse(`${record.review.reviewBy}T23:59:59.999Z`) < nowMs) {
-      /*
-        ⚠ [2026-09-04] 안내문 정정. 종전 문구는 첫 대안으로 "재검토를 완료하거나" 를 제시했는데
-          **그 경로는 이 파일 안에 존재하지 않는다.** 바로 위 :1105 와 아래 :1110·:1111·:1117 이
-          review.status·canonical.status·capabilityRoles·objectAuthorization·dataClass·approvalStatus 를
-          전부 'unverified' 로 강제하기 때문이다.
-
-          그 강제는 결함이 아니라 의도다 — 이 census 는 소스를 훑어 기계 생성되므로, 여기에 승인을
-          쓸 수 있게 하면 **문법이 스스로를 승인**하게 된다(:1110 주석 "cannot be approved by syntax").
-          따라서 사람의 승인은 이 파일이 아니라 사람이 직접 쓰는 오버레이에 있어야 한다 —
-          내비게이션 disposition overlay 가 그 선례다(reviewState·approvals·ADR 해시 결속).
-          경로 리터럴은 일부러 쓰지 않았다 — 위 :50 주석 참조.
-
-          별도 class registry가 승인된 부류만 면제하며 `search-input`만 ADR-0009에 결속된다.
-          registry 결속이나 class의 reviewBy·근거가 불완전하면 다시 fail-closed 한다.
-      */
-      /*
-        [2026-09-05] 승인 오버레이가 덮은 record 는 만료에서 제외한다.
-
-        면제 조건은 **record 의 모든 stateItem 이 approved 부류에 속할 때** 뿐이다. 하나라도
-        승인되지 않은 항목이 섞여 있으면 그 record 는 그대로 만료된다 —
-        **부분 승인이 전체 면제가 되지 않는다.**
-
-        stateItem 이 없는 record 는 **원칙적으로** 면제 대상이 아니다 — 빈 집합에 every 는 참이라
-        그 조건 없이는 상태를 추출하지 못한 record 가 전부 조용히 면제된다.
-
-        [2026-09-05] 다만 그중 **분류할 상태가 없음이 확인된** record 는 예외다. 판정 기준은
-        `hasNoClassifiableUrlState` 가 다섯 조건으로 좁게 정의한다. 승인과 무관하게 면제되는데,
-        승인할 대상 자체가 없기 때문이다.
-      */
-      const items = record.stateItems ?? [];
-      const fullyApproved = items.length > 0
-        && items.every((item) => isUrlStateItemApproved(record, item, approvalSelectors));
-
-      if (!fullyApproved && !hasNoClassifiableUrlState(record)) {
-        errors.push(`${label}: review horizon expired on ${record.review.reviewBy} — 사유와 함께 DEFAULT_REVIEW_BY 를 연장하고 --write 로 재생성하거나, `
-          + '승인 오버레이(config/ui-url-state-approval.json)에서 이 record 의 stateItem 부류를 근거와 함께 승인하세요. '
-          + '이 census 는 기계 생성물이라 "재검토 완료" 를 여기에 직접 기록할 수 없습니다 — 문법이 스스로를 승인하지 못하게 하는 의도된 제약입니다.');
-      }
-    }
     if (record?.canonical?.status !== 'unverified') errors.push(`${label}: canonical route status cannot be approved by syntax`);
     if (record?.authorizationBoundary?.capabilityRoles !== 'unverified'
       || record?.authorizationBoundary?.objectAuthorization !== 'unverified') {

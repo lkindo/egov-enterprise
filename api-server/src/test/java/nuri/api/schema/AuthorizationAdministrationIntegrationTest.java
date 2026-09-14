@@ -169,6 +169,11 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     }
 
     private void verifyDepartmentDeltasPreserveOtherGroupsAndRejectStaleRosters() {
+        // This rejection needs an existing, unassignable group. Reduced bootstrap profiles do not
+        // need an anonymous group, so the isolated fixture supplies its own prerequisite.
+        jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,frst_rgtr_id,last_mdfr_id,crt_dt,mdfcn_dt) "
+                + "VALUES('ROLE_ANONYMOUS','fixture anonymous','TEST','TEST',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
+                + "ON CONFLICT (authrt_cd) DO NOTHING");
         jdbc.update("INSERT INTO tb_ognz_info(ognz_id,ognz_nm) VALUES('T_DEPT_A','권한 시험 A'),('T_DEPT_B','권한 시험 B')");
         for (String id:List.of("T_DEPT_USER_A","T_DEPT_USER_B","T_DEPT_OUTSIDE")) {
             insertUser(id);

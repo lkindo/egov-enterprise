@@ -120,6 +120,7 @@ class ServiceReadOnlyTransactionalLinterTest {
                 .sorted()
                 .collect(Collectors.toList());
         List<String> staleGrandfathered = GRANDFATHERED.stream()
+                .filter(ReusableHarnessProfile.current()::retainsType)
                 .filter(name -> !nonReadOnly.contains(name))
                 .sorted()
                 .collect(Collectors.toList());

@@ -102,7 +102,7 @@ class HandlerReachesServiceLinterTest {
         List<Path> controllers = collectRestControllers();
 
         // 게이트 무결성 ①: 컨트롤러 스캔이 조용히 붕괴하면 vacuous 통과가 된다.
-        if (controllers.size() < MIN_REST_CONTROLLERS) {
+        if (controllers.size() < ReusableHarnessProfile.current().count("restControllers", MIN_REST_CONTROLLERS)) {
             fail("게이트 무결성 파손: @RestController 스캔 건수(" + controllers.size() + ")가 예상 하한("
                     + MIN_REST_CONTROLLERS + ") 미만 — 경로/스캔 파손 의심 (workingDir="
                     + Paths.get("").toAbsolutePath() + "). 조용한 skip 은 false-green 입니다.");
@@ -144,11 +144,11 @@ class HandlerReachesServiceLinterTest {
         }
 
         // 게이트 무결성 ②③: 쓰기 핸들러/성공응답 탐지 정규식이 썩으면 위반이 있어도 영원히 그린이 된다.
-        if (writeHandlers < MIN_WRITE_HANDLERS) {
+        if (writeHandlers < ReusableHarnessProfile.current().count("writeHandlers", MIN_WRITE_HANDLERS)) {
             fail("게이트 무결성 파손: 쓰기 핸들러 스캔 건수(" + writeHandlers + ")가 예상 하한("
                     + MIN_WRITE_HANDLERS + ") 미만 — WRITE_MAPPING 정규식/스캔 파손 의심.");
         }
-        if (successHandlers < MIN_SUCCESS_HANDLERS) {
+        if (successHandlers < ReusableHarnessProfile.current().count("successfulWriteHandlers", MIN_SUCCESS_HANDLERS)) {
             fail("게이트 무결성 파손: 성공응답 반환 쓰기 핸들러(" + successHandlers + ")가 예상 하한("
                     + MIN_SUCCESS_HANDLERS + ") 미만 — SUCCESS_RESPONSE 정규식/본문 추출 파손 의심.");
         }

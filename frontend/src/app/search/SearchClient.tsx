@@ -7,19 +7,24 @@ import { Search,
     FileText, 
     User as UserIcon, 
     Layout, 
-    ArrowRight, 
     ChevronRight, 
+    /* reusable-base:collaboration:start */
+    ArrowRight,
     MessageSquare, 
+    /* reusable-base:collaboration:end */
     AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
+/* reusable-base:collaboration:start */
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
+/* reusable-base:collaboration:end */
 import { menuService } from '@/services/business/user/MenuService';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 import type { MenuInfo } from '@/types/foundation/menu';
+import { SEARCH_URL_STATE } from '@/lib/navigation/search-url-state';
 
 /**
  * 검색 결과 카드가 쓰는 게시글 필드. 백엔드 `BoardSearchItemResponse` 와 같은 범위다.
@@ -55,13 +60,28 @@ export interface SearchResults {
 interface SearchResultsContentProps {
     initialResults?: SearchResults;
     query: string;
+    queryError?: string;
 }
 
 const EMPTY_RESULTS: SearchResults = { articles: [], users: [], menus: [] };
+const articleSearchProviders: Array<(query: string) => Promise<SearchArticle[]>> = [
+    /* reusable-base:collaboration:start */
+    async (query) => (await boardUserService.searchPosts(query)).map(item => ({
+        bbsId: item.bbsId,
+        pstSn: item.pstSn,
+        pstTtl: item.pstTtl ?? '(제목 없음)',
+        crtDt: item.crtDt,
+        userNm: item.userNm,
+        inqCnt: item.inqCnt,
+    })),
+    /* reusable-base:collaboration:end */
+];
+const hasArticleSearch = articleSearchProviders.length > 0;
 
 export const SearchResultsContent = ({
     initialResults = EMPTY_RESULTS,
     query = '',
+    queryError,
 }: SearchResultsContentProps) => {
     const [activeTab, setTab] = useState('all');
 
@@ -130,22 +150,13 @@ export const SearchResultsContent = ({
             const [userResult, articleResult, menuResult] = await Promise.allSettled([
                 // 모든 인증 사용자가 접근하므로 연락처·주소가 없는 최소정보 API만 사용한다.
                 userSearchService.searchAssignableUsers(query),
-                boardUserService.searchPosts(query),
+                Promise.all(articleSearchProviders.map(search => search(query))).then(groups => groups.flat()),
                 menuSearch(),
             ]);
             if (cancelled) return;
 
             const users = userResult.status === 'fulfilled' ? userResult.value.slice(0, 10) : [];
-            const articles: SearchArticle[] = articleResult.status === 'fulfilled'
-                ? articleResult.value.map(item => ({
-                    bbsId: item.bbsId,
-                    pstSn: item.pstSn,
-                    pstTtl: item.pstTtl ?? '(제목 없음)',
-                    crtDt: item.crtDt,
-                    userNm: item.userNm,
-                    inqCnt: item.inqCnt,
-                }))
-                : [];
+            const articles = articleResult.status === 'fulfilled' ? articleResult.value : [];
             const menus = menuResult.status === 'fulfilled' ? menuResult.value : [];
 
             if (userResult.status === 'rejected') {
@@ -171,12 +182,14 @@ export const SearchResultsContent = ({
     //   이제 검색 대상은 **제목**이므로 그 범위는 아래 안내 문구가 말한다.
     const tabs = [
         { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
+        /* reusable-base:collaboration:start */
         {
             id: 'articles',
             label: articleSearchError ? '게시글 (조회 실패)' : '게시글',
             count: articleSearchError ? undefined : results.articles.length,
             icon: <MessageSquare size={16} />,
         },
+        /* reusable-base:collaboration:end */
         {
             id: 'users',
             label: userSearchError ? '임직원 (조회 실패)' : '임직원',
@@ -214,7 +227,7 @@ export const SearchResultsContent = ({
             <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                         <h1 className="text-xl font-bold tracking-tight text-foreground">통합 검색</h1>
-                        <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">게시글 제목, 임직원 성명, 메뉴 이름을 찾습니다. 게시글 본문은 검색하지 않습니다.</p>
+                        <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">{hasArticleSearch ? '게시글 제목, 임직원 성명, 메뉴 이름을 찾습니다. 게시글 본문은 검색하지 않습니다.' : '임직원 성명과 메뉴 이름을 찾습니다.'}</p>
                     </div>
                         {/* [2026-08-04] '실시간 인덱스 활성화' 배지 제거.
                             그런 인덱스는 존재하지 않는다 — 임직원 검색은 사용자 목록 API 의 키워드 조회이고,
@@ -244,9 +257,12 @@ export const SearchResultsContent = ({
                             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within/input:text-primary" />
                             <Input
                                 name="q"
+                                maxLength={SEARCH_URL_STATE.maxLength}
                                 aria-label="통합검색어"
+                                aria-invalid={Boolean(queryError) || undefined}
+                                aria-describedby={queryError ? 'search-query-error' : undefined}
                                 defaultValue={query}
-                                placeholder="게시글 제목, 임직원 또는 바로가기 이름을 입력하세요"
+                                placeholder={hasArticleSearch ? '게시글 제목, 임직원 또는 바로가기 이름을 입력하세요' : '임직원 또는 바로가기 이름을 입력하세요'}
                                 className="h-[var(--control-h)] rounded-md border border-border bg-card pl-9 pr-28 text-[length:var(--font-size-body)] placeholder:text-muted-foreground"
                             />
                             <Button
@@ -259,13 +275,15 @@ export const SearchResultsContent = ({
                         </div>
                     </form>
 
+            {queryError ? <p id="search-query-error" role="alert" className="text-[length:var(--font-size-body)] text-destructive-emphasis">{queryError}</p> : null}
+
             <div className="flex flex-col gap-4 md:flex-row">
                 {/* 검색 범위 안내 */}
                 <aside className="w-full shrink-0 space-y-3 md:w-56">
                     {/* [2026-09-08] 두 카드의 p-8·그림자·블러 장식을 걷고 업무 화면 카드 규격으로 맞췄다. */}
                     <div className="space-y-1 rounded-md border border-border bg-card p-4">
                         <h2 className="text-[length:var(--font-size-body)] font-bold text-foreground">현재 검색 범위</h2>
-                        <p className="text-[length:var(--font-size-body)] leading-relaxed text-muted-foreground">게시글 제목, 임직원, 메뉴 바로가기를 검색합니다. 게시글 본문은 검색하지 않습니다.</p>
+                        <p className="text-[length:var(--font-size-body)] leading-relaxed text-muted-foreground">{hasArticleSearch ? '게시글 제목, 임직원, 메뉴 바로가기를 검색합니다. 게시글 본문은 검색하지 않습니다.' : '임직원과 메뉴 바로가기를 검색합니다.'}</p>
                     </div>
 
                     {/* ⚠ [2026-09-08] 단축키가 여는 대상 이름이 틀려 있었다 — Ctrl+K 는 '커뮤니티 센터'가
@@ -295,6 +313,7 @@ export const SearchResultsContent = ({
                         범위를 적지 않으면 사용자는 본문에만 있는 낱말로 검색하고 "글이 없다" 로 오독한다.
                         ⚠ 결과 영역 **밖**에 둔다. 아래 분기는 세 결과가 모두 비면 '일치하는 결과가
                         없습니다' 를 먼저 렌더하므로, 안쪽에 두면 정작 필요한 순간에 가려진다. */}
+{/* reusable-base:collaboration:start */}
                     {activeTab === 'articles' ? (
                         <div className="rounded-md border border-border bg-muted/30 px-4 py-3">
                             <p className="text-[length:var(--font-size-body)] font-bold text-foreground">게시글은 제목만 검색합니다.</p>
@@ -304,6 +323,7 @@ export const SearchResultsContent = ({
                             </p>
                         </div>
                     ) : null}
+{/* reusable-base:collaboration:end */}
 
                     {visibleErrors.map(({ axis, message }) => (
                         <div key={axis} role="alert" className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3">
@@ -315,7 +335,7 @@ export const SearchResultsContent = ({
                     ))}
 
                     <div>
-                        {loading ? (
+                        {queryError ? null : loading ? (
                             <div className="space-y-3">
                                 {[1, 2, 3, 4].map(i => (
                                     <div key={`search-skeleton-${i}`} className="h-16 animate-pulse rounded-md bg-muted/40" />
@@ -338,6 +358,7 @@ export const SearchResultsContent = ({
                             </div>
                         ) : (
                             <div className="space-y-6">
+{/* reusable-base:collaboration:start */}
                                 {/* Articles Section */}
                                 {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 ? (
                                     <ResultSection title="게시글" count={results.articles.length}>
@@ -346,6 +367,7 @@ export const SearchResultsContent = ({
                                         ))}
                                     </ResultSection>
                                 ) : null}
+{/* reusable-base:collaboration:end */}
 
                                 {/* Users Section */}
                                 {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 ? (
@@ -392,6 +414,7 @@ function ResultSection({ title, count, children }: { title: string; count: numbe
     );
 }
 
+/* reusable-base:collaboration:start */
 function ArticleResultItem({ item }: { item: SearchArticle }) {
     return (
         <Link href={`/admin/community/boards/detail?bbsId=${item.bbsId}&pstSn=${item.pstSn}`} className="block group">
@@ -425,6 +448,7 @@ function ArticleResultItem({ item }: { item: SearchArticle }) {
         </Link>
     );
 }
+/* reusable-base:collaboration:end */
 
 // [2026-09-08] 아바타가 w-14 h-11 로 **정사각형이 아니었다**(가로 56 세로 44) — 원형/정사각
 //   아이콘 자리가 눌린 타원으로 보이던 원인이다. size-9 정사각으로 맞췄다.

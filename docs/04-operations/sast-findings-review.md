@@ -1,5 +1,11 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-14 의존성 업데이트에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스 4개(`build.gradle`, `foundation/build.gradle`, `business-core/build.gradle`, `business-app/build.gradle`)에 Querydsl Jakarta 의존성, Swagger·HTTP client·SLF4J 버전과 Dependency-Check 13의 출력·캐시 연결 변경이 반영됐다. H2는 테스트 의존성으로 유지되고, 탐지 대상인 `application-test.yml`의 메모리 DB 설정은 동일하다. 실제 Gradle 의존성 해석으로 5개 모듈 모두의 `runtimeClasspath`에 H2가 없고 `testRuntimeClasspath`에만 존재함을 확인했다. API 모듈의 테스트 H2는 2.5.250, 나머지 모듈은 Boot BOM의 2.3.232다.
+
+따라서 위 보완 소스 4개의 해시와 해당 승인 목록의 registry 해시만 재결속한다. 기존 예외 6건의 탐지 소스·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 소스 변형·미등록 탐지·만료 거부 계약과 현재 CodeQL 결과의 exact-match는 해당 변경의 로컬 계약 및 required `secure-coding` CI에서 검증한다.
+
 ## 2026-09-11 메뉴 재편에 따른 보완 방어 재검토
 
 SAST-FP-001의 보완 소스인 `frontend/src/proxy.ts`에서 `/admin` 접두사별 예외 목록을 제거하고 개별 등록 페이지의 현재 기능 권한을 판정하도록 변경했다. JWT 서명·토큰 검증, 정확한 Origin 비교, 쿠키의 Bearer 전달과 BFF의 Strict·HttpOnly 계약은 변경되지 않았다. 실제 브라우저에서 허용/거부 경로, 접두사·대소문자 우회, 위조 토큰, 잘못된 Origin 거절을 재검증했다. 따라서 보완 소스 해시 하나만 재결속한다. 승인 예외 6건의 규칙·파일·행·fingerprint·만료일과 보안 임계값은 유지하며 새로운 탐지를 예외로 추가하지 않는다.

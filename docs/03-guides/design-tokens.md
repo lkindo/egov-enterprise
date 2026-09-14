@@ -5,6 +5,8 @@
 > **정의 위치**: 값의 소유자는 [frontend/src/styles/themes/](../../frontend/src/styles/themes/)의 **프로필 CSS**(`premium.css`·`krds-aligned.css`)다. [globals.css](../../frontend/src/app/globals.css)는 `@theme` 간접 참조(`--color-x: hsl(var(--x))`)만 소유하며 `:root` 시맨틱 블록을 되돌리면 계약이 red다(theme-token-contract).
 > **구조**: [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md)의 브랜드 프로필 × 색상 모드 2축이 **구현 완료**됐다 — `<html data-brand-theme>`가 서버 env(`BRAND_THEME`)에서 전역 배선되며(레이아웃 1곳, 라우트별 배정은 ADR-0004 금지), 프로필 선택은 배포 단위 설정이다.
 
+폰트 호환 경계: `globals.css`의 기존 `@theme`는 `--default-font-family`에 의존성 업데이트 전의 시스템 fallback을 명시해 기존 글자 폭을 보존한다. 현재 [layout.tsx](../../frontend/src/app/layout.tsx)의 `next/font` 변수는 `body`에 있고 `--font-sans` 별칭은 루트에서 계산되므로, 별칭 선언이나 폰트 preload만으로 Pretendard 실사용을 입증할 수 없다. 이 fallback 고정은 변수 범위를 수정하지 않으며, 실제 폰트 전환은 계산된 스타일과 렌더링 결과를 별도로 검증해야 한다.
+
 ---
 
 ## 1. 30분 브랜드 프로필 — 새 브랜드 추가 레시피

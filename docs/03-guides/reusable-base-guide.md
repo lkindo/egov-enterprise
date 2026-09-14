@@ -1,7 +1,7 @@
 # 재사용 Base 생성 가이드
 
 > **현행 정책**: 재사용 base는 `main`의 정확한 `v*` 릴리스 태그에서 생성하는
-> 검증된 산출물이다. `template/reusable-base`는 역사 브랜치이며 신규
+> 산출물이며, 생성 후 해당 프로필의 기술 검증을 통과해야 한다. `template/reusable-base`는 역사 브랜치이며 신규
 > 프로젝트의 시작점으로 사용하지 않는다. 결정 배경은
 > [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)을 따른다.
 
@@ -31,7 +31,7 @@ clean v* release tag
 |---|---|---|
 | `core` | core | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 |
 | `collaboration` | core + collaboration | core + 게시판 클러스터 + 메일·쪽지·알림·SMS·실시간 대시보드 |
-| `demo` | core + collaboration + demo | 현재 제품의 전체 참조 기능 |
+| `demo` | core + collaboration + survey + demo | 현재 제품의 전체 참조 기능 |
 
 프로필은 누적된다. 낮은 pack이 높은 pack을 의존할 수 없고, 물리 테이블·독립 시퀀스는 한 pack만
 소유한다. `board`·`comment`·`scrap`처럼 함께 선택해야 하는 클러스터와 `tb_tmplt_info`처럼 공유되는
@@ -71,20 +71,17 @@ day-1 관리자 부트스트랩(§3.3)의 SQL 단언이 모두 성립해야만 P
 
 ### 3.3 day-1 관리자 부트스트랩
 
-V1 baseline은 `pg_dump --schema-only`라서 versioned 체인이 심은 데이터(V2_2 메뉴/권한,
-V2_3 역할계층, V2_11 URL 인가 레지스트리)가 생성 base에서 전부 소실된다. 그대로 부팅하면
-관리자가 로그인해도 두 겹으로 잠긴다: `DbUrlAuthorizationManager`는 fail-closed라
-`tb_prgrm_lst`/`tb_role_prgrm_map`이 비면 `/api/v1/admin/**` 전체를 ROLE_ADMIN에게도
-403으로 거부하고, `tb_menu_info`가 비어 `GET /api/v1/menus`가 빈 트리를 반환한다.
+V1 baseline은 `pg_dump --schema-only`이므로 versioned 체인이 기록한 메뉴·권한 부여 데이터가
+그대로 승계되지 않는다. 현재 인가는 [ADR-0016](../02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md)의
+복수 그룹과 명시 `OPERATION`·`NAVIGATION`을 사용한다. 관리자 그룹 이름만으로 모든 API를 허용하지
+않으므로 신규 base에는 기능 부여와 메뉴를 명시적으로 초기화해야 한다.
 
-`R__zz_seed_base_admin.sql`이 이를 해소한다. 대상 테이블이 **비어 있을 때만**(신규 base)
-아래를 시드하고, 풀시드 제품 DB에서는 전 블록이 no-op이다.
+`R__zz_seed_base_admin.sql`은 신규 base의 빈 권한·메뉴 상태와 변경 이력을 확인하여 초기화한다.
+기존 제품 DB에서 회수된 기능·메뉴·사용자 배정을 재부여하지 않으며 예약 그룹의 수정된 이름도 덮어쓰지 않는다.
 
-- URL 인가 anchor: `ADMIN_ALL(/api/v1/admin/**)`·`ACTUATOR_ALL(/actuator/**)` +
-  ROLE_ADMIN/ROLE_SYSTEM 매핑 (V2_11과 동일 값 — 권한 확장 없음)
-- core 잔존 라우트만 가리키는 최소 관리자 메뉴 트리(루트 1 + 잎 10)와 ROLE_ADMIN 매핑,
-  `sq_menu_sn` 채번 전진
-- 권한/역할 마스터(`tb_authrt_info`·ROLE_SYSTEM·`tb_authrt_role_map`·`tb_role_hierarchy`) 멱등 보증
+- 코드의 [기능 카탈로그](../../config/governance/permission-catalog.json) `defaultGroups`와 같은 명시 OPERATION 부여
+- core 잔존 라우트의 최소 관리자 메뉴와 명시 NAVIGATION 부여, 메뉴 시퀀스 전진
+- 예약 그룹과 최초 초기화 감사의 보존. 구 테이블 분기는 과거 Flyway target 검증용이며 현재 앱의 인가 모델이 아니다.
 
 회귀 게이트는 두 겹이다: DB 생성기의 verify 단계가 재적용 DB에서 부트스트랩 행 존재를 SQL로
 단언해 시드가 빠지면 생성이 FAIL하고,
@@ -101,7 +98,7 @@ core 잔존 라우트 계약을 검증한다.
 2. `webmaster`로 로그인한다.
 3. `GET /api/v1/menus`가 200이고 **비어 있지 않은** 트리를 반환하는지 확인한다.
 4. 관리자 토큰으로 `GET /api/v1/admin/system/users`가 200인지 확인한다
-   (URL 인가 fail-closed가 풀렸다는 증거).
+   (실제 기능 부여와 관리자 API 접근의 증거).
 
 ### 3.5 소스 projection
 
@@ -145,11 +142,13 @@ npm run base:generate-source -- \
 - 승인은 삭제를 **허용**하는 장치가 아니라 **조용할 수 없게** 만드는 장치다. 게이트가 사라지는 변경에서는
   매니페스트와 커밋 메시지가 함께 움직여 diff 에 의도가 드러난다.
 
-생성기는 DB 번들과 Docker 가 필요해 CI 에서 돌지 않는다. 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
-`npm run test:base-profile`(CI 의 `test:operational-contracts` 에 포함)이 별도로 지킨다.
+생산 저장소 CI의 `reusable-base` 3프로필 matrix가 실제 DB 번들과 소스 생성·산출물 검증을 실행하고 결과를 required
+`backend-build`에 집계한다. 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
+`npm run test:base-profile`(CI의 `test:operational-contracts`에 포함)이 별도로 지킨다.
 
-⚠ 현재 core·collaboration 프로필은 각각 파일 게이트 2건(`acknowledgedRemovedGates`)과 migration 검증 규칙
-42건을 잃는다. 남은 둘(`SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`)은 빠진
+현재 core·collaboration 프로필은 각각 파일 게이트 2건(`acknowledgedRemovedGates`)과 역사 검증 규칙
+45건을 제외한다. 역사 규칙은 V2 migration 파일 검증 42건과 구 인가 전환 검증 3건이며, 새 V1 baseline의 현재
+PostgreSQL 스키마 검증은 계속 실행한다. 남은 둘(`SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`)은 빠진
 pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **남는 코드도 검사하던 횡단 게이트는 모두 되살렸다** —
 `QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는 pack 경계로 옮겼고,
 `PrivacyAccessCensusLinterTest`(DEC-OPS-089)·`InputContractMirrorLinterTest`·`CrossDomainCouplingLinterTest`(DEC-OPS-090)는
@@ -199,51 +198,132 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    조합 지점(메일·문자 화면)만 demo 블록 안에서 어댑터를 넘긴다 — 공용 파일에 마커를 흩뿌리지 않는다.
 7. **대상이 cascade 로 잘못 사라진 링크는 가리지 않는다.** 그 링크를 마커로 숨기면 신호를 은폐하게 된다(H2).
    원인(잘못된 import)을 고친다.
-8. **판정은 투영본 `tsc --noEmit` 이다.** 마커 편집은 전체 제품 빌드에서 드러나지 않으며, 이 규칙을 기계로 막는
-   CI 게이트는 아직 없다(GAP-PACK-001 ③). 마커를 추가·수정한 변경은 §4 절차로 core·collaboration 을 투영해
-   base 커밋 대비 신규 타입 오류가 0 인지 확인한다.
+8. **판정은 실제 투영본의 타입·lint·build와 적용범위 계약이다.** 마커 편집은 전체 제품 빌드만으로 확인할 수 없다.
+   마커를 추가·수정하면 `base:verify`로 영향 프로필을 생성·검증한다. CI도 세 프로필의 같은 경로를 실행한다.
+   컴파일 성공만으로 모든 링크와 API의 런타임 동작이 증명되는 것은 아니다.
+
+### 3.8 검토 원장 투영과 기관 승인
+
+[ADR-0018](../02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)에 따라
+원본 제품의 검토 이력과 도입 기관의 운영 승인을 구분한다. 소스 생성기는 URL census·승인·route·UI quality·
+화면 용어·KRDS 원장, 적용범위 계약과 공용 메모리를 해시가 붙은 `config/governance/upstream-review/` snapshot으로 보존하고, 실제 투영 소스에서
+active URL·route census를 다시 생성한다. 살아남은 동일 소스·관측 범위에만 원본 승인 selector를
+제한하며 원본 검토자·날짜·근거는 바꾸지 않는다. 투영 범위는
+`config/governance/reusable-governance-projection.json`에 기록한다.
+
+UI 시나리오·화면 용어 pilot·KRDS의 적용범위는 [review scope 계약](../../config/governance/reusable-review-scopes.json)의
+명시 소유 pack에서 계산한다. 적용 대상 소스가 실수로 없어졌다는 이유로 검사를 제외하지 않는다. 유지하는
+시나리오의 경로·step·근거 파일은 실제로 존재해야 하며, 프레임워크 pack과 브랜드 프로필은 별개 축이다.
+원본의 측정 결과를 현재 프로필의 실행 증거로 자동 승격하지 않는다.
+
+`config/governance/adoption-review.json`은 선택한 프로필의 `pending`으로,
+`migration-adoption-review.json`도 독립 이관 제품의 새 `pending`으로 생성한다. 원본 승인 이력이
+기관의 데이터 분류·권한·로그·접근성 검토를 대신하지 않는다. 일반 `reviewBy` 경과는 운영 보고에
+표시하며 기술 빌드를 무효화하지 않는다. 실제 기관 사용 승인의 대상·범위·유효기간은 기관 preflight에서
+별도로 차단한다. 명령과 근거 작성은 [검토 수명 가이드](governance-review-lifecycle.md)를 따른다.
+
+생성물의 공용 메모리는 해당 프로필의 짧은 파생 인덱스로 바뀐다. 원본 OCI·운영 검증 사실과 과거 결정은
+upstream snapshot에 보존하고 기관의 사실로 복제하지 않는다. 기관의 실제 상태는 현재 승인 원장이 정본이다.
+
+[무결성 검사](../../scripts/reusable-governance-integrity.mjs)는 snapshot·소스 결속·승계 selector·원장 모집단·
+메모리·프로필 lock을 대조한다. 이는 생성된 출시 산출물의 인증 검사다. 도입 후 개발로 소스가 바뀌면 기존
+승계 증거의 적용범위를 재검토해야 하며, 해시만 다시 기록하여 기존 승인을 유지해서는 안 된다.
 
 ## 4. 산출물 검증
 
-생성된 디렉터리에서 아래 게이트를 모두 통과시킨다.
+생산 저장소에서 각 프로필의 전체 경로를 확인한다. Docker에 새 격리 PostgreSQL 컨테이너를 만들고,
+새 DB 번들·소스를 생성한 뒤 의존성을 설치하여 산출물을 검사한다. 기존 운영·공유 DB를 사용하지 않으며,
+종료 시 이번 호출이 만든 컨테이너만 소유권을 확인하여 정리한다. 생성 파일과 검증 보고서는 보존한다.
 
 ```bash
-npm run test:base-profile
-./gradlew compileJava compileTestJava
-./gradlew :api-server:harnessTest :api-server:schemaValidationTest
-pnpm -C frontend install --frozen-lockfile
-pnpm -C frontend exec tsc --noEmit
+npm run base:verify -- --profile core
+npm run base:verify -- --profile collaboration
+npm run base:verify -- --profile demo
 ```
+
+실행 정본은 [생성·검증 driver](../../scripts/verify-reusable-base.mjs)와
+[산출물 runner](../../scripts/verify-reusable-artifact.mjs)다. 범위는 거버넌스 무결성·활성 원장·부정 계약,
+Java 컴파일·하네스·실 PostgreSQL 스키마 검증, 프런트 `tsc`·lint·build다. 브라우저 시나리오 실행과 실제
+기관 환경 승인은 별도다. `build/reports/reusable-base/<profile>.json`은 실행한 기술 검증 범위만 기록한다.
+
+이미 생성한 디렉터리에서 의존성을 설치한 뒤에는 `npm run verify`로 같은 산출물 검사를 실행한다.
+`npm run test:operational-contracts`는 공통 활성 계약을, pre-push는 전체 산출물 검사를 실행한다.
+생산 저장소의 원본 회귀 테스트는 생산 저장소에서 계속 실행한다.
+
+온라인 생성물의 명령은 다음과 같다. 모든 scope는 거버넌스 무결성·활성 UI 계약·실행 경로 계약을 먼저 검사한다.
+
+| 생성물 명령 | runner scope | 추가 검사 |
+|---|---|---|
+| `npm run verify:docs`, `npm run test:operational-contracts` | `contracts` | 공통 계약만 |
+| `npm run verify:be` | `backend` | Java 컴파일·하네스·실 DB 스키마 |
+| `npm run verify:fe` | `frontend` | 프런트 타입·lint·build |
+| `npm run verify`, `verify:artifact`, `verify:full`, `verify:push`, `verify:fast` | `full` | backend와 frontend 모두 |
+
+`fast`·`push`는 기존 호출부와의 보수적인 호환을 위해 `full`에 연결된다. 생산 저장소처럼 비용 순으로
+중첩된 단계가 아니다. 생산자 전용 `base:*`와 기관 환경이 필요한 `verify:e2e`·`verify:ops` 별칭은 생성물에서
+제거한다. 기관 브라우저 검증과 원격 ruleset 검증은 기관에서 별도로 설계하고 연결한다.
+
+생산 저장소는 기존 6개 required context와 3프로필 생성 matrix를 유지한다. 생성물은
+`artifact-verification` 한 job에서 자기 프로필의 산출물 runner를 직접 실행하고, 기존 버전의 gitleaks
+working-tree·incremental 검사를 함께 수행한다. 실제 실행 설정은
+[생성물 실행 경로 계약](../../scripts/reusable-artifact-entrypoints-contract.mjs)이 정한다.
+
+생산 저장소의 12개 workflow·required-check 명세·package·pre-push는
+`config/governance/upstream-verification/`에 SHA-256이 붙은 비활성 이력으로 보존한다. 원본 CodeQL·E2E·mutation과
+배포·예약 작업은 기관 범위에 맞게 다시 결속해야 하며, 생성물 기본 CI가 원본 CI와 동등한 검증이나 운영 인증을
+제공한다고 주장하지 않는다. 생성물의 `.github/required-checks.json`은 `remoteApplied: false`이고 대상 브랜치·App은
+미설정이다. 기관이 `artifact-verification`과 추가로 선택한 검사를 실제 ruleset에 연결해야 병합을 강제할 수 있다.
 
 Windows에서는 `./gradlew` 대신 `.\gradlew.bat`을 사용한다. 배포 아카이브를 만들 때는 Git index의
 `gradlew` 실행 비트(100755)를 보존한다. 생성 디렉터리는 검증 후 별도 릴리스 자산으로 보관하며,
 이를 다시 장기 브랜치의 정본으로 승격하지 않는다.
 
-### 4.1 하네스 게이트의 프로필별 기대치 (2026-09-12 실측)
+기관 도입 검토를 시작할 때는 같은 산출물에서 `npm run review:status`로 현재 검토 상태와 scope digest를
+확인한다. 기관이 원장을 검토·작성한 뒤 `npm run review:adoption -- --environment <실제-환경-ID>`를
+자기 배포 직전 절차에 연결한다. 기본 `pending`은 기관 검토 미완료이며 참조 프레임워크 릴리스의
+전역 차단 조건은 아니다. 독립 이관 도구만 사용하는 프로젝트는 `verify:migration`과 이관 전용 원장을 사용한다.
 
-`:api-server:harnessTest` 의 통과 기대치는 **프로필마다 다르다**. 축소 프로필은 전체 제품 기준으로
-동결된 수치를 그대로 들고 가므로 일부 게이트가 구조적으로 어긋난다 — 이것은 생성기 결함이 아니라
-파생 제품이 기준선을 다시 동결해야 한다는 [DEC-OPS-019 재동결 절차](../04-operations/adopter-baseline-refreeze.md)의
-적용 대상이다.
+### 4.1 하네스 게이트의 프로필별 기대치
+
+현재 승인된 계약은 **세 프로필 모두 기술 게이트를 통과하는 것**이다. 생성기는 원본 제거 계획의
+retained/removed Java 소스·FQCN 집합을 실제 산출물과 정확히 대조해
+`config/governance/reusable-harness-profile.json`에 결속한다. 하네스는 이 명시 모집단으로 축소 제품을
+검사하며 파일 부재만으로 임의의 검사를 생략하지 않는다. 기관 고유 코드 변경은
+[adopter 재동결 절차](../04-operations/adopter-baseline-refreeze.md)로 별도 검토한다.
+
+2026-09-14에는 실제 생성한 세 프로필에서 Java 전체 컴파일과 아래 검사를 실행해
+실패·건너뜀 0건을 확인했다. 이에 따라 축소 하네스 붕괴 `GAP-BASE-001`은 활성 gap에서 제거했다.
+
+| 프로필 | `harnessTest` | 실제 PostgreSQL `schemaValidationTest` |
+|---|---|---|
+| `core` | 91/91 | 11/11 |
+| `collaboration` | 91/91 | 11/11 |
+| `demo` | 91/91 | 13/13 |
+
+소스 모집단·필수 실행 단계의 누락, 잘못된 프로필과 보안 부정 테스트 변조가 red가 되는 것도
+확인했다. 이 로컬 기술 검증과 현재 커밋의 required CI는 별개이며, 병합에는
+세 프로필 matrix를 포함한 required CI 통과가 필요하다. 기관의 운영·업무 승인은 별도다.
+
+아래 수치는 **2026-09-12의 역사적 진단**이며 현재 허용되는 실패 수가 아니다.
 
 | 프로필 | 제거 java | harnessTest | 성격 |
 |---|---|---|---|
-| `demo` | 0 | **green이어야 한다** | 아무것도 제거하지 않으므로 어긋날 이유가 없다. red 면 생성기 결함이다. |
-| `collaboration` | 238 | 일부 red | 축소 제품 ↔ 동결 census 불일치 |
+| `demo` | 0 | 당시 수정 후 green | 생성기와 하네스 메타 계약의 드리프트 수정 |
+| `collaboration` | 238 | 당시 일부 red | 축소 제품 ↔ 동결 census 불일치 |
 | `core` | 435 | 73건 중 19건 red | 위와 같음 |
 
-축소 프로필의 red 는 세 부류이며 해소 주체가 다르다(전수 분류·실측은 GAP-BASE-001).
+당시 실패는 세 부류였다.
 
 1. **anti-vacuity 플로어가 축소 제품 규모보다 높다** — 요청 컨트롤러 30 < 하한 40, `@Entity` 0 < 20,
    재생 테이블 35 < 50, 핸들러 153 < 250 등. 플로어는 "스캔이 조용히 붕괴하면 실패" 장치이므로
-   축소 제품에서는 실제 규모로 다시 동결해야 한다.
+   현재 생성기는 승인된 소유권과 실제 모집단을 먼저 대조한다.
 2. **exact 동결 census 가 제거된 타입을 지목한다** — Entity 74→31, PK 동결 목록의 `BoardMaster`,
-   `@Transactional(readOnly)` 동결 목록의 `BoardService`, BaseSearchDto 28→26 등. 재동결 대상이다.
+   `@Transactional(readOnly)` 동결 목록의 `BoardService`, BaseSearchDto 28→26 등이었다.
 3. **횡단 게이트가 제거된 도메인 소스를 필수로 읽는다** — 첨부 assignment census 가 `BoardService`
    소스를, springdoc 동기화 게이트가 cascade 로 제거된 `OpenApiDocumentationTest` 를 요구한다.
-   이쪽은 재동결로 풀리지 않고 표적 목록을 소스 밖으로 옮겨야 한다(GAP-PACK-001 ④).
+   대상 소유권과 검증 실행 경로를 함께 수정해야 하는 문제다.
 
-2026-09-14 재측정(DEC-OPS-090 적용 후, 실제 생성기 투영): core 는 java 432개가 제거되고 harnessTest 90건 중
+2026-09-14의 이번 프로필 검증 확장 **이전** 재측정(DEC-OPS-090 적용 후, 실제 생성기 투영): core 는 java 432개가 제거되고 harnessTest 90건 중
 19건 red 다 — 되살린 횡단 게이트 3종(개인정보 3·입력 계약 10·결합 4건)은 core·collaboration 투영본에서 모두 통과했고
 red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 green 이다.
 
@@ -265,6 +345,8 @@ npm run base:generate-source -- \
 ```
 
 이 산출물의 lock에는 `localDevelopmentBuild: true`가 기록되며 공식 배포물로 사용할 수 없다.
+§4의 `base:verify`도 개발·CI 검증을 위해 이 플래그를 사용한다. 공식 출시물은 clean release tag에서
+완화 플래그 없이 생성하고 산출물 전체 검증을 통과시킨다.
 
 ## 6. 변경 절차
 
@@ -285,4 +367,4 @@ npm run base:generate-source -- \
 
 `template/reusable-base` 등 장기 template 브랜치는 현재 릴리스와 보안·DB·품질 게이트의 동기화를 보장하지 않는다. 신규 base 생성 입력으로 사용하지 않고, 필요한 역사 비교가 있을 때만 읽기 전용 참고 자료로 취급한다.
 
-*Last reviewed against current sources: 2026-08-23.*
+*생성·검증·부트스트랩·기관 도입 경계 검토: 2026-09-14. 실제 결과는 해당 산출물의 검증 보고서가 정본이다.*

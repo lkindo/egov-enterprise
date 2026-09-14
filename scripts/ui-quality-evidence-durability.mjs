@@ -2,6 +2,7 @@ import { readRegularFile } from './read-regular-file.mjs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import { scenarioContractSourceHash } from './ui-quality-scenario-contract-hash.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -2173,8 +2174,10 @@ export function assertCombinedRepositoryProvenance(root, summary) {
     throw new Error('combined committed manifest and execution plan do not match provenance');
   }
   for (const [hashKey, relativePath] of Object.entries(TOOLING_PATHS)) {
-    const bytes = committedBytesAt(root, buildSha, relativePath, `combined ${hashKey}`);
-    if (sha256Hex(bytes) !== summary.provenance[hashKey]) {
+    const readHash = source => sha256Hex(committedBytesAt(root, buildSha, source, `combined ${hashKey}`));
+    const actualHash = hashKey === 'scenarioContractHash'
+      ? scenarioContractSourceHash(readHash) : readHash(relativePath);
+    if (actualHash !== summary.provenance[hashKey]) {
       throw new Error(`combined ${hashKey} does not match the clean build commit`);
     }
   }

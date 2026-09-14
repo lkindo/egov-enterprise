@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "authority": "reusable-review-scope-contract",
+  "sources": {
+    "uiQuality": "config/ui-quality-scenarios.json",
+    "visibleTerms": "config/frontend-visible-terms.json",
+    "krds": "config/krds-profile-mapping.json"
+  },
+  "scenarios": [
+    {
+      "id": "auth-login",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "admin-shell-hub",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "dense-user-logs",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "user-management-hub",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "board-article-composer",
+      "requiredPacks": [
+        "collaboration"
+      ]
+    },
+    {
+      "id": "faq-admin-user-lifecycle",
+      "requiredPacks": [
+        "collaboration",
+        "demo"
+      ]
+    },
+    {
+      "id": "board-maker-wizard",
+      "requiredPacks": [
+        "collaboration"
+      ]
+    },
+    {
+      "id": "first-use-onboarding",
+      "requiredPacks": [
+        "core"
+      ]
+    }
+  ],
+  "pilots": [
+    {
+      "id": "content-login",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "content-user-home",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "content-admin-home",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "content-user-log",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "content-user-manage",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "content-board-composer",
+      "requiredPacks": [
+        "collaboration"
+      ]
+    },
+    {
+      "id": "content-survey-create",
+      "requiredPacks": [
+        "survey"
+      ]
+    },
+    {
+      "id": "content-schedule",
+      "requiredPacks": [
+        "demo"
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "id": "PRINCIPLE-USER-CENTRED",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "PRINCIPLE-INCLUSIVE",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "PRINCIPLE-CONSISTENT-FLEXIBLE",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "STYLE-COLOR",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "STYLE-TYPOGRAPHY",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "STYLE-SHAPE",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "STYLE-LAYOUT-REFLOW",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "STYLE-ICON",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "STYLE-ELEVATION",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "STYLE-HIGH-CONTRAST",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "STYLE-TOKENS",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "IDENTITY-MASTHEAD-STANDARD",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "IDENTITY-MASTHEAD-NONSTANDARD",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "IDENTITY-HEADER-FOOTER",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "COMPONENT-SKIP-LINK",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "COMPONENT-BUTTON-LINK",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "COMPONENT-FORM-CONTROLS",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "COMPONENT-STRUCTURED-LIST-TABLE",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "COMPONENT-FEEDBACK-ERROR",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "PATTERN-LIST-NAVIGATION",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "PATTERN-FILTER-SORT",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "PATTERN-ERROR",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "PATTERN-INPUT-FORM",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "PATTERN-PERSONAL-DATA",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "SERVICE-LOGIN",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "SERVICE-SEARCH",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "SERVICE-APPLICATION",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "SERVICE-POLICY-INFORMATION",
+      "requiredPacks": [
+        "core"
+      ]
+    },
+    {
+      "id": "VERIFICATION-SELF-CHECKLIST",
+      "requiredPacks": [
+        "core"
+      ]
+    }
+  ],
+  "optionalPilotSources": [
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/app/dashboard-data.ts",
+      "requiredPacks": [
+        "collaboration"
+      ]
+    },
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/components/features/dashboard/RealTimeDashboard.tsx",
+      "requiredPacks": [
+        "collaboration"
+      ]
+    }
+  ],
+  "notes": [
+    "Scope is declared from feature ownership, never inferred merely because a source file is missing.",
+    "Brand profiles krds-standard, krds-aligned, premium are independent of reusable source pack selection.",
+    "Included features must retain all required routes and evidence; an accidental cascade deletion fails projection."
+  ]
+}

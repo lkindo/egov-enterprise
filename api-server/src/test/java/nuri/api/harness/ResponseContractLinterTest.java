@@ -156,7 +156,7 @@ class ResponseContractLinterTest {
         List<String> violations = new ArrayList<>();
 
         // 스캔이 조용히 붕괴하면 census 가 비어 통과한다 — 그것이 가장 값싼 우회다.
-        if (handlers < HANDLER_FLOOR) {
+        if (handlers < ReusableHarnessProfile.current().count("responseHandlers", HANDLER_FLOOR)) {
             violations.add("핸들러 스캔 하한 미달: " + handlers + " < " + HANDLER_FLOOR
                     + " — 경로/정규식 파손 의심. 빈 census 로 통과시키지 않습니다.");
         }

@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
+import { validateUrlStateApproval } from './ui-url-state-approval-contract.mjs';
 
 import {
   approvedStateItemSelectors,
@@ -39,7 +40,6 @@ const overlay = JSON.parse(readFileSync(OVERLAY_PATH, 'utf8'));
 const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'));
 const censusRaw = readFileSync(CENSUS_PATH, 'utf8');
 const census = JSON.parse(censusRaw);
-const DECISION_TIME = Date.parse('2026-09-05T00:00:00.000Z');
 
 const SEARCH_INPUT_NAMES = ['q', 'searchCnd', 'searchWrd'];
 const SEARCH_INPUT_RECORD_IDS = [
@@ -104,9 +104,9 @@ function stateItemCounts(source) {
   return counts;
 }
 
-/** 설계안 §4.2 — 모든 stateItem 이 approved class 에 덮인 record 만 만료를 면제받는다. */
-function recordsExemptFromExpiry(overlayDoc, censusDoc, nowMs = DECISION_TIME) {
-  const selectors = approvedStateItemSelectors(overlayDoc, censusDoc, nowMs);
+/** 모든 stateItem이 승인된 record만 전체 승인으로 집계한다. 검토 최신성과 별개다(ADR-0018). */
+function fullyApprovedRecords(overlayDoc, censusDoc) {
+  const selectors = approvedStateItemSelectors(overlayDoc, censusDoc);
   return (censusDoc.records ?? []).filter((record) => {
     const items = record.stateItems ?? [];
     return items.length > 0 && items.every((item) => isUrlStateItemApproved(record, item, selectors));
@@ -137,6 +137,7 @@ function searchInputContractErrors(overlayDoc) {
 }
 
 test('오버레이는 선언된 JSON Schema를 실제로 통과한다', () => {
+  assert.deepEqual(validateUrlStateApproval(overlay, census, schema), []);
   const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
   assert.equal(validate(overlay), true, JSON.stringify(validate.errors, null, 2));
 
@@ -145,7 +146,7 @@ test('오버레이는 선언된 JSON Schema를 실제로 통과한다', () => {
     'docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md';
   assert.equal(validate(misplacedDecision), false, 'ADR-0009 decisionRef는 search-input 밖에 둘 수 없어야 한다');
   assert.equal(
-    approvedStateItemSelectors(misplacedDecision, census, DECISION_TIME).length,
+    approvedStateItemSelectors(misplacedDecision, census).length,
     0,
     '잘못 귀속된 decisionRef를 실제 matcher가 승인으로 열면 안 된다',
   );
@@ -228,45 +229,35 @@ test('census 가 판정하지 못한 항목은 승인 대상이 아니다', () =
   }
 });
 
-test('부분 승인이 전체 면제가 되지 않는다', () => {
+test('부분 승인이 record 전체 승인으로 확대되지 않는다', () => {
   const approvedClasses = overlay.classes.filter((cls) => cls.reviewState === 'approved');
-  const exempt = recordsExemptFromExpiry(overlay, census);
+  const exempt = fullyApprovedRecords(overlay, census);
 
   if (approvedClasses.length === 0) {
-    assert.equal(exempt.length, 0, '승인이 없는데 만료를 면제받는 record 가 있다');
+    assert.equal(exempt.length, 0, '승인이 없는데 승인으로 집계된 record가 있다');
     return;
   }
 
-  // 승인이 생긴 뒤에도: 덮이지 않은 stateItem 이 하나라도 있는 record 는 면제되지 않는다.
-  const selectors = approvedStateItemSelectors(overlay, census, DECISION_TIME);
+  // 덮이지 않은 stateItem이 하나라도 있는 record는 전체 승인으로 집계하지 않는다.
+  const selectors = approvedStateItemSelectors(overlay, census);
   for (const record of exempt) {
     assert.ok(
       (record.stateItems ?? []).every((item) => isUrlStateItemApproved(record, item, selectors)),
-      `${record.id}: 승인되지 않은 stateItem 을 가진 record 가 면제됐다`,
+      `${record.id}: 승인되지 않은 stateItem을 가진 record가 승인됐다`,
     );
   }
 });
 
-test('면제 계산이 공허하지 않다 — 합성 승인으로 red 를 증명한다', () => {
-  /*
-    ⚠ vacuity 가드. 위 '부분 승인' 테스트는 현재 approved 가 0이라 "0건 면제" 만 확인한다.
-      그것만으로는 면제 로직이 **아무것도 면제하지 않는 죽은 코드**여도 green 이다.
-      합성 오버레이로 (가) 승인하면 실제로 면제되고 (나) 한 부류만 승인하면 섞인 record 는
-      면제되지 않음을 함께 증명한다. 저장소에 가짜 승인을 남기지 않으려고 메모리에서만 만든다.
-  */
-  /*
-    ⚠ [2026-09-05] 실물 오버레이를 복제한 뒤 **한 부류만 올리는** 방식이었는데, 실제 승인이
-      생기자(presentation-state·control-flag) 복제본에 그 승인이 함께 실려 "다른 부류의
-      stateItem 을 가졌는데 면제됐다" 로 red 가 됐다. 테스트가 틀린 것이지 면제가 샌 것이 아니다.
-      합성 시나리오는 **전체 승인 집합을 통제**해야 한다 — 전부 내린 뒤 하나만 올린다.
-  */
+test('합성 승인으로 전체 승인과 미승인 항목 혼재를 구별한다', () => {
+  // 메모리에서 승인 집합 전체를 통제한다. 승인 record가 실제 생기면서도 부분 승인이
+  // 다른 항목을 묵시 승인하지 않는지 확인하고, 저장소에 합성 승인을 남기지 않는다.
   const presentationOnly = structuredClone(overlay);
   for (const cls of presentationOnly.classes) {
     cls.reviewState = cls.classId === 'presentation-state' ? 'approved' : 'proposed';
   }
 
-  const exempt = recordsExemptFromExpiry(presentationOnly, census);
-  assert.ok(exempt.length > 0, '표현 상태를 전부 승인해도 면제되는 record 가 0이면 면제 로직이 죽어 있다');
+  const exempt = fullyApprovedRecords(presentationOnly, census);
+  assert.ok(exempt.length > 0, '표현 상태를 승인해도 해당 record가 0이면 승인 판정이 동작하지 않는다');
 
   const presentationNames = new Set(
     presentationOnly.classes.find((c) => c.classId === 'presentation-state').selector.stateItemNames,
@@ -274,11 +265,11 @@ test('면제 계산이 공허하지 않다 — 합성 승인으로 red 를 증�
   for (const record of exempt) {
     assert.ok(
       record.stateItems.every((item) => presentationNames.has(item.name)),
-      `${record.id}: 다른 부류의 stateItem 을 가졌는데 면제됐다`,
+      `${record.id}: 다른 부류의 stateItem을 가졌는데 승인됐다`,
     );
   }
 
-  // 섞인 record 는 반드시 남아야 한다 — 그렇지 않으면 부분 승인이 전체 면제가 된다.
+  // 미승인 항목이 섞인 record를 반드시 구분한다.
   const mixed = census.records.filter((r) => {
     const items = r.stateItems ?? [];
     return items.some((i) => presentationNames.has(i.name)) && items.some((i) => !presentationNames.has(i.name));
@@ -286,7 +277,7 @@ test('면제 계산이 공허하지 않다 — 합성 승인으로 red 를 증�
   if (mixed.length > 0) {
     const exemptIds = new Set(exempt.map((r) => r.id));
     for (const record of mixed) {
-      assert.ok(!exemptIds.has(record.id), `${record.id}: 일부만 승인됐는데 면제됐다`);
+      assert.ok(!exemptIds.has(record.id), `${record.id}: 일부만 승인됐는데 전체 승인으로 집계됐다`);
     }
   }
 });
@@ -332,9 +323,9 @@ test('ADR-0009 검색어 승인은 현재 5개 record와 3개 key에만 한정�
   const withoutSearch = structuredClone(overlay);
   withoutSearch.classes.find(({ classId }) => classId === 'search-input').reviewState = 'proposed';
   assert.equal(
-    recordsExemptFromExpiry(overlay, census).length - recordsExemptFromExpiry(withoutSearch, census).length,
+    fullyApprovedRecords(overlay, census).length - fullyApprovedRecords(withoutSearch, census).length,
     5,
-    '검색어 승인으로 면제되는 현재 surface 수가 달라졌다',
+    '검색어 승인으로 승인되는 현재 surface 수가 달라졌다',
   );
 });
 
@@ -350,7 +341,9 @@ test('/search?q producer는 명시된 두 구현으로 고정되고 값은 인�
   assert.deepEqual(producers, SEARCH_PRODUCER_FILES, '새 검색 URL producer는 ADR-0009 allowlist 검토 없이 추가할 수 없다');
 
   const commandCenter = readFileSync(join(ROOT, SEARCH_PRODUCER_FILES[0]), 'utf8');
-  assert.match(commandCenter, /url:\s*`\/search\?q=\$\{encodeURIComponent\(search\)\}`/u);
+  assert.match(commandCenter, /url:\s*`\/search\?q=\$\{serializeSearchQuery\(\{ q: search \}\)\}`/u);
+  const searchContract = readFileSync(join(ROOT, 'frontend/src/lib/navigation/search-url-state.ts'), 'utf8');
+  assert.match(searchContract, /return encodeURIComponent\(parsed\.state\.q\)/u);
 
   const searchForm = readFileSync(join(ROOT, SEARCH_PRODUCER_FILES[1]), 'utf8');
   assert.match(searchForm, /<form\s+action="\/search"\s+method="get"[\s\S]{0,800}?name="q"/u);
@@ -377,7 +370,8 @@ test('/admin/community/[id]는 호출 화면의 key만 재조립하고 same-view
   assert.deepEqual(names, ['bbsId', 'page', 'searchCnd', 'searchWrd']);
 });
 
-test('자격증명 key나 새 free-text search surface로 검색어 승인이 조용히 넓어지지 않는다', () => {
+test('검토일 경과 후에도 자격증명 key나 새 free-text search surface로 승인이 넓어지지 않는다', (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2036-09-14T00:00:00.000Z') });
   const credentialExpansion = structuredClone(overlay);
   credentialExpansion.classes.find(({ classId }) => classId === 'search-input').selector.stateItemNames.push('token');
   assert.match(searchInputContractErrors(credentialExpansion).join('\n'), /exact ADR-0009 allowlist/);
@@ -399,26 +393,24 @@ test('자격증명 key나 새 free-text search surface로 검색어 승인이 �
 
   const matchingOverlay = structuredClone(overlay);
   matchingOverlay.manifestRef.sha256 = canonicalSha256(`${JSON.stringify(future, null, 2)}\n`);
-  const exemptIds = new Set(recordsExemptFromExpiry(matchingOverlay, future).map(({ id }) => id));
-  assert.equal(exemptIds.has(synthetic.id), false, '같은 q 이름을 쓰는 새 route가 record 승인 없이 면제됐다');
-  assert.equal(exemptIds.has(alternateName.id), false, '다른 free-text 이름을 쓰는 새 route가 승인 없이 면제됐다');
+  const exemptIds = new Set(fullyApprovedRecords(matchingOverlay, future).map(({ id }) => id));
+  assert.equal(exemptIds.has(synthetic.id), false, '같은 q 이름을 쓰는 새 route가 record 승인 없이 승인됐다');
+  assert.equal(exemptIds.has(alternateName.id), false, '다른 free-text 이름을 쓰는 새 route가 승인 없이 승인됐다');
   assert.match(
     validateUrlStateCensus(future, {
       repoRoot: ROOT,
-      nowMs: DECISION_TIME,
       approvalOverlay: matchingOverlay,
     }).join('\n'),
     /URL-FFFFFFFFFFFFFF\/q: URL search state is outside the exact approved route\/record allowlist/i,
-    '새 q surface는 reviewBy 전에도 production validator를 즉시 red로 만들어야 한다',
+    '새 q surface는 날짜와 관계없이 production validator를 즉시 red로 만들어야 한다',
   );
   assert.match(
     validateUrlStateCensus(future, {
       repoRoot: ROOT,
-      nowMs: DECISION_TIME,
       approvalOverlay: matchingOverlay,
     }).join('\n'),
     /URL-EEEEEEEEEEEEEE\/keyword: URL search state is outside the exact approved route\/record allowlist/i,
-    '다른 free-text key도 reviewBy 전 production validator를 즉시 red로 만들어야 한다',
+    '다른 free-text key도 날짜와 관계없이 production validator를 즉시 red로 만들어야 한다',
   );
 
   for (const [field, value] of [
@@ -430,7 +422,7 @@ test('자격증명 key나 새 free-text search surface로 검색어 승인이 �
     const invalidReview = structuredClone(overlay);
     invalidReview.classes.find(({ classId }) => classId === 'search-input')[field] = value;
     assert.equal(
-      approvedStateItemSelectors(invalidReview, census, DECISION_TIME).length,
+      approvedStateItemSelectors(invalidReview, census).length,
       0,
       `${field} 형식이나 accepted-risk 경계가 틀렸는데 실제 matcher가 승인을 열었다`,
     );
@@ -439,13 +431,43 @@ test('자격증명 key나 새 free-text search surface로 검색어 승인이 �
   const missingDecision = structuredClone(overlay);
   delete missingDecision.classes.find(({ classId }) => classId === 'search-input').decisionRef;
   assert.equal(
-    approvedStateItemSelectors(missingDecision, census, DECISION_TIME).length,
+    approvedStateItemSelectors(missingDecision, census).length,
     0,
     'ADR-0009 decisionRef가 없는데 실제 matcher가 검색 승인을 열었다',
   );
 });
 
-test('승인 class의 reviewBy가 지나면 만료 면제가 다시 닫힌다', () => {
-  const afterReview = Date.parse('2027-01-01T00:00:00.000Z');
-  assert.equal(recordsExemptFromExpiry(overlay, census, afterReview).length, 0);
+test('정기 검토일이 지나도 동일 근거에 결속된 승인과 검색 범위는 유지된다', (t) => {
+  // ADR-0018: 검토 기한 경과는 별도 운영 최신성 계약이 관측한다. 실제 Date API를 이동해
+  // 과거 options.nowMs를 주입하지 않아도 기존 코드·승인 판정이 같은지 확인한다.
+  const before = fullyApprovedRecords(overlay, census).map(({ id }) => id);
+  const registryBefore = structuredClone(overlay);
+  assert.ok(before.length > 0);
+  const dates = ['2026-12-31T23:59:59.999Z', '2027-01-01T00:00:00.000Z', '2036-09-14T00:00:00.000Z'];
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse(dates[0]) });
+  for (const date of dates) {
+    t.mock.timers.setTime(Date.parse(date));
+    assert.deepEqual(fullyApprovedRecords(overlay, census).map(({ id }) => id), before, date);
+    assert.deepEqual(validateUrlStateCensus(census, { repoRoot: ROOT, approvalOverlay: overlay }), [], date);
+  }
+  assert.deepEqual(overlay, registryBefore, '승인 근거·검토일·범위를 자동 갱신하면 안 된다');
+});
+
+test('해시·소유자·검토근거·날짜가 불완전하면 미래에도 승인이 열리지 않는다', (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2036-09-14T00:00:00.000Z') });
+  const mutations = [
+    ['manifest hash mismatch', (doc) => { doc.manifestRef.sha256 = '0'.repeat(64); }],
+    ['missing owner', (doc) => { doc.classes[0].owner = ' '; }],
+    ['missing evidence', (doc) => { doc.classes[0].approvals.securityPrivacy.evidence = []; }],
+    ['missing reviewer', (doc) => { doc.classes[0].approvals.domain.reviewer = ''; }],
+    ['invalid review date', (doc) => { doc.classes[0].reviewBy = '2026-02-30'; }],
+    ['invalid approval date', (doc) => { doc.classes[0].approvals.domain.reviewedAt = '2026-13-01'; }],
+    ['unexpected schema', (doc) => { doc.schemaVersion = 2; }],
+  ];
+  assert.equal(overlay.classes[0].reviewState, 'approved');
+  for (const [reason, mutate] of mutations) {
+    const invalid = structuredClone(overlay);
+    mutate(invalid);
+    assert.deepEqual(approvedStateItemSelectors(invalid, census), [], reason);
+  }
 });

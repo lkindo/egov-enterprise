@@ -142,7 +142,9 @@ class SecurityAuthAnnotationLinterTest {
         List<String> violations = operationViolations(registry,
                 discoverEndpoints(Set.of(RequestMethod.values())));
         Set<String> source = new TreeSet<>();
-        registry.operationBindings().forEach(row -> source.add(row.signature()));
+        // The source-generated permission catalog is preserved in full. Its declaration parity is
+        // checked in full too; only actual MVC discovery is scoped to the approved retained sources.
+        loadRegistry(false).operationBindings().forEach(row -> source.add(row.signature()));
         Set<String> runtime = new TreeSet<>();
         permissionPolicy.bindings().forEach(row -> runtime.add(new OperationBinding(row.method(), row.path(),
                 row.handler(), row.access(), row.permission(), row.excludedGroups()).signature()));
@@ -198,7 +200,8 @@ class SecurityAuthAnnotationLinterTest {
     private List<String> operationViolations(PolicyRegistry registry, Map<String, ActualEndpoint> actual) {
         List<String> violations = new ArrayList<>();
         Map<String, OperationBinding> expected = operationMap(registry, violations);
-        if (expected.size() < 350 || actual.size() < 350) {
+        if (expected.size() < ReusableHarnessProfile.current().count("operationBindings", 350)
+                || actual.size() < ReusableHarnessProfile.current().count("operationEndpoints", 350)) {
             violations.add("전체 operation endpoint 하한(350) 미달");
         }
         actual.values().forEach(endpoint -> validateOperationMatch(expected.get(endpoint.key()), endpoint, violations));
@@ -267,7 +270,7 @@ class SecurityAuthAnnotationLinterTest {
         }
 
         Map<String, ActualEndpoint> actual = discoverWriteEndpoints();
-        if (actual.size() < 180) {
+        if (actual.size() < ReusableHarnessProfile.current().count("writeEndpoints", 180)) {
             fail("쓰기 endpoint discovery가 예상 하한(180) 미만입니다: " + actual.size()
                     + " — scan/context 붕괴를 green으로 처리할 수 없습니다.");
         }
@@ -311,7 +314,7 @@ class SecurityAuthAnnotationLinterTest {
         List<String> violations = new ArrayList<>();
         Map<String, ActualEndpoint> actual = discoverEndpoints(Set.of(RequestMethod.GET));
         Map<String, OperationBinding> expected = operationMap(registry, violations);
-        if (actual.size() < READ_ENDPOINT_FLOOR) {
+        if (actual.size() < ReusableHarnessProfile.current().count("readEndpoints", READ_ENDPOINT_FLOOR)) {
             violations.add("읽기 endpoint 스캔 하한 미달: " + actual.size());
         }
         Set<String> census = new TreeSet<>();
@@ -464,19 +467,19 @@ class SecurityAuthAnnotationLinterTest {
             violations.add("policyDefinitions exact set drift: expected=" + KNOWN_POLICIES
                     + ", actual=" + registry.policyDefinitions().keySet());
         }
-        if (registry.endpointPolicies().size() < 180) {
+        if (registry.endpointPolicies().size() < ReusableHarnessProfile.current().count("writeEndpoints", 180)) {
             violations.add("endpoint registry 하한 미달: " + registry.endpointPolicies().size());
         }
-        if (registry.operationBindings() == null || registry.operationBindings().size() < 350) {
+        if (registry.operationBindings() == null || registry.operationBindings().size() < ReusableHarnessProfile.current().count("operationBindings", 350)) {
             violations.add("operation binding registry 하한 미달");
         }
         if (!"config/governance/permission-catalog.json".equals(registry.permissionCatalog())) {
             violations.add("operation catalog 원본 경로 drift");
         }
-        if (registry.serviceGuardPolicies().size() < 40) {
+        if (registry.serviceGuardPolicies().size() < ReusableHarnessProfile.current().count("serviceGuards", 40)) {
             violations.add("SecurityUtil guard registry 하한 미달: " + registry.serviceGuardPolicies().size());
         }
-        if (registry.manualGuardPolicies().size() < 10) {
+        if (registry.manualGuardPolicies().size() < ReusableHarnessProfile.current().count("manualGuards", 10)) {
             violations.add("manual guard registry 하한 미달: " + registry.manualGuardPolicies().size());
         }
         failIfAny("AUTHORIZATION REGISTRY INTEGRITY", violations);
@@ -1031,11 +1034,24 @@ class SecurityAuthAnnotationLinterTest {
     }
 
     private PolicyRegistry loadRegistry() throws IOException {
+        return loadRegistry(true);
+    }
+
+    private PolicyRegistry loadRegistry(boolean activeScope) throws IOException {
         Path file = resolveFromRepoRoot(POLICY_FILE);
         if (!Files.isRegularFile(file)) {
             fail("인가 정책 registry 부재: " + file.toAbsolutePath());
         }
-        return new ObjectMapper().readValue(file.toFile(), PolicyRegistry.class);
+        PolicyRegistry registry = new ObjectMapper().readValue(file.toFile(), PolicyRegistry.class);
+        ReusableHarnessProfile profile = ReusableHarnessProfile.current();
+        if (!activeScope || !profile.projected()) return registry;
+        return new PolicyRegistry(registry.schemaVersion(), registry.authority(), registry.description(),
+                registry.analysisModel(), registry.policyDefinitions(),
+                registry.endpointPolicies().stream().filter(row -> profile.retainsType(row.handler())).toList(),
+                registry.serviceGuardPolicies().stream().filter(row -> profile.retainsType(row.target())).toList(),
+                registry.manualGuardPolicies().stream().filter(row -> profile.retainsSource(row.source())).toList(),
+                registry.permissionCatalog(),
+                registry.operationBindings().stream().filter(row -> profile.retainsType(row.handler())).toList());
     }
 
     /**

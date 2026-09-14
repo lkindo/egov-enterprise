@@ -250,21 +250,32 @@ public class ProductService extends BaseAbstractService {
 
 ### 6.5 레거시 데이터 이관 CLI
 
-`migration-tool`은 소스 DB와 표준 타깃 DB 사이의 선언적 mapping을 load → validate → execute → verify하는 독립 CLI다. 프로젝트의 일반 런타임에는 필요하지 않으며, 레거시 이관이 있는 파생 프로젝트에서만 포함한다.
+`migration-tool`은 소스 DB와 표준 PostgreSQL 타깃 사이에서 discover → plan → validate → load를 수행하는 독립 CLI다. 프로젝트의 일반 런타임에는 필요하지 않으며, 레거시 이관이 있는 파생 프로젝트에서만 포함한다.
 
 ```bash
-./gradlew :migration-tool:bootJar
-
-# 항상 dry-run과 검증 리포트를 먼저 확인
-java -jar migration-tool/build/libs/<jar-name>.jar \
-  --mapping=<mapping.yml> --mode=dry-run
+npm run verify:migration
+npm run review:migration
 ```
 
-`--mode=commit`은 타깃 DB를 변경하므로 mapping·대상 환경·백업/롤백·dry-run 결과를 검토하고 사용자 승인을 받은 뒤 실행한다. 현재 구현 범위와 지원하지 않는 소스 DBMS·LOB·cutover 항목은 [레거시 이관 도구 설계](../02-architecture/legacy-migration-tool-design.md)의 코드 대조 결과를 확인한다. 실제 계약은 `migration-tool/src/main/java/nuri/migration/`과 테스트가 정본이다.
+온라인 모듈 없이 별도 소스로 시작하려면 생산 저장소에서 `npm run migration:export -- --output build/migration-product/<새-디렉터리>`를 실행한다. 생성물에서는 npm 의존성 설치 없이 `npm run verify`와 `npm run review:status`를 사용한다.
+
+첫 명령은 테스트·bootJar 기술 검증이고 둘째는 이관 제품의 검토 상태 보고다. 실제 실행은 [승인형 CLI 예시](../02-architecture/legacy-migration-tool-design.md)와 [복구 런북](../04-operations/migration-recovery-runbook.md)을 따른다. mapping과 `--mode`만 넘기는 과거 진입점은 dry-run도 차단한다. `load --mode=commit`은 타깃 DB를 변경하므로 승인 plan, source/target identity, 기관 환경 검토와 백업·복구 근거가 필요하다. 기관 원장은 [검토 수명 가이드](governance-review-lifecycle.md)에 따라 작성하며 도구 자체의 쓰기 승인을 대체하지 않는다.
+
+### 6.6 재사용 프로필과 기관 도입
+
+원본 저장소에서 `npm run base:verify -- --profile core`를 실행하면 새 일회용 DB와 소스 산출물을 만들어 실제 프로필을 검증한다. `collaboration`·`demo`도 각각 실행하며 Docker·Java 21·Node·pnpm이 필요하다. 이 명령의 개발 검증 산출물과 공식 릴리스 태그 산출물의 경계는 [재사용 Base 가이드](reusable-base-guide.md)를 따른다.
+
+생성물의 `npm run verify`는 해당 프로필의 계약·하네스·스키마·프런트를 검증한다. 원본 제품의 회귀 테스트는 생산 저장소에서 계속 실행한다. 기술 검증 통과, 일반 검토 일정의 최신성, 실제 기관 운영 승인은 서로 다른 판정이다. 생성물의 온라인·이관 승인 원장은 모두 `pending`에서 시작하고, 원본 운영 메모리는 upstream 이력으로만 보존한다.
+
+생산 저장소의 CI는 기존 6개 required context와 3프로필 생성 matrix를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 산출물 runner와 gitleaks working-tree·incremental 검사를 실행한다. 원본 12개 workflow·required 명세·package·pre-push는 `config/governance/upstream-verification/`의 비활성 이력이다. CodeQL·E2E·mutation·외부 배포·예약 작업은 기관 범위에 맞춰 다시 연결해야 하며, 기본 생성물 CI를 원본과 동등한 검증이나 운영 인증으로 해석하지 않는다.
+
+생성물의 `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`에 연결된다. `verify`·`verify:full`·`verify:push`·`verify:fast`는 보수적으로 `full`을 실행하며 모든 범위에서 공통 활성 계약을 먼저 검사한다. 생산자 전용 `base:*`와 기관 환경이 필요한 `verify:e2e`·`verify:ops` 별칭은 제거된다. 생성물 required-check 템플릿은 `remoteApplied: false`이고 브랜치·App이 미설정이므로 기관의 실제 ruleset과 런타임 검증을 별도로 구성한다. 자세한 명령별 범위는 [재사용 Base 가이드 §4](reusable-base-guide.md#4-산출물-검증)를 따른다.
 
 ---
 
 ## 7. 품질 게이트 (완료 전 필수)
+
+아래 표는 생산 저장소의 실행 경로다. 온라인 생성물은 §6.6의 명령과 기관에서 구성한 추가 게이트를 사용한다.
 
 | 도메인 | 명령 | 근거 |
 |---|---|---|
@@ -274,9 +285,11 @@ java -jar migration-tool/build/libs/<jar-name>.jar \
 | Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
 | Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실 DB/E2E는 별도) |
 | Frontend 타입 | `pnpm -C frontend exec tsc --noEmit` | AGENTS 범위별 검증 |
+| 재사용 프로필 전체 기술 검증 | `npm run base:verify -- --profile core` | 새 격리 DB·소스 생성과 산출물 계약·Java·스키마·tsc·lint·build; 세 프로필 각각 실행 |
+| 독립 이관 기술 검증 | `npm run verify:migration` | migration-tool 테스트·bootJar; 실제 기관 적재 승인과 구분 |
 | 커버리지 | `make coverage` / `pnpm -C frontend test:coverage` | Backend JaCoCo + Frontend Vitest의 현재 설정 래칫 |
 | 시크릿 스캔 | `gitleaks protect --staged --verbose`(설치 시) | pre-commit은 로컬 보조, CI `secret-scan`이 required check |
 | 브랜치 보호 정합 | `npm run verify:ops` | 저장소 명세·CI·실제 GitHub ruleset 대조(네트워크·관리 읽기 권한 필요) |
 
 ---
-*Last reviewed against current sources: 2026-08-19.*
+*파생 제품·이관·검증 진입점 검토: 2026-09-14. 그 밖의 온보딩 내용 검토: 2026-08-19.*

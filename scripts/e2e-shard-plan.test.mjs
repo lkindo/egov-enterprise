@@ -7,6 +7,7 @@ import test from 'node:test';
 import {
   buildDurationBalancedPlan,
   discoverSpecs,
+  durationProfileFreshness,
   loadDurationProfile,
   parseShard,
   validateDurationProfile,
@@ -156,8 +157,9 @@ test('duration source provenance rejects missing, malformed, or future evidence'
     ['commit', 'deadbeef', /commit.*40-hex/],
     ['capturedAt', 'not-a-date', /capturedAt.*valid ISO/],
     ['capturedAt', '2026-02-30', /capturedAt.*valid ISO/],
+    ['capturedAt', '2026-02-30T00:00:00Z', /capturedAt.*valid ISO/],
+    ['capturedAt', '2026-02-28T24:00:00Z', /capturedAt.*valid ISO/],
     ['capturedAt', '2026-08-20T00:00:00Z', /capturedAt.*future/],
-    ['capturedAt', '2026-01-01', /capturedAt.*older than 120 days/],
     ['runner', '   ', /runner.*nonempty/],
     ['workers', 0, /workers.*positive integer/],
     ['workers', 1.5, /workers.*positive integer/],
@@ -199,8 +201,7 @@ test('recursive discovery includes nested specs and requires duration evidence f
       },
       durationsMs: { 'root.spec.ts': 1000 },
     };
-    // 합성 fixture 는 capturedAt 이 고정이므로 실시간 시계로 검증하면 120일 뒤 이 테스트가
-    // 신선도 상한 때문에 낡는다 — fixture 시점으로 시계를 고정한다.
+    // 누락 spec 검증과 미래 시각 검증을 독립적으로 재현한다.
     assert.match(
       validateDurationProfile(profile, specs, Date.parse('2026-08-19T12:00:00Z')).join('\n'),
       /nested\/admin\/user\.spec\.ts/,
@@ -208,6 +209,23 @@ test('recursive discovery includes nested specs and requires duration evidence f
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('120-day age requests remeasurement without disabling planning, including the actual clock boundary', (t) => {
+  const profile = loadDurationProfile();
+  const boundary = Date.parse(profile.source.capturedAt) + 120 * 86_400_000;
+  t.mock.timers.enable({ apis: ['Date'], now: boundary });
+  assert.equal(durationProfileFreshness(profile).freshness, 'due-soon');
+  const plan = buildDurationBalancedPlan(profile, 2);
+  t.mock.timers.tick(1);
+  assert.equal(durationProfileFreshness(profile).freshness, 'overdue');
+  assert.deepEqual(buildDurationBalancedPlan(profile, 2), plan);
+  t.mock.timers.tick(3650 * 86_400_000);
+  assert.deepEqual(validateDurationProfile(profile), []);
+  assert.deepEqual(buildDurationBalancedPlan(profile, 2), plan);
+  const invalid = structuredClone(profile);
+  delete invalid.durationsMs[Object.keys(invalid.durationsMs)[0]];
+  assert.throws(() => buildDurationBalancedPlan(invalid, 2), /missing duration/);
 });
 
 test('CLI emits only the selected repository-relative spec arguments', () => {

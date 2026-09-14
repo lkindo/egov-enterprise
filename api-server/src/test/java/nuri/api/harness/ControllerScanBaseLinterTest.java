@@ -117,7 +117,7 @@ class ControllerScanBaseLinterTest {
         }
 
         // 게이트 무결성: 컨트롤러 스캔이 조용히 붕괴하면 vacuous 통과가 된다.
-        if (scanned < MIN_REQUEST_CONTROLLERS) {
+        if (scanned < ReusableHarnessProfile.current().count("requestControllers", MIN_REQUEST_CONTROLLERS)) {
             fail("게이트 무결성 파손: 요청 컨트롤러 스캔 건수(" + scanned + ")가 예상 하한("
                     + MIN_REQUEST_CONTROLLERS + ") 미만 — 경로/스캔 파손 의심 (workingDir="
                     + Paths.get("").toAbsolutePath() + "). 조용한 skip 은 false-green 입니다.");

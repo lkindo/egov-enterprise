@@ -230,10 +230,18 @@ class AttachmentSourceRegistryLinterTest {
     @DisplayName("🔒 첨부 할당 writer는 exact census에 등록되고 원 업로더 가드를 저장보다 먼저 실행한다")
     void auditAttachmentAssignmentWriters() throws IOException {
         List<String> violations = attachmentMethodViolations(
-                loadAttachmentServiceSources(), ATTACHMENT_METHOD_RULES);
+                loadAttachmentServiceSources(), activeAttachmentRules());
         if (!violations.isEmpty()) {
             fail("첨부 할당 writer 계약 위반:\n - " + String.join("\n - ", violations));
         }
+    }
+
+    private static Map<String, AttachmentMethodRule> activeAttachmentRules() {
+        Map<String, AttachmentMethodRule> active = new LinkedHashMap<>();
+        ATTACHMENT_METHOD_RULES.forEach((key, rule) -> {
+            if (ReusableHarnessProfile.current().retainsSource(key)) active.put(key, rule);
+        });
+        return active;
     }
 
     @Test
@@ -384,6 +392,7 @@ class AttachmentSourceRegistryLinterTest {
     @DisplayName("🔒 Board 소유권 가드는 첨부 조회·업로드·갱신보다 먼저 실행된다")
     void auditBoardOwnerGuardPrecedesEveryAttachmentMutation() throws IOException {
         String path = "business-app/src/main/java/nuri/business/service/board/BoardService.java";
+        if (!ReusableHarnessProfile.current().retainsSource(path)) return;
         String source = loadAttachmentServiceSources().get(path);
         assertNotNull(source, "BoardService 소스를 찾을 수 없다");
 

@@ -5,7 +5,8 @@
  * Profiles are intentionally nested by cost:
  *   docs < fast < push < full
  * Browser E2E and live repository policy checks remain explicit because they
- * require running services or external credentials.
+ * require running services or external credentials. The independent migration
+ * scope verifies its CLI module without online UI governance dependencies.
  */
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -15,7 +16,7 @@ const isWin = platform() === 'win32';
 const gradlew = isWin ? '.\\gradlew.bat' : './gradlew';
 const requestedScope = (process.argv[2] || 'full').toLowerCase();
 const scope = requestedScope === 'all' ? 'full' : requestedScope;
-const allowedScopes = new Set(['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'ops']);
+const allowedScopes = new Set(['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'ops', 'migration']);
 
 if (!allowedScopes.has(scope)) {
   console.error(`알 수 없는 범위 '${requestedScope}' — ${[...allowedScopes].join('|')} 중 하나여야 합니다.`);
@@ -111,6 +112,11 @@ try {
     run('pnpm -C frontend run test:e2e');
   } else if (scope === 'ops') {
     run('node scripts/verify-branch-protection.mjs');
+  } else if (scope === 'migration') {
+    // ADR-0018: module tests use disposable fixtures; this never invokes the
+    // migration CLI against adopter data or grants an operational load approval.
+    run('node --test scripts/migration-verification-contract.test.mjs');
+    run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
   }
 
   console.log(`\n✅ [verify:${scope}] 요청 범위 검증 통과`);

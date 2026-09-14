@@ -1,6 +1,8 @@
 package nuri.business.domain.board;
 
 import nuri.foundation.domain.common.BaseEntity;
+import com.querydsl.core.annotations.PropertyType;
+import com.querydsl.core.annotations.QueryType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -27,6 +29,8 @@ public class BoardMasterOption extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "bbs_id")
+    // JPA 역참조는 유지하고, 미사용 Q 역경로의 정적 초기화 순환만 제거한다.
+    @QueryType(PropertyType.NONE)
     private BoardMaster boardMaster;
 
     @Column(length = 1, nullable = false)

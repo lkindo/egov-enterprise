@@ -7,6 +7,11 @@
 
 base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 한다"는 **양방향 동결(exact census/baseline)** 방식이다. adopter 가 브랜드 프로필을 갈아끼우고 화면을 추가·삭제하면 이 동결값들은 필연적으로 어긋난다. 그때 게이트를 끄거나 목록을 비우는 것이 아니라, **자기 실측값으로 재동결**하는 것이 이 절차의 목적이다.
 
+공식 core·collaboration·demo 생성 직후의 실패를 기관에 넘기는 절차는 아니다. [ADR-0018](../02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)의
+프로필 생성·검증 경로가 세 프로필의 기술 통과를 요구한다. 이 런북은 기관 고유 변경으로 원래 검토 범위가
+바뀐 경우에 적용한다. 생성물 snapshot·소스·원장·lock의 무결성이 달라졌다면 실제 변경 근거를 검토하고
+출시 산출물을 다시 생성·검증한다. 기존 승인을 유지하려고 hash만 다시 쓰는 방식은 허용하지 않는다.
+
 모든 단계에 다음 원칙이 적용된다([AGENTS.md Evidence guardrails](../../AGENTS.md#evidence-guardrails)).
 
 - **red 실측 후 재동결 (H2·H5)** — 동결값을 바꾸기 전에 반드시 해당 게이트를 실행해 red 와 함께 출력되는 **실측 카운트를 확인**하고, 그 값으로만 갱신한다. 게이트를 돌려보지 않고 상수를 추정치로 고치는 것은 금지다.
@@ -15,7 +20,8 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 ## 2. 재동결 대상 목록 (현존 게이트 실측)
 
-아래 6개 축이 adopter 채택 시 재동결 대상 전부다. 각 항목은 현재 저장소에 실존하는 파일로 실증한다.
+아래 6개 축은 이 런북이 다루는 기준선 재동결 범위다. 기관 운영 검토와 승인은
+[ADR-0018 검토 수명 가이드](../03-guides/governance-review-lifecycle.md)에 따라 별도로 수행한다.
 
 | # | 축 | 동결 위치 | 재동결 방법 |
 |---|---|---|---|
@@ -57,6 +63,8 @@ node scripts/ui-url-state-census.mjs --write
 
 - **수기 편집 금지** — 이 파일은 생성물이다. `--write` 로만 재생성한다.
 - 재생성 후 diff 를 리뷰한다: 새로 잡힌 URL 상태가 개인정보·프라이버시 분류 대상인지 확인한다(base 의 분류 초안: [url-state-privacy-classification-draft.md](url-state-privacy-classification-draft.md)).
+- census 재생성은 사람의 승인을 갱신하지 않는다. 승인 원장의 census hash가 달라지면 관련 분류·범위·근거를 다시 확인한 뒤 원장을 결속한다. 새 검색 surface·자격증명 key는 즉시 차단 대상이며 날짜 연장으로 해결할 수 없다.
+- `reviewBy`는 기존 정기 검토 일정으로 유지한다. 경과는 `npm run review:status`의 운영 신호이며 정상 코드 계약을 자동 무효화하지 않는다. 원본 snapshot과 기관 `pending` 검토는 별도 자료다.
 
 ## 5. 거버넌스 게이트 exact census — gates.json
 
@@ -66,7 +74,7 @@ adopter 절차:
 
 1. 게이트(테스트 클래스·ratchet)를 추가·삭제·개명하는 변경은 **같은 변경 세트에서** gates.json 의 해당 행을 갱신한다. registry 만 고치고 소스를 안 고치거나 그 반대는 계약이 red 로 잡는다.
 2. `qualityRatchets` 의 하한(coverage·mutation 등)을 adopter 실측으로 조정할 때도 §1 원칙대로 red 실측을 먼저 확인하고, 하한 하향(악화)은 사유를 리뷰에 남긴다.
-3. 검증: 루트에서 `npm run verify:fast` (registry 계약 포함) 또는 계약 테스트 직접 실행.
+3. 생산 저장소에서는 `npm run verify:fast`에 registry 계약이 포함된다. 생성물의 `verify:fast`는 산출물 `full` 범위이므로, 기관에서 확정한 registry·실행 tier를 검사하는 계약을 별도로 연결하고 직접 실행한다. 명령 이름이 같다는 이유로 원본 registry 검사 전체가 실행됐다고 판단하지 않는다.
 
 ## 6. 브랜드 프로필 키 패리티 — theme-token-contract
 
@@ -86,29 +94,33 @@ pnpm -C frontend exec vitest run src/__tests__/theme-token-contract.test.ts
 
 내부 e2e 는 [frontend/e2e/shard-duration-profile.json](../../frontend/e2e/shard-duration-profile.json) 의 spec 별 실행시간으로 shard 를 균형 분배한다([scripts/e2e-shard-plan.mjs](../../scripts/e2e-shard-plan.mjs)). 검증기는 발견된 spec 과 프로필 기록이 **양방향으로 완전 일치**할 것을 요구한다 — spec 추가 시 `missing duration profile`, 삭제 시 `stale duration profile` 로 red 다.
 
+기록 후 120일 경과는 `review:status`의 `performanceEvidence`에 재측정 필요로 보고한다. 경과만으로
+shard 계획을 차단하거나 `capturedAt`을 오늘로 바꾸지 않는다. 재측정은 실제 성공 run이 있을 때만 갱신한다.
+
 adopter 절차:
 
 1. adopter 의 e2e spec 집합이 안정된 뒤, **자기 CI 의 최근 성공 run** 에서 spec 별 실행시간을 수집한다.
 2. 프로필 JSON 을 재작성한다 — `schemaVersion: 1`, `source` 증거 필드(`workflowRunId`·`commit`·`capturedAt`(ISO, 미래 불가)·`runner`·`workers`), 전체 spec 의 `durationsMs`. source 증거 없는 임의 숫자는 검증기가 거부한다.
-3. shard 수 변화와 무관하게 브랜치 보호에는 안정 context `e2e-test` 하나만 노출하는 구조([CI workflow](../../.github/workflows/ci.yml), DEC-OPS-008)는 그대로 승계한다.
+3. 생산 저장소는 shard 수와 무관한 안정 context `e2e-test`를 사용한다([CI workflow](../../.github/workflows/ci.yml), DEC-OPS-008). 생성물의 기본 CI에는 E2E 실행이 없으므로, 기관은 자기 spec·서비스·집계 job을 먼저 구성하고 실제 context를 ruleset에 연결한다. 원본 context 이름만 복사해 검증이 결속됐다고 판단하지 않는다.
 
 ## 8. required checks 결속 재확인
 
 기준선 재동결의 마지막은 **병합 권위 재결속**이다. adopter 의 원격 저장소는 base 의 ruleset 을 자동 승계하지 않는다.
 
-1. [.github/required-checks.json](../../.github/required-checks.json) 을 adopter 의 required context 명세로 확정한다(변경 없으면 그대로 승계).
-2. 명세 ↔ CI workflow 정합은 [scripts/required-checks-contract.mjs](../../scripts/required-checks-contract.mjs) 가, 명세 ↔ **원격 브랜치 보호 실측** 대조는 [scripts/verify-branch-protection.mjs](../../scripts/verify-branch-protection.mjs) 가 수행한다.
-3. adopter 저장소에 ruleset 을 적용한 뒤 `npm run verify:ops` 로 exact-match 를 실측한다(admin 읽기 권한 필요). review policy 값(base 는 단독 운영 DEC-OPS-009 로 approval 0)은 adopter 의 인력 구조에 맞게 명세·계약 상수·결정 기록을 **함께** 바꾼다.
+1. 생산 저장소의 [.github/required-checks.json](../../.github/required-checks.json)은 6개 required context와 원본 review policy를 검증한다. 온라인 생성물의 같은 경로에는 `artifact-verification` 한 context의 기관용 템플릿이 생성된다. `remoteApplied: false`, `branch: null`, `integrationId: null`이므로 원격 적용 완료나 원본 기관 정책의 승계를 뜻하지 않는다.
+2. 생성물 CI는 자기 프로필의 기술 검증과 gitleaks working-tree·incremental 검사를 실행한다. 원본 12개 workflow·required 명세·package·pre-push는 `config/governance/upstream-verification/`의 비활성 이력이다. CodeQL·E2E·mutation·외부 배포·예약 작업은 기관 범위에 맞춰 다시 결속해야 한다. 기본 CI를 원본 6개 context와 동등한 검증이나 기관 운영 인증으로 해석하지 않는다.
+3. 기관은 대상 브랜치·GitHub App·리뷰 인력에 맞는 정책을 정하고 실제 workflow context를 ruleset에 적용한 뒤 원격 상태를 읽어 대조한다. 생성물 실행 경로·템플릿 정합은 [실행 경로 계약](../../scripts/reusable-artifact-entrypoints-contract.mjs)이 검사한다. 원본 [required-check 계약](../../scripts/required-checks-contract.mjs)과 [원격 점검기](../../scripts/verify-branch-protection.mjs)를 도입하려면 기관의 명세·계약·결정 기록을 함께 조정해야 하며, 생성물에는 생산자 전용 `verify:ops` 별칭이 제공되지 않는다.
 
 ## 9. 실행 순서 요약과 완료 기준
 
 1. §3 색 guard 2종 → §4 URL census → §5 gates.json → §6 프로필 패리티 → §7 shard 프로필 순으로 로컬 재동결.
 2. 각 항목은 "red 실측 → 재생성/갱신 → green 재실행" 을 개별 커밋으로 남긴다.
-3. 통합 검증: `npm run verify:push` (필요 범위에 따라 `verify:fe`·`verify:full`), 마지막으로 §8 의 `npm run verify:ops`.
+3. 생성물 통합 검증은 `npm run verify` 또는 `verify:push`·`verify:fast`·`verify:full`로 실행하며 이 별칭은 모두 보수적으로 `full`에 연결된다. `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`다. 공통 활성 계약은 각 범위에서 먼저 실행한다. `base:*`·`verify:e2e`·`verify:ops` 별칭은 생성물에서 제거되므로, 마지막 원격 검증은 §8에서 기관이 연결한 절차를 따른다.
 4. **완료 기준**: 전 게이트 green + 재동결 diff 가 항목별 사유와 함께 PR 리뷰로 승인됨. 게이트 비활성화·예외 목록 확대로 green 을 만든 항목이 0건이어야 한다.
 
 ## 10. 이 문서가 다루지 않는 것
 
+- 기관 배포·이관의 운영 승인. [온라인·이관 전용 preflight](../03-guides/governance-review-lifecycle.md)가 실제 환경·소유자·UTC 유효기간·현재 scope digest·통제별 근거를 검사한다. 기준선 재동결만으로 기관 사용이 승인되지 않는다.
 - base 저장소 자체의 baseline 변경 정책(그건 각 게이트 파일 상단 주석과 AGENTS.md 가 정본).
 - 시각 회귀 스냅샷(리눅스 기준선은 update-visual-baseline workflow 경로, DEC-OPS-017 참조)과 UI quality evidence(r12, ADR-0005) — adopter 가 해당 축을 승계할 때는 각 정본 문서를 따른다.
 - KRDS/KWCAG 등 외부 표준 준수 판정 — 이 절차는 저장소 내부 게이트 재동결만 다룬다.
