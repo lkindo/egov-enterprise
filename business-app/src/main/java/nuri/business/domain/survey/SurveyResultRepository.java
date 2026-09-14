@@ -13,6 +13,9 @@ import java.util.List;
 public interface SurveyResultRepository extends JpaRepository<SurveyResult, Long> {
     long countBySrvyArtclSn(Long srvyArtclSn);
 
+    /** 문항 삭제 차단 판정용(응답이 있는 문항은 지우지 않는다). */
+    long countBySrvyQstnSn(Long srvyQstnSn);
+
     // [V2_13 결속] 설문/문항/항목 삭제 시 응답 선정리용 파생 삭제
     void deleteBySrvySn(Long srvySn);
 

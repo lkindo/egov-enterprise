@@ -338,6 +338,13 @@ public class OnlinePollService {
     @Transactional
     public void deletePollItem(Long pollArtclSn) {
         Objects.requireNonNull(pollArtclSn);
+        // [2026-09-14 DEC-OPS-095] 투표가 있는 항목을 지우면 그 투표가 경고 없이 사라지고 결과가 조작된다.
+        //   설문 문항·항목 삭제와 같은 기준으로 막는다. 투표째 정리하려면 투표 전체를 삭제한다.
+        long votes = pollResultRepository.countByPollArtclSn(pollArtclSn);
+        if (votes > 0) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                    "투표 " + votes + "건이 있는 항목은 삭제할 수 없습니다. 투표를 통째로 정리하려면 투표를 삭제하세요.");
+        }
         // [V2_13 결속] 해당 항목 투표 결과 선정리 (fk_tb_onln_poll_rslt_tb_onln_poll_artcl NO ACTION)
         pollResultRepository.deleteByPollArtclSn(pollArtclSn);
         pollItemRepository.deleteById(pollArtclSn);

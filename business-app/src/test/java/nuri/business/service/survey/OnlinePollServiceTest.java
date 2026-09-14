@@ -901,4 +901,17 @@ class OnlinePollServiceTest {
         onlinePollService.deletePollItem(11L);
         verify(pollItemRepository, times(1)).deleteById(11L);
     }
+
+    /** [2026-09-14 DEC-OPS-095] 투표가 있는 항목을 지우면 그 투표가 사라져 결과가 바뀐다 — 409 로 막는다. */
+    @Test
+    @DisplayName("투표가 있는 항목은 삭제하지 않고 투표도 보존한다")
+    void deletePollItem_WithVotes_IsBlocked() {
+        given(pollResultRepository.countByPollArtclSn(11L)).willReturn(2L);
+
+        assertThatThrownBy(() -> onlinePollService.deletePollItem(11L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
+        verify(pollResultRepository, org.mockito.Mockito.never()).deleteByPollArtclSn(org.mockito.ArgumentMatchers.anyLong());
+        verify(pollItemRepository, org.mockito.Mockito.never()).deleteById(org.mockito.ArgumentMatchers.anyLong());
+    }
 }

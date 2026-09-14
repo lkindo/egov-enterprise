@@ -52,6 +52,14 @@ class InformalSanctionServiceImplTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
+    private void activeApprover(String esntlId) {
+        given(userRepository.findById(esntlId)).willReturn(Optional.of(nuri.business.domain.user.entity.User.builder()
+                .esntlId(esntlId).userId(esntlId).userNm("결재자").pswd("{bcrypt}x").userSttsCd("P").build()));
+    }
+
     private MockedStatic<SecurityUtil> securityUtilMock;
 
     @BeforeEach
@@ -176,6 +184,8 @@ class InformalSanctionServiceImplTest {
         InformalSanctionDto dto = new InformalSanctionDto();
         dto.setTaskSeCd("CD1");
         dto.setAplcntId("APP1");
+        dto.setAprvrId("APR1");
+        activeApprover("APR1");
         // 업무 구분은 COM075 에 등록된 코드여야 저장된다(2026-09-05).
         given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of(new CommonCodeDto("COM075", "CD1", "TaskName", "", "Y")));
         given(informalSanctionRepository.save(any(InformalSanction.class)))
@@ -194,6 +204,7 @@ class InformalSanctionServiceImplTest {
         dto.setTaskSeCd("CD1");
         dto.setReqYmd("20260909");
         dto.setAprvrId("APPROVER_02");
+        activeApprover("APPROVER_02");
         given(commonCodeService.getCodesByGroup("COM075"))
                 .willReturn(List.of(new CommonCodeDto("COM075", "CD1", "TaskName", "", "Y")));
         

@@ -45,11 +45,19 @@ class InformalSanctionServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private nuri.business.domain.user.repository.UserRepository userRepository;
+
     @org.mockito.Spy
     nuri.business.service.informalsanction.dto.InformalSanctionMapper informalSanctionMapper = new nuri.business.service.informalsanction.dto.InformalSanctionMapperImpl();
 
     @InjectMocks
     private InformalSanctionService informalSanctionService;
+
+    private void approverStatus(String esntlId, String userSttsCd) {
+        given(userRepository.findById(esntlId)).willReturn(Optional.of(nuri.business.domain.user.entity.User.builder()
+                .esntlId(esntlId).userId(esntlId).userNm("결재자").pswd("{bcrypt}x").userSttsCd(userSttsCd).build()));
+    }
 
     private MockedStatic<SecurityUtil> securityUtilMock;
 
@@ -114,10 +122,11 @@ class InformalSanctionServiceTest {
     void registerInformalSanctionTest() {
         // Given
         InformalSanctionDto dto = InformalSanctionDto.builder()
-                .taskSeCd("C1")
+                .taskSeCd("C1").aplcntId("user1").aprvrId("boss1")
                 .build();
         given(commonCodeService.getCodesByGroup("COM075"))
                 .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+        approverStatus("boss1", "P");
         given(informalSanctionRepository.save(any(InformalSanction.class)))
                 .willReturn(InformalSanction.builder().ifmlAtrzSn(1L).build());
 
@@ -126,6 +135,54 @@ class InformalSanctionServiceTest {
 
         // Then
         verify(informalSanctionRepository).save(any(InformalSanction.class));
+    }
+
+    /**
+     * [2026-09-14 DEC-OPS-095] 결재자는 신청자와 다른, 존재하는 활성 사용자여야 한다. 자기 자신에게 올리면 스스로
+     * 승인할 수 있고, 없거나 비활성인 사용자에게 올리면 처리할 사람이 없어 영원히 대기로 남는다.
+     */
+    @Test
+    @DisplayName("신청자 본인을 결재자로 지정한 상신은 거부한다")
+    void registerRejectsSelfApproval() {
+        InformalSanctionDto dto = InformalSanctionDto.builder().taskSeCd("C1").aplcntId("user1").aprvrId("user1").build();
+        given(commonCodeService.getCodesByGroup("COM075"))
+                .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+
+        assertThatThrownBy(() -> informalSanctionService.registerInformalSanction(dto))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("본인에게 결재를 요청할 수 없습니다");
+        verify(informalSanctionRepository, never()).save(any(InformalSanction.class));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"missing", "inactive"})
+    @DisplayName("없거나 비활성인 사용자를 결재자로 지정한 상신은 같은 문구로 거부한다")
+    void registerRejectsUnavailableApprover(String kind) {
+        InformalSanctionDto dto = InformalSanctionDto.builder().taskSeCd("C1").aplcntId("user1").aprvrId("boss1").build();
+        given(commonCodeService.getCodesByGroup("COM075"))
+                .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+        if ("inactive".equals(kind)) approverStatus("boss1", "D");
+        else given(userRepository.findById("boss1")).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> informalSanctionService.registerInformalSanction(dto))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("결재자로 지정할 수 없는 사용자입니다");
+        verify(informalSanctionRepository, never()).save(any(InformalSanction.class));
+    }
+
+    @Test
+    @DisplayName("수정으로도 결재자를 신청자 본인으로 바꿀 수 없고 기존 결재자를 보존한다")
+    void updateRejectsSelfApprovalWithoutMutation() {
+        InformalSanction entity = InformalSanction.builder().ifmlAtrzSn(1L)
+                .aplcntId("owner").taskSeCd("C1").reqYmd("20260908").aprvrId("boss").aprvYn("A").build();
+        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(commonCodeService.getCodesByGroup("COM075"))
+                .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+        InformalSanctionDto dto = InformalSanctionDto.builder().ifmlAtrzSn(1L)
+                .taskSeCd("C1").reqYmd("20260909").aprvrId("owner").build();
+
+        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("본인에게 결재를 요청할 수 없습니다");
+        assertThat(entity.getAprvrId()).isEqualTo("boss");
+        assertThat(entity.getReqYmd()).isEqualTo("20260908");
     }
 
     /**
