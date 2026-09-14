@@ -86,6 +86,69 @@ class SeedLocationLinterTest {
      */
     private static final int MIGRATION_SQL_FLOOR = 25;
 
+    /**
+     * 감사·로그 테이블({@code tb_*_log})에 행을 넣는 INSERT. [2026-09-14 DEC-OPS-092]
+     *
+     * <p>종전 R__seed_demo.sql 이 실제로 일어나지 않은 요청 12건을 {@code tb_sys_log} 에 넣어 운영 감사
+     * 로그에 섞었다. 로그 행은 시스템이 실제 사건으로 남기는 기록이므로 운영 마이그레이션 경로에서는
+     * 예외 없이 0건이어야 한다(2026-09-14 실측: 이동 후 db/migration 전수 0건).
+     */
+    private static final Pattern LOG_TABLE_INSERT = Pattern.compile(
+            "(?i)INSERT\\s+INTO\\s+(?:public\\.)?(tb_[a-z0-9_]*_log)\\b");
+
+    @Test
+    @DisplayName("🧾 운영 마이그레이션 경로의 가짜 감사·로그 행 차단 — db/migration 0건 + seed-dev 양성 대조군")
+    void auditMigrationsDoNotFabricateLogRows() throws IOException {
+        Path migrationDir = SchemaNamingLinterTest.resolveMigrationDir();
+        Path seedDevDir = migrationDir.getParent().resolve(SEED_DEV_DIR);
+
+        List<Path> migrationSql = collectSql(migrationDir);
+        if (migrationSql.size() < MIGRATION_SQL_FLOOR) {
+            fail("게이트 무결성 파손: db/migration 의 .sql 스캔(" + migrationSql.size() + ")이 예상 하한("
+                    + MIGRATION_SQL_FLOOR + ") 미만입니다. 조용한 skip 은 false-green 입니다.");
+        }
+        List<String> violations = new ArrayList<>();
+        for (Path sql : migrationSql) {
+            violations.addAll(findLogInserts(sql, "db/migration"));
+        }
+
+        // 양성 대조군: 개발 시드는 화면 확인용 감사 로그를 넣는다. 0건이면 정규식이 죽었거나 시드가 사라진 것이다.
+        int control = 0;
+        if (Files.isDirectory(seedDevDir)) {
+            for (Path sql : collectSql(seedDevDir)) {
+                control += findLogInserts(sql, "db/" + SEED_DEV_DIR).size();
+            }
+        }
+        if (control == 0) {
+            violations.add("양성 대조군 실패 — db/" + SEED_DEV_DIR + " 에서 로그 테이블 INSERT 가 1건도 검출되지 않았습니다."
+                    + " 개발 감사 로그 시드가 사라졌거나 LOG_TABLE_INSERT 정규식이 무력화된 것입니다.");
+        }
+
+        if (!violations.isEmpty()) {
+            fail("\n🧾 [SEED LOCATION LINTER] 운영 마이그레이션 경로가 감사·로그 행을 만듭니다:\n❌ "
+                    + String.join("\n❌ ", violations)
+                    + "\n💡 로그 행은 실제 사건의 기록입니다. 화면 확인용 행은 classpath:db/" + SEED_DEV_DIR
+                    + " 에만 두십시오(dev/local/e2e 전용).");
+        }
+        log.info("✅ 운영 마이그레이션 .sql {}개에 로그 테이블 INSERT 0건, seed-dev 대조군 {}건.", migrationSql.size(), control);
+    }
+
+    /** SQL 한 파일에서 주석이 아닌 로그 테이블 INSERT 를 찾는다(블록 주석·'--' 주석 라인 제외). */
+    private static List<String> findLogInserts(Path sql, String area) throws IOException {
+        String[] lines = blankBlockComments(HarnessSourceIndex.read(sql)).split("\r?\n", -1);
+        List<String> hits = new ArrayList<>();
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].trim().startsWith("--")) {
+                continue;
+            }
+            Matcher m = LOG_TABLE_INSERT.matcher(lines[i]);
+            if (m.find()) {
+                hits.add(String.format("[%s/%s:%d] %s 에 행을 넣습니다", area, sql.getFileName(), i + 1, m.group(1)));
+            }
+        }
+        return hits;
+    }
+
     @Test
     @DisplayName("🔐 알려진 자격증명 재유입 차단 — db/migration 해시 0 + seed-dev 이설 유지 + 운영 locations 청결 (W0-02)")
     void auditSeedCredentialLocation() throws IOException {

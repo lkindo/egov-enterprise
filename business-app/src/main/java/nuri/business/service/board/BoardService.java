@@ -291,6 +291,25 @@ public class BoardService extends BaseAbstractService {
                                 .ifPresent(this::assertCommunityAccess);
         }
 
+        /**
+         * URL 의 게시판에 실제로 속한 글만 돌려준다 — 다르면 없는 글로 본다.
+         *
+         * <p>[2026-09-14 DEC-OPS-092] 수정·삭제는 커뮤니티 가드를 URL 의 {@code bbsId} 로 판정하는데,
+         * 종전에는 글을 번호로만 읽어 그 글의 실제 게시판과 대조하지 않았다. 그래서 커뮤니티 게시판의 글을
+         * 커뮤니티가 아닌 게시판 ID 로 요청하면 가드를 건너뛸 수 있었다. 상세 조회는 이미 (게시판, 글번호)
+         * 쌍으로 읽어 불일치를 404 로 처리하므로 같은 의미로 맞춘다. 가드를 먼저 두는 순서는 유지한다 —
+         * 뒤로 옮기면 비회원이 404/403 차이로 글의 존재를 알아낼 수 있다.
+         */
+        private Board findPostInBoard(String bbsId, Long pstSn) {
+                Board board = boardRepository
+                                .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+                if (!java.util.Objects.equals(bbsId, board.getBbsId())) {
+                        throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
+                }
+                return board;
+        }
+
         private void bindCurrentViewerVisibility(BoardSearchCondition condition) {
                 boolean secretPostAdminOverride = SecurityUtil.hasPermission("BOARD_READ_ALL");
                 condition.setSecretPostAdminOverride(secretPostAdminOverride);
@@ -565,15 +584,13 @@ public class BoardService extends BaseAbstractService {
         public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
                 required(bbsId, "bbsId 는 null 일 수 없습니다");
                 assertCommunityAccess(bbsId); // [2026-09-08 PD-CMTY-001]
-                Board board = findOwnedPost(pstSn);
+                Board board = findOwnedPost(bbsId, pstSn);
                 updateOwnedPost(board, request, false);
         }
 
         /** 게시글 변경 및 파일 I/O보다 먼저 현재 주체의 게시글 소유권을 확정한다. */
-        private Board findOwnedPost(Long pstSn) {
-                Board board = boardRepository
-                                .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+        private Board findOwnedPost(String bbsId, Long pstSn) {
+                Board board = findPostInBoard(bbsId, pstSn);
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
                 nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL");
@@ -628,7 +645,9 @@ public class BoardService extends BaseAbstractService {
                         List<MultipartFile> files)
                         throws IOException {
                 required(bbsId, "bbsId 는 null 일 수 없습니다");
-                Board board = findOwnedPost(pstSn);
+                // [2026-09-14 DEC-OPS-092] JSON 수정(updatePost)과 같은 커뮤니티 가드. 이 경로에만 빠져 있었다.
+                assertCommunityAccess(bbsId);
+                Board board = findOwnedPost(bbsId, pstSn);
                 Long atchFileSn = request.atchFileSn();
                 boolean attachmentAlreadyValidated = false;
 
@@ -661,9 +680,7 @@ public class BoardService extends BaseAbstractService {
         @Transactional
         public void deletePost(@NonNull String bbsId, @NonNull Long pstSn, String authorId) {
                 assertCommunityAccess(required(bbsId, "bbsId 는 null 일 수 없습니다")); // [2026-09-08 PD-CMTY-001]
-                Board board = boardRepository
-                                .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+                Board board = findPostInBoard(bbsId, pstSn);
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
                 nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL");

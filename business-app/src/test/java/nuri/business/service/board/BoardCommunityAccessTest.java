@@ -223,6 +223,51 @@ class BoardCommunityAccessTest {
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
             verify(boardRepository, never()).findById(any());
         }
+
+        /** [2026-09-14 DEC-OPS-092] 첨부를 싣는 수정 경로에만 이 경계가 빠져 있었다. 파일 I/O 전에 막아야 한다. */
+        @Test
+        @DisplayName("첨부를 싣는 수정도 같은 경계다 — 파일을 만들거나 바꾸기 전에 거부한다")
+        void multipartUpdateDenied() {
+            given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);
+            BoardService service = boardService(communityBoardAccess);
+
+            assertThatThrownBy(() -> service.updatePostWithFiles(COMMUNITY_BBS, 1L, saveRequest(COMMUNITY_BBS),
+                    List.of(new org.springframework.mock.web.MockMultipartFile("file", "a.txt", "text/plain", new byte[] {1}))))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+            verify(boardRepository, never()).findById(any());
+            org.mockito.Mockito.verifyNoInteractions(fileService);
+        }
+
+        /**
+         * [2026-09-14 DEC-OPS-092] 가드는 URL 의 게시판 ID 로 판정한다. 글을 번호로만 읽으면 커뮤니티 게시판의 글을
+         * 일반 게시판 ID 로 요청해 가드를 건너뛸 수 있었다. 여기서는 작성자 본인이라 소유권 검사가 통과하므로,
+         * 게시판 대조가 없으면 세 요청 모두 성공한다.
+         */
+        @Test
+        @DisplayName("다른 게시판 ID 로 커뮤니티 글을 수정·삭제할 수 없다 — 없는 글로 본다")
+        void crossBoardPathIsNotFound() throws Exception {
+            nuri.business.domain.board.Board post = org.mockito.Mockito.spy(nuri.business.domain.board.Board.builder()
+                    .bbsId(COMMUNITY_BBS).pstSn(1L).userId(VIEWER).useYn("Y").build());
+            given(boardRepository.findById(1L)).willReturn(Optional.of(post));
+            BoardService service = boardService(communityBoardAccess);
+
+            assertThatThrownBy(() -> service.updatePost(PLAIN_BBS, 1L, saveRequest(PLAIN_BBS)))
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.business.domain.board.exception.BoardErrorCode.ARTICLE_NOT_FOUND);
+            assertThatThrownBy(() -> service.updatePostWithFiles(PLAIN_BBS, 1L, saveRequest(PLAIN_BBS), List.of()))
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.business.domain.board.exception.BoardErrorCode.ARTICLE_NOT_FOUND);
+            assertThatThrownBy(() -> service.deletePost(PLAIN_BBS, 1L, VIEWER))
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.business.domain.board.exception.BoardErrorCode.ARTICLE_NOT_FOUND);
+
+            verify(post, never()).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+            verify(post, never()).delete();
+            verify(communityBoardAccess, never()).isApprovedMember(any(), any());
+        }
+    }
+
+    private static nuri.business.service.board.dto.BoardSaveRequest saveRequest(String bbsId) {
+        return new nuri.business.service.board.dto.BoardSaveRequest(
+                bbsId, "제목", "본문", null, null, null, null, null, null, null, null, null);
     }
 
     @Nested

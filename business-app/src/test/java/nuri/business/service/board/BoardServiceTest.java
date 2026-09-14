@@ -256,6 +256,7 @@ class BoardServiceTest {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(false);
 
         Board board = mock(Board.class);
+        given(board.getBbsId()).willReturn("BBS1");
         given(board.getUserId()).willReturn("user1");
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
         
@@ -275,6 +276,7 @@ class BoardServiceTest {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(false);
 
         Board board = mock(Board.class);
+        given(board.getBbsId()).willReturn("BBS1");
         given(board.getUserId()).willReturn("user1");
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
 
@@ -289,6 +291,7 @@ class BoardServiceTest {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(false);
 
         Board board = mock(Board.class);
+        given(board.getBbsId()).willReturn("BBS1");
         given(board.getUserId()).willReturn("user1");
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
 
@@ -797,7 +800,7 @@ class BoardServiceTest {
         Long pstSn = 1L;
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null, null, null, null);
-        Board board = Board.builder().pstSn(pstSn).pstTtl("Old").userId(userId).build();
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).pstTtl("Old").userId(userId).build();
 
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
@@ -813,7 +816,7 @@ class BoardServiceTest {
     @DisplayName("게시글 수정 - 타인의 첨부로 교체하면 엔티티 변경 전에 거부한다")
     void updatePost_rejectsForeignAttachmentBeforeEntityMutation() {
         Long pstSn = 1L;
-        Board board = Board.builder()
+        Board board = Board.builder().bbsId("BBS_01")
                 .pstSn(pstSn)
                 .pstTtl("Old")
                 .userId("user1")
@@ -840,7 +843,7 @@ class BoardServiceTest {
     @DisplayName("게시글 수정 - 기존 첨부를 그대로 유지하면 재할당 검증을 생략한다")
     void updatePost_sameAttachmentSkipsAssignmentCheck() {
         Long pstSn = 1L;
-        Board board = Board.builder()
+        Board board = Board.builder().bbsId("BBS_01")
                 .pstSn(pstSn)
                 .pstTtl("Old")
                 .userId("user1")
@@ -867,7 +870,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstSn = 1L;
         String userId = "user1";
-        Board board = Board.builder().pstSn(pstSn).useYn("Y").userId(userId).build();
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).useYn("Y").userId(userId).build();
 
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
@@ -1193,7 +1196,7 @@ class BoardServiceTest {
         String eventDateStr = "2023-12-25T10:00:00";
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, eventDateStr, null, null, null, null, null);
-        Board board = org.mockito.Mockito.spy(Board.builder().pstSn(pstSn).userId(userId).build());
+        Board board = org.mockito.Mockito.spy(Board.builder().bbsId("BBS_01").pstSn(pstSn).userId(userId).build());
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
@@ -1224,7 +1227,7 @@ class BoardServiceTest {
         String userId = "user1";
         java.time.LocalDateTime existingEvent = java.time.LocalDateTime.of(2026, 5, 1, 0, 0);
 
-        Board board = org.mockito.Mockito.spy(Board.builder()
+        Board board = org.mockito.Mockito.spy(Board.builder().bbsId("BBS_01")
                 .pstSn(pstSn)
                 .userId(userId)
                 .pstBgngYmd("20260101")
@@ -1261,7 +1264,7 @@ class BoardServiceTest {
         Long pstSn = 1L;
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "2026-03-01", null, null, null, null, null);
-        Board board = org.mockito.Mockito.spy(Board.builder().pstSn(pstSn).userId(userId).build());
+        Board board = org.mockito.Mockito.spy(Board.builder().bbsId("BBS_01").pstSn(pstSn).userId(userId).build());
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
@@ -1279,7 +1282,7 @@ class BoardServiceTest {
         Long pstSn = 1L;
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "invalid-date", null, null, null, null, null);
-        Board board = org.mockito.Mockito.spy(Board.builder().pstSn(pstSn).userId(userId).build());
+        Board board = org.mockito.Mockito.spy(Board.builder().bbsId("BBS_01").pstSn(pstSn).userId(userId).build());
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
@@ -1303,7 +1306,7 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().pstSn(pstSn).userId("user1").build();
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
         given(fileService.uploadFiles(files)).willReturn(102L);
@@ -1329,7 +1332,7 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().pstSn(pstSn).userId("user1").build();
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
 
@@ -1347,7 +1350,7 @@ class BoardServiceTest {
     void updatePostWithFiles_nonOwnerCannotMutateExistingAttachment() throws IOException {
         Long pstSn = 1L;
         Long atchFileSn = 101L;
-        Board board = Board.builder()
+        Board board = Board.builder().bbsId("BBS_01")
                 .pstSn(pstSn)
                 .userId("owner")
                 .atchFileSn(atchFileSn)
@@ -1374,7 +1377,7 @@ class BoardServiceTest {
     @DisplayName("파일 포함 수정 - 게시글 비소유자는 새 파일 업로드 전에 거부한다")
     void updatePostWithFiles_nonOwnerCannotUploadNewAttachment() throws IOException {
         Long pstSn = 1L;
-        Board board = Board.builder().pstSn(pstSn).userId("owner").build();
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("owner").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("other-user"));
@@ -1433,7 +1436,7 @@ class BoardServiceTest {
     @DisplayName("게시글 수정 - 작성자 본인이 아니고 관리자도 아니면 접근 거부")
     void updatePost_AccessDenied() {
         Long pstSn = 1L;
-        Board board = Board.builder().pstSn(pstSn).userId("owner").build();
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("owner").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("other_user"));
 
@@ -1448,7 +1451,7 @@ class BoardServiceTest {
     @DisplayName("게시글 삭제 - 작성자 본인이 아니고 관리자도 아니면 접근 거부")
     void deletePost_AccessDenied() {
         Long pstSn = 1L;
-        Board board = Board.builder().pstSn(pstSn).userId("owner").build();
+        Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("owner").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("other_user"));
 
@@ -1472,7 +1475,7 @@ class BoardServiceTest {
         boardService.createPostWithFiles(userId, request, Collections.emptyList());
         
         // update
-        Board board = Board.builder().pstSn(1L).userId(userId).build();
+        Board board = Board.builder().bbsId("BBS_01").pstSn(1L).userId(userId).build();
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
         
