@@ -41,9 +41,27 @@ public class RateLimitFilter implements Filter {
     private final int requestsPerMinute;
     private final int loginRequestsPerMinute;
 
+    /**
+     * 429 거절 카운터 메트릭 이름 — Prometheus 에서는 {@code security_ratelimit_rejected_total} 이다.
+     * {@code config/observability/prometheus-alert-rules.yml} 의 경보가 이 이름에 결속하며,
+     * {@code scripts/observability-alert-rules-contract.test.mjs} 가 두 곳의 정합을 고정한다. 바꾸면 경보가 끊긴다.
+     */
+    public static final String REJECTION_METRIC = "security.ratelimit.rejected";
+
+    /** 거절 버킷 태그. 값은 {@code login}·{@code all} 둘뿐이다 — IP·URI 를 태그로 두면 시계열이 무한히 늘어난다. */
+    public static final String REJECTION_BUCKET_TAG = "bucket";
+
+    /**
+     * [2026-09-14] 선택 주입. 이 필터는 {@code HIGHEST_PRECEDENCE} 라 HTTP 관측 필터보다 먼저 응답을 끝내므로
+     * 429 는 {@code http.server.requests} 에 **잡히지 않는다**. 그래서 경보의 원천은 이 카운터다.
+     * 레지스트리가 없는 컨텍스트에서도 필터 생성이 실패하지 않도록 {@link org.springframework.beans.factory.ObjectProvider} 로 받는다.
+     */
+    private final org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistryProvider;
+
     public RateLimitFilter(nuri.foundation.security.net.ClientIpResolver clientIpResolver,
             @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.requests-per-minute:10000}") int requestsPerMinute,
-            @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.login-requests-per-minute:2000}") int loginRequestsPerMinute) {
+            @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.login-requests-per-minute:2000}") int loginRequestsPerMinute,
+            org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistryProvider) {
         if (requestsPerMinute < 1 || loginRequestsPerMinute < 1) {
             // 0 이하는 "제한 없음" 이 아니라 모든 요청 거부가 된다 — 조용히 전체 장애로 뜨지 않게 기동에서 막는다.
             throw new IllegalStateException("요청 제한 한도는 1 이상이어야 합니다: requests-per-minute="
@@ -52,6 +70,7 @@ public class RateLimitFilter implements Filter {
         this.clientIpResolver = clientIpResolver;
         this.requestsPerMinute = requestsPerMinute;
         this.loginRequestsPerMinute = loginRequestsPerMinute;
+        this.meterRegistryProvider = meterRegistryProvider;
     }
 
     /** 버킷 맵 상한. 초과 시 W-TinyLFU 가 저빈도 키부터 축출한다. */
@@ -140,15 +159,18 @@ public class RateLimitFilter implements Filter {
      * 설정 오류(용량 과소)이거나 공격 신호다. INFO 로 두면 운영 로그에서 묻힌다.
      * 반대로 ERROR 로 두면 정상 방어 동작이 알람을 무디게 만든다(W1-D4 가 고친 그 패턴).
      *
-     * <p>[메트릭이 아니라 로그인 이유] business-core 는 Micrometer 를 선택 의존으로만 쓴다.
-     * 여기서 {@code MeterRegistry} 를 생성자 주입하면 그 빈이 없는 컨텍스트(단위 테스트 슬라이스 등)에서
-     * 필터 생성이 실패해 <b>레이트리밋이 통째로 빠진 채 테스트가 초록</b>이 되는 위험이 있다.
-     * 카운터는 프로세스 내부 {@link java.util.concurrent.atomic.AtomicLong} 으로 두고, 로그를 1차 신호로 삼는다.
-     * 외부 카운터가 필요해지면 선택 주입과 actuator 노출면을 함께 설계한다. 그 전까지는 429 로그가
-     * 운영 관측 계약이고 이 값은 프로세스 내부 진단용이다.
+     * <p>[메트릭은 선택 주입이다 — 2026-09-14] 종전에는 {@code MeterRegistry} 를 생성자 주입하면 그 빈이 없는
+     * 컨텍스트(단위 테스트 슬라이스 등)에서 필터 생성이 실패해 <b>레이트리밋이 통째로 빠진 채 테스트가 초록</b>이
+     * 되는 위험 때문에 로그만 남겼다. 이제 {@link org.springframework.beans.factory.ObjectProvider} 로 받아 그 위험 없이
+     * {@link #REJECTION_METRIC} 을 올린다. 노출면은 이미 관리 포트 분리(W1-12)의 {@code /actuator/prometheus} 다.
+     * 로그는 누가 맞고 있는지(IP·URI), 카운터는 얼마나 자주인지(경보)를 맡는다.
      */
     private void recordRejection(HttpServletRequest request, String clientIp, String deniedBy) {
         long total = rejectedCount.incrementAndGet();
+        io.micrometer.core.instrument.MeterRegistry registry = meterRegistryProvider.getIfAvailable();
+        if (registry != null) {
+            registry.counter(REJECTION_METRIC, REJECTION_BUCKET_TAG, deniedBy).increment();
+        }
         // bucket 은 한도 조정의 근거다 — 로그인 한도와 전체 한도 중 어느 쪽이 막았는지 로그만으로 구분돼야 한다.
         LOG.warn("[RATE-LIMIT] 429 거절 — ip={} method={} uri={} bucket={} 누적={}",
                 nuri.foundation.security.util.SafeLog.text(clientIp), nuri.foundation.security.util.SafeLog.text(request.getMethod()),

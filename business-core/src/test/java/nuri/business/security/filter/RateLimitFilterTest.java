@@ -1,7 +1,11 @@
 package nuri.business.security.filter;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,17 +25,33 @@ class RateLimitFilterTest {
 
     private RateLimitFilter filter;
     private FilterChain filterChain;
+    private SimpleMeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
         // [2026-09-14 ADR-0019] 한도는 JVM 시스템 프로퍼티가 아니라 생성자(설정 속성)로 받는다.
-        filter = newFilter(100, 20);
+        meterRegistry = new SimpleMeterRegistry();
+        filter = newFilter(100, 20, meterRegistry);
         filterChain = mock(FilterChain.class);
     }
 
     private static RateLimitFilter newFilter(int requestsPerMinute, int loginRequestsPerMinute) {
+        return newFilter(requestsPerMinute, loginRequestsPerMinute, null);
+    }
+
+    private static RateLimitFilter newFilter(int requestsPerMinute, int loginRequestsPerMinute, MeterRegistry registry) {
+        StaticListableBeanFactory beans = new StaticListableBeanFactory();
+        if (registry != null) {
+            beans.addBean("meterRegistry", registry);
+        }
         return new RateLimitFilter(new nuri.foundation.security.net.ClientIpResolver(TRUSTED),
-                requestsPerMinute, loginRequestsPerMinute);
+                requestsPerMinute, loginRequestsPerMinute, beans.getBeanProvider(MeterRegistry.class));
+    }
+
+    private double rejected(String bucket) {
+        Counter counter = meterRegistry.find(RateLimitFilter.REJECTION_METRIC)
+                .tag(RateLimitFilter.REJECTION_BUCKET_TAG, bucket).counter();
+        return counter == null ? 0 : counter.count();
     }
 
     private MockHttpServletResponse send(String remoteAddr, String uri) throws ServletException, IOException {
@@ -56,6 +76,9 @@ class RateLimitFilterTest {
         assertEquals("application/json;charset=UTF-8", blocked.getContentType());
         // [W0-P1-6 보완] 429 가 관측 가능해야 한다.
         assertEquals(1, filter.rejectedCountForTest(), "429 거절은 카운터에 계상되어야 한다");
+        // [2026-09-14] 경보 원천 — 429 는 http.server.requests 에 잡히지 않으므로 이 메트릭이 유일한 신호다.
+        assertEquals(1.0, rejected("login"), "로그인 버킷 거절은 bucket=login 으로 계상되어야 한다");
+        assertEquals(0.0, rejected("all"), "로그인 거절이 전체 버킷 거절로 계상되면 한도 조정 근거가 뒤섞인다");
     }
 
     @Test
@@ -81,6 +104,7 @@ class RateLimitFilterTest {
         }
 
         assertEquals(0, filter.rejectedCountForTest(), "허용된 요청은 거절 카운터에 잡히면 안 된다");
+        assertEquals(0.0, rejected("login") + rejected("all"), "허용된 요청은 거절 메트릭에 잡히면 안 된다");
     }
 
     @Test
@@ -91,6 +115,37 @@ class RateLimitFilterTest {
         }
 
         assertEquals(429, send("10.0.0.1", "/api/v1/board/list").getStatus());
+        assertEquals(1.0, rejected("all"), "전체 버킷 거절은 bucket=all 로 계상되어야 한다");
+    }
+
+    /**
+     * 경보 규칙은 Prometheus 노출 이름에 결속한다. 점 표기 → 밑줄 + {@code _total} 변환을 추론하지 않고 실제
+     * Prometheus 레지스트리의 scrape 출력으로 고정한다 — observability-alert-rules 계약이 이 문자열을 참조한다.
+     */
+    @Test
+    @DisplayName("[2026-09-14] Prometheus 로는 security_ratelimit_rejected_total{bucket=...} 로 노출된다")
+    void exportsPrometheusCounterName() throws ServletException, IOException {
+        io.micrometer.prometheusmetrics.PrometheusMeterRegistry prometheus =
+                new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
+                        io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT);
+        filter = newFilter(1, 1, prometheus);
+
+        send("10.0.0.10", "/api/v1/auth/login");
+        send("10.0.0.10", "/api/v1/auth/login");
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+                prometheus.scrape().contains("security_ratelimit_rejected_total{bucket=\"login\"} 1.0"),
+                prometheus.scrape());
+    }
+
+    @Test
+    @DisplayName("[2026-09-14] 메트릭 레지스트리가 없어도 필터는 생성되고 429 를 낸다 — 선택 주입이 레이트리밋을 빼지 않는다")
+    void limitsWithoutMeterRegistry() throws ServletException, IOException {
+        filter = newFilter(1, 1);
+
+        assertEquals(200, send("10.0.0.9", "/api/v1/boards").getStatus());
+        assertEquals(429, send("10.0.0.9", "/api/v1/boards").getStatus());
+        assertEquals(1, filter.rejectedCountForTest());
     }
 
     @Test

@@ -37,6 +37,8 @@ services:
 
   api:
     environment:
+      # 로그 수집기를 붙일 때는 `prod,json-logs` 로 바꿔 ECS JSON 콘솔 로그를 켠다
+      #   (docs/04-operations/observability-baseline.md). prod 는 빼지 않는다.
       SPRING_PROFILES_ACTIVE: prod
       # base 의 datasource 고정 JSON 을 무력화한다. 운영 접속 정보는 아래 개별 변수로만 들어온다.
       SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}'

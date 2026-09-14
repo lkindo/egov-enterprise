@@ -133,6 +133,7 @@
 | [improvement-validation-2026-09-09.md](04-operations/improvement-validation-2026-09-09.md) | 개선 우선순위 1~6의 검증 범위와 OCI 표준 불일치 적용 검토안 |
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |
 | [log-retention-policy.md](04-operations/log-retention-policy.md) | 로그 보존기간·개인정보 파기 정책 |
+| [observability-baseline.md](04-operations/observability-baseline.md) | 관측성 기본값 — 429·로그인 실패 메트릭, JSON 로그 opt-in(`json-logs`), Prometheus 경보 예시와 드리프트 계약 |
 | [database-optimization-guide.md](04-operations/database-optimization-guide.md) | DB 최적화 |
 | [performance-optimization-guide.md](04-operations/performance-optimization-guide.md) | 성능 최적화 |
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
