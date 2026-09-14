@@ -200,8 +200,31 @@ class UserServiceTest {
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("testuser")).willReturn(Optional.of(mock(User.class)));
             
-            assertThrows(BusinessException.class, () -> 
+            assertThrows(BusinessException.class, () ->
                 userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("USER").build()));
+        }
+    }
+
+    /**
+     * [2026-09-14] access token subject 는 esntlId 이고 인증 어댑터는 그 값을 로그인 ID 로 먼저 찾는다.
+     * 기존 사용자의 esntlId 와 같은 로그인 ID 를 만들 수 있으면 그 사용자의 토큰이 새 계정으로 해석된다.
+     * 초기 관리자 식별자는 관리자 등록 ID 규칙(영문·숫자·밑줄 4~20자)을 그대로 통과한다.
+     */
+    @Test
+    @DisplayName("사용자 등록 - 기존 사용자의 내부 식별자와 같은 로그인 ID 는 중복으로 거부한다")
+    void registerUserRejectsLoginIdEqualToExistingEsntlId() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            String adminEsntlId = nuri.foundation.constants.Constants.User.SYSTEM_ADMIN_ESNTL_ID;
+            given(userRepository.findByUserId(adminEsntlId)).willReturn(Optional.empty());
+            given(userRepository.existsById(adminEsntlId)).willReturn(true);
+
+            var error = assertThrows(BusinessException.class, () -> userService.registerUser(
+                    UserDto.builder().userId(adminEsntlId).pswd("password").userNm("홍길동").role("USER").build()));
+
+            assertEquals(nuri.business.domain.user.exception.UserErrorCode.DUPLICATE_USER_ID, error.getErrorCode());
+            verify(userRepository, never()).saveAndFlush(any());
         }
     }
 
@@ -209,14 +232,16 @@ class UserServiceTest {
     @DisplayName("비밀번호 변경 테스트 - 성공")
     void changePasswordSuccessTest() {
         User user = mock(User.class);
+        given(user.getEsntlId()).willReturn("USR_ESNTL_1");
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
         given(user.getPswd()).willReturn("oldEncoded");
-        
+
         given(passwordEncoder.matches("old", "oldEncoded")).willReturn(true);
         given(passwordEncoder.encode("new")).willReturn("newEncoded");
 
         assertDoesNotThrow(() -> userService.changePassword("user1", "old", "new"));
         verify(user).updatePassword("newEncoded");
+        verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of("USR_ESNTL_1"));
     }
 
     @Test
@@ -461,11 +486,14 @@ class UserServiceTest {
             org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User user = mock(User.class);
+            given(user.getEsntlId()).willReturn("USR_ESNTL_1");
             given(userRepository.findById("user1")).willReturn(Optional.of(user));
             given(passwordEncoder.encode("newpwd")).willReturn("encoded");
-            
+
             userService.updatePasswordByAdmin("user1", "newpwd");
             verify(user).updatePassword("encoded");
+            // 관리자 초기화도 이전 자격으로 발급된 refresh token 을 남기지 않는다.
+            verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of("USR_ESNTL_1"));
         }
     }
 
@@ -523,6 +551,7 @@ class UserServiceTest {
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.updatePasswordByAdmin("user1", "newpwd"));
+            verify(refreshTokenRepository, never()).deleteAllByEsntlIdIn(anyList());
         }
     }
 

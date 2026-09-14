@@ -239,6 +239,8 @@ class UserServiceAdditionalTest {
         // Then
         assertThat(user.getPswd()).isEqualTo(encodedNewPassword);
         verify(passwordEncoder).encode(newPassword);
+        // 새 비밀번호와 무관하게 재발급을 계속 받던 기존 refresh token 을 끊는다(esntlId 키).
+        verify(refreshTokenRepository).deleteAllByEsntlIdIn(java.util.List.of("ESNTL_" + userId));
     }
 
     @Test
@@ -261,6 +263,8 @@ class UserServiceAdditionalTest {
         assertThatThrownBy(() -> userService.changePassword(userId, oldPassword, newPassword))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", UserErrorCode.INVALID_PASSWORD);
+        // 현재 비밀번호를 모르는 요청이 남의 세션을 끊는 수단이 되면 안 된다.
+        verify(refreshTokenRepository, never()).deleteAllByEsntlIdIn(anyList());
     }
 
     @Test
