@@ -6,7 +6,7 @@ authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-09-14
-verified_against: c45d34b8f07118d9345cea9b59e156c734609f01
+verified_against: 554973785a11c27d5dd8580d6b36678f42b10660
 canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
   - ../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md
@@ -60,7 +60,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 |---|---|---|---|
 | CTX-001 | Gradle 포함 모듈은 `foundation`, `business-core`, `business-app`, `api-server`, `migration-tool` 5개다. | [settings.gradle](../../settings.gradle) | 2026-08-18 |
 | CTX-002 | 백엔드는 Java 21, Spring Boot 3.5.16, eGovFrame 5.0.0 축이다. | [build.gradle](../../build.gradle), [version catalog](../../gradle/libs.versions.toml) | 2026-08-18 |
-| CTX-003 | 루트 스크립트는 Node 22 이상과 npm lockfile을, 프런트엔드는 Node 22 이상·pnpm 9 lockfile을 사용한다. 프런트는 Next.js 16.3.4 계열·React 19.2.8 계열이다. | [package.json](../../package.json), [package-lock.json](../../package-lock.json), [frontend/package.json](../../frontend/package.json), [frontend/pnpm-lock.yaml](../../frontend/pnpm-lock.yaml), [.nvmrc](../../.nvmrc) | 2026-09-10 |
+| CTX-003 | 루트 스크립트는 Node 22 이상과 npm lockfile을, 프런트엔드는 Node 22 이상·pnpm 9 lockfile을 사용한다. 프런트는 Next.js 16.3.4 계열·React 19.3.0 계열이다. | [package.json](../../package.json), [package-lock.json](../../package-lock.json), [frontend/package.json](../../frontend/package.json), [frontend/pnpm-lock.yaml](../../frontend/pnpm-lock.yaml), [.nvmrc](../../.nvmrc) | 2026-09-14 |
 | CTX-004 | 프론트 계약 생성의 결정적 기본 경로는 `codegen:file` 뒤 `codegen:zod`이며, live `codegen:ts`는 API 서버가 필요하다. | [frontend/package.json](../../frontend/package.json), [API 문서 가이드](../../docs/03-guides/api-documentation-guide.md) | 2026-08-18 |
 | CTX-005 | main 병합 명세는 `backend-build`, `frontend-build`, `secret-scan`, `e2e-test`, `mutation-test`, `secure-coding` 6개 required context와 DEC-OPS-009의 단독 운영 review policy다. CodeQL SAST는 Java·JavaScript/TypeScript의 High/Critical을 차단하며, 원격 적용 상태는 대상 SHA와 `verify:ops`로 확인한다. | [.github/required-checks.json](../../.github/required-checks.json), [CI 가이드](../../docs/03-guides/cicd-pipeline.md), [branch verifier](../../scripts/verify-branch-protection.mjs) | 2026-09-09 |
 | CTX-006 | DB 표준의 규범 SSOT는 DB 헌법이고, 물리 변경 판단은 live metadata/schema 실측을 함께 요구한다. | [DB 헌법](../knowledge/db-standard-constitution/artifacts/constitution.md), [AGENTS Evidence guardrails](../../AGENTS.md#evidence-guardrails) | 2026-08-18 |

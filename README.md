@@ -37,7 +37,7 @@
 - **DB Migration**: Flyway (`V2_0` Postgres 표준 베이스라인 — 빈 DB 부팅 가능)
 - **Security**: Spring Security 6.x, JWT (Json Web Token)
 - **API**: RESTful API with OpenAPI 3.0
-- **Build**: Gradle 9.6.1 (Version Catalog)
+- **Build**: Gradle 9.7.1 (Version Catalog)
 
 ---
 
