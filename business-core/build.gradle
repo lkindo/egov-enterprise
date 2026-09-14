@@ -26,7 +26,8 @@ dependencies {
     // [2026-08-07 이관] com.querydsl -> io.github.openfeign.querydsl (CVE-2024-49203).
     //   원본은 5.1.0 이 마지막이라 패치가 나오지 않는다. 자바 패키지는 `com.querydsl.*` 로
     //   동일하므로 import 를 쓰는 소스 94개 파일은 그대로다.
-    api variantOf(libs.querydsl.jpa) { classifier('jakarta') }
+    // Querydsl 7 publishes Jakarta JPA in the main artifact; its APT Jakarta variant remains available.
+    api libs.querydsl.jpa
     annotationProcessor variantOf(libs.querydsl.apt) { classifier('jakarta') }
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
