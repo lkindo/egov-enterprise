@@ -103,6 +103,13 @@ allprojects {
         }
         */
     }
+
+    // DC 13 creates a task-local DataExtension with an explicit default, which overrides
+    // its convention from dependencyCheck.data.directory. Preserve the configured cache provider.
+    def dependencyCheckDataDirectory = extensions.getByName('dependencyCheck').data.directory
+    tasks.withType(org.owasp.dependencycheck.gradle.tasks.ConfiguredTask).configureEach { task ->
+        task.data.directory.set(dependencyCheckDataDirectory)
+    }
 }
 
 tasks.withType(Test) {
