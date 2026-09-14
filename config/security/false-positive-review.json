@@ -36,11 +36,11 @@
         },
         {
           "file": "frontend/src/app/api/auth/login/route.ts",
-          "sha256": "31df84bde966072db66389f2bd938c56a62d80c044eda89331030b1cc1f350e1"
+          "sha256": "8d00baeed752e5c96a3de1f136e679a54d090d1a04a7ccb05634e0ff02654ccc"
         },
         {
           "file": "frontend/src/app/api/auth/reissue/route.ts",
-          "sha256": "75d917746432e351779e3d244c8de4f279f0098e12ff0cf2701deb79b2647f2a"
+          "sha256": "ddca9c5573f4d691d2ebe0008a79c76b212e93fd8a3cdebf39d4d1552b14bb1c"
         },
         {
           "file": "frontend/src/lib/auth/session-cookie-policy.ts",

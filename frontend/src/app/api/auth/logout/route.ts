@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { authLogoutResponseSchema } from '@/lib/auth/auth-bff-contract';
+import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
 import {
   parseGeneratedOperationRequest,
   parseGeneratedOperationResponse,
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
       headers: {
         'Cookie': cookieHeader,
         ...(resolvedAuthHeader ? { 'Authorization': resolvedAuthHeader } : {}),
+        // 요청 제한·감사 IP 입력(ADR-0019). 신뢰 앞단 프록시가 없으면 넘기지 않는다.
+        ...forwardedClientIpHeaders(request.headers),
       },
     });
     parseGeneratedOperationResponse(logoutOperation, response.data);

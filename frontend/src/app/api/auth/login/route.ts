@@ -4,6 +4,7 @@ import { getJwtExpiryMs, cookieMaxAgeSecondsFrom } from '@/lib/auth/jwt';
 import { safeLoginFailure } from '@/lib/auth/login-error';
 import { authLoginResponseSchema } from '@/lib/auth/auth-bff-contract';
 import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
+import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
 import {
   parseGeneratedOperationRequest,
   parseGeneratedOperationResponse,
@@ -41,6 +42,8 @@ export async function POST(request: NextRequest) {
     const response = await axios.post(`${BACKEND_URL}/auth/login`, upstreamRequest, {
       headers: {
         'Content-Type': 'application/json',
+        // 로그인 IP 제한 정책·로그인 IP 기록의 입력이다(ADR-0019). 신뢰 앞단 프록시가 없으면 넘기지 않는다.
+        ...forwardedClientIpHeaders(request.headers),
       },
     });
 

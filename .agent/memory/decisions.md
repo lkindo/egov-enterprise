@@ -58,6 +58,7 @@ refresh_triggers:
 | ADR-0016 | accepted | 인가를 그룹·복수 사용자배정·유형별 기능/메뉴배정 3개와 같은 트랜잭션 감사 1개로 통합하고 구 writer 종료 후 수동 전환한다. | 최소 테이블과 동일한 권한 의미·회수·감사·동시 수정 보호를 함께 유지한다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) | 2026-09-10 | DEC-OPS-023 ②·037·042·046·064의 역할 판정과 DEC-OPS-067의 구 권한·롤 UI 부분 |
 | ADR-0017 | accepted | 현재 제품을 과업 중심 4개 메뉴 영역으로 재편하고 중복 진입점을 통합하며 기존 기능 권한을 보존한다. | 사용자가 OCI·소스 실측에 따른 메뉴 이동·추가·병합안을 승인했다. | [ADR-0017](../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 2026-09-11 | - |
 | ADR-0018 | accepted | 일반 검토 최신성·기술 계약·기관 승인을 분리한다. 세 프로필 실제 산출물 검증, 명시 소유권 기반 원장·메모리 투영과 무결성, 기관별 실행 artifact 결속을 적용한다. 원본 운영 사실은 upstream 이력이며 기관 승인은 pending에서 시작한다. | 사용자가 D + E와 후속 F 확대 및 정합 감사의 권장 수정 순서를 승인했다. 실제 위반·미검토·한시 예외 만료·이관 쓰기 경계는 유지한다. | [ADR-0018](../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 2026-09-14 | DEC-OPS-027 ③·DEC-OPS-087 ②·UI quality 및 E2E duration의 일반 최신성 차단, DEC-OPS-077 ⑤의 축소 프로필 red 허용 기대치 |
+| ADR-0019 | accepted | 운영 오버레이에 X-Forwarded-For를 접속 주소로 덮어쓰는 비루트 nginx edge를 두고 Next 공개 포트를 비운다. Next는 `TRUSTED_EDGE_PROXY=true`일 때만 인증 BFF와 서버 측 API 호출에 사용자 IP를 싣고, 요청 제한 한도는 설정 속성으로 받는다(기본값은 종전 동작). | 사용자 IP가 로그인 IP 제한·로그인 기록·요청 제한에서 Next 주소 하나로 모이거나 rewrite 경로에서 위조될 수 있었다(GAP-SEC-004). 사용자가 개선 계획의 권고 형상을 승인했다. | [ADR-0019](../../docs/02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md) | 2026-09-14 | - |
 
 ## 운영 결정 index
 

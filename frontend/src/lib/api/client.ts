@@ -3,6 +3,7 @@ import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
+import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
 import { assertCurrentAuthorizationRequest, getAuthorizationRequestEpoch, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 
 /*
@@ -77,6 +78,17 @@ axiosInstance.interceptors.request.use(
       } catch {
         // 빌드 타임이나 만료된 세션 시 cookies() 접근 불가 상황 대응
         token = null;
+      }
+      // 서버 컴포넌트·서버 액션의 백엔드 호출도 사용자 IP 를 싣는다(ADR-0019). 싣지 않으면 모든 사용자의
+      // 서버 측 조회가 Next 주소 하나의 요청 제한 버킷을 같이 쓴다. 신뢰 앞단 프록시가 없으면 넘기지 않는다.
+      // 요청 범위 밖(빌드 타임)이면 headers() 가 실패하므로 토큰 처리와 분리해 조용히 건너뛴다.
+      try {
+        const { headers } = await import('next/headers');
+        for (const [name, value] of Object.entries(forwardedClientIpHeaders(await headers()))) {
+          if (!config.headers[name]) config.headers[name] = value;
+        }
+      } catch {
+        // 요청 범위 밖 — 넘길 사용자 IP 가 없다.
       }
     }
     

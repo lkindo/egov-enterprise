@@ -583,3 +583,36 @@ describe('POST /api/auth/logout', () => {
     expect(JSON.stringify(body)).not.toContain(privateValue);
   });
 });
+
+/**
+ * [2026-09-14 ADR-0019 · GAP-SEC-004] 인증 BFF 는 백엔드를 서버에서 부르므로 사용자 IP 를 싣지 않으면 로그인 IP
+ * 제한 정책·로그인 IP 기록·요청 제한이 Next 주소 하나로 판정된다. 앞단 프록시가 헤더를 덮어쓰는 형상에서만 싣는다.
+ */
+describe.each([
+  { name: 'login', call: () => login(postRequest('/api/auth/login', { userId: 'u', password: 'p' }, { 'x-forwarded-for': '203.0.113.9' })) },
+  { name: 'reissue', call: () => reissue(postRequest('/api/auth/reissue', undefined, { cookie: 'refreshToken=r', 'x-forwarded-for': '203.0.113.9' })) },
+  { name: 'logout', call: () => logout(postRequest('/api/auth/logout', undefined, { cookie: 'accessToken=t', 'x-forwarded-for': '203.0.113.9' })) },
+])('$name Route Handler의 사용자 IP 전달', ({ call }) => {
+  beforeEach(() => {
+    mockedPost.mockResolvedValue({
+      status: 200,
+      data: tokenEnvelope({ accessToken: tokenWithExp(inOneHour()), role: 'ROLE_USER' }),
+      headers: {},
+    });
+  });
+
+  it('신뢰 앞단 프록시 형상이면 받은 사용자 IP 를 백엔드로 넘긴다', async () => {
+    vi.stubEnv('TRUSTED_EDGE_PROXY', 'true');
+    await call();
+
+    const [, , config] = mockedPost.mock.calls[0];
+    expect((config as { headers: Record<string, string> }).headers['X-Forwarded-For']).toBe('203.0.113.9');
+  });
+
+  it('신뢰 앞단 프록시가 없으면 넘기지 않는다 — 직접 공개된 Next 에서는 위조 값일 수 있다', async () => {
+    await call();
+
+    const [, , config] = mockedPost.mock.calls[0];
+    expect((config as { headers: Record<string, string> }).headers['X-Forwarded-For']).toBeUndefined();
+  });
+});
