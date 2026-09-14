@@ -249,6 +249,67 @@ class JwtTokenProviderTest {
                 () -> jwtTokenProvider.getAuthentication(token));
     }
 
+    /**
+     * [2026-09-14 DEC-OPS-094] 비밀번호를 바꾸면 그 전에 발급된 access token 은 만료 전이라도 거부한다.
+     * JWT 발급 시각은 초 단위로 내림 저장되므로 같은 초의 토큰은 통과시키는 경계를 함께 고정한다.
+     */
+    @Nested
+    @DisplayName("비밀번호 변경 전 발급 토큰 거부")
+    class CredentialChange {
+        private final java.time.Instant changedAt = java.time.Instant.parse("2026-09-14T01:00:00.700Z");
+
+        private String accessTokenIssuedAt(java.time.Instant issuedAt) {
+            var builder = Jwts.builder().subject("subject").claim("typ", "access")
+                    .expiration(new Date(System.currentTimeMillis() + 3_600_000L))
+                    .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()));
+            if (issuedAt != null) builder.issuedAt(Date.from(issuedAt));
+            return builder.compact();
+        }
+
+        private void currentAccount(java.time.Instant credentialsChangedAt) {
+            when(userDetailsService.loadUserByUsername("subject")).thenReturn(
+                    nuri.foundation.security.service.CustomUserDetails.builder()
+                            .esntlId("subject").enabled(true).lockAt("N")
+                            .credentialsChangedAt(credentialsChangedAt).build());
+        }
+
+        @Test
+        @DisplayName("변경 전 초에 발급된 토큰은 거부한다")
+        void rejectsTokenIssuedBeforeChange() {
+            currentAccount(changedAt);
+            String token = accessTokenIssuedAt(java.time.Instant.parse("2026-09-14T00:59:59Z"));
+
+            assertThrows(org.springframework.security.authentication.CredentialsExpiredException.class,
+                    () -> jwtTokenProvider.getAuthentication(token));
+        }
+
+        @Test
+        @DisplayName("같은 초·이후에 발급된 토큰은 통과한다 — 변경 직후 다시 로그인한 토큰을 끊지 않는다")
+        void acceptsTokenIssuedInTheSameSecondOrLater() {
+            currentAccount(changedAt);
+
+            assertThat(jwtTokenProvider.getAuthentication(accessTokenIssuedAt(java.time.Instant.parse("2026-09-14T01:00:00Z")))).isNotNull();
+            assertThat(jwtTokenProvider.getAuthentication(accessTokenIssuedAt(java.time.Instant.parse("2026-09-14T01:00:01Z")))).isNotNull();
+        }
+
+        @Test
+        @DisplayName("변경 시각을 모르면 이 기준으로 거부하지 않는다")
+        void acceptsWhenChangeTimeUnknown() {
+            currentAccount(null);
+
+            assertThat(jwtTokenProvider.getAuthentication(accessTokenIssuedAt(java.time.Instant.parse("2020-01-01T00:00:00Z")))).isNotNull();
+        }
+
+        @Test
+        @DisplayName("변경 시각이 있는데 발급 시각이 없는 토큰은 판정할 수 없으므로 거부한다")
+        void rejectsTokenWithoutIssuedAtWhenChangeTimeKnown() {
+            currentAccount(changedAt);
+
+            assertThrows(org.springframework.security.authentication.CredentialsExpiredException.class,
+                    () -> jwtTokenProvider.getAuthentication(accessTokenIssuedAt(null)));
+        }
+    }
+
     @Test
     @DisplayName("잘못된 형식 토큰 검증 실패 (Malformed)")
     void validateToken_Malformed_fail() {

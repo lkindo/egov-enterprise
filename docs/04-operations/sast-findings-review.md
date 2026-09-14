@@ -1,5 +1,13 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-14 비밀번호 변경 전 발급 토큰 거부에 따른 보완 방어 재검토
+
+`foundation/.../JwtTokenProvider.java`(SAST-FP-001·002·008의 보완 소스)의 `getAuthentication`이 계정 상태 검사 뒤에 **비밀번호 변경 전에 발급된 access token을 거부**하는 검사를 하나 더 수행한다(DEC-OPS-094). `business-core/.../JpaUserAuthAdapter.java`(SAST-FP-008의 보완 소스)는 그 비교에 쓸 마지막 비밀번호 변경 시각을 인증 주체에 싣는 매핑만 추가됐다.
+
+001·002의 근거인 Bearer 전용 STATELESS 인증, Origin 검증, 별도 legacy CSRF 활성화는 변경되지 않았다. 008의 근거인 "서명 검증된 JWT와 현재 활성 계정 정보, 비어 있지 않은 권한 버전만 체인에 도달한다"는 조건은 거부 조건이 늘어 더 엄격해졌을 뿐 완화되지 않았다. 인증 실패는 기존과 같이 컨텍스트를 비우고 401로 끝난다.
+
+따라서 위 보완 소스 2개의 해시만 재결속한다. 승인 예외의 규칙·파일·행·fingerprint·만료일과 보안 임계값은 유지하며 새로운 탐지를 예외로 추가하지 않는다. 현재 CodeQL 결과와의 일치는 해당 커밋의 required `secure-coding` CI에서 다시 검사한다.
+
 ## 2026-09-14 클라이언트 IP 전달에 따른 BFF 보완 방어 재검토
 
 SAST-FP-001의 보완 소스인 `frontend/src/app/api/auth/login/route.ts`와 `frontend/src/app/api/auth/reissue/route.ts`에 ADR-0019의 사용자 IP 헤더 전달이 추가됐다. 두 파일의 변경은 공용 헬퍼 import 1줄과 백엔드 요청 헤더에 `X-Forwarded-For`를 싣는 1줄뿐이며, 헬퍼는 신뢰 앞단 프록시 형상(`TRUSTED_EDGE_PROXY=true`)이 아니면 아무것도 넣지 않는다. 이 예외의 근거인 accessToken·session_exp 쿠키의 HttpOnly·SameSite=Strict·Secure 정책, 응답 본문의 토큰 제외, 백엔드의 Bearer 전용 STATELESS 인증과 Origin 검증은 변경되지 않았다. 쿠키 정책·토큰 비노출 계약은 `auth-routes.test.ts`가 그대로 통과한다.

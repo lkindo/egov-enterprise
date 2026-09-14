@@ -200,6 +200,17 @@ public class User extends BaseEntity implements Serializable {
         this.chgPswdLastDt = LocalDateTime.now();
     }
 
+    /**
+     * 같은 비밀번호를 새 해시 방식으로만 다시 저장한다 — 자격 변경 시각은 그대로 둔다.
+     *
+     * <p>[2026-09-14] {@code chgPswdLastDt} 는 이전에 발급된 access token 을 끊는 기준이다. 로그인 중의 해시
+     * 업그레이드(레거시 SHA-256 → BCrypt, cost 상향)는 사용자가 비밀번호를 바꾼 것이 아니므로 이 시각을 바꾸면
+     * 그 사용자의 다른 기기 세션이 이유 없이 끊긴다.
+     */
+    public void rehashPassword(String pswd) {
+        this.pswd = Objects.requireNonNull(pswd);
+    }
+
     public void unlockAccount() {
         this.lckYn = "N";
         this.lckCnt = 0;
