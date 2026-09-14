@@ -29,6 +29,7 @@ public class InformalSanctionService {
     private final CommonCodeService commonCodeService;
     private final ApplicationEventPublisher eventPublisher;
     private final InformalSanctionMapper informalSanctionMapper;
+    private final nuri.business.domain.user.repository.UserRepository userRepository;
 
     public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, Pageable pageable) {
         requireParticipantId(aplcntId);
@@ -150,6 +151,7 @@ public class InformalSanctionService {
     @Transactional
     public Long registerInformalSanction(InformalSanctionDto dto) {
         assertKnownTaskType(dto.getTaskSeCd());
+        assertAssignableApprover(dto.getAplcntId(), dto.getAprvrId());
         InformalSanction entity = InformalSanction.builder()
                 .taskSeCd(dto.getTaskSeCd())
                 .aplcntId(dto.getAplcntId())
@@ -176,7 +178,30 @@ public class InformalSanctionService {
         }
 
         assertKnownTaskType(dto.getTaskSeCd());
+        assertAssignableApprover(entity.getAplcntId(), dto.getAprvrId());
         entity.update(dto.getTaskSeCd(), dto.getReqYmd(), dto.getAprvrId());
+    }
+
+    /**
+     * 결재자로 지정할 수 있는 사용자인지 확인한다. [2026-09-14 DEC-OPS-095]
+     *
+     * <p>종전에는 결재자 식별자를 그대로 저장했다. 그래서 ① 신청자가 자기 자신을 결재자로 지정해 스스로 승인할 수
+     * 있었고(결재 통제의 의미가 사라진다), ② 존재하지 않거나 비활성인 사용자에게 올린 결재는 처리할 사람이 없어
+     * 영원히 대기 상태로 남았다. 없는 사용자와 비활성 사용자를 같은 문구로 답해 계정 상태를 드러내지 않는다.
+     */
+    private void assertAssignableApprover(String applicantEsntlId, String approverEsntlId) {
+        if (approverEsntlId == null || approverEsntlId.isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "결재자를 지정해 주세요.");
+        }
+        if (approverEsntlId.equals(applicantEsntlId)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "본인에게 결재를 요청할 수 없습니다.");
+        }
+        boolean activeApprover = userRepository.findById(approverEsntlId)
+                .map(user -> "P".equals(user.getUserSttsCd()))
+                .orElse(false);
+        if (!activeApprover) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "결재자로 지정할 수 없는 사용자입니다.");
+        }
     }
 
     @Transactional

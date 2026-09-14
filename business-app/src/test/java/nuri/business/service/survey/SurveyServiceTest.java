@@ -430,6 +430,37 @@ class SurveyServiceTest {
         verify(qesitmRepository, never()).deleteById(anyLong());
     }
 
+    /**
+     * [2026-09-14 DEC-OPS-095] 응답이 있는 문항·항목을 지우면 이미 모은 응답이 경고 없이 사라졌다(V2_13 의 FK 선정리).
+     * 응답이 있으면 409 로 막고 응답·항목·문항을 하나도 지우지 않는다.
+     */
+    @Test
+    @DisplayName("응답이 있는 문항은 삭제하지 않고 응답도 보존한다")
+    void deleteQuestion_WithResponses_IsBlocked() {
+        SurveyQuestion question = SurveyQuestion.builder().srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L).build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
+
+        assertThatThrownBy(() -> surveyService.deleteQuestion(201L, 301L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE);
+        verify(rsltRepository, never()).deleteBySrvyQstnSn(anyLong());
+        verify(iemRepository, never()).deleteBySrvyQstnSn(anyLong());
+        verify(qesitmRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    @DisplayName("응답이 있는 선택 항목은 삭제하지 않고 응답도 보존한다")
+    void deleteItem_WithResponses_IsBlocked() {
+        given(rsltRepository.countBySrvyArtclSn(401L)).willReturn(1L);
+
+        assertThatThrownBy(() -> surveyService.deleteItem(401L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE);
+        verify(rsltRepository, never()).deleteBySrvyArtclSn(anyLong());
+        verify(iemRepository, never()).deleteById(anyLong());
+    }
+
     // ==========================================
     // 4. 설문 항목 테스트
     // ==========================================

@@ -187,6 +187,7 @@ public class SurveyService {
         SurveyQuestion question = qesitmRepository.findById(srvyQstnSn)
                 .filter(candidate -> srvySn.equals(candidate.getSrvySn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        assertNoResponses(rsltRepository.countBySrvyQstnSn(question.getSrvyQstnSn()), "문항");
         // [V2_13 결속] 문항 삭제 시 응답·항목 선정리 (기존 fk_tb_srvy_artcl_tb_srvy_qstn 기왕 부채 해소)
         rsltRepository.deleteBySrvyQstnSn(question.getSrvyQstnSn());
         iemRepository.deleteBySrvyQstnSn(question.getSrvyQstnSn());
@@ -224,9 +225,25 @@ public class SurveyService {
     @Transactional
     public void deleteItem(Long srvyArtclSn) {
         Objects.requireNonNull(srvyArtclSn);
+        assertNoResponses(rsltRepository.countBySrvyArtclSn(srvyArtclSn), "선택 항목");
         // [V2_13 결속] 항목 삭제 시 해당 항목 응답 선정리 (기존 fk_tb_srvy_rslt_tb_srvy_artcl 기왕 부채 해소)
         rsltRepository.deleteBySrvyArtclSn(srvyArtclSn);
         iemRepository.deleteById(srvyArtclSn);
+    }
+
+    /**
+     * 응답이 있는 문항·항목은 지우지 않는다. [2026-09-14 DEC-OPS-095]
+     *
+     * <p>V2_13 은 FK 오류를 피하려고 삭제 전에 응답을 함께 지우게 했는데, 그 결과 설문을 편집하다 문항 하나를 지우면
+     * 이미 모은 응답이 경고 없이 사라졌다. 편집 중의 삭제는 응답 보존과 양립해야 한다 — 템플릿 변경이 문항·응답자가
+     * 있으면 막히는 것(updateSurvey)과 같은 기준이다. 응답 채로 정리하려면 설문 전체를 삭제한다(명시적 행위).
+     * 응답이 없는 문항·항목의 선정리 경로는 그대로 두어 FK 순서를 유지한다.
+     */
+    private static void assertNoResponses(long responseCount, String target) {
+        if (responseCount > 0) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                    "응답 " + responseCount + "건이 있는 " + target + "은(는) 삭제할 수 없습니다. 응답을 보존하려면 그대로 두고, 설문을 통째로 정리하려면 설문을 삭제하세요.");
+        }
     }
 
     private void validateSurveyDates(String beginDe, String endDe) {

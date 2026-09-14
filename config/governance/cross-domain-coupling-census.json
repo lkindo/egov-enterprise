@@ -127,6 +127,16 @@
       "pack": "demo"
     },
     {
+      "file": "informalsanction/InformalSanctionService.java",
+      "owner": "informalsanction",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.repository.UserRepository"
+      ],
+      "pack": "demo"
+    },
+    {
       "file": "informalsanction/event/SanctionEventListener.java",
       "owner": "informalsanction",
       "target": "user",
