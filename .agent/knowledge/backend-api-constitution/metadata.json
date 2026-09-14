@@ -9,7 +9,7 @@
     "SpringBoot",
     "Constitution"
   ],
-  "updatedAt": "2026-09-10T00:00:00Z",
+  "updatedAt": "2026-09-14T00:00:00Z",
   "references": [
     "AGENTS.md",
     "docs/02-architecture/domain-resilience.md",
