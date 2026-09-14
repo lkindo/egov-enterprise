@@ -55,6 +55,8 @@ export async function createVisualAdmin(request: APIRequestContext, baseURL: str
             throw new Error('Visual admin authentication did not return an access token.');
         }
         return {
+            // 결재 완주 테스트가 이 계정을 결재자로 고른다(자기 결재 금지 — DEC-OPS-095).
+            esntlId,
             authorization: { Authorization: `Bearer ${token}` },
             storageState: {
                 cookies: [{
