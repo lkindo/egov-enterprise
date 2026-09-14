@@ -228,7 +228,7 @@ class VendorCatalogDiscoveryTest {
         given(metadata.getDatabaseProductVersion()).willReturn(version);
         given(metadata.getDriverName()).willReturn(product + " JDBC");
         given(metadata.getDriverVersion()).willReturn("test");
-        given(metadata.getTables(isNull(), isNull(), anyString(), any())).willReturn(emptyTables);
+        given(metadata.getTables(isNull(), any(), anyString(), any())).willReturn(emptyTables);
         given(emptyTables.next()).willReturn(false);
         return connection;
     }

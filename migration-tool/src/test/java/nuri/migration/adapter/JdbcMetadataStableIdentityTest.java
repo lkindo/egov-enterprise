@@ -12,6 +12,9 @@ import java.sql.ResultSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -32,7 +35,7 @@ class JdbcMetadataStableIdentityTest {
         given(metadata.getDatabaseProductVersion()).willReturn("1");
         given(metadata.getDriverName()).willReturn("legacy-driver");
         given(metadata.getDriverVersion()).willReturn("1");
-        given(metadata.getTables(null, null, "%", null)).willReturn(tables);
+        given(metadata.getTables(isNull(), any(), eq("%"), isNull())).willReturn(tables);
         given(tables.next()).willReturn(true, false);
         given(tables.getString("TABLE_CAT")).willReturn("legacy");
         given(tables.getString("TABLE_SCHEM")).willReturn("sales");

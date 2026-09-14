@@ -94,9 +94,9 @@ class DiscoveryVisibilityProofTest {
         given(metadata.getDriverVersion()).willReturn("1");
         given(metadata.getCatalogs()).willReturn(catalogs);
         given(metadata.getSchemas()).willReturn(schemas);
-        given(metadata.getTables(isNull(), isNull(), anyString(), any())).willReturn(tables);
-        given(metadata.getProcedures(isNull(), isNull(), anyString())).willReturn(procedures);
-        given(metadata.getFunctions(isNull(), isNull(), anyString())).willReturn(functions);
+        given(metadata.getTables(isNull(), any(), anyString(), any())).willReturn(tables);
+        given(metadata.getProcedures(isNull(), any(), anyString())).willReturn(procedures);
+        given(metadata.getFunctions(isNull(), any(), anyString())).willReturn(functions);
         given(metadata.getUDTs(isNull(), isNull(), anyString(), any())).willReturn(types);
         return connection;
     }

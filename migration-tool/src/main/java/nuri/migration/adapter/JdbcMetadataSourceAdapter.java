@@ -188,7 +188,8 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
             IdentifierRules identifierRules,
             DiscoveryAccumulator accumulator) {
         List<TableRef> tables = new ArrayList<>();
-        try (ResultSet rows = metadata.getTables(null, null, "%", null)) {
+        for (String schemaPattern : schemaPatterns(metadata, request)) {
+        try (ResultSet rows = metadata.getTables(null, schemaPattern, "%", null)) {
             while (rows.next()) {
                 String catalog = rows.getString("TABLE_CAT");
                 String schema = rows.getString("TABLE_SCHEM");
@@ -239,7 +240,31 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                 accumulator.failure(kind, null, null, "jdbc-get-tables", failure);
             }
         }
+        }
         return tables;
+    }
+
+    /**
+     * 요청이 스키마를 지정하면 JDBC 메타데이터 조회에 스키마 패턴을 넘긴다(아래 필터는 그대로 정확 일치로 거른다).
+     *
+     * <p>[2026-09-14 Oracle 26ai 실측] 스키마를 null 로 두면 드라이버가 전체 딕셔너리를 훑는다. 스키마 하나를
+     * 요청했는데 {@code getProcedures(null, null, "%")} 가 380초를 넘겼고, 같은 호출에 스키마를 주면 266ms 였다.
+     * 운영 원천은 사용자·시스템 객체가 훨씬 많으므로 이 차이가 곧 탐색 가능 여부다. LIKE 와일드카드는 이스케이프한다.
+     */
+    private static List<String> schemaPatterns(DatabaseMetaData metadata, DiscoveryRequest request) {
+        if (request.schemas().isEmpty()) {
+            return java.util.Collections.singletonList(null);
+        }
+        List<String> patterns = new ArrayList<>();
+        try {
+            for (String schema : request.schemas()) {
+                patterns.add(escapedPattern(metadata, schema));
+            }
+        } catch (SQLException unavailableEscape) {
+            // 이스케이프 문자를 알 수 없으면 좁히지 않는다 — 느려질 뿐 결과는 아래 정확 일치 필터가 같게 만든다.
+            return java.util.Collections.singletonList(null);
+        }
+        return patterns;
     }
 
     private void collectColumns(
@@ -260,6 +285,10 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                 escapedPattern(metadata, table.name()),
                 "%")) {
             while (rows.next()) {
+                // [2026-09-14 Oracle 26ai 실측] 열은 반드시 ResultSet 순서(왼쪽→오른쪽)대로 한 번씩 읽는다.
+                //   Oracle 은 COLUMN_DEF(13번)를 LONG 스트림으로 주므로, ORDINAL_POSITION(17)·IS_GENERATEDCOLUMN(24)을
+                //   먼저 읽으면 ORA-17027(스트림이 이미 닫힘)로 실패해 기본값이 있는 테이블의 컬럼이 중간에서 끊겼다.
+                //   JDBC 명세도 이식성을 위해 이 순서를 권고한다. 속성 기록 순서는 산출물 호환을 위해 종전 그대로 둔다.
                 String actualTable = rows.getString("TABLE_NAME");
                 if (!table.name().equals(actualTable)) {
                     continue;
@@ -268,18 +297,27 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                 if (column == null) {
                     continue;
                 }
-                String path = childName(table.name(), column);
+                int dataType = rows.getInt("DATA_TYPE");
                 String typeName = rows.getString("TYPE_NAME");
+                long columnSize = rows.getLong("COLUMN_SIZE");
+                int decimalDigits = rows.getInt("DECIMAL_DIGITS");
+                int nullability = rows.getInt("NULLABLE");
+                String remarks = rows.getString("REMARKS");
+                String defaultExpression = rows.getString("COLUMN_DEF");
+                int ordinal = rows.getInt("ORDINAL_POSITION");
+                String autoIncrement = rows.getString("IS_AUTOINCREMENT");
+                String generated = rows.getString("IS_GENERATEDCOLUMN");
+
+                String path = childName(table.name(), column);
                 LinkedHashMap<String, String> columnAttributes = new LinkedHashMap<>();
                 columnAttributes.put("parentTable", table.name());
                 columnAttributes.put("originalName", column);
-                put(columnAttributes, "jdbcType", rows.getInt("DATA_TYPE"));
+                put(columnAttributes, "jdbcType", dataType);
                 put(columnAttributes, "nativeType", typeName);
-                put(columnAttributes, "size", rows.getLong("COLUMN_SIZE"));
-                put(columnAttributes, "scale", rows.getInt("DECIMAL_DIGITS"));
-                put(columnAttributes, "nullable", rows.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls);
-                put(columnAttributes, "ordinal", rows.getInt("ORDINAL_POSITION"));
-                String generated = rows.getString("IS_GENERATEDCOLUMN");
+                put(columnAttributes, "size", columnSize);
+                put(columnAttributes, "scale", decimalDigits);
+                put(columnAttributes, "nullable", nullability != DatabaseMetaData.columnNoNulls);
+                put(columnAttributes, "ordinal", ordinal);
                 if (generated != null) {
                     put(columnAttributes, "generated", "YES".equalsIgnoreCase(generated));
                 }
@@ -295,7 +333,6 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                             columnAttributes));
                 }
 
-                String defaultExpression = rows.getString("COLUMN_DEF");
                 if (defaultExpression != null && request.includes(ObjectKind.DEFAULT_CONSTRAINT)) {
                     accumulator.add(CatalogObject.hashOnlyDefinition(
                             ObjectKind.DEFAULT_CONSTRAINT,
@@ -308,7 +345,7 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                             attributes("parentTable", table.name(), "column", column)));
                 }
 
-                if ("YES".equalsIgnoreCase(rows.getString("IS_AUTOINCREMENT"))
+                if ("YES".equalsIgnoreCase(autoIncrement)
                         && request.includes(ObjectKind.IDENTITY)) {
                     accumulator.add(object(
                             ObjectKind.IDENTITY,
@@ -320,7 +357,6 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                             attributes("parentTable", table.name(), "column", column, "strategy", "AUTO_INCREMENT")));
                 }
 
-                String remarks = rows.getString("REMARKS");
                 if (remarks != null && request.includes(ObjectKind.COMMENT)) {
                     accumulator.add(CatalogObject.hashOnlyDefinition(
                             ObjectKind.COMMENT,
@@ -518,7 +554,11 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
             return;
         }
         LinkedHashMap<String, IndexParts> indexes = new LinkedHashMap<>();
-        try (ResultSet rows = metadata.getIndexInfo(table.catalog(), table.schema(), table.name(), false, false)) {
+        // approximate=true 여야 한다. [2026-09-14 Oracle 26ai 실측] false 로 두면 Oracle 드라이버가 인덱스 조회 전에
+        //   DBMS_STATS.GATHER_TABLE_STATS 를 실행해 **원천 테이블의 통계를 바꿨고**(LAST_ANALYZED 갱신), 읽기 전용
+        //   연결에서는 그 수집이 실패해 인덱스 조회 자체가 72000 으로 끊겼다. 이 SPI 는 원천에 쓰기를 하지 않는다.
+        //   인덱스 구조(이름·열·유일성)는 approximate 와 무관하며, 통계 행(tableIndexStatistic)은 아래에서 버린다.
+        try (ResultSet rows = metadata.getIndexInfo(table.catalog(), table.schema(), table.name(), false, true)) {
             while (rows.next()) {
                 short type = rows.getShort("TYPE");
                 String name = rows.getString("INDEX_NAME");
@@ -610,20 +650,22 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
         if (!request.includes(ObjectKind.ROUTINE)) {
             return;
         }
-        try (ResultSet rows = metadata.getProcedures(null, null, "%")) {
-            while (rows.next()) {
-                addRoutine(
-                        request,
-                        identifierRules,
-                        accumulator,
-                        rows.getString("PROCEDURE_CAT"),
-                        rows.getString("PROCEDURE_SCHEM"),
-                        rows.getString("PROCEDURE_NAME"),
-                        rows.getString("SPECIFIC_NAME"),
-                        "PROCEDURE");
+        for (String schemaPattern : schemaPatterns(metadata, request)) {
+            try (ResultSet rows = metadata.getProcedures(null, schemaPattern, "%")) {
+                while (rows.next()) {
+                    addRoutine(
+                            request,
+                            identifierRules,
+                            accumulator,
+                            rows.getString("PROCEDURE_CAT"),
+                            rows.getString("PROCEDURE_SCHEM"),
+                            rows.getString("PROCEDURE_NAME"),
+                            rows.getString("SPECIFIC_NAME"),
+                            "PROCEDURE");
+                }
+            } catch (SQLException failure) {
+                accumulator.failure(ObjectKind.ROUTINE, null, null, "jdbc-get-procedures", failure);
             }
-        } catch (SQLException failure) {
-            accumulator.failure(ObjectKind.ROUTINE, null, null, "jdbc-get-procedures", failure);
         }
     }
 
@@ -635,20 +677,22 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
         if (!request.includes(ObjectKind.ROUTINE)) {
             return;
         }
-        try (ResultSet rows = metadata.getFunctions(null, null, "%")) {
-            while (rows.next()) {
-                addRoutine(
-                        request,
-                        identifierRules,
-                        accumulator,
-                        rows.getString("FUNCTION_CAT"),
-                        rows.getString("FUNCTION_SCHEM"),
-                        rows.getString("FUNCTION_NAME"),
-                        rows.getString("SPECIFIC_NAME"),
-                        "FUNCTION");
+        for (String schemaPattern : schemaPatterns(metadata, request)) {
+            try (ResultSet rows = metadata.getFunctions(null, schemaPattern, "%")) {
+                while (rows.next()) {
+                    addRoutine(
+                            request,
+                            identifierRules,
+                            accumulator,
+                            rows.getString("FUNCTION_CAT"),
+                            rows.getString("FUNCTION_SCHEM"),
+                            rows.getString("FUNCTION_NAME"),
+                            rows.getString("SPECIFIC_NAME"),
+                            "FUNCTION");
+                }
+            } catch (SQLException failure) {
+                accumulator.failure(ObjectKind.ROUTINE, null, null, "jdbc-get-functions", failure);
             }
-        } catch (SQLException failure) {
-            accumulator.failure(ObjectKind.ROUTINE, null, null, "jdbc-get-functions", failure);
         }
     }
 

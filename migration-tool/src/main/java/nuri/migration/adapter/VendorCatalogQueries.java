@@ -14,10 +14,16 @@ final class VendorCatalogQueries {
 
     private VendorCatalogQueries() {}
 
+    /**
+     * [2026-09-14 Oracle 26ai Free 실측] ① ALL_TAB_PARTITIONS.HIGH_VALUE 는 LONG 이라 SELECT 목록의 마지막에 둔다 —
+     * 실행기는 정의 열을 마지막에 읽는데, 그 뒤 열(PARTITION_POSITION)을 먼저 읽으면 ORA-17027 로 조회가 실패했다.
+     * ② ALL_TAB_PRIVS 에는 OWNER 가 없고 TABLE_SCHEMA 가 있다(OWNER 는 DBA/USER_TAB_PRIVS 쪽) — 종전 쿼리는 ORA-00904 였다.
+     *    결과 열 이름은 투영 계약(OWNER)을 유지하려고 별칭으로 맞춘다.
+     */
     static List<VendorCatalogQuery> oracle() {
         return List.of(
                 q(ObjectKind.PARTITION, "oracle-partitions",
-                        "SELECT TABLE_OWNER, TABLE_NAME, PARTITION_NAME, HIGH_VALUE, PARTITION_POSITION FROM ALL_TAB_PARTITIONS WHERE (? IS NULL OR TABLE_OWNER = ?)",
+                        "SELECT TABLE_OWNER, TABLE_NAME, PARTITION_NAME, PARTITION_POSITION, HIGH_VALUE FROM ALL_TAB_PARTITIONS WHERE (? IS NULL OR TABLE_OWNER = ?)",
                         ObjectSupportGrade.METADATA_ONLY),
                 q(ObjectKind.CHECK_CONSTRAINT, "oracle-check-constraints",
                         "SELECT OWNER, CONSTRAINT_NAME, TABLE_NAME, SEARCH_CONDITION_VC FROM ALL_CONSTRAINTS WHERE CONSTRAINT_TYPE = 'C' AND (? IS NULL OR OWNER = ?)",
@@ -50,7 +56,7 @@ final class VendorCatalogQueries {
                         "SELECT OBJECT_OWNER, OBJECT_NAME, POLICY_GROUP, POLICY_NAME, PACKAGE, FUNCTION FROM ALL_POLICIES WHERE (? IS NULL OR OBJECT_OWNER = ?)",
                         ObjectSupportGrade.MANUAL),
                 q(ObjectKind.GRANT, "oracle-table-privileges",
-                        "SELECT OWNER, TABLE_NAME, GRANTEE, PRIVILEGE, GRANTABLE FROM ALL_TAB_PRIVS WHERE (? IS NULL OR OWNER = ?)",
+                        "SELECT TABLE_SCHEMA AS OWNER, TABLE_NAME, GRANTEE, PRIVILEGE, GRANTABLE FROM ALL_TAB_PRIVS WHERE (? IS NULL OR TABLE_SCHEMA = ?)",
                         ObjectSupportGrade.METADATA_ONLY),
                 q(ObjectKind.JOB, "oracle-scheduler-jobs",
                         "SELECT OWNER, JOB_NAME, JOB_TYPE, ENABLED, STATE FROM ALL_SCHEDULER_JOBS WHERE (? IS NULL OR OWNER = ?)",

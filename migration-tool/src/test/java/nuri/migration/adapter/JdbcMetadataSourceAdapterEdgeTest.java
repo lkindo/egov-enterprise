@@ -328,7 +328,7 @@ class JdbcMetadataSourceAdapterEdgeTest {
         }
 
         void tables(List<Map<String, Object>> source) throws Exception {
-            given(metadata.getTables(null, null, "%", null)).willAnswer(ignored -> rows(source));
+            given(metadata.getTables(isNull(), any(), eq("%"), isNull())).willAnswer(ignored -> rows(source));
         }
 
         void columns(List<Map<String, Object>> source) throws Exception {
@@ -352,11 +352,11 @@ class JdbcMetadataSourceAdapterEdgeTest {
         }
 
         void procedures(List<Map<String, Object>> source) throws Exception {
-            given(metadata.getProcedures(null, null, "%")).willAnswer(ignored -> rows(source));
+            given(metadata.getProcedures(isNull(), any(), eq("%"))).willAnswer(ignored -> rows(source));
         }
 
         void functions(List<Map<String, Object>> source) throws Exception {
-            given(metadata.getFunctions(null, null, "%")).willAnswer(ignored -> rows(source));
+            given(metadata.getFunctions(isNull(), any(), eq("%"))).willAnswer(ignored -> rows(source));
         }
 
         void types(List<Map<String, Object>> source) throws Exception {
