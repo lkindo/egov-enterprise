@@ -16,7 +16,7 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f39261ef5838cce5f2079f95ecafa463320a4bf53f179fc09fdb4ed8c5ce8c64"
+          "sha256": "4dab5fff4171e94f270f5878a46bc414dc7598818911127fa12d3f2459e16f89"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -36,11 +36,11 @@
         },
         {
           "file": "frontend/src/app/api/auth/login/route.ts",
-          "sha256": "31df84bde966072db66389f2bd938c56a62d80c044eda89331030b1cc1f350e1"
+          "sha256": "8d00baeed752e5c96a3de1f136e679a54d090d1a04a7ccb05634e0ff02654ccc"
         },
         {
           "file": "frontend/src/app/api/auth/reissue/route.ts",
-          "sha256": "75d917746432e351779e3d244c8de4f279f0098e12ff0cf2701deb79b2647f2a"
+          "sha256": "ddca9c5573f4d691d2ebe0008a79c76b212e93fd8a3cdebf39d4d1552b14bb1c"
         },
         {
           "file": "frontend/src/lib/auth/session-cookie-policy.ts",
@@ -74,7 +74,7 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f39261ef5838cce5f2079f95ecafa463320a4bf53f179fc09fdb4ed8c5ce8c64"
+          "sha256": "4dab5fff4171e94f270f5878a46bc414dc7598818911127fa12d3f2459e16f89"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -176,11 +176,11 @@
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "f39261ef5838cce5f2079f95ecafa463320a4bf53f179fc09fdb4ed8c5ce8c64"
+          "sha256": "4dab5fff4171e94f270f5878a46bc414dc7598818911127fa12d3f2459e16f89"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",
-          "sha256": "547d3afad403d518de16b8574bfe2ede7585280a74989d3692b219165fd60231"
+          "sha256": "17935e4f595d799891e5c84d9fc872cdd659c22fb896677c92911e7944b8f455"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java",

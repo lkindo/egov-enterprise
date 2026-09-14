@@ -149,15 +149,18 @@ if [ "$(docker inspect "$API_CONTAINER" --format '{{.Image}}')" != \
     exit 1
 fi
 
-for container in "$API_CONTAINER" "$FRONTEND_CONTAINER"; do
-    if [ "$(docker inspect "$container" --format '{{.State.Health.Status}}')" != "healthy" ]; then
-        echo "ERROR: api/frontend release가 모두 healthy 상태가 아닙니다." >&2
+# [2026-09-14 ADR-0019] 브라우저 진입점은 edge 다. edge 가 죽어 있으면 Next 는 떠 있어도 사용자가 들어올 수 없다.
+EDGE_CONTAINER=$(docker compose "${COMPOSE_FILES[@]}" ps -q edge)
+for container in "$API_CONTAINER" "$FRONTEND_CONTAINER" "$EDGE_CONTAINER"; do
+    if [ -z "$container" ] || [ "$(docker inspect "$container" --format '{{.State.Health.Status}}')" != "healthy" ]; then
+        echo "ERROR: api/frontend/edge 가 모두 healthy 상태가 아닙니다." >&2
         exit 1
     fi
 done
-echo -e "${GREEN}API and frontend are healthy on the verified release images.${NC}"
+echo -e "${GREEN}API, frontend and edge are healthy on the verified release images.${NC}"
 
 echo -e "${BLUE}=== Deployment Completed Successfully ===${NC}"
-echo -e "Frontend: http://localhost:3000"
+# Next(3000)는 운영에서 호스트에 공개하지 않는다 — 접속은 edge 로만 한다(사용자 IP 신뢰 경계).
+echo -e "Frontend (edge): http://localhost:${EDGE_HTTP_PORT:-80}"
 echo -e "Backend API: http://localhost:8080/api/v1"
 # prod 프로파일은 springdoc 을 비활성화하므로 Swagger UI 안내를 출력하지 않는다.

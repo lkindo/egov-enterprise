@@ -891,9 +891,10 @@ export default function UserOrgHubClient({
             {user?.userNm?.[0]}
           </div>
           <div className="space-y-0.5">
-            <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === user.userId ? "text-white" : "text-foreground")}>
+            {/* 표 셀 안의 이름 라벨이지 절 제목이 아니다 — h4 는 h1 뒤에 단계를 건너뛰어 heading-order 위반이었다(axe). */}
+            <span className={cn("block text-sm font-black tracking-tighter leading-none ", selectedItemId === user.userId ? "text-white" : "text-foreground")}>
               {user.userNm}
-            </h4>
+            </span>
             <p className="text-[10px] font-bold tracking-tight text-muted-foreground">{user.userId}</p>
           </div>
         </div>

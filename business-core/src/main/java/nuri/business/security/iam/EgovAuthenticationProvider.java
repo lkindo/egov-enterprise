@@ -170,7 +170,8 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     private void rehashPassword(User user, String rawPassword, String reason) {
         try {
             String upgraded = passwordEncoder.encode(rawPassword);
-            user.updatePassword(upgraded);
+            // 비밀번호 자체는 같다 — 자격 변경 시각을 바꾸면 다른 기기의 세션까지 끊긴다(User#rehashPassword).
+            user.rehashPassword(upgraded);
             log.info(">>> Password rehashed ({}) for user: {}", reason, user.getUserId());
         } catch (Exception e) {
             // 호환 로그인은 유지한다. 다음 로그인에서 재시도할 수 있도록 기존 해시는 그대로 둔다.

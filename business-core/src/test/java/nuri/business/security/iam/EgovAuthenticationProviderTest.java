@@ -109,12 +109,14 @@ class EgovAuthenticationProviderTest {
     @Test
     @DisplayName("표식 없는 레거시 해시도 호환 인증 후 BCrypt로 재해시")
     void authenticate_success_bareLegacyHash_rehashes() {
+        java.time.LocalDateTime lastRealChange = java.time.LocalDateTime.of(2026, 1, 2, 3, 4, 5);
         User bareLegacyUser = User.builder()
                 .userId("legacy")
                 .esntlId("USR_0000000000009")
                 .pswd("legacyHash")
                 .userNm("Legacy User")
                 .lckYn("N")
+                .chgPswdLastDt(lastRealChange)
                 .build();
         when(userRepository.findById("legacy")).thenReturn(Optional.of(bareLegacyUser));
         when(egovPasswordEncoder.matches("password", "legacyHash", "legacy")).thenReturn(true);
@@ -125,6 +127,8 @@ class EgovAuthenticationProviderTest {
 
         assertThat(result.isAuthenticated()).isTrue();
         assertThat(bareLegacyUser.getPswd()).isEqualTo("{bcrypt}migrated");
+        // [2026-09-14] 해시 방식만 바뀌었다 — 변경 시각이 바뀌면 이 사용자의 다른 기기 세션이 끊긴다.
+        assertThat(bareLegacyUser.getChgPswdLastDt()).isEqualTo(lastRealChange);
         verify(passwordEncoder, never()).matches(anyString(), anyString());
     }
 

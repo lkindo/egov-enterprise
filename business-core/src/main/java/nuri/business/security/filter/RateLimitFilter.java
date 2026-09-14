@@ -29,8 +29,29 @@ public class RateLimitFilter implements Filter {
     /** [W1-07] 감사 로그·로그인 IP 제한과 동일한 신뢰 경계 판정을 공유한다. */
     private final nuri.foundation.security.net.ClientIpResolver clientIpResolver;
 
-    public RateLimitFilter(nuri.foundation.security.net.ClientIpResolver clientIpResolver) {
+    /**
+     * [2026-09-14 ADR-0019] 한도는 운영 설정으로 받는다.
+     *
+     * <p>종전에는 {@code Integer.getInteger("ratelimit.capacity", 10000)} — JVM 시스템 프로퍼티만 읽어 운영에서
+     * 바꿀 방법이 없었고(설정하는 곳이 테스트뿐), 로그인은 같은 버킷에서 5토큰을 써 IP 당 분당 약 2,000회였다.
+     * 기본값은 그 동작을 그대로 옮긴다(전체 10,000 · 로그인 2,000). 낮추는 것은 신뢰 앞단 프록시로 IP 가
+     * 사용자별로 들어오는 것을 확인하고 429 로그를 관측한 뒤다(application.yml 순서 주석). 먼저 낮추면 한 IP 로
+     * 모인 전사 로그인이 한꺼번에 막힌다.
+     */
+    private final int requestsPerMinute;
+    private final int loginRequestsPerMinute;
+
+    public RateLimitFilter(nuri.foundation.security.net.ClientIpResolver clientIpResolver,
+            @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.requests-per-minute:10000}") int requestsPerMinute,
+            @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.login-requests-per-minute:2000}") int loginRequestsPerMinute) {
+        if (requestsPerMinute < 1 || loginRequestsPerMinute < 1) {
+            // 0 이하는 "제한 없음" 이 아니라 모든 요청 거부가 된다 — 조용히 전체 장애로 뜨지 않게 기동에서 막는다.
+            throw new IllegalStateException("요청 제한 한도는 1 이상이어야 합니다: requests-per-minute="
+                    + requestsPerMinute + ", login-requests-per-minute=" + loginRequestsPerMinute);
+        }
         this.clientIpResolver = clientIpResolver;
+        this.requestsPerMinute = requestsPerMinute;
+        this.loginRequestsPerMinute = loginRequestsPerMinute;
     }
 
     /** 버킷 맵 상한. 초과 시 W-TinyLFU 가 저빈도 키부터 축출한다. */
@@ -52,15 +73,19 @@ public class RateLimitFilter implements Filter {
      * <p>⚠ 이것은 메모리 무한 증가만 막는다. XFF 위조를 통한 레이트리밋 우회 자체는
      * 신뢰 프록시 경계(Wave 1)에서 해소된다 — 이 항목 완료를 '레이트리밋이 견고해졌다'로 읽지 말 것.
      */
-    private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
-            .maximumSize(MAX_BUCKETS)
-            .expireAfterAccess(EXPIRE_AFTER_ACCESS_MINUTES, TimeUnit.MINUTES)
-            .build();
+    private final Cache<String, Bucket> buckets = newBucketCache();
 
-    private Bucket createNewBucket() {
-        // Default: 10000 requests per minute for stable E2E testing
-        // Can be overridden by system property for unit tests
-        int capacity = Integer.getInteger("ratelimit.capacity", 10000);
+    /** 로그인 전용 버킷. 전체 버킷과 같은 상한·축출 규칙을 쓴다(키 무한 증가 방어는 동일하게 필요하다). */
+    private final Cache<String, Bucket> loginBuckets = newBucketCache();
+
+    private static Cache<String, Bucket> newBucketCache() {
+        return Caffeine.newBuilder()
+                .maximumSize(MAX_BUCKETS)
+                .expireAfterAccess(EXPIRE_AFTER_ACCESS_MINUTES, TimeUnit.MINUTES)
+                .build();
+    }
+
+    private static Bucket perMinuteBucket(int capacity) {
         Bandwidth limit = Bandwidth.builder()
                 .capacity(capacity)
                 .refillGreedy(capacity, Duration.ofMinutes(1))
@@ -80,15 +105,20 @@ public class RateLimitFilter implements Filter {
         }
 
         String clientIp = getClientIp(httpRequest);
-        Bucket bucket = buckets.get(clientIp, k -> createNewBucket());
+        boolean login = httpRequest.getRequestURI().contains("/auth/login");
 
-        // Sensitive endpoints (e.g., login) consume more tokens
-        int tokensToConsume = httpRequest.getRequestURI().contains("/auth/login") ? 5 : 1;
+        // 로그인은 전용 버킷을 먼저 본다 — 로그인 한도를 넘긴 요청이 전체 한도까지 깎지 않게 한다.
+        String deniedBy = null;
+        if (login && !loginBuckets.get(clientIp, k -> perMinuteBucket(loginRequestsPerMinute)).tryConsume(1)) {
+            deniedBy = "login";
+        } else if (!buckets.get(clientIp, k -> perMinuteBucket(requestsPerMinute)).tryConsume(1)) {
+            deniedBy = "all";
+        }
 
-        if (bucket.tryConsume(tokensToConsume)) {
+        if (deniedBy == null) {
             chain.doFilter(request, response);
         } else {
-            recordRejection(httpRequest, clientIp, tokensToConsume);
+            recordRejection(httpRequest, clientIp, deniedBy);
 
             HttpServletResponse httpResponse = (HttpServletResponse) response;
             httpResponse.setStatus(429); // Too Many Requests
@@ -117,11 +147,12 @@ public class RateLimitFilter implements Filter {
      * 외부 카운터가 필요해지면 선택 주입과 actuator 노출면을 함께 설계한다. 그 전까지는 429 로그가
      * 운영 관측 계약이고 이 값은 프로세스 내부 진단용이다.
      */
-    private void recordRejection(HttpServletRequest request, String clientIp, int tokens) {
+    private void recordRejection(HttpServletRequest request, String clientIp, String deniedBy) {
         long total = rejectedCount.incrementAndGet();
-        LOG.warn("[RATE-LIMIT] 429 거절 — ip={} method={} uri={} tokens={} 누적={}",
+        // bucket 은 한도 조정의 근거다 — 로그인 한도와 전체 한도 중 어느 쪽이 막았는지 로그만으로 구분돼야 한다.
+        LOG.warn("[RATE-LIMIT] 429 거절 — ip={} method={} uri={} bucket={} 누적={}",
                 nuri.foundation.security.util.SafeLog.text(clientIp), nuri.foundation.security.util.SafeLog.text(request.getMethod()),
-                nuri.foundation.security.util.SafeLog.text(request.getRequestURI()), tokens, total);
+                nuri.foundation.security.util.SafeLog.text(request.getRequestURI()), deniedBy, total);
     }
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RateLimitFilter.class);

@@ -213,9 +213,35 @@ public class JwtTokenProvider {
     }
 
     public Authentication getAuthentication(String token) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(getUserId(token));
+        var claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(
+                Objects.requireNonNull(claims.getSubject(), "Subject in JWT token cannot be null"));
         new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(userDetails);
+        rejectIfIssuedBeforeCredentialChange(claims.getIssuedAt(), userDetails);
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    }
+
+    /**
+     * 비밀번호가 바뀌기 전에 발급된 access token 을 거부한다. [2026-09-14 DEC-OPS-094]
+     *
+     * <p>비밀번호 변경은 refresh token 을 폐기하지만(DEC-OPS-091), access token 은 서명 기반이라 자기 만료(기본
+     * 1시간)까지 계속 통과했다 — 탈취된 토큰이 비밀번호를 바꾼 뒤에도 쓰였다. 사용자 정보는 요청마다 저장소에서
+     * 다시 읽으므로 추가 조회 없이 마지막 변경 시각과 발급 시각을 비교할 수 있다.
+     *
+     * <p>JWT 의 발급 시각은 초 단위로 내림 저장되므로 변경 시각도 초로 내려 비교한다. 같은 초에 발급된 토큰은
+     * 통과시킨다 — 변경 직후 다시 로그인한 토큰을 잘못 거부하지 않는 쪽을 택한 경계다. 변경 시각이 있는데 발급
+     * 시각이 없는 토큰은 판정할 수 없으므로 거부한다.
+     */
+    private static void rejectIfIssuedBeforeCredentialChange(Date issuedAt, UserDetails userDetails) {
+        if (!(userDetails instanceof nuri.foundation.security.service.CustomUserDetails details)
+                || details.getCredentialsChangedAt() == null) {
+            return;
+        }
+        java.time.Instant changedAt = details.getCredentialsChangedAt().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+        if (issuedAt == null || issuedAt.toInstant().isBefore(changedAt)) {
+            throw new org.springframework.security.authentication.CredentialsExpiredException(
+                    "Access token was issued before the last credential change");
+        }
     }
 
     public String getUserId(String token) {

@@ -103,6 +103,9 @@ services:
       CORS_ORIGIN_2:
       LOGIN_MAX_FAILURES:
       LOGIN_LOCK_MINUTES:
+      # [2026-09-14 ADR-0019] 요청 제한 한도. 낮추는 순서는 application.yml 의 rate-limit 주석을 따른다.
+      RATE_LIMIT_REQUESTS_PER_MINUTE:
+      RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:
       JWT_REFRESH_TOKEN_VALIDITY_MS:
       DB_POOL_CONNECTION_TIMEOUT_MS:
       DB_POOL_MAX_SIZE:
@@ -146,10 +149,52 @@ services:
   #   ⚠ ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE 는 넣지 않는다(ADR-0010 — loopback 개발 전용).
   #     scripts/deploy-env-forwarding-contract.test.mjs 가 이 오버레이에 나타나면 red 로 막는다.
   frontend:
+    # [2026-09-14 ADR-0019] 브라우저 진입점은 아래 edge 하나다. base 가 공개하는 3000 을 비운다 —
+    #   compose 는 ports 를 이어 붙이므로 오버레이에서 목록을 덮어쓰려면 `!reset` 이 필요하다.
+    #   Next 가 직접 공개되면 클라이언트가 보낸 X-Forwarded-For 가 그대로 남아(Next 는 없을 때만 채운다)
+    #   아래 TRUSTED_EDGE_PROXY 로 켠 IP 전달이 위조 경로가 된다.
+    ports: !reset []
     environment:
+      # [2026-09-14 ADR-0019] edge 가 X-Forwarded-For 를 접속 주소로 덮어쓰는 형상에서만 켠다. 켜면 로그인·재발급·
+      #   로그아웃 BFF 와 서버 측 API 호출이 그 값을 백엔드로 넘긴다. base compose(개발·E2E)에서는 켜지 않는다.
+      TRUSTED_EDGE_PROXY: "true"
       # 브랜드 프로필·밀도 축(DEC-OPS-015, docs/03-guides/design-tokens.md). 미설정이면 기본 프로필·comfortable.
       BRAND_THEME:
       UI_DENSITY:
       LOG_LEVEL:
       # BACKEND_ACTUATOR_URL 은 전달하지 않는다 — 현재 호출 경로(클라이언트 조회 → /actuator rewrite)에서 읽히지 않고,
       #   운영의 actuator 404 는 관리 포트 분리(W1-12)의 의도된 형상이다. 9090 연결은 next.config 가 금지한 권한 완화다.
+
+  # [2026-09-14 ADR-0019 · GAP-SEC-004] 클라이언트 IP 신뢰 경계. 설정과 이유는 config/edge/default.conf.template 머리주석.
+  #   api 8080 은 그대로 공개한다(브라우저 직접 도달 형상 — docker-compose.yml egov-net 주석). 직접 온 요청은
+  #   백엔드 신뢰 대역 밖이라 X-Forwarded-For 를 무시하고 접속 주소를 쓰므로 위조 경로가 아니다.
+  edge:
+    # nginx 1.30.4 stable-alpine, 비루트(uid 101), 컨테이너 포트 8080.
+    image: nginxinc/nginx-unprivileged@sha256:adf5042a17f4ecdd200c595fa9ffd1be37efb18f89a830bd1a00e4ab4d59d42c
+    container_name: egov-edge
+    restart: always
+    ports:
+      - "${EDGE_HTTP_PORT:-80}:8080"
+    environment:
+      # 앞단 LB·TLS 종단 대역. 없으면 루프백(= 아무 상위도 신뢰하지 않음).
+      EDGE_TRUSTED_UPSTREAM: ${EDGE_TRUSTED_UPSTREAM:-127.0.0.1/32}
+      EDGE_CLIENT_MAX_BODY_SIZE: ${EDGE_CLIENT_MAX_BODY_SIZE:-50m}
+      # 템플릿 치환을 EDGE_* 로 한정한다 — nginx 변수($remote_addr 등)를 환경변수로 오인해 지우지 않게 한다.
+      NGINX_ENVSUBST_FILTER: "^EDGE_"
+    volumes:
+      - ./config/edge/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:8080/__edge/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - egov-net

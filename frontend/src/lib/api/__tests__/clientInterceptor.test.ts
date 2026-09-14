@@ -422,4 +422,62 @@ describe('API 클라이언트 인터셉터', () => {
     expect(dispatchEvent).not.toHaveBeenCalled();
   });
 
+  /**
+   * [2026-09-14 ADR-0019] 서버 컴포넌트·서버 액션의 백엔드 호출은 피어가 Next 라서, 사용자 IP 를 싣지 않으면
+   * 모든 사용자의 서버 측 조회가 요청 제한 버킷 하나를 같이 쓴다. 신뢰 앞단 프록시 형상에서만 싣는다.
+   */
+  describe('서버 측 사용자 IP 전달', () => {
+    const originalFlag = process.env.TRUSTED_EDGE_PROXY;
+
+    function serverRequestScope(options: { forwardedFor?: string; headersThrow?: boolean }) {
+      Object.defineProperty(globalThis, 'window', { value: undefined, configurable: true, writable: true });
+      vi.doMock('next/headers', () => ({
+        cookies: async () => ({ get: (name: string) => (name === 'accessToken' ? { value: 'server-token' } : undefined) }),
+        headers: async () => {
+          if (options.headersThrow) throw new Error('outside request scope');
+          return new Headers(options.forwardedFor ? { 'x-forwarded-for': options.forwardedFor } : {});
+        },
+      }));
+    }
+
+    afterEach(() => {
+      vi.doUnmock('next/headers');
+      if (originalFlag === undefined) delete process.env.TRUSTED_EDGE_PROXY;
+      else process.env.TRUSTED_EDGE_PROXY = originalFlag;
+    });
+
+    it('신뢰 앞단 프록시 형상이면 받은 사용자 IP 를 백엔드 호출에 싣는다', async () => {
+      process.env.TRUSTED_EDGE_PROXY = 'true';
+      serverRequestScope({ forwardedFor: '203.0.113.9' });
+      const { captured } = await loadClient();
+
+      const config = await captured.requestOk!({ url: '/boards', headers: {} }) as { headers: Record<string, string> };
+
+      expect(config.headers['X-Forwarded-For']).toBe('203.0.113.9');
+      expect(config.headers['Authorization']).toBe('Bearer server-token');
+    });
+
+    it('신뢰 앞단 프록시가 없으면 싣지 않는다 — 직접 공개된 Next 에서는 위조 값일 수 있다', async () => {
+      delete process.env.TRUSTED_EDGE_PROXY;
+      serverRequestScope({ forwardedFor: '203.0.113.9' });
+      const { captured } = await loadClient();
+
+      const config = await captured.requestOk!({ url: '/boards', headers: {} }) as { headers: Record<string, string> };
+
+      expect(config.headers['X-Forwarded-For']).toBeUndefined();
+      expect(config.headers['Authorization']).toBe('Bearer server-token');
+    });
+
+    it('헤더를 읽을 수 없어도 이미 읽은 토큰은 버리지 않는다', async () => {
+      process.env.TRUSTED_EDGE_PROXY = 'true';
+      serverRequestScope({ headersThrow: true });
+      const { captured } = await loadClient();
+
+      const config = await captured.requestOk!({ url: '/boards', headers: {} }) as { headers: Record<string, string> };
+
+      expect(config.headers['Authorization']).toBe('Bearer server-token');
+      expect(config.headers['X-Forwarded-For']).toBeUndefined();
+    });
+  });
+
 });

@@ -1,0 +1,58 @@
+# 운영 앞단 프록시 — 클라이언트 IP 신뢰 경계 (ADR-0019, GAP-SEC-004)
+#
+# 이 프록시가 브라우저의 유일한 진입점이다. 역할은 하나다: 뒤로 넘기는 X-Forwarded-For 를
+# **이 프록시가 본 접속 주소로 덮어쓴다.** 클라이언트가 보낸 X-Forwarded-For 는 버린다.
+#
+#   종전 운영 형상은 Next(3000)를 호스트에 직접 공개했다. Next 는 X-Forwarded-For 가 없을 때만
+#   소켓 주소로 채우므로(`??=`) 클라이언트가 보낸 값이 그대로 남았고, 백엔드는 신뢰 대역인 Next 를
+#   피어로 보고 그 값을 사용자 IP 로 채택했다. 한편 로그인 BFF 는 헤더를 싣지 않아 모든 로그인이
+#   Next IP 하나로 모였다. 이 프록시가 앞에 서야 두 경로가 같은 실제 주소를 쓴다.
+#
+# 앞에 LB·TLS 종단이 따로 있으면 EDGE_TRUSTED_UPSTREAM 에 그 대역을 준다. 그 대역에서 온 요청만
+# 그 LB 가 붙인 X-Forwarded-For 를 따라가 실제 주소를 복원한다(real_ip). 기본값은 루프백이라
+# 사실상 아무 상위도 신뢰하지 않는다.
+#
+# ⚠ Docker 호스트의 userland-proxy 가 켜져 있으면 외부 접속의 원 주소가 브리지 게이트웨이로 바뀐다.
+#   그 주소는 백엔드의 신뢰 대역 안이라 사용자별 판정이 다시 한 주소로 모인다(위조는 되지 않는다).
+#   운영 호스트는 daemon.json 의 "userland-proxy": false 로 둔다(docs/04-operations 배포 안내).
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 8080;
+    server_name _;
+
+    set_real_ip_from ${EDGE_TRUSTED_UPSTREAM};
+    real_ip_header X-Forwarded-For;
+    real_ip_recursive on;
+
+    # 백엔드 업로드 상한(FILE_UPLOAD_MAX_REQUEST_SIZE 기본 50MB)과 맞춘다. 여기서 먼저 막히면
+    # 사용자는 백엔드의 필드 오류 대신 413 을 본다.
+    client_max_body_size ${EDGE_CLIENT_MAX_BODY_SIZE};
+
+    # compose 헬스체크 전용. 뒤 서비스의 준비 여부는 frontend 자신의 헬스체크가 판정한다.
+    location = /__edge/health {
+        access_log off;
+        return 200;
+    }
+
+    location / {
+        proxy_pass http://frontend:3000;
+        proxy_http_version 1.1;
+
+        # Next 의 Origin 검사(proxy.ts)는 Host 를 기준으로 판정한다 — 포트까지 원래 값을 넘긴다.
+        proxy_set_header Host $http_host;
+        # 덮어쓴다. `$proxy_add_x_forwarded_for` 로 이어 붙이면 클라이언트가 보낸 값이 앞에 남는다.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Host $http_host;
+
+        # /ws 는 Next rewrite 를 거쳐 백엔드 STOMP 로 간다.
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 300s;
+    }
+}

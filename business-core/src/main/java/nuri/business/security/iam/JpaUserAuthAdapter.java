@@ -28,6 +28,10 @@ public class JpaUserAuthAdapter implements UserAuthPort {
                 .password(user.getPswd()).lockAt(user.getLckYn()).enabled("P".equals(user.getUserSttsCd()))
                 .authorCode(snapshot.groups().stream().findFirst().orElse(null))
                 .groups(snapshot.groups()).permissions(snapshot.permissions())
-                .authorizationVersion(snapshot.authorizationVersion()).build();
+                .authorizationVersion(snapshot.authorizationVersion())
+                // 저장 시각은 LocalDateTime.now()(JVM 기본 시간대)이므로 같은 기준으로 되돌린다.
+                .credentialsChangedAt(user.getChgPswdLastDt() == null ? null
+                        : user.getChgPswdLastDt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+                .build();
     }
 }
