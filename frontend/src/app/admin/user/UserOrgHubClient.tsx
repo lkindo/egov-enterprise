@@ -5,8 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { type LucideIcon,
+import {
   Users,
   Network,
   UserMinus,
@@ -28,9 +27,7 @@ import { type LucideIcon,
   Database,
   Contact2,
   SearchSlash,
-  Info,
   Save,
-  GripVertical,
   KeyRound,
   Loader2,
   UserCheck } from 'lucide-react';
@@ -75,35 +72,27 @@ import { extractFieldErrors } from '@/app/actions/actionUtils';
 import {
     DndContext,
     closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
     DragOverlay,
-    defaultDropAnimationSideEffects,
     MeasuringStrategy,
-    DropAnimation,
 } from '@dnd-kit/core';
 import {
-    arrayMove,
     SortableContext,
-    sortableKeyboardCoordinates,
     verticalListSortingStrategy,
-    useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import { flattenDeptTree, listToDeptTree, getDeptProjection, FlattenedDept } from './departments/treeUtils';
-
-const INDENTATION_WIDTH = 24;
-
-/**
- * 부서 목록 조회 크기.
- * 조직도(D&D 트리)와 '부서 이동' 모달의 대상 선택은 계층 전체가 있어야 성립한다 — 페이징과 상극이다.
- * 서버는 Spring Pageable(page/size, 0-based)을 그대로 받으므로 충분히 큰 size 로 전량을 끌어온다.
- * (종전 size:10 → 11번째 부서부터 트리에서도 모달에서도 보이지 않았다.)
- */
-const DEPT_LIST_SIZE = 1000;
+import {
+  AbsenceStatusNotice,
+  AccessControlLink,
+  BulkSelectionSummary,
+  dropAnimation,
+  InfoBlock,
+  NavButton,
+  OrgPolicyPanel,
+  SortableDeptNode,
+  USER_STATUS_LABELS,
+  UserOrgMasterSection,
+} from './UserOrgHubParts';
+import { useDeptTree } from './useDeptTree';
 
 type UserOrgWriteOperation =
   | 'user-form'
@@ -116,156 +105,8 @@ type UserOrgWriteOperation =
   | 'bulk-move'
   | 'dept-hierarchy';
 
-const dropAnimation: DropAnimation = {
-    sideEffects: defaultDropAnimationSideEffects({
-        styles: {
-            active: {
-                opacity: '0.5',
-            },
-        },
-    }),
-};
 
-interface SortableDeptNodeProps {
-    node: FlattenedDept;
-    isSelected: boolean;
-    isTabStop: boolean;
-    onClick: () => void;
-    isOverlay?: boolean;
-}
 
-const SortableDeptNode = ({ node, isSelected, isTabStop, onClick, isOverlay = false }: SortableDeptNodeProps) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: node.ognzId || '', disabled: isOverlay });
-
-    const style = {
-        transform: isOverlay ? undefined : CSS.Translate.toString(transform),
-        transition: isOverlay ? undefined : transition,
-        paddingLeft: isOverlay ? 0 : `${node.depth * INDENTATION_WIDTH}px`,
-    };
-
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            aria-hidden={isOverlay ? true : undefined}
-            className={cn(
-                "group relative mb-1 outline-none",
-                isDragging && !isOverlay && "opacity-30",
-                isOverlay && "z-[9999] pointer-events-none"
-            )}
-        >
-            {/* Hierarchy Line */}
-            {node.depth > 0 && !isOverlay && (
-                <>
-                    <div className="absolute left-[11px] top-[-10px] bottom-1/2 w-px bg-muted" />
-                    <div className="absolute left-[11px] top-1/2 w-3 h-px bg-muted" />
-                </>
-            )}
-
-            <div
-              className={cn(
-                "flex w-full items-center gap-1 rounded-lg border border-transparent p-1 transition-colors",
-                "hover:bg-muted",
-                isSelected && "border-primary/30 bg-primary/10",
-                isOverlay && "border-primary bg-card shadow-2xl ring-4 ring-primary/5"
-              )}
-            >
-              <button
-                type="button"
-                {...attributes}
-                {...listeners}
-                disabled={isOverlay}
-                aria-label={`${node.ognzNm} (${node.ognzId}) 순서 이동 핸들`}
-                className="shrink-0 cursor-grab rounded p-2 text-muted-foreground hover:bg-card hover:text-foreground active:cursor-grabbing"
-              >
-                <GripVertical size={16} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                data-a2-master-item={isOverlay ? undefined : ''}
-                aria-current={isSelected ? 'true' : undefined}
-                tabIndex={isTabStop ? 0 : -1}
-                onClick={onClick}
-                className="flex min-w-0 flex-1 items-center gap-3 rounded p-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
-                        isSelected ? "bg-primary text-primary-foreground" : "bg-hub-indigo/10 text-hub-indigo group-hover:bg-primary/10 group-hover:text-primary"
-                    )}>
-                        <Building2 size={14} aria-hidden="true" />
-                    </div>
-                    <div className="flex flex-col truncate items-start">
-                        <span className={cn(
-                            "text-xs font-bold truncate leading-tight tracking-tight",
-                            isSelected ? "text-primary" : "text-foreground"
-                        )}>
-                            {node.ognzNm}
-                        </span>
-                        <span className={cn(
-                            "text-xs font-bold tracking-tighter opacity-60",
-                            isSelected ? "text-primary" : "text-muted-foreground"
-                        )}>
-                            {node.ognzId}
-                        </span>
-                    </div>
-                    {isSelected && (
-                        <div className="ml-auto">
-                            <div className="w-1.5 h-1.5 rounded-full bg-surface-inverse-foreground animate-pulse" />
-                        </div>
-                    )}
-                </div>
-              </button>
-            </div>
-        </div>
-    );
-};
-
-function UserOrgMasterSection({
-  compact,
-  title,
-  description,
-  icon: Icon,
-  children,
-}: {
-  compact: boolean;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  children: React.ReactNode;
-}) {
-  if (!compact) {
-    return (
-      <HubSectionCard title={title} description={description} icon={Icon}>
-        {children}
-      </HubSectionCard>
-    );
-  }
-
-  return (
-    <section aria-labelledby="department-master-title" className="flex min-h-0 flex-1 flex-col rounded-md border border-border bg-card">
-      <header className="border-b border-border p-[var(--filter-pad)]">
-        <div className="flex items-start gap-3">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
-            <Icon size={16} aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <h2 id="department-master-title" className="text-sm font-semibold text-foreground">{title}</h2>
-            <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">{description}</p>
-          </div>
-        </div>
-      </header>
-      <div className="min-h-0 flex-1 p-[var(--filter-pad)]">{children}</div>
-    </section>
-  );
-}
 
 type UserOrgTab = 'USERS' | 'DEPTS' | 'ABSENCES' | 'POLICIES';
 
@@ -288,12 +129,6 @@ const TAB_ROUTE_MAP: Record<UserOrgTab, string> = {
  */
 export type UserOrgPrefetch<T> = PageResponse<T> | null;
 
-/** 계정 상태 코드(userSttsCd) → 표시 라벨. 일괄 상태 변경 모달의 코드 체계와 동일하다. */
-const USER_STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  P: { label: '정상', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
-  A: { label: '승인 대기', className: 'bg-amber-500/10 text-amber-700 border-amber-500/20' },
-  D: { label: '비활성', className: 'bg-muted text-muted-foreground border-border' },
-};
 
 export default function UserOrgHubClient({
   defaultTab = 'USERS',
@@ -327,7 +162,6 @@ export default function UserOrgHubClient({
     const raw = Number(searchParams.get('page'));
     return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
   });
-  const [deptPage] = useState(1);
 
   /** 라우트(=탭) 이동 시 서버가 내려준 defaultTab 으로 동기화한다. */
   useEffect(() => {
@@ -544,73 +378,25 @@ export default function UserOrgHubClient({
    * '부서 이동' 모달의 대상 목록이 그 키워드로 걸러져 비어 버린다 — 부서 탭에서만 키워드를 태운다.
    */
   const deptKeyword = activeTab === 'DEPTS' ? debouncedKeyword : '';
-
-  /**
-   * 서버 프리페치(page.tsx)는 size=10 으로 잘린 목록일 수 있다. 잘린 시드를 initialData 로 쓰면
-   * 전역 staleTime(60s) 동안 재조회가 일어나지 않아 10건 절단이 그대로 유지된다.
-   * 전량(total)을 담고 있을 때만 시드로 채택한다.
-   */
-  const initialDeptsSeed = useMemo(() => {
-    const list = initialDepts?.list;
-    const total = initialDepts?.total;
-    return Array.isArray(list) && typeof total === 'number' && list.length >= total ? (initialDepts ?? undefined) : undefined;
-  }, [initialDepts]);
-
-  const { data: deptsData, isLoading: isDeptsLoading, isError: isDeptsError, error: deptsError, refetch: refetchDepts } = useQuery({
-    queryKey: ['admin-depts', deptKeyword, deptPage],
-    // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다. 종전의 {pageNo, searchKeyword}는
-    // ApiService 매핑 대상이 아니라 그대로 전달돼 무시됐고, 검색어가 서버에 닿지 않았다.
-    queryFn: () => deptAdminService.getDeptList({ keyword: deptKeyword, page: deptPage - 1, size: DEPT_LIST_SIZE }),
-    // 부서 탭뿐 아니라 '부서 이동' 모달·사용자 등록/수정 폼(소속 부서 선택)에서도 목록이 필요하다.
-    // 종전에는 DEPTS 탭에서만 조회해 USERS 탭의 모달이 항상 빈 상자였다.
+  const {
+    isDeptsLoading,
+    isDeptsError,
+    deptsError,
+    refetchDepts,
+    departments,
+    flattenedDepts,
+    activeDeptId,
+    hasDeptChanges,
+    setHasDeptChanges,
+    previewDepts,
+    sensors,
+    dragHandlers: deptDragHandlers,
+  } = useDeptTree({
+    deptKeyword,
+    initialDepts,
     enabled: activeTab === 'DEPTS' || isBulkMoveModalOpen || isUserModalOpen,
-    initialData: (deptPage === 1 && !deptKeyword) ? initialDeptsSeed : undefined
+    onDragSelect: setSelectedItemId,
   });
-
-  // D&D States for Depts
-  const [flattenedDepts, setFlattenedDepts] = useState<FlattenedDept[]>([]);
-  const [activeDeptId, setActiveDeptId] = useState<string | null>(null);
-  /** 드래그 중 가로 이동 거리. 이 값으로 계층(깊이)이 결정된다 — 없으면 순서만 바뀌고 계층은 그대로다. */
-  const [deptOffsetLeft, setDeptOffsetLeft] = useState(0);
-  /** 현재 드롭 대상. 메뉴 관리(MenuAdminClient)와 동일하게 실시간 투영을 계산하기 위해 추적한다. */
-  const [overDeptId, setOverDeptId] = useState<string | null>(null);
-  const [hasDeptChanges, setHasDeptChanges] = useState(false);
-
-  /**
-   * 드래그 중 투영(projection) — 지금 놓으면 어떤 깊이/부모가 되는지 실시간 계산한다.
-   * 종전에는 onDragEnd 에서만 계산해, 끄는 동안 결과를 알 수 없었고 최상단 이동이나
-   * 부모 전환이 의도대로 됐는지 놓아봐야만 알 수 있었다. (메뉴 관리와 동일한 패턴)
-   */
-  const deptProjected = useMemo(() => {
-    if (!activeDeptId || !overDeptId) return null;
-    return getDeptProjection(flattenedDepts, activeDeptId, overDeptId, deptOffsetLeft, INDENTATION_WIDTH);
-  }, [flattenedDepts, activeDeptId, overDeptId, deptOffsetLeft]);
-
-  /** 드래그 중인 노드에 투영 깊이를 입혀 들여쓰기가 즉시 보이게 한다. */
-  const previewDepts = useMemo(
-    () => flattenedDepts.map((n) =>
-      n.ognzId === activeDeptId && deptProjected ? { ...n, depth: deptProjected.depth } : n
-    ),
-    [flattenedDepts, activeDeptId, deptProjected]
-  );
-
-  const departments = useMemo(() => {
-    const list = deptsData?.list;
-    return (Array.isArray(list) ? list.filter(Boolean) : []) as Department[];
-  }, [deptsData]);
-
-  // 평탄화는 탭과 무관하게 수행한다. 종전에는 DEPTS 탭 조건이 걸려 있어 USERS 탭의
-  // '부서 이동' 모달이 렌더하는 flattenedDepts 가 언제나 빈 배열이었다.
-  useEffect(() => {
-    // Build tree and flatten it for D&D
-    const tree = listToDeptTree(departments);
-    setFlattenedDepts(flattenDeptTree(tree));
-  }, [departments]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
 
   const onUserSubmit = async (values: UserFormValues) => {
     const operation = 'user-form' as const;
@@ -1099,39 +885,7 @@ export default function UserOrgHubClient({
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
                                 measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-                                onDragStart={(e) => {
-                                    setActiveDeptId(e.active.id as string);
-                                    setSelectedItemId(e.active.id as string);
-                                    // 시작 시 드롭 대상을 자기 자신으로 두어야 첫 프레임부터 투영이 계산된다.
-                                    setOverDeptId(e.active.id as string);
-                                    setDeptOffsetLeft(0);
-                                }}
-                                onDragOver={({ over }) => setOverDeptId((over?.id as string) ?? null)}
-                                // ⚠ 계층(깊이) 변경은 '가로' 드래그 거리로 결정된다. 종전에는 이 핸들러가 없어
-                                //    getDeptProjection 에 dragOffset=0 이 고정으로 들어갔고, 그 결과
-                                //    projectedDepth = dragItem.depth + Math.round(0 / indentationWidth) = 기존 깊이
-                                //    가 되어 아무리 끌어도 계층이 바뀌지 않고 순서만 바뀌었다.
-                                //    (메뉴 관리 화면 MenuAdminClient 는 이 패턴을 이미 갖추고 있다.)
-                                onDragMove={({ delta }) => setDeptOffsetLeft(delta.x)}
-                                onDragEnd={(event) => {
-                                    const { active, over } = event;
-                                    // 제자리에 놓아도(active===over) 가로로 밀어 깊이만 바꾸는 경우가 있으므로
-                                    // 위치 변경 여부가 아니라 투영 결과를 기준으로 반영한다.
-                                    if (over && deptProjected) {
-                                        setFlattenedDepts((items) => {
-                                            const oldIndex = items.findIndex(n => n.ognzId === active.id);
-                                            const newIndex = items.findIndex(n => n.ognzId === over.id);
-                                            const newItems = oldIndex === newIndex ? items.slice() : arrayMove(items, oldIndex, newIndex);
-                                            const idx = newItems.findIndex(n => n.ognzId === active.id);
-                                            newItems[idx] = { ...newItems[idx], parentId: deptProjected.parentId, depth: deptProjected.depth };
-                                            return newItems;
-                                        });
-                                        setHasDeptChanges(true);
-                                    }
-                                    setActiveDeptId(null);
-                                    setOverDeptId(null);
-                                    setDeptOffsetLeft(0);
-                                }}
+                                {...deptDragHandlers}
                             >
                                 <SortableContext items={previewDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
                                     <div className="space-y-1">
@@ -1190,35 +944,13 @@ export default function UserOrgHubClient({
                     ) : (
                         <div className="space-y-4">
                           {activeTab === 'ABSENCES' && (
-                            /*
-                              [2026-09-07] 종전 문구는 "부재 정보는 아직 연동되지 않았습니다" 였다. 이제 연동됐으므로
-                              그 고지를 걷되, 남은 사실 두 가지는 계속 말한다 — 목록은 전체 사용자이고(부재자 필터가 아니다),
-                              조회가 실패하면 '전원 정상' 으로 위장하지 않는다.
-                            */
-                            isAbsencesError ? (
-                              <div role="alert" className="flex items-start gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5 text-left">
-                                <Info size={16} className="mt-0.5 shrink-0 text-destructive-emphasis" aria-hidden="true" />
-                                <div className="space-y-2">
-                                  <p className="text-xs font-bold text-destructive-emphasis leading-relaxed">
-                                    부재 상태를 불러오지 못했습니다. 아래 목록의 부재 여부는 <strong>알 수 없음</strong>이며 정상이라는 뜻이 아닙니다.
-                                    {absencesError instanceof Error ? ` (${absencesError.message})` : ''}
-                                  </p>
-                                  <Button variant="outline" size="sm" onClick={() => { void refetchAbsences(); }} className="gap-2 h-8">
-                                    <RefreshCcw size={14} aria-hidden="true" /> 다시 시도
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div role="note" className="flex items-start gap-3 p-4 rounded-xl border border-border bg-muted/40 text-left">
-                                <Info size={16} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                                <p className="text-xs font-bold text-muted-foreground leading-relaxed">
-                                  아래 목록은 <strong>전체 사용자</strong>이며, 각 행의 부재 여부를 함께 표시합니다.
-                                  {isAbsencesLoading
-                                    ? ' 부재 상태를 불러오는 중입니다.'
-                                    : ` 현재 페이지에서 부재로 표시된 사용자는 ${users.filter((user) => absenceOf(user) === ABSENT).length}명입니다.`}
-                                </p>
-                              </div>
-                            )
+                            <AbsenceStatusNotice
+                              isError={isAbsencesError}
+                              error={absencesError}
+                              isLoading={isAbsencesLoading}
+                              absentCount={users.filter((user) => absenceOf(user) === ABSENT).length}
+                              onRetry={() => { void refetchAbsences(); }}
+                            />
                           )}
                           <StandardDataTable<UserManage>
                               columns={userColumns as Column<UserManage>[]}
@@ -1348,31 +1080,7 @@ export default function UserOrgHubClient({
                       )}
                     </div>
 
-                    {activeTab !== 'DEPTS' && <div className="pt-10 border-t border-border/50 space-y-8">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-                            <ShieldCheck size={16} aria-hidden="true" />
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-semibold text-muted-foreground leading-none mb-1.5">접근 제어</h4>
-                            <p className="text-sm font-black text-foreground tracking-tighter leading-none">권한 그룹 관리</p>
-                          </div>
-                        </div>
-                        {/* 종전에는 onClick 없는 死버튼이었고, 아래에는 실제 권한과 무관한
-                            고정 태그 5개(ACCESS_CMS …)가 붙어 있었다(감사 P1-5·P1-6). */}
-                        <button
-                          type="button"
-                          onClick={() => router.push('/admin/security/authority')}
-                          className="h-10 px-5 rounded-xl bg-muted hover:bg-surface-inverse text-[10px] font-black text-foreground hover:text-surface-inverse-foreground gap-2 transition-all flex items-center justify-center outline-none cursor-pointer"
-                        >
-                          권한 설정 열기 <ChevronRight size={14} aria-hidden="true" />
-                        </button>
-                      </div>
-                      <p className="text-xs font-bold text-muted-foreground leading-relaxed">
-                        사용자별 권한은 <span className="text-foreground">권한 그룹 관리</span> 화면에서 부여·회수합니다.
-                      </p>
-                    </div>}
+                    {activeTab !== 'DEPTS' && <AccessControlLink onOpen={() => router.push('/admin/security/authority')} />}
                   </div>
 
                   {activeTab !== 'DEPTS' && <div className="flex gap-4 pt-10 mt-auto border-t border-border/50 relative z-10">
@@ -1493,15 +1201,7 @@ export default function UserOrgHubClient({
         maxWidth="sm"
       >
         <div className="space-y-8 p-4">
-          <div className="p-6 bg-muted rounded-lg border border-border">
-            <p className="text-xs font-bold text-muted-foreground tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
-            <div className="flex flex-wrap gap-2">
-              {selectedBulkItems.slice(0, 5).map(u => (
-                <span key={u.userId} className="px-3 py-1 bg-card border border-border rounded-lg text-xs font-bold text-foreground">{u.userNm}</span>
-              ))}
-              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-muted-foreground">외 {selectedBulkItems.length - 5}명</span>}
-            </div>
-          </div>
+          <BulkSelectionSummary users={selectedBulkItems} />
 
           <div className="space-y-4">
             {/* 폼 컨트롤이 아니라 버튼 그룹이므로 <label> 이 아니라 radiogroup 으로 이름을 붙인다(감사 P2). */}
@@ -1565,15 +1265,7 @@ export default function UserOrgHubClient({
         maxWidth="md"
       >
         <div className="space-y-8 p-4">
-          <div className="p-6 bg-muted rounded-lg border border-border">
-            <p className="text-xs font-bold text-muted-foreground tracking-tight mb-2">선택된 사용자 ({selectedBulkItems.length}명)</p>
-            <div className="flex flex-wrap gap-2">
-              {selectedBulkItems.slice(0, 5).map(u => (
-                <span key={u.userId} className="px-3 py-1 bg-card border border-border rounded-lg text-xs font-bold text-foreground">{u.userNm}</span>
-              ))}
-              {selectedBulkItems.length > 5 && <span className="text-xs font-bold text-muted-foreground">외 {selectedBulkItems.length - 5}명</span>}
-            </div>
-          </div>
+          <BulkSelectionSummary users={selectedBulkItems} />
 
           <div className="space-y-4">
             <p id="bulk-dept-label" className="text-xs font-bold text-foreground tracking-tight">이동할 대상 부서 선택</p>
@@ -1640,103 +1332,3 @@ export default function UserOrgHubClient({
   );
 }
 
-function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors',
-        active ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground'
-      )}
-    >
-      <span className={cn(
-        "transition-colors shrink-0",
-        active ? "text-primary" : "text-muted-foreground"
-      )}>
-        {icon}
-      </span>
-      <span>{label}</span>
-      {active && (
-        <motion.div 
-          layoutId="activeTabGlow"
-          className="absolute right-0 top-0 w-16 h-16 bg-primary/20 rounded-full blur-2xl opacity-40 -mr-8 -mt-8 pointer-events-none" 
-        />
-      )}
-    </button>
-  );
-}
-
-/**
- * '조직 정책' 탭 패널.
- *
- * 종전에는 이 탭이 사용자 목록을 그대로 재사용해, 정책 화면인 척하며 계정 목록을 보여줬다
- * (감사: 사용자/조직 > 부재관리·개인정보정책 D등급). 이 허브에는 정책 편집 기능이 없으므로
- * 실제 편집 화면으로 안내한다 — 없는 기능을 있는 것처럼 그리지 않는다.
- */
-function OrgPolicyPanel({ onNavigate }: { onNavigate: (href: string) => void }) {
-  const links: { href: string; title: string; description: string }[] = [
-    {
-      href: '/admin/security/login-policy',
-      title: '로그인 정책 관리',
-      description: '사용자별 접속 IP·허용 시간대·2단계 인증(OTP)을 관리합니다.',
-    },
-    {
-      href: '/admin/system/policies',
-      title: '개인정보처리방침 · 이용약관',
-      // '공개 페이지'가 아니다 — /help/policies/[type] 은 로그인을 요구하고, 본문 조회 API 가
-      //   /api/v1/admin/** 아래라 일반 사용자에게는 403 이다(ApiSecurityConfig 실측).
-      description: '정책 본문을 편집합니다. 현재 열람은 관리자에게만 가능합니다.',
-    },
-    {
-      href: '/admin/security/authority',
-      title: '권한 그룹 관리',
-      description: '그룹별 기능권한과 메뉴 표시를 설정하고 사용자에게 하나 이상의 권한 그룹을 배정합니다.',
-    },
-  ];
-
-  return (
-    <div className="space-y-4 py-2">
-      <div role="note" className="flex items-start gap-3 p-4 rounded-xl border border-border bg-muted/50 text-left">
-        <Info size={16} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <p className="text-xs font-bold text-muted-foreground leading-relaxed">
-          조직 정책 편집 기능은 이 허브가 아니라 아래 전용 화면에 있습니다.
-        </p>
-      </div>
-      <ul className="space-y-3">
-        {links.map((link) => (
-          <li key={link.href}>
-            <button
-              type="button"
-              onClick={() => onNavigate(link.href)}
-              className="w-full flex items-center justify-between gap-4 p-5 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-muted/60 transition-all text-left outline-none cursor-pointer"
-            >
-              <span className="space-y-1">
-                <span className="block text-sm font-black text-foreground tracking-tight">{link.title}</span>
-                <span className="block text-xs font-bold text-muted-foreground">{link.description}</span>
-              </span>
-              <ChevronRight size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function InfoBlock({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
-  return (
-    <div className="space-y-4 p-8 rounded-lg bg-muted/50 shadow-inner border border-border transition-all hover:bg-card hover:shadow-2xl hover:scale-105 group cursor-default relative overflow-hidden">
-      <div className="absolute top-0 right-0 p-8 opacity-[0.02] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-        {icon}
-      </div>
-      <h5 className="text-xs font-bold text-muted-foreground/60 tracking-tight flex items-center gap-3 group-hover:text-primary transition-colors relative z-10">
-        {icon} {label}
-      </h5>
-      <p className="text-2xl font-bold tracking-tighter text-foreground truncate leading-none relative z-10 py-1">
-        {value}
-      </p>
-    </div>
-  );
-}

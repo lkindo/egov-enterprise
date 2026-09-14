@@ -60,6 +60,14 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 
 로컬 훅은 빠른 피드백이며 `--no-verify`로 우회 가능하다. 병합 권위는 required CI다. 더 넓은 검증이 필요하면 `npm run verify`, 운영 ruleset은 `npm run verify:ops`를 사용한다.
 
+## 거버넌스 총량 관리
+
+게이트와 기록은 신호를 지키기 위한 비용이다. 비용이 신호보다 빨리 늘지 않게 한다.
+
+- 새 게이트·계약·census를 만들기 전에 같은 불변식을 이미 보는 게이트([gate registry](config/governance/gates.json), `scripts/*.test.mjs`, 하네스)를 찾는다. 기존 게이트를 확장해 해결되면 확장한다. 새로 만들면 확장할 수 없는 이유를 변경 설명에 남긴다.
+- 변경 후 두 게이트가 같은 불변식을 검사하면 같은 변경에서 하나로 합치거나 약한 쪽을 걷는다. 걷은 뒤 남은 게이트로 red 증명을 다시 확인한다. 적용 범위가 줄지 않는 중복 제거는 H2의 신호 은폐가 아니다.
+- 공용 메모리 행에는 결론·근거 링크·다음 행동만 적는다. 경위·실측 로그·red 증명 상세는 커밋·PR·링크 문서에 둔다. 행 길이 상한은 [공용 메모리 계약](scripts/shared-memory-contract.test.mjs)이 검사한다.
+
 ## 공유 워킹트리와 Git
 
 - 수정 전후 `git status`와 대상 diff를 확인하고 다른 에이전트·사용자의 WIP를 덮어쓰지 않는다.

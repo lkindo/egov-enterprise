@@ -27,10 +27,10 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "8ac10571c0d53e830ed29de2979529b370c1ef6aabcdb55ae4f260f3f8126537"
+    "inventoryHash": "0bffe670b4da83fc4abe5b4bb708cc62f59fff4b59519393d433cac137e1a114"
   },
   "summary": {
-    "sourceFileCount": 545,
+    "sourceFileCount": 550,
     "records": 388,
     "syntaxOccurrences": 458,
     "ambiguousRecords": 357,
@@ -10941,159 +10941,6 @@
       }
     },
     {
-      "id": "URL-29D7E6272D1893",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "href-field",
-      "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin",
-      "targetCandidate": "/admin/security/authority",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/security/authority",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-E3DC75224DCCB9",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "href-field",
-      "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin",
-      "targetCandidate": "/admin/security/login-policy",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/security/login-policy",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-3160B00BFBD857",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "href-field",
-      "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin",
-      "targetCandidate": "/admin/system/policies",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/system/policies",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-C846F9BFF59AC3",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "href-field",
-      "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 2
-      }
-    },
-    {
       "id": "URL-0F0CDA16A338DF",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -11401,6 +11248,159 @@
         "source": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
         "detector": "url-search-param-method",
         "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-319615904D1F30",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+      "producerFile": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin",
+      "targetCandidate": "/admin/security/authority",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/security/authority",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-E2E8A10973E1AD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+      "producerFile": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin",
+      "targetCandidate": "/admin/security/login-policy",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/security/login-policy",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-5E15DA84201D81",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+      "producerFile": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin",
+      "targetCandidate": "/admin/system/policies",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/policies",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-BA4ACC1D211B8F",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+      "producerFile": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 2
       }
     },
     {

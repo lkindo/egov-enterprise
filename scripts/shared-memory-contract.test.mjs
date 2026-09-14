@@ -511,6 +511,51 @@ test('memory registries use unique IDs and allowed gap states', () => {
   }
 });
 
+/**
+ * [2026-09-14 AGENTS.md 거버넌스 총량 관리] 공용 메모리는 인덱스다. 행에는 결론·근거 링크·다음 행동만 두고
+ * 경위·실측 로그·red 증명 상세는 커밋·PR·링크 문서에 둔다. 결정 행은 소급 편집하지 않으므로 상한은
+ * FIRST_CAPPED_DECISION 이후 행에만 적용한다. gap·context 행은 현재 상태라 전부 적용한다.
+ */
+export const MEMORY_ROW_LIMITS = Object.freeze({ DEC: 1200, GAP: 1600, CTX: 700 });
+export const FIRST_CAPPED_DECISION = 97;
+
+export function memoryRowLengthViolations(text) {
+  const violations = [];
+  for (const row of text.split(/\r?\n/)) {
+    const id = row.match(/^\| ((DEC|GAP|CTX)-[A-Z0-9-]+) \|/);
+    if (!id || id[1] === 'GAP-ID') continue;
+    const kind = id[2];
+    if (kind === 'DEC') {
+      const number = Number(id[1].match(/-(\d+)$/)?.[1]);
+      if (!Number.isFinite(number) || number < FIRST_CAPPED_DECISION) continue;
+    }
+    if (row.length > MEMORY_ROW_LIMITS[kind]) {
+      violations.push(`${id[1]}: 행 ${row.length}자 > 상한 ${MEMORY_ROW_LIMITS[kind]}자 — 경위·실측·red 증명 상세는 링크 문서·커밋으로 옮기십시오.`);
+    }
+  }
+  return violations;
+}
+
+test('shared memory rows stay index-sized', () => {
+  const violations = Object.keys(documents)
+    .flatMap((file) => memoryRowLengthViolations(fs.readFileSync(path.join(memoryDir, file), 'utf8')));
+  assert.deepEqual(violations, []);
+
+  const agents = readRepoFile('AGENTS.md');
+  assert.match(agents, /## 거버넌스 총량 관리/u, 'AGENTS.md 에 거버넌스 총량 규칙이 있어야 이 상한의 근거가 선다.');
+  assert.ok(agents.includes('(scripts/shared-memory-contract.test.mjs)'), 'AGENTS.md 규칙은 집행 계약을 가리켜야 한다(H5).');
+});
+
+test('memory row limits are red for oversized new rows and leave accepted history alone', () => {
+  const pad = (n) => 'x'.repeat(n);
+  assert.deepEqual(memoryRowLengthViolations(`| DEC-OPS-096 | accepted | ${pad(3000)} |`), [], '상한 이전 결정은 소급 편집 대상이 아니다');
+  assert.equal(memoryRowLengthViolations(`| DEC-OPS-097 | accepted | ${pad(1300)} |`).length, 1);
+  assert.equal(memoryRowLengthViolations(`| DEC-OPS-120 | accepted | ${pad(1000)} |`).length, 0);
+  assert.equal(memoryRowLengthViolations(`| GAP-NEW-001 | P2 | open | ${pad(1700)} |`).length, 1);
+  assert.equal(memoryRowLengthViolations(`| CTX-099 | ${pad(800)} |`).length, 1);
+  assert.equal(memoryRowLengthViolations(`| GAP-ID | 우선순위 | ${pad(2000)} |`).length, 0, '표 머리글은 행이 아니다');
+});
+
 test('shared memory is public-repository safe', () => {
   const text = Object.keys(documents)
     .map((file) => fs.readFileSync(path.join(memoryDir, file), 'utf8'))
