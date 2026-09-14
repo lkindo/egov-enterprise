@@ -1,0 +1,164 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragMoveEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { deptAdminService, Department } from '@/services/foundation/system/DeptAdminService';
+import { PageResponse } from '@/types/foundation/system';
+import { flattenDeptTree, listToDeptTree, getDeptProjection, FlattenedDept } from './departments/treeUtils';
+import { INDENTATION_WIDTH } from './UserOrgHubParts';
+
+/**
+ * 부서 목록 조회 크기.
+ * 조직도(D&D 트리)와 '부서 이동' 모달의 대상 선택은 계층 전체가 있어야 성립한다 — 페이징과 상극이다.
+ * 서버는 Spring Pageable(page/size, 0-based)을 그대로 받으므로 충분히 큰 size 로 전량을 끌어온다.
+ * (종전 size:10 → 11번째 부서부터 트리에서도 모달에서도 보이지 않았다.)
+ */
+const DEPT_LIST_SIZE = 1000;
+const DEPT_PAGE = 1;
+
+/**
+ * 사용자·조직 허브의 부서 조회와 조직도 드래그 상태.
+ *
+ * 조회·평탄화·드래그 투영만 둔다. 계층 저장·부서 삭제 같은 쓰기와 그 잠금은 UserOrgHubClient 가 소유한다.
+ */
+export function useDeptTree({
+  deptKeyword,
+  initialDepts,
+  enabled,
+  onDragSelect,
+}: {
+  /** 부서 탭에서만 검색어를 태운다 — 호출부가 결정한다. */
+  deptKeyword: string;
+  initialDepts: PageResponse<Department> | null;
+  enabled: boolean;
+  /** 드래그를 시작한 부서를 선택 상태로 만든다(선택은 허브가 소유한다). */
+  onDragSelect: (ognzId: string) => void;
+}) {
+  /**
+   * 서버 프리페치(page.tsx)는 size=10 으로 잘린 목록일 수 있다. 잘린 시드를 initialData 로 쓰면
+   * 전역 staleTime(60s) 동안 재조회가 일어나지 않아 10건 절단이 그대로 유지된다.
+   * 전량(total)을 담고 있을 때만 시드로 채택한다.
+   */
+  const initialDeptsSeed = useMemo(() => {
+    const list = initialDepts?.list;
+    const total = initialDepts?.total;
+    return Array.isArray(list) && typeof total === 'number' && list.length >= total ? (initialDepts ?? undefined) : undefined;
+  }, [initialDepts]);
+
+  const { data: deptsData, isLoading: isDeptsLoading, isError: isDeptsError, error: deptsError, refetch: refetchDepts } = useQuery({
+    queryKey: ['admin-depts', deptKeyword, DEPT_PAGE],
+    // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다. 종전의 {pageNo, searchKeyword}는
+    // ApiService 매핑 대상이 아니라 그대로 전달돼 무시됐고, 검색어가 서버에 닿지 않았다.
+    queryFn: () => deptAdminService.getDeptList({ keyword: deptKeyword, page: DEPT_PAGE - 1, size: DEPT_LIST_SIZE }),
+    // 부서 탭뿐 아니라 '부서 이동' 모달·사용자 등록/수정 폼(소속 부서 선택)에서도 목록이 필요하다.
+    // 종전에는 DEPTS 탭에서만 조회해 USERS 탭의 모달이 항상 빈 상자였다.
+    enabled,
+    initialData: !deptKeyword ? initialDeptsSeed : undefined
+  });
+
+  // D&D States for Depts
+  const [flattenedDepts, setFlattenedDepts] = useState<FlattenedDept[]>([]);
+  const [activeDeptId, setActiveDeptId] = useState<string | null>(null);
+  /** 드래그 중 가로 이동 거리. 이 값으로 계층(깊이)이 결정된다 — 없으면 순서만 바뀌고 계층은 그대로다. */
+  const [deptOffsetLeft, setDeptOffsetLeft] = useState(0);
+  /** 현재 드롭 대상. 메뉴 관리(MenuAdminClient)와 동일하게 실시간 투영을 계산하기 위해 추적한다. */
+  const [overDeptId, setOverDeptId] = useState<string | null>(null);
+  const [hasDeptChanges, setHasDeptChanges] = useState(false);
+
+  /**
+   * 드래그 중 투영(projection) — 지금 놓으면 어떤 깊이/부모가 되는지 실시간 계산한다.
+   * 종전에는 onDragEnd 에서만 계산해, 끄는 동안 결과를 알 수 없었고 최상단 이동이나
+   * 부모 전환이 의도대로 됐는지 놓아봐야만 알 수 있었다. (메뉴 관리와 동일한 패턴)
+   */
+  const deptProjected = useMemo(() => {
+    if (!activeDeptId || !overDeptId) return null;
+    return getDeptProjection(flattenedDepts, activeDeptId, overDeptId, deptOffsetLeft, INDENTATION_WIDTH);
+  }, [flattenedDepts, activeDeptId, overDeptId, deptOffsetLeft]);
+
+  /** 드래그 중인 노드에 투영 깊이를 입혀 들여쓰기가 즉시 보이게 한다. */
+  const previewDepts = useMemo(
+    () => flattenedDepts.map((n) =>
+      n.ognzId === activeDeptId && deptProjected ? { ...n, depth: deptProjected.depth } : n
+    ),
+    [flattenedDepts, activeDeptId, deptProjected]
+  );
+
+  const departments = useMemo(() => {
+    const list = deptsData?.list;
+    return (Array.isArray(list) ? list.filter(Boolean) : []) as Department[];
+  }, [deptsData]);
+
+  // 평탄화는 탭과 무관하게 수행한다. 종전에는 DEPTS 탭 조건이 걸려 있어 USERS 탭의
+  // '부서 이동' 모달이 렌더하는 flattenedDepts 가 언제나 빈 배열이었다.
+  useEffect(() => {
+    // Build tree and flatten it for D&D
+    const tree = listToDeptTree(departments);
+    setFlattenedDepts(flattenDeptTree(tree));
+  }, [departments]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const dragHandlers = {
+    onDragStart: ({ active }: DragStartEvent) => {
+      setActiveDeptId(active.id as string);
+      onDragSelect(active.id as string);
+      // 시작 시 드롭 대상을 자기 자신으로 두어야 첫 프레임부터 투영이 계산된다.
+      setOverDeptId(active.id as string);
+      setDeptOffsetLeft(0);
+    },
+    onDragOver: ({ over }: DragOverEvent) => setOverDeptId((over?.id as string) ?? null),
+    // ⚠ 계층(깊이) 변경은 '가로' 드래그 거리로 결정된다. 종전에는 이 핸들러가 없어
+    //    getDeptProjection 에 dragOffset=0 이 고정으로 들어갔고, 그 결과
+    //    projectedDepth = dragItem.depth + Math.round(0 / indentationWidth) = 기존 깊이
+    //    가 되어 아무리 끌어도 계층이 바뀌지 않고 순서만 바뀌었다.
+    //    (메뉴 관리 화면 MenuAdminClient 는 이 패턴을 이미 갖추고 있다.)
+    onDragMove: ({ delta }: DragMoveEvent) => setDeptOffsetLeft(delta.x),
+    onDragEnd: ({ active, over }: DragEndEvent) => {
+      // 제자리에 놓아도(active===over) 가로로 밀어 깊이만 바꾸는 경우가 있으므로
+      // 위치 변경 여부가 아니라 투영 결과를 기준으로 반영한다.
+      if (over && deptProjected) {
+        setFlattenedDepts((items) => {
+          const oldIndex = items.findIndex(n => n.ognzId === active.id);
+          const newIndex = items.findIndex(n => n.ognzId === over.id);
+          const newItems = oldIndex === newIndex ? items.slice() : arrayMove(items, oldIndex, newIndex);
+          const idx = newItems.findIndex(n => n.ognzId === active.id);
+          newItems[idx] = { ...newItems[idx], parentId: deptProjected.parentId, depth: deptProjected.depth };
+          return newItems;
+        });
+        setHasDeptChanges(true);
+      }
+      setActiveDeptId(null);
+      setOverDeptId(null);
+      setDeptOffsetLeft(0);
+    },
+  };
+
+  return {
+    isDeptsLoading,
+    isDeptsError,
+    deptsError,
+    refetchDepts,
+    departments,
+    flattenedDepts,
+    activeDeptId,
+    hasDeptChanges,
+    setHasDeptChanges,
+    previewDepts,
+    sensors,
+    dragHandlers,
+  };
+}

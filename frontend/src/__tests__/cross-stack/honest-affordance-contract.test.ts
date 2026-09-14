@@ -178,7 +178,10 @@ describe('정책: 권한 벽을 일시 장애처럼 안내하지 않는다', () 
   });
 
   it('관리 허브가 이 화면을 공개 페이지라고 부르지 않는다', () => {
-    const hub = stripComments(readSrc('app/admin/user/UserOrgHubClient.tsx'));
+    // [2026-09-14] 정책 안내 패널은 UserOrgHubParts.tsx 로 분리했다 — 빈 검사가 되지 않도록 패널이 있는 파일을 함께 읽는다.
+    const hub = stripComments(readSrc('app/admin/user/UserOrgHubClient.tsx') + readSrc('app/admin/user/UserOrgHubParts.tsx'));
+    expect(hub).toContain('function OrgPolicyPanel');
+    expect(hub).toContain('정책 본문을 편집합니다');
     expect(hub).not.toContain('공개 페이지에 노출되는 정책 본문');
   });
 });

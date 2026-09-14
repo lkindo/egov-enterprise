@@ -291,7 +291,7 @@
       "id": "content-user-manage",
       "route": "/admin/user/manage",
       "roles": ["ADMIN", "SYSTEM"],
-      "sources": ["frontend/src/app/admin/user/UserOrgHubClient.tsx"],
+      "sources": ["frontend/src/app/admin/user/UserOrgHubClient.tsx", "frontend/src/app/admin/user/UserOrgHubParts.tsx"],
       "evidenceLevel": "static-source",
       "status": "remediated-local",
       "owner": "content-design",

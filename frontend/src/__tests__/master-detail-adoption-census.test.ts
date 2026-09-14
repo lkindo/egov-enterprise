@@ -55,10 +55,15 @@ describe('A2 master-detail adoption census', () => {
   it('/admin/user/departments만 공유 허브의 A2 레이아웃을 활성화한다', () => {
     const route = source('src/app/admin/user/departments/page.tsx');
     const client = source('src/app/admin/user/UserOrgHubClient.tsx');
+    // [2026-09-14] 부서 노드는 UserOrgHubParts.tsx 로 분리했다. 선택 시맨틱은 그 파일에, 사용은 허브에 있어야 한다.
+    const parts = source('src/app/admin/user/UserOrgHubParts.tsx');
 
     expect(route).toMatch(/<UserOrgHubClient[\s\S]*defaultTab="DEPTS"/);
     expect(client).toMatch(/<MasterDetailLayout[\s\S]*active=\{activeTab === 'DEPTS'\}/);
-    expect(client).toContain('data-a2-master-item');
+    expect(client).toMatch(/import \{[^}]*\bSortableDeptNode\b[^}]*\} from '\.\/UserOrgHubParts'/);
+    expect(client).toMatch(/<SortableDeptNode\b/);
+    expect(parts).toContain("data-a2-master-item={isOverlay ? undefined : ''}");
+    expect(parts).toContain("aria-current={isSelected ? 'true' : undefined}");
     expect(client).toContain("aria-label={activeTab === 'DEPTS' ? '부서 조직 구조'");
     expect(client).toContain("data-a2-detail={activeTab === 'DEPTS' ? '' : undefined}");
   });
@@ -114,6 +119,8 @@ describe('A2 master-detail adoption census', () => {
     const route = source('src/app/admin/system/common-code/page.tsx');
     const hub = source('src/app/admin/system/common-code/CommonCodeHubClient.tsx');
     const client = source('src/app/admin/system/common-code/CommonCodeClient.tsx');
+    // [2026-09-14] 트리 노드는 CodeTreeNode.tsx 로 분리했다. 선택 시맨틱은 그 파일이 갖고, 화면이 실제로 그 노드를 쓰는지 함께 본다.
+    const treeNode = source('src/app/admin/system/common-code/CodeTreeNode.tsx');
     const administ = source('src/app/admin/system/codes/administ/AdministCodeClient.tsx');
     const institution = source('src/app/admin/system/codes/institution/InstitutionCodeClient.tsx');
 
@@ -123,8 +130,11 @@ describe('A2 master-detail adoption census', () => {
     expect(hub).toMatch(/<PageHeader\b[\s\S]*?animateEntrance=\{false\}/);
     expect(hub).toMatch(/<CommonCodeClient\b[^>]*\bembedded\b\s*\/>/);
     expect(client).toMatch(/<MasterDetailPage\b/);
-    expect(client).toContain('data-a2-master-item');
-    expect(client).toContain("aria-current={isSelected ? 'true' : undefined}");
+    expect(client).toMatch(/import \{[^}]*\bSortableCodeNode\b[^}]*\} from '\.\/CodeTreeNode'/);
+    expect(client).toMatch(/<SortableCodeNode\b/);
+    // `data-a2-master-item-type` 도 부분 문자열로 걸리므로 속성 식 전체로 고정한다.
+    expect(treeNode).toContain("data-a2-master-item={isOverlay ? undefined : ''}");
+    expect(treeNode).toContain("aria-current={isSelected ? 'true' : undefined}");
     expect(client).toContain('aria-label="분류·그룹명 또는 코드로 검색"');
 
     expect(hub).toMatch(/activeTab\s*===\s*['"]ADMINIST['"]\s*\?\s*\(\s*<AdministCodeClient\b/);
@@ -144,10 +154,13 @@ describe('A2 master-detail adoption census', () => {
 
   it('공통코드 groupId URL 소비는 기존 미승인 legacy 한 건으로 고정하고 새 producer·저장소를 만들지 않는다', () => {
     const route = source('src/app/admin/system/common-code/page.tsx');
-    const codeClients = [
-      source('src/app/admin/system/common-code/CommonCodeClient.tsx'),
-      source('src/app/admin/system/common-code/CommonCodeHubClient.tsx'),
-    ].join('\n');
+    // 화면을 여러 파일로 나눠도 가드가 빈 검사가 되지 않도록 디렉터리의 비테스트 모듈 전체를 읽는다.
+    const codeClients = readdirSync(join(APP_DIR, 'admin', 'system', 'common-code'), { withFileTypes: true })
+      .filter((entry) => entry.isFile() && /\.tsx?$/.test(entry.name) && entry.name !== 'page.tsx')
+      .map((entry) => source(`src/app/admin/system/common-code/${entry.name}`))
+      .join('\n');
+    expect(codeClients).toContain('export default function CommonCodeClient');
+    expect(codeClients).toContain('export default function CommonCodeHubClient');
 
     expect(route).toMatch(/typeof\s+rawGroupId\s*===\s*['"]string['"]/);
     expect(route).toMatch(/item\.cdId\s*===\s*groupId/);

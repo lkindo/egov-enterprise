@@ -6,34 +6,25 @@ import { DndContext,
  useSensor, 
  useSensors, 
  DragOverlay, 
- defaultDropAnimationSideEffects, 
  DragStartEvent, 
  DragEndEvent, 
  MeasuringStrategy, 
- DropAnimation,
- type Announcements,
- type ScreenReaderInstructions } from '@dnd-kit/core';
+ type Announcements } from '@dnd-kit/core';
 import {
  SortableContext,
  sortableKeyboardCoordinates,
  verticalListSortingStrategy,
- useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
 import { flattenCodeTree, FlattenedCodeNode } from './treeUtils';
-import { cn } from '@/lib/utils';
-import { Layers,  
- Tag,  
- Search,  
+import { Search,  
  SearchSlash,  
  Plus,  
  Settings,  
  Trash2, 
  Fingerprint, 
  Save,
- Loader2,
- GripVertical } from 'lucide-react';
+ Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
@@ -43,16 +34,7 @@ import { useState, useEffect } from 'react';
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppForm } from '@/hooks/useAppForm';
-import { 
- Form, 
- FormControl, 
- FormErrorSummary,
- FormField as ShadcnFormField, 
- FormItem, 
- FormLabel, 
- FormMessage 
-} from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormErrorSummary } from '@/components/ui/form';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardModal } from '@/app/components/ui/standard-modal';
@@ -74,306 +56,23 @@ import {
 import { DomainCluster, GroupCode } from '@/types/foundation/code';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 
-const INDENTATION_WIDTH = 24;
-
-function formatClassificationLabel(name?: string): string {
- if (!name) return '알 수 없는 분류';
- return name.endsWith('분류') ? name : `${name} 분류`;
-}
-
-const CODE_DND_SCREEN_READER_INSTRUCTIONS: ScreenReaderInstructions = {
- draggable: '스페이스 또는 엔터 키로 코드 그룹 이동을 시작합니다. 방향키로 대상 분류를 찾고 스페이스 또는 엔터 키로 이동을 확정합니다. Escape 키로 취소합니다.',
-};
-
-import { CmmnClCodeDtoSchema, CmmnCodeDtoSchema, CmmnDetailCodeDtoSchema } from '@/types/generated-zod';
-
-export const codeDetailFormSchema = CmmnDetailCodeDtoSchema.extend({
- dtlCd: CmmnDetailCodeDtoSchema.shape.dtlCd
-  .unwrap()
-  .trim()
-  .min(1, '코드 식별자를 입력해 주세요.')
-  .max(12, '코드 식별자는 12자 이하여야 합니다.'),
- dtlCdNm: CmmnDetailCodeDtoSchema.shape.dtlCdNm
-  .unwrap()
-  .trim()
-  .min(1, '표기 레이블을 입력해 주세요.')
-  .max(100, '표기 레이블은 100자 이하여야 합니다.'),
- dtlCdExpln: CmmnDetailCodeDtoSchema.shape.dtlCdExpln
-  .unwrap()
-  .trim()
-  .max(4000, '설명은 4000자 이하여야 합니다.'),
- useYn: z.enum(['Y', 'N']).default('Y'),
-});
-
-const CODE_DETAIL_FIELD_LABELS = {
- dtlCd: '코드 식별자',
- dtlCdNm: '표기 레이블',
- dtlCdExpln: '메타데이터 컨텍스트 설명',
- useYn: '활성 상태',
- 'root.server': '저장 요청',
-};
-
-/**
- * 코드 분류(cluster) 폼.
- *
- * 서버 DTO(CmmnClCodeDto)는 clsfCd·clsfCdNm 을 @Size 로만 제한하지만, 둘 다 비면
- * insertCmmnClCode 의 required(...) 가 500 계열로 죽는다. 화면에서 먼저 막는다.
- */
-const codeClusterFormSchema = CmmnClCodeDtoSchema.extend({
- clsfCd: CmmnClCodeDtoSchema.shape.clsfCd
-  .unwrap()
-  .trim()
-  .min(1, '분류 코드를 입력해 주세요.')
-  .max(12, '분류 코드는 12자 이하여야 합니다.'),
- clsfCdNm: CmmnClCodeDtoSchema.shape.clsfCdNm
-  .unwrap()
-  .trim()
-  .min(1, '분류명을 입력해 주세요.')
-  .max(100, '분류명은 100자 이하여야 합니다.'),
- clsfCdExpln: CmmnClCodeDtoSchema.shape.clsfCdExpln
-  .unwrap()
-  .trim()
-  .max(4000, '설명은 4000자 이하여야 합니다.'),
- useYn: z.enum(['Y', 'N']).default('Y'),
-});
-
-const CODE_CLUSTER_FIELD_LABELS = {
- clsfCd: '분류 코드',
- clsfCdNm: '분류명',
- clsfCdExpln: '분류 설명',
- useYn: '사용 여부',
- 'root.server': '저장 요청',
-};
-
-/**
- * 코드 그룹 폼.
- *
- * clsfCd(소속 분류)는 **등록할 때만** 반영된다 — 서버의 updateCmmnCode 는 명칭·설명·사용여부만
- * 갱신하고 소속 분류는 건드리지 않는다(CommonCodeGroup#update). 그래서 수정 화면에서는 읽기
- * 전용으로 보여 주고, 분류 간 이동은 탐색기 드래그앤드롭 + '그룹 소속 저장' 경로가 담당한다.
- */
-const codeGroupFormSchema = CmmnCodeDtoSchema.extend({
- cdId: CmmnCodeDtoSchema.shape.cdId
-  .unwrap()
-  .trim()
-  .min(1, '그룹 코드를 입력해 주세요.')
-  .max(20, '그룹 코드는 20자 이하여야 합니다.'),
- cdIdNm: CmmnCodeDtoSchema.shape.cdIdNm
-  .unwrap()
-  .trim()
-  .min(1, '그룹명을 입력해 주세요.')
-  .max(100, '그룹명은 100자 이하여야 합니다.'),
- cdIdExpln: CmmnCodeDtoSchema.shape.cdIdExpln
-  .unwrap()
-  .trim()
-  .max(4000, '설명은 4000자 이하여야 합니다.'),
- clsfCd: CmmnCodeDtoSchema.shape.clsfCd
-  .unwrap()
-  .trim()
-  .min(1, '소속 분류를 선택해 주세요.')
-  .max(12, '분류 코드는 12자 이하여야 합니다.'),
- useYn: z.enum(['Y', 'N']).default('Y'),
-});
-
-const CODE_GROUP_FIELD_LABELS = {
- cdId: '그룹 코드',
- cdIdNm: '그룹명',
- cdIdExpln: '그룹 설명',
- clsfCd: '소속 분류',
- useYn: '사용 여부',
- 'root.server': '저장 요청',
-};
-
-const dropAnimation: DropAnimation = {
- sideEffects: defaultDropAnimationSideEffects({
- styles: {
- active: {
- opacity: '0.5',
- },
- },
- }),
-};
-
-function filterCodeNodes(nodes: FlattenedCodeNode[], query: string): FlattenedCodeNode[] {
- if (!query) return nodes;
- const lowerQuery = query.toLowerCase();
- const matches = new Set<string>();
-
- nodes.forEach((node) => {
- if (node.name.toLowerCase().includes(lowerQuery) || node.id.toLowerCase().includes(lowerQuery)) {
- matches.add(node.id);
- if (node.parentId) matches.add(node.parentId);
- }
- });
-
- return nodes.filter((node) => matches.has(node.id));
-}
-
-interface SortableCodeNodeProps {
- node: FlattenedCodeNode;
- isSelected: boolean;
- onClick: () => void;
- tabIndex: number;
- dragDisabled?: boolean;
- parentClassificationName?: string;
-}
-
-interface CodeNodeRowProps extends SortableCodeNodeProps {
- isOverlay?: boolean;
- nodeRef?: React.Ref<HTMLDivElement>;
- style?: React.CSSProperties;
- isDragging?: boolean;
- dragHandleProps?: React.ButtonHTMLAttributes<HTMLButtonElement>;
-}
-
-const CodeNodeRow = ({
- node,
- isSelected,
- onClick,
- tabIndex,
- dragDisabled = false,
- parentClassificationName,
- isOverlay = false,
- nodeRef,
- style,
- isDragging = false,
- dragHandleProps,
-}: CodeNodeRowProps) => {
- const isCluster = node.type === 'cluster';
-
- return (
- <div
- ref={nodeRef}
- style={style}
- aria-hidden={isOverlay || undefined}
- className={cn(
- "group relative mb-1 flex items-stretch gap-1 outline-none",
- isDragging && !isOverlay && "opacity-30",
- isOverlay && "z-[9999] pointer-events-none"
- )}
- >
- {/* Hierarchy Line for Groups */}
- {!isCluster && !isOverlay && (
- <div className="absolute left-[11px] top-[-10px] bottom-1/2 w-px bg-border" />
- )}
- {!isCluster && !isOverlay && (
- <div className="absolute left-[11px] top-1/2 w-3 h-px bg-border" />
- )}
-
- <button
- type="button"
- {...dragHandleProps}
- disabled={isOverlay || dragDisabled}
- tabIndex={isOverlay || dragDisabled || isCluster || !isSelected ? -1 : 0}
- aria-roledescription={!isCluster && !isOverlay ? '코드 그룹 소속 분류 이동 핸들' : undefined}
- aria-label={isCluster
- ? `${node.name} (${node.id}) 분류는 이동할 수 없음`
- : `${node.name} (${node.id}) 소속 분류 이동 핸들 — 현재 ${formatClassificationLabel(parentClassificationName)}`}
- className="flex w-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
- >
- <GripVertical size={16} aria-hidden="true" />
- </button>
- <button
- type="button"
- onClick={onClick}
- disabled={isOverlay}
- tabIndex={isOverlay ? -1 : tabIndex}
- data-a2-master-item={isOverlay ? undefined : ''}
- data-a2-master-item-type={isOverlay ? undefined : node.type}
- aria-current={isSelected ? 'true' : undefined}
- aria-label={`${node.name} (${node.id}) 선택`}
- className={cn(
- "relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-md border p-3 text-left transition-colors",
- isCluster 
- ? "border-transparent bg-muted/50 hover:bg-muted"
- : "border-transparent hover:bg-muted",
- isSelected && "border-primary bg-primary text-primary-foreground hover:bg-primary",
- isOverlay && "border-primary bg-card shadow-lg"
- )}
- >
- <div className="flex items-center gap-3 truncate relative z-10 w-full">
- <div className={cn(
- "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
- isSelected ? "bg-primary-foreground/20 text-primary-foreground" : "bg-card text-muted-foreground"
- )}>
- {isCluster ? <Layers size={14} aria-hidden="true" /> : <Tag size={14} aria-hidden="true" />}
- </div>
- <div className="flex flex-col truncate items-start">
- {/* 선택 배경이 cluster=surface-inverse / group=primary 로 달라 전경 토큰도 짝을 맞춘다 */}
- <span className={cn(
- "truncate text-xs font-semibold leading-tight",
- isSelected ? "text-primary-foreground" : "text-foreground"
- )}>
- {node.name}
- </span>
- <span className={cn(
- "font-mono text-xs",
- isSelected ? "text-primary-foreground" : "text-muted-foreground"
- )}>
- {node.id}
- </span>
- </div>
- </div>
- </button>
- </div>
- );
-};
-
-const SortableCodeNode = ({
- node,
- isSelected,
- onClick,
- tabIndex,
- dragDisabled = false,
- parentClassificationName,
-}: SortableCodeNodeProps) => {
- const nodeDragDisabled = dragDisabled || node.type === 'cluster';
- const {
- attributes,
- listeners,
- setNodeRef,
- transform,
- transition,
- isDragging,
- } = useSortable({
- id: node.id,
- disabled: {
- draggable: nodeDragDisabled,
- droppable: dragDisabled,
- },
- });
-
- return (
- <CodeNodeRow
- node={node}
- isSelected={isSelected}
- onClick={onClick}
- tabIndex={tabIndex}
- dragDisabled={nodeDragDisabled}
- parentClassificationName={parentClassificationName}
- nodeRef={setNodeRef}
- style={{
- transform: CSS.Translate.toString(transform),
- transition,
- paddingLeft: `${node.depth * INDENTATION_WIDTH}px`,
- }}
- isDragging={isDragging}
- dragHandleProps={{ ...attributes, ...listeners } as React.ButtonHTMLAttributes<HTMLButtonElement>}
- />
- );
-};
-
-const CodeNodeOverlay = ({ node }: { node: FlattenedCodeNode }) => (
- <CodeNodeRow
- node={node}
- isSelected={false}
- onClick={() => {}}
- tabIndex={-1}
- dragDisabled
- isOverlay
- style={{ paddingLeft: 0 }}
- />
-);
+import {
+ codeClusterFormSchema,
+ codeDetailFormSchema,
+ codeGroupFormSchema,
+ CODE_CLUSTER_FIELD_LABELS,
+ CODE_DETAIL_FIELD_LABELS,
+ CODE_GROUP_FIELD_LABELS,
+} from './common-code-form-schemas';
+import {
+ CODE_DND_SCREEN_READER_INSTRUCTIONS,
+ CodeNodeOverlay,
+ dropAnimation,
+ filterCodeNodes,
+ formatClassificationLabel,
+ SortableCodeNode,
+} from './CodeTreeNode';
+import { CodeClusterFields, CodeDetailFields, CodeGroupFields } from './CodeFormFields';
 
 interface CommonCodeClientProps {
  clCodes: CmmnClCode[];
@@ -1389,192 +1088,14 @@ export default function CommonCodeClient({
  <Form {...clusterForm}>
  <form noValidate onSubmit={submitStructureForm} className="space-y-8 pt-4">
  <FormErrorSummary labels={CODE_CLUSTER_FIELD_LABELS} onNavigate={clusterForm.focusError} />
- <ShadcnFormField
- control={clusterForm.control}
- name="clsfCd"
- required
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">분류 코드</FormLabel>
- <FormControl>
- <Input
- {...field}
- readOnly={structureModal.mode === 'edit'}
- maxLength={12}
- className="h-11 rounded-lg border-none bg-muted font-mono text-xs font-bold shadow-inner"
- placeholder="예: SYS (최대 12자)"
- />
- </FormControl>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- <ShadcnFormField
- control={clusterForm.control}
- name="clsfCdNm"
- required
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">분류명</FormLabel>
- <FormControl>
- <Input {...field} maxLength={100} className="h-11 rounded-lg border-none bg-muted text-sm font-bold shadow-inner" placeholder="분류명 입력 (최대 100자)" />
- </FormControl>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- <ShadcnFormField
- control={clusterForm.control}
- name="useYn"
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">사용 여부</FormLabel>
- <Select onValueChange={field.onChange} value={field.value}>
- <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
- <SelectValue />
- </SelectTrigger>
- </FormControl>
- <SelectContent className="rounded-lg shadow-xl z-[9999]">
- <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold text-success-emphasis">사용 중</SelectItem>
- <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold text-destructive-emphasis">미사용</SelectItem>
- </SelectContent>
- </Select>
- <p className="px-1 text-xs text-muted-foreground">
- 미사용으로 바꾸면 이 분류에 속한 코드 그룹이 목록에서 함께 사라집니다(그룹·상세 코드는 지워지지 않습니다).
- </p>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- <ShadcnFormField
- control={clusterForm.control}
- name="clsfCdExpln"
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">분류 설명</FormLabel>
- <FormControl>
- <textarea {...field} maxLength={4000} className="w-full min-h-[120px] resize-none rounded-lg border-none bg-muted p-4 text-xs font-bold shadow-inner outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="이 분류가 무엇을 묶는지 설명 (최대 4000자)" />
- </FormControl>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
+ <CodeClusterFields form={clusterForm} mode={structureModal.mode} />
  </form>
  </Form>
  ) : structureModal ? (
  <Form {...groupForm}>
  <form noValidate onSubmit={submitStructureForm} className="space-y-8 pt-4">
  <FormErrorSummary labels={CODE_GROUP_FIELD_LABELS} onNavigate={groupForm.focusError} />
- <ShadcnFormField
- control={groupForm.control}
- name="cdId"
- required
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">그룹 코드</FormLabel>
- <FormControl>
- <Input
- {...field}
- readOnly={structureModal.mode === 'edit'}
- maxLength={20}
- className="h-11 rounded-lg border-none bg-muted font-mono text-xs font-bold shadow-inner"
- placeholder="예: COM001 (최대 20자)"
- />
- </FormControl>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- <ShadcnFormField
- control={groupForm.control}
- name="cdIdNm"
- required
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">그룹명</FormLabel>
- <FormControl>
- <Input {...field} maxLength={100} className="h-11 rounded-lg border-none bg-muted text-sm font-bold shadow-inner" placeholder="그룹명 입력 (최대 100자)" />
- </FormControl>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- {structureModal.mode === 'create' ? (
- <ShadcnFormField
- control={groupForm.control}
- name="clsfCd"
- required
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">소속 분류</FormLabel>
- <Select onValueChange={field.onChange} value={field.value}>
- <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
- <SelectValue placeholder="분류 선택" />
- </SelectTrigger>
- </FormControl>
- <SelectContent className="rounded-lg shadow-xl z-[9999]">
- {clCodes.map((cl) => (
- <SelectItem key={cl.clsfCd} value={cl.clsfCd} className="h-12 rounded-lg text-xs font-bold">
- {cl.clsfCdNm} ({cl.clsfCd})
- </SelectItem>
- ))}
- </SelectContent>
- </Select>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- ) : (
- <div className="space-y-1.5">
- <span id="cmmn-group-cluster-label" className="text-xs font-bold text-foreground">소속 분류</span>
- <div
- aria-labelledby="cmmn-group-cluster-label"
- className="flex h-11 items-center rounded-lg bg-muted px-4 font-mono text-xs font-bold text-muted-foreground shadow-inner"
- >
- {groupForm.getValues('clsfCd')}
- </div>
- {/* 서버의 updateCmmnCode 는 clsfCd 를 갱신하지 않는다. 편집 가능한 것처럼 보이면 저장된 척하고 아무 일도 일어나지 않는다. */}
- <p className="px-1 text-xs text-muted-foreground">
- 소속 분류는 이 창에서 바꿀 수 없습니다. 왼쪽 탐색기에서 그룹을 다른 분류로 끌어다 놓은 뒤 &lsquo;그룹 소속 저장&rsquo;을 누르세요.
- </p>
- </div>
- )}
- <ShadcnFormField
- control={groupForm.control}
- name="useYn"
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">사용 여부</FormLabel>
- <Select onValueChange={field.onChange} value={field.value}>
- <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
- <SelectValue />
- </SelectTrigger>
- </FormControl>
- <SelectContent className="rounded-lg shadow-xl z-[9999]">
- <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold text-success-emphasis">사용 중</SelectItem>
- <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold text-destructive-emphasis">미사용</SelectItem>
- </SelectContent>
- </Select>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- <ShadcnFormField
- control={groupForm.control}
- name="cdIdExpln"
- render={({ field }) => (
- <FormItem className="space-y-1.5">
- <FormLabel className="text-xs font-bold text-foreground">그룹 설명</FormLabel>
- <FormControl>
- <textarea {...field} maxLength={4000} className="w-full min-h-[120px] resize-none rounded-lg border-none bg-muted p-4 text-xs font-bold shadow-inner outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="이 그룹의 용도와 제약 설명 (최대 4000자)" />
- </FormControl>
- <FormMessage className="text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
+ <CodeGroupFields form={groupForm} mode={structureModal.mode} clCodes={clCodes} />
  </form>
  </Form>
  ) : null}
@@ -1622,122 +1143,7 @@ export default function CommonCodeClient({
  labels={CODE_DETAIL_FIELD_LABELS}
  onNavigate={form.focusError}
  />
- <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
- <div className="space-y-8">
- {/* [P2] 폼 컨트롤이 아닌 읽기 전용 표시라 <label> 이 아닌 <span> + aria-describedby 로 연결한다. */}
- <div className="space-y-1.5 p-0.5">
- <span id="cmmn-parent-group-label" className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
- 상위 그룹 식별자
- </span>
- <div
- aria-labelledby="cmmn-parent-group-label"
- className="h-11 flex items-center px-6 rounded-lg bg-muted border-none font-mono text-xs font-bold shadow-inner text-muted-foreground"
- >
- {modalTargetGroup?.cdId}
- </div>
- </div>
-
- <ShadcnFormField
- control={form.control}
- name="dtlCd"
- required
- render={({ field }) => (
- <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
- 코드 식별자 (Unique ID)
- </FormLabel>
- <FormControl>
- <Input
- {...field}
- readOnly={!!editingDetail}
- maxLength={12}
- className="h-11 rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-muted focus:bg-card transition-all text-left"
- placeholder="Unique code indicator (최대 12자)"
- />
- </FormControl>
- <FormMessage className="mt-1 px-1 text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
-
- <ShadcnFormField
- control={form.control}
- name="dtlCdNm"
- required
- render={({ field }) => (
- <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
- 표기 레이블 (Label)
- </FormLabel>
- <FormControl>
- <Input
- {...field}
- maxLength={100}
- className="h-11 rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-muted focus:bg-card transition-all text-left"
- placeholder="레이블 명칭 입력 (최대 100자)"
- />
- </FormControl>
- <FormMessage className="mt-1 px-1 text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- </div>
-
- <div className="space-y-8">
- <ShadcnFormField
- control={form.control}
- name="useYn"
- render={({ field }) => (
- <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
- 활성 상태 프로토콜
- </FormLabel>
- <Select
- onValueChange={field.onChange}
- defaultValue={field.value}
- value={field.value}
- >
- <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
- <SelectValue />
- </SelectTrigger>
- </FormControl>
- <SelectContent className="rounded-lg shadow-xl z-[9999]">
- <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold text-success-emphasis">
- 사용 중 (ACTIVE)
- </SelectItem>
- <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold text-destructive-emphasis">
- 미사용 (INACTIVE)
- </SelectItem>
- </SelectContent>
- </Select>
- <FormMessage className="mt-1 px-1 text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
-
- <ShadcnFormField
- control={form.control}
- name="dtlCdExpln"
- render={({ field }) => (
- <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
- 메타데이터 컨텍스트 설명
- </FormLabel>
- <FormControl>
- <textarea
- {...field}
- maxLength={4000}
- className="w-full min-h-[160px] resize-none rounded-lg border-none bg-muted p-6 text-left text-xs font-bold shadow-inner outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring"
- placeholder="코드 사용처 및 시스템 제약 조건 설명... (최대 4000자)"
- />
- </FormControl>
- <FormMessage className="mt-1 px-1 text-xs font-bold text-destructive-emphasis" />
- </FormItem>
- )}
- />
- </div>
- </div>
+ <CodeDetailFields form={form} parentGroupId={modalTargetGroup?.cdId} isEditing={!!editingDetail} />
  </form>
  </Form>
  </StandardModal>
