@@ -1,4 +1,6 @@
 import { test, expect } from './fixtures/base-test';
+import AxeBuilder from '@axe-core/playwright';
+import type { Page } from '@playwright/test';
 import { getAdminBearerToken } from './utils/admin-token';
 import { buildSpecScope, ConsoleErrorGuard } from './fixtures/error-detector';
 import { BOARD_DRAFT_PREFIX } from '../src/lib/drafts/board-draft-storage';
@@ -454,5 +456,59 @@ test.describe('Tier 4: Quality & Resilience', () => {
                 }
             });
         }
+    });
+
+    /**
+     * [2026-09-14 GAP-UIQ-001] UI 품질 시나리오 8개가 쓰는 화면 중 axe 자동 검사가 없던 곳을 채운다.
+     * `/login`·`/admin` 은 01-core-base 가 이미 검사한다.
+     *
+     * ⚠ 이것은 자동 검사일 뿐이다. 기준선의 `unmeasured` 판정과 수동 접근성 48건(전문가 40·NVDA 8)을
+     *   대신하지 않으며, 이 통과를 `measured` 증거로 쓰지 않는다(ADR-0005).
+     *
+     * 로딩 중인 폴백을 검사하지 않도록, 폴백이 아닌 h1 이 보이고 로딩 상태가 사라진 뒤 감사한다
+     * (01-core-base 의 2026-07-27 스피너 오감사 선례).
+     */
+    test.describe('Scenario Route Accessibility (axe)', () => {
+        const LOADING_TEXT = /불러오는 중|준비하는 중|확인하는 중|로딩 중/;
+
+        async function expectNoAxeViolations(page: Page, route: string) {
+            await page.emulateMedia({ reducedMotion: 'reduce' });
+            await page.goto(route);
+            await expect(page.getByRole('heading', { level: 1 }).filter({ hasNotText: LOADING_TEXT }).first())
+                .toBeVisible({ timeout: 30000 });
+            await expect(page.locator('[role="status"]').filter({ hasText: LOADING_TEXT })).toHaveCount(0);
+            await page.addStyleTag({
+                content: '*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; transition-delay: 0s !important; }',
+            });
+            await page.evaluate(() => new Promise<void>((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+            }));
+            const a11y = await new AxeBuilder({ page }).analyze();
+            expect(a11y.violations, `${route}: ${JSON.stringify(a11y.violations.map((v) => `${v.id}(${v.nodes.length})`))}`).toEqual([]);
+        }
+
+        test.describe('관리자 화면', () => {
+            test.use({ storageState: 'playwright/.auth/admin.json' });
+
+            for (const route of [
+                '/admin/system/logs/user',
+                '/admin/user/manage',
+                '/admin/community/boards/insert-board-article',
+                '/admin/help/faq',
+                '/admin/community/boards/maker',
+            ]) {
+                test(`${route} 에 axe 위반이 없다`, async ({ page }) => {
+                    await expectNoAxeViolations(page, route);
+                });
+            }
+        });
+
+        test.describe('일반 사용자 화면', () => {
+            test.use({ storageState: 'playwright/.auth/user.json' });
+
+            test('/help 에 axe 위반이 없다', async ({ page }) => {
+                await expectNoAxeViolations(page, '/help');
+            });
+        });
     });
 });
