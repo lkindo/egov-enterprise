@@ -80,10 +80,12 @@ describe('MailSendHubClient 재사용 base 조합 지점', () => {
     const placeholder = screen.getByRole('textbox', { name: '수신자 선택' }).getAttribute('placeholder') ?? '';
 
     // 기대값도 같은 마커로 조립한다 — demo 가 빠진 프로필에서도 '주소록' 이 없다는 사실을 정확한 문자열로 단언한다.
-    let expectedSources = '사용자';
-    /* reusable-base:demo:start */
-    expectedSources = '사용자·주소록';
-    /* reusable-base:demo:end */
+    const expectedSources = [
+      '사용자',
+      /* reusable-base:demo:start */
+      '주소록',
+      /* reusable-base:demo:end */
+    ].join('·');
     expect(placeholder).toBe(`이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 ${expectedSources}에서 고르세요`);
   });
 
