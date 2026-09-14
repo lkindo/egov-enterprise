@@ -88,16 +88,16 @@ class EntityTableOwnershipLinterTest {
                     Set.of("up_ognz_id", "sort_ordr")));
 
     @Test
-    @DisplayName("74 Entity → 73 물리 테이블: 공유 테이블은 exact FQCN + 단일 쓰기 소유자다")
+    @DisplayName("활성 Entity와 물리 테이블 census: 공유 테이블은 exact FQCN + 단일 쓰기 소유자다")
     void entityTableOwnershipIsUniqueExceptForExactDocumentedPairs() {
         EntityInventory inventory = scanEntities();
 
         assertThat(inventory.entitiesByName())
                 .as("Entity 스캔 모집단이 바뀌었습니다. 신규/삭제가 의도됐다면 물리 테이블 소유권을 재판정하십시오.")
-                .hasSize(EXPECTED_ENTITY_COUNT);
+                .hasSize(ReusableHarnessProfile.current().count("entities", EXPECTED_ENTITY_COUNT));
         assertThat(inventory.entitiesByTable())
                 .as("현재 Entity의 distinct @Table 모집단")
-                .hasSize(EXPECTED_PHYSICAL_TABLE_COUNT);
+                .hasSize(ReusableHarnessProfile.current().count("entityTables", EXPECTED_PHYSICAL_TABLE_COUNT));
 
         List<String> violations = new ArrayList<>(duplicateOwnershipViolations(
                 inventory.entitiesByTable(), expectedSharedMembers()));
@@ -169,7 +169,7 @@ class EntityTableOwnershipLinterTest {
         }
 
         assertThat(inventory.entitiesByName().keySet()).containsAll(INSERT_ONLY_AUDIT_ENTITIES.keySet());
-        assertThat(census.getOrDefault(AuditShape.FULL, 0)).as("full audit Entity census").isEqualTo(EXPECTED_ENTITY_COUNT-INSERT_ONLY_AUDIT_ENTITIES.size());
+        assertThat(census.getOrDefault(AuditShape.FULL, 0)).as("full audit Entity census").isEqualTo(ReusableHarnessProfile.current().count("entities", EXPECTED_ENTITY_COUNT)-INSERT_ONLY_AUDIT_ENTITIES.size());
         assertThat(census.getOrDefault(AuditShape.INSERT_ONLY, 0)).as("immutable insert audit Entity census").isEqualTo(INSERT_ONLY_AUDIT_ENTITIES.size());
         assertThat(census.getOrDefault(AuditShape.TIME_ONLY, 0)).as("time-only Entity는 허용하지 않음").isZero();
         assertThat(census.getOrDefault(AuditShape.NONE, 0)).as("no-audit Entity는 허용하지 않음").isZero();
@@ -217,6 +217,7 @@ class EntityTableOwnershipLinterTest {
     void correctedAuditEntitiesRemainWriteModels() throws ClassNotFoundException, IOException {
         List<String> violations = new ArrayList<>();
         for (Map.Entry<String, String> entry : CORRECTED_AUDIT_WRITE_ENTITIES.entrySet()) {
+            if (!ReusableHarnessProfile.current().retainsType(entry.getKey())) continue;
             Class<?> entity = Class.forName(entry.getKey());
             Class<?> repository = Class.forName(entry.getValue());
             if (!BaseEntity.class.isAssignableFrom(entity)) {
@@ -231,11 +232,12 @@ class EntityTableOwnershipLinterTest {
         if (!evidence.authService().contains("refreshTokenRepository.save(")) {
             violations.add("RefreshToken 실제 save/update 경로 소실");
         }
-        if (!evidence.smsService().contains("smsRecptnRepository.save(")) {
+        if (ReusableHarnessProfile.current().retainsType("SmsService") && !evidence.smsService().contains("smsRecptnRepository.save(")) {
             violations.add("SmsRecptn 생성 save 경로 소실");
         }
-        if (!evidence.smsAsyncProcessor().contains("@Transactional(propagation = Propagation.REQUIRES_NEW)")
-                || !evidence.smsAsyncProcessor().contains(".ifPresent(r -> r.updateResult(")) {
+        if (ReusableHarnessProfile.current().retainsType("SmsAsyncProcessor")
+                && (!evidence.smsAsyncProcessor().contains("@Transactional(propagation = Propagation.REQUIRES_NEW)")
+                || !evidence.smsAsyncProcessor().contains(".ifPresent(r -> r.updateResult("))) {
             violations.add("SmsRecptn 비동기 결과 갱신의 REQUIRES_NEW + managed dirty-check 경로 소실");
         }
 
@@ -451,10 +453,12 @@ class EntityTableOwnershipLinterTest {
         return new PathEvidence(
                 HarnessSourceIndex.read(root.resolve(
                         "business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java")),
-                HarnessSourceIndex.read(root.resolve(
-                        "business-app/src/main/java/nuri/business/service/sms/SmsService.java")),
-                HarnessSourceIndex.read(root.resolve(
-                        "business-app/src/main/java/nuri/business/service/sms/SmsAsyncProcessor.java")));
+                readActiveSource(root, "business-app/src/main/java/nuri/business/service/sms/SmsService.java"),
+                readActiveSource(root, "business-app/src/main/java/nuri/business/service/sms/SmsAsyncProcessor.java"));
+    }
+
+    private static String readActiveSource(java.nio.file.Path root, String path) throws IOException {
+        return ReusableHarnessProfile.current().retainsSource(path) ? HarnessSourceIndex.read(root.resolve(path)) : "";
     }
 
     private enum AuditShape {

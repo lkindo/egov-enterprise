@@ -8,6 +8,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
+import { SCENARIO_CONTRACT_SOURCES, scenarioContractSourceHash } from './ui-quality-scenario-contract-hash.mjs';
 
 import {
   buildExecutionPlan,
@@ -1379,6 +1380,7 @@ test('combined v2 becomes measured only after clean committed protocol, build-in
       manifestPath,
       routeTruthPath,
       ...Object.values(toolingPaths),
+      ...SCENARIO_CONTRACT_SOURCES,
     ]);
     for (const relativePath of buildPaths) {
       writeRepositoryFile(root, relativePath, readFileSync(new URL(`../${relativePath}`, import.meta.url)));
@@ -1411,7 +1413,9 @@ test('combined v2 becomes measured only after clean committed protocol, build-in
       buildInputTreeHash,
       ...Object.fromEntries(Object.entries(toolingPaths).map(([key, relativePath]) => [
         key,
-        sha256Hex(readFileSync(join(root, ...relativePath.split('/')))),
+        key === 'scenarioContractHash'
+          ? scenarioContractSourceHash(source => sha256Hex(readFileSync(join(root, ...source.split('/')))))
+          : sha256Hex(readFileSync(join(root, ...relativePath.split('/')))),
       ])),
     };
     const combined = sampleCombinedSummary({ provenanceOverrides });

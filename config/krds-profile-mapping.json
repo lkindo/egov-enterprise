@@ -458,7 +458,7 @@
     {
       "id": "scheduled-upstream-review",
       "condition": "current date is after checkBy",
-      "action": "fail the mapping contract until checkedAt/checkBy and affected entries are reviewed"
+      "action": "report upstream review-needed through governance-review (ADR-0018); preserve the pinned source contract and draft claims until an actual review changes the recorded evidence"
     },
     {
       "id": "guideline-version-change",

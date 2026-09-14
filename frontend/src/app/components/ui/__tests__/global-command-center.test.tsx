@@ -62,6 +62,28 @@ describe('GlobalCommandCenter accessibility contract', () => {
     mocks.getLeftMenus.mockResolvedValue([]);
   });
 
+  it('광역 검색 제안은 선언된 q만 인코딩하여 기존 검색 주소로 이동한다', async () => {
+    const user = userEvent.setup();
+    renderCommandCenter();
+    await openFromTrigger(user);
+    const query = '홍 길동 + & #';
+    const input = screen.getByRole('textbox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    fireEvent.change(input, { target: { value: query } });
+    expect(input).toHaveAttribute('maxlength', '200');
+    await user.click(await screen.findByRole('button', { name: `"${query}" 검색어로 사이트 전체 검색` }));
+    expect(mocks.push).toHaveBeenCalledWith('/search' + '?q=' + encodeURIComponent(query));
+  });
+
+  it('프로그램으로 주입된 길이 초과 검색어도 이동 제안으로 만들지 않는다', async () => {
+    const user = userEvent.setup();
+    renderCommandCenter();
+    await openFromTrigger(user);
+    fireEvent.change(screen.getByRole('textbox', { name: '글로벌 커맨드 센터 검색어 입력' }), { target: { value: '한'.repeat(201) } });
+    expect(screen.getByRole('alert')).toHaveTextContent('200자 이내');
+    expect(screen.queryByRole('button', { name: /검색어로 사이트 전체 검색/ })).not.toBeInTheDocument();
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
   it('배경은 포커스 대상이 아니며 배경으로 닫아도 단축키 호출 위치로 포커스를 돌린다', async () => {
     const user = userEvent.setup();
     renderCommandCenter();

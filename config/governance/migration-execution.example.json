@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "product": "migration-tool",
+  "profile": null,
+  "environmentId": null,
+  "migration": {
+    "jar": { "path": "execution/migration-tool.jar", "sha256": null },
+    "mapping": { "path": "execution/mapping.yml", "sha256": null },
+    "inventory": { "path": "execution/inventory.json", "sha256": null },
+    "plan": { "path": "execution/plan.json", "sha256": null },
+    "mode": "dry-run",
+    "sourceAdapter": "postgresql-pg-catalog",
+    "schemas": [],
+    "ackSourceFreeze": false
+  }
+}

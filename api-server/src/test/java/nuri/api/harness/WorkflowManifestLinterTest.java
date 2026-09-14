@@ -19,9 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 🧾 GitHub Actions 워크플로 매니페스트 파싱 게이트.
@@ -51,6 +53,8 @@ class WorkflowManifestLinterTest {
 
     private static final String WORKFLOW_DIR = ".github/workflows";
 
+    private static JsonNode artifactContract;
+
     @Test
     @DisplayName("🧾 모든 GitHub Actions 워크플로가 파싱되고 트리거·잡을 갖는다 — 조용히 실행되지 않는 워크플로 차단")
     void auditWorkflowManifestsParseAndDeclareJobs() throws IOException {
@@ -68,7 +72,13 @@ class WorkflowManifestLinterTest {
         }
 
         // 게이트 무결성(false-green 방지): 스캔이 조용히 0 에 수렴하면 vacuous 통과가 된다.
-        if (manifests.size() < 5) {
+        if (ReusableHarnessProfile.current().projected()) {
+            // ADR-0018: 생산자 workflow는 비활성 이력이다. 활성 계약은 Node 정본으로 exact-match한다.
+            requireArtifactContract(resolveRepoRoot());
+            assertThat(manifests.stream().map(path -> path.getFileName().toString()).toList())
+                    .as("생성물의 유일한 활성 workflow는 제품 검증 CI여야 한다")
+                    .containsExactly("ci.yml");
+        } else if (manifests.size() < 5) {
             fail("게이트 무결성 파손: 워크플로 파일 스캔 건수(" + manifests.size()
                     + ")가 예상 하한(5) 미만 — 경로/스캔 파손 의심. 실측 기준값은 8건(2026-08-04)이다.");
         }
@@ -120,6 +130,15 @@ class WorkflowManifestLinterTest {
     @DisplayName("🚀 릴리스는 main의 필수 CI 증거와 실제 이미지 발행 없이는 생성되지 않는다")
     void auditReleaseRequiresCompleteCiEvidenceAndPublishedImages() throws IOException {
         Path repoRoot = resolveRepoRoot();
+        if (ReusableHarnessProfile.current().projected()) {
+            requireArtifactContract(repoRoot);
+            String runner = HarnessSourceIndex.read(repoRoot.resolve("scripts/verify-reusable-artifact.mjs"));
+            assertThat(runner).contains("environmentApproved: false", "runtimeScenariosExecuted: false");
+            assertArtifactBoundaryDocumentation(repoRoot);
+            // exact-match 계약은 contents:read, remoteApplied:false, branch/integrationId:null과
+            // 활성 workflow가 ci.yml뿐임을 검사한다. 보관된 release.yml을 발행 권한으로 읽지 않는다.
+            return;
+        }
         Path releasePath = repoRoot.resolve(WORKFLOW_DIR).resolve("release.yml");
         if (!Files.isRegularFile(releasePath)) {
             fail("게이트 무결성 파손: release.yml 을 찾을 수 없습니다 — " + releasePath.toAbsolutePath());
@@ -217,6 +236,13 @@ class WorkflowManifestLinterTest {
     @DisplayName("📈 백엔드·프런트 커버리지 하한이 CI와 localGate 양쪽 실행 경로에 결속된다")
     void auditCoverageThresholdsAreBlockingAndWired() throws IOException {
         Path root = resolveRepoRoot();
+        if (ReusableHarnessProfile.current().projected()) {
+            requireArtifactContract(root);
+            assertArtifactBoundaryDocumentation(root);
+            // 생성물은 현재 프로필의 compile/harness/schema를 실행한다. 생산자 coverage 수치와
+            // 여섯 required context를 승계했다는 주장을 하지 않으며 실제 실행 graph를 검사한다.
+            return;
+        }
         String ci = HarnessSourceIndex.read(root.resolve(WORKFLOW_DIR).resolve("ci.yml"));
         String gradle = HarnessSourceIndex.read(root.resolve("build.gradle"));
         String vitest = HarnessSourceIndex.read(root.resolve("frontend/vitest.config.mts"));
@@ -261,6 +287,14 @@ class WorkflowManifestLinterTest {
     @DisplayName("📦 프런트는 린트·운영 의존성·임시 시크릿·번들 예산·테스트를 강제한다")
     void auditFrontendBuildIsFailFastAndBundleBudgetIsBlocking() throws IOException {
         Path root = resolveRepoRoot();
+        if (ReusableHarnessProfile.current().projected()) {
+            requireArtifactContract(root);
+            String runner = HarnessSourceIndex.read(root.resolve("scripts/verify-reusable-artifact.mjs"));
+            assertThat(runner).contains("randomBytes(44)", "JWT_SECRET", "result.status !== 0",
+                    "throw new Error", "report.result = 'failed'; throw error");
+            assertArtifactBoundaryDocumentation(root);
+            return;
+        }
         String ci = HarnessSourceIndex.read(root.resolve(WORKFLOW_DIR).resolve("ci.yml"));
         String packageJson = HarnessSourceIndex.read(root.resolve("frontend/package.json"));
         String verify = HarnessSourceIndex.read(root.resolve("scripts/verify.mjs"));
@@ -318,6 +352,112 @@ class WorkflowManifestLinterTest {
                     + String.join("\n❌ ", violations));
         }
         log.info("✅ frontend-build와 local verify가 임시 JWT_SECRET 및 고정 gzip 번들 예산을 강제합니다.");
+    }
+
+    /**
+     * The Node policy is the exact-match SSOT for active product CI, aliases, history integrity and
+     * unapplied institution policy. Execute it, rather than copying its workflow template into Java.
+     * Node is already a required tool in the artifact CI. Missing Node/output and timeout fail closed.
+     */
+    static synchronized JsonNode requireArtifactContract(Path root) throws IOException {
+        if (artifactContract == null) {
+            String probe = """
+                    import { pathToFileURL } from 'node:url';
+                    import { resolve } from 'node:path';
+                    const policy = await import(pathToFileURL(resolve('scripts/reusable-artifact-entrypoints-contract.mjs')));
+                    const runner = await import(pathToFileURL(resolve('scripts/verify-reusable-artifact.mjs')));
+                    const scopes = Object.fromEntries(['full', 'contracts', 'backend', 'frontend']
+                      .map(scope => [scope, runner.verificationCommands(scope)]));
+                    let unknownScopeRejected = false;
+                    try { runner.verificationCommands('unknown'); } catch { unknownScopeRejected = true; }
+                    let unknownProfileRejected = false;
+                    try { policy.reusableArtifactEntrypoints('unknown', 'VERSION=8.28.0 --no-git --log-opts='); }
+                    catch { unknownProfileRejected = true; }
+                    process.stdout.write(JSON.stringify({ errors: policy.validateReusableArtifactEntrypoints(process.cwd()),
+                      scopes, unknownScopeRejected, unknownProfileRejected }));
+                    """;
+            Process process = new ProcessBuilder("node", "--input-type=module", "--eval", probe)
+                    .directory(root.toFile()).redirectErrorStream(true).start();
+            try {
+                if (!process.waitFor(30, TimeUnit.SECONDS)) {
+                    process.destroyForcibly();
+                    fail("생성물 CI 계약 검사 Node 프로세스 timeout");
+                }
+                String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                assertThat(process.exitValue()).as("생성물 CI 계약 검사 실행 실패: %s", output).isZero();
+                artifactContract = new ObjectMapper().readTree(output);
+            } catch (InterruptedException interrupted) {
+                process.destroyForcibly();
+                Thread.currentThread().interrupt();
+                throw new IOException("생성물 CI 계약 검사 중단", interrupted);
+            }
+        }
+        assertThat(artifactContract).as("생성물 CI 계약 검사 결과가 비어 있음").isNotNull();
+        assertThat(artifactContract.path("errors").isArray()).isTrue();
+        assertThat(artifactContract.path("errors")).as("활성 생성물 CI 계약 위반").isEmpty();
+        assertThat(artifactContract.path("unknownScopeRejected").asBoolean()).isTrue();
+        assertThat(artifactContract.path("unknownProfileRejected").asBoolean()).isTrue();
+        assertThat(artifactGraphViolations(artifactContract.path("scopes")))
+                .as("실제 생성물 검증 graph에서 필수 실행 단계 또는 scope 경계가 바뀜").isEmpty();
+        assertArtifactGraphRejectsMutations(artifactContract.path("scopes"));
+        return artifactContract;
+    }
+
+    private static List<String> artifactGraphViolations(JsonNode scopes) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode common = mapper.readTree("""
+                [["node", ["scripts/verify-reusable-governance.mjs"]],
+                 ["node", ["--test", "scripts/reusable-ui-governance-contract.test.mjs"]],
+                 ["node", ["--test", "scripts/reusable-artifact-entrypoints-contract.test.mjs"]]]
+                """);
+        JsonNode backend = mapper.readTree("""
+                ["gradle", ["compileJava", "compileTestJava", ":api-server:harnessTest",
+                  ":api-server:schemaValidationTest", "--no-daemon", "--warning-mode", "fail",
+                  "--console=plain", "-Dfile.encoding=UTF-8"]]
+                """);
+        JsonNode frontend = mapper.readTree("""
+                [["pnpm", ["-C", "frontend", "exec", "tsc", "--noEmit"]],
+                 ["pnpm", ["-C", "frontend", "run", "lint"]],
+                 ["pnpm", ["-C", "frontend", "run", "build"]]]
+                """);
+        List<String> violations = new ArrayList<>();
+        for (String scope : List.of("contracts", "backend", "frontend", "full")) {
+            var expected = mapper.createArrayNode().addAll((com.fasterxml.jackson.databind.node.ArrayNode) common);
+            if (scope.equals("backend") || scope.equals("full")) expected.add(backend);
+            if (scope.equals("frontend") || scope.equals("full")) {
+                expected.addAll((com.fasterxml.jackson.databind.node.ArrayNode) frontend);
+            }
+            if (!expected.equals(scopes.path(scope))) violations.add("Unexpected product command graph: " + scope);
+        }
+        return violations;
+    }
+
+    private static void assertArtifactGraphRejectsMutations(JsonNode actual) throws IOException {
+        // 실제 runner에서 받은 graph의 각 단계를 지운다. 검출기가 noop가 되거나 schema 명령을
+        // 잃어도 통과하는 회귀는 이 부정 대조군 자체가 red를 낸다.
+        for (int index = 0; index < actual.path("full").size(); index++) {
+            JsonNode missingStage = actual.deepCopy();
+            ((com.fasterxml.jackson.databind.node.ArrayNode) missingStage.path("full")).remove(index);
+            assertThat(artifactGraphViolations(missingStage)).contains("Unexpected product command graph: full");
+        }
+        for (String task : List.of("compileJava", "compileTestJava", ":api-server:harnessTest",
+                ":api-server:schemaValidationTest")) {
+            JsonNode missingTask = actual.deepCopy();
+            var arguments = (com.fasterxml.jackson.databind.node.ArrayNode) missingTask.path("full").get(3).get(1);
+            for (int index = arguments.size() - 1; index >= 0; index--) {
+                if (arguments.get(index).asText().equals(task)) arguments.remove(index);
+            }
+            assertThat(artifactGraphViolations(missingTask)).contains("Unexpected product command graph: full");
+        }
+        var changedScope = (com.fasterxml.jackson.databind.node.ObjectNode) actual.deepCopy();
+        changedScope.set("full", actual.path("contracts"));
+        assertThat(artifactGraphViolations(changedScope)).contains("Unexpected product command graph: full");
+    }
+
+    private static void assertArtifactBoundaryDocumentation(Path root) throws IOException {
+        String boundary = HarnessSourceIndex.read(root.resolve("REUSABLE_VERIFICATION.md"));
+        assertThat(boundary).contains("artifact-verification", "remoteApplied=false",
+                "동등한 보증이 아니다", "비활성 이력", "기관 운영 승인이 아니다");
     }
 
     private int assertUnconditionalPush(List<?> steps, String name, List<String> violations) {

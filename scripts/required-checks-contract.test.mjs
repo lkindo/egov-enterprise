@@ -276,7 +276,7 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
     const requiredJob = parseWorkflowJobs(ciContent).get(check.jobId);
     assert.ok(requiredJob);
     assert.match(requiredJob, /^    if: always\(\)$/m);
-    assert.deepEqual(check.needs, ['change-scope', sourceJobId]);
+    assert.deepEqual(check.needs, ['change-scope', sourceJobId, ...(scope === 'backend' ? ['reusable-base'] : [])]);
     assert.equal(check.aggregate.sourceJobId, sourceJobId);
     assert.equal(check.aggregate.scopeExpression, `needs.change-scope.outputs.${scope}`);
     assert.equal(check.aggregate.resultExpression, `needs.${sourceJobId}.result`);

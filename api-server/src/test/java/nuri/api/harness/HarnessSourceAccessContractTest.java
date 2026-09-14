@@ -21,6 +21,45 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("governance-harness")
 class HarnessSourceAccessContractTest {
 
+    @Test
+    @DisplayName("투영 source 인덱스는 승인된 제거만 허용하고 필수 source 소실과 profile 위조를 red로 검출한다")
+    void projectedSourceInventoryFailsClosed(@org.junit.jupiter.api.io.TempDir Path temporary) throws Exception {
+        Path valid = projectedFixture(temporary.resolve("valid"), false, false);
+        ReusableHarnessProfile profile = ReusableHarnessProfile.load(valid);
+        assertTrue(profile.retainsType("sample.Core"));
+        org.junit.jupiter.api.Assertions.assertFalse(profile.retainsType("sample.Optional"));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                () -> profile.retainsSource("business-core/src/main/java/sample/Unknown.java"));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                () -> ReusableHarnessProfile.load(projectedFixture(temporary.resolve("missing"), true, false)));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                () -> ReusableHarnessProfile.load(projectedFixture(temporary.resolve("wrong-profile"), false, true)));
+    }
+
+    private static Path projectedFixture(Path root, boolean missing, boolean wrongProfile) throws Exception {
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        java.nio.file.Files.createDirectories(root.resolve("config/governance"));
+        for (String module : List.of("foundation", "business-core", "business-app", "api-server")) {
+            java.nio.file.Files.createDirectories(root.resolve(module + "/src/main/java"));
+        }
+        String source = "business-core/src/main/java/sample/Core.java";
+        java.nio.file.Files.createDirectories(root.resolve(source).getParent());
+        if (!missing) java.nio.file.Files.writeString(root.resolve(source), "package sample; class Core {}");
+        String profiles = "{\"sourcePolicy\":{\"generatedProfile\":\"core\"},\"profiles\":{\"core\":{\"packs\":[\"core\"]}}}";
+        java.nio.file.Files.writeString(root.resolve("config/reusable-base-profiles.json"), profiles);
+        String hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                .digest(profiles.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        mapper.writeValue(root.resolve("reusable-base-lock.json").toFile(), Map.of(
+                "profile", wrongProfile ? "collaboration" : "core", "packs", List.of("core"),
+                "sourceCommit", "fixture", "java", Map.of("excludedDomains", List.of("optional"))));
+        mapper.writeValue(root.resolve("config/governance/reusable-harness-profile.json").toFile(), Map.of(
+                "schemaVersion", 1, "profile", "core", "packs", List.of("core"), "sourceCommit", "fixture",
+                "excludedDomains", List.of("optional"), "profileManifestSha256", hash,
+                "retained", List.of(Map.of("path", source, "type", "sample.Core")),
+                "removed", List.of(Map.of("path", "business-app/src/main/java/sample/Optional.java", "type", "sample.Optional"))));
+        return root;
+    }
+
     /**
      * [2026-08-31 확장] {@code readAllLines|readAllBytes|list|lines} 를 금지 목록에 추가했다.
      * 종전에는 walk/readString 만 막아서, 같은 우회(공용 인덱스를 지나치는 직접 I/O·중복 루트 해석)를

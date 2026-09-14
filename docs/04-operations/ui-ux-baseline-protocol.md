@@ -602,13 +602,18 @@ Severity 기본안:
 - JSON schema의 필수/허용 field drift.
 - 8개 archetype 누락·추가, first-use onboarding state drift, duplicate scenario/step ID, stale parallel board route.
 - non-deterministic axe, `color-contrast` disable, task/performance metric 누락.
-- `unknown`, stale review date, 90일을 넘긴 unbounded review.
+- `unknown`, 실재하지 않는 날짜·검토 시점보다 이른 review date, 기록된 검토 시점 기준 90일을 넘긴 unbounded review.
 - evidence path 누락, artifact 없이 `measured` 승격.
 - privacy-forbidden key 유입.
 - scenario별 journey 또는 theme/mode/viewport 축소·추가, 48개 performance target 누락.
 - package baseline 명령에서 scenario/runner contract 파일 삭제·누락.
 
 테스트 파일 존재 또는 green만으로 baseline 수치·접근성 품질을 증명하지 않는다. 이 gate는 **측정 계약의 구조**를 지킬 뿐 실제 browser/manual 실행은 별도 증거다.
+
+[ADR-0018](../02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)에 따라 일반
+`reviewBy` 경과는 [운영 검토 보고](../03-guides/governance-review-lifecycle.md)의 `overdue`로 남긴다.
+시간 경과만으로 기술 계약이 실패하지 않으며, 기존 `asOf`·90일 검토 계획·`unmeasured`·수동 평가 미완료를
+자동 갱신하거나 승인하지 않는다. 실제 예외·기관 사용 승인의 유효기간과는 구분한다.
 
 ## 13. 현재 상태와 bounded blockers
 

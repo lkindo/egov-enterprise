@@ -1,4 +1,5 @@
 import { SearchResultsContent } from './SearchClient';
+import { parseSearchUrlState, searchUrlErrorMessage, type SearchUrlInput } from '@/lib/navigation/search-url-state';
 
 /**
  * 검색어에 의존하는 **동적 슬롯**. PPR 의 홀(hole)에 해당한다.
@@ -17,20 +18,23 @@ import { SearchResultsContent } from './SearchClient';
 export default async function SearchResultsSlot({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<SearchUrlInput>;
 }) {
   const { q = '' } = await searchParams;
+  const parsed = parseSearchUrlState({ q });
+  const query = parsed.ok ? parsed.state.q : '';
 
   return (
     <SearchResultsContent
       // key={q}: 검색어가 바뀌면 트리를 새로 만든다. 재조정(reconcile)하면 이전 질의의
       //   입력값·결과가 잠시 섞인다 — 검색은 매 질의가 독립된 화면이다.
-      key={q}
+      key={query}
       // 첫 렌더의 결과는 항상 비어 있다 — 서버와 클라이언트가 같은 출발점을 갖게 고정한다.
       // 실제 결과는 마운트 이후 조회로 채워지며, 그것은 하이드레이션 **이후**의 상태 변경이라
       // 불일치와 무관하다. (검색어만은 서버가 준 값을 그대로 쓴다.)
       initialResults={{ articles: [], users: [], menus: [] }}
-      query={q}
+      query={query}
+      queryError={parsed.ok ? undefined : searchUrlErrorMessage(parsed.error)}
     />
   );
 }

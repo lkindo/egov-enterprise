@@ -244,6 +244,7 @@ class PkGenerationStandardLinterTest {
                 .sorted()
                 .collect(Collectors.toList());
         List<String> vanished = GRANDFATHERED.stream()
+                .filter(ReusableHarnessProfile.current()::retainsType)
                 .filter(name -> !allEntityNames.contains(name))
                 .filter(name -> !loadFailures.contains(name)) // 로드 실패는 별도 경고로 처리(오탐 방지)
                 .sorted()

@@ -5,6 +5,7 @@
 > top-level 전체 승인이나 단일 ADR 지배를 뜻하지 않는다. 네 부류가 각자 `approved` 검토 기록을 가지며,
 > 그중 `search-input`만 class-level `decisionRef`로 [ADR-0009](decisions/ADR-0009-controlled-url-search-state.md)에 결속한다.
 > 이 문서는 오버레이의 설계 의도와 운영 계약을 설명하며, 설정 파일이나 ADR을 대신하는 규범은 아니다.
+> 2026-09-14 [ADR-0018](decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)에 따라 일반 검토 일정과 기술 승인 판정을 분리했다. 기존 승인 기록·검토 일정은 보존한다.
 
 ## 1. 해결한 문제
 
@@ -27,9 +28,13 @@
 | `schemaRef` | `config/ui-url-state-approval.schema.json` |
 | `manifestRef` | census 경로와 내용 SHA-256 |
 
-`manifestRef.sha256`이 현재 census와 다르면 어떤 부류의 승인 기록도 만료 면제에 사용하지 않는다. 승인된 부류도 두 승인 축의
-reviewer·날짜·비어 있지 않은 evidence가 완결되고 selector가 현재 census 항목을 정확히 덮을 때만
-만료 면제에 사용한다. 새 state item이나 새 route는 기존 이름과 같다는 이유만으로 자동 승인되지 않는다.
+`manifestRef.sha256`이 현재 census와 다르면 승인 selector가 열리지 않고 별도 승인 계약이 실패한다.
+승인된 부류도 owner, 실제 검토 일정, 두 승인 축의 reviewer·날짜·비어 있지 않은 evidence가 완결되고
+selector가 현재 census 항목을 정확히 덮을 때만 인정한다. 일정 경과만으로 승인을 폐기하지 않는다.
+새 state item이나 새 route는 기존 이름과 같다는 이유로 변경 검토를 건너뛸 수 없다.
+
+후보 census 생성은 기존 exact 검색 record를 판정하기 위해 검색용 selector만 후보 해시에 결속한다.
+이는 `--write`의 후보 생성 경로이며 원본 승인 원장의 hash 정합을 자동 승인하는 경로가 아니다.
 
 ## 3. 부류 단위 승인
 
@@ -46,8 +51,9 @@ record를 일일이 복제하지 않고 같은 의미와 경계를 가진 state 
 | `hand-assembled-segment` | `proposed` | 사람이 조립한 세그먼트의 값 검증 계약 필요 |
 | `opaque` | `blocked-input` | detector가 의미를 식별하기 전 승인 금지 |
 
-record의 모든 state item이 승인된 부류로 덮일 때만 그 record가 만료 검사에서 면제된다. 승인된 항목과
-미승인 항목이 섞인 record는 계속 red 대상이다.
+record의 모든 state item이 승인된 부류로 덮일 때만 전체 승인으로 집계한다. 승인된 항목과
+미승인 항목이 섞인 record는 미검토 항목을 계속 보유한다. 날짜가 지났다는 이유만으로 기술 오류가
+되지는 않지만, 새 검색 범위나 credential-like key 등 실제 위반은 즉시 차단한다.
 
 ## 4. `search-input`의 제한 승인
 
@@ -95,11 +101,13 @@ URL은 인가 증거가 아니다. 검색 결과와 상세 객체의 인증·역
 ## 5. 채택 시점의 영향
 
 2026-09-05 결정 시점 기준 승인 부류가 덮는 state-bearing record는 **119건**이며,
-`search-input` 승인이 그중 **5건을 추가**했다. 모든 부류의 `reviewBy`는 2026-12-31이다.
-그 날짜가 지난 뒤 재승인이나 정당한 기한 갱신이 없으면 **258건이 red**가 된다.
+`search-input` 승인이 그중 **5건을 추가**했다. 이는 당시 관측치이며 현재 수는 생성물에서 확인한다.
+모든 부류의 기존 `reviewBy` 2026-12-31은 정기 검토 일정으로 보존한다. 경과 시 실제 시계 기반
+운영 보고에 `overdue`로 나타나며 같은 소스·정책·승인이 기술 CI에서 갑자기 무효가 되지는 않는다.
 
-따라서 부류 승인은 만료 검사를 제거하는 수단이 아니다. 남은 `path-intent`,
-`hand-assembled-segment`, `opaque`는 각각 분류·검증·detector 개선을 거쳐야 한다.
+남은 `path-intent`, `hand-assembled-segment`, `opaque`는 각각 분류·검증·detector 개선이 필요하다.
+기관의 실제 데이터·권한·로그·접근성 승인은 별도 `pending` 원장에서 검토하며, 원본 네 부류의
+승인을 복사해 기관 운영 준비 완료로 표시하지 않는다. 실행 방법은 [검토 수명 가이드](../03-guides/governance-review-lifecycle.md)를 따른다.
 
 ## 6. fail-closed 계약
 
@@ -110,7 +118,7 @@ URL은 인가 증거가 아니다. 검색 결과와 상세 객체의 인증·역
 3. 승인 근거 누락, 검토 축 미완료, 유령 selector
 4. `search-input`의 recordId·route-key binding 누락 또는 확장
 5. 자격증명·토큰을 의미하는 전용 URL key나 새 검색 surface를 검색 허용 목록에 추가
-6. 승인되지 않은 state item이 섞인 record를 만료 면제
+6. 승인되지 않은 state item이 섞인 record를 전체 승인으로 판정
 
 생성 census의 `unverified` 값은 계속 유지된다. 비규범 오버레이는 각 부류의 사람 검토 기록을 제공할
 뿐 생성물이나 컨테이너 전체를 승인하지 않는다.
@@ -125,6 +133,7 @@ URL은 인가 증거가 아니다. 검색 결과와 상세 객체의 인증·역
 ## 관련
 
 - [ADR-0009](decisions/ADR-0009-controlled-url-search-state.md)
+- [ADR-0018](decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)
 - [URL-state 부류 승인 근거](../04-operations/url-state-class-approval-evidence.md)
 - [URL-state 분류 초안](../01-product/url-state-classification-draft.md) — 역사적 결정 입력물
 - [사용자 결정 대기 레지스트리](../04-operations/pending-decisions.md)

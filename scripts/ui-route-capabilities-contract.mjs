@@ -626,7 +626,7 @@ function validIsoDate(value) {
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
-function validateReview(review, label, nowMs, errors) {
+function validateReview(review, label, asOf, errors) {
   if (!review || !isNonemptyString(review.owner) || !isNonemptyString(review.reason)) {
     errors.push(`${label}: unverified fields require review owner and reason`);
     return;
@@ -635,8 +635,11 @@ function validateReview(review, label, nowMs, errors) {
     errors.push(`${label}: reviewBy must be a real YYYY-MM-DD date`);
     return;
   }
-  const deadline = Date.parse(`${review.reviewBy}T23:59:59.999Z`);
-  if (deadline < nowMs) errors.push(`${label}: review exception expired on ${review.reviewBy}`);
+  // ADR-0018: the technical contract validates the recorded review, while
+  // governance-review reports calendar freshness without changing route truth.
+  if (validIsoDate(asOf) && review.reviewBy < asOf) {
+    errors.push(`${label}: reviewBy predates its evidence review`);
+  }
 }
 
 function unresolvedMarkers(entry) {
@@ -650,7 +653,7 @@ function unresolvedMarkers(entry) {
   return fields;
 }
 
-function validateMenuSnapshot(snapshot, nowMs, errors) {
+function validateMenuSnapshot(snapshot, asOf, errors) {
   if (!snapshot || !['live', 'blocked-external'].includes(snapshot.status)) {
     errors.push('menuSnapshot: status must be live or blocked-external');
     return;
@@ -662,13 +665,13 @@ function validateMenuSnapshot(snapshot, nowMs, errors) {
     errors.push('menuSnapshot: source must describe the tb_menu_info-only structural scope and must not claim role-aware exposure');
   }
   if (snapshot.status === 'blocked-external') {
-    validateReview(snapshot.review, 'menuSnapshot', nowMs, errors);
+    validateReview(snapshot.review, 'menuSnapshot', asOf, errors);
   } else if (!validIsoDate(snapshot.capturedAt)) {
     errors.push('menuSnapshot: live evidence requires capturedAt');
   }
 }
 
-export function validateRouteCapabilities(manifest, repository, nowMs = Date.now()) {
+export function validateRouteCapabilities(manifest, repository) {
   const errors = [];
   const warnings = [];
   const entries = Array.isArray(manifest?.routes) ? manifest.routes : [];
@@ -689,7 +692,7 @@ export function validateRouteCapabilities(manifest, repository, nowMs = Date.now
   })) {
     if (!expected || manifest?.sources?.[key] !== expected) errors.push(`sources.${key} must bind the current page authorization source`);
   }
-  validateMenuSnapshot(manifest?.menuSnapshot, nowMs, errors);
+  validateMenuSnapshot(manifest?.menuSnapshot, manifest?.asOf, errors);
 
   const expectedByRoute = new Map();
   for (const page of pages) {
@@ -913,7 +916,7 @@ export function validateRouteCapabilities(manifest, repository, nowMs = Date.now
     if (markers.some((field) => !declaredUnverified.includes(field))) {
       errors.push(`${label}: unresolved markers must be declared in unverifiedFields`);
     }
-    if (declaredUnverified.length > 0) validateReview(entry.review, label, nowMs, errors);
+    if (declaredUnverified.length > 0) validateReview(entry.review, label, manifest?.asOf, errors);
     else if (entry.review !== undefined) warnings.push(`${label}: review metadata exists without unverifiedFields`);
 
     if (entry.capabilities?.some(({ status }) => status === 'demo')
@@ -944,13 +947,15 @@ export function validateRouteCapabilities(manifest, repository, nowMs = Date.now
   }
 
   const workflow = actualByRoute.get('/admin/workflow');
-  if (!workflow
+  // Reusable profiles may remove this demo page. The exact filesystem census
+  // above still rejects a missing declared page or an invented manifest entry.
+  if (expectedByRoute.has('/admin/workflow') && (!workflow
     || workflow.status !== 'partial'
     || workflow.dataSource !== 'mixed'
     || !exactArray(workflow.profileOwners, ['demo'])
     || workflow.decisionSafe !== false
     || !workflow.capabilities?.some(({ id, status }) => id === 'workflow.canvas' && status === 'demo')
-    || !workflow.capabilities?.some(({ id, status }) => id === 'workflow.mutations' && status === 'unavailable')) {
+    || !workflow.capabilities?.some(({ id, status }) => id === 'workflow.mutations' && status === 'unavailable'))) {
     errors.push('/admin/workflow must preserve its demo canvas and unavailable mutations as demo-profile-only capabilities');
   }
 
@@ -981,10 +986,10 @@ export function validateRouteCapabilities(manifest, repository, nowMs = Date.now
   };
 }
 
-export function analyzeRouteCapabilities(repoRoot = ROOT, manifestPath = MANIFEST_PATH, nowMs = Date.now()) {
+export function analyzeRouteCapabilities(repoRoot = ROOT, manifestPath = MANIFEST_PATH) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const repository = inspectRouteRepository(repoRoot);
-  return { manifest, repository, result: validateRouteCapabilities(manifest, repository, nowMs) };
+  return { manifest, repository, result: validateRouteCapabilities(manifest, repository) };
 }
 
 function printReport(result) {

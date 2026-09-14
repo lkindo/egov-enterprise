@@ -14,6 +14,22 @@ public final class AuthorizationCutoverTestSupport {
 
     /** Disposable current-schema tests preserve expansion evidence until the real Contract succeeds. */
     public static void migrate(Flyway flyway) throws SQLException {
+        if (nuri.api.harness.ReusableHarnessProfile.current().projected()) {
+            // Generated V1 artifacts contain the final authorization model. They cannot rehearse the
+            // absent V2 pre-Contract state; current-schema tests still exercise the actual V1 SQL.
+            flyway.migrate();
+            try (Connection connection = flyway.getConfiguration().getDataSource().getConnection();
+                 var statement = connection.createStatement();
+                 var rows = statement.executeQuery("SELECT "
+                         + "count(*) FILTER (WHERE table_name IN ('tb_authrt_user_map','tb_authrt_grnt_map','tb_authrt_chg_hstry')), "
+                         + "count(*) FILTER (WHERE table_name IN ('tb_user_authrt_map','tb_authrt_role_map','tb_menu_crt_dtl','tb_role_prgrm_map','tb_role_hierarchy','tb_role_info')) "
+                         + "FROM information_schema.tables WHERE table_schema='public'")) {
+                if (!rows.next() || rows.getInt(1) != 3 || rows.getInt(2) != 0) {
+                    throw new IllegalStateException("Projected baseline must contain the final authorization model without legacy tables");
+                }
+            }
+            return;
+        }
         Flyway.configure().configuration(flyway.getConfiguration()).target("2.99").load().migrate();
         try (Connection connection = flyway.getConfiguration().getDataSource().getConnection()) {
             boolean legacy;

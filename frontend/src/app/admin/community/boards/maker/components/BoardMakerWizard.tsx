@@ -19,8 +19,11 @@ import {
  SelectValue,
 } from "@/components/ui/select";
 import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+/* reusable-base:demo:start */
+import { useQuery } from "@tanstack/react-query";
 import { communityUserService } from '@/services/business/user/community/CommunityUserService';
+/* reusable-base:demo:end */
 import {
  ChevronRight,
  ChevronLeft,
@@ -221,11 +224,13 @@ export function BoardMakerWizard() {
    (사용 중지된 커뮤니티도 포함되지만, 그런 커뮤니티에 새 게시판을 붙일 이유가 없어
    사용 중인 것만 후보로 둔다).
  */
+/* reusable-base:demo:start */
  const { data: communities } = useQuery({
    queryKey: ['board-maker-communities'],
    queryFn: () => communityUserService.getCommunityList({ pageIndex: 1, pageUnit: 100 }),
  });
  const communityOptions = (communities?.list ?? []).filter((community) => community.useYn === 'Y');
+/* reusable-base:demo:end */
 
  const selectedTemplate = watch('tmpltId');
  const bbsTtl = watch('bbsTtl');
@@ -289,7 +294,9 @@ export function BoardMakerWizard() {
  tmpltId: data.tmpltId,
  // [2026-09-08 PD-CMTY-001] 빈 값은 '귀속 없음' 이라 필드를 아예 보내지 않는다.
  //   서버는 없는 커뮤니티 귀속을 404 로 거부한다.
+/* reusable-base:demo:start */
  ...(data.cmntySn ? { cmntySn: Number(data.cmntySn) } : {}),
+/* reusable-base:demo:end */
  useYn: 'Y'
  });
 
@@ -505,6 +512,7 @@ export function BoardMakerWizard() {
  {errors.bbsExpln && <p id="bbsExpln-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsExpln.message}</p>}
  </div>
 
+{/* reusable-base:demo:start */}
  <div className="space-y-4 text-left">
  <Label htmlFor="cmntySn" className="text-xl font-bold text-foreground flex items-center gap-2 transition-colors">
  <span className="w-1.5 h-6 bg-muted rounded-lg inline-block" />
@@ -528,6 +536,7 @@ export function BoardMakerWizard() {
  통합 검색 결과에서도 제외됩니다. 귀속은 생성 후에는 바꿀 수 없습니다.
  </p>
  </div>
+{/* reusable-base:demo:end */}
 
  {/*
    [2026-08-29] '댓글 사용 여부'·'파일 첨부 여부' 토글을 걷어냈다.

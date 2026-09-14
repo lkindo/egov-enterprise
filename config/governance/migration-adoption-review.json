@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "authority": "adopter-environment-review",
+  "product": "migration-tool",
+  "profile": null,
+  "status": "pending",
+  "environmentId": null,
+  "owner": null,
+  "reviewedAt": null,
+  "validUntil": null,
+  "scopeDigest": null,
+  "evidence": []
+}

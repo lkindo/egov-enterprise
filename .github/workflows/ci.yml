@@ -223,6 +223,22 @@ jobs:
           UI_QUALITY_INDEX_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: npm run test:operational-contracts
 
+      # Ordinary review dates are maintenance signals. Invalid input still fails;
+      # pending institution approval is checked by the separate adoption command.
+      - name: Report governance review freshness
+        run: |
+          mkdir -p build/reports/governance
+          node scripts/governance-review.mjs --product online --mode report > build/reports/governance/review.json
+          node scripts/governance-review-summary.mjs build/reports/governance/review.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload governance review report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: governance-review
+          path: build/reports/governance/review.json
+          if-no-files-found: error
+          retention-days: 30
+
       # 크로스 스택 계약(frontend/src/__tests__/cross-stack — Atlas 계약 포함)은 백엔드
       # 소스를 함께 감사하므로 frontend 축이 아니라 여기서도 실행한다. 백엔드-only PR 은
       # frontend-scope 가 skip 되어 이 계약들이 어디서도 돌지 않았다 — 예: 서버 정렬을
@@ -559,8 +575,43 @@ jobs:
 
   # Stable required contexts. A selected heavy source must succeed; an
   # explicitly unselected source must be skipped. Every other state is red.
+  reusable-base:
+    needs: [change-scope]
+    if: needs.change-scope.outputs['docs-only'] != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [core, collaboration, demo]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
+        with:
+          java-version: '21'
+          distribution: temurin
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413  # v6.1.0
+        with:
+          version: '9.15.0'
+      - uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70  # v3
+      - name: Generate and verify reusable profile
+        run: node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }}
+      - name: Retain reusable profile verification
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: reusable-base-verification-${{ matrix.profile }}
+          path: build/reports/reusable-base/${{ matrix.profile }}.json
+          if-no-files-found: error
+          retention-days: 7
+
   backend-build:
-    needs: [change-scope, backend-scope]
+    needs: [change-scope, backend-scope, reusable-base]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -572,6 +623,13 @@ jobs:
           CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
           EXPECTED_WORK: ${{ needs.change-scope.outputs.backend }}
           SOURCE_RESULT: ${{ needs.backend-scope.result }}
+        run: node scripts/aggregate-required-check.mjs
+
+      - name: 재사용 프로필 결과 집계
+        env:
+          CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
+          EXPECTED_WORK: ${{ needs.change-scope.outputs['docs-only'] != 'true' }}
+          SOURCE_RESULT: ${{ needs.reusable-base.result }}
         run: node scripts/aggregate-required-check.mjs
 
   frontend-build:

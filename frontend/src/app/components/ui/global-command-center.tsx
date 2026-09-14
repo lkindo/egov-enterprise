@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
 import { menuService } from '@/services/business/user/MenuService';
 import { useAuth } from '@/contexts/AuthContext';
+import { SEARCH_URL_STATE, parseSearchUrlState, serializeSearchQuery, searchUrlErrorMessage } from '@/lib/navigation/search-url-state';
 import {
   normalizeInternalRoute,
   resolveMenuInternalRoute,
@@ -31,6 +32,8 @@ interface CommandItem {
 export function GlobalCommandCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const parsedSearch = parseSearchUrlState({ q: search });
+  const searchQueryError = parsedSearch.ok ? null : searchUrlErrorMessage(parsedSearch.error);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [menus, setMenus] = useState<CommandItem[]>([]);
   const [, setIsSearching] = useState(false);
@@ -162,18 +165,18 @@ export function GlobalCommandCenter() {
       : combined;
 
     // 만약 일치하는 게 없다면 광역 검색 제안 추가
-    if (search && results.length === 0) {
+    if (search && results.length === 0 && !searchQueryError) {
       results = [{
         id: 'global-search',
         name: `"${search}" 검색어로 사이트 전체 검색`,
-        url: `/search?q=${encodeURIComponent(search)}`,
+        url: `/search?q=${serializeSearchQuery({ q: search })}`,
         category: '검색',
         icon: <Search size={16} />
       }];
     }
 
     return results.slice(0, 10);
-  }, [search, menus, quickActions]);
+  }, [search, searchQueryError, menus, quickActions]);
 
   // 5. 핸들바 및 포커스 관리
   useEffect(() => {
@@ -352,6 +355,9 @@ export function GlobalCommandCenter() {
           <input
             ref={inputRef}
             aria-label="글로벌 커맨드 센터 검색어 입력"
+            maxLength={SEARCH_URL_STATE.maxLength}
+            aria-invalid={Boolean(searchQueryError) || undefined}
+            aria-describedby={searchQueryError ? 'command-search-query-error' : undefined}
             placeholder="검색..."
             className="flex-1 bg-transparent border-none outline-none text-2xl font-bold placeholder:text-muted-foreground/30 tracking-tight"
             value={search}
@@ -367,6 +373,7 @@ export function GlobalCommandCenter() {
 
         {/* Results Container */}
         <div className="max-h-[500px] overflow-y-auto p-6 scrollbar-hide">
+          {searchQueryError ? <p id="command-search-query-error" role="alert" className="text-sm text-destructive-emphasis">{searchQueryError}</p> : null}
           {filteredItems.length > 0 ? (
             <div className="space-y-6">
               {['메뉴', '액션', '시스템', '검색'].map(cat => {

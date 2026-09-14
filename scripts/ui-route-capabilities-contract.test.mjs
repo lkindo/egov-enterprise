@@ -18,7 +18,6 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_PATH = path.join(ROOT, 'config', 'ui-route-capabilities.json');
-const NOW = Date.parse('2026-08-20T12:00:00Z');
 
 const repository = inspectRouteRepository(ROOT);
 
@@ -29,7 +28,7 @@ const repository = inspectRouteRepository(ROOT);
 const FILESYSTEM_ROUTE_COUNT = discoverPageRoutes(ROOT).length;
 
 function currentAnalysis() {
-  return analyzeRouteCapabilities(ROOT, MANIFEST_PATH, NOW);
+  return analyzeRouteCapabilities(ROOT, MANIFEST_PATH);
 }
 
 test('current manifest covers every filesystem route exactly once without structural errors', () => {
@@ -42,32 +41,21 @@ test('current manifest covers every filesystem route exactly once without struct
   assert.equal(new Set(analysis.manifest.routes.map(({ route }) => route)).size, FILESYSTEM_ROUTE_COUNT);
 });
 
-// [2026-08-31 신설] 종전에는 CI 가 고정 NOW(2026-08-20)로만 검증해 reviewBy 만료가
-//   실제로는 영원히 발화하지 않았다 — CLI 만 Date.now() 를 쓰는데 CI 는 CLI 를 실행하지
-//   않는다. 이 테스트가 실시간 시계를 결속한다. 만료 red 의 해소는 해당 review 의 실제
-//   재검토, 또는 사유를 남긴 명시적 기한 연장 커밋이다 — 조용한 방치는 이제 red 가 된다.
-test('review horizons hold against the real clock, not only the pinned fixture date', () => {
-  const nowMs = Date.now();
-  const analysis = analyzeRouteCapabilities(ROOT, MANIFEST_PATH, nowMs);
-
-  // 만료 임박(60일 이내)은 절벽이 오기 전에 콘솔로 드러낸다. red 는 만료 시점부터다.
-  const horizonMs = nowMs + 60 * 24 * 60 * 60 * 1000;
-  const expiring = (analysis.manifest.routes ?? [])
-    .map(({ review }) => review?.reviewBy)
-    .filter((reviewBy) => typeof reviewBy === 'string')
-    .filter((reviewBy) => {
-      const deadline = Date.parse(`${reviewBy}T23:59:59.999Z`);
-      return deadline >= nowMs && deadline <= horizonMs;
-    });
-  if (expiring.length > 0) {
-    const dates = [...new Set(expiring)].sort();
-    console.warn(
-      `⚠ [ui-route-capabilities] review 기한 60일 이내 만료 예정 ${expiring.length}건 (기한: ${dates.join(', ')}) — `
-      + '만료 시 이 게이트가 red 가 됩니다. 재검토를 완료하거나 기한 연장을 사유와 함께 커밋하세요.',
-    );
+// ADR-0018 moves real-clock review freshness to governance-review. The normal
+// analyzer must remain deterministic and must never promote unresolved evidence.
+test('route technical truth is identical at review time and after review deadlines', (t) => {
+  const baseline = currentAnalysis();
+  assert.deepEqual(baseline.result.errors, []);
+  assert.equal(baseline.result.summary.gateReady, false);
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse(`${baseline.manifest.asOf}T12:00:00Z`) });
+  for (const timestamp of [
+    `${baseline.manifest.asOf}T12:00:00Z`,
+    '2026-12-01T00:00:00Z',
+    '2036-01-01T00:00:00Z',
+  ]) {
+    t.mock.timers.setTime(Date.parse(timestamp));
+    assert.deepEqual(currentAnalysis().result, baseline.result, timestamp);
   }
-
-  assert.deepEqual(analysis.result.errors, []);
 });
 
 test('route discovery covers every Next page extension and fails closed on URL collisions', (t) => {
@@ -167,7 +155,7 @@ test('missing registry pages, unknown permissions and generated-page drift are r
   assert.match(parsePageAuthorizationSources(proxySource, pageHelperSource, lowered, generatedPageSource).bindingErrors.join('\n'), /exactly match/);
   const { manifest } = currentAnalysis();
   const incompleteRepository = { ...repository, proxy: { ...repository.proxy, pagePermissions: removed.pagePermissions } };
-  assert.match(validateRouteCapabilities(manifest, incompleteRepository, NOW).errors.join('\n'), /exactly the filesystem route population/);
+  assert.match(validateRouteCapabilities(manifest, incompleteRepository).errors.join('\n'), /exactly the filesystem route population/);
 });
 
 test('proxy shell access is measured separately from unresolved capability roles', () => {
@@ -292,7 +280,7 @@ test('menu census scope cannot be promoted to role-aware exposure without eviden
   const manifest = structuredClone(currentAnalysis().manifest);
   manifest.menuSnapshot.source = 'live tb_menu_info/tb_menu_crt_dtl via scripts/menu-census.mjs';
 
-  const errors = validateRouteCapabilities(manifest, repository, NOW).errors.join('\n');
+  const errors = validateRouteCapabilities(manifest, repository).errors.join('\n');
   assert.match(errors, /tb_menu_info-only structural scope/);
 });
 
@@ -381,21 +369,21 @@ test('empty, missing, and duplicate route populations fail closed', () => {
   const emptyRepository = { ...repository, pages: [] };
   const emptyManifest = { ...analysis.manifest, routes: [] };
   assert.match(
-    validateRouteCapabilities(emptyManifest, emptyRepository, NOW).errors.join('\n'),
+    validateRouteCapabilities(emptyManifest, emptyRepository).errors.join('\n'),
     /route population is empty/,
   );
 
   const missing = structuredClone(analysis.manifest);
   const removed = missing.routes.pop();
   assert.match(
-    validateRouteCapabilities(missing, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(missing, repository).errors.join('\n'),
     new RegExp(`manifest is missing filesystem route: ${removed.route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
   );
 
   const duplicate = structuredClone(analysis.manifest);
   duplicate.routes.push(structuredClone(duplicate.routes[0]));
   assert.match(
-    validateRouteCapabilities(duplicate, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(duplicate, repository).errors.join('\n'),
     /manifest route is duplicated/,
   );
 });
@@ -407,7 +395,7 @@ test('proxy access drift and redirect drift fail closed', () => {
   assert.equal(expectedShellAccess(workHub.route, repository.proxy), 'authenticated');
   workHub.shellAccess = 'admin-system';
   assert.match(
-    validateRouteCapabilities(accessDrift, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(accessDrift, repository).errors.join('\n'),
     /shellAccess must match effective redirect\/proxy evidence/,
   );
 
@@ -416,7 +404,7 @@ test('proxy access drift and redirect drift fail closed', () => {
   assert.ok(redirected, 'fixture requires at least one configured redirect route');
   redirected.routing.target = '/synthetic-wrong-target';
   assert.match(
-    validateRouteCapabilities(redirectDrift, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(redirectDrift, repository).errors.join('\n'),
     /routing drifted from next\.config\.ts/,
   );
 
@@ -433,7 +421,7 @@ test('proxy access drift and redirect drift fail closed', () => {
     permanent: false,
   });
   assert.match(
-    validateRouteCapabilities(analysis.manifest, sourceConflictRepository, NOW).errors.join('\n'),
+    validateRouteCapabilities(analysis.manifest, sourceConflictRepository).errors.join('\n'),
     /redirect sources disagree/,
   );
 
@@ -450,7 +438,7 @@ test('proxy access drift and redirect drift fail closed', () => {
     permanent: false,
   });
   assert.match(
-    validateRouteCapabilities(analysis.manifest, cycleRepository, NOW).errors.join('\n'),
+    validateRouteCapabilities(analysis.manifest, cycleRepository).errors.join('\n'),
     /redirect cycle detected/,
   );
 });
@@ -461,21 +449,21 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
   const unresolved = unreviewed.routes.find(({ unverifiedFields }) => unverifiedFields.length > 0);
   delete unresolved.review;
   assert.match(
-    validateRouteCapabilities(unreviewed, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(unreviewed, repository).errors.join('\n'),
     /unverified fields require review owner and reason/,
   );
 
-  const expired = structuredClone(analysis.manifest);
-  expired.routes.find(({ unverifiedFields }) => unverifiedFields.length > 0).review.reviewBy = '2026-08-19';
+  const predatesReview = structuredClone(analysis.manifest);
+  predatesReview.routes.find(({ unverifiedFields }) => unverifiedFields.length > 0).review.reviewBy = '2026-08-19';
   assert.match(
-    validateRouteCapabilities(expired, repository, NOW).errors.join('\n'),
-    /review exception expired/,
+    validateRouteCapabilities(predatesReview, repository).errors.join('\n'),
+    /reviewBy predates its evidence review/,
   );
 
   const demoLeak = structuredClone(analysis.manifest);
   demoLeak.routes.find(({ route }) => route === '/admin/workflow').profileOwners = ['core', 'demo'];
   assert.match(
-    validateRouteCapabilities(demoLeak, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(demoLeak, repository).errors.join('\n'),
     /demo capability leaks into a non-demo profile owner/,
   );
 
@@ -486,9 +474,31 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
   dispatch.status = 'live';
   notification.status = 'partial';
   assert.match(
-    validateRouteCapabilities(falseLive, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(falseLive, repository).errors.join('\n'),
     /live requires current E4 or E5 evidence|live cannot contain mock data/,
   );
+});
+
+test('route review records reject impossible dates and missing review accountability', () => {
+  const { manifest } = currentAnalysis();
+  for (const target of ['route', 'menuSnapshot']) {
+    for (const [field, value, expected] of [
+      ['reviewBy', '2026-02-30', /reviewBy must be a real YYYY-MM-DD date/],
+      ['reviewBy', '2026-08-20', /reviewBy predates its evidence review/],
+      ['owner', ' ', /unverified fields require review owner and reason/],
+      ['reason', '', /unverified fields require review owner and reason/],
+    ]) {
+      const fixture = structuredClone(manifest);
+      const review = target === 'route'
+        ? fixture.routes.find(({ unverifiedFields }) => unverifiedFields.length > 0).review
+        : fixture.menuSnapshot.review;
+      review[field] = value;
+      assert.match(validateRouteCapabilities(fixture, repository).errors.join('\n'), expected, `${target}.${field}`);
+    }
+  }
+  const invalidAsOf = structuredClone(manifest);
+  invalidAsOf.asOf = '2026-02-30';
+  assert.match(validateRouteCapabilities(invalidAsOf, repository).errors.join('\n'), /manifest asOf must be a real YYYY-MM-DD date/);
 });
 
 test('missing evidence and reusable profile projection drift fail closed', () => {
@@ -496,14 +506,46 @@ test('missing evidence and reusable profile projection drift fail closed', () =>
   const missingEvidence = structuredClone(analysis.manifest);
   missingEvidence.routes[0].evidence = ['frontend/src/app/does-not-exist/page.tsx'];
   assert.match(
-    validateRouteCapabilities(missingEvidence, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(missingEvidence, repository).errors.join('\n'),
     /evidence path does not exist/,
   );
 
   const projectionDrift = structuredClone(analysis.manifest);
   projectionDrift.routes[0].directProjectionProfiles = ['demo'];
   assert.match(
-    validateRouteCapabilities(projectionDrift, repository, NOW).errors.join('\n'),
+    validateRouteCapabilities(projectionDrift, repository).errors.join('\n'),
     /directProjectionProfiles drifted/,
+  );
+});
+
+test('a projected route population may omit the demo workflow only when the page and permission entry are absent', () => {
+  const { manifest } = currentAnalysis();
+  const projectedManifest = structuredClone(manifest);
+  projectedManifest.routes = projectedManifest.routes.filter(({ route }) => route !== '/admin/workflow');
+  assert.match(
+    validateRouteCapabilities(projectedManifest, repository).errors.join('\n'),
+    /manifest is missing filesystem route: \/admin\/workflow/,
+  );
+
+  const projectedRepository = structuredClone(repository);
+  projectedRepository.pages = projectedRepository.pages.filter(({ route }) => route !== '/admin/workflow');
+  assert.match(
+    validateRouteCapabilities(projectedManifest, projectedRepository).errors.join('\n'),
+    /page permission registry must cover exactly the filesystem route population/,
+  );
+  delete projectedRepository.proxy.pagePermissions['/admin/workflow'];
+  assert.match(
+    validateRouteCapabilities(projectedManifest, projectedRepository).errors.join('\n'),
+    /redirect destination is not a filesystem route: \/admin\/sanctn\/workflow -> \/admin\/workflow/,
+  );
+  projectedManifest.routes = projectedManifest.routes.filter(({ route }) => route !== '/admin/sanctn/workflow');
+  projectedRepository.pages = projectedRepository.pages.filter(({ route }) => route !== '/admin/sanctn/workflow');
+  delete projectedRepository.proxy.pagePermissions['/admin/sanctn/workflow'];
+  projectedRepository.configRedirects.redirects.delete('/admin/sanctn/workflow');
+  assert.deepEqual(validateRouteCapabilities(projectedManifest, projectedRepository).errors, []);
+
+  assert.match(
+    validateRouteCapabilities(manifest, projectedRepository).errors.join('\n'),
+    /route \/admin\/workflow: no matching page.ts\/page.tsx exists/,
   );
 });

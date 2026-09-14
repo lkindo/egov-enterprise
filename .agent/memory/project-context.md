@@ -5,9 +5,10 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-11
-verified_against: 5811096e5769b6e08ba1d6c67902f8f92d76f8ea
+verified_at: 2026-09-14
+verified_against: c45d34b8f07118d9345cea9b59e156c734609f01
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
   - ../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md
   - ../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md
   - ../../config/governance/permission-catalog.json
@@ -73,6 +74,8 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-014 | Atlas는 프로젝트·업무·규칙·검증·운영을 연결하는 비규범 파생 지도다. 원본은 frontend/atlas와 기존 source catalog이며 atlas:build로 정적 HTML을 생성하고 atlas:check·운영/Atlas 계약으로 드리프트를 확인한다. 생성물은 운영 실측 증거를 자동 갱신하지 않는다. | [Atlas 가이드](../../docs/03-guides/governance-atlas-guide.md), [생성기](../../scripts/build-atlas.mjs) | 2026-09-10 |
 | CTX-015 | 인가는 복수 그룹과 명시 OPERATION/NAVIGATION을 사용하며 핵심 3개+변경 이력 1개다. OCI에서 구 6개 테이블 부재와 Contract 감사 1건을 재확인했다. DB 적용과 운영 앱 배포의 증거는 구분한다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md), [인가 원본](../../config/governance/permission-catalog.json), [런북](../../docs/04-operations/authorization-cutover-runbook.md) | 2026-09-11 |
 | CTX-016 | 전체 제품 메뉴는 나의 업무·소통·지식·참여·관리 센터의 4개 영역이며, OCI V2_100 적용 후 전체 77개·활성 71개·최대 3단계다. OPERATION과 사용자 배정은 보존하고 메뉴 선택·상위 회수를 계층 단위로 처리한다. 신규 격리 초기화는 V2_99 → Contract → latest 순서다. | [ADR-0017](../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md), [적용 결과](../../docs/04-operations/authorization-cutover-runbook.md#2026-09-11-oci-메뉴-재편-적용-결과) | 2026-09-11 |
+| CTX-017 | URL·route·UI quality·KRDS·화면 용어와 E2E duration의 일반 최신성은 기술 판정과 분리하고 실제 시계 보고에서 추적한다. 기관 온라인/독립 이관 승인은 제품·환경·소스·실행 artifact·근거·UTC 유효기간에 결속한다. 기본 pending과 기술 검증 통과는 기관 운영 승인이 아니며 실제 실행 진입점이 기술 검사 전후 원장을 확인한다. | [ADR-0018](../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md), [검토 수명 가이드](../../docs/03-guides/governance-review-lifecycle.md), [기관 실행 검증](../../scripts/adoption-execute.mjs) | 2026-09-14 |
+| CTX-018 | 재사용 생성물은 명시 pack 소유권에서 하네스·UI 원장 모집단을 도출하고 snapshot·소스·승계 selector·lock 무결성을 검사한다. 공용 메모리의 원본 운영 사실은 upstream 이력으로 보존하며 현재 기관 사실로 승격하지 않는다. 온라인·이관 승인은 각각 새 pending으로 시작한다. | [생성 가이드](../../docs/03-guides/reusable-base-guide.md), [원장 투영](../../scripts/reusable-governance-projection.mjs), [산출물 무결성](../../scripts/reusable-governance-integrity.mjs), [적용범위 계약](../../config/governance/reusable-review-scopes.json) | 2026-09-14 |
 
 ## 개발·검증·배포 흐름
 
@@ -80,6 +83,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 - 변경 범위별 최소 검증은 [AGENTS.md의 Verification by change scope](../../AGENTS.md#verification-by-change-scope)를 따른다. 비용 순서는 `verify:docs` < `verify:fast` < `verify:push` < `verify:full`이고, 서비스가 필요한 브라우저 E2E와 외부 ruleset 실측은 각각 `verify:e2e`, `verify:ops`로 명시 실행한다.
 - 로컬 훅은 빠른 피드백 계층이고 우회 가능하다. 병합 권위는 [.github/required-checks.json](../../.github/required-checks.json)에 결속된 CI다.
 - 재사용 base와 release 경계는 [ADR-0001](../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이다.
+- `npm run base:verify -- --profile core`는 새 격리 DB·소스에서 해당 프로필의 계약·Java·스키마·프런트를 검사한다. CI는 core·collaboration·demo 결과를 required `backend-build`에 집계한다. 생성물의 `verify`와 운영 계약은 산출물 runner를 사용하고, 원본 회귀 테스트는 생산 저장소에서 유지한다. 기술 결과와 실제 기관 시나리오·운영 승인을 구분한다.
 
 ## 공유 워킹트리와 에이전트 인수인계
 

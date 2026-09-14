@@ -22,3 +22,4 @@
 | [ADR-0015](ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 | Accepted |
 | [ADR-0016](ADR-0016-explicit-permissions-and-multiple-groups.md) | 인가 핵심 3개와 감사 1개, 복수 그룹·명시 기능 권한 및 수동 전환 | Accepted |
 | [ADR-0017](ADR-0017-task-oriented-menu-navigation.md) | 현재 제품의 과업 중심 4개 메뉴 영역, 중복 진입점 통합과 NAV 보존 이행 | Accepted |
+| [ADR-0018](ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관별 온라인/이관 도입 승인 분리 | Accepted |

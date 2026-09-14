@@ -98,7 +98,7 @@
           }
         },
         "reviewState": {
-          "description": "blocked-input 은 사람이 판단할 수 없는 상태다(예: census 가 무엇인지 알아내지 못한 항목). approved 만이 만료 면제를 연다.",
+          "description": "blocked-input은 사람이 판단할 수 없는 상태다. approved는 결속된 코드·정책 범위의 승인이고, 정기 검토 일정의 경과만으로 폐기되지 않는다(ADR-0018).",
           "enum": ["blocked-input", "proposed", "approved"]
         },
         "dataClass": {
@@ -115,7 +115,11 @@
         "privacyReview": { "enum": ["unverified", "verified", "accepted-risk", "not-applicable"] },
         "authorizationReview": { "enum": ["unverified", "verified", "not-applicable"] },
         "owner": { "type": "string", "minLength": 1 },
-        "reviewBy": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "reviewBy": {
+          "description": "다음 정기 검토 일정. 경과는 운영 최신성 보고에서 관리하며 승인 자동 만료나 자동 갱신에 사용하지 않는다. 실제 한시 예외의 expiresAt과 구분한다(ADR-0018).",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
         "approvals": {
           "type": "object",
           "additionalProperties": false,
