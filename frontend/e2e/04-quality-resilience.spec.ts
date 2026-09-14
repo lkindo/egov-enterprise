@@ -483,6 +483,24 @@ test.describe('Tier 4: Quality & Resilience', () => {
             await page.evaluate(() => new Promise<void>((resolve) => {
                 requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
             }));
+            // [2026-09-14 main CI flaky] 위 CSS 는 JS 로 구동되는 진입 모션을 멈추지 못한다. MotionConfig reducedMotion="user" 도
+            //   이동만 끄고 투명도 페이드는 남기므로, 페이드 도중에 감사하면 반투명 글자가 color-contrast 위반으로 잡혔다
+            //   (게시글 작성 화면, 첫 시도만 실패·재시도 통과). 인라인 투명도가 여러 번 연속 같고 실행 중인 애니메이션이
+            //   없을 때 감사한다. 고정 반투명(예: 배너 0.8)은 값이 변하지 않으므로 대기를 막지 않고, 영구 대비 결함은 그대로 잡힌다.
+            await page.waitForFunction(() => {
+                const state = window as unknown as { __axeOpacity?: string; __axeStableSamples?: number };
+                const opacities = Array.from(document.querySelectorAll<HTMLElement>('[style*="opacity"]'))
+                    .map((element) => element.style.opacity)
+                    .join('|');
+                const animating = document.getAnimations().some((animation) => animation.playState === 'running');
+                if (animating || opacities !== state.__axeOpacity) {
+                    state.__axeOpacity = opacities;
+                    state.__axeStableSamples = 0;
+                    return false;
+                }
+                state.__axeStableSamples = (state.__axeStableSamples ?? 0) + 1;
+                return state.__axeStableSamples >= 3;
+            }, undefined, { polling: 100, timeout: 10000 });
             const a11y = await new AxeBuilder({ page }).analyze();
             expect(a11y.violations, `${route}: ${JSON.stringify(a11y.violations.map((v) => `${v.id}(${v.nodes.length})`))}`).toEqual([]);
         }
