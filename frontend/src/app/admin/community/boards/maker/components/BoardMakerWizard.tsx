@@ -449,9 +449,9 @@ export function BoardMakerWizard() {
  ) : null}
  <CardHeader className="bg-muted p-12 text-foreground relative border-b border-border transition-colors">
  <div className="space-y-2 relative z-10 text-left">
- <h3 className="text-4xl font-bold tracking-tighter text-left">
+ <h2 className="text-4xl font-bold tracking-tighter text-left">
  {STEPS[currentStep - 1].title}
- </h3>
+ </h2>
  <p className="text-muted-foreground dark:text-muted-foreground font-medium text-lg tracking-tight text-left transition-colors">
  {STEPS[currentStep - 1].description}
  </p>
@@ -553,7 +553,7 @@ export function BoardMakerWizard() {
  <div className="flex flex-col lg:flex-row gap-12 text-left">
  <div className="flex-1 space-y-8 text-left">
  <div className="space-y-2 text-left">
- <h4 className="text-xl font-bold text-foreground tracking-tight text-left uppercase">Layout strategy select</h4>
+ <h3 className="text-xl font-bold text-foreground tracking-tight text-left uppercase">Layout strategy select</h3>
  <p className="text-sm text-muted-foreground font-bold tracking-tight text-left">비즈니스 목적에 부합하는 최적의 UI 디자인을 선택하세요.</p>
  </div>
  <div className="grid grid-cols-1 gap-6">
@@ -617,7 +617,7 @@ export function BoardMakerWizard() {
 
  <div className="flex-1 hidden xl:block sticky top-0">
  <div className="space-y-4 mb-4">
- <h4 className="text-xs font-bold text-muted-foreground tracking-tight text-right">레이아웃 미리보기 · 예시 데이터</h4>
+ <h3 className="text-xs font-bold text-muted-foreground tracking-tight text-right">레이아웃 미리보기 · 예시 데이터</h3>
  </div>
  <BoardPreview
  tmpltId={selectedTemplate || 'TMPLT_HUB'}
@@ -745,10 +745,10 @@ export function BoardMakerWizard() {
  <div className="p-10 rounded-lg bg-muted text-foreground border border-border dark:border-none flex items-center justify-between group overflow-hidden relative text-left transition-colors">
  <div className="space-y-2 relative z-10 text-left">
  <p className="text-primary font-bold tracking-widest text-xs uppercase text-left transition-colors">Generated Path</p>
- <h5 className="text-2xl font-bold tracking-tight flex items-center gap-3 text-left transition-colors">
+ <h3 className="text-2xl font-bold tracking-tight flex items-center gap-3 text-left transition-colors">
  /admin/community/boards/select-board-list?bbsId=AUTO_GEN
  <ExternalLink size={20} className="text-muted-foreground dark:text-muted-foreground" />
- </h5>
+ </h3>
  <p className="text-muted-foreground dark:text-muted-foreground text-sm font-bold tracking-tight text-left transition-colors">메뉴는 비활성(미사용) 상태로 생성됩니다. 메뉴 관리에서 활성화해야 내비게이션에 나타납니다.</p>
  </div>
  <div className="absolute right-[-20px] top-[-20px] opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700">
