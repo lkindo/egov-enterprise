@@ -133,27 +133,80 @@ class ConfigSafetyLinterTest {
 
     /** [W1-12] compose 의 호스트 포트 매핑({@code - "9090:9090"} / {@code - 9090:9090}). */
     /**
-     * [J-1 · 2026-08-04] 신뢰 프록시 경계는 <b>두 파일에 걸쳐</b> 성립한다 —
-     * {@code docker-compose.yml} 의 {@code egov-net} 서브넷과 {@code docker-compose.prod.yml} 의
-     * {@code TRUSTED_PROXIES} 기본값이 같은 대역을 가리켜야 한다.
+     * [J-1 · 2026-08-04 → 2026-09-14 GAP-SEC-004] 신뢰 프록시 경계는 <b>두 파일에 걸쳐</b> 성립한다 —
+     * {@code docker-compose.yml} 이 Next(frontend) 컨테이너에 준 <b>고정 주소</b>와
+     * {@code docker-compose.prod.yml} 의 {@code TRUSTED_PROXIES} 기본값이 정확히 같아야 한다.
      *
      * <p>둘이 갈라지면 <b>양방향 모두 나쁘다</b>: 프록시가 신뢰 목록에서 빠지면 모든 클라이언트 IP 가
      * Next 컨테이너 하나로 수렴해 레이트리밋이 전역 단일 버킷이 되고(가용성),
-     * 반대로 목록이 다시 사설 대역 전체로 넓어지면 8080 에 직접 접근하는 사내망 클라이언트가
-     * 자기 XFF 를 위조할 수 있게 된다(무결성). 어느 쪽도 red 없이 조용히 성립한다.
+     * 반대로 목록이 넓어지면 8080 에 직접 접근하는 클라이언트가 자기 XFF 를 위조할 수 있게 된다(무결성).
+     *
+     * <p>[왜 서브넷 전체가 아닌가 — 2026-09-14 리허설 실측] 종전 기준은 "egov-net 서브넷을 신뢰" 였다.
+     * 그러면 <b>도커 게이트웨이(서브넷 .1)도 신뢰</b>된다. 공개 포트로 직접 온 요청은 Docker Desktop·rootless
+     * Docker·호스트 루프백 경유에서 출발지가 게이트웨이 주소로 바뀌므로, 격리 운영 오버레이 스택에서
+     * api 공개 포트에 {@code X-Forwarded-For} 를 실어 보내자 위조 IP 가 로그인 기록에 남았고
+     * <b>로그인 IP 제한도 우회</b>됐다. 신뢰 대상은 프록시 컨테이너의 고정 주소 하나여야 한다.
      */
     private static final Pattern COMPOSE_NET_SUBNET =
             Pattern.compile("(?m)^\\s*-\\s*subnet\\s*:\\s*([0-9./]+)\\s*$");
 
+    /** 동적 할당 구간. 고정 주소가 이 구간 밖에 있어야 다른 컨테이너(스크레이퍼 등)에게 먼저 배정되지 않는다. */
+    private static final Pattern COMPOSE_NET_IP_RANGE =
+            Pattern.compile("(?m)^\\s*ip_range\\s*:\\s*([0-9./]+)\\s*$");
+
+    /** 게이트웨이. ip_range 를 주면 도커가 게이트웨이를 그 구간 첫 주소로 잡으므로 명시를 요구한다(리허설 실측). */
+    private static final Pattern COMPOSE_NET_GATEWAY =
+            Pattern.compile("(?m)^\\s*gateway\\s*:\\s*([0-9.]+)\\s*$");
+
+    private static final Pattern COMPOSE_IPV4_ADDRESS =
+            Pattern.compile("(?m)^\\s*ipv4_address\\s*:\\s*([0-9.]+)\\s*$");
+
     private static final Pattern COMPOSE_TRUSTED_PROXIES =
             Pattern.compile("(?m)^\\s*TRUSTED_PROXIES\\s*:\\s*\\$\\{TRUSTED_PROXIES:-([^}]*)}\\s*$");
 
-    /** 신뢰 목록에 있으면 안 되는 광역 사설 대역 — 8080 직접 도달이 가능한 형상에서 위조 표면이 된다. */
-    private static final java.util.List<String> FORBIDDEN_BROAD_TRUST = java.util.List.of(
-            "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16");
-
     private static final Pattern COMPOSE_HOST_PORT_MAPPING =
             Pattern.compile("(?m)^\\s*-\\s*\"?(\\d+):(\\d+)\"?\\s*$");
+
+    /**
+     * [GAP-SEC-004 · H5] 신뢰 프록시 판정의 red 증명. 저장소 파일이 아니라 합성 compose 로 각 위반 형태가
+     * 실제로 잡히는지 본다 — 저장소가 정상일 때는 위 전체 감사가 이 분기를 한 번도 red 로 실행하지 않기 때문이다.
+     */
+    @Test
+    @DisplayName("[GAP-SEC-004] 신뢰 프록시는 Next 고정 주소 하나 — 서브넷 신뢰·주소 누락·ip_range 겹침·게이트웨이·다른 서비스 주소는 red")
+    void trustedProxyBoundaryRejectsSpoofableShapes() {
+        String base = "services:\n"
+                + "  api:\n    image: api\n"
+                + "  frontend:\n    image: web\n    networks:\n      egov-net:\n        ipv4_address: 172.28.0.10\n"
+                + "networks:\n  egov-net:\n    ipam:\n      config:\n        - subnet: 172.28.0.0/24\n          gateway: 172.28.0.1\n          ip_range: 172.28.0.128/25\n";
+        String prod = "services:\n  api:\n    environment:\n      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.28.0.10/32}\n";
+        org.junit.jupiter.api.Assertions.assertEquals(List.of(), trustedProxyBoundaryViolations(base, prod));
+
+        String address = "        ipv4_address: 172.28.0.10\n";
+        Map<String, String[]> cases = new LinkedHashMap<>();
+        cases.put("서브넷 전체 신뢰(리허설에서 위조된 형상)", new String[] {base, prod.replace("172.28.0.10/32", "172.28.0.0/24"), "게이트웨이"});
+        cases.put("프록시 외 대역 추가", new String[] {base, prod.replace("172.28.0.10/32", "172.28.0.10/32,10.0.0.0/8"), "하나"});
+        cases.put("다른 주소 신뢰", new String[] {base, prod.replace("172.28.0.10/32", "172.28.0.11/32"), "하나"});
+        cases.put("고정 주소 누락", new String[] {base.replace(address, ""), prod, "고정 주소를 갖지 않습니다"});
+        cases.put("주석 속 고정 주소", new String[] {base.replace(address, "        # ipv4_address: 172.28.0.10\n"), prod, "고정 주소를 갖지 않습니다"});
+        cases.put("다른 서비스의 고정 주소", new String[] {base.replace(address, "").replace("  api:\n    image: api\n",
+                "  api:\n    image: api\n    networks:\n      egov-net:\n        ipv4_address: 172.28.0.10\n"), prod, "고정 주소를 갖지 않습니다"});
+        cases.put("동적 구간과 겹침", new String[] {base.replace("172.28.0.128/25", "172.28.0.0/25"), prod, "ip_range"});
+        cases.put("ip_range 누락", new String[] {base.replace("          ip_range: 172.28.0.128/25\n", ""), prod, "ip_range"});
+        cases.put("게이트웨이를 프록시로 지정", new String[] {base.replace("172.28.0.10\n", "172.28.0.1\n"),
+                prod.replace("172.28.0.10/32", "172.28.0.1/32"), "게이트웨이·브로드캐스트"});
+        cases.put("서브넷 밖 주소", new String[] {base.replace("172.28.0.10\n", "172.29.0.10\n"),
+                prod.replace("172.28.0.10/32", "172.29.0.10/32"), "서브넷 안에 있지 않습니다"});
+        cases.put("gateway 명시 누락", new String[] {base.replace("          gateway: 172.28.0.1\n", ""), prod, "gateway 명시"});
+        cases.put("명시 게이트웨이를 프록시로 지정", new String[] {base.replace("gateway: 172.28.0.1", "gateway: 172.28.0.10"), prod,
+                "게이트웨이·브로드캐스트"});
+
+        for (Map.Entry<String, String[]> entry : cases.entrySet()) {
+            List<String> violations = trustedProxyBoundaryViolations(entry.getValue()[0], entry.getValue()[1]);
+            org.junit.jupiter.api.Assertions.assertTrue(
+                    violations.stream().anyMatch(v -> v.contains(entry.getValue()[2])),
+                    entry.getKey() + " 가 잡히지 않았습니다: " + violations);
+        }
+    }
 
     @Test
     @DisplayName("🛡️ 배포 형상 안전성 — prod 오버레이 존재·actuator 노출면·prod 기동가능성 회귀 차단 (Wave 0)")
@@ -445,45 +498,147 @@ class ConfigSafetyLinterTest {
      * 무기본값 fail-fast 로 기동 불가, cookie.secure=true 로 http localhost 로그인 전멸).
      */
     /**
-     * [J-1] 신뢰 프록시 경계가 두 파일에서 정합한지 본다.
+     * [J-1 · GAP-SEC-004] 신뢰 프록시 경계가 두 파일에서 정합한지 본다.
      *
-     * <p>판정 2축: ① 운영 기본값이 광역 사설 대역을 포함하지 않는가(위조 표면)
-     * ② 그 값이 실제 컨테이너 네트워크 서브넷과 같은가(프록시가 신뢰 목록에 실제로 들어 있는가).
+     * <p>판정: ① Next 컨테이너가 egov-net 에서 고정 주소를 가지며, 그 주소는 서브넷 안이고 게이트웨이가 아니며
+     * 동적 할당 구간 밖이다 ② 운영 {@code TRUSTED_PROXIES} 기본값은 그 주소 하나뿐이다
+     * (서브넷·광역 대역·다른 주소를 넣으면 위조 표면, 빼면 전역 단일 버킷).
      */
     private void auditTrustedProxyBoundary(String composeBaseSrc, String composeProdSrc, List<String> violations) {
+        violations.addAll(trustedProxyBoundaryViolations(composeBaseSrc, composeProdSrc));
+    }
+
+    static List<String> trustedProxyBoundaryViolations(String composeBaseSrc, String composeProdSrc) {
+        List<String> violations = new ArrayList<>();
         Matcher subnet = COMPOSE_NET_SUBNET.matcher(composeBaseSrc);
         Matcher trusted = COMPOSE_TRUSTED_PROXIES.matcher(composeProdSrc);
-
         if (!subnet.find()) {
             violations.add(COMPOSE_BASE + ": egov-net 에 명시 subnet 이 없습니다 — 서브넷이 동적으로 배정되면"
-                    + " 신뢰 프록시를 특정할 수 없어, 목록을 사설 대역 전체로 넓히는 것 외에 방법이 없어집니다."
-                    + " 그 상태에서 8080 이 직접 도달 가능하면 사내망 클라이언트가 자기 XFF 를 위조할 수 있습니다(J-1).");
-            return;
+                    + " 프록시 고정 주소를 둘 수 없어 신뢰 목록을 넓히는 것 외에 방법이 없어집니다(J-1).");
+            return violations;
         }
         if (!trusted.find()) {
             violations.add(COMPOSE_PROD + ": TRUSTED_PROXIES 기본값 선언을 찾을 수 없습니다 —"
                     + " 이 한 줄이 레이트리밋 키·로그인 IP 제한·감사 IP 를 동시에 결정합니다.");
-            return;
+            return violations;
         }
+        long[] net = cidr(subnet.group(1).trim());
+        if (net == null) {
+            violations.add(COMPOSE_BASE + ": egov-net subnet '" + subnet.group(1).trim() + "' 을 해석할 수 없습니다.");
+            return violations;
+        }
+        Matcher gatewayMatch = COMPOSE_NET_GATEWAY.matcher(composeBaseSrc);
+        Long gatewayValue = gatewayMatch.find() ? ipv4(gatewayMatch.group(1).trim()) : null;
+        if (gatewayValue == null || !inRange(gatewayValue, net)) {
+            violations.add(COMPOSE_BASE + ": egov-net 에 서브넷 안의 gateway 명시가 없습니다 — ip_range 를 주면 도커가"
+                    + " 게이트웨이를 그 구간 첫 주소로 잡아, 어느 주소가 게이트웨이인지 설정만으로 알 수 없습니다.");
+            return violations;
+        }
+        long gateway = gatewayValue;
 
-        String subnetValue = subnet.group(1).trim();
-        String trustedValue = trusted.group(1).trim();
-
-        for (String broad : FORBIDDEN_BROAD_TRUST) {
-            if (trustedValue.contains(broad)) {
-                violations.add(COMPOSE_PROD + ": TRUSTED_PROXIES 기본값에 광역 사설 대역 '" + broad + "' 이 있습니다 —"
-                        + " 백엔드 8080 이 브라우저에서 직접 도달 가능한 형상이므로(J-1 확정), 그 대역의 클라이언트는"
-                        + " 스스로 신뢰 프록시로 판정돼 X-Forwarded-For 를 위조할 수 있습니다."
-                        + " 신뢰 대상은 프록시(Next 컨테이너)뿐이어야 합니다.");
+        String frontendBlock = composeServiceBlock(composeBaseSrc, "frontend");
+        Matcher address = frontendBlock == null ? null : COMPOSE_IPV4_ADDRESS.matcher(frontendBlock);
+        if (address == null || !address.find()) {
+            violations.add(COMPOSE_BASE + ": frontend 가 egov-net 에서 ipv4_address 고정 주소를 갖지 않습니다 —"
+                    + " 프록시를 주소 하나로 특정할 수 없으면 서브넷 전체(게이트웨이 포함)를 신뢰하게 되고,"
+                    + " 공개 포트 직접 요청이 게이트웨이 주소로 들어오는 환경에서 XFF 위조·IP 제한 우회가 열립니다(GAP-SEC-004).");
+            return violations;
+        }
+        String proxy = address.group(1).trim();
+        Long proxyValue = ipv4(proxy);
+        if (proxyValue == null || !inRange(proxyValue, net)) {
+            violations.add(COMPOSE_BASE + ": frontend 고정 주소 " + proxy + " 가 egov-net 서브넷 안에 있지 않습니다.");
+        } else if (proxyValue == gateway || proxyValue == net[0] || proxyValue == net[1]) {
+            violations.add(COMPOSE_BASE + ": frontend 고정 주소 " + proxy + " 가 네트워크·게이트웨이·브로드캐스트 주소입니다.");
+        }
+        Matcher ipRange = COMPOSE_NET_IP_RANGE.matcher(composeBaseSrc);
+        if (!ipRange.find()) {
+            violations.add(COMPOSE_BASE + ": egov-net 에 ip_range 가 없습니다 — 동적 할당이 고정 주소를 먼저 가져가면"
+                    + " 프록시 컨테이너가 기동하지 못합니다. 고정 주소를 뺀 구간으로 동적 할당을 한정하십시오.");
+        } else {
+            long[] range = cidr(ipRange.group(1).trim());
+            if (range == null || (proxyValue != null && inRange(proxyValue, range))) {
+                violations.add(COMPOSE_BASE + ": ip_range(" + ipRange.group(1).trim() + ") 가 frontend 고정 주소 "
+                        + proxy + " 를 포함하거나 해석되지 않습니다 — 다른 컨테이너가 같은 주소를 받을 수 있습니다.");
             }
         }
 
-        if (!trustedValue.contains(subnetValue)) {
-            violations.add(COMPOSE_PROD + ": TRUSTED_PROXIES(" + trustedValue + ") 가 "
-                    + COMPOSE_BASE + " 의 egov-net 서브넷(" + subnetValue + ")을 포함하지 않습니다 —"
-                    + " 프록시가 신뢰 목록에서 빠지면 XFF 가 전면 불신되어 모든 클라이언트 IP 가"
-                    + " Next 컨테이너 하나로 수렴하고, 레이트리밋이 전역 단일 버킷이 됩니다(순서 지뢰 1 계열).");
+        String trustedValue = trusted.group(1).trim();
+        List<String> entries = new ArrayList<>();
+        for (String entry : trustedValue.split(",")) {
+            if (!entry.isBlank()) {
+                entries.add(entry.trim());
+            }
         }
+        String expected = proxy + "/32";
+        if (!(entries.size() == 1 && (entries.get(0).equals(expected) || entries.get(0).equals(proxy)))) {
+            violations.add(COMPOSE_PROD + ": TRUSTED_PROXIES 기본값(" + trustedValue + ") 은 frontend 고정 주소 하나("
+                    + expected + ")여야 합니다 — 서브넷이나 다른 대역을 넣으면 도커 게이트웨이(" + longToIp(gateway)
+                    + ") 같은 주소가 신뢰되어, 공개 포트 직접 요청의 X-Forwarded-For 위조로 로그인 기록 IP 와"
+                    + " IP 제한이 우회됩니다(2026-09-14 리허설 실측). 프록시를 빼면 모든 클라이언트가 Next 주소 하나로 수렴합니다.");
+        }
+        return violations;
+    }
+
+    /** compose 최상위 services 아래 한 서비스 블록(두 칸 들여쓰기 키)의 원문. 주석 줄은 비운다. */
+    private static String composeServiceBlock(String source, String service) {
+        String[] lines = source.replace("\r\n", "\n").split("\n", -1);
+        int start = -1;
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].equals("  " + service + ":")) {
+                start = i;
+                break;
+            }
+        }
+        if (start < 0) {
+            return null;
+        }
+        StringBuilder block = new StringBuilder();
+        for (int i = start + 1; i < lines.length; i++) {
+            String line = lines[i];
+            boolean comment = line.trim().startsWith("#");
+            if (!line.isBlank() && !comment && !line.startsWith("   ")) {
+                break;
+            }
+            block.append(comment ? "" : line).append('\n');
+        }
+        return block.toString();
+    }
+
+    private static Long ipv4(String value) {
+        String[] parts = value.split("\\.");
+        if (parts.length != 4) {
+            return null;
+        }
+        long result = 0;
+        for (String part : parts) {
+            if (!part.matches("\\d{1,3}") || Integer.parseInt(part) > 255) {
+                return null;
+            }
+            result = (result << 8) | Integer.parseInt(part);
+        }
+        return result;
+    }
+
+    /** CIDR → {네트워크 주소, 브로드캐스트 주소}. 해석할 수 없으면 null. */
+    private static long[] cidr(String value) {
+        String[] parts = value.split("/");
+        Long base = parts.length == 2 ? ipv4(parts[0]) : null;
+        if (base == null || !parts[1].matches("\\d{1,2}") || Integer.parseInt(parts[1]) > 32) {
+            return null;
+        }
+        int prefix = Integer.parseInt(parts[1]);
+        long mask = prefix == 0 ? 0 : (0xFFFFFFFFL << (32 - prefix)) & 0xFFFFFFFFL;
+        long network = base & mask;
+        return new long[] {network, network | (~mask & 0xFFFFFFFFL)};
+    }
+
+    private static boolean inRange(long value, long[] range) {
+        return value >= range[0] && value <= range[1];
+    }
+
+    private static String longToIp(long value) {
+        return ((value >> 24) & 255) + "." + ((value >> 16) & 255) + "." + ((value >> 8) & 255) + "." + (value & 255);
     }
 
     private void auditBaseProfileInjection(String composeBaseSrc, List<String> violations) {
