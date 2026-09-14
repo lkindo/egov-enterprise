@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserInfo } from '@/services/foundation/auth/authService';
@@ -21,6 +21,7 @@ const testState = vi.hoisted(() => ({
   logout: vi.fn(async () => undefined),
   getMe: vi.fn(),
   updateMe: vi.fn(),
+  changePassword: vi.fn(),
   toast: vi.fn(),
 }));
 
@@ -72,7 +73,7 @@ vi.mock('@/services/business/user/userService', () => ({
   userService: {
     getMe: (...args: unknown[]) => testState.getMe(...args),
     updateMe: (...args: unknown[]) => testState.updateMe(...args),
-    changePassword: vi.fn(),
+    changePassword: (...args: unknown[]) => testState.changePassword(...args),
   },
 }));
 
@@ -169,5 +170,49 @@ describe('Header 내 정보 수정 경계', () => {
     await waitFor(() => expect(testState.toast).toHaveBeenCalledWith(expect.stringContaining('조회 실패'), 'error'));
     expect(screen.queryByRole('button', { name: '저장' })).toBeNull();
     expect(testState.updateMe).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * [2026-09-14] 서버가 비밀번호 변경과 함께 refresh token 을 폐기한다. 헤더가 세션을 그대로 두면
+ * access token 만료 시점에 사용자는 이유 없이 로그아웃되므로, 성공 즉시 알리고 로그아웃한다.
+ * 실패하면 세션을 끊지 않는다 — 현재 비밀번호를 틀린 입력이 로그아웃으로 이어지면 안 된다.
+ */
+describe('Header 비밀번호 변경 뒤 세션 처리', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  async function submitPasswordChange(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(await screen.findByRole('button', { name: '사용자 계정 메뉴' }));
+    await user.click(screen.getByRole('button', { name: '비밀번호 변경' }));
+    await user.type(await screen.findByLabelText('현재 비밀번호'), 'Oldpass1!');
+    await user.type(screen.getByLabelText('새 비밀번호'), 'Newpass1!');
+    await user.type(screen.getByLabelText('새 비밀번호 확인'), 'Newpass1!');
+    const form = screen.getByRole('form', { name: '비밀번호 변경 폼' });
+    await user.click(within(form).getByRole('button', { name: '비밀번호 변경' }));
+  }
+
+  it('성공하면 다시 로그인하라고 알리고 로그아웃한다', async () => {
+    const user = userEvent.setup();
+    testState.changePassword.mockResolvedValue(undefined);
+
+    renderHeader();
+    await submitPasswordChange(user);
+
+    await waitFor(() => expect(testState.logout).toHaveBeenCalledTimes(1));
+    expect(testState.changePassword).toHaveBeenCalledWith('Oldpass1!', 'Newpass1!');
+    expect(testState.toast).toHaveBeenCalledWith(expect.stringContaining('다시 로그인'), 'success');
+  });
+
+  it('실패하면 로그아웃하지 않는다', async () => {
+    const user = userEvent.setup();
+    testState.changePassword.mockRejectedValue(new Error('현재 비밀번호가 일치하지 않습니다.'));
+
+    renderHeader();
+    await submitPasswordChange(user);
+
+    await waitFor(() => expect(testState.toast).toHaveBeenCalledWith(expect.stringContaining('일치하지 않습니다'), 'error'));
+    expect(testState.logout).not.toHaveBeenCalled();
   });
 });

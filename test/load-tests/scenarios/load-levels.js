@@ -88,9 +88,16 @@ export const options = {
     test_type: 'load-level',
   },
 
+  // check() 는 정확성(상태·응답 계약)만 보고 100% 를 요구한다. 지연은 요청 하나가 아니라 분포로
+  // 판정한다 — [2026-09-14] 종전에는 요청별 지연을 check() 에 넣어, 오류율 0%·p95 236ms 인 실행이
+  // 공유 러너에서 느린 요청 17건(2만 9천여 건 중) 때문에 checks rate==1 을 넘지 못하고 실패했다.
   thresholds: {
     checks: ['rate==1'],
     http_req_duration: ['p(95)<1000'],
+    'http_req_duration{endpoint:login}': ['p(95)<500'],
+    'http_req_duration{endpoint:dashboard}': ['p(95)<800'],
+    'http_req_duration{endpoint:users-list}': ['p(95)<600'],
+    'http_req_duration{endpoint:create-post}': ['p(95)<1000'],
     http_req_failed: ['rate<0.01'],
   },
 
@@ -160,11 +167,11 @@ function runLoginTest() {
 
   const response = http.post(url, JSON.stringify(payload), {
     headers: Config.getDefaultHeaders(),
+    tags: { endpoint: 'login' },
   });
 
   check(response, {
     'login status is 200': (r) => r.status === 200,
-    'login response time < 500ms': (r) => r.timings.duration < 500,
   });
 
   sleep(1);
@@ -178,11 +185,11 @@ function runDashboardTest(token) {
 
   const response = http.get(url, {
     headers: Config.getAuthHeaders(token),
+    tags: { endpoint: 'dashboard' },
   });
 
   check(response, {
     'dashboard status is 200': (r) => r.status === 200,
-    'dashboard response time < 800ms': (r) => r.timings.duration < 800,
   });
 
   sleep(2);
@@ -197,12 +204,12 @@ function runUsersListTest(token) {
 
   const response = http.get(`${url}?page=${page}&size=10`, {
     headers: Config.getAuthHeaders(token),
+    tags: { endpoint: 'users-list' },
   });
 
   check(response, {
     'users list status is 200': (r) => r.status === 200,
     'users list matches ApiResponse PageResponse': (r) => hasPageResponse(r.body),
-    'users list response time < 600ms': (r) => r.timings.duration < 600,
   });
 
   sleep(2);
@@ -228,11 +235,11 @@ function runPostCreateTest(token) {
 
   const response = http.post(url, JSON.stringify(payload), {
     headers: Config.getAuthHeaders(token),
+    tags: { endpoint: 'create-post' },
   });
 
   check(response, {
     'create post status is 200': (r) => r.status === 200,
-    'create post response time < 1000ms': (r) => r.timings.duration < 1000,
   });
 
   sleep(3);

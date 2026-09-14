@@ -358,8 +358,11 @@ export function Header({
             setPasswordPending(true);
             try {
               await userService.changePassword(oldPassword, newPassword);
-              toast('비밀번호를 변경했습니다.', 'success');
+              // 서버가 비밀번호 변경과 함께 refresh token 을 폐기한다. 여기서 세션을 이어 두면
+              // access token 만료 시점에 이유 없이 로그아웃되므로, 지금 알리고 다시 로그인하게 한다.
+              toast('비밀번호를 변경했습니다. 새 비밀번호로 다시 로그인해 주세요.', 'success');
               setPasswordOpen(false);
+              handleLogout();
             } finally {
               // 실패는 폼이 필드 오류·안내로 처리하도록 그대로 올려보낸다(입력 보존).
               setPasswordPending(false);

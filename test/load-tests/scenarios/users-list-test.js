@@ -92,7 +92,7 @@ export default function (data) {
   // 응답 검증
   const success = check(response, {
     'users list status is 200': (r) => r.status === 200,
-    'users list response time < 600ms': (r) => r.timings.duration < 600,
+    // 지연은 요청 하나가 아니라 options.thresholds 의 p(95)<600 으로 판정한다(checks 는 rate==1).
     'users list matches ApiResponse PageResponse': (r) => hasPageResponse(r.body),
   });
   

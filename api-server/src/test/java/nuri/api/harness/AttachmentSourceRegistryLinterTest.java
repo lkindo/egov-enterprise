@@ -409,11 +409,11 @@ class AttachmentSourceRegistryLinterTest {
         String good = """
                 class BoardService {
                     public void updatePost(Long pstSn, Request request) {
-                        Board board = findOwnedPost(pstSn);
+                        Board board = findOwnedPost(bbsId, pstSn);
                         updateOwnedPost(board, request, false);
                     }
                     public void updatePostWithFiles(Long pstSn, Request request, Files files) {
-                        Board board = findOwnedPost(pstSn);
+                        Board board = findOwnedPost(bbsId, pstSn);
                         attachmentAssignmentPolicy.assertAssignable(atchFileSn);
                         fileService.uploadFiles(files);
                         fileService.updateFiles(atchFileSn, files);
@@ -424,8 +424,8 @@ class AttachmentSourceRegistryLinterTest {
         assertTrue(boardOwnershipOrderViolations(path, good).isEmpty());
 
         String uploadBeforeOwner = good.replace(
-                "Board board = findOwnedPost(pstSn);\n        attachmentAssignmentPolicy",
-                "fileService.uploadFiles(files);\n        Board board = findOwnedPost(pstSn);\n"
+                "Board board = findOwnedPost(bbsId, pstSn);\n        attachmentAssignmentPolicy",
+                "fileService.uploadFiles(files);\n        Board board = findOwnedPost(bbsId, pstSn);\n"
                         + "        attachmentAssignmentPolicy")
                 .replace("        fileService.uploadFiles(files);\n        fileService.updateFiles",
                         "        fileService.updateFiles");
@@ -433,18 +433,18 @@ class AttachmentSourceRegistryLinterTest {
                 .anyMatch(value -> value.contains("fileService.uploadFiles(") && value.contains("소유권보다 앞")));
 
         String updateBeforeOwner = good.replace(
-                "Board board = findOwnedPost(pstSn);\n        attachmentAssignmentPolicy",
+                "Board board = findOwnedPost(bbsId, pstSn);\n        attachmentAssignmentPolicy",
                 "fileService.updateFiles(atchFileSn, files);\n"
-                        + "        Board board = findOwnedPost(pstSn);\n        attachmentAssignmentPolicy")
+                        + "        Board board = findOwnedPost(bbsId, pstSn);\n        attachmentAssignmentPolicy")
                 .replace("        fileService.updateFiles(atchFileSn, files);\n        updateOwnedPost",
                         "        updateOwnedPost");
         assertTrue(boardOwnershipOrderViolations(path, updateBeforeOwner).stream()
                 .anyMatch(value -> value.contains("fileService.updateFiles(") && value.contains("소유권보다 앞")));
 
         String assignmentBeforeOwner = good.replace(
-                "Board board = findOwnedPost(pstSn);\n        attachmentAssignmentPolicy",
+                "Board board = findOwnedPost(bbsId, pstSn);\n        attachmentAssignmentPolicy",
                 "attachmentAssignmentPolicy.assertAssignable(atchFileSn);\n"
-                        + "        Board board = findOwnedPost(pstSn);\n        voidPolicy")
+                        + "        Board board = findOwnedPost(bbsId, pstSn);\n        voidPolicy")
                 .replace("        voidPolicy.assertAssignable(atchFileSn);\n        fileService.uploadFiles",
                         "        fileService.uploadFiles");
         assertTrue(boardOwnershipOrderViolations(path, assignmentBeforeOwner).stream()
@@ -452,10 +452,10 @@ class AttachmentSourceRegistryLinterTest {
                         && value.contains("소유권보다 앞")));
 
         String entityUpdateBeforeOwner = good.replace(
-                "Board board = findOwnedPost(pstSn);\n        updateOwnedPost(board, request, false);",
+                "Board board = findOwnedPost(bbsId, pstSn);\n        updateOwnedPost(board, request, false);",
                 "Board board = findUnownedPost(pstSn);\n"
                         + "        updateOwnedPost(board, request, false);\n"
-                        + "        board = findOwnedPost(pstSn);");
+                        + "        board = findOwnedPost(bbsId, pstSn);");
         assertTrue(boardOwnershipOrderViolations(path, entityUpdateBeforeOwner).stream()
                 .anyMatch(value -> value.contains("updateOwnedPost(") && value.contains("소유권보다 앞")));
     }
@@ -535,9 +535,9 @@ class AttachmentSourceRegistryLinterTest {
         List<String> violations = new ArrayList<>();
         Map<String, String> methods = extractMethods(stripCommentsAndLiterals(rawSource), path, violations);
         requireTokenBeforeMutations(methods, path, "updatePost",
-                "findOwnedPost(pstSn)", List.of("updateOwnedPost("), violations);
+                "findOwnedPost(bbsId, pstSn)", List.of("updateOwnedPost("), violations);
         requireTokenBeforeMutations(methods, path, "updatePostWithFiles",
-                "findOwnedPost(pstSn)",
+                "findOwnedPost(bbsId, pstSn)",
                 List.of("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                         "fileService.uploadFiles(", "fileService.updateFiles(", "updateOwnedPost("),
                 violations);

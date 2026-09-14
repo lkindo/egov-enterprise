@@ -134,6 +134,28 @@ class GlobalExceptionHandlerTest {
         assertFalse(response.getBody().success());
     }
 
+    /**
+     * [2026-09-14] 인증 제공자는 비밀번호 확인 전에 계정 상태를 검사한다. 예외 메시지가 응답에 실리면
+     * 비밀번호 없이 없는 계정·잠긴 계정·비활성 계정을 구분할 수 있다. 세 경우의 응답이 같아야 한다.
+     */
+    @Test
+    @DisplayName("인증 실패 응답은 계정 없음·잠김·비활성을 구분해 드러내지 않는다")
+    void authenticationFailureResponseDoesNotRevealAccountState() {
+        AuthenticationException unknown = new org.springframework.security.authentication.BadCredentialsException("Invalid User ID or Password");
+        AuthenticationException disabled = new org.springframework.security.authentication.DisabledException("User account is not active");
+        AuthenticationException locked = new org.springframework.security.authentication.LockedException("User account is locked.");
+
+        ApiResponse<Void> unknownBody = handler.handleAuthenticationException(unknown).getBody();
+        ApiResponse<Void> disabledBody = handler.handleAuthenticationException(disabled).getBody();
+        ApiResponse<Void> lockedBody = handler.handleAuthenticationException(locked).getBody();
+
+        assertEquals(unknownBody.message(), disabledBody.message());
+        assertEquals(unknownBody.message(), lockedBody.message());
+        assertEquals(unknownBody.code(), lockedBody.code());
+        assertFalse(lockedBody.message().contains("lock"), "잠김 사유가 응답에 실리면 안 된다: " + lockedBody.message());
+        assertFalse(disabledBody.message().contains("active"), "비활성 사유가 응답에 실리면 안 된다: " + disabledBody.message());
+    }
+
     @Test
     @DisplayName("OptimisticLockingFailureException 처리 테스트")
     void testHandleOptimisticLockingFailureException() {

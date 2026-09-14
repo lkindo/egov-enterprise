@@ -442,6 +442,20 @@ class NoteServiceImplTest {
     }
 
     @Test
+    @DisplayName("쪽지 발송 - 수신자 필드가 없으면 쪽지 자체를 저장하지 않고 거부한다")
+    void sendNote_missingRecipient_rejectedBeforeAnyWrite() {
+        // [2026-09-14] 종전에는 수신자 파싱 블록을 통째로 건너뛰어 수신자 없는 쪽지가 200 으로 저장됐다.
+        NoteDto dto = NoteDto.builder().noteSj("S").noteCn("M").rcverId(null).build();
+
+        assertThatThrownBy(() -> noteService.sendNote("user1", dto))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(noteRepository, never()).save(any());
+        verify(noteRecptnRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("보낸 쪽지 상세 - 소프트삭제된 건은 RESOURCE_NOT_FOUND")
     void getNoteDetail_sent_softDeleted_notFound() {
         Long relationSn = 2L;

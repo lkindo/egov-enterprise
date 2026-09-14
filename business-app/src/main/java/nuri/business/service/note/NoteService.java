@@ -131,6 +131,11 @@ public class NoteService {
 
     @Transactional
     public void sendNote(String dsptchUserId, NoteDto dto) {
+        // [2026-09-14 DEC-OPS-092] 수신자 필드가 아예 없으면 아래 파싱 블록을 건너뛰어 수신자 없는 쪽지가
+        // 200 으로 저장됐다. 공백 수신자는 이미 거부하므로(V2_21) 같은 입력 오류로 저장 전에 거부한다.
+        if (dto.getRcverId() == null || dto.getRcverId().isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
         try {
             Note note = Note.builder()
                     .noteTtl(dto.getNoteSj())

@@ -128,11 +128,16 @@ public class GlobalExceptionHandler {
 
     /**
      * 인증 실패 예외 처리 (Spring Security)
+     *
+     * <p>응답 메시지는 실패 사유와 무관하게 하나로 둔다. 인증 제공자는 비밀번호 확인 전에 계정 상태를
+     * 검사하므로(잠긴 동안 비밀번호 정답 여부를 알려 주지 않기 위해서다), 예외 메시지를 그대로 돌려주면
+     * 비밀번호 없이도 "없는 계정·잠긴 계정·비활성 계정" 을 구분할 수 있었다. 사유는 서버 로그에만 남긴다.
+     * 브라우저 로그인 경로(BFF)는 이미 모든 4xx 를 같은 문구로 바꾸며, 이 처리는 API 직접 호출도 같게 만든다.
      */
     @ExceptionHandler(AuthenticationException.class)
     protected ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException e) {
-        log.warn(">>> Authentication Failed: {}", e.getMessage());
-        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.UNAUTHORIZED, resolveMessage(CommonErrorCode.UNAUTHORIZED, e.getMessage())), HttpStatus.UNAUTHORIZED);
+        log.warn(">>> Authentication Failed: {} ({})", e.getMessage(), e.getClass().getSimpleName());
+        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.UNAUTHORIZED, resolve(CommonErrorCode.UNAUTHORIZED)), HttpStatus.UNAUTHORIZED);
     }
 
     /**

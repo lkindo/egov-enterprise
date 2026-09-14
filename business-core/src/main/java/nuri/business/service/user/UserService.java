@@ -192,10 +192,7 @@ public class UserService extends BaseAbstractService {
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_CREATE");
 
-                // [안정성] ID 중복 체크 (통합 테이블 내 userId 필드 기준)
-                if (userRepository.findByUserId(userId).isPresent()) {
-                        throw new BusinessException(UserErrorCode.DUPLICATE_USER_ID);
-                }
+                assertLoginIdAvailable(userId);
 
                 String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
                 String encodedPassword = passwordEncoder.encode(pswd);
@@ -338,6 +335,36 @@ public class UserService extends BaseAbstractService {
                 }
 
                 user.updatePassword(passwordEncoder.encode(newPassword));
+                revokeRefreshTokens(user);
+        }
+
+        /**
+         * 새 로그인 ID 가 기존 로그인 ID 는 물론 **기존 사용자의 내부 식별자(esntlId)와도** 겹치지 않게 한다.
+         *
+         * <p>access token 의 subject 는 esntlId 인데, 인증 어댑터는 그 값을 로그인 ID 로 먼저 찾고
+         * 없을 때 esntlId 로 찾는다. 그래서 누군가의 esntlId 와 같은 로그인 ID 가 생기면 원래 사용자의
+         * 토큰이 새 계정으로 해석된다 — 권한·감사 귀속이 다른 사람으로 바뀐다. 관리자 등록 규칙
+         * (영문·숫자·밑줄 4~20자)은 초기 관리자 식별자 {@code USRCNFRM_00000000001} 같은 값을 통과시킨다.
+         * 사용자에게는 일반 중복과 같은 오류로 답해 내부 식별자의 존재를 드러내지 않는다.
+         */
+        private void assertLoginIdAvailable(String userId) {
+                if (userRepository.findByUserId(userId).isPresent() || userRepository.existsById(userId)) {
+                        throw new BusinessException(UserErrorCode.DUPLICATE_USER_ID);
+                }
+        }
+
+        /**
+         * 비밀번호가 바뀌면 그 전에 발급된 refresh token 을 폐기한다.
+         *
+         * <p>종전에는 비밀번호만 바꾸고 토큰을 남겨, 탈취된 refresh token 이 새 비밀번호와 무관하게
+         * 만료(최대 7일)까지 access token 을 재발급받을 수 있었다. 본인 변경과 관리자 초기화는 모두
+         * "지금까지의 자격을 끊는다" 는 의미이므로 두 경로에서 같은 폐기를 수행한다.
+         *
+         * <p>토큰 테이블은 esntlId 단일 키이며 사용자 삭제와 같은 bulk 계약을 쓴다. 이미 발급된
+         * access token 은 서명 기반이라 여기서 폐기되지 않고 자기 만료 시각까지 유효하다.
+         */
+        private void revokeRefreshTokens(User user) {
+                refreshTokenRepository.deleteAllByEsntlIdIn(List.of(user.getEsntlId()));
         }
 
         /**
@@ -415,11 +442,9 @@ public class UserService extends BaseAbstractService {
                 required(request.getPswd(), "비밀번호 는 null 일 수 없습니다");
                 required(request.getUserNm(), "사용자 이름 은 null 일 수 없습니다");
 
-                // [버그수정] User @Id 는 esntlId 이므로 existsById(loginId)는 항상 false(死가드)였다.
+                // [버그수정] User @Id 는 esntlId 이므로 existsById(loginId)만으로는 로그인 ID 중복을 못 본다.
                 // 로그인 ID 중복은 unique 컬럼 user_id 로 확인해야 한다. 미수정 시 중복 loginId 가 통과→INSERT 시 500.
-                if (userRepository.findByUserId(request.getUserId()).isPresent()) {
-                        throw new BusinessException(UserErrorCode.DUPLICATE_USER_ID);
-                }
+                assertLoginIdAvailable(request.getUserId());
 
                 String esntlId = nuri.foundation.core.util.IdGenerationUtil.generateUserId();
                 String encodedPassword = passwordEncoder.encode(request.getPswd());
@@ -491,6 +516,7 @@ public class UserService extends BaseAbstractService {
                                 .or(() -> userRepository.findById(userId))
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
                 user.updatePassword(passwordEncoder.encode(newPassword));
+                revokeRefreshTokens(user);
         }
 
         /**
