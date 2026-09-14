@@ -258,7 +258,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <span className="text-xs font-bold text-primary tracking-tight bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap">{CATEGORY_LABEL[activeCategory]}</span>
  <span className="text-xs font-bold text-muted-foreground">{item.frstRegisterPnttmStr}</span>
  </div>
- <h4 className="text-base font-semibold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h4>
+ <h3 className="text-base font-semibold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h3>
  <div className="flex items-center gap-3 md:gap-4 text-muted-foreground">
  <div className="flex items-center gap-1.5"><User size={12} className="text-primary" /><span className="text-xs font-bold truncate max-w-[120px]">{item.frstRegisterNm || item.frstRgtrId || '-'}</span></div>
  <div className="flex items-center gap-1.5"><Eye size={12} /><span className="text-xs font-bold">{(item.inqCnt || 0).toLocaleString()}</span></div>
@@ -405,7 +405,8 @@ function StatsCard({ label, value, desc }: { label: string, value: string, desc:
  <TrendingUp size={14} className="text-primary opacity-30 group-hover:opacity-100 transition-opacity" />
  </div>
  <div className="space-y-1">
- <h4 className="text-4xl font-bold tracking-tighter text-foreground tabular-nums group-hover:text-primary transition-colors">{value}</h4>
+ {/* 통계 수치는 제목이 아니다. */}
+ <p className="text-4xl font-bold tracking-tighter text-foreground tabular-nums group-hover:text-primary transition-colors">{value}</p>
  <p className="text-xs font-bold text-muted-foreground tracking-tight">{desc}</p>
  </div>
  </div>
@@ -476,7 +477,8 @@ function CategoryCard({ title, desc, icon, color, active, onClick }: {
  {icon}
  </div>
  <div className="space-y-1">
- <h3 className="font-semibold text-sm text-foreground">{title}</h3>
+ {/* 탭 이름이지 절 제목이 아니다. 탭 안의 h3 는 h1 뒤 단계를 건너뛰어 heading-order 위반이었다(axe). */}
+ <span className="block font-semibold text-sm text-foreground">{title}</span>
  <p className="text-xs font-bold text-muted-foreground tracking-tight">{desc}</p>
  </div>
 
@@ -500,7 +502,8 @@ function HubSectionCard({ title, description, icon: Icon, children, className, i
  <Icon size={20} />
  </div>
  <div className="space-y-0.5">
- <h3 className="text-xl font-bold text-foreground tracking-tighter leading-none">{title}</h3>
+ {/* 화면 h1 바로 아래 절이다 — 제목 계층은 h1 → 절(h2) → 문서 제목(h3). */}
+ <h2 className="text-xl font-bold text-foreground tracking-tighter leading-none">{title}</h2>
  <p className="text-xs font-bold text-muted-foreground tracking-tight">{description}</p>
  </div>
  </div>
