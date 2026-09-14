@@ -1,19 +1,29 @@
 'use client';
 
-import { useState, useMemo, useRef, useTransition } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo, useTransition,
+  /* reusable-base:collaboration:start */
+  useRef,
+  /* reusable-base:collaboration:end */
+} from 'react';
+import { useQuery, useQueryClient,
+  /* reusable-base:collaboration:start */
+  useMutation,
+  /* reusable-base:collaboration:end */
+} from '@tanstack/react-query';
 ;
 import { Button } from '@/components/ui/button';
 ;
 import {
   ShieldAlert,
   Terminal,
-  MessageSquare,
   RefreshCcw,
   Zap,
   LogIn,
   Download,
+  /* reusable-base:collaboration:start */
+  MessageSquare,
   Trash2,
+  /* reusable-base:collaboration:end */
   MonitorCheck,
   Database,
   Network,
@@ -22,14 +32,18 @@ import {
   Share2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+/* reusable-base:collaboration:start */
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+/* reusable-base:collaboration:end */
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { monitoringKeys, monitoringQueryOptions } from '@/queries/monitoring-query-options';
+/* reusable-base:collaboration:start */
 import { commentMutationOptions, commentQueryOptions } from '@/queries/comment-query-options';
+/* reusable-base:collaboration:end */
 import { attachmentIntegrityService } from '@/services/foundation/system/AttachmentIntegrityService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -67,10 +81,18 @@ import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 
 export type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'TOPOLOGY' | 'HARNESS';
 
-const MONITORING_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY', 'COMMENTS', 'TOPOLOGY', 'HARNESS'];
+const MONITORING_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY',
+  /* reusable-base:collaboration:start */
+  'COMMENTS',
+  /* reusable-base:collaboration:end */
+  'TOPOLOGY', 'HARNESS'];
 
 /** 목록 탭(서버 데이터 조회 + 페이저를 쓰는 탭) 여부 */
-const LIST_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'COMMENTS'];
+const LIST_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN',
+  /* reusable-base:collaboration:start */
+  'COMMENTS',
+  /* reusable-base:collaboration:end */
+];
 
 /** 페이지당 건수 기본값. 사용자가 바꾸면 화면 상태가 이긴다(A1 필수 — 페이지당 건수 선택). */
 const DEFAULT_PAGE_SIZE = 50;
@@ -115,6 +137,7 @@ const SYS_LOG_EXPORT_HEADERS = [
   { label: '처리시간(ms)', key: 'prcsTm' }
 ];
 
+/* reusable-base:collaboration:start */
 const COMMENT_EXPORT_HEADERS = [
   { label: '댓글번호', key: 'ansSn' },
   { label: '내용', key: 'ansCn' },
@@ -124,6 +147,7 @@ const COMMENT_EXPORT_HEADERS = [
   { label: '게시판ID', key: 'bbsId' },
   { label: '게시글ID', key: 'pstSn' }
 ];
+/* reusable-base:collaboration:end */
 
 /**
  * 목록 탭의 조회 상태 묶음.
@@ -150,8 +174,10 @@ interface ListTabConfig {
 /** 실측 소스가 없는 위젯에 붙이는 공용 '샘플 데이터' 배지 */
 export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defaultTab?: MonitoringTab }) {
   const queryClient = useQueryClient();
+  /* reusable-base:collaboration:start */
   const { toast } = useToast();
   const confirm = useConfirm();
+  /* reusable-base:collaboration:end */
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -166,7 +192,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const activeTab = (queryTab && MONITORING_TABS.includes(queryTab))
     ? queryTab
-    : defaultTab;
+    : MONITORING_TABS.includes(defaultTab) ? defaultTab : 'SECURITY';
 
   // [P1-7] 페이지도 URL 파생값으로 둔다 → 공유·새로고침·뒤로가기가 조회 위치까지 복원한다.
   //        ADR-0009는 URL 사용을 의무화하지 않으므로 검색어는 이 화면의 로컬 상태로 유지한다.
@@ -179,8 +205,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+/* reusable-base:collaboration:start */
   const deleteCommentPendingRef = useRef(false);
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
+/* reusable-base:collaboration:end */
 
   // [P1-8] 타이핑 한 글자마다 서버 요청이 나가던 문제 → 300ms 디바운스 후에만 조회한다.
 
@@ -258,11 +286,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   // ⚠ 백엔드 CommentApiController 는 키워드 검색을 지원하지 않는다(CommentAdminService 주석 참조).
   //    따라서 COMMENTS 탭에서는 검색 입력을 렌더하지 않고, queryKey 에도 검색어를 넣지 않는다.
+/* reusable-base:collaboration:start */
   const { data: commentData, isLoading: isCommentLoading, error: commentError, refetch: refetchComments } = useQuery({
     ...commentQueryOptions.adminList({ page: page - 1, size: pageSize }),
     enabled: activeTab === 'COMMENTS'
   });
   const comments = useMemo(() => commentData?.list || [], [commentData]);
+/* reusable-base:collaboration:end */
 
   // Real-time Metrics Queries
   const { data: healthData, error: healthError, isLoading: isHealthLoading, refetch: refetchHealth } = useQuery({
@@ -307,6 +337,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     gcTime: 0,
   });
 
+/* reusable-base:collaboration:start */
   const deleteCommentMutation = useMutation({
     ...commentMutationOptions.removeAdmin(queryClient),
     onSuccess: () => {
@@ -346,6 +377,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       setDeletingCommentId(null);
     }
   };
+/* reusable-base:collaboration:end */
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
@@ -356,12 +388,18 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     if (idStr.startsWith('TEST_')) {
       return HARNESS_SAMPLE_TESTS.find(t => t.id === idStr) || null;
     }
+/* reusable-base:collaboration:start */
     if (activeTab === 'COMMENTS') return comments.find(c => c.ansSn === selectedItemId);
+/* reusable-base:collaboration:end */
     if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.sysLogSn) === idStr);
     if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.sysLogSn) === idStr);
     if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.lgnSn) === idStr);
     return null;
-  }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, comments]);
+  }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs,
+    /* reusable-base:collaboration:start */
+    comments,
+    /* reusable-base:collaboration:end */
+  ]);
 
   const auditColumns: Column<any>[] = [
     {
@@ -432,6 +470,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     }
   ];
 
+/* reusable-base:collaboration:start */
   const commentColumns: Column<any>[] = [
     {
       header: '댓글 및 피드백',
@@ -464,6 +503,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       )
     }
   ];
+/* reusable-base:collaboration:end */
 
   const renderObservability = () => (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -824,6 +864,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               exportHeaders: LOGIN_LOG_EXPORT_HEADERS,
               label: '접속 이력'
             };
+/* reusable-base:collaboration:start */
           case 'COMMENTS':
             return {
               columns: commentColumns,
@@ -842,6 +883,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               exportHeaders: COMMENT_EXPORT_HEADERS,
               label: '사용자 의견 관리'
             };
+/* reusable-base:collaboration:end */
           case 'SECURITY':
           default:
             return {
@@ -897,7 +939,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '가동 상태' },
     { tab: 'TOPOLOGY', icon: <Share2 size={14} />, label: '인프라 구성도' },
     { tab: 'HARNESS', icon: <Zap size={14} />, label: '하네스 아틀라스' },
+/* reusable-base:collaboration:start */
     { tab: 'COMMENTS', icon: <MessageSquare size={14} />, label: '사용자 의견 관리' },
+/* reusable-base:collaboration:end */
   ];
 
   /** 선택 항목의 상세. 종전에는 우측 3열 패널이었고, 미선택 시 '인텔리전스 대기 중' 장식이 자리를 채웠다. */
@@ -1093,4 +1137,3 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     </>
   );
 }
-

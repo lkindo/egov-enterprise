@@ -82,14 +82,18 @@ class FlywaySchemaOwnershipLinterTest {
                 || !apiBuild.contains("includeTags 'schema-validation'")) {
             violations.add("api-server schemaValidationTest 전용 실행 태스크/태그 연결 누락");
         }
-        if (!ci.contains("./gradlew :api-server:schemaValidationTest")
+        if (ReusableHarnessProfile.current().projected()) {
+            // ADR-0018: 생성물은 change-scope 없이 모든 변경에서 제품 runner의 실제
+            // PostgreSQL schemaValidationTest를 실행한다. 생산자 CI 이력은 증거가 아니다.
+            WorkflowManifestLinterTest.requireArtifactContract(root);
+        } else if (!ci.contains("./gradlew :api-server:schemaValidationTest")
                 || !ci.contains("needs.change-scope.outputs.schema == 'true'")) {
             violations.add("required CI의 schemaValidationTest 실행 또는 schema 조건 연결 누락");
         }
-        if (!scope.contains("const SCHEMA_RELEVANT")
+        if (!ReusableHarnessProfile.current().projected() && (!scope.contains("const SCHEMA_RELEVANT")
                 || !scope.contains("business-core|business-app|foundation")
                 || !scope.contains("src\\/main\\/java\\/.*\\/domain")
-                || !scope.contains("api-server\\/src\\/main\\/resources\\/db\\/migration")) {
+                || !scope.contains("api-server\\/src\\/main\\/resources\\/db\\/migration"))) {
             violations.add("Entity domain/Flyway 변경을 schema=true로 분류하는 fail-closed 범위 누락");
         }
         if (!"validate".equals(normalize(tc.get("spring.jpa.hibernate.ddl-auto")))

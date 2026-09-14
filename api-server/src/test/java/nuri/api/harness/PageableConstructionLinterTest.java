@@ -164,7 +164,7 @@ class PageableConstructionLinterTest {
     }
 
     @Test
-    @DisplayName("BaseSearchDto MVC model attribute 28건이 모두 @Valid 를 집행한다")
+    @DisplayName("활성 BaseSearchDto MVC model attribute census가 모두 @Valid 를 집행한다")
     void auditBaseSearchDtoModelAttributesAreValidated() throws IOException {
         Path root = HarnessSourceIndex.repoRoot();
         List<String> violations = new ArrayList<>();
@@ -184,7 +184,7 @@ class PageableConstructionLinterTest {
             }
         }
 
-        if (all != EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES) {
+        if (all != ReusableHarnessProfile.current().count("baseSearchBindings", EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES)) {
             violations.add("BaseSearchDto model attribute census가 " + EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES
                     + " → " + all + " 로 변했습니다. 추가/삭제된 binding의 validation 의미를 검토하십시오.");
         }

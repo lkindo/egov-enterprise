@@ -70,7 +70,7 @@ class SchemaValidationIntegrationTest {
             }
             assertThat(applied)
                     .as("Flyway 적용 건수가 비정상 — 마이그레이션이 실제로 실행되지 않았다면 validate 는 무의미하다")
-                    .isGreaterThanOrEqualTo(20);
+                    .isGreaterThanOrEqualTo(nuri.api.harness.ReusableHarnessProfile.current().count("migrations", 20));
 
             int tables = 0;
             try (ResultSet rs = st.executeQuery(
@@ -81,11 +81,13 @@ class SchemaValidationIntegrationTest {
             }
             assertThat(tables)
                     .as("물리 테이블 수가 비정상 — 스키마가 비어 있으면 validate 통과는 vacuous 하다")
-                    .isGreaterThanOrEqualTo(50);
+                    .isGreaterThanOrEqualTo(nuri.api.harness.ReusableHarnessProfile.current().count("schemaTables", 50));
             try (ResultSet rs=st.executeQuery("SELECT count(*) FROM tb_authrt_chg_hstry "
                     + "WHERE chg_artcl_nm='legacy_authorization_contract' AND chg_type_cd='UPDATE'")) {
                 assertThat(rs.next()).isTrue();
-                assertThat(rs.getInt(1)).as("JPA validate 전에 실제 Contract를 수행했어야 한다").isEqualTo(1);
+                assertThat(rs.getInt(1)).as(nuri.api.harness.ReusableHarnessProfile.current().projected()
+                        ? "생성 baseline의 bootstrap provenance가 있어야 한다 — 운영 전환 리허설 증거가 아니다"
+                        : "JPA validate 전에 실제 Contract를 수행했어야 한다").isEqualTo(1);
             }
         }
     }

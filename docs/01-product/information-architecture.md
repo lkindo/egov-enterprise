@@ -6,10 +6,12 @@
 - **Current URL-state:** 비규범 registry는 `class-governed`; `presentation-state`·`resource-identifier`·`search-input`·`control-flag` 4개 부류가 각각 승인됐고, `search-input`만 ADR-0009에 결속된다. `opaque`·`path-intent`·`hand-assembled-segment` 3개 부류는 미해결이다.
 - **Global URL remainder:** 범위가 축소된 `PD-UX-002`가 위 3개 미해결 부류를 추적한다. 외부 telemetry·보존 경계는 배포자별 재검토 대상이며, ADR-0009는 이 잔여 범위를 일괄 승인하지 않는다.
 - **Required reviewers:** domain owners, frontend architecture, accessibility, DB/menu operator — 담당자 미지정
-- **Route evidence reviewBy:** 2026-10-31 — 현재 route manifest의 bounded exception 기한
+- **Route evidence reviewBy:** [현재 route manifest](../../config/ui-route-capabilities.json)의 기록된 정기 검토 일정 — 경과는 ADR-0018의 운영 검토 신호이며 기술 CI 자동 만료가 아님
 - **Decision reviewBy:** 미정 — 제품 소유자와 대상 배포 맥락이 지정될 때 정한다
 - **Last evidence review:** 2026-08-21
 - **Last policy alignment:** 2026-09-11 — [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)은 현재 제품의 구체적인 메뉴 재편을 승인한다. ADR-0009와 URL-state registry의 범위는 유지한다.
+
+> **2026-09-14 검토 수명 정합:** [ADR-0018](../02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)은 일반 검토 일정과 기술 계약을 분리하고 기관·환경별 사용 승인을 별도로 검증한다. 아래 과거 결정 입력물의 날짜·route 수는 당시 기록이며 현재 자동 실패 예측이 아니다. 미검토 역할·메뉴·URL 부류와 기존 승인 범위는 유지한다. 실제 실행은 [검토 수명 가이드](../03-guides/governance-review-lifecycle.md)를 따른다.
 
 > 이 문서는 승인자가 판단할 수 있는 선택지·권고안·연구·검증·rollback 계약을 제공한다. [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md)는 구조 근거를 남기고, ADR-0007은 그 잠정 지위를 참조-기본 범위에서 종료했다. 실제 사용자 선호와 live 메뉴·권한·AT 증거는 기관 채택 시 다시 검증하며 route disposition은 계속 개별 승인한다. URL 개인정보 정책 중 **일반 개인정보성 업무 검색어**는 ADR-0009가 정확한 화면·키 계약 아래 승인했으며, 나머지 URL-state 세 부류는 계속 미해결이다.
 

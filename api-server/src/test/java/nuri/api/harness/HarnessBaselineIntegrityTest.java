@@ -119,7 +119,7 @@ class HarnessBaselineIntegrityTest {
      * 실질 계약이므로 전체 해시로 보호한다.
      */
     private static final Pattern ARCH_RULE_FILE = Pattern.compile(
-            "(?:AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules"
+            "(?:WorkflowManifestLinterTest|FlywaySchemaOwnershipLinterTest|ReusableHarnessProfile|ControllerScanBaseLinterTest|EntityLombokSourceLinterTest|EntitySchemaConformanceLinterTest|EntityTableOwnershipLinterTest|HandlerReachesServiceLinterTest|PageableConstructionLinterTest|PkGenerationStandardLinterTest|ResponseContractLinterTest|SecurityAuthAnnotationLinterTest|ServiceReadOnlyTransactionalLinterTest|SchemaValidationIntegrationTest|WriteSmokeIntegrationTest|AuthorizationAdministrationIntegrationTest|AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules"
                     + "|Archunit\\w*)\\.java$");
 
     /** 소스 전체 해시 키 접미 — {@code <module>/<Class>.__sourceHash} */
@@ -158,6 +158,11 @@ class HarnessBaselineIntegrityTest {
      * 파일이 사라진 것도 위반이다: registry 부재는 그것을 읽는 게이트를 통째로 무력화한다.
      */
     private static final List<String> GATE_REGISTRIES = List.of(
+            // 실행 가능한 생성물 정책도 JSON 원장과 같은 전체 내용 hash 경계에 묶는다.
+            "scripts/reusable-artifact-entrypoints-contract.mjs",
+            "scripts/reusable-artifact-entrypoints-contract.test.mjs",
+            "scripts/verify-reusable-artifact.mjs",
+            "config/governance/reusable-harness-profile.json",
             "config/governance/authorization-policies.json",
             "config/governance/cross-domain-coupling-census.json",
             "config/governance/gates.json",

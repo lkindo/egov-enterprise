@@ -118,13 +118,23 @@ pnpm dev
 
 ## ✅ 검증 진입점 (Verification Entry Points)
 
+다음은 생산 저장소의 명령이다. 온라인 생성물의 명령·CI 범위는 아래 별도 설명과 [재사용 Base 가이드 §4](./docs/03-guides/reusable-base-guide.md#4-산출물-검증)를 따른다.
+
 - `npm run verify:docs` / `verify:fast` / `verify:push` / `verify:full`: 비용 순으로 중첩된 로컬 프로파일. 변경 범위에 맞는 최소 프로파일을 고른다. `verify:full`은 실 PostgreSQL 스키마 검증을 포함해 Docker가 필요하다.
 - `npm run verify:e2e`: 브라우저 E2E. 서비스 기동이 필요해 별도로 둔다.
+- `npm run base:verify -- --profile core`: 새 격리 PostgreSQL과 소스 산출물을 만들고 산출물의 계약·Java 하네스·실 DB 스키마·프런트 타입·lint·build를 검증한다. `collaboration`·`demo`도 같은 경로를 사용한다. [재사용 Base 가이드](./docs/03-guides/reusable-base-guide.md)를 따른다.
+- `npm run verify:migration`: 온라인 UI 없이 독립 이관 모듈의 테스트·bootJar를 검증한다.
+- `npm run migration:export`: 프런트·온라인 모듈 없이 이관 CLI의 독립 소스 제품을 새 디렉터리에 생성한다. 생성 후 해당 제품에서 기술 검증과 기관 검토를 수행한다.
+- `npm run review:status` / `review:migration`: 일반 검토 기한 경과와 미검토 상태를 별도 보고한다. 기관 배포·이관 승인은 [검토 수명 가이드](./docs/03-guides/governance-review-lifecycle.md)의 제품·환경별 원장으로 따로 확인한다.
 - `.\gradlew.bat localGate`: Docker 기반 PostgreSQL 스키마 검증, 전 모듈 테스트, JaCoCo, 프론트 단위 검증을 포함하는 병합 전 로컬 게이트.
 - `npm run verify:ops`: 원격 ruleset 등 네트워크·관리 권한이 필요한 운영 점검.
 - 최종 병합 권위는 [.github/required-checks.json](./.github/required-checks.json)에 결속된 required CI다.
 
 변경 범위별 최소 검증과 문서-only fast path는 [AGENTS.md](./AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](./.githooks/README.md)를 따른다.
+
+생산 저장소는 기존 6개 required context와 `core`·`collaboration`·`demo` 생성 matrix를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 기술 검증과 gitleaks working-tree·incremental 검사를 수행한다. 원본 12개 workflow와 실행 설정은 `config/governance/upstream-verification/`의 비활성 이력으로 보존하며, CodeQL·E2E·mutation·배포·예약 작업은 기관에서 다시 결속해야 한다. 기본 생성물 CI가 원본과 동등한 검증이나 기관 운영 인증을 제공한다는 뜻은 아니다.
+
+생성물의 `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`다. `verify`·`verify:full`·`verify:push`·`verify:fast`는 보수적으로 `full`을 실행한다. 생성물에는 `base:*`·`verify:e2e`·`verify:ops` 별칭이 없으며, required-check 템플릿의 `remoteApplied: false`에 따라 기관이 자기 ruleset과 실행 환경을 설정해야 한다.
 
 ---
 

@@ -5,9 +5,10 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-11
-verified_against: 5811096e5769b6e08ba1d6c67902f8f92d76f8ea
+verified_at: 2026-09-14
+verified_against: c45d34b8f07118d9345cea9b59e156c734609f01
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
   - ../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md
   - ../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md
   - ../../docs/02-architecture/decisions/ADR-0015-secure-coding-ci.md
@@ -56,8 +57,11 @@ refresh_triggers:
 | ADR-0015 | accepted | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결한다. | 사용자 시큐어코딩 점검 도입 요청에 따라 기존 시크릿·의존성 검사의 소스 분석 공백을 보완한다. | [ADR-0015](../../docs/02-architecture/decisions/ADR-0015-secure-coding-ci.md) | 2026-09-09 | - |
 | ADR-0016 | accepted | 인가를 그룹·복수 사용자배정·유형별 기능/메뉴배정 3개와 같은 트랜잭션 감사 1개로 통합하고 구 writer 종료 후 수동 전환한다. | 최소 테이블과 동일한 권한 의미·회수·감사·동시 수정 보호를 함께 유지한다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) | 2026-09-10 | DEC-OPS-023 ②·037·042·046·064의 역할 판정과 DEC-OPS-067의 구 권한·롤 UI 부분 |
 | ADR-0017 | accepted | 현재 제품을 과업 중심 4개 메뉴 영역으로 재편하고 중복 진입점을 통합하며 기존 기능 권한을 보존한다. | 사용자가 OCI·소스 실측에 따른 메뉴 이동·추가·병합안을 승인했다. | [ADR-0017](../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 2026-09-11 | - |
+| ADR-0018 | accepted | 일반 검토 최신성·기술 계약·기관 승인을 분리한다. 세 프로필 실제 산출물 검증, 명시 소유권 기반 원장·메모리 투영과 무결성, 기관별 실행 artifact 결속을 적용한다. 원본 운영 사실은 upstream 이력이며 기관 승인은 pending에서 시작한다. | 사용자가 D + E와 후속 F 확대 및 정합 감사의 권장 수정 순서를 승인했다. 실제 위반·미검토·한시 예외 만료·이관 쓰기 경계는 유지한다. | [ADR-0018](../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 2026-09-14 | DEC-OPS-027 ③·DEC-OPS-087 ②·UI quality 및 E2E duration의 일반 최신성 차단, DEC-OPS-077 ⑤의 축소 프로필 red 허용 기대치 |
 
 ## 운영 결정 index
+
+아래 DEC 행은 당시 결정을 보존한다. 일반 UI 검토 일정의 현재 처리는 [ADR-0018](../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)이 DEC-OPS-027 ③·DEC-OPS-087 ②의 달력 기반 기술 차단 부분을 대체한다. 다른 통제와 실제 예외 만료는 유지한다.
 
 | ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
 |---|---|---|---|---|---|---|

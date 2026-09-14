@@ -15,6 +15,7 @@ import {
 } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { scenarioContractSourceHash } from '../../scripts/ui-quality-scenario-contract-hash.mjs';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -558,7 +559,7 @@ function toolingHashes(buildSha) {
     runnerHash: boundSourceFileHash(buildSha, TOOLING_PATHS.runnerHash),
     coreHash: boundSourceFileHash(buildSha, TOOLING_PATHS.coreHash),
     runnerContractHash: boundSourceFileHash(buildSha, TOOLING_PATHS.runnerContractHash),
-    scenarioContractHash: boundSourceFileHash(buildSha, TOOLING_PATHS.scenarioContractHash),
+    scenarioContractHash: scenarioContractSourceHash(relativePath => boundSourceFileHash(buildSha, relativePath)),
   };
 }
 

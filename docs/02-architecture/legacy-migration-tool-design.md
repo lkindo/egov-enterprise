@@ -155,7 +155,19 @@ Target에는 migration-tool 전용 Flyway가 `migration_control` schema와 다�
 
 Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 source driver는 discover/load 양쪽에 같은 repeatable `--source-driver-jar=<absolute-local.jar>`와 `--source-driver-class=<class>`를 주고 dry-run load에 inventory가 기록한 exact `--ack-source-driver=<sha256>`를 추가한다. 접속정보는 환경 변수나 승인된 secret provider adapter로 주입하고 mapping, artifact, 로그, 명령행에 평문 저장하지 않는다.
 
-배포용 JAR은 `./gradlew :migration-tool:bootJar`로 만들고 `migration-tool/build/libs/`의 실제 산출물 이름을 사용한다.
+배포용 JAR은 `./gradlew :migration-tool:bootJar`로 만들고 `migration-tool/build/libs/`의 실제 산출물 이름을 사용한다. 온라인 UI 없이 테스트·bootJar를 함께 검증하는 진입점은 `npm run verify:migration`이다.
+
+## 기관 도입과 실행 승인
+
+[ADR-0018](decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)은 이관 제품의 기술 검증·기관 환경 승인·실제 load 승인을 구분한다. `npm run review:migration`은 제품 범위와 상태를 보고하며 온라인 URL·UI 원장을 이관 검증의 전제 조건으로 가져오지 않는다.
+
+`config/governance/migration-adoption-review.json`은 `product: migration-tool`, `profile: null`, `status: pending`으로 시작한다. 기관은 실제 source/target identity, mapping·schema·driver, 복구·cutover와 실행 artifact를 검토하고 소스 범위 digest·유효기간·근거를 기록한다. 원본 프로젝트의 운영 승인이나 온라인 원장을 복제하여 이관 승인을 대신하지 않는다.
+
+프런트·온라인 모듈을 포함하지 않는 별도 소스 제품은 `npm run migration:export -- --output build/migration-product/<새-디렉터리>`로 생성한다. [생성기](../../scripts/generate-migration-product.mjs)는 migration-tool만 포함하는 Gradle settings와 전용 검증·hook·workflow를 만들고 기관 원장을 pending으로 초기화한다. 생성은 기술 검증을 대신하지 않으므로 출력 디렉터리에서 `npm run verify`와 `npm run test:operational-contracts`를 실행한다. 새 저장소의 required CI 설정과 운영 도입 승인은 별도로 연결한다.
+
+`npm run adoption:check -- --execution config/governance/execution.json --environment <기관-환경-ID>`는 기관 승인과 실행 descriptor를 확인하고 이관 기술 검증 후 다시 확인한다. 기본 동작은 검사다. 명시적 `--execute`에서만 검토된 JAR·mapping·inventory·plan과 mode로 기존 `--command=load`를 호출한다. 이 wrapper는 현재 built-in PostgreSQL adapter·명시 source schema·source freeze 확인을 요구한다. 실제 적재에서는 이 문서의 inventory·plan·live identity 경계도 모두 다시 검사한다.
+
+원장과 descriptor 작성은 [검토 수명 가이드](../03-guides/governance-review-lifecycle.md), 실패·재개는 [복구 런북](../04-operations/migration-recovery-runbook.md)을 따른다. 파일 hash는 제출한 근거와 실행물을 묶을 뿐 실제 운영 검증이나 작성자 신원을 자동 증명하지 않는다.
 
 ## production cutover 전 필수 보강
 
@@ -176,10 +188,10 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 ## 검증 증거와 한계
 
 ```powershell
-./gradlew :migration-tool:test
+npm run verify:migration
 ```
 
 현재 테스트 목록은 [migration-tool/src/test/java](../../migration-tool/src/test/java)와 실행 보고서가 정본이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target 환경 결속과 strict 종료를 검사한다. [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 사용해 실제 자식 JVM 종료, 500행 체크포인트 재개, 재실행 무중복·변조 탐지를 검증한다. Docker가 필요한 경로와 로컬 실행 결과의 범위는 [검증 기록](../04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드)을 따른다. 다른 source vendor·운영 규모·권한·cutover/rollback 증거는 별도로 필요하다.
 
 ---
-*Source review: 2026-09-10 — target binding, execution JSON, PostgreSQL recovery tests. 운영 적용 여부는 별도 증거를 요구한다.*
+*기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*

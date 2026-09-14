@@ -12,6 +12,21 @@
   },
   "criticalSteps": [
     {
+      "jobId": "reusable-base",
+      "name": "Generate and verify reusable profile",
+      "run": "node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }}"
+    },
+    {
+      "jobId": "backend-build",
+      "name": "재사용 프로필 결과 집계",
+      "run": "node scripts/aggregate-required-check.mjs",
+      "env": {
+        "CLASSIFIER_RESULT": "${{ needs.change-scope.result }}",
+        "EXPECTED_WORK": "${{ needs.change-scope.outputs['docs-only'] != 'true' }}",
+        "SOURCE_RESULT": "${{ needs.reusable-base.result }}"
+      }
+    },
+    {
       "jobId": "secret-scan",
       "name": "Run gitleaks (working tree + incremental)",
       "run": "set -euo pipefail\nVERSION=8.28.0\ncurl -sSL \"https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz\" \\\n  | tar -xz gitleaks\n\necho \"::group::① 워킹트리 스캔\"\n./gitleaks detect --source . --no-git --no-banner --redact --verbose \\\n  --report-format json --report-path gitleaks-worktree.json --exit-code 1\necho \"::endgroup::\"\n\n# 비교 기준: PR 이면 base, push 면 이전 HEAD. 둘 다 없으면(초회 푸시·수동 실행) 워킹트리 스캔으로 충분하다.\nBASE=\"\"\nif [ -n \"${{ github.event.pull_request.base.sha }}\" ]; then\n  BASE=\"${{ github.event.pull_request.base.sha }}\"\nelif [ -n \"${{ github.event.before }}\" ] && git cat-file -e \"${{ github.event.before }}^{commit}\" 2>/dev/null; then\n  BASE=\"${{ github.event.before }}\"\nfi\n\nif [ -z \"$BASE\" ]; then\n  echo \"ℹ️ 비교 기준 커밋이 없어 증분 스캔을 생략합니다(워킹트리 스캔은 이미 통과).\"\n  exit 0\nfi\n\necho \"::group::② 증분 스캔 ($BASE..${{ github.sha }})\"\n./gitleaks detect --source . --no-banner --redact --verbose \\\n  --log-opts=\"$BASE..${{ github.sha }}\" \\\n  --report-format json --report-path gitleaks-incremental.json --exit-code 1\necho \"::endgroup::\""
@@ -65,7 +80,8 @@
       "jobId": "backend-build",
       "needs": [
         "change-scope",
-        "backend-scope"
+        "backend-scope",
+        "reusable-base"
       ],
       "jobIf": "always()",
       "aggregate": {

@@ -34,7 +34,8 @@ push/PR / workflow_dispatch
         ├─ backend-scope (backend=true인 경우의 실제 무거운 실행)
         │   ├─ Gradle 빌드·테스트·커버리지·OpenAPI 신선도
         │   └─ schema=true일 때만 PostgreSQL schema-validation
-        ├─ backend-build (backend-scope를 집계해 항상 완료되는 안정 required context)
+        ├─ reusable-base (문서 전용이 아니면 core·collaboration·demo 실제 생성·기술 검증)
+        ├─ backend-build (backend-scope와 reusable-base를 집계하는 안정 required context)
         ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
         │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
         ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
@@ -67,6 +68,38 @@ dependency-submission.yml (pull_request, contents:read)
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
+
+### 정기 검토와 기관 도입의 분리
+
+[ADR-0018](../02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)에 따라
+URL·route·UI quality·KRDS·화면 용어의 일반 검토 일정은 기술 CI의 유효기간으로 쓰지 않는다.
+`secret-scan`의 실제 시계 보고 step과 [주간·수동 워크플로](../../.github/workflows/governance-review.yml)가
+예정·기한 경과·미검토를 보고하고 artifact로 남긴다. 실제 위반·승인 근거·drift 검사와 required context 6개는 유지한다.
+
+기관 온라인 배포와 독립 이관에는 각각 환경·현재 소스 범위·근거·UTC 유효기간을 결속하는 별도 preflight를 사용한다.
+기관 기본 `pending`은 참조 제품의 CI·릴리스를 일괄 차단하지 않는다. `verify:migration`은 이관 모듈의
+테스트·bootJar를 검증하며 UI 검토 날짜를 요구하지 않는다. 실행 방법과 증거 한계는
+[검토 수명 가이드](governance-review-lifecycle.md)를 따른다.
+
+E2E duration profile의 120일 경과도 `performanceEvidence` 보고로 분리한다. 성공 run provenance,
+현재 spec과의 exact 모집단, 양수 duration·미래 시각 검사는 계속 차단한다. 오래된 측정으로 계획한
+shard가 현재 런타임에서도 균형이 맞는다는 뜻은 아니다.
+
+### 재사용 프로필과 독립 이관 검증
+
+`reusable-base`는 core·collaboration·demo matrix에서 `node scripts/verify-reusable-base.mjs --profile <profile>`을
+실행한다. 각 호출은 새 격리 PostgreSQL과 DB·소스 번들을 생성하고 산출물의 거버넌스 무결성·활성 원장·
+Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. 문서 전용 변경만 명시적으로 skip하며
+실패·취소·예상 밖 skip은 `backend-build` 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
+
+로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.
+개발·CI driver의 lock에는 `localDevelopmentBuild`를 남기므로 기술 검증 성공만으로 공식 릴리스 자산이 되지 않는다.
+생성물의 runtime 시나리오·기관 운영 승인은 별도다.
+
+[migration-tool workflow](../../.github/workflows/migration-tool.yml)는 독립 이관 모듈의 테스트·bootJar를
+검증한다. `migration:export`로 만든 별도 제품은 자체 workflow와 hook을 제공하며, 새 저장소의 required
+체크 설정은 기관이 연결한다. 실제 기관 배포·이관은 `adoption:check`가 기술 검사 전후에 승인과 실행 대상을
+확인하며, 명시적 `--execute`에서만 기존 deploy/load를 호출한다. 참조 CI에서 실제 기관 작업을 실행하지 않는다.
 
 ### 실행 트리거
 

@@ -21,6 +21,9 @@ import {
 } from 'node:fs';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { projectReusableGovernance } from './reusable-governance-projection.mjs';
+import { canonicalJsonSha256, validateReusableGovernance } from './reusable-governance-integrity.mjs';
+import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, artifactAliases, reusableArtifactEntrypoints, verificationTextHash } from './reusable-artifact-entrypoints-contract.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -150,8 +153,12 @@ const HARNESS_SCAN_ROOTS = [
   'migration-tool/src/test/java',
 ];
 const ARCH_RULE_FILE_PATTERN =
-  /(?:AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
+  /(?:WorkflowManifestLinterTest|FlywaySchemaOwnershipLinterTest|ReusableHarnessProfile|ControllerScanBaseLinterTest|EntityLombokSourceLinterTest|EntitySchemaConformanceLinterTest|EntityTableOwnershipLinterTest|HandlerReachesServiceLinterTest|PageableConstructionLinterTest|PkGenerationStandardLinterTest|ResponseContractLinterTest|SecurityAuthAnnotationLinterTest|ServiceReadOnlyTransactionalLinterTest|SchemaValidationIntegrationTest|WriteSmokeIntegrationTest|AuthorizationAdministrationIntegrationTest|AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
 const GATE_REGISTRIES = [
+  'scripts/reusable-artifact-entrypoints-contract.mjs',
+  'scripts/reusable-artifact-entrypoints-contract.test.mjs',
+  'scripts/verify-reusable-artifact.mjs',
+  'config/governance/reusable-harness-profile.json',
   'config/governance/authorization-policies.json',
   'config/governance/cross-domain-coupling-census.json',
   'config/governance/gates.json',
@@ -214,6 +221,19 @@ function referencedRemovedJavaType(path, removedTypes) {
  * `copySourceTree` 와 같은 파일 모집단(`javaFiles`)으로 이 함수를 불러 "이 타입이 이 프로필에서 사라지는가" 를
  * 생성기 실행 없이 확인한다 — 같은 패키지 중간 클래스를 거치는 간접 참조까지 생성기와 똑같이 따라간다.
  */
+export function resolveDomainRemovalDirectory(root, sourceSet, layer, domain) {
+  if (typeof domain !== 'string' || !/^[a-z][a-z0-9_]*(?:\/[a-z][a-z0-9_]*)*$/u.test(domain)) {
+    fail(`삭제 대상 domain은 비어 있지 않은 Java 패키지 경로여야 한다: ${JSON.stringify(domain)}`);
+  }
+  const parent = resolve(root, 'business-app', 'src', sourceSet, 'java', 'nuri', 'business', layer);
+  const directory = resolve(parent, domain);
+  const child = relative(parent, directory);
+  if (child === '' || child === '..' || child.startsWith(`..${sep}`) || isAbsolute(child)) {
+    fail(`domain 삭제 대상이 상위 패키지 또는 외부 경로다: ${directory}`);
+  }
+  return directory;
+}
+
 export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, (path) => path.endsWith('.java'))) {
   const allowedPacks = new Set(profile.packs);
   const excludedDomains = Object.entries(manifest.packs)
@@ -233,7 +253,7 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
   for (const domain of excludedDomains) {
     for (const sourceSet of ['main', 'test']) {
       for (const layer of ['domain', 'service']) {
-        const directory = join(root, 'business-app', 'src', sourceSet, 'java', 'nuri', 'business', layer, domain);
+        const directory = resolveDomainRemovalDirectory(root, sourceSet, layer, domain);
         if (!existsSync(directory)) continue;
         directDirectories.push(directory);
         for (const file of walk(directory, () => true)) removed.add(file);
@@ -269,7 +289,7 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
   return { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories };
 }
 
-function pruneJava(output, manifest, profile) {
+export function pruneJava(output, manifest, profile) {
   const { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories } =
     planJavaRemoval(output, manifest, profile);
 
@@ -287,6 +307,59 @@ function pruneJava(output, manifest, profile) {
     }))
     .sort((left, right) => left.file.localeCompare(right.file));
   return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates };
+}
+
+export function installReusableVerification(output) {
+  if (existsSync(join(output, VERIFICATION_HISTORY, 'index.json'))) fail('Verification history is already projected; regenerate from upstream source');
+  const path = join(output, 'package.json');
+  const pkg = JSON.parse(readFileSync(path, 'utf8'));
+  const profilePath = join(output, 'config/reusable-base-profiles.json');
+  const profile = existsSync(profilePath)
+    ? JSON.parse(readFileSync(profilePath, 'utf8')).sourcePolicy.generatedProfile
+    : JSON.parse(readFileSync(join(output, 'reusable-base-lock.json'), 'utf8')).profile;
+  const workflowDirectory = join(output, '.github/workflows');
+  const workflows = existsSync(workflowDirectory)
+    ? readdirSync(workflowDirectory).filter(name => /\.ya?ml$/.test(name)).map(name => `.github/workflows/${name}`) : [];
+  const historyFiles = ['package.json', '.github/required-checks.json', '.githooks/pre-push', ...workflows];
+  const records = [];
+  for (const source of historyFiles) {
+    const original = join(output, source);
+    if (!existsSync(original)) fail(`Missing upstream verification source: ${source}`);
+    const content = readFileSync(original, 'utf8').replace(/\r\n/g, '\n');
+    const snapshot = `${VERIFICATION_HISTORY}/${source}`;
+    mkdirSync(dirname(join(output, snapshot)), { recursive: true });
+    writeFileSync(join(output, snapshot), content);
+    records.push({ source, path: snapshot, sha256: verificationTextHash(content) });
+  }
+  const sourceManifest = JSON.parse(readFileSync(join(output, '.github/required-checks.json'), 'utf8'));
+  const scan = sourceManifest.criticalSteps?.find(step => step.name === 'Run gitleaks (working tree + incremental)')?.run;
+  const generated = reusableArtifactEntrypoints(profile, scan);
+  // Each inactive workflow has been copied and hash-bound before this single-file removal.
+  for (const workflow of workflows) {
+    const target = resolve(output, workflow);
+    if (dirname(target) !== resolve(workflowDirectory)) fail('Workflow removal escaped the generated product');
+    rmSync(target);
+  }
+  writeFileSync(join(output, '.github/workflows/ci.yml'), generated.workflow);
+  writeFileSync(join(output, '.github/required-checks.json'), `${JSON.stringify(generated.manifest, null, 2)}\n`);
+  writeFileSync(join(output, VERIFICATION_HISTORY, 'index.json'), `${JSON.stringify({
+    schemaVersion: 1, authority: 'upstream-verification-history', activeProfile: profile,
+    inheritedExecutionApproval: false, files: records.sort((left, right) => left.source.localeCompare(right.source)),
+  }, null, 2)}\n`);
+  Object.assign(pkg.scripts, artifactAliases);
+  for (const alias of Object.keys(pkg.scripts)) {
+    if (alias.startsWith('base:') || ['verify:e2e', 'verify:ops', '//verify:ops'].includes(alias)) delete pkg.scripts[alias];
+  }
+  writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+  // This is the adopter product hook, whose scope is the actual artifact. The producer hook is unchanged.
+  mkdirSync(join(output, '.githooks'), { recursive: true });
+  writeFileSync(join(output, '.githooks/pre-push'), `#!/bin/sh\nset -e\n${ARTIFACT_COMMAND}\n`);
+  writeFileSync(join(output, 'REUSABLE_VERIFICATION.md'), '# Generated product verification\n\n'
+    + '`npm run verify`와 생성물 CI는 현재 프로필의 원장·Java 하네스·스키마·프런트 타입·lint·build를 검증한다. CI는 working-tree·incremental gitleaks 검사도 유지한다.\n\n'
+    + '`verify:docs`는 contracts, `verify:be`는 backend, `verify:fe`는 frontend이며 `verify:full`, `verify:push`, `verify:fast`는 보수적으로 full에 연결한다. 각 scope는 공통 활성 계약을 먼저 실행한다.\n\n'
+    + '생산자 전용 `base:*`, 기관 실행 환경이 필요한 `verify:e2e`·`verify:ops`는 제공하지 않는다. 기관 브라우저 시나리오와 원격 ruleset은 기관에서 별도로 결속한다.\n\n'
+    + '현재 CI의 required context 제안은 `artifact-verification` 하나이다. `.github/required-checks.json`의 remoteApplied=false는 기관 branch protection을 실제 적용하지 않았다는 뜻이다. 원본 6개 required context와 동등한 보증이 아니다.\n\n'
+    + '원본 workflow·required manifest·package·hook은 `config/governance/upstream-verification/`의 비활성 이력이다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞게 재결속해야 한다. 이력을 복사한 것은 외부 발행이나 기관 운영 승인이 아니다.\n');
 }
 
 export function resolveFrontendImport(frontendRoot, importer, specifier, knownFiles) {
@@ -369,7 +442,7 @@ export function projectFrontendPackMarkers(source, { knownPacks, excludedPacks, 
   return { source: projected.join(''), strippedBlocks };
 }
 
-function stripExcludedFrontendPackBlocks(output, manifest, profile) {
+export function stripExcludedFrontendPackBlocks(output, manifest, profile) {
   const frontendRoot = join(output, 'frontend');
   const knownPacks = new Set(Object.keys(manifest.packs));
   const allowedPacks = new Set(profile.packs);
@@ -395,7 +468,7 @@ function stripExcludedFrontendPackBlocks(output, manifest, profile) {
   return { excludedPacks: [...excludedPacks].sort(), strippedBlocks, changedFiles };
 }
 
-function pruneFrontend(output, manifest, profile) {
+export function pruneFrontend(output, manifest, profile) {
   const frontendRoot = join(output, 'frontend');
   const allowedPacks = new Set(profile.packs);
   const directPaths = Object.entries(manifest.packs)
@@ -613,9 +686,25 @@ function pruneZeroDowntimeWaivers(output) {
  * 돌아, census 가 "제거된 게이트 0건" 이라고 말하면서 게이트 42개가 사라졌다(2026-09-12 실측).
  * 조용한 손실을 막으려고 만든 census 자신에 남아 있던 같은 구멍이다.
  */
+export function isHistoricalAuthorizationRehearsal(name, source) {
+  const markers = {
+    'AuthorityReferenceFkIntegrationTest.java': ['fromVersion("2.99")', 'fk_tb_role_hierarchy_tb_authrt_info_higher'],
+    'AuthorizationContractIntegrationTest.java': ['fromVersion("2.99")', 'assertLegacyTablesRemain(', 'AuthorizationCutoverTestSupport.execute('],
+    'AuthorizationGrantExpansionIntegrationTest.java': ['migrate("2.97")', 'migrate("2.98")'],
+  };
+  if (!Object.hasOwn(markers, name)) return false;
+  const code = stripJavaComments(source).replace(/\s+/g, '');
+  if (!markers[name].every(marker => code.includes(marker))) {
+    fail(`Historical authorization fixture changed scope; removal requires review: ${name}`);
+  }
+  return true;
+}
+
 function pruneHistoricalMigrationTests(output) {
   const schemaTestRoot = join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'schema');
-  const tests = walk(schemaTestRoot, (path) => /MigrationIntegrationTest\.java$/.test(path));
+  const tests = walk(schemaTestRoot, path => path.endsWith('.java')).filter(path =>
+    /MigrationIntegrationTest\.java$/.test(path)
+    || isHistoricalAuthorizationRehearsal(basename(path), readFileSync(path, 'utf8')));
   for (const path of tests) rmSync(path);
   return {
     count: tests.length,
@@ -667,11 +756,6 @@ function adaptOwnershipGuardBaseline(output) {
 
 function adaptGeneratedHarness(output) {
   const replacements = [
-    {
-      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'schema', 'SchemaValidationIntegrationTest.java'),
-      from: '.isGreaterThanOrEqualTo(20);',
-      to: '.isGreaterThanOrEqualTo(2);',
-    },
     {
       path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'EntitySchemaConformanceLinterTest.java'),
       from: 'if (files.size() < 20)',
@@ -973,7 +1057,133 @@ export function computeHarnessBaselineEntries(root) {
   return entries;
 }
 
+export function projectedWriteHandlerCounts(source) {
+  const code = stripJavaComments(source);
+  const skipLiteral = (open) => {
+    if (code.startsWith('"""', open)) {
+      const end = code.indexOf('"""', open + 3);
+      if (end < 0) fail('Unclosed Java text block in handler census');
+      return end + 2;
+    }
+    for (let i = open + 1; i < code.length; i++) {
+      if (code[i] === '\\') i++;
+      else if (code[i] === code[open]) return i;
+    }
+    fail('Unclosed Java literal in handler census');
+  };
+  const bodyAt = (from) => {
+    let parentheses = 0;
+    let open = -1;
+    for (let i = from; i < code.length; i++) {
+      if (code[i] === '"' || code[i] === "'") i = skipLiteral(i);
+      else if (code[i] === '(') parentheses++;
+      else if (code[i] === ')') parentheses--;
+      else if (code[i] === '{' && parentheses === 0) { open = i; break; }
+      else if (code[i] === ';' && parentheses === 0) break;
+    }
+    if (open < 0) fail('Cannot locate projected write handler body');
+    let braces = 0;
+    for (let i = open; i < code.length; i++) {
+      if (code[i] === '"' || code[i] === "'") i = skipLiteral(i);
+      else if (code[i] === '{') braces++;
+      else if (code[i] === '}' && --braces === 0) return code.slice(open, i + 1);
+    }
+    fail('Unclosed projected write handler body');
+  };
+  let handlers = 0;
+  let successful = 0;
+  for (const match of code.matchAll(/@(?:Post|Put|Delete|Patch)Mapping(?![A-Za-z0-9_$])/g)) {
+    handlers++;
+    const body = bodyAt(match.index + match[0].length);
+    let analyzed = body;
+    const names = new Set([...body.replace(/"(?:\\.|[^"\\])*"/g, '""').matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)].map(row => row[1]));
+    for (const name of names) {
+      const declaration = new RegExp(`\\bprivate\\s+[^;{}()]*\\b${name.replaceAll('$', '\\$')}\\s*\\(`).exec(code);
+      if (declaration) analyzed += `\n${bodyAt(declaration.index)}`;
+    }
+    if (/ResponseEntity\s*\.\s*(?:ok|created)\s*\(|ApiResponse\s*\.\s*success\s*\(|HttpStatus\s*\.\s*(?:OK|CREATED)\b/.test(analyzed)) successful++;
+  }
+  return { handlers, successful };
+}
+
+export function writeReusableHarnessProfile(output) {
+  const projected = JSON.parse(readFileSync(join(output, 'config/reusable-base-profiles.json'), 'utf8'));
+  const profileName = projected.sourcePolicy.generatedProfile;
+  const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+  const profile = manifest.profiles[profileName];
+  const javaFiles = trackedAndUntrackedFiles().filter(path => path.endsWith('.java')).map(path => join(ROOT, path));
+  const plan = planJavaRemoval(ROOT, manifest, profile, javaFiles);
+  const production = javaFiles.filter(path => /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\//.test(normalize(relative(ROOT, path))));
+  const retained = [];
+  const removed = [];
+  const sources = new Map();
+  for (const path of production) {
+    const relativePath = normalize(relative(ROOT, path));
+    const source = stripJavaComments(readFileSync(path, 'utf8'));
+    const packageName = source.match(/^\s*package\s+([\w.]+)\s*;/m)?.[1];
+    if (!packageName) fail(`Projected source package missing: ${relativePath}`);
+    const row = { path: relativePath, type: `${packageName}.${basename(path, '.java')}` };
+    if (plan.removed.has(path)) removed.push({ ...row, reason: plan.removalReason.get(path) });
+    else { retained.push(row); sources.set(relativePath, source); }
+  }
+  const actual = walk(output, path => path.endsWith('.java'))
+    .map(path => normalize(relative(output, path)))
+    .filter(path => /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\//.test(path)).sort();
+  const expected = retained.map(row => row.path).sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    fail(`Projected Java source inventory differs from independent removal plan: missing=${expected.filter(path => !actual.includes(path))}, unknown=${actual.filter(path => !expected.includes(path))}`);
+  }
+  const activeType = target => {
+    if (target.startsWith('EXTERNAL#')) return true;
+    const type = target.split('#')[0];
+    const rows = [...retained, ...removed].filter(row => row.type === type || row.type.split('.').at(-1) === type);
+    if (rows.length !== 1) fail(`Ambiguous/unregistered harness policy type: ${type}`);
+    return sources.has(rows[0].path);
+  };
+  const authorization = JSON.parse(readFileSync(join(ROOT, 'config/governance/authorization-policies.json'), 'utf8'));
+  const bindings = authorization.operationBindings.filter(row => activeType(row.handler));
+  const endpoints = authorization.endpointPolicies.filter(row => activeType(row.handler));
+  const entries = [...sources.entries()];
+  const entities = entries.filter(([, source]) => /@Entity\b/.test(source));
+  const restControllers = entries.filter(([, source]) => /@RestController(?![A-Za-z0-9_$])/.test(source));
+  const countMatches = (rows, pattern) => rows.reduce((total, [, source]) => total + [...source.matchAll(pattern)].length, 0);
+  const writes = restControllers.map(([, source]) => projectedWriteHandlerCounts(source));
+  const writeHandlers = writes.reduce((sum, row) => sum + row.handlers, 0);
+  const census = {
+    requestControllers: entries.filter(([path, source]) => path.startsWith('api-server/') && /@(?:RestController|Controller)(?![A-Za-z0-9_$])/.test(source)).length,
+    restControllers: restControllers.length,
+    writeHandlers,
+    successfulWriteHandlers: writes.reduce((sum, row) => sum + row.successful, 0),
+    entities: entities.length,
+    entityTables: new Set(entities.map(([, source]) => source.match(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/)?.[1]
+      ?? fail('Entity @Table(name) cannot be determined'))).size,
+    schemaTables: projected.databaseSnapshot.physicalTableCountExcludingFlyway,
+    migrations: walk(join(output, 'api-server/src/main/resources/db/migration'), path => path.endsWith('.sql')).length,
+    booleanFlagColumns: [...readFileSync(join(output, 'api-server/src/main/resources/db/migration/V1_0__baseline.sql'), 'utf8')
+      .matchAll(/^\s+[a-z][a-z0-9_]*_yn\s+[a-z]/gm)].length,
+    responseHandlers: countMatches(entries.filter(([path]) => path.startsWith('api-server/src/main/java/nuri/api/controller/')),
+      /@(?:Get|Post|Put|Patch|Delete|Request)Mapping\b[^\n]*\n(?:\s*@[^\n]*\n)*\s*public\s+([^\n{]+?)\s+(\w+)\s*\(/g),
+    baseSearchBindings: countMatches(entries.filter(([path]) => path.startsWith('api-server/')),
+      /@ModelAttribute(?:\s*\([^)]*\))?\s+(?:nuri\.business\.domain\.common\.)?BaseSearchDto\b/g),
+    writeEndpoints: endpoints.length,
+    readEndpoints: bindings.filter(row => !row.handler.startsWith('EXTERNAL#') && row.method === 'GET').length,
+    operationBindings: bindings.length,
+    operationEndpoints: bindings.filter(row => !row.handler.startsWith('EXTERNAL#')).length,
+    serviceGuards: authorization.serviceGuardPolicies.filter(row => activeType(row.target)).length,
+    manualGuards: authorization.manualGuardPolicies.filter(row => sources.has(row.source)).length,
+    productionSources: retained.length,
+  };
+  for (const module of ['business-core', 'business-app']) census[`entities:${module}`] = entities.filter(([path]) => path.startsWith(`${module}/`)).length;
+  const snapshot = { schemaVersion: 1, profile: profileName, packs: profile.packs,
+    excludedDomains: plan.excludedDomains.sort(), sourceCommit: git(['rev-parse', 'HEAD']),
+    profileManifestSha256: createHash('sha256').update(readFileSync(join(output, 'config/reusable-base-profiles.json'))).digest('hex'),
+    census, retained: retained.sort((a, b) => a.path.localeCompare(b.path)), removed: removed.sort((a, b) => a.path.localeCompare(b.path)) };
+  writeFileSync(join(output, 'config/governance/reusable-harness-profile.json'), `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
+  return snapshot;
+}
+
 function writeHarnessBaseline(output) {
+  writeReusableHarnessProfile(output);
   const entries = computeHarnessBaselineEntries(output);
   const lines = [
     '# 자동 산출 — reusable-base source projection 기준.',
@@ -1065,6 +1275,15 @@ function main() {
   installDatabaseBundle(output, dbBundle);
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
   writeProjectedManifest(output, manifest, args.profile, profile, dbLock);
+  installReusableVerification(output);
+  const governance = projectReusableGovernance({
+    sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit,
+    projectSource: (file, source) => projectFrontendPackMarkers(source, {
+      knownPacks: new Set(Object.keys(manifest.packs)),
+      excludedPacks: new Set(Object.keys(manifest.packs).filter(pack => !profile.packs.includes(pack))),
+      label: file,
+    }).source,
+  });
   adaptGeneratedHarness(output);
   writeHarnessBaseline(output);
 
@@ -1081,9 +1300,19 @@ function main() {
     removedGates,
     removedHistoricalMigrationTests: removedHistoricalMigrationTests.count,
     zdmWaivers,
+    governance: {
+      path: 'config/governance/reusable-governance-projection.json',
+      projectionSha256: canonicalJsonSha256(governance),
+      routes: governance.routes.length,
+      urlRecords: governance.urlRecordIds.length,
+      inheritedUrlRecords: governance.inheritedUrlRecordIds.length,
+      environmentReview: 'pending',
+    },
     databaseLock: dbLock,
   };
   writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
+  const governanceErrors = validateReusableGovernance(output);
+  if (governanceErrors.length) fail(`산출물 거버넌스 증거 검증 실패:\n${governanceErrors.join('\n')}`);
   writeFileSync(
     join(output, 'REUSABLE_BASE.md'),
     `# Reusable Base — ${args.profile}\n\n` +
@@ -1101,6 +1330,9 @@ function main() {
             ...removedGates.files.map((gate) => `  - ${gate.file} <- ${gate.reason}`),
           ].join('\n')}\n\n`
           : '\n\n') +
+      `- 현재 route/URL 모집단: ${governance.routes.length}/${governance.urlRecordIds.length}\n` +
+      `- 기관 운영 검토: pending. 원본의 검토자·날짜는 upstream-review 이력이며 기관 승인이 아니다.\n` +
+      `- 검토 경계: config/governance/reusable-governance-projection.json\n\n` +
       `DB migration은 신규 빈 PostgreSQL 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
     'utf8',
   );
