@@ -24,7 +24,8 @@ public class InformalSanctionDashboardProvider implements DashboardItemProvider 
             long pendingApprovalCount = approvalService.getPendingApprovalList(userId, Pageable.unpaged()).getTotalElements();
             result.put("pendingApprovalCount", pendingApprovalCount);
         } catch (Exception e) {
-            result.put("pendingApprovalCount", 0L);
+            // [2026-09-15 DEC-OPS-100] 조회 실패를 0건으로 채우지 않는다. 값을 싣지 않으면 응답이 null(셀 수 없음)을 내린다.
+            result.remove("pendingApprovalCount");
         }
     }
 }

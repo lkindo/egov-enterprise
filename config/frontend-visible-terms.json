@@ -301,6 +301,14 @@
           "status": "remediated-local",
           "owner": "dashboard-domain-owner",
           "reviewBy": "2026-12-15"
+        },
+        {
+          "kind": "uncountable-approvals-shown-as-zero",
+          "evidence": "결재 대기 건수를 셀 수 없을 때(결재 공급자 조회 실패) 응답이 0 을 채우고 화면이 '결재 대기 0건'을 말했다. 응답은 null 을 내리고 화면은 조회 실패를 말한다(formatRules.number.unknownAsZero).",
+          "removedSourceEvidence": ["data.pendingApprovalCount || 0"],
+          "status": "remediated-local",
+          "owner": "dashboard-domain-owner",
+          "reviewBy": "2026-12-15"
         }
       ]
     },

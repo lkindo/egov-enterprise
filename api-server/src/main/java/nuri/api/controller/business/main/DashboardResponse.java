@@ -25,13 +25,13 @@ public final class DashboardResponse {
 
     private final List<BoardDto> taskList;
     private final List<BoardDto> notiList;
-    private final long pendingApprovalCount;
+    private final Long pendingApprovalCount;
     private final Map<String, Object> extensions;
 
     private DashboardResponse(
             List<BoardDto> taskList,
             List<BoardDto> notiList,
-            long pendingApprovalCount,
+            Long pendingApprovalCount,
             Map<String, Object> extensions) {
         this.taskList = taskList;
         this.notiList = notiList;
@@ -43,7 +43,7 @@ public final class DashboardResponse {
         Map<String, Object> extensions = new LinkedHashMap<>(values);
         List<BoardDto> taskList = boardItems(extensions.remove(TASK_LIST), TASK_LIST);
         List<BoardDto> notiList = boardItems(extensions.remove(NOTICE_LIST), NOTICE_LIST);
-        long pendingApprovalCount = nonNegativeCount(
+        Long pendingApprovalCount = nonNegativeCount(
                 extensions.remove(PENDING_APPROVAL_COUNT), PENDING_APPROVAL_COUNT);
         return new DashboardResponse(
                 taskList,
@@ -62,8 +62,15 @@ public final class DashboardResponse {
         return notiList;
     }
 
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0")
-    public long getPendingApprovalCount() {
+    /**
+     * 결재 대기 건수.
+     *
+     * <p>[2026-09-15 DEC-OPS-100] 셀 수 없을 때(결재 공급자가 없거나 조회에 실패했을 때)는 0 이 아니라
+     * {@code null} 이다. 0 으로 채우면 화면이 "결재 대기 0건" 이라는 사실 주장을 한다(unknownAsZero).
+     * 키는 늘 응답에 실린다(필수·nullable).</p>
+     */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0", nullable = true, types = {"integer", "null"})
+    public Long getPendingApprovalCount() {
         return pendingApprovalCount;
     }
 
@@ -90,9 +97,9 @@ public final class DashboardResponse {
         return List.copyOf(items);
     }
 
-    private static long nonNegativeCount(Object value, String field) {
+    private static Long nonNegativeCount(Object value, String field) {
         if (value == null) {
-            return 0L;
+            return null;
         }
         if (!(value instanceof Number number)) {
             throw new IllegalStateException("대시보드 " + field + " 계약이 올바르지 않습니다.");
