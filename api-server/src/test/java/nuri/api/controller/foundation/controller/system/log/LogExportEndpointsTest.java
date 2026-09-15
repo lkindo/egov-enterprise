@@ -90,11 +90,15 @@ class LogExportEndpointsTest {
     }
 
     private static String[] firstDataRow(byte[] body, int cells) throws Exception {
+        return rowValues(body, 1, cells);
+    }
+
+    private static String[] rowValues(byte[] body, int rowIndex, int cells) throws Exception {
         try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(body))) {
             Sheet sheet = workbook.getSheetAt(0);
             String[] values = new String[cells];
             for (int i = 0; i < cells; i++) {
-                values[i] = sheet.getRow(1).getCell(i).getStringCellValue();
+                values[i] = sheet.getRow(rowIndex).getCell(i).getStringCellValue();
             }
             return values;
         }
@@ -147,13 +151,17 @@ class LogExportEndpointsTest {
     @DisplayName("사용자 로그 — 총 건수를 먼저 세고 전량을 다시 조회한다")
     void exportsUserLogs() throws Exception {
         UserLogDto row = new UserLogDto("20260826", "userA", "홍길동", "UserService", "select",
-                1, 0, 2, 0, 0, 0);
+                1, 0, 2, 0, 7, 0);
         when(userLogManageService.selectUserLogList(any())).thenReturn(pageOf(List.of(row), 1));
 
         byte[] body = download(mvc(userLogApiController),
                 "/api/v1/admin/system/logs/user/export.xlsx", "user-logs.xlsx");
 
-        assertThat(firstDataRow(body, 2)).containsExactly("20260826", "userA");
+        // 출력 건수는 측정되지 않는다 — 값이 실려 와도 머리글이 미측정을 밝히고 칸은 비운다(0 으로 쓰지 않는다).
+        assertThat(rowValues(body, 0, 11)).containsExactly("발생일자", "요청자 ID", "성명", "서비스명", "메서드명",
+                "등록", "수정", "조회", "삭제", "출력(미측정)", "오류");
+        assertThat(firstDataRow(body, 11)).containsExactly("20260826", "userA", "홍길동", "UserService", "select",
+                "1", "0", "2", "0", "", "0");
     }
 
     @Test

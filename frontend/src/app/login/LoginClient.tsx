@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
@@ -249,9 +249,10 @@ function LoginContent() {
                         <h1 id="login-title" className="text-2xl font-bold tracking-tight text-foreground">
                             {SITE_IDENTITY.siteShortName}
                         </h1>
-                        <CardDescription className="text-muted-foreground font-bold text-xs tracking-tight">
-                            글로벌 통합 관리 콘솔
-                        </CardDescription>
+                        {/* [2026-09-15 DEC-OPS-099] 제목 아래 설명 문구를 두지 않는다. 종전 문구는 검증되지 않은 제품
+                            포지셔닝이었고(화면 용어 원장 content-login), 사이트 소개 한 줄은 프로필에 따라 참이 아닌 기능을
+                            말할 수 있어(core 프로필에는 협업 pack 이 없다) 로그인 카드로 옮기지 않는다.
+                            ⚠ 제거한 문구를 이 주석에 인용하지 않는다 — 원장 검증기는 주석을 거르지 않고 부재를 검사한다. */}
                     </CardHeader>
 
                     <form

@@ -23,7 +23,9 @@ const REQUIRED_PILOT_ROUTES = [
   '/',
   '/admin',
   '/admin/community/boards/insert-board-article',
-  '/admin/survey/manage/create',
+  // [2026-09-15] '/admin/survey/manage/create' 는 2026-09-12 부터 page-redirect 다(§A3-1 모달 이행).
+  //   등록 모달은 설문 허브의 manage 탭이 embed 하는 목록이 렌더하므로 실제 도달 route 로 옮긴다.
+  '/admin/survey/hub',
   '/admin/system/logs/user',
   '/admin/user/manage',
   '/login',
@@ -78,6 +80,18 @@ export function validateVisibleTerms(contract, { root = ROOT, expectedPilotRoute
     errors.push('pilot census does not exactly cover its population');
   }
 
+  /*
+    [2026-09-15 DEC-OPS-099] 문구를 고치지 않고 소유자가 현 상태를 확정하는 종결 경로.
+    종전 스키마에는 이 상태가 없어, 결정이 내려져도 finding 은 영원히 활성으로 남았다.
+
+    결정 종결은 remediated-local 과 반대로 **결정 대상 문자열이 여전히 있어야** 한다 — 결정한 뒤
+    문구가 바뀌었다면 그 결정은 더 이상 지금 화면에 대한 것이 아니므로 red 다. 결정 참조와 결정일은
+    산문 사유로 대신할 수 없다. 원장(decisions.md) 실재 대조는 재사용 산출물에서도 이 모듈이 호출되므로
+    생산 저장소 테스트(frontend-visible-terms-contract.test.mjs)가 맡는다.
+  */
+  const OWNER_DECISION_STATUS = 'accepted-by-owner';
+  const CLOSED_STATUSES = new Set(['remediated-local', OWNER_DECISION_STATUS]);
+  const DECISION_REF = /^DEC-OPS-\d{3}$/;
   for (const pilot of pilots) {
     if (!pilot.owner?.trim() || !validReviewBy(pilot.reviewBy, contract.lastReviewedAt)) errors.push(`pilot is unbounded: ${pilot.id}`);
     if (!pilot.roles?.length || !pilot.sources?.length || !pilot.evidenceLevel || !pilot.status) {
@@ -105,6 +119,11 @@ export function validateVisibleTerms(contract, { root = ROOT, expectedPilotRoute
           }
         }
       } else {
+        if (finding.status === OWNER_DECISION_STATUS
+            && (!DECISION_REF.test(finding.decisionRef ?? '') || !validDate(finding.decidedAt)
+              || finding.decidedAt > contract.lastReviewedAt)) {
+          errors.push(`owner decision needs a decision reference and a decision date on or before the review: ${pilot.id}/${finding.kind}`);
+        }
         if (!finding.sourceEvidence?.length) {
           errors.push(`active finding needs literal source evidence: ${pilot.id}/${finding.kind}`);
           continue;
@@ -114,6 +133,13 @@ export function validateVisibleTerms(contract, { root = ROOT, expectedPilotRoute
             errors.push(`finding source evidence drift: ${pilot.id}/${finding.kind}/${snippet}`);
           }
         }
+      }
+    }
+    // 닫힌 pilot 아래 활성 finding 이 남으면, pilot 상태만 보고 "이 화면은 끝났다"고 읽게 된다.
+    if (CLOSED_STATUSES.has(pilot.status)) {
+      const active = (pilot.findings ?? []).filter((finding) => !CLOSED_STATUSES.has(finding.status));
+      if (active.length) {
+        errors.push(`closed pilot still has active findings: ${pilot.id}/${active.map(({ kind }) => kind).join(',')}`);
       }
     }
   }

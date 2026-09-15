@@ -207,7 +207,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   };
 
   const tabStrip = (
-    <div role="tablist" aria-label="워크허브 영역 선택" className="flex rounded-md border border-border p-0.5">
+    <div role="tablist" aria-label="업무 영역 선택" className="flex rounded-md border border-border p-0.5">
       {(['job', 'report', 'calendar'] as const).map((tab) => (
         <button
           key={tab}

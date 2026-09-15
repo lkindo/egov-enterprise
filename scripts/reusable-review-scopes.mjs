@@ -60,7 +60,7 @@ export function deriveProjectedReviewManifests({ outputRoot, upstream, contract,
   const result = structuredClone(upstream);
   const reviewScopes = {
     uiQuality: { scenarioIds: [], excludedScenarios: [], resetBaselineIds: [] },
-    visibleTerms: { pilotIds: [], excludedPilots: [], excludedSources: [] },
+    visibleTerms: { pilotIds: [], excludedPilots: [], excludedSources: [], resetDecisions: [] },
     krds: { mappingIds: [], excludedMappings: [] },
   };
   result.uiQuality.scenarios = upstream.uiQuality.scenarios.flatMap(original => {
@@ -101,6 +101,20 @@ export function deriveProjectedReviewManifests({ outputRoot, upstream, contract,
       if (finding.status !== 'remediated-local') for (const literal of finding.sourceEvidence ?? []) {
         assert(sourceText.includes(literal), `${pilot.id}/${finding.kind}: active finding requires review after source projection`);
       }
+    }
+    // An upstream owner's decision to keep copy is not the adopter's decision (ADR-0018: approvals start pending).
+    // Reopen it as awaiting input, and reopen a pilot that the decision had closed.
+    for (const finding of pilot.findings ?? []) {
+      if (finding.status !== 'accepted-by-owner') continue;
+      finding.status = 'blocked-input';
+      delete finding.decisionRef;
+      delete finding.decidedAt;
+      reviewScopes.visibleTerms.resetDecisions.push({ pilotId: pilot.id, kind: finding.kind });
+    }
+    const closedStatuses = new Set(['remediated-local', 'accepted-by-owner']);
+    const hasActive = (pilot.findings ?? []).some(finding => !closedStatuses.has(finding.status));
+    if (pilot.status === 'accepted-by-owner' || (closedStatuses.has(pilot.status) && hasActive)) {
+      pilot.status = hasActive ? 'open' : 'remediated-local';
     }
     reviewScopes.visibleTerms.pilotIds.push(pilot.id);
     return [pilot];

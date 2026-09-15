@@ -38,7 +38,7 @@ const scopes = artifact ? inspection.reviewScopes : {
 };
 const expectedPilotRoutes = artifact
   ? documents.upstreamTerms.pilotCensus.filter(row => scopes.visibleTerms.pilotIds.includes(row.id)).map(row => row.route)
-  : ['/', '/admin', '/admin/community/boards/insert-board-article', '/admin/survey/manage/create',
+  : ['/', '/admin', '/admin/community/boards/insert-board-article', '/admin/survey/hub',
     '/admin/system/logs/user', '/admin/user/manage', '/login', '/smart-toolkit/schedule'];
 const qualityErrors = manifest => validateUiQuality(manifest, documents.routes, ROOT, undefined,
   { sourceRoot: ROOT, scenarioIds: scopes.uiQuality.scenarioIds });
