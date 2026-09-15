@@ -69,7 +69,7 @@ export default function HelpClient() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [qnas, setQnas] = useState<QNA[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<{ tab: 'faq' | 'qna'; message: string } | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqDetails, setFaqDetails] = useState<Record<string, FaqDetailState>>({});
@@ -99,10 +99,10 @@ export default function HelpClient() {
         //   직전 검색어의 목록이 새 검색어의 결과처럼 남지 않게 비운다. 서버 문구는 API 공통 토스트가 알린다.
         if (tab === 'faq') {
           setFaqs([]);
-          setLoadError('자주 묻는 질문을 불러오지 못했습니다.');
+          setLoadError({ tab: 'faq', message: '자주 묻는 질문을 불러오지 못했습니다.' });
         } else {
           setQnas([]);
-          setLoadError('Q&A 문의 내역을 불러오지 못했습니다.');
+          setLoadError({ tab: 'qna', message: 'Q&A 문의 내역을 불러오지 못했습니다.' });
         }
       } finally {
         setLoading(false);
@@ -112,6 +112,8 @@ export default function HelpClient() {
   }, [tab, searchKeyword, reloadToken]);
 
   const retryLoad = () => setReloadToken((token) => token + 1);
+  // [2026-09-15 DEC-OPS-100] 탭을 바꾼 직후 300ms 지연 조회가 시작되기 전에도 다른 탭의 실패를 보이지 않는다.
+  const currentLoadError = loadError?.tab === tab ? loadError.message : null;
 
   const openAsk = () => {
     askForm.reset({ pstTtl: '', pstCn: '' });
@@ -243,8 +245,8 @@ export default function HelpClient() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              {loadError ? (
-                <ErrorStateDisplay error={loadError} onRetry={retryLoad} className="bg-card border-2 border-dashed border-border" />
+              {currentLoadError ? (
+                <ErrorStateDisplay error={currentLoadError} onRetry={retryLoad} className="bg-card border-2 border-dashed border-border" />
               ) : faqs.length === 0 && loading ? (
                 <p role="status" className="py-12 text-center text-sm text-muted-foreground">자주 묻는 질문을 불러오는 중…</p>
               ) : faqs.length === 0 ? (
@@ -320,7 +322,7 @@ export default function HelpClient() {
                 columns={qnaColumns}
                 data={qnas}
                 loading={loading}
-                error={loadError}
+                error={currentLoadError}
                 onRetry={retryLoad}
                 emptyMessage={emptyResultMessage(searchKeyword, "등록된 Q&A 문의 내역이 없습니다.")}
                 className="border-none shadow-none rounded-none"

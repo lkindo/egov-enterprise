@@ -74,7 +74,10 @@ test('contract-level norms keep their approved reading, floors, format bans and 
     ['lifted zero ban', (f) => { f.formatRules.number.unknownAsZero = 'allowed'; }, /format rule was weakened: number\.unknownAsZero/],
     ['deleted format rules', (f) => { delete f.formatRules; }, /format rules are missing/],
     ['dropped action rule', (f) => { f.actionRules.pop(); }, /action rules are incomplete/],
+    ['duplicate action rule', (f) => { f.actionRules.push(structuredClone(f.actionRules[0])); }, /duplicate action rule id/],
     ['narrowed action rule', (f) => { f.actionRules[0].forbiddenExamples.pop(); }, /action rule was weakened/],
+    ['unbound added action rule', (f) => { f.actionRules.push({ id: 'adopter-rule', rule: 'An adopter-specific rule.', forbiddenExamples: ['example'], catalogRule: 'G99' }); }, /catalogRule does not name a work-screen grammar rule: adopter-rule/],
+    ['added action rule with a missing shared implementation', (f) => { f.actionRules.push({ id: 'adopter-rule', rule: 'An adopter-specific rule.', forbiddenExamples: ['example'], sharedImplementation: ['frontend/src/hooks/missing-guard.ts'] }); }, /sharedImplementation file is missing: adopter-rule/],
     ['relaxed term', (f) => { f.terms.find(({ id }) => id === 'term-intelligence').decision = 'allowed'; }, /term decision was weakened: term-intelligence/],
     ['removed term', (f) => { f.terms = f.terms.filter(({ id }) => id !== 'term-intelligence'); }, /term decision was dropped: term-intelligence/],
     ['no normative sources', (f) => { f.normativeSources = []; }, /normative source was dropped/],
@@ -90,6 +93,11 @@ test('contract-level norms keep their approved reading, floors, format bans and 
     mutate(fixture);
     assert.match(validateContract(fixture).join('\n'), expected, label);
   }
+
+  // 하한은 넓어질 수 있다 — 파생 제품이 규칙을 더해도 red 가 아니다.
+  const widened = structuredClone(contract);
+  widened.actionRules.push({ id: 'adopter-rule', rule: 'An adopter-specific rule.', forbiddenExamples: ['example'] });
+  assert.deepEqual(validateContract(widened), []);
 });
 test('pilot composers do not expose internal deployment language or log form payloads', () => {
   const boardComposer = fs.readFileSync(

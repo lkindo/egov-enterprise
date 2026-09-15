@@ -205,18 +205,21 @@ export function validateVisibleTerms(contract, { root = ROOT, expectedPilotRoute
     checkNormBinding(state.id, state, floor);
   }
 
+  // 검토한 네 규칙은 모두 있어야 하고, 파생 제품은 규칙을 더할 수 있다(하한 검사).
   const actionIds = (contract.actionRules ?? []).map(({ id }) => id);
-  if (JSON.stringify([...actionIds].sort()) !== JSON.stringify(Object.keys(ACTION_RULE_FLOOR).sort())) {
-    errors.push('action rules are incomplete or contain an unknown rule');
+  for (const id of Object.keys(ACTION_RULE_FLOOR)) {
+    if (!actionIds.includes(id)) errors.push(`action rules are incomplete: ${id}`);
   }
+  if (duplicates(actionIds).length) errors.push(`duplicate action rule id: ${duplicates(actionIds).join(', ')}`);
   for (const rule of contract.actionRules ?? []) {
     if (!rule.rule?.trim()) errors.push(`action rule is unbounded: ${rule.id ?? '<missing>'}`);
     const floor = ACTION_RULE_FLOOR[rule.id];
+    // 파생 제품이 더한 규칙도 적어 둔 catalogRule·sharedImplementation 은 같은 기준으로 검사한다.
+    checkNormBinding(rule.id, rule, floor ?? {});
     if (!floor) continue;
     for (const item of lostItems(rule.forbiddenExamples, floor.forbiddenExamples)) {
       errors.push(`action rule was weakened: ${rule.id} lost "${item}"`);
     }
-    checkNormBinding(rule.id, rule, floor);
   }
 
   const format = contract.formatRules;

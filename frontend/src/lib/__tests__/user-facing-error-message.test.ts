@@ -32,4 +32,12 @@ describe('userFacingErrorMessage', () => {
     expect(userFacingErrorMessage(null)).toBeUndefined();
     expect(userFacingErrorMessage(42)).toBeUndefined();
   });
+
+  it('문자열이나 Error 로 넘어온 axios 전송 오류 문구는 사용자 문장으로 쓰지 않는다', () => {
+    for (const text of ['Request failed with status code 500', 'Network Error', 'timeout of 10000ms exceeded', 'canceled']) {
+      expect(userFacingErrorMessage(text)).toBeUndefined();
+      expect(userFacingErrorMessage(new Error(text))).toBeUndefined();
+    }
+    expect(userFacingErrorMessage('권한이 없습니다.')).toBe('권한이 없습니다.');
+  });
 });

@@ -67,9 +67,10 @@ describe('TopologyMap 상태 표시', () => {
     };
     const { container } = render(<TopologyMap />);
 
-    // api-01 자리만 계측 행이 있다. 나머지 다섯 자리(로드밸런서 포함)는 상태 미확인이다(범례 1건 포함).
-    expect(screen.getAllByText('정상').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('상태 미확인').length).toBeGreaterThanOrEqual(5);
+    // api-01 자리만 계측 행이 있다. 노드 여섯 중 정상 1·상태 미확인 5(로드밸런서 포함)이고, 범례가 각 1건씩 더한다.
+    // 로드밸런서를 다시 정상으로 칠하거나 계측 행의 상태를 노드에 옮기지 않으면 이 개수가 달라진다.
+    expect(screen.getAllByText('정상')).toHaveLength(2);
+    expect(screen.getAllByText('상태 미확인')).toHaveLength(6);
     expect(screen.queryByText('UP')).toBeNull();
 
     fireEvent.mouseEnter(screen.getByText('Cloud Front / LB'));

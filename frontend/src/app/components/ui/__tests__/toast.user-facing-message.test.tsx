@@ -41,4 +41,12 @@ describe('useToast 문구', () => {
     result.current.toast('문의를 등록했습니다.', 'success');
     expect(sonner.success).toHaveBeenLastCalledWith('문의를 등록했습니다.');
   });
+
+  it('호출부가 넘긴 전송 오류 문자열은 사용자 문장으로 쓰지 않는다', async () => {
+    const useToast = await loadUseToast();
+    const { result } = renderHook(() => useToast());
+    result.current.toast('Request failed with status code 500', 'error');
+
+    expect(sonner.error).toHaveBeenCalledWith('요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  });
 });

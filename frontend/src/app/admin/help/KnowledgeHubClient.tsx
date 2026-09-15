@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PagePagination } from '@/components/common/PagePagination';
 import { CommunityManageDialog } from '@/components/business/community/CommunityManageDialog';
+import { userFacingErrorMessage } from '@/lib/safe-error-log';
 
 // --- Types ---
 type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
@@ -218,9 +219,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <div role="alert" className="flex flex-col items-center justify-center gap-4 p-16 border-2 border-dashed rounded-lg border-rose-300 bg-rose-50/50 dark:border-rose-900/40 dark:bg-rose-950/20">
  <AlertTriangle size={32} className="text-rose-500" />
  <p className="text-sm font-bold text-foreground">지식 목록을 불러오지 못했습니다.</p>
- {articlesError instanceof Error && (
- <p className="text-xs font-medium text-muted-foreground">{articlesError.message}</p>
- )}
+ {/* [2026-09-15 DEC-OPS-100] axios 전송 오류 원문은 보이지 않는다 — 서버가 준 문장이나, axios 오류가 아닌 오류의 문장만 덧붙인다. */}
+ {userFacingErrorMessage(articlesError) ? (
+ <p className="text-xs font-medium text-muted-foreground">{userFacingErrorMessage(articlesError)}</p>
+ ) : null}
  <Button variant="outline" size="sm" className="gap-2" onClick={() => void refetchArticles()}>
  <RefreshCcw size={14} /> 다시 시도
  </Button>

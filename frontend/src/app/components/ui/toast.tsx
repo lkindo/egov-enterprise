@@ -9,11 +9,9 @@ type ToastType = 'success' | 'error' | 'info' | 'loading';
 export const useToast = () => {
   const toast = useCallback((message: unknown, type: ToastType = 'info') => {
     // Failsafe: format message as string to prevent rendering errors
-    // [2026-09-15 DEC-OPS-100] 문자열이 아닌 값은 사용자 문장만 뽑는다 — 종전에는 객체를 JSON 원문으로,
-    //   axios 오류는 transport 원문으로 보여 줬다.
-    const displayMessage = typeof message === 'string'
-      ? message
-      : (userFacingErrorMessage(message) ?? '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    // [2026-09-15 DEC-OPS-100] 문자열을 포함한 모든 값에서 사용자 문장만 뽑는다 — 종전에는 객체를 JSON 원문으로,
+    //   axios 오류는 transport 원문으로 보여 줬고, error.message 를 문자열로 넘긴 호출부의 transport 원문도 그대로 보였다.
+    const displayMessage = userFacingErrorMessage(message) ?? '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
     if (type === 'success') {
       sonnerToast.success(displayMessage);

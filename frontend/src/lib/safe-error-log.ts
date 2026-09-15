@@ -76,7 +76,7 @@ export function logErrorSafely(message: string, error: unknown): void {
  *   (`response.data.message`)만 쓴다. 직렬화돼 평범한 객체가 된 axios 오류도 `isAxiosError` 로 가린다.
  */
 export function userFacingErrorMessage(error: unknown): string | undefined {
-  if (typeof error === 'string') return error.trim() || undefined;
+  if (typeof error === 'string') return userSentence(error);
   if (!isRecord(error)) return undefined;
 
   const response = isRecord(error.response) ? error.response : null;
@@ -84,5 +84,14 @@ export function userFacingErrorMessage(error: unknown): string | undefined {
   if (typeof data?.message === 'string' && data.message.trim()) return data.message.trim();
 
   if (error.isAxiosError === true) return undefined;
-  return typeof error.message === 'string' && error.message.trim() ? error.message.trim() : undefined;
+  return typeof error.message === 'string' ? userSentence(error.message) : undefined;
+}
+
+// [2026-09-15 DEC-OPS-100] axios 가 만드는 전송 오류 문구다. 호출부가 error.message 를 문자열로 넘겨도
+//   사용자 문장으로 쓰지 않는다(server-error mustNotImply).
+const TRANSPORT_MESSAGE = /^(?:Request failed with status code \d{3}|Network Error|timeout of \d+ms exceeded|canceled|Unknown Network\/System Error)$/;
+
+function userSentence(text: string): string | undefined {
+  const trimmed = text.trim();
+  return trimmed && !TRANSPORT_MESSAGE.test(trimmed) ? trimmed : undefined;
 }

@@ -59,7 +59,7 @@ export class ObservabilityPage {
 
     async refresh() {
         console.log('[E2E] Clicking data-stream refresh button...');
-        const syncBtn = this.page.getByRole('button', { name: /현재 목록 새로고침/i });
+        const syncBtn = this.page.getByRole('button', { name: /현재 탭 새로고침/i });
         await Promise.all([
             this.page.waitForResponse((response) =>
                 /\/actuator\/health(?:\?|$)/.test(response.url()) && response.request().method() === 'GET',
