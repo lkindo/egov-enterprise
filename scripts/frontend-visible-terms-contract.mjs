@@ -214,11 +214,12 @@ export function validateVisibleTerms(contract, { root = ROOT, expectedPilotRoute
   for (const rule of contract.actionRules ?? []) {
     if (!rule.rule?.trim()) errors.push(`action rule is unbounded: ${rule.id ?? '<missing>'}`);
     const floor = ACTION_RULE_FLOOR[rule.id];
+    // 파생 제품이 더한 규칙도 적어 둔 catalogRule·sharedImplementation 은 같은 기준으로 검사한다.
+    checkNormBinding(rule.id, rule, floor ?? {});
     if (!floor) continue;
     for (const item of lostItems(rule.forbiddenExamples, floor.forbiddenExamples)) {
       errors.push(`action rule was weakened: ${rule.id} lost "${item}"`);
     }
-    checkNormBinding(rule.id, rule, floor);
   }
 
   const format = contract.formatRules;

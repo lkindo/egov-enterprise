@@ -143,9 +143,9 @@ describe('KnowledgeHubClient accessibility semantics', () => {
 
   /**
    * [2026-09-15 DEC-OPS-100] 조회 실패 패널은 axios 가 만든 전송 오류 원문을 보이지 않는다.
-   * 서버가 준 사용자 문장만 덧붙인다(server-error mustNotImply).
+   * 서버가 준 문장이나, axios 오류가 아닌 오류의 문장만 덧붙인다(server-error mustNotImply).
    */
-  it('문서 목록 조회 실패 패널은 전송 오류 원문 대신 서버 문장만 보인다', () => {
+  it('문서 목록 조회 실패 패널은 전송 오류 원문을 보이지 않고 사용자 문장만 보인다', () => {
     harness.articlesError = new Error('Request failed with status code 500');
     const { unmount } = render(<KnowledgeHubClient defaultTab="FAQ" />);
     const alert = screen.getByRole('alert');
