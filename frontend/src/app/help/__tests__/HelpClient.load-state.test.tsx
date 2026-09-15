@@ -75,4 +75,16 @@ describe('HelpClient 조회 상태', () => {
     expect(harness.getQnas).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('등록된 Q&A 문의 내역이 없습니다.')).toBeNull();
   });
+
+  it('한 탭의 조회 실패를 다른 탭으로 옮겨 보이지 않는다', async () => {
+    harness.getFaqs.mockRejectedValue(new Error('FAQ 조회 장애'));
+    harness.getQnas.mockReturnValue(new Promise(() => undefined));
+    const user = userEvent.setup();
+    render(<HelpClient />);
+
+    expect(await screen.findByText('자주 묻는 질문을 불러오지 못했습니다.')).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: /1:1 Q&A 문의/ }));
+
+    expect(screen.queryByText('자주 묻는 질문을 불러오지 못했습니다.')).toBeNull();
+  });
 });

@@ -52,11 +52,13 @@ interface AppNotificationDrawerProps {
   error?: string | null;
   /** 오류 상태에서 사용자가 직접 재시도할 수 있게 한다(알림은 자동 폴링이 60초라 체감이 길다). */
   onRetry?: () => void;
+  /** [2026-09-15 DEC-OPS-100] 첫 조회가 끝나기 전이면 true 다. 이때 빈 목록을 '알림 없음'으로 말하지 않는다. */
+  loading?: boolean;
 }
 
 type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
-export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, onDelete, error, onRetry }: AppNotificationDrawerProps) {
+export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, onDelete, error, onRetry, loading = false }: AppNotificationDrawerProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
   const hasUnreadNotifications = notifications.some(n => !n.isRead);
 
@@ -177,6 +179,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                       다시 시도
                     </button>
                   ) : null}
+                </div>
+             ) : loading && filteredNotifications.length === 0 ? (
+                <div role="status" className="flex h-full items-center justify-center text-sm font-bold text-muted-foreground">
+                  알림을 불러오는 중…
                 </div>
              ) : filteredNotifications.length === 0 ? (
                 <div

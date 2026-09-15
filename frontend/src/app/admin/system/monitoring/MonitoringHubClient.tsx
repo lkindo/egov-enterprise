@@ -1022,7 +1022,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <Button
           variant="outline"
           size="sm"
-          aria-label="현재 목록 새로고침"
+          aria-label="현재 탭 새로고침"
           onClick={handleRefreshActiveTab}
         >
           <RefreshCcw size={16} aria-hidden="true" />
@@ -1081,8 +1081,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
                   식별자 {selectedItemId}
                 </p>
-                {/* [2026-09-15 DEC-OPS-100] 상세는 정적 카탈로그·표본이다 — 목록과 같은 고지를 상세에도 둔다(demo). */}
-                <div className="mt-2"><SampleDataBadge /></div>
+                {/* [2026-09-15 DEC-OPS-100] 하네스 스킬·테스트 상세는 정적 카탈로그·표본이라 목록과 같은 고지를 둔다(demo). 실제 로그·의견 기록에는 붙이지 않는다. */}
+                {detailKind !== 'RECORD' ? <div className="mt-2"><SampleDataBadge /></div> : null}
               </div>
               <Button variant="outline" size="sm" onClick={() => setSelectedItemId(null)}>닫기</Button>
             </header>

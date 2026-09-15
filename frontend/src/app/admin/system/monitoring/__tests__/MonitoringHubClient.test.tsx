@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MonitoringHubClient from '../MonitoringHubClient';
@@ -235,7 +235,7 @@ describe('MonitoringHubClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
     expect(mocks.replace).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '현재 목록 새로고침' }));
+    fireEvent.click(screen.getByRole('button', { name: '현재 탭 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '리포트 스냅샷' }));
     expect(screen.getByRole('region', { name: '현재 조회 결과 반출' }))
       .toHaveTextContent('1건 반출');
@@ -422,5 +422,21 @@ describe('MonitoringHubClient', () => {
     renderHub('tab=observability');
 
     expect(await screen.findByText('시스템 상태: 점검 필요 (health 응답: DOWN)')).toBeInTheDocument();
+  });
+
+  it('실제 로그 기록의 상세에는 샘플 데이터 고지를 붙이지 않는다', async () => {
+    renderHub('tab=system');
+    fireEvent.click((await screen.findAllByRole('button', { name: /상세 열기/ }))[0]);
+
+    const detail = await screen.findByRole('region', { name: '선택 항목 상세' });
+    expect(within(detail).queryByText('샘플 데이터')).toBeNull();
+  });
+
+  it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
+    renderHub('tab=harness');
+    fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
+
+    const detail = screen.getByRole('region', { name: '선택 항목 상세' });
+    expect(within(detail).getByText('샘플 데이터')).toBeInTheDocument();
   });
 });

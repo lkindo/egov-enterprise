@@ -8,6 +8,7 @@ const harness = vi.hoisted(() => ({
   //   defaultTab 을 무엇으로 주든 화면이 FAQ 였고, Q&A 분기는 스펙이 닿지 못했다.
   search: 'tab=FAQ',
   statsLoading: false,
+  articlesError: null as Error | null,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -45,6 +46,9 @@ vi.mock('@tanstack/react-query', () => ({
 
     switch (queryKey[0]) {
       case 'knowledge-articles':
+        if (harness.articlesError) {
+          return { ...common, isError: true, error: harness.articlesError, data: undefined };
+        }
         return { ...common, data: { list: [article], total: 1 } };
       case 'hot-articles':
         return { ...common, data: { list: [article] } };
@@ -72,6 +76,7 @@ describe('KnowledgeHubClient accessibility semantics', () => {
     vi.clearAllMocks();
     harness.search = 'tab=FAQ';
     harness.statsLoading = false;
+    harness.articlesError = null;
   });
 
   it('uses semantic foregrounds on matching card surfaces and preserves truthful FAQ status', () => {
@@ -134,5 +139,22 @@ describe('KnowledgeHubClient accessibility semantics', () => {
       expect(within(card).getByText('불러오는 중…')).toBeInTheDocument();
       expect(within(card).queryByText('0')).toBeNull();
     }
+  });
+
+  /**
+   * [2026-09-15 DEC-OPS-100] 조회 실패 패널은 axios 가 만든 전송 오류 원문을 보이지 않는다.
+   * 서버가 준 사용자 문장만 덧붙인다(server-error mustNotImply).
+   */
+  it('문서 목록 조회 실패 패널은 전송 오류 원문 대신 서버 문장만 보인다', () => {
+    harness.articlesError = new Error('Request failed with status code 500');
+    const { unmount } = render(<KnowledgeHubClient defaultTab="FAQ" />);
+    const alert = screen.getByRole('alert');
+    expect(within(alert).queryByText('Request failed with status code 500')).toBeNull();
+    expect(within(alert).getByRole('button', { name: /다시 시도/ })).toBeInTheDocument();
+    unmount();
+
+    harness.articlesError = new Error('권한이 없습니다.');
+    render(<KnowledgeHubClient defaultTab="FAQ" />);
+    expect(within(screen.getByRole('alert')).getByText('권한이 없습니다.')).toBeInTheDocument();
   });
 });

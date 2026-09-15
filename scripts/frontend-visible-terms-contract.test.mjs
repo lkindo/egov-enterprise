@@ -90,6 +90,11 @@ test('contract-level norms keep their approved reading, floors, format bans and 
     mutate(fixture);
     assert.match(validateContract(fixture).join('\n'), expected, label);
   }
+
+  // 하한은 넓어질 수 있다 — 파생 제품이 규칙을 더해도 red 가 아니다.
+  const widened = structuredClone(contract);
+  widened.actionRules.push({ id: 'adopter-rule', rule: 'An adopter-specific rule.', forbiddenExamples: ['example'] });
+  assert.deepEqual(validateContract(widened), []);
 });
 test('pilot composers do not expose internal deployment language or log form payloads', () => {
   const boardComposer = fs.readFileSync(
