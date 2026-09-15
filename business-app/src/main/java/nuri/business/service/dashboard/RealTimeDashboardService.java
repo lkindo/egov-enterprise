@@ -1,9 +1,10 @@
 package nuri.business.service.dashboard;
 
-import nuri.business.domain.notification.NotificationRepository;
+import nuri.foundation.core.dashboard.PendingAlertCountContributor;
 import nuri.foundation.core.event.PostCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,7 +21,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class RealTimeDashboardService {
 
-    private final NotificationRepository notificationRepository;
+    /**
+     * 대기 알림 수를 세는 포트. 알림 도메인이 구현하며 여기서는 개수만 받는다.
+     *
+     * <p>종전에는 {@code NotificationRepository} 를 직접 주입해 dashboard→notification 교차 도메인
+     * 결합을 만들었다(GAP-ARCH-001). {@code ObjectProvider} 로 받는 것은 알림 도메인이 base projection
+     * 에서 빠진 프로필에서도 대시보드가 뜨게 하기 위해서다 — 그때의 0 은 "세지 못했다" 가 아니라
+     * "셀 알림이 없다" 는 사실이다.
+     */
+    private final ObjectProvider<PendingAlertCountContributor> pendingAlertCounts;
     private final ApplicationEventPublisher eventPublisher;
 
     // 실시간 통계 데이터 관리(로컬 메모리 활용)
@@ -80,11 +89,19 @@ public class RealTimeDashboardService {
     }
 
     /**
-     * 처리 대기 중인 알림 수 조회
+     * 처리 대기 중인 알림 수 조회.
+     *
+     * <p>구현이 없으면(알림 도메인이 빠진 프로필) 셀 알림 자체가 없으므로 0 이다. 조회가 실패해서 0 이 되는
+     * 경우와 구분되도록 실패는 종전처럼 error 로 남긴다 — 둘을 같은 로그로 뭉개면 "알림이 없다" 와
+     * "알림을 못 셌다" 를 사후에 구분할 수 없다.
      */
     private int getPendingAlertsCount() {
+        PendingAlertCountContributor contributor = pendingAlertCounts.getIfAvailable();
+        if (contributor == null) {
+            return 0;
+        }
         try {
-            return (int) notificationRepository.countByReadYn("N");
+            return (int) contributor.countPendingAlerts();
         } catch (Exception e) {
             log.error("Failed to count pending alerts", e);
             return 0;

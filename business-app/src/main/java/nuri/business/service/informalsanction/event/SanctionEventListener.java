@@ -17,38 +17,25 @@ public class SanctionEventListener {
     private static final int CHANNEL_CONTENT_MAX_LENGTH = 4_000;
 
     private final nuri.business.service.user.UserService userService;
-    private final nuri.business.service.sms.SmsService smsService;
-    private final nuri.business.service.mail.MailService mailService;
 
     /**
-     * 앱 내 알림은 {@code NotificationService} 를 주입하지 않고 foundation 이벤트로 요청한다.
+     * 세 채널(문자·메일·앱 내 알림)을 모두 foundation 이벤트로 요청한다.
      *
-     * <p>주입하면 informalsanction→notification 이라는 <b>새 교차 도메인 결합</b>이 생긴다.
-     * 이 리스너는 이미 sms·mail 두 결합을 갖고 있고(GAP-ARCH-001 의 잔여 4건 중 둘),
-     * 그 목록을 늘리는 대신 발행만 한다 — 어느 쪽도 상대를 import 하지 않는다.
+     * <p>{@code SmsService}·{@code MailService}·{@code NotificationService} 를 주입하면 결재가 세 도메인에
+     * 결합돼 교차 도메인 결합 census 가 늘어난다. 앱 내 알림은 처음부터 발행만 했고, 문자·메일도 이제
+     * 같은 자리로 옮겼다 — GAP-ARCH-001 의 잔여 app→app 4건 중 이 리스너가 갖고 있던 둘이 그것이다.
+     * 어느 쪽도 상대를 import 하지 않으므로 census 숫자만 내려가는 것이 아니라 실제로 떼어 낼 수 있다.
+     *
+     * <p><b>발신 번호는 더 이상 여기 없다.</b> {@code nuri.notification.sender.tel} 은 업무 사실이 아니라
+     * 배포 설정이고 그것을 쓰는 것은 sms 도메인이므로 {@code SmsRequestListener} 가 소유한다. 미설정 시
+     * 문자 채널만 건너뛰는 거동은 그대로다.
      */
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
-    /**
-     * 시스템 발신 문자의 발신 번호({@code nuri.notification.sender.tel}).
-     *
-     * <p>종전에는 {@code "02-1234-5678"} 리터럴이 코드에 박혀 있었다 — 실 게이트웨이가 거부하거나
-     * 엉뚱한 번호로 귀속될 값이다. 비어 있으면 문자 채널을 <b>건너뛴다</b>(앱 내 알림·메일은 그대로).
-     * 가짜 번호로 발송을 흉내 내는 것보다 안 보내고 warn 을 남기는 쪽이 정직하다.
-     */
-    private final String smsSenderTel;
-
     public SanctionEventListener(nuri.business.service.user.UserService userService,
-                                nuri.business.service.sms.SmsService smsService,
-                                nuri.business.service.mail.MailService mailService,
-                                org.springframework.context.ApplicationEventPublisher eventPublisher,
-                                @org.springframework.beans.factory.annotation.Value("${nuri.notification.sender.tel:}")
-                                String smsSenderTel) {
+                                org.springframework.context.ApplicationEventPublisher eventPublisher) {
         this.userService = userService;
-        this.smsService = smsService;
-        this.mailService = mailService;
         this.eventPublisher = eventPublisher;
-        this.smsSenderTel = smsSenderTel == null ? "" : smsSenderTel.trim();
     }
 
     // 발행 자체가 커밋 후 이뤄지도록 발행부(confirmInformalSanction)에서 TransactionUtils.runAfterCommit 로 감싼다.
@@ -98,51 +85,46 @@ public class SanctionEventListener {
         }
     }
 
+    /**
+     * 문자 요청.
+     *
+     * <p>연락처가 없으면 <b>발행하지 않는다</b> — 수신 번호 없는 요청은 보낼 곳이 없는 이력만 남긴다.
+     * 발신 번호 미설정으로 건너뛰는 판정은 sms 도메인({@code SmsRequestListener})이 소유한다.
+     */
     private void sendSms(SanctionStatusChangedEvent event, String actorId,
             nuri.business.service.user.dto.UserDto user, String message) {
         if (!org.springframework.util.StringUtils.hasText(user.mblTelno())) {
             return;
         }
-        if (smsSenderTel.isEmpty()) {
-            log.warn("SMS notification skipped — nuri.notification.sender.tel is not configured: sanctionSn={}, status={}",
-                    event.getInformalSanctionSn(), event.getNewStatus());
-            return;
-        }
         try {
-            nuri.business.service.sms.dto.SmsDto smsDto = nuri.business.service.sms.dto.SmsDto.builder()
-                    .sndngTelno(smsSenderTel)
-                    .sndngCn(message)
-                    .recipients(java.util.List.of(nuri.business.service.sms.dto.SmsRecptnDto.builder()
-                            .rcptnTelno(user.mblTelno())
-                            .build()))
-                    .build();
-            smsService.sendSms(actorId, smsDto);
-            log.info("SMS notification sent: sanctionSn={}, status={}",
+            eventPublisher.publishEvent(new nuri.foundation.core.event.SmsRequestedEvent(
+                    actorId, user.mblTelno(), message));
+            log.info("SMS notification requested: sanctionSn={}, status={}",
                     event.getInformalSanctionSn(), event.getNewStatus());
         } catch (Exception e) {
-            log.error("Failed to send SMS notification: sanctionSn={}, status={}, exceptionType={}",
+            log.error("Failed to request SMS notification: sanctionSn={}, status={}, exceptionType={}",
                     event.getInformalSanctionSn(), event.getNewStatus(), e.getClass().getSimpleName());
         }
     }
 
+    /**
+     * 메일 요청.
+     *
+     * <p>SMTP From 과 발신자 표시명은 {@code MailService} 가 설정({@code nuri.mail.from})과 요청자에서
+     * 정한다 — 여기서 주소를 지어내지 않는다.
+     */
     private void sendMail(SanctionStatusChangedEvent event, String actorId,
             nuri.business.service.user.dto.UserDto user, String message) {
         if (!org.springframework.util.StringUtils.hasText(user.emlAddr())) {
             return;
         }
         try {
-            // SMTP From 과 발신자 표시명은 MailService 가 설정(nuri.mail.from)과 요청자에서 정한다 —
-            // 여기서 주소를 지어내지 않는다(종전 'admin@egov.enterprise' 리터럴은 어디에도 쓰이지 않았다).
-            nuri.business.service.mail.dto.SentMailDto mailDto = nuri.business.service.mail.dto.SentMailDto.builder()
-                    .sj("[eGov] 결재 상태 변경 알림")
-                    .emailCn(message)
-                    .recptnPerson(user.emlAddr())
-                    .build();
-            mailService.sendMail(actorId, mailDto);
-            log.info("Mail notification sent: sanctionSn={}, status={}",
+            eventPublisher.publishEvent(new nuri.foundation.core.event.MailRequestedEvent(
+                    actorId, user.emlAddr(), "[eGov] 결재 상태 변경 알림", message));
+            log.info("Mail notification requested: sanctionSn={}, status={}",
                     event.getInformalSanctionSn(), event.getNewStatus());
         } catch (Exception e) {
-            log.error("Failed to send mail notification: sanctionSn={}, status={}, exceptionType={}",
+            log.error("Failed to request mail notification: sanctionSn={}, status={}, exceptionType={}",
                     event.getInformalSanctionSn(), event.getNewStatus(), e.getClass().getSimpleName());
         }
     }
