@@ -13,6 +13,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class TypeConverterTest {
 
     @Test
+    void binaryAndJdbcLocatorsCannotBecomeObjectIdentityStrings() {
+        byte[] bytes = {0, 1, -1};
+        assertThat(TypeConverter.convert(null, bytes)).isSameAs(bytes);
+        for (String type : new String[] {"text", "string", "int", "uuid"}) {
+            assertThatThrownBy(() -> TypeConverter.convert(type, bytes))
+                    .isInstanceOf(IllegalArgumentException.class).hasNoCause();
+        }
+        for (Object locator : new Object[] {org.mockito.Mockito.mock(java.sql.Blob.class),
+                org.mockito.Mockito.mock(java.sql.Clob.class)}) {
+            assertThatThrownBy(() -> TypeConverter.convert(null, locator))
+                    .isInstanceOf(IllegalArgumentException.class).hasNoCause();
+        }
+    }
+
+    @Test
     void nullAndBlankPassThroughButUnknownTypeFailsClosed() {
         assertThat(TypeConverter.convert("int", null)).isNull();
         assertThat(TypeConverter.convert(null, "x")).isEqualTo("x");

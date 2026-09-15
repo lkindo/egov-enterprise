@@ -71,6 +71,9 @@ public class TransformerRegistry {
             return value;
         }
         Definition definition = transformers.get(name);
+        if (value instanceof byte[] && definition != null && definition.builtin()) {
+            throw new IllegalArgumentException("text transformer cannot consume binary data");
+        }
         return definition == null ? value : definition.fn().apply(value);
     }
 

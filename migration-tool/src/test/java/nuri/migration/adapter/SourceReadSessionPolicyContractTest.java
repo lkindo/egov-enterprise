@@ -88,7 +88,8 @@ class SourceReadSessionPolicyContractTest {
             assertThat(policy.supported()).as(adapter.id()).isTrue();
             assertThat(policy.sourceFreezeRequired()).as(adapter.id()).isTrue();
             assertThat(policy.quotedIdentifiersSupported()).as(adapter.id()).isFalse();
-            assertThat(policy.lobStreamingSupported()).as(adapter.id()).isFalse();
+            assertThat(policy.lobStreamingSupported()).as(adapter.id())
+                    .isEqualTo(adapterType == OracleSourceAdapter.class);
             assertThat(policy.executionPolicy())
                     .as(adapter.id())
                     .isEqualTo(ExecutionPolicy.MANUAL_ONLY);

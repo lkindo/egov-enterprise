@@ -38,9 +38,13 @@ public final class TypeConverter {
     }
 
     public static Object convert(String type, Object value) {
+        if (value instanceof java.sql.Blob || value instanceof java.sql.Clob) {
+            throw conversionFailure();
+        }
         if (type == null || type.isBlank() || value == null) {
             return value;
         }
+        if (value instanceof byte[]) throw conversionFailure();
         String t = type.toLowerCase(Locale.ROOT);
         if (!KNOWN.contains(t)) {
             throw conversionFailure();
