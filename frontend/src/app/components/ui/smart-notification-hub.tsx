@@ -40,7 +40,7 @@ export function SmartNotificationHub() {
 
   // 실제 알림 API(/notifications)를 헤더 드로어와 동일한 useNotifications 훅으로 연결.
   // (과거엔 SAMPLE_NOTIFICATIONS 하드코딩이라 새로 생성한 알림이 검색/목록에 절대 안 나타났음.)
-  const { notifications: rawNotifications, error, refresh } = useNotifications();
+  const { notifications: rawNotifications, error, isLoading, refresh } = useNotifications();
   const notifications = useMemo<Notification[]>(
     () =>
       (rawNotifications || []).map((n) => ({
@@ -212,6 +212,7 @@ export function SmartNotificationHub() {
             <StandardDataTable
               columns={columns}
               data={filteredNotifications}
+              loading={isLoading}
               emptyMessage="표시할 알림이 없습니다."
               error={error}
               onRetry={refresh}

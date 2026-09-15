@@ -28,7 +28,7 @@
  *    `getUptime` 은 **초(seconds) 원값을 그대로** 돌려준다(ms 변환 없음).
  *
  * 5) 실패 처리의 **비대칭**이 곧 계약이다 —
- *    `getCpuUsage`/`getMemoryUsage`/`getUptime` 은 예외를 삼키고 `0` 으로 폴백한다(대시보드
+ *    `getCpuUsage`/`getMemoryUsage` 는 예외·미측정을 `null`(측정값 없음)로, `getUptime` 은 `0` 으로 폴백한다(대시보드
  *    위젯 하나가 전체 화면을 깨뜨리지 않게). 반대로 `getHealth`/`getMetric` 은 예외를
  *    **그대로 던진다** — 여기에 폴백을 넣으면 장애 중인 서버가 화면상 정상으로 보인다.
  *    어느 쪽이든 반대로 바뀌면 아무도 눈치채지 못한 채 관측이 죽는다.
@@ -258,24 +258,24 @@ describe('MonitoringAdminService — 액추에이터 모니터링 계약', () =>
       await expect(monitoringAdminService.getCpuUsage()).resolves.toBe(25);
     });
 
-    it('사용률 0 은 0 으로 반환한다 — 폴백 값과 구분되지 않지만 예외 없이 정상 경로로 나온다', async () => {
+    it('사용률 0 은 0 으로 반환한다 — 측정된 0 은 측정값 없음(null)과 구분된다', async () => {
       actuatorClient.get.mockResolvedValueOnce(metricEnvelope('system.cpu.usage', 0));
 
       await expect(monitoringAdminService.getCpuUsage()).resolves.toBe(0);
     });
 
-    it('measurements 가 비어 있으면 예외를 던지지 않고 0 으로 폴백한다 — 위젯 하나가 대시보드 전체를 깨뜨리지 않는다', async () => {
+    it('measurements 가 비어 있으면 예외를 던지지 않고 null(측정값 없음)을 반환한다 — 0% 로 위장하지 않는다', async () => {
       actuatorClient.get.mockResolvedValueOnce({
         data: { name: 'system.cpu.usage', description: '', baseUnit: '', measurements: [], availableTags: [] },
       });
 
-      await expect(monitoringAdminService.getCpuUsage()).resolves.toBe(0);
+      await expect(monitoringAdminService.getCpuUsage()).resolves.toBeNull();
     });
 
-    it('조회 자체가 실패해도 0 으로 폴백한다', async () => {
+    it('조회 자체가 실패하면 0 이 아니라 null 을 반환한다 — 실패와 유휴를 구분한다', async () => {
       actuatorClient.get.mockRejectedValueOnce(new Error('network down'));
 
-      await expect(monitoringAdminService.getCpuUsage()).resolves.toBe(0);
+      await expect(monitoringAdminService.getCpuUsage()).resolves.toBeNull();
     });
   });
 
@@ -298,34 +298,34 @@ describe('MonitoringAdminService — 액추에이터 모니터링 계약', () =>
       await expect(monitoringAdminService.getMemoryUsage()).resolves.toBe(25);
     });
 
-    it('max 가 0 이면 0 을 반환한다 — 0 으로 나눠 Infinity 를 화면에 내보내지 않기 위한 가드다', async () => {
+    it('max 가 0 이면 null 을 반환한다 — Infinity 도 0% 도 아닌 측정값 없음이다', async () => {
       actuatorClient.get
         .mockResolvedValueOnce(metricEnvelope('jvm.memory.max', 0))
         .mockResolvedValueOnce(metricEnvelope('jvm.memory.used', 512));
 
-      await expect(monitoringAdminService.getMemoryUsage()).resolves.toBe(0);
+      await expect(monitoringAdminService.getMemoryUsage()).resolves.toBeNull();
     });
 
-    it('max 가 음수(-1, 측정 불가)여도 0 을 반환한다 — 음수 퍼센트가 대시보드에 뜨지 않는다', async () => {
+    it('max 가 음수(-1, 측정 불가)면 null 을 반환한다 — 음수 퍼센트도 0% 도 대시보드에 뜨지 않는다', async () => {
       actuatorClient.get
         .mockResolvedValueOnce(metricEnvelope('jvm.memory.max', -1))
         .mockResolvedValueOnce(metricEnvelope('jvm.memory.used', 512));
 
-      await expect(monitoringAdminService.getMemoryUsage()).resolves.toBe(0);
+      await expect(monitoringAdminService.getMemoryUsage()).resolves.toBeNull();
     });
 
-    it('두 번째 조회(used)가 실패하면 0 으로 폴백한다 — 첫 조회만 성공한 반쪽 상태를 노출하지 않는다', async () => {
+    it('두 번째 조회(used)가 실패하면 null 을 반환한다 — 첫 조회만 성공한 반쪽 상태를 노출하지 않는다', async () => {
       actuatorClient.get
         .mockResolvedValueOnce(metricEnvelope('jvm.memory.max', 4_294_967_296))
         .mockRejectedValueOnce(new Error('used metric unavailable'));
 
-      await expect(monitoringAdminService.getMemoryUsage()).resolves.toBe(0);
+      await expect(monitoringAdminService.getMemoryUsage()).resolves.toBeNull();
     });
 
-    it('첫 조회(max)가 실패하면 used 는 조회하지 않고 곧바로 0 으로 폴백한다', async () => {
+    it('첫 조회(max)가 실패하면 used 는 조회하지 않고 곧바로 null 을 반환한다', async () => {
       actuatorClient.get.mockRejectedValueOnce(new Error('max metric unavailable'));
 
-      await expect(monitoringAdminService.getMemoryUsage()).resolves.toBe(0);
+      await expect(monitoringAdminService.getMemoryUsage()).resolves.toBeNull();
       expect(requestedPaths()).toEqual(['metrics/jvm.memory.max']);
     });
   });

@@ -2252,7 +2252,7 @@ export type BoardDto = z.infer<typeof BoardDtoSchema>;
 export const DashboardResponseSchema = z.object({
   taskList: z.array(z.lazy(() => BoardDtoSchema)),
   notiList: z.array(z.lazy(() => BoardDtoSchema)),
-  pendingApprovalCount: z.number().int().min(0),
+  pendingApprovalCount: z.number().int().min(0).nullable(),
 });
 export type DashboardResponse = z.infer<typeof DashboardResponseSchema>;
 
@@ -7857,13 +7857,13 @@ export const BoardDtoResponseSchema = z.object({
 export const DashboardResponseRequestSchema = z.object({
   taskList: z.array(z.lazy(() => BoardDtoRequestSchema.strict())),
   notiList: z.array(z.lazy(() => BoardDtoRequestSchema.strict())),
-  pendingApprovalCount: z.number().int().min(0),
+  pendingApprovalCount: z.number().int().min(0).nullable(),
 });
 
 export const DashboardResponseResponseSchema = z.object({
   taskList: z.array(z.lazy(() => BoardDtoResponseSchema)),
   notiList: z.array(z.lazy(() => BoardDtoResponseSchema)),
-  pendingApprovalCount: z.number().int().min(0),
+  pendingApprovalCount: z.number().int().min(0).nullable(),
 });
 
 export const ApiResponsePageResponseCommunityDtoRequestSchema = z.object({

@@ -2,33 +2,15 @@ import { AlertCircle, RefreshCw, Search, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { userFacingErrorMessage } from '@/lib/safe-error-log';
 
 /**
- * 에러 객체에서 사람이 읽을 수 있는 메시지를 안전하게 추출한다.
- * axios 에러(`response.data.message`)와 일반 `Error.message`를 모두 지원하며,
- * 형태가 다르면 조용히 undefined 를 반환한다(문구는 호출부의 기본 안내로 대체).
+ * 에러 객체에서 사용자에게 보여 줄 수 있는 문장만 뽑는다(없으면 undefined — 아래 기본 안내가 말한다).
+ * [2026-09-15 DEC-OPS-100] 규칙은 `userFacingErrorMessage` 한 곳이 소유한다: 서버가 준 문구는 그대로,
+ * axios 가 만든 transport 원문(`Network Error` 등)은 버린다.
  */
 function extractErrorMessage(error: unknown): string | undefined {
-  if (typeof error === 'string') {
-    return error.trim() || undefined;
-  }
-  if (!error || typeof error !== 'object') {
-    return undefined;
-  }
-
-  const candidate = error as {
-    response?: { data?: { message?: unknown } };
-    message?: unknown;
-  };
-
-  const apiMessage = candidate.response?.data?.message;
-  if (typeof apiMessage === 'string' && apiMessage.trim()) {
-    return apiMessage.trim();
-  }
-  if (typeof candidate.message === 'string' && candidate.message.trim()) {
-    return candidate.message.trim();
-  }
-  return undefined;
+  return userFacingErrorMessage(error);
 }
 
 export function ErrorStateDisplay({
@@ -97,13 +79,17 @@ export function ErrorStateDisplay({
 
 export function EmptyStateDisplay({
   message = "데이터가 없습니다.",
-  description = "조건에 해당하는 항목이 없습니다. 검색 조건을 변경하거나 초기화한 뒤 다시 확인해 주세요.",
+  description,
   onRetry,
   className
 }: {
   /** 빈 상태 제목. 화면 맥락에 맞는 문구를 넘긴다. */
   message?: string;
-  /** 보조 안내 문구. 실패를 암시하지 않는 중립 문구를 유지한다. */
+  /**
+   * 보조 안내 문구. 실패를 암시하지 않는 중립 문구를 유지한다.
+   * [2026-09-15 DEC-OPS-100] 기본값을 두지 않는다. 종전 기본값은 검색이 없는 표에도 "검색 조건을 변경하거나"를 말해
+   * 처음부터 빈 목록을 검색 결과 없음으로 읽히게 했다(first-use-empty). 조건 안내는 조건이 적용된 곳만 넘긴다.
+   */
   description?: string;
   /**
    * 재조회 콜백(예: TanStack Query 의 `refetch`).

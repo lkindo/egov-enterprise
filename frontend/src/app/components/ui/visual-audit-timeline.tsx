@@ -11,14 +11,14 @@ import {
  RotateCcw,
  Search,
  ChevronDown,
- ChevronUp,
- Cpu
+ ChevronUp
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 export interface AuditLog {
  id: string;
- action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE';
+ // [2026-09-15 DEC-OPS-100] 동작과 중요도는 저장된 판정이 있을 때만 싣는다. 키워드 추측을 넣지 않는다.
+ action?: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE';
  entityName: string;
  performedBy: string;
  timestamp: string;
@@ -28,8 +28,11 @@ export interface AuditLog {
  before: string;
  after: string;
  }[];
- severity: 'low' | 'medium' | 'high';
+ severity?: 'low' | 'medium' | 'high';
 }
+
+const ACTION_LABEL = { CREATE: '생성', UPDATE: '수정', DELETE: '삭제', RESTORE: '복구' } as const;
+const SEVERITY_LABEL = { high: '높음', medium: '보통', low: '낮음' } as const;
 
 interface VisualAuditTimelineProps {
  logs: AuditLog[];
@@ -54,18 +57,19 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  }
  };
 
- const getActionIcon = (action: string) => {
+ const getActionIcon = (action?: string) => {
  switch (action) {
  case 'CREATE': return <ShieldCheck size={16} className="text-emerald-500" />;
  case 'DELETE': return <AlertCircle size={16} className="text-rose-500" />;
  case 'RESTORE': return <RotateCcw size={16} className="text-hub-blue" />;
- default: return <FileEdit size={16} className="text-amber-500" />;
+ case 'UPDATE': return <FileEdit size={16} className="text-amber-500" />;
+ default: return <Clock size={16} className="text-muted-foreground" />;
  }
  };
 
  return (
  <div className={cn("flex flex-col gap-8 bg-card border-2 border-primary/5 rounded-lg p-10 shadow-2xl", className)}>
- {/* Header Intelligence */}
+ {/* Header */}
  <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-primary/5">
  <div className="flex items-center gap-5">
  <div className="p-4 bg-primary/10 rounded-lg text-primary shadow-inner">
@@ -74,7 +78,7 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  <div>
  <h2 className="text-2xl font-bold tracking-tighter text-foreground ">{title}</h2>
  {/*
-   [2026-08-29] 헤더의 상태 배지 두 줄을 걷었다. '보안 거버넌스 엔진' 이라는 구성요소도,
+   [2026-08-29] 헤더의 상태 배지 두 줄을 걷었다. 배지가 말한 보안 엔진이라는 구성요소도,
    '실시간 데이터 무결성 모니터링' 이라는 동작도 저장소에 없다. 방패 아이콘과 초록색까지
    붙어 보안 장치가 돌고 있다는 뜻으로 읽혔지만, 이 컴포넌트가 하는 일은 tb_sys_log
    조회 결과를 시간순으로 그리는 것뿐이다.
@@ -146,12 +150,14 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  <div className="space-y-1">
  <div className="flex items-center gap-3">
  <span className="text-sm font-bold text-foreground">{log.performedBy}</span>
- <span className={cn("text-xs font-bold px-2 py-0.5 rounded-lg border", getSeverityColor(log.severity || 'low'))}>
- {(log.severity || 'low').toUpperCase()}
+ {log.severity ? (
+ <span className={cn("text-xs font-bold px-2 py-0.5 rounded-lg border", getSeverityColor(log.severity))}>
+ 중요도 {SEVERITY_LABEL[log.severity]}
  </span>
+ ) : null}
  </div>
  <p className="text-sm font-bold text-foreground tracking-tight">
-   <span className="text-primary font-bold">{log.action === 'CREATE' ? '생성' : log.action === 'UPDATE' ? '수정' : log.action === 'DELETE' ? '삭제' : '복구'}</span> {log.entityName}
+   {log.action ? <><span className="text-primary font-bold">{ACTION_LABEL[log.action]}</span>{' '}</> : null}{log.entityName}
  </p>
  </div>
  </div>
@@ -171,7 +177,7 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  {expandedLog === log.id && log.changes && (
  <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-muted space-y-6 animate-in slide-in-from-top-4 duration-500">
  <h4 className="text-xs font-bold text-primary tracking-[0.3em] mb-4 flex items-center gap-2">
-   <Cpu size={12} /> AI 기반 변경 감지 엔진
+   <FileEdit size={12} /> 변경 내용
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes?.map((change, cIdx) => (

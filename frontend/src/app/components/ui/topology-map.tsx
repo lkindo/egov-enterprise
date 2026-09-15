@@ -17,7 +17,7 @@ interface Node {
   id: string;
   label: string;
   type: 'lb' | 'api' | 'db' | 'cache' | 'ext';
-  status: 'up' | 'down' | 'warning';
+  status: 'up' | 'down' | 'warning' | 'unknown';
   x: number;
   y: number;
 }
@@ -29,13 +29,16 @@ interface Link {
 }
 
 const NODES: Node[] = [
-  { id: 'lb-01', label: 'Cloud Front / LB', type: 'lb', status: 'up', x: 100, y: 300 },
-  { id: 'api-01', label: 'API Server Node A', type: 'api', status: 'up', x: 350, y: 150 },
-  { id: 'api-02', label: 'API Server Node B', type: 'api', status: 'warning', x: 350, y: 450 },
-  { id: 'db-01', label: 'PostgreSQL Primary', type: 'db', status: 'up', x: 650, y: 150 },
-  { id: 'cache-01', label: 'Redis Cache Fabric', type: 'cache', status: 'up', x: 650, y: 450 },
-  { id: 'ext-01', label: 'External Auth API', type: 'ext', status: 'up', x: 350, y: 650 },
+  // [2026-09-15 DEC-OPS-100] 배치 좌표만 고정이다. 상태는 계측 행에서만 오고, 행이 없는 자리는 상태 미확인이다.
+  { id: 'lb-01', label: 'Cloud Front / LB', type: 'lb', status: 'unknown', x: 100, y: 300 },
+  { id: 'api-01', label: 'API Server Node A', type: 'api', status: 'unknown', x: 350, y: 150 },
+  { id: 'api-02', label: 'API Server Node B', type: 'api', status: 'unknown', x: 350, y: 450 },
+  { id: 'db-01', label: 'PostgreSQL Primary', type: 'db', status: 'unknown', x: 650, y: 150 },
+  { id: 'cache-01', label: 'Redis Cache Fabric', type: 'cache', status: 'unknown', x: 650, y: 450 },
+  { id: 'ext-01', label: 'External Auth API', type: 'ext', status: 'unknown', x: 350, y: 650 },
 ];
+
+const NODE_STATUS_LABEL: Record<Node['status'], string> = { up: '정상', down: '장애', warning: '주의', unknown: '상태 미확인' };
 
 const INITIAL_LINKS: Link[] = [
   { source: 'lb-01', target: 'api-01', traffic: 85 },
@@ -48,14 +51,34 @@ const INITIAL_LINKS: Link[] = [
 ];
 
 export const TopologyMap = () => {
-  const { data: realData, isLoading } = useTopologyData();
+  const { data: realData, isLoading, isError, refetch } = useTopologyData();
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
   // [W0-06] 계측 소스가 없으면 다이어그램을 그리지 않는다.
   //   종전에는 API 가 빈 목록을 주거나 실패해도 아래 NODES 6건을 status='up' 기본값으로 칠해
   //   '인프라 전부 정상'이라는 거짓 화면을 렌더했다. 관리자가 이 그림을 보고 운영 판단을 한다.
   //   훅 순서 규칙상 useState 이후에 조기 반환한다.
-  if (!isLoading && (!realData || realData.length === 0)) {
+  // [2026-09-15 DEC-OPS-100] 조회 중에는 고정 좌표의 노드를 먼저 그리지 않고, 실패는 "계측 소스 없음"과 구분한다.
+  if (isLoading) {
+    return (
+      <div role="status" className="flex h-full min-h-[300px] w-full items-center justify-center rounded-lg border border-dashed border-border p-8 text-sm text-muted-foreground">
+        토폴로지 상태를 불러오는 중…
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex h-full min-h-[300px] w-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+        <p className="text-sm font-medium text-foreground">토폴로지 상태를 불러오지 못했습니다.</p>
+        <button type="button" onClick={() => { void refetch(); }} className="rounded-lg border border-border px-4 py-2 text-xs font-bold text-foreground hover:bg-muted">
+          다시 불러오기
+        </button>
+      </div>
+    );
+  }
+
+  if (!realData || realData.length === 0) {
     return (
       <div className="flex h-full min-h-[300px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-8 text-center">
         <Radio className="text-muted-foreground" size={28} />
@@ -68,10 +91,8 @@ export const TopologyMap = () => {
   }
 
   const getRealNodeStatus = (type: Node['type'], index: number): Node['status'] => {
-     if (!realData || realData.length === 0) return 'up';
-     const matches = realData.filter(d => d.type === type);
-     if (matches[index]) return matches[index].status as any;
-     return 'up';
+     const matches = (realData ?? []).filter(d => d.type === type);
+     return matches[index]?.status ?? 'unknown';
   };
 
   const getRealNodeMeta = (nodeId: string) => {
@@ -83,7 +104,7 @@ export const TopologyMap = () => {
   };
 
   const currentNodes = NODES.map(node => {
-     const status = (node.id === 'lb-01') ? 'up' : getRealNodeStatus(node.type, node.id.endsWith('01') ? 0 : 1);
+     const status = getRealNodeStatus(node.type, node.id.endsWith('01') ? 0 : 1);
      return { ...node, status };
   });
 
@@ -102,6 +123,7 @@ export const TopologyMap = () => {
       case 'up': return 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]';
       case 'warning': return 'bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.4)]';
       case 'down': return 'bg-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.4)]';
+      case 'unknown': return 'bg-muted-foreground';
     }
   };
 
@@ -193,7 +215,7 @@ export const TopologyMap = () => {
                <div className={cn(
                  "w-20 h-11 rounded-lg flex items-center justify-center border border-white/10 transition-all duration-500",
                  hoveredNode === node.id ? "bg-slate-800 scale-110" : "bg-slate-900",
-                 node.status === 'down' ? 'border-rose-500/50' : node.status === 'warning' ? 'border-amber-500/50' : 'border-emerald-500/50'
+                 node.status === 'unknown' ? 'border-border' : node.status === 'down' ? 'border-rose-500/50' : node.status === 'warning' ? 'border-amber-500/50' : 'border-emerald-500/50'
                )}>
                  <div className={cn("text-white", hoveredNode === node.id && "text-primary animate-pulse")}>
                    {getNodeIcon(node.type)}
@@ -211,10 +233,10 @@ export const TopologyMap = () => {
                    {node.label}
                  </p>
                  <p className={cn(
-                   "text-xs font-bold uppercase tracking-widest",
-                   node.status === 'up' ? 'text-emerald-500' : node.status === 'warning' ? 'text-amber-500' : 'text-rose-500'
+                   "text-xs font-bold tracking-widest",
+                   node.status === 'unknown' ? 'text-muted-foreground' : node.status === 'up' ? 'text-emerald-500' : node.status === 'warning' ? 'text-amber-500' : 'text-rose-500'
                  )}>
-                   {node.status.toUpperCase()}
+                   {NODE_STATUS_LABEL[node.status]}
                  </p>
                </div>
             </div>
@@ -233,43 +255,34 @@ export const TopologyMap = () => {
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h4 className="text-lg font-bold text-white tracking-tighter uppercase">_ 노드 실시간 지표</h4>
+                <h4 className="text-lg font-bold text-white tracking-tighter uppercase">노드 상태</h4>
                 <Activity size={18} className="text-primary animate-pulse" />
               </div>
               
               <div className="p-4 bg-white/5 rounded-lg border border-white/5 space-y-4">
                 <div className="flex justify-between items-center">
-                   <span className="text-xs font-bold text-white/30 uppercase tracking-widest">SysName</span>
+                   <span className="text-xs font-bold text-white/30 uppercase tracking-widest">시스템 이름</span>
                    <span className="text-xs font-mono font-bold text-white max-w-[150px] truncate" title={nodeMeta?.label || hoveredNode}>{nodeMeta?.label || hoveredNode}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                   <span className="text-xs font-bold text-white/30 uppercase tracking-widest">Health</span>
+                   <span className="text-xs font-bold text-white/30 uppercase tracking-widest">상태</span>
                    <span className={cn(
                        "text-xs font-bold",
-                       nodeMeta?.status === 'up' ? "text-emerald-400" : "text-rose-400"
-                   )}>{nodeMeta?.status === 'up' ? "98.4%" : "0.0%"}</span>
+                       nodeMeta?.status === 'up' ? "text-emerald-400" : nodeMeta?.status === 'down' ? "text-rose-400" : "text-muted-foreground"
+                   )}>{NODE_STATUS_LABEL[nodeMeta?.status ?? 'unknown']}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                   <span className="text-xs font-bold text-white/30 uppercase tracking-widest">Ip:Port</span>
-                   <span className="text-xs font-bold text-primary">{nodeMeta?.ip || '0.0.0.0'}:{nodeMeta?.port || '8888'}</span>
+                   <span className="text-xs font-bold text-white/30 uppercase tracking-widest">IP:포트</span>
+                   <span className="text-xs font-bold text-primary">{nodeMeta?.ip ? `${nodeMeta.ip}:${nodeMeta.port ?? '-'}` : '-'}</span>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                 <p className="text-xs font-bold text-white/20 uppercase tracking-[0.2em]">Real-time Throughput</p>
-                 <div className="h-1 bg-white/10 rounded-lg overflow-hidden">
-                    <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: nodeMeta?.status === 'up' ? "75%" : "0%" }}
-                        className="h-full bg-primary shadow-[0_0_10px_#3B82F6]" 
-                    />
-                 </div>
-              </div>
+              {/* [2026-09-15 DEC-OPS-100] 계측 없는 처리량 막대(상태가 정상이면 75%)와 가짜 가용률(98.4%)을 걷었다. */}
               
               {nodeMeta?.status === 'down' && (
                   <div className="flex items-center gap-2 text-rose-500 bg-rose-500/10 p-3 rounded-lg border border-rose-500/20">
                       <ZapOff size={14} />
-                      <span className="text-xs font-bold uppercase tracking-widest">Service Unreachable</span>
+                      <span className="text-xs font-bold uppercase tracking-widest">응답 없음</span>
                   </div>
               )}
             </div>
@@ -280,15 +293,19 @@ export const TopologyMap = () => {
       <div className="absolute bottom-10 left-10 flex gap-6">
          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-lg">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-bold text-white/60 tracking-widest uppercase">Up</span>
+            <span className="text-xs font-bold text-white/60 tracking-widest uppercase">정상</span>
          </div>
          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-lg">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-xs font-bold text-white/60 tracking-widest uppercase">Warning</span>
+            <span className="text-xs font-bold text-white/60 tracking-widest uppercase">주의</span>
          </div>
          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-white/5 px-4 py-2 rounded-lg">
             <div className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="text-xs font-bold text-white/60 tracking-widest uppercase">Down</span>
+            <span className="text-xs font-bold text-white/60 tracking-widest uppercase">장애</span>
+         </div>
+         <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/5 px-4 py-2 rounded-lg">
+            <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+            <span className="text-xs font-bold text-white/60 tracking-widest">상태 미확인</span>
          </div>
       </div>
       

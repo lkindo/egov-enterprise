@@ -319,6 +319,62 @@ describe('API 클라이언트 인터셉터', () => {
       expect(event.detail).toEqual({ message: '서버 오류', status: 500 });
     });
 
+    it('서버 문구가 없는 실패는 axios 원문 대신 한국어 안내로 알리고, 원문은 오류 객체에 남긴다', async () => {
+      // [2026-09-15 DEC-OPS-100] 연결 실패·시간 초과·상태 코드만 있는 실패의 axios 원문은 사용자 문장이 아니다.
+      //   원문을 지우면 admin/error.tsx 의 401·403·404 판정이 죽으므로 오류 객체에는 그대로 둔다.
+      const dispatchEvent = vi.fn();
+      Object.defineProperty(globalThis, 'window', {
+        value: { location: { pathname: '/admin', href: '' }, dispatchEvent },
+        configurable: true, writable: true,
+      });
+      const { captured } = await loadClient();
+      const cases = [
+        { error: Object.assign(new Error('Network Error'), { code: 'ERR_NETWORK' }),
+          expected: '서버에 연결하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.' },
+        { error: Object.assign(new Error('timeout of 15000ms exceeded'), { code: 'ECONNABORTED' }),
+          expected: '서버 응답이 늦어 요청을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+        { error: Object.assign(new Error('Request failed with status code 500'), { response: { status: 500, data: {} } }),
+          expected: '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+      ];
+      for (const { error, expected } of cases) {
+        dispatchEvent.mockClear();
+        const raw = error.message;
+        await expect(captured.responseErr!(error)).rejects.toThrow(raw);
+        const event = dispatchEvent.mock.calls.map((call) => call[0] as CustomEvent)
+          .find((candidate) => candidate.type === 'api-error');
+        expect(event?.detail.message).toBe(expected);
+        expect(event?.detail.message).not.toMatch(/Network Error|timeout of|status code/);
+      }
+    });
+
+    it('호출부가 취소한 요청은 실패 토스트를 띄우지 않는다', async () => {
+      const dispatchEvent = vi.fn();
+      Object.defineProperty(globalThis, 'window', {
+        value: { location: { pathname: '/admin', href: '' }, dispatchEvent },
+        configurable: true, writable: true,
+      });
+      const { captured } = await loadClient();
+
+      await expect(
+        captured.responseErr!(Object.assign(new Error('canceled'), { code: 'ERR_CANCELED' })),
+      ).rejects.toBeDefined();
+
+      expect(dispatchEvent).not.toHaveBeenCalled();
+    });
+
+    it('Error 가 아닌 거절 값도 영어 기본 문구 대신 한국어 안내를 담아 다시 던진다', async () => {
+      // [2026-09-15 DEC-OPS-100] 종전 기본값은 'Unknown Network/System Error' 였다.
+      const dispatchEvent = vi.fn();
+      Object.defineProperty(globalThis, 'window', {
+        value: { location: { pathname: '/admin', href: '' }, dispatchEvent },
+        configurable: true, writable: true,
+      });
+      const { captured } = await loadClient();
+
+      await expect(captured.responseErr!({ code: 'ERR_NETWORK' }))
+        .rejects.toThrow('서버에 연결하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
+    });
+
     it('suppressErrorToast 를 선언한 요청의 실패는 전역 토스트를 띄우지 않는다', async () => {
       /*
        * [왜 필요한가 — 2026-08-26 실측]

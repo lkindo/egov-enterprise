@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -83,7 +84,8 @@ class DashboardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.taskList").isEmpty())
-                .andExpect(jsonPath("$.data.pendingApprovalCount").value(0));
+                // [2026-09-15 DEC-OPS-100] 조회 실패는 0건이 아니다. 키는 싣되 값은 null(셀 수 없음)이다.
+                .andExpect(jsonPath("$.data.pendingApprovalCount").value(nullValue()));
         
         verify(boardService, times(2)).getBoardPosts(anyString(), any());
         verify(approvalService).getPendingApprovalList(anyString(), any());

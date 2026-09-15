@@ -112,7 +112,7 @@ export default function ApprovalDraftHubClient() {
                 {step === 'CATALOG' ? '기안 문서 선택' : '기안 작성'}
               </h1>
               <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
-                {step === 'CATALOG' ? 'Select Template Node' : `Dispatch: ${selectedForm?.title}`}
+                {step === 'CATALOG' ? '기안할 양식을 고르세요' : `${selectedForm?.title ?? '양식'} 작성`}
               </p>
             </div>
           </div>
@@ -263,7 +263,7 @@ export default function ApprovalDraftHubClient() {
                         onClick={() => setStep('CATALOG')}
                         className="h-11 px-8 rounded-lg font-bold text-muted-foreground hover:text-foreground transition-all tracking-tight text-xs"
                     >
-                      Abort Dispatch
+                      양식 선택으로 돌아가기
                     </Button>
                     <Button
                         onClick={handleSubmit}
@@ -272,7 +272,7 @@ export default function ApprovalDraftHubClient() {
                         title="상신 기능이 아직 연결되지 않았습니다"
                         className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold shadow-2xl transition-all gap-3 border-none tracking-tight text-xs disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <Send size={20} /> Commit to Ledger (미지원)
+                      <Send size={20} /> 결재 상신 (미지원)
                     </Button>
                   </div>
                 </Card>

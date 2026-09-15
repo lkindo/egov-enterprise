@@ -152,6 +152,12 @@ test('all active content retains exact state vocabulary, source evidence and dra
     ['unowned pilot', fixture => { fixture.pilotCensus[0].owner = ' '; }, /pilot is unbounded/],
     ['invalid date', fixture => { fixture.reviewBy = '2026-02-30'; }, /real reviewBy/],
     ['review ordering', fixture => { fixture.reviewBy = '2020-01-01'; }, /real reviewBy/],
+    ['weakened norm policy', fixture => { fixture.normPolicy.mustNotImply = 'advisory'; }, /normPolicy/],
+    ['dropped required information', fixture => { fixture.stateVocabulary.find(row => row.id === 'filtered-zero').requiredInformation.pop(); }, /state norm was weakened/],
+    ['lifted format ban', fixture => { fixture.formatRules.number.unknownAsZero = 'allowed'; }, /format rule was weakened/],
+    ['dropped normative source', fixture => { fixture.normativeSources.pop(); }, /normative source was dropped/],
+    ['missing approval boundary', fixture => { delete fixture.approval; }, /approval boundary is missing/],
+    ['unbounded norm review', fixture => { fixture.reviewBy = '2036-01-01'; }, /within 120 days/],
   ]);
 });
 

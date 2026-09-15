@@ -154,7 +154,7 @@ export class BoardMasterPage {
     await expect(settingsBtn).toBeVisible({ timeout: 10000 });
     
     await settingsBtn.click();
-    await expect(this.page.getByText('Board Configuration')).toBeVisible({ timeout: 15000 });
+    await expect(this.page.getByRole('dialog').getByRole('heading', { name: '게시판 설정', exact: true })).toBeVisible({ timeout: 15000 });
     console.log('>>> Settings modal is visible');
   }
 
@@ -184,7 +184,7 @@ export class BoardMasterPage {
     await updateResponse;
     
     await expect(this.page.locator('[role="alert"], .toast, :text-matches("업데이트되었습니다", "i")').first()).toBeVisible({ timeout: 10000 });
-    await expect(this.page.getByText('Board Configuration')).not.toBeVisible({ timeout: 15000 });
+    await expect(this.page.getByRole('dialog').getByRole('heading', { name: '게시판 설정', exact: true })).not.toBeVisible({ timeout: 15000 });
   }
 
   async deleteBoard(boardName: string) {

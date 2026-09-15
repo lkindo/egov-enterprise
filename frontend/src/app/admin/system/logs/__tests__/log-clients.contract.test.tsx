@@ -249,9 +249,11 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     // [2026-09-02] '출력'(otptCnt) 은 렌더 목록에서 뺐다 — 집계기가 OUTPUT 을 어떤 HTTP 메서드에도
     //   매핑하지 않아 구조적으로 항상 0 인 값이다. 숫자로 그리면 "출력이 없었다" 로 읽히므로
     //   화면은 '측정 안 함' 표식을 그리고, 아래에서 원시 숫자가 새어 나오지 않는지도 함께 본다.
-    for (const value of ['20260813', 'UserService', 'updateUser', 'Alice Kim', '1', '2', '3', '4', '6']) {
+    // [2026-09-15 DEC-OPS-100] 발생일자는 저장 형식이 아니라 yyyy-MM-dd 로 보인다. 행 식별자(rowKey)는 원문 그대로다.
+    for (const value of ['2026-08-13', 'UserService', 'updateUser', 'Alice Kim', '1', '2', '3', '4', '6']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
+    expect(table.queryByText('20260813')).toBeNull();
     expect(table.getByLabelText('출력 건수 측정 안 함')).toBeInTheDocument();
     expect(table.queryByText('5')).toBeNull();
 

@@ -574,9 +574,9 @@ export function BoardMasterListClient() {
               <Settings2 size={120} />
             </div>
             <DialogHeader className="relative z-10">
-              <DialogTitle className="text-3xl font-bold tracking-tighter uppercase">Board Configuration</DialogTitle>
+              <DialogTitle className="text-3xl font-bold tracking-tighter uppercase">게시판 설정</DialogTitle>
               <DialogDescription className="text-muted-foreground font-bold uppercase tracking-widest text-xs">
-                게시판 마스터 설정 매트릭스
+                게시판 이름·설명·사용 여부를 수정합니다.
               </DialogDescription>
             </DialogHeader>
           </div>

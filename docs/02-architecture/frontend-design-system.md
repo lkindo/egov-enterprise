@@ -71,7 +71,7 @@ Page scaffold는 heading, breadcrumb, action, status slot 같은 표현 구조�
 
 ## 6. State and Interaction Contract
 
-적용 가능한 컴포넌트·화면은 normal뿐 아니라 loading, stale refresh, first-use empty, filtered-zero, partial failure, offline, permission, validation, mutation pending/failure, destructive pending, session expiry, unsaved/autosaved/restored, demo/unavailable 상태를 명시한다.
+적용 가능한 컴포넌트·화면은 normal뿐 아니라 loading, stale refresh, first-use empty, filtered-zero, partial failure, offline, permission, validation, mutation pending/failure, destructive pending, session expiry, unsaved/autosaved/restored, demo/unavailable 상태를 명시한다. 상태 문구의 ID·필수 정보·금지 암시는 [화면 용어 원장](../../config/frontend-visible-terms.json)이 소유하고, pending 상태는 `actionRules`, stale refresh는 [카탈로그 G15](work-screen-grammar-catalog.md)가 다룬다.
 
 각 상태는 다음을 가진다.
 

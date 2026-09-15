@@ -27,14 +27,9 @@ import {
 } from "@/components/ui/tooltip";
 
 import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
+import { toDisplayYmd } from '@/lib/format-date';
 
-/** 'yyyyMMdd'(varchar 8) 발생일자를 표시용으로 변환한다. 스키마에 시각 정보는 없다. */
-function formatOcrnYmd(ymd?: string): string {
-  if (!ymd) return '-';
-  const digits = ymd.replace(/\D/g, '');
-  if (digits.length < 8) return ymd;
-  return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6, 8)}`;
-}
+// 발생일자는 'yyyyMMdd'(varchar 8)이고 시각 정보는 없다. 표시는 공용 관문(toDisplayYmd)이 yyyy-MM-dd 로 바꾼다.
 
 export default function AdminDashboardClient() {
   const {
@@ -90,26 +85,18 @@ export default function AdminDashboardClient() {
     const list: AuditLog[] = auditData?.list ?? [];
     return list.slice(0, 5).map((log, i) => {
       const entityName = [log.srvcNm, log.methodNm].filter(Boolean).join('.') || '시스템 활동';
-      const haystack = `${entityName} ${log.prcsSeCd ?? ''}`.toLowerCase();
 
-      const action: UIAuditLog['action'] =
-        /insert|create|regist|등록|생성/.test(haystack) ? 'CREATE' :
-        /delete|remove|삭제/.test(haystack) ? 'DELETE' :
-        /restore|복원/.test(haystack) ? 'RESTORE' : 'UPDATE';
-
-      const severity: UIAuditLog['severity'] =
-        /error|fail|오류|실패|delete|삭제/.test(haystack) ? 'high' :
-        /security|auth|권한|보안/.test(haystack) ? 'medium' : 'low';
-
-      return {
+      // [2026-09-15 DEC-OPS-100] 서비스·메서드 이름의 키워드로 동작과 중요도를 추측해 영문 대문자 등급으로 그렸다.
+      //   저장된 판정이 아니므로 운영 상태처럼 보이면 안 된다(term-operational-status). 이 로그에는 동작·중요도
+      //   코드가 없어 둘 다 비워 둔다.
+      const row: UIAuditLog = {
         id: String(log.sysLogSn ?? log.dmndId ?? `log-${i}`),
-        action,
         entityName,
-        performedBy: log.dmndUserId || 'System',
-        timestamp: formatOcrnYmd(log.ocrnYmd),
-        ipAddress: log.rqesterIp || 'Unknown',
-        severity,
+        performedBy: log.dmndUserId || '시스템',
+        timestamp: toDisplayYmd(log.ocrnYmd),
+        ipAddress: log.rqesterIp || '-',
       };
+      return row;
     });
   }, [auditData]);
 

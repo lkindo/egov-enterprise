@@ -117,3 +117,19 @@ export function fromDateInputValue(value: string | null | undefined): string {
   const compact = value.replace(/-/g, '');
   return isStorageYmd(compact) ? compact : '';
 }
+
+/**
+ * 시각 → 표시 문자열 'yyyy-MM-dd HH:mm:ss'(로컬 타임존).
+ *
+ * [2026-09-15 DEC-OPS-100] 시스템 표준 날짜·시각 형식이다(formatRules.time.dateTimeDisplay). epoch 밀리초와
+ * Date 를 받는다. 비었거나 0 이하(한 번도 받지 않은 조회의 dataUpdatedAt)·해석할 수 없는 값이면 `fallback` 이다 —
+ * 없는 시각을 지어내지 않는다.
+ */
+export function toDisplayDateTime(value: Date | number | null | undefined, fallback = '-'): string {
+  if (value === null || value === undefined) return fallback;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime()) || date.getTime() <= 0) return fallback;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+    + ` ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}

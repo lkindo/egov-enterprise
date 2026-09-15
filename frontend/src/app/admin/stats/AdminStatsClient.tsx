@@ -96,7 +96,7 @@ export default function AdminStatsClient({
       description="사용자·게시물 누적 현황과 일자별 접속 집계를 확인합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
       // A7 필수 — 무엇을·언제까지·어디서 센 값인지 없으면 지표는 검증할 수 없는 주장이 된다.
-      basis={`집계 기준: 최근 1개월 일자별 접속 로그 · 수집된 일수 ${connectData.length}일 · 출처: 시스템 접속 통계 API`}
+      basis={`집계 기준: 최근 1개월 일자별 접속 로그 · 수집된 일수 ${loadError ? '조회 실패' : `${connectData.length}일`} · 출처: 시스템 접속 통계 API`}
       notice={loadError && (
         <div role="alert" className="space-y-2 rounded-md border border-destructive/30 bg-destructive/10 p-4">
           <p className="text-sm font-semibold text-destructive-emphasis">통계 데이터 조회 실패</p>
@@ -130,9 +130,9 @@ export default function AdminStatsClient({
       }
       summary={
         <div className="grid gap-2 sm:grid-cols-3">
-          <SummaryStat title="누적 사용자" value={initialSummary?.totalUsers ?? 0} />
-          <SummaryStat title="금일 접속" value={initialSummary?.todayConnects ?? 0} />
-          <SummaryStat title="누적 게시물" value={initialSummary?.totalPosts ?? 0} />
+          <SummaryStat title="누적 사용자" value={summaryText(initialSummary?.totalUsers, loadError)} />
+          <SummaryStat title="금일 접속" value={summaryText(initialSummary?.todayConnects, loadError)} />
+          <SummaryStat title="누적 게시물" value={summaryText(initialSummary?.totalPosts, loadError)} />
         </div>
       }
       chartTitle="일자별 접속 추이"
@@ -160,7 +160,8 @@ export default function AdminStatsClient({
           currentPage,
           totalPages,
           onPageChange: setPage,
-          totalCount: connectData.length,
+          // 조회에 실패하면 총 건수는 0 이 아니라 알 수 없다 — 넘기지 않아 "총 0건" 을 그리지 않는다.
+          totalCount: loadError ? undefined : connectData.length,
           pageSize: CONNECT_PAGE_SIZE
         }}
         emptyMessage="조회된 접속 통계가 없습니다."
@@ -169,12 +170,21 @@ export default function AdminStatsClient({
   );
 }
 
+/**
+ * 요약 지표 칸의 표시 문구. [2026-09-15 DEC-OPS-100] 조회 실패와 읽을 수 없는 값을 0 으로 쓰지 않는다 —
+ * 종전에는 실패 경고 바로 옆에 "누적 사용자 0" 을 그렸다.
+ */
+function summaryText(value: number | null | undefined, loadError: string | null | undefined): string {
+  if (loadError) return '조회 실패';
+  return typeof value === 'number' ? value.toLocaleString() : '-';
+}
+
 /** 요약 지표 한 칸. 값의 출처는 ReportPage 의 basis 가 설명한다. */
-function SummaryStat({ title, value }: { title: string; value: number }) {
+function SummaryStat({ title, value }: { title: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-card px-4 py-3">
       <p className="text-[length:var(--font-size-body)] text-muted-foreground">{title}</p>
-      <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{value.toLocaleString()}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }

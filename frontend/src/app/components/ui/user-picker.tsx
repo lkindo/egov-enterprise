@@ -7,6 +7,7 @@ import { VirtualScrollList } from './virtual-scroll-list';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { Search,  User } from 'lucide-react';
 import { logErrorSafely } from '@/lib/safe-error-log';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 ;
 
 interface UserPickerProps {
@@ -25,18 +26,26 @@ export function UserPicker({
  const [keyword, setKeyword] = useState('');
  const [results, setResults] = useState<UserSearchResult[]>([]);
  const [loading, setLoading] = useState(false);
+ // [2026-09-15 DEC-OPS-100] 검색하기 전의 빈 결과를 "검색 결과 없음"으로, 검색 실패를 결과 없음으로 말하지 않는다.
+ const [searchedKeyword, setSearchedKeyword] = useState<string | null>(null);
+ const [searchFailed, setSearchFailed] = useState(false);
 
  const handleSearch = useCallback(async (e?: React.FormEvent) => {
  if (e) e.preventDefault();
- if (keyword.trim().length < 2) return;
+ const term = keyword.trim();
+ if (term.length < 2) return;
 
  try {
  setLoading(true);
- const res = await userSearchService.searchAssignableUsers(keyword.trim());
+ setSearchFailed(false);
+ const res = await userSearchService.searchAssignableUsers(term);
  setResults(res);
  } catch (error) {
  logErrorSafely('Search failed', error);
+ setResults([]);
+ setSearchFailed(true);
  } finally {
+ setSearchedKeyword(term);
  setLoading(false);
  }
  }, [keyword]);
@@ -114,10 +123,16 @@ export function UserPicker({
  <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground animate-pulse font-medium">
  검색 중..
  </div>
+ ) : searchFailed ? (
+ <div role="alert" className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-2">
+ <p className="text-sm font-bold text-destructive-emphasis">사용자를 검색하지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+ </div>
  ) : results.length === 0 ? (
  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center space-y-2">
  <Search size={32} className="opacity-10" />
- <p className="text-sm font-bold">검색 결과가 없습니다.</p>
+ {searchedKeyword !== null ? (
+ <p className="text-sm font-bold">{emptyResultMessage(searchedKeyword, '검색 결과가 없습니다.')}</p>
+ ) : null}
  <p className="text-xs">이름을 두 글자 이상 입력하고 엔터를 눌러주세요</p>
  </div>
  ) : (

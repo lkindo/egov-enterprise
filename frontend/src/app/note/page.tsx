@@ -530,7 +530,7 @@ export default function NotePage() {
                 setFormData((current) => ({ ...current, noteSj: e.target.value }));
                 validation.clearError('noteSj');
               }}
-              placeholder="쪽지 아키텍처 제목을 입력하세요."
+              placeholder="쪽지 제목을 입력하세요."
               className="w-full h-11 px-8 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
             />
           </FormField>

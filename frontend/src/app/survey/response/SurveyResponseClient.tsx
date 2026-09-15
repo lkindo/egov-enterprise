@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getQustnrRespondInfoList, deleteQustnrRespondInfo } from '@/lib/api/survey';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import {
   Table,
   TableBody,
@@ -47,7 +48,7 @@ export default function SurveyResponseClient() {
   //      (Spring Page 형태)를 읽어 **항상 0건**으로 렌더됐고,
   //   ② 응답 항목 필드도 실재하지 않는 이름(`respondNm`·`respondAnswerCn`·`qestnrQesitmId`)을
   //      읽고 있었는데 tsc 가 아무것도 잡지 못했다.
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['survey-responses', pageNo, searchKeyword],
     // [2026-08-29] Spring Data Pageable 은 0부터 시작한다. 종전에는 1-base 인 pageNo 를 그대로
     //   실어 보내 **첫 화면이 곧 2페이지 요청**이었다. 응답이 한 페이지뿐이면 표는 비고 페이저는
@@ -69,8 +70,10 @@ export default function SurveyResponseClient() {
       queryClient.invalidateQueries({ queryKey: ['survey-responses'] });
       toast.success('삭제되었습니다.');
     },
-    onError: (err) => {
-      toast.error(`삭제 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
+    onError: () => {
+      // [2026-09-15 DEC-OPS-100] 오류 원문을 붙이지 않는다 — 서버 문구는 API 공통 토스트가 이미 알리고,
+      //   원문이 transport 문구면 사용자 문장이 아니다. 여기서는 실패한 작업과 다음 행동만 말한다.
+      toast.error('응답을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     },
     onSettled: () => {
       deletingResponseIdRef.current = null;
@@ -147,7 +150,8 @@ export default function SurveyResponseClient() {
             </div>
           </div>
           <CardDescription>
-            총 {totalCount}건의 응답이 조회되었습니다.
+            {/* [2026-09-15 DEC-OPS-100] 조회 실패·조회 중의 총 건수는 0 이 아니라 아직 모르는 값이다. */}
+            {isError ? '응답 수를 확인하지 못했습니다.' : isLoading ? '응답 수를 확인하는 중…' : `총 ${totalCount}건의 응답이 조회되었습니다.`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -173,14 +177,20 @@ export default function SurveyResponseClient() {
                   </TableRow>
                 ) : isError ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-48 text-center text-destructive-emphasis">
-                      연결 오류: {error instanceof Error ? error.message : '데이터를 가져올 수 없습니다.'}
+                    <TableCell colSpan={4} className="h-48 text-center">
+                      {/* [2026-09-15 DEC-OPS-100] 전송 오류 원문을 붙이지 않는다 — 실패한 작업과 다음 행동만 말한다. */}
+                      <div className="flex flex-col items-center gap-3">
+                        <p className="text-destructive-emphasis">응답 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+                        <Button type="button" variant="outline" size="sm" onClick={() => { void refetch(); }}>
+                          다시 불러오기
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : responses.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="h-48 text-center text-muted-foreground">
-                      검색 결과가 없습니다.
+                      {emptyResultMessage(searchKeyword, '등록된 응답이 없습니다.')}
                     </TableCell>
                   </TableRow>
                 ) : (

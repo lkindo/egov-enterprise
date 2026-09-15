@@ -15,6 +15,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { Terminal, FileText, Calendar } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
+import { toDisplayYmd } from '@/lib/format-date';
 
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -72,7 +73,7 @@ const SystemLogsUserClient = () => {
             accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
-                    {item.ocrnYmd || '-'}
+                    {toDisplayYmd(item.ocrnYmd)}
                 </div>
             ),
             className: 'w-40'

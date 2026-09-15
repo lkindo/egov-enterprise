@@ -35,7 +35,7 @@ export function DataExportExcel({ data, headers, scope, filename = "export_data"
  // 2. Add data rows
  for (const row of data) {
  const values = headers.map(h => {
- const val = row[h.key] || '';
+ const val = row[h.key] ?? ''; // [2026-09-15 DEC-OPS-100] 측정값 0 을 빈 칸으로 바꾸지 않는다 — 값이 없을 때(null·undefined)만 비운다
  return `"${val.toString().replace(/"/g, '""')}"`;
  });
  csvRows.push(values.join(','));

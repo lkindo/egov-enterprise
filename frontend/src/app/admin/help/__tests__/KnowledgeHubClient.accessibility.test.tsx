@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const harness = vi.hoisted(() => ({
@@ -7,6 +7,8 @@ const harness = vi.hoisted(() => ({
   // [2026-08-29] 탭을 스펙마다 바꿀 수 있게 한다. 종전에는 'tab=FAQ' 가 하드코딩돼 있어
   //   defaultTab 을 무엇으로 주든 화면이 FAQ 였고, Q&A 분기는 스펙이 닿지 못했다.
   search: 'tab=FAQ',
+  statsLoading: false,
+  articlesError: null as Error | null,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -44,10 +46,14 @@ vi.mock('@tanstack/react-query', () => ({
 
     switch (queryKey[0]) {
       case 'knowledge-articles':
+        if (harness.articlesError) {
+          return { ...common, isError: true, error: harness.articlesError, data: undefined };
+        }
         return { ...common, data: { list: [article], total: 1 } };
       case 'hot-articles':
         return { ...common, data: { list: [article] } };
       case 'knowledge-stats':
+        if (harness.statsLoading) return { ...common, isLoading: true, data: undefined };
         return {
           ...common,
           data: { intelligenceScore: 80, totalViews: 3, topContributor: '합성 작성자' },
@@ -69,6 +75,8 @@ describe('KnowledgeHubClient accessibility semantics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     harness.search = 'tab=FAQ';
+    harness.statsLoading = false;
+    harness.articlesError = null;
   });
 
   it('uses semantic foregrounds on matching card surfaces and preserves truthful FAQ status', () => {
@@ -116,5 +124,37 @@ describe('KnowledgeHubClient accessibility semantics', () => {
 
     expect(screen.getByText('해결됨')).toBeInTheDocument();
     expect(screen.queryByText('미해결')).toBeNull();
+  });
+
+  /**
+   * [2026-09-15 DEC-OPS-100] 게시판 이용 현황은 불러오는 동안 0 을 쓰지 않는다.
+   * 종전에는 조회 중 상태를 받지 않아 "게시글 수 0 · 누적 조회수 0" 이 먼저 보였다.
+   */
+  it('게시판 이용 현황은 불러오는 동안 0 이 아니라 불러오는 중을 말한다', () => {
+    harness.statsLoading = true;
+    render(<KnowledgeHubClient defaultTab="FAQ" />);
+
+    for (const label of ['게시글 수', '누적 조회수', '최다 기여자']) {
+      const card = screen.getByText(label).closest('.hub-card-premium') as HTMLElement;
+      expect(within(card).getByText('불러오는 중…')).toBeInTheDocument();
+      expect(within(card).queryByText('0')).toBeNull();
+    }
+  });
+
+  /**
+   * [2026-09-15 DEC-OPS-100] 조회 실패 패널은 axios 가 만든 전송 오류 원문을 보이지 않는다.
+   * 서버가 준 문장이나, axios 오류가 아닌 오류의 문장만 덧붙인다(server-error mustNotImply).
+   */
+  it('문서 목록 조회 실패 패널은 전송 오류 원문을 보이지 않고 사용자 문장만 보인다', () => {
+    harness.articlesError = new Error('Request failed with status code 500');
+    const { unmount } = render(<KnowledgeHubClient defaultTab="FAQ" />);
+    const alert = screen.getByRole('alert');
+    expect(within(alert).queryByText('Request failed with status code 500')).toBeNull();
+    expect(within(alert).getByRole('button', { name: /다시 시도/ })).toBeInTheDocument();
+    unmount();
+
+    harness.articlesError = new Error('권한이 없습니다.');
+    render(<KnowledgeHubClient defaultTab="FAQ" />);
+    expect(within(screen.getByRole('alert')).getByText('권한이 없습니다.')).toBeInTheDocument();
   });
 });

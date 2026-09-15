@@ -389,4 +389,33 @@ describe('StandardDataTable', () => {
     expect(screen.getAllByText('표시할 행이 없습니다.')).toHaveLength(1);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  /*
+   * [2026-09-15 DEC-OPS-100] 검색 조건 안내는 이 표가 소유한 검색어가 적용됐을 때만 붙는다. 로딩 스켈레톤은
+   * aria-hidden 이라 보조기술에는 빈 표로 읽혔으므로 진행 상태를 따로 알린다.
+   */
+  it('검색이 없는 빈 표에는 검색 조건 안내를 붙이지 않는다', () => {
+    renderTable({ data: [], emptyMessage: '등록된 항목이 없습니다.' });
+
+    expect(screen.getByText('등록된 항목이 없습니다.')).toBeInTheDocument();
+    expect(screen.queryByText(/검색 조건을 변경하거나/)).toBeNull();
+  });
+
+  it('표가 소유한 검색어로 비었을 때만 G15 결과 없음 문구와 조건 안내를 함께 보인다', async () => {
+    const user = userEvent.setup();
+    renderTable({ data: [], search: { placeholder: '이름 검색', onSearch: vi.fn() } });
+
+    await user.type(screen.getByRole('textbox', { name: '데이터 검색' }), 'alpha');
+    await user.click(screen.getByRole('button', { name: '검색' }));
+
+    expect(screen.getAllByText('"alpha"에 대한 검색 결과가 없습니다.')).toHaveLength(1);
+    expect(screen.getByText('검색 조건을 변경하거나 초기화한 뒤 다시 확인해 주세요.')).toBeInTheDocument();
+  });
+
+  it('불러오는 동안 표를 busy 로 표시하고 보조기술에 진행 상태를 알린다', () => {
+    const { container } = renderTable({ data: [], loading: true, accessibleLabel: '사용자 목록' });
+
+    expect(screen.getByRole('status')).toHaveTextContent('사용자 목록을(를) 불러오는 중…');
+    expect(container.querySelector('table')).toHaveAttribute('aria-busy', 'true');
+  });
 });

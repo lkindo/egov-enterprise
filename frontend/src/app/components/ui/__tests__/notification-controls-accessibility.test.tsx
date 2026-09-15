@@ -6,6 +6,7 @@ import { AppNotificationDrawer } from '../app-notification-drawer';
 
 const notificationsMock = vi.hoisted(() => ({
   refresh: vi.fn(),
+  isLoading: false,
   notifications: [
     {
       notiSn: 1,
@@ -22,15 +23,32 @@ vi.mock('@/lib/hooks/use-notifications', () => ({
   useNotifications: () => ({
     notifications: notificationsMock.notifications,
     error: null,
+    isLoading: notificationsMock.isLoading,
     refresh: notificationsMock.refresh,
   }),
 }));
 
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ data }: { data: unknown[] }) => <div>알림 {data.length}건</div>,
+  StandardDataTable: ({ data, loading }: { data: unknown[]; loading?: boolean }) => (
+    <div data-testid="notification-table" data-loading={String(Boolean(loading))}>알림 {data.length}건</div>
+  ),
 }));
 
 describe('notification controls accessibility', () => {
+  it('알림 센터 표는 첫 조회 중이면 불러오는 중으로 그린다 — 빈 목록을 알림 없음으로 말하지 않는다', () => {
+    // [2026-09-15 DEC-OPS-100] 종전에는 loading 을 넘기지 않아 조회 중에 "표시할 알림이 없습니다" 가 떴다.
+    notificationsMock.isLoading = true;
+    try {
+      const { unmount } = render(<SmartNotificationHub />);
+      expect(screen.getByTestId('notification-table')).toHaveAttribute('data-loading', 'true');
+      unmount();
+    } finally {
+      notificationsMock.isLoading = false;
+    }
+    render(<SmartNotificationHub />);
+    expect(screen.getByTestId('notification-table')).toHaveAttribute('data-loading', 'false');
+  });
+
   it('알림 필터가 현재 선택 상태를 보조기술에 전달한다', () => {
     render(<SmartNotificationHub />);
 
