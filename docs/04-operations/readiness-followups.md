@@ -66,6 +66,28 @@ null/빈 문자열은 보존한다. 일정·행사·설문지·온라인 설문�
 원장은 [operation census](../../config/governance/operation-consumer-census.json)와
 [활성 gap](../../.agent/memory/known-gaps.md)의 GAP-WIRING-001이다.
 
+## 화면 문구 규범 편차
+
+2026-09-15 화면 용어 원장의 계약 수준 규범 검토([DEC-OPS-100](../../.agent/memory/decisions.md))에서 확인했지만 그 변경에서
+고치지 않은 편차다. 결함으로 고친 것은 `mustNotImply` 위반, 미측정의 0 표시, 기능을 과장하거나 대상을 잘못 부르는
+용어뿐이다. 아래는 필수 정보가 빠졌지만 잘못 암시하지는 않는 문구, 예외 검토가 필요한 용어, 소유자 결정이나
+양단 계약 변경이 필요한 항목이다. 원장 `reviewBy`의 다음 규범 검토에서 화면별로 처분하며 일괄 치환하지 않는다.
+
+| 분류 | 대표 위치 | 규범 | 처분 조건 |
+|---|---|---|---|
+| 결재 대기 0건 | 사용자 홈 `pendingApprovalCount \|\| 0`, 결재 공급자의 조회 실패 시 0 | `formatRules.number.unknownAsZero` | 대시보드 응답을 nullable 로 바꾸는 양단 변경. 결함이며 후속 변경으로 닫는다 |
+| 날짜 형식 | 원시 `yyyyMMdd`: 포상·메모보고·업무 허브 보고·기관코드·외부인사 목록. 점 구분: 부서 일정·행사·주소록·게시판 템플릿·설문 관리. 전송 원문: 쪽지 목록, 로그 내보내기 | `formatRules.date`, `formatRules.time.dateTimeDisplay` | 날짜 표기 가드가 템플릿 조합 구분자를 보도록 넓히면서 함께 고친다 |
+| 시간대 고지 | 로그·예약 화면, 메일 발송 화면의 로케일 시각 | `formatRules.time.zoneDisclosure` | 화면·내보내기마다 기준 시간대 한 번 |
+| 파괴적 확인 | 권한 그룹 편집·프로그램 등록·부서 권한·결재 반려의 기본 `확인` 버튼, 기안 취소 옆의 `취소` 닫기 | `actionRules.destructive-action` | 확인 대화 가드를 `confirmText` 검사로 넓힐지 결정 |
+| 안내용 확인 대화 | 게시판 목록의 영구 삭제 불가 안내 | `actionRules.verb-object` | toast·단일 버튼 모달 |
+| 대기·저장 라벨 | 부서·사용자 폼의 대상 없는 `처리 중…`, `수정 완료`, 저장 동작의 `배포`·`동기화` | `actionRules.pending-action` | 해당 폼 수정 시 |
+| 허브 | 협업·공통코드·결재·모니터링 제목과 breadcrumb, 메뉴 9010100 이름, 템플릿 표시 이름 `지식 허브` | `term-hub` | 메뉴 이름은 메뉴 결정과 Flyway, 화면 제목은 화면별 |
+| 장식용 기술 용어 | 관리자 화면의 `아키텍처`·`프로토콜`·`코어`(보안 그룹 등록 알림, 공통코드 명세 제목, 배너 상태 라벨 등) | `term-architecture-protocol-core` | 대상 독자·의미 예외 검토 또는 결과 중심 표현 |
+| 영문·약어 | 모니터링 게이지 제목(e2e 고정), 게이지 임계 배지, 토폴로지 노드 이름, 사용자 폼의 이중 번역 | ADR-0002, `term-standard-acronyms` | e2e 갱신과 함께 |
+| 필수 정보 누락 | 실패한 작업 없이 서버 메시지만 보이는 오류, 대체 경로 없는 미지원 고지, 홈 권한 안내의 문의 경로, 목록 수준 403 을 일시 오류로 보이는 공용 오류 표시 | `server-error`·`unavailable`·`permission-denied` | 화면별 |
+| 서버 메시지 규칙 | 가이드 §5 의 "서버 메시지를 그대로 보여 주지 않는다" 와 DEC-OPS-037·095 의 서버 문구 표시 | 소유자 결정 | `Accept-Language` 전달을 확인한 뒤 가이드나 결정을 정정 |
+| route capability 원장 | 부재·검색·알림 health·결재·재가 엔진 상태 행의 낡은 판정, 알림 목록 capability 표시 이름 | `normativeSources` | route 원장 소유자 재검증 |
+
 ## 정기 첨부 점검
 
 운영 프로파일은 매일 03:15 Asia/Seoul에 읽기 전용 점검을 실행한다.

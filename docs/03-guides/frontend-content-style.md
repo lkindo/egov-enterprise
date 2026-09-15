@@ -87,7 +87,7 @@
 
 `config/frontend-visible-terms.json`의 `stateVocabulary`가 machine-readable ID와 최소 정보를 소유한다. 컴포넌트는 모든 상태를 무조건 렌더하는 것이 아니라 적용 가능한 상태를 명시하고, route 시나리오에서 role·data·network 상태별로 확인한다.
 
-**규범의 지위(DEC-OPS-100).** 이 절과 `stateVocabulary`는 작성 기준이자 필수 정보 규범이다. `canonicalLabel`은 새 문구의 기본 문구이며 `{대상}`은 채울 자리, `{닫으면|이동하면}`은 하나를 고르는 자리다. 공용 컴포넌트·패턴이 합의한 문구가 `requiredInformation`을 말하고 `mustNotImply`를 암시하지 않으면 그대로 쓴다. `requiredInformation`·`mustNotImply`는 규범이며 코드에 맞추려고 줄이지 않는다. 전체 문구 이관은 없다. `mustNotImply` 위반, 미측정의 0 표시, 기능을 과장하거나 대상을 잘못 부르는 용어는 결함으로 고친다. 필수 정보가 빠졌지만 잘못 암시하지는 않는 기존 문구와 그 밖의 용어·형식 편차는 기록하고 다음 규범 검토에서 처분한다.
+**규범의 지위(DEC-OPS-100).** 이 절과 `stateVocabulary`는 작성 기준이자 필수 정보 규범이다. `canonicalLabel`은 새 문구의 기본 문구이며 `{대상}`은 채울 자리, `{닫으면|이동하면}`은 하나를 고르는 자리다. 공용 컴포넌트·패턴이 합의한 문구가 `requiredInformation`을 말하고 `mustNotImply`를 암시하지 않으면 그대로 쓴다. `requiredInformation`·`mustNotImply`는 규범이며 코드에 맞추려고 줄이지 않는다. 전체 문구 이관은 없다. `mustNotImply` 위반, 미측정의 0 표시, 기능을 과장하거나 대상을 잘못 부르는 용어는 결함으로 고친다. 필수 정보가 빠졌지만 잘못 암시하지는 않는 기존 문구와 그 밖의 용어·형식 편차는 [편차 목록](../04-operations/readiness-followups.md#화면-문구-규범-편차)에 기록하고 다음 규범 검토에서 처분한다.
 
 **하나의 G15.** `first-use-empty`는 G15의 `데이터 없음`(조건 없는 조회), `filtered-zero`는 `결과 없음`이다. 공용 구현은 [`emptyResultMessage`](../../frontend/src/app/components/patterns/empty-result-message.ts)이고 [G15 census](../../frontend/src/__tests__/empty-state-distinction-census.test.ts)는 공용 조회 조건 화면만 센다. 검색어 외 조건만 적용된 화면의 기본 문구는 중립으로 쓰고, 검색 조건 변경 안내는 조건이 적용됐을 때만 보인다.
 
