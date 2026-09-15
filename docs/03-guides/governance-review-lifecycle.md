@@ -149,7 +149,7 @@ npm run review:adoption:migration -- --environment institution-migration
 1. 원본 URL census·승인·route·UI quality·화면 용어·KRDS 원장, 프로필 소유권·적용범위 계약과 공용 메모리를 `config/governance/upstream-review/`의 snapshot과 SHA-256으로 보존한다.
 2. 선택한 프로필의 실제 소스에서 active URL·route census를 재생성한다.
 3. 남은 동일 소스·관측에만 승인 record selector를 제한하고 원본 검토자·날짜·근거는 그대로 둔다. 변경되거나 새로 생긴 검색 범위를 이름만으로 승계하지 않는다.
-4. UI 시나리오·pilot·KRDS 적용범위를 명시 소유 pack으로 계산한다. 적용 대상 파일이 사라졌으면 실패하고, 비대상 범위에는 제외 사유를 남긴다. 브랜드 프로필 세 종류는 별도 축으로 보존한다. 실행·접근성 근거를 자동 생성하지 않는다.
+4. UI 시나리오·pilot·KRDS 적용범위를 명시 소유 pack으로 계산한다. 적용 대상 파일이 사라졌으면 실패하고, 비대상 범위에는 제외 사유를 남긴다. 브랜드 프로필 세 종류는 별도 축으로 보존한다. 실행·접근성 근거를 자동 생성하지 않는다. 원본 저장소 소유자의 화면 문구 유지 결정(`accepted-by-owner`)은 입력 대기(`blocked-input`)로 되돌린다.
 5. 온라인·독립 이관 환경 검토 모두 새 `pending` 원장으로 생성한다. 공용 메모리도 현재 프로필과 기관 승인 정본을 연결하는 짧은 인덱스로 작성하고, 원본 운영 사실은 upstream 이력으로만 보존한다.
 6. 투영 manifest에 남은·승계한·미검토 범위와 snapshot·소스 결속을 기록하고 프로필 lock과 연결한다.
 

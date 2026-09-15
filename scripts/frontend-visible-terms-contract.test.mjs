@@ -106,9 +106,11 @@ test('home route sources are bound to their real entry points and do not expose 
     'frontend/src/app/components/dashboard/ActivityFeed.tsx',
     'frontend/src/components/features/dashboard/RealTimeDashboard.tsx',
   ]);
+  // [2026-09-15] route 진입 파일을 sources 에 넣어 제거 문구의 부재 검사가 실제 화면 경로를 덮게 한다.
+  //   InsightBanner 는 참조처 0건인 고아 컴포넌트라 이 화면의 문구 증거가 아니다.
   assert.deepEqual(adminPilot.sources, [
+    'frontend/src/app/admin/page.tsx',
     'frontend/src/app/admin/AdminDashboardClient.tsx',
-    'frontend/src/app/admin/components/InsightBanner.tsx',
   ]);
   assert.doesNotMatch(rootSources, /실시간 피드|보안 지수|value="안전"|시스템 활성 지표|CPU 사용률|24%|42%|홍길동|이순신 과장/);
   assert.match(rootSources, /최근 활동 데이터가 연결되지 않았습니다/);
@@ -174,8 +176,15 @@ test('duplicate, missing, misordered, and falsely approved content evidence are 
   delete unboundedFinding.pilotCensus[0].findings[0].owner;
   assert.match(validateContract(unboundedFinding).join('\n'), /finding is unbounded/);
 
+  // [2026-09-15] 인덱스로 고르지 않는다 — pilotCensus[0] 의 finding 이 remediated-local 로 닫히자 검증기가
+  //   sourceEvidence 대신 removedSourceEvidence 를 보게 돼, 이 red 증명이 아무것도 증명하지 못하게 됐다.
+  //   실재 검사를 타는(= sourceEvidence 를 가진) finding 을 골라 변형한다.
   const staleSourceEvidence = structuredClone(contract);
-  staleSourceEvidence.pilotCensus[0].findings[0].sourceEvidence = ['removed visible copy'];
+  const activeFinding = staleSourceEvidence.pilotCensus
+    .flatMap((pilot) => pilot.findings ?? [])
+    .find((finding) => finding.status !== 'remediated-local' && finding.sourceEvidence?.length);
+  assert.ok(activeFinding, 'the source-evidence drift proof needs at least one finding checked for present copy');
+  activeFinding.sourceEvidence = ['removed visible copy'];
   assert.match(validateContract(staleSourceEvidence).join('\n'), /finding source evidence drift/);
 
   const falseRemediation = structuredClone(contract);
@@ -191,4 +200,48 @@ test('duplicate, missing, misordered, and falsely approved content evidence are 
   const falseApproval = structuredClone(contract);
   falseApproval.approval.contentOwnerApproved = true;
   assert.match(validateContract(falseApproval).join('\n'), /approval cannot be asserted/);
+});
+
+/*
+  [2026-09-15 DEC-OPS-099] 소유자 결정 종결은 산문 사유가 아니라 결정 참조·결정일·결정 대상 문자열로 선다.
+  결정 뒤 문구가 바뀌면 그 결정은 지금 화면에 대한 것이 아니므로 red 여야 하고, 닫힌 pilot 아래 활성
+  finding 이 남으면 pilot 상태만 보고 "끝났다"고 읽게 된다.
+*/
+test('owner decisions close findings only with a real decision reference and the decided copy still present', () => {
+  const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
+  const decided = contract.pilotCensus.flatMap((pilot) => (pilot.findings ?? [])
+    .filter(({ status }) => status === 'accepted-by-owner')
+    .map((finding) => ({ pilotId: pilot.id, kind: finding.kind, decisionRef: finding.decisionRef })));
+  assert.ok(decided.length > 0, 'recorded owner decisions must stay in the population this test proves');
+
+  // 재사용 산출물은 이 테스트를 실행하지 않는다(verify-reusable-artifact contracts scope) — 원장 대조는 생산 저장소 몫이다.
+  const decisionIndex = fs.readFileSync(path.join(ROOT, '.agent/memory/decisions.md'), 'utf8');
+  for (const { pilotId, kind, decisionRef } of decided) {
+    assert.ok(decisionIndex.includes(`| ${decisionRef} |`), `${pilotId}/${kind}: ${decisionRef} is not recorded in decisions.md`);
+  }
+
+  const locate = (fixture) => {
+    const pilot = fixture.pilotCensus.find(({ id }) => id === decided[0].pilotId);
+    return { pilot, finding: pilot.findings.find(({ kind }) => kind === decided[0].kind) };
+  };
+
+  const missingRef = structuredClone(contract);
+  delete locate(missingRef).finding.decisionRef;
+  assert.match(validateContract(missingRef).join('\n'), /owner decision needs a decision reference/);
+
+  const proseRef = structuredClone(contract);
+  locate(proseRef).finding.decisionRef = 'decided in chat';
+  assert.match(validateContract(proseRef).join('\n'), /owner decision needs a decision reference/);
+
+  const futureDecision = structuredClone(contract);
+  locate(futureDecision).finding.decidedAt = '2099-01-01';
+  assert.match(validateContract(futureDecision).join('\n'), /owner decision needs a decision reference/);
+
+  const staleDecision = structuredClone(contract);
+  locate(staleDecision).finding.sourceEvidence = ['copy that changed after the decision'];
+  assert.match(validateContract(staleDecision).join('\n'), /finding source evidence drift/);
+
+  const closedWithActive = structuredClone(contract);
+  locate(closedWithActive).finding.status = 'open';
+  assert.match(validateContract(closedWithActive).join('\n'), /closed pilot still has active findings/);
 });

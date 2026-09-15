@@ -229,6 +229,19 @@ for (const profileName of ['core', 'collaboration', 'demo']) {
       assert.ok(home, 'the retained home pilot must continue to check remaining source');
       assert.deepEqual(home.findings, upstreamReviews.visibleTerms.pilotCensus.find(row => row.id === home.id).findings);
       assert.equal(home.sources.length, profileName === 'core' ? 3 : 5);
+      // Upstream owner decisions reopen as awaiting input in every generated profile (ADR-0018).
+      const isDecision = finding => finding.status === 'accepted-by-owner';
+      assert.ok(upstreamReviews.visibleTerms.pilotCensus.flatMap(row => row.findings ?? []).some(isDecision),
+        'the upstream ledger must carry an owner decision for this proof to mean anything');
+      const projectedTerms = readJson(output, REVIEW_MANIFEST_PATHS.visibleTerms).pilotCensus;
+      assert.equal(projectedTerms.flatMap(row => row.findings ?? []).filter(isDecision).length, 0);
+      const userLog = projectedTerms.find(row => row.id === 'content-user-log');
+      const auditFields = userLog.findings.find(finding => finding.kind === 'technical-audit-fields');
+      assert.equal(auditFields.status, 'blocked-input');
+      assert.equal(auditFields.decisionRef, undefined);
+      assert.equal(userLog.status, 'open');
+      assert.ok(result.projectedReviewScopes.visibleTerms.resetDecisions
+        .some(row => row.pilotId === 'content-user-log' && row.kind === 'technical-audit-fields'));
       for (const path of MEMORY_PATHS) {
         const memory = readFileSync(join(output, path), 'utf8');
         assert.match(memory, /derived-generated-profile-index/);

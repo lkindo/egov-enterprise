@@ -89,8 +89,11 @@ public class UserLogApiController {
         searchDto.setPageUnit(Math.max(totalCount, 1));
         List<UserLogDto> rows = userLogManageService.selectUserLogList(searchDto).getContent();
 
+        // [2026-09-15 DEC-OPS-099] 출력 건수는 측정되지 않는다 — ProcessTypeCode 가 채우지 않아 otpt_cnt 는 늘 0 이다.
+        //   화면은 미측정으로 고지하는데 엑셀만 숫자를 쓰면 "출력이 한 번도 없었다" 로 읽힌다(화면 용어 원장의
+        //   unknownAsZero 금지). 머리글이 미측정을 밝히고 칸은 비운다. 측정이 생기면 둘을 함께 되돌린다.
         return LogExcelExport.attachment("user-logs.xlsx", "user-logs",
-                new String[]{"발생일자", "요청자 ID", "성명", "서비스명", "메서드명", "등록", "수정", "조회", "삭제", "출력", "오류"},
+                new String[]{"발생일자", "요청자 ID", "성명", "서비스명", "메서드명", "등록", "수정", "조회", "삭제", "출력(미측정)", "오류"},
                 rows,
                 (row, dto) -> {
                     row.createCell(0).setCellValue(LogExcelExport.nullSafe(dto.ocrnYmd()));
@@ -102,7 +105,7 @@ public class UserLogApiController {
                     row.createCell(6).setCellValue(LogExcelExport.nullSafe(dto.mdfcnCnt()));
                     row.createCell(7).setCellValue(LogExcelExport.nullSafe(dto.inqCnt()));
                     row.createCell(8).setCellValue(LogExcelExport.nullSafe(dto.delCnt()));
-                    row.createCell(9).setCellValue(LogExcelExport.nullSafe(dto.otptCnt()));
+                    row.createCell(9).setCellValue("");
                     row.createCell(10).setCellValue(LogExcelExport.nullSafe(dto.errCnt()));
                 });
     }

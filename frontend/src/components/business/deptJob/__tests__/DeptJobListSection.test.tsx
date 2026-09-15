@@ -371,12 +371,12 @@ describe('DeptJobListSection 탭 스트립 슬롯', () => {
   it('provider 가 준 탭 스트립을 액션 영역에 그리고 tabpanel 로 받는다(demo 레이아웃)', () => {
     render(
       <DeptJobSectionSlotProvider
-        value={<div role="tablist" aria-label="워크허브 영역 선택"><button type="button" role="tab" id="work-hub-tab-job" aria-selected aria-controls="work-hub-tabpanel">업무 관리</button></div>}
+        value={<div role="tablist" aria-label="업무 영역 선택"><button type="button" role="tab" id="work-hub-tab-job" aria-selected aria-controls="work-hub-tabpanel">업무 관리</button></div>}
       >
         <DeptJobListSection />
       </DeptJobSectionSlotProvider>,
     );
-    expect(screen.getByRole('tablist', { name: '워크허브 영역 선택' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: '업무 영역 선택' })).toBeInTheDocument();
     // 탭이 aria-controls 로 가리키는 패널이 실제로 존재해야 한다.
     expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'work-hub-tabpanel');
   });

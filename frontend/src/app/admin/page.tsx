@@ -5,7 +5,7 @@ import { userAdminService } from '@/services/foundation/system/UserAdminService'
 import { authorAdminService } from '@/services/foundation/system/AuthorAdminService';
 
 /**
- * 관리자 인텔리전스 센터 대시보드 메인 페이지 (Server Component)
+ * 관리자 대시보드 메인 페이지 (Server Component)
  * 
  * 헌법 제3조(서버 컴포넌트 우선 원칙) 및 제4조 5항(SSR 초기 데이터 하이드레이션 패턴)을 준수합니다.
  * 서버 사이드에서 주요 데이터(보안 감사 이력, 사용자 목록, 권한 그룹 목록)를 병렬 프리페치하여

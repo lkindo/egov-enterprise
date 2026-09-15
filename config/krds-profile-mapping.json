@@ -67,7 +67,7 @@
       "maximumClaimWithoutReleaseEvidence": "target",
       "identityElements": "blocked-input",
       "identityOwner": "product-institution-owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-21",
       "requirements": [
         "official-service eligibility",
         "pinned standard-style mapping",
@@ -83,7 +83,7 @@
       "maximumClaimWithoutReleaseEvidence": "target",
       "identityElements": "off-by-default",
       "identityOwner": "product-institution-owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-21",
       "requirements": [
         "documented adaptation and deviation",
         "semantic token and interaction parity",
@@ -98,7 +98,7 @@
       "maximumClaimWithoutReleaseEvidence": "no-krds-claim",
       "identityElements": "forbidden",
       "identityOwner": "product-owner",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-11-21",
       "requirements": [
         "same semantic, state, interaction and accessibility floor",
         "no official-government impersonation",
@@ -153,10 +153,13 @@
       "upstream": "https://www.krds.go.kr/html/site/style/style_02.html",
       "localEvidence": [
         "frontend/src/app/globals.css",
+        "frontend/src/styles/themes/premium.css",
+        "frontend/src/styles/themes/krds-aligned.css",
+        "frontend/src/lib/theme/brand-theme.ts",
         "docs/03-guides/design-tokens.md"
       ],
-      "deviation": "Current single token set uses Hub Blue and is not the KRDS standard palette; semantic roles and contrast ratchets are retained.",
-      "notes": "Task 2.2 must implement profile-specific adapters before any standard-profile claim."
+      "deviation": "Profile token values live in premium.css (Hub Blue) and krds-aligned.css (public KRDS palette steps with two documented exceptions, not yet compared against the official Figma kit), selected through data-brand-theme. Neither is the KRDS standard palette and no krds-standard adapter exists; semantic roles and contrast ratchets are retained.",
+      "notes": "Brand profile and color mode plumbing is implemented; a krds-standard palette adapter is still required before any standard-profile claim."
     },
     {
       "id": "STYLE-TYPOGRAPHY",
@@ -165,9 +168,9 @@
       "disposition": "deferred",
       "applicableProfiles": ["krds-standard", "krds-aligned"],
       "upstream": "https://www.krds.go.kr/html/site/style/style_03.html",
-      "reason": "The current app uses Pretendard Variable, Inter and Outfit; Pretendard GOV and profile-specific hierarchy have not been evaluated.",
+      "reason": "layout.tsx loads Pretendard Variable, Inter and Outfit through next/font on body, but the --font-sans alias is computed at the root, so browsers fall back to system fonts (GAP-UIF-001); Pretendard GOV and profile-specific hierarchy have not been evaluated.",
       "owner": "design-system-accessibility",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     },
     {
       "id": "STYLE-SHAPE",
@@ -176,9 +179,9 @@
       "disposition": "deferred",
       "applicableProfiles": ["krds-standard", "krds-aligned"],
       "upstream": "https://www.krds.go.kr/html/site/style/style_04.html",
-      "reason": "Current premium radii and KRDS standard/adaptive shape scales have not been separated by profile.",
+      "reason": "Radius tokens are identical in premium.css and krds-aligned.css, and the KRDS standard and extended (표준형·확장형) shape scales have not been separated by profile.",
       "owner": "design-system",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     },
     {
       "id": "STYLE-LAYOUT-REFLOW",
@@ -213,7 +216,7 @@
       "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
       "upstream": "https://www.krds.go.kr/html/site/style/style_08.html",
       "localEvidence": ["docs/03-guides/design-tokens.md"],
-      "deviation": "Premium shadow and blur recipes remain profile-specific; high-contrast separation must use borders.",
+      "deviation": "Shadow tokens are currently identical in premium.css and krds-aligned.css and blur lives in shared globals.css, so elevation is not yet profile-specific; high-contrast separation must use borders.",
       "notes": "Profile implementation is pending."
     },
     {
@@ -223,9 +226,9 @@
       "disposition": "deferred",
       "applicableProfiles": ["krds-standard", "krds-aligned"],
       "upstream": "https://www.krds.go.kr/html/site/style/style_09.html",
-      "reason": "Current dark mode is not equivalent to the KRDS high-contrast mode and forced-colors evidence is missing.",
+      "reason": "No color mode equivalent to the KRDS high-contrast mode exists; dark mode is not a substitute. OS forced-colors is a separate axis: globals.css has a safety block for shared surfaces, but manual forced-colors evidence is missing.",
       "owner": "design-system-accessibility",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     },
     {
       "id": "STYLE-TOKENS",
@@ -236,6 +239,8 @@
       "upstream": "https://www.krds.go.kr/html/site/outline/outline_03.html",
       "localEvidence": [
         "frontend/src/app/globals.css",
+        "frontend/src/styles/themes/premium.css",
+        "frontend/src/styles/themes/krds-aligned.css",
         "docs/03-guides/design-tokens.md"
       ],
       "deviation": "Local semantic token names are stable adapters; upstream token files are not copied wholesale.",
@@ -250,7 +255,7 @@
       "upstream": "https://www.krds.go.kr/html/site/component/component_02_01.html",
       "reason": "This repository is a reference implementation and has no approved official-service eligibility or institution content.",
       "owner": "product-institution-owner",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     },
     {
       "id": "IDENTITY-MASTHEAD-NONSTANDARD",
@@ -268,9 +273,9 @@
       "disposition": "deferred",
       "applicableProfiles": ["krds-standard", "krds-aligned"],
       "upstream": "https://www.krds.go.kr/html/site/component/component_02_04.html",
-      "reason": "Generic shell components exist, but institution identity, policy links, contact details and exact KRDS ordering are unapproved.",
+      "reason": "Generic shell components exist, but institution identity, policy links, contact details and exact KRDS ordering are unapproved. The pinned upstream is the KRDS footer page; header guidance is a separate page (component_02_03.html) that this entry does not pin yet.",
       "owner": "product-institution-owner",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     },
     {
       "id": "COMPONENT-SKIP-LINK",
@@ -390,10 +395,10 @@
       "title": "개인 식별 정보 입력",
       "disposition": "deferred",
       "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
-      "upstream": "https://www.krds.go.kr/html/site/global/global_summary.html",
+      "upstream": "https://www.krds.go.kr/html/site/global/global_01.html",
       "reason": "Field-level purpose, minimization, masking, retention and analytics rules require domain and privacy-owner approval.",
       "owner": "security-privacy",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     },
     {
       "id": "SERVICE-LOGIN",
@@ -429,7 +434,7 @@
       "upstream": "https://www.krds.go.kr/html/site/service/service_04_01.html",
       "reason": "No product owner has selected an application journey as an applicable public-service pilot; generic wizard styling cannot establish applicability.",
       "owner": "product-ux",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     },
     {
       "id": "SERVICE-POLICY-INFORMATION",
@@ -440,7 +445,7 @@
       "upstream": "https://www.krds.go.kr/html/site/service/service_05_03.html",
       "reason": "Help and policy routes exist, but current content ownership, freshness and direct-detail journey evidence are unapproved.",
       "owner": "content-product-owner",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     },
     {
       "id": "VERIFICATION-SELF-CHECKLIST",
@@ -451,7 +456,7 @@
       "upstream": "https://www.krds.go.kr/html/site/community/community_04_01.html?nttId=2",
       "reason": "The official checklist has not been executed against an approved profile-route-state population.",
       "owner": "quality-accessibility",
-      "reviewBy": "2026-10-31"
+      "reviewBy": "2026-11-21"
     }
   ],
   "refreshTriggers": [

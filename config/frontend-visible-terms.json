@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "status": "draft-blocked-input",
   "language": "ko-KR",
-  "lastReviewedAt": "2026-08-21",
+  "lastReviewedAt": "2026-09-15",
   "owner": "content-design",
   "ownerAssignment": "unassigned",
   "reviewBy": "2026-10-31",
@@ -21,7 +21,7 @@
       "/admin/system/logs/user",
       "/admin/user/manage",
       "/admin/community/boards/insert-board-article",
-      "/admin/survey/manage/create",
+      "/admin/survey/hub",
       "/smart-toolkit/schedule"
     ],
     "limitations": [
@@ -196,17 +196,27 @@
       "roles": ["ANONYMOUS"],
       "sources": ["frontend/src/app/login/LoginClient.tsx", "frontend/src/config/site-identity.ts"],
       "evidenceLevel": "static-source",
-      "status": "open",
+      "status": "remediated-local",
       "owner": "content-design",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-12-15",
       "findings": [
         {
           "kind": "unapproved-product-positioning",
-          "evidence": "엔터프라이즈 / 글로벌 통합 관리 콘솔",
-          "sourceEvidence": ["엔터프라이즈", "글로벌 통합 관리 콘솔"],
-          "status": "blocked-input",
+          "evidence": "로그인 카드 설명이 검증되지 않은 제품 포지셔닝(글로벌 통합 관리 콘솔)을 말했다. 설명 줄을 걷었다. 사이트 소개 한 줄은 프로필에 따라 없는 기능(core 프로필의 협업)을 말할 수 있어 대신 쓰지 않는다(DEC-OPS-099).",
+          "removedSourceEvidence": ["글로벌 통합 관리 콘솔", "SITE_IDENTITY.siteDescription"],
+          "status": "remediated-local",
           "owner": "product-owner",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
+        },
+        {
+          "kind": "site-identity-short-name",
+          "evidence": "로그인 카드 제목은 사이트 식별 설정의 짧은 제품명(엔터프라이즈)이다. 도입 기관이 site-identity 한 곳에서 바꾸는 식별 설정으로 유지하기로 결정했다(DEC-OPS-099).",
+          "sourceEvidence": ["siteShortName: '엔터프라이즈'", "{SITE_IDENTITY.siteShortName}"],
+          "status": "accepted-by-owner",
+          "decisionRef": "DEC-OPS-099",
+          "decidedAt": "2026-09-15",
+          "owner": "product-owner",
+          "reviewBy": "2026-12-15"
         }
       ]
     },
@@ -224,7 +234,7 @@
       "evidenceLevel": "static-source-and-contract-test",
       "status": "remediated-local",
       "owner": "content-design",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-12-15",
       "findings": [
         {
           "kind": "fabricated-activity-and-operational-state",
@@ -232,7 +242,7 @@
           "removedSourceEvidence": ["실시간 피드", "보안 지수", "value=\"안전\"", "시스템 활성 지표", "CPU 사용률", "24%", "42%", "홍길동", "이순신 과장"],
           "status": "remediated-local",
           "owner": "dashboard-domain-owner",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         },
         {
           "kind": "unreceived-statistics-presented-as-zero",
@@ -240,7 +250,7 @@
           "removedSourceEvidence": ["실시간 접속자", "activeUsers: 0", "visitsPerMinute: 0", "newPosts: 0", "alerts: 0"],
           "status": "remediated-local",
           "owner": "dashboard-domain-owner",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         }
       ]
     },
@@ -249,13 +259,13 @@
       "route": "/admin",
       "roles": ["ADMIN", "SYSTEM"],
       "sources": [
-        "frontend/src/app/admin/AdminDashboardClient.tsx",
-        "frontend/src/app/admin/components/InsightBanner.tsx"
+        "frontend/src/app/admin/page.tsx",
+        "frontend/src/app/admin/AdminDashboardClient.tsx"
       ],
       "evidenceLevel": "static-source-and-contract-test",
       "status": "remediated-local",
       "owner": "content-design",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-12-15",
       "findings": [
         {
           "kind": "unproven-intelligence-label",
@@ -263,7 +273,7 @@
           "removedSourceEvidence": ["인텔리전스 센터", "지능형 데이터 분석", "보안 거버넌스", "AI_INSIGHT_ENGINE"],
           "status": "remediated-local",
           "owner": "dashboard-domain-owner",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         }
       ]
     },
@@ -271,19 +281,32 @@
       "id": "content-user-log",
       "route": "/admin/system/logs/user",
       "roles": ["ADMIN", "SYSTEM"],
-      "sources": ["frontend/src/app/admin/system/logs/user/SystemLogsUserClient.tsx"],
+      "sources": [
+        "frontend/src/app/admin/system/logs/user/SystemLogsUserClient.tsx",
+        "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/UserLogApiController.java"
+      ],
       "evidenceLevel": "static-source",
-      "status": "open",
+      "status": "accepted-by-owner",
       "owner": "content-design",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-12-15",
       "findings": [
         {
           "kind": "technical-audit-fields",
-          "evidence": "메소드명·요청자·행위별 건수의 역할 적합성과 개인정보 노출 범위",
-          "sourceEvidence": ["메소드명", "요청자", "행위 (생성/수정/조회/삭제/출력·미측정/오류)"],
-          "status": "blocked-input",
+          "evidence": "메소드명·요청자 열과 행위별 건수, 그리고 조건 일치 전량을 내려받는 전체 결과 엑셀 다운로드의 개인정보 노출 범위. 소유자가 현 노출을 유지하기로 결정했다(DEC-OPS-099).",
+          "sourceEvidence": ["메소드명", "요청자", "행위 (생성/수정/조회/삭제/출력·미측정/오류)", "전체 결과 엑셀 다운로드"],
+          "status": "accepted-by-owner",
+          "decisionRef": "DEC-OPS-099",
+          "decidedAt": "2026-09-15",
           "owner": "security-privacy",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
+        },
+        {
+          "kind": "unmeasured-output-exported-as-zero",
+          "evidence": "전체 결과 엑셀의 출력 열이 측정되지 않는 출력 건수를 숫자(0)로 썼다. 화면은 미측정으로 고지한다. 머리글이 미측정을 밝히고 칸을 비운다(formatRules.number.unknownAsZero).",
+          "removedSourceEvidence": ["LogExcelExport.nullSafe(dto.otptCnt())", "\"삭제\", \"출력\", \"오류\""],
+          "status": "remediated-local",
+          "owner": "security-privacy",
+          "reviewBy": "2026-12-15"
         }
       ]
     },
@@ -291,11 +314,17 @@
       "id": "content-user-manage",
       "route": "/admin/user/manage",
       "roles": ["ADMIN", "SYSTEM"],
-      "sources": ["frontend/src/app/admin/user/UserOrgHubClient.tsx", "frontend/src/app/admin/user/UserOrgHubParts.tsx"],
+      "sources": [
+        "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+        "frontend/src/app/admin/user/UserOrgHubParts.tsx",
+        "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
+        "frontend/src/components/admin/user/UserManageForm.tsx",
+        "frontend/src/components/admin/user/DepartmentForm.tsx"
+      ],
       "evidenceLevel": "static-source",
       "status": "remediated-local",
       "owner": "content-design",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-12-15",
       "findings": [
         {
           "kind": "internal-stream-metaphor",
@@ -303,7 +332,7 @@
           "removedSourceEvidence": ["스트림에서 부서 또는 사용자를 선택하여 관리를 시작하십시오."],
           "status": "remediated-local",
           "owner": "user-domain-owner",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         },
         {
           "kind": "unproven-realtime-claim",
@@ -311,7 +340,7 @@
           "removedSourceEvidence": ["실시간 데이터 동기화"],
           "status": "remediated-local",
           "owner": "user-domain-owner",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         }
       ]
     },
@@ -326,7 +355,7 @@
       "evidenceLevel": "static-source-and-contract-test",
       "status": "remediated-local",
       "owner": "content-design",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-12-15",
       "findings": [
         {
           "kind": "raw-error-console-log",
@@ -334,35 +363,40 @@
           "removedSourceEvidence": ["console.error("],
           "status": "remediated-local",
           "owner": "frontend-platform",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         },
         {
           "kind": "internal-or-unproven-composer-copy",
           "evidence": "English command placeholder, internal command-node footer and unproven security grade were visible",
-          "removedSourceEvidence": ["INJECT SUBJECT LINE", "Enterprise Command Node", "보안 등급", "DEPLOYING"],
+          "removedSourceEvidence": ["INJECT SUBJECT LINE", "Enterprise Command Node", "보안 등급"],
           "status": "remediated-local",
           "owner": "content-design",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         },
         {
           "kind": "generic-save-state",
-          "evidence": "generic save labels and failures did not identify the object or state that input remained available",
-          "removedSourceEvidence": ["저장 중...", "Waiting for Submit"],
+          "evidence": "generic save labels and failures did not identify the object or state that input remained available. The pending label now names the post and the failure message states that input is kept.",
+          "removedSourceEvidence": ["저장 중...", "<span>저장 중…</span>"],
           "status": "remediated-local",
           "owner": "content-design",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         }
       ]
     },
     {
       "id": "content-survey-create",
-      "route": "/admin/survey/manage/create",
+      "route": "/admin/survey/hub",
       "roles": ["ADMIN", "SYSTEM"],
-      "sources": ["frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx"],
+      "sources": [
+        "frontend/src/app/admin/survey/hub/page.tsx",
+        "frontend/src/app/admin/survey/hub/SurveyHubClient.tsx",
+        "frontend/src/app/admin/survey/manage/SurveyManageClient.tsx",
+        "frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx"
+      ],
       "evidenceLevel": "static-source-and-contract-test",
-      "status": "partial",
+      "status": "accepted-by-owner",
       "owner": "content-design",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-12-15",
       "findings": [
         {
           "kind": "mixed-language-options",
@@ -370,15 +404,17 @@
           "removedSourceEvidence": ["Highly Satisfied", "Satisfied", "Neutral", "Unsatisfied"],
           "status": "remediated-local",
           "owner": "content-design",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         },
         {
           "kind": "fixed-hidden-answer-model",
-          "evidence": "four satisfaction choices are generated without an editable question/answer model",
+          "evidence": "four satisfaction choices are generated without an editable question/answer model. The owner kept the fixed four-choice model because the form discloses it before registration; question-level surveys remain a separate product (DEC-OPS-099).",
           "sourceEvidence": ["응답 선택지가 매우 만족·만족·보통·불만족으로 고정된 설문을 등록합니다."],
-          "status": "blocked-input",
+          "status": "accepted-by-owner",
+          "decisionRef": "DEC-OPS-099",
+          "decidedAt": "2026-09-15",
           "owner": "survey-domain-owner",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         }
       ]
     },
@@ -391,17 +427,17 @@
         "frontend/src/app/admin/work-hub/WorkHubClient.tsx"
       ],
       "evidenceLevel": "static-source",
-      "status": "open",
+      "status": "remediated-local",
       "owner": "content-design",
-      "reviewBy": "2026-10-31",
+      "reviewBy": "2026-12-15",
       "findings": [
         {
           "kind": "shared-hub-copy-boundary",
-          "evidence": "schedule route renders a shared work-hub client and requires route-specific terminology review",
-          "sourceEvidence": ["WorkHubClient", "defaultTab=\"SCHEDULE\""],
-          "status": "open",
+          "evidence": "schedule route renders a shared work-hub client and required route-specific terminology review. Reviewed 2026-09-15: the tab list's accessible name used the hub container metaphor (term-hub) on this route and was renamed to the task context; the tab, breadcrumb, description, register action, empty and error states and dialogs say 일정 (DEC-OPS-099).",
+          "removedSourceEvidence": ["워크허브 영역 선택"],
+          "status": "remediated-local",
           "owner": "work-domain-owner",
-          "reviewBy": "2026-10-31"
+          "reviewBy": "2026-12-15"
         }
       ]
     }

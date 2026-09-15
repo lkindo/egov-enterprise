@@ -558,7 +558,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin w-5 h-5" />
-                    <span>저장 중…</span>
+                    <span>게시글 저장 중…</span>
                   </>
                 ) : (
                   <>

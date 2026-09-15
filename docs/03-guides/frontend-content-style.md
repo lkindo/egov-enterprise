@@ -4,11 +4,11 @@
 - **Owner:** content-design — 담당자 미지정
 - **Reviewers:** product/UX, domain owner, accessibility, security/privacy — 담당자 미지정
 - **Review by:** 2026-10-31
-- **Last evidence review:** 2026-08-21
+- **Last evidence review:** 2026-09-15
 - **URL-state policy review:** 2026-09-05 — [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)
 - **Structured inventory:** [`config/frontend-visible-terms.json`](../../config/frontend-visible-terms.json)
 
-이 문서는 사용자에게 보이는 한국어 문구, action 이름, 상태, 오류, 날짜·시간·수치의 공통 계약이다. 코드 식별자나 API DTO 이름을 바꾸는 규칙이 아니며, 단어를 기계적으로 전역 치환하는 허가도 아니다. 현재는 파일럿 후보 7개 route의 정적 소스 census와 즉시 판정 가능한 진실성 수정만 포함한다. 콘텐츠 소유자 검토, 실제 role별 렌더 결과, 사용자 이해도 연구가 없으므로 전체 화면의 콘텐츠 품질이나 사용자 검증 완료를 주장하지 않는다.
+이 문서는 사용자에게 보이는 한국어 문구, action 이름, 상태, 오류, 날짜·시간·수치의 공통 계약이다. 코드 식별자나 API DTO 이름을 바꾸는 규칙이 아니며, 단어를 기계적으로 전역 치환하는 허가도 아니다. 현재는 파일럿 후보 8개 route의 정적 소스 census와 즉시 판정 가능한 진실성 수정만 포함한다. 콘텐츠 소유자 검토, 실제 role별 렌더 결과, 사용자 이해도 연구가 없으므로 전체 화면의 콘텐츠 품질이나 사용자 검증 완료를 주장하지 않는다.
 
 ## 1. 규칙의 우선순위와 범위
 
@@ -139,14 +139,14 @@
 - `terms`: 단어 자체의 허용/금지보다 audience·근거·대체 표현을 기록한다.
 - `stateVocabulary`: 서로 합치면 안 되는 상태와 최소 정보.
 - `actionRules`, `formatRules`: action 및 형식 불변조건.
-- `pilotCensus`: 정확히 7개 파일럿 후보 route의 static evidence와 open finding.
+- `pilotCensus`: 정확히 8개 파일럿 후보 route의 static evidence와 open finding.
 - `approval`: 콘텐츠·제품 owner 승인과 사용자 검증 여부.
 
-게시글 작성 파일럿의 canonical route는 `/admin/community/boards/insert-board-article`이다. `/admin/community/boards/write`는 별도 병렬 화면이며 raw payload logging과 내부 용어를 선제 수리했더라도 기준선·파일럿 route의 대체 근거로 사용하지 않는다.
+게시글 작성 파일럿의 canonical route는 `/admin/community/boards/insert-board-article`이다. `/admin/community/boards/write`는 2026-09-05부터 canonical 화면으로 보내는 page-redirect다(DEC-OPS-034). 파일럿 route의 대체 근거로 사용하지 않는다.
 
 정적 regex는 영어 후보와 금지 phrase를 찾는 보조 수단이다. `API`, 코드 샘플, hidden developer identifier, 합법적인 제품명까지 일괄 위반으로 판정하지 않는다. 후보는 실제 route reachability, role, 렌더 여부, 기능 상태를 사람이 대조한다. 반대로 regex에 잡히지 않는 한국어 내부 은유와 과장도 검토 대상이다.
 
-새 finding은 `route`, `source`, 가시 문구, state, user impact, owner, `reviewBy`, proposed copy, 실행 증거를 기록한다. `open`이나 `blocked-input`을 `partial`로 세탁하지 않는다. 콘텐츠 owner가 승인하면 reviewer, 날짜, route/state/role 범위, 비교 screenshot 또는 DOM evidence를 연결한다.
+새 finding은 `route`, `source`, 가시 문구, state, user impact, owner, `reviewBy`, proposed copy, 실행 증거를 기록한다. `open`이나 `blocked-input`을 `partial`로 세탁하지 않는다. 콘텐츠 owner가 승인하면 reviewer, 날짜, route/state/role 범위, 비교 screenshot 또는 DOM evidence를 연결한다. 문구를 고치지 않는 소유자 결정은 `accepted-by-owner` 상태에 결정 참조(`DEC-OPS-###`)와 결정일을 남기며, 결정 대상 문자열이 바뀌면 그 결정은 더 이상 현재 화면에 대한 것이 아니므로 계약이 red가 된다. 이 결정은 콘텐츠 승인(`approval`)이 아니며, 재사용 생성 제품에서는 입력 대기(`blocked-input`)로 되돌아간다.
 
 ## 9. 파일럿 review checklist
 
@@ -163,11 +163,11 @@
 
 ## 10. 승인·완료 경계
 
-현재 완료된 것은 가이드, 구조화 inventory, 7-route 정적 census, canonical 게시글 composer와 설문 composer의 로컬 진실성 수정, 그리고 별도 `/write` 화면의 인접한 개인정보·문구 수리다. 다음은 완료되지 않았다.
+현재 완료된 것은 가이드, 구조화 inventory, 8-route 정적 census, canonical 게시글 composer와 설문 composer의 로컬 진실성 수정, 그리고 별도 `/write` 화면의 인접한 개인정보·문구 수리다. 다음은 완료되지 않았다.
 
 - 콘텐츠 소유자와 제품 소유자 지정·승인.
 - role별 실제 렌더 및 backend 오류 문구 census.
-- 7개 파일럿의 모든 state·viewport·theme·AT 검토.
+- 8개 파일럿의 모든 state·viewport·theme·AT 검토.
 - 사용자 이해도와 task 성과 검증.
 - 전체 route의 visible-string census.
 

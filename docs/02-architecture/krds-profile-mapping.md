@@ -20,7 +20,7 @@
 
 현재 29개 mapping entry의 정적 판정은 `adopted 4`, `adapted 15`, `deferred 9`, `notApplicable 1`이다. `adopted`는 원칙 또는 로컬 계약을 채택했다는 뜻이며, 모든 route/state에서 구현이 입증됐다는 뜻이 아니다. `adapted`는 React/Next.js 구조와 제품 경계를 보존하며 의미를 이식하는 상태다. `deferred`는 이유·owner·reviewBy가 있는 미충족 항목이다.
 
-따라서 지금 `krds-standard`를 활성화하거나 공공서비스 identity를 노출하면 안 된다. 먼저 Task 2.2의 profile×mode plumbing, Task 0.5/2.3의 rendered·AT 증거, 기관 자격 승인, 공식 self-checklist를 닫아야 한다. `premium`은 KRDS claim을 하지 않지만 동일한 상태·접근성 하한을 지켜야 한다.
+따라서 지금 `krds-standard`를 활성화하거나 공공서비스 identity를 노출하면 안 된다. 먼저 `krds-standard` palette adapter(profile×mode plumbing과 `premium`·`krds-aligned` 프로필은 구현됨), Task 0.5/2.3의 rendered·AT 증거, 기관 자격 승인, 공식 self-checklist를 닫아야 한다. `premium`은 KRDS claim을 하지 않지만 동일한 상태·접근성 하한을 지켜야 한다.
 
 ## 2. 공식 원문 pin
 
@@ -66,7 +66,7 @@
 현재 blockers:
 
 - reference implementation이 어느 기관의 공식 서비스인지 승인되지 않았다.
-- current `globals.css`의 Hub Blue 단일 token set은 KRDS standard palette가 아니다.
+- 프로필 토큰 값은 `premium.css`(Hub Blue)와 `krds-aligned.css`(공개 KRDS 단계값)로 나뉘었지만 둘 다 KRDS standard palette가 아니며 `krds-standard` palette adapter는 아직 없다.
 - Pretendard Variable/Inter/Outfit은 KRDS 표준형 Pretendard GOV 계약으로 검증되지 않았다.
 - premium radius/shadow와 standard shape/elevation이 profile별로 분리되지 않았다.
 - `.dark`는 일반 dark mode이며 KRDS 선명한 화면 모드 또는 OS forced colors 증거가 아니다.
@@ -106,7 +106,7 @@ machine-readable exact entry는 JSON이 소유한다. 아래는 위험과 의사
 | Category | entries | 현재 판단 | 다음 증거 |
 |---|---:|---|---|
 | principle | 3 | 사용자 중심·포용 원칙 채택, profile×mode 독립 축으로 일관성 원칙 adaptation | 실제 사용자 연구, task baseline, profile parity |
-| style | 8 | semantic color/token·layout·icon·elevation adaptation, typography·shape·high-contrast deferred | Task 2.2 adapter, computed contrast, typography/reflow, forced-colors |
+| style | 8 | semantic color/token·layout·icon·elevation adaptation, typography·shape·high-contrast deferred | `krds-standard` adapter, computed contrast, typography/reflow, forced-colors |
 | identity | 3 | standard identity deferred, nonstandard masthead not applicable, header/footer content 미승인 | 기관 자격·명칭·연락처·정책 owner 승인 |
 | component | 5 | skip link 채택; button/form/table/feedback 의미 adaptation | rendered states, keyboard/SR, mobile, exact checklist |
 | basic pattern | 5 | list/filter/error/form adaptation, 개인 식별 정보 입력 deferred | dense-list/composer pilot, privacy approval |
@@ -206,12 +206,12 @@ checkedAt: <date>
 5. WCAG/KWCAG 목표 또는 KRDS accessibility mapping이 바뀜.
 6. adopted/adapted local evidence path가 삭제되거나 semantic contract가 바뀜.
 
-업데이트는 version 숫자만 바꾸지 않는다. 원칙·style·component·pattern·identity diff, 영향을 받는 local evidence, migration/rollback, license 변경을 함께 검토한다. contract test는 stale `checkBy`, 비공식 source, category 누락, owner 없는 deferred, 설명 없는 adaptation, premium identity 누출을 red로 만든다.
+업데이트는 version 숫자만 바꾸지 않는다. 원칙·style·component·pattern·identity diff, 영향을 받는 local evidence, migration/rollback, license 변경을 함께 검토한다. stale `checkBy`는 governance-review가 보고하고(ADR-0018), contract test는 비공식 source, category 누락, owner 없는 deferred, 설명 없는 adaptation, premium identity 누출을 red로 만든다.
 
 ## 11. 구현 순서
 
 1. 이 mapping과 Task 0.5 baseline을 현재 증거로 고정한다.
-2. Task 2.2에서 `data-brand-theme`와 color mode를 독립 구현하고, profile token equality를 계약화한다.
+2. Task 2.2에서 `data-brand-theme`와 color mode를 독립 구현하고, profile token equality를 계약화한다. (구현됨: `premium`·`krds-aligned`)
 3. `krds-standard`의 typography·shape·high-contrast를 작은 representative state에서 먼저 검증한다.
 4. identity를 제외한 component/pattern adaptation을 실제 vertical pilot에서 증명한다.
 5. 기관 자격과 content owner가 정해진 뒤 identity를 별도 feature로 구현한다.
@@ -233,7 +233,7 @@ checkedAt: <date>
 남은 release blockers:
 
 - product/institution owner와 official-service 자격.
-- Task 2.2 profile implementation.
+- `krds-standard` profile adapter(`premium`·`krds-aligned` 프로필과 profile×mode plumbing은 구현됨).
 - current UI baseline과 rendered profile×mode×state evidence.
 - user/task, keyboard, screen reader, reflow, forced-colors, reduced-motion 결과.
 - official self-checklist 실행과 승인된 exception.
