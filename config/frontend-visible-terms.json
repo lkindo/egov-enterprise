@@ -310,7 +310,8 @@
       "roles": ["ADMIN", "SYSTEM"],
       "sources": [
         "frontend/src/app/admin/page.tsx",
-        "frontend/src/app/admin/AdminDashboardClient.tsx"
+        "frontend/src/app/admin/AdminDashboardClient.tsx",
+        "frontend/src/app/components/ui/visual-audit-timeline.tsx"
       ],
       "evidenceLevel": "static-source-and-contract-test",
       "status": "remediated-local",
@@ -321,6 +322,14 @@
           "kind": "unproven-intelligence-label",
           "evidence": "internal intelligence, governance, and AI-engine labels were presented as administrator-facing product capabilities",
           "removedSourceEvidence": ["인텔리전스 센터", "지능형 데이터 분석", "보안 거버넌스", "AI_INSIGHT_ENGINE"],
+          "status": "remediated-local",
+          "owner": "dashboard-domain-owner",
+          "reviewBy": "2026-12-15"
+        },
+        {
+          "kind": "guessed-audit-severity-and-dotted-dates",
+          "evidence": "최근 감사 이력이 서비스·메서드 이름의 키워드로 추측한 중요도를 영문 대문자 등급으로, 맞지 않는 기록을 수정으로 그렸고 발생일자를 점 구분으로 썼다. 추측을 걷고 저장된 판정만 보이며 날짜는 yyyy-MM-dd 로 쓴다(term-operational-status, formatRules.date).",
+          "removedSourceEvidence": ["(log.severity || 'low').toUpperCase()", "AI 기반 변경 감지 엔진", "${digits.slice(0, 4)}.${digits.slice(4, 6)}"],
           "status": "remediated-local",
           "owner": "dashboard-domain-owner",
           "reviewBy": "2026-12-15"
@@ -356,6 +365,14 @@
           "removedSourceEvidence": ["LogExcelExport.nullSafe(dto.otptCnt())", "\"삭제\", \"출력\", \"오류\""],
           "status": "remediated-local",
           "owner": "security-privacy",
+          "reviewBy": "2026-12-15"
+        },
+        {
+          "kind": "storage-date-shown-raw",
+          "evidence": "발생일자 열이 저장 형식 yyyyMMdd 를 그대로 보였다. 정렬 키는 원문으로 두고 표시만 yyyy-MM-dd 로 바꾼다(formatRules.date).",
+          "removedSourceEvidence": ["{item.ocrnYmd || '-'}"],
+          "status": "remediated-local",
+          "owner": "content-design",
           "reviewBy": "2026-12-15"
         }
       ]

@@ -6,6 +6,8 @@ import { HubHeader } from '../HubHeader';
 import { HubInsightBadge } from '../HubInsightBadge';
 import { HubListCard } from '../HubListCard';
 import { HubSummaryCard } from '../HubSummaryCard';
+import { HubMetricCard } from '../HubMetrics';
+import type { LucideIcon } from 'lucide-react';
 
 // lucide-react 아이콘과 같은 forwardRef 객체다. 런타임 typeof가 `object`이므로
 // 종전의 `typeof icon === 'function'` 구현에서는 렌더되지 않았다.
@@ -90,5 +92,15 @@ describe('Hub 공통 컴포넌트', () => {
     expect(icons[1]).toHaveAttribute('data-size', '140');
     expect(screen.getByText('3%')).toBeInTheDocument();
     expect(screen.getByText('processing-rate')).toHaveClass('sr-only');
+  });
+
+  // [2026-09-15 DEC-OPS-100] 상태를 넘기지 않은 지표 카드에 근거 없는 'NOMINAL' 배지를 붙이지 않는다.
+  it('지표 카드는 넘겨받은 상태만 배지로 그린다', () => {
+    const DotIcon = (() => null) as unknown as LucideIcon;
+    const { rerender } = render(<HubMetricCard title="처리 건수" value={3} icon={DotIcon} />);
+    expect(screen.queryByText('NOMINAL')).toBeNull();
+
+    rerender(<HubMetricCard title="처리 건수" value={3} icon={DotIcon} status="정적 예시" />);
+    expect(screen.getByText('정적 예시')).toBeInTheDocument();
   });
 });

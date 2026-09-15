@@ -56,7 +56,7 @@ export default async function AdminStatsPage() {
       return {
         statsDate,
         name: statsDate.length === 8
-          ? `${statsDate.substring(4, 6)}/${statsDate.substring(6, 8)}`
+          ? `${statsDate.substring(4, 6)}-${statsDate.substring(6, 8)}`
           : (statsDate || 'N/A'),
         statsCo: typeof item.statsCo === 'number' ? item.statsCo : 0,
       };

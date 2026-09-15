@@ -152,6 +152,8 @@ test('home route sources are bound to their real entry points and do not expose 
   assert.deepEqual(adminPilot.sources, [
     'frontend/src/app/admin/page.tsx',
     'frontend/src/app/admin/AdminDashboardClient.tsx',
+    // [2026-09-15 DEC-OPS-100] 최근 감사 이력 목록을 그리는 공용 타임라인도 이 화면의 문구 증거다.
+    'frontend/src/app/components/ui/visual-audit-timeline.tsx',
   ]);
   assert.doesNotMatch(rootSources, /실시간 피드|보안 지수|value="안전"|시스템 활성 지표|CPU 사용률|24%|42%|홍길동|이순신 과장/);
   assert.match(rootSources, /최근 활동 데이터가 연결되지 않았습니다/);
@@ -300,6 +302,7 @@ test('screens fixed for term decisions do not bring the overclaiming or misnamed
     'frontend/src/app/admin/workflow/WorkflowClient.tsx',
     'frontend/src/app/components/ui/workflow-canvas.tsx',
     'frontend/src/app/admin/operation/rough-map/page.tsx',
+    'frontend/src/app/components/ui/visual-audit-timeline.tsx',
   ]) {
     assert.doesNotMatch(read(file), /인텔리전스|지능형|AI 기반/, file);
   }

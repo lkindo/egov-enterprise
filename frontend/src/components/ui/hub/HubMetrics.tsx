@@ -19,7 +19,7 @@ export function HubMetricCard({
   value, 
   icon: Icon, 
   color = 'primary', 
-  status = 'NOMINAL', 
+  status, 
   unit,
   trend,
   className 
@@ -49,7 +49,8 @@ export function HubMetricCard({
           <Icon size={22} />
         </div>
         <div className="flex flex-col items-end gap-2">
-            <HubStatusBadge label={status} variant="default" className="text-[10px] font-bold tracking-widest shadow-sm" />
+            {/* [2026-09-15 DEC-OPS-100] 기본값 'NOMINAL' 은 근거 없는 상태 배지였다 — 상태를 넘긴 카드만 배지를 그린다. */}
+            {status ? <HubStatusBadge label={status} variant="default" className="text-[10px] font-bold tracking-widest shadow-sm" /> : null}
             {trend && (
                 <span className={cn(
                     "text-[10px] font-bold px-2 py-0.5 rounded-lg border tracking-tighter uppercase",

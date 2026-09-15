@@ -77,6 +77,7 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { SampleDataBadge, NavButton, StatusIndicator, HarnessDashboardOverview, SkillDetailView, TestDetailView } from './components/MonitoringPanels';
+import { toDisplayDateTime } from '@/lib/format-date';
 import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 
 export type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'TOPOLOGY' | 'HARNESS';
@@ -295,25 +296,29 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 /* reusable-base:collaboration:end */
 
   // Real-time Metrics Queries
-  const { data: healthData, error: healthError, isLoading: isHealthLoading, refetch: refetchHealth } = useQuery({
+  const { data: healthData, error: healthError, isLoading: isHealthLoading, refetch: refetchHealth, dataUpdatedAt: healthUpdatedAt } = useQuery({
     ...monitoringQueryOptions.health(),
     enabled: activeTab === 'OBSERVABILITY'
   });
 
   /**
    * [P1-1] 액추에이터 조회 실패를 '0%'/'정상'으로 위장하지 않는다.
-   * ⚠ CPU·메모리 게이지는 `MonitoringAdminService` 가 내부 catch 로 0 을 반환해 실패와 유휴가
-   *   구분되지 않는다(서비스 파일 소유자 정정 필요 — `number | null` 반환으로 승격).
+   * CPU·메모리 게이지는 서비스가 조회 실패·미측정을 `null` 로 돌려주고 게이지가 측정값 없음을 그린다
+   *   ([2026-09-15 DEC-OPS-100] 종전에는 0 으로 폴백해 실패와 유휴가 구분되지 않았다).
    *   여기서는 health 조회 실패를 근거로 액추에이터 미가용을 화면에 명시한다.
    */
   const isActuatorUnavailable = activeTab === 'OBSERVABILITY' && !isHealthLoading && (Boolean(healthError) || !healthData);
+  // [2026-09-15 DEC-OPS-100] 조회 중·실패는 장애 단정(점검 필요)도 근거 없는 최상급(최적 상태)도 아니다.
+  //   받은 health 응답과 받은 시각만 말한다(term-operational-status).
+  const healthStatus = typeof healthData?.status === 'string' && healthData.status ? healthData.status : null;
+  const isHealthKnown = !isHealthLoading && !healthError && healthStatus !== null;
 
-  const { data: cpuUsage = 0 } = useQuery({
+  const { data: cpuUsage = null } = useQuery({
     ...monitoringQueryOptions.cpu(),
     enabled: activeTab === 'OBSERVABILITY'
   });
 
-  const { data: memUsage = 0 } = useQuery({
+  const { data: memUsage = null } = useQuery({
     ...monitoringQueryOptions.memory(),
     enabled: activeTab === 'OBSERVABILITY'
   });
@@ -644,8 +649,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
       {/* 실측(액추에이터) 기반 지표 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <GaugeChart value={Number(cpuUsage.toFixed(1))} title="CPU_LOAD" unit="%" color="#10B981" />
-        <GaugeChart value={Number(memUsage.toFixed(1))} title="MEMORY_ALLOC" unit="%" color="#3B82F6" />
+        <GaugeChart value={cpuUsage === null ? null : Number(cpuUsage.toFixed(1))} title="CPU_LOAD" unit="%" color="#10B981" />
+        <GaugeChart value={memUsage === null ? null : Number(memUsage.toFixed(1))} title="MEMORY_ALLOC" unit="%" color="#3B82F6" />
       </div>
 
       {/*
@@ -693,10 +698,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           <div className="flex items-center gap-6">
             <div className={cn(
               "w-5 h-5 rounded-lg animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]",
-              healthData?.status === 'UP' ? "bg-emerald-500" : "bg-rose-500"
+              !isHealthKnown ? "bg-warning" : healthStatus === 'UP' ? "bg-emerald-500" : "bg-rose-500"
             )} />
             <h3 className="text-3xl font-bold tracking-tighter leading-none">
-              코어 엔진: {healthData?.status === 'UP' ? '최적 상태' : '점검 필요'}
+              {!isHealthKnown
+                ? '시스템 상태 미확인'
+                : healthStatus === 'UP'
+                  ? `시스템 상태: 정상 (health 응답 UP, ${toDisplayDateTime(healthUpdatedAt)} 기준)`
+                  : `시스템 상태: 점검 필요 (health 응답: ${healthStatus})`}
             </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -1065,13 +1074,15 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <header className="flex items-start justify-between gap-2 border-b border-border p-[var(--filter-pad)]">
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-foreground">
-                  {detailKind === 'SKILL' ? '엔진 아키텍처'
-                    : detailKind === 'TEST' ? '가드레일 검증'
+                  {detailKind === 'SKILL' ? '스킬 상세'
+                    : detailKind === 'TEST' ? '테스트 상세'
                       : '선택 항목 상세'}
                 </h2>
                 <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
                   식별자 {selectedItemId}
                 </p>
+                {/* [2026-09-15 DEC-OPS-100] 상세는 정적 카탈로그·표본이다 — 목록과 같은 고지를 상세에도 둔다(demo). */}
+                <div className="mt-2"><SampleDataBadge /></div>
               </div>
               <Button variant="outline" size="sm" onClick={() => setSelectedItemId(null)}>닫기</Button>
             </header>
