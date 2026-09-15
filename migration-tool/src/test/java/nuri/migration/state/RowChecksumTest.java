@@ -1,6 +1,7 @@
 package nuri.migration.state;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -10,19 +11,23 @@ import java.security.MessageDigest;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.NClob;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+@ResourceLock("java.util.TimeZone.default")
 class RowChecksumTest {
 
     @Test
@@ -60,6 +65,55 @@ class RowChecksumTest {
             assertThat(checksum(value)).isEqualTo(legacyChecksum(value));
         }
         assertThat(checksum(new BigDecimal("100.00"))).isEqualTo(checksum(100));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "2026-09-15 12:34:00.0",
+            "2026-09-15 12:34:56.000000001",
+            "2026-09-15 12:34:56.00000001",
+            "2026-09-15 12:34:56.0000001",
+            "2026-09-15 12:34:56.000001",
+            "2026-09-15 12:34:56.001",
+            "2026-09-15 12:34:56.1",
+            "2026-09-15 12:34:56.123456",
+            "2026-09-15 12:34:56.999999999"
+    })
+    void localDateTimeMatchesFixedFractionSpellingAndExistingJdbcTimestampCheckpoints(String spelling) throws Exception {
+        LocalDateTime value = LocalDateTime.parse(spelling.replace(' ', 'T'));
+        Timestamp jdbc = Timestamp.valueOf(spelling);
+
+        assertThat(jdbc.toString()).isEqualTo(spelling);
+        assertThat(checksum(jdbc)).isEqualTo(legacyChecksum(jdbc));
+        assertThat(checksum(value)).isEqualTo(legacyChecksum(jdbc)).isEqualTo(legacyChecksum(spelling));
+    }
+
+    @Test
+    void localDateTimeChecksumsDetectAMicrosecondChange() throws Exception {
+        LocalDateTime value = LocalDateTime.of(2026, 9, 15, 12, 34, 56, 123456000);
+        String original = checksum(value);
+
+        assertThat(original).isEqualTo(legacyChecksum("2026-09-15 12:34:56.123456"));
+        assertThat(checksum(value.plusNanos(1000))).isNotEqualTo(original)
+                .isEqualTo(legacyChecksum("2026-09-15 12:34:56.123457"));
+    }
+
+    @Test
+    void localDateTimeChecksumDoesNotDependOnDefaultTimezoneEvenInsideADaylightSavingGap() throws Exception {
+        TimeZone original = TimeZone.getDefault();
+        LocalDateTime gap = LocalDateTime.of(2026, 3, 8, 2, 30, 0, 123456000);
+        LocalDateTime overlap = LocalDateTime.of(2026, 11, 1, 1, 30, 0);
+        String expectedGap = legacyChecksum("2026-03-08 02:30:00.123456");
+        String expectedOverlap = legacyChecksum("2026-11-01 01:30:00.0");
+        try {
+            for (String zone : List.of("UTC", "Asia/Seoul", "America/New_York", "Europe/Berlin")) {
+                TimeZone.setDefault(TimeZone.getTimeZone(zone));
+                assertThat(checksum(gap)).as("local wall time inside a DST gap: %s", zone).isEqualTo(expectedGap);
+                assertThat(checksum(overlap)).as("local wall time inside a DST overlap: %s", zone).isEqualTo(expectedOverlap);
+            }
+        } finally {
+            TimeZone.setDefault(original);
+        }
     }
 
     @ParameterizedTest

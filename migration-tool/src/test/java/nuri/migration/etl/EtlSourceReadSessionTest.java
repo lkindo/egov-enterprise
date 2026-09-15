@@ -13,6 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -183,6 +184,9 @@ class EtlSourceReadSessionTest {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
+        DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        given(connection.getMetaData()).willReturn(metadata);
+        given(metadata.getDatabaseProductName()).willReturn("PostgreSQL");
         given(jdbc.getDataSource()).willReturn(dataSource);
         given(dataSource.getConnection()).willReturn(connection);
         return new SourceFixture(jdbc, dataSource, connection);

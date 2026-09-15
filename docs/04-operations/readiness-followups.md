@@ -166,7 +166,7 @@ check 24,930건, 오류율 0%, p95 41.93ms였다. 최종 소스로 백엔드·�
 
 이 실측은 원천 탐색의 증거이며, 후속 단계의 2026-09-15 검증은 아래에 구분한다. Oracle 어댑터 증거 수준은
 `UNVERIFIED`로 유지한다. SCN 스냅샷, 운영 규모, 19c 등 다른 버전과 외부 드라이버 commit 자격은 검증하지 않았다.
-Tibero는 공개 실행 이미지가 없어 실측하지 못했다.
+Tibero는 당시 실행 환경을 확보하지 못해 실측하지 못했다. 후속 준비 상태는 [실행 환경 점검](#tibero-및-oracle-19c-실행-환경-점검)을 따른다.
 
 ## 이관 Oracle 후속 단계 실측
 
@@ -205,7 +205,8 @@ LOB 연결 연산으로 생성하고 `getCharacterStream` 전체 내용과 먼�
 CLOB 임시 복사·JDBC 버퍼·identity/checkpoint 목록을 포함한 JVM 전체 힙 상한이 아니며, 임의 크기 LOB를
 디스크로 spool하는 구현도 아니다. source와 target의 `fetchSize=1`은 JDBC 힌트이며 드라이버 버퍼의 강제 상한이 아니다.
 크기 초과·길이 불일치는 잘라 저장하지 않고 실패한다.
-`NCLOB`, `LONG*`, `SQLXML`, quoted identifier와 vendor-specific type은 공개 load에서 계속 차단한다.
+Oracle의 `NCLOB`, `LONG*`, `SQLXML`, quoted identifier와 vendor-specific type은 공개 load에서 계속 차단한다.
+아래 MySQL의 `LONGVARCHAR`/`LONGVARBINARY` 처리는 MySQL 전용 capability이며 Oracle의 범위를 넓히지 않는다.
 
 가시성 증명은 로그인 사용자·현재 사용자·현재 스키마·local owner가 일치하고 시스템/공통 계정이 아닌 경우만 적용한다.
 catalog를 지정하지 않고 시스템 객체를 제외한 단일 스키마 범위여야 한다.
@@ -256,6 +257,338 @@ SCN·운영 규모·상한 초과 LOB의 별도 처리 검증이다. 이번 결�
 verify/report는 load 내부 단계이고 resume는 같은 run의 재실행이다. 전체 rollback CLI는 없으며,
 백업 복원·운영 cutover는 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 절차로 이번에 실행하지 않았다.
 
+## 이관 MySQL 후속 단계 실측
+
+2026-09-15 폐기용 Docker의 MySQL `8.4.11`과 Connector/J `26.7.0`, PostgreSQL `17.10` 대상을 사용했다.
+원천 이미지는 `mysql@sha256:85b9bf2e29cf836ecb8c2a15a935d4ba0c606631dff1dd79531a11983c638f2a`로 고정한다.
+DB·driver 버전은 연결의 실제 JDBC 메타데이터로 기록하며, 계정과 데이터는 합성 fixture만 사용한다.
+MySQL 어댑터의 증거 수준은 `UNVERIFIED`이며 공개 COMMIT 자격과 기관 운영 승인을 부여하지 않는다.
+
+`npm run verify:migration` 전체 회차는 **599건 중 597건 통과, 실패·오류 0건, Windows 심볼릭 링크 2건 skip**이었다.
+MySQL 실제 DB 시험 33건과 기존 Oracle 17건은 모두 통과했다. 이후 드라이버 확인·치명 오류 보존·상한 단위 시험·
+3단 source 조기 거절을 보완한 뒤 `compileJava compileTestJava`와 표적 검사를 실행해
+**331건 중 330건 통과, 실패·오류 0건, 심볼릭 링크 1건 skip**을 확인했다.
+이 후속 회차는 가시성 14건·workflow 5건·배포 JAR 1건의 실제 MySQL 재검증을 포함하며 전체 회차와 구분한다.
+
+| 범위 | 확인된 결과·경계 | 근거 |
+|---|---|---|
+| 최소권한 가시성 | 단일 존재 DB의 database-wide SELECT 계정에서 TABLE/COLUMN/PRIMARY_KEY와 빈 DB를 확인한다. 일부 테이블·컬럼 권한, 미존재 DB, 기본 CATALOG 모드, 범위 확장과 메타데이터/권한 조회 실패는 완전한 가시성 증명으로 취급하지 않는다 | [가시성 통합 테스트](../../migration-tool/src/test/java/nuri/migration/MySqlDiscoveryVisibilityIntegrationTest.java) |
+| 직접 엔진의 scalar 복구 | 1,001행에서 오류 행 501의 기록과 checkpoint만 누락시키고 나머지 1,000행을 보존한다. 정정 후 같은 run으로 재개·재반복해 전체 값과 무중복을 확인하고 target 변조를 탐지한다 | [엔진 통합 테스트](../../migration-tool/src/test/java/nuri/migration/EtlMySqlPostgresIntegrationTest.java) |
+| 직접 엔진의 LONGBLOB | 16MiB 전체 바이트와 checksum, NULL/빈 값 구분, 재반복 무중복과 마지막 바이트 변조를 확인한다. 대상은 PostgreSQL bytea이며 large object 증가는 없다 | 같은 엔진 통합 테스트 |
+| 직접 엔진의 LONGTEXT | 11MiB UTF-8 Unicode 전체 본문과 checksum, NULL/빈 값 구분, 재반복 무중복과 마지막 문자 변조를 확인했다. 최초 긴 Reader fixture 업로드는 이관 전 원본 비교에서 실패했으며, 서버 REPEAT로 합성 원본을 만들고 원본·대상 전체 비교를 유지해 재검증했다 | 같은 엔진 통합 테스트 |
+| 직접 엔진의 프로세스 종료 | 1,001행 중 8행의 LONGBLOB/LONGTEXT 합계 152MiB를 최대 힙 128MiB JVM에서 읽는다. 500·504 영속 checkpoint에서 각각 강제 종료하고 새 JVM으로 재개·재반복한다. 전체 본문 hash·무중복과 바이너리/문자 본문의 변조 탐지를 확인했다 | [MySQL JVM 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlMySqlCrashRecoveryIntegrationTest.java) |
+| 수치·고정 문자 | decimal(38,9)의 양수·음수는 PostgreSQL numeric(38,9)에, unsigned bigint 최댓값은 numeric(20,0)에 보존했다. signed long 범위를 넘는 unsigned 값은 target 행·checkpoint 기록 전에 거절했다. CHAR의 Unicode·앞 공백과 MySQL 조회에서 뒤 padding을 제거한 실제 값, NULL/빈 값·재반복·변조 탐지를 확인했다 | [값 타입 통합 테스트](../../migration-tool/src/test/java/nuri/migration/MySqlValueTypesIntegrationTest.java) |
+| 날짜·시간 | DATE와 DATETIME(6)을 PostgreSQL date·timestamp(6)에 적재해 날짜와 6자리 소수초를 보존했다. 최초 Java/JDBC 시간 표현 차이로 실패한 checksum은 정규화 후 전체 행 대조·재반복과 1마이크로초 변조 탐지를 통과했다 | 같은 값 타입 통합 테스트 |
+
+DATETIME(6)에 대해 Connector/J의 `getColumns`는 `DECIMAL_DIGITS=0`을 보고했지만,
+실제 `information_schema.COLUMNS.datetime_precision`은 6이었다. 시험은 driver 메타데이터와 물리 정밀도를
+각각 확인하고 적재한 전체 값을 직접 비교한다. 메타데이터의 0을 소수초가 없는 물리 타입의 증거로 취급하지 않는다.
+
+`RowChecksum`은 `LocalDateTime`을 기존 JDBC `Timestamp`와 같은 공백 구분·소수초 표현으로 정규화하도록
+수정했다. 기존 JDBC `Timestamp`의 영속 hash는 유지하지만, 이전 `LocalDateTime.toString()`의 `T` 구분 표현으로
+계산한 hash는 달라진다. 구현 digest가 바뀌므로 기존 승인 plan은 재작성·재승인해야 한다. 이전 `T` 표현의
+checkpoint가 있는 run의 자동 재개 호환성은 보장하지 않는다. checkpoint를 지우지 말고 기존 승인·run·원천과
+대상 근거를 보존해 별도 reconciliation과 승인을 거친다([복구 절차](migration-recovery-runbook.md#재개와-reconciliation)).
+
+MySQL `LONGTEXT`/`LONGBLOB`의 실제 JDBC 타입 `LONGVARCHAR`/`LONGVARBINARY`만 MySQL 전용 capability로 허용한다.
+열의 스트림을 ResultSet이 열린 동안 읽고 문자 본문은 `String`, 바이너리는 `byte[]`로 변환해 기존 변환·checksum·
+target INSERT와 checkpoint에 결속한다. NULL과 빈 값은 구분한다. 다른 vendor의 `LONG*` 타입을 같은 근거로 허용하지 않는다.
+
+값별 제한은 **바이너리 32MiB, 문자 16,777,216 UTF-16 단위**이며 보관할 행의 추정치는 64MiB까지다.
+페이지는 최대 500행 또는 마지막 행을 포함한 뒤 누적 추정치가 8MiB에 도달하면 나눈다.
+이 기준은 전체 JVM 힙 상한이 아니다. 스트림 취합과 최종 문자열/바이트 배열의 일시 복사, JDBC 버퍼와 checkpoint/identity
+목록이 추가 메모리를 사용한다. 128MiB 복구 성공은 이번 8MiB 바이너리·11MiB UTF-8 문자 본문 fixture의 증거이며,
+최대 허용 값이나 임의 크기 LOB·GB/TB 규모의 메모리와 처리 시간을 보장하지 않는다. 초과 값은 잘라 저장하지 않고 실패한다.
+
+원천 조회는 실제 Connector/J property의 `useCursorFetch`와 `useServerPrepStmts`가 모두 true일 때
+forward-only/read-only statement에 `fetchSize=1`을 적용한다. property는 외부 driver를 배포 JAR에 포함하지 않고
+읽기 전용 reflection으로 확인한다. cursor 설정이 없거나 확인되지 않으면 Connector/J의 `Integer.MIN_VALUE` sentinel로
+행 단위 읽기를 유지한다. sentinel 방식은 조기 종료한 결과의 나머지 행을 driver가 끝까지 읽고 버리므로, 큰 행으로
+페이지가 자주 나뉘면 중복 원천 I/O가 증가한다. source driver가 Connector/J인지 증명되지 않으면 유계 조회를 가정하지 않고
+차단한다. 조회 설정 실패 뒤 자원 정리가 추가로 실패해도 원래 JVM 치명 오류를 보존하고,
+일반 오류 뒤 발생한 치명 오류는 전파하도록 부정 조합을 검증한다.
+대상 검증은 기존 PostgreSQL `fetchSize=1` cursor에서 행별 checksum을 계산한다.
+
+가시성 증명에는 Connector/J `databaseTerm=SCHEMA`, 명시한 단일 DB와 TABLE/COLUMN/PRIMARY_KEY 범위,
+현재 계정에 직접 부여한 해당 DB 전체의 SELECT 권한과 `partial_revokes=0`이 필요하다. 밑줄·퍼센트 문자는
+권한 카탈로그의 리터럴 escape 철자와 실제 DB 철자를 각각 정확히 대조한다. wildcard·global·role·table/column만의
+권한과 미실측 partial revokes 모드는 완전한 가시성을 증명하지 않는다. SCHEMA 모드에서 `getCatalog()=null`이지만
+컬럼 metadata의 `TABLE_CAT=def`인 실측을 반영해 누락된 기본 catalog만 보정한다.
+mapping의 원천 SQL 이름은 `table` 또는 `schema.table`을 사용한다. `def.schema.table`을 포함한
+3단 이름은 metadata 조회 전에 `MYSQL_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED`로 거절한다.
+계획의 catalog를 포함한 객체 식별 정보는 입력 mapping의 SQL 이름을 바꾸지 않는다
+([MySQL 식별자 문법](https://dev.mysql.com/doc/refman/8.4/en/identifier-qualifiers.html)).
+단일 InnoDB REPEATABLE READ 트랜잭션과 operator freeze 확인을 사용하며,
+가시성 증명 자체가 freeze나 재시작 사이의 동일 snapshot을 증명하지 않는다.
+
+공개 [workflow 통합 테스트](../../migration-tool/src/test/java/nuri/migration/MySqlWorkflowPostgresIntegrationTest.java)는
+discover → review → plan → validate → dry-run과 승인 누락·환경 변경·미검증 COMMIT의 차단을 통과했다.
+업무 target 행과 control 스키마가 생기지 않는 것, LONG 필드의 전체 변환 본문과 `DRY_RUN/PASS` artifact를 확인했다.
+[배포 CLI 시험](../../migration-tool/src/test/java/nuri/migration/MySqlPackagedCliIntegrationTest.java)도 실제 bootJar와
+외부 JDBC JAR로 같은 단계와 정확한 driver digest 확인을 통과했다. bootJar의 Spring 구성에는
+`SourceJdbcEndpointFactory`의 주입 생성자를 명시하고, 중첩 JAR 경로는 실제 outer JAR 전체 bytes에 결속하도록 보완했다.
+정상 실행 가능한 JAR에 합성 리소스만 추가해 이전 승인 plan이 execution digest 불일치로 쓰기 전에 거절되는 것을 확인했다.
+isolated 외부 driver COMMIT과 driver digest ack 누락도 artifact·DB 쓰기 전에 거절한다.
+어댑터 `UNVERIFIED`와 isolated 외부 driver의 공개 COMMIT 금지는 유지한다.
+
+MySQL·MariaDB·Oracle driver와 Testcontainers는 테스트 전용이며 배포 bootJar에 포함되지 않는다.
+MySQL·MariaDB 프로세스 종료·배포 CLI 시험은 일반 `test`와 독립 migration CI에서 계속 실행한다.
+PIT는 targetClasses가 `nuri.migration.transform.*` 단독 또는 `nuri.migration.validate.*`와 `nuri.migration.verify.*`의
+정확한 집합인 기존 CI 두 작업에서만 두 vendor의 이 네 시험을 정확한 클래스 이름으로 제외한다.
+자식 JVM은 일반 classpath/bootJar를 실행하므로 그 범위의 mutant를 검사하지 않는다.
+기본 `nuri.*` 분석에서는 부모의 artifact/adapter 검증을 보존하기 위해 포함한다. 기존 Oracle/PostgreSQL 시험과 생산 코드
+mutation 분모는 유지하며, 정확한 제외·조건과 일반 통합 실행 경로는 기존 [독립 이관 계약](../../scripts/migration-verification-contract.test.mjs)이 검사한다.
+
+로컬 Delta PIT는 `STRICT_MUTATION=true`로 9개 변경 경계 클래스와 관련 단위 시험 42개 클래스를 검사해
+**382/475개 탐지(80.42%)**로 75% 기준을 통과했다. 범위는 `SourceReadStatements`, `JdbcLobReader`,
+`RowChecksum`, `SourceLoadSurfaceGate`, `MySqlDiscoveryVisibilityProof`, `MappingValidator`,
+`MigrationExecutionContract`, `SourceReadSessionPolicy`, `MySqlSourceAdapter`다.
+결과는 정상 탐지 380개·제한시간 탐지 2개·미탐지 59개·미실행 34개이며 run/memory error는 없다.
+점수는 이 범위의 합산이며 각 클래스의 75%나 전체 ETL 변이 검증을 뜻하지 않는다.
+이후 MySQL 어댑터의 `visibilityProof` 전달 경로를 검증하는 단위 시험을 추가해 관련 시험 44건이 모두 통과했다.
+`MySqlSourceAdapter` 단독 후속 PIT도 null-return 변이 1/1개를 탐지해 통과했다. 이 결과는 위 9개 클래스 회차와 별도다.
+`MigrationExecutionContract`는 43/72개 탐지였다. 신규 outer JAR 경로 4개와 기존 JAR 처리 14개 변이는
+미실행 상태이며, 일반 bootJar를 실행하는 자식 JVM의 성공·거절 시험은 이 변이들을 검사하지 않는다.
+기존 class digest의 hash 읽기와 디렉터리 경로 결속·필터에서 생존한 11개 변이도 단위 시험의 탐지 공백으로 남는다.
+배포 JAR 자식 JVM의 실제 동작은 위 CLI 회차에서 따로 확인했다. 현재 변경의 required CI·CodeQL은 실행하지 않았다.
+
+재현은 `npm run verify:migration`이며 부분 실행은 `./gradlew :migration-tool:test --tests '*MySql*IntegrationTest'`다.
+Windows에서는 `.\gradlew.bat`를 사용한다. verify/report는 load의 내부 단계이며 resume는 같은 run의 재실행이다.
+실제 도입 버전·driver digest별 COMMIT 자격, 운영 규모·일관성·cutover와 전체 백업 복원은
+[복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다. MariaDB·SQL Server·Tibero에는 이 결과를 승계하지 않는다.
+
+## 이관 MariaDB 후속 단계 실측
+
+2026-09-15~16 폐기용 Docker의 MariaDB `11.4.13-MariaDB-ubu2404`, MariaDB Connector/J `3.5.10`,
+PostgreSQL `17.10`으로 별도 시험했다. 원천 이미지는
+`mariadb@sha256:80494b9810694179889f7281ec44ca928241df577159c0356a1070e2e94616a1`로 고정하며,
+실제 연결의 JDBC 메타데이터와 합성 fixture를 사용한다. MySQL의 성공 결과를 MariaDB 자격으로 승계하지 않는다.
+2026-09-15 최초 표적 검사 **128건 통과**에는 실제 MariaDB 시험 **36건 통과**가 포함된다.
+이 회차는 추가 서버 행 제한·namespace 경계 시험 전의 결과이며 전체 모듈의 최종 회차 결과가 아니다.
+2026-09-16 추가 표적 3건은 12분 29초에 완료했다. 프로세스 종료 1건·배포 CLI 1건은 통과했으며,
+`Rows_sent` 1건은 예상 3과 실제 2의 차이로 실패했다. 아래에 최초 실패와 assertion 수정 후 통과를 구분한다.
+수정한 Rows_sent 시험은 별도 2건의 의도적 red 회차에서 통과했으며, 같은 회차의 기존 namespace 구현은 실패했다.
+namespace 수정 후 `compileJava compileTestJava`와 영향 검사는 **BUILD SUCCESS(3분 13초)**였고,
+**324건 중 323건 통과, 기존 Windows 심볼릭 링크 1건 skip, 실패·오류 0건**을 확인했다.
+이 최신 회차의 실제 MariaDB 시험은 가시성 18건·workflow 5건의 **23건 통과**다. 여러 회차에서 통과를 확인한
+서로 다른 실제 MariaDB 시험은 **40건**(초기 36건 + Rows_sent·프로세스 종료·배포 CLI·namespace 각 1건)이며,
+40건을 최신 회차에서 모두 실행했거나 현재 전체 모듈을 실행했다는 뜻은 아니다.
+MariaDB 가시성 증명 단위 51건·JDBC metadata edge case 6건·실제 driver 조회 순서 행동을 모사한 단위 4건도 통과했다.
+
+| 범위 | 확인된 결과·경계 | 근거 |
+|---|---|---|
+| 실제 metadata | 기본 CATALOG 모드의 DB catalog·null schema를 확인했다. 명시적 `useCatalogTerm=SCHEMA`에서는 `getCatalog()=def`, `getSchema()=<DB>`와 컬럼의 `TABLE_CAT=def`, `TABLE_SCHEM=<DB>`를 확인한다 | [metadata 통합 테스트](../../migration-tool/src/test/java/nuri/migration/MariaDbMetadataIntegrationTest.java), [workflow 통합 테스트](../../migration-tool/src/test/java/nuri/migration/MariaDbWorkflowPostgresIntegrationTest.java) |
+| 최소권한 가시성 | 존재하는 단일 DB에 현재 계정의 직접 database-wide SELECT 권한과 활성 role 없음이 필요하다. TABLE/COLUMN/PRIMARY_KEY·빈 DB와 리터럴 `_`/`%` escape 철자를 확인한다. wildcard·global·role·PUBLIC·table/column 권한, 기본 CATALOG와 조회 실패는 완전한 증명으로 취급하지 않는다 | [가시성 통합 테스트](../../migration-tool/src/test/java/nuri/migration/MariaDbDiscoveryVisibilityIntegrationTest.java) |
+| 직접 엔진의 scalar·LONG 값 | scalar 1,001행의 오류 행 재개·재반복·무중복·변조 탐지, 16MiB LONGBLOB과 11MiB UTF-8 Unicode LONGTEXT의 전체 내용·checksum·NULL/빈 값 구분을 확인했다. 크기 초과는 target 행·checkpoint 기록 전에 거절한다 | [엔진 통합 테스트](../../migration-tool/src/test/java/nuri/migration/EtlMariaDbPostgresIntegrationTest.java) |
+| LONG 변환·batch 오류 복구 | LONGTEXT 본문 변환 결과와 영속 checksum을 대조하고, binary/text batch 실패 뒤 본문을 유지한 행별 재시도·미기록 오류 행 정정·같은 run 재개를 확인했다 | 같은 엔진 통합 테스트 |
+| 수치·고정 문자·시간 | decimal(38,9), unsigned bigint 최댓값의 BigInteger → numeric(20,0) 보존과 signed long 범위 초과 거절, CHAR Unicode·padding 조회 의미를 확인했다. DATE·DATETIME(6)의 전체 값·checksum과 PostgreSQL timestamp(6)의 6자리 소수초를 대조한다 | [값 타입 통합 테스트](../../migration-tool/src/test/java/nuri/migration/MariaDbValueTypesIntegrationTest.java) |
+| 공개 workflow | 명시한 DB의 discover → 객체별 review → plan → validate → dry-run을 확인했다. scalar 501행과 LONG 본문 변환을 검증하고 target 업무 행·control 스키마 무변경을 확인한다. 승인 누락·target drift·UNVERIFIED COMMIT을 차단한다 | workflow 통합 테스트 |
+| 직접 엔진의 프로세스 종료 | **통과**. 1,001행·8쌍 LONG 값 합계 152MiB를 최대 힙 128MiB 자식 JVM의 실제 StreamingResult에서 읽었다. 500·504 영속 checkpoint에서 각각 강제 종료하고 새 JVM으로 재개·재반복했다. 전체 1,001행의 본문 hash·checkpoint·무중복과 target binary/text 변조의 종료 코드 2를 확인했다 | [MariaDB JVM 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlMariaDbCrashRecoveryIntegrationTest.java) |
+| 배포 CLI | **통과**. 실제 bootJar·외부 JDBC JAR에서 13단계의 성공·거절 결과를 확인했다. discover·review·validate·dry-run, 정상 실행 가능한 app/driver JAR에 합성 리소스를 추가한 digest 변경과 ack 누락의 거절·무 artifact·무 DB 쓰기를 확인했다. isolated 외부 driver COMMIT 금지는 유지한다 | [배포 CLI 시험](../../migration-tool/src/test/java/nuri/migration/MariaDbPackagedCliIntegrationTest.java) |
+| 서버 행 제한 | **통과**. 10행 fixture에 `setMaxRows(2)`를 적용해 `selectedRows=2`, `serverRowsSentDelta=2`, `statusRows=1`을 기록했다. 최초 예상 3은 SHOW 자신의 행까지 세는 잘못된 assertion이었다. 수정 후 연속 SHOW의 counter 무증가와 예상 delta 2를 모두 확인했다 | 엔진 통합 테스트 |
+
+공개 운용에는 명시적 `useCatalogTerm=SCHEMA`, `--schemas=<정확한 DB>`와 단일 DB의 관계형 객체 범위가 필요하다.
+기본 CATALOG metadata의 탐색 성공은 이 경로의 승인 가시성 증명이 아니다. 원천 mapping은 `table` 또는
+`DB.table`을 사용한다. `def.DB.table`을 포함한 3단 이름은 metadata 조회 전에
+`MARIADB_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED`로 거절한다. MySQL의 null catalog 보정을 MariaDB에 적용하지 않는다.
+권한 증명은 `CURRENT_ROLE() IS NULL`과 현재 계정의 직접 권한만 대조하며, 실제 DB 철자와 grant의 리터럴
+escape 철자를 구분한다. SELECT 증명은 다른 쓰기 권한의 부재나 source freeze를 증명하지 않는다.
+리터럴 DB 권한의 가시성 시험은 기존 unquoted mapping SQL 식별자 문법을 넓히지 않는다.
+추가 namespace 경계도 **red → 수정 → green을 확인했다**. raw schema를 JDBC LIKE pattern으로 넘기고 테이블
+이름만 대조한 기존 컬럼 수집은 `md_<suffix>`와 `mdX<suffix>`의 같은 이름 테이블에서 인접 DB의
+전용 컬럼 `neighbor_only`까지 섞어 실패했다. 공통 컬럼 수집에서 null schema 처리와 schema pattern escape를
+유지하고, catalog·schema·table을 정확히 대조한 뒤 컬럼과 default를 읽도록 보완했다.
+같은 fixture의 서로 다른 payload 타입·인접 DB 전용 컬럼 구분을 수정 후 통과했으며, 최신 23건에 포함된다.
+
+MariaDB LONGTEXT/LONGBLOB의 실제 JDBC 타입 `LONGVARCHAR`/`LONGVARBINARY`는 명시적 adapter capability로 허용한다.
+ResultSet 안에서 본문을 `String`/`byte[]`로 읽어 변환·checksum·target 기록과 checkpoint에 결속한다.
+값별 상한은 **바이너리 32MiB, 문자 16,777,216 UTF-16 단위**, 행 보관 추정치는 64MiB다.
+페이지는 최대 500행 또는 마지막 행을 포함한 뒤 누적 8MiB 기준으로 나누며 전체 JVM 힙 상한은 아니다.
+Oracle의 LONG* 차단과 다른 미실측 vendor의 제한은 유지한다. DATETIME은 실제 JDBC `Timestamp`로 읽히고,
+driver `DECIMAL_DIGITS=0`과 물리 `information_schema.COLUMNS.datetime_precision=6`을 각각 확인한다.
+메타데이터의 0을 물리 소수초 부재의 증거로 취급하지 않는다. 이전 LocalDateTime hash 표현과 run의 호환성은
+위 MySQL 관측 및 [reconciliation 절차](migration-recovery-runbook.md#재개와-reconciliation)를 따른다.
+
+원천 조회는 실제 MariaDB Connector/J를 확인한 forward-only/read-only statement의 **positive fetchSize=1**을 사용한다.
+MySQL cursor URL이나 MIN_VALUE sentinel 조건을 요구하지 않는다. 현재 ETL의 네 조회 경로는 ResultSet을 먼저 닫고
+Statement를 닫은 뒤 다음 source query를 실행한다. Connector/J 3.5.10의 ResultSet.close는 잔여 패킷을 읽어 버리지만,
+Statement만 먼저 닫거나 미완료 결과를 둔 채 같은 연결에 query를 내면 `fetchRemaining`이 잔여 행을 배열에 모을 수 있다
+([Result.close 공식 소스](https://github.com/mariadb-corporation/mariadb-connector-j/blob/3.5.10/src/main/java/org/mariadb/jdbc/client/result/Result.java#L357),
+[StreamingResult 공식 소스](https://github.com/mariadb-corporation/mariadb-connector-j/blob/3.5.10/src/main/java/org/mariadb/jdbc/client/result/StreamingResult.java#L146)).
+행별 ResultSet.getMetaData/getColumnType은 기존 column decoder를 참조하며 별도 query를 내지 않는다
+([결과 metadata](https://github.com/mariadb-corporation/mariadb-connector-j/blob/3.5.10/src/main/java/org/mariadb/jdbc/client/result/Result.java#L768),
+[column type](https://github.com/mariadb-corporation/mariadb-connector-j/blob/3.5.10/src/main/java/org/mariadb/jdbc/client/result/ResultSetMetaData.java#L213)).
+공식 driver 소스에서 MariaDB 10.3 이상은 `setMaxRows`를 `SET STATEMENT SQL_SELECT_LIMIT=<n> FOR`로 전달한다
+([Connection 조건](https://github.com/mariadb-corporation/mariadb-connector-j/blob/3.5.10/src/main/java/org/mariadb/jdbc/Connection.java#L95),
+[client prepared 경로](https://github.com/mariadb-corporation/mariadb-connector-j/blob/3.5.10/src/main/java/org/mariadb/jdbc/ClientPreparedStatement.java#L59)).
+위 시험의 실제 SELECT 2행과 session Rows_sent 증가 2를 확인했다. 같은 서버의 독립 읽기 전용 프로브에서도
+session counter 0 → SELECT 2행 → counter 2 → SELECT 3행 → counter 5를 관측했으며,
+SHOW는 자신의 status 행을 session counter에 남기지 않았다. 연속 SHOW 무증가와 delta 2의 수정 assertion도 통과했다.
+MariaDB 11.4.13의 `execute_show_status`도 SHOW 실행 뒤 session status snapshot을 복원한다
+([서버 공식 소스](https://github.com/MariaDB/server/blob/mariadb-11.4.13/sql/sql_parse.cc#L5904)).
+실제 관측은 10행 fixture의 `setMaxRows(2)`에 대한 증거이며 최대 크기 payload나 전체 운영 I/O 비용의 보장이 아니다.
+byte 기준으로 일찍 나누면 해당 결과의 미처리 패킷 드레인과 다음 keyset 재조회에 추가 I/O가 남는다.
+fetch1은 한 행의 큰 패킷·LOB 취합·임시 복사에 대한 일정한 메모리 상한을 보장하지 않는다.
+
+MariaDB 어댑터는 **UNVERIFIED**이며 공개 및 isolated 외부 driver COMMIT은 계속 거절한다.
+직접 엔진 시험은 승인형 공개 load의 자격을 부여하지 않는다. 단일 InnoDB REPEATABLE READ와 수동 freeze 확인은
+운영 freeze의 실제 이행이나 재시작 사이의 같은 snapshot을 증명하지 않는다. 최대 허용 LOB·GB/TB 규모·처리량·
+운영 cutover와 전체 백업 복원은 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다.
+이번 보완 후 검증은 영향받은 MariaDB 가시성·workflow 실제 DB 시험, 공통 adapter/JDBC/validator 단위 경계와
+백엔드 compile을 실행했다. 기존 Oracle/MySQL runtime 전체나 기본 `verify:migration` 전체는 이 회차에서 실행하지 않았다.
+scoped Delta PIT는 `SourceReadStatements`, `MariaDbDiscoveryVisibilityProof`, `MariaDbSourceAdapter`,
+`MappingValidator`, `JdbcMetadataSourceAdapter`의 정확한 5개 클래스와 관련 adapter/JDBC/validator/ETL 단위를
+`STRICT_MUTATION=true`·75% 기준으로 검사해 **443/510개 탐지(86.86%)**로 통과했다.
+관련 단위 시험은 40개 클래스이며 결과는 정상 탐지 436개·제한시간 탐지 7개·미탐지 44개·미실행 23개,
+run/memory error 0개다. 점수는 이 5개 클래스의 합산이며 전체 ETL·운영 이관의 검증 점수가 아니다.
+`JdbcMetadataSourceAdapter`는 207/233개, MariaDB 가시성 증명은 43/44개, MariaDB adapter는 1/1개,
+`SourceReadStatements`는 23/23개, `MappingValidator`는 169/209개를 탐지했다.
+새 컬럼 수집의 schema null 처리와 catalog·schema·table 대조 분기 변이는 모두 탐지했다.
+현재 변경의 required CI·CodeQL은 실행하지 않았다. 실제 DB 표적 명령은
+`./gradlew :migration-tool:test --tests '*MariaDbDiscoveryVisibilityIntegrationTest' --tests '*MariaDbWorkflowPostgresIntegrationTest'`다.
+Windows에서는 `.\gradlew.bat`를 사용한다. 일반 모듈 시험과 독립 CI의 전체 통합 시험 등록은 유지하며,
+위 두 scoped PIT 작업의 정확한 subprocess 네 클래스 제외는 일반 classpath/JAR의 mutant 미실행 경계에만 적용한다.
+
+## 이관 SQL Server 후속 단계 실측
+
+2026-09-16 폐기용 Docker의 SQL Server 2022 `16.00.4295`, Microsoft JDBC Driver 13.6 for SQL Server
+`13.6.0.0`, PostgreSQL `17.10`으로 별도 시험했다. 원천 이미지는
+`mcr.microsoft.com/mssql/server@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090`로 고정한다.
+전용 `migration_fixture` DB의 `dbo` 스키마와 합성 데이터만 사용하며 운영 DB·표준 엔티티는 변경하지 않았다.
+SQL Server 어댑터의 증거 수준은 **UNVERIFIED**로 유지한다.
+
+회차별 JUnit XML에서 서로 다른 실제 SQL Server 시험 **47건의 통과**를 확인했다.
+metadata 1건·직접 엔진 14건·가시성 19건·값 타입 4건·workflow 7건·프로세스 종료 1건·배포 CLI 1건이다.
+이는 여러 회차의 개별 시험 최종 성공을 합친 수이며, 47건을 한 회차에서 모두 실행하거나 전체 모듈이 통과했다는 뜻은 아니다.
+초기 회차에는 공개 workflow 5건과 CONTROL SERVER 권한 경계 1건의 실패가 있었다.
+후속 MAX lookahead의 의도적 red도 확인했으며, 수정 후 해당 시험과 workflow·권한 경계 시험의 통과를 별도로 확인했다.
+로컬 정본 XML은 `migration-tool/build/reports/sqlserver-rehearsal-*`에 회차별로 보존한다.
+`boundaries-green` 폴더에도 후속 수정 전 실패가 남아 있으므로 폴더 이름을 전체 성공 판정으로 사용하지 않는다.
+
+| 범위 | 확인된 결과·경계 | 근거 |
+|---|---|---|
+| 실제 metadata | catalog `migration_fixture`·schema `dbo`, JDBC 및 물리 `sys.columns`를 대조했다. MAX는 LONG 코드가 아니라 `VARBINARY(-3)`·`NVARCHAR(-9)`·`VARCHAR(12)`이며 JDBC COLUMN_SIZE는 모두 2,147,483,647이다. nvarchar의 ResultSet precision은 1,073,741,823으로 별도 확인했다 | [metadata 통합 테스트](../../migration-tool/src/test/java/nuri/migration/SqlServerMetadataIntegrationTest.java) |
+| 가시성 | 현재 비시스템 DB의 `dbo`에서 original/current login 일치·현재 사용자 dbo·sysadmin membership이 필요하다. SCHEMA/TABLE/COLUMN/PRIMARY_KEY만 증명하며 일반 schema SELECT·VIEW DEFINITION·table/column/role·CONTROL SERVER 권한과 impersonation은 미증명으로 유지한다 | [가시성 통합 테스트](../../migration-tool/src/test/java/nuri/migration/SqlServerDiscoveryVisibilityIntegrationTest.java) |
+| 직접 엔진의 scalar 복구 | BIGINT/VARCHAR 1,001행의 오류 행 501만 기록·checkpoint가 없고 나머지 1,000행은 보존한다. 미기록 행 정정 후 같은 run 재개·재반복·전체 값·무중복과 target 변조 탐지를 확인했다 | [엔진 통합 테스트](../../migration-tool/src/test/java/nuri/migration/EtlSqlServerPostgresIntegrationTest.java) |
+| MAX 전체 내용·변환 | 16MiB varbinary(max) → bytea, 11MiB UTF-8 Unicode nvarchar(max) → text의 전체 내용·SHA-256·NULL/빈 값·재반복·마지막 값 변조를 확인했다. binary/text batch 실패 뒤 본문을 유지한 행별 재시도·미기록 행 정정·재개와 text trim 결과의 영속 checksum을 대조했다 | 같은 엔진 통합 테스트 |
+| MAX 크기 경계 | 바이너리 32MiB와 nvarchar/varchar 16,777,216 UTF-16 단위는 전체 값을 보존했다. 각 상한+1은 `LOB_SIZE_LIMIT_EXCEEDED`로 target/checkpoint 0행이다. 페이지 lookahead의 초과 MAX 정렬 키도 이전 페이지 기록 전에 거절한다 | 엔진 통합 테스트, [자기 참조 키 단위 회귀](../../migration-tool/src/test/java/nuri/migration/etl/SqlServerSelfReferenceReadTest.java) |
+| 수치·고정 값·시간 | decimal(38,9) → numeric(38,9), signed BIGINT 경계·DATE·DATETIME2(6) → timestamp(6)의 전체 값·checksum을 대조했다. long 범위 초과·소수 포함 decimal → bigint는 기록 전에 거절한다. binary(8) padding·GUID의 JDBC CHAR/String → text·BIT → boolean·VARCHAR 공백·NULL과 변조 탐지를 확인했다 | [값 타입 통합 테스트](../../migration-tool/src/test/java/nuri/migration/SqlServerValueTypesIntegrationTest.java) |
+| 원천 읽기·서버 행 제한 | forward-only/read-only statement·positive fetchSize=1에서 외부 `responseBuffering=full`을 adaptive로 덮어쓴 실제 값을 확인했다. 10행 fixture의 setMaxRows(2)는 첫 결과 2행과 같은 SQL batch의 `@@ROWCOUNT=2`로 서버 제한을 대조했다 | 엔진 통합 테스트, [statement 단위 회귀](../../migration-tool/src/test/java/nuri/migration/jdbc/SourceReadStatementsTest.java) |
+| 공개 workflow·물리 읽기 전용 | 실제 READ_ONLY DB에서 discover → 객체별 review → plan → validate → dry-run의 scalar/MAX 본문 변환·PASS artifact·target/control 무변경을 확인했다. JDBC read-only 신호는 false로 보존하며 실제 INSERT·UPDATE는 오류 3906으로 거절된다. READ_WRITE source·승인/ack/freeze 누락·target drift·UNVERIFIED COMMIT을 차단한다 | [workflow 통합 테스트](../../migration-tool/src/test/java/nuri/migration/SqlServerWorkflowPostgresIntegrationTest.java) |
+| 직접 엔진의 프로세스 종료 | 1,001행·8쌍 MAX 값은 SQL Server 물리 저장량 144MiB, PostgreSQL UTF-8 대상 내용 합계 152MiB다. 최대 힙 128MiB JVM을 500·504 영속 checkpoint에서 각각 강제 종료하고 새 JVM으로 재개·재반복했다. 전체 내용 SHA-256·checkpoint·무중복과 binary/text 변조의 종료 코드 2를 확인했다 | [SQL Server JVM 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlSqlServerCrashRecoveryIntegrationTest.java) |
+| 배포 CLI | 실제 bootJar·외부 JDBC JAR의 13단계에서 discover·review·validate·dry-run을 확인했다. source driver 누락·실행 가능한 app/driver JAR의 digest 변경·driver ack 누락/불일치를 거절하며 업무/control 쓰기는 없다. isolated 외부 driver COMMIT 거절과 adapter UNVERIFIED는 각각 유지한다 | [배포 CLI 시험](../../migration-tool/src/test/java/nuri/migration/SqlServerPackagedCliIntegrationTest.java) |
+
+MAX reader와 SQL Server preflight·가시성 proof는 본문 오류 뒤 자원 정리 중 발생한 JVM fatal 오류를 전파한다.
+수정 전 실패·수정 후 통과를 확인했고, 최종 관련 단위 시험 148건과 `compileJava compileTestJava`가 통과했다.
+변경한 adapter·visibility proof·source statement·LOB reader·fatal boundary 5개 클래스의 strict Delta PIT는
+145/149(97.32%)로 75% 기준을 통과했다. 기존 incremental 결과 114개를 재사용했고, survivor 4개·미실행/무커버리지 0개다.
+이는 전체 ETL 클래스나 제품 전체의 변이 분석 결과가 아니다. 관련 문서·메모리·Atlas·PIT 실행 경로·SAST 계약 70건도 통과했다.
+
+공개 가시성 범위는 catalog 옵션 없이 `--schemas=dbo`와 위 관계형 객체 종류를 명시한다.
+sysadmin은 DENY를 우회하므로 이 증명은 최소권한 SELECT-only 계정의 가시성 자격이 아니다.
+원천 SQL 이름의 `DB.schema.table`은 현재 DB일 때만 허용하며 다른 catalog는 target 상태 생성 전에 차단한다.
+Microsoft driver의 `setReadOnly(true)`만으로 쓰기 금지를 판단하지 않는다. 해당 driver 버전의 preflight는
+실제 연결 catalog와 `DB_NAME()`이 같고 `DATABASEPROPERTYEX(...,'Updateability')=READ_ONLY`인 비시스템 DB에서만
+누락된 JDBC 힌트의 차단을 물리 증거 경고로 바꾼다. `connectionReadOnlySignal=false`, privilege·UNVERIFIED 경고와
+기존 `--ack-adapter`·`--ack-source-freeze`·공개 COMMIT 금지는 유지한다.
+
+SQL Server의 VARBINARY/VARCHAR/NVARCHAR는 ResultSet 안에서 bounded stream으로 읽어 `byte[]`/`String` 본문을
+변환·checksum·target/checkpoint에 결속한다. MAX 정렬 키의 페이지 lookahead와 자기 참조 키 pre-mint에도 같은 읽기 제한을 적용한다.
+자기 참조 초과 키는 ID 생성·target 접근 전에 실패하고 Reader·ResultSet·Statement가 닫히는 것을 별도 단위 시험으로 확인했다.
+값별 상한은 **바이너리 32MiB, 문자 16,777,216 UTF-16 단위**, 행 보관 추정치는 64MiB다.
+페이지는 최대 500행 또는 마지막 행을 포함한 뒤 누적 8MiB로 나눈다. 임시 본문 복사·JDBC 버퍼·keymap/checkpoint를
+포함한 전체 JVM 힙의 고정 상한이 아니며, 128MiB 시험과 최대 크기 단일 값 시험도 서로 다른 fixture다.
+앞선 ResultSet 컬럼을 다시 읽지 않고 왼쪽부터 한 번씩 소비한다. 기존 JDBC Timestamp의 영속 checksum 의미와
+이전 LocalDateTime 표현 run의 [reconciliation 절차](migration-recovery-runbook.md#재개와-reconciliation)는 유지한다.
+
+직접 엔진의 COMMIT 시험은 승인형 공개 load의 vendor/driver 자격을 부여하지 않는다.
+최소권한 계정·database snapshot/SNAPSHOT isolation·운영 freeze의 이행·재시작 사이 snapshot·GB/TB 규모·처리량·
+전체 힙 보장·운영 cutover와 전체 백업 복원은 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다.
+Oracle 19c `19.3.0.0.0`은 별도로 실측했으며 범위와 결과는 [Oracle 19c 후속 단계 실측](#이관-oracle-19c-후속-단계-실측)을 따른다.
+Tibero는 라이선스 파일 부재로 기동하지 못해 discover·load를 아직 실측하지 않았다.
+이번 SQL Server 및 Oracle Free 결과를 이들 환경의 자격으로 승계하지 않는다.
+
+## Tibero 및 Oracle 19c 실행 환경 점검
+
+2026-09-16 `tiberoofficial/tibero:7.2.6`을 실제로 내려받았다. linux/amd64 이미지 digest는
+`sha256:9132b7e399d5f5384848823c531b63c2d060f9e0b297b0afc6aaa6c6d0905614`다.
+이미지의 설치 압축파일에서 `tibero7-jdbc-17.jar`를 확보하고 `com.tmax.tibero.jdbc.TbDriver` 클래스를 확인했다.
+드라이버 SHA-256은 `2e8ad3e9bdb8bfb8c2cdc03692f504e3f43c8b7f7c546fc705ffb37785425de2`다.
+드라이버와 실행 근거는 Git에서 제외하는 로컬 build 경로에 보관하며 운영 의존성에는 추가하지 않았다.
+
+설치 압축파일에는 license 디렉터리만 있고 `license.xml`이 없다. hostname `egov-migration-tibero`,
+2 CPU·4GiB 메모리·외부 네트워크 없는 폐기용 컨테이너의 실제 설치·기동은 종료 코드 1로 실패했다.
+고정 오류는 `Can't open the license file`이며 요구 경로는 `/opt/tibero7/license/license.xml`이다.
+이 이미지는 별도 발급한 demo/유료 라이선스와 발급 hostname의 일치를 요구한다([배포 안내](https://hub.docker.com/r/tiberoofficial/tibero)).
+점검용 컨테이너와 생성한 자격증명 파일을 정리하고 이미지·드라이버만 보존했다.
+
+Oracle 19c의 `container-registry.oracle.com/database/enterprise:19.3.0.0`도 실제 `docker pull`로 확인했지만
+anonymous token 요청이 `401 Unauthorized`로 거절돼 내려받지 못했다. Oracle Registry의 licensed 이미지는
+계정·저장소별 약관 수락·Auth Token 인증이 필요하다([현재 인증 문서](https://docs.oracle.com/en/operating-systems/oracle-linux/podman/registries.html)).
+별도 직접 빌드는 사용할 수 있는 `LINUX.X64_193000_db_home.zip`을 제공해야 한다([공식 빌드 지침](https://github.com/oracle/docker-images/blob/main/OracleDatabase/SingleInstance/README.md)).
+
+별도로 공개 community 게시자의 `fugeritorg/oracle-19.3.0-ee:2025.0` linux/amd64 이미지를 내려받았다.
+시험에 사용하는 pin은 `fugeritorg/oracle-19.3.0-ee@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac`이다.
+이는 공식 Oracle Registry 이미지가 아니며, 게시자는 개발용 이미지로 안내한다([게시자 배포 안내](https://hub.docker.com/r/fugeritorg/oracle-19.3.0-ee)).
+이 community 이미지를 폐기용 Oracle 19c EE/PDB로 기동해 [후속 단계](#이관-oracle-19c-후속-단계-실측)를 실측했다.
+Tibero discover·load는 유효한 `license.xml`과 발급 hostname을 확보한 뒤 검증할 미완료 항목이다.
+어댑터의 `UNVERIFIED`와 공개 COMMIT 금지는 유지한다.
+로컬 근거는 `migration-tool/build/reports/tibero-availability-20260916`과 `migration-tool/build/reports/oracle19c-rehearsal-20260916`이다.
+
+## 이관 Oracle 19c 후속 단계 실측
+
+2026-09-16 Oracle Database 19c Enterprise Edition **19.3.0.0.0**, CDB·PDB `ORCLPDB1`,
+문자 집합 `AL32UTF8`, ojdbc11 **23.26.3.0.0**, PostgreSQL **17.10**을 실제 JDBC와 Oracle 사전 조회로 확인했다.
+위 community 이미지 pin을 사용했으며 일반 local 계정의 `ORACLE_MAINTAINED=N`, `COMMON=NO`와
+CREATE SESSION·CREATE TABLE·CREATE SEQUENCE·UNLIMITED TABLESPACE 네 권한을 대조했다.
+서로 다른 시험 **22건이 모두 통과**했으며 skip은 0건이다.
+
+| 검증 범위 | 고유 시험 수 | 확인한 결과 |
+|---|---:|---|
+| 직접 엔진 | 6 | scalar·native BLOB/CLOB의 COMMIT·ROLLBACK, NULL/빈 값, 오류 행 정정 후 재개·재반복·전체 값·무중복·변조 탐지 |
+| 승인 workflow | 4 | discover → plan → 객체별 review → validate → DRY_RUN, source 본문 대조·target 무쓰기·target drift·UNVERIFIED 공개 COMMIT 거절 |
+| JVM 종료와 복구 | 1 | 1,001행·8쌍의 큰 BLOB/CLOB, 합계 152MiB를 최대 힙 128MiB JVM의 영속 checkpoint 500·504에서 각각 강제 종료 후 재개·재반복·전체 SHA-256·무중복·본문 변조 종료 코드 2 |
+| 가시성 | 6 | owner·빈/미존재 schema·다른 owner 일부 SELECT·CURRENT_SCHEMA 변경·미지원 범위·메타데이터 실패의 판정 |
+| 값 타입·checkpoint | 3 | NUMBER(38,9)/(38,0)·RAW·자정이 아닌 DATE·TIMESTAMP(6)·finite BINARY_FLOAT/DOUBLE·Unicode NCLOB의 전체 값, namespace/소문자 table에 결속한 checkpoint SHA·재개·변조 탐지 및 시간대→local timestamp 변환 거절 |
+| 배포 bootJar | 1 | 별도 자식 JVM 16단계 통과: driver 누락·원본 raw isolated manifest 거절·discover·미검토 plan 거절·review·validate·app/driver JAR 변조·adapter/freeze ack 거절·501행 DRY_RUN·UNVERIFIED 공개 COMMIT 거절, target/control 무쓰기 |
+| 물리 메타데이터 | 1 | 12개 컬럼의 JDBC/물리 구조·NULL/빈 LOB, native TIMESTAMP 원본 표현·typed microseconds·시간대 대조 |
+
+최초 22건 실행의 12건 통과·10건 실패, 영향 회귀 11건 실행의 10건 통과·1건 실패,
+마지막 메타데이터 1건 실행의 1건 통과를 보존했다.
+첫 회차의 엔진 6·workflow 4·JVM 복구 1, 두 번째 회차의 가시성 6·값 타입 3·배포 JAR 1에서
+21건의 통과를 집계하고 마지막 물리 메타데이터 1건을 더해 고유 22건을 확인했다.
+두 회차에 중복된 시간대 변환 거절 시험은 한 번만 센다. 최종 22건은 각 회차의 성공 근거를 합산한 결과다.
+테스트 계정의 비밀번호를 Oracle 19c의 30-byte 제한 안으로 보정했고, 실제 RAW JDBC 코드
+`VARBINARY(-3)`와 native `oracle.sql.TIMESTAMP` 표현에 맞춰 기대값을 수정했다.
+마지막 메타데이터 시험은 12개 컬럼의 DatabaseMetaData·ResultSetMetaData·USER_TAB_COLUMNS,
+native TIMESTAMP 원본 소수초와 별도 `getTimestamp()`의 `123456000` nanos·`OffsetDateTime`을 대조한다.
+
+배포 JAR 시험은 **수정하지 않은 원본 Oracle JAR을 명시 JVM module path에 넣고 BUNDLED evidence와 전체 JAR SHA-256을 결속**한다.
+원본의 `Class-Path: oraclepki.jar`를 가진 raw isolated JAR은 기존 `LocalDriverJarPolicy`에서 계속 거절한다.
+별도 Java 21 probe에서도 module path의 암묵 manifest 의존성 미노출과 원본 CodeSource·전체 JAR SHA를 확인했다.
+Oracle driver와 Testcontainers는 테스트 전용이며 배포 bootJar에 포함하지 않는다.
+이 경로가 isolated driver의 공개 COMMIT 허용이나 어댑터 자격 승격을 부여하지 않는다.
+
+19c fixture는 Test JVM마다 원천 하나를 공유하고 JVM 종료 시 정리한다. 원천은 4 CPU·6GiB 메모리·1GiB shared memory이며
+최초 cold DBCA는 약 20분이었다. cold-start 상한은 30분이고 ready 로그·JDBC·실제 버전·PDB·charset 확인은 모두 필수다.
+전체 범위를 재현하려면 아래처럼 하나의 Test task에 여섯 클래스를 선택한다.
+
+```powershell
+$env:MIGRATION_ORACLE19C_IMAGE = 'fugeritorg/oracle-19.3.0-ee@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac'
+./gradlew.bat :migration-tool:test --no-daemon --warning-mode fail --console=plain `
+  --tests 'nuri.migration.EtlOraclePostgresIntegrationTest' `
+  --tests 'nuri.migration.OracleWorkflowPostgresIntegrationTest' `
+  --tests 'nuri.migration.EtlOracleCrashRecoveryIntegrationTest' `
+  --tests 'nuri.migration.OracleDiscoveryVisibilityIntegrationTest' `
+  --tests 'nuri.migration.OracleMetadataIntegrationTest' `
+  --tests 'nuri.migration.OraclePackagedCliIntegrationTest'
+```
+
+직접 엔진 COMMIT의 성공과 공개 승인 load의 vendor/driver 자격은 별도다. `UNVERIFIED`·`MANUAL_ONLY`,
+adapter/freeze 승인과 공개 COMMIT 금지는 유지한다. 다른 Oracle release/RU, 최소권한·SCN/일관성·운영 freeze,
+GB/TB 규모·전체 JVM 힙 보장·cutover·전체 백업 복원은 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다.
+Tibero는 위 라이선스 기동 실패로 discover·load를 아직 실측하지 않았다.
+
 ## 이관 프로세스 종료와 큰 필드
 
 `./gradlew :migration-tool:test --tests '*EtlCrashRecoveryPostgresIntegrationTest'`는 별도 JVM을
@@ -268,7 +601,7 @@ verify/report는 load 내부 단계이고 resume는 같은 run의 재실행이�
 일반 오류 후 재개 시험도 함께 유지한다.
 
 Gradle `test`와 PIT의 minion JVM 모두 `migration.drill.classpath`를 전달한다. 전달이 빠지면
-테스트 자체가 실패하며, PIT에서도 종료·재개 검사를 제외하지 않는다. 자식 JVM은 별도로
+테스트 자체가 실패하며, 기존 PostgreSQL 종료·재개 검사는 PIT에도 계속 포함한다. 자식 JVM은 별도로
 실행되므로 그 프로세스의 코드를 PIT가 변이했다는 뜻은 아니다. 동일 JVM의 검증·변환 단위
 테스트가 각 변이 분석 범위의 탐지율을 책임진다.
 

@@ -31,6 +31,20 @@ class MigrationExecutionContractTest {
     Path temp;
 
     @Test
+    void longValueCapabilityChangesApprovalDigestEvenWithTheSameMechanism() {
+        var baseline = SourceReadSessionPolicy.repeatableRead(EvidenceLevel.EXPERIMENTAL, "same mechanism");
+        var changed = new SourceReadSessionPolicy(baseline.isolationMode(), baseline.sourceFreezeRequired(),
+                baseline.quotedIdentifiersSupported(), baseline.lobStreamingSupported(), true,
+                baseline.executionPolicy(), baseline.evidenceLevel(), baseline.mechanism());
+        var registry = new TransformerRegistry();
+        var before = MigrationExecutionContract.capture(mapping("trim"), adapter(baseline), registry);
+        var after = MigrationExecutionContract.capture(mapping("trim"), adapter(changed), registry);
+        assertThat(before.adapter().longValueStreamingSupported()).isFalse();
+        assertThat(after.adapter().longValueStreamingSupported()).isTrue();
+        assertThat(after.digest()).isNotEqualTo(before.digest());
+    }
+
+    @Test
     void deterministicallyBindsCoreBytesSelectedAdapterPolicyAndUsedTransformers() {
         MappingSpec mapping = mapping("trim");
         TransformerRegistry transformers = new TransformerRegistry();

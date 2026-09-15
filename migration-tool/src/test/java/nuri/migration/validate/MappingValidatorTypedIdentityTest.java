@@ -12,6 +12,8 @@ import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.transform.TransformerRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
@@ -21,16 +23,21 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 class MappingValidatorTypedIdentityTest {
@@ -39,6 +46,158 @@ class MappingValidatorTypedIdentityTest {
 
     @TempDir
     Path temp;
+
+    @Test
+    void metadataFixtureHasIndependentScansAndRejectsOffRowAndClosedAccess() throws Exception {
+        JdbcTemplate jdbc = metadataJdbc(List.of(
+                new JdbcColumn("id", Types.BIGINT, "BIGINT"),
+                new JdbcColumn("amount", Types.DECIMAL, "DECIMAL")));
+        try (Connection connection = jdbc.getDataSource().getConnection()) {
+            DatabaseMetaData metadata = connection.getMetaData();
+            try (ResultSet first = metadata.getColumns("legacy", "app", "legacy_table", null);
+                 ResultSet second = metadata.getColumns("legacy", "app", "legacy_table", null)) {
+                assertThat(first).isNotSameAs(second);
+                assertMetadataRowUnavailable(first, "Metadata result set has no current row");
+                assertMetadataRowUnavailable(second, "Metadata result set has no current row");
+
+                assertThat(first.next()).isTrue();
+                assertThat(first.getString("TABLE_CAT")).isEqualTo("legacy");
+                assertThat(first.getString("TABLE_SCHEM")).isEqualTo("app");
+                assertThat(first.getString("TABLE_NAME")).isEqualTo("legacy_table");
+                assertThat(first.getString("COLUMN_NAME")).isEqualTo("id");
+                assertThat(first.getInt("DATA_TYPE")).isEqualTo(Types.BIGINT);
+                assertThat(first.getString("TYPE_NAME")).isEqualTo("BIGINT");
+                assertMetadataRowUnavailable(second, "Metadata result set has no current row");
+                assertThat(second.next()).isTrue();
+                assertThat(second.getString("COLUMN_NAME")).isEqualTo("id");
+
+                assertThat(first.next()).isTrue();
+                assertThat(first.getString("COLUMN_NAME")).isEqualTo("amount");
+                assertThat(first.getInt("DATA_TYPE")).isEqualTo(Types.DECIMAL);
+                assertThat(second.getString("COLUMN_NAME")).isEqualTo("id");
+                assertThat(first.next()).isFalse();
+                assertThat(first.next()).isFalse();
+                assertMetadataRowUnavailable(first, "Metadata result set has no current row");
+                first.close();
+                first.close();
+                assertThat(first.isClosed()).isTrue();
+                assertThatThrownBy(first::next).isInstanceOf(SQLException.class)
+                        .hasMessage("Metadata result set is closed");
+                assertMetadataRowUnavailable(first, "Metadata result set is closed");
+
+                assertThat(second.isClosed()).isFalse();
+                assertThat(second.next()).isTrue();
+                assertThat(second.getString("COLUMN_NAME")).isEqualTo("amount");
+                assertThat(second.next()).isFalse();
+                assertMetadataRowUnavailable(second, "Metadata result set has no current row");
+            }
+            try (ResultSet third = metadata.getColumns("legacy", "app", "legacy_table", null)) {
+                assertThat(third.next()).isTrue();
+                assertThat(third.getString("COLUMN_NAME")).isEqualTo("id");
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"legacy_table", "app.legacy_table"})
+    void mariaDbSchemaModePreservesItsReportedDefCatalog(String sourceTable) throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MariaDB", "MariaDB Connector/J", "def", "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"def.app.legacy_table", "wrong.app.legacy_table"})
+    void mariaDbSchemaModeRejectsCatalogQualifiedSqlBeforeColumnLookup(String sourceTable) throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MariaDB", "MariaDB Connector/J", "def", "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).containsExactly("MARIADB_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED");
+    }
+
+    @Test
+    void mariaDbQualificationGuardCannotChangeAnotherProductsDriversOrMetadataProjections() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        for (MetadataIdentity identity : List.of(
+                new MetadataIdentity("PostgreSQL", "MariaDB Connector/J", "def", "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MariaDB", "MySQL Connector/J", "def", "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MariaDB", "MariaDB Connector/J", "other", "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MariaDB", "MariaDB Connector/J", "def", null, "def", "app", "legacy_table"))) {
+            ValidationResult result = validator.validateLiveSource(liveSpec("def.app.legacy_table"),
+                    metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+            assertThat(result.errors()).isEmpty();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"legacy_table", "app.legacy_table"})
+    void mysqlSchemaModeResolvesOnlyItsMissingConnectionCatalog(String sourceTable) throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MySQL", "MySQL Connector/J", null, "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"def.app.legacy_table", "wrong.app.legacy_table"})
+    void mysqlSchemaModeRejectsExplicitCatalogQualificationEvenWhenItsMetadataIdentityIsValid(String sourceTable)
+            throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MySQL", "MySQL Connector/J", null, "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).containsExactly("MYSQL_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"other.legacy_table", "app.other_table"})
+    void mysqlSchemaModeStillRejectsAnExplicitWrongSchemaOrTable(String sourceTable) throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MySQL", "MySQL Connector/J", null, "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).singleElement().asString().contains("실 source에 없는 테이블");
+    }
+
+    @Test
+    void mysqlDefaultCatalogResolutionCannotApplyToAnotherDriverOrMissingSchemaOrExplicitCatalog() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        for (MetadataIdentity identity : List.of(
+                new MetadataIdentity("PostgreSQL", "MySQL Connector/J", null, "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MySQL", "MariaDB Connector/J", null, "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MySQL", "MySQL Connector/J", null, null, "def", "app", "legacy_table"),
+                new MetadataIdentity("MySQL", "MySQL Connector/J", "other", "app", "def", "app", "legacy_table"))) {
+            ValidationResult result = validator.validateLiveSource(liveSpec("app.legacy_table"),
+                    metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+            assertThat(result.errors()).singleElement().asString().contains("실 source에 없는 테이블");
+        }
+    }
+
+    private static MappingSpec liveSpec(String sourceTable) {
+        return new MappingSpec(null, null, List.of(new TableMapping(sourceTable, "target_table", null,
+                List.of(new ColumnMapping("id", "id", null, null, null, null, null)), null)), Map.of());
+    }
 
     @Test
     void staticValidationCoversTypedTargetsDuplicatesAndForeignKeyTypeContract() throws Exception {
@@ -329,26 +488,76 @@ class MappingValidatorTypedIdentityTest {
     }
 
     private static JdbcTemplate metadataJdbc(List<JdbcColumn> columns) throws Exception {
+        return metadataJdbc(columns, new MetadataIdentity(
+                null, null, "legacy", "app", "legacy", "app", "legacy_table"));
+    }
+
+    private static JdbcTemplate metadataJdbc(List<JdbcColumn> columns, MetadataIdentity identity) throws Exception {
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         DatabaseMetaData metadata = mock(DatabaseMetaData.class);
-        ResultSet rows = mock(ResultSet.class);
-        AtomicInteger cursor = new AtomicInteger(-1);
 
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.getMetaData()).willReturn(metadata);
-        given(connection.getCatalog()).willReturn("legacy");
-        given(connection.getSchema()).willReturn("app");
-        given(metadata.getColumns(any(), any(), any(), any())).willReturn(rows);
-        given(rows.next()).willAnswer(ignored -> cursor.incrementAndGet() < columns.size());
-        given(rows.getString("TABLE_CAT")).willReturn("legacy");
-        given(rows.getString("TABLE_SCHEM")).willReturn("app");
-        given(rows.getString("TABLE_NAME")).willReturn("legacy_table");
-        given(rows.getString("COLUMN_NAME")).willAnswer(ignored -> columns.get(cursor.get()).name());
-        given(rows.getInt("DATA_TYPE")).willAnswer(ignored -> columns.get(cursor.get()).jdbcType());
-        given(rows.getString("TYPE_NAME")).willAnswer(ignored -> columns.get(cursor.get()).typeName());
+        given(connection.getCatalog()).willReturn(identity.defaultCatalog());
+        given(connection.getSchema()).willReturn(identity.defaultSchema());
+        given(metadata.getDatabaseProductName()).willReturn(identity.product());
+        given(metadata.getDriverName()).willReturn(identity.driver());
+        given(metadata.getColumns(any(), any(), any(), any()))
+                .willAnswer(ignored -> metadataRows(columns, identity));
         return new JdbcTemplate(dataSource);
     }
 
+    private static ResultSet metadataRows(List<JdbcColumn> columns, MetadataIdentity identity) throws SQLException {
+        ResultSet rows = mock(ResultSet.class);
+        AtomicInteger cursor = new AtomicInteger(-1);
+        AtomicBoolean closed = new AtomicBoolean();
+        given(rows.next()).willAnswer(ignored -> {
+            if (closed.get()) throw new SQLException("Metadata result set is closed");
+            if (cursor.get() < columns.size()) cursor.incrementAndGet();
+            return cursor.get() < columns.size();
+        });
+        given(rows.getString(anyString())).willAnswer(invocation -> {
+            JdbcColumn column = metadataCurrentColumn(columns, cursor, closed);
+            return switch (invocation.<String>getArgument(0)) {
+                case "TABLE_CAT" -> identity.catalog();
+                case "TABLE_SCHEM" -> identity.schema();
+                case "TABLE_NAME" -> identity.table();
+                case "COLUMN_NAME" -> column.name();
+                case "TYPE_NAME" -> column.typeName();
+                default -> throw new SQLException("Unsupported metadata string column");
+            };
+        });
+        given(rows.getInt(anyString())).willAnswer(invocation -> {
+            JdbcColumn column = metadataCurrentColumn(columns, cursor, closed);
+            if (!"DATA_TYPE".equals(invocation.<String>getArgument(0))) {
+                throw new SQLException("Unsupported metadata integer column");
+            }
+            return column.jdbcType();
+        });
+        given(rows.isClosed()).willAnswer(ignored -> closed.get());
+        doAnswer(ignored -> { closed.set(true); return null; }).when(rows).close();
+        return rows;
+    }
+
+    private static JdbcColumn metadataCurrentColumn(List<JdbcColumn> columns,
+                                                    AtomicInteger cursor, AtomicBoolean closed) throws SQLException {
+        if (closed.get()) throw new SQLException("Metadata result set is closed");
+        if (cursor.get() < 0 || cursor.get() >= columns.size()) {
+            throw new SQLException("Metadata result set has no current row");
+        }
+        return columns.get(cursor.get());
+    }
+
+    private static void assertMetadataRowUnavailable(ResultSet rows, String message) {
+        for (String column : List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "TYPE_NAME")) {
+            assertThatThrownBy(() -> rows.getString(column)).isInstanceOf(SQLException.class).hasMessage(message);
+        }
+        assertThatThrownBy(() -> rows.getInt("DATA_TYPE")).isInstanceOf(SQLException.class).hasMessage(message);
+    }
+
     private record JdbcColumn(String name, int jdbcType, String typeName) {}
+
+    private record MetadataIdentity(String product, String driver, String defaultCatalog, String defaultSchema,
+                                    String catalog, String schema, String table) {}
 }

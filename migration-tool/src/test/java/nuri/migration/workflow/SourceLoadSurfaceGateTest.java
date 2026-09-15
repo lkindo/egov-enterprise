@@ -30,6 +30,23 @@ class SourceLoadSurfaceGateTest {
             EvidenceLevel.UNVERIFIED, "test operator freeze");
 
     @Test
+    void mysqlAllowsOnlyRehearsedLongTextAndBinaryTypes() {
+        var mysql = new nuri.migration.adapter.MySqlSourceAdapter().sourceReadSessionPolicy();
+        for (int type : new int[] {Types.LONGVARCHAR, Types.LONGVARBINARY}) {
+            var snapshot = snapshot(table(false), column("PAYLOAD", false, Integer.toString(type)));
+            assertThat(SourceLoadSurfaceGate.blockers(snapshot, mappingWithSourceColumn("PAYLOAD"), mysql))
+                    .isEmpty();
+            assertThat(SourceLoadSurfaceGate.blockers(snapshot, mappingWithSourceColumn("PAYLOAD"), POLICY))
+                    .containsExactly(LOB_STREAMING);
+        }
+        for (int type : new int[] {Types.BLOB, Types.CLOB, Types.NCLOB, Types.LONGNVARCHAR, Types.SQLXML}) {
+            assertThat(SourceLoadSurfaceGate.blockers(
+                    snapshot(table(false), column("PAYLOAD", false, Integer.toString(type))),
+                    mappingWithSourceColumn("PAYLOAD"), mysql)).containsExactly(LOB_STREAMING);
+        }
+    }
+
+    @Test
     void oracleAllowsOnlyRehearsedBlobAndClobTypes() {
         var oracle = new nuri.migration.adapter.OracleSourceAdapter().sourceReadSessionPolicy();
         for (int type : new int[] {Types.BLOB, Types.CLOB}) {

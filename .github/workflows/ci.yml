@@ -1021,7 +1021,8 @@ jobs:
     needs: [change-scope, backend-scope]
     if: ${{ always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.mutation == 'true' && needs.backend-scope.result == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 실제 DB coverage 후 변이 실행이 30분을 넘은 validate/verify 범위만 시간을 확보한다.
+    timeout-minutes: ${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}
     strategy:
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false

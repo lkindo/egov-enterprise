@@ -50,7 +50,7 @@ Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 �
 
 `SourceAdapterRegistry`는 vendor adapter를 먼저 선택하고 마지막에 portable JDBC metadata adapter를 둔다. JDBC product/version이 명시 adapter와 맞지 않으면 실패한다. 각 adapter는 44개 `ObjectKind`마다 `OBJECTS`, `PARTIAL_PROBE`, `NOT_APPLICABLE`, `UNSUPPORTED` 중 하나의 종료 경로를 갖는다.
 
-객체가 0건이라는 사실과 볼 수 없다는 상태를 구분한다. `UNREADABLE`, `UNSUPPORTED`, `PARTIAL`, `QUERY_FAILED` visibility finding은 plan blocker이며 `NOT_APPLICABLE`만 정상적인 비대상이다. PostgreSQL adapter는 `pg_catalog`와 JDBC metadata를 결합하고 요청 schema의 visibility를 확인한다. 다른 vendor adapter의 catalog SQL도 제품별로 분리돼 있지만 실제 DB 증거 없이 query 정의만 존재한다.
+객체가 0건이라는 사실과 볼 수 없다는 상태를 구분한다. `UNREADABLE`, `UNSUPPORTED`, `PARTIAL`, `QUERY_FAILED` visibility finding은 plan blocker이며 `NOT_APPLICABLE`만 정상적인 비대상이다. PostgreSQL adapter는 `pg_catalog`와 JDBC metadata를 결합하고 요청 schema의 visibility를 확인한다. 다른 vendor adapter의 catalog SQL도 제품별로 분리돼 있으며, 실제 DB 검증 범위는 [이관 실측 기록](../04-operations/readiness-followups.md)에 명시한다.
 
 | Source 경로 | 구현 상태 | load 경계 |
 |---|---|---|
@@ -59,7 +59,7 @@ Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 �
 | Generic JDBC metadata | account-scoped portable metadata의 `EXPERIMENTAL` fallback | 일관 source snapshot을 증명하는 read-session policy가 없어 load는 차단된다. discovery·plan의 완전성도 자동 증명하지 못한다. |
 | 명시적 외부 JDBC JAR | absolute local regular JAR만 격리 classloader로 열고 symlink·network path·glob·중복·manifest classpath를 거부 | inventory에 JAR digest를 결속하고 dry-run load에는 exact `--ack-source-driver=<digest>`가 필요하다. isolated in-process driver commit은 금지된다. |
 
-모든 source connection은 JDBC read-only로 표시하지만 이는 권한 증명이 아니다. 운영에서는 source DB 계정 자체를 SELECT-only 최소 권한으로 제한하고 adapter가 요구하는 격리 수준과 maintenance-window freeze를 별도로 승인해야 한다.
+원천 연결에는 JDBC `setReadOnly(true)`를 요청하지만 이는 권한 증명이 아니다. Microsoft JDBC `13.6.0.0`은 이 요청을 지원하지 않아 신호가 false다. SQL Server preflight는 제품·드라이버가 실측 조합과 정확히 일치하고, 현재 catalog와 `DB_NAME()`이 같은 비시스템 DB에서 `DATABASEPROPERTYEX(...,'Updateability')=READ_ONLY` 단일행을 확인했을 때만 누락 신호를 대체한다. 신호는 false로 기록하며 쓰기 가능한 DB와 불완전한 증거는 차단한다. 운영에서는 원천 계정의 SELECT-only 최소 권한, DB 상태 전환, 격리 수준과 maintenance-window freeze를 별도로 승인해야 한다.
 
 ## `mapping.yml` 계약
 

@@ -175,7 +175,8 @@ class OracleDiscoveryVisibilityIntegrationTest extends OraclePostgresTestSupport
     }
 
     private static Account account() throws Exception {
-        Account account = new Account("MV_" + suffix(), "R" + UUID.randomUUID().toString().replace("-", ""));
+        // Oracle 19c limits password identifiers to 30 bytes; retain a random ASCII fixture password.
+        Account account = new Account("MV_" + suffix(), "R" + UUID.randomUUID().toString().replace("-", "").substring(0, 29));
         // DDL and grants only initialize these newly created, disposable fixture accounts.
         try (Connection admin = admin(); Statement statement = admin.createStatement()) {
             statement.execute("CREATE USER " + account.name() + " IDENTIFIED BY \"" + account.password()

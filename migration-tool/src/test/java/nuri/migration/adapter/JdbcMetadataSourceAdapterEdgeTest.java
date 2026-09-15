@@ -152,6 +152,58 @@ class JdbcMetadataSourceAdapterEdgeTest {
     }
 
     @Test
+    void rejectsForeignColumnNamespacesBeforeReadingDefinitionsAndRetainsRequestedEvidence() throws Exception {
+        MetadataFixture fixture = fixture();
+        fixture.tables(List.of(table("orders", "TABLE")));
+        List<Map<String, Object>> columns = List.of(
+                columnEvidence("other", "app", "orders", "foreign_catalog"),
+                columnEvidence("legacy", "other", "orders", "foreign_schema"),
+                columnEvidence("legacy", "app", "other_table", "foreign_table"),
+                columnEvidence("legacy", "app", "orders", "id"));
+        List<List<String>> reads = columns.stream()
+                .<List<String>>map(ignored -> new java.util.ArrayList<>()).toList();
+        given(fixture.metadata().getColumns(any(), any(), anyString(), anyString()))
+                .willAnswer(ignored -> tracedColumnRows(columns, reads));
+        Set<ObjectKind> evidenceKinds = EnumSet.of(ObjectKind.COLUMN, ObjectKind.DEFAULT_CONSTRAINT,
+                ObjectKind.IDENTITY, ObjectKind.COMMENT);
+        CatalogSnapshot snapshot = new JdbcMetadataSourceAdapter().discover(fixture.connection(),
+                new DiscoveryRequest(Set.of("legacy"), Set.of("app"), evidenceKinds, false));
+
+        for (int index = 0; index < 3; index++) {
+            assertThat(reads.get(index)).containsExactly("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME");
+        }
+        assertThat(reads.get(3)).startsWith("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME");
+        assertThat(snapshot.objects()).hasSize(4).allSatisfy(object -> {
+            assertThat(object.catalog()).isEqualTo("legacy");
+            assertThat(object.schema()).isEqualTo("app");
+            assertThat(object.name()).isEqualTo("orders.id");
+        });
+        assertThat(snapshot.objects()).extracting(CatalogObject::kind)
+                .containsExactlyInAnyOrderElementsOf(evidenceKinds);
+        assertThat(snapshot.objects()).filteredOn(object -> object.kind() == ObjectKind.COLUMN)
+                .singleElement().satisfies(column -> assertThat(column.attributes())
+                        .containsEntry("jdbcType", Integer.toString(Types.BIGINT))
+                        .containsEntry("nativeType", "BIGINT")
+                        .containsEntry("size", "19")
+                        .containsEntry("scale", "0")
+                        .containsEntry("nullable", "false")
+                        .containsEntry("ordinal", "1")
+                        .containsEntry("generated", "true"));
+        assertThat(snapshot.objects()).filteredOn(object -> object.kind() == ObjectKind.IDENTITY)
+                .singleElement().satisfies(identity -> assertThat(identity.attributes())
+                        .containsEntry("strategy", "AUTO_INCREMENT"));
+        for (ObjectKind kind : List.of(ObjectKind.DEFAULT_CONSTRAINT, ObjectKind.COMMENT)) {
+            String definition = kind == ObjectKind.COMMENT ? "synthetic comment id" : "synthetic default id";
+            assertThat(snapshot.objects()).filteredOn(object -> object.kind() == kind)
+                    .singleElement().satisfies(object -> {
+                        assertThat(object.nativeDefinition()).isNull();
+                        assertThat(object.definitionHash()).isEqualTo(CatalogObject.definitionHash(definition));
+                    });
+        }
+        assertThat(snapshot.visibilityFindings()).noneMatch(finding -> finding.operation().equals("jdbc-get-columns"));
+    }
+
+    @Test
     void synthesizesUnnamedKeysAndSeparatesPkUniqueExpressionAndRoutineTypeEvidence() throws Exception {
         MetadataFixture fixture = fixture();
         fixture.tables(List.of(table("orders", "TABLE")));
@@ -254,6 +306,34 @@ class JdbcMetadataSourceAdapterEdgeTest {
                 "COLUMN_NAME", column, "ORDINAL_POSITION", ordinal);
     }
 
+    private static Map<String, Object> columnEvidence(String catalog, String schema, String table, String column) {
+        return row("TABLE_CAT", catalog, "TABLE_SCHEM", schema, "TABLE_NAME", table, "COLUMN_NAME", column,
+                "DATA_TYPE", Types.BIGINT, "TYPE_NAME", "BIGINT", "COLUMN_SIZE", 19L, "DECIMAL_DIGITS", 0,
+                "NULLABLE", DatabaseMetaData.columnNoNulls, "REMARKS", "synthetic comment " + column,
+                "COLUMN_DEF", "synthetic default " + column, "ORDINAL_POSITION", 1,
+                "IS_AUTOINCREMENT", "YES", "IS_GENERATEDCOLUMN", "YES");
+    }
+
+    private static ResultSet tracedColumnRows(List<Map<String, Object>> source, List<List<String>> reads) throws Exception {
+        ResultSet result = mock(ResultSet.class);
+        AtomicInteger cursor = new AtomicInteger(-1);
+        given(result.next()).willAnswer(ignored -> cursor.incrementAndGet() < source.size());
+        org.mockito.stubbing.Answer<Object> read = invocation -> {
+            String label = invocation.getArgument(0);
+            reads.get(cursor.get()).add(label);
+            Object value = source.get(cursor.get()).get(label);
+            return switch (invocation.getMethod().getName()) {
+                case "getInt" -> value instanceof Number number ? number.intValue() : 0;
+                case "getLong" -> value instanceof Number number ? number.longValue() : 0L;
+                default -> value == null ? null : String.valueOf(value);
+            };
+        };
+        given(result.getString(anyString())).willAnswer(read);
+        given(result.getInt(anyString())).willAnswer(read);
+        given(result.getLong(anyString())).willAnswer(read);
+        return result;
+    }
+
     private static Map<String, Object> routine(
             String prefix, String catalog, String schema, String name, String specific) {
         return row(prefix + "_CAT", catalog, prefix + "_SCHEM", schema,
@@ -332,8 +412,14 @@ class JdbcMetadataSourceAdapterEdgeTest {
         }
 
         void columns(List<Map<String, Object>> source) throws Exception {
+            List<Map<String, Object>> namespaced = source.stream().map(column -> {
+                Map<String, Object> knownNamespace = new LinkedHashMap<>(column);
+                if (!knownNamespace.containsKey("TABLE_CAT")) knownNamespace.put("TABLE_CAT", "legacy");
+                if (!knownNamespace.containsKey("TABLE_SCHEM")) knownNamespace.put("TABLE_SCHEM", "app");
+                return knownNamespace;
+            }).toList();
             given(metadata.getColumns(any(), any(), anyString(), anyString()))
-                    .willAnswer(ignored -> rows(source));
+                    .willAnswer(ignored -> rows(namespaced));
         }
 
         void primaryKeys(List<Map<String, Object>> source) throws Exception {

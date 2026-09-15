@@ -549,6 +549,25 @@ test('mutation jobs provision the Gradle distribution with a bounded retry befor
   assert.ok(provision >= 0 && provision < pit, 'Gradle distribution retry must run before the PIT hard gate');
 });
 
+test('only the measured migration validate/verify scope gets a bounded longer PIT job', () => {
+  assert.deepEqual(validateStaticContract({ manifest, ciContent }), []);
+  const timeoutLine = "    timeout-minutes: ${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}";
+  const invalidTimeouts = [
+    '    timeout-minutes: 30',
+    '    timeout-minutes: 60',
+    timeoutLine.replace('migration-validate-verify', 'migration-transform'),
+    timeoutLine.replace('&& 60', '&& 90'),
+    timeoutLine.replace('|| 30', '|| 60'),
+    `    # ${timeoutLine.trim()}`,
+    `${timeoutLine}\n    timeout-minutes: 30`,
+  ];
+  for (const replacement of invalidTimeouts) {
+    const changed = mutateWorkflowJob(ciContent, 'mutation-scope', block => block.replace(timeoutLine, replacement));
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'negative fixture must change the job');
+    assert.match(validateStaticContract({ manifest, ciContent: changed }).join('\n'), /mutation-scope timeout/);
+  }
+});
+
 // [2026-08-16 신설] 훅 전용이던 검증을 CI 로 미러링하면서, 그 스텝이 조용히 사라지지
 //   못하도록 고정한다. `.githooks/*` 는 `--no-verify` / `SKIP_HOOKS=1` 로 우회되므로 훅에만
 //   있는 검증은 required check 가 아니다 — 우회한 푸시에서 무검증으로 통과했다.

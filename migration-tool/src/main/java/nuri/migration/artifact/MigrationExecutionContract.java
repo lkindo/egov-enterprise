@@ -10,6 +10,7 @@ import nuri.migration.transform.TypeConverter;
 import nuri.migration.validate.MappingValidator;
 import nuri.migration.verify.MigrationVerifier;
 import nuri.migration.workflow.SourceLoadSurfaceGate;
+import org.springframework.boot.system.ApplicationHome;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -214,10 +215,22 @@ public record MigrationExecutionContract(
         try {
             URL location = MigrationExecutionContract.class.getProtectionDomain()
                     .getCodeSource().getLocation();
-            if (location == null || !"file".equalsIgnoreCase(location.getProtocol())) {
+            if (location == null) {
                 throw new IllegalStateException("migration module implementation bytes are unavailable");
             }
-            return Path.of(location.toURI()).toRealPath(LinkOption.NOFOLLOW_LINKS);
+            if ("file".equalsIgnoreCase(location.getProtocol())) {
+                return Path.of(location.toURI()).toRealPath(LinkOption.NOFOLLOW_LINKS);
+            }
+            if ("jar".equalsIgnoreCase(location.getProtocol())) {
+                // Boot's nested class URL must bind the entire shipped outer JAR.
+                // getSource() returns null on failure; never fall back to the working directory.
+                var source = new ApplicationHome(MigrationExecutionContract.class).getSource();
+                if (source != null) {
+                    Path jar = source.toPath().toRealPath(LinkOption.NOFOLLOW_LINKS);
+                    if (Files.isRegularFile(jar, LinkOption.NOFOLLOW_LINKS)) return jar;
+                }
+            }
+            throw new IllegalStateException("migration module implementation bytes are unavailable");
         } catch (IOException | URISyntaxException | NullPointerException failure) {
             throw new IllegalStateException("migration module implementation bytes are unavailable");
         }
@@ -285,6 +298,7 @@ public record MigrationExecutionContract(
             boolean sourceFreezeRequired,
             boolean quotedIdentifiersSupported,
             boolean lobStreamingSupported,
+            boolean longValueStreamingSupported,
             String executionPolicy,
             String policyEvidence,
             String mechanism
@@ -305,6 +319,7 @@ public record MigrationExecutionContract(
                     policy.sourceFreezeRequired(),
                     policy.quotedIdentifiersSupported(),
                     policy.lobStreamingSupported(),
+                    policy.longValueStreamingSupported(),
                     policy.executionPolicy().name(),
                     policy.evidenceLevel().name(),
                     policy.mechanism());

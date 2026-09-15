@@ -93,13 +93,17 @@ class JdbcMetadataRealDriverBehaviorTest {
     @DisplayName("스키마를 지정한 탐색은 이스케이프한 스키마 패턴을 사전 조회에 넘기고, 미지정이면 전체를 조회한다")
     void scopedDiscoveryPushesEscapedSchemaIntoDictionaryCalls() throws Exception {
         Fixture scoped = fixture();
+        given(scoped.metadata.getTables(isNull(), any(), eq("%"), isNull()))
+                .willAnswer(ignored -> rows(List.of(table("APP_1", "TABLE_1"))));
         new JdbcMetadataSourceAdapter().discover(scoped.connection, request(Set.of("APP_1")));
         verify(scoped.metadata).getTables(isNull(), eq("APP\\_1"), eq("%"), isNull());
+        verify(scoped.metadata).getColumns(isNull(), eq("APP\\_1"), eq("TABLE\\_1"), eq("%"));
         verify(scoped.metadata).getProcedures(isNull(), eq("APP\\_1"), eq("%"));
         verify(scoped.metadata).getFunctions(isNull(), eq("APP\\_1"), eq("%"));
         verify(scoped.metadata, never()).getTables(isNull(), isNull(), anyString(), any());
         verify(scoped.metadata, never()).getProcedures(isNull(), isNull(), anyString());
         verify(scoped.metadata, never()).getFunctions(isNull(), isNull(), anyString());
+        verify(scoped.metadata, never()).getColumns(any(), eq("APP_1"), anyString(), anyString());
 
         Fixture unscoped = fixture();
         new JdbcMetadataSourceAdapter().discover(unscoped.connection, request(Set.of()));
@@ -136,11 +140,15 @@ class JdbcMetadataRealDriverBehaviorTest {
     }
 
     private static Map<String, Object> table(String name) {
-        return map("TABLE_CAT", null, "TABLE_SCHEM", "APP", "TABLE_NAME", name, "TABLE_TYPE", "TABLE");
+        return table("APP", name);
+    }
+
+    private static Map<String, Object> table(String schema, String name) {
+        return map("TABLE_CAT", null, "TABLE_SCHEM", schema, "TABLE_NAME", name, "TABLE_TYPE", "TABLE");
     }
 
     private static Map<String, Object> column(String name, int ordinal, String defaultExpression) {
-        return map("TABLE_NAME", "LEGACY_DEPT", "COLUMN_NAME", name, "DATA_TYPE", Types.VARCHAR,
+        return map("TABLE_CAT", null, "TABLE_SCHEM", "APP", "TABLE_NAME", "LEGACY_DEPT", "COLUMN_NAME", name, "DATA_TYPE", Types.VARCHAR,
                 "TYPE_NAME", "VARCHAR2", "COLUMN_SIZE", 100L, "DECIMAL_DIGITS", 0,
                 "NULLABLE", DatabaseMetaData.columnNullable, "REMARKS", null, "COLUMN_DEF", defaultExpression,
                 "ORDINAL_POSITION", ordinal, "IS_AUTOINCREMENT", "NO", "IS_GENERATEDCOLUMN", "NO");

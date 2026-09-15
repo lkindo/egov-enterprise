@@ -14,6 +14,7 @@ public record SourceReadSessionPolicy(
         boolean sourceFreezeRequired,
         boolean quotedIdentifiersSupported,
         boolean lobStreamingSupported,
+        boolean longValueStreamingSupported,
         ExecutionPolicy executionPolicy,
         EvidenceLevel evidenceLevel,
         String mechanism
@@ -26,6 +27,14 @@ public record SourceReadSessionPolicy(
         if (mechanism == null || mechanism.isBlank()) {
             throw new IllegalArgumentException("source read session mechanism must not be blank");
         }
+    }
+
+    public SourceReadSessionPolicy(IsolationMode isolationMode, boolean sourceFreezeRequired,
+                                   boolean quotedIdentifiersSupported, boolean lobStreamingSupported,
+                                   ExecutionPolicy executionPolicy, EvidenceLevel evidenceLevel,
+                                   String mechanism) {
+        this(isolationMode, sourceFreezeRequired, quotedIdentifiersSupported, lobStreamingSupported,
+                false, executionPolicy, evidenceLevel, mechanism);
     }
 
     public static SourceReadSessionPolicy repeatableRead(
