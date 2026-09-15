@@ -36,6 +36,12 @@ load는 plan 옆에 `<plan filename>.load-<UUID>.json`을 만든다. 적재 시�
 
 ## 전체 롤백과 cutover
 
+Oracle 후속 단계의 실제 경계는 [2026-09-15 실측](readiness-followups.md#이관-oracle-후속-단계-실측)을 따른다.
+명시한 local owner의 테이블·컬럼·기본키 범위에서 승인 plan·validate·dry-run과 직접 엔진의 BLOB/CLOB
+내용 적재·checksum·오류 행 재개를 확인했다. 지원 범위·값 크기 제한·프로세스 종료 시험은 해당 실측 문서를 따른다.
+Oracle `UNVERIFIED`와 외부 driver의 공개 commit 차단은 유지한다. owner 가시성 증명은 SELECT-only 권한이나
+SCN 스냅샷 증명이 아니며, 실제 버전·driver별 자격과 운영 승인을 별도로 확보해야 한다.
+
 부분 커밋을 일반 SQL `ROLLBACK` 한 번으로 되돌릴 수 없다. target의 업무 데이터를 자동 DELETE하거나 checkpoint만 제거하지 않는다. 재개가 불가능하면 승인된 **이관 전 DB·첨부·키 백업 세트**를 별도 격리 대상에 복원하고 무결성을 검증한다. 운영 접속 전환은 복원 검증·동일 버전 앱 확인·명시적 운영 승인 후 수행한다.
 
 cutover 조건은 오류 0, source/target 행·checksum reconciliation 통과, FK/제약·첨부/키 검증, 승인된 서비스 smoke 통과다. 실패하면 트래픽을 열지 않고 기존 서비스를 유지하거나 승인된 백업으로 복구한다. CDC·임의 upsert·자동 역방향 DML은 지원 범위가 아니다. 운영 규모·지원 DB 버전·LOB·최소권한·장애 전환 실증은 별도 채택 증거가 필요하다.

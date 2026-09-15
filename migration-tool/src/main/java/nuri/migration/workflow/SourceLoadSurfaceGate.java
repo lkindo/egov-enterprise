@@ -108,7 +108,8 @@ public final class SourceLoadSurfaceGate {
             blockers.add(Blocker.COLUMN_TYPE_EVIDENCE_MISSING);
             return;
         }
-        if (!policy.lobStreamingSupported() && LOB_TYPES.contains(parsed)) {
+        if (LOB_TYPES.contains(parsed) && (!policy.lobStreamingSupported()
+                || (parsed != Types.BLOB && parsed != Types.CLOB))) {
             blockers.add(Blocker.LOB_STREAMING);
         }
         if (VENDOR_SPECIFIC_TYPES.contains(parsed)) {

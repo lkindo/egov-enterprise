@@ -9,6 +9,7 @@ import nuri.migration.identity.TypedKeyTuple;
 import nuri.migration.identity.TypedValue;
 import nuri.migration.keymap.KeyMapRegistry;
 import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
+import nuri.migration.jdbc.JdbcLobReader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.CompositeForeignKey;
@@ -431,9 +432,11 @@ public class EtlExecutor {
                 readKeysetPages(sourceConnection, spec, t, writePlan, reg, state,
                         targetConn, c, errors);
             }
-        } catch (SQLException ignored) {
+        } catch (SQLException failure) {
             sourceSessionFailed = true;
-            errors.add("이관 실패(" + t.source() + "): SQL_EXECUTION_FAILED");
+            String reason = failure instanceof JdbcLobReader.ContentReadException content
+                    ? content.reason() : "SQL_EXECUTION_FAILED";
+            errors.add("이관 실패(" + t.source() + "): " + reason);
             safeRollback(targetConn);
         } catch (Throwable failure) {
             safeRollback(targetConn);
@@ -495,17 +498,22 @@ public class EtlExecutor {
                                        Connection target, long[] counts, List<String> errors) throws SQLException {
         String sql = buildSourcePageSql(table, false);
         try (PreparedStatement statement = source.prepareStatement(sql)) {
-            statement.setFetchSize(CHUNK);
+            // Keep JDBC read-ahead bounded as well as the application page; text/bytea are not locators.
+            statement.setFetchSize(1);
             try (ResultSet result = statement.executeQuery()) {
                 String[] labels = lowerLabels(result.getMetaData());
                 List<Map<String, Object>> chunk = new ArrayList<>(CHUNK);
+                long retainedBytes = 0;
                 while (result.next()) {
                     counts[0]++;
-                    chunk.add(readRow(result, labels));
-                    if (chunk.size() == CHUNK) {
+                    Map<String, Object> row = readRow(result, labels);
+                    chunk.add(row);
+                    retainedBytes += rowBytes(row);
+                    if (chunk.size() == CHUNK || retainedBytes >= JdbcLobReader.PAGE_BYTES) {
                         processChunk(chunk, spec, table, writePlan, registry, state,
                                 target, counts, errors);
                         chunk.clear();
+                        retainedBytes = 0;
                     }
                 }
                 if (!chunk.isEmpty()) {
@@ -551,6 +559,9 @@ public class EtlExecutor {
             if (!page.rows().isEmpty()) {
                 cursor = orderValues(page.rows().get(page.rows().size() - 1), table);
             }
+            // Do not retain the previous large page while JDBC constructs the next one.
+            accepted.clear();
+            page.rows().clear();
         } while (hasMore);
     }
 
@@ -572,23 +583,33 @@ public class EtlExecutor {
             if (cursor != null) {
                 bindSeek(statement, cursor);
             }
-            statement.setFetchSize(CHUNK + 1);
+            statement.setFetchSize(1);
             statement.setMaxRows(CHUNK + 1);
             try (ResultSet result = statement.executeQuery()) {
                 String[] labels = lowerLabels(result.getMetaData());
                 List<Map<String, Object>> rows = new ArrayList<>(CHUNK + 1);
+                long retainedBytes = 0;
+                boolean hasMore = false;
                 while (result.next()) {
-                    rows.add(readRow(result, labels));
-                }
-                boolean hasMore = rows.size() > CHUNK;
-                if (hasMore) {
-                    Map<String, Object> boundary = rows.remove(rows.size() - 1);
-                    String lastOrderDigest = orderDigest(rows.get(rows.size() - 1), table);
-                    if (lastOrderDigest.equals(orderDigest(boundary, table))) {
-                        throw new SQLException(table.source()
-                                + ": keyset page 경계의 order identity 중복: orderDigest="
-                                + lastOrderDigest);
+                    if (rows.size() == CHUNK || (!rows.isEmpty() && retainedBytes >= JdbcLobReader.PAGE_BYTES)) {
+                        // Look ahead at ordering values only; do not allocate another large payload.
+                        Map<String, Object> boundary = new LinkedHashMap<>();
+                        for (int i = 0; i < labels.length; i++) {
+                            for (String key : table.effectiveOrderKeys()) {
+                                if (labels[i].equalsIgnoreCase(key)) boundary.put(labels[i], result.getObject(i + 1));
+                            }
+                        }
+                        String lastOrderDigest = orderDigest(rows.getLast(), table);
+                        if (lastOrderDigest.equals(orderDigest(boundary, table))) {
+                            throw new SQLException(table.source()
+                                    + ": keyset page 경계의 order identity 중복: orderDigest=" + lastOrderDigest);
+                        }
+                        hasMore = true;
+                        break;
                     }
+                    Map<String, Object> row = readRow(result, labels);
+                    rows.add(row);
+                    retainedBytes += rowBytes(row);
                 }
                 return new SourcePage(rows, hasMore);
             }
@@ -968,6 +989,7 @@ public class EtlExecutor {
             } else if (col.source() != null) {
                 value = src.get(col.source().toLowerCase(Locale.ROOT));
                 if (col.codemap() != null && spec.codemaps().containsKey(col.codemap())) {
+                    if (value instanceof byte[]) throw new IllegalArgumentException("codemap cannot consume binary data");
                     value = CodeMapper.map(spec.codemaps().get(col.codemap()), value == null ? null : value.toString());
                 }
                 value = transformers.apply(col.transform(), value);
@@ -1401,10 +1423,18 @@ public class EtlExecutor {
 
     private static Map<String, Object> readRow(ResultSet rs, String[] labels) throws SQLException {
         Map<String, Object> row = new LinkedHashMap<>();
+        long retainedBytes = 0;
         for (int i = 0; i < labels.length; i++) {
-            row.put(labels[i], rs.getObject(i + 1));
+            Object value = JdbcLobReader.detach(rs.getObject(i + 1));
+            retainedBytes += JdbcLobReader.retainedBytes(value);
+            JdbcLobReader.requireRowSize(retainedBytes);
+            row.put(labels[i], value);
         }
         return row;
+    }
+
+    private static long rowBytes(Map<String, Object> row) {
+        return row.values().stream().mapToLong(JdbcLobReader::retainedBytes).sum();
     }
 
     private static void safeRollback(Connection conn) {

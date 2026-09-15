@@ -13,18 +13,28 @@ import nuri.migration.state.MigrationStateStore;
 import nuri.migration.state.RowChecksum;
 import nuri.migration.verify.MigrationReport.Status;
 import nuri.migration.verify.MigrationReport.TableReport;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlParameterValue;
+import org.springframework.jdbc.core.SqlTypeValue;
+import org.springframework.jdbc.core.StatementCreatorUtils;
+import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * 이관 후 실증 검증 — 타깃을 재조회해 조회↔변환↔기록 정합과 실제 타깃 행수를 대조하고 PASS/WARN/FAIL 등급을 매긴다.
@@ -182,30 +192,26 @@ public class MigrationVerifier {
                         // 레거시 checkpoint는 키를 문자열로 보존한다. PostgreSQL의 bigint/UUID 키와
                         // varchar 파라미터를 비교하면 operator 오류가 나므로 서버의 컬럼 타입 추론을 쓴다.
                         // 복합 typed identity는 아래 전용 경계에서 원래 JDBC 타입으로 바인딩한다.
-                        .map(checkpoint -> new org.springframework.jdbc.core.SqlParameterValue(
-                                java.sql.Types.OTHER, checkpoint.targetKey()))
+                        .map(checkpoint -> new SqlParameterValue(Types.OTHER, checkpoint.targetKey()))
                         .toArray();
-                List<Map<String, Object>> rows = target.queryForList(
-                        selectPrefix + placeholders + ")", arguments);
-                Map<String, List<Map<String, Object>>> rowsByKey = new LinkedHashMap<>();
-                for (Map<String, Object> row : rows) {
-                    Object actualKey = valueIgnoreCase(row, targetKey);
-                    if (actualKey == null) {
-                        return new ScopedVerification(checkpoints.size(),
-                                "run scoped target identity가 null: " + targetKey);
-                    }
-                    rowsByKey.computeIfAbsent(actualKey.toString(), ignored -> new ArrayList<>()).add(row);
+                TargetBatch rows = readTargetChecksums(target,
+                        selectPrefix + placeholders + ")", arguments, columns, row -> {
+                            Object actualKey = valueIgnoreCase(row, targetKey);
+                            return actualKey == null ? null : actualKey.toString();
+                        });
+                if (rows.missingIdentity()) {
+                    return new ScopedVerification(checkpoints.size(),
+                            "run scoped target identity가 null: " + targetKey);
                 }
                 for (MigrationStateStore.CheckpointEntry checkpoint : batch) {
-                    List<Map<String, Object>> matched = rowsByKey.getOrDefault(
-                            checkpoint.targetKey(), List.of());
-                    if (matched.size() != 1) {
+                    TargetRowSummary matched = rows.byKey().get(checkpoint.targetKey());
+                    long matches = matched == null ? 0 : matched.count();
+                    if (matches != 1) {
                         return new ScopedVerification(checkpoints.size(),
                                 "run scoped parity 불일치: targetDigest=" + keyDigest(checkpoint.targetKey())
-                                        + " 행수=" + matched.size());
+                                        + " 행수=" + matches);
                     }
-                    String actual = RowChecksum.calculate(columns, matched.get(0));
-                    if (!actual.equals(checkpoint.rowChecksum())) {
+                    if (!matched.checksum().equals(checkpoint.rowChecksum())) {
                         return new ScopedVerification(checkpoints.size(),
                                 "run scoped checksum 불일치: sourceDigest=" + keyDigest(checkpoint.sourceKey()));
                     }
@@ -274,26 +280,20 @@ public class MigrationVerifier {
                         .flatMap(item -> item.target().values().stream())
                         .map(TypedValue::jdbcValue)
                         .toArray();
-                List<Map<String, Object>> rows = target.queryForList(
-                        selectPrefix + typedTuplePredicate(components, batch.size()), arguments);
-                Map<String, List<Map<String, Object>>> rowsByKey = new LinkedHashMap<>();
-                for (Map<String, Object> row : rows) {
-                    TypedKeyTuple actualTuple = tupleFromRow(row, components);
-                    String actualKey = TypedKeyEncoding.encode(
-                            actualTuple, RUNTIME_KEY_MAX, "tb_migration_checkpoint.target_key");
-                    rowsByKey.computeIfAbsent(actualKey, ignored -> new ArrayList<>()).add(row);
-                }
+                TargetBatch rows = readTargetChecksums(target,
+                        selectPrefix + typedTuplePredicate(components, batch.size()), arguments,
+                        columns, row -> TypedKeyEncoding.encode(tupleFromRow(row, components),
+                                RUNTIME_KEY_MAX, "tb_migration_checkpoint.target_key"));
                 for (TypedCheckpoint item : batch) {
                     MigrationStateStore.CheckpointEntry checkpoint = item.checkpoint();
-                    List<Map<String, Object>> matched = rowsByKey.getOrDefault(
-                            checkpoint.targetKey(), List.of());
-                    if (matched.size() != 1) {
+                    TargetRowSummary matched = rows.byKey().get(checkpoint.targetKey());
+                    long matches = matched == null ? 0 : matched.count();
+                    if (matches != 1) {
                         return new ScopedVerification(checkpoints.size(),
                                 "run scoped parity 불일치: targetDigest=" + keyDigest(checkpoint.targetKey())
-                                        + " 행수=" + matched.size());
+                                        + " 행수=" + matches);
                     }
-                    String actual = RowChecksum.calculate(columns, matched.getFirst());
-                    if (!actual.equals(checkpoint.rowChecksum())) {
+                    if (!matched.checksum().equals(checkpoint.rowChecksum())) {
                         return new ScopedVerification(checkpoints.size(),
                                 "run scoped checksum 불일치: sourceDigest=" + keyDigest(checkpoint.sourceKey()));
                     }
@@ -305,6 +305,73 @@ public class MigrationVerifier {
         }
         return new ScopedVerification(checkpoints.size(), null);
     }
+
+    /** Keep only identity/count/checksum per batch; large target values live for one row. */
+    private static TargetBatch readTargetChecksums(
+            JdbcTemplate target, String sql, Object[] arguments, List<String> columns,
+            Function<Map<String, Object>, String> identity
+    ) {
+        return target.execute((ConnectionCallback<TargetBatch>) connection -> {
+            boolean ownTransaction = connection.getAutoCommit();
+            boolean previousReadOnly = connection.isReadOnly();
+            boolean transactionStarted = false;
+            try {
+                if (ownTransaction) {
+                    connection.setReadOnly(true);
+                    connection.setAutoCommit(false);
+                    transactionStarted = true;
+                }
+                // pgjdbc needs autoCommit=false and a positive fetch size to use a cursor.
+                try (PreparedStatement statement = connection.prepareStatement(sql,
+                        ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
+                    statement.setFetchSize(1);
+                    for (int i = 0; i < arguments.length; i++) {
+                        Object argument = arguments[i];
+                        if (argument instanceof SqlParameterValue parameter) {
+                            StatementCreatorUtils.setParameterValue(statement, i + 1,
+                                    parameter, parameter.getValue());
+                        } else {
+                            StatementCreatorUtils.setParameterValue(statement, i + 1,
+                                    SqlTypeValue.TYPE_UNKNOWN, argument);
+                        }
+                    }
+                    try (ResultSet result = statement.executeQuery()) {
+                        ResultSetMetaData metadata = result.getMetaData();
+                        Map<String, TargetRowSummary> summaries = new LinkedHashMap<>();
+                        while (result.next()) {
+                            Map<String, Object> row = new LinkedHashMap<>();
+                            for (int i = 1; i <= metadata.getColumnCount(); i++) {
+                                row.putIfAbsent(JdbcUtils.lookupColumnName(metadata, i),
+                                        JdbcUtils.getResultSetValue(result, i));
+                            }
+                            String key = identity.apply(row);
+                            if (key == null) {
+                                return new TargetBatch(summaries, true);
+                            }
+                            String checksum = RowChecksum.calculate(columns, row);
+                            summaries.compute(key, (ignored, previous) -> previous == null
+                                    ? new TargetRowSummary(1, checksum)
+                                    : new TargetRowSummary(previous.count() + 1, previous.checksum()));
+                        }
+                        return new TargetBatch(summaries, false);
+                    }
+                }
+            } finally {
+                // A caller-owned transaction is never committed, rolled back, or reconfigured.
+                if (ownTransaction) {
+                    if (transactionStarted) {
+                        connection.rollback();
+                        connection.setAutoCommit(true);
+                    }
+                    connection.setReadOnly(previousReadOnly);
+                }
+            }
+        });
+    }
+
+    private record TargetRowSummary(long count, String checksum) {}
+
+    private record TargetBatch(Map<String, TargetRowSummary> byKey, boolean missingIdentity) {}
 
     private record TypedCheckpoint(
             MigrationStateStore.CheckpointEntry checkpoint,
