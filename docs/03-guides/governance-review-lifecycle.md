@@ -10,7 +10,7 @@
 | 정기 검토 최신성 | 기록된 `reviewBy`·`checkBy`와 현재 시각 | 예정·기한 경과·미완료를 보고하고 책임자가 후속 검토 |
 | 기관 사용 승인 | 제품·프로필·환경, 현재 scope digest, 통제별 evidence, 유효기간 | 미승인·대상 불일치·근거 오류·만료는 기관 preflight 실패 |
 
-일반 일정은 URL-state census·승인 부류, route capabilities, UI quality, KRDS 매핑, 화면 용어를 다룬다. 기존 날짜와 검토자·근거는 보존하며 생성 명령이 날짜를 오늘로 바꾸거나 미검토 항목을 승인하지 않는다. 날짜 형식·검토 시점과의 순서·소유자·UI quality의 기록된 90일 상한은 기술 계약에서도 필요하다.
+일반 일정은 URL-state census·승인 부류, route capabilities, UI quality, KRDS 매핑, 화면 용어를 다룬다. 기존 날짜와 검토자·근거는 보존하며 생성 명령이 날짜를 오늘로 바꾸거나 미검토 항목을 승인하지 않는다. 날짜 형식·검토 시점과의 순서·소유자·UI quality의 기록된 90일 상한, KRDS 매핑과 화면 용어 계약 규범의 검토 시점 기준 120일 상한은 기술 계약에서도 필요하다.
 
 E2E shard 실행시간 profile의 120일 최신성도 정기 보고의 `performanceEvidence`에서 추적한다. 오래된 측정만으로 shard 계획이나 기술 CI를 중단하지 않는다. 성공 실행 provenance, 실제 spec 모집단, 양수 duration과 미래 시각 금지는 계속 검사한다. 오래된 값으로 계획한 shard의 균형이 현재 성능을 증명하는 것은 아니다.
 

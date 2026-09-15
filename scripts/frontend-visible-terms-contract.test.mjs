@@ -50,6 +50,47 @@ test('content review metadata rejects impossible dates, missing owners, and revi
   assert.match(validateContract(invalidReview).join('\n'), /lastReviewedAt must be a real YYYY-MM-DD date/);
 });
 
+/*
+  [2026-09-15 DEC-OPS-100] 계약 수준 규범의 지위·하한·검토 경계는 기계로 선다. 필수 정보를 지우거나 형식 금지를
+  풀거나 승인 경계를 부풀리면 각각 red 여야 하고, 규범을 검토하지 않고 기한만 옮기는 것도 red 다.
+*/
+test('contract-level norms keep their approved reading, floors, format bans and review bounds', () => {
+  const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
+  assert.deepEqual(validateContract(contract), []);
+  // 재사용 산출물은 이 테스트를 실행하지 않는다 — 결정 원장 대조는 생산 저장소 몫이다.
+  const decisionIndex = fs.readFileSync(path.join(ROOT, '.agent/memory/decisions.md'), 'utf8');
+  assert.ok(decisionIndex.includes(`| ${contract.normPolicy.decisionRef} |`), `${contract.normPolicy.decisionRef} is not recorded in decisions.md`);
+
+  const state = (fixture, id) => fixture.stateVocabulary.find((row) => row.id === id);
+  const cases = [
+    ['old schema', (f) => { f.schemaVersion = '1.0.0'; }, /unsupported schemaVersion/],
+    ['advisory norms', (f) => { f.normPolicy.mustNotImply = 'advisory'; }, /normPolicy must keep the approved reading: mustNotImply/],
+    ['prose decision', (f) => { f.normPolicy.decisionRef = 'decided in chat'; }, /normPolicy must record the approved reading/],
+    ['dropped required information', (f) => { state(f, 'filtered-zero').requiredInformation.pop(); }, /state norm was weakened: filtered-zero\.requiredInformation/],
+    ['dropped forbidden implication', (f) => { state(f, 'first-use-empty').mustNotImply.shift(); }, /state norm was weakened: first-use-empty\.mustNotImply/],
+    ['unbound G15', (f) => { delete state(f, 'filtered-zero').catalogRule; }, /norm binding was weakened: filtered-zero lost catalogRule G15/],
+    ['unknown catalog rule', (f) => { state(f, 'first-use-empty').catalogRule = 'G99'; }, /catalogRule does not name a work-screen grammar rule/],
+    ['missing shared implementation', (f) => { state(f, 'unsaved').sharedImplementation.push('frontend/src/hooks/missing-guard.ts'); }, /sharedImplementation file is missing/],
+    ['lifted zero ban', (f) => { f.formatRules.number.unknownAsZero = 'allowed'; }, /format rule was weakened: number\.unknownAsZero/],
+    ['deleted format rules', (f) => { delete f.formatRules; }, /format rules are missing/],
+    ['dropped action rule', (f) => { f.actionRules.pop(); }, /action rules are incomplete/],
+    ['narrowed action rule', (f) => { f.actionRules[0].forbiddenExamples.pop(); }, /action rule was weakened/],
+    ['relaxed term', (f) => { f.terms.find(({ id }) => id === 'term-intelligence').decision = 'allowed'; }, /term decision was weakened: term-intelligence/],
+    ['removed term', (f) => { f.terms = f.terms.filter(({ id }) => id !== 'term-intelligence'); }, /term decision was dropped: term-intelligence/],
+    ['no normative sources', (f) => { f.normativeSources = []; }, /normative source was dropped/],
+    ['missing approval', (f) => { delete f.approval; }, /approval boundary is missing/],
+    ['inflated claim', (f) => { f.approval.allowedCompletionClaim = 'content review complete'; }, /approval completion claim must stay bounded/],
+    ['changed population', (f) => { f.population.kind = 'full-visible-string-census'; }, /population must stay a bounded pilot census/],
+    ['unrecorded owner', (f) => { f.ownerAssignment = 'assigned'; }, /ownerAssignment other than unassigned/],
+    ['norm review after evidence review', (f) => { f.normsReviewedAt = '2099-01-01'; }, /normsReviewedAt must be a real date on or before lastReviewedAt/],
+    ['unbounded norm review', (f) => { f.reviewBy = '2036-01-01'; }, /within 120 days after normsReviewedAt/],
+  ];
+  for (const [label, mutate, expected] of cases) {
+    const fixture = structuredClone(contract);
+    mutate(fixture);
+    assert.match(validateContract(fixture).join('\n'), expected, label);
+  }
+});
 test('pilot composers do not expose internal deployment language or log form payloads', () => {
   const boardComposer = fs.readFileSync(
     path.join(ROOT, 'frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'),
