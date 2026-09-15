@@ -7,10 +7,9 @@ vi.mock('next/config', () => ({
 
 import { vi, describe, it, expect, expectTypeOf, beforeEach } from 'vitest';
 import client from '@/lib/api/client';
-import { noteService } from '../NoteService';
-import { scrapService } from '../ScrapService';
-import { menuService } from '../MenuService';
-import { mailService } from '../../mail/MailService';
+import { addressbookUserService } from '../addressbook/AddressbookUserService';
+import { approvalUserService } from '../approval/ApprovalUserService';
+import { communityUserService } from '../community/CommunityUserService';
 import { reportService, type WorkReportInput } from '../ReportService';
 import { createWorkReportOperation, updateWorkReportOperation } from '@/types/generated-operations';
 import {
@@ -33,10 +32,7 @@ vi.mock('@/lib/api/client', () => {
  delete: remove,
  getRaw: vi.fn(async (url: string, config?: unknown) => {
  const result = await get(url, config);
- const fallback = url.endsWith('/received') || url.endsWith('/sent') || url === 'scraps'
- ? { list: [], total: 0, page: 0, size: 10, totalPage: 0 }
- : {};
- return { success: true, code: 'S000', message: '성공', data: result ?? fallback };
+ return { success: true, code: 'S000', message: '성공', data: result ?? {} };
  }),
  requestRaw: vi.fn(async (request: Record<string, unknown>) => {
  const { url, method, data, ...rest } = request;
@@ -51,38 +47,65 @@ vi.mock('@/lib/api/client', () => {
  };
 });
 
-describe('Final Domain Services', () => {
+const PAGE = {
+ success: true,
+ code: 'S000',
+ message: '성공',
+ data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+};
+
+/*
+ * [GAP-PACK-001] 이 파일은 **demo pack 소유 서비스만** 검증한다 — 그 pack 이 빠진 프로필
+ * (core·collaboration)에서는 검증 대상이 함께 사라지므로 파일이 cascade 제거되는 것이 정확한 동작이다.
+ * 다른 pack 의 서비스를 여기 섞으면 그 서비스의 검증이 축소 프로필에서 조용히 없어진다.
+ */
+describe('Demo user services', () => {
  beforeEach(() => vi.clearAllMocks());
 
- it('noteService validates every JSON/void operation through the generated raw boundary', async () => {
- const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
- vi.mocked(client.getRaw)
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: page })
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: page })
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { noteSn: 31 } });
- vi.mocked(client.requestRaw)
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined })
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined });
+ it('addressbookUserService calls correct endpoints', async () => {
+ vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
+ await addressbookUserService.getAddressBooks({ page: 1 });
+ expect(client.getRaw).toHaveBeenCalledWith('address-books', {
+ params: { page: 1, searchCnd: '0' },
+ });
+ });
 
- await noteService.getReceivedNotes({ page: 0, size: 10 });
- await noteService.getSentNotes({ page: 1, searchWrd: '회의' });
- await noteService.sendNote({ rcverId: 'user01', noteSj: '제목', noteCn: '내용' });
- await noteService.getNote(31, { type: 'received', relationSn: 41 });
- await noteService.deleteNote(41, { type: 'received' });
+ /*
+  * 서버(AddressBookRepositoryImpl)는 searchCnd 가 '0'/'1' 일 때만 검색 조건을 만든다.
+  * 종전에는 두 호출부 모두 searchCnd 를 보내지 않아 QueryDSL 의 and(null) 로 무시됐고,
+  * **검색어를 넣어도 목록과 총건수가 전체 그대로**였다. 오류도 로딩도 없어 사용자는 알 수 없다.
+  */
+ it('addressbookUserService 는 검색어가 서버에 닿도록 searchCnd 를 실어 보낸다', async () => {
+ vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
+ await addressbookUserService.getAddressBooks({ page: 0, size: 10, searchWrd: '영업팀' });
 
- expect(vi.mocked(client.getRaw).mock.calls).toEqual([
- ['notes/received', { params: { page: 0, size: 10 } }],
- ['notes/sent', { params: { searchWrd: '회의', page: 1 } }],
- ['notes/31', { params: { type: 'received', relationSn: 41 } }],
- ]);
- expect(vi.mocked(client.requestRaw).mock.calls).toEqual([
- [{
- url: 'notes',
- method: 'post',
- data: { rcverId: 'user01', noteSj: '제목', noteCn: '내용' },
- }],
- [{ url: 'notes/41', method: 'delete', params: { type: 'received' } }],
- ]);
+ const [, config] = vi.mocked(client.getRaw).mock.calls.at(-1)!;
+ expect(config?.params).toMatchObject({ searchWrd: '영업팀', searchCnd: '0' });
+ });
+
+ it('addressbookUserService 는 호출부가 고른 검색 축을 덮어쓰지 않는다', async () => {
+ vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
+ await addressbookUserService.getAddressBooks({ page: 0, searchWrd: 'kim', searchCnd: '1' });
+
+ const [, config] = vi.mocked(client.getRaw).mock.calls.at(-1)!;
+ expect(config?.params.searchCnd).toBe('1');
+ });
+
+ it('ApprovalUserService should call correct endpoints', async () => {
+ vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
+ await approvalUserService.getPending({ page: 0 });
+ expect(client.getRaw).toHaveBeenCalledWith('approvals/pending', { params: { page: 0 } });
+ });
+
+ /*
+  * ⚠ 커뮤니티 사용자 서비스는 core 로 보이지만 demo 다 — 서비스 파일 자체는 어느 pack 의
+  *   removePaths 에도 없고, 그것이 import 하는 `@/types/business/community.ts` 가 demo 소유라
+  *   cascade 로 함께 빠진다. manifest 의 경로 목록만 읽으면 놓치고, 도달성 census 를 실행해야 보인다.
+  */
+ it('communityUserService calls correct endpoints', async () => {
+ vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
+ await communityUserService.getCommunityList({} as never);
+ expect(client.getRaw).toHaveBeenCalledWith('communities', { params: {} });
  });
 
  it('reportService rejects every server-owned report field before transport', async () => {
@@ -109,34 +132,6 @@ describe('Final Domain Services', () => {
  .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
  }
  expect(vi.mocked(client.requestRaw)).not.toHaveBeenCalled();
- });
-
- it('mailService validates list/detail/send/delete with generated operation descriptors', async () => {
- const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
- vi.mocked(client.getRaw)
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: page })
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { emlDsptchSn: 17 } });
- vi.mocked(client.requestRaw)
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: 71 })
- .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined });
-
- await mailService.getSentMails({ page: 0, size: 10, searchKeyword: '공지' });
- await mailService.getSentMail(17);
- await expect(mailService.sendMail({ sj: '제목', recptnPerson: 'user@example.com' })).resolves.toBe(71);
- await mailService.deleteMail(17);
-
- expect(vi.mocked(client.getRaw).mock.calls).toEqual([
- ['mails', { params: { searchKeyword: '공지', page: 0, size: 10 } }],
- ['mails/17', undefined],
- ]);
- expect(vi.mocked(client.requestRaw).mock.calls).toEqual([
- [{
- url: 'mails',
- method: 'post',
- data: { sj: '제목', recptnPerson: 'user@example.com' },
- }],
- [{ url: 'mails/17', method: 'delete' }],
- ]);
  });
 
  it('reportService preserves its pagination aliases and config at the generated boundary', async () => {
@@ -172,30 +167,6 @@ describe('Final Domain Services', () => {
  ]);
  });
 
- it('noteService calls correct endpoints', async () => {
- await noteService.getReceivedNotes({ page: 0 });
- expect(client.get).toHaveBeenCalledWith('notes/received', expect.any(Object));
- await noteService.getNote(31, { type: 'received', relationSn: 41 });
- expect(client.get).toHaveBeenCalledWith('notes/31', { params: { type: 'received', relationSn: 41 } });
- await noteService.deleteNote(41, { type: 'received' });
- expect(client.delete).toHaveBeenCalledWith('notes/41', { params: { type: 'received' } });
- });
-
- it('scrapService calls correct endpoints', async () => {
- vi.mocked(client.get).mockResolvedValueOnce({ list: [], total: 0, page: 0, size: 10, totalPage: 0 });
- await scrapService.getMyScraps({ pageIndex: 1, pageUnit: 10 });
- expect(client.get).toHaveBeenCalledWith('scraps', expect.any(Object));
- await scrapService.deleteScrap(7);
- expect(client.delete).toHaveBeenCalledWith('scraps/7', undefined);
- });
-
- it('mailService uses the numeric dispatch serial number in resource paths', async () => {
- await mailService.getSentMail(17);
- expect(client.get).toHaveBeenCalledWith('mails/17', undefined);
- await mailService.deleteMail(17);
- expect(client.delete).toHaveBeenCalledWith('mails/17', undefined);
- });
-
  it('reportService uses the numeric report serial number in resource paths', async () => {
  vi.mocked(client.get).mockResolvedValueOnce({ rptpSn: 23, rptTtl: '기존 보고' });
  await reportService.getReport(23);
@@ -204,16 +175,5 @@ describe('Final Domain Services', () => {
  expect(client.put).toHaveBeenCalledWith('work-reports/23', { rptTtl: '수정 보고' }, undefined);
  await reportService.deleteReport(23);
  expect(client.delete).toHaveBeenCalledWith('work-reports/23', undefined);
- });
-
- it('menuService calls correct endpoints', async () => {
- vi.mocked(client.getRaw).mockResolvedValueOnce({
- success: true,
- code: 'S000',
- message: '성공',
- data: { list: [] },
- });
- await menuService.getHeadMenus();
- expect(client.getRaw).toHaveBeenCalledWith('menus/head', undefined);
  });
 });
