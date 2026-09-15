@@ -65,3 +65,24 @@ export function summarizeError(error: unknown): SafeErrorSummary {
 export function logErrorSafely(message: string, error: unknown): void {
   console.error(message, summarizeError(error));
 }
+
+/**
+ * 사용자에게 보여 줄 수 있는 오류 문장만 돌려준다. 보여 줄 문장이 없으면 undefined 다 —
+ * 호출부가 과업에 맞는 기본 안내를 쓴다. 오류 패널·Server Action·토스트가 이 규칙 하나를 쓴다.
+ *
+ * ⚠ axios 오류의 `message` 는 서버 문구가 아니라 transport 원문(`Network Error`·
+ *   `timeout of 15000ms exceeded`·`Request failed with status code 500`)이다. 사용자가 무엇을 해야
+ *   하는지 말하지 않고 콘텐츠 가이드 §5 가 노출을 금지하므로 버린다. 서버가 준 문구
+ *   (`response.data.message`)만 쓴다. 직렬화돼 평범한 객체가 된 axios 오류도 `isAxiosError` 로 가린다.
+ */
+export function userFacingErrorMessage(error: unknown): string | undefined {
+  if (typeof error === 'string') return error.trim() || undefined;
+  if (!isRecord(error)) return undefined;
+
+  const response = isRecord(error.response) ? error.response : null;
+  const data = response && isRecord(response.data) ? response.data : null;
+  if (typeof data?.message === 'string' && data.message.trim()) return data.message.trim();
+
+  if (error.isAxiosError === true) return undefined;
+  return typeof error.message === 'string' && error.message.trim() ? error.message.trim() : undefined;
+}

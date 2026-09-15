@@ -2,40 +2,15 @@ import { AlertCircle, RefreshCw, Search, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { userFacingErrorMessage } from '@/lib/safe-error-log';
 
 /**
- * 에러 객체에서 사람이 읽을 수 있는 메시지를 안전하게 추출한다.
- * axios 에러(`response.data.message`)와 일반 `Error.message`를 모두 지원하며,
- * 형태가 다르면 조용히 undefined 를 반환한다(문구는 호출부의 기본 안내로 대체).
+ * 에러 객체에서 사용자에게 보여 줄 수 있는 문장만 뽑는다(없으면 undefined — 아래 기본 안내가 말한다).
+ * [2026-09-15 DEC-OPS-100] 규칙은 `userFacingErrorMessage` 한 곳이 소유한다: 서버가 준 문구는 그대로,
+ * axios 가 만든 transport 원문(`Network Error` 등)은 버린다.
  */
 function extractErrorMessage(error: unknown): string | undefined {
-  if (typeof error === 'string') {
-    return error.trim() || undefined;
-  }
-  if (!error || typeof error !== 'object') {
-    return undefined;
-  }
-
-  const candidate = error as {
-    response?: { data?: { message?: unknown } };
-    message?: unknown;
-    isAxiosError?: unknown;
-  };
-
-  const apiMessage = candidate.response?.data?.message;
-  if (typeof apiMessage === 'string' && apiMessage.trim()) {
-    return apiMessage.trim();
-  }
-  // [2026-09-15 DEC-OPS-100] 서버 문구가 없는 axios 오류의 message 는 transport 원문
-  //   (`Network Error`·`Request failed with status code 500`)이다. 사용자 문장이 아니므로 싣지 않고
-  //   아래 기본 안내에 맡긴다(콘텐츠 가이드 §5).
-  if (candidate.isAxiosError === true) {
-    return undefined;
-  }
-  if (typeof candidate.message === 'string' && candidate.message.trim()) {
-    return candidate.message.trim();
-  }
-  return undefined;
+  return userFacingErrorMessage(error);
 }
 
 export function ErrorStateDisplay({

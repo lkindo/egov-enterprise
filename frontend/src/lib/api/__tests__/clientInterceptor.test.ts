@@ -362,6 +362,19 @@ describe('API 클라이언트 인터셉터', () => {
       expect(dispatchEvent).not.toHaveBeenCalled();
     });
 
+    it('Error 가 아닌 거절 값도 영어 기본 문구 대신 한국어 안내를 담아 다시 던진다', async () => {
+      // [2026-09-15 DEC-OPS-100] 종전 기본값은 'Unknown Network/System Error' 였다.
+      const dispatchEvent = vi.fn();
+      Object.defineProperty(globalThis, 'window', {
+        value: { location: { pathname: '/admin', href: '' }, dispatchEvent },
+        configurable: true, writable: true,
+      });
+      const { captured } = await loadClient();
+
+      await expect(captured.responseErr!({ code: 'ERR_NETWORK' }))
+        .rejects.toThrow('서버에 연결하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
+    });
+
     it('suppressErrorToast 를 선언한 요청의 실패는 전역 토스트를 띄우지 않는다', async () => {
       /*
        * [왜 필요한가 — 2026-08-26 실측]

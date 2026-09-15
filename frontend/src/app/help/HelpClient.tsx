@@ -12,7 +12,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EmptyStateDisplay } from '@/app/components/ui/status-displays';
+import { EmptyStateDisplay, ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { z } from 'zod';
 import { BoardSaveRequestSchema } from '@/types/generated-zod';
@@ -69,6 +69,7 @@ export default function HelpClient() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [qnas, setQnas] = useState<QNA[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqDetails, setFaqDetails] = useState<Record<string, FaqDetailState>>({});
@@ -84,6 +85,7 @@ export default function HelpClient() {
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
+        setLoadError(null);
         if (tab === 'faq') {
           const res = await helpUserService.getFaqs({ keyword: searchKeyword });
           setFaqs(res.list || []);
@@ -92,13 +94,24 @@ export default function HelpClient() {
           setQnas(res.list || []);
         }
       } catch {
-        toast('데이터를 불러오지 못했습니다.', 'error');
+        // [2026-09-15 DEC-OPS-100] 종전에는 토스트만 띄우고 목록을 빈 채로 둬서, 토스트가 사라지면
+        //   "등록된 … 없습니다"(데이터 없음)나 "검색 결과가 없습니다"로 읽혔다. 실패를 화면에 남기고,
+        //   직전 검색어의 목록이 새 검색어의 결과처럼 남지 않게 비운다. 서버 문구는 API 공통 토스트가 알린다.
+        if (tab === 'faq') {
+          setFaqs([]);
+          setLoadError('자주 묻는 질문을 불러오지 못했습니다.');
+        } else {
+          setQnas([]);
+          setLoadError('Q&A 문의 내역을 불러오지 못했습니다.');
+        }
       } finally {
         setLoading(false);
       }
     }, 300); // Debounce
     return () => clearTimeout(timer);
-  }, [tab, searchKeyword, toast, reloadToken]);
+  }, [tab, searchKeyword, reloadToken]);
+
+  const retryLoad = () => setReloadToken((token) => token + 1);
 
   const openAsk = () => {
     askForm.reset({ pstTtl: '', pstCn: '' });
@@ -230,7 +243,11 @@ export default function HelpClient() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              {faqs.length === 0 ? (
+              {loadError ? (
+                <ErrorStateDisplay error={loadError} onRetry={retryLoad} className="bg-card border-2 border-dashed border-border" />
+              ) : faqs.length === 0 && loading ? (
+                <p role="status" className="py-12 text-center text-sm text-muted-foreground">자주 묻는 질문을 불러오는 중…</p>
+              ) : faqs.length === 0 ? (
                 <EmptyStateDisplay message={emptyResultMessage(searchKeyword, "등록된 자주 묻는 질문이 없습니다.")} className="bg-card border-2 border-dashed border-border" />
               ) : (
                 faqs.map((faq) => (
@@ -303,6 +320,8 @@ export default function HelpClient() {
                 columns={qnaColumns}
                 data={qnas}
                 loading={loading}
+                error={loadError}
+                onRetry={retryLoad}
                 emptyMessage={emptyResultMessage(searchKeyword, "등록된 Q&A 문의 내역이 없습니다.")}
                 className="border-none shadow-none rounded-none"
               />

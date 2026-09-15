@@ -124,7 +124,7 @@ describe('SurveyResponseClient destructive boundary', () => {
 
     await act(async () => pending.reject(new Error('응답 삭제 API 장애')));
 
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('삭제 실패: 응답 삭제 API 장애'));
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('응답을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'));
     expect(screen.getByText('홍길동')).toBeVisible();
     expect(screen.getByRole('button', { name: '홍길동 응답 삭제' })).toBeEnabled();
   });
@@ -138,7 +138,7 @@ describe('SurveyResponseClient destructive boundary', () => {
       remove.click();
     });
 
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('삭제 실패: 응답 삭제 API 장애'));
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith('응답을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.'));
     expect(screen.getByRole('button', { name: '홍길동 응답 삭제' })).toBeEnabled();
     expect(screen.getByRole('button', { name: '홍길동 응답 삭제' })).not.toHaveAttribute('aria-busy');
     expect(mocks.toastSuccess).not.toHaveBeenCalled();

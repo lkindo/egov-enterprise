@@ -286,7 +286,7 @@ axiosInstance.interceptors.response.use(
 
     let finalError = error;
     if (!(error instanceof Error) && typeof error === 'object' && error !== null) {
-      finalError = new Error((error as Record<string, unknown>).message as string || backendMessage || 'Unknown Network/System Error');
+      finalError = new Error((error as Record<string, unknown>).message as string || backendMessage || describeRequestFailure(error));
       Object.assign(finalError, error);
     }
 

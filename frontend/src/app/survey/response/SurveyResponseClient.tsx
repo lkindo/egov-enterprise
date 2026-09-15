@@ -69,8 +69,10 @@ export default function SurveyResponseClient() {
       queryClient.invalidateQueries({ queryKey: ['survey-responses'] });
       toast.success('삭제되었습니다.');
     },
-    onError: (err) => {
-      toast.error(`삭제 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
+    onError: () => {
+      // [2026-09-15 DEC-OPS-100] 오류 원문을 붙이지 않는다 — 서버 문구는 API 공통 토스트가 이미 알리고,
+      //   원문이 transport 문구면 사용자 문장이 아니다. 여기서는 실패한 작업과 다음 행동만 말한다.
+      toast.error('응답을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     },
     onSettled: () => {
       deletingResponseIdRef.current = null;
