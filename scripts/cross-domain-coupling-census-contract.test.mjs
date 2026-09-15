@@ -73,7 +73,16 @@ test('app→app·app→core edge 수는 공용 메모리 GAP-ARCH-001 이 인용
   const registry = readRepoJson(root, REGISTRY_PATH);
   const count = (module) => registry.edges.filter((edge) => edge.module === module).length;
   assert.equal(count('business-app') + count('business-core'), registry.edges.length, '모듈 어휘 밖 edge 가 있다');
-  assert.ok(count('business-app') > 0 && count('business-core') > 0);
+  /*
+    [2026-09-15] app→app 은 0 이 정상이 됐다 — GAP-ARCH-001 의 마지막 4건을 foundation 포트·이벤트로
+    역전했다. 그래서 종전의 `count('business-app') > 0` floor 는 더 이상 쓸 수 없다.
+
+    0 을 "세지 못했다" 와 구분하는 것은 이 floor 가 아니라 CrossDomainCouplingLinterTest 의 exact-set
+    대조다 — 코드에 app→app 참조가 있는데 원장에 없으면 그쪽이 red 이고, 원장에만 있으면 유령 edge 로
+    red 다. 여기서 막아야 하는 것은 원장이 통째로 비어 메모리 수치가 vacuous 하게 0 이 되는 경우다.
+  */
+  assert.ok(registry.edges.length > 0, '원장이 비면 공용 메모리의 edge 수가 vacuous 하다');
+  assert.ok(count('business-core') > 0, 'app→core 축이 비면 원장이 모집단을 잃은 것이다');
 });
 
 test('부정 증명: 틀린 edge pack 태그는 생성기 계획과의 대조에서 red 다', (t) => {
@@ -92,15 +101,21 @@ test('부정 증명: 틀린 edge pack 태그는 생성기 계획과의 대조에
     edges: registry.edges.map((edge) => (predicate(edge) ? { ...edge, pack } : edge)),
   });
   const cases = [
+    /*
+      [2026-09-15] 종전 두 경우는 dashboard→notification 과 informalsanction→mail 을 표적으로 삼았는데,
+      GAP-ARCH-001 의 마지막 app→app 4건을 역전하면서 두 edge 가 사라졌다. 사라진 edge 를 표적으로 두면
+      retag 가 아무것도 바꾸지 못해 이 부정 증명이 조용히 vacuous 해진다 — 같은 판정(하향 태그는 제거,
+      상향 태그는 잔존)을 현재 실재하는 edge 로 옮긴다.
+    */
     {
-      name: 'collaboration 소유 대시보드→알림 edge 를 core 로 적는다',
-      registry: retag((edge) => edge.file === 'dashboard/RealTimeDashboardService.java', 'core'),
-      expect: /dashboard\/RealTimeDashboardService\.java: dashboard -> notification \[business-app\] \(pack=core\) 는 프로필 \[core\] 에서 제거된다/,
+      name: 'collaboration 소유 게시판 첨부 기여자 edge 를 core 로 적는다',
+      registry: retag((edge) => edge.file === 'board/attachment/BoardAttachmentSourceContributor.java', 'core'),
+      expect: /board\/attachment\/BoardAttachmentSourceContributor\.java: board -> file \[business-core\] \(pack=core\) 는 프로필 \[core\] 에서 제거된다/,
     },
     {
-      name: 'demo 소유 결재 알림→메일 edge 를 collaboration 으로 적는다',
-      registry: retag((edge) => edge.file === 'informalsanction/event/SanctionEventListener.java' && edge.target === 'mail', 'collaboration'),
-      expect: /SanctionEventListener\.java: informalsanction -> mail \[business-app\] \(pack=collaboration\) 는 프로필 \[core,collaboration\] 에서 제거된다/,
+      name: 'demo 소유 주소록 정리 리스너 edge 를 collaboration 으로 적는다',
+      registry: retag((edge) => edge.file === 'addressbook/listener/AddressBookUserDeletionCleanupListener.java', 'collaboration'),
+      expect: /AddressBookUserDeletionCleanupListener\.java: addressbook -> user \[business-core\] \(pack=collaboration\) 는 프로필 \[core,collaboration\] 에서 제거된다/,
     },
     {
       name: 'collaboration 소유 게시판→사용자 edge 를 demo 로 적는다',
