@@ -523,6 +523,12 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
   if (jobs.size < 3) {
     errors.push(`workflow job parsing failed: only ${jobs.size} job(s) found`);
   }
+  const mutationJob = jobs.get('mutation-scope') ?? '';
+  const mutationTimeouts = [...mutationJob.matchAll(/^ {4}timeout-minutes:\s*([^\r\n]*)$/gm)];
+  const mutationTimeout = "${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}";
+  if (mutationTimeouts.length !== 1 || mutationTimeouts[0][1].trim() !== mutationTimeout) {
+    errors.push('mutation-scope timeout must allow 60 minutes only for migration-validate-verify and 30 otherwise');
+  }
   errors.push(...validatePinnedWorkflowUses([{ path: workflowPath, content: ciContent }]));
   if (runShellDefault(ciContent, 0) !== null) {
     errors.push('workflow-level defaults.run.shell cannot override required command execution');

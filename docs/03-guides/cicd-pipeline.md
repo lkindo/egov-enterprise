@@ -67,6 +67,13 @@ dependency-submission.yml (pull_request, contents:read)
 > - **증분 뮤테이션 (HARD, CI FAIL)**: `mutation-scope`는 10개 PIT 스코프 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. `mutation-test`는 매트릭스 전체 결론을 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
+`migration-validate-verify`의 CI 실행 상한은 60분이고 다른 PIT 스코프는 30분이다.
+[2026-09-16 실측](https://github.com/lkindo/egov-enterprise/actions/runs/35010396436/job/104528840104)에서
+실제 DB 시험의 기본 커버리지 계산 456초 후 변이 실행이 이어지다 기존 30분 작업 제한으로 취소됐다.
+실행 시간만 구분하며 대상 클래스·시험·75% 임계값·전체 결과의 실패 집계는 유지한다.
+작업별 시간 표현식은 [GitHub의 matrix 지원](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability)을 사용하며
+기존 required-checks 계약이 다른 범위 확대·상한 변경·삭제·주석 대체·중복 키를 실패로 확인한다.
+
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
 ### 정기 검토와 기관 도입의 분리
