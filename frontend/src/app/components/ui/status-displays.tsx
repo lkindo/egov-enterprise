@@ -79,13 +79,17 @@ export function ErrorStateDisplay({
 
 export function EmptyStateDisplay({
   message = "데이터가 없습니다.",
-  description = "조건에 해당하는 항목이 없습니다. 검색 조건을 변경하거나 초기화한 뒤 다시 확인해 주세요.",
+  description,
   onRetry,
   className
 }: {
   /** 빈 상태 제목. 화면 맥락에 맞는 문구를 넘긴다. */
   message?: string;
-  /** 보조 안내 문구. 실패를 암시하지 않는 중립 문구를 유지한다. */
+  /**
+   * 보조 안내 문구. 실패를 암시하지 않는 중립 문구를 유지한다.
+   * [2026-09-15 DEC-OPS-100] 기본값을 두지 않는다. 종전 기본값은 검색이 없는 표에도 "검색 조건을 변경하거나"를 말해
+   * 처음부터 빈 목록을 검색 결과 없음으로 읽히게 했다(first-use-empty). 조건 안내는 조건이 적용된 곳만 넘긴다.
+   */
   description?: string;
   /**
    * 재조회 콜백(예: TanStack Query 의 `refetch`).
