@@ -34,8 +34,15 @@ class ReportStatsServiceTest {
     @Mock
     private DtaUseStatsRepository dtaUseStatsRepository;
 
+    /**
+     * 게시글 집계는 게시판 도메인이 구현하는 포트로 받는다(GAP-ARCH-001 의 stats→board 역전).
+     * 구현이 없는 프로필에서도 통계가 뜨도록 {@code ObjectProvider} 로 주입된다.
+     */
     @Mock
-    private nuri.business.domain.board.BoardRepository boardRepository;
+    private org.springframework.beans.factory.ObjectProvider<nuri.foundation.core.stats.PostStatisticsContributor> postStatistics;
+
+    @Mock
+    private nuri.foundation.core.stats.PostStatisticsContributor postStatisticsContributor;
 
     @Mock private nuri.business.domain.user.repository.UserRepository userRepository;
     @Mock private nuri.business.domain.log.LoginLogRepository loginLogRepository;
@@ -44,7 +51,8 @@ class ReportStatsServiceTest {
     @Test
     void summarySumsNumericCountsAndSkipsIncompleteRows() {
         given(userRepository.count()).willReturn(7L);
-        given(boardRepository.count()).willReturn(20L);
+        given(postStatistics.getIfAvailable()).willReturn(postStatisticsContributor);
+        given(postStatisticsContributor.countPosts()).willReturn(20L);
         given(loginLogRepository.countLoginsByDate(anyString(), anyString())).willReturn(List.of(
                 new Object[]{"date", 2L}, new Object[]{"date", java.math.BigInteger.valueOf(3)},
                 new Object[]{}, new Object[]{"date"}, new Object[]{"date", null}));
@@ -171,12 +179,28 @@ class ReportStatsServiceTest {
     @Test
     @DisplayName("일자별 게시물 통계는 게시글을 센다 — 자료이용현황 표를 읽지 않는다")
     void getBbsStatsByDateCountsPosts() {
-        given(boardRepository.countPostsByDate(anyString(), anyString())).willReturn(new ArrayList<>());
+        given(postStatistics.getIfAvailable()).willReturn(postStatisticsContributor);
+        given(postStatisticsContributor.countPostsByDate(anyString(), anyString())).willReturn(new ArrayList<>());
 
         reportStatsService.getBbsStatsByDate("2024-01-01", "2024-01-31");
 
-        verify(boardRepository).countPostsByDate("2024-01-01 00:00:00", "2024-01-31 23:59:59");
+        verify(postStatisticsContributor).countPostsByDate("2024-01-01 00:00:00", "2024-01-31 23:59:59");
         verify(dtaUseStatsRepository, never()).countByDate(anyString(), anyString());
+    }
+
+    /**
+     * 게시판 도메인이 base projection 에서 빠진 프로필에서는 구현이 없다. 그때의 0·빈 목록은
+     * "셀 게시글이 없다" 는 사실이며, 통계 화면이 죽어서는 안 된다(GAP-ARCH-001 의 stats→board 역전).
+     */
+    @Test
+    @DisplayName("게시글 집계 구현이 없으면 총계 0·날짜별 빈 목록이다")
+    void postStatisticsAreEmptyWhenNoContributorIsPresent() {
+        given(postStatistics.getIfAvailable()).willReturn(null);
+        given(userRepository.count()).willReturn(7L);
+        given(loginLogRepository.countLoginsByDate(anyString(), anyString())).willReturn(List.of());
+
+        assertThat(reportStatsService.getSummary().getTotalPosts()).isZero();
+        assertThat(reportStatsService.getBbsStatsByDate("2024-01-01", "2024-01-31")).isEmpty();
     }
 
     @Test

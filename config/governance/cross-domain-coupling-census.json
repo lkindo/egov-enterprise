@@ -9,49 +9,6 @@
   ],
   "edges": [
     {
-      "file": "dashboard/RealTimeDashboardService.java",
-      "owner": "dashboard",
-      "target": "notification",
-      "module": "business-app",
-      "types": [
-        "nuri.business.domain.notification.NotificationRepository"
-      ],
-      "pack": "collaboration"
-    },
-    {
-      "file": "informalsanction/event/SanctionEventListener.java",
-      "owner": "informalsanction",
-      "target": "mail",
-      "module": "business-app",
-      "types": [
-        "nuri.business.service.mail.MailService",
-        "nuri.business.service.mail.dto.SentMailDto"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "informalsanction/event/SanctionEventListener.java",
-      "owner": "informalsanction",
-      "target": "sms",
-      "module": "business-app",
-      "types": [
-        "nuri.business.service.sms.SmsService",
-        "nuri.business.service.sms.dto.SmsDto",
-        "nuri.business.service.sms.dto.SmsRecptnDto"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "stats/ReportStatsService.java",
-      "owner": "stats",
-      "target": "board",
-      "module": "business-app",
-      "types": [
-        "nuri.business.domain.board.BoardRepository"
-      ],
-      "pack": "demo"
-    },
-    {
       "file": "addressbook/listener/AddressBookUserDeletionCleanupListener.java",
       "owner": "addressbook",
       "target": "user",

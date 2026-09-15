@@ -5,6 +5,8 @@ import nuri.business.domain.stats.DtaUseStatsRepository;
 import nuri.business.domain.stats.ReprtStats;
 import nuri.business.domain.stats.ReprtStatsRepository;
 import lombok.RequiredArgsConstructor;
+import nuri.foundation.core.stats.PostStatisticsContributor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,15 @@ public class ReportStatsService {
     private final nuri.business.domain.log.UserLogRepository userLogRepository;
     private final nuri.business.domain.log.LoginLogRepository loginLogRepository;
     private final nuri.business.domain.user.repository.UserRepository userRepository;
-    private final nuri.business.domain.board.BoardRepository boardRepository;
+
+    /**
+     * 게시글 집계를 세는 포트. 게시판 도메인이 구현하며 여기서는 숫자만 받는다.
+     *
+     * <p>종전에는 {@code BoardRepository} 를 인라인 FQN 으로 주입해 stats→board 교차 도메인 결합을
+     * 만들었다(GAP-ARCH-001). {@code ObjectProvider} 로 받는 것은 게시판 도메인이 base projection 에서
+     * 빠진 프로필에서도 통계가 뜨게 하기 위해서다 — 그때의 0 은 셀 게시글이 없다는 사실이다.
+     */
+    private final ObjectProvider<PostStatisticsContributor> postStatistics;
 
     // ========== 사용자 통계 ==========
 
@@ -54,7 +64,8 @@ public class ReportStatsService {
      */
     public nuri.business.service.stats.dto.SummaryStatsDto getSummary() {
         long totalUsers = userRepository.count();
-        long totalPosts = boardRepository.count();
+        PostStatisticsContributor posts = postStatistics.getIfAvailable();
+        long totalPosts = posts == null ? 0L : posts.countPosts();
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         long todayConnects = loginLogRepository.countLoginsByDate(today, today).stream()
                 .filter(row -> row.length > 1 && row[1] != null)
@@ -178,6 +189,7 @@ public class ReportStatsService {
     public List<Object[]> getBbsStatsByDate(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
-        return boardRepository.countPostsByDate(from, to);
+        PostStatisticsContributor posts = postStatistics.getIfAvailable();
+        return posts == null ? List.of() : posts.countPostsByDate(from, to);
     }
 }

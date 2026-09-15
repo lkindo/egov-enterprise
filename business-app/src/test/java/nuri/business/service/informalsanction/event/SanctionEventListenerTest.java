@@ -3,28 +3,33 @@ package nuri.business.service.informalsanction.event;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import nuri.business.service.mail.MailService;
-import nuri.business.service.mail.dto.SentMailDto;
-import nuri.business.service.sms.SmsService;
-import nuri.business.service.sms.dto.SmsDto;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
+import nuri.foundation.core.event.MailRequestedEvent;
+import nuri.foundation.core.event.NotificationRequestedEvent;
+import nuri.foundation.core.event.SmsRequestedEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 
-
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+/**
+ * 이 리스너는 세 채널을 모두 <b>foundation 이벤트 발행</b>으로 요청한다.
+ *
+ * <p>종전에는 {@code SmsService}·{@code MailService} 를 주입해 직접 불렀고, 그 두 주입이 GAP-ARCH-001 의
+ * 잔여 app→app 결합 4건 중 둘이었다. 실제 발송은 {@code SmsRequestListener}·{@code MailRequestListener}
+ * 가 소유하므로 발신 번호 미설정 같은 채널 규칙은 그쪽 테스트가 고정한다 — 여기서는 <b>무엇을 요청하는가</b>만 본다.
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SanctionEventListener 단위 테스트")
 class SanctionEventListenerTest {
@@ -32,29 +37,32 @@ class SanctionEventListenerTest {
     @Mock
     private UserService userService;
 
-    @Mock
-    private SmsService smsService;
-
-    @Mock
-    private MailService mailService;
-
-    /** 앱 내 알림은 NotificationService 주입 대신 foundation 이벤트로 요청한다. */
+    /** 문자·메일·앱 내 알림이 모두 이 발행자를 지난다. 채널 구분은 이벤트 타입으로 한다. */
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
-
-    /** 발신 번호는 설정 주입이라 @InjectMocks 가 채울 수 없다 — 값을 준 생성자로 직접 만든다. */
-    private static final String SENDER_TEL = "0212340000";
 
     private SanctionEventListener sanctionEventListener;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        sanctionEventListener = new SanctionEventListener(
-                userService, smsService, mailService, eventPublisher, SENDER_TEL);
+        sanctionEventListener = new SanctionEventListener(userService, eventPublisher);
+    }
+
+    /** 발행된 이벤트 중 해당 타입만 순서대로 모은다. */
+    private <T> List<T> published(Class<T> type) {
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, atLeast(0)).publishEvent(captor.capture());
+        return captor.getAllValues().stream().filter(type::isInstance).map(type::cast).toList();
+    }
+
+    private <T> T onlyPublished(Class<T> type) {
+        List<T> events = published(type);
+        assertThat(events).as("%s 는 정확히 한 번 발행돼야 합니다", type.getSimpleName()).hasSize(1);
+        return events.get(0);
     }
 
     @Test
-    @DisplayName("결재 상태 변경 시 SMS 및 메일 알림 발송 테스트")
+    @DisplayName("결재 상태 변경 시 문자·메일 발송을 요청한다")
     void handleStatusChangedTest() {
         // Given
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
@@ -76,24 +84,24 @@ class SanctionEventListenerTest {
         // [W1-D5] 발송 요청자는 리터럴 "SYSTEM" 이 아니라 **이벤트가 싣고 온 actor(결재자)** 여야 한다.
         //   이 리스너는 @Async 라 SecurityContext 가 없고(TaskDecorator 는 프로덕션에서 의도적 no-op),
         //   그래서 종전에는 실제로 승인/반려한 사람이 발송 이력에서 사라졌다.
-        //   전파(Composite 데코레이터) 대신 손해가 확정된 이 지점만 봉합한다.
-        org.mockito.ArgumentCaptor<SmsDto> smsCaptor = org.mockito.ArgumentCaptor.forClass(SmsDto.class);
-        org.mockito.ArgumentCaptor<SentMailDto> mailCaptor = org.mockito.ArgumentCaptor.forClass(SentMailDto.class);
-        verify(smsService).sendSms(eq("SANCTIONER_001"), smsCaptor.capture());
-        verify(mailService).sendMail(eq("SANCTIONER_001"), mailCaptor.capture());
+        SmsRequestedEvent sms = onlyPublished(SmsRequestedEvent.class);
+        MailRequestedEvent mail = onlyPublished(MailRequestedEvent.class);
+        assertThat(sms.requesterId()).isEqualTo("SANCTIONER_001");
+        assertThat(mail.requesterId()).isEqualTo("SANCTIONER_001");
 
-        // 발신 번호는 설정값이다 — 코드에 박힌 대표번호가 아니다.
-        assertThat(smsCaptor.getValue().getSndngTelno()).isEqualTo(SENDER_TEL);
+        // 수신처는 발행 측이 해석해 싣는다 — 소비 도메인이 연락처를 다시 조회하지 않는다.
+        assertThat(sms.recipientTelno()).isEqualTo("01011112222");
+        assertThat(mail.recipientAddress()).isEqualTo("hong@egov.com");
+
         // [2026-09-05] 사용자에게 가는 본문에 enum 상수명(APPROVED)과 내부 ID 표기가 실리지 않고,
         //   승인에는 사유 절이 붙지 않는다.
-        assertThat(smsCaptor.getValue().getSndngCn())
+        assertThat(sms.content())
                 .contains("결재(번호 1)가 승인되었습니다.")
                 .doesNotContain("APPROVED")
                 .doesNotContain("ID:")
                 .doesNotContain("사유");
-        assertThat(mailCaptor.getValue().getEmailCn()).isEqualTo(smsCaptor.getValue().getSndngCn());
-        // SMTP From 은 MailService 가 설정에서 정한다 — 리스너가 주소를 지어내지 않는다.
-        assertThat(mailCaptor.getValue().getDsptchPerson()).isNull();
+        assertThat(mail.content()).isEqualTo(sms.content());
+        assertThat(mail.subject()).isEqualTo("[eGov] 결재 상태 변경 알림");
     }
 
     @Test
@@ -107,29 +115,9 @@ class SanctionEventListenerTest {
 
         sanctionEventListener.handleStatusChanged(event);
 
-        org.mockito.ArgumentCaptor<SmsDto> smsCaptor = org.mockito.ArgumentCaptor.forClass(SmsDto.class);
-        verify(smsService).sendSms(eq("SANCTIONER_001"), smsCaptor.capture());
-        assertThat(smsCaptor.getValue().getSndngCn())
+        assertThat(onlyPublished(SmsRequestedEvent.class).content())
                 .contains("결재(번호 3)가 반려되었습니다. 반려 사유: 예산 코드 누락")
                 .doesNotContain("REJECTED");
-    }
-
-    @Test
-    @DisplayName("발신 번호가 설정되지 않으면 문자만 건너뛰고 메일·앱 내 알림은 발송한다")
-    void skipsSmsWhenSenderTelIsNotConfigured() {
-        SanctionEventListener unconfigured = new SanctionEventListener(
-                userService, smsService, mailService, eventPublisher, " ");
-        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
-                4L, "USER_001", "SANCTIONER_001",
-                nuri.business.domain.informalsanction.SanctionStatus.APPROVED, null);
-        given(userService.getUserById("USER_001")).willReturn(UserDto.builder()
-                .userId("USER_001").userNm("홍길동").mblTelno("01011112222").emlAddr("hong@egov.com").build());
-
-        unconfigured.handleStatusChanged(event);
-
-        verify(smsService, never()).sendSms(anyString(), any());
-        verify(mailService).sendMail(eq("SANCTIONER_001"), any(SentMailDto.class));
-        verify(eventPublisher).publishEvent(any(nuri.foundation.core.event.NotificationRequestedEvent.class));
     }
 
     @Test
@@ -140,25 +128,23 @@ class SanctionEventListenerTest {
                 2L, "USER_001", null,
                 nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
 
-        UserDto userDto = UserDto.builder()
+        given(userService.getUserById("USER_001")).willReturn(UserDto.builder()
                 .userId("USER_001")
                 .userNm("홍길동")
                 .mblTelno("01011112222")
                 .emlAddr("hong@egov.com")
-                .build();
-
-        given(userService.getUserById("USER_001")).willReturn(userDto);
+                .build());
 
         // When
         sanctionEventListener.handleStatusChanged(event);
 
         // Then
-        verify(smsService).sendSms(eq("SYSTEM"), any(SmsDto.class));
-        verify(mailService).sendMail(eq("SYSTEM"), any(SentMailDto.class));
+        assertThat(onlyPublished(SmsRequestedEvent.class).requesterId()).isEqualTo("SYSTEM");
+        assertThat(onlyPublished(MailRequestedEvent.class).requesterId()).isEqualTo("SYSTEM");
     }
 
     @Test
-    @DisplayName("사용자 정보가 없는 경우 알림을 발송하지 않음")
+    @DisplayName("사용자 정보가 없는 경우 외부 채널을 요청하지 않음")
     void handleStatusChangedNoUserTest() {
         // Given
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
@@ -170,12 +156,12 @@ class SanctionEventListenerTest {
         sanctionEventListener.handleStatusChanged(event);
 
         // Then
-        verify(smsService, never()).sendSms(anyString(), any());
-        verify(mailService, never()).sendMail(anyString(), any());
+        assertThat(published(SmsRequestedEvent.class)).isEmpty();
+        assertThat(published(MailRequestedEvent.class)).isEmpty();
     }
 
     @Test
-    @DisplayName("연락처 정보가 없는 경우 해당 수단으로 발송하지 않음")
+    @DisplayName("연락처 정보가 없는 경우 해당 수단을 요청하지 않음")
     void handleStatusChangedNoContactTest() {
         // Given
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
@@ -193,9 +179,9 @@ class SanctionEventListenerTest {
         // When
         sanctionEventListener.handleStatusChanged(event);
 
-        // Then
-        verify(smsService, never()).sendSms(anyString(), any());
-        verify(mailService, never()).sendMail(anyString(), any());
+        // Then — 수신처 없는 요청은 보낼 곳이 없는 이력만 남긴다. 발행 자체를 하지 않는다.
+        assertThat(published(SmsRequestedEvent.class)).isEmpty();
+        assertThat(published(MailRequestedEvent.class)).isEmpty();
     }
 
     // ------------------------------------------------------------------
@@ -216,18 +202,16 @@ class SanctionEventListenerTest {
 
         sanctionEventListener.handleStatusChanged(event);
 
-        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> captor =
-                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertThat(captor.getValue().receiverEsntlId()).isEqualTo("USER_001");
-        assertThat(captor.getValue().content()).contains("7").contains("승인되었습니다.");
-        assertThat(captor.getValue().linkUrl()).isEqualTo("/approvals");
+        NotificationRequestedEvent requested = onlyPublished(NotificationRequestedEvent.class);
+        assertThat(requested.receiverEsntlId()).isEqualTo("USER_001");
+        assertThat(requested.content()).contains("7").contains("승인되었습니다.");
+        assertThat(requested.linkUrl()).isEqualTo("/approvals");
     }
 
     /**
-     * SMS·메일 블록은 사용자 조회부터 발송까지를 한 try 로 감싼다. 그 안에서 예외가 나면
-     * 통째로 빠져나오는데, 앱 내 알림까지 같은 try 에 있으면 <b>가장 중요한 경로가 부수적인
-     * 실패에 함께 묻힌다</b>. 별도 경로임을 고정한다.
+     * 사용자 조회부터 외부 채널 요청까지가 한 경로다. 그 안에서 예외가 나면 통째로 빠져나오는데,
+     * 앱 내 알림까지 같은 경로에 있으면 <b>가장 중요한 경로가 부수적인 실패에 함께 묻힌다</b>.
+     * 별도 경로임을 고정한다.
      */
     @Test
     @DisplayName("사용자 조회가 실패해도 앱 내 알림 요청은 살아 있다")
@@ -239,15 +223,13 @@ class SanctionEventListenerTest {
 
         sanctionEventListener.handleStatusChanged(event);
 
-        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> captor =
-                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertThat(captor.getValue().receiverEsntlId()).isEqualTo("USER_002");
-        assertThat(captor.getValue().content()).contains("사유: 없음");
+        NotificationRequestedEvent requested = onlyPublished(NotificationRequestedEvent.class);
+        assertThat(requested.receiverEsntlId()).isEqualTo("USER_002");
+        assertThat(requested.content()).contains("사유: 없음");
     }
 
     @Test
-    @DisplayName("최대 길이 반려 사유도 SMS·메일·앱 알림의 최종 본문 한도를 넘지 않는다")
+    @DisplayName("최대 길이 반려 사유도 문자·메일·앱 알림의 최종 본문 한도를 넘지 않는다")
     void boundsFinalChannelMessagesForMaximumReason() {
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
                 10L, "USER_003", "SANCTIONER_001",
@@ -260,30 +242,22 @@ class SanctionEventListenerTest {
 
         sanctionEventListener.handleStatusChanged(event);
 
-        org.mockito.ArgumentCaptor<SmsDto> smsCaptor = org.mockito.ArgumentCaptor.forClass(SmsDto.class);
-        org.mockito.ArgumentCaptor<SentMailDto> mailCaptor = org.mockito.ArgumentCaptor.forClass(SentMailDto.class);
-        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> appCaptor =
-                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
-        verify(smsService).sendSms(eq("SANCTIONER_001"), smsCaptor.capture());
-        verify(mailService).sendMail(eq("SANCTIONER_001"), mailCaptor.capture());
-        verify(eventPublisher).publishEvent(appCaptor.capture());
-
-        assertThat(smsCaptor.getValue().getSndngCn())
+        assertThat(onlyPublished(SmsRequestedEvent.class).content())
                 .hasSize(4_000)
                 .startsWith("[eGov Enterprise]")
                 .endsWith("가");
-        assertThat(mailCaptor.getValue().getEmailCn())
+        assertThat(onlyPublished(MailRequestedEvent.class).content())
                 .hasSize(4_000)
                 .startsWith("[eGov Enterprise]")
                 .endsWith("가");
-        assertThat(appCaptor.getValue().content())
+        assertThat(onlyPublished(NotificationRequestedEvent.class).content())
                 .hasSize(4_000)
                 .startsWith("결재(번호 10)")
                 .endsWith("가");
     }
 
     @Test
-    @DisplayName("SMS 채널 실패가 메일과 앱 내 알림을 막지 않는다")
+    @DisplayName("문자 요청 실패가 메일과 앱 내 알림을 막지 않는다")
     void smsFailureDoesNotSkipOtherChannels() {
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
                 11L, "USER_004", "SANCTIONER_001",
@@ -293,13 +267,14 @@ class SanctionEventListenerTest {
                 .mblTelno("01011112222")
                 .emlAddr("user4@egov.com")
                 .build());
+        // 동기 리스너의 예외는 발행 호출로 되돌아온다 — 그 실패가 나머지 채널을 삼키면 안 된다.
         doThrow(new IllegalStateException("sms unavailable"))
-                .when(smsService).sendSms(eq("SANCTIONER_001"), any(SmsDto.class));
+                .when(eventPublisher).publishEvent(any(SmsRequestedEvent.class));
 
         sanctionEventListener.handleStatusChanged(event);
 
-        verify(mailService).sendMail(eq("SANCTIONER_001"), any(SentMailDto.class));
-        verify(eventPublisher).publishEvent(any(nuri.foundation.core.event.NotificationRequestedEvent.class));
+        assertThat(published(MailRequestedEvent.class)).hasSize(1);
+        assertThat(published(NotificationRequestedEvent.class)).hasSize(1);
     }
 
     @Test
@@ -336,12 +311,11 @@ class SanctionEventListenerTest {
 
             given(userService.getUserById(channelApplicant)).willReturn(user);
             doThrow(new IllegalArgumentException("PII_SMS_EXCEPTION\r\nFORGED_SMS_EXCEPTION"))
-                    .when(smsService).sendSms(anyString(), any(SmsDto.class));
+                    .when(eventPublisher).publishEvent(any(SmsRequestedEvent.class));
             doThrow(new UnsupportedOperationException("PII_MAIL_EXCEPTION\r\nFORGED_MAIL_EXCEPTION"))
-                    .when(mailService).sendMail(anyString(), any(SentMailDto.class));
+                    .when(eventPublisher).publishEvent(any(MailRequestedEvent.class));
             doThrow(new SecurityException("PII_APP_EXCEPTION\r\nFORGED_APP_EXCEPTION"))
-                    .when(eventPublisher)
-                    .publishEvent(any(nuri.foundation.core.event.NotificationRequestedEvent.class));
+                    .when(eventPublisher).publishEvent(any(NotificationRequestedEvent.class));
             sanctionEventListener.handleStatusChanged(new SanctionStatusChangedEvent(
                     73L, channelApplicant, "PII_ACTOR",
                     nuri.business.domain.informalsanction.SanctionStatus.REJECTED, reason));
