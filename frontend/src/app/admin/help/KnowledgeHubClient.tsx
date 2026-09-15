@@ -228,7 +228,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  ) : (
  <>
  {isLoading ? (
- <div className="p-12 text-center text-muted-foreground animate-pulse">지식 스트림을 불러오는 중입니다...</div>
+ <div role="status" className="p-12 text-center text-muted-foreground animate-pulse">게시글을 불러오는 중…</div>
  ) : displayItems.length === 0 ? (
  <div className="flex flex-col items-center justify-center p-20 space-y-4 border-2 border-dashed rounded-lg border-border/50">
  <Hash size={40} className="text-muted-foreground/20" />

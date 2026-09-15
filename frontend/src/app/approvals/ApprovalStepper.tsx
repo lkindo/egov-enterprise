@@ -90,7 +90,7 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
                   "text-xs font-bold tracking-[0.2em] uppercase",
                   isCurrent ? "text-primary" : "text-muted-foreground"
                 )}>
-                  STEP {idx + 1}
+                  {idx + 1}단계
                 </p>
                 <h4 className={cn(
                   "text-sm font-bold tracking-tight",
@@ -119,7 +119,7 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
                     animate={{ opacity: 1, scale: 1 }}
                     className="absolute -top-8 px-3 py-1 bg-primary rounded-lg shadow-lg shadow-primary/20"
                   >
-                    <span className="text-xs font-bold text-white tracking-widest uppercase">Active</span>
+                    <span className="text-xs font-bold text-white tracking-widest uppercase">현재 단계</span>
                   </motion.div>
                 )}
               </AnimatePresence>

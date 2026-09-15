@@ -123,7 +123,7 @@ const KNOWN_ROUTE_CAPABILITIES = {
   '/admin/survey/polls/manage': [
     {
       id: 'poll-governance', status: 'unavailable', dataSource: 'none', actions: [],
-      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '여론조사 거버넌스 준비 중', primaryTask: true,
+      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '여론조사 관리는 이 화면에서 지원하지 않습니다.', primaryTask: true,
       evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/survey/polls/manage/page.tsx'],
     },
   ],

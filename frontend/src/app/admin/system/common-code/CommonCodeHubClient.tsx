@@ -108,7 +108,7 @@ export default function CommonCodeHubClient({
         id="code-hub-tab-institution"
         panelId="code-hub-panel"
         icon={Building2}
-        label="기관 노드"
+        label="기관 코드"
         active={activeTab === 'INSTITUTION'}
         onClick={() => setActiveTab('INSTITUTION')}
       />

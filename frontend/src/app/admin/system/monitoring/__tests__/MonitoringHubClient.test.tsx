@@ -235,7 +235,7 @@ describe('MonitoringHubClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
     expect(mocks.replace).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '데이터 스트림 새로고침' }));
+    fireEvent.click(screen.getByRole('button', { name: '현재 목록 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '리포트 스냅샷' }));
     expect(screen.getByRole('region', { name: '현재 조회 결과 반출' }))
       .toHaveTextContent('1건 반출');

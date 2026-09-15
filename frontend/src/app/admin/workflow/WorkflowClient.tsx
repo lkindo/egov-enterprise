@@ -1,6 +1,6 @@
 'use client';
 
-// [데모 스캐폴드] /admin/workflow 'Process Studio'는 정적 목업이다(하드코딩 노드/지표, 백엔드 미연동 — fetch/service 0건).
+// [데모 스캐폴드] /admin/workflow 'Process Studio'는 정적 목업이다(하드코딩 단계/지표, 백엔드 미연동 — fetch/service 0건).
 // 실제 전자결재(승인/반려) 기능은 별도 경로에 백엔드 연동되어 동작한다:
 //   FE /approvals(ApprovalHubClient)·/admin/system/ism(IsmClient) ↔ BE /api/v1/approvals·/api/v1/admin/system/ism ↔ InformalSanction(tb_ifml_atrz_info).
 // 신규 SI에서 워크플로우 엔진이 필요하면 대응 백엔드(컨트롤러/서비스/테이블)를 신설해 이 화면에 배선할 것.
@@ -76,7 +76,7 @@ export default function WorkflowClient() {
             */}
             <div role="status" className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-4 text-sm leading-relaxed">
                 <strong className="font-bold">정적 데모 화면입니다.</strong>{' '}
-                아래 노드·담당자·시간·수치는 모두 예시이며 실제 저장·실행·운영 지표를 제공하지 않습니다.
+                아래 단계·담당자·시간·수치는 모두 예시이며 실제 저장·실행·운영 지표를 제공하지 않습니다.
                 실제 전자결재 조회와 승인·반려는 <Link className="font-bold underline underline-offset-4" href="/approvals">전자결재함</Link>에서 수행합니다.
                 <span className="mt-2 block font-normal">
                     현재 제공되는 결재는 <strong className="font-bold">결재자 1인의 승인·반려 단일 단계</strong>입니다.
@@ -95,7 +95,7 @@ export default function WorkflowClient() {
                 <div className="col-span-12 lg:col-span-8">
                     <HubSectionCard
                         title="프로세스 캔버스"
-                        description="샘플 휴가 결재 흐름의 노드와 연결선을 탐색하는 정적 캔버스입니다."
+                        description="샘플 휴가 결재 흐름의 단계와 연결선을 탐색하는 정적 캔버스입니다."
                         icon={Layers}
                         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
                     >
@@ -120,8 +120,8 @@ export default function WorkflowClient() {
 
                 <div className="col-span-12 lg:col-span-4">
                     <HubSectionCard
-                        title="노드 인텔리전스"
-                        description="선택된 단계의 상세 전송 프로토콜입니다."
+                        title="단계 상세"
+                        description="선택한 단계의 담당자와 처리 기록 예시입니다."
                         icon={Zap}
                         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5 h-full"
                     >
@@ -136,33 +136,33 @@ export default function WorkflowClient() {
                                     </div>
                                     <div>
                                         <h4 className="text-xl font-bold tracking-tighter text-foreground">{selectedNode.label}</h4>
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">ID: {selectedNode.id} / TYPE: {selectedNode.type}</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">식별자 {selectedNode.id} · 유형 {selectedNode.type}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Assignee_Node</span>
+                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">담당자</span>
                                         <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-xl border border-border">
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                                                {selectedNode.assignee?.charAt(0) || 'U'}
+                                                {selectedNode.assignee?.charAt(0) || '-'}
                                             </div>
-                                            <span className="text-sm font-bold text-foreground">{selectedNode.assignee || 'UNASSIGNED'}</span>
+                                            <span className="text-sm font-bold text-foreground">{selectedNode.assignee || '미지정'}</span>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Audit_Log</span>
+                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">처리 기록</span>
                                         <div className="space-y-4 border-l-2 border-border ml-2 pl-6 pt-2">
                                             <div className="relative">
                                                 <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-emerald-500 border-4 border-white shadow-sm" />
-                                                <p className="text-xs font-bold text-foreground">Protocol Received</p>
-                                                <p className="text-[10px] text-muted-foreground font-bold tabular-nums">2026.05.10 14:20:01</p>
+                                                <p className="text-xs font-bold text-foreground">요청 접수</p>
+                                                <p className="text-[10px] text-muted-foreground font-bold tabular-nums">2026-05-10 14:20:01</p>
                                             </div>
                                             <div className="relative opacity-50">
                                                 <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-muted border-4 border-white shadow-sm" />
-                                                <p className="text-xs font-bold text-muted-foreground">Queue Synchronizing</p>
-                                                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Waiting...</p>
+                                                <p className="text-xs font-bold text-muted-foreground">다음 처리 대기</p>
+                                                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">대기 중</p>
                                             </div>
                                         </div>
                                     </div>
@@ -175,7 +175,7 @@ export default function WorkflowClient() {
                         ) : (
                             <div className="py-20 text-center opacity-20">
                                 <GitBranch size={48} className="mx-auto mb-4" />
-                                <p className="text-xs font-bold uppercase tracking-widest">Select Node to Analyze</p>
+                                <p className="text-xs font-bold uppercase tracking-widest">단계를 선택하면 상세가 표시됩니다.</p>
                             </div>
                         )}
                     </HubSectionCard>

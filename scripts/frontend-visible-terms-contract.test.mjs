@@ -286,3 +286,37 @@ test('owner decisions close findings only with a real decision reference and the
   locate(closedWithActive).finding.status = 'open';
   assert.match(validateContract(closedWithActive).join('\n'), /closed pilot still has active findings/);
 });
+
+/*
+  [2026-09-15 DEC-OPS-100] 기능을 과장하거나 대상을 잘못 부르던 용어를 고친 화면에 같은 말이 되돌아오지 않게 한다.
+  인텔리전스·지능형·AI 기반은 검증된 기능 근거가 없는 한 금지(forbidden-unless-source-proven)라 파일 전체에서 막고,
+  노드·스트림·매트릭스는 도메인 명사로 바꾼 자리의 문구만 막는다 — 인프라 topology 의 노드는 가이드 §2.2 예외다.
+*/
+test('screens fixed for term decisions do not bring the overclaiming or misnamed terms back', () => {
+  const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
+  for (const file of [
+    'frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx',
+    'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
+    'frontend/src/app/admin/workflow/WorkflowClient.tsx',
+    'frontend/src/app/components/ui/workflow-canvas.tsx',
+    'frontend/src/app/admin/operation/rough-map/page.tsx',
+  ]) {
+    assert.doesNotMatch(read(file), /인텔리전스|지능형|AI 기반/, file);
+  }
+  const replaced = {
+    'frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx': ['기관 노드'],
+    'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx': ['데이터 스트림'],
+    'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx': ['스트림에서'],
+    'frontend/src/app/admin/system/menus/MenuAdminClient.tsx': ['상위 노드', '그룹 노드'],
+    'frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx': ['노드'],
+    'frontend/src/app/admin/workflow/WorkflowClient.tsx': ['노드'],
+    'frontend/src/app/components/ui/workflow-canvas.tsx': ['노드'],
+    'frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx': ['매트릭스', 'Board Configuration'],
+    'frontend/src/app/admin/help/KnowledgeHubClient.tsx': ['지식 스트림'],
+    'frontend/src/app/admin/collaboration/page.tsx': ['매트릭스'],
+  };
+  for (const [file, literals] of Object.entries(replaced)) {
+    const text = read(file);
+    for (const literal of literals) assert.ok(!text.includes(literal), `${file} brought back "${literal}"`);
+  }
+});

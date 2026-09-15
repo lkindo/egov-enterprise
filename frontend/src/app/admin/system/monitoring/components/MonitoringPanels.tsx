@@ -157,9 +157,9 @@ export function HarnessDashboardOverview() {
 
         {/* Guides */}
         <div className="p-5 bg-hub-indigo/5 border border-hub-indigo/10 rounded-lg text-muted-foreground text-[10px] leading-relaxed space-y-2">
-          <h5 className="font-bold text-foreground flex items-center gap-1.5"><Cpu size={12} className="text-primary animate-pulse" /> 지능형 아틀라스 사용법</h5>
+          <h5 className="font-bold text-foreground flex items-center gap-1.5"><Cpu size={12} className="text-primary animate-pulse" /> 아틀라스 사용법</h5>
           <p className="text-muted-foreground font-medium leading-relaxed">
-            좌측 <strong>에이전트 하네스 아틀라스</strong> 스트림에서 스킬 엔진 카드나 항목을 클릭하십시오.
+            좌측 <strong>에이전트 하네스 아틀라스</strong> 목록에서 스킬 엔진 카드나 항목을 클릭하십시오.
           </p>
           <p className="text-muted-foreground font-medium leading-relaxed">
             선택 시 저장소 규범 문서를 요약한 상세 설명과 대표 호출 스택 예시가 표시됩니다. 실행 중인 시스템을 계측한 값이 아닙니다.

@@ -1013,7 +1013,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <Button
           variant="outline"
           size="sm"
-          aria-label="데이터 스트림 새로고침"
+          aria-label="현재 목록 새로고침"
           onClick={handleRefreshActiveTab}
         >
           <RefreshCcw size={16} aria-hidden="true" />

@@ -8,7 +8,7 @@ import { Page, expect } from '@playwright/test';
  * canvas-based process designer. It has NO tabs, form inventory, engine-status sidebar, or deploy
  * button — those belonged to the old WorkflowHubClient at the now-redirected route. Selectors below
  * target the actual WorkflowClient structure: the PageHeader title, hub metric cards, the
- * WorkflowCanvas nodes, and the "노드 인텔리전스" (Node Intelligence) side panel.
+ * WorkflowCanvas nodes, and the "단계 상세" (step detail) side panel.
  */
 export class WorkflowAdminPage {
     readonly page: Page;
@@ -32,7 +32,7 @@ export class WorkflowAdminPage {
         await expect(this.page.getByText('샘플 성공률', { exact: true })).toBeVisible();
         await expect(this.page.getByText('샘플 시스템 부하', { exact: true })).toBeVisible();
         await expect(this.page.getByRole('heading', { name: '프로세스 캔버스' })).toBeVisible();
-        await expect(this.page.getByRole('heading', { name: '노드 인텔리전스' })).toBeVisible();
+        await expect(this.page.getByRole('heading', { name: '단계 상세' })).toBeVisible();
     }
 
     /** Clicks a process node on the WorkflowCanvas by its label. */
@@ -45,7 +45,7 @@ export class WorkflowAdminPage {
     }
 
     /**
-     * Asserts the "노드 인텔리전스" side panel reflects the selected node.
+     * Asserts the "단계 상세" side panel reflects the selected node.
      * The panel renders the node label as an <h4> (role=heading), distinct from the canvas <p>
      * label, so a role-based lookup uniquely targets the panel and avoids strict-mode collisions.
      */
@@ -53,6 +53,6 @@ export class WorkflowAdminPage {
         console.log(`[E2E] Verifying Node Intelligence panel for: ${nodeLabel}`);
         const panelHeading = this.page.getByRole('heading', { name: nodeLabel });
         await expect(panelHeading).toBeVisible({ timeout: 10000 });
-        await expect(this.page.getByText('Assignee_Node')).toBeVisible();
+        await expect(this.page.getByText('담당자', { exact: true })).toBeVisible();
     }
 }
