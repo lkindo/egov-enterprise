@@ -235,6 +235,49 @@ test('coupling memory rejects stale and missing census claims', () => {
   assert.throws(() => assertCouplingMemoryMatches(missing, source), /현재 결합 census가 필요합니다/u);
 });
 
+/**
+ * 배선 census 는 원장(config/governance/operation-consumer-census.json)의 `expected` 를 정본으로 쓴다.
+ * 결합 census(GAP-ARCH-001)와 같은 형태다 — 공용 메모리가 수치를 적는다면 그 수치는 원장과 결속돼야
+ * 하고, 원장만 바뀌고 메모리가 남으면 red 다. 이 결속이 없던 동안 2026-09-10 의 원장 갱신
+ * (371→385·32→29)이 메모리·문서에 반영되지 않은 채 남았다.
+ */
+function assertWiringMemoryMatches(gaps, source) {
+  const row = gaps.split(/\r?\n/).find((line) => line.startsWith('| GAP-WIRING-001 |'));
+  assert.ok(row, 'GAP-WIRING-001의 현재 배선 census가 필요합니다.');
+  const { expected } = JSON.parse(source);
+  assert.ok(expected && typeof expected === 'object', '배선 census 원장의 expected를 읽을 수 없습니다.');
+  for (const [label, key] of [
+    ['operation', 'operationCount'],
+    ['unwired', 'unwiredMax'],
+    ['화면 고아', 'screenOrphanMax'],
+  ]) {
+    const actual = row.match(new RegExp(`${label} \\*\\*(\\d+)개\\*\\*`, 'u'));
+    assert.ok(actual, `${label}: 메모리의 census를 읽을 수 없습니다.`);
+    assert.equal(typeof expected[key], 'number', `${label}: 원장 expected.${key}가 없습니다.`);
+    assert.equal(Number(actual[1]), expected[key], `${label}: 공용 메모리 census가 현재 원장과 다릅니다.`);
+  }
+}
+
+test('active wiring memory matches the current operation census', () => {
+  assertWiringMemoryMatches(
+    readRepoFile('.agent/memory/known-gaps.md'),
+    readRepoFile('config/governance/operation-consumer-census.json'),
+  );
+});
+
+test('wiring memory rejects stale and missing census claims', () => {
+  const gaps = readRepoFile('.agent/memory/known-gaps.md');
+  const source = readRepoFile('config/governance/operation-consumer-census.json');
+  for (const label of ['operation', 'unwired', '화면 고아']) {
+    const stale = gaps.replace(new RegExp(`${label} \\*\\*\\d+개\\*\\*`, 'u'), `${label} **999개**`);
+    assert.notEqual(stale, gaps);
+    assert.throws(() => assertWiringMemoryMatches(stale, source), /현재 원장과 다릅니다/u);
+  }
+  const missing = gaps.replace(/^\| GAP-WIRING-001 \|[^\n]*\n/mu, '');
+  assert.notEqual(missing, gaps);
+  assert.throws(() => assertWiringMemoryMatches(missing, source), /현재 배선 census가 필요합니다/u);
+});
+
 function assertDocumentationAdrIndexMatches(index, ids) {
   const section = index.split('### 02-architecture/decisions — ADR')[1]?.split('## 03-guides')[0] ?? '';
   const linkedIds = [...section.matchAll(/^\| \[(ADR-\d{4})\]\(/gm)].map((match) => match[1]);
