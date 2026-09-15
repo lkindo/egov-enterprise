@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.Types;
 
 /** Detaches bounded LOB contents while their JDBC result and connection are still open. */
 public final class JdbcLobReader {
@@ -13,6 +15,51 @@ public final class JdbcLobReader {
     public static final long PAGE_BYTES = 8L * 1024 * 1024;
 
     private JdbcLobReader() { }
+
+    public static Object read(ResultSet result, int column) throws SQLException {
+        return read(result, column, false);
+    }
+
+    /** SQL Server reports MAX values as ordinary variable types; stream them before materialization. */
+    public static Object read(ResultSet result, int column, boolean boundedVariableValues) throws SQLException {
+        int type = result.getMetaData().getColumnType(column);
+        if (type == Types.LONGVARBINARY || (boundedVariableValues && type == Types.VARBINARY)) {
+            try (var input = result.getBinaryStream(column)) {
+                if (input == null) return null;
+                byte[] bytes = input.readNBytes(MAX_BLOB_BYTES + 1);
+                checkedLength(bytes.length, MAX_BLOB_BYTES);
+                return bytes;
+            } catch (IOException failure) {
+                JvmFailureBoundary.rethrowSuppressedFatal(failure);
+                throw new ContentReadException("LOB_READ_FAILED");
+            } catch (SQLException | RuntimeException | Error failure) {
+                JvmFailureBoundary.rethrowSuppressedFatal(failure);
+                throw failure;
+            }
+        }
+        if (type == Types.LONGVARCHAR || (boundedVariableValues
+                && (type == Types.VARCHAR || type == Types.NVARCHAR))) {
+            try (var input = result.getCharacterStream(column)) {
+                if (input == null) return null;
+                StringBuilder text = new StringBuilder();
+                char[] buffer = new char[8192];
+                int read;
+                while ((read = input.read(buffer)) != -1) {
+                    if (read == 0) throw new ContentReadException("LOB_READ_STALLED");
+                    checkedLength((long) text.length() + read, MAX_CLOB_CHARACTERS);
+                    text.append(buffer, 0, read);
+                }
+                return text.toString();
+            } catch (IOException failure) {
+                JvmFailureBoundary.rethrowSuppressedFatal(failure);
+                throw new ContentReadException("LOB_READ_FAILED");
+            } catch (SQLException | RuntimeException | Error failure) {
+                JvmFailureBoundary.rethrowSuppressedFatal(failure);
+                throw failure;
+            }
+        }
+        return detach(result.getObject(column));
+    }
 
     public static Object detach(Object value) throws SQLException {
         if (value instanceof Blob blob) {

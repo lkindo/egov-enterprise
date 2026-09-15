@@ -2,8 +2,10 @@ package nuri.migration.adapter;
 
 import nuri.migration.adapter.DataStreamingStrategy.StreamingModel;
 import nuri.migration.adapter.SnapshotStrategy.SnapshotModel;
+import nuri.migration.discovery.DiscoveryRequest;
 import nuri.migration.discovery.ObjectKind;
 
+import java.sql.Connection;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,12 +35,23 @@ public final class MariaDbSourceAdapter extends AbstractVendorSourceAdapter {
                         Set.of(StreamingModel.JDBC_FORWARD_ONLY, StreamingModel.KEYSET_PAGINATION),
                         true,
                         true,
-                        "MariaDB Connector/J fetch and LOB behavior requires rehearsal",
+                        "Connector/J row streaming with bounded LONGTEXT/LONGBLOB materialization",
                         ExecutionPolicy.MANUAL_ONLY,
                         EvidenceLevel.UNVERIFIED),
-                SourceReadSessionPolicy.repeatableRead(
+                new SourceReadSessionPolicy(
+                        SourceReadSessionPolicy.IsolationMode.REPEATABLE_READ,
+                        true,
+                        false,
+                        false,
+                        true,
+                        ExecutionPolicy.MANUAL_ONLY,
                         EvidenceLevel.UNVERIFIED,
                         "operator freeze plus one InnoDB REPEATABLE READ transaction"));
+    }
+
+    @Override
+    protected DiscoveryVisibilityProof visibilityProof(Connection connection, DiscoveryRequest request) {
+        return MariaDbDiscoveryVisibilityProof.inspect(connection, request);
     }
 
 }

@@ -108,8 +108,11 @@ public final class SourceLoadSurfaceGate {
             blockers.add(Blocker.COLUMN_TYPE_EVIDENCE_MISSING);
             return;
         }
-        if (LOB_TYPES.contains(parsed) && (!policy.lobStreamingSupported()
-                || (parsed != Types.BLOB && parsed != Types.CLOB))) {
+        boolean supportedLocator = policy.lobStreamingSupported()
+                && (parsed == Types.BLOB || parsed == Types.CLOB);
+        boolean supportedLongValue = policy.longValueStreamingSupported()
+                && (parsed == Types.LONGVARCHAR || parsed == Types.LONGVARBINARY);
+        if (LOB_TYPES.contains(parsed) && !supportedLocator && !supportedLongValue) {
             blockers.add(Blocker.LOB_STREAMING);
         }
         if (VENDOR_SPECIFIC_TYPES.contains(parsed)) {

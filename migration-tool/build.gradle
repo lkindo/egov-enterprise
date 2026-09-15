@@ -15,7 +15,13 @@ dependencies {
     testImplementation libs.testcontainers.postgresql
     testImplementation libs.testcontainers.junit.jupiter
     testImplementation 'org.testcontainers:oracle-free'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:mariadb'
+    testImplementation 'org.testcontainers:mssqlserver'
     testRuntimeOnly 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0'
+    testRuntimeOnly 'com.mysql:mysql-connector-j:26.7.0'
+    testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.10'
+    testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:13.6.0.jre11'
     testRuntimeOnly libs.postgresql
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -28,12 +34,34 @@ jar { enabled = false }
 
 // The crash drill starts a fresh JVM; Gradle's worker java.class.path is not the test runtime classpath.
 tasks.named('test', Test) {
-    doFirst { systemProperty 'migration.drill.classpath', classpath.asPath }
+    dependsOn tasks.named('bootJar')
+    doFirst {
+        systemProperty 'migration.drill.classpath', classpath.asPath
+        systemProperty 'migration.drill.jar', tasks.named('bootJar').get().archiveFile.get().asFile.absolutePath
+    }
 }
 
 // PIT runs the same crash drill in its own minion JVM, outside Gradle's Test task.
+tasks.named('pitest') { dependsOn tasks.named('bootJar') }
 pitest {
+    // These new subprocess probes execute the ordinary classpath/JAR, so they cannot kill
+    // transform/validate/verify mutants in the two required CI scopes. Keep them in the
+    // full local nuri.* analysis, where their parent artifact/adapter checks can matter.
+    if (targetClasses.get().toSet() == ['nuri.migration.transform.*'].toSet()
+            || targetClasses.get().toSet() == ['nuri.migration.validate.*', 'nuri.migration.verify.*'].toSet()) {
+        excludedTestClasses = [
+                'nuri.migration.EtlMySqlCrashRecoveryIntegrationTest',
+                'nuri.migration.MySqlPackagedCliIntegrationTest',
+                'nuri.migration.EtlMariaDbCrashRecoveryIntegrationTest',
+                'nuri.migration.MariaDbPackagedCliIntegrationTest',
+                'nuri.migration.EtlSqlServerCrashRecoveryIntegrationTest',
+                'nuri.migration.SqlServerPackagedCliIntegrationTest'
+        ]
+    }
     jvmArgs.add(providers.provider {
         "-Dmigration.drill.classpath=${sourceSets.test.runtimeClasspath.asPath}".toString()
+    })
+    jvmArgs.add(providers.provider {
+        "-Dmigration.drill.jar=${tasks.named('bootJar').get().archiveFile.get().asFile.absolutePath}".toString()
     })
 }

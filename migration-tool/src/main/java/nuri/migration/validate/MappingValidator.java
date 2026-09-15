@@ -402,7 +402,25 @@ public class MappingValidator {
             DatabaseMetaData metadata = connection.getMetaData();
             String defaultCatalog = connection.getCatalog();
             String defaultSchema = connection.getSchema();
+            boolean mysqlSchemaMode = defaultCatalog == null && !isBlank(defaultSchema)
+                    && "MySQL".equals(metadata.getDatabaseProductName())
+                    && "MySQL Connector/J".equals(metadata.getDriverName());
+            boolean mariaDbSchemaMode = "def".equals(defaultCatalog) && !isBlank(defaultSchema)
+                    && "MariaDB".equals(metadata.getDatabaseProductName())
+                    && "MariaDB Connector/J".equals(metadata.getDriverName());
+            if (mysqlSchemaMode) {
+                // Connector/J databaseTerm=SCHEMA makes getCatalog() a null no-op,
+                // but getColumns() still reports the fixed INFORMATION_SCHEMA catalog "def".
+                // Resolve only the missing metadata default; MySQL source SQL accepts
+                // table or schema.table, so an explicit catalog qualification is rejected.
+                defaultCatalog = "def";
+            }
             for (MappingSpec.TableMapping table : spec.tables()) {
+                if ((mysqlSchemaMode || mariaDbSchemaMode) && table.source().split("\\.", -1).length > 2) {
+                    errors.add(mysqlSchemaMode ? "MYSQL_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED"
+                            : "MARIADB_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED");
+                    continue;
+                }
                 QualifiedName name = qualifiedName(table.source(), defaultCatalog, defaultSchema);
                 Map<String, ColumnMetadata> liveColumns = metadataColumnInfo(
                         metadata, name.catalog(), name.schema(), name.table());

@@ -1,5 +1,35 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-16 SQL Server 통합 시험 추가에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 SQL Server Testcontainers의 `testImplementation`과
+Microsoft JDBC `13.6.0.jre11`의 `testRuntimeOnly`를 추가했다. 생성한 migration bootJar의 `BOOT-INF/lib` JAR
+48개에 Microsoft·MySQL·MariaDB·Oracle JDBC, H2·Testcontainers·docker-java가 없음을 확인했다.
+SQL Server 자식 JVM 시험도 일반 통합 실행에 포함하며, 자식 프로세스가 mutant를 실행하지 않는 정확한
+기존 두 CI PIT 범위에서만 등록된 해당 시험을 제외한다. 운영 의존성과 mutation 대상은 유지한다.
+
+변경된 보완 소스 하나와 승인 목록의 registry 해시만 재결속했다. 기존 예외 6건의 범위·fingerprint·승인일·
+만료일과 임계값은 유지한다. 기존 SAST 계약과 PIT 실행 경로 계약으로 해시 변조·미등록 탐지·넓은 시험 제외·
+SQL Server 등록 누락의 거부를 확인했다. 현재 CodeQL·required CI의 결과는 병합할 커밋에서 확인해야 한다.
+
+## 2026-09-15 MariaDB 통합 시험 추가에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 MariaDB Testcontainers의 `testImplementation`과
+Connector/J `3.5.10`의 `testRuntimeOnly`를 추가했다. 실제로 새로 생성한 migration bootJar의 `BOOT-INF/lib`
+48개에서 MariaDB·MySQL·Oracle JDBC, H2·Testcontainers·docker-java가 없음을 확인했다.
+기존 target PostgreSQL 드라이버와 운영 의존성은 동일하다. 새 프로세스 종료·배포 CLI 시험은 일반 통합 실행에
+포함하며, 자식 JVM이 mutant를 실행하지 않는 정확한 두 CI PIT 범위에서만 해당 시험을 제외한다.
+
+탐지 원문과 다른 보완 소스 5개를 유지하며 변경된 보완 소스 하나와 승인 목록의 registry 해시를 재결속한다.
+승인된 예외 6건의 범위·fingerprint·승인일·만료일과 임계값은 유지한다. 소스·방어 해시 변경과 미등록 탐지의
+거부는 기존 SAST 예외·정책 계약으로 검사한다. 이 로컬 재검토는 현재 CodeQL·required CI 실행의 증거가 아니다.
+
+## 2026-09-15 MySQL 통합 시험 추가에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 MySQL Testcontainers의 `testImplementation`, Connector/J의 `testRuntimeOnly`와 실제 배포 JAR 시험의 실행 경로를 추가했다. 탐지 원문과 다른 보완 소스 5개는 동일하다. 생성한 migration bootJar의 `BOOT-INF/lib` 48개에서 H2·MySQL/Oracle JDBC·Testcontainers 및 docker-java가 없음을 확인했다. PostgreSQL은 기존 target 드라이버로 남는다.
+
+변경된 보완 소스 하나와 승인 목록의 registry 해시를 재결속한다. 예외 6건의 범위·fingerprint·승인일·만료일과 임계값은 유지한다. 기존 SAST 예외 계약이 해시 불일치를 red로 차단하는 것을 확인했으며, 재결속 후 같은 계약과 부정 검사를 재실행한다. 현재 CodeQL 결과와의 일치는 해당 커밋의 required CI에서 별도로 확인한다.
+
 ## 2026-09-15 Oracle 통합 시험 추가에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 Oracle Testcontainers의 `testImplementation`과 ojdbc11의 `testRuntimeOnly` 두 선언이 추가됐다. 기존 H2의 `testImplementation`, 운영 의존성 및 bootJar 설정은 동일하다. 탐지 원문인 `api-server/src/main/resources/application-test.yml`의 `jdbc:h2:mem:testdb` 설정과 다른 보완 소스 5개의 해시도 일치한다. 실제 migration 배포 JAR의 `BOOT-INF/lib`에서 H2·ojdbc·Testcontainers 라이브러리가 모두 없음을 확인했다.

@@ -281,7 +281,7 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
         }
         try (ResultSet rows = metadata.getColumns(
                 table.catalog(),
-                table.schema(),
+                table.schema() == null ? null : escapedPattern(metadata, table.schema()),
                 escapedPattern(metadata, table.name()),
                 "%")) {
             while (rows.next()) {
@@ -289,8 +289,13 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                 //   Oracle 은 COLUMN_DEF(13번)를 LONG 스트림으로 주므로, ORDINAL_POSITION(17)·IS_GENERATEDCOLUMN(24)을
                 //   먼저 읽으면 ORA-17027(스트림이 이미 닫힘)로 실패해 기본값이 있는 테이블의 컬럼이 중간에서 끊겼다.
                 //   JDBC 명세도 이식성을 위해 이 순서를 권고한다. 속성 기록 순서는 산출물 호환을 위해 종전 그대로 둔다.
+                String actualCatalog = rows.getString("TABLE_CAT");
+                String actualSchema = rows.getString("TABLE_SCHEM");
                 String actualTable = rows.getString("TABLE_NAME");
-                if (!table.name().equals(actualTable)) {
+                // JDBC schema/table arguments are patterns; never relabel a neighboring object's columns.
+                if (!Objects.equals(table.catalog(), actualCatalog)
+                        || !Objects.equals(table.schema(), actualSchema)
+                        || !table.name().equals(actualTable)) {
                     continue;
                 }
                 String column = rows.getString("COLUMN_NAME");

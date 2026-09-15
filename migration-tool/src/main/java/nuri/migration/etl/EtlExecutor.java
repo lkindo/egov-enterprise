@@ -10,6 +10,7 @@ import nuri.migration.identity.TypedValue;
 import nuri.migration.keymap.KeyMapRegistry;
 import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import nuri.migration.jdbc.JdbcLobReader;
+import nuri.migration.jdbc.SourceReadStatements;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.CompositeForeignKey;
@@ -479,8 +480,7 @@ public class EtlExecutor {
                 + SourceIntrospector.qualifiedIdent(table.source())
                 + (isBlank(table.where()) ? "" : " WHERE " + table.where())
                 + " GROUP BY " + keys + " HAVING COUNT(*) > 1";
-        try (PreparedStatement statement = source.prepareStatement(sql)) {
-            statement.setFetchSize(1);
+        try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
             statement.setMaxRows(1);
             try (ResultSet duplicates = statement.executeQuery()) {
                 if (duplicates.next()) {
@@ -497,16 +497,15 @@ public class EtlExecutor {
                                        KeyMapRegistry registry, MigrationStateStore state,
                                        Connection target, long[] counts, List<String> errors) throws SQLException {
         String sql = buildSourcePageSql(table, false);
-        try (PreparedStatement statement = source.prepareStatement(sql)) {
-            // Keep JDBC read-ahead bounded as well as the application page; text/bytea are not locators.
-            statement.setFetchSize(1);
+        boolean boundedVariableValues = "Microsoft SQL Server".equals(source.getMetaData().getDatabaseProductName());
+        try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
             try (ResultSet result = statement.executeQuery()) {
                 String[] labels = lowerLabels(result.getMetaData());
                 List<Map<String, Object>> chunk = new ArrayList<>(CHUNK);
                 long retainedBytes = 0;
                 while (result.next()) {
                     counts[0]++;
-                    Map<String, Object> row = readRow(result, labels);
+                    Map<String, Object> row = readRow(result, labels, boundedVariableValues);
                     chunk.add(row);
                     retainedBytes += rowBytes(row);
                     if (chunk.size() == CHUNK || retainedBytes >= JdbcLobReader.PAGE_BYTES) {
@@ -579,11 +578,11 @@ public class EtlExecutor {
     private SourcePage readSourcePage(Connection source, TableMapping table,
                                       List<Object> cursor) throws SQLException {
         String sql = buildSourcePageSql(table, cursor != null);
-        try (PreparedStatement statement = source.prepareStatement(sql)) {
+        boolean boundedVariableValues = "Microsoft SQL Server".equals(source.getMetaData().getDatabaseProductName());
+        try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
             if (cursor != null) {
                 bindSeek(statement, cursor);
             }
-            statement.setFetchSize(1);
             statement.setMaxRows(CHUNK + 1);
             try (ResultSet result = statement.executeQuery()) {
                 String[] labels = lowerLabels(result.getMetaData());
@@ -596,7 +595,8 @@ public class EtlExecutor {
                         Map<String, Object> boundary = new LinkedHashMap<>();
                         for (int i = 0; i < labels.length; i++) {
                             for (String key : table.effectiveOrderKeys()) {
-                                if (labels[i].equalsIgnoreCase(key)) boundary.put(labels[i], result.getObject(i + 1));
+                                if (labels[i].equalsIgnoreCase(key)) boundary.put(labels[i], boundedVariableValues
+                                        ? JdbcLobReader.read(result, i + 1, true) : result.getObject(i + 1));
                             }
                         }
                         String lastOrderDigest = orderDigest(rows.getLast(), table);
@@ -607,7 +607,7 @@ public class EtlExecutor {
                         hasMore = true;
                         break;
                     }
-                    Map<String, Object> row = readRow(result, labels);
+                    Map<String, Object> row = readRow(result, labels, boundedVariableValues);
                     rows.add(row);
                     retainedBytes += rowBytes(row);
                 }
@@ -687,10 +687,11 @@ public class EtlExecutor {
                 + (isBlank(table.where()) ? "" : " WHERE " + table.where())
                 + " ORDER BY " + orderByClause(table);
         Set<String> seen = new HashSet<>();
-        try (PreparedStatement statement = sourceConnection.prepareStatement(sql);
+        boolean boundedVariableValues = "Microsoft SQL Server".equals(sourceConnection.getMetaData().getDatabaseProductName());
+        try (PreparedStatement statement = SourceReadStatements.prepare(sourceConnection, sql);
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
-                Object raw = result.getObject(1);
+                Object raw = boundedVariableValues ? JdbcLobReader.read(result, 1, true) : result.getObject(1);
                 if (raw == null || raw.toString().isBlank()) {
                     throw new SQLException(table.source() + ": 자기참조 sourceKey가 null/blank입니다");
                 }
@@ -1421,11 +1422,11 @@ public class EtlExecutor {
         return labels;
     }
 
-    private static Map<String, Object> readRow(ResultSet rs, String[] labels) throws SQLException {
+    private static Map<String, Object> readRow(ResultSet rs, String[] labels, boolean boundedVariableValues) throws SQLException {
         Map<String, Object> row = new LinkedHashMap<>();
         long retainedBytes = 0;
         for (int i = 0; i < labels.length; i++) {
-            Object value = JdbcLobReader.detach(rs.getObject(i + 1));
+            Object value = JdbcLobReader.read(rs, i + 1, boundedVariableValues);
             retainedBytes += JdbcLobReader.retainedBytes(value);
             JdbcLobReader.requireRowSize(retainedBytes);
             row.put(labels[i], value);

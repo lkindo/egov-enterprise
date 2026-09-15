@@ -12,6 +12,8 @@ import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.transform.TransformerRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
@@ -39,6 +41,107 @@ class MappingValidatorTypedIdentityTest {
 
     @TempDir
     Path temp;
+
+    @ParameterizedTest
+    @ValueSource(strings = {"legacy_table", "app.legacy_table"})
+    void mariaDbSchemaModePreservesItsReportedDefCatalog(String sourceTable) throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MariaDB", "MariaDB Connector/J", "def", "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"def.app.legacy_table", "wrong.app.legacy_table"})
+    void mariaDbSchemaModeRejectsCatalogQualifiedSqlBeforeColumnLookup(String sourceTable) throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MariaDB", "MariaDB Connector/J", "def", "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).containsExactly("MARIADB_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED");
+    }
+
+    @Test
+    void mariaDbQualificationGuardCannotChangeAnotherProductsDriversOrMetadataProjections() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        for (MetadataIdentity identity : List.of(
+                new MetadataIdentity("PostgreSQL", "MariaDB Connector/J", "def", "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MariaDB", "MySQL Connector/J", "def", "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MariaDB", "MariaDB Connector/J", "other", "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MariaDB", "MariaDB Connector/J", "def", null, "def", "app", "legacy_table"))) {
+            ValidationResult result = validator.validateLiveSource(liveSpec("def.app.legacy_table"),
+                    metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+            assertThat(result.errors()).isEmpty();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"legacy_table", "app.legacy_table"})
+    void mysqlSchemaModeResolvesOnlyItsMissingConnectionCatalog(String sourceTable) throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MySQL", "MySQL Connector/J", null, "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"def.app.legacy_table", "wrong.app.legacy_table"})
+    void mysqlSchemaModeRejectsExplicitCatalogQualificationEvenWhenItsMetadataIdentityIsValid(String sourceTable)
+            throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MySQL", "MySQL Connector/J", null, "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).containsExactly("MYSQL_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"other.legacy_table", "app.other_table"})
+    void mysqlSchemaModeStillRejectsAnExplicitWrongSchemaOrTable(String sourceTable) throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "MySQL", "MySQL Connector/J", null, "app", "def", "app", "legacy_table");
+
+        ValidationResult result = validator.validateLiveSource(liveSpec(sourceTable),
+                metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+        assertThat(result.errors()).singleElement().asString().contains("실 source에 없는 테이블");
+    }
+
+    @Test
+    void mysqlDefaultCatalogResolutionCannotApplyToAnotherDriverOrMissingSchemaOrExplicitCatalog() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        for (MetadataIdentity identity : List.of(
+                new MetadataIdentity("PostgreSQL", "MySQL Connector/J", null, "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MySQL", "MariaDB Connector/J", null, "app", "def", "app", "legacy_table"),
+                new MetadataIdentity("MySQL", "MySQL Connector/J", null, null, "def", "app", "legacy_table"),
+                new MetadataIdentity("MySQL", "MySQL Connector/J", "other", "app", "def", "app", "legacy_table"))) {
+            ValidationResult result = validator.validateLiveSource(liveSpec("app.legacy_table"),
+                    metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity));
+
+            assertThat(result.errors()).singleElement().asString().contains("실 source에 없는 테이블");
+        }
+    }
+
+    private static MappingSpec liveSpec(String sourceTable) {
+        return new MappingSpec(null, null, List.of(new TableMapping(sourceTable, "target_table", null,
+                List.of(new ColumnMapping("id", "id", null, null, null, null, null)), null)), Map.of());
+    }
 
     @Test
     void staticValidationCoversTypedTargetsDuplicatesAndForeignKeyTypeContract() throws Exception {
@@ -329,6 +432,11 @@ class MappingValidatorTypedIdentityTest {
     }
 
     private static JdbcTemplate metadataJdbc(List<JdbcColumn> columns) throws Exception {
+        return metadataJdbc(columns, new MetadataIdentity(
+                null, null, "legacy", "app", "legacy", "app", "legacy_table"));
+    }
+
+    private static JdbcTemplate metadataJdbc(List<JdbcColumn> columns, MetadataIdentity identity) throws Exception {
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         DatabaseMetaData metadata = mock(DatabaseMetaData.class);
@@ -337,13 +445,15 @@ class MappingValidatorTypedIdentityTest {
 
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.getMetaData()).willReturn(metadata);
-        given(connection.getCatalog()).willReturn("legacy");
-        given(connection.getSchema()).willReturn("app");
+        given(connection.getCatalog()).willReturn(identity.defaultCatalog());
+        given(connection.getSchema()).willReturn(identity.defaultSchema());
+        given(metadata.getDatabaseProductName()).willReturn(identity.product());
+        given(metadata.getDriverName()).willReturn(identity.driver());
         given(metadata.getColumns(any(), any(), any(), any())).willReturn(rows);
         given(rows.next()).willAnswer(ignored -> cursor.incrementAndGet() < columns.size());
-        given(rows.getString("TABLE_CAT")).willReturn("legacy");
-        given(rows.getString("TABLE_SCHEM")).willReturn("app");
-        given(rows.getString("TABLE_NAME")).willReturn("legacy_table");
+        given(rows.getString("TABLE_CAT")).willReturn(identity.catalog());
+        given(rows.getString("TABLE_SCHEM")).willReturn(identity.schema());
+        given(rows.getString("TABLE_NAME")).willReturn(identity.table());
         given(rows.getString("COLUMN_NAME")).willAnswer(ignored -> columns.get(cursor.get()).name());
         given(rows.getInt("DATA_TYPE")).willAnswer(ignored -> columns.get(cursor.get()).jdbcType());
         given(rows.getString("TYPE_NAME")).willAnswer(ignored -> columns.get(cursor.get()).typeName());
@@ -351,4 +461,7 @@ class MappingValidatorTypedIdentityTest {
     }
 
     private record JdbcColumn(String name, int jdbcType, String typeName) {}
+
+    private record MetadataIdentity(String product, String driver, String defaultCatalog, String defaultSchema,
+                                    String catalog, String schema, String table) {}
 }

@@ -5,6 +5,7 @@ import nuri.migration.model.MappingSpec.DbConfig;
 import nuri.migration.source.SourceIntrospector;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -36,6 +37,29 @@ class SourceJdbcEndpointFactoryTest {
     private final SourceIntrospector introspector = mock(SourceIntrospector.class);
     private final SourceJdbcEndpointFactory factory = new SourceJdbcEndpointFactory(
             introspector, new LocalDriverJarPolicy());
+
+    @Test
+    void springCreatesTheFactoryUsingItsProductionConstructorAndInjectedIntrospector() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        DataSource dataSource = mock(DataSource.class);
+        DbConfig config = new DbConfig("jdbc:bundled:source", "user", "password", "org.h2.Driver");
+        given(introspector.jdbc(config)).willReturn(jdbc);
+        given(jdbc.getDataSource()).willReturn(dataSource);
+
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(SourceIntrospector.class, () -> introspector);
+            context.register(SourceJdbcEndpointFactory.class);
+            context.refresh();
+
+            SourceJdbcEndpointFactory managed = context.getBean(SourceJdbcEndpointFactory.class);
+            try (SourceJdbcEndpoint endpoint = managed.open(config, List.of(), null)) {
+                assertThat(endpoint.jdbc()).isSameAs(jdbc);
+                assertThat(endpoint.dataSource()).isSameAs(dataSource);
+                assertThat(endpoint.evidence().loadingMode())
+                        .isEqualTo(SourceDriverEvidence.LoadingMode.BUNDLED);
+            }
+        }
+    }
 
     @Test
     void loadsCopiedH2JarWithPlatformParentAndUsesDriverConnectUntilEndpointClose() throws Exception {

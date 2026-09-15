@@ -20,6 +20,145 @@ const requiredPaths = [
     'scripts/verify-reusable-artifact.mjs', 'scripts/e2e-shard-plan.mjs', 'config/governance/**', '.githooks/**'] : []),
 ];
 
+const childOnlyTests = [
+  'nuri.migration.EtlMySqlCrashRecoveryIntegrationTest',
+  'nuri.migration.MySqlPackagedCliIntegrationTest',
+  'nuri.migration.EtlMariaDbCrashRecoveryIntegrationTest',
+  'nuri.migration.MariaDbPackagedCliIntegrationTest',
+  'nuri.migration.EtlSqlServerCrashRecoveryIntegrationTest',
+  'nuri.migration.SqlServerPackagedCliIntegrationTest',
+];
+const childOnlyScopes = [
+  ['nuri.migration.transform.*'],
+  ['nuri.migration.validate.*', 'nuri.migration.verify.*'],
+];
+const ordinaryDrillConfiguration = `
+tasks.named('test', Test) {
+    dependsOn tasks.named('bootJar')
+    doFirst {
+        systemProperty 'migration.drill.classpath', classpath.asPath
+        systemProperty 'migration.drill.jar', tasks.named('bootJar').get().archiveFile.get().asFile.absolutePath
+    }
+}
+tasks.named('pitest') { dependsOn tasks.named('bootJar') }
+pitest {
+    jvmArgs.add(providers.provider {
+        "-Dmigration.drill.classpath=\${sourceSets.test.runtimeClasspath.asPath}".toString()
+    })
+    jvmArgs.add(providers.provider {
+        "-Dmigration.drill.jar=\${tasks.named('bootJar').get().archiveFile.get().asFile.absolutePath}".toString()
+    })
+}
+`;
+
+// Keep quoted Groovy values intact while comments and string decoys cannot supply executable markers.
+function gradleCode(source, maskStrings = false) {
+  const tokens = source.match(/"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/[^\n]*|\/\*[\s\S]*?\*\/|[^"'/]+|./g) ?? [];
+  return tokens.map((token) => token.startsWith('//') || token.startsWith('/*')
+    || (maskStrings && /^["']/.test(token)) ? token.replace(/[^\r\n]/g, ' ') : token).join('');
+}
+
+function closeDelimiter(mask, opening, left, right) {
+  let depth = 0;
+  for (let index = opening; index < mask.length; index++) {
+    if (mask[index] === left) depth++;
+    if (mask[index] === right && --depth === 0) return index;
+  }
+  return -1;
+}
+
+function sameSet(left, right) {
+  return JSON.stringify([...new Set(left)].sort()) === JSON.stringify([...new Set(right)].sort());
+}
+
+function readGradleClassList(source, name) {
+  const executable = gradleCode(source);
+  const mask = gradleCode(executable, true);
+  const markers = [...mask.matchAll(new RegExp(`\\b${name}\\s*=\\s*\\[`, 'g'))];
+  if (markers.length !== 1) return { error: 'expected one executable literal class list' };
+  const opening = mask.indexOf('[', markers[0].index);
+  const closing = closeDelimiter(mask, opening, '[', ']');
+  const literal = executable.slice(opening, closing + 1);
+  // Class globs are ASCII literals; expressions, interpolation and unquoted entries cannot supply evidence.
+  if (!/^\[\s*(?:(?:'[A-Za-z0-9_.*]+'|"[A-Za-z0-9_.*]+")(?:\s*,\s*(?:'[A-Za-z0-9_.*]+'|"[A-Za-z0-9_.*]+"))*\s*)?\]$/.test(literal)) {
+    return { error: 'expected only quoted literal class globs' };
+  }
+  return { exclude: [...literal.matchAll(/['"]([A-Za-z0-9_.*]+)['"]/g)].map((match) => match[1]) };
+}
+
+function validateDrillBuild(source) {
+  const errors = [];
+  const executable = gradleCode(source);
+  const mask = gradleCode(executable, true);
+  const readExclusions = (text) => readGradleClassList(text, 'excludedTestClasses');
+  const exclusions = readExclusions(source);
+  if (exclusions.error || JSON.stringify(exclusions.exclude) !== JSON.stringify(childOnlyTests)
+      || [...mask.matchAll(/\bexcludedTestClasses\b/g)].length !== 1) {
+    errors.push('PIT may exclude only the registered exact child-only probes');
+  }
+  if (/\b(?:exclude|include|filter|onlyIf|ignoreFailures)\b/.test(mask)) {
+    errors.push('ordinary migration Test must retain the complete integration test population');
+  }
+
+  const conditions = [...mask.matchAll(/\bif\s*\(/g)];
+  if (conditions.length !== 1) return [...errors, 'child-only PIT exclusion needs one bounded target scope condition'];
+  const marker = conditions[0];
+  const opening = mask.indexOf('(', marker.index);
+  const closing = closeDelimiter(mask, opening, '(', ')');
+  const bodyOpening = mask.indexOf('{', closing + 1);
+  const bodyClosing = closeDelimiter(mask, bodyOpening, '{', '}');
+  if (closing < 0 || bodyOpening < 0 || bodyClosing < 0) {
+    return [...errors, 'child-only PIT condition must have a complete executable body'];
+  }
+  const body = readExclusions(executable.slice(bodyOpening + 1, bodyClosing));
+  const normalize = (text) => text.replace(/\s+/g, ' ').trim();
+  const expectedBody = `excludedTestClasses = [ ${childOnlyTests.map((name) => `'${name}'`).join(', ')} ]`;
+  if (body.error || JSON.stringify(body.exclude) !== JSON.stringify(childOnlyTests)
+      || normalize(executable.slice(bodyOpening + 1, bodyClosing)) !== normalize(expectedBody)) {
+    errors.push('the registered PIT exclusions must remain inside the target scope condition');
+  }
+
+  // Evaluate the actual supported Groovy boolean expression for exact, broader, and unrelated target sets.
+  const sets = [];
+  const expression = executable.slice(opening + 1, closing).replace(
+    /targetClasses\.get\(\)\.toSet\(\)\s*==\s*(\[[^\]]*\])\.toSet\(\)/g,
+    (_, array) => {
+      const parsed = readGradleClassList(`scope = ${array}`, 'scope');
+      if (parsed.error) return 'INVALID';
+      sets.push(parsed.exclude);
+      return `B${sets.length - 1}`;
+    },
+  );
+  if (!/^(?:\s|B\d+|true|false|\(|\)|\|\||&&|!)+$/.test(expression)) {
+    errors.push('PIT condition must compare complete target sets without broad pattern matching');
+  } else {
+    const script = expression.replace(/B(\d+)/g, 'values[$1]');
+    for (const targets of [...childOnlyScopes, [...childOnlyScopes[1]].reverse(),
+      [], ['nuri.*'], ['nuri.migration.*'], ['nuri.migration.verify.*'], ['nuri.migration.validate.*'],
+      [...childOnlyScopes[0], 'nuri.migration.artifact.*'],
+      [...childOnlyScopes[1], 'nuri.migration.artifact.*']]) {
+      try {
+        const selected = runInNewContext(script, { values: sets.map((scope) => sameSet(scope, targets)) }, { timeout: 1000 });
+        if (selected !== childOnlyScopes.some((scope) => sameSet(scope, targets))) {
+          errors.push(`PIT child-only scope drift for ${targets.join(',') || '(empty)'}`);
+        }
+      } catch {
+        errors.push('PIT target scope condition must evaluate without hidden dependencies');
+      }
+    }
+  }
+
+  const normalMarkers = [...mask.matchAll(/\btasks\.named\s*\(/g)].filter((match) =>
+    /^tasks\.named\('test'[,)]/.test(executable.slice(match.index)));
+  const normal = normalMarkers[0];
+  const remaining = normal ? executable.slice(normal.index, marker.index) + executable.slice(bodyClosing + 1) : '';
+  if (normalMarkers.length !== 1 || /\btasks\.withType\s*\(\s*Test\s*\)|\btest\s*\{/.test(mask)
+      || normalize(remaining) !== normalize(ordinaryDrillConfiguration)) {
+    errors.push('ordinary Test and PIT must keep unconditional bootJar and real child runtime paths');
+  }
+  return errors;
+}
+
 // Execute the actual dispatch and helper calls while replacing only process I/O.
 // A command in a comment, an uncalled helper, or a different scope cannot count.
 function observeMigrationCommands(source, os, failCommand) {
@@ -107,6 +246,53 @@ test('migration scope executes only its independent contracts and module tasks o
   assert.deepEqual(validateRunner(runner, 'win32'), []);
   assert.deepEqual(validateRunner(runner, 'linux'), []);
   assert.doesNotMatch(moduleBuild, /\b(?:api|implementation|testImplementation)\s+project\(/);
+});
+
+test('child-only PIT probes are excluded only from the two exact CI target scopes while ordinary Test retains them', () => {
+  assert.deepEqual(validateDrillBuild(moduleBuild), []);
+  assert.deepEqual(validateRunner(runner, 'win32'), []);
+  assert.deepEqual(validateRunner(runner, 'linux'), []);
+  assert.deepEqual(validateWorkflow(workflow), []);
+});
+
+test('broad PIT test exclusions, added Oracle probes, and ordinary Test filters turn red', () => {
+  for (const mutate of [
+    (source) => source.replace(childOnlyTests[0], 'nuri.migration.*IntegrationTest'),
+    (source) => source.replace(`,\n                '${childOnlyTests[3]}'`, ''),
+    (source) => source.replace(`,\n                '${childOnlyTests[4]}'`, ''),
+    (source) => source.replace(`,\n                '${childOnlyTests[5]}'`, ''),
+    (source) => source.replace(`'${childOnlyTests[1]}'`, `'${childOnlyTests[1]}',\n                'nuri.migration.EtlOracleCrashRecoveryIntegrationTest'`),
+    (source) => source.replace("tasks.named('test', Test) {", "tasks.named('test', Test) {\n    exclude '**/*IntegrationTest*'"),
+    (source) => source.replace("tasks.named('test', Test) {", "tasks.named('test', Test) {\n    onlyIf { false }"),
+    (source) => `tasks.named('test') { enabled = false }\n${source}`,
+    (source) => `tasks.withType(Test) { enabled = false }\n${source}`,
+    (source) => source.replace("dependsOn tasks.named('bootJar')", "// dependsOn tasks.named('bootJar')"),
+    (source) => source.replace("systemProperty 'migration.drill.classpath', classpath.asPath",
+      "systemProperty 'migration.drill.classpath', 'fake-classpath'"),
+    (source) => source.replace("systemProperty 'migration.drill.jar', tasks.named('bootJar').get().archiveFile.get().asFile.absolutePath",
+      "systemProperty 'migration.drill.jar', 'fake-application.jar'"),
+  ]) {
+    const changed = mutate(moduleBuild);
+    assert.notEqual(changed, moduleBuild);
+    assert.ok(validateDrillBuild(changed).length);
+  }
+});
+
+test('unconditional, broadened, disabled, and comment or quoted-string PIT policies turn red', () => {
+  for (const mutate of [
+    (source) => source.replace('if (targetClasses.get()', 'if (true || targetClasses.get()'),
+    (source) => source.replace('if (targetClasses.get()', 'if (false && targetClasses.get()'),
+    (source) => source.replace("['nuri.migration.transform.*'].toSet()", "['nuri.*'].toSet()"),
+    (source) => source.replace('excludedTestClasses = [', '// excludedTestClasses = ['),
+    (source) => source.replace('    if (targetClasses.get()', '    /* if (targetClasses.get()')
+      .replace('    jvmArgs.add(providers.provider {', '    */\n    jvmArgs.add(providers.provider {'),
+    (source) => source.replace('    if (targetClasses.get()', "    def decoy = '''if (targetClasses.get()")
+      .replace('    jvmArgs.add(providers.provider {', "    '''\n    jvmArgs.add(providers.provider {"),
+  ]) {
+    const changed = mutate(moduleBuild);
+    assert.notEqual(changed, moduleBuild);
+    assert.ok(validateDrillBuild(changed).length);
+  }
 });
 
 test('online coupling, removed commands, unqualified Gradle tasks, and load invocation turn red', () => {

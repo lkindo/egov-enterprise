@@ -14,6 +14,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Blob;
 import java.sql.Clob;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +29,10 @@ public final class RowChecksum {
 
     private static final int ENCODING_BUFFER_SIZE = 8192;
     private static final byte[] BINARY_PREFIX = "base64:".getBytes(StandardCharsets.US_ASCII);
+    private static final DateTimeFormatter LOCAL_TIMESTAMP = new DateTimeFormatterBuilder()
+            .appendPattern("uuuu-MM-dd HH:mm:ss")
+            .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+            .toFormatter(Locale.ROOT);
 
     private RowChecksum() {
     }
@@ -121,6 +129,10 @@ public final class RowChecksum {
         }
         if (value instanceof BigDecimal decimal) {
             return decimal.stripTrailingZeros().toPlainString();
+        }
+        if (value instanceof LocalDateTime timestamp) {
+            // Match the durable JDBC Timestamp spelling without a default-zone/DST conversion.
+            return LOCAL_TIMESTAMP.format(timestamp);
         }
         return value.toString();
     }

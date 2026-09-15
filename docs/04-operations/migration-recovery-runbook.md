@@ -30,6 +30,13 @@ load는 plan 옆에 `<plan filename>.load-<UUID>.json`을 만든다. 적재 시�
 4. 동일 run으로 load를 재개한다. 기존 checkpoint의 checksum·identity를 대조한 뒤 완료 행은 재사용한다. target INSERT와 checkpoint는 같은 트랜잭션으로 기록된다.
 5. verifier의 target 실측 건수·checksum 대조가 `PASS`이고 run이 `COMPLETED`인지 확인한다. 키맵 부재·중복·행 변조·source checksum 차이는 실패다. 정상 재개를 위해 검증을 끄거나 checkpoint를 지우지 않는다.
 
+2026-09-15 `LocalDateTime` checksum 정규화는 JDBC `Timestamp`의 기존 영속 hash를 유지하지만,
+이전 `T` 구분 표현의 `LocalDateTime` hash는 바꾼다([MySQL 값 타입 관측](readiness-followups.md#이관-mysql-후속-단계-실측)).
+구현 digest가 바뀐 기존 plan은 재작성·재승인해야 한다. 이전 표현으로 기록한 checkpoint run의 자동 재개 호환성은
+보장하지 않는다. 해당 run은 checkpoint·최초 승인·실행 파일을 보존하고 소스·대상·영속 hash를 별도로 대조해
+reconciliation 절차와 재개 방법을 승인받는다. plan 재승인만으로 기존 checkpoint가 호환된다고 판단하거나
+checkpoint 삭제·checksum 검증 해제로 우회하지 않는다.
+
 [PostgreSQL 복구 회귀 테스트](../../migration-tool/src/test/java/nuri/migration/EtlPartialLoadRecoveryPostgresIntegrationTest.java)는 501행 중 첫 500행 커밋 후 실패, 실패 행 수정, 같은 run 재개, 중복 없는 재실행과 대상 변조 탐지를 실행한다. 레거시 숫자/UUID 키의 검증 파라미터는 PostgreSQL이 실제 컬럼 타입으로 해석하도록 바인딩하며, typed 복합키는 기존 JDBC 타입을 보존한다.
 
 [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 별도 JVM을 실제로 종료한 뒤 같은 run을 재개한다. 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea, 500행 체크포인트와 128MiB 자식 JVM 힙으로 재개·무중복·변조 탐지를 확인했다. 이 테스트의 실행과 PIT에는 `migration.drill.classpath`가 필요하며 [모듈 빌드](../../migration-tool/build.gradle)가 각각 주입한다. 운영 규모나 다른 vendor의 Blob/Clob까지 검증했다는 의미는 아니다([2026-09-10 검증 범위](readiness-followups.md#이관-프로세스-종료와-큰-필드)).
@@ -41,6 +48,41 @@ Oracle 후속 단계의 실제 경계는 [2026-09-15 실측](readiness-followups
 내용 적재·checksum·오류 행 재개를 확인했다. 지원 범위·값 크기 제한·프로세스 종료 시험은 해당 실측 문서를 따른다.
 Oracle `UNVERIFIED`와 외부 driver의 공개 commit 차단은 유지한다. owner 가시성 증명은 SELECT-only 권한이나
 SCN 스냅샷 증명이 아니며, 실제 버전·driver별 자격과 운영 승인을 별도로 확보해야 한다.
+
+MySQL의 경계는 [MySQL 후속 실측](readiness-followups.md#이관-mysql-후속-단계-실측)을 따른다.
+MySQL 8.4.11·Connector/J 26.7.0의 직접 엔진에서 1,001행·LONGBLOB/LONGTEXT 합계 152MiB를
+최대 힙 128MiB JVM의 500·504 영속 checkpoint에서 강제 종료하고 재개·재반복·전체 본문·변조 탐지를 확인했다.
+MySQL 전용 LONGVARCHAR/LONGVARBINARY의 값·행 제한과 원천 cursor/sentinel의 차이는 해당 실측에 둔다.
+이 결과는 모든 허용 크기의 힙 상한이나 운영 처리 시간을 보장하지 않는다. 단일 InnoDB REPEATABLE READ와
+operator freeze 확인을 사용하며, 재시작 사이의 동일 snapshot이나 운영 cutover를 자동 증명하지 않는다.
+공개 workflow/배포 CLI의 최종 결과는 실측 문서를 확인한다. MySQL `UNVERIFIED`와 isolated 외부 driver의
+공개 COMMIT 차단은 유지한다. MariaDB·SQL Server·Tibero의 자격은 각각 별도로 검증한다.
+
+MariaDB의 별도 경계는 [MariaDB 후속 실측](readiness-followups.md#이관-mariadb-후속-단계-실측)을 따른다.
+2026-09-15~16 MariaDB 11.4.13·Connector/J 3.5.10·PostgreSQL 17.10의 직접 엔진에서
+152MiB LONG을 최대 힙 128MiB JVM으로 읽고 500·504 checkpoint에서 강제 종료한 뒤 새 JVM으로
+재개·재반복·전체 본문 hash·변조 거절을 확인했다. 실제 bootJar의 승인 workflow는 dry-run까지 확인했다.
+인접 DB 컬럼 혼입은 실제 DB에서 재현한 뒤 schema pattern escape와 catalog·schema·table 대조로 막았다.
+고정 image digest, 회차별 시험 수와 수정 전 red·수정 후 green 증거의 정본은 위 실측 문서다.
+기본 CATALOG metadata 탐색을 승인 가시성으로 승격하지 않는다. 명시적 `useCatalogTerm=SCHEMA`의
+`getCatalog()=def`·`getSchema()=<DB>`와 직접 DB SELECT·활성 role 없음의 좁은 범위만 증명한다.
+원천 SQL 이름은 `table` 또는 `DB.table`이며 3단 이름은 차단한다. LONG 값·행·페이지 제한은 전체 힙 상한이 아니다.
+positive fetch1의 ResultSet을 Statement보다 먼저 닫는 순서를 유지한다. MariaDB 3.5.10 공식 소스의
+SQL_SELECT_LIMIT 적용과 byte 기준 조기 close의 추가 드레인 I/O는 작은 fixture의 Rows_sent 관측과 구분한다.
+이번 보완의 영향받은 MariaDB 가시성·workflow와 공통 단위 경계·compile, 변경 5개 클래스의
+scoped Delta PIT가 통과했다. 최신 영향 검사와 기존 Oracle/MySQL 실측의 범위는 위 실측 문서에서 구분한다.
+MariaDB **UNVERIFIED**와 공개·isolated 외부 driver COMMIT 차단은 유지한다. 최대 허용 LOB·GB/TB 규모·처리량,
+수동 freeze의 운영 이행·재시작 snapshot·cutover·전체 백업 복원을 이번 합성 시험으로 승인하지 않는다.
+
+SQL Server의 별도 경계는 [SQL Server 후속 실측](readiness-followups.md#이관-sql-server-후속-단계-실측)을 따른다.
+SQL Server 2022 16.00.4295·Microsoft JDBC 13.6.0.0·PostgreSQL 17.10에서 실제 DB 시험 47개의 개별 통과를 확인했다.
+직접 엔진은 MAX 물리 저장량 144MiB·PostgreSQL 내용 152MiB를 최대 힙 128MiB JVM의 500·504 checkpoint에서
+강제 종료한 뒤 재개·재반복·전체 SHA-256·무중복·변조 거절을 확인했다. 공개 workflow·배포 CLI는 dry-run까지다.
+공개 가시성은 현재 비시스템 DB의 sysadmin·dbo 관계형 범위만 증명하며 최소권한 계정 자격은 미검증이다.
+실제 READ_ONLY DB의 물리 증거로 preflight를 통과해도 JDBC 신호 false·privilege 경고·ack/freeze 조건은 유지한다.
+SQL Server **UNVERIFIED**와 isolated 외부 driver COMMIT 금지는 유지한다. MAX 상한·adaptive fetch1 시험은
+전체 힙 보장·GB/TB 규모·snapshot·운영 cutover·전체 백업 복원을 승인하지 않는다. Tibero와 Oracle 19c runtime은
+승인된 실행 이미지/설치 매체·필요한 사용 허가와 driver·접속 설정을 확보한 뒤 별도로 검증한다.
 
 부분 커밋을 일반 SQL `ROLLBACK` 한 번으로 되돌릴 수 없다. target의 업무 데이터를 자동 DELETE하거나 checkpoint만 제거하지 않는다. 재개가 불가능하면 승인된 **이관 전 DB·첨부·키 백업 세트**를 별도 격리 대상에 복원하고 무결성을 검증한다. 운영 접속 전환은 복원 검증·동일 버전 앱 확인·명시적 운영 승인 후 수행한다.
 

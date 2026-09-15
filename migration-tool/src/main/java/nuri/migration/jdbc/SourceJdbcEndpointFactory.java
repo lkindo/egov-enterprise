@@ -3,6 +3,7 @@ package nuri.migration.jdbc;
 import nuri.migration.artifact.SourceDriverEvidence;
 import nuri.migration.model.MappingSpec.DbConfig;
 import nuri.migration.source.SourceIntrospector;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,7 @@ public final class SourceJdbcEndpointFactory {
     private final SourceIntrospector introspector;
     private final LocalDriverJarPolicy policy;
 
+    @Autowired
     public SourceJdbcEndpointFactory(SourceIntrospector introspector) {
         this(introspector, new LocalDriverJarPolicy());
     }

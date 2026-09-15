@@ -90,6 +90,8 @@ class SourceReadSessionPolicyContractTest {
             assertThat(policy.quotedIdentifiersSupported()).as(adapter.id()).isFalse();
             assertThat(policy.lobStreamingSupported()).as(adapter.id())
                     .isEqualTo(adapterType == OracleSourceAdapter.class);
+            assertThat(policy.longValueStreamingSupported()).as(adapter.id())
+                    .isEqualTo(adapterType == MySqlSourceAdapter.class || adapterType == MariaDbSourceAdapter.class);
             assertThat(policy.executionPolicy())
                     .as(adapter.id())
                     .isEqualTo(ExecutionPolicy.MANUAL_ONLY);
