@@ -9,13 +9,16 @@ export const metadata = {
   description: '최근 1개월 접속 집계와 누적 사용자·게시물 현황을 확인합니다',
 };
 
-/** 집계 수치 정규화 — 숫자가 아니면 0. (문자열 숫자도 허용) */
-function toCount(value: unknown): number {
+/**
+ * 집계 수치 정규화 — 숫자가 아니면 null. (문자열 숫자도 허용)
+ * [2026-09-15 DEC-OPS-100] 종전에는 0 을 돌려줘, 응답 형태가 어긋나면 "누적 사용자 0" 처럼 사실이 아닌 값을 보였다.
+ */
+function toCount(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) {
     return Number(value);
   }
-  return 0;
+  return null;
 }
 
 export default async function AdminStatsPage() {

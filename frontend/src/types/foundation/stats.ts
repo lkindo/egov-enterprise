@@ -20,9 +20,10 @@ export interface ConnectPoint {
 
 
 export interface SummaryStats {
-  totalUsers: number;
-  totalPosts: number;
-  todayConnects: number;
+  /** 숫자로 읽을 수 없는 값은 null 이다 — 0 으로 바꾸지 않는다(모르는 값은 0 이 아니다). */
+  totalUsers: number | null;
+  totalPosts: number | null;
+  todayConnects: number | null;
 }
 
 

@@ -145,7 +145,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  queryFn: () => knowledgeService.getHotArticles(currentBbsId),
  });
 
- const { data: statsData, isError: isStatsError } = useQuery({
+ const { data: statsData, isError: isStatsError, isLoading: isStatsLoading } = useQuery({
  queryKey: ['knowledge-stats', activeCategory],
  queryFn: () => knowledgeService.getStats(currentBbsId),
  });
@@ -355,17 +355,17 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  */}
  <StatsCard
  label="게시글 수"
- value={isStatsError ? '조회 실패' : (statsData?.totalArticles ?? 0).toLocaleString()}
+ value={statsCardValue(statsData?.totalArticles, isStatsError, isStatsLoading)}
  desc="이 게시판에 등록된 글"
  />
  <StatsCard
  label="누적 조회수"
- value={isStatsError ? '조회 실패' : (statsData?.totalViews ?? 0).toLocaleString()}
+ value={statsCardValue(statsData?.totalViews, isStatsError, isStatsLoading)}
  desc="이 게시판의 전체 조회수"
  />
  <StatsCard
  label="최다 기여자"
- value={isStatsError ? '조회 실패' : (statsData?.topContributor || '-')}
+ value={isStatsError ? '조회 실패' : isStatsLoading ? '불러오는 중…' : (statsData?.topContributor || '-')}
  desc="게시글 등록이 가장 많은 사용자"
  />
  </motion.div>
@@ -395,6 +395,16 @@ function FilterButton({ active, onClick, label }: { active: boolean; onClick: ()
  {label}
  </button>
  );
+}
+
+/**
+ * 게시판 이용 현황 수치 칸의 표시 문구. [2026-09-15 DEC-OPS-100] 조회 중이거나 값을 읽을 수 없을 때
+ * 0 을 쓰지 않는다 — 종전에는 불러오는 동안 "게시글 수 0" 이 보였다.
+ */
+function statsCardValue(value: number | null | undefined, isError: boolean, isLoading: boolean): string {
+ if (isError) return '조회 실패';
+ if (isLoading) return '불러오는 중…';
+ return typeof value === 'number' ? value.toLocaleString() : '-';
 }
 
 function StatsCard({ label, value, desc }: { label: string, value: string, desc: string }) {
