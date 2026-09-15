@@ -166,7 +166,7 @@ check 24,930건, 오류율 0%, p95 41.93ms였다. 최종 소스로 백엔드·�
 
 이 실측은 원천 탐색의 증거이며, 후속 단계의 2026-09-15 검증은 아래에 구분한다. Oracle 어댑터 증거 수준은
 `UNVERIFIED`로 유지한다. SCN 스냅샷, 운영 규모, 19c 등 다른 버전과 외부 드라이버 commit 자격은 검증하지 않았다.
-Tibero는 공개 실행 이미지가 없어 실측하지 못했다.
+Tibero는 당시 실행 환경을 확보하지 못해 실측하지 못했다. 후속 준비 상태는 [실행 환경 점검](#tibero-및-oracle-19c-실행-환경-점검)을 따른다.
 
 ## 이관 Oracle 후속 단계 실측
 
@@ -504,8 +504,90 @@ SQL Server의 VARBINARY/VARCHAR/NVARCHAR는 ResultSet 안에서 bounded stream�
 직접 엔진의 COMMIT 시험은 승인형 공개 load의 vendor/driver 자격을 부여하지 않는다.
 최소권한 계정·database snapshot/SNAPSHOT isolation·운영 freeze의 이행·재시작 사이 snapshot·GB/TB 규모·처리량·
 전체 힙 보장·운영 cutover와 전체 백업 복원은 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다.
-Tibero와 Oracle 19c는 승인된 실행 이미지 또는 설치 매체, 필요한 사용 허가·드라이버와 접속 설정이 제공되지 않아
-runtime을 검증하지 않았다. 이번 SQL Server 및 Oracle Free 결과를 이들 환경의 자격으로 승계하지 않는다.
+Oracle 19c `19.3.0.0.0`은 별도로 실측했으며 범위와 결과는 [Oracle 19c 후속 단계 실측](#이관-oracle-19c-후속-단계-실측)을 따른다.
+Tibero는 라이선스 파일 부재로 기동하지 못해 discover·load를 아직 실측하지 않았다.
+이번 SQL Server 및 Oracle Free 결과를 이들 환경의 자격으로 승계하지 않는다.
+
+## Tibero 및 Oracle 19c 실행 환경 점검
+
+2026-09-16 `tiberoofficial/tibero:7.2.6`을 실제로 내려받았다. linux/amd64 이미지 digest는
+`sha256:9132b7e399d5f5384848823c531b63c2d060f9e0b297b0afc6aaa6c6d0905614`다.
+이미지의 설치 압축파일에서 `tibero7-jdbc-17.jar`를 확보하고 `com.tmax.tibero.jdbc.TbDriver` 클래스를 확인했다.
+드라이버 SHA-256은 `2e8ad3e9bdb8bfb8c2cdc03692f504e3f43c8b7f7c546fc705ffb37785425de2`다.
+드라이버와 실행 근거는 Git에서 제외하는 로컬 build 경로에 보관하며 운영 의존성에는 추가하지 않았다.
+
+설치 압축파일에는 license 디렉터리만 있고 `license.xml`이 없다. hostname `egov-migration-tibero`,
+2 CPU·4GiB 메모리·외부 네트워크 없는 폐기용 컨테이너의 실제 설치·기동은 종료 코드 1로 실패했다.
+고정 오류는 `Can't open the license file`이며 요구 경로는 `/opt/tibero7/license/license.xml`이다.
+이 이미지는 별도 발급한 demo/유료 라이선스와 발급 hostname의 일치를 요구한다([배포 안내](https://hub.docker.com/r/tiberoofficial/tibero)).
+점검용 컨테이너와 생성한 자격증명 파일을 정리하고 이미지·드라이버만 보존했다.
+
+Oracle 19c의 `container-registry.oracle.com/database/enterprise:19.3.0.0`도 실제 `docker pull`로 확인했지만
+anonymous token 요청이 `401 Unauthorized`로 거절돼 내려받지 못했다. Oracle Registry의 licensed 이미지는
+계정·저장소별 약관 수락·Auth Token 인증이 필요하다([현재 인증 문서](https://docs.oracle.com/en/operating-systems/oracle-linux/podman/registries.html)).
+별도 직접 빌드는 사용할 수 있는 `LINUX.X64_193000_db_home.zip`을 제공해야 한다([공식 빌드 지침](https://github.com/oracle/docker-images/blob/main/OracleDatabase/SingleInstance/README.md)).
+
+별도로 공개 community 게시자의 `fugeritorg/oracle-19.3.0-ee:2025.0` linux/amd64 이미지를 내려받았다.
+시험에 사용하는 pin은 `fugeritorg/oracle-19.3.0-ee@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac`이다.
+이는 공식 Oracle Registry 이미지가 아니며, 게시자는 개발용 이미지로 안내한다([게시자 배포 안내](https://hub.docker.com/r/fugeritorg/oracle-19.3.0-ee)).
+이 community 이미지를 폐기용 Oracle 19c EE/PDB로 기동해 [후속 단계](#이관-oracle-19c-후속-단계-실측)를 실측했다.
+Tibero discover·load는 유효한 `license.xml`과 발급 hostname을 확보한 뒤 검증할 미완료 항목이다.
+어댑터의 `UNVERIFIED`와 공개 COMMIT 금지는 유지한다.
+로컬 근거는 `migration-tool/build/reports/tibero-availability-20260916`과 `migration-tool/build/reports/oracle19c-rehearsal-20260916`이다.
+
+## 이관 Oracle 19c 후속 단계 실측
+
+2026-09-16 Oracle Database 19c Enterprise Edition **19.3.0.0.0**, CDB·PDB `ORCLPDB1`,
+문자 집합 `AL32UTF8`, ojdbc11 **23.26.3.0.0**, PostgreSQL **17.10**을 실제 JDBC와 Oracle 사전 조회로 확인했다.
+위 community 이미지 pin을 사용했으며 일반 local 계정의 `ORACLE_MAINTAINED=N`, `COMMON=NO`와
+CREATE SESSION·CREATE TABLE·CREATE SEQUENCE·UNLIMITED TABLESPACE 네 권한을 대조했다.
+서로 다른 시험 **22건이 모두 통과**했으며 skip은 0건이다.
+
+| 검증 범위 | 고유 시험 수 | 확인한 결과 |
+|---|---:|---|
+| 직접 엔진 | 6 | scalar·native BLOB/CLOB의 COMMIT·ROLLBACK, NULL/빈 값, 오류 행 정정 후 재개·재반복·전체 값·무중복·변조 탐지 |
+| 승인 workflow | 4 | discover → plan → 객체별 review → validate → DRY_RUN, source 본문 대조·target 무쓰기·target drift·UNVERIFIED 공개 COMMIT 거절 |
+| JVM 종료와 복구 | 1 | 1,001행·8쌍의 큰 BLOB/CLOB, 합계 152MiB를 최대 힙 128MiB JVM의 영속 checkpoint 500·504에서 각각 강제 종료 후 재개·재반복·전체 SHA-256·무중복·본문 변조 종료 코드 2 |
+| 가시성 | 6 | owner·빈/미존재 schema·다른 owner 일부 SELECT·CURRENT_SCHEMA 변경·미지원 범위·메타데이터 실패의 판정 |
+| 값 타입·checkpoint | 3 | NUMBER(38,9)/(38,0)·RAW·자정이 아닌 DATE·TIMESTAMP(6)·finite BINARY_FLOAT/DOUBLE·Unicode NCLOB의 전체 값, namespace/소문자 table에 결속한 checkpoint SHA·재개·변조 탐지 및 시간대→local timestamp 변환 거절 |
+| 배포 bootJar | 1 | 별도 자식 JVM 16단계 통과: driver 누락·원본 raw isolated manifest 거절·discover·미검토 plan 거절·review·validate·app/driver JAR 변조·adapter/freeze ack 거절·501행 DRY_RUN·UNVERIFIED 공개 COMMIT 거절, target/control 무쓰기 |
+| 물리 메타데이터 | 1 | 12개 컬럼의 JDBC/물리 구조·NULL/빈 LOB, native TIMESTAMP 원본 표현·typed microseconds·시간대 대조 |
+
+최초 22건 실행의 12건 통과·10건 실패, 영향 회귀 11건 실행의 10건 통과·1건 실패,
+마지막 메타데이터 1건 실행의 1건 통과를 보존했다.
+첫 회차의 엔진 6·workflow 4·JVM 복구 1, 두 번째 회차의 가시성 6·값 타입 3·배포 JAR 1에서
+21건의 통과를 집계하고 마지막 물리 메타데이터 1건을 더해 고유 22건을 확인했다.
+두 회차에 중복된 시간대 변환 거절 시험은 한 번만 센다. 최종 22건은 각 회차의 성공 근거를 합산한 결과다.
+테스트 계정의 비밀번호를 Oracle 19c의 30-byte 제한 안으로 보정했고, 실제 RAW JDBC 코드
+`VARBINARY(-3)`와 native `oracle.sql.TIMESTAMP` 표현에 맞춰 기대값을 수정했다.
+마지막 메타데이터 시험은 12개 컬럼의 DatabaseMetaData·ResultSetMetaData·USER_TAB_COLUMNS,
+native TIMESTAMP 원본 소수초와 별도 `getTimestamp()`의 `123456000` nanos·`OffsetDateTime`을 대조한다.
+
+배포 JAR 시험은 **수정하지 않은 원본 Oracle JAR을 명시 JVM module path에 넣고 BUNDLED evidence와 전체 JAR SHA-256을 결속**한다.
+원본의 `Class-Path: oraclepki.jar`를 가진 raw isolated JAR은 기존 `LocalDriverJarPolicy`에서 계속 거절한다.
+별도 Java 21 probe에서도 module path의 암묵 manifest 의존성 미노출과 원본 CodeSource·전체 JAR SHA를 확인했다.
+Oracle driver와 Testcontainers는 테스트 전용이며 배포 bootJar에 포함하지 않는다.
+이 경로가 isolated driver의 공개 COMMIT 허용이나 어댑터 자격 승격을 부여하지 않는다.
+
+19c fixture는 Test JVM마다 원천 하나를 공유하고 JVM 종료 시 정리한다. 원천은 4 CPU·6GiB 메모리·1GiB shared memory이며
+최초 cold DBCA는 약 20분이었다. cold-start 상한은 30분이고 ready 로그·JDBC·실제 버전·PDB·charset 확인은 모두 필수다.
+전체 범위를 재현하려면 아래처럼 하나의 Test task에 여섯 클래스를 선택한다.
+
+```powershell
+$env:MIGRATION_ORACLE19C_IMAGE = 'fugeritorg/oracle-19.3.0-ee@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac'
+./gradlew.bat :migration-tool:test --no-daemon --warning-mode fail --console=plain `
+  --tests 'nuri.migration.EtlOraclePostgresIntegrationTest' `
+  --tests 'nuri.migration.OracleWorkflowPostgresIntegrationTest' `
+  --tests 'nuri.migration.EtlOracleCrashRecoveryIntegrationTest' `
+  --tests 'nuri.migration.OracleDiscoveryVisibilityIntegrationTest' `
+  --tests 'nuri.migration.OracleMetadataIntegrationTest' `
+  --tests 'nuri.migration.OraclePackagedCliIntegrationTest'
+```
+
+직접 엔진 COMMIT의 성공과 공개 승인 load의 vendor/driver 자격은 별도다. `UNVERIFIED`·`MANUAL_ONLY`,
+adapter/freeze 승인과 공개 COMMIT 금지는 유지한다. 다른 Oracle release/RU, 최소권한·SCN/일관성·운영 freeze,
+GB/TB 규모·전체 JVM 힙 보장·cutover·전체 백업 복원은 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다.
+Tibero는 위 라이선스 기동 실패로 discover·load를 아직 실측하지 않았다.
 
 ## 이관 프로세스 종료와 큰 필드
 

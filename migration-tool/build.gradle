@@ -55,7 +55,8 @@ pitest {
                 'nuri.migration.EtlMariaDbCrashRecoveryIntegrationTest',
                 'nuri.migration.MariaDbPackagedCliIntegrationTest',
                 'nuri.migration.EtlSqlServerCrashRecoveryIntegrationTest',
-                'nuri.migration.SqlServerPackagedCliIntegrationTest'
+                'nuri.migration.SqlServerPackagedCliIntegrationTest',
+                'nuri.migration.OraclePackagedCliIntegrationTest'
         ]
     }
     jvmArgs.add(providers.provider {

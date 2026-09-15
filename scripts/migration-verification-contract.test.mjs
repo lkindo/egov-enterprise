@@ -27,6 +27,7 @@ const childOnlyTests = [
   'nuri.migration.MariaDbPackagedCliIntegrationTest',
   'nuri.migration.EtlSqlServerCrashRecoveryIntegrationTest',
   'nuri.migration.SqlServerPackagedCliIntegrationTest',
+  'nuri.migration.OraclePackagedCliIntegrationTest',
 ];
 const childOnlyScopes = [
   ['nuri.migration.transform.*'],
@@ -255,12 +256,13 @@ test('child-only PIT probes are excluded only from the two exact CI target scope
   assert.deepEqual(validateWorkflow(workflow), []);
 });
 
-test('broad PIT test exclusions, added Oracle probes, and ordinary Test filters turn red', () => {
+test('broad PIT exclusions, excluded Oracle engine probes, and ordinary Test filters turn red', () => {
   for (const mutate of [
     (source) => source.replace(childOnlyTests[0], 'nuri.migration.*IntegrationTest'),
     (source) => source.replace(`,\n                '${childOnlyTests[3]}'`, ''),
     (source) => source.replace(`,\n                '${childOnlyTests[4]}'`, ''),
     (source) => source.replace(`,\n                '${childOnlyTests[5]}'`, ''),
+    (source) => source.replace(`,\n                '${childOnlyTests[6]}'`, ''),
     (source) => source.replace(`'${childOnlyTests[1]}'`, `'${childOnlyTests[1]}',\n                'nuri.migration.EtlOracleCrashRecoveryIntegrationTest'`),
     (source) => source.replace("tasks.named('test', Test) {", "tasks.named('test', Test) {\n    exclude '**/*IntegrationTest*'"),
     (source) => source.replace("tasks.named('test', Test) {", "tasks.named('test', Test) {\n    onlyIf { false }"),
