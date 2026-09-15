@@ -114,7 +114,54 @@ const COLLABORATION_SURVIVORS = [
   'frontend/src/app/admin/notifications/page.tsx',
   'frontend/src/app/admin/notifications/NotificationsClient.tsx',
   'frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx',
+  // [2026-09-15 GAP-PACK-001] pack 별로 가른 사용자 서비스 회귀 테스트 — 아래 CORE_SURVIVORS 주석 참조.
+  'frontend/src/services/business/user/__tests__/CoreUserServices.test.ts',
+  'frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts',
 ];
+
+/*
+  [2026-09-15 GAP-PACK-001] 공용 회귀 테스트가 여러 pack 의 서비스를 한 파일에 섞고 있었다.
+  투영은 import 그래프로 cascade 를 판정하므로, 가장 먼저 빠지는 pack 때문에 파일 전체가 사라지고
+  **살아남은 서비스의 검증까지 함께 없어진다**. 실측 세 건:
+
+    ComprehensiveUserServices  demo(addressbook) + core(community·deptJob)
+      → core·collaboration 에서 community·deptJob 검증 소실
+    FinalDomainServices        collaboration(note·scrap·mail) + demo(report) + core(menu)
+      → collaboration 에서 note·scrap·mail·menu 검증 소실
+    UserDomainServices         collaboration(board) + demo(approval)
+      → collaboration 에서 board 검증 소실
+
+  pack 별로 가르면 cascade 제거가 오히려 정확한 동작이 된다 — 검증 대상이 없으면 검증도 없다.
+  아래 가드는 다시 섞이는 회귀를 main CI 에서 잡는다. core 파일은 어떤 프로필에서도 빠지지 않아야
+  하므로 가장 좁은 프로필(core)로 따로 본다.
+*/
+const CORE_SURVIVORS = [
+  'frontend/src/services/business/user/__tests__/CoreUserServices.test.ts',
+];
+
+test('pack 별로 가른 사용자 서비스 테스트는 core 프로필에서도 제외 pack 을 참조하지 않는다', () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const exclusion = profileExclusion(manifest, 'core');
+  const frontendRoot = join(repoRoot, 'frontend');
+  assert.ok(exclusion.excludedRemovePaths.length > 0, 'core must exclude at least one frontend pack path');
+
+  const census = buildFrontendReachabilityCensus({ repoRoot });
+  for (const survivor of CORE_SURVIVORS) {
+    const file = join(repoRoot, survivor);
+    assert.deepEqual(
+      excludedOwnedImports({ frontendRoot, file, source: readFileSync(file, 'utf8'), ...exclusion }),
+      [],
+      `${survivor} references a pack excluded from core`,
+    );
+    const coreRemoval = byFile(census, survivor).profileRemovalConstraints
+      .find((constraint) => constraint.profile === 'core');
+    assert.equal(
+      coreRemoval,
+      undefined,
+      `${survivor} is removed from the core profile via ${JSON.stringify(coreRemoval?.evidencePath)}`,
+    );
+  }
+});
 
 test('recipient picker and its collaboration consumers survive the collaboration projection', () => {
   const census = buildFrontendReachabilityCensus({ repoRoot });
