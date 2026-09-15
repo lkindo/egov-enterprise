@@ -141,8 +141,22 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     );
     const method = service.slice(service.indexOf('public List<Object[]> getBbsStatsByDate'));
     const body = method.slice(0, method.indexOf('}'));
-    expect(body, '게시물 통계가 다시 자료이용현황 표를 읽는다').toContain('boardRepository.countPostsByDate');
+    /*
+     * [2026-09-15] stats→board 직접 주입은 foundation 포트로 역전됐다(GAP-ARCH-001).
+     *   문자열만 새 표현으로 갈아 끼우면 "포트를 부른다" 까지만 보고 **그 포트가 무엇을 세는지**는
+     *   놓친다 — 구현이 다시 빈 표를 읽어도 이 계약은 통과한다. 그래서 간접 참조를 한 단계
+     *   따라가 구현까지 본다.
+     */
+    expect(body, '게시물 통계가 다시 자료이용현황 표를 읽는다').toContain('postStatistics');
+    expect(body).toContain('countPostsByDate');
     expect(body).not.toContain('dtaUseStatsRepository');
+
+    const contributor = readRepo(
+      'business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java',
+    );
+    expect(contributor, '게시글 집계 포트 구현이 게시판을 세지 않는다')
+      .toContain('boardRepository.countPostsByDate');
+    expect(contributor).not.toContain('dtaUseStatsRepository');
   });
 
   it('SYSTEM_STATS 는 미수집 목록에 넣지 않는다 — 이 축만 실제 writer 가 있다', () => {
