@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PagePagination } from '@/components/common/PagePagination';
 import { CommunityManageDialog } from '@/components/business/community/CommunityManageDialog';
+import { userFacingErrorMessage } from '@/lib/safe-error-log';
 
 // --- Types ---
 type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
@@ -145,7 +146,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  queryFn: () => knowledgeService.getHotArticles(currentBbsId),
  });
 
- const { data: statsData, isError: isStatsError } = useQuery({
+ const { data: statsData, isError: isStatsError, isLoading: isStatsLoading } = useQuery({
  queryKey: ['knowledge-stats', activeCategory],
  queryFn: () => knowledgeService.getStats(currentBbsId),
  });
@@ -218,9 +219,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <div role="alert" className="flex flex-col items-center justify-center gap-4 p-16 border-2 border-dashed rounded-lg border-rose-300 bg-rose-50/50 dark:border-rose-900/40 dark:bg-rose-950/20">
  <AlertTriangle size={32} className="text-rose-500" />
  <p className="text-sm font-bold text-foreground">지식 목록을 불러오지 못했습니다.</p>
- {articlesError instanceof Error && (
- <p className="text-xs font-medium text-muted-foreground">{articlesError.message}</p>
- )}
+ {/* [2026-09-15 DEC-OPS-100] axios 전송 오류 원문은 보이지 않는다 — 서버가 준 문장이나, axios 오류가 아닌 오류의 문장만 덧붙인다. */}
+ {userFacingErrorMessage(articlesError) ? (
+ <p className="text-xs font-medium text-muted-foreground">{userFacingErrorMessage(articlesError)}</p>
+ ) : null}
  <Button variant="outline" size="sm" className="gap-2" onClick={() => void refetchArticles()}>
  <RefreshCcw size={14} /> 다시 시도
  </Button>
@@ -228,7 +230,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  ) : (
  <>
  {isLoading ? (
- <div className="p-12 text-center text-muted-foreground animate-pulse">지식 스트림을 불러오는 중입니다...</div>
+ <div role="status" className="p-12 text-center text-muted-foreground animate-pulse">게시글을 불러오는 중…</div>
  ) : displayItems.length === 0 ? (
  <div className="flex flex-col items-center justify-center p-20 space-y-4 border-2 border-dashed rounded-lg border-border/50">
  <Hash size={40} className="text-muted-foreground/20" />
@@ -355,17 +357,17 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  */}
  <StatsCard
  label="게시글 수"
- value={isStatsError ? '조회 실패' : (statsData?.totalArticles ?? 0).toLocaleString()}
+ value={statsCardValue(statsData?.totalArticles, isStatsError, isStatsLoading)}
  desc="이 게시판에 등록된 글"
  />
  <StatsCard
  label="누적 조회수"
- value={isStatsError ? '조회 실패' : (statsData?.totalViews ?? 0).toLocaleString()}
+ value={statsCardValue(statsData?.totalViews, isStatsError, isStatsLoading)}
  desc="이 게시판의 전체 조회수"
  />
  <StatsCard
  label="최다 기여자"
- value={isStatsError ? '조회 실패' : (statsData?.topContributor || '-')}
+ value={isStatsError ? '조회 실패' : isStatsLoading ? '불러오는 중…' : (statsData?.topContributor || '-')}
  desc="게시글 등록이 가장 많은 사용자"
  />
  </motion.div>
@@ -395,6 +397,16 @@ function FilterButton({ active, onClick, label }: { active: boolean; onClick: ()
  {label}
  </button>
  );
+}
+
+/**
+ * 게시판 이용 현황 수치 칸의 표시 문구. [2026-09-15 DEC-OPS-100] 조회 중이거나 값을 읽을 수 없을 때
+ * 0 을 쓰지 않는다 — 종전에는 불러오는 동안 "게시글 수 0" 이 보였다.
+ */
+function statsCardValue(value: number | null | undefined, isError: boolean, isLoading: boolean): string {
+ if (isError) return '조회 실패';
+ if (isLoading) return '불러오는 중…';
+ return typeof value === 'number' ? value.toLocaleString() : '-';
 }
 
 function StatsCard({ label, value, desc }: { label: string, value: string, desc: string }) {

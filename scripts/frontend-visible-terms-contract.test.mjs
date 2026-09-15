@@ -50,6 +50,55 @@ test('content review metadata rejects impossible dates, missing owners, and revi
   assert.match(validateContract(invalidReview).join('\n'), /lastReviewedAt must be a real YYYY-MM-DD date/);
 });
 
+/*
+  [2026-09-15 DEC-OPS-100] 계약 수준 규범의 지위·하한·검토 경계는 기계로 선다. 필수 정보를 지우거나 형식 금지를
+  풀거나 승인 경계를 부풀리면 각각 red 여야 하고, 규범을 검토하지 않고 기한만 옮기는 것도 red 다.
+*/
+test('contract-level norms keep their approved reading, floors, format bans and review bounds', () => {
+  const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
+  assert.deepEqual(validateContract(contract), []);
+  // 재사용 산출물은 이 테스트를 실행하지 않는다 — 결정 원장 대조는 생산 저장소 몫이다.
+  const decisionIndex = fs.readFileSync(path.join(ROOT, '.agent/memory/decisions.md'), 'utf8');
+  assert.ok(decisionIndex.includes(`| ${contract.normPolicy.decisionRef} |`), `${contract.normPolicy.decisionRef} is not recorded in decisions.md`);
+
+  const state = (fixture, id) => fixture.stateVocabulary.find((row) => row.id === id);
+  const cases = [
+    ['old schema', (f) => { f.schemaVersion = '1.0.0'; }, /unsupported schemaVersion/],
+    ['advisory norms', (f) => { f.normPolicy.mustNotImply = 'advisory'; }, /normPolicy must keep the approved reading: mustNotImply/],
+    ['prose decision', (f) => { f.normPolicy.decisionRef = 'decided in chat'; }, /normPolicy must record the approved reading/],
+    ['dropped required information', (f) => { state(f, 'filtered-zero').requiredInformation.pop(); }, /state norm was weakened: filtered-zero\.requiredInformation/],
+    ['dropped forbidden implication', (f) => { state(f, 'first-use-empty').mustNotImply.shift(); }, /state norm was weakened: first-use-empty\.mustNotImply/],
+    ['unbound G15', (f) => { delete state(f, 'filtered-zero').catalogRule; }, /norm binding was weakened: filtered-zero lost catalogRule G15/],
+    ['unknown catalog rule', (f) => { state(f, 'first-use-empty').catalogRule = 'G99'; }, /catalogRule does not name a work-screen grammar rule/],
+    ['missing shared implementation', (f) => { state(f, 'unsaved').sharedImplementation.push('frontend/src/hooks/missing-guard.ts'); }, /sharedImplementation file is missing/],
+    ['lifted zero ban', (f) => { f.formatRules.number.unknownAsZero = 'allowed'; }, /format rule was weakened: number\.unknownAsZero/],
+    ['deleted format rules', (f) => { delete f.formatRules; }, /format rules are missing/],
+    ['dropped action rule', (f) => { f.actionRules.pop(); }, /action rules are incomplete/],
+    ['duplicate action rule', (f) => { f.actionRules.push(structuredClone(f.actionRules[0])); }, /duplicate action rule id/],
+    ['narrowed action rule', (f) => { f.actionRules[0].forbiddenExamples.pop(); }, /action rule was weakened/],
+    ['unbound added action rule', (f) => { f.actionRules.push({ id: 'adopter-rule', rule: 'An adopter-specific rule.', forbiddenExamples: ['example'], catalogRule: 'G99' }); }, /catalogRule does not name a work-screen grammar rule: adopter-rule/],
+    ['added action rule with a missing shared implementation', (f) => { f.actionRules.push({ id: 'adopter-rule', rule: 'An adopter-specific rule.', forbiddenExamples: ['example'], sharedImplementation: ['frontend/src/hooks/missing-guard.ts'] }); }, /sharedImplementation file is missing: adopter-rule/],
+    ['relaxed term', (f) => { f.terms.find(({ id }) => id === 'term-intelligence').decision = 'allowed'; }, /term decision was weakened: term-intelligence/],
+    ['removed term', (f) => { f.terms = f.terms.filter(({ id }) => id !== 'term-intelligence'); }, /term decision was dropped: term-intelligence/],
+    ['no normative sources', (f) => { f.normativeSources = []; }, /normative source was dropped/],
+    ['missing approval', (f) => { delete f.approval; }, /approval boundary is missing/],
+    ['inflated claim', (f) => { f.approval.allowedCompletionClaim = 'content review complete'; }, /approval completion claim must stay bounded/],
+    ['changed population', (f) => { f.population.kind = 'full-visible-string-census'; }, /population must stay a bounded pilot census/],
+    ['unrecorded owner', (f) => { f.ownerAssignment = 'assigned'; }, /ownerAssignment other than unassigned/],
+    ['norm review after evidence review', (f) => { f.normsReviewedAt = '2099-01-01'; }, /normsReviewedAt must be a real date on or before lastReviewedAt/],
+    ['unbounded norm review', (f) => { f.reviewBy = '2036-01-01'; }, /within 120 days after normsReviewedAt/],
+  ];
+  for (const [label, mutate, expected] of cases) {
+    const fixture = structuredClone(contract);
+    mutate(fixture);
+    assert.match(validateContract(fixture).join('\n'), expected, label);
+  }
+
+  // 하한은 넓어질 수 있다 — 파생 제품이 규칙을 더해도 red 가 아니다.
+  const widened = structuredClone(contract);
+  widened.actionRules.push({ id: 'adopter-rule', rule: 'An adopter-specific rule.', forbiddenExamples: ['example'] });
+  assert.deepEqual(validateContract(widened), []);
+});
 test('pilot composers do not expose internal deployment language or log form payloads', () => {
   const boardComposer = fs.readFileSync(
     path.join(ROOT, 'frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'),
@@ -111,6 +160,8 @@ test('home route sources are bound to their real entry points and do not expose 
   assert.deepEqual(adminPilot.sources, [
     'frontend/src/app/admin/page.tsx',
     'frontend/src/app/admin/AdminDashboardClient.tsx',
+    // [2026-09-15 DEC-OPS-100] 최근 감사 이력 목록을 그리는 공용 타임라인도 이 화면의 문구 증거다.
+    'frontend/src/app/components/ui/visual-audit-timeline.tsx',
   ]);
   assert.doesNotMatch(rootSources, /실시간 피드|보안 지수|value="안전"|시스템 활성 지표|CPU 사용률|24%|42%|홍길동|이순신 과장/);
   assert.match(rootSources, /최근 활동 데이터가 연결되지 않았습니다/);
@@ -244,4 +295,39 @@ test('owner decisions close findings only with a real decision reference and the
   const closedWithActive = structuredClone(contract);
   locate(closedWithActive).finding.status = 'open';
   assert.match(validateContract(closedWithActive).join('\n'), /closed pilot still has active findings/);
+});
+
+/*
+  [2026-09-15 DEC-OPS-100] 기능을 과장하거나 대상을 잘못 부르던 용어를 고친 화면에 같은 말이 되돌아오지 않게 한다.
+  인텔리전스·지능형·AI 기반은 검증된 기능 근거가 없는 한 금지(forbidden-unless-source-proven)라 파일 전체에서 막고,
+  노드·스트림·매트릭스는 도메인 명사로 바꾼 자리의 문구만 막는다 — 인프라 topology 의 노드는 가이드 §2.2 예외다.
+*/
+test('screens fixed for term decisions do not bring the overclaiming or misnamed terms back', () => {
+  const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
+  for (const file of [
+    'frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx',
+    'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
+    'frontend/src/app/admin/workflow/WorkflowClient.tsx',
+    'frontend/src/app/components/ui/workflow-canvas.tsx',
+    'frontend/src/app/admin/operation/rough-map/page.tsx',
+    'frontend/src/app/components/ui/visual-audit-timeline.tsx',
+  ]) {
+    assert.doesNotMatch(read(file), /인텔리전스|지능형|AI 기반/, file);
+  }
+  const replaced = {
+    'frontend/src/app/admin/system/common-code/CommonCodeHubClient.tsx': ['기관 노드'],
+    'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx': ['데이터 스트림'],
+    'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx': ['스트림에서'],
+    'frontend/src/app/admin/system/menus/MenuAdminClient.tsx': ['상위 노드', '그룹 노드'],
+    'frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx': ['노드'],
+    'frontend/src/app/admin/workflow/WorkflowClient.tsx': ['노드'],
+    'frontend/src/app/components/ui/workflow-canvas.tsx': ['노드'],
+    'frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx': ['매트릭스', 'Board Configuration'],
+    'frontend/src/app/admin/help/KnowledgeHubClient.tsx': ['지식 스트림'],
+    'frontend/src/app/admin/collaboration/page.tsx': ['매트릭스'],
+  };
+  for (const [file, literals] of Object.entries(replaced)) {
+    const text = read(file);
+    for (const literal of literals) assert.ok(!text.includes(literal), `${file} brought back "${literal}"`);
+  }
 });

@@ -7585,7 +7585,7 @@ export interface components {
             taskList: components["schemas"]["BoardDto"][];
             notiList: components["schemas"]["BoardDto"][];
             /** Format: int64 */
-            pendingApprovalCount: number;
+            pendingApprovalCount: number | null;
         };
         ApiResponsePageResponseCommunityDto: {
             success?: boolean;

@@ -52,12 +52,12 @@
 | G7 | **세로 열 구분선은 기본적으로 쓰지 않는다.** 시각적 복잡성을 올리므로 반드시 필요한 경우에만 넣는다. | KRDS 표 원문 |
 | G8 | 데이터 셀 텍스트는 **3줄을 넘기지 않는다.** 넘치면 요약하고 상세로 넘긴다. | KRDS 표 원문 |
 | G9 | 열을 과밀하게 넣지 않고 열 사이 간격을 충분히 둔다. 읽기 쉬움이 열 개수보다 우선한다. | MS 원문(grid를 너무 많은 열로 채우지 말고 충분한 간격을 둔다) |
-| G10 | 명령(액션)은 **역할·레코드 상태에 따라 조건부로 표시**하고, 관련 명령끼리 논리적으로 묶는다. 죽은 버튼을 노출하지 않는다. | MS command bar(조건부 가시성·논리적 그룹) + ADR-0003(demo·unavailable 상태를 실제 기능처럼 위장하지 않는다) |
+| G10 | 명령(액션)은 **역할·레코드 상태에 따라 조건부로 표시**하고, 관련 명령끼리 논리적으로 묶는다. 죽은 버튼을 노출하지 않는다. 문구와 필수 정보는 [화면 용어 원장](../../config/frontend-visible-terms.json)의 `actionRules.unsupported-action`이 소유한다. | MS command bar(조건부 가시성·논리적 그룹) + ADR-0003(demo·unavailable 상태를 실제 기능처럼 위장하지 않는다) |
 | G11 | 표 마크업은 `caption`·`thead`·`th`와 `scope`를 정확히 사용한다. | KRDS 표 접근성 원문 |
 | G12 | 좁은 화면에서는 헤더-데이터를 수직 배치로 바꾸거나 열 헤더를 고정한 채 가로 스크롤을 준다. **표현 분기는 CSS만 담당한다.** | KRDS 표 반응형 원문 + ADR-0006(이중 렌더·뷰포트 데이터 분기 금지) |
 | G13 | 정렬·필터·행 이동을 **키보드만으로 완주**할 수 있어야 한다. | MS 접근성(열 정렬·필터의 키보드 단축키를 시험) + 헌법 WCAG 2.2 하한 |
-| G14 | 액션 라벨은 결과를 예측할 수 있는 **동사+대상** 구조로 쓰고 약어·전문용어를 피한다. | MS(명확·간결한 라벨, 전문용어 회피) + [frontend-design-system.md](frontend-design-system.md) §4 |
-| G15 | 조회 중에도 **직전 결과를 유지**하고, `결과 없음`과 `데이터 없음`을 다른 문구로 구분한다. | ADR-0003(위험 기반 복구·상태 계약) + KRDS 검색 결과 패턴(결과 수 노출) |
+| G14 | 액션 라벨은 결과를 예측할 수 있는 **동사+대상** 구조로 쓰고 약어·전문용어를 피한다. [콘텐츠 가이드 §3](../03-guides/frontend-content-style.md#3-action-label-계약)과 `actionRules.verb-object`도 같은 규칙이다. | MS(명확·간결한 라벨, 전문용어 회피) + [frontend-design-system.md](frontend-design-system.md) §4 |
+| G15 | 조회 중에도 **직전 결과를 유지**하고, `결과 없음`과 `데이터 없음`을 다른 문구로 구분한다. 문구·필수 정보는 [화면 용어 원장](../../config/frontend-visible-terms.json)의 `first-use-empty`·`filtered-zero`, 공용 구현은 `emptyResultMessage`이며 [G15 census](../../frontend/src/__tests__/empty-state-distinction-census.test.ts)는 공용 조회 조건 화면만 센다. | ADR-0003(위험 기반 복구·상태 계약) + KRDS 검색 결과 패턴(결과 수 노출) |
 
 **금지 목록(전 archetype 공통)**
 

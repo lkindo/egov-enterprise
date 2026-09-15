@@ -92,6 +92,36 @@ describe('useNotifications', () => {
     vi.useRealTimers();
   });
 
+  describe('조회 중과 알림 없음을 구분한다', () => {
+    it('첫 조회가 끝나기 전에는 isLoading 이고, 끝나면 내린다', async () => {
+      const list = deferred<unknown>();
+      vi.mocked(client.getRaw).mockImplementation((url: string) =>
+        url.includes('unread-count') ? Promise.resolve(countResponse(0)) : (list.promise as never));
+      const { result } = renderHook(() => useNotifications());
+
+      // 빈 배열인데 isLoading 이 false 면 알림 센터가 조회 중에 "표시할 알림이 없습니다" 를 말한다.
+      expect(result.current.notifications).toEqual([]);
+      expect(result.current.isLoading).toBe(true);
+
+      await act(async () => { list.resolve(listResponse([NOTIF])); });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      expect(result.current.notifications).toHaveLength(1);
+    });
+
+    it('첫 조회가 실패해도 isLoading 을 내린다 — 오류 상태가 대신 말한다', async () => {
+      mockFetch(new Error('500'), 3);
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.error).toBe('알림을 불러오지 못했습니다.'));
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    it('로그인하지 않았으면 isLoading 이 아니다', () => {
+      authUser = null as never;
+      const { result } = renderHook(() => useNotifications());
+      expect(result.current.isLoading).toBe(false);
+    });
+  });
+
   describe('조회 실패를 "알림 없음" 으로 번역하지 않는다', () => {
     it('목록 조회가 실패하면 오류 상태를 올린다', async () => {
       mockFetch(new Error('500'), 3);

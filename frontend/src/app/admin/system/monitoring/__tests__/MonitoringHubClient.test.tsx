@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MonitoringHubClient from '../MonitoringHubClient';
@@ -235,7 +235,7 @@ describe('MonitoringHubClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
     expect(mocks.replace).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '데이터 스트림 새로고침' }));
+    fireEvent.click(screen.getByRole('button', { name: '현재 탭 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '리포트 스냅샷' }));
     expect(screen.getByRole('region', { name: '현재 조회 결과 반출' }))
       .toHaveTextContent('1건 반출');
@@ -394,5 +394,49 @@ describe('MonitoringHubClient', () => {
 
     renderHub('tab=topology');
     expect(screen.getByTestId('dynamic-panel')).toBeInTheDocument();
+  });
+
+  /*
+   * [2026-09-15 DEC-OPS-100] 시스템 상태는 받은 health 응답과 받은 시각만 말한다. 조회 중·실패는 장애 단정(점검 필요)도
+   * 근거 없는 최상급(최적 상태)도 아니다.
+   */
+  it('health 응답이 UP 이면 받은 시각과 함께 정상이라고 말하고 최상급 표현을 쓰지 않는다', async () => {
+    renderHub('tab=observability');
+
+    const headline = await screen.findByText((text) => text.startsWith('시스템 상태: 정상 (health 응답 UP, ') && text.endsWith(' 기준)'));
+    expect(headline.textContent).toMatch(/UP, \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} 기준\)$/);
+    expect(screen.queryByText(/최적 상태|코어 엔진/)).toBeNull();
+  });
+
+  it('health 조회가 실패하면 점검 필요로 단정하지 않고 상태 미확인이라고 말한다', async () => {
+    mocks.health.mockRejectedValueOnce(new Error('actuator unavailable'));
+    renderHub('tab=observability');
+
+    await screen.findByRole('alert');
+    expect(screen.getByText('시스템 상태 미확인')).toBeInTheDocument();
+    expect(screen.queryByText(/점검 필요/)).toBeNull();
+  });
+
+  it('UP 이 아닌 health 응답은 받은 상태 그대로 점검 필요라고 말한다', async () => {
+    mocks.health.mockResolvedValue({ status: 'DOWN', components: {} });
+    renderHub('tab=observability');
+
+    expect(await screen.findByText('시스템 상태: 점검 필요 (health 응답: DOWN)')).toBeInTheDocument();
+  });
+
+  it('실제 로그 기록의 상세에는 샘플 데이터 고지를 붙이지 않는다', async () => {
+    renderHub('tab=system');
+    fireEvent.click((await screen.findAllByRole('button', { name: /상세 열기/ }))[0]);
+
+    const detail = await screen.findByRole('region', { name: '선택 항목 상세' });
+    expect(within(detail).queryByText('샘플 데이터')).toBeNull();
+  });
+
+  it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
+    renderHub('tab=harness');
+    fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
+
+    const detail = screen.getByRole('region', { name: '선택 항목 상세' });
+    expect(within(detail).getByText('샘플 데이터')).toBeInTheDocument();
   });
 });

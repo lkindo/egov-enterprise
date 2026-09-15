@@ -4202,7 +4202,7 @@
           "actions": [],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "여론조사 거버넌스 준비 중",
+          "visibleLabel": "여론조사 관리는 이 화면에서 지원하지 않습니다.",
           "primaryTask": true,
           "evidenceLevel": "E1",
           "evidence": [

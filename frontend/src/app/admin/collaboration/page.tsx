@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
 
 export const metadata: Metadata = {
-  title: '협업 매트릭스 | eGov Enterprise',
+  title: '쪽지·스크랩 | eGov Enterprise',
   description: '조직 내 지식 공유 및 커뮤니케이션을 위한 통합 협업 허브',
 };
 

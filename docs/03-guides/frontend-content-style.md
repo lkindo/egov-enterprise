@@ -3,8 +3,9 @@
 - **Status:** Draft — 콘텐츠 소유자 승인 전 `blocked-input`
 - **Owner:** content-design — 담당자 미지정
 - **Reviewers:** product/UX, domain owner, accessibility, security/privacy — 담당자 미지정
-- **Review by:** 2026-10-31
+- **Review by:** 2026-12-15
 - **Last evidence review:** 2026-09-15
+- **Last norm review:** 2026-09-15 — 계약 수준 규범 전체(상태·action·형식·용어·규범 원천·승인 경계), [DEC-OPS-100](../../.agent/memory/decisions.md)
 - **URL-state policy review:** 2026-09-05 — [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)
 - **Structured inventory:** [`config/frontend-visible-terms.json`](../../config/frontend-visible-terms.json)
 
@@ -16,6 +17,7 @@
 2. [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)은 내부 구현 용어, 출처 없는 수치, 비동작 action을 실제 기능처럼 노출하지 못하게 한다. 개인정보성 업무 검색어의 URL 경계는 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)를 따른다.
 3. [route capability manifest](../../config/ui-route-capabilities.json)는 route·role·기능 상태의 증거 경계다. 콘텐츠는 `demo`, `partial`, `unavailable`을 `live`처럼 바꿔 말할 수 없다.
 4. 이 문서는 사용자 언어와 표현 구조를 소유하고, 도메인 정책·인가·데이터 보존·법률 판단을 대신하지 않는다.
+5. [업무 화면 문법 카탈로그](../02-architecture/work-screen-grammar-catalog.md)는 화면 행동(G10·G15)을, 이 문서와 `stateVocabulary`·`actionRules`는 문구와 필수 정보를 소유한다. G10↔`unsupported-action`, G14↔§3, G15↔`first-use-empty`·`filtered-zero`는 하나의 규범이며 두 문서를 같은 변경에서 맞춘다.
 
 적용 대상은 heading, navigation label, breadcrumb, button/link, form label·hint·validation, toast, dialog, table heading, empty/error/loading/status, metric label, aria accessible name, document title이다. 개발자 주석, 타입·변수·API field 이름은 사용자가 볼 수 없다면 직접 적용 대상이 아니다. 다만 오류 객체나 원시 payload가 toast·DOM·console·analytics로 흘러가면 사용자 및 개인정보 경계에 포함한다.
 
@@ -30,14 +32,14 @@
 
 ### 2.2 시스템 은유와 과장된 상태를 제거한다
 
-`Hub`, `Intelligence`, `Matrix`, `Node`, `Stream`, `Protocol`, `Core`, `Architecture`는 구현팀에게 익숙해도 사용자의 과업을 설명하지 못한다. 실제 도메인 명사인 `알림 목록`, `사용자`, `게시물`, `검색 결과`, `보안 설정`으로 바꾼다. adopter 전용 기술 문서나 실제 네트워크 topology처럼 용어가 도메인 개념인 경우에는 대상 독자와 의미를 명시해 예외 검토한다.
+`Hub`, `Intelligence`, `Matrix`, `Node`, `Stream`, `Protocol`, `Core`, `Architecture`는 구현팀에게 익숙해도 사용자의 과업을 설명하지 못한다. 실제 도메인 명사인 `알림 목록`, `사용자`, `게시물`, `검색 결과`, `보안 설정`으로 바꾼다. adopter 전용 기술 문서나 실제 네트워크 topology처럼 용어가 도메인 개념인 경우에는 대상 독자와 의미를 명시해 예외 검토한다. 이 예외는 `Node`(인프라 topology)와 `Protocol`·`Core`·`Architecture`(기술 문서·설정)에만 있다. `지능형`·`AI 기반`은 `Intelligence`와 같다. DB 메뉴 이름은 메뉴 결정과 Flyway로만 바꾸며 관리자 화면도 장식 문구의 예외가 아니다.
 
-`ACTIVE`, `SAFE`, `HIGH`, `99.9%`, `정상`, `최적`은 출처·측정 시각·범위·실패 의미가 없으면 상태가 아니다. authoritative source가 없다면 수치를 제거하고 `상태 미확인`, `데이터 원천 미연결`, `정적 예시`처럼 증거 경계를 말한다. 0도 미측정이나 조회 실패를 대신할 수 없다.
+`ACTIVE`, `SAFE`, `HIGH`, `MEDIUM`, `LOW`, `OPTIMAL`, `UP`, `NOMINAL`, `99.9%`, `정상`, `안전`, `최적`은 출처·측정 시각·범위·실패 의미가 없으면 상태가 아니다. 조회 실패를 정상으로 그리지 않는 기록 값 라벨과 부사·범위 한정(`안전하게`)은 대상이 아니다. authoritative source가 없다면 수치를 제거하고 `상태 미확인`, `데이터 원천 미연결`, `정적 예시`처럼 증거 경계를 말한다. 0도 미측정이나 조회 실패를 대신할 수 없다.
 
 ### 2.3 한국어 우선은 영어를 숨기는 작업이 아니다
 
 - 장식용 영어 부제, 대문자 status, 이중 번역을 제거한다.
-- `ID`, `IP`, `URL`, `API`, `CSV`, `CPU`처럼 역할에 필요한 표준 약어는 첫 사용 설명, audience, 접근 가능한 이름을 검토한다.
+- `ID`, `IP`, `URL`, `API`, `CSV`, `CPU`처럼 역할에 필요한 표준 약어는 첫 사용 설명, audience, 접근 가능한 이름을 검토한다. `ID`는 종류를 밝히고(`로그인 ID`), 사용자 화면은 한국어나 첫 사용 병기(`웹 주소(URL)`)를 쓰며, 한국어 label에 같은 뜻의 영문을 덧붙이지 않는다.
 - 제품명·기관명·법정 명칭은 번역하지 않을 수 있지만 제품 소유자 또는 기관 owner가 표기를 승인해야 한다.
 - 코드값이나 저장 형식은 사용자가 입력·판단해야 할 때만 설명하고, 내부 field 이름을 label로 그대로 노출하지 않는다.
 - 미래 다국어는 ADR-0002의 재도입 조건을 모두 충족하는 별도 제품 기능이다.
@@ -58,32 +60,38 @@
 | 생성 | `대상 추가/등록/작성` | `사용자 추가`, `게시물 등록` | 생성과 게시·발행 의미 혼합 |
 | 수정 | `변경사항 저장` 또는 구체 속성 | `권한 변경사항 저장` | `처리`, `적용`만 사용 |
 | 검색 | `대상 검색`, reset은 별도 | `사용자 검색`, `검색 조건 초기화` | placeholder만으로 검색 범위 설명 |
-| 삭제 | 대상 명시 | `선택한 사용자 삭제` | `정리`, 대상 없는 `삭제` |
+| 삭제 | 대상 명시(확인 dialog의 버튼은 제목·본문이 대상을 밝히면 `삭제`만 쓸 수 있다) | `선택한 사용자 삭제` | `정리`, 대상 없는 `삭제`, 삭제 dialog의 `확인` 버튼 |
 | 대기 | 같은 대상 + `중…` | `게시물 등록 중…` | 서버 확인 전 `완료`, `성공` |
-| 미지원 | disabled + 이유 또는 제거 | `예약 기능은 아직 연결되지 않았습니다.` | enabled dead button, cursor-only card |
+| 미지원 | disabled + 이유 또는 제거 | `예약 기능은 현재 지원하지 않습니다.` | enabled dead button, cursor-only card |
 
-아이콘만 있는 버튼은 한국어 accessible name과 44×44 CSS px 이상의 기본 target을 우선한다. tooltip은 보조 설명이지 이름의 유일한 원천이 아니다. 한 action에 `등록`, `게시`, `배포`, `동기화`를 섞지 말고 실제 backend contract에 맞는 동사 하나를 선택한다.
+아이콘만 있는 버튼은 한국어 accessible name과 44×44 CSS px 이상의 기본 target을 우선한다. tooltip은 보조 설명이지 이름의 유일한 원천이 아니다. 한 action에 `등록`, `게시`, `배포`, `동기화`를 섞지 말고 실제 backend contract에 맞는 동사 하나를 선택한다. 이 표는 카탈로그 G14·G10과 같은 규칙이다. 공용 조회 조건의 `조회`·`초기화`는 동사만 쓴다. `확인`은 동작 없는 안내의 단일 버튼에만 쓰고 안내에는 `useConfirm` 대신 toast·inline·단일 버튼 `StandardModal`을 쓴다. 대기 라벨은 대상과 작업어를 남기고(`삭제 처리 중…`) 대상 없는 `처리 중…`을 쓰지 않는다. `준비 중`·`~할 예정`은 제공 약속이므로 미지원 이유로 쓰지 않는다.
 
 ## 4. 상태 모델
 
 상태는 모양이 아니라 사용자에게 필요한 사실과 다음 행동의 조합이다. 다음 상태를 서로 합치지 않는다.
 
-| 상태 | 반드시 말할 내용 | 기본 예 | 잘못된 축약 |
+| 상태(`stateVocabulary` id) | 반드시 말할 내용 | 기본 예 | 잘못된 축약 |
 |---|---|---|---|
-| loading | 무엇을 불러오는지, 진행 중임 | `사용자 목록을 불러오는 중…` | 빈 표, 완료 icon |
-| first-use empty | 처음 상태, 생성 action | `아직 등록된 게시물이 없습니다. 새 게시물을 작성할 수 있습니다.` | `결과 없음` |
-| filtered-zero | 조건과 초기화 action | `현재 검색 조건에 맞는 사용자가 없습니다.` | `사용자가 없습니다.` |
-| permission | 거부된 action, 안전한 다음 행동 | `이 사용자의 권한을 변경할 권한이 없습니다.` | empty/404 위장 |
-| unavailable | 미지원 범위, 대체 행동 | `예약 발송은 현재 지원하지 않습니다.` | enabled button, `준비 중`만 표시 |
+| loading | 무엇을 불러오는지, 진행 중임(보이는 문구와 보조기술: live region·aria-busy 또는 sr-only 제목) | `사용자 목록을 불러오는 중…` | 빈 표, 완료 icon, 보조기술에 아무것도 알리지 않는 skeleton |
+| first-use-empty | 대상, 조건 없이도 비어 있음, 권한이 있으면 생성 action(같은 화면의 주요 action도 된다. G15 데이터 없음) | `등록된 게시물이 없습니다. 새 게시물을 작성할 수 있습니다.` | `결과 없음`, 검색 조건 변경 안내 |
+| filtered-zero | 적용한 조건, 초기화·수정 action(조회 조건 영역의 `초기화`·입력도 된다. G15 결과 없음) | `"보안"에 대한 검색 결과가 없습니다.` · 검색어 외 조건만이면 `현재 조회 조건에 맞는 사용자가 없습니다.` | `사용자가 없습니다.`, `데이터가 없습니다.` |
+| permission-denied | 거부된 action, 안전한 다음 행동 | `이 사용자의 권한을 변경할 권한이 없습니다. 필요하면 시스템 관리자에게 문의해 주세요.` | empty/404 위장, `일시적인 오류`·`다시 시도` 안내 |
+| unavailable | 미지원 범위, 대체 행동(없을 때만 대체 경로가 없다는 사실) | `예약 발송은 현재 지원하지 않습니다.` | enabled button, `준비 중`·`~할 예정`만 표시 |
 | demo | 예시/로컬 범위, 저장·전송 여부 | `로컬 미리보기 데모입니다. 실제로 전송하지 않습니다.` | 운영 화면처럼 보이는 고정 수치 |
-| partial failure | 성공/실패 범위, 기존 데이터, 재시도 | `목록은 표시했지만 부서 정보를 불러오지 못했습니다.` | 전체 성공 또는 전체 empty |
-| offline | 네트워크, 저장 여부, 재시도 | `연결이 끊겼습니다. 입력 내용은 이 화면에 유지됩니다.` | 서버 오류와 혼합 |
-| validation | field, 수정 조건, 입력 유지 | `종료일은 시작일 이후여야 합니다.` | `잘못된 요청` |
-| server error | 실패 task, 유지 상태, next action | `게시물을 등록하지 못했습니다. 입력 내용은 유지됩니다. 다시 시도해 주세요.` | 오류 객체 원문, blank table |
-| success | 완료 대상과 검증된 결과 | `게시물이 등록되었습니다.` | toast만 성공이고 readback 없음 |
-| unsaved | 떠날 때 영향, 선택지 | `저장하지 않은 변경사항이 있습니다.` | 자동 저장으로 오인 |
+| partial-failure | 성공/실패 범위, 기존 데이터, 재시도 | `목록은 표시했지만 부서 정보를 불러오지 못했습니다.` | 전체 성공 또는 전체 empty, 실패한 항목의 0 |
+| offline | 네트워크, 저장 여부, 재시도 | `연결이 끊겼습니다. 입력 내용은 이 화면에 유지됩니다.` | 서버 오류와 혼합, 브라우저가 오프라인을 알리지 않았는데 네트워크 원인 단정 |
+| validation-error | field, 수정 조건, 입력 유지 | `종료일은 시작일 이후여야 합니다.` | `잘못된 요청` |
+| server-error | 실패 task, 유지 상태, next action | `게시물을 등록하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.` | 오류 객체 원문, HTTP 상태·영문 라이브러리 오류 원문, blank table |
+| success | 완료 대상과 검증된 결과 | `게시물을 등록했습니다.` | toast만 성공이고 readback 없음 |
+| unsaved | 떠날 때 영향, 선택지 | `닫으면 저장하지 않은 변경이 사라집니다. 저장하려면 계속 편집을 선택하세요.` (선택지 `계속 편집`·`변경 버리고 닫기`) | 자동 저장으로 오인 |
 
 `config/frontend-visible-terms.json`의 `stateVocabulary`가 machine-readable ID와 최소 정보를 소유한다. 컴포넌트는 모든 상태를 무조건 렌더하는 것이 아니라 적용 가능한 상태를 명시하고, route 시나리오에서 role·data·network 상태별로 확인한다.
+
+**규범의 지위(DEC-OPS-100).** 이 절과 `stateVocabulary`는 작성 기준이자 필수 정보 규범이다. `canonicalLabel`은 새 문구의 기본 문구이며 `{대상}`은 채울 자리, `{닫으면|이동하면}`은 하나를 고르는 자리다. 공용 컴포넌트·패턴이 합의한 문구가 `requiredInformation`을 말하고 `mustNotImply`를 암시하지 않으면 그대로 쓴다. `requiredInformation`·`mustNotImply`는 규범이며 코드에 맞추려고 줄이지 않는다. 전체 문구 이관은 없다. `mustNotImply` 위반, 미측정의 0 표시, 기능을 과장하거나 대상을 잘못 부르는 용어는 결함으로 고친다. 필수 정보가 빠졌지만 잘못 암시하지는 않는 기존 문구와 그 밖의 용어·형식 편차는 [편차 목록](../04-operations/readiness-followups.md#화면-문구-규범-편차)에 기록하고 다음 규범 검토에서 처분한다.
+
+**하나의 G15.** `first-use-empty`는 G15의 `데이터 없음`(조건 없는 조회), `filtered-zero`는 `결과 없음`이다. 공용 구현은 [`emptyResultMessage`](../../frontend/src/app/components/patterns/empty-result-message.ts)이고 [G15 census](../../frontend/src/__tests__/empty-state-distinction-census.test.ts)는 공용 조회 조건 화면만 센다. 검색어 외 조건만 적용된 화면의 기본 문구는 중립으로 쓰고, 검색 조건 변경 안내는 조건이 적용됐을 때만 보인다.
+
+**그 밖의 해석.** capability `partial`은 `partial-failure`가 아니다. `validation-error`의 입력 유지는 값이 필드에 남는 것으로 충족한다. `demo`의 `정적`은 고정 화면, `로컬`은 브라우저 안 데모다. 성공 문구는 능동·피동 모두 충족하므로 이관하지 않는다. 문구를 바꾸면 묶인 테스트·e2e matcher도 같은 변경에서 고친다.
 
 ## 5. 오류와 회복 문구
 
@@ -109,11 +117,12 @@
 
 ## 6. 날짜·시간·숫자·단위
 
-- 사용자 표시 날짜는 공유 `ko-KR` formatter를 사용한다. 저장 형식 `yyyyMMdd`를 화면 문구나 placeholder로 노출하지 않는다.
-- 시간대가 결과 해석에 영향을 주는 로그·예약·교차 지역 과업은 시간대와 기준 시각을 함께 표시한다. 감사 로그는 상대 시간만으로 표시하지 않는다.
-- 수치는 `Intl.NumberFormat('ko-KR')` 또는 공유 formatter를 사용하고 `건`, `명`, `초`, `ms`, `MB`, `%` 등 단위를 붙인다.
+- 사용자 표시 날짜는 `yyyy-MM-dd`다(2026-09-08 결정). 저장 문자열은 [`toDisplayYmd`](../../frontend/src/lib/format-date.ts)로 바꾸고 `yyyyMMdd`·점 구분 날짜를 화면·placeholder·내보내기에 노출하지 않는다. 연도 없는 숫자 날짜는 조회 기간이 연도를 정하는 차트 축 `MM-DD`뿐이다.
+- 날짜·시각은 `yyyy-MM-dd HH:mm:ss`(필요 없으면 `HH:mm`)로 쓰고 `T`가 든 전송 문자열을 보이지 않는다. 표시 변환은 정렬 키를 바꾸지 않는다.
+- 시간대가 결과 해석에 영향을 주는 로그·예약·교차 지역 과업은 시간대와 기준 시각을 함께 표시한다. 기준 시간대는 `Asia/Seoul`이고 한 시간대만 쓰는 화면은 화면·내보내기마다 한 번(`기준: 한국 표준시(KST)`) 밝히면 된다. 감사 로그는 상대 시간만으로 표시하지 않는다.
+- 새 수치는 `Intl.NumberFormat('ko-KR')` 또는 `toLocaleString('ko-KR')`로 쓰고 `건`, `명`, `개`, `회`, `자`, `표`, `초`, `ms`, `MB`, `%` 등 단위를 값·단위 속성·열 머리글 중 한 곳에 붙인다. 인자 없는 기존 `toLocaleString()`은 이관하지 않는 편차다.
 - 전체 합계와 현재 페이지 건수를 명시적으로 구분한다. 현재 배열 길이를 `전체`라고 부르지 않는다.
-- 조회 실패나 미측정을 0으로 표시하지 않는다. `조회 실패`, `측정값 없음`, `상태 미확인`을 구분한다.
+- 조회 실패나 미측정을 0으로, 측정된 0을 빈 칸으로 표시하지 않는다. `조회 실패`, `측정값 없음`(`미수집`·`미측정`), `상태 미확인`을 구분한다.
 - 백분율에는 분자·분모·기간·데이터 원천이 있어야 하며, 그렇지 않으면 표시하지 않는다.
 
 ## 7. 긴 콘텐츠 및 boundary fixture
@@ -138,8 +147,11 @@
 
 - `terms`: 단어 자체의 허용/금지보다 audience·근거·대체 표현을 기록한다.
 - `stateVocabulary`: 서로 합치면 안 되는 상태와 최소 정보.
-- `actionRules`, `formatRules`: action 및 형식 불변조건.
-- `pilotCensus`: 정확히 8개 파일럿 후보 route의 static evidence와 open finding.
+- `actionRules`, `formatRules`: action·형식 작성 기준과 필수 정보·금지 사항. 전용 검증은 규범 하한뿐이고 인접 게이트는 메커니즘만 본다: [native confirm](../../frontend/src/__tests__/native-confirm-guard.test.ts), [폼 검증 census](../../frontend/scripts/frontend-form-validation-census.mjs), [route capability](../../scripts/ui-route-capabilities-contract.mjs), [page-redirect 참조](../../frontend/src/__tests__/page-redirect-reference-guard.test.ts), [날짜 표기](../../frontend/src/__tests__/date-format-guard.test.ts), [내보내기 범위](../../frontend/src/__tests__/export-scope-census.test.ts), [정렬 범위](../../frontend/src/app/components/ui/__tests__/sort-scope-disclosure.test.tsx).
+- `pilotCensus`: 정확히 8개 파일럿 route의 static evidence와 finding(`open`·`blocked-input`·`remediated-local`·`accepted-by-owner`). 닫힌 파일럿은 기록한 finding만 닫는다.
+- `normativeSources`·`population`: 규범 원천(계약이 필수 포함·실재 검사)과 census 모집단·한계. 규범은 모든 가시 문구에 적용된다.
+- `catalogRule`·`sharedImplementation`: 같은 규칙을 공유하는 카탈로그 규칙(`G#`, 카탈로그 표에 실재)과 합의 문구를 소유한 공용 구현 파일(실재 검사).
+- `normPolicy`·`status`·`owner`·`ownerAssignment`(`unassigned`가 아니면 `ownerAssignmentRef`에 `DEC-OPS-###`)·`lastReviewedAt`·`normsReviewedAt`·`reviewBy`: 규범 지위·승인 경계·검토 일정([ADR-0018](../02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)). `normsReviewedAt`은 규범 검토일이며 `reviewBy`는 그로부터 120일 안이고, 규범을 검토하지 않으면 옮기지 않는다.
 - `approval`: 콘텐츠·제품 owner 승인과 사용자 검증 여부.
 
 게시글 작성 파일럿의 canonical route는 `/admin/community/boards/insert-board-article`이다. `/admin/community/boards/write`는 2026-09-05부터 canonical 화면으로 보내는 page-redirect다(DEC-OPS-034). 파일럿 route의 대체 근거로 사용하지 않는다.
@@ -153,7 +165,7 @@
 - [ ] 모든 heading과 navigation label이 role의 top task를 설명한다.
 - [ ] 영어 장식, 내부 시스템 은유, 출처 없는 상태·수치가 없다.
 - [ ] enabled action은 handler, 권한, 서버 완료 경로가 있고 이름이 결과와 일치한다.
-- [ ] loading, first-use empty, filtered-zero, permission, unavailable, demo, partial error, server error가 필요한 만큼 구분된다.
+- [ ] loading, first-use-empty, filtered-zero, permission-denied, unavailable, demo, partial-failure, server-error가 필요한 만큼 구분된다.
 - [ ] 오류는 입력/기존 데이터 보존과 가능한 다음 행동을 말한다.
 - [ ] label과 accessible name이 일치하고 dynamic status가 발표된다.
 - [ ] 날짜·시간대·수치·단위·전체/현재 페이지 scope가 정확하다.
@@ -163,7 +175,7 @@
 
 ## 10. 승인·완료 경계
 
-현재 완료된 것은 가이드, 구조화 inventory, 8-route 정적 census, canonical 게시글 composer와 설문 composer의 로컬 진실성 수정, 그리고 별도 `/write` 화면의 인접한 개인정보·문구 수리다. 다음은 완료되지 않았다.
+현재 완료된 것은 가이드, 구조화 inventory, 8-route 정적 census, canonical 게시글 composer와 설문 등록 모달의 로컬 진실성 수정, 그리고 2026-09-15 계약 수준 규범 검토(DEC-OPS-100)다. `/write`는 §8에 적은 page-redirect다. 다음은 완료되지 않았다.
 
 - 콘텐츠 소유자와 제품 소유자 지정·승인.
 - role별 실제 렌더 및 backend 오류 문구 census.

@@ -106,7 +106,7 @@ export default function (data) {
     'dashboard response has taskList': (r) => {
       try {
         const body = JSON.parse(r.body);
-        return body.result && body.result.taskList !== undefined;
+        return body.data && body.data.taskList !== undefined;
       } catch (e) {
         return false;
       }
@@ -114,7 +114,7 @@ export default function (data) {
     'dashboard response has notiList': (r) => {
       try {
         const body = JSON.parse(r.body);
-        return body.result && body.result.notiList !== undefined;
+        return body.data && body.data.notiList !== undefined;
       } catch (e) {
         return false;
       }
@@ -122,7 +122,9 @@ export default function (data) {
     'dashboard response has pendingApprovalCount': (r) => {
       try {
         const body = JSON.parse(r.body);
-        return body.result && typeof body.result.pendingApprovalCount === 'number';
+        // [2026-09-15 DEC-OPS-100] 셀 수 없으면 null 이다. 키가 없으면 여전히 실패한다.
+        //   응답 봉투는 data 다 — 종전 result 는 없는 키라 이 파일의 본문 검사 셋이 항상 실패했다.
+        return body.data && (body.data.pendingApprovalCount === null || typeof body.data.pendingApprovalCount === 'number');
       } catch (e) {
         return false;
       }

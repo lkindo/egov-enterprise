@@ -107,7 +107,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
             key={node.id}
             role="button"
             tabIndex={0}
-            aria-label={`노드: ${node.label}`}
+            aria-label={`단계: ${node.label}`}
             className={cn(
               "absolute w-56 p-5 rounded-lg border-2 transition-all duration-500 cursor-pointer flex flex-col gap-3 group/node",
               node.status === 'current' ? "bg-card border-primary shadow-[0_20px_40px_rgba(59,130,246,0.15)] scale-105" :
@@ -153,7 +153,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
               "absolute top-2 -right-12 flex flex-col gap-2 transition-all",
               hoveredNode === node.id ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
             )}>
-              <button aria-label="노드 옵션" className="p-2 bg-card border rounded-lg shadow-lg text-muted-foreground hover:text-primary transition-colors">
+              <button aria-label="단계 선택" className="p-2 bg-card border rounded-lg shadow-lg text-muted-foreground hover:text-primary transition-colors">
                 <MoreVertical size={14} />
               </button>
             </div>
@@ -163,16 +163,16 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
 
       {/* Canvas UI Overlays */}
       <div className="absolute bottom-8 left-8 p-6 bg-card border shadow-2xl space-y-4">
-        <h4 className="text-sm font-bold tracking-tight text-foreground">워크플로우 인텔리전스</h4>
+        <h4 className="text-sm font-bold tracking-tight text-foreground">진행 상태</h4>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" /> Completed
+            <div className="w-2 h-2 rounded-full bg-emerald-500" /> 완료
           </div>
           <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" /> In Progress
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" /> 진행 중
           </div>
           <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-muted" /> Scheduled
+            <div className="w-2 h-2 rounded-full bg-muted" /> 예정
           </div>
         </div>
       </div>

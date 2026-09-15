@@ -366,7 +366,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <Activity size={28} className="text-primary" />
  </div>
  <div className="space-y-3">
- <h4 className="text-2xl font-bold tracking-tighter leading-tight uppercase">메뉴 매핑<br />인텔리전스</h4>
+ <h4 className="text-2xl font-bold tracking-tighter leading-tight uppercase">메뉴 표시 현황</h4>
  <p className="text-xs text-surface-inverse-muted font-bold tracking-[0.3em] uppercase font-mono">선택한 권한 그룹의 메뉴 계층</p>
  </div>
  </div>
@@ -383,8 +383,8 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  >
  <div className="space-y-8">
  <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-8">
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] font-mono">기능 노드 트리</span>
- {/* 핸들러가 없어 눌러도 아무 일도 일어나지 않던 '노드 검색' 버튼을 제거했다(구현 계획 없음). */}
+ <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] font-mono">메뉴 트리</span>
+ {/* 핸들러가 없어 눌러도 아무 일도 일어나지 않던 '검색' 버튼을 제거했다(구현 계획 없음). */}
  <div className="flex items-center gap-4">
  {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
  </div>

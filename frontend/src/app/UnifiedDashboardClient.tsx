@@ -37,7 +37,7 @@ interface UnifiedDashboardClientProps {
   dataPromise: Promise<{
     initialNotiList: DashboardTask[];
     initialTaskList: DashboardTask[];
-    pendingApprovalCount: number;
+    pendingApprovalCount: number | null;
   }>;
 }
 /* reusable-base:collaboration:end */
@@ -124,7 +124,8 @@ export default function UnifiedDashboardClient(
   const taskList = data.initialTaskList || [];
   /* reusable-base:collaboration:end */
   /* reusable-base:demo:start */
-  const pendingCount = data.pendingApprovalCount || 0;
+  // [2026-09-15 DEC-OPS-100] 셀 수 없는 결재 대기(null)를 0건으로 말하지 않는다(unknownAsZero).
+  const pendingCount = data.pendingApprovalCount;
   /* reusable-base:demo:end */
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -197,7 +198,7 @@ export default function UnifiedDashboardClient(
         <li className="rounded-md border border-border bg-card px-4 py-3">
           <Link href="/approvals" className="group block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             <span className="text-[length:var(--font-size-body)] text-muted-foreground group-hover:text-primary">결재 대기</span>
-            <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{pendingCount}건</span>
+            <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{pendingCount === null ? '조회 실패' : `${pendingCount}건`}</span>
           </Link>
         </li>
         {/* reusable-base:demo:end */}

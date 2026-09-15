@@ -145,4 +145,15 @@ describe('DashboardPage Server Component', () => {
       '생성 API 응답에 허용되지 않은 필드가 있습니다.',
     );
   });
+
+  // [2026-09-15 DEC-OPS-100] 결재 대기 건수를 셀 수 없으면 서버가 null 을 내린다. 0건으로 바꾸지 않고 그대로 넘긴다.
+  it('셀 수 없는 결재 대기(null)를 0건으로 바꾸지 않고 그대로 넘깁니다.', async () => {
+    vi.mocked(cookies).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: 'mock-token' }),
+    } as any);
+    vi.mocked(client.getRaw).mockResolvedValue(success({ taskList: [], notiList: [], pendingApprovalCount: null }));
+
+    const result = await loadDashboardData();
+    expect(result.pendingApprovalCount).toBeNull();
+  });
 });

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 import { ErrorStateDisplay, EmptyStateDisplay } from './status-displays';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { useOverflowRegion } from '@/components/ui/table';
 
 export interface Column<T> {
@@ -357,9 +358,13 @@ export function StandardDataTable<T extends object>({
     else search?.onSearch("");
   };
 
-  const resolvedEmptyMessage = search && appliedKeyword
-    ? `"${appliedKeyword}"에 대한 검색 결과가 없습니다.`
-    : emptyMessage;
+  // [2026-09-15 DEC-OPS-100] G15 문구는 공용 관문(emptyResultMessage) 하나가 만든다. 검색 조건 안내는 이 표가 소유한
+  //   검색어가 실제로 적용됐을 때만 붙인다 — 검색이 없는 표의 빈 목록을 검색 결과 없음으로 읽히게 하지 않는다.
+  const appliedSearchKeyword = search ? appliedKeyword : '';
+  const resolvedEmptyMessage = emptyResultMessage(appliedSearchKeyword, emptyMessage);
+  const emptyDescription = appliedSearchKeyword.trim()
+    ? '검색 조건을 변경하거나 초기화한 뒤 다시 확인해 주세요.'
+    : undefined;
 
   // 페이지 번호 윈도우 (PagePagination 과 동일 규칙: 최대 5개 + 앞뒤 생략부호)
   const totalPages = Math.max(pagination?.totalPages ?? 0, 0);
@@ -512,8 +517,11 @@ export function StandardDataTable<T extends object>({
         {...desktopScrollRegionProps}
       >
         <div className="w-full">
+          {/* [2026-09-15 DEC-OPS-100] 로딩 스켈레톤은 aria-hidden 이라 보조기술에는 빈 표로 읽혔다 — 진행 상태를 말한다. */}
+          {loading ? <p role="status" className="sr-only">{`${accessibleLabel}을(를) 불러오는 중…`}</p> : null}
           <table
             role="table"
+            aria-busy={loading || undefined}
             className={cn(
               "w-full text-sm text-left border-collapse standard-data-table-responsive",
               stickyHeader && "table-sticky-header"
@@ -612,7 +620,7 @@ export function StandardDataTable<T extends object>({
               ) : (data || []).length === 0 ? (
                 <tr>
                   <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-[var(--cell-px)] py-20 text-center" data-testid="empty-table-msg">
-                    <EmptyStateDisplay message={resolvedEmptyMessage} />
+                    <EmptyStateDisplay message={resolvedEmptyMessage} description={emptyDescription} />
                   </td>
                 </tr>
               ) : (

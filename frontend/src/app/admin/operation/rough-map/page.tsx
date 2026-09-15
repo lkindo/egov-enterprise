@@ -3,7 +3,7 @@ import RoughMapManagementClient from './RoughMapManagementClient';
 
 export const metadata: Metadata = {
   title: '약도 관리 | eGov Enterprise System',
-  description: '에고브 엔터프라이즈 공간 인텔리전스 및 약도 관리 센터',
+  description: '에고브 엔터프라이즈 약도 등록·관리',
 };
 
 export default function RoughMapPage() {

@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "0bffe670b4da83fc4abe5b4bb708cc62f59fff4b59519393d433cac137e1a114"
+    "inventoryHash": "52c56216c93486a55074392cfcaf2adfe8ef4002301981b680f1f337fab86103"
   },
   "summary": {
     "sourceFileCount": 550,
-    "records": 388,
-    "syntaxOccurrences": 458,
-    "ambiguousRecords": 357,
-    "unverifiedRecords": 388,
+    "records": 389,
+    "syntaxOccurrences": 459,
+    "ambiguousRecords": 358,
+    "unverifiedRecords": 389,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 166,
+      "navigation-producer": 167,
       "page-redirect": 16,
       "query-builder": 21,
       "query-consumer": 56,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 378,
+      "navigation": 379,
       "request-telemetry": 10
     }
   },
@@ -8288,6 +8288,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/page.tsx",
         "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-36714404792093",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/survey/polls/manage/page.tsx",
+      "producerFile": "frontend/src/app/admin/survey/polls/manage/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/survey/polls/manage",
+      "targetCandidate": "/admin/survey/polls",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/survey/polls",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/survey/polls/manage/page.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

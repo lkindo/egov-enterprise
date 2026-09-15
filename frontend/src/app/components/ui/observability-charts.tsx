@@ -78,7 +78,7 @@ export const SafeResponsiveContainer = ({ children, ...props }: ResponsiveContai
  * DB 커넥션 및 리소스 사용률을 계기판 형태로 시각화합니다.
  */
 interface GaugeChartProps {
- value: number; // 0 to 100
+ value: number | null; // 0 to 100, null = 측정값 없음
  title: string;
  unit?: string;
  color?: string;
@@ -87,10 +87,12 @@ interface GaugeChartProps {
 
 export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', className }: GaugeChartProps) {
   const c = useChartColors();
+  // [2026-09-15 DEC-OPS-100] 조회 실패·미측정을 0% 로 그리지 않는다(formatRules.number.unknownAsZero).
+  const measured = typeof value === 'number' && Number.isFinite(value) ? value : null;
 
   const data = [
-    { value: value },
-    { value: 100 - value }
+    { value: measured ?? 0 },
+    { value: measured === null ? 100 : 100 - measured }
   ];
 
   return (
@@ -119,11 +121,13 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
           </PieChart>
         </SafeResponsiveContainer>
         <div className="absolute inset-x-0 bottom-[20%] flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold tracking-tighter text-foreground">{Math.round(value)}{unit}</span>
+          {measured === null
+            ? <span className="text-lg font-bold tracking-tight text-muted-foreground">측정값 없음</span>
+            : <span className="text-3xl font-bold tracking-tighter text-foreground">{Math.round(measured)}{unit}</span>}
           <span className="text-xs font-bold text-muted-foreground tracking-tight">{title}</span>
         </div>
       </div>
-      {value > 90 && (
+      {measured !== null && measured > 90 && (
         <div className="mt-2 px-3 py-1 bg-destructive/10 text-destructive-emphasis text-xs font-bold rounded-lg animate-pulse">
           CRITICAL THRESHOLD
         </div>

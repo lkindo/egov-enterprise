@@ -45,6 +45,10 @@ class DashboardOpenApiDocumentationTest {
     assertThat(schema.path("properties").has("pendingApprovalCount")).isTrue();
     assertThat(schema.path("properties").has("extensions")).isFalse();
     assertThat(required).contains("taskList", "notiList", "pendingApprovalCount");
+    // [2026-09-15 DEC-OPS-100] 결재 대기 건수는 셀 수 없으면 null 이다. 문서가 그 사실을 말해야 생성 계약이 null 을 받는다.
+    com.fasterxml.jackson.databind.JsonNode pending = schema.path("properties").path("pendingApprovalCount");
+    assertThat(pending.path("nullable").asBoolean(false)
+        || (pending.path("type").isArray() && pending.path("type").toString().contains("null"))).isTrue();
   }
 
 }

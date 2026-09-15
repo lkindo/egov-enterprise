@@ -53,7 +53,7 @@ export function NavButton({ tab, icon, label, active, onClick }: { tab: Monitori
 }
 
 export function StatusIndicator({ label, status, icon: Icon }: { label: string, status: string, icon: any }) {
-  // 상태 표시등 분기 — 코어 엔진 인디케이터(healthData.status === 'UP')와 동일 규약.
+  // 상태 표시등 분기 — 시스템 상태 표시등(healthData.status === 'UP')과 같은 규약.
   // 정상('UP'/'안정')만 초록, 미상('UNKNOWN'/빈값)은 주황, 그 외(DOWN/OUT_OF_SERVICE 등)는 적색으로 장애를 드러낸다.
   const isUp = status === 'UP' || status === '안정';
   const isUnknown = !isUp && (!status || status === 'UNKNOWN');
@@ -157,9 +157,9 @@ export function HarnessDashboardOverview() {
 
         {/* Guides */}
         <div className="p-5 bg-hub-indigo/5 border border-hub-indigo/10 rounded-lg text-muted-foreground text-[10px] leading-relaxed space-y-2">
-          <h5 className="font-bold text-foreground flex items-center gap-1.5"><Cpu size={12} className="text-primary animate-pulse" /> 지능형 아틀라스 사용법</h5>
+          <h5 className="font-bold text-foreground flex items-center gap-1.5"><Cpu size={12} className="text-primary animate-pulse" /> 아틀라스 사용법</h5>
           <p className="text-muted-foreground font-medium leading-relaxed">
-            좌측 <strong>에이전트 하네스 아틀라스</strong> 스트림에서 스킬 엔진 카드나 항목을 클릭하십시오.
+            좌측 <strong>에이전트 하네스 아틀라스</strong> 목록에서 스킬 엔진 카드나 항목을 클릭하십시오.
           </p>
           <p className="text-muted-foreground font-medium leading-relaxed">
             선택 시 저장소 규범 문서를 요약한 상세 설명과 대표 호출 스택 예시가 표시됩니다. 실행 중인 시스템을 계측한 값이 아닙니다.
@@ -255,9 +255,9 @@ export function SkillDetailView({ skill }: { skill: any }) {
       */}
       <div className="grid grid-cols-1 gap-4">
         <div className="p-5 rounded-lg bg-muted border border-border space-y-1">
-          <span className="text-[9px] font-black text-muted-foreground block uppercase">SYSTEM IMPACT</span>
+          <span className="text-[9px] font-black text-muted-foreground block uppercase">시스템 영향도</span>
           <span className={cn("text-xs font-black", currentMeta.impact === "HIGH" ? "text-rose-500" : "text-amber-500")}>
-            {currentMeta.impact} SEVERITY
+            {currentMeta.impact === "HIGH" ? '높음' : '보통'}
           </span>
           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-2">
             <div className={cn("h-full", currentMeta.impact === "HIGH" ? "bg-rose-500 w-full" : "bg-amber-500 w-2/3")} />
@@ -339,7 +339,7 @@ export function TestDetailView({ test }: { test: any }) {
       <div className="p-6 rounded-lg bg-muted border border-border">
         <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase font-mono">{test.id}</span>
         <h4 className="text-sm font-black text-foreground tracking-tight mt-1 leading-snug break-all">{test.testName}</h4>
-        <p className="text-[10px] font-bold text-muted-foreground uppercase mt-2">측정 타임: {test.time}</p>
+        <p className="text-[10px] font-bold text-muted-foreground uppercase mt-2">표본 시각: {test.time}</p>
       </div>
 
       {/* SQL Budget Slider */}
@@ -364,7 +364,7 @@ export function TestDetailView({ test }: { test: any }) {
       <div className="p-6 rounded-lg bg-emerald-50/50 border border-emerald-100 space-y-2">
         <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
           <CheckCircle2 size={14} className="text-emerald-600 animate-bounce" />
-          <span>가드레일 통합 검증 통과: {test.status}</span>
+          <span>표본 판정: {test.status}</span>
         </div>
         <p className="text-xs font-bold text-foreground leading-normal">
           {currentStack.summary}

@@ -102,28 +102,33 @@ class MonitoringAdminService {
   /**
    * CPU 사용률 조회
    */
-  async getCpuUsage(): Promise<number> {
+  async getCpuUsage(): Promise<number | null> {
+    // [2026-09-15 DEC-OPS-100] 조회 실패·측정값 부재를 0% 로 돌려주지 않는다 — 유휴와 실패가 같은 값이 된다.
     try {
       const data = await this.getMetric('system.cpu.usage');
-      return (data.measurements[0].value * 100) || 0;
+      const ratio = data.measurements[0]?.value;
+      return typeof ratio === 'number' && Number.isFinite(ratio) ? ratio * 100 : null;
     } catch {
-      return 0;
+      return null;
     }
   }
 
   /**
    * 메모리 사용률 조회
    */
-  async getMemoryUsage(): Promise<number> {
+  async getMemoryUsage(): Promise<number | null> {
     try {
       const max = await this.getMetric('jvm.memory.max');
       const used = await this.getMetric('jvm.memory.used');
-      const maxValue = max.measurements[0].value;
-      const usedValue = used.measurements[0].value;
-      if (maxValue <= 0) return 0;
+      const maxValue = max.measurements[0]?.value;
+      const usedValue = used.measurements[0]?.value;
+      // max 가 0 이하(-1 = 측정 불가)거나 값이 없으면 사용률을 계산할 수 없다 — 0% 가 아니라 측정값 없음이다.
+      if (typeof maxValue !== 'number' || !(maxValue > 0) || typeof usedValue !== 'number' || !Number.isFinite(usedValue)) {
+        return null;
+      }
       return (usedValue / maxValue) * 100;
     } catch {
-      return 0;
+      return null;
     }
   }
 

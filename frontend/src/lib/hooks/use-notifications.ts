@@ -159,6 +159,11 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   /** 조회 실패 사유. null 이면 정상. UI 는 이것을 '알림 없음' 과 반드시 구분해 표시해야 한다. */
   const [error, setError] = useState<string | null>(null);
+  /**
+   * 조회가 결과(성공·실패)를 낸 사용자. 현재 사용자의 첫 조회가 끝나기 전의 빈 목록은 '알림 없음' 이
+   * 아니라 '불러오는 중' 이다 — 둘을 합치면 알림 센터가 조회 중에 "표시할 알림이 없습니다" 를 말한다.
+   */
+  const [settledOwnerId, setSettledOwnerId] = useState<string | null>(null);
   /** 오류 토스트 중복 억제 — 60초 폴링이라 매 실패마다 띄우면 화면이 잠긴다. */
   const errorNotifiedRef = useRef(false);
   const { client: wsClient, isConnected } = useWebSocket();
@@ -243,6 +248,8 @@ export function useNotifications() {
           || ownerIdRef.current !== userId) {
         return;
       }
+      // 이 사용자의 조회가 결과를 냈다(성공·실패 모두) — 이후 빈 목록은 '불러오는 중' 이 아니다.
+      setSettledOwnerId(userId);
 
       if (listResult.status === 'rejected') {
         reportFetchError('알림을 불러오지 못했습니다.');
@@ -569,6 +576,8 @@ export function useNotifications() {
     notifications,
     unreadCount,
     error,
+    /** 현재 사용자의 첫 조회가 아직 끝나지 않았다. 로그인하지 않았으면 false 다. */
+    isLoading: userId !== null && settledOwnerId !== userId,
     markAsRead,
     markAllAsRead,
     removeNotification,

@@ -1,5 +1,6 @@
 import { isAxiosError } from 'axios';
 import type { FieldErrorItem } from '@/lib/api/client';
+import { userFacingErrorMessage } from '@/lib/safe-error-log';
 
 /**
  * 백엔드 검증 실패 응답에서 필드별 오류를 뽑는다. [W1-14]
@@ -32,33 +33,12 @@ export function extractFieldErrors(error: unknown): Record<string, string> | und
 }
 
 /**
- * Type-safe error message extractor for Server Actions.
- * Safely extracts error messages from Axios errors, standard Errors, or response objects.
+ * Server Action 이 사용자에게 돌려줄 오류 문장을 고른다.
+ *
+ * [2026-09-15 DEC-OPS-100] 서버가 준 문구가 있으면 그것을, axios 오류지만 서버 문구가 없으면 호출부의
+ * 과업별 안내(`fallbackMessage`)를 쓴다. 종전에는 axios 의 transport 원문(`Network Error`·
+ * `Request failed with status code 500`)을 그대로 돌려줘 화면 토스트가 영어 원문을 보였다.
  */
 export function extractErrorMessage(error: unknown, fallbackMessage: string = '오류가 발생했습니다.'): string {
-  if (isAxiosError(error)) {
-    const responseData = error.response?.data as { message?: string } | undefined;
-    if (responseData?.message && typeof responseData.message === 'string') {
-      return responseData.message;
-    }
-    if (error.message) {
-      return error.message;
-    }
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === 'object' && error !== null) {
-    const errObj = error as { response?: { data?: { message?: string } }; message?: string };
-    if (errObj.response?.data?.message && typeof errObj.response.data.message === 'string') {
-      return errObj.response.data.message;
-    }
-    if (errObj.message && typeof errObj.message === 'string') {
-      return errObj.message;
-    }
-  }
-
-  return fallbackMessage;
+  return userFacingErrorMessage(error) ?? fallbackMessage;
 }

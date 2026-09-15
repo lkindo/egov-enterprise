@@ -805,7 +805,7 @@ export default function MenuAdminClient({
                       value={field.value ?? ''}
                       maxLength={500}
                       className="h-11 rounded-lg font-bold px-5"
-                      placeholder="/admin/system/menus 형식으로 입력 (비우면 그룹 노드)"
+                      placeholder="/admin/system/menus 형식으로 입력 (비우면 하위 메뉴를 묶는 분류 메뉴)"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
@@ -855,7 +855,7 @@ export default function MenuAdminClient({
             />
             <div className="grid grid-cols-2 gap-6">
                 <FormItem>
-                  <Label className="text-xs font-bold text-foreground ml-1">상위 노드</Label>
+                  <Label className="text-xs font-bold text-foreground ml-1">상위 메뉴</Label>
                   <div className="h-11 rounded-lg border-2 border-border flex items-center px-5 text-xs font-bold bg-muted/50 text-muted-foreground">
                     {form.getValues('upperMenuId') === 0 ? '최상위(루트)' : `상위 메뉴 ID ${form.getValues('upperMenuId')}`}
                   </div>
