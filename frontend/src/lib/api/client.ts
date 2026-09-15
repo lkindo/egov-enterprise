@@ -167,6 +167,21 @@ export function reissueSession(): Promise<void> {
 }
 
 // Response interceptor: 401 시 token refresh
+/**
+ * 서버 문구가 없는 요청 실패를 사용자에게 보여 줄 한국어 안내로 바꾼다.
+ * axios 원문(`Network Error`·`timeout of 15000ms exceeded`·`Request failed with status code 500`)은
+ * 무엇을 해야 하는지 말하지 않는다. 원문은 호출부가 받는 오류 객체에 그대로 남는다.
+ */
+function describeRequestFailure(error: { code?: string; response?: unknown }): string {
+  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+    return '서버 응답이 늦어 요청을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  }
+  if (!error.response) {
+    return '서버에 연결하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요.';
+  }
+  return '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+}
+
 axiosInstance.interceptors.response.use(
   (response) => {
     assertCurrentAuthorizationRequest(response.config?._authorizationEpoch);
@@ -242,7 +257,13 @@ axiosInstance.interceptors.response.use(
     }
 
     const backendMessage = error.response?.data?.message;
-    const message = backendMessage || error.message || '요청 처리 중 오류가 발생했습니다.';
+    // [2026-09-15 DEC-OPS-100] axios 의 transport 문구(연결 실패·시간 초과·상태 코드만 있는 실패)는
+    //   사용자에게 보여 줄 문장이 아니다(콘텐츠 가이드 §5). 서버가 준 문구만 그대로 싣고, 나머지는
+    //   실패 형태에 맞는 한국어 안내로 바꾼다. 아래 finalError.message 는 원문을 유지한다 —
+    //   admin/error.tsx 가 그 원문에서 401·403·404 를 판정한다.
+    const message = backendMessage || describeRequestFailure(error);
+    // 호출부가 스스로 취소한 요청(AbortController)은 실패가 아니다 — 알릴 것이 없다.
+    const cancelled = error.code === 'ERR_CANCELED';
     
     /*
      * [2026-08-26] 모든 실패를 전역 토스트로 올리면 **호출부가 이미 처리한 실패까지 화면을 가린다**.
@@ -257,7 +278,7 @@ axiosInstance.interceptors.response.use(
       (error.config as (AxiosRequestConfig & { suppressErrorToast?: boolean }) | undefined)?.suppressErrorToast,
     );
 
-    if (typeof window !== 'undefined' && !suppressToast) {
+    if (typeof window !== 'undefined' && !suppressToast && !cancelled) {
       window.dispatchEvent(new CustomEvent('api-error', {
         detail: { message, status: error.response?.status }
       }));

@@ -19,11 +19,18 @@ function extractErrorMessage(error: unknown): string | undefined {
   const candidate = error as {
     response?: { data?: { message?: unknown } };
     message?: unknown;
+    isAxiosError?: unknown;
   };
 
   const apiMessage = candidate.response?.data?.message;
   if (typeof apiMessage === 'string' && apiMessage.trim()) {
     return apiMessage.trim();
+  }
+  // [2026-09-15 DEC-OPS-100] 서버 문구가 없는 axios 오류의 message 는 transport 원문
+  //   (`Network Error`·`Request failed with status code 500`)이다. 사용자 문장이 아니므로 싣지 않고
+  //   아래 기본 안내에 맡긴다(콘텐츠 가이드 §5).
+  if (candidate.isAxiosError === true) {
+    return undefined;
   }
   if (typeof candidate.message === 'string' && candidate.message.trim()) {
     return candidate.message.trim();
