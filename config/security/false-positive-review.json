@@ -158,7 +158,7 @@
         },
         {
           "file": "migration-tool/build.gradle",
-          "sha256": "3cbfc6da78e570bb2b0c153c73dca7c3fb655e005f80cc670061043444d04a92"
+          "sha256": "ddacbc27edb92420e5afb726de8d43a247b4be6a1cfdadfe50aa845ef571c855"
         }
       ]
     },

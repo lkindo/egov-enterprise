@@ -143,9 +143,97 @@ check 24,930건, 오류율 0%, p95 41.93ms였다. 최종 소스로 백엔드·�
 "빈 결과가 부재를 증명하지 않는다"는 PARTIAL 판정을 남겼다. 네 결함은 `JdbcMetadataRealDriverBehaviorTest`가 고정한다.
 이 테스트는 LONG 스트림처럼 앞선 열 재읽기를 거부하는 결과 집합을 쓰며, 수정을 하나씩 되돌리면 각각 red가 된다.
 
-이 실측은 원천 탐색의 증거일 뿐이다. Oracle 어댑터 증거 수준은 `UNVERIFIED`로 유지한다. plan·load, LOB 스트리밍,
-SCN 스냅샷, 운영 규모, 19c 등 다른 버전은 검증하지 않았다. 외부 드라이버 commit 차단도 그대로다.
+이 실측은 원천 탐색의 증거이며, 후속 단계의 2026-09-15 검증은 아래에 구분한다. Oracle 어댑터 증거 수준은
+`UNVERIFIED`로 유지한다. SCN 스냅샷, 운영 규모, 19c 등 다른 버전과 외부 드라이버 commit 자격은 검증하지 않았다.
 Tibero는 공개 실행 이미지가 없어 실측하지 못했다.
+
+## 이관 Oracle 후속 단계 실측
+
+2026-09-15 로컬 Docker의 폐기용 Oracle AI Database 26ai Free `23.26.3.0.0`
+(`gvenzl/oracle-free:23-slim-faststart`)와 PostgreSQL `17.10`, ojdbc11 `23.26.3.0.0`으로 후속 단계를 시험했다.
+합성 원천 데이터만 사용한다. 첫 실측에서는 가시성 미증명으로 plan이 차단되고, BLOB 기록 실패와 CLOB의
+large object OID 문자열 저장을 확인했다. 후속 구현은 소유자 범위의 가시성과 LOB 본문 처리를 보완한다.
+Oracle의 `UNVERIFIED` 등급과 외부 driver의 공개 commit 금지는 유지한다.
+`commitReady=true`는 plan의 승인·분류 완성을 뜻하며, load 단계의 vendor/driver 자격 검사를 대신하지 않는다.
+
+| 경로·단계 | 실제 결과 | 근거 |
+|---|---|---|
+| 공개 workflow: discover → plan → 객체별 review → validate | 명시한 local owner의 TABLE/COLUMN/PRIMARY_KEY 범위에서 가시성을 증명하고 승인된 plan의 `commitReady=true` 확인 | [workflow 통합 테스트](../../migration-tool/src/test/java/nuri/migration/OracleWorkflowPostgresIntegrationTest.java) |
+| 공개 workflow: dry-run | scalar 501행과 BLOB/CLOB 본문 변환, `DRY_RUN/PASS` 실행 artifact. target 업무 행·control 스키마 무변경 | 같은 workflow 테스트 |
+| 공개 workflow: 승인 누락·commit·환경 변경 | 미승인 plan, adapter/freeze 확인 누락, `UNVERIFIED` commit 거절. target fingerprint 변경 시 이전 review·plan 재사용 거절 | 같은 workflow 테스트 |
+| 가시성·권한 경계 | CREATE SESSION만 부여한 local owner의 테이블·컬럼·PK와 빈 스키마 탐색. 다른 소유자의 일부 SELECT 권한·CURRENT_SCHEMA 변경·미존재 스키마·미지원 객체 범위는 차단. 메타데이터 조회 실패도 차단 유지 | [가시성 통합 테스트](../../migration-tool/src/test/java/nuri/migration/OracleDiscoveryVisibilityIntegrationTest.java) |
+| 직접 ETL 엔진: scalar dry-run·load·오류 복구 | Oracle NUMBER/VARCHAR2 1,001행. 오류 행 501만 미기록, 나머지 1,000행과 checkpoint 보존. 오류 행 정정 후 전체 값 일치·재반복 무중복·target 변조 탐지 | [엔진 통합 테스트](../../migration-tool/src/test/java/nuri/migration/EtlOraclePostgresIntegrationTest.java) |
+| 직접 ETL 엔진: 프로세스 종료·재개 | 1,001행 중 8행에 합계 152MiB LOB. 최대 힙 128MiB JVM을 500 checkpoint와 504 checkpoint(LOB 4행 포함)에서 각각 종료하고 새 JVM으로 재개·재반복·전체 내용·무중복·BLOB/CLOB 변조 탐지 | [Oracle JVM 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlOracleCrashRecoveryIntegrationTest.java) |
+| 직접 ETL 엔진: 16MiB BLOB → bytea | 전체 바이트·checksum, NULL/EMPTY_BLOB 구분, 재반복 무중복, 마지막 바이트 변조 탐지. PostgreSQL large object 증가 없음 | 엔진 통합 테스트 |
+| 직접 ETL 엔진: 대형 Unicode CLOB → text | 전체 본문·checksum, NULL/EMPTY_CLOB 구분, 재반복 무중복, 마지막 문자 변조 탐지. PostgreSQL large object 증가 없음 | 엔진 통합 테스트 |
+| 직접 ETL 엔진: LOB 오류 행 재시도·변환 | batch 제약 실패 후 BLOB/CLOB 본문으로 행별 재시도, 미기록 행 수정 후 재개. CLOB trim 결과와 영속 checksum 결속 | 엔진 통합 테스트 |
+| 직접 ETL 엔진: 크기 초과 | 실제 32MiB+1 byte BLOB은 `LOB_SIZE_LIMIT_EXCEEDED`, target/checkpoint 0행, 검증 FAIL | 엔진 통합 테스트 |
+
+CLOB fixture는 `본문🙂-` 1,048,576회 반복이다(Java UTF-16 5,242,880 단위, UTF-8 11MiB).
+긴 `setCharacterStream`으로 fixture를 넣었을 때 이모지가 손상되는 현상도 관측하여, 최종 fixture는 Oracle 내부
+LOB 연결 연산으로 생성하고 `getCharacterStream` 전체 내용과 먼저 대조한다. 일반 로그에는 본문을 남기지 않는다.
+
+현재 엔진은 ResultSet이 열린 동안 BLOB을 `byte[]`, CLOB을 `String`으로 읽고 locator를 해제한 뒤
+변환·checksum·target 바인딩에 같은 본문을 사용한다. 바이너리를 내장 문자열 변환·codemap·`type: text`에
+통과시켜 객체 주소 문자열로 저장하는 경로는 거절한다. 기존 SHA-256 framing은 유지하며 Base64·UTF-8 인코딩을
+유계 버퍼로 처리한다. 대상 검증은 `fetchSize=1` cursor로 행마다 checksum을 계산하고 키·건수·hash만 보관한다.
+구현 digest는 새 helper를 포함한 모듈 전체 class/JAR bytes에 결속되므로 기존 승인 plan은 재작성·재승인해야 한다.
+
+값별 상한은 **BLOB 32MiB, CLOB 16,777,216 UTF-16 단위**다. 행 보관 크기 추정치는 64MiB까지이며,
+페이지는 최대 500행 또는 누적 8MiB에 도달하면 나눈다. 8MiB는 마지막 행을 포함한 뒤 검사하는 분할 기준이다.
+CLOB 임시 복사·JDBC 버퍼·identity/checkpoint 목록을 포함한 JVM 전체 힙 상한이 아니며, 임의 크기 LOB를
+디스크로 spool하는 구현도 아니다. source와 target의 `fetchSize=1`은 JDBC 힌트이며 드라이버 버퍼의 강제 상한이 아니다.
+크기 초과·길이 불일치는 잘라 저장하지 않고 실패한다.
+`NCLOB`, `LONG*`, `SQLXML`, quoted identifier와 vendor-specific type은 공개 load에서 계속 차단한다.
+
+가시성 증명은 로그인 사용자·현재 사용자·현재 스키마·local owner가 일치하고 시스템/공통 계정이 아닌 경우만 적용한다.
+catalog를 지정하지 않고 시스템 객체를 제외한 단일 스키마 범위여야 한다.
+`--schemas=<정확한 owner>`와 `--object-kinds=TABLE,COLUMN,PRIMARY_KEY`처럼 범위를 명시한다.
+소유자는 객체에 대한 암묵적 쓰기 권한도 있으므로 이 증명은 SELECT-only 계정이나 source freeze 증명이 아니다.
+다른 스키마의 일부 객체 권한과 기본 전체 객체 범위는 아직 완전한 가시성을 증명하지 못한다.
+
+재현: `npm run verify:migration`(기존 CI와 같은 독립 모듈 compile/test/bootJar 경로).
+2026-09-15 전체 회차는 493건 중 489건 통과, 복구 시험 2건 시간 초과, Windows 심볼릭 링크 시험 2건 skip이었다.
+이후 아래 명령으로 Oracle·PostgreSQL 복구 시험을 재실행하여 2건 모두 통과했다. 각 시험의 최신 결과는
+**491건 통과·2건 환경 skip**이며, 실제 Oracle 통합 시험은 총 17건이다. 증거는 전체 회차와 복구 재실행의
+조합이고, 단일 전체 회차의 green 결과는 확보하지 않았다. compileJava·compileTestJava와 bootJar도 확인했다.
+
+```sh
+./gradlew :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test \
+  --tests '*EtlOracleCrashRecoveryIntegrationTest' --tests '*EtlCrashRecoveryPostgresIntegrationTest' \
+  --no-daemon --warning-mode fail --console=plain "-Dfile.encoding=UTF-8"
+```
+
+Windows PowerShell에서는 `./gradlew` 대신 `.\gradlew.bat`를 사용하고 JVM 속성의 따옴표를 유지한다.
+각 실행의 JUnit XML이 결과의 정본이다. 로컬 결과는 `migration-tool/build/reports/oracle-lob-before-crash-diagnostics/`와
+`migration-tool/build/reports/oracle-lob-crash-final/`에 분리 보존했으며 후자의 `verification-summary.json`에 집계를 남겼다.
+Oracle 복구 회귀의 hang 방지 상한은 worker 완료·checkpoint 도달 각각 180초, DB 초기화 5분이다.
+큰 fixture에서 기존 45초·90초 및 초기화 3분 제한에 걸린 사례를 반영했다. 최종 Oracle 재개·반복 PASS는
+JVM 내부 측정으로 각각 약 91.5초·118.4초였다. advisory lock으로 고정한 500·504 종료 지점,
+최대 힙 128MiB와 데이터 검증은 유지하며 checkpoint 초과는 즉시 실패한다. 단계 시간과 checkpoint 증가,
+45초 시점의 상태를 기록한다. 최종 두 번째 종료 회차는 45초에 501건, 약 68.7초에 504건을 기록했다.
+자식 콘솔의 문자셋과 무관하게 ASCII 단계 기록을 수집한다.
+이 시간 상한은 처리 성능 보장값이 아니다. PostgreSQL 복구 회귀의 기존 45초·90초 제한은 유지했다.
+
+프로파일 표본에서는 PostgreSQL 원천 cursor 읽기·대상 검증의 JDBC 응답 대기와 Oracle LOB 읽기·문자 변환이
+관측됐다. 같은 표본의 GC 시간은 작고 PostgreSQL lock 대기는 관측되지 않았다. `fetchSize=1`의 왕복 비용과
+실행 환경에 따른 시간 변동은 후속 성능 검증 대상이며, 이 표본만으로 전체 지연 원인을 확정하지 않는다.
+Oracle 테스트만 실행할 때는 `./gradlew :migration-tool:test --tests '*Oracle*IntegrationTest'`를 사용한다.
+Oracle 의존성은 테스트 전용이며 배포 bootJar에 포함되지 않는다. 공개 workflow는 실제 runner·adapter와 테스트
+classpath 드라이버를 사용하므로, 외부 driver JAR를 전달한 배포 CLI의 승인형 전체 성공 증거로 해석하면 안 된다.
+직접 엔진 시험은 승인 게이트 아래의 구현 검증이며 Oracle의 운영 사용을 승인하거나 차단을 해제하지 않는다.
+
+구현 감사(L2): 백엔드·DB 헌법과 현재 diff를 대조했다. 변경은 독립 `migration-tool`의 JDBC 경로이며
+온라인 API·Entity·운영 Flyway/메타 표준을 변경하지 않는다. 실제 스키마 확인과 DDL/DML은 폐기용 DB에 한정한다.
+소스 freeze 확인, 승인 digest 재대조, target INSERT와 checkpoint의 원자적 기록을 유지한다.
+검증기는 자신이 시작한 읽기 트랜잭션만 정리하며 호출자의 미커밋 트랜잭션은 보존한다.
+오류 보고에는 고정 reason code를 사용하고 자격증명·LOB 본문을 담지 않는다. 가시성 누락·승인 누락·크기 초과·
+잘못된 LOB 길이·정렬 키 중복·본문 변조를 거부하는 음성 사례가 기존 모듈 테스트/CI 실행 경로에 연결된다.
+
+남은 작업은 실제 도입 버전·외부 driver digest별 commit 자격, 다른 스키마를 읽는 최소권한 계정의 완전한 가시성,
+SCN·운영 규모·상한 초과 LOB의 별도 처리 검증이다. 이번 결과를 19c 등 미실측 버전의 지원으로 승격하지 않는다.
+verify/report는 load 내부 단계이고 resume는 같은 run의 재실행이다. 전체 rollback CLI는 없으며,
+백업 복원·운영 cutover는 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 절차로 이번에 실행하지 않았다.
 
 ## 이관 프로세스 종료와 큰 필드
 

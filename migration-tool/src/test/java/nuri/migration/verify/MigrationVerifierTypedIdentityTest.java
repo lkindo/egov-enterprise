@@ -17,10 +17,16 @@ import nuri.migration.state.MigrationStateStore.CheckpointEntry;
 import nuri.migration.state.RowChecksum;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +34,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 class MigrationVerifierTypedIdentityTest {
 
@@ -116,7 +132,7 @@ class MigrationVerifierTypedIdentityTest {
         String secret = "password=credential-sentinel; target-key=value-sentinel";
         JdbcTemplate failingTarget = new JdbcTemplate(fixture.jdbc().getDataSource()) {
             @Override
-            public List<Map<String, Object>> queryForList(String sql, Object... args) {
+            public <T> T execute(ConnectionCallback<T> action) {
                 throw new DataAccessResourceFailureException(secret);
             }
         };
@@ -132,6 +148,104 @@ class MigrationVerifierTypedIdentityTest {
                 .doesNotContain("credential-sentinel", "value-sentinel");
         assertThat(report.toSummary())
                 .doesNotContain("credential-sentinel", "value-sentinel", "password=");
+    }
+
+    @Test
+    void targetCursorUsesOneRowFetchAndRestoresItsOwnReadTransaction() throws Exception {
+        Fixture fixture = singleFixture();
+        fixture.jdbc().update("INSERT INTO tb_single VALUES (101, 'one')");
+        addCheckpoint(fixture, "legacy-1", TypedKeyTuple.of(TypedValue.signedInteger(101)),
+                Map.of("payload", "one", "id", 101L));
+        try (Connection actual = fixture.jdbc().getDataSource().getConnection()) {
+            // Observe verifier calls, not H2's internal setAutoCommit(true) -> commit() call.
+            Connection connection = mock(Connection.class, delegatesTo(actual));
+            List<PreparedStatement> cursors = new ArrayList<>();
+            doAnswer(invocation -> {
+                assertThat(connection.getAutoCommit()).isFalse();
+                PreparedStatement statement = spy(actual.prepareStatement(invocation.getArgument(0),
+                        ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
+                cursors.add(statement);
+                return statement;
+            }).when(connection).prepareStatement(anyString(),
+                    eq(ResultSet.TYPE_FORWARD_ONLY), eq(ResultSet.CONCUR_READ_ONLY));
+            JdbcTemplate target = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+
+            MigrationReport report = verifier.verify(fixture.spec(),
+                    List.of(new EtlExecutor.TableResult("legacy_single", "tb_single", 1, 1, 1, List.of())),
+                    target);
+
+            assertThat(report.ok()).isTrue();
+            assertThat(cursors).hasSize(1);
+            var lifecycle = inOrder(connection, cursors.getFirst());
+            lifecycle.verify(connection).setReadOnly(true);
+            lifecycle.verify(connection).setAutoCommit(false);
+            lifecycle.verify(cursors.getFirst()).setFetchSize(1);
+            lifecycle.verify(cursors.getFirst()).executeQuery();
+            lifecycle.verify(cursors.getFirst()).close();
+            lifecycle.verify(connection).rollback();
+            lifecycle.verify(connection).setAutoCommit(true);
+            lifecycle.verify(connection).setReadOnly(false);
+            verify(connection, never()).commit();
+            assertThat(connection.getAutoCommit()).isTrue();
+            assertThat(connection.isClosed()).isFalse();
+        }
+    }
+
+    @Test
+    void cursorFailureRollsBackAndRestoresOnlyItsOwnTransaction() throws Exception {
+        Fixture fixture = singleFixture();
+        addCheckpoint(fixture, "legacy-1", TypedKeyTuple.of(TypedValue.signedInteger(101)),
+                Map.of("payload", "one", "id", 101L));
+        try (Connection actual = fixture.jdbc().getDataSource().getConnection()) {
+            Connection connection = mock(Connection.class, delegatesTo(actual));
+            doThrow(new SQLException("private-value-sentinel"))
+                    .when(connection).prepareStatement(anyString(),
+                            eq(ResultSet.TYPE_FORWARD_ONLY), eq(ResultSet.CONCUR_READ_ONLY));
+            JdbcTemplate target = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+
+            MigrationReport report = verifier.verify(fixture.spec(),
+                    List.of(new EtlExecutor.TableResult("legacy_single", "tb_single", 1, 1, 1, List.of())),
+                    target);
+
+            assertThat(report.ok()).isFalse();
+            assertThat(report.tables().getFirst().note())
+                    .isEqualTo("run scoped typed target/checksum batch 대조 실패");
+            assertThat(report.toSummary()).doesNotContain("private-value-sentinel");
+            verify(connection).rollback();
+            verify(connection).setAutoCommit(true);
+            verify(connection).setReadOnly(false);
+            verify(connection, never()).commit();
+            assertThat(connection.getAutoCommit()).isTrue();
+            assertThat(connection.isClosed()).isFalse();
+        }
+    }
+
+    @Test
+    void verificationDoesNotCommitOrRollBackTheCallerTransaction() throws Exception {
+        Fixture fixture = singleFixture();
+        addCheckpoint(fixture, "legacy-1", TypedKeyTuple.of(TypedValue.signedInteger(101)),
+                Map.of("payload", "one", "id", 101L));
+        try (Connection actual = fixture.jdbc().getDataSource().getConnection()) {
+            actual.setAutoCommit(false);
+            Connection connection = mock(Connection.class, delegatesTo(actual));
+            JdbcTemplate target = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+            target.update("INSERT INTO tb_single VALUES (101, 'one')");
+
+            MigrationReport report = verifier.verify(fixture.spec(),
+                    List.of(new EtlExecutor.TableResult("legacy_single", "tb_single", 1, 1, 1, List.of())),
+                    target);
+
+            assertThat(report.ok()).isTrue();
+            verify(connection, never()).commit();
+            verify(connection, never()).rollback();
+            verify(connection, never()).setAutoCommit(true);
+            verify(connection, never()).setReadOnly(true);
+            assertThat(connection.getAutoCommit()).isFalse();
+            assertThat(target.queryForObject("SELECT COUNT(*) FROM tb_single", Long.class)).isEqualTo(1L);
+            assertThat(fixture.jdbc().queryForObject("SELECT COUNT(*) FROM tb_single", Long.class)).isZero();
+            actual.rollback();
+            assertThat(target.queryForObject("SELECT COUNT(*) FROM tb_single", Long.class)).isZero();
+        }
     }
 
     private MigrationReport verifyOne(Fixture fixture) {

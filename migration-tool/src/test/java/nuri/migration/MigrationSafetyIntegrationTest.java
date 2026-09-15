@@ -13,12 +13,21 @@ import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DelegatingDataSource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -197,24 +206,37 @@ class MigrationSafetyIntegrationTest {
         assertThat(count(target, "migration_control.tb_migration_checkpoint")).isEqualTo(503);
     }
 
-    @Test
-    void verifierReadsScopedTargetsInOneBatchInsteadOfOneQueryPerRow() {
+    @ParameterizedTest
+    @ValueSource(ints = {3, 500, 501, 1001})
+    void verifierReadsScopedTargetsInOneBatchInsteadOfOneQueryPerRow(int rowCount) {
         DbPair db = databases("batch_verify");
         JdbcTemplate source = jdbc(db.source());
         source.execute("CREATE TABLE LEGACY_NODE (NODE_ID varchar(20), PARENT_ID varchar(20), NODE_NM varchar(50))");
-        source.update("INSERT INTO LEGACY_NODE VALUES ('01', NULL, 'one')");
-        source.update("INSERT INTO LEGACY_NODE VALUES ('02', NULL, 'two')");
-        source.update("INSERT INTO LEGACY_NODE VALUES ('03', NULL, 'three')");
+        List<Object[]> rows = new ArrayList<>();
+        for (int id = 1; id <= rowCount; id++) {
+            rows.add(new Object[]{Integer.toString(id), "node-" + id});
+        }
+        source.batchUpdate("INSERT INTO LEGACY_NODE VALUES (?, NULL, ?)", rows);
         JdbcTemplate target = jdbc(db.target());
         target.execute("CREATE TABLE tb_node (node_id varchar(40) PRIMARY KEY, parent_id varchar(40), node_nm varchar(50))");
         MappingSpec spec = spec(db, "batch-run", "legacy-crm");
         List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
-        CountingJdbcTemplate counted = new CountingJdbcTemplate(target.getDataSource());
+        CountingDataSource counted = new CountingDataSource(target.getDataSource());
 
-        MigrationReport report = verifier.verify(spec, results, counted);
+        MigrationReport report = verifier.verify(spec, results, new JdbcTemplate(counted));
 
         assertThat(report.overall()).isEqualTo(MigrationReport.Status.PASS);
-        assertThat(counted.targetBatchReads).isEqualTo(1);
+        assertThat(report.tables()).singleElement().satisfies(table -> assertThat(table.targetRows()).isEqualTo(rowCount));
+        List<Integer> expectedBatchSizes = new ArrayList<>();
+        for (int offset = 0; offset < rowCount; offset += 500) {
+            expectedBatchSizes.add(Math.min(500, rowCount - offset));
+        }
+        assertThat(counted.targetReads).hasSize(expectedBatchSizes.size());
+        assertThat(counted.targetReads).extracting(TargetRead::parameterCount).containsExactlyElementsOf(expectedBatchSizes);
+        assertThat(counted.targetReads).allSatisfy(read -> {
+            assertThat(read.fetchSize()).isEqualTo(1);
+            assertThat(read.sql()).contains(" IN (");
+        });
     }
 
     private static MappingSpec spec(DbPair db, String runId, String namespace) {
@@ -252,17 +274,58 @@ class MigrationSafetyIntegrationTest {
 
     private record DbPair(DbConfig source, DbConfig target) {}
 
-    private static final class CountingJdbcTemplate extends JdbcTemplate {
-        private int targetBatchReads;
+    private record TargetRead(String sql, int parameterCount, int fetchSize) {}
 
-        private CountingJdbcTemplate(DataSource dataSource) {
+    /** Observe actual JDBC executions, independent of JdbcTemplate's query overload. */
+    private static final class CountingDataSource extends DelegatingDataSource {
+        private final List<TargetRead> targetReads = new ArrayList<>();
+
+        private CountingDataSource(DataSource dataSource) {
             super(dataSource);
         }
 
         @Override
-        public List<Map<String, Object>> queryForList(String sql, Object... args) {
-            targetBatchReads++;
-            return super.queryForList(sql, args);
+        public Connection getConnection() throws SQLException {
+            return observe(super.getConnection());
+        }
+
+        @Override
+        public Connection getConnection(String username, String password) throws SQLException {
+            return observe(super.getConnection(username, password));
+        }
+
+        private Connection observe(Connection delegate) {
+            return (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(),
+                    new Class<?>[]{Connection.class}, (proxy, method, arguments) -> {
+                        try {
+                            Object result = method.invoke(delegate, arguments);
+                            if (method.getName().equals("prepareStatement") && arguments[0] instanceof String sql) {
+                                String normalized = sql.toLowerCase(Locale.ROOT);
+                                if (normalized.stripLeading().startsWith("select ") && normalized.contains(" from tb_node ")) {
+                                    return observe((PreparedStatement) result, sql);
+                                }
+                            }
+                            return result;
+                        } catch (InvocationTargetException failure) {
+                            throw failure.getCause();
+                        }
+                    });
+        }
+
+        private PreparedStatement observe(PreparedStatement delegate, String sql) {
+            return (PreparedStatement) Proxy.newProxyInstance(PreparedStatement.class.getClassLoader(),
+                    new Class<?>[]{PreparedStatement.class}, (proxy, method, arguments) -> {
+                        try {
+                            Object result = method.invoke(delegate, arguments);
+                            if (method.getName().equals("executeQuery")) {
+                                targetReads.add(new TargetRead(sql,
+                                        delegate.getParameterMetaData().getParameterCount(), delegate.getFetchSize()));
+                            }
+                            return result;
+                        } catch (InvocationTargetException failure) {
+                            throw failure.getCause();
+                        }
+                    });
         }
     }
 }

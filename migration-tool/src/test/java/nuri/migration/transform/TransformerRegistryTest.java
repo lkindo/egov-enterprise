@@ -21,6 +21,18 @@ class TransformerRegistryTest {
     private final TransformerRegistry registry = new TransformerRegistry();
 
     @Test
+    void builtinsRejectBinaryButExplicitBinaryTransformersRemainAvailable() {
+        byte[] bytes = {0, 1, -1};
+        assertThat(registry.apply(null, bytes)).isSameAs(bytes);
+        for (String name : new String[] {"trim", "upper", "lower", "date", "timestamp"}) {
+            assertThatThrownBy(() -> registry.apply(name, bytes))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+        registry.register("binary-length", value -> ((byte[]) value).length);
+        assertThat(registry.apply("binary-length", bytes)).isEqualTo(3);
+    }
+
+    @Test
     void 기본_등록_변환기가_모두_존재한다() {
         // `replaced boolean return with true/false` 뮤턴트를 양방향으로 잡는다.
         for (String name : new String[] { "trim", "upper", "lower", "date", "timestamp" }) {
