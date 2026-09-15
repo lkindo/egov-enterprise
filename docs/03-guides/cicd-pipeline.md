@@ -68,9 +68,18 @@ dependency-submission.yml (pull_request, contents:read)
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
 `migration-validate-verify`의 CI 실행 상한은 60분이고 다른 PIT 스코프는 30분이다.
-[2026-09-16 실측](https://github.com/lkindo/egov-enterprise/actions/runs/35010396436/job/104528840104)에서
-실제 DB 시험의 기본 커버리지 계산 456초 후 변이 실행이 이어지다 기존 30분 작업 제한으로 취소됐다.
-실행 시간만 구분하며 대상 클래스·시험·75% 임계값·전체 결과의 실패 집계는 유지한다.
+실제 DB를 포함한 실행은 [30분](https://github.com/lkindo/egov-enterprise/actions/runs/35010396436/job/104528840104)과
+[60분](https://github.com/lkindo/egov-enterprise/actions/runs/35016770629/job/104548958474) 상한에서 취소됐다.
+두 번째 실행의 불완전한 보고서에 남은 식별자·정렬 검증 변이 6건은 같은 경계를 검증하는 빠른 단위 테스트로 잡는다.
+[JUnit 5 PIT 플러그인](https://github.com/pitest/pitest-junit5-plugin/blob/1.2.1/src/main/java/org/pitest/junit5/JUnit5TestUnit.java)은
+커버리지 측정과 개별 변이 실행에서 클래스 초기화를 다시 수행하므로,
+DB 초기화 비용이 짧은 시험의 시간 예산을 넘을 수 있다. 이 설명이 각 CI 타임아웃의 원인을 확정하지는 않는다.
+메타데이터 시험의 `getColumns()` 모형도 조회마다 독립된 ResultSet을 만들고,
+행 밖·EOF·닫힘 상태의 getter는 SQLException을 발생시켜 실제 JDBC 계약을 지킨다.
+로컬 보완 검증은 기존 증분 기록을 보존하고 별도 기록으로 변이를 재계산한다.
+[PIT의 증분 최적화](https://pitest.org/quickstart/incremental_analysis/)가 시험만 바뀐 경우에도
+이전 무한 루프 결과를 재사용할 수 있기 때문이다.
+대상 클래스·DB 시험·75% 임계값·전체 결과의 실패 집계는 유지한다.
 작업별 시간 표현식은 [GitHub의 matrix 지원](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability)을 사용하며
 기존 required-checks 계약이 다른 범위 확대·상한 변경·삭제·주석 대체·중복 키를 실패로 확인한다.
 

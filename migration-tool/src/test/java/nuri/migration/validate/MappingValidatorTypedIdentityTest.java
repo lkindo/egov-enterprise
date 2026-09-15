@@ -23,16 +23,21 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 class MappingValidatorTypedIdentityTest {
@@ -41,6 +46,57 @@ class MappingValidatorTypedIdentityTest {
 
     @TempDir
     Path temp;
+
+    @Test
+    void metadataFixtureHasIndependentScansAndRejectsOffRowAndClosedAccess() throws Exception {
+        JdbcTemplate jdbc = metadataJdbc(List.of(
+                new JdbcColumn("id", Types.BIGINT, "BIGINT"),
+                new JdbcColumn("amount", Types.DECIMAL, "DECIMAL")));
+        try (Connection connection = jdbc.getDataSource().getConnection()) {
+            DatabaseMetaData metadata = connection.getMetaData();
+            try (ResultSet first = metadata.getColumns("legacy", "app", "legacy_table", null);
+                 ResultSet second = metadata.getColumns("legacy", "app", "legacy_table", null)) {
+                assertThat(first).isNotSameAs(second);
+                assertMetadataRowUnavailable(first, "Metadata result set has no current row");
+                assertMetadataRowUnavailable(second, "Metadata result set has no current row");
+
+                assertThat(first.next()).isTrue();
+                assertThat(first.getString("TABLE_CAT")).isEqualTo("legacy");
+                assertThat(first.getString("TABLE_SCHEM")).isEqualTo("app");
+                assertThat(first.getString("TABLE_NAME")).isEqualTo("legacy_table");
+                assertThat(first.getString("COLUMN_NAME")).isEqualTo("id");
+                assertThat(first.getInt("DATA_TYPE")).isEqualTo(Types.BIGINT);
+                assertThat(first.getString("TYPE_NAME")).isEqualTo("BIGINT");
+                assertMetadataRowUnavailable(second, "Metadata result set has no current row");
+                assertThat(second.next()).isTrue();
+                assertThat(second.getString("COLUMN_NAME")).isEqualTo("id");
+
+                assertThat(first.next()).isTrue();
+                assertThat(first.getString("COLUMN_NAME")).isEqualTo("amount");
+                assertThat(first.getInt("DATA_TYPE")).isEqualTo(Types.DECIMAL);
+                assertThat(second.getString("COLUMN_NAME")).isEqualTo("id");
+                assertThat(first.next()).isFalse();
+                assertThat(first.next()).isFalse();
+                assertMetadataRowUnavailable(first, "Metadata result set has no current row");
+                first.close();
+                first.close();
+                assertThat(first.isClosed()).isTrue();
+                assertThatThrownBy(first::next).isInstanceOf(SQLException.class)
+                        .hasMessage("Metadata result set is closed");
+                assertMetadataRowUnavailable(first, "Metadata result set is closed");
+
+                assertThat(second.isClosed()).isFalse();
+                assertThat(second.next()).isTrue();
+                assertThat(second.getString("COLUMN_NAME")).isEqualTo("amount");
+                assertThat(second.next()).isFalse();
+                assertMetadataRowUnavailable(second, "Metadata result set has no current row");
+            }
+            try (ResultSet third = metadata.getColumns("legacy", "app", "legacy_table", null)) {
+                assertThat(third.next()).isTrue();
+                assertThat(third.getString("COLUMN_NAME")).isEqualTo("id");
+            }
+        }
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"legacy_table", "app.legacy_table"})
@@ -440,8 +496,6 @@ class MappingValidatorTypedIdentityTest {
         DataSource dataSource = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         DatabaseMetaData metadata = mock(DatabaseMetaData.class);
-        ResultSet rows = mock(ResultSet.class);
-        AtomicInteger cursor = new AtomicInteger(-1);
 
         given(dataSource.getConnection()).willReturn(connection);
         given(connection.getMetaData()).willReturn(metadata);
@@ -449,15 +503,57 @@ class MappingValidatorTypedIdentityTest {
         given(connection.getSchema()).willReturn(identity.defaultSchema());
         given(metadata.getDatabaseProductName()).willReturn(identity.product());
         given(metadata.getDriverName()).willReturn(identity.driver());
-        given(metadata.getColumns(any(), any(), any(), any())).willReturn(rows);
-        given(rows.next()).willAnswer(ignored -> cursor.incrementAndGet() < columns.size());
-        given(rows.getString("TABLE_CAT")).willReturn(identity.catalog());
-        given(rows.getString("TABLE_SCHEM")).willReturn(identity.schema());
-        given(rows.getString("TABLE_NAME")).willReturn(identity.table());
-        given(rows.getString("COLUMN_NAME")).willAnswer(ignored -> columns.get(cursor.get()).name());
-        given(rows.getInt("DATA_TYPE")).willAnswer(ignored -> columns.get(cursor.get()).jdbcType());
-        given(rows.getString("TYPE_NAME")).willAnswer(ignored -> columns.get(cursor.get()).typeName());
+        given(metadata.getColumns(any(), any(), any(), any()))
+                .willAnswer(ignored -> metadataRows(columns, identity));
         return new JdbcTemplate(dataSource);
+    }
+
+    private static ResultSet metadataRows(List<JdbcColumn> columns, MetadataIdentity identity) throws SQLException {
+        ResultSet rows = mock(ResultSet.class);
+        AtomicInteger cursor = new AtomicInteger(-1);
+        AtomicBoolean closed = new AtomicBoolean();
+        given(rows.next()).willAnswer(ignored -> {
+            if (closed.get()) throw new SQLException("Metadata result set is closed");
+            if (cursor.get() < columns.size()) cursor.incrementAndGet();
+            return cursor.get() < columns.size();
+        });
+        given(rows.getString(anyString())).willAnswer(invocation -> {
+            JdbcColumn column = metadataCurrentColumn(columns, cursor, closed);
+            return switch (invocation.<String>getArgument(0)) {
+                case "TABLE_CAT" -> identity.catalog();
+                case "TABLE_SCHEM" -> identity.schema();
+                case "TABLE_NAME" -> identity.table();
+                case "COLUMN_NAME" -> column.name();
+                case "TYPE_NAME" -> column.typeName();
+                default -> throw new SQLException("Unsupported metadata string column");
+            };
+        });
+        given(rows.getInt(anyString())).willAnswer(invocation -> {
+            JdbcColumn column = metadataCurrentColumn(columns, cursor, closed);
+            if (!"DATA_TYPE".equals(invocation.<String>getArgument(0))) {
+                throw new SQLException("Unsupported metadata integer column");
+            }
+            return column.jdbcType();
+        });
+        given(rows.isClosed()).willAnswer(ignored -> closed.get());
+        doAnswer(ignored -> { closed.set(true); return null; }).when(rows).close();
+        return rows;
+    }
+
+    private static JdbcColumn metadataCurrentColumn(List<JdbcColumn> columns,
+                                                    AtomicInteger cursor, AtomicBoolean closed) throws SQLException {
+        if (closed.get()) throw new SQLException("Metadata result set is closed");
+        if (cursor.get() < 0 || cursor.get() >= columns.size()) {
+            throw new SQLException("Metadata result set has no current row");
+        }
+        return columns.get(cursor.get());
+    }
+
+    private static void assertMetadataRowUnavailable(ResultSet rows, String message) {
+        for (String column : List.of("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "COLUMN_NAME", "TYPE_NAME")) {
+            assertThatThrownBy(() -> rows.getString(column)).isInstanceOf(SQLException.class).hasMessage(message);
+        }
+        assertThatThrownBy(() -> rows.getInt("DATA_TYPE")).isInstanceOf(SQLException.class).hasMessage(message);
     }
 
     private record JdbcColumn(String name, int jdbcType, String typeName) {}

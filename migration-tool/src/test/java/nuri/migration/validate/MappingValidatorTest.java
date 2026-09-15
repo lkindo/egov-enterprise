@@ -9,16 +9,30 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /**
  * 매핑 선언(mapping.yml) <b>사전 검증</b> 테스트.
@@ -70,6 +84,129 @@ class MappingValidatorTest {
 
     private static ColumnMapping col(String source, String target) {
         return new ColumnMapping(source, target, null, null, null, null, null);
+    }
+
+    private static JdbcTemplate orderingMetadataJdbc() throws Exception {
+        DataSource dataSource = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        given(dataSource.getConnection()).willReturn(connection);
+        given(connection.getMetaData()).willReturn(metadata);
+        given(connection.getCatalog()).willReturn("fixture_catalog");
+        given(connection.getSchema()).willReturn("fixture_schema");
+        given(metadata.getColumns(any(), any(), any(), any())).willAnswer(ignored -> {
+            ResultSet rows = mock(ResultSet.class);
+            AtomicInteger cursor = new AtomicInteger(-1);
+            AtomicBoolean closed = new AtomicBoolean();
+            given(rows.next()).willAnswer(invocation -> {
+                if (closed.get()) throw new SQLException("Metadata result set is closed");
+                if (cursor.get() < 2) cursor.incrementAndGet();
+                return cursor.get() < 2;
+            });
+            given(rows.getString(anyString())).willAnswer(invocation -> {
+                if (closed.get()) throw new SQLException("Metadata result set is closed");
+                if (cursor.get() < 0 || cursor.get() >= 2) {
+                    throw new SQLException("Metadata result set has no current row");
+                }
+                return switch (invocation.getArgument(0, String.class)) {
+                    case "TABLE_CAT" -> "fixture_catalog";
+                    case "TABLE_SCHEM" -> "fixture_schema";
+                    case "TABLE_NAME" -> "legacy_user";
+                    case "COLUMN_NAME" -> cursor.get() == 0 ? "id" : "tenant_id";
+                    case "TYPE_NAME" -> "BIGINT";
+                    default -> throw new SQLException("Unsupported metadata string column");
+                };
+            });
+            given(rows.getInt(anyString())).willAnswer(invocation -> {
+                if (closed.get()) throw new SQLException("Metadata result set is closed");
+                if (cursor.get() < 0 || cursor.get() >= 2) {
+                    throw new SQLException("Metadata result set has no current row");
+                }
+                if (!"DATA_TYPE".equals(invocation.getArgument(0, String.class))) {
+                    throw new SQLException("Unsupported metadata integer column");
+                }
+                return Types.BIGINT;
+            });
+            given(rows.isClosed()).willAnswer(invocation -> closed.get());
+            doAnswer(invocation -> { closed.set(true); return null; }).when(rows).close();
+            return rows;
+        });
+        return new JdbcTemplate(dataSource);
+    }
+
+    @Test
+    @DisplayName("테이블과 정렬·타깃 키에는 SQL 구문이나 한정 컬럼명을 허용하지 않는다")
+    void unsafeTableAndOrderingIdentifiersFailClosed() {
+        List<Map.Entry<String, TableMapping>> cases = List.of(
+                Map.entry("소스 테이블", new TableMapping(
+                        "fixture_schema.legacy_user;SELECT 1", "tb_user_info", null,
+                        null, List.of(), null, List.of(), null)),
+                Map.entry("타깃 테이블", new TableMapping(
+                        "legacy_user", "tb_user_info--comment", null,
+                        null, List.of(), null, List.of(), null)),
+                Map.entry("orderBy", new TableMapping(
+                        "legacy_user", "tb_user_info", null,
+                        "id DESC", List.of(), null, List.of(), null)),
+                Map.entry("orderByKeys", new TableMapping(
+                        "legacy_user", "tb_user_info", null,
+                        null, List.of("id", "tenant_id DESC"), null, List.of(), null)),
+                Map.entry("targetKey", new TableMapping(
+                        "legacy_user", "tb_user_info", null,
+                        null, List.of(), "public.user_id", List.of(), null)));
+
+        for (Map.Entry<String, TableMapping> entry : cases) {
+            ValidationResult result = withSchema().validate(spec(List.of(entry.getValue())));
+
+            assertThat(result.ok()).as(entry.getKey()).isFalse();
+            assertThat(result.errors()).as(entry.getKey()).singleElement().asString()
+                    .contains(entry.getKey(), "식별자 오류");
+            assertThat(result.warnings()).as(entry.getKey()).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("단일 정렬과 복합 정렬을 각각 선언하면 안전한 한정 테이블명과 함께 허용한다")
+    void singleOrCompositeOrderingIsAcceptedWhenDeclaredSeparately() {
+        List<TableMapping> cases = List.of(
+                new TableMapping("fixture_schema.legacy_user", "public.tb_user_info", null,
+                        "id_2", List.of(), "user_id", List.of(), null),
+                new TableMapping("fixture_schema.legacy_user", "public.tb_user_info", null,
+                        null, List.of("tenant_id", "id_2"), "user_id", List.of(), null));
+
+        for (TableMapping table : cases) {
+            ValidationResult result = withSchema().validate(spec(List.of(table)));
+
+            assertThat(result.errors()).as("orderBy=%s, orderByKeys=%s",
+                    table.orderBy(), table.orderByKeys()).isEmpty();
+            assertThat(result.ok()).isTrue();
+            assertThat(result.warnings()).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("실 source의 모든 정렬 컬럼을 대조하고 없는 단일·복합 키는 거절한다")
+    void liveSourceRequiresEveryEffectiveOrderingColumn() throws Exception {
+        List<Map.Entry<TableMapping, List<String>>> cases = List.of(
+                Map.entry(new TableMapping("legacy_user", "tb_user_info", null,
+                        "ID", List.of(), null, List.of(), null), List.of()),
+                Map.entry(new TableMapping("legacy_user", "tb_user_info", null,
+                        null, List.of("TENANT_ID", "ID"), null, List.of(), null), List.of()),
+                Map.entry(new TableMapping("legacy_user", "tb_user_info", null,
+                        "missing_id", List.of(), null, List.of(), null),
+                        List.of("실 source에 없는 order key: legacy_user.missing_id")),
+                Map.entry(new TableMapping("legacy_user", "tb_user_info", null,
+                        null, List.of("tenant_id", "missing_id"), null, List.of(), null),
+                        List.of("실 source에 없는 order key: legacy_user.missing_id")));
+
+        for (Map.Entry<TableMapping, List<String>> entry : cases) {
+            ValidationResult result = withSchema().validateLiveSource(
+                    spec(List.of(entry.getKey())), orderingMetadataJdbc());
+
+            assertThat(result.errors()).as("effectiveOrderKeys=%s",
+                    entry.getKey().effectiveOrderKeys()).containsExactlyElementsOf(entry.getValue());
+            assertThat(result.ok()).isEqualTo(entry.getValue().isEmpty());
+            assertThat(result.warnings()).isEmpty();
+        }
     }
 
     @Nested
