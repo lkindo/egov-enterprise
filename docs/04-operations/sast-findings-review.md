@@ -1,5 +1,11 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-15 Oracle 통합 시험 추가에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 Oracle Testcontainers의 `testImplementation`과 ojdbc11의 `testRuntimeOnly` 두 선언이 추가됐다. 기존 H2의 `testImplementation`, 운영 의존성 및 bootJar 설정은 동일하다. 탐지 원문인 `api-server/src/main/resources/application-test.yml`의 `jdbc:h2:mem:testdb` 설정과 다른 보완 소스 5개의 해시도 일치한다. 실제 migration 배포 JAR의 `BOOT-INF/lib`에서 H2·ojdbc·Testcontainers 라이브러리가 모두 없음을 확인했다.
+
+따라서 위 보완 소스 하나와 승인 목록의 registry 해시를 재결속한다. 예외 6건의 탐지 규칙·파일·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 재검토는 [Oracle 검증 범위](readiness-followups.md#이관-oracle-후속-단계-실측)의 테스트 의존성 추가에 한정되며, 소스·방어 변형과 미등록 탐지의 거부는 기존 예외·정책 계약으로 재검증한다. 현재 CodeQL 결과와의 일치는 해당 커밋의 required `secure-coding` CI에서 확인한다.
+
 ## 2026-09-14 비밀번호 변경 전 발급 토큰 거부에 따른 보완 방어 재검토
 
 `foundation/.../JwtTokenProvider.java`(SAST-FP-001·002·008의 보완 소스)의 `getAuthentication`이 계정 상태 검사 뒤에 **비밀번호 변경 전에 발급된 access token을 거부**하는 검사를 하나 더 수행한다(DEC-OPS-094). `business-core/.../JpaUserAuthAdapter.java`(SAST-FP-008의 보완 소스)는 그 비교에 쓸 마지막 비밀번호 변경 시각을 인증 주체에 싣는 매핑만 추가됐다.
