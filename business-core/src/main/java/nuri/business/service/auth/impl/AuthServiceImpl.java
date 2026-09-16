@@ -129,7 +129,9 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.INVALID_TOKEN));
 
         if (storedToken.getExprtnDt().isBefore(java.time.Instant.now())) {
-            refreshTokenRepository.delete(storedToken);
+            // [2026-09-16] 별도 트랜잭션으로 지운다. 아래 예외가 RuntimeException 이라 같은 트랜잭션에서
+            //   지우면 롤백이 삭제까지 되돌려, 종전에는 이 정리가 한 번도 커밋되지 않았다.
+            refreshTokenRepository.deleteIfCurrent(storedToken.getUserId(), refreshToken);
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
 
@@ -149,8 +151,15 @@ public class AuthServiceImpl implements AuthService {
         java.time.Instant absoluteExpiry = storedToken.getExprtnDt();
         String rotatedRefreshToken = jwtTokenProvider.createRefreshToken(
                 userId, java.util.Date.from(absoluteExpiry));
-        storedToken.updateToken(rotatedRefreshToken, absoluteExpiry);
-        refreshTokenRepository.save(storedToken);
+
+        //   ⚠ **회전은 원자적이어야 한다** — 제시된 토큰이 아직 저장값일 때만 바꾼다(2026-09-16).
+        //   종전처럼 읽어 온 엔티티를 덮어쓰면, 같은 토큰으로 동시에 재발급한 두 요청이 **둘 다 성공**하고
+        //   마지막 저장만 남는다. 진 쪽은 서버가 이미 무효화한 리프레시 토큰을 받아 들고 있다가
+        //   다음 재발급에서 이유 없이 로그아웃된다 — 실패가 최대 1시간 뒤에 드러나는 조용한 결함이다.
+        if (refreshTokenRepository.rotateIfCurrent(
+                userId, refreshToken, rotatedRefreshToken, java.time.LocalDateTime.now()) != 1) {
+            throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
+        }
 
         return TokenResponse.from(newAccessToken, rotatedRefreshToken, principal);
     }
