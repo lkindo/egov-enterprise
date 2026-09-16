@@ -55,6 +55,39 @@ class ZeroDowntimeMigrationLinterTest {
     private static final Pattern STRUCTURED_WAIVER_ID = Pattern.compile("ZDM-\\d{4}-\\d{4}");
     private static final Pattern SHA256 = Pattern.compile("[a-f0-9]{64}");
 
+    /**
+     * Contract 는 선행 Expand 가 <b>배포된 뒤</b> 최소 이 기간을 관측해야 한다.
+     *
+     * <p>버전 순서만 보면 Expand 와 Contract 를 같은 릴리스에 함께 실을 수 있다 — 그러면 구버전
+     * 인스턴스가 살아 있는 동안 구조가 사라져 무중단이 깨진다. 무중단 가이드 §3 의 권고 기준
+     * (최소 1개 릴리스이면서 7일)을 여기서 강제한다.
+     */
+    private static final int EXPAND_OBSERVATION_MIN_DAYS = 7;
+    private static final Pattern RELEASE_TAG = Pattern.compile("v\\d+\\.\\d+\\.\\d+");
+
+    /**
+     * 관측 기간 정책(2026-09-16) 이전에 승인된 Contract waiver 다. 당시에는 Expand 와 Contract 를
+     * 같은 배치로 배포했으므로 배포·관측 기록이 존재하지 않는다.
+     *
+     * <p>소급 승인이 아니라 <b>동결</b>이다. 면제는 {@code id|대상|expandMigration} 조합이 정확히
+     * 일치할 때만 성립한다 — 같은 id 를 다른 대상에 재사용하거나 승인일을 되돌려 적어도 면제되지
+     * 않는다.
+     */
+    private static final Set<String> PRE_POLICY_CONTRACT_WAIVERS = Set.of(
+            "ZDM-2026-0006|api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql|api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+            "ZDM-2026-0007|api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql|api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+            "ZDM-2026-0008|api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql|api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+            "ZDM-2026-0009|api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql|api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+            "ZDM-2026-0010|api-server/src/main/resources/db/migration/V2_90__retire_blog_domain.sql|api-server/src/main/resources/db/migration/V2_89__fence_retired_blog_writes.sql",
+            "ZDM-2026-0030|api-server/src/main/resources/db/migration/V2_93__contract_standard_text_lengths.sql|api-server/src/main/resources/db/migration/V2_92__fence_standard_lengths_and_normalize_sms.sql",
+            "ZDM-2026-0031|api-server/src/main/resources/db/migration/V2_93__contract_standard_text_lengths.sql|api-server/src/main/resources/db/migration/V2_92__fence_standard_lengths_and_normalize_sms.sql",
+            "ZDM-2026-0032|api-server/src/main/resources/db/migration/V2_93__contract_standard_text_lengths.sql|api-server/src/main/resources/db/migration/V2_92__fence_standard_lengths_and_normalize_sms.sql",
+            "ZDM-2026-0033|api-server/src/main/resources/db/migration/V2_93__contract_standard_text_lengths.sql|api-server/src/main/resources/db/migration/V2_92__fence_standard_lengths_and_normalize_sms.sql",
+            "ZDM-2026-0034|api-server/src/main/resources/db/migration/V2_93__contract_standard_text_lengths.sql|api-server/src/main/resources/db/migration/V2_92__fence_standard_lengths_and_normalize_sms.sql",
+            "ZDM-2026-0038|api-server/src/main/resources/db/migration/V2_96__contract_institution_times_and_encrypted_rrno.sql|api-server/src/main/resources/db/migration/V2_95__fence_institution_times_and_menu_program_refs.sql",
+            "ZDM-2026-0039|api-server/src/main/resources/db/migration/V2_96__contract_institution_times_and_encrypted_rrno.sql|api-server/src/main/resources/db/migration/V2_95__fence_institution_times_and_menu_program_refs.sql",
+            "ZDM-2026-0040|api-server/src/main/resources/db/migration/V2_96__contract_institution_times_and_encrypted_rrno.sql|api-server/src/main/resources/db/migration/V2_94__expand_program_keys_and_encrypted_rrno.sql");
+
     private static final Pattern FORBIDDEN_DROP = Pattern.compile(
             "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+DROP\\s+(?:COLUMN\\s+)?(?!CONSTRAINT\\b)\\w+");
     private static final Pattern FORBIDDEN_ALTER_TYPE = Pattern.compile(
@@ -150,6 +183,10 @@ class ZeroDowntimeMigrationLinterTest {
         Path sandbox = Files.createTempDirectory("zdm-expand-rule").toAbsolutePath().normalize();
         Path migrationDir = sandbox.resolve("db").resolve("migration");
         Files.createDirectories(migrationDir);
+        Files.createDirectories(sandbox.resolve("docs"));
+        // 선행 Expand 규칙을 통과하려면 배포·관측 기록도 있어야 한다 — 그 축은 아래 테스트가 따로 본다.
+        writeReleaseLog(sandbox, "docs/release-log.md", "v0.2.0", LocalDate.now().minusDays(30),
+                "V2_13__expand_add_column.sql");
         String contractSql = "db/migration/V2_16__contract_drop_column.sql";
         String earlier = "db/migration/V2_13__expand_add_column.sql";
         String later = "db/migration/V2_18__expand_after_contract.sql";
@@ -200,15 +237,130 @@ class ZeroDowntimeMigrationLinterTest {
                 .isEqualTo(Integer.MIN_VALUE);
     }
 
+    /**
+     * 관측 기간 규칙의 red 증명 — 합성 입력이라 저장소 SQL·registry 를 건드리지 않는다.
+     *
+     * <p>[무엇이 red 여야 하는가] ① 배포 기록 없음 ② 태그 형식 ③ 미래 배포일 ④ 관측 기간 미달
+     * ⑤ 근거 파일 없음 ⑥ 기록에 그 태그 행 없음 ⑦ 행의 배포일 불일치 ⑧ 행이 선행 Expand 를
+     * 싣지 않음 ⑨ 같은 릴리스에 Contract 가 함께 실림.
+     */
+    @Test
+    @DisplayName("Contract waiver는 선행 Expand의 배포와 7일 관측을 기록으로 증명해야 한다")
+    void contractWaiverRequiresObservedExpandRelease() throws IOException {
+        Path sandbox = Files.createTempDirectory("zdm-observation").toAbsolutePath().normalize();
+        Path migrationDir = sandbox.resolve("db").resolve("migration");
+        Files.createDirectories(migrationDir);
+        Files.createDirectories(sandbox.resolve("docs"));
+        String contractSql = "db/migration/V2_16__contract_drop_column.sql";
+        String expandSql = "db/migration/V2_13__expand_add_column.sql";
+        writeFixture(sandbox, contractSql, "ALTER TABLE tb_zdm_fixture DROP COLUMN legacy_col;");
+        writeFixture(sandbox, expandSql, "ALTER TABLE tb_zdm_fixture ADD COLUMN new_col varchar(30);");
+        LocalDate today = LocalDate.parse("2026-10-01");
+        LocalDate deployedAt = today.minusDays(8);
+        writeReleaseLog(sandbox, "docs/release-log.md", "v0.2.0", deployedAt,
+                "V2_13__expand_add_column.sql");
+
+        // 관측 기간을 지난 배포 기록이 있으면 통과한다.
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("v0.2.0", deployedAt, "docs/release-log.md"), today)).isEmpty();
+
+        // ① 배포 기록이 없다.
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql, null, today))
+                .anySatisfy(message -> assertThat(message).contains("expandRelease"));
+
+        // ② 태그가 릴리스 형식이 아니다.
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("0.2.0", deployedAt, "docs/release-log.md"), today))
+                .anySatisfy(message -> assertThat(message).contains("vX.Y.Z"));
+
+        // ③ 배포일이 미래다 — 아직 일어나지 않은 일을 근거로 쓸 수 없다.
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("v0.2.0", today.plusDays(1), "docs/release-log.md"), today))
+                .anySatisfy(message -> assertThat(message).contains("미래"));
+
+        // ④ 관측 기간이 지나지 않았다.
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("v0.2.0", today.minusDays(6), "docs/release-log.md"), today))
+                .anySatisfy(message -> assertThat(message).contains("관측 기간"));
+
+        // ⑤ 근거 파일이 없다.
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("v0.2.0", deployedAt, "docs/missing-log.md"), today))
+                .anySatisfy(message -> assertThat(message).contains("evidence"));
+
+        // ⑥ 기록에 그 태그 행이 없다.
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("v0.9.0", deployedAt, "docs/release-log.md"), today))
+                .anySatisfy(message -> assertThat(message).contains("행이 없습니다"));
+
+        // ⑦ 기록의 배포일이 원장과 다르다.
+        writeReleaseLog(sandbox, "docs/other-date-log.md", "v0.2.0", today.minusDays(20),
+                "V2_13__expand_add_column.sql");
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("v0.2.0", deployedAt, "docs/other-date-log.md"), today))
+                .anySatisfy(message -> assertThat(message).contains("배포일이 deployedAt"));
+
+        // ⑧ 태그 행이 선행 Expand 를 싣지 않았다.
+        writeReleaseLog(sandbox, "docs/other-log.md", "v0.2.0", deployedAt, "V2_11__unrelated_change.sql");
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("v0.2.0", deployedAt, "docs/other-log.md"), today))
+                .anySatisfy(message -> assertThat(message).contains("싣지 않았습니다"));
+
+        // ⑨ 선행 Expand 와 Contract 가 같은 릴리스에 함께 실렸다 — 순서 검사만으로는 잡히지 않는다.
+        writeReleaseLog(sandbox, "docs/same-release-log.md", "v0.2.0", deployedAt,
+                "V2_13__expand_add_column.sql · V2_16__contract_drop_column.sql");
+        assertThat(expandViolations(sandbox, migrationDir, contractSql, expandSql,
+                release("v0.2.0", deployedAt, "docs/same-release-log.md"), today))
+                .anySatisfy(message -> assertThat(message).contains("같은 릴리스"));
+    }
+
+    /** 합성 릴리스 기록 — 린터가 읽는 마크다운 표와 같은 모양이다. */
+    private static void writeReleaseLog(
+            Path sandbox, String relativePath, String tag, LocalDate deployedAt, String migrations)
+            throws IOException {
+        writeFixture(sandbox, relativePath, String.join(System.lineSeparator(),
+                "| 릴리스 태그 | 배포일(UTC) | 환경 | 포함 마이그레이션 | 근거 |",
+                "|---|---|---|---|---|",
+                "| " + tag + " | " + deployedAt + " | institution-production | " + migrations
+                        + " | 합성 픽스처 |"));
+    }
+
+    private static com.fasterxml.jackson.databind.node.ObjectNode release(
+            String tag, LocalDate deployedAt, String evidence) {
+        com.fasterxml.jackson.databind.node.ObjectNode node = JSON.createObjectNode();
+        node.put("tag", tag);
+        node.put("deployedAt", deployedAt.toString());
+        node.put("environment", "institution-production");
+        node.put("evidence", evidence);
+        return node;
+    }
+
     private static List<String> expandViolations(
             Path repoRoot, Path migrationDir, String waivedPath, String expandPath) {
+        return expandViolations(repoRoot, migrationDir, waivedPath, expandPath,
+                validRelease(LocalDate.now().minusDays(30)), LocalDate.now());
+    }
+
+    private static List<String> expandViolations(
+            Path repoRoot, Path migrationDir, String waivedPath, String expandPath,
+            com.fasterxml.jackson.databind.node.ObjectNode release, LocalDate today) {
         com.fasterxml.jackson.databind.node.ObjectNode entry = JSON.createObjectNode();
+        entry.put("id", "ZDM-2099-0001");
         if (expandPath != null) {
             entry.put("expandMigration", expandPath);
         }
+        if (release != null) {
+            entry.set("expandRelease", release);
+        }
         List<String> violations = new ArrayList<>();
-        validateExpandPrecedesContract(repoRoot, migrationDir, entry, waivedPath, "waivers[0]", violations);
+        validateExpandPrecedesContract(
+                repoRoot, migrationDir, entry, waivedPath, "waivers[0]", today, violations);
         return violations;
+    }
+
+    /** 기본 합성 릴리스 — 관측 기간을 지난 유효한 배포다. */
+    private static com.fasterxml.jackson.databind.node.ObjectNode validRelease(LocalDate deployedAt) {
+        return release("v0.2.0", deployedAt, "docs/release-log.md");
     }
     private static void validateWaiverRegistry(
             Path repoRoot,
@@ -244,6 +396,12 @@ class ZeroDowntimeMigrationLinterTest {
         if (!root.path("legacyDebtPolicy").asText().toLowerCase()
                 .contains("not retroactive approval")) {
             violations.add("legacyDebtPolicy에 기존 marker가 소급 승인이 아님을 명시해야 합니다.");
+        }
+        String contractReleasePolicy = root.path("contractReleasePolicy").asText().toLowerCase();
+        if (!contractReleasePolicy.contains("observation window")
+                || !contractReleasePolicy.contains("not retroactive approval")) {
+            violations.add("contractReleasePolicy에 관측 기간 규칙과 기존 waiver가 소급 승인이"
+                    + " 아님을 명시해야 합니다.");
         }
 
         LocalDate today = LocalDate.now();
@@ -423,7 +581,7 @@ class ZeroDowntimeMigrationLinterTest {
             }
             resolveRegisteredMigrationPath(repoRoot, migrationDir, path, label, violations);
             validateEvidence(repoRoot, evidence, label, violations);
-            validateExpandPrecedesContract(repoRoot, migrationDir, entry, path, label, violations);
+            validateExpandPrecedesContract(repoRoot, migrationDir, entry, path, label, today, violations);
 
             LocalDate approvedAt = parseDate(approvedAtText, label + ".approvedAt", violations);
             LocalDate expiresAt = parseDate(expiresAtText, label + ".expiresAt", violations);
@@ -548,7 +706,7 @@ class ZeroDowntimeMigrationLinterTest {
      */
     private static void validateExpandPrecedesContract(
             Path repoRoot, Path migrationDir, JsonNode entry, String waivedPath,
-            String label, List<String> violations) {
+            String label, LocalDate today, List<String> violations) {
         Path waived = repoRoot.resolve(waivedPath).toAbsolutePath().normalize();
         String waivedSql;
         try {
@@ -587,7 +745,112 @@ class ZeroDowntimeMigrationLinterTest {
         } else if (order >= 0) {
             violations.add(label + ": expandMigration은 waiver 대상보다 앞선 버전이어야 합니다 — "
                     + expandPath + " ≥ " + waivedPath);
+        } else {
+            validateExpandReleaseObservation(
+                    repoRoot, entry, waivedPath, expandPath, label, today, violations);
         }
+    }
+
+    /**
+     * 선행 Expand 가 <b>먼저 배포되고 관측 기간을 지났는지</b>를 기록으로 확인한다.
+     *
+     * <p>[왜 필요한가] 버전 순서 검사는 두 migration 의 선후만 본다. 같은 릴리스에 함께 실으면
+     * 구버전 인스턴스가 살아 있는 동안 구조가 사라지므로 무중단이 깨지는데, 순서 검사만으로는
+     * 그것을 구분할 수 없다.
+     *
+     * <p>[무엇을 증명하고 무엇을 증명하지 않는가] 이 검사는 저장소 안의 릴리스 기록과 날짜를
+     * 대조한다. 실제로 그 릴리스가 운영에 배포됐는지는 운영 증거의 몫이며(GAP-ZDM-001) 여기서
+     * 증명하지 않는다. 기록이 없거나 읽을 수 없으면 통과가 아니라 위반이다.
+     */
+    private static void validateExpandReleaseObservation(
+            Path repoRoot, JsonNode entry, String waivedPath, String expandPath,
+            String label, LocalDate today, List<String> violations) {
+        String id = entry.path("id").asText("");
+        if (PRE_POLICY_CONTRACT_WAIVERS.contains(id + "|" + waivedPath + "|" + expandPath)) {
+            return; // 정책 시행 전 동결분 — 소급 승인이 아니다.
+        }
+
+        JsonNode release = entry.path("expandRelease");
+        if (!release.isObject()) {
+            violations.add(label + ": Contract waiver는 선행 Expand 의 배포·관측 기록을"
+                    + " expandRelease{tag,deployedAt,environment,evidence} 로 남겨야 합니다 — " + waivedPath);
+            return;
+        }
+        String tag = release.path("tag").asText("");
+        String environment = release.path("environment").asText("");
+        String evidence = release.path("evidence").asText("");
+        if (!RELEASE_TAG.matcher(tag).matches()) {
+            violations.add(label + ".expandRelease: tag는 vX.Y.Z 릴리스 태그여야 합니다 — " + tag);
+        }
+        if (environment.isBlank()) {
+            violations.add(label + ".expandRelease: 배포 환경을 적어야 합니다.");
+        }
+        LocalDate deployedAt = parseDate(
+                release.path("deployedAt").asText(""), label + ".expandRelease.deployedAt", violations);
+        if (deployedAt == null) {
+            violations.add(label + ".expandRelease: deployedAt이 없습니다 — " + waivedPath);
+        } else if (deployedAt.isAfter(today)) {
+            violations.add(label + ".expandRelease: deployedAt이 미래입니다 — " + deployedAt);
+        } else if (deployedAt.plusDays(EXPAND_OBSERVATION_MIN_DAYS).isAfter(today)) {
+            violations.add(label + ".expandRelease: 선행 Expand 배포 후 관측 기간("
+                    + EXPAND_OBSERVATION_MIN_DAYS + "일)이 지나지 않았습니다 — deployedAt=" + deployedAt);
+        }
+
+        if (evidence.startsWith("https://")) {
+            violations.add(label + ".expandRelease: evidence는 대조 가능한 저장소 릴리스 기록이어야 합니다.");
+            return;
+        }
+        validateEvidence(repoRoot, evidence, label + ".expandRelease", violations);
+        Path evidencePath = repoRoot.resolve(evidence).toAbsolutePath().normalize();
+        if (!evidencePath.startsWith(repoRoot) || !Files.isRegularFile(evidencePath)) {
+            return;
+        }
+        String releaseLog;
+        try {
+            releaseLog = normalizeNewlines(HarnessSourceIndex.read(evidencePath));
+        } catch (IOException failure) {
+            violations.add(label + ".expandRelease: 릴리스 기록을 읽지 못했습니다 — " + evidence);
+            return;
+        }
+        String row = releaseRow(releaseLog, tag);
+        if (row == null) {
+            violations.add(label + ".expandRelease: 릴리스 기록에 " + tag + " 행이 없습니다 — " + evidence);
+            return;
+        }
+        if (deployedAt != null && !row.contains(deployedAt.toString())) {
+            violations.add(label + ".expandRelease: " + tag + " 행의 배포일이 deployedAt(" + deployedAt
+                    + ")과 다릅니다 — 기록과 원장이 어긋난 채로 통과시키지 않는다.");
+        }
+        String expandFile = migrationFileName(expandPath);
+        String waivedFile = migrationFileName(waivedPath);
+        if (!row.contains(expandFile)) {
+            violations.add(label + ".expandRelease: " + tag + " 행이 선행 Expand 를 싣지 않았습니다 — "
+                    + expandFile);
+        }
+        if (row.contains(waivedFile)) {
+            violations.add(label + ".expandRelease: 선행 Expand 와 Contract 가 같은 릴리스(" + tag
+                    + ")에 함께 실렸습니다 — " + waivedFile);
+        }
+    }
+
+    /** 릴리스 기록(마크다운 표)에서 첫 칸이 태그인 행을 찾는다. 없으면 null 이고 호출부가 위반으로 다룬다. */
+    private static String releaseRow(String releaseLog, String tag) {
+        for (String line : releaseLog.split("\n")) {
+            String trimmed = line.trim();
+            if (!trimmed.startsWith("|")) {
+                continue;
+            }
+            String[] cells = trimmed.split("\\|");
+            if (cells.length > 1 && cells[1].trim().replace("`", "").equals(tag)) {
+                return trimmed;
+            }
+        }
+        return null;
+    }
+
+    private static String migrationFileName(String path) {
+        int slash = path.lastIndexOf('/');
+        return slash >= 0 ? path.substring(slash + 1) : path;
     }
 
     /**
