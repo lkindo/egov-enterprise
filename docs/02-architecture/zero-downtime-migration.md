@@ -41,7 +41,7 @@ PostgreSQL 스키마 변경의 구버전 호환성 파손 위험을 줄이기 �
 4. **Phase 4: Contract (축소 및 정리)**
    - 앱에서 기존 컬럼 참조가 완전히 제거된 후, 구버전 컬럼을 안전하게 `DROP`하고 인덱스/제약조건 네이밍 표준화를 이행.
    - **Linter Ignore (라인 단위)**: 신규 Contract 예외는 해당 SQL과 같은 라인에 `-- linter:ignore ZDM-YYYY-NNNN <인라인 사유>` 형식의 안정 ID와 사유를 두고, [`zdm-waivers.json`](../../config/governance/zdm-waivers.json)의 `waivers`에 같은 ID와 `path`, `directive`, `reason`, `owner`, `approvedAt`, `expiresAt`, `evidence`를 등록한다. marker와 레지스트리는 한 곳에만 1:1로 존재해야 하며, 미등록·중복·사유 누락·만료·경로 불일치는 하네스를 실패시킨다.
-   - **선행 Expand 결속**: 린터가 DROP/RENAME 등 Contract 성격으로 판정한 대상 SQL의 waiver는 `expandMigration`도 필요하다. 지목한 migration이 실제로 존재하고 대상보다 앞선 버전이어야 하며 같은 파일·후행 버전은 실패한다. 이는 버전 순서 검사이므로 두 migration을 서로 다른 release에 배포했다는 증거까지 대신하지 않는다.
+   - **선행 Expand 결속**: 린터가 DROP/RENAME 등 Contract 성격으로 판정한 대상 SQL의 waiver는 `expandMigration`도 필요하다. 지목한 migration이 실제로 존재하고 대상보다 앞선 버전이어야 하며 같은 파일·후행 버전은 실패한다. 또한 Contract waiver는 선행 Expand의 배포·관측 기록을 `expandRelease{tag,deployedAt,environment,evidence}`로 남겨야 한다. 린터는 릴리스 태그 형식, 미래 날짜, `deployedAt` 기준 7일 관측 기간, 그리고 [릴리스 기록](../04-operations/migration-release-log.md)의 해당 태그 행이 선행 Expand를 싣고 Contract 자신은 싣지 않았는지를 대조한다. 2026-09-16 이전 승인분 13건은 `id·path·expandMigration` 조합으로 동결하며 소급 승인이 아니다. 이 검사는 저장소 기록 대조이므로 실제 배포와 관측 증거는 여전히 운영 환경에서 확인한다.
    - **Linter Disable File (파일 단위)**: 파일 전체 면제가 불가피하면 `-- linter:disable-file ZDM-YYYY-NNNN <인라인 사유>`와 `directive: "disable-file"`을 같은 방식으로 등록한다. 모든 규칙을 끄므로 일반 해법으로 사용하지 않고 가능한 한 라인 단위 예외로 축소한다.
 
 ### 3.1 적용 완료 migration의 레거시 예외
