@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "52c56216c93486a55074392cfcaf2adfe8ef4002301981b680f1f337fab86103"
+    "inventoryHash": "6d6e9020a17324a8db39b72f518ba6a98d1f5b4df8caa1ecc03e2cfb9311d631"
   },
   "summary": {
     "sourceFileCount": 550,
-    "records": 389,
-    "syntaxOccurrences": 459,
-    "ambiguousRecords": 358,
-    "unverifiedRecords": 389,
+    "records": 390,
+    "syntaxOccurrences": 460,
+    "ambiguousRecords": 359,
+    "unverifiedRecords": 390,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 55,
-      "navigation-producer": 167,
+      "navigation-producer": 168,
       "page-redirect": 16,
       "query-builder": 21,
       "query-consumer": 56,
@@ -54,7 +54,7 @@
       "url-observer": 8
     },
     "bySurface": {
-      "navigation": 379,
+      "navigation": 380,
       "request-telemetry": 10
     }
   },
@@ -12218,6 +12218,44 @@
       "evidence": {
         "source": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
         "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-34B1E16ACD66CF",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
+      "producerFile": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/approvals/draft",
+      "targetCandidate": "/approvals",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/approvals",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
+        "detector": "router-navigation",
         "occurrenceCount": 1
       }
     },
