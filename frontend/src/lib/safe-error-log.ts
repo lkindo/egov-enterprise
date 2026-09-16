@@ -95,3 +95,16 @@ function userSentence(text: string): string | undefined {
   const trimmed = text.trim();
   return trimmed && !TRANSPORT_MESSAGE.test(trimmed) ? trimmed : undefined;
 }
+
+/**
+ * 취소된 요청인가 — 호출부가 스스로 끊었거나(AbortController: axios `ERR_CANCELED`) 인증 상태가
+ * 바뀌어 이전 결과를 버린 경우(`CanceledError`, authorization-state)다.
+ *
+ * <p>취소는 실패가 아니다. 이것을 `console.error` 로 남기면 e2e 오류 감지기가 진짜 오류와
+ * 구분하지 못한다 — 2026-09-16 main e2e 실측에서 배너·팝업 취소 2건이 flaky 를 만들어
+ * Playwright result 계약이 red 였다(재시도 통과는 green 이 아니다).
+ */
+export function isCanceledRequest(error: unknown): boolean {
+  if (!isRecord(error)) return false;
+  return error.code === 'ERR_CANCELED' || error.name === 'CanceledError';
+}
