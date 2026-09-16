@@ -54,7 +54,11 @@ describe('app shell accessibility source contract', () => {
     expect(headerClasses.split(/\s+/)).toContain('sticky');
     expect(headerClasses.split(/\s+/)).not.toContain('relative');
     expect(headerClasses.split(/\s+/)).not.toContain('overflow-hidden');
-    expect(layout).toContain('<html lang="ko" className="scroll-pt-16"');
+    // [2026-09-16 GAP-UIF-001] next/font 변수가 <html> 로 올라가며 className 이 식이 됐다.
+    //   이 계약이 고정하려는 사실은 문자열 형태가 아니라 "html 이 lang 과 scroll-pt-16 을 갖는다" 이다.
+    const htmlTag = layout.slice(layout.indexOf('<html'), layout.indexOf('<body'));
+    expect(htmlTag).toContain('lang="ko"');
+    expect(htmlTag).toContain('scroll-pt-16');
     expect(frame).toContain('scroll-mt-[var(--app-header-height)]');
     expect(frame).toContain('id="main-content"');
     expect(frame).toContain('data-sidebar-modal-background="skip-link"');

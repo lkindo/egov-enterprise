@@ -69,6 +69,29 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         expect(a11y.violations, JSON.stringify(a11y.violations.map((v) => v.id))).toEqual([]);
     });
 
+    // [2026-09-16 GAP-UIF-001] 번들한 Pretendard 가 실제로 쓰이는지는 선언이 아니라 계산된
+    //   글꼴로만 알 수 있다. 변수를 body 에 두면 :root 에서 계산되는 --font-sans 별칭이 무효가
+    //   되는데, 그때도 선언·preload 는 그대로라 소스만 보면 정상으로 보인다.
+    test('본문 글꼴은 번들한 Pretendard 로 계산된다', async ({ page, consoleGuard }) => {
+        consoleGuard.expectErrors([{
+            id: 'E2E-CORE-LOGIN-FONT-ME-401',
+            specScope: '01-core-base.spec.ts :: 본문 글꼴은 번들한 Pretendard 로 계산된다',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 4,
+            reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
+        await page.goto('/login?e2e=true');
+        await expect(page.getByRole('heading', { level: 1, name: '엔터프라이즈' })).toBeVisible({ timeout: 30000 });
+
+        const fontFamily = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
+        expect(fontFamily.toLowerCase()).toContain('pretendard');
+    });
+
     test.describe('Dashboard Integrity (Session Preserved)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
 
