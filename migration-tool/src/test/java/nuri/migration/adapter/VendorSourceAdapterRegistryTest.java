@@ -29,6 +29,8 @@ class VendorSourceAdapterRegistryTest {
                 .isInstanceOf(MariaDbSourceAdapter.class);
         assertThat(registry.resolve(connection("Microsoft SQL Server", "16.00.1140")))
                 .isInstanceOf(SqlServerSourceAdapter.class);
+        assertThat(registry.resolve(connection("CUBRID", "11.4.6.1963")))
+                .isInstanceOf(CubridSourceAdapter.class);
     }
 
     @Test
@@ -54,6 +56,8 @@ class VendorSourceAdapterRegistryTest {
                 .hasMessageNotContaining("missing-adapter");
         assertThatThrownBy(() -> registry.resolve(connection("Oracle", "19.0"), " "))
                 .isInstanceOf(SQLException.class);
+        assertThat(registry.resolve(connection("CUBRID", "11.4.6.1963"), "cubrid-catalog"))
+                .isInstanceOf(CubridSourceAdapter.class);
     }
 
     @Test

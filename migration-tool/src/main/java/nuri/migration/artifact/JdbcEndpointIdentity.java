@@ -9,12 +9,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /** Credential을 제외한 실제 JDBC 위치 의미만 canonical hash material로 만든다. */
 final class JdbcEndpointIdentity {
 
     private static final String ORACLE_PREFIX = "jdbc:oracle:";
     private static final String DB2_NETWORK_PREFIX = "jdbc:db2://";
+    private static final Pattern CUBRID_POSITIONAL_URL = Pattern.compile(
+            "(jdbc:cubrid:(?:\\[[^\\[\\]\\s]+\\]|[^:/?;#\\[\\]\\s]+):[0-9]+:[^:/?;#\\s]+:)"
+                    + "[^:]*:[^:]*:(\\?.*)?",
+            Pattern.CASE_INSENSITIVE);
 
     private JdbcEndpointIdentity() {}
 
@@ -27,7 +32,7 @@ final class JdbcEndpointIdentity {
     }
 
     private static String canonicalUrl(String url) {
-        String redacted = stripAuthorityUserInfo(stripOracleCredentials(url));
+        String redacted = stripAuthorityUserInfo(stripOracleCredentials(stripCubridCredentials(url)));
         int queryStart = redacted.indexOf('?');
         String beforeQuery = queryStart < 0 ? redacted : redacted.substring(0, queryStart);
         String query = queryStart < 0 ? "" : redacted.substring(queryStart + 1);
@@ -41,6 +46,17 @@ final class JdbcEndpointIdentity {
         appendProperties(canonical, ';', properties, false);
         appendProperties(canonical, '?', query, true);
         return canonical.toString();
+    }
+
+    private static String stripCubridCredentials(String url) {
+        // CUBRID puts credentials after host:port:database, outside ordinary URL properties.
+        // Match the complete positional form before splitting '?' or ';': either can be in
+        // a password, but ':' cannot. Incomplete/foreign URL forms keep their existing identity.
+        var match = CUBRID_POSITIONAL_URL.matcher(url);
+        if (!match.matches()) {
+            return url;
+        }
+        return match.group(1) + "::" + Objects.toString(match.group(2), "");
     }
 
     private static int db2ColonPropertyStart(String url) {

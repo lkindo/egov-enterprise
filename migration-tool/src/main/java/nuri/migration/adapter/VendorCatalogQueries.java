@@ -150,6 +150,29 @@ final class VendorCatalogQueries {
                         ObjectSupportGrade.TRANSFORMED));
     }
 
+    /** CUBRID 11.4.6 public catalog virtual classes, exercised with JDBC 11.3.1.0050. */
+    static List<VendorCatalogQuery> cubrid() {
+        return List.of(
+                q(ObjectKind.SCHEMA, "cubrid-user-schemas",
+                        "SELECT LOWER(name) AS schema_name FROM db_user WHERE (? IS NULL OR UPPER(name) = UPPER(?))",
+                        ObjectSupportGrade.METADATA_ONLY),
+                q(ObjectKind.PARTITION, "cubrid-partitions",
+                        "SELECT LOWER(owner_name) AS owner_name, class_name, partition_name, partition_type, partition_expr FROM db_partition WHERE (? IS NULL OR UPPER(owner_name) = UPPER(?))",
+                        ObjectSupportGrade.METADATA_ONLY),
+                q(ObjectKind.SEQUENCE, "cubrid-sequences",
+                        "SELECT LOWER(owner.name) AS owner_name, name, min_val, max_val, increment_val, cyclic FROM db_serial WHERE class_name IS NULL AND attr_name IS NULL AND (? IS NULL OR UPPER(owner.name) = UPPER(?))",
+                        ObjectSupportGrade.METADATA_ONLY),
+                q(ObjectKind.IDENTITY, "cubrid-identities",
+                        "SELECT LOWER(owner.name) AS owner_name, class_name, attr_name, class_name || '.' || attr_name AS column_name, name AS sequence_name, increment_val FROM db_serial WHERE class_name IS NOT NULL AND attr_name IS NOT NULL AND (? IS NULL OR UPPER(owner.name) = UPPER(?))",
+                        ObjectSupportGrade.METADATA_ONLY),
+                q(ObjectKind.TRIGGER, "cubrid-triggers",
+                        "SELECT LOWER(owner_name) AS owner_name, trigger_name, LOWER(target_owner_name) AS target_owner_name, target_class_name, action_type, action_time FROM db_trig WHERE (? IS NULL OR UPPER(owner_name) = UPPER(?))",
+                        ObjectSupportGrade.MANUAL),
+                q(ObjectKind.GRANT, "cubrid-object-privileges",
+                        "SELECT LOWER(a.owner_name) AS owner_name, a.object_name, a.object_type, a.grantee_name, a.auth_type, a.is_grantable FROM db_auth a JOIN db_class c ON c.owner_name = a.owner_name AND c.class_name = a.object_name AND c.class_type = a.object_type WHERE c.is_system_class = 'NO' AND (? IS NULL OR UPPER(a.owner_name) = UPPER(?))",
+                        ObjectSupportGrade.METADATA_ONLY));
+    }
+
     static List<VendorCatalogQuery> sqlServer() {
         return List.of(
                 q(ObjectKind.PARTITION, "sqlserver-partitions",
@@ -323,6 +346,49 @@ final class VendorCatalogQueries {
                     tableDependency("TABLE_SCHEMA", "TABLE_NAME"));
             case "mariadb-sequences" -> basic(
                     "TABLE_SCHEMA", "TABLE_NAME", List.of("TABLE_NAME"), Map.of("tableType", "TABLE_TYPE"));
+            case "cubrid-user-schemas" -> basic(
+                    "schema_name", "schema_name", List.of("schema_name"), Map.of());
+            case "cubrid-partitions" -> withDefinitionAndDependency(
+                    "owner_name", "partition_name", List.of("class_name", "partition_name"),
+                    "partition_expr", Map.of(
+                            "parentTable", "class_name",
+                            "partitionType", "partition_type"),
+                    tableDependency("owner_name", "class_name"));
+            case "cubrid-sequences" -> basic(
+                    "owner_name", "name", List.of("name"), Map.of(
+                            "minValue", "min_val",
+                            "maxValue", "max_val",
+                            "increment", "increment_val",
+                            "cycle", "cyclic"));
+            case "cubrid-identities" -> withDependency(
+                    "owner_name", "column_name", List.of("class_name", "attr_name"),
+                    Map.of(
+                            "parentTable", "class_name",
+                            "column", "attr_name",
+                            "sequence", "sequence_name",
+                            "increment", "increment_val"),
+                    DependencyProjection.of(
+                            ObjectKind.COLUMN,
+                            ResultColumnProjection.absent(),
+                            ResultColumnProjection.column("owner_name"),
+                            ResultColumnProjection.column("column_name")));
+            case "cubrid-triggers" -> withDependency(
+                    "owner_name", "trigger_name", List.of("target_owner_name", "target_class_name", "trigger_name"),
+                    Map.of(
+                            "parentSchema", "target_owner_name",
+                            "parentTable", "target_class_name",
+                            "actionType", "action_type",
+                            "actionTime", "action_time"),
+                    tableDependency("target_owner_name", "target_class_name"));
+            case "cubrid-object-privileges" -> sensitiveWithDependency(
+                    ResultColumnProjection.absent(), "owner_name", "auth_type",
+                    List.of("object_name", "grantee_name", "auth_type"),
+                    Map.of(
+                            "parentTable", "object_name",
+                            "objectType", "object_type",
+                            "grantable", "is_grantable"),
+                    Set.of("grantee_name"), false,
+                    tableDependency("owner_name", "object_name"));
             case "sqlserver-partitions" -> withDependency(
                     "schema_name", "name", List.of("name", "partition_number"),
                     Map.of(

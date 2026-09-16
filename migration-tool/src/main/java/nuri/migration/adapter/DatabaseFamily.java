@@ -8,5 +8,6 @@ public enum DatabaseFamily {
     TIBERO,
     MYSQL,
     MARIADB,
-    SQL_SERVER
+    SQL_SERVER,
+    CUBRID
 }

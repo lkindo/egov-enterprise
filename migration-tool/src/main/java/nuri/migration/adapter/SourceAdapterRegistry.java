@@ -34,6 +34,7 @@ public final class SourceAdapterRegistry {
                 new MySqlSourceAdapter(),
                 new MariaDbSourceAdapter(),
                 new SqlServerSourceAdapter(),
+                new CubridSourceAdapter(),
                 new JdbcMetadataSourceAdapter()));
     }
 

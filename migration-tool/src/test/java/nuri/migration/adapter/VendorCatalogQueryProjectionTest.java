@@ -56,6 +56,7 @@ class VendorCatalogQueryProjectionTest {
                 new TiberoSourceAdapter(),
                 new MySqlSourceAdapter(),
                 new MariaDbSourceAdapter(),
-                new SqlServerSourceAdapter());
+                new SqlServerSourceAdapter(),
+                new CubridSourceAdapter());
     }
 }

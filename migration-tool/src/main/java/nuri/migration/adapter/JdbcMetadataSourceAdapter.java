@@ -282,7 +282,7 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
         try (ResultSet rows = metadata.getColumns(
                 table.catalog(),
                 table.schema() == null ? null : escapedPattern(metadata, table.schema()),
-                escapedPattern(metadata, table.name()),
+                escapedPattern(metadata, metadataTableName(table.schema(), table.name())),
                 "%")) {
             while (rows.next()) {
                 // [2026-09-14 Oracle 26ai 실측] 열은 반드시 ResultSet 순서(왼쪽→오른쪽)대로 한 번씩 읽는다.
@@ -308,10 +308,10 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
                 int decimalDigits = rows.getInt("DECIMAL_DIGITS");
                 int nullability = rows.getInt("NULLABLE");
                 String remarks = rows.getString("REMARKS");
-                String defaultExpression = rows.getString("COLUMN_DEF");
+                String defaultExpression = columnDefaultExpression(rows);
                 int ordinal = rows.getInt("ORDINAL_POSITION");
-                String autoIncrement = rows.getString("IS_AUTOINCREMENT");
-                String generated = rows.getString("IS_GENERATEDCOLUMN");
+                String autoIncrement = columnAutoIncrement(rows);
+                String generated = columnGenerated(rows);
 
                 String path = childName(table.name(), column);
                 LinkedHashMap<String, String> columnAttributes = new LinkedHashMap<>();
@@ -398,7 +398,8 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
             return List.of();
         }
         LinkedHashMap<String, OrderedColumns> keys = new LinkedHashMap<>();
-        try (ResultSet rows = metadata.getPrimaryKeys(table.catalog(), table.schema(), table.name())) {
+        try (ResultSet rows = metadata.getPrimaryKeys(
+                table.catalog(), table.schema(), metadataTableName(table.schema(), table.name()))) {
             while (rows.next()) {
                 String keyName = rows.getString("PK_NAME");
                 if (keyName == null || keyName.isBlank()) {
@@ -449,7 +450,8 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
         LinkedHashMap<String, ForeignKeyParts> keys = new LinkedHashMap<>();
         LinkedHashMap<UnnamedForeignKeyBase, UnnamedForeignKeyOccurrences> unnamedOccurrences =
                 new LinkedHashMap<>();
-        try (ResultSet rows = metadata.getImportedKeys(table.catalog(), table.schema(), table.name())) {
+        try (ResultSet rows = metadata.getImportedKeys(
+                table.catalog(), table.schema(), metadataTableName(table.schema(), table.name()))) {
             while (rows.next()) {
                 String keyName = rows.getString("FK_NAME");
                 String pkCatalog = rows.getString("PKTABLE_CAT");
@@ -563,7 +565,8 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
         //   DBMS_STATS.GATHER_TABLE_STATS 를 실행해 **원천 테이블의 통계를 바꿨고**(LAST_ANALYZED 갱신), 읽기 전용
         //   연결에서는 그 수집이 실패해 인덱스 조회 자체가 72000 으로 끊겼다. 이 SPI 는 원천에 쓰기를 하지 않는다.
         //   인덱스 구조(이름·열·유일성)는 approximate 와 무관하며, 통계 행(tableIndexStatistic)은 아래에서 버린다.
-        try (ResultSet rows = metadata.getIndexInfo(table.catalog(), table.schema(), table.name(), false, true)) {
+        try (ResultSet rows = metadata.getIndexInfo(
+                table.catalog(), table.schema(), metadataTableName(table.schema(), table.name()), false, true)) {
             while (rows.next()) {
                 short type = rows.getShort("TYPE");
                 String name = rows.getString("INDEX_NAME");
@@ -790,22 +793,49 @@ public class JdbcMetadataSourceAdapter implements SourceAdapter {
         }
     }
 
-    private static CatalogSnapshot.EnvironmentInfo environment(
+    private CatalogSnapshot.EnvironmentInfo environment(
             Connection connection,
             DiscoveryAccumulator accumulator) {
         String catalog = null;
         String schema = null;
         try {
-            catalog = connection.getCatalog();
+            catalog = currentCatalog(connection);
         } catch (SQLException failure) {
             accumulator.failure(ObjectKind.CATALOG, null, null, "jdbc-get-current-catalog", failure);
         }
         try {
-            schema = connection.getSchema();
+            schema = currentSchema(connection);
         } catch (SQLException failure) {
             accumulator.failure(ObjectKind.SCHEMA, catalog, null, "jdbc-get-current-schema", failure);
         }
         return new CatalogSnapshot.EnvironmentInfo(catalog, schema, "unknown", "unknown", "unknown");
+    }
+
+    /** Vendor adapters may replace JDBC namespace methods that their driver does not implement. */
+    protected String currentCatalog(Connection connection) throws SQLException {
+        return connection.getCatalog();
+    }
+
+    /** Vendor adapters may replace JDBC namespace methods that their driver does not implement. */
+    protected String currentSchema(Connection connection) throws SQLException {
+        return connection.getSchema();
+    }
+
+    /** Some drivers require an owner-qualified table argument even when a schema argument is present. */
+    protected String metadataTableName(String schema, String table) {
+        return table;
+    }
+
+    protected String columnDefaultExpression(ResultSet row) throws SQLException {
+        return row.getString("COLUMN_DEF");
+    }
+
+    protected String columnAutoIncrement(ResultSet row) throws SQLException {
+        return row.getString("IS_AUTOINCREMENT");
+    }
+
+    protected String columnGenerated(ResultSet row) throws SQLException {
+        return row.getString("IS_GENERATEDCOLUMN");
     }
 
     private static CatalogObject object(

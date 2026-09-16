@@ -12,12 +12,14 @@ import static org.mockito.Mockito.mock;
 class SourceAdapterRegistryTest {
 
     @Test
-    void postgresUsesItsEnricherWhileUnknownProductsUseTheJdbcBaseline() throws Exception {
+    void knownProductsUseVendorAdaptersWhileUnknownProductsUseTheJdbcBaseline() throws Exception {
         SourceAdapterRegistry registry = SourceAdapterRegistry.defaults();
         Connection postgres = connectionWithProduct("PostgreSQL");
+        Connection cubrid = connectionWithProduct("CUBRID");
         Connection unknown = connectionWithProduct("LegacyDB");
 
         assertThat(registry.resolve(postgres)).isInstanceOf(PostgreSqlSourceAdapter.class);
+        assertThat(registry.resolve(cubrid)).isInstanceOf(CubridSourceAdapter.class);
         assertThat(registry.resolve(unknown)).isExactlyInstanceOf(JdbcMetadataSourceAdapter.class);
     }
 

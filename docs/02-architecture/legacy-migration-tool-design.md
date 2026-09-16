@@ -4,7 +4,7 @@
 
 ## 목적과 경계
 
-이 도구는 PostgreSQL·Oracle·Tibero·MySQL·MariaDB·Microsoft SQL Server 및 generic JDBC source를 조사할 수 있는 adapter registry를 제공한다. 그러나 자동 적재 대상은 `mapping.yml`에 선언한 **테이블 데이터**이며 target DBMS는 현재 정확히 **PostgreSQL 하나**다. 발견한 view·routine·trigger·grant 같은 객체는 누락 없이 계획에 분류하지만 DDL을 직접 변환·실행하지 않는다. 현재 프로젝트의 target schema는 계속 애플리케이션 Flyway가 소유한다.
+이 도구는 PostgreSQL·Oracle·Tibero·MySQL·MariaDB·Microsoft SQL Server·CUBRID 및 generic JDBC source를 위한 adapter registry를 제공한다. 그러나 자동 적재 대상은 `mapping.yml`에 선언한 **테이블 데이터**이며 target DBMS는 현재 정확히 **PostgreSQL 하나**다. 발견한 view·routine·trigger·grant 같은 객체는 누락 없이 계획에 분류하지만 DDL을 직접 변환·실행하지 않는다. 현재 프로젝트의 target schema는 계속 애플리케이션 Flyway가 소유한다.
 
 모듈은 `foundation`이나 온라인 런타임에 의존하지 않는 독립 `bootJar`이며, 이관이 필요한 프로젝트에서만 실행한다. 직접 `--mapping=... --mode=dry-run|commit` 경로는 승인 artifact를 우회하므로 dry-run과 commit 모두 차단한다.
 
@@ -56,6 +56,7 @@ Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 �
 |---|---|---|
 | PostgreSQL `postgresql-pg-catalog` | `pg_catalog` 보강과 schema visibility census가 구현된 `EXPERIMENTAL` adapter | commit은 exact `--ack-adapter=postgresql-pg-catalog`와 `--ack-source-freeze`가 필요하다. 실제 버전/권한 범위는 별도 rehearsal 대상이다. |
 | Oracle·Tibero·MySQL·MariaDB·SQL Server | vendor별 catalog query, snapshot/streaming 정책 선언이 있는 `UNVERIFIED` adapter | dry-run도 adapter 승인과 source freeze가 필요하며 commit은 코드가 차단한다. 실제 vendor/version/driver 검증 전 지원 완료로 간주하지 않는다. |
+| CUBRID | 전용 adapter의 자격은 `UNVERIFIED`·`MANUAL_ONLY`다. 11.4.6/JDBC 11.3.1의 owner-scoped discovery와 작은 BLOB/CLOB dry-run·내부 COMMIT rehearsal 범위는 [CUBRID 실측 기록](../04-operations/readiness-followups.md#이관-cubrid-실행-환경과-검증-경계)에서 구분한다. | 공개 COMMIT은 차단한다. 완전성·SELECT-only 증명에는 원천 SELECT와 `_db_class`·`_db_auth` SELECT가 필요하며 source freeze도 필수다. |
 | Generic JDBC metadata | account-scoped portable metadata의 `EXPERIMENTAL` fallback | 일관 source snapshot을 증명하는 read-session policy가 없어 load는 차단된다. discovery·plan의 완전성도 자동 증명하지 못한다. |
 | 명시적 외부 JDBC JAR | absolute local regular JAR만 격리 classloader로 열고 symlink·network path·glob·중복·manifest classpath를 거부 | inventory에 JAR digest를 결속하고 dry-run load에는 exact `--ack-source-driver=<digest>`가 필요하다. isolated in-process driver commit은 금지된다. |
 
@@ -175,7 +176,7 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 
 1. **완료(2026-09-05):** `MappingLoader`가 source/target `endpointId`를 보존하도록 수정하고, [loader 회귀](../../migration-tool/src/test/java/nuri/migration/model/MappingLoaderEndpointBindingTest.java)와 [실제 YAML `discover` 회귀](../../migration-tool/src/test/java/nuri/migration/MigrationWorkflowRunnerTest.java)를 추가했다.
 2. **구현 완료:** target 접속 위치·cluster/DB identity·허용 스키마를 승인 digest에 결속한다. 실제 도입 환경의 identity 조회 권한과 복제본·접속 경로는 별도로 확인한다. 이전 스키마 전용 digest의 plan은 다시 작성·승인한다.
-3. PostgreSQL source/target과 Oracle·Tibero·MySQL·MariaDB·SQL Server adapter를 지원 버전·실제 driver·최소권한 계정으로 검증한다. 현재 vendor query 정의와 H2/mock 테스트는 실 DB 증거가 아니다.
+3. PostgreSQL source/target과 Oracle·Tibero·MySQL·MariaDB·SQL Server·CUBRID adapter를 지원 버전·실제 driver·최소권한 계정으로 검증한다. 현재 vendor query 정의와 H2/mock 테스트는 실 DB 증거가 아니다.
 4. charset/collation/timezone, quoted identifier, LOB와 vendor-specific type, 대용량 스트리밍을 익명화된 대표 데이터로 rehearsal한다.
 5. **JSON 구현 완료:** 실행별 승인·mapping·target digest, 모드, 시각, 테이블별 건수·검증 상태를 보존한다. 원시 행·키·접속정보는 기록하지 않는다. `STARTED` 잔류는 결과 미확정이며 `DRY_RUN/PASS`는 실제 적재 완료가 아니다. 운영 승인자·백업·점검 창과의 결속은 배포 절차로 확보한다.
 6. [부분 적재 복구 런북](../04-operations/migration-recovery-runbook.md)과 PostgreSQL 회귀가 마련돼 있다. 실제 프로세스 종료 후 체크포인트 재개·무중복·변조 탐지도 검증했다. self-reference 예약 keymap, commit ambiguity와 운영 백업 복원·cutover는 인수 환경에서 별도 승인·실증한다.

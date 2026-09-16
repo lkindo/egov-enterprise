@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -36,9 +37,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 class MappingValidatorTypedIdentityTest {
 
@@ -192,6 +196,93 @@ class MappingValidatorTypedIdentityTest {
 
             assertThat(result.errors()).singleElement().asString().contains("실 source에 없는 테이블");
         }
+    }
+
+    @Test
+    void cubridUnsupportedSchemaAndEmptyCatalogStillValidateAnOwnerQualifiedSource() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "CUBRID", "CUBRID JDBC Driver", "", null, null, "APP", "legacy_table");
+        for (SQLException unsupported : List.of(
+                new SQLException(new UnsupportedOperationException()),
+                new SQLFeatureNotSupportedException())) {
+            JdbcTemplate jdbc = metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity);
+            Connection connection = jdbc.getDataSource().getConnection();
+            given(connection.getSchema()).willThrow(unsupported);
+
+            ValidationResult result = validator.validateLiveSource(liveSpec("app.legacy_table"), jdbc);
+
+            assertThat(result.errors()).isEmpty();
+            verify(connection.getMetaData()).getColumns(isNull(), eq("app"), eq("app.legacy_table"), isNull());
+        }
+    }
+
+    @Test
+    void cubridReportedSchemaIsPreservedWhenTheDriverProvidesIt() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "CUBRID", "CUBRID JDBC Driver", "", "app", null, "APP", "legacy_table");
+        JdbcTemplate jdbc = metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity);
+
+        assertThat(validator.validateLiveSource(liveSpec("legacy_table"), jdbc).errors()).isEmpty();
+        verify(jdbc.getDataSource().getConnection().getMetaData())
+                .getColumns(isNull(), eq("app"), eq("app.legacy_table"), isNull());
+    }
+
+    @Test
+    void cubridCompatibilityStillRejectsWrongMetadataIdentityOrAnUnqualifiedSource() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        for (MetadataIdentity identity : List.of(
+                new MetadataIdentity("CUBRID", "CUBRID JDBC Driver", "", null, null, "OTHER", "legacy_table"),
+                new MetadataIdentity("CUBRID", "CUBRID JDBC Driver", "", null, "other", "APP", "legacy_table"),
+                new MetadataIdentity("CUBRID", "CUBRID JDBC Driver", "", null, null, "APP", "other_table"),
+                new MetadataIdentity("CUBRID", "CUBRID JDBC Driver", "other", null, null, "APP", "legacy_table"))) {
+            JdbcTemplate jdbc = metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity);
+            assertThat(validator.validateLiveSource(liveSpec("app.legacy_table"), jdbc).errors())
+                    .singleElement().asString().contains("실 source에 없는 테이블");
+        }
+        MetadataIdentity identity = new MetadataIdentity(
+                "CUBRID", "CUBRID JDBC Driver", "", null, null, "APP", "legacy_table");
+        JdbcTemplate jdbc = metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity);
+        given(jdbc.getDataSource().getConnection().getSchema())
+                .willThrow(new SQLException(new UnsupportedOperationException()));
+        assertThat(validator.validateLiveSource(liveSpec("legacy_table"), jdbc).errors())
+                .singleElement().asString().contains("실 source에 없는 테이블");
+    }
+
+    @Test
+    void cubridCompatibilityCannotHideAnotherProductsUnsupportedSchemaOrEmptyCatalog() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        for (MetadataIdentity identity : List.of(
+                new MetadataIdentity("PostgreSQL", "CUBRID JDBC Driver", "", null, null, "APP", "legacy_table"),
+                new MetadataIdentity("CUBRID", "Another JDBC Driver", "", null, null, "APP", "legacy_table"),
+                new MetadataIdentity("cubrid", "CUBRID JDBC Driver", "", null, null, "APP", "legacy_table"))) {
+            JdbcTemplate jdbc = metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity);
+            assertThat(validator.validateLiveSource(liveSpec("app.legacy_table"), jdbc).errors())
+                    .singleElement().asString().contains("실 source에 없는 테이블");
+            given(jdbc.getDataSource().getConnection().getSchema())
+                    .willThrow(new SQLException(new UnsupportedOperationException()));
+            assertThatThrownBy(() -> validator.validateLiveSource(liveSpec("app.legacy_table"), jdbc))
+                    .hasRootCauseInstanceOf(UnsupportedOperationException.class);
+        }
+    }
+
+    @Test
+    void cubridSchemaIoFailureAndTargetSchemaFailureStillPropagate() throws Exception {
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), "not-read-here.json");
+        MetadataIdentity identity = new MetadataIdentity(
+                "CUBRID", "CUBRID JDBC Driver", "", null, null, "APP", "legacy_table");
+        JdbcTemplate jdbc = metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity);
+        SQLException unavailable = new SQLException("Schema lookup failed", "08006");
+        given(jdbc.getDataSource().getConnection().getSchema()).willThrow(unavailable);
+        assertThatThrownBy(() -> validator.validateLiveSource(liveSpec("app.legacy_table"), jdbc))
+                .hasRootCause(unavailable);
+
+        JdbcTemplate target = metadataJdbc(List.of(new JdbcColumn("id", Types.BIGINT, "BIGINT")), identity);
+        given(target.getDataSource().getConnection().getSchema())
+                .willThrow(new SQLException(new UnsupportedOperationException()));
+        assertThatThrownBy(() -> validator.validateLiveTarget(liveSpec("app.legacy_table"), target))
+                .hasRootCauseInstanceOf(UnsupportedOperationException.class);
     }
 
     private static MappingSpec liveSpec(String sourceTable) {

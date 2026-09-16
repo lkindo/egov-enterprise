@@ -57,6 +57,7 @@ class SourceReadSessionPolicyContractTest {
                 OracleSourceAdapter.class, READ_COMMITTED,
                 TiberoSourceAdapter.class, READ_COMMITTED,
                 SqlServerSourceAdapter.class, READ_COMMITTED,
+                CubridSourceAdapter.class, REPEATABLE_READ,
                 JdbcMetadataSourceAdapter.class, UNSUPPORTED);
         SourceAdapterRegistry registry = SourceAdapterRegistry.defaults();
         List<SourceAdapter> resolved = List.of(
@@ -66,6 +67,7 @@ class SourceReadSessionPolicyContractTest {
                 registry.resolve(connection("MySQL", "8.4.3")),
                 registry.resolve(connection("MariaDB", "11.4.4")),
                 registry.resolve(connection("Microsoft SQL Server", "16.00.1140")),
+                registry.resolve(connection("CUBRID", "11.4.6.1963")),
                 registry.resolve(connection("LegacyDB", "1.0")));
         Map<Class<? extends SourceAdapter>, SourceAdapter> adaptersByType = new LinkedHashMap<>();
         resolved.forEach(adapter -> adaptersByType.put(adapter.getClass(), adapter));
@@ -89,7 +91,8 @@ class SourceReadSessionPolicyContractTest {
             assertThat(policy.sourceFreezeRequired()).as(adapter.id()).isTrue();
             assertThat(policy.quotedIdentifiersSupported()).as(adapter.id()).isFalse();
             assertThat(policy.lobStreamingSupported()).as(adapter.id())
-                    .isEqualTo(adapterType == OracleSourceAdapter.class);
+                    .isEqualTo(adapterType == OracleSourceAdapter.class
+                            || adapterType == CubridSourceAdapter.class);
             assertThat(policy.longValueStreamingSupported()).as(adapter.id())
                     .isEqualTo(adapterType == MySqlSourceAdapter.class || adapterType == MariaDbSourceAdapter.class);
             assertThat(policy.executionPolicy())

@@ -17,6 +17,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -400,8 +401,25 @@ public class MappingValidator {
         source.execute((Connection connection) -> {
             connection.setReadOnly(true);
             DatabaseMetaData metadata = connection.getMetaData();
+            boolean cubridDriver = "CUBRID".equals(metadata.getDatabaseProductName())
+                    && "CUBRID JDBC Driver".equals(metadata.getDriverName());
             String defaultCatalog = connection.getCatalog();
-            String defaultSchema = connection.getSchema();
+            if (cubridDriver && "".equals(defaultCatalog)) {
+                // CUBRID reports an empty connection catalog but null TABLE_CAT in metadata.
+                defaultCatalog = null;
+            }
+            String defaultSchema;
+            try {
+                defaultSchema = connection.getSchema();
+            } catch (SQLException failure) {
+                // The official driver wraps UnsupportedOperationException for getSchema().
+                // Do not disguise connection failures or another driver's metadata failure.
+                if (!cubridDriver || (!(failure instanceof SQLFeatureNotSupportedException)
+                        && !(failure.getCause() instanceof UnsupportedOperationException))) {
+                    throw failure;
+                }
+                defaultSchema = null;
+            }
             boolean mysqlSchemaMode = defaultCatalog == null && !isBlank(defaultSchema)
                     && "MySQL".equals(metadata.getDatabaseProductName())
                     && "MySQL Connector/J".equals(metadata.getDriverName());
@@ -423,7 +441,7 @@ public class MappingValidator {
                 }
                 QualifiedName name = qualifiedName(table.source(), defaultCatalog, defaultSchema);
                 Map<String, ColumnMetadata> liveColumns = metadataColumnInfo(
-                        metadata, name.catalog(), name.schema(), name.table());
+                        metadata, name.catalog(), name.schema(), name.table(), cubridDriver);
                 if (liveColumns.isEmpty()) {
                     errors.add("실 source에 없는 테이블 또는 metadata 접근 불가: " + table.source());
                     continue;
@@ -477,7 +495,7 @@ public class MappingValidator {
                 }
                 QualifiedName name = qualifiedName(qualified, defaultCatalog, defaultSchema);
                 Map<String, ColumnMetadata> liveColumns = metadataColumnInfo(
-                        metadata, name.catalog(), name.schema(), name.table());
+                        metadata, name.catalog(), name.schema(), name.table(), false);
                 if (liveColumns.isEmpty()) {
                     errors.add("실 target에 없는 테이블 또는 metadata 접근 불가: " + qualified);
                     continue;
@@ -514,14 +532,19 @@ public class MappingValidator {
             DatabaseMetaData metadata,
             String catalog,
             String schema,
-            String table
+            String table,
+            boolean ownerQualifiedTablePattern
     ) throws SQLException {
         Map<String, ColumnMetadata> columns = new LinkedHashMap<>();
         List<String> schemas = caseVariants(schema);
         List<String> tables = caseVariants(table);
         for (String schemaVariant : schemas) {
             for (String tableVariant : tables) {
-                try (ResultSet result = metadata.getColumns(catalog, schemaVariant, tableVariant, null)) {
+                // CUBRID ignores schemaPattern; its table pattern must carry the owner.
+                // Returned owner/catalog/table still pass the same exact identity check below.
+                String tablePattern = ownerQualifiedTablePattern && schemaVariant != null
+                        ? schemaVariant + "." + tableVariant : tableVariant;
+                try (ResultSet result = metadata.getColumns(catalog, schemaVariant, tablePattern, null)) {
                     while (result.next()) {
                         if (!metadataIdentityMatches(result, catalog, schema, table)) {
                             continue;

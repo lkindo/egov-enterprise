@@ -58,6 +58,7 @@ class SourceAdapterCapabilityContractTest {
                 new MySqlSourceAdapter(),
                 new MariaDbSourceAdapter(),
                 new SqlServerSourceAdapter(),
+                new CubridSourceAdapter(),
                 new JdbcMetadataSourceAdapter());
 
         for (SourceAdapter adapter : adapters) {
