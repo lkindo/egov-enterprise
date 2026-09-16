@@ -197,16 +197,17 @@ function yamlScalar(value) {
   return trimmed === '' ? null : trimmed;
 }
 
-export function parseMutationScopeMatrix(source) {
+// 이관 스코프가 전용 잡으로 갈라지면서 잡 이름을 받는다(DEC-OPS-104). 기본값은 종전 잡이다.
+export function parseMutationScopeMatrix(source, jobName = 'mutation-scope') {
   const lines = source.split(/\r?\n/);
-  const jobStart = lines.findIndex((line) => /^  mutation-scope:\s*$/.test(line));
-  if (jobStart < 0) return { scopes: [], errors: ['CI mutation-scope job is missing'] };
+  const jobStart = lines.findIndex((line) => new RegExp(`^  ${jobName}:\\s*$`).test(line));
+  if (jobStart < 0) return { scopes: [], errors: [`CI ${jobName} job is missing`] };
   const relativeJobEnd = lines.slice(jobStart + 1)
     .findIndex((line) => /^  [A-Za-z0-9_-]+:\s*$/.test(line));
   const jobEnd = relativeJobEnd < 0 ? lines.length : jobStart + 1 + relativeJobEnd;
   const jobLines = lines.slice(jobStart, jobEnd);
   const includeStart = jobLines.findIndex((line) => /^        include:\s*$/.test(line));
-  if (includeStart < 0) return { scopes: [], errors: ['CI mutation-scope matrix include catalog is missing'] };
+  if (includeStart < 0) return { scopes: [], errors: [`CI ${jobName} matrix include catalog is missing`] };
 
   const scopes = [];
   const errors = [];
@@ -303,17 +304,38 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
     }
   }
 
+  // 스코프가 두 잡에 나뉘어 산다(DEC-OPS-104). 원장이 선언한 소유 잡 전부를 읽어 union 으로 대조하고,
+  //   각 항목이 **선언한 잡에 실제로 있는지**까지 본다 — 한 잡만 읽으면 다른 잡의 스코프가 통째로
+  //   사라져도 양방향 exact-match 가 둘 다 초록이 된다.
   const workflowPath = path.join(repoRoot, '.github', 'workflows', 'ci.yml');
-  const parsed = isFile(workflowPath)
-    ? parseMutationScopeMatrix(fs.readFileSync(workflowPath, 'utf8'))
-    : { scopes: [], errors: ['CI workflow is missing'] };
-  errors.push(...parsed.errors.map((error) => `${setLabel}: ${error}`));
+  const declaredJobs = [...new Set(expected
+    .map((entry) => (typeof entry?.job === 'string' ? entry.job : ''))
+    .filter((job) => job !== ''))];
+  if (declaredJobs.length === 0) {
+    errors.push(`${setLabel}: PIT matrix entries must declare an owning job`);
+  }
+  const workflowSource = isFile(workflowPath) ? fs.readFileSync(workflowPath, 'utf8') : null;
   const actualByScope = new Map();
-  for (const entry of parsed.scopes) {
-    if (actualByScope.has(entry.scope)) {
-      errors.push(`${setLabel}: duplicate CI mutation matrix scope '${entry.scope}'`);
-    } else {
-      actualByScope.set(entry.scope, entry);
+  if (workflowSource === null) {
+    errors.push(`${setLabel}: CI workflow is missing`);
+  } else {
+    for (const jobName of declaredJobs) {
+      const parsed = parseMutationScopeMatrix(workflowSource, jobName);
+      errors.push(...parsed.errors.map((error) => `${setLabel}: ${error}`));
+      for (const entry of parsed.scopes) {
+        if (actualByScope.has(entry.scope)) {
+          errors.push(`${setLabel}: duplicate CI mutation matrix scope '${entry.scope}'`);
+        } else {
+          actualByScope.set(entry.scope, { ...entry, job: jobName });
+        }
+      }
+    }
+  }
+  for (const entry of expected) {
+    if (typeof entry?.scope !== 'string') continue;
+    const actual = actualByScope.get(entry.scope);
+    if (actual && actual.job !== entry.job) {
+      errors.push(`${setLabel}: PIT scope ${entry.scope} is declared under '${entry.job}' but runs in '${actual.job}'`);
     }
   }
   for (const [scope, expectedEntry] of expectedByScope) {
@@ -1776,14 +1798,23 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
     if (selector?.type === 'required-check-aggregate') {
       if (set.rules !== undefined) errors.push(`${setLabel}: aggregate runners must not enumerate individual test rules`);
       const check = requiredChecks.find(({ context }) => context === selector.context);
-      if (!check
-        || check.aggregate?.sourceJobId !== selector.sourceJobId
-        || check.aggregate?.sourceRun !== set.task) {
+      // 한 context 가 소스 잡을 여럿 가질 수 있다(DEC-OPS-104). 선언 집합이 매니페스트와 정확히 같아야 하고,
+      //   strictEnvironment 는 **모든** 소스에서 성립해야 한다 — 한 잡에서만 STRICT_MUTATION 을 빼는 경로를 막는다.
+      const declaredSources = Array.isArray(check?.aggregate)
+        ? check.aggregate
+        : (check?.aggregate ? [check.aggregate] : []);
+      const expectedSourceJobIds = Array.isArray(selector.sourceJobIds) ? selector.sourceJobIds : [];
+      const actualSourceJobIds = declaredSources.map((source) => source?.sourceJobId);
+      const sameSources = expectedSourceJobIds.length === actualSourceJobIds.length
+        && expectedSourceJobIds.every((jobId, index) => jobId === actualSourceJobIds[index]);
+      if (!check || !sameSources || declaredSources.some((source) => source?.sourceRun !== set.task)) {
         errors.push(`${setLabel}: ghost required-check aggregate selector for ${selector?.context ?? ''}`);
       } else {
         for (const [name, value] of Object.entries(selector.strictEnvironment ?? {})) {
-          if (check.aggregate.sourceEnv?.[name] !== value) {
-            errors.push(`${setLabel}: aggregate environment ${name} must remain ${value}`);
+          for (const source of declaredSources) {
+            if (source.sourceEnv?.[name] !== value) {
+              errors.push(`${setLabel}: aggregate environment ${name} must remain ${value} in '${source.sourceJobId}'`);
+            }
           }
         }
       }

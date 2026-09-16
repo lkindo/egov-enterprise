@@ -1407,67 +1407,80 @@
       "selector": {
         "type": "required-check-aggregate",
         "context": "mutation-test",
-        "sourceJobId": "mutation-scope",
+        "sourceJobIds": [
+          "mutation-scope",
+          "mutation-scope-migration"
+        ],
         "strictEnvironment": {
           "STRICT_MUTATION": "true"
         },
         "matrixScopes": [
           {
             "scope": "business-app",
+            "job": "mutation-scope",
             "gradle": ":business-app:pitest",
             "classes": "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.isg.*,nuri.business.service.operation.*",
             "tests": "nuri.business.*"
           },
           {
             "scope": "business-core-file",
+            "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*",
             "tests": "nuri.business.*"
           },
           {
             "scope": "foundation-security-filter",
+            "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.security.filter.*",
             "tests": "nuri.foundation.*"
           },
           {
             "scope": "foundation-core-util",
+            "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.core.util.*",
             "tests": "nuri.foundation.*"
           },
           {
             "scope": "foundation-jwt",
+            "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.security.jwt.*",
             "tests": "nuri.foundation.*"
           },
           {
             "scope": "foundation-client-ip",
+            "job": "mutation-scope",
             "gradle": ":foundation:pitest",
             "classes": "nuri.foundation.security.net.*",
             "tests": "nuri.foundation.*"
           },
           {
             "scope": "migration-transform",
+            "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.transform.*",
             "tests": "nuri.migration.*"
           },
           {
             "scope": "migration-validate-verify",
+            "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.validate.*,nuri.migration.verify.*",
             "tests": "nuri.migration.*"
           },
           {
             "scope": "business-core-auth",
+            "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*",
             "tests": "nuri.business.*"
           },
           {
             "scope": "business-core-code-user-common",
+            "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*",
             "tests": "nuri.business.*"

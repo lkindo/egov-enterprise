@@ -250,7 +250,9 @@ export function parseAtlasWorkflow(text, source, required = []) {
     ].filter(([, pattern]) => pattern.test(body.replace(/^\s*#.*$/gm, ''))).map(([name]) => name);
     return { id, permissions: permission ?? '미선언: 상위 선언·플랫폼 기본값 확인 필요',
       condition: body.match(/^ {4}if:\s*(.+)$/m)?.[1] ?? '미선언',
-      requiredContexts: required.filter(check => check.jobId === id || check.aggregate?.sourceJobId === id).map(check => check.context),
+      requiredContexts: required.filter(check => check.jobId === id
+        || (Array.isArray(check.aggregate) ? check.aggregate : (check.aggregate ? [check.aggregate] : []))
+          .some(source => source?.sourceJobId === id)).map(check => check.context),
       stepNames, actions, writeIndicators, status: 'static-declaration' };
   });
   return record(source, normalized.match(/^name:\s*(.+)$/m)?.[1] ?? path.posix.basename(source),

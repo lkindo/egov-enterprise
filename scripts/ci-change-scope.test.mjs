@@ -104,6 +104,50 @@ test('frontend unit tests and the offline migration tool skip unrelated browser 
   assert.equal(migrationTool.backend, true);
   assert.equal(migrationTool.e2e, false);
   assert.equal(migrationTool.mutation, true);
+  assert.equal(migrationTool.mutationMigrationTool, true);
+});
+
+test('migration-tool mutation is a narrowing of the mutation scope, never an extension', () => {
+  // 이 모듈의 뮤테이션 두 스코프가 CI 임계 경로를 지배했다(DEC-OPS-104). 온라인 런타임과 분리된
+  // 독립 CLI 라 다른 모듈의 뮤턴트에 영향을 주지 않으므로, 변경 범위 밖이면 실행하지 않는다.
+  const backendOnly = classifyChangedFiles([
+    'business-core/src/main/java/nuri/business/service/auth/AuthServiceImpl.java',
+  ]);
+  assert.equal(backendOnly.mutation, true);
+  assert.equal(backendOnly.mutationMigrationTool, false);
+
+  assert.equal(classifyChangedFiles(['build.gradle']).mutationMigrationTool, true);
+  assert.equal(classifyChangedFiles(['settings.gradle']).mutationMigrationTool, true);
+  assert.equal(classifyChangedFiles(['migration-tool/build.gradle']).mutationMigrationTool, true);
+  assert.equal(classifyChangedFiles(['unheard-of/path.bin']).mutationMigrationTool, true);
+
+  // 하한 — 이 경로들이 빠지면 이관 뮤테이션이 필요한 변경에서 잡이 돌지 않는다.
+  //   상한(⊆ mutation)만 검사하면 "항상 false" 인 구현도 통과하므로 양쪽을 함께 고정한다.
+  for (const file of [
+    'migration-tool/src/main/java/nuri/migration/validate/MappingValidator.java',
+    'migration-tool/src/test/java/nuri/migration/adapter/CubridSourceAdapterTest.java',
+    'migration-tool/src/test/resources/discovery/fixture.json',
+  ]) {
+    assert.equal(classifyChangedFiles([file]).mutationMigrationTool, true,
+      `${file}: 이관 뮤테이션 범위에서 빠졌다`);
+  }
+
+  // 부분집합 불변식 — 잡 자체가 mutation 으로 열리므로, 이 플래그가 더 넓으면 "범위 안" 이라고
+  //   말해 놓고 아무것도 실행되지 않는 상태가 된다.
+  for (const file of [
+    'gradle/libs.versions.toml',
+    'migration-tool/src/main/resources/application.yml',
+    'migration-tool/src/test/java/nuri/migration/adapter/CubridSourceAdapterTest.java',
+    'docs/README.md',
+    'frontend/src/app/page.tsx',
+    'build.gradle',
+  ]) {
+    const result = classifyChangedFiles([file]);
+    if (result.mutationMigrationTool) {
+      assert.equal(result.mutation, true,
+        `${file}: mutationMigrationTool 이 mutation 보다 넓어 잡이 열리지 않는 범위를 범위 안이라고 말한다`);
+    }
+  }
 });
 
 test('frontend runtime configuration and lockfile changes retain browser E2E evidence', () => {
@@ -254,6 +298,7 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     schema: 'false',
     e2e: 'false',
     mutation: 'false',
+    mutation_migration_tool: 'false',
     unknown_count: '0',
   });
 });
