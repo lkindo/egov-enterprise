@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -125,6 +126,56 @@ class CatalogInventoryEndpointBindingTest {
                 "jdbc:db2://db-a.example:50000/app:user=bob;password=beta;currentSchema=OTHER;",
                 "bob",
                 "beta"))).isFalse();
+    }
+
+    @Test
+    void cubridPositionalCredentialRotationPreservesEndpointIdentity() {
+        assertSameEndpoint(
+                endpoint("jdbc:cubrid:db.example:33000:legacy:alice:alpha:", "alice", "alpha"),
+                endpoint("jdbc:cubrid:db.example:33000:legacy:bob:beta:", "bob", "beta"));
+        assertSameEndpoint(
+                endpoint("jdbc:cubrid:db.example:33000:legacy:alice:alpha:", "alice", "alpha"),
+                endpoint("jdbc:cubrid:db.example:33000:legacy:::", "bob", "beta"));
+        assertSameEndpoint(
+                endpoint("jdbc:CUBRID:[::1]:33000:legacy:alice:a?b;c@d/e:"
+                        + "?charSet=utf-8&user=alice&password=alpha&altHosts=standby:33000", "alice", "alpha"),
+                endpoint("jdbc:CUBRID:[::1]:33000:legacy:bob:beta:"
+                        + "?altHosts=standby:33000&password=beta&charSet=utf-8&user=bob", "bob", "beta"));
+    }
+
+    @Test
+    void cubridLocationAndNonSecretOptionsRemainBoundAfterCredentialRemoval() {
+        SourceEndpointBinding binding = SourceEndpointBinding.capture(endpoint(
+                "jdbc:cubrid:db.example:33000:legacy:alice:alpha:?charSet=utf-8&altHosts=standby:33000",
+                "alice", "alpha"));
+
+        for (String changed : List.of(
+                "jdbc:cubrid:other.example:33000:legacy:bob:beta:?charSet=utf-8&altHosts=standby:33000",
+                "jdbc:cubrid:db.example:33001:legacy:bob:beta:?charSet=utf-8&altHosts=standby:33000",
+                "jdbc:cubrid:db.example:33000:other:bob:beta:?charSet=utf-8&altHosts=standby:33000",
+                "jdbc:cubrid:db.example:33000:legacy:bob:beta:?charSet=euc-kr&altHosts=standby:33000",
+                "jdbc:cubrid:db.example:33000:legacy:bob:beta:?charSet=utf-8&altHosts=other:33000")) {
+            assertThat(binding.matches(endpoint(changed, "bob", "beta"))).isFalse();
+        }
+    }
+
+    @Test
+    void malformedCubridAndOtherPositionalUrlsRetainTheirExistingIdentity() {
+        for (String unchanged : List.of(
+                "jdbc:cubrid:db.example:33000:legacy:alice:alpha",
+                "jdbc:cubrid:db.example:33000:legacy:alice:",
+                "jdbc:cubrid:db.example:33000:legacy:alice:alpha:extra:",
+                "jdbc:cubrid::33000:legacy:alice:alpha:",
+                "jdbc:cubrid:db.example:not-a-port:legacy:alice:alpha:",
+                "jdbc:cubrid:db.example:33000::alice:alpha:",
+                "jdbc:other:db.example:33000:legacy:alice:alpha:")) {
+            String expected = CanonicalSha256.digest(CanonicalJsonSupport.bytes(Map.of(
+                    "schemaVersion", 1,
+                    "purpose", "credential-redacted-jdbc-location",
+                    "canonicalUrl", unchanged)));
+            assertThat(JdbcEndpointIdentity.digest(endpoint(unchanged, "alice", "alpha")))
+                    .isEqualTo(expected);
+        }
     }
 
     @Test

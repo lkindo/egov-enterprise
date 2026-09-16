@@ -589,6 +589,51 @@ adapter/freeze 승인과 공개 COMMIT 금지는 유지한다. 다른 Oracle rel
 GB/TB 규모·전체 JVM 힙 보장·cutover·전체 백업 복원은 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다.
 Tibero는 위 라이선스 기동 실패로 discover·load를 아직 실측하지 않았다.
 
+## 이관 CUBRID 실행 환경과 검증 경계
+
+2026-09-16 공식 `cubrid/cubrid:11.4` 이미지의 고정 digest
+`sha256:1248b77ad39888df9e064655937188ab99fe056ed7e35b57d06155a015dc1791`와
+로컬 엔진 **11.4.6.1963**, JDBC **11.3.1.0050**을 확인했다. 사용한 원본
+`JDBC-11.3.1.0050-cubrid.jar`의 SHA-256은
+`38C1293B629FEF5C4F6F57A1F4E52C98BAAD4872BC4C0EB59587CE03DE54AC66`이다.
+엔진·JDBC 버전은 서로 다른 번호 체계를 사용하므로 같은 숫자로 맞춰 쓰지 않는다.
+공급자 공개 이미지·드라이버를 사용하는 환경이며 별도 hostname 결속 라이선스 파일은 필요하지 않다.
+엔진은 Apache 2.0, JDBC 등 커넥터는 BSD 3-Clause 조건을 따른다
+([공식 이미지](https://hub.docker.com/r/cubrid/cubrid),
+[공식 엔진 릴리스](https://github.com/CUBRID/cubrid/releases/tag/v11.4.6.1963),
+[공식 라이선스](https://dev.cubrid.org/dev-guide/license)).
+
+같은 환경의 UTF-8 DB에서 전용 adapter preflight와 owner 한정 discovery를 실행했다. CUBRID의 공개
+`db_class`·`db_auth`는 현재 계정 권한으로 결과가 줄어드므로 완전성·SELECT-only 증명에는 사용할 수 없다.
+준비 계정에는 원천 테이블 SELECT 외에 아래 두 내부 catalog의 SELECT가 필요하다. adapter는 이를 통해
+권한이 없는 테이블과 UPDATE-only 테이블도 포함한 owner 전체 객체·권한을 대조하며, catalog 권한 누락,
+SELECT 누락, 쓰기 권한, grant option, PUBLIC 외 그룹 상속 중 하나라도 있으면 preflight를 차단한다.
+
+```sql
+GRANT SELECT ON _db_class TO <migration_user>;
+GRANT SELECT ON _db_auth TO <migration_user>;
+```
+
+실제 reader 계정에서 숨은 테이블과 UPDATE-only 테이블을 만든 부정 시험은
+`READ_ONLY_SIGNAL_MISSING` 차단을 유지했고, 해당 객체를 제거하거나 SELECT-only로 교정한 뒤에는
+preflight blocking 0, schema 1, table 3, column 9, identity 1, non-system grant 3을 수집했다.
+AUTO_INCREMENT는 JDBC `getColumns`의 누락 필드에 의존하지 않고 `db_serial`의 class/attribute
+연결을 사용하며, 일반 sequence 목록에서는 이 내부 serial을 제외한다.
+
+실측 fixture의 scalar 1행과 BLOB/CLOB 1행은 `EtlExecutor` DRY_RUN에서 각각 read 1,
+transformed 1, written 0, error 0이었다. BLOB 4 bytes와 한글·emoji CLOB(UTF-16 17 code units,
+UTF-8 23 bytes)은 JDBC LOB 객체에서 `byte[]`·`String`으로 분리된 뒤 원본과 일치했다.
+별도 PostgreSQL 17.9 target에 대한 내부 엔진 COMMIT rehearsal도 2행·checkpoint 2개 적재,
+동일 run 무중복 재개, BLOB/CLOB 변조 checksum 실패와 복구 후 PASS를 확인했다. 이 직접 호출은
+공개 workflow 밖의 엔진 rehearsal이며 승인·driver 격리 gate를 해제하거나 충족한 것으로 보지 않는다.
+
+CUBRID 전용 adapter는 **UNVERIFIED·MANUAL_ONLY**를 유지하며 공개 COMMIT을 차단한다.
+외부 JDBC JAR의 digest 결속·격리 driver COMMIT 금지와 source freeze 승인도 그대로 적용한다.
+이번 데이터 경계는 작은 LOB와 테이블당 1행이다. 500행 초과 page 전환, 32 MiB BLOB/
+16,777,216 UTF-16 code-unit CLOB 상한, 저메모리 대용량, 프로세스 장애복구, 운영 cutover는 아직
+CUBRID 실측이 아니다.
+로컬 근거의 위치는 `build/cubrid-verification`이며 자격증명이나 원시 행을 이 문서에 옮기지 않는다.
+
 ## 이관 프로세스 종료와 큰 필드
 
 `./gradlew :migration-tool:test --tests '*EtlCrashRecoveryPostgresIntegrationTest'`는 별도 JVM을

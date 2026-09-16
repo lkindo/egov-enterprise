@@ -25,7 +25,8 @@ class VendorCatalogQueryContractTest {
                 new TiberoSourceAdapter(),
                 new MySqlSourceAdapter(),
                 new MariaDbSourceAdapter(),
-                new SqlServerSourceAdapter());
+                new SqlServerSourceAdapter(),
+                new CubridSourceAdapter());
 
         for (SourceAdapter adapter : adapters) {
             assertThat(adapter.catalogQueries()).as(adapter.id()).isNotEmpty();
@@ -55,7 +56,8 @@ class VendorCatalogQueryContractTest {
                 new TiberoSourceAdapter(),
                 new MySqlSourceAdapter(),
                 new MariaDbSourceAdapter(),
-                new SqlServerSourceAdapter())) {
+                new SqlServerSourceAdapter(),
+                new CubridSourceAdapter())) {
             assertThat(adapter.identity().evidenceLevel()).isEqualTo(EvidenceLevel.UNVERIFIED);
             assertThat(adapter.catalogQueries())
                     .extracting(VendorCatalogQuery::supportGrade)
