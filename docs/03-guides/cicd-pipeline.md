@@ -419,6 +419,8 @@ git config core.hooksPath .githooks
 
 `release.yml`은 frontend image를 build/push할 뿐 배포하지 않는다. build step의 repository variables는 Next production build를 검증하기 위한 입력이고, 발행된 image를 어느 backend에 연결할지는 runtime deploy owner가 별도로 인계해야 한다. build arguments가 container runtime environment를 대신한다고 간주하지 않는다.
 
+이미지는 **GHCR**(`ghcr.io/<owner>/egov-api`·`ghcr.io/<owner>/egov-frontend`)로 발행한다(DEC-OPS-103). 별도 레지스트리 시크릿을 두지 않고 `GITHUB_TOKEN`과 `permissions: packages: write`로 push하며, GHCR이 대문자 경로를 거부하므로 소유자 이름을 소문자로 정규화한다. 두 이미지 push가 실패하면 GitHub 릴리스도 발행되지 않는다 — 무조건 push, push 뒤 릴리스 순서, 권한 선언과 로그인·push 대상 일치를 [`WorkflowManifestLinterTest`](../../api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java)가 정적으로 고정한다. 운영 Compose는 이 이미지를 pull하지 않고 로컬 빌드하므로, 발행물의 소비자는 인수처가 배포 manifest에서 정한다.
+
 <!-- FRONTEND_RELEASE_RUNTIME_API_HANDOFF -->
 
 ```yaml
