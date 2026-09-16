@@ -121,9 +121,18 @@ export default async function RootLayout({
   // 밀도 축은 브랜드와 직교하는 배포 단위 서버 설정이다(D1, DEC-OPS-015) — 같은 규칙으로
   // allowlist 검증 뒤 <html> 한 곳에만 배선한다(미설정 시 comfortable = 렌더링 무변경).
   const density = resolveDensity(process.env.UI_DENSITY);
+  // [2026-09-16 GAP-UIF-001] next/font 변수는 <html>(:root)에 둔다. globals.css 의 @theme 는
+  // --font-sans 를 :root 에서 계산하는데, 변수를 body 에만 두면 그 시점에 값이 없어 별칭 전체가
+  // 무효가 되고 브라우저는 시스템 대체 글꼴로 떨어졌다 — 번들한 Pretendard 가 쓰이지 않았다.
   return (
-    <html lang="ko" className="scroll-pt-16" data-brand-theme={brandTheme} data-density={density} suppressHydrationWarning>
-      <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
+    <html
+      lang="ko"
+      className={`${pretendard.variable} ${inter.variable} ${outfit.variable} scroll-pt-16`}
+      data-brand-theme={brandTheme}
+      data-density={density}
+      suppressHydrationWarning
+    >
+      <body className="antialiased font-sans">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
