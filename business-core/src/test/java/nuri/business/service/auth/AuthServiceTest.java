@@ -114,6 +114,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
         
         when(userDetailsService.loadUserByUsername("user")).thenReturn(principal("user","ROLE_USER"));
+        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any())).thenReturn(1);
         when(jwtTokenProvider.createAccessToken(eq("user"), anyString())).thenReturn("new_access_token");
 
         // When
@@ -145,6 +146,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
         when(jwtTokenProvider.createAccessToken(eq(userId), eq("ROLE_ADMIN"))).thenReturn("new_access_token_admin");
+        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any())).thenReturn(1);
 
         // When
         TokenResponse response = authService.reissue(refreshToken);
@@ -176,6 +178,7 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
         when(jwtTokenProvider.createAccessToken(eq(userId), isNull())).thenReturn("new_access_token_user");
+        when(refreshTokenRepository.rotateIfCurrent(any(), any(), any(), any())).thenReturn(1);
 
         // When
         TokenResponse response = authService.reissue(refreshToken);
@@ -327,12 +330,13 @@ class AuthServiceTest {
         
         nuri.business.domain.auth.RefreshToken rt = mock(nuri.business.domain.auth.RefreshToken.class);
         when(rt.getExprtnDt()).thenReturn(java.time.Instant.now().minusSeconds(10));
+        when(rt.getUserId()).thenReturn("user");
         when(refreshTokenRepository.findByRfshTkn(refreshToken)).thenReturn(java.util.Optional.of(rt));
 
         // When & Then
         BusinessException ex = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken));
         assertEquals(CommonErrorCode.INVALID_TOKEN, ex.getErrorCode());
-        verify(refreshTokenRepository).delete(rt);
+        verify(refreshTokenRepository).deleteIfCurrent("user", refreshToken);
     }
 
     @Test
