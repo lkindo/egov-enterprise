@@ -1,6 +1,6 @@
 import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
-import { ApprovalConfirmRequestSchema, ApprovalDraftRequestSchema } from '@/types/generated-zod';
+import { ApprovalConfirmRequestSchema, ApprovalDraftRequestSchema, ApprovalResubmissionRequestSchema } from '@/types/generated-zod';
 import { z } from 'zod';
 import type { components } from '@/types/generated-api';
 import {
@@ -11,12 +11,16 @@ import {
   getPendingOperation,
   getProcessedOperation,
   getTaskTypesOperation,
+  getApprovalDetailOperation,
+  resubmitApprovalOperation,
 } from '@/types/generated-operations';
 
 /** 기안 시 고르는 업무 구분 — 서버가 COM075 에서 내려주는 공통코드 행. */
 export type ApprovalTaskType = components['schemas']['CommonCodeDto'];
 /** 기안 요청 본문. 신청자는 서버가 인증 주체로 채우므로 여기에 없다. */
 export type ApprovalDraftRequest = components['schemas']['ApprovalDraftRequest'];
+export type ApprovalResubmissionRequest = components['schemas']['ApprovalResubmissionRequest'];
+export type ApprovalStageRequest = components['schemas']['ApprovalStageRequest'];
 
 /**
  * 결재함(사용자) 서비스.
@@ -89,6 +93,13 @@ class ApprovalUserService extends UserService {
     return requireApprovalPage(response);
   }
 
+  async getDetail(ifmlAtrzSn: number): Promise<InformalSanctionDto> {
+    const response = await this.executeGenerated(getApprovalDetailOperation, { path: { id: ifmlAtrzSn } });
+    if (response.ifmlAtrzSn !== ifmlAtrzSn) throw new Error('상세 응답이 요청한 문서와 일치하지 않습니다.');
+    if (typeof response.version !== 'number' || !Number.isInteger(response.version) || response.version < 0) throw new Error('문서 버전을 확인할 수 없습니다. 상세를 다시 불러와 주세요.');
+    return response;
+  }
+
   /**
    * 기안 화면의 업무 구분 선택지. 공통코드 API 는 관리자 전용이라 결재 도메인이 자기 어휘를 내려준다.
    * 등록된 코드가 없으면 빈 배열이다 — 화면은 그것을 "고를 것이 없다" 로 정직하게 보여야 한다.
@@ -132,8 +143,9 @@ class ApprovalUserService extends UserService {
     ifmlAtrzSn: number,
     aprvYn: typeof SANCTION_STATUS.APPROVED | typeof SANCTION_STATUS.REJECTED,
     rjctRsnCn?: string,
+    version?: number,
   ): Promise<void> {
-    const request = ApprovalDecisionRequestSchema.parse({ status: aprvYn, reason: rjctRsnCn });
+    const request = ApprovalDecisionRequestSchema.parse({ status: aprvYn, reason: rjctRsnCn, ...(version === undefined ? {} : { version }) });
     return this.executeGenerated(confirmOperation, {
       path: { id: ifmlAtrzSn },
       body: request,
@@ -141,13 +153,22 @@ class ApprovalUserService extends UserService {
   }
 
   /**
-   * 내가 올린 결재 취소(철회). 대기(신청) 중인 건만 취소 가능하며, 신청자 본인만 할 수 있다
-   * (서버 {@code InformalSanctionService#deleteInformalSanction} 의 소유자·상태 가드).
+   * 내가 올린 결재 회수. 신청자·상태·버전은 서버가 재검증하며 문서와 차수 이력을 보존한다.
    */
-  async cancelDraft(ifmlAtrzSn: number): Promise<void> {
+  async cancelDraft(ifmlAtrzSn: number, version?: number): Promise<void> {
     return this.executeGenerated(cancelApprovalOperation, {
       path: { id: ifmlAtrzSn },
+      ...(version === undefined ? {} : { query: { version } }),
     });
+  }
+
+  async resubmit(ifmlAtrzSn: number, request: ApprovalResubmissionRequest): Promise<number> {
+    const response = await this.executeGenerated(resubmitApprovalOperation, {
+      path: { id: ifmlAtrzSn },
+      body: ApprovalResubmissionRequestSchema.parse(request),
+    });
+    if (typeof response !== 'number') throw new Error('재상신 응답이 문서 번호 계약과 일치하지 않습니다.');
+    return response;
   }
 }
 

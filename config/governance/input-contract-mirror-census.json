@@ -339,6 +339,30 @@
         "prgrmExpln"
       ],
       "pack": "core"
+    },
+    {
+      "entity": "nuri.business.domain.informalsanction.InformalSanction",
+      "dto": "nuri.api.controller.business.approval.dto.ApprovalDraftRequest",
+      "fields": [
+        "taskSeCd",
+        "aprvrId",
+        "docTtl",
+        "docCn"
+      ],
+      "pack": "demo"
+    },
+    {
+      "entity": "nuri.business.domain.informalsanction.InformalSanction",
+      "dto": "nuri.api.controller.business.approval.dto.ApprovalConfirmRequest",
+      "fields": [
+        "status",
+        "reason"
+      ],
+      "entityFields": {
+        "status": "aprvYn",
+        "reason": "rjctRsnCn"
+      },
+      "pack": "demo"
     }
   ],
   "enumBindings": [
@@ -495,6 +519,12 @@
       "parent": "nuri.business.service.addressbook.dto.AddressBookDto",
       "field": "adbkMan",
       "item": "nuri.business.service.addressbook.dto.AddressBookUserDto",
+      "pack": "demo"
+    },
+    {
+      "parent": "nuri.api.controller.business.approval.dto.ApprovalDraftRequest",
+      "field": "stages",
+      "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest",
       "pack": "demo"
     }
   ],
@@ -892,6 +922,28 @@
         }
       ],
       "pack": "core"
+    },
+    {
+      "dto": "nuri.api.controller.business.approval.dto.ApprovalDraftRequest",
+      "fields": [
+        {
+          "field": "taskSeCd",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
+    },
+    {
+      "dto": "nuri.api.controller.business.approval.dto.ApprovalConfirmRequest",
+      "fields": [
+        {
+          "field": "status",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ],
+      "pack": "demo"
     }
   ],
   "requiredResponseFields": [

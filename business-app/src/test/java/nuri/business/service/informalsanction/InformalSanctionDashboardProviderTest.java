@@ -2,16 +2,11 @@ package nuri.business.service.informalsanction;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,8 +24,7 @@ class InformalSanctionDashboardProviderTest {
     @Test
     @DisplayName("대기 중인 결재 건수를 센다")
     void countsPendingApprovals() {
-        when(approvalService.getPendingApprovalList(eq("user-1"), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(Collections.emptyList(), Pageable.unpaged(), 3));
+        when(approvalService.getPendingApprovalCount("user-1")).thenReturn(3L);
         Map<String, Object> result = new HashMap<>();
 
         provider.provideDashboardData("user-1", result);
@@ -41,7 +35,7 @@ class InformalSanctionDashboardProviderTest {
     @Test
     @DisplayName("조회에 실패하면 0 을 채우지 않는다")
     void doesNotReportZeroWhenTheQueryFails() {
-        when(approvalService.getPendingApprovalList(any(), any())).thenThrow(new RuntimeException("approval store down"));
+        when(approvalService.getPendingApprovalCount(any())).thenThrow(new RuntimeException("approval store down"));
         Map<String, Object> result = new HashMap<>();
 
         provider.provideDashboardData("user-1", result);

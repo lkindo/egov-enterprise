@@ -707,6 +707,14 @@
           "source": "api-server/src/test/java/nuri/api/schema/AddressBookBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-APPROVAL-WORKFLOW",
+          "source": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-APPROVAL-WORKFLOW",
+          "source": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-ATTACHMENT-REFERENCE-INTEGRITY",
           "source": "api-server/src/test/java/nuri/api/schema/AttachmentReferenceIntegrityPostgresTest.java"
         },

@@ -27,6 +27,8 @@ export const SANCTION_STATUS = {
   APPROVED: 'C',
   /** 반려 */
   REJECTED: 'R',
+  /** 회수 — 문서와 이전 차수 이력을 보존한다. */
+  WITHDRAWN: 'W',
 } as const;
 
 export type SanctionStatusCode = (typeof SANCTION_STATUS)[keyof typeof SANCTION_STATUS];

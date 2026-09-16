@@ -20,5 +20,10 @@ public interface InformalSanctionMapper {
     @Mapping(target = "aplcntNm", ignore = true)
     @Mapping(target = "aprvrNm", ignore = true)
     @Mapping(target = "aprvrOrgnztNm", ignore = true)
+    @Mapping(target = "stages", ignore = true)
+    @Mapping(target = "history", ignore = true)
+    @Mapping(target = "canApprove", ignore = true)
+    @Mapping(target = "canWithdraw", ignore = true)
+    @Mapping(target = "canResubmit", ignore = true)
     InformalSanctionDto toDto(InformalSanction entity);
 }

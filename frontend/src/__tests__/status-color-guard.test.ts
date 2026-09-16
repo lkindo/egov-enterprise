@@ -138,7 +138,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // Superseded role/authority forms removed nine legacy status colors.
 // 2026-09-11: 지식·설문 허브 장식 헤더 제거와 최근 활동 오류의 semantic 토큰 이행으로 7건 감소.
 // 제외 목록은 변경하지 않는다.
-const BASELINE = 485;
+// [하향 래칫 2026-09-16] 실제 다단계 결재선의 semantic 상태색 이행(6건)과 기안 화면 양식 목업 제거(2건)로 8건 감소.
+const BASELINE = 477;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

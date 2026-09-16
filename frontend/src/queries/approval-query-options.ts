@@ -6,6 +6,7 @@ import {
 import {
   approvalUserService,
   type ApprovalDraftRequest,
+  type ApprovalResubmissionRequest,
   type SanctionStatusCode,
 } from '@/services/business/user/approval/ApprovalUserService';
 
@@ -31,6 +32,7 @@ export interface ApprovalDecision {
   ifmlAtrzSn: number;
   status: Extract<SanctionStatusCode, 'C' | 'R'>;
   reason?: string;
+  version?: number;
 }
 
 export const approvalKeys = {
@@ -40,6 +42,8 @@ export const approvalKeys = {
     [...approvalKeys.lists(), tab, params] as const
   ),
   taskTypes: () => [...approvalKeys.all, 'task-types'] as const,
+  details: () => [...approvalKeys.all, 'detail'] as const,
+  detail: (id: number) => [...approvalKeys.details(), id] as const,
 };
 
 function listByTab(tab: ApprovalTab, params: ApprovalListParams) {
@@ -54,6 +58,10 @@ function listByTab(tab: ApprovalTab, params: ApprovalListParams) {
 }
 
 export const approvalQueryOptions = {
+  detail: (id: number) => queryOptions({
+    queryKey: approvalKeys.detail(id),
+    queryFn: () => approvalUserService.getDetail(id),
+  }),
   list: (tab: ApprovalTab, params: ApprovalListParams) => queryOptions({
     queryKey: approvalKeys.list(tab, params),
     queryFn: () => listByTab(tab, params),
@@ -68,9 +76,10 @@ export const approvalQueryOptions = {
 
 export const approvalMutationOptions = {
   confirm: (queryClient: QueryClient) => mutationOptions({
-    mutationFn: async ({ ifmlAtrzSn, status, reason }: ApprovalDecision) => {
-      await approvalUserService.confirm(ifmlAtrzSn, status, reason);
+    mutationFn: async ({ ifmlAtrzSn, status, reason, version }: ApprovalDecision) => {
+      await approvalUserService.confirm(ifmlAtrzSn, status, reason, version);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
     },
   }),
   /** 기안 상신. 성공하면 목록 factory key 만 무효화한다(업무 구분 캐시는 그대로). */
@@ -81,11 +90,20 @@ export const approvalMutationOptions = {
       return ifmlAtrzSn;
     },
   }),
-  /** 기안 취소(철회). 성공하면 목록 factory key 를 무효화한다. */
+  /** 회수 후에도 같은 문서의 상세와 차수 이력을 최신화한다. */
   cancel: (queryClient: QueryClient) => mutationOptions({
-    mutationFn: async (ifmlAtrzSn: number) => {
-      await approvalUserService.cancelDraft(ifmlAtrzSn);
+    mutationFn: async ({ ifmlAtrzSn, version }: { ifmlAtrzSn: number; version?: number }) => {
+      await approvalUserService.cancelDraft(ifmlAtrzSn, version);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
+    },
+  }),
+  resubmit: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async ({ ifmlAtrzSn, request }: { ifmlAtrzSn: number; request: ApprovalResubmissionRequest }) => {
+      const id = await approvalUserService.resubmit(ifmlAtrzSn, request);
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.lists() });
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.detail(ifmlAtrzSn) });
+      return id;
     },
   }),
 };

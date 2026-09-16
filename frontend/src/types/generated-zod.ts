@@ -169,6 +169,43 @@ export const MemoReportDtoSchema = z.object({
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
 // ==========================================================================
+// ApprovalApproverDto Schema
+// ==========================================================================
+export const ApprovalApproverDtoSchema = z.object({
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
+  opinion: z.string().optional(),
+  decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+export type ApprovalApproverDto = z.infer<typeof ApprovalApproverDtoSchema>;
+
+// ==========================================================================
+// ApprovalRevisionDto Schema
+// ==========================================================================
+export const ApprovalRevisionDtoSchema = z.object({
+  atrzCycl: z.number().int().optional(),
+  docTtl: z.string().optional(),
+  docCn: z.string().optional(),
+  aprvYn: z.string().optional(),
+  reqYmd: z.string().optional(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoSchema)).optional(),
+});
+export type ApprovalRevisionDto = z.infer<typeof ApprovalRevisionDtoSchema>;
+
+// ==========================================================================
+// ApprovalStageDto Schema
+// ==========================================================================
+export const ApprovalStageDtoSchema = z.object({
+  order: z.number().int().optional(),
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
+  approvers: z.array(z.lazy(() => ApprovalApproverDtoSchema)).optional(),
+});
+export type ApprovalStageDto = z.infer<typeof ApprovalStageDtoSchema>;
+
+// ==========================================================================
 // InformalSanctionDto Schema
 // ==========================================================================
 export const InformalSanctionDtoSchema = z.object({
@@ -178,7 +215,7 @@ export const InformalSanctionDtoSchema = z.object({
   aplcntId: z.string().min(0).max(20),
   aplcntNm: z.string().optional(),
   reqYmd: z.string().min(0).max(8).optional(),
-  aprvrId: z.string().min(0).max(20),
+  aprvrId: z.string().min(0).max(20).optional(),
   aprvrNm: z.string().optional(),
   aprvrOrgnztNm: z.string().optional(),
   aprvYn: z.string().min(0).max(1).optional(),
@@ -186,6 +223,15 @@ export const InformalSanctionDtoSchema = z.object({
   rjctRsnCn: z.string().min(0).max(4000).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  version: z.number().int().min(0).optional(),
+  atrzCycl: z.number().int().optional(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoSchema)).optional(),
+  history: z.array(z.lazy(() => ApprovalRevisionDtoSchema)).optional(),
+  canApprove: z.boolean().optional(),
+  canWithdraw: z.boolean().optional(),
+  canResubmit: z.boolean().optional(),
 });
 export type InformalSanctionDto = z.infer<typeof InformalSanctionDtoSchema>;
 
@@ -311,6 +357,7 @@ export type SatisfactionDto = z.infer<typeof SatisfactionDtoSchema>;
 export const ApprovalConfirmRequestSchema = z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional(),
+  version: z.number().int().min(0).optional(),
 });
 export type ApprovalConfirmRequest = z.infer<typeof ApprovalConfirmRequestSchema>;
 
@@ -1172,10 +1219,36 @@ export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 // ==========================================================================
 export const ApprovalDraftRequestSchema = z.object({
   taskSeCd: z.string().min(0).max(12),
-  aprvrId: z.string().min(0).max(20),
+  aprvrId: z.string().min(0).max(20).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestSchema)).min(1).max(10).optional(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
 });
 export type ApprovalDraftRequest = z.infer<typeof ApprovalDraftRequestSchema>;
+
+// ==========================================================================
+// ApprovalStageRequest Schema
+// ==========================================================================
+export const ApprovalStageRequestSchema = z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]),
+  approverIds: z.array(z.string().min(0).max(20)).min(1).max(10),
+});
+export type ApprovalStageRequest = z.infer<typeof ApprovalStageRequestSchema>;
+
+// ==========================================================================
+// ApprovalResubmissionRequest Schema
+// ==========================================================================
+export const ApprovalResubmissionRequestSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestSchema)).min(1).max(10).optional(),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+  version: z.number().int().min(0),
+});
+export type ApprovalResubmissionRequest = z.infer<typeof ApprovalResubmissionRequestSchema>;
 
 // ==========================================================================
 // UserDto Schema
@@ -4907,6 +4980,56 @@ export const MemoReportDtoResponseSchema = z.object({
   editable: z.boolean().optional().nullable(),
 });
 
+export const ApprovalApproverDtoRequestSchema = z.object({
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
+  opinion: z.string().optional(),
+  decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+});
+
+export const ApprovalApproverDtoResponseSchema = z.object({
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional().nullable(),
+  opinion: z.string().optional().nullable(),
+  decidedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+});
+
+export const ApprovalRevisionDtoRequestSchema = z.object({
+  atrzCycl: z.number().int().optional(),
+  docTtl: z.string().optional(),
+  docCn: z.string().optional(),
+  aprvYn: z.string().optional(),
+  reqYmd: z.string().optional(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoRequestSchema.strict())).optional(),
+});
+
+export const ApprovalRevisionDtoResponseSchema = z.object({
+  atrzCycl: z.number().int().optional().nullable(),
+  docTtl: z.string().optional().nullable(),
+  docCn: z.string().optional().nullable(),
+  aprvYn: z.string().optional().nullable(),
+  reqYmd: z.string().optional().nullable(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoResponseSchema)).optional().nullable(),
+});
+
+export const ApprovalStageDtoRequestSchema = z.object({
+  order: z.number().int().optional(),
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
+  approvers: z.array(z.lazy(() => ApprovalApproverDtoRequestSchema.strict())).optional(),
+});
+
+export const ApprovalStageDtoResponseSchema = z.object({
+  order: z.number().int().optional().nullable(),
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional().nullable(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional().nullable(),
+  approvers: z.array(z.lazy(() => ApprovalApproverDtoResponseSchema)).optional().nullable(),
+});
+
 export const InformalSanctionDtoRequestSchema = z.object({
   ifmlAtrzSn: z.number().int().optional(),
   taskSeCd: z.string().min(0).max(12),
@@ -4914,7 +5037,7 @@ export const InformalSanctionDtoRequestSchema = z.object({
   aplcntId: z.string().min(0).max(20),
   aplcntNm: z.string().optional(),
   reqYmd: z.string().min(0).max(8).optional(),
-  aprvrId: z.string().min(0).max(20),
+  aprvrId: z.string().min(0).max(20).optional(),
   aprvrNm: z.string().optional(),
   aprvrOrgnztNm: z.string().optional(),
   aprvYn: z.string().min(0).max(1).optional(),
@@ -4922,6 +5045,15 @@ export const InformalSanctionDtoRequestSchema = z.object({
   rjctRsnCn: z.string().min(0).max(4000).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  version: z.number().int().min(0).optional(),
+  atrzCycl: z.number().int().optional(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoRequestSchema.strict())).optional(),
+  history: z.array(z.lazy(() => ApprovalRevisionDtoRequestSchema.strict())).optional(),
+  canApprove: z.boolean().optional(),
+  canWithdraw: z.boolean().optional(),
+  canResubmit: z.boolean().optional(),
 });
 
 export const InformalSanctionDtoResponseSchema = z.object({
@@ -4931,7 +5063,7 @@ export const InformalSanctionDtoResponseSchema = z.object({
   aplcntId: z.string().min(0).max(20),
   aplcntNm: z.string().optional().nullable(),
   reqYmd: z.string().min(0).max(8).optional().nullable(),
-  aprvrId: z.string().min(0).max(20),
+  aprvrId: z.string().min(0).max(20).optional().nullable(),
   aprvrNm: z.string().optional().nullable(),
   aprvrOrgnztNm: z.string().optional().nullable(),
   aprvYn: z.string().min(0).max(1).optional().nullable(),
@@ -4939,6 +5071,15 @@ export const InformalSanctionDtoResponseSchema = z.object({
   rjctRsnCn: z.string().min(0).max(4000).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  docTtl: z.string().min(0).max(256).optional().nullable(),
+  docCn: z.string().min(0).max(4000).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
+  atrzCycl: z.number().int().optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoResponseSchema)).optional().nullable(),
+  history: z.array(z.lazy(() => ApprovalRevisionDtoResponseSchema)).optional().nullable(),
+  canApprove: z.boolean().optional().nullable(),
+  canWithdraw: z.boolean().optional().nullable(),
+  canResubmit: z.boolean().optional().nullable(),
 });
 
 export const OnlineManualDtoRequestSchema = z.object({
@@ -5100,11 +5241,13 @@ export const SatisfactionDtoResponseSchema = z.object({
 export const ApprovalConfirmRequestRequestSchema = z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional(),
+  version: z.number().int().min(0).optional(),
 });
 
 export const ApprovalConfirmRequestResponseSchema = z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 });
 
 export const UserProfileUpdateRequestRequestSchema = z.object({
@@ -6329,14 +6472,50 @@ export const LoginRequestResponseSchema = z.object({
 
 export const ApprovalDraftRequestRequestSchema = z.object({
   taskSeCd: z.string().min(0).max(12),
-  aprvrId: z.string().min(0).max(20),
+  aprvrId: z.string().min(0).max(20).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestRequestSchema.strict())).min(1).max(10).optional(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
 });
 
 export const ApprovalDraftRequestResponseSchema = z.object({
   taskSeCd: z.string().min(0).max(12),
-  aprvrId: z.string().min(0).max(20),
+  aprvrId: z.string().min(0).max(20).optional().nullable(),
+  docTtl: z.string().min(0).max(256).optional().nullable(),
+  docCn: z.string().min(0).max(4000).optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(1).max(10).optional().nullable(),
   reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional().nullable(),
+});
+
+export const ApprovalStageRequestRequestSchema = z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]),
+  approverIds: z.array(z.string().min(0).max(20)).min(1).max(10),
+});
+
+export const ApprovalStageRequestResponseSchema = z.object({
+  kind: z.enum(["APPROVAL","AGREEMENT"]),
+  approverIds: z.array(z.string().min(0).max(20).optional().nullable()).min(1).max(10),
+});
+
+export const ApprovalResubmissionRequestRequestSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestRequestSchema.strict())).min(1).max(10).optional(),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional(),
+  version: z.number().int().min(0),
+});
+
+export const ApprovalResubmissionRequestResponseSchema = z.object({
+  taskSeCd: z.string().min(0).max(12),
+  aprvrId: z.string().min(0).max(20).optional().nullable(),
+  docTtl: z.string().min(0).max(256).optional().nullable(),
+  docCn: z.string().min(0).max(4000).optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(1).max(10).optional().nullable(),
+  reqYmd: z.string().regex(new RegExp("^\\d{8}$")).optional().nullable(),
+  version: z.number().int().min(0),
 });
 
 export const UserDtoRequestSchema = z.object({

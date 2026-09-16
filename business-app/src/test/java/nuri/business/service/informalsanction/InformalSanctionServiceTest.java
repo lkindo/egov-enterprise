@@ -40,6 +40,15 @@ class InformalSanctionServiceTest {
     private InformalSanctionRepository informalSanctionRepository;
 
     @Mock
+    private nuri.business.domain.informalsanction.InformalSanctionDetailRepository detailRepository;
+
+    @Mock
+    private nuri.business.domain.informalsanction.InformalSanctionHistoryRepository historyRepository;
+
+    @Mock
+    private jakarta.persistence.EntityManager entityManager;
+
+    @Mock
     private CommonCodeService commonCodeService;
 
     @Mock
@@ -55,7 +64,7 @@ class InformalSanctionServiceTest {
     private InformalSanctionService informalSanctionService;
 
     private void approverStatus(String esntlId, String userSttsCd) {
-        given(userRepository.findById(esntlId)).willReturn(Optional.of(nuri.business.domain.user.entity.User.builder()
+        given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
                 .esntlId(esntlId).userId(esntlId).userNm("결재자").pswd("{bcrypt}x").userSttsCd(userSttsCd).build()));
     }
 
@@ -76,7 +85,8 @@ class InformalSanctionServiceTest {
     void getInformalSanctionListTest() {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
-        InformalSanction sanction = InformalSanction.builder().ifmlAtrzSn(1L).build();
+        InformalSanction sanction = InformalSanction.builder().ifmlAtrzSn(1L)
+                .aplcntId("user1").aprvYn("A").build();
         given(informalSanctionRepository.findByAplcntId("user1", pageable)).willReturn(new PageImpl<>(List.of(sanction)));
 
         // When
@@ -91,7 +101,7 @@ class InformalSanctionServiceTest {
     void getInformalSanction_Success() {
         // Given
         InformalSanction sanction = InformalSanction.builder()
-                .ifmlAtrzSn(1L).taskSeCd("C1").aplcntId("user1").aprvrId("boss1").build();
+                .ifmlAtrzSn(1L).taskSeCd("C1").aplcntId("user1").aprvrId("boss1").aprvYn("A").build();
         given(informalSanctionRepository.findByIdAndParticipant(1L, "user1"))
                 .willReturn(Optional.of(sanction));
         given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of());
@@ -161,7 +171,7 @@ class InformalSanctionServiceTest {
         given(commonCodeService.getCodesByGroup("COM075"))
                 .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
         if ("inactive".equals(kind)) approverStatus("boss1", "D");
-        else given(userRepository.findById("boss1")).willReturn(Optional.empty());
+        else given(userRepository.findAllById(any())).willReturn(List.of());
 
         assertThatThrownBy(() -> informalSanctionService.registerInformalSanction(dto))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("결재자로 지정할 수 없는 사용자입니다");
@@ -169,17 +179,19 @@ class InformalSanctionServiceTest {
     }
 
     @Test
-    @DisplayName("수정으로도 결재자를 신청자 본인으로 바꿀 수 없고 기존 결재자를 보존한다")
-    void updateRejectsSelfApprovalWithoutMutation() {
+    @DisplayName("재상신에서도 자기 결재를 거절하고 이전 내용을 보존한다")
+    void resubmitRejectsSelfApprovalWithoutMutation() {
         InformalSanction entity = InformalSanction.builder().ifmlAtrzSn(1L)
-                .aplcntId("owner").taskSeCd("C1").reqYmd("20260908").aprvrId("boss").aprvYn("A").build();
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+                .aplcntId("owner").taskSeCd("C1").reqYmd("20260908").aprvrId("boss").aprvYn("R").build();
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(commonCodeService.getCodesByGroup("COM075"))
                 .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
         InformalSanctionDto dto = InformalSanctionDto.builder().ifmlAtrzSn(1L)
                 .taskSeCd("C1").reqYmd("20260909").aprvrId("owner").build();
 
-        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
+        assertThatThrownBy(() -> informalSanctionService.resubmitInformalSanction(1L, dto, null, List.of(
+                new nuri.business.service.informalsanction.dto.ApprovalStageRequest(
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, List.of("owner")))))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("본인에게 결재를 요청할 수 없습니다");
         assertThat(entity.getAprvrId()).isEqualTo("boss");
         assertThat(entity.getReqYmd()).isEqualTo("20260908");
@@ -205,17 +217,21 @@ class InformalSanctionServiceTest {
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.NullAndEmptySource
     @org.junit.jupiter.params.provider.ValueSource(strings = {"ZZ", "RETIRED"})
-    @DisplayName("수정도 사용 중 업무 구분만 허용하며 거절 시 기존 내용을 보존한다")
-    void updateRejectsUnknownTaskTypeWithoutMutation(String taskType) {
+    @DisplayName("재상신도 사용 중 업무 구분만 허용하며 거절 시 이전 내용을 보존한다")
+    void resubmitRejectsUnknownTaskTypeWithoutMutation(String taskType) {
         InformalSanction entity = InformalSanction.builder().ifmlAtrzSn(1L)
-                .aplcntId("owner").taskSeCd("C1").reqYmd("20260908").aprvrId("boss").aprvYn("A").build();
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
-        given(commonCodeService.getCodesByGroup("COM075"))
-                .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+                .aplcntId("owner").taskSeCd("C1").reqYmd("20260908").aprvrId("boss").aprvYn("R").build();
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
+        if (taskType != null) {
+            given(commonCodeService.getCodesByGroup("COM075"))
+                    .willReturn(List.of(new nuri.business.service.code.dto.CommonCodeDto("COM075", "C1", "일반", null, "Y")));
+        }
         InformalSanctionDto dto = InformalSanctionDto.builder().ifmlAtrzSn(1L)
                 .taskSeCd(taskType).reqYmd("20260909").aprvrId("new-boss").build();
 
-        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
+        assertThatThrownBy(() -> informalSanctionService.resubmitInformalSanction(1L, dto, null, List.of(
+                new nuri.business.service.informalsanction.dto.ApprovalStageRequest(
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, List.of("new-boss")))))
                 .isInstanceOf(BusinessException.class).extracting("errorCode")
                 .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
         assertThat(entity.getTaskSeCd()).isEqualTo("C1");
@@ -229,7 +245,7 @@ class InformalSanctionServiceTest {
     void updateChecksOwnerBeforeTaskType() {
         InformalSanction entity = InformalSanction.builder().ifmlAtrzSn(1L)
                 .aplcntId("owner").taskSeCd("C1").aprvYn("A").build();
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         securityUtilMock.when(() -> SecurityUtil.assertOwnerByEsntlId("owner"))
                 .thenThrow(new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED));
 
@@ -252,7 +268,15 @@ class InformalSanctionServiceTest {
                 .aprvrId(sanctionerId)
                 .aprvYn(SanctionStatus.REQUESTED.getCode())
                 .build();
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(sanction));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(sanction));
+        given(detailRepository.findRevision(1L, java.math.BigDecimal.ONE)).willReturn(List.of(
+                nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                        new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                                1L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, sanctionerId),
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true)));
+        given(historyRepository.findById(new nuri.business.domain.informalsanction.InformalSanctionHistoryId(
+                1L, java.math.BigDecimal.ONE))).willReturn(Optional.of(
+                nuri.business.domain.informalsanction.InformalSanctionHistory.create(sanction)));
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         // When
@@ -265,16 +289,22 @@ class InformalSanctionServiceTest {
 
     /**
      * [2026-09-05] 결재함의 '처리 이력' 탭이 신청자 기준 목록을 부르고 있었다. 결재자가
-     * 처리한 건은 결재자 축 + 승인·반려 상태로만 좁혀야 한다 — 대기(A)가 섞이면 '처리한 것'
-     * 이라는 화면의 약속이 깨진다.
+     * 처리 이력은 결재자 축의 승인·반려 라인으로 좁힌다. 다른 결재자가 아직 처리 중이라 문서가
+     * A여도 본인이 승인한 라인은 이력에 남아야 한다.
      */
     @Test
-    @DisplayName("처리한 결재 목록은 결재자 기준으로 승인·반려 상태만 조회한다")
+    @DisplayName("처리한 결재 목록은 본인의 승인·반려 라인을 조회하며 진행 중 문서도 보존한다")
     void getProcessedApprovalListQueriesApproverWithProcessedStatuses() {
         Pageable pageable = PageRequest.of(0, 10);
         InformalSanction approved = InformalSanction.builder()
                 .ifmlAtrzSn(1L).aplcntId("user1").aprvrId("admin")
-                .aprvYn(SanctionStatus.APPROVED.getCode()).build();
+                .aprvYn(SanctionStatus.REQUESTED.getCode()).build();
+        var approvedLine = nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                        1L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, "admin"),
+                nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true);
+        approvedLine.decide(true, null, java.time.LocalDateTime.of(2026, 9, 16, 10, 0));
+        given(detailRepository.findVisibleForDocuments(any(), eq("admin"))).willReturn(List.of(approvedLine));
         given(informalSanctionRepository.findByAprvrIdAndAprvYnIn(
                 eq("admin"), eq(List.of("C", "R")), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(approved)));
@@ -282,7 +312,9 @@ class InformalSanctionServiceTest {
         Page<InformalSanctionDto> result = informalSanctionService.getProcessedApprovalList("admin", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getAprvYn()).isEqualTo("C");
+        assertThat(result.getContent().get(0).getAprvYn()).isEqualTo("A");
+        assertThat(result.getContent().get(0).getStages().get(0).approvers().get(0).status())
+                .isEqualTo(nuri.business.domain.informalsanction.ApprovalStatus.APPROVED);
         verify(informalSanctionRepository).findByAprvrIdAndAprvYnIn(eq("admin"), eq(List.of("C", "R")), eq(pageable));
         verify(informalSanctionRepository, never()).findByAprvrId(any(), any());
         verify(informalSanctionRepository, never()).findByAplcntId(any(), any());
@@ -298,6 +330,15 @@ class InformalSanctionServiceTest {
         InformalSanction unknownCode = InformalSanction.builder()
                 .ifmlAtrzSn(2L).aplcntId("user1").aprvrId("admin").taskSeCd("GONE")
                 .aprvYn(SanctionStatus.REQUESTED.getCode()).build();
+        given(detailRepository.findVisibleForDocuments(any(), anyString())).willReturn(List.of(
+                nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                        new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                                1L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, "admin"),
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true),
+                nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                        new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                                2L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, "admin"),
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true)));
         given(informalSanctionRepository.findByAprvrIdAndAprvYn(eq("admin"), eq("A"), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(pending, unknownCode)));
         given(informalSanctionRepository.findByAplcntId("user1", pageable))

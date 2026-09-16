@@ -34,7 +34,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                                 """))
                 .andExpect(status().isOk());
 
-        verify(approvalService).confirmInformalSanction(7L, "C", null);
+        verify(approvalService).confirmInformalSanction(7L, "C", null, null);
     }
 
     @Test
@@ -111,7 +111,8 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser(username = "drafter", esntlId = "DRAFTER_ESNTL")
     @DisplayName("기안은 현재 사용자를 신청자로 고정하고 빈 신청일은 서버가 8자리로 채운다")
     void createsDraftBoundToCurrentUser() throws Exception {
-        org.mockito.BDDMockito.given(approvalService.registerInformalSanction(org.mockito.ArgumentMatchers.any()))
+        org.mockito.BDDMockito.given(approvalService.registerInformalSanction(
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.isNull()))
                 .willReturn(42L);
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
@@ -126,7 +127,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
 
         org.mockito.ArgumentCaptor<nuri.business.service.informalsanction.dto.InformalSanctionDto> captor =
                 org.mockito.ArgumentCaptor.forClass(nuri.business.service.informalsanction.dto.InformalSanctionDto.class);
-        verify(approvalService).registerInformalSanction(captor.capture());
+        verify(approvalService).registerInformalSanction(captor.capture(), org.mockito.ArgumentMatchers.isNull());
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getAplcntId()).isEqualTo("DRAFTER_ESNTL");
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getAprvrId()).isEqualTo("BOSS_ESNTL");
         org.assertj.core.api.Assertions.assertThat(captor.getValue().getTaskSeCd()).isEqualTo("01");
@@ -178,6 +179,62 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .with(csrf()))
                 .andExpect(status().isOk());
 
-        verify(approvalService).deleteInformalSanction(42L);
+        verify(approvalService).deleteInformalSanction(42L, null);
+    }
+
+    @Test
+    @WithMockCustomUser(username = "drafter", esntlId = "DRAFTER_ESNTL")
+    void acceptsSequentialAndParallelStagesWithoutLegacyApprover() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
+                            {"taskSeCd":"01","docTtl":"검토 요청","docCn":"승인할 내용",
+                             "stages":[{"kind":"AGREEMENT","approverIds":["REVIEWER_A","REVIEWER_B"]},
+                                       {"kind":"APPROVAL","approverIds":["MANAGER"]}]}
+                            """))
+                .andExpect(status().isOk());
+        var dto = org.mockito.ArgumentCaptor.forClass(nuri.business.service.informalsanction.dto.InformalSanctionDto.class);
+        @SuppressWarnings("unchecked")
+        var stages = (org.mockito.ArgumentCaptor<java.util.List<nuri.business.service.informalsanction.dto.ApprovalStageRequest>>)
+                (org.mockito.ArgumentCaptor<?>) org.mockito.ArgumentCaptor.forClass(java.util.List.class);
+        verify(approvalService).registerInformalSanction(dto.capture(), stages.capture());
+        org.assertj.core.api.Assertions.assertThat(dto.getValue().getDocTtl()).isEqualTo("검토 요청");
+        org.assertj.core.api.Assertions.assertThat(dto.getValue().getAplcntId()).isEqualTo("DRAFTER_ESNTL");
+        org.assertj.core.api.Assertions.assertThat(stages.getValue()).hasSize(2);
+    }
+
+    @Test
+    @WithMockCustomUser
+    void rejectsInvalidNestedStagesBeforeService() throws Exception {
+        for (String stages : new String[]{"[]", "[{\"kind\":\"APPROVAL\",\"approverIds\":[]}]",
+                "[{\"kind\":\"APPROVAL\",\"approverIds\":[\"\"]}]", "[null]"}) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
+                            .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"taskSeCd\":\"01\",\"stages\":" + stages + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    void bindsVersionForDecisionsAndWithdrawal() throws Exception {
+        mockMvc.perform(put("/api/v1/approvals/7/confirm").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"C\",\"version\":4,\"reason\":\"검토 완료\"}"))
+                .andExpect(status().isOk());
+        verify(approvalService).confirmInformalSanction(7L, "C", "검토 완료", 4);
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/approvals/7")
+                        .queryParam("version", "4").with(csrf()))
+                .andExpect(status().isOk());
+        verify(approvalService).deleteInformalSanction(7L, 4);
+    }
+
+    @Test
+    @WithMockCustomUser
+    void resubmissionRequiresTheVersionReadByTheEditor() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/7/resubmissions")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS\"}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(approvalService);
     }
 }

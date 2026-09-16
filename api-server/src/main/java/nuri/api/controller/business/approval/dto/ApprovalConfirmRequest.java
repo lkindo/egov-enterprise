@@ -6,6 +6,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import nuri.business.domain.informalsanction.SanctionStatus;
 
 /** 승인·반려 입력 계약. 응답 모델이나 도메인 DTO를 재정의하지 않는다. */
 @Schema(description = "전자결재 승인·반려 요청")
@@ -17,9 +18,16 @@ public class ApprovalConfirmRequest {
     @Pattern(regexp = "^[CR]$")
     private String status;
 
-    @Schema(description = "반려 사유. status가 R이면 필수", maxLength = 4000)
+    @Schema(description = "처리 의견. 반려(status=R)일 때는 필수", maxLength = 4000)
     @Size(max = 4000)
     private String reason;
+
+    @Schema(description = "상세 조회 시 받은 문서 버전. 달라졌으면 최신 상태를 확인해야 합니다.")
+    @jakarta.validation.constraints.Min(0)
+    private Integer version;
+
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
 
     public String getStatus() {
         return status;
@@ -41,6 +49,6 @@ public class ApprovalConfirmRequest {
     @JsonIgnore
     @Schema(hidden = true)
     public boolean isRejectionReasonValid() {
-        return !"R".equals(status) || (reason != null && !reason.isBlank());
+        return !SanctionStatus.REJECTED.getCode().equals(status) || (reason != null && !reason.isBlank());
     }
 }

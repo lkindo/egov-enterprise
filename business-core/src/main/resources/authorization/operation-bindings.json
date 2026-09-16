@@ -2804,5 +2804,19 @@
     "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#departments",
     "access": "PERMISSION",
     "permission": "AUTHRT_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/{id}",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalDetail",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_READ"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals/{id}/resubmissions",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
   }
 ]

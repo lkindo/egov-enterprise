@@ -1,6 +1,8 @@
 package nuri.api.controller.business.approval;
 
 import nuri.api.controller.business.approval.dto.ApprovalConfirmRequest;
+import nuri.api.controller.business.approval.dto.ApprovalDraftRequest;
+import nuri.api.controller.business.approval.dto.ApprovalResubmissionRequest;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.security.annotation.LoginUser;
@@ -24,6 +26,14 @@ public class ApprovalApiController {
 
     private final InformalSanctionService approvalService;
 
+    @Operation(summary = "Get Approval Detail", description = "참여한 결재의 내용·단계·처리 이력을 조회합니다. 참여하지 않은 차수는 공개하지 않습니다.")
+    @GetMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getApprovalDetail')")
+    public ResponseEntity<ApiResponse<InformalSanctionDto>> getApprovalDetail(
+            @PathVariable Long id, @LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(approvalService.getInformalSanction(id, userDetails.getEsntlId())));
+    }
+
     /**
      * 결재 대기함.
      *
@@ -37,7 +47,7 @@ public class ApprovalApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getPending')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getPending(
             @LoginUser CustomUserDetails userDetails,
-            Pageable pageable) {
+            @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
         Page<InformalSanctionDto> result = approvalService.getPendingApprovalList(userDetails.getEsntlId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
@@ -52,7 +62,7 @@ public class ApprovalApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getMyHistory')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getMyHistory(
             @LoginUser CustomUserDetails userDetails,
-            Pageable pageable) {
+            @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
         Page<InformalSanctionDto> result = approvalService.getInformalSanctionList(userDetails.getEsntlId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
@@ -63,7 +73,7 @@ public class ApprovalApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getProcessed')")
     public ResponseEntity<ApiResponse<PageResponse<InformalSanctionDto>>> getProcessed(
             @LoginUser CustomUserDetails userDetails,
-            Pageable pageable) {
+            @org.springframework.data.web.PageableDefault(sort = "ifmlAtrzSn", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
         Page<InformalSanctionDto> result = approvalService.getProcessedApprovalList(userDetails.getEsntlId(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
@@ -89,17 +99,19 @@ public class ApprovalApiController {
     public ResponseEntity<ApiResponse<Long>> createApproval(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody nuri.api.controller.business.approval.dto.ApprovalDraftRequest request) {
-        String reqYmd = request.getReqYmd() == null || request.getReqYmd().isBlank()
-                ? java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
-                        .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
-                : request.getReqYmd();
-        InformalSanctionDto dto = InformalSanctionDto.builder()
-                .taskSeCd(request.getTaskSeCd())
-                .aprvrId(request.getAprvrId())
-                .reqYmd(reqYmd)
-                .aplcntId(userDetails.getEsntlId())
-                .build();
-        return ResponseEntity.ok(ApiResponse.success(approvalService.registerInformalSanction(dto)));
+        return ResponseEntity.ok(ApiResponse.success(approvalService.registerInformalSanction(
+                draftDto(request, userDetails.getEsntlId()), request.getStages())));
+    }
+
+    @Operation(summary = "Resubmit Approval", description = "기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다.")
+    @PostMapping("/{id}/resubmissions")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval')")
+    public ResponseEntity<ApiResponse<Long>> resubmitApproval(
+            @PathVariable Long id, @LoginUser CustomUserDetails userDetails,
+            @Valid @RequestBody ApprovalResubmissionRequest request) {
+        approvalService.resubmitInformalSanction(id, draftDto(request, userDetails.getEsntlId()),
+                request.getVersion(), request.getStages());
+        return ResponseEntity.ok(ApiResponse.success(id));
     }
 
     @Operation(summary = "Confirm Approval (Approve/Reject)")
@@ -108,27 +120,30 @@ public class ApprovalApiController {
     public ResponseEntity<ApiResponse<Void>> confirm(
             @PathVariable Long id,
             @Valid @RequestBody ApprovalConfirmRequest request) {
-        approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason());
+        approvalService.confirmInformalSanction(id, request.getStatus(), request.getReason(), request.getVersion());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    /**
-     * 기안 취소(철회).
-     *
-     * <p><b>주체 결속은 이 핸들러가 아니라 서비스가 한다.</b>
-     * {@link nuri.business.service.informalsanction.InformalSanctionService#deleteInformalSanction}
-     * 이 {@code assertOwnerByEsntlId(aplcntId)} 로 신청자 본인만 허용하고(관리자도 우회 못 한다),
-     * {@code aprvYn = "A"}(신청) 상태에서만 지운다. 그래서 여기서 {@code @LoginUser} 를 받아
-     * 쓰지 않는 채로 두지 않는다 — 받아 두면 핸들러가 소유권을 판정하는 것처럼 읽히는데
-     * 실제로는 아무것도 하지 않아, 다음 사람이 서비스 가드를 지워도 눈치채지 못한다.
-     */
+    /** The service checks ownership and retains the document and completed decisions on withdrawal. */
     @Operation(summary = "Cancel My Approval Draft",
             description = "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. "
-                    + "신청자 본인만 가능하며 관리자도 대리 취소할 수 없습니다.")
+                    + "내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다.")
     @DeleteMapping("/{id}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#cancelApproval')")
-    public ResponseEntity<ApiResponse<Void>> cancelApproval(@PathVariable Long id) {
-        approvalService.deleteInformalSanction(id);
+    public ResponseEntity<ApiResponse<Void>> cancelApproval(@PathVariable Long id,
+            @RequestParam(required = false) @jakarta.validation.constraints.Min(0) Integer version) {
+        approvalService.deleteInformalSanction(id, version);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    private static InformalSanctionDto draftDto(ApprovalDraftRequest request, String applicantId) {
+        String reqYmd = request.getReqYmd() == null || request.getReqYmd().isBlank()
+                ? java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
+                        .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
+                : request.getReqYmd();
+        return InformalSanctionDto.builder()
+                .taskSeCd(request.getTaskSeCd()).aprvrId(request.getAprvrId())
+                .reqYmd(reqYmd).aplcntId(applicantId)
+                .docTtl(request.getDocTtl()).docCn(request.getDocCn()).build();
     }
 }

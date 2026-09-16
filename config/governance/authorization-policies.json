@@ -1720,6 +1720,15 @@
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#changeDepartmentGroups')",
       "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{id}/resubmissions",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "InformalSanctionService#resubmitInformalSanction"
     }
   ],
   "serviceGuardPolicies": [
@@ -2944,6 +2953,28 @@
           "permission": "AUTHRT_ASSIGN"
         }
       ]
+    },
+    {
+      "target": "InformalSanctionService#resubmitInformalSanction",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "InformalSanctionService#assertCurrentParticipant",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
     }
   ],
   "manualGuardPolicies": [
@@ -3296,6 +3327,25 @@
         "AND bool_or(g.authrt_grnt_cd='AUTHRT_ASSIGN')"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "InformalSanctionService#confirmInformalSanction",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentEsntlId()",
+        "detailRepository.findRevision(id, sanction.getAtrzCycl())",
+        "actor.equals(d.getId().getUserId())",
+        "SecurityUtil.assertOwnerByEsntlId(ownLine.getId().getUserId())",
+        "ownLine.status() == ApprovalStatus.WAITING",
+        "ownLine.status() != ApprovalStatus.ACTIVE",
+        "CommonErrorCode.ACCESS_DENIED"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.isAdmin()",
+        "SecurityUtil.isAdminOrSystem()"
+      ]
     }
   ],
   "permissionCatalog": "config/governance/permission-catalog.json",
@@ -6105,6 +6155,20 @@
       "handler": "nuri.api.controller.foundation.controller.system.AuthorizationApiController#departments",
       "access": "PERMISSION",
       "permission": "AUTHRT_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/approvals/{id}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalDetail",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_READ"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/{id}/resubmissions",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#resubmitApproval",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
     }
   ]
 }

@@ -19,6 +19,10 @@
       ],
       "acknowledgedRemovedGates": [
         {
+          "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
+          "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
+        },
+        {
           "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
           "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
         },
@@ -41,6 +45,10 @@
         }
       ],
       "acknowledgedRemovedGates": [
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
+          "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
+        },
         {
           "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
           "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
@@ -305,6 +313,8 @@
           "tb_event_info",
           "tb_extrl_hr_info",
           "tb_hlp_info",
+          "tb_ifml_atrz_dtl",
+          "tb_ifml_atrz_hstry",
           "tb_ifml_atrz_info",
           "tb_intrn_svc",
           "tb_memo_rpt_info",
@@ -363,9 +373,9 @@
     }
   ],
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository migrations through V2_99 and explicit authorization Contract (not OCI deployment state)",
-    "checkedAt": "2026-09-10T09:35:06.494Z",
-    "physicalTableCountExcludingFlyway": 78,
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_101 and explicit authorization Contract (not OCI deployment state)",
+    "checkedAt": "2026-09-16T00:43:23.368Z",
+    "physicalTableCountExcludingFlyway": 80,
     "physicalSequenceCount": 49,
     "physicalStandaloneSequenceCount": 3,
     "metaRows": {

@@ -1,8 +1,9 @@
 'use client';
 
-import { Check, Clock, X, User } from 'lucide-react';
+import { Check, Clock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { toDisplayDateTime } from '@/lib/format-date';
+import type { InformalSanctionDto } from '@/services/business/user/approval/ApprovalUserService';
 
 interface Step {
   label: string;
@@ -12,121 +13,53 @@ interface Step {
 }
 
 interface ApprovalStepperProps {
-  steps: Step[];
+  steps?: Step[];
+  stages?: InformalSanctionDto['stages'];
+  currentUserId?: string;
+  accessibleLabel?: string;
 }
 
-export function ApprovalStepper({ steps }: ApprovalStepperProps) {
-  // 진행선은 '마지막으로 처리된 단계의 위치'까지만 채운다.
-  // 종전의 처리 건수/(단계-1) 공식은 전 단계 완료 시 100%를 넘겨(150~200%) 컨테이너를
-  // 넘치고, 첫 단계만 끝나도 선이 끝까지 차는 과장을 만들었다.
-  const lastDoneIndex = steps.reduce(
-    (acc, step, idx) => (step.status === 'completed' || step.status === 'rejected' ? idx : acc),
-    0,
+export function ApprovalStepper({ steps = [], stages, currentUserId, accessibleLabel = '결재선 진행' }: ApprovalStepperProps) {
+  if (!stages?.length) return (
+    <ol aria-label={accessibleLabel} className="space-y-3">
+      {steps.map((step, index) => <li key={`${step.label}-${index}`} className="rounded-md border border-border p-3 text-sm">
+        <p className="font-semibold">{step.label} · {step.user || '담당자 미지정'}</p>
+        <p className="mt-1 text-muted-foreground">{step.status === 'completed' ? '완료' : step.status === 'rejected' ? '반려' : step.status === 'current' ? '승인 대기' : '앞 단계 대기'}{step.date ? ` · ${step.date}` : ''}</p>
+      </li>)}
+    </ol>
   );
-  const progressPercentage = steps.length > 1 ? (lastDoneIndex / (steps.length - 1)) * 100 : 0;
 
-  return (
-    <div className="w-full py-12 px-4">
-      <div className="relative flex justify-between items-start max-w-5xl mx-auto">
-        {/* Background Connection Line */}
-        <div className="absolute top-6 left-0 w-full h-[3px] bg-muted rounded-lg -z-10" />
-        
-        {/* Active Progress Line */}
-        <motion.div 
-          className="absolute top-6 left-0 h-[3px] bg-gradient-to-r from-primary to-hub-purple rounded-lg -z-10"
-          initial={{ width: 0 }}
-          animate={{ width: `${progressPercentage}%` }}
-          transition={{ duration: 0.8, ease: "circOut" }}
-        />
-
-        {steps.map((step, idx) => {
-          const isCompleted = step.status === 'completed';
-          const isRejected = step.status === 'rejected';
-          const isCurrent = step.status === 'current';
-
-          return (
-            <div key={`step-${idx}`} className="relative flex flex-col items-center flex-1 group">
-              {/* Step Marker Container */}
-              <div className="relative flex items-center justify-center">
-                <AnimatePresence>
-                  {isCurrent && (
-                    <motion.div
-                      layoutId="active-ring"
-                      className="absolute w-16 h-11 rounded-lg bg-primary/10 border-2 border-primary/20"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1.1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    />
-                  )}
-                </AnimatePresence>
-
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={cn(
-                    "w-12 h-12 rounded-[1.2rem] flex items-center justify-center transition-all duration-500 z-10 shadow-xl border-4",
-                    isCompleted ? "bg-emerald-500 border-emerald-100 dark:border-emerald-900/30 text-white" :
-                    isRejected ? "bg-rose-500 border-rose-100 dark:border-rose-900/30 text-white" :
-                    isCurrent ? "bg-slate-900 border-white dark:border-slate-800 text-white" :
-                    "bg-card border-border text-muted-foreground"
-                  )}
-                >
-                  {isCompleted ? <Check size={20} strokeWidth={3} /> :
-                  isRejected ? <X size={20} strokeWidth={3} /> :
-                  isCurrent ? <Clock size={20} className="animate-spin-slow" /> :
-                  <User size={20} />}
-                </motion.div>
-              </div>
-
-              {/* Step Information */}
-              <motion.div 
-                className="mt-6 text-center space-y-1.5"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <p className={cn(
-                  "text-xs font-bold tracking-[0.2em] uppercase",
-                  isCurrent ? "text-primary" : "text-muted-foreground"
-                )}>
-                  {idx + 1}단계
-                </p>
-                <h4 className={cn(
-                  "text-sm font-bold tracking-tight",
-                  isCurrent ? "text-foreground" : "text-muted-foreground"
-                )}>
-                  {step.label}
-                </h4>
-                <div className="flex flex-col items-center">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1">
-                    <User size={10} className="opacity-50" />
-                    {step.user}
-                  </span>
-                  {step.date && (
-                    <span className="text-xs font-medium text-muted-foreground mt-1">
-                      {step.date}
-                    </span>
-                  )}
-                </div>
-              </motion.div>
-
-              {/* Status Badge */}
-              <AnimatePresence>
-                {isCurrent && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute -top-8 px-3 py-1 bg-primary rounded-lg shadow-lg shadow-primary/20"
-                  >
-                    <span className="text-xs font-bold text-white tracking-widest uppercase">현재 단계</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  return <ol aria-label={accessibleLabel} className="space-y-4">
+    {stages.map(stage => {
+      const active = stage.status === 'ACTIVE';
+      const approved = stage.status === 'APPROVED';
+      const rejected = stage.status === 'REJECTED';
+      const agreed = stage.kind === 'AGREEMENT';
+      const people = stage.approvers ?? [];
+      const completed = people.filter(person => person.status === 'APPROVED').length;
+      const status = approved ? '완료' : rejected ? '반려' : stage.status === 'CANCELLED' ? '중단' : active ? '진행 중' : '앞 단계 대기';
+      return <li key={stage.order} aria-current={active ? 'step' : undefined}
+        className={cn('rounded-md border-l-4 p-4', active ? 'border-primary bg-primary/10' : approved ? 'border-success bg-success/10' : rejected ? 'border-destructive bg-destructive/10' : 'border-border bg-muted/30')}>
+        <h4 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+          {approved ? <Check size={16} aria-hidden="true" /> : rejected ? <X size={16} aria-hidden="true" /> : <Clock size={16} aria-hidden="true" />}
+          {stage.order}단계 · {agreed ? '합의' : '결재'} · {status}
+        </h4>
+        <p className="mt-1 text-sm text-muted-foreground">전원 {agreed ? '동의' : '승인'} · {completed}/{people.length}명 완료</p>
+        <ul className="mt-3 space-y-3" aria-label={`${stage.order}단계 결재자 상태`}>
+          {people.map(person => {
+            const isWaiting = person.status === 'WAITING' || person.status === 'ACTIVE';
+            const ownTurn = active && isWaiting && person.userId === currentUserId;
+            const personStatus = person.status === 'APPROVED' ? agreed ? '동의 완료' : '승인 완료'
+              : person.status === 'REJECTED' ? '반려' : person.status === 'CANCELLED' ? '중단'
+              : ownTurn ? '내 차례' : active ? agreed ? '동의 대기' : '승인 대기' : '앞 단계 대기';
+            return <li key={person.userId} className="space-y-1 text-sm">
+              <p className={ownTurn ? 'font-semibold text-primary' : 'text-foreground'}>{person.userNm || person.userId} · {personStatus}</p>
+              {person.decidedAt && <p className="text-xs text-muted-foreground"><time dateTime={person.decidedAt}>{toDisplayDateTime(new Date(person.decidedAt))}</time></p>}
+              {person.opinion && <p className="whitespace-pre-wrap break-words text-foreground">{person.opinion}</p>}
+            </li>;
+          })}
+        </ul>
+      </li>;
+    })}
+  </ol>;
 }

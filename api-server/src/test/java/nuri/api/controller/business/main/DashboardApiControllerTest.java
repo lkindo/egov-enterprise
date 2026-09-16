@@ -57,7 +57,7 @@ class DashboardApiControllerTest extends ControllerTestSupport {
     void getDashboardData_success() throws Exception {
         // given
         when(boardService.getBoardPosts(anyString(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
-        when(approvalService.getPendingApprovalList(anyString(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(approvalService.getPendingApprovalCount(anyString())).thenReturn(0L);
 
         // when & then
         mockMvc.perform(get("/api/v1/dashboard"))
@@ -77,7 +77,7 @@ class DashboardApiControllerTest extends ControllerTestSupport {
         // When notice board service works
         when(boardService.getBoardPosts(eq("BBSMSTR_AAAAAAAAAAAA"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
         // When pending-approval query fails
-        when(approvalService.getPendingApprovalList(anyString(), any())).thenThrow(new RuntimeException("Approval API Error"));
+        when(approvalService.getPendingApprovalCount(anyString())).thenThrow(new RuntimeException("Approval API Error"));
 
         // when & then
         mockMvc.perform(get("/api/v1/dashboard"))
@@ -88,7 +88,7 @@ class DashboardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.pendingApprovalCount").value(nullValue()));
         
         verify(boardService, times(2)).getBoardPosts(anyString(), any());
-        verify(approvalService).getPendingApprovalList(anyString(), any());
+        verify(approvalService).getPendingApprovalCount(anyString());
         // 대기 건수는 상태 조건 없는 수신 전체 질의(getReceivedInformalSanctionList)로 세지 않는다 —
         // 그 경로는 처리 완료 건까지 세어 결재자가 승인해도 대시보드 숫자가 줄지 않았다(2026-09-02 수정).
         verify(approvalService, never()).getReceivedInformalSanctionList(anyString(), any());

@@ -7,7 +7,7 @@ type ApprovalActor = Awaited<ReturnType<typeof createVisualAdmin>>;
 
 // 결재자는 신청자와 다른 계정이어야 한다(DEC-OPS-095 — 자기 결재 금지). 일회용 관리자는 현재 관리자와
 // 표시 이름이 같아(동명이인) 검색 결과 순서에 의존하지 않고 고유 ID 로 고르는 경로도 함께 검증한다.
-const approvalTest = test.extend<{ approver: ApprovalActor }>({
+const approvalTest = test.extend<{ approver: ApprovalActor; finalApprover: ApprovalActor }>({
     approver: async ({ playwright, baseURL }, use) => {
         const fixtureRequest = await playwright.request.newContext({
             baseURL, storageState: { cookies: [], origins: [] },
@@ -22,6 +22,13 @@ const approvalTest = test.extend<{ approver: ApprovalActor }>({
         } finally {
             await fixtureRequest.dispose();
         }
+    },
+    finalApprover: async ({ playwright, baseURL }, use) => {
+        const fixtureRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+        try {
+            const actor = await createVisualAdmin(fixtureRequest, baseURL!);
+            try { await use(actor); } finally { await actor.dispose(); }
+        } finally { await fixtureRequest.dispose(); }
     },
 });
 
@@ -51,126 +58,122 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
      *   없는 임의 시드 금지) 테스트가 관리자 API 로 코드 하나를 보장한 뒤 시작한다. 이미 있으면
      *   등록 응답은 실패해도 되고, 실제 판정은 `/approvals/task-types` 가 그 코드를 돌려주는지다.
      */
-    approvalTest('Workflow: 결재를 올리고 승인해 세 탭을 완주한다', async ({ page, request, browser, approver }) => {
-        console.log('\n>>> Starting Workflow: Electronic Approval full lifecycle');
+    approvalTest('Workflow: 결재를 올리고 승인해 세 탭을 완주한다', async ({ page, request, browser, baseURL, approver, finalApprover }) => {
         const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
-        const authPath = path.join(__dirname, '..', 'playwright', '.auth', 'admin.json');
-        const authData = JSON.parse(fs.readFileSync(authPath, 'utf-8'));
-        const adminToken: string | undefined = authData.cookies.find((c: { name: string; value: string }) => c.name === 'accessToken')?.value;
-        expect(adminToken, 'admin accessToken 이 storageState 에 있어야 한다').toBeTruthy();
+        const authData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'playwright', '.auth', 'admin.json'), 'utf-8'));
+        const adminToken: string | undefined = authData.cookies.find((cookie: { name: string; value: string }) => cookie.name === 'accessToken')?.value;
+        expect(adminToken, '기안자 인증 세션이 있어야 한다').toBeTruthy();
         const headers = { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' };
-
-        // 0. 업무 구분 코드 보장(COM075). 이미 있으면 등록은 실패해도 된다 — 아래 조회가 판정한다.
-        const taskCode = 'E2ETASK';
-        const taskName = 'E2E 업무';
-        await request.post(`${API_BASE}/admin/system/codes/detail`, {
-            headers,
-            data: { cdId: 'COM075', dtlCd: taskCode, dtlCdNm: taskName, dtlCdExpln: 'e2e 결재 완주용', useYn: 'Y' },
-        });
+        const taskCode = 'E2ETASK'; const taskName = 'E2E 업무';
+        const documentTitle = `E2E 출장 결재 ${Date.now()}`;
+        const revisedTitle = `${documentTitle} 보완`;
+        await request.post(`${API_BASE}/admin/system/codes/detail`, { headers, data: { cdId: 'COM075', dtlCd: taskCode, dtlCdNm: taskName, dtlCdExpln: 'e2e 결재 완주용', useYn: 'Y' } });
         const typesRes = await request.get(`${API_BASE}/approvals/task-types`, { headers });
-        expect(typesRes.ok(), `task-types 조회 실패: ${typesRes.status()}`).toBeTruthy();
-        const taskTypes: Array<{ dtlCd: string }> = (await typesRes.json()).data;
-        expect(taskTypes.some((code) => code.dtlCd === taskCode), 'COM075 에 E2E 코드가 있어야 한다').toBeTruthy();
-
-        // 결재자로 고를 내 표시 이름(피커는 성명으로만 검색한다).
-        const meRes = await request.get(`${API_BASE}/users/me`, { headers });
-        expect(meRes.ok()).toBeTruthy();
+        expect(typesRes.ok()).toBeTruthy();
+        expect(((await typesRes.json()).data as Array<{ dtlCd: string }>).some(code => code.dtlCd === taskCode)).toBe(true);
+        const meRes = await request.get(`${API_BASE}/users/me`, { headers }); expect(meRes.ok()).toBeTruthy();
         const me: { userNm?: string; esntlId?: string } = (await meRes.json()).data;
-        expect(me.userNm, '현재 사용자 표시 이름이 있어야 피커로 찾을 수 있다').toBeTruthy();
-        expect(me.esntlId, '동명이인 중 본인을 식별할 고유 ID가 있어야 한다').toBeTruthy();
-        expect(approver.esntlId, '결재자는 신청자와 다른 계정이어야 한다').not.toBe(me.esntlId);
+        expect(me.userNm).toBeTruthy(); expect(me.esntlId).toBeTruthy();
+        expect(approver.esntlId).not.toBe(me.esntlId); expect(finalApprover.esntlId).not.toBe(me.esntlId);
+        expect(finalApprover.esntlId).not.toBe(approver.esntlId);
+        const selfDraft = await request.post(`${API_BASE}/approvals`, { headers, data: { taskSeCd: taskCode, docTtl: '자기 결재 거절 확인', stages: [{ kind: 'APPROVAL', approverIds: [me.esntlId] }] } });
+        expect(selfDraft.status(), '새 단계 요청도 자기 결재를 거부해야 한다').toBe(400);
 
-        // 0-1. 자기 자신에게 올리는 상신은 서버가 거부한다(DEC-OPS-095).
-        const selfDraft = await request.post(`${API_BASE}/approvals`, {
-            headers,
-            data: { taskSeCd: taskCode, aprvrId: me.esntlId, reqYmd: new Date().toISOString().slice(0, 10).replaceAll('-', '') },
-        });
-        expect(selfDraft.status(), '본인을 결재자로 지정한 상신은 400 이어야 한다').toBe(400);
-
-        // 1. 결재 허브
-        await page.goto('/approvals');
-        await expect(page.getByRole('heading', { name: '결재 허브' }).first()).toBeVisible();
-
-        // 2. 새 결재 기안 — 페이지 이동이 아니라 다이얼로그다(종전 link → button).
+        await page.goto('/approvals'); await expect(page.getByRole('heading', { name: '결재 허브' }).first()).toBeVisible();
         await page.getByRole('button', { name: '새 결재 기안' }).click();
-        const dialog = page.getByRole('dialog', { name: '새 결재 기안' });
-        await expect(dialog).toBeVisible();
-
-        // 3. 업무 구분 선택
-        await dialog.locator('#approval-draft-task-type').click();
-        await page.getByRole('option', { name: taskName }).click();
-
-        // 4. 결재자 = 일회용 관리자. 표시 이름이 나와 같으므로 고유 ID 로 골라야 한다.
-        await dialog.getByRole('button', { name: /결재자 선택/ }).click();
-        const picker = page.getByRole('dialog', { name: '결재자 검색 및 선택' });
-        await expect(picker).toBeVisible();
-        await picker.getByLabel('사용자 검색어 입력').fill(me.userNm!);
-        await picker.getByRole('button', { name: '검색' }).click();
-        const sameNameUsers = picker.getByRole('button', { name: `사용자 선택: ${me.userNm}`, exact: true });
-        await expect.poll(() => sameNameUsers.count(), { message: '동명이인이 있어도 지정한 결재자를 선택해야 한다' }).toBeGreaterThanOrEqual(2);
-        await sameNameUsers.filter({ has: page.getByText(`ID: ${approver.esntlId}`, { exact: true }) }).click();
-        await expect(dialog.getByTestId('approval-draft-approver')).toContainText(me.userNm!);
-
-        // 5. 상신
-        const [submittedRequest] = await Promise.all([
-            page.waitForRequest((req) => req.method() === 'POST' && new URL(req.url()).pathname === '/api/v1/approvals'),
-            dialog.getByRole('button', { name: '결재 상신' }).click(),
+        const dialog = page.getByRole('dialog', { name: '새 결재 기안' }); await expect(dialog).toBeVisible();
+        await dialog.getByLabel('제목 (필수)').fill(documentTitle);
+        await dialog.getByLabel('본문 (선택)').fill('출장 일정과 예산 검토 요청');
+        await dialog.locator('#approval-draft-task-type').click(); await page.getByRole('option', { name: taskName }).click();
+        await dialog.getByRole('button', { name: '다음', exact: true }).click();
+        const pickActor = async (stage: number, actor: ApprovalActor) => {
+            await dialog.getByRole('button', { name: `${stage}단계 결재자 선택`, exact: true }).click();
+            const picker = page.getByRole('dialog', { name: '결재자 검색 및 선택' });
+            await picker.getByLabel('사용자 검색어 입력').fill(me.userNm!); await picker.getByRole('button', { name: '검색', exact: true }).click();
+            const matches = picker.getByRole('button', { name: `사용자 선택: ${me.userNm}`, exact: true });
+            await matches.filter({ has: page.getByText(`ID: ${actor.esntlId}`, { exact: true }) }).click();
+            await expect(picker).toBeHidden();
+        };
+        await pickActor(1, approver); await dialog.getByRole('button', { name: '다음 단계 추가' }).click();
+        await pickActor(2, finalApprover); await dialog.getByLabel('단계 유형').nth(1).selectOption('AGREEMENT');
+        await dialog.getByRole('button', { name: '다음', exact: true }).click();
+        await expect(dialog.getByLabel('상신 결재선 미리보기')).toContainText('1단계 · 결재 · 전원 승인 (1명)');
+        await expect(dialog.getByLabel('상신 결재선 미리보기')).toContainText('2단계 · 합의 · 전원 동의 (1명)');
+        await expect(dialog.getByText(/누구든 한 명이 반려하면 문서 전체가 반려/)).toBeVisible();
+        const [submittedResponse] = await Promise.all([
+            page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v1/approvals'),
+            dialog.getByRole('button', { name: '결재 상신', exact: true }).click(),
         ]);
-        expect(submittedRequest.postDataJSON().aprvrId, '상신 결재자는 고른 결재자여야 한다').toBe(approver.esntlId);
-        const submittedResponse = await submittedRequest.response();
-        expect(submittedResponse?.ok(), '상신 요청이 저장되어야 한다').toBe(true);
-        const approvalId: number = (await submittedResponse!.json()).data;
-        expect(Number.isInteger(approvalId) && approvalId > 0, '저장된 결재 번호가 있어야 한다').toBe(true);
-        await expect(page.getByText('결재를 상신했습니다', { exact: false })).toBeVisible();
-        await expect(dialog).toBeHidden();
+        expect(submittedResponse.ok()).toBe(true);
+        expect(submittedResponse.request().postDataJSON().stages).toEqual([{ kind: 'APPROVAL', approverIds: [approver.esntlId] }, { kind: 'AGREEMENT', approverIds: [finalApprover.esntlId] }]);
+        const approvalId: number = (await submittedResponse.json()).data; expect(Number.isInteger(approvalId) && approvalId > 0).toBe(true);
+        await expect(dialog).toBeHidden(); await expect(page.getByRole('tab', { name: '내가 올린 결재' })).toHaveAttribute('aria-selected', 'true');
+        const item = (actorPage: typeof page, title: string) => actorPage.getByTestId('approval-item').filter({ has: actorPage.getByRole('button', { name: `${title} #${approvalId} 상세 열기`, exact: true }) });
+        await expect(item(page, documentTitle).getByText('대기 중', { exact: true })).toBeVisible();
+        await expect(item(page, documentTitle)).toContainText('1/2단계');
+        await page.getByRole('tab', { name: '대기 중인 결재' }).click(); await expect(item(page, documentTitle)).toHaveCount(0);
 
-        // 6. '내가 올린 결재' 로 자동 전환되고 방금 올린 건이 보인다.
-        await expect(page.getByRole('tab', { name: '내가 올린 결재' })).toHaveAttribute('aria-selected', 'true');
-        // 같은 업무 구분의 과거 결재가 있어도 이번 상신 번호만 따라간다.
-        const approvalItem = page.getByTestId('approval-item').filter({
-            has: page.getByRole('button', { name: `${taskName} #${approvalId} 상세 열기`, exact: true }),
-        });
-        await expect(approvalItem).toBeVisible();
-        await expect(approvalItem.getByText('대기 중')).toBeVisible();
-
-        // 신청자의 대기함에는 이 결재가 없다 — 결재자가 아니기 때문이다.
-        await page.getByRole('tab', { name: '대기 중인 결재' }).click();
-        await expect(approvalItem).toHaveCount(0);
-
-        // 7. 결재자의 세션으로 대기함에서 승인한다.
-        const approverContext = await browser.newContext({ storageState: approver.storageState, viewport: { width: 1920, height: 1080 } });
+        const firstContext = await browser.newContext({ baseURL, storageState: approver.storageState });
+        const finalContext = await browser.newContext({ baseURL, storageState: finalApprover.storageState });
         try {
-            const approverPage = await approverContext.newPage();
-            await approverPage.goto('/approvals');
-            await expect(approverPage.getByRole('heading', { name: '결재 허브' }).first()).toBeVisible();
-            await approverPage.getByRole('tab', { name: '대기 중인 결재' }).click();
-            const pendingItem = approverPage.getByTestId('approval-item').filter({
-                has: approverPage.getByRole('button', { name: `${taskName} #${approvalId} 상세 열기`, exact: true }),
-            });
-            await expect(pendingItem).toBeVisible();
-            await pendingItem.getByRole('button').click();
-            await approverPage.getByRole('button', { name: '결재 승인' }).click();
-            await approverPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
-            await expect(approverPage.getByText('성공적으로 승인되었습니다.')).toBeVisible();
+            const firstPage = await firstContext.newPage(); const finalPage = await finalContext.newPage();
+            await firstPage.goto('/approvals'); await finalPage.goto('/approvals');
+            // 다음 단계 사용자는 문서를 조회해도 현재 차례를 처리할 수 없다.
+            const premature = await request.get(`${API_BASE}/approvals/${approvalId}`, { headers: finalApprover.authorization }); expect(premature.ok()).toBe(true);
+            expect((await premature.json()).data.canApprove).toBe(false);
+            await expect(finalPage.getByText('대기 중인 결재가 없습니다.', { exact: true })).toBeVisible();
+            await expect(item(finalPage, documentTitle)).toHaveCount(0);
+            await item(firstPage, documentTitle).getByRole('button').click();
+            await expect(firstPage.getByRole('list', { name: '결재선 진행', exact: true })).toContainText('내 차례');
+            await firstPage.getByRole('button', { name: '결재 승인', exact: true }).click();
+            await firstPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
+            await expect(firstPage.getByText('성공적으로 승인되었습니다.')).toBeVisible();
+            await firstPage.getByRole('tab', { name: '내가 처리한 결재' }).click(); await expect(item(firstPage, documentTitle)).toBeVisible();
+            // 단계 승인만으로 문서 전체가 승인된 것처럼 보이면 red다.
+            await expect(item(firstPage, documentTitle).getByText('대기 중', { exact: true })).toBeVisible();
+            await expect(item(firstPage, documentTitle)).toContainText('2/2단계');
+            await finalPage.reload(); await item(finalPage, documentTitle).getByRole('button').click();
+            await expect(finalPage.getByRole('button', { name: '합의 동의', exact: true })).toBeVisible();
+            await finalPage.getByRole('textbox', { name: '결재 의견 (반려 시 필수)' }).fill('예산 근거 보완 필요');
+            await finalPage.getByRole('button', { name: '결재 반려', exact: true }).click();
+            await expect(finalPage.getByRole('dialog')).toContainText('남은 모든 결재는 종료');
+            await finalPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
+            await expect(finalPage.getByText('성공적으로 반려되었습니다.')).toBeVisible();
 
-            // 8. 결재자의 '내가 처리한 결재' 에 승인 완료로 남는다 — 종전에는 이 목록을 볼 탭이 없었다.
-            await approverPage.getByRole('tab', { name: '내가 처리한 결재' }).click();
-            await expect(pendingItem).toBeVisible();
-            await expect(pendingItem.getByText('승인 완료')).toBeVisible();
-        } finally {
-            await approverContext.close();
-        }
-
-        // 9. 신청자의 '내가 올린 결재' 에도 승인 완료로 보인다.
-        await page.reload();
-        await page.getByRole('tab', { name: '내가 올린 결재' }).click();
-        await expect(approvalItem.getByText('승인 완료')).toBeVisible();
-
-        // 10. 회귀 차단 — 종전의 가짜 성공 문구·목업 라우트로의 이동이 되살아나면 red 다.
-        await expect(page.locator('text=결재 상신이 완료되었습니다')).toHaveCount(0);
-        await expect(page).toHaveURL(/\/approvals$/);
+            await page.reload(); await page.getByRole('tab', { name: '내가 올린 결재' }).click(); await item(page, documentTitle).getByRole('button').click();
+            await expect(item(page, documentTitle).getByText('반려됨', { exact: true })).toBeVisible();
+            await page.getByRole('button', { name: '수정 후 재상신' }).click();
+            const resubmitDialog = page.getByRole('dialog', { name: '결재 재상신' });
+            await expect(resubmitDialog.getByLabel('본문 (선택)')).toHaveValue('출장 일정과 예산 검토 요청');
+            await resubmitDialog.getByLabel('제목 (필수)').fill(revisedTitle);
+            await resubmitDialog.getByLabel('본문 (선택)').fill('예산 근거를 보완한 출장 요청');
+            await resubmitDialog.getByRole('button', { name: '다음', exact: true }).click();
+            await expect(resubmitDialog.getByText(/결재자와 순서를 다시 확인/)).toBeVisible();
+            await resubmitDialog.getByRole('button', { name: '다음', exact: true }).click();
+            const [resubmitted] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === `/api/v1/approvals/${approvalId}/resubmissions`),
+                resubmitDialog.getByRole('button', { name: '새 차수로 재상신' }).click(),
+            ]);
+            expect(resubmitted.ok()).toBe(true); expect((await resubmitted.json()).data).toBe(approvalId);
+            await expect(resubmitDialog).toBeHidden();
+            await expect(page.getByLabel('이전 차수 이력')).toContainText(`1차 · ${documentTitle} · 반려`);
+            await page.getByLabel('이전 차수 이력').getByText(`1차 · ${documentTitle} · 반려`, { exact: true }).click();
+            await expect(page.getByLabel('이전 차수 이력').getByText('출장 일정과 예산 검토 요청', { exact: true })).toBeVisible();
+            await expect(page.getByLabel('문서 내용')).toContainText('2차');
+            await firstPage.reload(); await firstPage.getByRole('tab', { name: '대기 중인 결재' }).click(); await item(firstPage, revisedTitle).getByRole('button').click();
+            await firstPage.getByRole('button', { name: '결재 승인', exact: true }).click(); await firstPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
+            await expect(firstPage.getByText('성공적으로 승인되었습니다.')).toBeVisible();
+            await finalPage.reload(); await item(finalPage, revisedTitle).getByRole('button').click();
+            await finalPage.getByRole('button', { name: '합의 동의', exact: true }).click(); await finalPage.getByRole('dialog').getByRole('button', { name: '확인', exact: true }).click();
+            await expect(finalPage.getByText('성공적으로 동의되었습니다.')).toBeVisible();
+            await finalPage.getByRole('tab', { name: '내가 처리한 결재' }).click(); await expect(item(finalPage, revisedTitle).getByText('승인 완료', { exact: true })).toBeVisible();
+        } finally { await firstContext.close(); await finalContext.close(); }
+        await page.reload(); await page.getByRole('tab', { name: '내가 올린 결재' }).click();
+        await expect(item(page, revisedTitle).getByText('승인 완료', { exact: true })).toBeVisible();
+        await expect(page.locator('text=결재 상신이 완료되었습니다')).toHaveCount(0); await expect(page).toHaveURL(/\/approvals$/);
+        // 결재 문서/차수는 삭제 API로 지우지 않는다. 이력 보존 계약을 검증한 합성 데이터이며
+        // 일회용 사용자만 fixture.dispose로 정리하고 문서는 격리 E2E DB 수명과 함께 폐기한다.
     });
-
     test('Productivity: Smart Toolkit - Department Schedule', async ({ page }) => {
         console.log('\n>>> Starting Productivity: Smart Toolkit - Schedule');
         
