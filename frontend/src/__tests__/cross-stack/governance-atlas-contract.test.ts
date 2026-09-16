@@ -92,6 +92,25 @@ function factFailures(doc: Document, facts: CatalogData['facts']): string[] {
     return !Object.hasOwn(facts, key) || node.textContent?.trim() !== String(facts[key]) ? [`fact differs: ${key}`] : [];
   });
 }
+function sourceLinkFailures(doc: Document): string[] {
+  const failures: string[] = [];
+  for (const node of doc.querySelectorAll('*')) {
+    for (const attribute of node.attributes) {
+      if (/^on/i.test(attribute.name)) failures.push(`${node.tagName}: inline event attribute ${attribute.name}`);
+    }
+  }
+  for (const link of doc.querySelectorAll<HTMLAnchorElement>('a[href]')) {
+    const href = link.getAttribute('href');
+    if (/^(?:javascript:|data:|file:)/i.test(href || '')) failures.push(`unsafe href: ${href}`);
+    if (!link.href.startsWith('https://github.com/')) continue;
+    if (link.target !== '_blank') failures.push(`${link.href}: target must be _blank`);
+    const rel = link.rel.split(/\s+/);
+    if (!rel.includes('noopener') || !rel.includes('noreferrer')) failures.push(`${link.href}: rel must include noopener and noreferrer`);
+    const relative = new URL(link.href).pathname.match(/^\/lkindo\/egov-enterprise\/(?:blob|tree)\/main\/(.+)$/)?.[1];
+    if (relative && !existsSync(join(REPO_DIR, decodeURIComponent(relative)))) failures.push(`${link.href}: source does not exist`);
+  }
+  return failures;
+}
 function navigate(panel: string, dom = browser) {
   dom.window.history.replaceState({}, '', `#${panel}`);
   dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
@@ -338,20 +357,47 @@ describe('Governance Atlas rendered source and interaction contract', () => {
   });
 
   it('retains source-safe new-window links and renders catalog content without executable HTML', () => {
-    for (const node of document.querySelectorAll('*')) {
-      expect([...node.attributes].filter(attribute => /^on/i.test(attribute.name)), node.tagName).toEqual([]);
-    }
-    const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href]')];
-    expect(links.length).toBeGreaterThan(Object.keys(current.catalogs).length);
-    for (const link of links) {
-      expect(link.getAttribute('href')).not.toMatch(/^(?:javascript:|data:|file:)/i);
-      if (!link.href.startsWith('https://github.com/')) continue;
-      expect(link.target).toBe('_blank');
-      expect(link.rel.split(/\s+/)).toEqual(expect.arrayContaining(['noopener', 'noreferrer']));
-      const relative = new URL(link.href).pathname.match(/^\/lkindo\/egov-enterprise\/(?:blob|tree)\/main\/(.+)$/)?.[1];
-      if (relative) expect(existsSync(join(REPO_DIR, decodeURIComponent(relative))), link.href).toBe(true);
-    }
+    expect(document.querySelectorAll('a[href]').length).toBeGreaterThan(Object.keys(current.catalogs).length);
+    expect(sourceLinkFailures(document)).toEqual([]);
     expect(document.querySelectorAll('script[src],link[rel="stylesheet"][href^="http"]')).toHaveLength(0);
+  });
+
+  it('rejects inline events, unsafe URIs and unsafe or missing GitHub source links', () => {
+    const source = 'https://github.com/lkindo/egov-enterprise/blob/main/README.md';
+    const missingSource = 'https://github.com/lkindo/egov-enterprise/blob/main/__atlas_missing_source__.md';
+    const fixture = () => {
+      const doc = document.implementation.createHTMLDocument('Source link safety');
+      const link = doc.createElement('a');
+      link.href = source;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      doc.body.append(link);
+      return { doc, link };
+    };
+    expect(sourceLinkFailures(fixture().doc)).toEqual([]);
+    const event = fixture();
+    const node = event.doc.createElement('div');
+    node.setAttribute('onclick', 'return true');
+    event.doc.body.append(node);
+    expect(sourceLinkFailures(event.doc)).toEqual(['DIV: inline event attribute onclick']);
+    for (const href of ['javascript:void(0)', 'data:text/plain,unsafe', 'file:///unsafe']) {
+      const unsafe = fixture();
+      const link = unsafe.doc.createElement('a');
+      link.href = href;
+      unsafe.doc.body.append(link);
+      expect(sourceLinkFailures(unsafe.doc), href).toEqual([`unsafe href: ${href}`]);
+    }
+    const target = fixture();
+    target.link.removeAttribute('target');
+    expect(sourceLinkFailures(target.doc)).toEqual([`${source}: target must be _blank`]);
+    for (const rel of ['', 'noopener', 'noreferrer']) {
+      const unsafe = fixture();
+      unsafe.link.rel = rel;
+      expect(sourceLinkFailures(unsafe.doc), rel).toEqual([`${source}: rel must include noopener and noreferrer`]);
+    }
+    const missing = fixture();
+    missing.link.href = missingSource;
+    expect(sourceLinkFailures(missing.doc)).toEqual([`${missingSource}: source does not exist`]);
   });
 
   it('keeps governance authority, native loading, identity and read-only data boundaries explicit', () => {
