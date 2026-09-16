@@ -202,11 +202,24 @@ class WorkflowManifestLinterTest {
         }
 
         List<?> releaseSteps = asList(buildAndPush.get("steps"));
-        Map<?, ?> credentialStep = findStep(releaseSteps, "Require Docker Hub release credentials");
-        String credentialRun = Objects.toString(credentialStep.get("run"), "");
-        if (!credentialRun.contains("DOCKERHUB_USERNAME") || !credentialRun.contains("DOCKERHUB_TOKEN")) {
-            violations.add("Docker Hub 자격증명 fail-fast 단계가 username/token을 모두 검증하지 않음");
+        // [2026-09-16 DEC-OPS-103] 발행 대상이 Docker Hub 에서 GHCR 로 바뀌었다.
+        //   종전 단언은 "시크릿 두 개가 비어 있으면 일찍 실패한다" 를 요구했다. GHCR 은 GITHUB_TOKEN 으로
+        //   push 하므로 그 실패 모드 자체가 없어졌고, 대신 **선언된 권한과 실제 push 대상**이 어긋나는 것이
+        //   새로운 사각이다 — 권한 없이 push 하면 실행 중 403 이고, ghcr.io 로 로그인한 뒤 다른 레지스트리로
+        //   push 하면 릴리스는 성공하는데 이미지는 엉뚱한 곳에 남는다. 그래서 정적으로 셋을 함께 본다.
+        //   완화가 아니라 같은 불변식(실제 발행 없이는 릴리스 없음)을 더 이른 시점에 검사하는 것이다.
+        if (!"write".equals(Objects.toString(permissions.get("packages"), ""))) {
+            violations.add("permissions.packages=write 누락 — GHCR 에 이미지를 push 할 수 없음");
         }
+        Map<?, ?> loginWith = asMap(findStep(releaseSteps, "Login to GitHub Container Registry").get("with"));
+        if (!"ghcr.io".equals(Objects.toString(loginWith.get("registry"), ""))) {
+            violations.add("레지스트리 로그인 대상이 ghcr.io 가 아님");
+        }
+        if (!Objects.toString(loginWith.get("password"), "").contains("secrets.GITHUB_TOKEN")) {
+            violations.add("GHCR 로그인이 GITHUB_TOKEN 을 쓰지 않음");
+        }
+        assertGhcrImage(releaseSteps, "Extract metadata (tags, labels) for Backend", violations);
+        assertGhcrImage(releaseSteps, "Extract metadata (tags, labels) for Frontend", violations);
 
         int backendPush = assertUnconditionalPush(releaseSteps, "Build and push Backend", violations);
         int frontendPush = assertUnconditionalPush(releaseSteps, "Build and push Frontend", violations);
@@ -458,6 +471,19 @@ class WorkflowManifestLinterTest {
         String boundary = HarnessSourceIndex.read(root.resolve("REUSABLE_VERIFICATION.md"));
         assertThat(boundary).contains("artifact-verification", "remoteApplied=false",
                 "동등한 보증이 아니다", "비활성 이력", "기관 운영 승인이 아니다");
+    }
+
+    /** 로그인한 레지스트리와 실제 push 대상이 같은지 본다. 어긋나면 릴리스만 성공하고 이미지는 다른 곳에 남는다. */
+    private void assertGhcrImage(List<?> steps, String name, List<String> violations) {
+        int index = indexOfStep(steps, name);
+        if (index < 0) {
+            violations.add(name + " 단계 없음");
+            return;
+        }
+        String images = Objects.toString(asMap(asMap(steps.get(index)).get("with")).get("images"), "");
+        if (!images.startsWith("ghcr.io/")) {
+            violations.add(name + " 의 이미지 이름이 ghcr.io/ 로 시작하지 않음: " + images);
+        }
     }
 
     private int assertUnconditionalPush(List<?> steps, String name, List<String> violations) {
