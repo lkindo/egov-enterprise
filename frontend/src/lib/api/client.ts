@@ -5,6 +5,7 @@ import { cache } from 'react';
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
 import { assertCurrentAuthorizationRequest, getAuthorizationRequestEpoch, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
+import { isCanceledRequest } from '@/lib/safe-error-log';
 
 /*
  * 요청 단위 옵션 확장.
@@ -263,7 +264,7 @@ axiosInstance.interceptors.response.use(
     //   admin/error.tsx 가 그 원문에서 401·403·404 를 판정한다.
     const message = backendMessage || describeRequestFailure(error);
     // 호출부가 스스로 취소한 요청(AbortController)은 실패가 아니다 — 알릴 것이 없다.
-    const cancelled = error.code === 'ERR_CANCELED';
+    const cancelled = isCanceledRequest(error);
     
     /*
      * [2026-08-26] 모든 실패를 전역 토스트로 올리면 **호출부가 이미 처리한 실패까지 화면을 가린다**.

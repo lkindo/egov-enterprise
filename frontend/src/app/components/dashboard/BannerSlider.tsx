@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { bannerService } from '@/services/business/user/BannerService';
+import { isCanceledRequest } from '@/lib/safe-error-log';
 import { Banner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -19,11 +20,15 @@ export function BannerSlider() {
         const data = await bannerService.getReflectedBanners();
         setBanners(data || []);
       } catch (error: unknown) {
-        const err = error as { response?: { status?: number } };
-        if (err.response?.status === 403) {
-          console.warn('>>> [BannerSlider] Access denied (403). Banners will not be displayed for this user.');
-        } else {
-          console.error('>>> [BannerSlider] Failed to fetch banners:', error);
+        // [2026-09-16] 취소는 실패가 아니다 — 인증 상태가 바뀌어 이전 요청 결과를 버린 것이다.
+        //   콘솔 오류로 남기면 e2e 오류 감지기가 진짜 오류와 섞어 세고, 재시도로 통과해도 flaky 가 된다.
+        if (!isCanceledRequest(error)) {
+          const err = error as { response?: { status?: number } };
+          if (err.response?.status === 403) {
+            console.warn('>>> [BannerSlider] Access denied (403). Banners will not be displayed for this user.');
+          } else {
+            console.error('>>> [BannerSlider] Failed to fetch banners:', error);
+          }
         }
         setBanners([]);
       } finally {

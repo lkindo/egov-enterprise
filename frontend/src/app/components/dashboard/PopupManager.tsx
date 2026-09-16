@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
+import { isCanceledRequest } from '@/lib/safe-error-log';
 import { Popup } from '@/types/foundation/banner';
 import Image from 'next/image';
 import { AttachmentImage, extractAtchFileSn } from '@/app/components/ui/attachment-image';
@@ -29,7 +30,10 @@ export function PopupManager() {
                 setActivePopups(filteredPopups);
                 setVisiblePopupSns(filteredPopups.map(p => p.popupSn));
             } catch (error) {
-                console.error('Failed to fetch popups:', error);
+                // [2026-09-16] 취소는 실패가 아니다 — 인증 상태 변경으로 이전 요청 결과를 버린 경우다.
+                if (!isCanceledRequest(error)) {
+                    console.error('Failed to fetch popups:', error);
+                }
             }
         }
         fetchPopups();
