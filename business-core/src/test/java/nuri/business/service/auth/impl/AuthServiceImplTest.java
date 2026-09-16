@@ -334,8 +334,9 @@ class AuthServiceImplTest {
 
             assertThatThrownBy(() -> authService.reissue("expired")).isInstanceOf(BusinessException.class);
 
-            verify(refreshTokenRepository).delete(expired);
-            verify(refreshTokenRepository, never()).save(any());
+            // 삭제는 바깥 트랜잭션과 분리돼야 한다 — 같은 트랜잭션이면 위 예외의 롤백이 삭제를 되돌린다.
+            verify(refreshTokenRepository).deleteIfCurrent(ESNTL_ID, "expired");
+            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());
         }
 
         @Test
@@ -346,14 +347,30 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
             given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
+            given(refreshTokenRepository.rotateIfCurrent(eq(ESNTL_ID), eq("old"), eq("rotated"), any()))
+                    .willReturn(1);
 
             TokenResponse res = authService.reissue("old");
 
-            // L141 `removed call to updateToken` 뮤턴트가 여기서 죽는다.
             // 회전이 사라지면 같은 토큰이 계속 유효해 W1-06 이전 상태로 회귀한다.
-            assertThat(stored.getRfshTkn()).isEqualTo("rotated");
+            // 회전은 **제시된 토큰이 아직 저장값일 때만** 일어나야 하므로 그 조건까지 함께 고정한다
+            // — 조건 없이 덮어쓰면 동시 재발급이 둘 다 성공하고 진 쪽은 무효한 토큰을 받는다(2026-09-16).
+            verify(refreshTokenRepository).rotateIfCurrent(eq(ESNTL_ID), eq("old"), eq("rotated"), any());
             assertThat(res.getRefreshToken()).isEqualTo("rotated");
-            verify(refreshTokenRepository).save(stored);
+        }
+
+        @Test
+        @DisplayName("다른 요청이 먼저 회전을 마쳤으면 거부한다 — 무효한 토큰을 발급하지 않는다")
+        void rejectsWhenAnotherRequestAlreadyRotated() {
+            given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
+            given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(storedToken()));
+            given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
+            // 0 행 = 조회와 갱신 사이에 다른 재발급이 회전을 마쳤다.
+            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
+                    .willReturn(0);
+
+            // 여기서 성공을 돌려주면 서버가 **저장하지 않은** 리프레시 토큰을 클라이언트에 준다.
+            assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(BusinessException.class);
         }
 
         @Test
@@ -365,10 +382,14 @@ class AuthServiceImplTest {
             given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(stored));
             given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
+            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
+                    .willReturn(1);
 
             authService.reissue("old");
 
             // 회전마다 7일을 새로 주면 탈취 토큰이 무기한 연장된다 — 회전의 목적이 사라진다.
+            // 만료는 회전 질의가 건드리지 않는다(SET 절에 exprtnDt 가 없다). 실제 저장값의 불변은
+            // RefreshTokenRotationConcurrencyIntegrationTest 가 실 DB 로 확인한다.
             assertThat(stored.getExprtnDt()).isEqualTo(originalExpiry);
             ArgumentCaptor<Date> expiry = ArgumentCaptor.forClass(Date.class);
             verify(jwtTokenProvider).createRefreshToken(eq(ESNTL_ID), expiry.capture());
@@ -382,6 +403,8 @@ class AuthServiceImplTest {
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
             given(jwtTokenProvider.createRefreshToken(anyString(), any(Date.class))).willReturn("rotated");
             given(refreshTokenRepository.findByRfshTkn("old")).willReturn(Optional.of(storedToken()));
+            given(refreshTokenRepository.rotateIfCurrent(anyString(), anyString(), anyString(), any()))
+                    .willReturn(1);
             TokenResponse first = authService.reissue("old");
             assertThat(first.getGroups()).isEqualTo(login.getGroups());
             assertThat(first.getPermissions()).isEqualTo(login.getPermissions());
@@ -412,7 +435,7 @@ class AuthServiceImplTest {
             assertThatThrownBy(() -> authService.reissue("old")).isInstanceOf(UsernameNotFoundException.class);
             assertThat(stored.getRfshTkn()).isEqualTo("old");
             verify(jwtTokenProvider, never()).createAccessToken(anyString(), nullable(String.class));
-            verify(refreshTokenRepository, never()).save(any());
+            verify(refreshTokenRepository, never()).rotateIfCurrent(any(), any(), any(), any());
         }
     }
 
