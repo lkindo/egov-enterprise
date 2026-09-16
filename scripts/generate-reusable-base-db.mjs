@@ -265,6 +265,67 @@ export function runAuthorizationMigrationStages(migrations, actions) {
   actions.repeatables();
 }
 
+function reviewedSqlWithoutComments(sql) {
+  const text = sql.replace(/\r\n/g, '\n');
+  let source = '', quoted = false, lineComment = false, blockDepth = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index], next = text[index + 1];
+    if (lineComment) {
+      if (char === '\n') { lineComment = false; source += char; }
+    } else if (blockDepth > 0) {
+      if (char === '/' && next === '*') { blockDepth += 1; index += 1; }
+      else if (char === '*' && next === '/') { blockDepth -= 1; index += 1; }
+      else if (char === '\n') source += char;
+    } else if (quoted) {
+      source += char;
+      if (char === "'") {
+        if (next === "'") { source += next; index += 1; }
+        else quoted = false;
+      }
+    } else if (char === "'") {
+      quoted = true;
+      source += char;
+    } else if (char === '-' && next === '-') {
+      lineComment = true;
+      source += ' ';
+      index += 1;
+    } else if (char === '/' && next === '*') {
+      blockDepth = 1;
+      source += ' ';
+      index += 1;
+    } else source += char;
+  }
+  if (quoted || blockDepth > 0) fail('Reviewed V2_99 has an unterminated SQL literal or block comment.');
+  return source;
+}
+
+/** The historical Contract must use the immutable V2_99 review, independent of runtime bindings. */
+export function readReviewedAuthorizationCatalogVersion(sql) {
+  const source = reviewedSqlWithoutComments(sql);
+  const witnesses = new Set(['initial_operation_grant', 'legacy_policy:tb_role_info',
+    'legacy_policy:tb_authrt_role_map', 'legacy_policy:tb_role_prgrm_map',
+    'legacy_policy:tb_role_hierarchy', 'legacy_policy:program_url']);
+  const statements = [...source.matchAll(/^INSERT INTO tb_authrt_chg_hstry\b[\s\S]*?;/gm)];
+  const selects = [...source.matchAll(/^SELECT 'migration:2\.99','([^']*)',/gm)];
+  if (statements.length !== witnesses.size || selects.length !== witnesses.size) {
+    fail('Reviewed V2_99 requires exactly six historical audit INSERT/SELECT statements.');
+  }
+  let version;
+  for (const [statement] of statements) {
+    const audit = /^SELECT 'migration:2\.99','([a-f0-9]{64})','(GROUP(?:_GRANT)?)','MIGRATE',/m.exec(statement);
+    const labels = [...statement.matchAll(/'(initial_operation_grant|legacy_policy:[^']*)'/g)];
+    if (!audit || labels.length !== 1 || !witnesses.delete(labels[0][1])) {
+      fail('Reviewed V2_99 has an invalid catalog digest or missing, duplicate or unknown historical witness.');
+    }
+    const expectedType = labels[0][1] === 'initial_operation_grant' ? 'GROUP_GRANT' : 'GROUP';
+    if (audit[2] !== expectedType || (version !== undefined && version !== audit[1])) {
+      fail('Reviewed V2_99 historical audit types and catalog digests must agree.');
+    }
+    version = audit[1];
+  }
+  return version;
+}
+
 function restore(container, user, database, sql) {
   dockerExec(
     container,
@@ -276,7 +337,7 @@ function restore(container, user, database, sql) {
 /** Raw SQL rehearsal ledger is disposable evidence only; it is removed before pg_dump. */
 export function buildIsolatedContractSql(database, catalogVersion, contractSql) {
   if (!/^test_reusable_base_[a-z0-9_]+$/.test(database)) fail('Contract rehearsal requires a disposable generated DB name.');
-  if (!/^[a-f0-9]{64}$/.test(catalogVersion)) fail('Contract rehearsal requires the generated catalog digest.');
+  if (!/^[a-f0-9]{64}$/.test(catalogVersion)) fail('Contract rehearsal requires the reviewed catalog digest.');
   if (!contractSql.includes('DO $authorization_contract$')) fail('The actual authorization Contract SQL is required.');
   const evidence = createHash('sha256').update(`DISPOSABLE_BASE_REHEARSAL:${database}`).digest('hex');
   const backup = createHash('sha256').update('DISPOSABLE_BASE_NO_OPERATIONAL_BACKUP').digest('hex');
@@ -327,8 +388,8 @@ function main() {
     createDatabase(args.container, user, workingDb);
     workingCreated = true;
     const migrations = versionedMigrations();
-    const permissionSource = readFileSync(join(ROOT, 'business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java'), 'utf8');
-    const catalogVersion = permissionSource.match(/CATALOG_VERSION\s*=\s*"([a-f0-9]{64})"/)?.[1];
+    const reviewedSeed = migrations.find(migration => migration.name === 'V2_99__seed_explicit_operation_grants.sql');
+    const catalogVersion = readReviewedAuthorizationCatalogVersion(reviewedSeed?.sql.toString('utf8') ?? '');
     const contractSql = readFileSync(join(ROOT, 'api-server/src/main/resources/db/cutover/authorization-contract.sql'), 'utf8');
     runAuthorizationMigrationStages(migrations, {
       migrate: migration => restore(args.container, user, workingDb, `BEGIN;\n${migration.sql.toString('utf8')}\nCOMMIT;`),

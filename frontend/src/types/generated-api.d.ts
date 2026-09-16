@@ -1966,6 +1966,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/approvals/{id}/resubmissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resubmit Approval
+         * @description 기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다.
+         */
+        post: operations["resubmitApproval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/users": {
         parameters: {
             query?: never;
@@ -3878,6 +3898,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/approvals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Approval Detail
+         * @description 참여한 결재의 내용·단계·처리 이력을 조회합니다. 참여하지 않은 차수는 공개하지 않습니다.
+         */
+        get: operations["getApprovalDetail"];
+        put?: never;
+        post?: never;
+        /**
+         * Cancel My Approval Draft
+         * @description 신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. 내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다.
+         */
+        delete: operations["cancelApproval"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/approvals/task-types": {
         parameters: {
             query?: never;
@@ -4836,26 +4880,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/approvals/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Cancel My Approval Draft
-         * @description 신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. 신청자 본인만 가능하며 관리자도 대리 취소할 수 없습니다.
-         */
-        delete: operations["cancelApproval"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/system/board-masters/{bbsId}/physical": {
         parameters: {
             query?: never;
@@ -5112,6 +5136,35 @@ export interface components {
             /** @description 현재 사용자가 수정·삭제할 수 있는지(서버 판정) */
             readonly editable?: boolean;
         };
+        ApprovalApproverDto: {
+            userId?: string;
+            userNm?: string;
+            /** @enum {string} */
+            status?: "WAITING" | "ACTIVE" | "APPROVED" | "REJECTED" | "CANCELLED";
+            opinion?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+        };
+        ApprovalRevisionDto: {
+            /** Format: int32 */
+            atrzCycl?: number;
+            docTtl?: string;
+            docCn?: string;
+            aprvYn?: string;
+            reqYmd?: string;
+            /** Format: date-time */
+            atrzDt?: string;
+            stages?: components["schemas"]["ApprovalStageDto"][];
+        };
+        ApprovalStageDto: {
+            /** Format: int32 */
+            order?: number;
+            /** @enum {string} */
+            kind?: "APPROVAL" | "AGREEMENT";
+            /** @enum {string} */
+            status?: "WAITING" | "ACTIVE" | "APPROVED" | "REJECTED" | "CANCELLED";
+            approvers?: components["schemas"]["ApprovalApproverDto"][];
+        };
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {
             /**
@@ -5131,7 +5184,7 @@ export interface components {
             /** @description 신청 일자 */
             reqYmd?: string;
             /** @description 결재자 ID */
-            aprvrId: string;
+            aprvrId?: string;
             /** @description 결재자 명 */
             aprvrNm?: string;
             /** @description 결재자 조직 명 */
@@ -5152,6 +5205,17 @@ export interface components {
              * @description 등록 일시
              */
             crtDt?: string;
+            docTtl?: string;
+            docCn?: string;
+            /** Format: int32 */
+            version?: number;
+            /** Format: int32 */
+            atrzCycl?: number;
+            stages?: components["schemas"]["ApprovalStageDto"][];
+            history?: components["schemas"]["ApprovalRevisionDto"][];
+            canApprove?: boolean;
+            canWithdraw?: boolean;
+            canResubmit?: boolean;
         };
         /** @description 온라인 메뉴얼 DTO */
         OnlineManualDto: {
@@ -5301,8 +5365,13 @@ export interface components {
              * @enum {string}
              */
             status: "C" | "R";
-            /** @description 반려 사유. status가 R이면 필수 */
+            /** @description 처리 의견. 반려(status=R)일 때는 필수 */
             reason?: string;
+            /**
+             * Format: int32
+             * @description 상세 조회 시 받은 문서 버전. 달라졌으면 최신 상태를 확인해야 합니다.
+             */
+            version?: number;
         };
         UserProfileUpdateRequest: {
             userNm: string;
@@ -6528,9 +6597,40 @@ export interface components {
             /** @description 업무 구분 코드(공통코드 COM075 의 사용 중 상세코드) */
             taskSeCd: string;
             /** @description 결재자 esntlId(사용자 검색이 돌려주는 식별자) */
-            aprvrId: string;
+            aprvrId?: string;
+            /** @description 문서 제목 */
+            docTtl?: string;
+            /** @description 결재를 요청하는 문서 내용 */
+            docCn?: string;
+            /** @description 진행 순서대로 나열한 결재 단계. 생략하면 aprvrId의 단일 결재로 처리합니다. */
+            stages?: components["schemas"]["ApprovalStageRequest"][];
             /** @description 신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다 */
             reqYmd?: string;
+        };
+        ApprovalStageRequest: {
+            /** @enum {string} */
+            kind: "APPROVAL" | "AGREEMENT";
+            approverIds: string[];
+        };
+        /** @description 반려·회수된 결재의 수정 후 재상신 요청 */
+        ApprovalResubmissionRequest: {
+            /** @description 업무 구분 코드(공통코드 COM075 의 사용 중 상세코드) */
+            taskSeCd: string;
+            /** @description 결재자 esntlId(사용자 검색이 돌려주는 식별자) */
+            aprvrId?: string;
+            /** @description 문서 제목 */
+            docTtl?: string;
+            /** @description 결재를 요청하는 문서 내용 */
+            docCn?: string;
+            /** @description 진행 순서대로 나열한 결재 단계. 생략하면 aprvrId의 단일 결재로 처리합니다. */
+            stages?: components["schemas"]["ApprovalStageRequest"][];
+            /** @description 신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다 */
+            reqYmd?: string;
+            /**
+             * Format: int32
+             * @description 수정 화면에서 조회한 문서 버전
+             */
+            version: number;
         };
         UserDto: {
             userId: string;
@@ -20372,11 +20472,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -20565,11 +20662,8 @@ export interface operations {
             query?: {
                 /** @description 검색어 */
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -20816,11 +20910,8 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -20941,11 +21032,8 @@ export interface operations {
             query?: {
                 searchCondition?: string;
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21065,11 +21153,8 @@ export interface operations {
         parameters: {
             query?: {
                 type?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21189,11 +21274,8 @@ export interface operations {
         parameters: {
             query?: {
                 type?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21313,11 +21395,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -21437,11 +21516,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -22122,11 +22198,8 @@ export interface operations {
             query: {
                 pstSn: number;
                 bbsId: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -22718,15 +22791,83 @@ export interface operations {
             };
         };
     };
+    resubmitApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalResubmissionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseLong"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getUsers: {
         parameters: {
             query?: {
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -23487,11 +23628,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -23611,11 +23749,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -23877,11 +24012,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -24001,11 +24133,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -24441,11 +24570,8 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -24959,11 +25085,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -25322,11 +25445,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -26266,11 +26386,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -26729,11 +26846,8 @@ export interface operations {
             query?: {
                 searchCondition?: string;
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -26853,11 +26967,8 @@ export interface operations {
         parameters: {
             query?: {
                 name?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -26977,11 +27088,8 @@ export interface operations {
         parameters: {
             query?: {
                 name?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -27110,11 +27218,8 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -27304,11 +27409,8 @@ export interface operations {
             query?: {
                 searchCnd?: string;
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -27546,11 +27648,8 @@ export interface operations {
                 trgetOgnzId?: string;
                 searchCnd?: string;
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -29174,11 +29273,8 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -29238,11 +29334,8 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -29416,11 +29509,8 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -29480,11 +29570,8 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -30586,11 +30673,8 @@ export interface operations {
             query?: {
                 searchCnd?: string;
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -30860,11 +30944,8 @@ export interface operations {
                 endDate?: string;
                 qnaStatus?: string;
                 qnaCategory?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31079,11 +31160,8 @@ export interface operations {
             query?: {
                 /** @description 제목 검색어(2자 이상) */
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31143,11 +31221,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31386,6 +31461,142 @@ export interface operations {
             };
         };
     };
+    getApprovalDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseInformalSanctionDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    cancelApproval: {
+        parameters: {
+            query?: {
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getTaskTypes: {
         parameters: {
             query?: never;
@@ -31445,11 +31656,8 @@ export interface operations {
     getProcessed: {
         parameters: {
             query?: {
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31508,11 +31716,8 @@ export interface operations {
     getPending: {
         parameters: {
             query?: {
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31571,11 +31776,8 @@ export interface operations {
     getMyHistory: {
         parameters: {
             query?: {
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -31691,11 +31893,8 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -34082,11 +34281,8 @@ export interface operations {
             query?: {
                 /** @description 멤버십 상태 필터(REQUESTED·APPROVED). 생략하면 전체 */
                 status?: "REQUESTED" | "APPROVED";
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -34216,11 +34412,8 @@ export interface operations {
                 searchKeyword?: string;
                 bbsId?: string;
                 pstSn?: number;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -34516,11 +34709,8 @@ export interface operations {
         parameters: {
             query: {
                 searchWrd: string;
-                /** @description Zero-based page index (0..N) */
                 page?: number;
-                /** @description The size of the page to be returned */
                 size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
             };
             header?: never;
@@ -34655,73 +34845,6 @@ export interface operations {
                 bbsId: string;
                 pstSn: number;
                 dgstfnSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    cancelApproval: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
             };
             cookie?: never;
         };

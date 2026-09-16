@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
+import nuri.business.service.informalsanction.dto.ApprovalStageRequest;
+import java.util.List;
 
 /**
  * 결재 기안(상신) 입력 계약.
@@ -22,9 +25,21 @@ public class ApprovalDraftRequest {
     private String taskSeCd;
 
     @Schema(description = "결재자 esntlId(사용자 검색이 돌려주는 식별자)", maxLength = 20)
-    @NotBlank
     @Size(max = 20)
     private String aprvrId;
+
+    @Schema(description = "문서 제목", maxLength = 256)
+    @Size(max = 256)
+    private String docTtl;
+
+    @Schema(description = "결재를 요청하는 문서 내용", maxLength = 4000)
+    @Size(max = 4000)
+    private String docCn;
+
+    @Schema(description = "진행 순서대로 나열한 결재 단계. 생략하면 aprvrId의 단일 결재로 처리합니다.")
+    @Valid
+    @Size(min = 1, max = 10)
+    private List<@jakarta.validation.constraints.NotNull ApprovalStageRequest> stages;
 
     @Schema(description = "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다", pattern = "^\\d{8}$")
     @Pattern(regexp = "^\\d{8}$")
@@ -52,5 +67,19 @@ public class ApprovalDraftRequest {
 
     public void setReqYmd(String reqYmd) {
         this.reqYmd = reqYmd;
+    }
+
+    public String getDocTtl() { return docTtl; }
+    public void setDocTtl(String docTtl) { this.docTtl = docTtl; }
+    public String getDocCn() { return docCn; }
+    public void setDocCn(String docCn) { this.docCn = docCn; }
+    public List<ApprovalStageRequest> getStages() { return stages; }
+    public void setStages(List<ApprovalStageRequest> stages) { this.stages = stages; }
+
+    @jakarta.validation.constraints.AssertTrue(message = "결재자를 지정하거나 결재선을 구성해 주세요.")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Schema(hidden = true)
+    public boolean isApprovalLinePresent() {
+        return (stages != null && !stages.isEmpty()) || (aprvrId != null && !aprvrId.isBlank());
     }
 }

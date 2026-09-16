@@ -7,7 +7,8 @@ import { parseWorkflowJobs } from './required-checks-contract.mjs';
 
 const runner = readFileSync(new URL('./verify.mjs', import.meta.url), 'utf8');
 const workflow = readFileSync(new URL('../.github/workflows/migration-tool.yml', import.meta.url), 'utf8');
-const moduleBuild = readFileSync(new URL('../migration-tool/build.gradle', import.meta.url), 'utf8');
+// Exact negative-fixture replacements must behave the same after LF or CRLF checkout.
+const moduleBuild = readFileSync(new URL('../migration-tool/build.gradle', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const contractCommand = 'node --test scripts/migration-verification-contract.test.mjs';
 const moduleTasks = ':migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar';
 const gradleOptions = '--no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8';
@@ -251,6 +252,7 @@ test('migration scope executes only its independent contracts and module tasks o
 
 test('child-only PIT probes are excluded only from the two exact CI target scopes while ordinary Test retains them', () => {
   assert.deepEqual(validateDrillBuild(moduleBuild), []);
+  assert.deepEqual(validateDrillBuild(moduleBuild.replace(/\n/g, '\r\n')), []);
   assert.deepEqual(validateRunner(runner, 'win32'), []);
   assert.deepEqual(validateRunner(runner, 'linux'), []);
   assert.deepEqual(validateWorkflow(workflow), []);
@@ -277,6 +279,7 @@ test('broad PIT exclusions, excluded Oracle engine probes, and ordinary Test fil
     const changed = mutate(moduleBuild);
     assert.notEqual(changed, moduleBuild);
     assert.ok(validateDrillBuild(changed).length);
+    assert.ok(validateDrillBuild(changed.replace(/\n/g, '\r\n')).length);
   }
 });
 

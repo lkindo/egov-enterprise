@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 /**
  * 비정형 결재 Entity
@@ -51,10 +52,20 @@ public class InformalSanction extends BaseEntity {
     @Column(length = 4000)
     private String rjctRsnCn;
 
+    @Column(length = 256)
+    private String docTtl;
+
+    @Column(length = 4000)
+    private String docCn;
+
+    @Column(precision = 7, scale = 0, nullable = false)
+    private BigDecimal atrzCycl = BigDecimal.ONE;
+
     // 팩토리 create() 전용 생성자 (선언 순서에 맞춘 비즈니스 필드; 감사 필드/@Version 제외)
     private InformalSanction(Long ifmlAtrzSn, String taskSeCd, String aplcntId,
                              String reqYmd, String aprvrId, String aprvYn,
-                             LocalDateTime atrzDt, String rjctRsnCn) {
+                             LocalDateTime atrzDt, String rjctRsnCn,
+                             String docTtl, String docCn, BigDecimal atrzCycl) {
         this.ifmlAtrzSn = ifmlAtrzSn;
         this.taskSeCd = taskSeCd;
         this.aplcntId = aplcntId;
@@ -63,6 +74,9 @@ public class InformalSanction extends BaseEntity {
         this.aprvYn = aprvYn;
         this.atrzDt = atrzDt;
         this.rjctRsnCn = rjctRsnCn;
+        this.docTtl = docTtl;
+        this.docCn = docCn;
+        this.atrzCycl = atrzCycl == null ? BigDecimal.ONE : atrzCycl.setScale(0, java.math.RoundingMode.UNNECESSARY);
     }
 
     /**
@@ -71,8 +85,42 @@ public class InformalSanction extends BaseEntity {
     @Builder
     public static InformalSanction create(Long ifmlAtrzSn, String taskSeCd, String aplcntId,
                                           String reqYmd, String aprvrId, String aprvYn,
-                                          LocalDateTime atrzDt, String rjctRsnCn) {
-        return new InformalSanction(ifmlAtrzSn, taskSeCd, aplcntId, reqYmd, aprvrId, aprvYn, atrzDt, rjctRsnCn);
+                                          LocalDateTime atrzDt, String rjctRsnCn,
+                                          String docTtl, String docCn, BigDecimal atrzCycl) {
+        return new InformalSanction(ifmlAtrzSn, taskSeCd, aplcntId, reqYmd, aprvrId, aprvYn, atrzDt, rjctRsnCn,
+                docTtl, docCn, atrzCycl);
+    }
+
+    public void selectRepresentativeApprover(String approverId) {
+        validateRequestedState();
+        this.aprvrId = approverId;
+    }
+
+    public void withdraw() {
+        validateRequestedState();
+        this.aprvYn = SanctionStatus.WITHDRAWN.getCode();
+        this.atrzDt = LocalDateTime.now();
+        this.rjctRsnCn = null;
+    }
+
+    public void resubmit(String taskSeCd, String reqYmd, String docTtl, String docCn, String approverId) {
+        if (!SanctionStatus.REJECTED.getCode().equals(aprvYn)
+                && !SanctionStatus.WITHDRAWN.getCode().equals(aprvYn)) {
+            throw new nuri.foundation.core.exception.BusinessException(nuri.foundation.core.exception.CommonErrorCode.INVALID_STATE);
+        }
+        if (atrzCycl.compareTo(BigDecimal.valueOf(9_999_999)) >= 0) {
+            throw new nuri.foundation.core.exception.BusinessException(nuri.foundation.core.exception.CommonErrorCode.INVALID_STATE);
+        }
+        validateDateFormat(reqYmd);
+        this.taskSeCd = taskSeCd;
+        this.reqYmd = reqYmd;
+        this.docTtl = docTtl;
+        this.docCn = docCn;
+        this.aprvrId = approverId;
+        this.atrzCycl = atrzCycl.add(BigDecimal.ONE);
+        this.aprvYn = SanctionStatus.REQUESTED.getCode();
+        this.atrzDt = null;
+        this.rjctRsnCn = null;
     }
 
     public void update(String taskSeCd, String reqYmd, String aprvrId) {

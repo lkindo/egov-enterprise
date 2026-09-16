@@ -47,7 +47,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   3건이 셸의 빈 상태·토큰 문구로 수렴하며 제거(사전 red 실측: 61 != 64).
 // [하향 래칫 2026-09-05] DEC-OPS-034 작성 화면 수렴으로 삭제된 CommunityBoardsWriteClient 의 bg-slate-900 1건 제거 → 61→60.
 // Superseded role/authority forms removed five legacy color occurrences.
-const BASELINE = 55;
+// [하향 래칫 2026-09-16] 결재선의 단계 상태를 semantic 토큰으로 표현하며 ApprovalStepper의 브랜드색 2건 제거.
+const BASELINE = 53;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

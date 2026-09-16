@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   getPending: vi.fn(),
   getProcessed: vi.fn(),
   getTaskTypes: vi.fn(),
+  getDetail: vi.fn(),
   toast: vi.fn(),
 }));
 
@@ -35,12 +36,14 @@ vi.mock('@/app/components/ui/toast', () => ({
 vi.mock('@/app/components/ui/confirm-modal', () => ({
   useConfirm: () => mocks.confirm,
 }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { esntlId: 'approver' } }) }));
 
 vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
   SANCTION_STATUS: {
     REQUESTED: 'A',
     APPROVED: 'C',
     REJECTED: 'R',
+    WITHDRAWN: 'W',
   },
   isSanctionPending: (value?: string) => value === 'A',
   approvalUserService: {
@@ -51,6 +54,7 @@ vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
     getPending: mocks.getPending,
     getProcessed: mocks.getProcessed,
     getTaskTypes: mocks.getTaskTypes,
+    getDetail: mocks.getDetail,
   },
 }));
 
@@ -81,10 +85,13 @@ vi.mock('@/app/components/patterns/master-detail-page', () => ({
 }));
 
 vi.mock('../ApprovalStepper', () => ({
-  ApprovalStepper: () => <div>결재 단계</div>,
+  ApprovalStepper: ({ accessibleLabel = '결재선 진행' }: { accessibleLabel?: string }) => (
+    <ol aria-label={accessibleLabel}><li>결재 단계</li></ol>
+  ),
 }));
 
 import ApprovalHubClient from '../ApprovalHubClient';
+import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
 
 const pendingApproval = {
   ifmlAtrzSn: 73,
@@ -118,7 +125,7 @@ function renderClient() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <ApprovalHubClient />
+      <UnsavedChangesProvider><ApprovalHubClient /></UnsavedChangesProvider>
     </QueryClientProvider>,
   );
 }
@@ -133,6 +140,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     mocks.getProcessed.mockResolvedValue({ list: [], total: 0 });
     mocks.getTaskTypes.mockResolvedValue([]);
     mocks.getPending.mockResolvedValue({ list: [pendingApproval], total: 1 });
+    mocks.getDetail.mockImplementation(async (id: number) => ({ ...pendingApproval, ifmlAtrzSn: id, version: 2, canApprove: id !== 74 && id !== 75, canWithdraw: id === 74, canResubmit: false }));
   });
 
   /**
@@ -184,7 +192,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
 
     await screen.findByText('휴가 신청');
     expect(mocks.getPending).toHaveBeenCalledWith({ page: 0, size: 20 });
-    expect(screen.getByRole('button', { name: '결재 승인' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '결재 승인' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('link', { name: '2' }));
 
@@ -198,7 +206,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
   it('공백 반려 사유는 요약과 inline 오류로 연결하고 첫 오류 입력에 초점을 둔다', async () => {
     renderClient();
 
-    const reason = await screen.findByRole('textbox', { name: '반려 사유' });
+    const reason = await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' });
     fireEvent.change(reason, { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: '결재 반려' }));
 
@@ -222,12 +230,12 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     });
     renderClient();
 
-    const reason = await screen.findByRole('textbox', { name: '반려 사유' });
+    const reason = await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' });
     fireEvent.change(reason, { target: { value: '현재 입력은 유지되어야 합니다.' } });
     fireEvent.click(screen.getByRole('button', { name: '결재 반려' }));
 
     await waitFor(() => expect(confirmMutation).toHaveBeenCalledTimes(1));
-    const summary = await screen.findByRole('alert');
+    const summary = await screen.findByRole('alert', { name: /입력 오류/ });
     expect(summary).toHaveTextContent('반려 사유를 더 구체적으로 입력해 주세요.');
     expect(reason).toHaveAttribute('aria-invalid', 'true');
     expect(reason).toHaveValue('현재 입력은 유지되어야 합니다.');
@@ -277,17 +285,17 @@ describe('ApprovalHubClient handleAction pending contract', () => {
 
     // 결재 대기함(결재자 시점)에는 기안 취소가 없다 — 남의 기안을 철회할 수 없다.
     await screen.findByText('휴가 신청');
-    expect(screen.queryByRole('button', { name: '기안 취소' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '결재 회수' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: '내가 올린 결재' }));
-    const cancel = await screen.findByRole('button', { name: '기안 취소' });
+    const cancel = await screen.findByRole('button', { name: '결재 회수' });
     fireEvent.click(cancel);
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     expect(mocks.confirm.mock.calls[0][0].message).toContain('#74');
     expect(mocks.confirm.mock.calls[0][0].variant).toBe('destructive');
-    await waitFor(() => expect(mocks.cancelDraft).toHaveBeenCalledWith(74));
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('결재 기안이 취소되었습니다.', 'success'));
+    await waitFor(() => expect(mocks.cancelDraft).toHaveBeenCalledWith(74, 2));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('문서를 회수했습니다. 처리 이력은 보존됩니다.', 'success'));
   });
 
   it('기안 취소는 확인 대기 중에도 재진입을 막고 pending 상태·실패 사유를 드러낸다', async () => {
@@ -299,7 +307,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     renderClient();
 
     fireEvent.click(await screen.findByRole('tab', { name: '내가 올린 결재' }));
-    const cancel = await screen.findByRole('button', { name: '기안 취소' });
+    const cancel = await screen.findByRole('button', { name: '결재 회수' });
 
     act(() => {
       fireEvent.click(cancel);
@@ -330,7 +338,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     renderClient();
 
     fireEvent.click(await screen.findByRole('tab', { name: '내가 올린 결재' }));
-    const cancel = await screen.findByRole('button', { name: '기안 취소' });
+    const cancel = await screen.findByRole('button', { name: '결재 회수' });
     fireEvent.click(cancel);
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
@@ -344,7 +352,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     confirmMutation.mockReturnValueOnce(pending.promise);
     renderClient();
 
-    const reason = await screen.findByRole('textbox', { name: '반려 사유' });
+    const reason = await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' });
     fireEvent.change(reason, { target: { value: '예산 코드 확인이 필요합니다.' } });
     const reject = screen.getByRole('button', { name: '결재 반려' });
 
@@ -355,7 +363,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(confirmMutation).toHaveBeenCalledTimes(1));
-    expect(confirmMutation).toHaveBeenCalledWith(73, 'R', '예산 코드 확인이 필요합니다.');
+    expect(confirmMutation).toHaveBeenCalledWith(73, 'R', '예산 코드 확인이 필요합니다.', 2);
     expect(reject).toBeDisabled();
     expect(reject).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByRole('button', { name: '결재 승인' })).toBeDisabled();
@@ -371,5 +379,93 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     expect(reason).toHaveValue('예산 코드 확인이 필요합니다.');
     expect(reject).toBeEnabled();
     expect(reject).not.toHaveAttribute('aria-busy');
+  });
+
+  it('신청 상태와 대기 탭만으로 승인 권한을 추론하지 않는다', async () => {
+    mocks.getDetail.mockResolvedValue({ ...pendingApproval, version: 2, canApprove: false, canWithdraw: false, canResubmit: false });
+    renderClient(); await screen.findByText('휴가 신청');
+    await waitFor(() => expect(mocks.getDetail).toHaveBeenCalledWith(73));
+    expect(screen.queryByRole('button', { name: '결재 승인' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '결재 반려' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '결재 회수' })).not.toBeInTheDocument();
+  });
+
+  it('합의 동의를 실제 단계와 버전으로 전송하고 승인 의견을 보존한다', async () => {
+    mocks.getDetail.mockResolvedValue({ ...pendingApproval, version: 4, canApprove: true, stages: [{ order: 1, kind: 'AGREEMENT', status: 'ACTIVE', approvers: [{ userId: 'approver', status: 'ACTIVE' }] }] });
+    renderClient(); const agree = await screen.findByRole('button', { name: '합의 동의' });
+    fireEvent.change(screen.getByRole('textbox', { name: '결재 의견 (반려 시 필수)' }), { target: { value: '검토한 내용에 동의합니다.' } });
+    fireEvent.click(agree);
+    await waitFor(() => expect(mocks.confirmMutation).toHaveBeenCalledWith(73, 'C', '검토한 내용에 동의합니다.', 4));
+  });
+
+  it('작성 중 의견이 있는 문서 선택 변경을 취소하면 의견과 기존 선택을 보존한다', async () => {
+    mocks.getPending.mockResolvedValue({ list: [pendingApproval, { ...pendingApproval, ifmlAtrzSn: 99, taskSeNm: '다음 문서' }], total: 2 });
+    renderClient(); const reason = await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' });
+    fireEvent.change(reason, { target: { value: '작성 중 검토 의견' } }); mocks.confirm.mockResolvedValueOnce(false);
+    fireEvent.click(screen.getByRole('button', { name: '다음 문서 #99 상세 열기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '저장하지 않은 변경' })));
+    expect(reason).toHaveValue('작성 중 검토 의견');
+    expect(screen.getByRole('button', { name: '휴가 신청 #73 상세 열기' })).toHaveAttribute('aria-current', 'true');
+    mocks.confirm.mockResolvedValueOnce(true);
+    fireEvent.click(screen.getByRole('button', { name: '다음 문서 #99 상세 열기' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '다음 문서 #99 상세 열기' })).toHaveAttribute('aria-current', 'true'));
+    expect(await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' })).toHaveValue('');
+  });
+
+  it('409 후 의견을 유지하고 최신 상세를 확인하기 전 재처리를 막는다', async () => {
+    mocks.confirmMutation.mockRejectedValueOnce({ response: { status: 409 } });
+    renderClient(); const reason = await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' });
+    fireEvent.change(reason, { target: { value: '입력을 보존할 의견' } }); fireEvent.click(screen.getByRole('button', { name: '결재 승인' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('입력한 의견은 유지됩니다.');
+    expect(reason).toHaveValue('입력을 보존할 의견');
+    expect(screen.queryByRole('button', { name: '결재 승인' })).not.toBeInTheDocument();
+    mocks.getDetail.mockResolvedValue({ ...pendingApproval, version: 3, canApprove: true });
+    fireEvent.click(screen.getByRole('button', { name: '최신 문서 확인' }));
+    fireEvent.click(await screen.findByRole('button', { name: '결재 승인' }));
+    await waitFor(() => expect(mocks.confirmMutation).toHaveBeenLastCalledWith(73, 'C', '입력을 보존할 의견', 3));
+  });
+
+  it('목록 새로고침으로 문서가 사라져도 의견을 다른 첫 문서로 옮기지 않는다', async () => {
+    renderClient(); const reason = await screen.findByRole('textbox', { name: '결재 의견 (반려 시 필수)' });
+    fireEvent.change(reason, { target: { value: '73번 문서의 검토 의견' } });
+    mocks.getPending.mockResolvedValue({ list: [{ ...pendingApproval, ifmlAtrzSn: 99, taskSeNm: '다른 첫 문서' }], total: 1 });
+    fireEvent.click(screen.getByRole('button', { name: '결재함 목록 새로고침' }));
+    await screen.findByText('다른 첫 문서');
+    expect(screen.getByRole('status')).toHaveTextContent('입력은 이 문서에 보존했습니다.');
+    expect(reason).toHaveValue('73번 문서의 검토 의견'); expect(reason).toHaveAttribute('readonly');
+    expect(screen.queryByRole('button', { name: '결재 승인' })).not.toBeInTheDocument();
+    expect(mocks.getDetail).not.toHaveBeenCalledWith(99);
+    expect(mocks.confirmMutation).not.toHaveBeenCalled();
+  });
+
+  it('이력에 현재 차수만 있으면 이전 차수 이력을 표시하지 않는다', async () => {
+    mocks.getDetail.mockResolvedValue({
+      ...pendingApproval, docTtl: '최초 문서', docCn: '최초 본문', atrzCycl: 1,
+      history: [{ atrzCycl: 1, docTtl: '최초 문서', docCn: '최초 본문', aprvYn: 'A', stages: [] }],
+    });
+    renderClient();
+    await screen.findByRole('heading', { name: '최초 문서 · 1차' });
+    expect(screen.queryByRole('region', { name: '이전 차수 이력' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('최초 본문')).toHaveLength(1);
+    expect(screen.getByRole('list', { name: '결재선 진행' })).toBeInTheDocument();
+  });
+
+  it('전체 이력에서 이전 차수만 표시하고 현재 문서와 결재선 이름을 구분한다', async () => {
+    mocks.getDetail.mockResolvedValue({
+      ...pendingApproval, docTtl: '보완된 문서', docCn: '현재 본문', version: 3, atrzCycl: 2, canApprove: false,
+      history: [
+        { atrzCycl: 1, docTtl: '최초 문서', docCn: '이전 본문', aprvYn: 'R', stages: [] },
+        { atrzCycl: 2, docTtl: '보완된 문서', docCn: '현재 본문', aprvYn: 'A', stages: [] },
+      ],
+    });
+    renderClient();
+    await screen.findByRole('heading', { name: '보완된 문서 · 2차' });
+    expect(screen.getAllByText('현재 본문')).toHaveLength(1);
+    expect(screen.getByText('1차 · 최초 문서 · 반려')).toBeInTheDocument();
+    expect(screen.getByText('이전 본문')).toBeInTheDocument();
+    expect(screen.queryByText('2차 · 보완된 문서 · 대기')).not.toBeInTheDocument();
+    expect(screen.getByRole('list', { name: '결재선 진행' })).toBeInTheDocument();
+    fireEvent.click(screen.getByText('1차 · 최초 문서 · 반려'));
+    expect(screen.getByRole('list', { name: '1차 결재선 진행' })).toBeInTheDocument();
   });
 });

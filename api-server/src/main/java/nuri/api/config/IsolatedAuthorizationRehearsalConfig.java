@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import nuri.business.security.authorization.AuthorizationSnapshotService;
-import nuri.business.security.authorization.PermissionCodes;
 import org.flywaydb.core.Flyway;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
@@ -56,7 +55,7 @@ public class IsolatedAuthorizationRehearsalConfig {
                                 AuthorizationSnapshotService.digest("DISPOSABLE_E2E_FIXTURE:"+expected.database()));
                         jdbc.queryForObject("SELECT set_config('app.authorization_backup_sha256',?,true)",String.class,
                                 AuthorizationSnapshotService.digest("DISPOSABLE_FIXTURE_NO_OPERATIONAL_BACKUP"));
-                        jdbc.queryForObject("SELECT set_config('app.authorization_catalog_version',?,true)",String.class,PermissionCodes.CATALOG_VERSION);
+                        jdbc.queryForObject("SELECT set_config('app.authorization_catalog_version',?,true)",String.class,AuthorizationReviewedMigrationCatalog.version());
                         try (var input=new ClassPathResource("db/cutover/authorization-contract.sql").getInputStream();
                              var statement=connection.createStatement()) {
                             statement.setQueryTimeout(30);

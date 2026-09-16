@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -41,7 +42,6 @@ public class InformalSanctionDto {
 
     @Schema(description = "결재자 ID")
     @Size(max = 20)
-    @NotBlank
     private String aprvrId;
 
     @Schema(description = "결재자 명")
@@ -66,5 +66,21 @@ public class InformalSanctionDto {
 
     @Schema(description = "등록 일시")
     private LocalDateTime crtDt;
+
+    @Size(max = 256)
+    private String docTtl;
+
+    @Size(max = 4000)
+    private String docCn;
+
+    @Min(0)
+    private Integer version;
+
+    private Integer atrzCycl;
+    private List<ApprovalStageDto> stages;
+    private List<ApprovalRevisionDto> history;
+    private boolean canApprove;
+    private boolean canWithdraw;
+    private boolean canResubmit;
 }
 

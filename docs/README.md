@@ -39,6 +39,7 @@
 | [backend-architecture.md](02-architecture/backend-architecture.md) | Backend Architecture Blueprint — 멀티모듈 구조·레이어 |
 | [frontend-architecture.md](02-architecture/frontend-architecture.md) | Frontend Architecture (Next.js App Router 기준) |
 | [frontend-design-system.md](02-architecture/frontend-design-system.md) | Design System |
+| [approval-workflow-ux.md](02-architecture/approval-workflow-ux.md) | 다단계·병렬 전원 결재의 UX 근거, 차수·회수·재상신·열람 규칙 |
 | [krds-profile-mapping.md](02-architecture/krds-profile-mapping.md) | KRDS 공식 자산과 standard/aligned/premium 프로필의 채택·조정·보류 매핑(승인 전 Draft) |
 | [ui-ux-modernization-plan.md](02-architecture/ui-ux-modernization-plan.md) | Claude 원안의 적대적 재검토와 사용자 과업 중심 UI/UX 전면 현대화 실행 계획 |
 | [erp-transformation-master-plan.html](02-architecture/erp-transformation-master-plan.html) | 공통 프레임워크 × ERP·공공 업무시스템 전환 6단계 마스터플랜(2026-08-23, 결정 D1~D10 포함) |

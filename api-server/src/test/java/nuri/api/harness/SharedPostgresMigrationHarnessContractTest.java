@@ -27,7 +27,8 @@ class SharedPostgresMigrationHarnessContractTest {
      * 정당한 증감은 이 상수를 함께 고쳐 diff 에 의도를 남긴다.
      */
     // V2_100: 같은 공용 support에서 메뉴 노출 동등성·감사 롤백·Contract 순서 검증을 추가한다.
-    private static final int EXPECTED_MIGRATION_TEST_COUNT = 42;
+    // V2_101: 기존 단일 결재의 차수/참여자 백필 검증도 같은 공용 support를 사용한다.
+    private static final int EXPECTED_MIGRATION_TEST_COUNT = 43;
 
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")
@@ -48,7 +49,7 @@ class SharedPostgresMigrationHarnessContractTest {
     }
 
     @Test
-    @DisplayName("42개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
+    @DisplayName("43개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
     void migrationTestsUseSharedPostgresSupport() throws IOException {
         List<Path> migrationTests = HarnessSourceIndex.javaSources(schemaSourceRoot()).stream()
                 .filter(SharedPostgresMigrationHarnessContractTest::isMigrationTest)
@@ -75,7 +76,7 @@ class SharedPostgresMigrationHarnessContractTest {
         }
 
         assertThat(violations)
-                .as("migration 클래스마다 PostgreSQLContainer를 다시 띄우면 42회 부팅으로 회귀한다")
+                .as("migration 클래스마다 PostgreSQLContainer를 다시 띄우면 43회 부팅으로 회귀한다")
                 .isEmpty();
     }
 

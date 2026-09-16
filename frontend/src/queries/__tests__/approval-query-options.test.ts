@@ -8,6 +8,9 @@ const service = vi.hoisted(() => ({
   getPending: vi.fn(),
   getProcessed: vi.fn(),
   getTaskTypes: vi.fn(),
+  getDetail: vi.fn(),
+  resubmit: vi.fn(),
+  cancelDraft: vi.fn(),
 }));
 
 vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
@@ -76,9 +79,10 @@ describe('approval query ownership', () => {
       reason: '예산 코드 누락',
     }, {} as never);
 
-    expect(service.confirm).toHaveBeenCalledWith(17, 'R', '예산 코드 누락');
+    expect(service.confirm).toHaveBeenCalledWith(17, 'R', '예산 코드 누락', undefined);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.lists() });
     expect(invalidate).not.toHaveBeenCalledWith({ queryKey: approvalKeys.all });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.detail(17) });
   });
 
   it('기안 상신은 문서 번호를 돌려주고 목록 factory key만 무효화한다', async () => {
@@ -96,5 +100,27 @@ describe('approval query ownership', () => {
     expect(service.createDraft).toHaveBeenCalledWith({ taskSeCd: '01', aprvrId: 'BOSS', reqYmd: '20260905' });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.lists() });
     expect(invalidate).not.toHaveBeenCalledWith({ queryKey: approvalKeys.taskTypes() });
+  });
+
+  it('상세와 목록 key를 구분하고 재상신 후 같은 문서의 두 경계를 최신화한다', async () => {
+    expect(approvalKeys.detail(91)).toEqual(['approvals', 'detail', 91]);
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+    service.resubmit.mockResolvedValueOnce(91);
+    const request = { taskSeCd: '01', docTtl: '보완 문서', version: 3, stages: [{ kind: 'APPROVAL' as const, approverIds: ['BOSS'] }] };
+    const result = await approvalMutationOptions.resubmit(queryClient).mutationFn?.({ ifmlAtrzSn: 91, request }, {} as never);
+    expect(result).toBe(91);
+    expect(service.resubmit).toHaveBeenCalledWith(91, request);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.lists() });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.detail(91) });
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: approvalKeys.all });
+  });
+
+  it('회수도 버전을 결속하고 문서 이력을 재조회한다', async () => {
+    const queryClient = new QueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+    await approvalMutationOptions.cancel(queryClient).mutationFn?.({ ifmlAtrzSn: 91, version: 3 }, {} as never);
+    expect(service.cancelDraft).toHaveBeenCalledWith(91, 3);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.detail(91) });
   });
 });

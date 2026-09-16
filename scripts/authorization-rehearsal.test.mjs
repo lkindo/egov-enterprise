@@ -9,6 +9,7 @@ const overlay = 'docker-compose.authz-e2e.yml';
 const readiness = 'scripts/run-isolated-readiness.mjs';
 const deploy = 'scripts/deploy.sh';
 const config = 'api-server/src/main/java/nuri/api/config/IsolatedAuthorizationRehearsalConfig.java';
+const testSupport = 'api-server/src/test/java/nuri/api/schema/AuthorizationCutoverTestSupport.java';
 const jobs = new Map([
   ['.github/workflows/ci.yml', 'e2e-tests'],
   ['.github/workflows/load-test.yml', 'load-test'],
@@ -17,7 +18,7 @@ const jobs = new Map([
 ]);
 const defaults = ['docker-compose.yml', 'docker-compose.prod.yml',
   'api-server/src/main/resources/application.yml', 'api-server/src/main/resources/application-prod.yml'];
-const files = [...jobs.keys(), ...defaults, overlay, readiness, deploy, config];
+const files = [...jobs.keys(), ...defaults, overlay, readiness, deploy, config, testSupport];
 const read = () => new Map(files.map(file => [file, fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n')]));
 
 // Inspect the executable configuration paths, without starting Docker or accepting production state as fixture evidence.
@@ -62,6 +63,10 @@ function assertWiring(sources) {
   assert.ok(java.indexOf('validateTarget(profiles,connection.getMetaData().getURL(),ack)') < java.indexOf(stagedMigrate));
   assert.ok(java.indexOf(stagedMigrate) < java.indexOf('statement.execute(new String(input.readAllBytes(),StandardCharsets.UTF_8))'));
   assert.ok(java.indexOf('connection.commit()') < java.indexOf('flyway.migrate()'));
+  assert.match(java, /set_config\('app\.authorization_catalog_version',\?,true\)",String\.class,AuthorizationReviewedMigrationCatalog\.version\(\)\)/);
+  assert.doesNotMatch(java, /PermissionCodes\.CATALOG_VERSION/);
+  assert.match(sources.get(testSupport), /statement\.setString\(3, AuthorizationReviewedMigrationCatalog\.version\(\)\)/);
+  assert.doesNotMatch(sources.get(testSupport), /PermissionCodes\.CATALOG_VERSION/);
 }
 
 test('authorization cutover rehearsal is explicit in four CI jobs and isolated local readiness only', () => {
@@ -81,6 +86,8 @@ test('missing execution wiring, unsafe defaults and removed isolation checks are
     [config, s => s.replace('!profiles.equals(Set.of("e2e"))', 'false')],
     [config, s => s.replace('!expected.equals(actual)', 'false')],
     [config, s => s.replace('.target("2.99")', '.target("latest")')],
+    [config, s => s.replace('AuthorizationReviewedMigrationCatalog.version()', 'PermissionCodes.CATALOG_VERSION')],
+    [testSupport, s => s.replace('AuthorizationReviewedMigrationCatalog.version()', 'PermissionCodes.CATALOG_VERSION')],
     [config, s => s.replace('            flyway.migrate();', '').replace('            // Check the effective datasource', '            flyway.migrate();\n            // Check the effective datasource')],
   ];
   for (const [file, mutate] of mutations) {

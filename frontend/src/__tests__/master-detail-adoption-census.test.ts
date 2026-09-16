@@ -92,7 +92,17 @@ describe('A2 master-detail adoption census', () => {
     // 바뀌어 e2e 가 180초 타임아웃). [2026-09-05] 상신은 같은 화면의 다이얼로그가 실제 API 로
     // 수행하므로 페이지 이동이 없다 — 이제는 button 이 옳은 역할이고, 목업 라우트로 가는 링크가
     // 되살아나면 red 다.
-    expect(client).toMatch(/<Button type="button" onClick=\{\(\) => setDraftOpen\(true\)\}>/);
+    // 작성 중 의견을 먼저 확인하고 새 기안을 연다. 역할·pending 차단·유실 방지 경로를 함께 고정한다.
+    const draftButton = /<Button type="button" disabled=\{isActionPending\} onClick=\{\(\) => \{\s*void navigate\(\(\) => \{ setRejectReason\(''\); decisionValidation\.setFormErrors\(\{\}, false\); setResubmission\(undefined\); setDraftOpen\(true\); \}\);\s*\}\}>[\s\S]*?새 결재 기안\s*<\/Button>/;
+    expect(draftButton.test(client), '새 기안은 의견 유실 확인을 거치는 button이어야 한다').toBe(true);
+    for (const invalid of [
+      client.replace('<Button type="button" disabled={isActionPending} onClick', '<Link href="/approvals/draft" onClick'),
+      client.replace('disabled={isActionPending} onClick', 'onClick'),
+      client.replace('void navigate(() => { setRejectReason', 'void (() => { setRejectReason'),
+    ]) {
+      expect(invalid).not.toBe(client);
+      expect(draftButton.test(invalid), '링크 전환·중복 실행·의견 유실 경로는 거절한다').toBe(false);
+    }
     expect(client).not.toMatch(/<Link href="\/approvals\/draft">/);
     expect(client).toMatch(/isDraftOpen \? \(\s*<ApprovalDraftDialog\b/);
     // 표가 아니라 compact 마스터 목록이다 — 6열 표를 좁은 마스터 폭에 두지 않는다.

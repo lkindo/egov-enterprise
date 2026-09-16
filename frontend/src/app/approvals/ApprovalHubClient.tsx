@@ -11,9 +11,10 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { ApprovalConfirmRequestSchema } from '@/types/generated-zod';
 import {
-  isSanctionPending,
   SANCTION_STATUS,
   type InformalSanctionDto,
   type SanctionStatusCode,
@@ -60,7 +61,7 @@ const EMPTY_MESSAGES: Record<ApprovalTab, string> = {
 };
 
 const APPROVAL_DECISION_LABELS = {
-  reason: '반려 사유',
+  reason: '결재 의견',
   status: '결재 상태',
 };
 
@@ -89,6 +90,7 @@ function ApprovalStatusBadge({ aprvYn }: { aprvYn?: string }) {
   if (aprvYn === SANCTION_STATUS.REJECTED) {
     return <Badge variant="destructive" className="shrink-0 text-xs font-bold">반려됨</Badge>;
   }
+  if (aprvYn === SANCTION_STATUS.WITHDRAWN) return <Badge variant="secondary" className="shrink-0 text-xs font-bold">회수됨</Badge>;
   return <Badge variant="secondary" className="shrink-0 text-xs font-bold">대기 중</Badge>;
 }
 
@@ -122,12 +124,17 @@ export default function ApprovalHubClient() {
   const { toast } = useToast();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ApprovalTab>('PENDING');
   const [page, setPage] = useState(1);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isDraftOpen, setDraftOpen] = useState(false);
+  const [resubmission, setResubmission] = useState<InformalSanctionDto | undefined>();
   const [rejectReason, setRejectReason] = useState('');
+  const [opinionDocument, setOpinionDocument] = useState<InformalSanctionDto | null>(null);
   const [pendingAction, setPendingAction] = useState<SanctionStatusCode | 'CANCEL' | null>(null);
+  const [actionError, setActionError] = useState('');
+  const [needsActionReview, setNeedsActionReview] = useState(false);
   const pendingActionRef = useRef(false);
   const itemButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const rejectReasonRef = useRef<HTMLTextAreaElement>(null);
@@ -135,6 +142,7 @@ export default function ApprovalHubClient() {
     focusTargets: { reason: () => rejectReasonRef.current },
     labels: APPROVAL_DECISION_LABELS,
   });
+  const navigate = useUnsavedChanges({ dirty: Boolean(rejectReason.trim()), pending: pendingAction !== null });
 
   const { data: approvalData, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery(
     approvalQueryOptions.list(activeTab, { page: page - 1, size: PAGE_SIZE }),
@@ -150,26 +158,46 @@ export default function ApprovalHubClient() {
   */
   const total = approvalData?.total ?? list.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const selectedItem = useMemo(() =>
-    list.find(item => sanctionKey(item) === selectedItemId) || (list.length > 0 ? list[0] : null)
-  , [list, selectedItemId]);
+  const selectedListItem = useMemo(() => {
+    // 목록의 순서나 처리 상태가 새로고침되어도 작성 중 의견을 다른 문서로 옮기지 않는다.
+    if (rejectReason.length && opinionDocument) return list.find(item => sanctionKey(item) === sanctionKey(opinionDocument)) ?? opinionDocument;
+    return list.find(item => sanctionKey(item) === selectedItemId) || (list.length > 0 ? list[0] : null);
+  }, [list, selectedItemId, rejectReason, opinionDocument]);
+  const detailQuery = useQuery({
+    ...approvalQueryOptions.detail(selectedListItem?.ifmlAtrzSn ?? 0),
+    enabled: selectedListItem?.ifmlAtrzSn !== undefined,
+  });
+  const selectedItem = detailQuery.data ?? selectedListItem;
+  const previousRevisions = (detailQuery.data?.history ?? []).filter(
+    revision => revision.atrzCycl !== undefined && revision.atrzCycl < (selectedItem?.atrzCycl ?? 1),
+  );
   const hasVisibleSelection = list.some(item => sanctionKey(item) === selectedItemId);
 
   const handleTabChange = (tab: ApprovalTab) => {
+    if (pendingActionRef.current || tab === activeTab) return;
+    void navigate(() => {
     setActiveTab(tab);
     setPage(1);
     // 다른 대기열의 문서 식별자를 들고 넘어가면 첫 항목이 아니라 빈 상세가 남는다.
     setSelectedItemId(null);
     setRejectReason('');
     decisionValidation.setFormErrors({}, false);
+    setActionError('');
+    setNeedsActionReview(false);
+    });
   };
 
   /** 페이지를 넘기면 이전 페이지의 선택은 stale 이므로 해제한다(메일 이력 A2 와 같은 규칙). */
   const handlePageChange = (nextPage: number) => {
+    if (pendingActionRef.current || nextPage === page) return;
+    void navigate(() => {
     setPage(nextPage);
     setSelectedItemId(null);
     setRejectReason('');
     decisionValidation.setFormErrors({}, false);
+    setActionError('');
+    setNeedsActionReview(false);
+    });
   };
 
   /** 상신 직후에는 방금 올린 문서가 보이는 '내가 올린 결재' 첫 페이지로 옮겨 저장됐음을 눈으로 확인시킨다. */
@@ -179,6 +207,8 @@ export default function ApprovalHubClient() {
     setSelectedItemId(String(ifmlAtrzSn));
     setRejectReason('');
     decisionValidation.setFormErrors({}, false);
+    setActionError('');
+    setNeedsActionReview(false);
   };
 
   const handleAction = async (
@@ -186,7 +216,7 @@ export default function ApprovalHubClient() {
     aprvYn: Extract<SanctionStatusCode, 'C' | 'R'>,
   ) => {
     const isReject = aprvYn === SANCTION_STATUS.REJECTED;
-    const actionNm = isReject ? '반려' : '승인';
+    const actionNm = isReject ? '반려' : item.stages?.find(stage => stage.status === 'ACTIVE')?.kind === 'AGREEMENT' ? '동의' : '승인';
 
     if (item.ifmlAtrzSn === undefined) {
       toast('문서 번호를 확인할 수 없어 처리할 수 없습니다.', 'error');
@@ -195,7 +225,7 @@ export default function ApprovalHubClient() {
 
     const validatedDecision = decisionValidation.validate({
       status: aprvYn,
-      reason: isReject ? rejectReason : undefined,
+      reason: rejectReason || undefined,
     });
     if (!validatedDecision) return;
 
@@ -208,7 +238,8 @@ export default function ApprovalHubClient() {
     try {
       const isConfirmed = await confirm({
         title: `결재 ${actionNm}`,
-        message: `[#${item.ifmlAtrzSn}] 요청을 ${actionNm}하시겠습니까?`,
+        message: isReject ? `‘${item.docTtl || `#${item.ifmlAtrzSn}`}’ 문서 전체를 반려합니다. 남은 모든 결재는 종료되고 사유가 기안자에게 전달됩니다.`
+          : `‘${item.docTtl || `#${item.ifmlAtrzSn}`}’ 문서를 승인하시겠습니까? 이 단계의 전원이 승인해야 다음 단계가 시작됩니다.`,
         variant: isReject ? 'destructive' : 'default'
       });
 
@@ -218,12 +249,22 @@ export default function ApprovalHubClient() {
         ifmlAtrzSn: item.ifmlAtrzSn,
         status: validatedDecision.status,
         reason: validatedDecision.reason,
+        version: item.version,
       });
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       setRejectReason('');
+      setActionError('');
+      const next = list.find(entry => sanctionKey(entry) !== sanctionKey(item));
+      if (activeTab === 'PENDING' && next) {
+        setSelectedItemId(sanctionKey(next));
+        requestAnimationFrame(() => itemButtonRefs.current.get(sanctionKey(next))?.focus());
+      } else requestAnimationFrame(() => itemButtonRefs.current.get(sanctionKey(item))?.focus());
     } catch (error) {
       const fieldErrors = extractFieldErrors(error);
       if (fieldErrors) decisionValidation.setFormErrors(fieldErrors);
+      const conflict = typeof error === 'object' && error !== null && 'response' in error && (error as { response?: { status?: number } }).response?.status === 409;
+      if (conflict) setNeedsActionReview(true);
+      setActionError(conflict ? '다른 사용자가 문서를 변경했습니다. 입력한 의견은 유지됩니다. 최신 문서를 확인한 뒤 다시 처리해 주세요.' : `${actionNm} 처리 중 오류가 발생했습니다. 입력한 의견은 유지됩니다.`);
       toast(`${actionNm} 처리 중 오류가 발생했습니다.`, 'error');
     } finally {
       pendingActionRef.current = false;
@@ -238,35 +279,26 @@ export default function ApprovalHubClient() {
 
     try {
       const ok = await confirm({
-        title: '기안 취소',
-        message: `[#${item.ifmlAtrzSn}] 기안을 취소(철회)하시겠습니까? 취소 후에는 복구할 수 없습니다.`,
-        confirmText: '기안 취소',
+        title: '결재 회수',
+        message: `‘${item.docTtl || `#${item.ifmlAtrzSn}`}’ 문서를 회수하면 진행 중인 결재와 남은 결재가 종료됩니다. 문서와 처리 이력은 보존되고 수정 후 새 차수로 재상신할 수 있습니다.`,
+        confirmText: '결재 회수',
         variant: 'destructive',
       });
       if (!ok) return;
 
-      await cancelMutation.mutateAsync(item.ifmlAtrzSn);
-      toast('결재 기안이 취소되었습니다.', 'success');
-      setSelectedItemId(null);
-      // 마지막 페이지의 마지막 건을 지우면 그 페이지가 비어 페이저까지 사라지고
-      // '올린 결재가 없습니다' 라는 거짓 빈 상태에 갇힌다 — 한 페이지 앞으로 물린다.
-      if (list.length === 1 && page > 1) {
-        setPage(page - 1);
-      }
+      await cancelMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn, version: item.version });
+      toast('문서를 회수했습니다. 처리 이력은 보존됩니다.', 'success');
+      setActionError('');
     } catch (error) {
       toast(extractErrorMessage(error, '기안 취소에 실패했습니다.'), 'error');
+      setActionError('문서를 회수하지 못했습니다. 최신 상태를 확인한 뒤 다시 시도해 주세요.');
     } finally {
       pendingActionRef.current = false;
       setPendingAction(null);
     }
   };
 
-  /**
-   * 결재 단계는 서버가 내려준 필드로만 구성한다.
-   * 종전에는 존재하지 않는 중간 결재자('이순신 과장')와 '최종 승인' 단계를 화면에서
-   * 창작해 실제 결재선이 아닌 흐름을 사실처럼 보여줬다 — 기안(aplcntId)과 결재(aprvrId)
-   * 두 단계가 이 API 계약이 실제로 보증하는 전부다.
-   */
+  /** 이전 단일 결재 문서의 표시. stages가 있으면 서버의 실제 결재선을 우선한다. */
   const workflowSteps = useMemo(() => {
     if (!selectedItem) return [];
     return [
@@ -286,11 +318,12 @@ export default function ApprovalHubClient() {
     ];
   }, [selectedItem]);
 
-  // 서버는 신청 상태('A')만 확정을 받는다. 종전 조건(=== 'R')은 값 자체가 없어 영구 false 였고,
-  // 설령 값이 있었어도 'R'(반려)에만 승인 버튼을 띄우는 뒤집힌 게이트였다.
-  const canDecide = activeTab === 'PENDING' && isSanctionPending(selectedItem?.aprvYn);
-  // 내가 올린 결재 중 대기(신청) 상태인 건은 기안자가 스스로 취소(철회)할 수 있다.
-  const canCancel = activeTab === 'SUBMITTED' && isSanctionPending(selectedItem?.aprvYn);
+  // 단계와 참여자 권한은 서버가 판정한다. 목록 탭이나 전체 문서 상태만으로 추론하지 않는다.
+  const hasListedDocument = list.some(item => sanctionKey(item) === sanctionKey(selectedItem ?? ({} as InformalSanctionDto)));
+  const canDecide = Boolean(detailQuery.data?.canApprove) && hasListedDocument && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
+  const canCancel = Boolean(detailQuery.data?.canWithdraw) && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
+  const canResubmit = Boolean(detailQuery.data?.canResubmit) && !needsActionReview && !detailQuery.isError && !detailQuery.isFetching;
+  const isAgreement = selectedItem?.stages?.find(stage => stage.status === 'ACTIVE')?.kind === 'AGREEMENT';
   const isActionPending = pendingAction !== null;
   const rejectReasonFieldProps = decisionValidation.fieldProps('reason');
   const rejectReasonDescribedBy = [
@@ -321,7 +354,9 @@ export default function ApprovalHubClient() {
             상신을 저장하지 않았고(demo-isolated 승인), demo 밖 프로필에서는 사라진 라우트였다.
             상신은 같은 화면의 다이얼로그가 실제 API 로 수행한다 — 페이지 이동이 없으므로 button 이다.
           */}
-          <Button type="button" onClick={() => setDraftOpen(true)}>
+          <Button type="button" disabled={isActionPending} onClick={() => {
+            void navigate(() => { setRejectReason(''); decisionValidation.setFormErrors({}, false); setResubmission(undefined); setDraftOpen(true); });
+          }}>
             <Plus aria-hidden="true" />
             새 결재 기안
           </Button>
@@ -337,6 +372,7 @@ export default function ApprovalHubClient() {
               size="sm"
               variant={activeTab === tab ? 'default' : 'outline'}
               aria-selected={activeTab === tab}
+              disabled={isActionPending}
               onClick={() => handleTabChange(tab)}
             >
               {TAB_LABELS[tab]}
@@ -388,9 +424,13 @@ export default function ApprovalHubClient() {
                       type="button"
                       data-a2-master-item
                       aria-current={isSelected ? 'true' : undefined}
-                      aria-label={`${item.taskSeNm || item.taskSeCd || '결재'} ${key ? `#${key}` : ''} 상세 열기`.replace(/\s+/g, ' ').trim()}
+                      aria-label={`${item.docTtl || item.taskSeNm || item.taskSeCd || '결재'} ${key ? `#${key}` : ''} 상세 열기`.replace(/\s+/g, ' ').trim()}
                       tabIndex={isSelected || (!hasVisibleSelection && index === 0) ? 0 : -1}
-                      onClick={() => { setSelectedItemId(key); setRejectReason(''); }}
+                      disabled={isActionPending}
+                      onClick={() => {
+                        if (key === sanctionKey(selectedItem ?? ({} as InformalSanctionDto)) || pendingActionRef.current) return;
+                        void navigate(() => { setSelectedItemId(key); setRejectReason(''); setActionError(''); setNeedsActionReview(false); decisionValidation.setFormErrors({}, false); });
+                      }}
                       className={cn(
                         'w-full rounded-md border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                         isSelected
@@ -400,10 +440,15 @@ export default function ApprovalHubClient() {
                     >
                       <span className="flex min-w-0 items-start justify-between gap-3">
                         <span className="min-w-0 break-words text-sm font-semibold text-foreground">
-                          {item.taskSeNm || item.taskSeCd || '일반 결재'}
+                          {item.docTtl || item.taskSeNm || item.taskSeCd || '일반 결재'}
                         </span>
                         <ApprovalStatusBadge aprvYn={item.aprvYn} />
                       </span>
+                      {item.stages?.length ? (() => {
+                        const current = item.stages.find(stage => stage.status === 'ACTIVE' || stage.status === 'REJECTED') ?? item.stages[item.stages.length - 1];
+                        const completed = current.approvers?.filter(person => person.status === 'APPROVED').length ?? 0;
+                        return <span className="mt-1 block text-xs text-muted-foreground">{current.order}/{item.stages.length}단계 · 전원 {current.kind === 'AGREEMENT' ? '동의' : '승인'} {completed}/{current.approvers?.length ?? 0}</span>;
+                      })() : null}
                       <span className="mt-2 flex items-baseline justify-between gap-3">
                         <span className="min-w-0 truncate text-xs text-muted-foreground">
                           {item.aplcntNm || item.aplcntId || '기안자 미상'}
@@ -430,7 +475,7 @@ export default function ApprovalHubClient() {
         </div>
       )}
       selectedItemLabel={selectedItem?.ifmlAtrzSn !== undefined ? `#${selectedItem.ifmlAtrzSn}` : undefined}
-      detailTitle={selectedItem?.taskSeNm || selectedItem?.taskSeCd || '일반 결재 요청'}
+      detailTitle={selectedItem?.docTtl || selectedItem?.taskSeNm || selectedItem?.taskSeCd || '일반 결재 요청'}
       detailDescription={
         selectedItem && (selectedItem.aplcntNm || selectedItem.aplcntId)
           ? `기안자 ${selectedItem.aplcntNm || selectedItem.aplcntId}`
@@ -444,7 +489,7 @@ export default function ApprovalHubClient() {
             aria-busy={pendingAction === SANCTION_STATUS.APPROVED || undefined}
             onClick={() => { void handleAction(selectedItem, SANCTION_STATUS.APPROVED); }}
           >
-            <Check aria-hidden="true" /> 결재 승인
+            <Check aria-hidden="true" /> {isAgreement ? '합의 동의' : '결재 승인'}
           </Button>
           <Button
             type="button"
@@ -456,7 +501,17 @@ export default function ApprovalHubClient() {
             <X aria-hidden="true" /> 결재 반려
           </Button>
         </>
-      ) : canCancel && selectedItem ? (
+      ) : undefined}
+      emptyDetailTitle="결재 문서를 선택하세요"
+      emptyDetailDescription="왼쪽 목록에서 문서를 고르면 결재선과 처리 의견이 표시됩니다."
+      detail={selectedItem ? (
+        <div className="space-y-6">
+          {detailQuery.isPending && <p role="status" className="text-sm text-muted-foreground">문서 상세를 불러오는 중입니다.</p>}
+          {detailQuery.isError && <div role="alert" className="space-y-2 rounded-md border border-destructive/30 p-3"><p>문서 상세를 불러오지 못했습니다. 목록은 유지됩니다.</p><Button type="button" variant="outline" onClick={() => { void detailQuery.refetch(); }}>상세 다시 시도</Button></div>}
+          {!hasListedDocument && rejectReason.length > 0 && <p role="status" className="rounded-md bg-warning/10 p-3 text-sm">작성한 의견이 있는 문서가 현재 목록에 없습니다. 입력은 이 문서에 보존했습니다. 최신 상태를 확인하거나 다른 문서를 선택해 주세요.</p>}
+          {actionError && <div role="alert" className="space-y-2 rounded-md border border-destructive/30 p-3"><p>{actionError}</p><Button type="button" variant="outline" disabled={detailQuery.isFetching || isActionPending} onClick={() => { void detailQuery.refetch().then(result => { if (!result.isError) setNeedsActionReview(false); }); }}>최신 문서 확인</Button></div>}
+          <div className="flex flex-wrap gap-2">
+          {canCancel && (
         <Button
           type="button"
           variant="outline"
@@ -464,16 +519,20 @@ export default function ApprovalHubClient() {
           aria-busy={pendingAction === 'CANCEL' || cancelMutation.isPending || undefined}
           onClick={() => { void handleCancelDraft(selectedItem); }}
         >
-          <Trash2 aria-hidden="true" /> 기안 취소
+          <Trash2 aria-hidden="true" /> 결재 회수
         </Button>
-      ) : undefined}
-      emptyDetailTitle="결재 문서를 선택하세요"
-      emptyDetailDescription="왼쪽 목록에서 문서를 고르면 결재선과 처리 의견이 표시됩니다."
-      detail={selectedItem ? (
-        <div className="space-y-6">
+          )}
+          {canResubmit && <Button type="button" disabled={isActionPending} onClick={() => {
+            void navigate(() => { setRejectReason(''); decisionValidation.setFormErrors({}, false); setResubmission(selectedItem); setDraftOpen(true); });
+          }}>수정 후 재상신</Button>}
+          </div>
+          <section aria-label="문서 내용" className="space-y-2 rounded-md border border-border p-4">
+            <h3 className="font-semibold">{selectedItem.docTtl || '문서 내용'} · {selectedItem.atrzCycl ?? 1}차</h3>
+            <p className="whitespace-pre-wrap break-words text-sm text-foreground">{selectedItem.docCn || '작성한 본문이 없습니다.'}</p>
+          </section>
           <section aria-label="결재 진행 상태" className="rounded-md border border-border p-4">
             <h3 className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">결재 진행 상태</h3>
-            <ApprovalStepper steps={workflowSteps} />
+            <ApprovalStepper steps={workflowSteps} stages={selectedItem.stages} currentUserId={user?.esntlId} />
           </section>
 
           <dl className="grid gap-4 sm:grid-cols-2">
@@ -495,36 +554,39 @@ export default function ApprovalHubClient() {
             </div>
           </dl>
 
-          {canDecide && (
-            <section aria-label="반려 사유" className="rounded-md border border-border p-4">
+          {(canDecide || rejectReason.length > 0) && (
+            <section aria-label="결재 의견" className="rounded-md border border-border p-4">
               <FormErrorSummary
                 errors={decisionValidation.errors}
                 labels={APPROVAL_DECISION_LABELS}
                 onNavigate={decisionValidation.focusError}
               />
               <label htmlFor="reject-reason" className="text-[length:var(--font-size-body)] font-semibold text-foreground">
-                반려 사유
+                결재 의견 (반려 시 필수)
               </label>
               {/* 서버가 공백 사유를 거부하므로 반려에는 필수다. 종전에는 입력란 자체가 없어
                   반려 요청이 서버에 닿아도 실패했고, 기안자는 반려 이유를 볼 수 없었다. */}
               <p id="reject-reason-help" className="mt-1 text-xs text-muted-foreground">
-                반려할 때만 필요합니다. 입력한 내용은 기안자에게 그대로 전달됩니다.
+                승인 의견은 선택이며 반려할 때는 사유가 필요합니다. 입력한 의견은 문서 이력에 남습니다.
               </p>
               <textarea
                 id="reject-reason"
                 ref={rejectReasonRef}
                 {...rejectReasonFieldProps}
-                aria-label="반려 사유"
+                aria-label="결재 의견 (반려 시 필수)"
                 aria-describedby={rejectReasonDescribedBy}
                 value={rejectReason}
+                disabled={isActionPending}
+                readOnly={!canDecide}
                 onChange={(event) => {
                   decisionValidation.clearError('reason');
+                  setOpinionDocument(selectedItem);
                   setRejectReason(event.target.value);
                 }}
                 maxLength={4000}
                 rows={3}
                 className="mt-2 w-full rounded-md border border-border bg-background p-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                placeholder="예: 예산 코드가 누락되어 반려합니다."
+                placeholder="검토 의견을 적어 주세요. 반려할 때는 보완할 내용을 알려 주세요."
               />
               {decisionValidation.errors.reason ? (
                 <p {...decisionValidation.messageProps('reason')} className="mt-1 text-xs font-bold text-destructive-emphasis" />
@@ -546,6 +608,14 @@ export default function ApprovalHubClient() {
               <p className="text-sm text-muted-foreground">등록된 처리 의견이 없습니다.</p>
             )}
           </section>
+          {previousRevisions.length ? <section aria-label="이전 차수 이력" className="space-y-3">
+            <h3 className="font-semibold">이전 차수 이력</h3>
+            {previousRevisions.map(revision => <details key={revision.atrzCycl} className="rounded-md border border-border p-4">
+              <summary className="cursor-pointer font-semibold">{revision.atrzCycl}차 · {revision.docTtl || '제목 없음'} · {revision.aprvYn === 'R' ? '반려' : revision.aprvYn === 'W' ? '회수' : revision.aprvYn === 'C' ? '승인 완료' : '대기'}</summary>
+              <p className="my-3 whitespace-pre-wrap break-words text-sm">{revision.docCn || '작성한 본문이 없습니다.'}</p>
+              <ApprovalStepper stages={revision.stages} currentUserId={user?.esntlId} accessibleLabel={`${revision.atrzCycl}차 결재선 진행`} />
+            </details>)}
+          </section> : null}
         </div>
       ) : undefined}
     />
@@ -555,6 +625,7 @@ export default function ApprovalHubClient() {
         isOpen
         onClose={() => setDraftOpen(false)}
         onCreated={handleDraftCreated}
+        resubmission={resubmission}
       />
     ) : null}
     </>

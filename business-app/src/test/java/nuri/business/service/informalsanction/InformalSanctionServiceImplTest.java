@@ -47,6 +47,15 @@ class InformalSanctionServiceImplTest {
     private InformalSanctionRepository informalSanctionRepository;
 
     @Mock
+    private nuri.business.domain.informalsanction.InformalSanctionDetailRepository detailRepository;
+
+    @Mock
+    private nuri.business.domain.informalsanction.InformalSanctionHistoryRepository historyRepository;
+
+    @Mock
+    private jakarta.persistence.EntityManager entityManager;
+
+    @Mock
     private CommonCodeService commonCodeService;
 
     @Mock
@@ -56,8 +65,30 @@ class InformalSanctionServiceImplTest {
     private nuri.business.domain.user.repository.UserRepository userRepository;
 
     private void activeApprover(String esntlId) {
-        given(userRepository.findById(esntlId)).willReturn(Optional.of(nuri.business.domain.user.entity.User.builder()
+        given(userRepository.findAllById(any())).willReturn(List.of(nuri.business.domain.user.entity.User.builder()
                 .esntlId(esntlId).userId(esntlId).userNm("결재자").pswd("{bcrypt}x").userSttsCd("P").build()));
+    }
+
+    private void activeLine(String esntlId) {
+        given(detailRepository.findRevision(1L, java.math.BigDecimal.ONE)).willReturn(List.of(
+                nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                        new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                                1L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, esntlId),
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true)));
+    }
+
+    private void currentHistory(InformalSanction sanction) {
+        given(historyRepository.findById(new nuri.business.domain.informalsanction.InformalSanctionHistoryId(
+                1L, java.math.BigDecimal.ONE))).willReturn(Optional.of(
+                nuri.business.domain.informalsanction.InformalSanctionHistory.create(sanction)));
+    }
+
+    private void receivedLine() {
+        given(detailRepository.findVisibleForDocuments(any(), eq("user1"))).willReturn(List.of(
+                nuri.business.domain.informalsanction.InformalSanctionDetail.create(
+                        new nuri.business.domain.informalsanction.InformalSanctionDetailId(
+                                1L, java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, "user1"),
+                        nuri.business.domain.informalsanction.ApprovalStageKind.APPROVAL, true)));
     }
 
     private MockedStatic<SecurityUtil> securityUtilMock;
@@ -65,6 +96,7 @@ class InformalSanctionServiceImplTest {
     @BeforeEach
     void setUp() {
         securityUtilMock = mockStatic(SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS);
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
     }
 
     @AfterEach
@@ -75,7 +107,8 @@ class InformalSanctionServiceImplTest {
     @Test
     @DisplayName("getInformalSanctionList 테스트 - aplcntId 있음")
     void getInformalSanctionList_withAplcntId() {
-        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L).build()));
+        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L)
+                .aplcntId("user1").aprvYn("A").build()));
         given(informalSanctionRepository.findByAplcntId(eq("user1"), any())).willReturn(page);
 
         Page<InformalSanctionDto> result = informalSanctionService.getInformalSanctionList("user1", PageRequest.of(0, 10));
@@ -97,7 +130,9 @@ class InformalSanctionServiceImplTest {
     @Test
     @DisplayName("getReceivedInformalSanctionList 테스트")
     void getReceivedInformalSanctionList() {
-        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L).build()));
+        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L)
+                .aplcntId("applicant").aprvrId("user1").aprvYn("A").build()));
+        receivedLine();
         given(informalSanctionRepository.findByAprvrId(eq("user1"), any())).willReturn(page);
 
         Page<InformalSanctionDto> result = informalSanctionService.getReceivedInformalSanctionList("user1", PageRequest.of(0, 10));
@@ -115,7 +150,9 @@ class InformalSanctionServiceImplTest {
     @Test
     @DisplayName("getPendingApprovalList 는 신청(A) 상태만 조회한다")
     void getPendingApprovalList_filtersByRequestedState() {
-        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L).build()));
+        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L)
+                .aplcntId("applicant").aprvrId("user1").aprvYn("A").build()));
+        receivedLine();
         given(informalSanctionRepository.findByAprvrIdAndAprvYn(
                 eq("user1"),
                 eq(nuri.business.domain.informalsanction.SanctionStatus.REQUESTED.getCode()),
@@ -147,8 +184,9 @@ class InformalSanctionServiceImplTest {
     @Test
     @DisplayName("getInformalSanction 테스트")
     void getInformalSanction() {
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APP1"));
         InformalSanction entity = InformalSanction.builder()
-                .ifmlAtrzSn(1L).taskSeCd("CD1").aplcntId("APP1").aprvrId("APR1").build();
+                .ifmlAtrzSn(1L).taskSeCd("CD1").aplcntId("APP1").aprvrId("APR1").aprvYn("A").build();
         given(informalSanctionRepository.findByIdAndParticipant(1L, "APP1"))
                 .willReturn(Optional.of(entity));
         given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of(new CommonCodeDto("COM075", "CD1", "TaskName", "", "Y")));
@@ -162,6 +200,7 @@ class InformalSanctionServiceImplTest {
     @Test
     @DisplayName("상세 BOLA 방어 - 제3자는 PK를 알아도 결재 내용을 볼 수 없음")
     void getInformalSanction_foreignParticipantIsHidden() {
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("ATTACKER"));
         InformalSanction foreign = InformalSanction.builder()
                 .ifmlAtrzSn(2L).taskSeCd("CD1").aplcntId("OWNER").aprvrId("APPROVER").build();
         // 비스코프 findById로 회귀하면 이 sentinel이 노출되어 테스트가 red가 된다.
@@ -181,6 +220,7 @@ class InformalSanctionServiceImplTest {
     @Test
     @DisplayName("registerInformalSanction 테스트 (새로운 ID 생성)")
     void registerInformalSanction() {
+        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APP1"));
         InformalSanctionDto dto = new InformalSanctionDto();
         dto.setTaskSeCd("CD1");
         dto.setAplcntId("APP1");
@@ -197,32 +237,35 @@ class InformalSanctionServiceImplTest {
     }
 
     @Test
-    @DisplayName("updateInformalSanction 테스트 - 성공")
-    void updateInformalSanction_Success() {
+    @DisplayName("진행 중 문서의 내용·결재선 변경은 회수 후 재상신해야 한다")
+    void updateInformalSanction_requestedDocumentCannotBeEdited() {
         InformalSanctionDto dto = new InformalSanctionDto();
         dto.setIfmlAtrzSn(1L);
         dto.setTaskSeCd("CD1");
         dto.setReqYmd("20260909");
         dto.setAprvrId("APPROVER_02");
-        activeApprover("APPROVER_02");
-        given(commonCodeService.getCodesByGroup("COM075"))
-                .willReturn(List.of(new CommonCodeDto("COM075", "CD1", "TaskName", "", "Y")));
         
         InformalSanction entity = InformalSanction.builder()
                 .ifmlAtrzSn(1L)
                 .aplcntId("APPLICANT_01")
+                .taskSeCd("ORIGINAL")
+                .reqYmd("20260908")
+                .aprvrId("APPROVER_01")
                 .aprvYn("A") // 신청 상태
                 .build();
                 
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APPLICANT_01"));
 
-        informalSanctionService.updateInformalSanction(dto);
+        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
+                .isInstanceOf(BusinessException.class).extracting("errorCode")
+                .isEqualTo(CommonErrorCode.INVALID_STATE);
 
-        verify(informalSanctionRepository, times(1)).findById(1L);
-        assertThat(entity.getTaskSeCd()).isEqualTo("CD1");
-        assertThat(entity.getReqYmd()).isEqualTo("20260909");
-        assertThat(entity.getAprvrId()).isEqualTo("APPROVER_02");
+        verify(informalSanctionRepository, times(1)).findByIdForUpdate(1L);
+        assertThat(entity.getTaskSeCd()).isEqualTo("ORIGINAL");
+        assertThat(entity.getReqYmd()).isEqualTo("20260908");
+        assertThat(entity.getAprvrId()).isEqualTo("APPROVER_01");
+        verifyNoInteractions(commonCodeService, detailRepository, historyRepository);
     }
 
     @Test
@@ -237,7 +280,7 @@ class InformalSanctionServiceImplTest {
                 .aprvYn("C") // 승인 상태
                 .build();
                 
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APPLICANT_01"));
 
         assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
@@ -247,7 +290,7 @@ class InformalSanctionServiceImplTest {
     }
 
     @Test
-    @DisplayName("deleteInformalSanction 테스트 - 성공")
+    @DisplayName("회수는 W 상태를 남기며 문서를 물리 삭제하지 않는다")
     void deleteInformalSanction_Success() {
         InformalSanction entity = InformalSanction.builder()
                 .ifmlAtrzSn(1L)
@@ -255,12 +298,16 @@ class InformalSanctionServiceImplTest {
                 .aprvYn("A")
                 .build();
                 
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
+        activeLine("APPROVER_01");
+        currentHistory(entity);
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APPLICANT_01"));
 
         informalSanctionService.deleteInformalSanction(1L);
 
-        verify(informalSanctionRepository, times(1)).delete(entity);
+        assertThat(entity.getAprvYn()).isEqualTo(SanctionStatus.WITHDRAWN.getCode());
+        assertThat(entity.getAtrzCycl()).isEqualByComparingTo(java.math.BigDecimal.ONE);
+        verify(informalSanctionRepository, never()).delete(any(InformalSanction.class));
     }
 
     @Test
@@ -272,7 +319,7 @@ class InformalSanctionServiceImplTest {
                 .aprvYn("A")
                 .build();
                 
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("OTHER_USER"));
 
         assertThatThrownBy(() -> informalSanctionService.deleteInformalSanction(1L))
@@ -292,7 +339,9 @@ class InformalSanctionServiceImplTest {
                 .aprvYn(SanctionStatus.REQUESTED.getCode())
                 .build();
         
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
+        activeLine(sanctionerId);
+        currentHistory(entity);
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         informalSanctionService.confirmInformalSanction(1L, SanctionStatus.APPROVED.getCode(), null);
@@ -312,7 +361,9 @@ class InformalSanctionServiceImplTest {
                 .aprvYn(SanctionStatus.REQUESTED.getCode())
                 .build();
         
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
+        activeLine(sanctionerId);
+        currentHistory(entity);
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         informalSanctionService.confirmInformalSanction(1L, SanctionStatus.REJECTED.getCode(), "Reject Reason");
@@ -332,7 +383,8 @@ class InformalSanctionServiceImplTest {
                 .aprvYn(SanctionStatus.REQUESTED.getCode())
                 .build();
         
-        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
+        activeLine(sanctionerId);
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         assertThatThrownBy(() -> informalSanctionService.confirmInformalSanction(1L, "UNKNOWN", null))

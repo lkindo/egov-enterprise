@@ -13583,29 +13583,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -13852,29 +13849,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14183,29 +14177,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14367,29 +14358,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14543,29 +14531,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14719,29 +14704,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -14895,29 +14877,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -15071,29 +15050,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -16037,29 +16013,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -16792,6 +16765,99 @@
         }
       }
     },
+    "/api/v1/approvals/{id}/resubmissions": {
+      "post": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Resubmit Approval",
+        "description": "기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다.",
+        "operationId": "resubmitApproval",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalResubmissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLong"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/users": {
       "get": {
         "tags": [
@@ -16812,29 +16878,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -17857,29 +17920,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -18031,29 +18091,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -18389,29 +18446,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -18563,29 +18617,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -19283,29 +19334,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -20108,29 +20156,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 20,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -20581,29 +20626,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -22146,29 +22188,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -22918,29 +22957,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -23094,35 +23130,29 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
-              "default": [
-                "crtDt,DESC"
-              ],
               "items": {
                 "type": "string"
               }
@@ -23273,35 +23303,29 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
-              "default": [
-                "crtDt,DESC"
-              ],
               "items": {
                 "type": "string"
               }
@@ -23462,29 +23486,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -23728,29 +23749,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -24048,29 +24066,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -26145,29 +26160,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -26251,29 +26263,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -26490,29 +26499,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -26596,29 +26602,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -28043,29 +28046,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -28461,29 +28461,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -28753,29 +28750,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 20,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -28860,29 +28854,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -29153,6 +29144,180 @@
         }
       }
     },
+    "/api/v1/approvals/{id}": {
+      "get": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Get Approval Detail",
+        "description": "참여한 결재의 내용·단계·처리 이력을 조회합니다. 참여하지 않은 차수는 공개하지 않습니다.",
+        "operationId": "getApprovalDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseInformalSanctionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Approval"
+        ],
+        "summary": "Cancel My Approval Draft",
+        "description": "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. 내용과 처리 이력은 보존됩니다. 신청자 본인만 가능하며 관리자도 대리 회수할 수 없습니다.",
+        "operationId": "cancelApproval",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/approvals/task-types": {
       "get": {
         "tags": [
@@ -29227,29 +29392,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 20,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -29325,29 +29487,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 20,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -29423,29 +29582,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 20,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -29590,29 +29746,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -33820,29 +33973,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 20,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -34014,29 +34164,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -34455,29 +34602,26 @@
           {
             "name": "page",
             "in": "query",
-            "description": "Zero-based page index (0..N)",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 0,
+              "format": "int32",
               "minimum": 0
             }
           },
           {
             "name": "size",
             "in": "query",
-            "description": "The size of the page to be returned",
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 10,
+              "format": "int32",
               "minimum": 1
             }
           },
           {
             "name": "sort",
             "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
             "required": false,
             "schema": {
               "type": "array",
@@ -34662,89 +34806,6 @@
           },
           {
             "name": "dgstfnSn",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "대상을 찾을 수 없음 (code: C003/C007)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/approvals/{id}": {
-      "delete": {
-        "tags": [
-          "Approval"
-        ],
-        "summary": "Cancel My Approval Draft",
-        "description": "신청자 본인이 상신한 결재 중 대기(신청) 상태인 건을 취소(철회)합니다. 신청자 본인만 가능하며 관리자도 대리 취소할 수 없습니다.",
-        "operationId": "cancelApproval",
-        "parameters": [
-          {
-            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
@@ -35669,6 +35730,97 @@
           "rptrId"
         ]
       },
+      "ApprovalApproverDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "userNm": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "ACTIVE",
+              "APPROVED",
+              "REJECTED",
+              "CANCELLED"
+            ]
+          },
+          "opinion": {
+            "type": "string"
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApprovalRevisionDto": {
+        "type": "object",
+        "properties": {
+          "atrzCycl": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "docTtl": {
+            "type": "string"
+          },
+          "docCn": {
+            "type": "string"
+          },
+          "aprvYn": {
+            "type": "string"
+          },
+          "reqYmd": {
+            "type": "string"
+          },
+          "atrzDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalStageDto"
+            }
+          }
+        }
+      },
+      "ApprovalStageDto": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "APPROVAL",
+              "AGREEMENT"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "ACTIVE",
+              "APPROVED",
+              "REJECTED",
+              "CANCELLED"
+            ]
+          },
+          "approvers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalApproverDto"
+            }
+          }
+        }
+      },
       "InformalSanctionDto": {
         "type": "object",
         "description": "비정형 결재 DTO (표준화)",
@@ -35744,11 +35896,50 @@
             "type": "string",
             "format": "date-time",
             "description": "등록 일시"
+          },
+          "docTtl": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 0
+          },
+          "docCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "atrzCycl": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalStageDto"
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalRevisionDto"
+            }
+          },
+          "canApprove": {
+            "type": "boolean"
+          },
+          "canWithdraw": {
+            "type": "boolean"
+          },
+          "canResubmit": {
+            "type": "boolean"
           }
         },
         "required": [
           "aplcntId",
-          "aprvrId",
           "taskSeCd"
         ]
       },
@@ -36206,9 +36397,15 @@
           },
           "reason": {
             "type": "string",
-            "description": "반려 사유. status가 R이면 필수",
+            "description": "처리 의견. 반려(status=R)일 때는 필수",
             "maxLength": 4000,
             "minLength": 0
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "상세 조회 시 받은 문서 버전. 달라졌으면 최신 상태를 확인해야 합니다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39019,6 +39216,27 @@
             "maxLength": 20,
             "minLength": 0
           },
+          "docTtl": {
+            "type": "string",
+            "description": "문서 제목",
+            "maxLength": 256,
+            "minLength": 0
+          },
+          "docCn": {
+            "type": "string",
+            "description": "결재를 요청하는 문서 내용",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "stages": {
+            "type": "array",
+            "description": "진행 순서대로 나열한 결재 단계. 생략하면 aprvrId의 단일 결재로 처리합니다.",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalStageRequest"
+            },
+            "maxItems": 10,
+            "minItems": 1
+          },
           "reqYmd": {
             "type": "string",
             "description": "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다",
@@ -39026,8 +39244,87 @@
           }
         },
         "required": [
-          "aprvrId",
           "taskSeCd"
+        ]
+      },
+      "ApprovalStageRequest": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "APPROVAL",
+              "AGREEMENT"
+            ]
+          },
+          "approverIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 20,
+              "minLength": 0
+            },
+            "maxItems": 10,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "approverIds",
+          "kind"
+        ]
+      },
+      "ApprovalResubmissionRequest": {
+        "type": "object",
+        "description": "반려·회수된 결재의 수정 후 재상신 요청",
+        "properties": {
+          "taskSeCd": {
+            "type": "string",
+            "description": "업무 구분 코드(공통코드 COM075 의 사용 중 상세코드)",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "aprvrId": {
+            "type": "string",
+            "description": "결재자 esntlId(사용자 검색이 돌려주는 식별자)",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "docTtl": {
+            "type": "string",
+            "description": "문서 제목",
+            "maxLength": 256,
+            "minLength": 0
+          },
+          "docCn": {
+            "type": "string",
+            "description": "결재를 요청하는 문서 내용",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "stages": {
+            "type": "array",
+            "description": "진행 순서대로 나열한 결재 단계. 생략하면 aprvrId의 단일 결재로 처리합니다.",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalStageRequest"
+            },
+            "maxItems": 10,
+            "minItems": 1
+          },
+          "reqYmd": {
+            "type": "string",
+            "description": "신청 일자(yyyyMMdd). 비우면 서버가 오늘(Asia/Seoul)로 채운다",
+            "pattern": "^\\d{8}$"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "수정 화면에서 조회한 문서 버전",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "taskSeCd",
+          "version"
         ]
       },
       "UserDto": {

@@ -160,6 +160,7 @@ import {
   ApiResponseWorkReportDtoResponseSchema,
   ApprovalConfirmRequestRequestSchema,
   ApprovalDraftRequestRequestSchema,
+  ApprovalResubmissionRequestRequestSchema,
   AttachmentIntegrityReportResponseSchema,
   AuthorManageDtoRequestSchema,
   AuthorManageDtoResponseSchema,
@@ -3760,6 +3761,23 @@ export const createApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const resubmitApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "resubmitApproval",
+  method: "post",
+  path: "/api/v1/approvals/{id}/resubmissions",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: ApprovalResubmissionRequestRequestSchema.strict(),
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getUsersOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getUsers",
   method: "get",
@@ -6072,6 +6090,40 @@ export const getCurrentUserOperation = /*#__PURE__*/ defineGeneratedOperation({
   responseForbiddenPaths: [],
 });
 
+export const getApprovalDetailOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "getApprovalDetail",
+  method: "get",
+  path: "/api/v1/approvals/{id}",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => InformalSanctionDtoResponseSchema),
+  envelopeSchema: ApiResponseInformalSanctionDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
+export const cancelApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
+  id: "cancelApproval",
+  method: "delete",
+  path: "/api/v1/approvals/{id}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "id": z.number().int() }).strict(),
+  querySchema: z.object({ "version": z.number().int().min(0).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+});
+
 export const getTaskTypesOperation = /*#__PURE__*/ defineGeneratedOperation({
   id: "getTaskTypes",
   method: "get",
@@ -6948,23 +7000,6 @@ export const moderateOperation = /*#__PURE__*/ defineGeneratedOperation({
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int(), "dgstfnSn": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-});
-
-export const cancelApprovalOperation = /*#__PURE__*/ defineGeneratedOperation({
-  id: "cancelApproval",
-  method: "delete",
-  path: "/api/v1/approvals/{id}",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "id": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,

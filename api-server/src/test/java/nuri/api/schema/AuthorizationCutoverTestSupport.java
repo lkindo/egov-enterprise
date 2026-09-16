@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
-import nuri.business.security.authorization.PermissionCodes;
+import nuri.api.config.AuthorizationReviewedMigrationCatalog;
 import org.flywaydb.core.Flyway;
 import org.springframework.core.io.ClassPathResource;
 
@@ -61,7 +61,7 @@ public final class AuthorizationCutoverTestSupport {
                 + "set_config('app.authorization_backup_sha256',?,false),set_config('app.authorization_catalog_version',?,false)")) {
             statement.setString(1, "a".repeat(64));
             statement.setString(2, "b".repeat(64));
-            statement.setString(3, PermissionCodes.CATALOG_VERSION);
+            statement.setString(3, AuthorizationReviewedMigrationCatalog.version());
             statement.execute();
         }
     }

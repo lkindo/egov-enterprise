@@ -11,7 +11,8 @@ import lombok.RequiredArgsConstructor;
 public enum SanctionStatus {
     REQUESTED("A", "신청"),
     APPROVED("C", "승인"),
-    REJECTED("R", "반려");
+    REJECTED("R", "반려"),
+    WITHDRAWN("W", "회수");
 
     private final String code;
     private final String description;

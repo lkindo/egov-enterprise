@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { analyzeRepository, validateReusableBase } from './reusable-base-census.mjs';
-import { buildIsolatedContractSql, planAuthorizationMigrationStages, runAuthorizationMigrationStages } from './generate-reusable-base-db.mjs';
+import { buildIsolatedContractSql, planAuthorizationMigrationStages, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages } from './generate-reusable-base-db.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 
 const baseline = analyzeRepository();
@@ -84,6 +84,54 @@ test('base generation uses actual Contract only for its disposable database and 
   assert.throws(() => buildIsolatedContractSql('test_reusable_base_x;DROP TABLE x', 'a'.repeat(64), contract), /disposable/);
   assert.throws(() => buildIsolatedContractSql('test_reusable_base_fixture', 'unknown', contract), /catalog digest/);
   assert.throws(() => buildIsolatedContractSql('test_reusable_base_fixture', 'a'.repeat(64), '-- Contract skipped'), /actual authorization Contract/);
+});
+
+test('historical base Contract uses the reviewed V2_99 catalog when runtime operation bindings change', () => {
+  const reviewedSeed = readFileSync(new URL('../api-server/src/main/resources/db/migration/V2_99__seed_explicit_operation_grants.sql', import.meta.url), 'utf8');
+  const reviewed = readReviewedAuthorizationCatalogVersion(reviewedSeed);
+  assert.equal(reviewed, '7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276');
+  assert.equal(readReviewedAuthorizationCatalogVersion(reviewedSeed.replace(/\r?\n/g, '\r\n')), reviewed);
+  const runtimeSource = readFileSync(new URL('../business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java', import.meta.url), 'utf8');
+  const runtime = runtimeSource.match(/CATALOG_VERSION\s*=\s*"([a-f0-9]{64})"/)[1];
+  assert.notEqual(runtime, reviewed, 'new endpoint bindings change the runtime digest without rewriting historical evidence');
+  const contract = readFileSync(new URL('../api-server/src/main/resources/db/cutover/authorization-contract.sql', import.meta.url), 'utf8');
+  const sql = buildIsolatedContractSql('test_reusable_base_reviewed_fixture', reviewed, contract);
+  assert.ok(sql.includes(`set_config('app.authorization_catalog_version','${reviewed}',true)`));
+  assert.ok(!sql.includes(runtime), 'the actual historical Contract must not receive the current runtime catalog');
+  const generator = readFileSync(new URL('./generate-reusable-base-db.mjs', import.meta.url), 'utf8');
+  assert.match(generator, /const reviewedSeed = migrations\.find\(migration => migration\.name === 'V2_99__seed_explicit_operation_grants\.sql'\);/);
+  assert.match(generator, /const catalogVersion = readReviewedAuthorizationCatalogVersion\(reviewedSeed\?\.sql\.toString\('utf8'\) \?\? ''\);/);
+  assert.doesNotMatch(generator, /PermissionCodes\.java|CATALOG_VERSION/);
+});
+
+test('reviewed V2_99 catalog parser rejects missing, mixed, malformed and comment-only audit evidence', () => {
+  const source = readFileSync(new URL('../api-server/src/main/resources/db/migration/V2_99__seed_explicit_operation_grants.sql', import.meta.url), 'utf8');
+  const reviewed = readReviewedAuthorizationCatalogVersion(source);
+  const prefix = `SELECT 'migration:2.99','${reviewed}',`;
+  const cases = [
+    '',
+    source.replace(prefix, `SELECT 'migration:2.99','${'a'.repeat(64)}',`),
+    source.replace(prefix, `SELECT 'migration:2.99','${'a'.repeat(63)}',`),
+    source.replace(prefix, `SELECT 'migration:2.99','${'A'.repeat(64)}',`),
+    source.replace("'legacy_policy:tb_role_info'", "'legacy_policy:tb_authrt_role_map'"),
+    source.replace("'legacy_policy:tb_role_info'", "'legacy_policy:unreviewed_table'"),
+    source.replace("'initial_operation_grant'", "'initial_operation_missing'"),
+    source.replace("'GROUP_GRANT','MIGRATE'", "'GROUP','MIGRATE'"),
+    source.replace(/^INSERT INTO tb_authrt_chg_hstry\b[\s\S]*?;/m, ''),
+    source.replaceAll(prefix, `-- ${prefix}`),
+    `/*\n${source}\n*/`,
+    source.split(/\r?\n/).map(line => `-- ${line}`).join('\n'),
+    source + `\nSELECT 'migration:2.99','${'a'.repeat(64)}','GROUP','MIGRATE';\n`,
+    `/*\n${source}`,
+    `${source}\n/* unterminated review comment`,
+    `${source}\n/* outer /* inner */ still unclosed`,
+    `${source}\nSELECT 'unterminated SQL literal`,
+  ];
+  for (const [index, sql] of cases.entries()) {
+    assert.throws(() => readReviewedAuthorizationCatalogVersion(sql), /Reviewed V2_99/, `corrupt review fixture ${index}`);
+  }
+  assert.equal(readReviewedAuthorizationCatalogVersion(`-- SELECT 'migration:2.99','${'a'.repeat(64)}', fake\n${source}\n/* another fake review */`), reviewed);
+  assert.equal(readReviewedAuthorizationCatalogVersion(`/* outer /* nested fake SELECT 'migration:2.99','${'a'.repeat(64)}', */ still outer */\n${source}\nSELECT '/**', 'escaped''quote -- /* literal';`), reviewed);
 });
 
 test('current reusable-base profile contract matches the repository', () => {

@@ -113,7 +113,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // Canonical authorization administration adds 14 operations; all descriptors must remain bound to OpenAPI.
   //   GET /api/v1/communities/{cmntySn}/boards. findByCmntySnAndUseYn 의 첫 소비자이며
   //   승인된 회원·관리자만 목록을 받는다(BoardMasterService#assertCommunityMember).
-  assert.equal(operations.length, 385);
+  // Approval detail and revision submission add two operations to the documented surface.
+  assert.equal(operations.length, 387);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 
