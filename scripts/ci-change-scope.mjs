@@ -63,6 +63,21 @@ const MUTATION_RELEVANT = [
   /^(?:foundation|business-core|business-app|api-server|migration-tool)\/build\.gradle$/,
 ];
 
+// migration-tool 은 온라인 런타임과 분리된 독립 CLI 다(DEC-OPS-005) — foundation 에도 의존하지 않는다.
+// 그래서 그 뮤테이션 대상은 이 모듈과 공용 Gradle 설정이 바뀔 때만 달라진다.
+//
+// ⚠ 이것은 mutation 을 **좁히는 축**이지 넓히는 축이 아니다. 두 가지를 동시에 지킨다.
+//   ① mutation 불리언은 건드리지 않는다 — 좁히면 migration-tool 만 바뀐 변경에서 mutation-scope 잡
+//      자체가 건너뛰어져 이관 도구 뮤테이션이 통째로 사라진다.
+//   ② 이 플래그는 반드시 mutation 의 부분집합이어야 한다 — 잡이 안 도는데 "범위 안" 이라고 말하면
+//      플래그와 실행이 어긋난다. 그래서 MUTATION_RELEVANT 에 걸린 파일만 대상으로 본다.
+const MUTATION_MIGRATION_TOOL_SHARED = [/^(?:build|settings)\.gradle$/];
+
+function isMigrationToolMutation(file) {
+  return matchesAny(file, MUTATION_RELEVANT)
+    && (file.startsWith('migration-tool/') || matchesAny(file, MUTATION_MIGRATION_TOOL_SHARED));
+}
+
 const SCHEMA_RELEVANT = [
   /^api-server\/src\/main\/resources\/db\/migration\//,
   /^api-server\/src\/test\/java\/nuri\/api\/schema\//,
@@ -166,6 +181,7 @@ export function classifyChangedFiles(changedFiles) {
   const schema = full || files.some(file => matchesAny(file, SCHEMA_RELEVANT));
   const e2e = full || crossStack || files.some(isE2eRelevant);
   const mutation = full || files.some(file => matchesAny(file, MUTATION_RELEVANT));
+  const mutationMigrationTool = full || files.some(isMigrationToolMutation);
 
   return {
     files,
@@ -180,6 +196,7 @@ export function classifyChangedFiles(changedFiles) {
     schema,
     e2e,
     mutation,
+    mutationMigrationTool,
   };
 }
 
@@ -209,6 +226,7 @@ export function githubOutputs(result) {
     schema: bool(result.schema),
     e2e: bool(result.e2e),
     mutation: bool(result.mutation),
+    mutation_migration_tool: bool(result.mutationMigrationTool),
     unknown_count: String(result.unknownFiles.length),
   };
 }

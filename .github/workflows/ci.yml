@@ -36,6 +36,7 @@ jobs:
       schema: ${{ steps.scope.outputs.schema }}
       e2e: ${{ steps.scope.outputs.e2e }}
       mutation: ${{ steps.scope.outputs.mutation }}
+      mutation-migration-tool: ${{ steps.scope.outputs.mutation_migration_tool }}
       sast: ${{ steps.scope.outputs.sast }}
       docs-only: ${{ steps.scope.outputs.docs_only }}
       atlas: ${{ steps.scope.outputs.atlas }}
@@ -1021,8 +1022,8 @@ jobs:
     needs: [change-scope, backend-scope]
     if: ${{ always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.mutation == 'true' && needs.backend-scope.result == 'success' }}
     runs-on: ubuntu-latest
-    # 실제 DB coverage 후 변이 실행이 30분을 넘은 validate/verify 범위만 시간을 확보한다.
-    timeout-minutes: ${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}
+    # 이 잡에는 60분이 필요한 스코프가 없다 — 그 범위는 mutation-scope-migration 이 가져갔다.
+    timeout-minutes: 30
     strategy:
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
@@ -1061,18 +1062,6 @@ jobs:
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.net.*"
             tests: "nuri.foundation.*"
-
-          # 레거시 값 변환의 빈 값·정밀도·날짜 경계에서 조용한 데이터 손상을 탐지한다.
-          - scope: migration-transform
-            gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.transform.*"
-            tests: "nuri.migration.*"
-
-          # 매핑·fkRef와 이관 행 수 검증을 뒤집어 유실·고아 데이터를 PASS로 판정하는 회귀를 차단한다.
-          - scope: migration-validate-verify
-            gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.validate.*,nuri.migration.verify.*"
-            tests: "nuri.migration.*"
 
           # 로그인 IP·시간 정책, refresh 회전, 감사 기록과 OTP 판정의 보안 회귀를 검증한다.
           - scope: business-core-auth
@@ -1143,10 +1132,99 @@ jobs:
           path: "**/build/reports/pitest"
           retention-days: 30
 
+  # [2026-09-16 DEC-OPS-104] migration-tool 뮤테이션만 따로 세운 잡이다.
+  #   실측: 73.4분 CI 에서 임계 경로가 backend-scope 25.2분 → migration-validate-verify 48.0분이었고
+  #   나머지 잡은 전부 36.4분에 끝났다. #678·#680 은 이 모듈을 건드리지 않았는데 그 비용을 냈다.
+  #   migration-tool 은 온라인 런타임과 분리된 독립 CLI 라(DEC-OPS-005) 다른 모듈의 뮤턴트에 영향을 주지 않는다.
+  #   ⚠ 스텝 단위 if 로 좁히지 않는다 — 집계 소스 스텝의 step-level if 는 매니페스트 검증기가 금지한다
+  #     ("잡은 초록인데 실제 작업은 건너뜀" 을 막는 규칙). 조건은 잡 단위여야 하고, 이 잡도 매니페스트의
+  #     집계 소스로 등록돼 STRICT_MUTATION·checkout·needs·if 가 기존과 같은 엄격도로 검사된다.
+  mutation-scope-migration:
+    needs: [change-scope, backend-scope]
+    if: ${{ always() && needs.change-scope.result == 'success' && needs.change-scope.outputs['mutation-migration-tool'] == 'true' && needs.backend-scope.result == 'success' }}
+    runs-on: ubuntu-latest
+    # 실제 DB coverage 후 변이 실행이 30분을 넘은 validate/verify 범위만 시간을 확보한다.
+    timeout-minutes: ${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}
+    strategy:
+      # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
+      fail-fast: false
+      matrix:
+        include:
+          # 레거시 값 변환의 빈 값·정밀도·날짜 경계에서 조용한 데이터 손상을 탐지한다.
+          - scope: migration-transform
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.transform.*"
+            tests: "nuri.migration.*"
+
+          # 매핑·fkRef와 이관 행 수 검증을 뒤집어 유실·고아 데이터를 PASS로 판정하는 회귀를 차단한다.
+          - scope: migration-validate-verify
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.validate.*,nuri.migration.verify.*"
+            tests: "nuri.migration.*"
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70  # v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Wrapper 배포본 확보만 제한 재시도하고 실제 PIT는 한 번만 실행해 임계값 실패를 보존한다.
+      - name: Provision Gradle distribution with bounded retry
+        run: |
+          for attempt in 1 2 3; do
+            if ./gradlew --version; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Gradle 배포본을 3회 시도 후에도 확보하지 못했습니다."
+              exit 1
+            fi
+            backoff=$((attempt * 10))
+            echo "::warning::Gradle 배포본 확보 실패(${attempt}/3) — ${backoff}초 후 재시도합니다."
+            sleep "$backoff"
+          done
+
+      # 스코프마다 대상 클래스가 달라 히스토리도 분리한다 —
+      #   한 키를 공유하면 스코프끼리 서로의 증분 히스토리를 덮어써 매번 전량 재분석이 된다.
+      - name: Cache PIT incremental history
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: "**/build/pitest/pitHistory.txt"
+          key: pit-history-${{ matrix.scope }}-${{ github.sha }}
+          restore-keys: |
+            pit-history-${{ matrix.scope }}-
+
+      - name: Incremental Mutation Test (${{ matrix.scope }})
+        run: ./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain
+        env:
+          PIT_TARGET_CLASSES: ${{ matrix.classes }}
+          PIT_TARGET_TESTS: ${{ matrix.tests }}
+          STRICT_MUTATION: "true"
+
+      - name: Upload PIT report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: pitest-report-${{ matrix.scope }}
+          path: "**/build/reports/pitest"
+          retention-days: 30
+
+  # 안정 required context를 유지하며 matrix 전체 결과를 집계한다.
+  # always()가 실패 시 aggregate skip으로 바뀌는 fail-open을 막고 계약 테스트가 이를 고정한다.
+
   # 안정 required context를 유지하며 matrix 전체 결과를 집계한다.
   # always()가 실패 시 aggregate skip으로 바뀌는 fail-open을 막고 계약 테스트가 이를 고정한다.
   mutation-test:
-    needs: [change-scope, mutation-scope]
+    needs: [change-scope, mutation-scope, mutation-scope-migration]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1158,4 +1236,12 @@ jobs:
           CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
           EXPECTED_WORK: ${{ needs.change-scope.outputs.mutation }}
           SOURCE_RESULT: ${{ needs.mutation-scope.result }}
+        run: node scripts/aggregate-required-check.mjs
+
+      # 두 소스를 한 스텝에서 합치지 않는다 — 합치면 한쪽의 skip 을 다른 쪽의 success 가 덮는다.
+      - name: 이관 도구 뮤테이션 결과 집계
+        env:
+          CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
+          EXPECTED_WORK: ${{ needs.change-scope.outputs['mutation-migration-tool'] }}
+          SOURCE_RESULT: ${{ needs.mutation-scope-migration.result }}
         run: node scripts/aggregate-required-check.mjs

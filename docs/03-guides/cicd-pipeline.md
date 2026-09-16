@@ -39,8 +39,9 @@ push/PR / workflow_dispatch
         ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
         │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
         ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
-        ├─ mutation-scope (mutation=true, registry의 PIT 스코프 병렬)
-        │   └─ mutation-test (항상 완료되는 안정 required aggregate)
+        ├─ mutation-scope (mutation=true, 제품 PIT 스코프 8개 병렬)
+        ├─ mutation-scope-migration (mutation-migration-tool=true, 이관 PIT 스코프 2개)
+        │   └─ mutation-test (두 소스를 각각 fail-closed로 집계하는 안정 required aggregate)
         └─ e2e-tests (e2e=true, backend/frontend 결과 확인 후 내부 2 shard)
             ├─ 실행시간 profile 기반 명시적 spec 분배
             ├─ e2e-merge-reports (비필수 리포트 병합)
@@ -64,10 +65,10 @@ dependency-submission.yml (pull_request, contents:read)
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: classifier가 schema 영향으로 판정하면 `Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)`이 Flyway 전량 적용 + Hibernate `ddl-auto:validate`로 물리 정합성을 검증한다. `:foundation:test --no-build-cache`를 재실행하는 `Cache-bypass regression gate (foundation, main only)`는 같은 schema 조건에 더해 `refs/heads/main`에서만 실행한다.
 > - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
-> - **증분 뮤테이션 (HARD, CI FAIL)**: `mutation-scope`는 10개 PIT 스코프 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. `mutation-test`는 매트릭스 전체 결론을 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
+> - **증분 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 10개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 스코프는 두 잡에 나뉘어 산다 — 제품 8개는 `mutation-scope`, `migration-tool` 2개는 `mutation-scope-migration`이며 후자는 그 모듈이 변경 범위일 때만 실행한다(DEC-OPS-104). `mutation-test`는 **소스 잡마다** 같은 판정기를 돌려 각각 fail-closed로 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
-`migration-validate-verify`의 CI 실행 상한은 60분이고 다른 PIT 스코프는 30분이다.
+`migration-validate-verify`의 CI 실행 상한은 60분이고 다른 PIT 스코프는 30분이다. 60분 표현식은 `mutation-scope-migration`에만 있고 제품 스코프 잡은 30분 고정이며, 두 값을 required-check 계약이 함께 고정한다.
 실제 DB를 포함한 실행은 [30분](https://github.com/lkindo/egov-enterprise/actions/runs/35010396436/job/104528840104)과
 [60분](https://github.com/lkindo/egov-enterprise/actions/runs/35016770629/job/104548958474) 상한에서 취소됐다.
 두 번째 실행의 불완전한 보고서에 남은 식별자·정렬 검증 변이 6건은 같은 경계를 검증하는 빠른 단위 테스트로 잡는다.

@@ -291,9 +291,54 @@ export function validatePinnedWorkflowUses(workflowFiles) {
   return errors;
 }
 
+/**
+ * 한 required context 가 소스 잡을 여럿 가질 수 있다(2026-09-16 DEC-OPS-104).
+ *
+ * <p>⚠ 빈 배열을 허용하면 "소스를 한 번도 돌지 않는" 무검사 통과가 된다 — 루프 기반 일반화에서
+ * 가장 흔한 약화 경로라 명시적으로 거부한다. 단수 객체 형태는 나머지 context 를 위해 유지한다.
+ */
+function aggregateSourceList(check) {
+  const declared = check.aggregate;
+  if (declared === undefined) return { sources: [], errors: [] };
+  if (Array.isArray(declared)) {
+    if (declared.length === 0) {
+      return { sources: [], errors: [`aggregate mapping for '${check.context}' must declare at least one source`] };
+    }
+    return { sources: declared, errors: [] };
+  }
+  if (!declared || typeof declared !== 'object') return { sources: [], errors: [] };
+  return { sources: [declared], errors: [] };
+}
+
 function validateAggregate(check, jobs) {
-  const aggregate = check.aggregate;
-  if (!aggregate || typeof aggregate !== 'object') return [];
+  const { sources, errors } = aggregateSourceList(check);
+  const seenSourceJobs = new Set();
+  const seenStepNames = new Set();
+  for (const source of sources) {
+    errors.push(...validateAggregateSource(check, source, jobs));
+    // 같은 집계 잡 안에서 결과 스텝 이름이 겹치면 검증기가 한쪽만 보고 나머지 소스를 놓친다.
+    const stepName = typeof source?.aggregateStepName === 'string' ? source.aggregateStepName : '';
+    if (stepName !== "") {
+      if (seenStepNames.has(stepName)) {
+        errors.push(`aggregate mapping for '${check.context}' reuses result step '${stepName}'`);
+      }
+      seenStepNames.add(stepName);
+    }
+    const sourceJobId = typeof source?.sourceJobId === 'string' ? source.sourceJobId : '';
+    if (sourceJobId !== "") {
+      if (seenSourceJobs.has(sourceJobId)) {
+        errors.push(`aggregate mapping for '${check.context}' declares source job '${sourceJobId}' twice`);
+      }
+      seenSourceJobs.add(sourceJobId);
+    }
+  }
+  return errors;
+}
+
+function validateAggregateSource(check, aggregate, jobs) {
+  if (!aggregate || typeof aggregate !== 'object' || Array.isArray(aggregate)) {
+    return [`aggregate mapping for '${check.context}' requires an object source`];
+  }
   const errors = [];
   const requiredFields = [
     'sourceJobId',
@@ -337,11 +382,14 @@ function validateAggregate(check, jobs) {
 
   const aggregateJob = jobs.get(check.jobId);
   const sourceJob = jobs.get(aggregate.sourceJobId);
+  // ⚠ 누적 오류를 버리고 단일 배열을 돌려주면, 소스가 여럿일 때 한쪽의 부재가 다른 쪽의 실제 위반을 삼킨다.
   if (!aggregateJob) {
-    return [`aggregate job '${check.jobId}' for '${check.context}' does not exist`];
+    errors.push(`aggregate job '${check.jobId}' for '${check.context}' does not exist`);
+    return errors;
   }
   if (!sourceJob) {
-    return [`aggregate source job '${aggregate.sourceJobId}' for '${check.context}' does not exist`];
+    errors.push(`aggregate source job '${aggregate.sourceJobId}' for '${check.context}' does not exist`);
+    return errors;
   }
   errors.push(...checkoutProvenanceErrors(sourceJob, aggregate.sourceJobId));
   if (JSON.stringify(directNeeds(sourceJob)) !== JSON.stringify(aggregate.sourceNeeds)) {
@@ -523,11 +571,24 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
   if (jobs.size < 3) {
     errors.push(`workflow job parsing failed: only ${jobs.size} job(s) found`);
   }
-  const mutationJob = jobs.get('mutation-scope') ?? '';
-  const mutationTimeouts = [...mutationJob.matchAll(/^ {4}timeout-minutes:\s*([^\r\n]*)$/gm)];
-  const mutationTimeout = "${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}";
-  if (mutationTimeouts.length !== 1 || mutationTimeouts[0][1].trim() !== mutationTimeout) {
-    errors.push('mutation-scope timeout must allow 60 minutes only for migration-validate-verify and 30 otherwise');
+  // 60분은 실측으로 30분을 넘은 migration-validate-verify 에만 허용한다. 그 스코프가 전용 잡으로
+  //   옮겨졌으므로(DEC-OPS-104) 제품 스코프 잡은 30분 고정이고 60분 표현식은 이관 잡에만 있어야 한다.
+  //   둘을 함께 고정해야 "제품 잡에 60분을 주는" 되돌림도 red 가 된다.
+  const mutationTimeouts = [
+    ['mutation-scope', '30'],
+    ['mutation-scope-migration', "${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}"],
+  ];
+  for (const [jobId, expected] of mutationTimeouts) {
+    const job = jobs.get(jobId) ?? '';
+    const declared = [...job.matchAll(/^ {4}timeout-minutes:\s*([^\r\n]*)$/gm)];
+    if (declared.length !== 1 || declared[0][1].trim() !== expected) {
+      errors.push(`${jobId} timeout must be exactly ${expected}`);
+    }
+    // 한 스코프가 깨져도 나머지를 끝까지 돌려야 어디까지 무너졌는지 한 번에 본다.
+    //   fail-fast 가 true 로 돌아가면 형제 스코프가 취소되고, 그 결과가 없는 채로 집계가 진행된다.
+    if (!/^ {6}fail-fast: false$/m.test(job)) {
+      errors.push(`${jobId} strategy must keep fail-fast: false`);
+    }
   }
   errors.push(...validatePinnedWorkflowUses([{ path: workflowPath, content: ciContent }]));
   if (runShellDefault(ciContent, 0) !== null) {
@@ -539,6 +600,27 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
     errors.push("job 'change-scope' must exist and checkout the workflow commit");
   } else {
     errors.push(...checkoutProvenanceErrors(changeScopeJob, 'change-scope'));
+  }
+
+  // [2026-09-16 DEC-OPS-104] 조건이 참조하는 분류기 출력이 실제로 선언돼 있어야 한다.
+  //   ⚠ 선언이 없으면 표현식은 빈 값으로 평가돼 조건이 **영구 거짓**이 되고, 그 잡은 초록인 채로
+  //   영영 건너뛰어진다 — 잡 조건 문자열만 대조하는 검사로는 절대 잡히지 않는 경로다.
+  const declaredScopeOutputs = new Set([...(changeScopeJob ?? '')
+    .matchAll(/^ {6}([A-Za-z0-9_-]+):\s*\$\{\{\s*steps\./gm)].map((match) => match[1]));
+  for (const check of manifest.requiredChecks) {
+    for (const source of aggregateSourceList(check).sources) {
+      for (const expression of [source?.scopeExpression, source?.sourceJobIf]) {
+        if (typeof expression !== 'string') continue;
+        const referenced = expression
+          .matchAll(/needs\.change-scope\.outputs(?:\.([A-Za-z0-9_-]+)|\['([^']+)'\])/g);
+        for (const match of referenced) {
+          const name = match[1] ?? match[2];
+          if (!declaredScopeOutputs.has(name)) {
+            errors.push(`change-scope must declare output '${name}' consumed by '${check.context}'`);
+          }
+        }
+      }
+    }
   }
 
   const secretScanJob = jobs.get('secret-scan');

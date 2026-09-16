@@ -157,13 +157,80 @@ test('required jobs cannot weaken failures with job-level continue-on-error', ()
 
 test('mutation aggregate keeps its always condition so failures become a completed required check', () => {
   const conditional = ciContent.replace(
-    /  mutation-test:\r?\n    needs: \[change-scope, mutation-scope\]\r?\n    if: always\(\)/,
-    '  mutation-test:\n    needs: [change-scope, mutation-scope]\n    if: success()',
+    /  mutation-test:\r?\n    needs: \[change-scope, mutation-scope, mutation-scope-migration\]\r?\n    if: always\(\)/,
+    '  mutation-test:\n    needs: [change-scope, mutation-scope, mutation-scope-migration]\n    if: success()',
   );
 
   assert.match(validateStaticContract({ manifest, ciContent: conditional }).join('\n'), /job-level if.*mutation-test/i);
 });
 
+
+test('a scope condition cannot reference a classifier output that is never declared', () => {
+  // [DEC-OPS-104] 출력 선언만 지우면 조건이 영구 거짓이 되어 그 잡이 초록인 채로 영영 안 돈다.
+  //   조건 문자열은 그대로라 잡 조건 대조로는 잡히지 않는다 — 선언 자체를 확인해야 한다.
+  const undeclared = ciContent.replace(
+    /\n {6}mutation-migration-tool: \$\{\{ steps\.scope\.outputs\.mutation_migration_tool \}\}/,
+    '',
+  );
+  assert.notEqual(undeclared, ciContent.replace(/\r\n/g, '\n'), 'negative fixture must change the workflow');
+  assert.match(validateStaticContract({ manifest, ciContent: undeclared }).join('\n'),
+    /change-scope must declare output .mutation-migration-tool./i);
+});
+
+test('PIT source jobs keep fail-fast disabled so one broken scope cannot cancel the rest', () => {
+  // [DEC-OPS-104] 두 잡 모두에 적용된다 — 한쪽만 되돌려도 red 여야 한다.
+  for (const jobId of ['mutation-scope', 'mutation-scope-migration']) {
+    const cancelled = mutateWorkflowJob(ciContent, jobId,
+      block => block.replace('      fail-fast: false', '      fail-fast: true'));
+    assert.match(validateStaticContract({ manifest, ciContent: cancelled }).join('\n'),
+      new RegExp(`${jobId} strategy must keep fail-fast: false`));
+  }
+});
+
+test('a second aggregate source is validated with the same strictness as the first', () => {
+  // [DEC-OPS-104] 새 소스 잡을 needs 에만 달고 매니페스트 소스로 등록하지 않으면 그 잡은 무검사가 된다.
+  assert.deepEqual(validateStaticContract({ manifest, ciContent }), []);
+
+  // (a) 두 번째 소스의 STRICT_MUTATION 을 빼면 red — 한쪽만 느슨해지는 경로를 막는다.
+  const weakStrict = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+    block => block.replace('          STRICT_MUTATION: "true"\n', ''));
+  assert.match(validateStaticContract({ manifest, ciContent: weakStrict }).join('\n'),
+    /env keys must exactly match|STRICT_MUTATION/i);
+
+  // (b) 두 번째 소스 잡이 통째로 사라지면 red.
+  const withoutJob = ciContent.replace(/\n  mutation-scope-migration:\r?\n[\s\S]*?(?=\n  [a-z][a-z0-9-]*:\r?\n)/, '');
+  assert.match(validateStaticContract({ manifest, ciContent: withoutJob }).join('\n'),
+    /source job .mutation-scope-migration. for .mutation-test. does not exist/i);
+
+  // (c) 두 번째 소스의 잡 조건을 좁힘 출력에서 떼면 red — 이관 뮤테이션이 조용히 영구 미실행이 된다.
+  const detachedScope = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+    block => block.replace("needs.change-scope.outputs['mutation-migration-tool'] == 'true'",
+      "needs.change-scope.outputs.mutation == 'true'"));
+  assert.match(validateStaticContract({ manifest, ciContent: detachedScope }).join('\n'),
+    /must retain its fail-closed scope condition/i);
+});
+
+test('an aggregate source list cannot be emptied or duplicated into a vacuous pass', () => {
+  // 빈 배열은 "소스를 한 번도 돌지 않는" 무검사 통과가 된다 — 루프 일반화의 전형적 약화다.
+  const empty = structuredClone(manifest);
+  empty.requiredChecks[4].aggregate = [];
+  assert.match(validateStaticContract({ manifest: empty, ciContent }).join('\n'),
+    /must declare at least one source/i);
+
+  // 결과 스텝 이름이 겹치면 검증기가 한쪽만 보고 나머지 소스를 놓친다.
+  const duplicated = structuredClone(manifest);
+  duplicated.requiredChecks[4].aggregate[1].aggregateStepName
+    = duplicated.requiredChecks[4].aggregate[0].aggregateStepName;
+  assert.match(validateStaticContract({ manifest: duplicated, ciContent }).join('\n'),
+    /reuses result step/i);
+
+  // 같은 소스 잡을 두 번 선언하는 것도 red 다.
+  const twice = structuredClone(manifest);
+  twice.requiredChecks[4].aggregate[1].sourceJobId
+    = twice.requiredChecks[4].aggregate[0].sourceJobId;
+  assert.match(validateStaticContract({ manifest: twice, ciContent }).join('\n'),
+    /declares source job .* twice/i);
+});
 test('workflow path and GitHub Actions integration are mandatory manifest metadata', () => {
   const broken = structuredClone(manifest);
   broken.workflow = '.github/workflows/renamed.yml';
@@ -212,8 +279,13 @@ test('E2E shard coordinates cannot omit a partition or mix denominators', () => 
 
 test('mutation aggregate remains bound to its source job and real PIT command', () => {
   const noNeeds = ciContent.replace(
-    /  mutation-test:\r?\n    needs: \[change-scope, mutation-scope\]\r?\n/,
+    /  mutation-test:\r?\n    needs: \[change-scope, mutation-scope, mutation-scope-migration\]\r?\n/,
     '  mutation-test:\n',
+  );
+  // 두 번째 소스 잡을 needs 에서만 빼도 red 여야 한다 — 집계가 그 결과를 읽지 못한 채 초록이 되면 안 된다.
+  const noMigrationNeeds = ciContent.replace(
+    '    needs: [change-scope, mutation-scope, mutation-scope-migration]',
+    '    needs: [change-scope, mutation-scope]',
   );
   const upstreamContinue = ciContent.replace(
     /  mutation-scope:\r?\n/,
@@ -225,6 +297,8 @@ test('mutation aggregate remains bound to its source job and real PIT command', 
   );
 
   assert.match(validateStaticContract({ manifest, ciContent: noNeeds }).join('\n'), /needs.*mutation-scope/i);
+  assert.match(validateStaticContract({ manifest, ciContent: noMigrationNeeds }).join('\n'),
+    /must need .mutation-scope-migration./i);
   assert.match(validateStaticContract({ manifest, ciContent: upstreamContinue }).join('\n'), /source job.*continue-on-error/i);
   assert.match(validateStaticContract({ manifest, ciContent: pitStepContinue }).join('\n'), /source step.*continue-on-error/i);
 });
@@ -297,7 +371,10 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
 test('heavy source needs point to source jobs rather than stable aggregate contexts', () => {
   assert.deepEqual(manifest.requiredChecks[3].aggregate.sourceNeeds,
     ['change-scope', 'backend-scope', 'frontend-scope']);
-  assert.deepEqual(manifest.requiredChecks[4].aggregate.sourceNeeds,
+  assert.deepEqual(manifest.requiredChecks[4].aggregate[0].sourceNeeds,
+    ['change-scope', 'backend-scope']);
+  // 이관 전용 소스도 같은 선행 잡을 요구한다 — 한쪽만 느슨해지면 그 잡이 검증 없이 발행된다.
+  assert.deepEqual(manifest.requiredChecks[4].aggregate[1].sourceNeeds,
     ['change-scope', 'backend-scope']);
 
   const staleE2eNeeds = mutateWorkflowJob(ciContent, 'e2e-tests', block => block.replace(
@@ -400,7 +477,9 @@ test('aggregate result vocabulary is canonical rather than unused manifest decor
     [4, 'skippedResult'],
   ]) {
     const broken = structuredClone(manifest);
-    broken.requiredChecks[checkIndex].aggregate[field] = 'banana';
+    const target = broken.requiredChecks[checkIndex].aggregate;
+    if (Array.isArray(target)) target[0][field] = 'banana';
+    else target[field] = 'banana';
     assert.match(
       validateStaticContract({ manifest: broken, ciContent }).join('\n'),
       new RegExp(`${field}.*(?:success|skipped)`, 'i'),
@@ -551,6 +630,7 @@ test('mutation jobs provision the Gradle distribution with a bounded retry befor
 
 test('only the measured migration validate/verify scope gets a bounded longer PIT job', () => {
   assert.deepEqual(validateStaticContract({ manifest, ciContent }), []);
+  // 60분 표현식은 이관 전용 잡에만 있고, 제품 스코프 잡은 30분 고정이다(DEC-OPS-104).
   const timeoutLine = "    timeout-minutes: ${{ matrix.scope == 'migration-validate-verify' && 60 || 30 }}";
   const invalidTimeouts = [
     '    timeout-minutes: 30',
@@ -561,10 +641,18 @@ test('only the measured migration validate/verify scope gets a bounded longer PI
     `    # ${timeoutLine.trim()}`,
     `${timeoutLine}\n    timeout-minutes: 30`,
   ];
+  // 제품 스코프 잡에 60분을 되돌려 주는 것도 red 다 — 그 잡에는 60분이 필요한 스코프가 없다.
+  const productTimeoutBack = mutateWorkflowJob(ciContent, 'mutation-scope',
+    block => block.replace('    timeout-minutes: 30', timeoutLine));
+  assert.match(validateStaticContract({ manifest, ciContent: productTimeoutBack }).join('\n'),
+    /mutation-scope timeout must be exactly 30/i);
   for (const replacement of invalidTimeouts) {
-    const changed = mutateWorkflowJob(ciContent, 'mutation-scope', block => block.replace(timeoutLine, replacement));
+    // 변형 대상은 이관 전용 잡이다 — 60분 표현식이 사는 유일한 자리다.
+    const changed = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+      block => block.replace(timeoutLine, replacement));
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'negative fixture must change the job');
-    assert.match(validateStaticContract({ manifest, ciContent: changed }).join('\n'), /mutation-scope timeout/);
+    assert.match(validateStaticContract({ manifest, ciContent: changed }).join('\n'),
+      /mutation-scope-migration timeout/);
   }
 });
 

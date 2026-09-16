@@ -617,7 +617,7 @@ test('CODEOWNERS uses recursive globs and the last matching rule as GitHub does'
 test('PIT remains bound to the strict source matrix and stable aggregate context', () => {
   const registry = clone(loadGovernanceRegistry(registryPath));
   const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
-  pit.selector.sourceJobId = 'ghost-mutation-source';
+  pit.selector.sourceJobIds = ['ghost-mutation-source', 'mutation-scope-migration'];
 
   assert.match(validate(registry).join('\n'), /ghost required-check aggregate selector.*mutation-test/i);
 });
@@ -625,14 +625,33 @@ test('PIT remains bound to the strict source matrix and stable aggregate context
 test('PIT registry and CI keep the same exact ten-scope matrix catalog', () => {
   const registry = loadGovernanceRegistry(registryPath);
   const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
-  const workflow = parseMutationScopeMatrix(
-    readFileSync(path.join(repoRoot, '.github', 'workflows', 'ci.yml'), 'utf8'),
-  );
+  // 스코프는 두 잡에 나뉘어 산다(DEC-OPS-104) — union 이 원장과 정확히 같아야 한다.
+  const ci = readFileSync(path.join(repoRoot, '.github', 'workflows', 'ci.yml'), 'utf8');
+  const product = parseMutationScopeMatrix(ci, 'mutation-scope');
+  const migration = parseMutationScopeMatrix(ci, 'mutation-scope-migration');
 
-  assert.deepEqual(workflow.errors, []);
+  assert.deepEqual(product.errors, []);
+  assert.deepEqual(migration.errors, []);
   assert.equal(pit.selector.matrixScopes.length, 10);
-  assert.deepEqual(workflow.scopes, pit.selector.matrixScopes);
+  assert.deepEqual(pit.selector.sourceJobIds, ['mutation-scope', 'mutation-scope-migration']);
+  const byScope = (a, b) => a.scope.localeCompare(b.scope);
+  const declared = pit.selector.matrixScopes.map(({ job, ...rest }) => rest).sort(byScope);
+  assert.deepEqual([...product.scopes, ...migration.scopes].sort(byScope), declared);
+  // 소유 잡 태그가 실제 잡과 어긋나면 안 된다.
+  const owners = new Map(pit.selector.matrixScopes.map(({ scope, job }) => [scope, job]));
+  for (const entry of product.scopes) assert.equal(owners.get(entry.scope), 'mutation-scope');
+  for (const entry of migration.scopes) assert.equal(owners.get(entry.scope), 'mutation-scope-migration');
   assert.doesNotMatch(pit.selector.matrixScopes[0].classes, /service\.(?:image|calendar|log)\.\*/);
+});
+
+test('a PIT scope declared under the wrong job is rejected', () => {
+  // [DEC-OPS-104] 태그만 바꾸면 그 스코프가 다른 잡에서 도는 것처럼 보인다 — 조건이 달라 실행 시점이 바뀐다.
+  const registry = clone(loadGovernanceRegistry(registryPath));
+  const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
+  const entry = pit.selector.matrixScopes.find(({ scope }) => scope === 'migration-validate-verify');
+  entry.job = 'mutation-scope';
+
+  assert.match(validate(registry).join('\n'), /is declared under .mutation-scope. but runs in/i);
 });
 
 test('deleting a PIT scope is rejected in both the fixed catalog size and CI comparison', () => {

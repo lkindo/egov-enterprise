@@ -185,32 +185,58 @@
       "jobId": "mutation-test",
       "needs": [
         "change-scope",
-        "mutation-scope"
+        "mutation-scope",
+        "mutation-scope-migration"
       ],
       "jobIf": "always()",
-      "aggregate": {
-        "sourceJobId": "mutation-scope",
-        "sourceNeeds": [
-          "change-scope",
-          "backend-scope"
-        ],
-        "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.mutation == 'true' && needs.backend-scope.result == 'success'",
-        "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
-        "sourceRun": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
-        "sourceWorkingDirectory": null,
-        "sourceEnv": {
-          "PIT_TARGET_CLASSES": "${{ matrix.classes }}",
-          "PIT_TARGET_TESTS": "${{ matrix.tests }}",
-          "STRICT_MUTATION": "true"
+      "aggregate": [
+        {
+          "sourceJobId": "mutation-scope",
+          "sourceNeeds": [
+            "change-scope",
+            "backend-scope"
+          ],
+          "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.mutation == 'true' && needs.backend-scope.result == 'success'",
+          "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
+          "sourceRun": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {
+            "PIT_TARGET_CLASSES": "${{ matrix.classes }}",
+            "PIT_TARGET_TESTS": "${{ matrix.tests }}",
+            "STRICT_MUTATION": "true"
+          },
+          "aggregateStepName": "뮤테이션 스코프 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.mutation-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.mutation",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
         },
-        "aggregateStepName": "뮤테이션 스코프 결과 집계",
-        "aggregateRun": "node scripts/aggregate-required-check.mjs",
-        "resultExpression": "needs.mutation-scope.result",
-        "successResult": "success",
-        "scopeExpression": "needs.change-scope.outputs.mutation",
-        "classifierResultExpression": "needs.change-scope.result",
-        "skippedResult": "skipped"
-      }
+        {
+          "sourceJobId": "mutation-scope-migration",
+          "sourceNeeds": [
+            "change-scope",
+            "backend-scope"
+          ],
+          "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs['mutation-migration-tool'] == 'true' && needs.backend-scope.result == 'success'",
+          "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
+          "sourceRun": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {
+            "PIT_TARGET_CLASSES": "${{ matrix.classes }}",
+            "PIT_TARGET_TESTS": "${{ matrix.tests }}",
+            "STRICT_MUTATION": "true"
+          },
+          "aggregateStepName": "이관 도구 뮤테이션 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.mutation-scope-migration.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs['mutation-migration-tool']",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        }
+      ]
     },
     {
       "context": "secure-coding",
