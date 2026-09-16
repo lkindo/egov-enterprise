@@ -754,7 +754,7 @@ function adaptOwnershipGuardBaseline(output) {
   } finally { closeSync(descriptor); }
 }
 
-function adaptGeneratedHarness(output) {
+export function adaptGeneratedHarness(output) {
   const replacements = [
     {
       path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'EntitySchemaConformanceLinterTest.java'),
@@ -767,20 +767,20 @@ function adaptGeneratedHarness(output) {
       to: 'private static final int MIGRATION_SQL_FLOOR = 3;',
     },
     /*
-      투영본은 역사적 migration 검증 42개를 통째로 제거한다(pruneHistoricalMigrationTests —
+      투영본은 공용 support를 사용하는 역사적 migration 검증 43개를 제거한다(pruneHistoricalMigrationTests —
       그 테스트들이 검증하는 V2 체인이 V1 번들로 교체되므로 남겨 두면 전부 red 다). 그래서 이
-      동결 census 의 모집단이 42 → 0 이 된다. 수치를 낮추는 것이 아니라 **사실을 따라가는** 것이며,
+      동결 census 의 모집단이 43 → 0 이 된다. 수치를 낮추는 것이 아니라 **사실을 따라가는** 것이며,
       adopter 가 migration 검증을 새로 만들면 0 을 넘어 red 가 되어 다시 동결을 요구한다.
-      DisplayName 도 함께 고친다 — 0건을 세면서 "42개" 라고 말하면 화면이 사실과 다른 말을 한다.
+      DisplayName 도 함께 고친다 — 0건을 세면서 "43개" 라고 말하면 화면이 사실과 다른 말을 한다.
     */
     {
       path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SharedPostgresMigrationHarnessContractTest.java'),
-      from: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 42;',
+      from: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 43;',
       to: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 0;',
     },
     {
       path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SharedPostgresMigrationHarnessContractTest.java'),
-      from: '@DisplayName("42개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
+      from: '@DisplayName("43개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
       to: '@DisplayName("migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
     },
     /*

@@ -3,6 +3,8 @@ package nuri.api.schema;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import nuri.api.config.AuthorizationReviewedMigrationCatalog;
+import nuri.business.security.authorization.PermissionCodes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,9 @@ class AuthorizationContractIntegrationTest extends SharedPostgresMigrationTestSu
     @Test
     void refusesMissingEvidenceDriftAndUnexpectedDependencyBeforeAtomicCutover() throws Exception {
         // This test deliberately inspects the immutable pre-Contract state, not the current schema.
+        String reviewedCatalog = AuthorizationReviewedMigrationCatalog.version();
+        assertThat(reviewedCatalog).isEqualTo("7905bb657127d40bea2df619093b24316651b1957ac9e26a902c7bd171473276");
+        assertThat(PermissionCodes.CATALOG_VERSION).isNotEqualTo(reviewedCatalog);
         flyway(org.flywaydb.core.api.MigrationVersion.fromVersion("2.99")).migrate();
         try (Connection connection = openConnection(); Statement statement = connection.createStatement()) {
             assertThatThrownBy(() -> AuthorizationCutoverTestSupport.execute(connection))

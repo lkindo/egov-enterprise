@@ -1,7 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { isHistoricalAuthorizationRehearsal, projectedWriteHandlerCounts } from './generate-reusable-base-source.mjs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, dirname, join, resolve } from 'node:path';
+import { adaptGeneratedHarness, isHistoricalAuthorizationRehearsal, projectedWriteHandlerCounts } from './generate-reusable-base-source.mjs';
+
+test('generated harness adaptation matches current source selectors and rejects census or display-name drift', (t) => {
+  const generatedProfile = JSON.parse(readFileSync(new URL('../config/reusable-base-profiles.json', import.meta.url), 'utf8'))
+    .sourcePolicy.generatedProfile;
+  const harnessDirectory = 'api-server/src/test/java/nuri/api/harness';
+  const migrationHarness = 'SharedPostgresMigrationHarnessContractTest.java';
+  const files = ['EntitySchemaConformanceLinterTest.java', 'SeedLocationLinterTest.java',
+    migrationHarness, 'ZeroDowntimeMigrationLinterTest.java'];
+  const projectedFixture = () => {
+    const output = mkdtempSync(join(tmpdir(), 'reusable-harness-adaptation-'));
+    t.after(() => {
+      const owned = resolve(output);
+      assert.equal(dirname(owned), resolve(tmpdir()));
+      assert.ok(basename(owned).startsWith('reusable-harness-adaptation-'));
+      rmSync(owned, { recursive: true, force: true });
+    });
+    mkdirSync(join(output, harnessDirectory), { recursive: true });
+    for (const file of files) {
+      copyFileSync(new URL(`../${harnessDirectory}/${file}`, import.meta.url), join(output, harnessDirectory, file));
+    }
+    return output;
+  };
+
+  const assertProjected = (output) => {
+    const projected = readFileSync(join(output, harnessDirectory, migrationHarness), 'utf8');
+    assert.match(projected, /private static final int EXPECTED_MIGRATION_TEST_COUNT = 0;/, 'projected migration census drift');
+    assert.match(projected, /@DisplayName\("migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다"\)/,
+      'projected migration display name drift');
+  };
+  // Generated artifacts already contain the adapted census; validate that result instead of adapting it twice.
+  const verifyFixture = generatedProfile ? assertProjected : adaptGeneratedHarness;
+  const output = projectedFixture();
+  verifyFixture(output);
+  assertProjected(output);
+
+  for (const [from, to] of [
+    [`EXPECTED_MIGRATION_TEST_COUNT = ${generatedProfile ? 0 : 43};`, 'EXPECTED_MIGRATION_TEST_COUNT = 44;'],
+    [`@DisplayName("${generatedProfile ? '' : '43개 '}migration 검증은`, '@DisplayName("44개 migration 검증은'],
+  ]) {
+    const drifted = projectedFixture();
+    const path = join(drifted, harnessDirectory, migrationHarness);
+    const source = readFileSync(path, 'utf8');
+    const changed = source.replace(from, to);
+    assert.notEqual(changed, source);
+    writeFileSync(path, changed, 'utf8');
+    assert.throws(() => verifyFixture(drifted), generatedProfile
+      ? /projected migration (?:census|display name) drift/
+      : /generated harness 조정 지점을 찾지 못했다/);
+  }
+});
 
 test('projected handler census counts actual success bodies, private delegates and explicit non-success separately', () => {
   const source = `class Controller {
