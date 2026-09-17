@@ -8,27 +8,30 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * V2_102 가 추가한 참조 무결성 FK 4축.
+ * V2_102 가 추가한 참조 무결성 FK 중 <b>모든 재사용 프로필에 남는 core 3축</b>.
  *
- * <p>네 축 모두 종전에는 서비스 가드만 막고 DB 는 막지 않았다. 여기서 보는 것은 세 가지다 —
+ * <p>세 축 모두 종전에는 서비스 가드만 막고 DB 는 막지 않았다. 여기서 보는 것은 세 가지다 —
  * 제약이 실제로 <b>검증된(validated)</b> 상태인가, 고아 쓰기를 <b>차단</b>하는가, 그리고
  * "부모 없음" 을 뜻하는 NULL 을 <b>통과</b>시키는가. 마지막 축이 특히 중요하다: 화면은 부모 없음을
  * 빈 문자열로 보내므로, 서비스 정규화가 빠지면 소속 없는 사용자와 최상위 행정구역을 등록할 수
  * 없게 된다. 그 정규화는 각 서비스 테스트가 따로 고정하고, 여기서는 DB 쪽 계약만 본다.
+ *
+ * <p>⚠ 게시판 커뮤니티 귀속 축은 여기에 두지 않는다 — {@code tb_bbs_master} 는 collaboration,
+ * {@code tb_cmnty_info} 는 demo 소유라 축소 프로필에는 그 테이블이 없다. 여기 두면 core 에서는
+ * 없는 테이블을 조회해 죽고 collaboration 에서는 있을 수 없는 제약을 요구한다(실측: PR #683 CI).
+ * 그 축은 {@link ReferenceIntegrityCommunityFkIntegrationTest} 가 두 pack 과 함께 보고 함께 사라진다.
  */
 @Tag("schema-validation")
-@DisplayName("부서 소속·부서 계층·행정구역 계층·게시판 커뮤니티 귀속의 물리 FK")
+@DisplayName("부서 소속·부서 계층·행정구역 계층의 물리 FK (모든 프로필)")
 class ReferenceIntegrityFkIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
-    @DisplayName("fresh schema에서는 네 참조 FK가 검증되고 신규 고아 쓰기를 차단한다")
+    @DisplayName("fresh schema에서는 core 3축 FK가 검증되고 신규 고아 쓰기를 차단한다")
     void validatesReferencesAndRejectsNewOrphans() throws SQLException {
         migrateThroughAuthorizationCutover();
 
@@ -37,12 +40,10 @@ class ReferenceIntegrityFkIntegrationTest extends SharedPostgresMigrationTestSup
             assertThat(constraintValidated(statement, "fk_tb_user_info_tb_ognz_info")).isTrue();
             assertThat(constraintValidated(statement, "fk_tb_ognz_info_up_ognz_id")).isTrue();
             assertThat(constraintValidated(statement, "fk_tb_admdst_cd_up_admdst_cd")).isTrue();
-            assertThat(constraintValidated(statement, "fk_tb_bbs_master_tb_cmnty_info")).isTrue();
 
             assertThat(indexExists(statement, "ix_tb_user_info_ognz_id")).isTrue();
             assertThat(indexExists(statement, "ix_tb_ognz_info_up_ognz_id")).isTrue();
             assertThat(indexExists(statement, "ix_tb_admdst_cd_up_admdst_cd")).isTrue();
-            assertThat(indexExists(statement, "ix_tb_bbs_master_cmnty_sn")).isTrue();
 
             assertThatThrownBy(() -> statement.executeUpdate(
                     "INSERT INTO tb_user_info (esntl_id, user_id, pswd, user_nm, sbscrb_ymd, ognz_id)"
@@ -61,14 +62,6 @@ class ReferenceIntegrityFkIntegrationTest extends SharedPostgresMigrationTestSup
                             + " VALUES ('T_FK_ADM', 'NO_SUCH_UP')"))
                     .isInstanceOf(SQLException.class)
                     .hasMessageContaining("fk_tb_admdst_cd_up_admdst_cd");
-
-            assertThatThrownBy(() -> statement.executeUpdate(
-                    "INSERT INTO tb_bbs_master"
-                            + " (bbs_id, bbs_ttl, bbs_type_cd, bbs_atrb_cd, use_yn,"
-                            + "  file_atch_psblty_yn, atch_psblty_file_qty, cmnty_sn)"
-                            + " VALUES ('T_FK_BBS', '시험 게시판', 'BBST01', 'BBSA01', 'Y', 'N', 0, 987654321)"))
-                    .isInstanceOf(SQLException.class)
-                    .hasMessageContaining("fk_tb_bbs_master_tb_cmnty_info");
         }
     }
 
@@ -100,30 +93,6 @@ class ReferenceIntegrityFkIntegrationTest extends SharedPostgresMigrationTestSup
         }
     }
 
-    /**
-     * 템플릿 참조는 의도적으로 FK 대상이 아니다.
-     *
-     * <p>{@code tb_bbs_master.tmplt_id} 는 이름과 달리 템플릿 원장 참조가 아니라 프런트 레이아웃
-     * 분기 키로 쓰인다 — 게시판 생성 마법사가 보내는 값은 하드코딩 상수이고 {@code tb_tmplt_info}
-     * 에 행을 넣는 생산 코드가 저장소에 없다. {@code R__seed_demo.sql} 도 "tmplt_id 일부는
-     * 라이브에서도 dangling" 이라 적는다. 여기에 FK 를 걸면 <b>게시판 생성이 전면 중단된다</b>.
-     *
-     * <p>그래서 이 단언은 "아직 안 했다" 가 아니라 <b>결정</b>을 고정한다. 그 컬럼의 의미를 먼저
-     * 정하고 실제 원장을 채운 뒤에야 이 단언을 지우고 FK 를 걸 수 있다.
-     */
-    @Test
-    @DisplayName("템플릿 참조에는 FK를 걸지 않는다 — 원장이 비어 있어 게시판 생성이 막힌다")
-    void doesNotConstrainTemplateReference() throws SQLException {
-        migrateThroughAuthorizationCutover();
-
-        try (Connection connection = openConnection();
-             Statement statement = connection.createStatement()) {
-            assertThat(foreignKeyColumns(statement, "tb_bbs_master"))
-                    .contains("cmnty_sn")
-                    .doesNotContain("tmplt_id");
-        }
-    }
-
     private boolean constraintValidated(Statement statement, String name) throws SQLException {
         try (ResultSet result = statement.executeQuery(
                 "SELECT convalidated FROM pg_constraint WHERE conname='%s'".formatted(name))) {
@@ -147,23 +116,5 @@ class ReferenceIntegrityFkIntegrationTest extends SharedPostgresMigrationTestSup
             assertThat(result.next()).isTrue();
             return result.getBoolean(1);
         }
-    }
-
-    private List<String> foreignKeyColumns(Statement statement, String table) throws SQLException {
-        List<String> columns = new ArrayList<>();
-        String query = ("SELECT attribute.attname"
-                + "   FROM pg_constraint constraint_row"
-                + "   JOIN unnest(constraint_row.conkey) AS key_column(attnum) ON TRUE"
-                + "   JOIN pg_attribute attribute"
-                + "     ON attribute.attrelid = constraint_row.conrelid"
-                + "    AND attribute.attnum = key_column.attnum"
-                + "  WHERE constraint_row.conrelid = '%s'::regclass"
-                + "    AND constraint_row.contype = 'f'").formatted(table);
-        try (ResultSet result = statement.executeQuery(query)) {
-            while (result.next()) {
-                columns.add(result.getString(1));
-            }
-        }
-        return columns;
     }
 }

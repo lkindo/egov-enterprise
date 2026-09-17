@@ -859,6 +859,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/PrivacyLogBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-REFERENCE-INTEGRITY-FK-COMMUNITY",
+          "source": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-REFERENCE-INTEGRITY-FK",
           "source": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityFkIntegrationTest.java"
         },

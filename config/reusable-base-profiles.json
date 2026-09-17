@@ -23,6 +23,10 @@
           "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
         },
         {
+          "file": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java",
+          "reason": "게시판(collaboration) 자식과 커뮤니티(demo) 부모가 모두 있어야 성립하는 V2_102 귀속 FK 검증. 어느 한쪽 pack 이 빠지면 제약도 대상 테이블도 없어 검사 대상 자체가 없다. core 3축(사용자 소속·부서 계층·행정구역 계층)은 ReferenceIntegrityFkIntegrationTest 가 모든 프로필에서 계속 본다."
+        },
+        {
           "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
           "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
         },
@@ -48,6 +52,10 @@
         {
           "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
           "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
+        },
+        {
+          "file": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java",
+          "reason": "게시판(collaboration) 자식과 커뮤니티(demo) 부모가 모두 있어야 성립하는 V2_102 귀속 FK 검증. 어느 한쪽 pack 이 빠지면 제약도 대상 테이블도 없어 검사 대상 자체가 없다. core 3축(사용자 소속·부서 계층·행정구역 계층)은 ReferenceIntegrityFkIntegrationTest 가 모든 프로필에서 계속 본다."
         },
         {
           "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
