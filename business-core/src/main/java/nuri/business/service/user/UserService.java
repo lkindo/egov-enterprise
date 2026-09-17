@@ -47,6 +47,7 @@ public class UserService extends BaseAbstractService {
         private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
         private final nuri.business.domain.log.UserLogRepository userLogRepository;
         private final nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
+        private final nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
         private final PasswordEncoder passwordEncoder;
         private final ApplicationEventPublisher eventPublisher;
         private final nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
@@ -57,6 +58,7 @@ public class UserService extends BaseAbstractService {
                         nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository,
                         nuri.business.domain.log.UserLogRepository userLogRepository,
                         nuri.business.domain.deptjob.DeptJobRepository deptJobRepository,
+                        nuri.business.domain.user.repository.DeptManageRepository deptManageRepository,
                         PasswordEncoder passwordEncoder,
                         ApplicationEventPublisher eventPublisher,
                         nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots,
@@ -72,6 +74,8 @@ public class UserService extends BaseAbstractService {
                                 "UserAbsenceRepository 는 null 일 수 없습니다");
                 this.userLogRepository = required(userLogRepository, "UserLogRepository 는 null 일 수 없습니다");
                 this.deptJobRepository = required(deptJobRepository, "DeptJobRepository 는 null 일 수 없습니다");
+                this.deptManageRepository = required(deptManageRepository,
+                                "DeptManageRepository 는 null 일 수 없습니다");
                 this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
                 this.authorizationSnapshots = required(authorizationSnapshots);
@@ -216,6 +220,8 @@ public class UserService extends BaseAbstractService {
                 //   원칙은 하나다 — **클라이언트가 보낸 것을 저장한다.**
                 //   (등록 폼이 실제로 보내는 것은 emlAddr·mblTelno·ognzId 이고, 나머지는 API 직접
                 //    호출 시에만 채워진다. 보내지 않으면 종전과 같이 null 이라 회귀가 없다.)
+                assertDepartmentExists(dto.ognzId());
+
                 User user = User.builder()
                                 .userId(userId)
                                 .pswd(encodedPassword)
@@ -280,6 +286,11 @@ public class UserService extends BaseAbstractService {
                 //   ⚠ 이 규칙은 **부분 수정(partial update)** 계약이다. 필드를 null 로 만들고 싶다면
                 //     "" 를 보내야 한다. 전체 치환(PUT 의 엄격한 의미)을 원하는 클라이언트가 생기면
                 //     그때는 별도 엔드포인트로 분리할 것 — 조용한 데이터 유실보다 명시적 계약이 낫다.
+                // 소속 부서는 **요청이 실제로 보낸 값**만, 그것도 **기존과 다를 때만** 검사한다.
+                //   해석된 결과값을 검사하면 이미 고아 소속을 가진 사용자가 이름·연락처조차 고치지 못한다 —
+                //   /users/me 경계는 소속을 역직렬화하지 않아 본인은 그 값을 바꿀 수단이 아예 없다.
+                assertDepartmentChange(userDto.ognzId(), user.getOgnzId());
+
                 user.update(
                                 userDto.userNm(),
                                 user.getPswdHint(),
@@ -542,6 +553,7 @@ public class UserService extends BaseAbstractService {
                 authorizationAdministration.lockAndAuthorize("USER_DEPT");
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT");
+                assertDepartmentExists(ognzId);
                 List<User> users = findAllByLoginIdOrThrow(userIds);
                 users.forEach(user -> user.updateOrgnztId(ognzId));
                 userRepository.saveAll(users);
@@ -581,5 +593,32 @@ public class UserService extends BaseAbstractService {
                                         "요청한 사용자 중 존재하지 않는 대상이 있습니다.");
                 }
                 return users;
+        }
+        /**
+         * 소속 부서가 실재하는지 확인한다. [2026-09-17]
+         *
+         * <p>{@code tb_user_info.ognz_id} 에는 물리 FK 가 없어 존재하지 않는 부서를 그대로 저장할 수
+         * 있었다. 삭제 방향은 부서 삭제 가드가 닫고 있지만 쓰기 방향은 열려 있었고, 실측에서 값이
+         * 0 이었던 것은 가드 때문이 아니라 <b>아직 아무도 소속을 지정하지 않았기 때문</b>이다 —
+         * 시드가 이 컬럼을 채우지 않는다.
+         *
+         * <p>빈 값은 소속 해제라 그대로 통과시킨다.
+         */
+        private void assertDepartmentExists(String ognzId) {
+                if (ognzId == null || ognzId.isBlank()) {
+                        return; // 소속 없음
+                }
+                if (!deptManageRepository.existsById(ognzId)) {
+                        throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND,
+                                        "부서를 찾을 수 없습니다: " + ognzId);
+                }
+        }
+
+        /** 요청이 소속을 실제로 바꿀 때만 검사한다 — 기존 고아 값을 그대로 왕복시키는 수정은 막지 않는다. */
+        private void assertDepartmentChange(String requested, String current) {
+                if (requested == null || java.util.Objects.equals(requested, current)) {
+                        return;
+                }
+                assertDepartmentExists(requested);
         }
 }

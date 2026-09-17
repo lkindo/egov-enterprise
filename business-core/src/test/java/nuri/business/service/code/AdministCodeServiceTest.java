@@ -218,4 +218,69 @@ class AdministCodeServiceTest {
         assertThat(error.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
         verify(administCodeRepository, never()).delete(any());
     }
+    /**
+     * 상위 행정구역 지정의 무결성. [2026-09-17]
+     *
+     * <p>{@code tb_admdst_cd} 에는 자기참조 FK 가 없어 DB 가 아무것도 막지 않는다. 삭제 방향은
+     * 하위 코드 가드가 닫았지만(DEC-OPS-061) 쓰기 방향은 통째로 열려 있었다 — 존재하지 않는 상위,
+     * 자기 자신, 순환 중 어느 것도 거부되지 않았다.
+     *
+     * <p>분기마다 부정 테스트를 두는 이유는 이 클래스가 CI 뮤테이션 하드 게이트 범위이기 때문이다.
+     */
+    @Test
+    @DisplayName("상위 행정구역은 실재해야 하고 자기 자신·순환은 거부한다 (빈 값은 최상위로 통과)")
+    void rejectsMissingSelfReferencingAndCyclicParents() {
+        SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("admin", "ESNTL_admin", "ROLE_ADMIN"));
+
+        // (가) 없는 상위 — 404
+        given(administCodeRepository.existsById("1111000000")).willReturn(false);
+        given(administCodeRepository.existsById("9999999999")).willReturn(false);
+        BusinessException missing = assertThrows(BusinessException.class,
+                () -> administCodeService.createAdministCode(dto("1111000000", "9999999999"), "admin"));
+        assertThat(missing.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        // (나) 자기 자신 — 400. 저장되면 하위 건수 집계가 자기 자신을 세어 삭제까지 막힌다.
+        BusinessException self = assertThrows(BusinessException.class,
+                () -> administCodeService.createAdministCode(dto("1111000000", "1111000000"), "admin"));
+        assertThat(self.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+
+        // (다) 2단 순환 — A→B, B→A. FK 로는 막지 못하는 형태다.
+        given(administCodeRepository.existsById("2200000000")).willReturn(true);
+        given(administCodeRepository.findById("2200000000")).willReturn(java.util.Optional.of(
+                AdministCode.builder().admdstCd("2200000000").upAdmdstCd("1111000000").build()));
+        BusinessException cycle = assertThrows(BusinessException.class,
+                () -> administCodeService.createAdministCode(dto("1111000000", "2200000000"), "admin"));
+        assertThat(cycle.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+
+        // (라) 대조군 — 빈 값은 최상위다. 시·도 등록을 막으면 안 된다(DEC-OPS-061 이 푼 제약).
+        given(administCodeRepository.save(any())).willAnswer(call -> call.getArgument(0));
+        administCodeService.createAdministCode(dto("1111000000", ""), "admin");
+        verify(administCodeRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("이미 등록된 코드로 등록하면 거부한다 — save() 가 merge 라 기존 행이 조용히 덮인다")
+    void rejectsDuplicateCodeOnCreate() {
+        SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("admin", "ESNTL_admin", "ROLE_ADMIN"));
+        given(administCodeRepository.existsById("1100000000")).willReturn(true);
+
+        BusinessException duplicate = assertThrows(BusinessException.class,
+                () -> administCodeService.createAdministCode(dto("1100000000", ""), "admin"));
+
+        assertThat(duplicate.getErrorCode())
+                .isEqualTo(nuri.business.domain.code.exception.CodeErrorCode.DUPLICATE_CODE);
+        verify(administCodeRepository, never()).save(any());
+    }
+
+    private static AdministCodeDto dto(String code, String parent) {
+        AdministCodeDto dto = new AdministCodeDto();
+        dto.setAdmdstCd(code);
+        dto.setUpAdmdstCd(parent);
+        dto.setAdmdstSeCd("1");
+        dto.setAdmdstZoneNm("시험 구역");
+        dto.setUseYn("Y");
+        return dto;
+    }
 }
