@@ -61,6 +61,7 @@ class UserServiceTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock private nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
     @Mock private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
     @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
 
@@ -171,6 +172,9 @@ class UserServiceTest {
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             given(userRepository.findByUserId("newuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
+            // 소속 부서는 실재해야 저장된다(2026-09-17) — tb_user_info.ognz_id 에 물리 FK 가 없어
+            //   종전에는 존재하지 않는 부서도 그대로 저장됐다.
+            given(deptManageRepository.existsById("ORGNZT_0000000000001")).willReturn(true);
 
             // 등록 폼(UserManageForm, create 모드)이 실제로 보내는 필드 집합이다.
             userService.registerUser(UserDto.builder()
@@ -441,7 +445,8 @@ class UserServiceTest {
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
             User user = mock(User.class);
             given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
-            
+            given(deptManageRepository.existsById("DEPT1")).willReturn(true);
+
             userService.moveUsersToDept(List.of("user1"), "DEPT1");
             verify(authorizationAdministration).lockAndAuthorize("USER_DEPT");
             verify(user).updateOrgnztId("DEPT1");
@@ -611,6 +616,49 @@ class UserServiceTest {
 
             assertEquals("testuser2", userId);
             verify(userRepository).saveAndFlush(any());
+        }
+    }
+    /**
+     * 소속 부서 참조 무결성. [2026-09-17]
+     *
+     * <p>{@code tb_user_info.ognz_id} 에는 물리 FK 가 없다. 삭제 방향은 부서 삭제 가드가 닫고 있지만
+     * 쓰기 방향은 열려 있어 존재하지 않는 부서를 그대로 저장할 수 있었다.
+     *
+     * <p>⚠ 검사 대상은 <b>요청이 실제로 보낸 값</b>이고, 그것도 <b>기존과 다를 때만</b>이다.
+     * 해석된 결과값을 검사하면 이미 고아 소속을 가진 사용자가 이름·연락처조차 고치지 못한다 —
+     * {@code /users/me} 경계는 소속을 역직렬화하지 않아 본인에게는 빠져나올 수단이 아예 없다.
+     */
+    @Test
+    @DisplayName("존재하지 않는 부서로는 등록·일괄 이동이 거부되고, 기존 소속을 그대로 둔 수정은 통과한다")
+    void departmentReferenceIsValidatedOnlyForChangedRequestValues() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            given(userRepository.findByUserId("newuser")).willReturn(Optional.empty());
+            given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
+            given(deptManageRepository.existsById("GHOST_DEPT")).willReturn(false);
+
+            // (가) 등록 — 없는 부서는 거부한다.
+            var register = UserDto.builder().userId("newuser").pswd("ValidPass123!").userNm("홍길동")
+                    .ognzId("GHOST_DEPT").role("USER").build();
+            BusinessException rejected = assertThrows(BusinessException.class,
+                    () -> userService.registerUser(register));
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, rejected.getErrorCode());
+            verify(userRepository, never()).saveAndFlush(org.mockito.ArgumentMatchers.any());
+
+            // (나) 일괄 이동 — 사용자 조회조차 시작하지 않는다.
+            assertThrows(BusinessException.class,
+                    () -> userService.moveUsersToDept(List.of("user1"), "GHOST_DEPT"));
+            verify(userRepository, never()).saveAll(org.mockito.ArgumentMatchers.anyList());
+
+            // (다) 대조군 — 기존 고아 소속을 그대로 왕복시키는 수정은 막지 않는다.
+            //     이 단언이 깨지면 고아 소속 사용자가 이름조차 고치지 못하게 된 것이다.
+            User existing = User.builder().userId("orphan").userNm("기존").esntlId("ESNTL_ORPHAN")
+                    .ognzId("GHOST_DEPT").role(nuri.business.domain.user.entity.Role.USER).build();
+            given(userRepository.findByUserId("orphan")).willReturn(Optional.of(existing));
+            userService.updateUser("orphan", UserDto.builder().userNm("바뀐 이름")
+                    .ognzId("GHOST_DEPT").build());
+            assertEquals("바뀐 이름", existing.getUserNm(), "고아 소속 때문에 이름 수정이 막혔다");
         }
     }
 }

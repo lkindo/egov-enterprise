@@ -55,6 +55,7 @@ class UserServiceAdditionalTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Mock private nuri.business.domain.user.repository.DeptManageRepository deptManageRepository;
     @Mock private nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots;
     @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
     private UserService userService;
@@ -63,7 +64,8 @@ class UserServiceAdditionalTest {
     void setUp() {
         userService = new UserService(userRepository, userAuthorityRepository, refreshTokenRepository,
                 loginPolicyRepository, userAbsenceRepository,
-                userLogRepository, deptJobRepository, passwordEncoder, eventPublisher, authorizationSnapshots, authorizationAdministration);
+                userLogRepository, deptJobRepository, deptManageRepository, passwordEncoder, eventPublisher,
+                authorizationSnapshots, authorizationAdministration);
     }
 
     private User.UserBuilder createBaseUser(String userId) {
