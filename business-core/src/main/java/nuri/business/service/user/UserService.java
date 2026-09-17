@@ -232,7 +232,7 @@ public class UserService extends BaseAbstractService {
                                 .role(role)
                                 .emlAddr(dto.emlAddr())
                                 .mblTelno(dto.mblTelno())
-                                .ognzId(dto.ognzId())
+                                .ognzId(blankToNull(dto.ognzId()))
                                 .emplNo(dto.emplNo())
                                 .ofcpsNm(dto.ofcpsNm())
                                 .groupId(dto.groupId())
@@ -311,7 +311,7 @@ public class UserService extends BaseAbstractService {
                                 keepIfAbsent(userDto.emlAddr(), user.getEmlAddr()),
                                 keepIfAbsent(userDto.ofcpsNm(), user.getOfcpsNm()),
                                 keepIfAbsent(userDto.groupId(), user.getGroupId()),
-                                keepIfAbsent(userDto.ognzId(), user.getOgnzId()),
+                                blankToNull(keepIfAbsent(userDto.ognzId(), user.getOgnzId())),
                                 keepIfAbsent(userDto.pstinstCd(), user.getPstinstCd()),
                                 user.getRole(),
                                 user.getCertDnVl());
@@ -555,7 +555,8 @@ public class UserService extends BaseAbstractService {
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT");
                 assertDepartmentExists(ognzId);
                 List<User> users = findAllByLoginIdOrThrow(userIds);
-                users.forEach(user -> user.updateOrgnztId(ognzId));
+                String normalizedOgnzId = blankToNull(ognzId);
+                users.forEach(user -> user.updateOrgnztId(normalizedOgnzId));
                 userRepository.saveAll(users);
         }
 
@@ -604,6 +605,22 @@ public class UserService extends BaseAbstractService {
          *
          * <p>빈 값은 소속 해제라 그대로 통과시킨다.
          */
+        /**
+         * "소속 없음" 의 저장 표현을 NULL 하나로 모은다. [2026-09-17]
+         *
+         * <p>화면은 소속 없음을 <b>빈 문자열</b>로 보낸다 — 등록·수정 폼의
+         * {@code <option value="">소속 없음 / GLOBAL</option>} 이 그렇고, E2E 가 캡처한 실제 요청
+         * 본문도 {@code "ognzId":""} 다. 빈 문자열은 NULL 이 아니므로 V2_102 가 추가한
+         * {@code fk_tb_user_info_tb_ognz_info} 가 그것을 <b>거부한다</b> — 정규화하지 않으면
+         * 소속 없는 사용자를 등록할 수 없게 된다.
+         *
+         * <p>⚠ 부분 수정 계약({@link #keepIfAbsent})은 건드리지 않는다. 빈 문자열은 여전히
+         * "비우려는 의도" 로 해석되며, 이 변환은 그 의도가 확정된 <b>뒤</b> 저장 표현만 바꾼다.
+         */
+        private static String blankToNull(String value) {
+                return (value == null || value.isBlank()) ? null : value;
+        }
+
         private void assertDepartmentExists(String ognzId) {
                 if (ognzId == null || ognzId.isBlank()) {
                         return; // 소속 없음

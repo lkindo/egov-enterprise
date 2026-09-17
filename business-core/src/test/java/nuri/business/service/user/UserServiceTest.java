@@ -196,6 +196,37 @@ class UserServiceTest {
         }
     }
 
+    /**
+     * [2026-09-17] "소속 없음" 은 빈 문자열이 아니라 NULL 로 저장돼야 한다.
+     *
+     * <p>등록 폼의 {@code <option value="">소속 없음 / GLOBAL</option>} 은 빈 문자열을 보내고,
+     * E2E 가 캡처한 실제 요청 본문도 {@code "ognzId":""} 다. 빈 문자열은 NULL 이 아니므로
+     * V2_102 가 추가한 {@code fk_tb_user_info_tb_ognz_info} 가 그것을 <b>거부한다</b> —
+     * 정규화가 빠지면 소속 없는 사용자를 아예 등록할 수 없게 된다.
+     */
+    @Test
+    @DisplayName("사용자 등록 - 소속 없음(빈 문자열)은 NULL 로 저장한다")
+    void registerUser_storesBlankDepartmentAsNull() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            given(userRepository.findByUserId("nodept")).willReturn(Optional.empty());
+            given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
+
+            userService.registerUser(UserDto.builder()
+                    .userId("nodept")
+                    .pswd("ValidPass123!")
+                    .userNm("무소속")
+                    .ognzId("")
+                    .role("USER")
+                    .build());
+
+            org.mockito.ArgumentCaptor<User> saved = org.mockito.ArgumentCaptor.forClass(User.class);
+            verify(userRepository).saveAndFlush(saved.capture());
+            assertNull(saved.getValue().getOgnzId(), "빈 문자열 소속이 그대로 저장되면 FK 가 등록을 거부한다");
+        }
+    }
+
     @Test
     @DisplayName("사용자 등록 테스트 - 실패 (ID 중복)")
     void registerUserDuplicateIdTest() {

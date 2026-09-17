@@ -859,6 +859,14 @@
           "source": "api-server/src/test/java/nuri/api/schema/PrivacyLogBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-REFERENCE-INTEGRITY-FK",
+          "source": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityFkIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-REFERENCE-INTEGRITY-FK-BACKFILL",
+          "source": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityFkMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-AUTH-REFRESH-TOKEN-ROTATION-CONCURRENCY",
           "source": "api-server/src/test/java/nuri/api/schema/RefreshTokenRotationConcurrencyIntegrationTest.java"
         },

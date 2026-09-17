@@ -90,6 +90,27 @@ class DeptManageServiceTest {
         verify(deptManageRepository).save(any());
     }
 
+    /**
+     * [2026-09-17] V2_26 은 컬럼 주석에 "NULL 이면 최상위(루트)" 라고 못박았지만 쓰기 경로는
+     * 빈 문자열을 그대로 저장할 수 있었다. 빈 문자열은 NULL 이 아니므로 V2_102 의
+     * {@code fk_tb_ognz_info_up_ognz_id} 가 그것을 거부한다.
+     */
+    @Test
+    @DisplayName("부서 등록 - 최상위(빈 문자열 상위)는 NULL 로 저장한다")
+    void insertDeptManage_storesBlankParentAsNull() {
+        DeptManageDto dto = DeptManageDto.builder()
+                .ognzNm("최상위부서")
+                .upOgnzId("")
+                .build();
+
+        deptManageService.insertDeptManage(dto);
+
+        org.mockito.ArgumentCaptor<DeptManage> saved =
+                org.mockito.ArgumentCaptor.forClass(DeptManage.class);
+        verify(deptManageRepository).save(saved.capture());
+        org.assertj.core.api.Assertions.assertThat(saved.getValue().getUpOgnzId()).isNull();
+    }
+
     @Test
     @DisplayName("부서 수정 테스트")
     void updateDeptManageTest() {

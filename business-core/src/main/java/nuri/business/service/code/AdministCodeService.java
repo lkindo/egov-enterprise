@@ -60,7 +60,7 @@ public class AdministCodeService {
                 .admdstCd(dto.getAdmdstCd())
                 .admdstSeCd(dto.getAdmdstSeCd())
                 .admdstZoneNm(dto.getAdmdstZoneNm())
-                .upAdmdstCd(dto.getUpAdmdstCd())
+                .upAdmdstCd(blankToNull(dto.getUpAdmdstCd()))
                 .useYn(dto.getUseYn())
                 .crtYmd(dto.getCrtYmd())
                 .build();
@@ -74,7 +74,7 @@ public class AdministCodeService {
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "행정구역 코드를 찾을 수 없습니다: " + code));
         assertHierarchy(code, dto.getUpAdmdstCd());
-        entity.update(dto.getAdmdstSeCd(), dto.getAdmdstZoneNm(), dto.getUpAdmdstCd(), dto.getUseYn(), userId);
+        entity.update(dto.getAdmdstSeCd(), dto.getAdmdstZoneNm(), blankToNull(dto.getUpAdmdstCd()), dto.getUseYn(), userId);
     }
 
     /**
@@ -114,7 +114,7 @@ public class AdministCodeService {
                 .admdstCd(entity.getAdmdstCd())
                 .admdstSeCd(entity.getAdmdstSeCd())
                 .admdstZoneNm(entity.getAdmdstZoneNm())
-                .upAdmdstCd(entity.getUpAdmdstCd())
+                .upAdmdstCd(nullToBlank(entity.getUpAdmdstCd()))
                 .useYn(entity.getUseYn())
                 .crtYmd(entity.getCrtYmd())
                 .ablYmd(entity.getAblYmd())
@@ -124,6 +124,26 @@ public class AdministCodeService {
                 .mdfcnDt(entity.getMdfcnDt())
                 .build();
     }
+    /**
+     * 저장 표현과 응답 표현을 각각 고정한다. [2026-09-17]
+     *
+     * <p><b>저장은 NULL</b> — 화면은 최상위를 빈 문자열로 보내는데(등록 폼의 {@code upAdmdstCd}
+     * 기본값이 {@code ''}), 빈 문자열은 NULL 이 아니므로 V2_102 가 추가한
+     * {@code fk_tb_admdst_cd_up_admdst_cd} 가 그것을 거부한다. 정규화하지 않으면 상위 없는
+     * 시·도를 등록할 수 없게 된다 — DEC-OPS-061 이 푼 필수 제약을 DB 가 다시 거는 셈이다.
+     *
+     * <p><b>응답은 빈 문자열</b> — 프런트 목록 파서({@code CodeAdminService.requireAdministCode})가
+     * {@code upAdmdstCd} 를 문자열로 요구해, null 을 내보내면 행정코드 목록 화면 전체가 예외로 죽는다.
+     * 그래서 wire 계약은 종전 그대로 두고 물리 표현만 바꾼다. 둘은 같은 뜻("상위 없음")이다.
+     */
+    private static String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
+    }
+
+    private static String nullToBlank(String value) {
+        return value == null ? "" : value;
+    }
+
     /**
      * 상위 행정구역 지정의 무결성 검사. [2026-09-17]
      *
