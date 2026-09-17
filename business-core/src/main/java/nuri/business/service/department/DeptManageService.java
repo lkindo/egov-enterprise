@@ -51,7 +51,7 @@ public class DeptManageService {
                 .ognzId(ognzId)
                 .ognzNm(dto.getOgnzNm())
                 .ognzExpln(dto.getOgnzExpln())
-                .upOgnzId(dto.getUpOgnzId())
+                .upOgnzId(blankToNull(dto.getUpOgnzId()))
                 .sortOrdr(dto.getSortOrdr() != null ? dto.getSortOrdr() : 0)
                 .build();
         deptManageRepository.save(entity);
@@ -79,7 +79,7 @@ public class DeptManageService {
             DeptManage entity = deptManageRepository.findById(ognzId)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
             validateParent(ognzId, item.getUpOgnzId());
-            entity.updateHierarchy(item.getUpOgnzId(), item.getSortOrdr() != null ? item.getSortOrdr() : 0);
+            entity.updateHierarchy(blankToNull(item.getUpOgnzId()), item.getSortOrdr() != null ? item.getSortOrdr() : 0);
         }
     }
 
@@ -103,6 +103,18 @@ public class DeptManageService {
         }
 
         deptManageRepository.deleteById(ognzId);
+    }
+
+    /**
+     * "최상위(루트)" 의 저장 표현을 NULL 하나로 모은다. [2026-09-17]
+     *
+     * <p>V2_26 은 컬럼 주석에 "NULL 이면 최상위(루트)" 라고 못박았지만 쓰기 경로는 빈 문자열을
+     * 그대로 저장할 수 있었다. 빈 문자열은 NULL 이 아니므로 V2_102 가 추가한
+     * {@code fk_tb_ognz_info_up_ognz_id} 가 그것을 거부한다. 조직도 편집 화면은 루트를 아예
+     * 전송하지 않아(null) 오늘은 무해하지만, API 직접 호출은 빈 문자열을 보낼 수 있다.
+     */
+    private static String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 
     /** 자기 자신을 상위로 두거나(자기참조) 자기 후손을 상위로 두는(순환) 구조를 차단한다. */

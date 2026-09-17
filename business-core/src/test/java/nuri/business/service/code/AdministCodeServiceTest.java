@@ -274,6 +274,38 @@ class AdministCodeServiceTest {
         verify(administCodeRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("최상위는 빈 문자열이 아니라 NULL 로 저장하고, 응답은 종전대로 빈 문자열을 낸다")
+    void storesTopLevelParentAsNullButKeepsBlankOnTheWire() {
+        // 화면은 최상위를 빈 문자열로 보낸다. 빈 문자열은 NULL 이 아니라서 V2_102 의
+        // fk_tb_admdst_cd_up_admdst_cd 가 그것을 거부한다 — 정규화하지 않으면 시·도를 등록할 수 없다.
+        given(administCodeRepository.save(any())).willAnswer(call -> call.getArgument(0));
+
+        administCodeService.createAdministCode(dto("1100000000", ""), "admin");
+
+        org.mockito.ArgumentCaptor<AdministCode> saved =
+                org.mockito.ArgumentCaptor.forClass(AdministCode.class);
+        verify(administCodeRepository).save(saved.capture());
+        assertThat(saved.getValue().getUpAdmdstCd()).isNull();
+
+        // 반대 방향 — 프런트 목록 파서가 문자열을 요구하므로 응답에서는 null 이 나가면 안 된다.
+        given(administCodeRepository.findById("1100000000")).willReturn(Optional.of(
+                AdministCode.builder().admdstCd("1100000000").admdstZoneNm("서울특별시").build()));
+        assertThat(administCodeService.getAdministCodeDetail("1100000000").getUpAdmdstCd()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("수정에서 상위를 비우면 NULL 로 저장한다")
+    void clearingParentOnUpdateStoresNull() {
+        AdministCode entity = AdministCode.builder()
+                .admdstCd("1111000000").admdstZoneNm("종로구").upAdmdstCd("1100000000").build();
+        given(administCodeRepository.findById("1111000000")).willReturn(Optional.of(entity));
+
+        administCodeService.updateAdministCode("1111000000", dto("1111000000", ""), "admin");
+
+        assertThat(entity.getUpAdmdstCd()).isNull();
+    }
+
     private static AdministCodeDto dto(String code, String parent) {
         AdministCodeDto dto = new AdministCodeDto();
         dto.setAdmdstCd(code);
