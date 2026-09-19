@@ -13,6 +13,7 @@ import {
   openSync,
   ftruncateSync,
   readFileSync,
+  realpathSync,
   readdirSync,
   rmSync,
   statSync,
@@ -23,7 +24,10 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } 
 import { fileURLToPath } from 'node:url';
 import { projectReusableGovernance } from './reusable-governance-projection.mjs';
 import { canonicalJsonSha256, validateReusableGovernance } from './reusable-governance-integrity.mjs';
-import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, artifactAliases, reusableArtifactEntrypoints, verificationTextHash } from './reusable-artifact-entrypoints-contract.mjs';
+import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, artifactAliases, projectReusableMakefile, reusableArtifactEntrypoints, verificationTextHash } from './reusable-artifact-entrypoints-contract.mjs';
+import { normalizeBackendLayout } from './reusable-layout.mjs';
+import { applySingleModuleLayout } from './reusable-single-module.mjs';
+import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -53,13 +57,19 @@ function git(args) {
   return run('git', args).toString('utf8').trim();
 }
 
-function parseArgs(argv) {
-  const args = { profile: undefined, dbBundle: undefined, output: undefined, allowDirty: false, allowNonReleaseRef: false };
+export function parseSourceArgs(argv) {
+  const args = { profile: undefined, dbBundle: undefined, output: undefined, layout: 'multi-module', allowDirty: false, allowNonReleaseRef: false };
+  const seen = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === '--profile') args.profile = argv[++index];
-    else if (arg === '--db-bundle') args.dbBundle = argv[++index];
-    else if (arg === '--output') args.output = argv[++index];
+    if (seen.has(arg)) fail(`중복 인자: ${arg}`);
+    seen.add(arg);
+    const field = { '--profile': 'profile', '--db-bundle': 'dbBundle', '--output': 'output', '--layout': 'layout' }[arg];
+    if (field) {
+      const value = argv[++index];
+      if (!value || value.startsWith('--')) fail(`${arg} 값이 필요하다.`);
+      args[field] = field === 'layout' ? normalizeBackendLayout(value) : value;
+    }
     else if (arg === '--allow-dirty') args.allowDirty = true;
     else if (arg === '--allow-non-release-ref') args.allowNonReleaseRef = true;
     else fail(`알 수 없는 인자: ${arg}`);
@@ -72,14 +82,26 @@ function normalize(path) {
   return path.split(sep).join('/');
 }
 
-function safeOutputPath(requested, profile, shortSha) {
-  const output = resolve(requested ?? join(OUTPUT_ROOT, `${profile}-${shortSha}`));
+function safeOutputPath(requested, profile, shortSha, layout) {
+  const suffix = layout === 'single-module' ? '-single-module' : '';
+  const output = resolve(requested ?? join(OUTPUT_ROOT, `${profile}-${shortSha}${suffix}`));
   const rel = relative(resolve(OUTPUT_ROOT), output);
   if (rel === '' || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     fail(`산출물 경로는 ${OUTPUT_ROOT} 아래여야 한다: ${output}`);
   }
   if (existsSync(output)) fail(`기존 산출물을 덮어쓰지 않는다: ${output}`);
   return output;
+}
+
+/** An exported project must not inherit the producer's ignored build/ boundary. */
+export function initializeGeneratedRepository(output) {
+  const target = realpathSync(resolve(output));
+  if (target === realpathSync(ROOT) || existsSync(join(target, '.git'))) {
+    fail('새 산출물만 독립 Git 저장소로 초기화할 수 있다.');
+  }
+  git(['-C', target, 'init', '--quiet']);
+  const repository = git(['-C', target, 'rev-parse', '--show-toplevel']);
+  if (realpathSync(repository) !== target) fail('산출물의 독립 Git 경계를 확인하지 못했다.');
 }
 
 export function trackedAndUntrackedFiles() {
@@ -155,6 +177,9 @@ const HARNESS_SCAN_ROOTS = [
 const ARCH_RULE_FILE_PATTERN =
   /(?:WorkflowManifestLinterTest|FlywaySchemaOwnershipLinterTest|ReusableHarnessProfile|ControllerScanBaseLinterTest|EntityLombokSourceLinterTest|EntitySchemaConformanceLinterTest|EntityTableOwnershipLinterTest|HandlerReachesServiceLinterTest|PageableConstructionLinterTest|PkGenerationStandardLinterTest|ResponseContractLinterTest|SecurityAuthAnnotationLinterTest|ServiceReadOnlyTransactionalLinterTest|SchemaValidationIntegrationTest|WriteSmokeIntegrationTest|AuthorizationAdministrationIntegrationTest|AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
 const GATE_REGISTRIES = [
+  'scripts/reusable-layout.mjs',
+  'scripts/reusable-layout-runtime.mjs',
+  'scripts/reusable-single-module.mjs',
   'scripts/reusable-artifact-entrypoints-contract.mjs',
   'scripts/reusable-artifact-entrypoints-contract.test.mjs',
   'scripts/verify-reusable-artifact.mjs',
@@ -309,7 +334,7 @@ export function pruneJava(output, manifest, profile) {
   return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates };
 }
 
-export function installReusableVerification(output) {
+export function installReusableVerification(output, layout = 'multi-module') {
   if (existsSync(join(output, VERIFICATION_HISTORY, 'index.json'))) fail('Verification history is already projected; regenerate from upstream source');
   const path = join(output, 'package.json');
   const pkg = JSON.parse(readFileSync(path, 'utf8'));
@@ -320,7 +345,7 @@ export function installReusableVerification(output) {
   const workflowDirectory = join(output, '.github/workflows');
   const workflows = existsSync(workflowDirectory)
     ? readdirSync(workflowDirectory).filter(name => /\.ya?ml$/.test(name)).map(name => `.github/workflows/${name}`) : [];
-  const historyFiles = ['package.json', '.github/required-checks.json', '.githooks/pre-push', ...workflows];
+  const historyFiles = ['package.json', 'Makefile', '.github/required-checks.json', '.githooks/pre-push', ...workflows];
   const records = [];
   for (const source of historyFiles) {
     const original = join(output, source);
@@ -334,6 +359,7 @@ export function installReusableVerification(output) {
   const sourceManifest = JSON.parse(readFileSync(join(output, '.github/required-checks.json'), 'utf8'));
   const scan = sourceManifest.criticalSteps?.find(step => step.name === 'Run gitleaks (working tree + incremental)')?.run;
   const generated = reusableArtifactEntrypoints(profile, scan);
+  const makefile = projectReusableMakefile(readFileSync(join(output, 'Makefile'), 'utf8'), layout);
   // Each inactive workflow has been copied and hash-bound before this single-file removal.
   for (const workflow of workflows) {
     const target = resolve(output, workflow);
@@ -348,16 +374,17 @@ export function installReusableVerification(output) {
   }, null, 2)}\n`);
   Object.assign(pkg.scripts, artifactAliases);
   for (const alias of Object.keys(pkg.scripts)) {
-    if (alias.startsWith('base:') || ['verify:e2e', 'verify:ops', '//verify:ops'].includes(alias)) delete pkg.scripts[alias];
+    if (alias.startsWith('base:') || ['migration:export', 'verify:e2e', 'verify:ops', '//verify:ops'].includes(alias)) delete pkg.scripts[alias];
   }
   writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+  writeFileSync(join(output, 'Makefile'), makefile);
   // This is the adopter product hook, whose scope is the actual artifact. The producer hook is unchanged.
   mkdirSync(join(output, '.githooks'), { recursive: true });
   writeFileSync(join(output, '.githooks/pre-push'), `#!/bin/sh\nset -e\n${ARTIFACT_COMMAND}\n`);
   writeFileSync(join(output, 'REUSABLE_VERIFICATION.md'), '# Generated product verification\n\n'
     + '`npm run verify`와 생성물 CI는 현재 프로필의 원장·Java 하네스·스키마·프런트 타입·lint·build를 검증한다. CI는 working-tree·incremental gitleaks 검사도 유지한다.\n\n'
     + '`verify:docs`는 contracts, `verify:be`는 backend, `verify:fe`는 frontend이며 `verify:full`, `verify:push`, `verify:fast`는 보수적으로 full에 연결한다. 각 scope는 공통 활성 계약을 먼저 실행한다.\n\n'
-    + '생산자 전용 `base:*`, 기관 실행 환경이 필요한 `verify:e2e`·`verify:ops`는 제공하지 않는다. 기관 브라우저 시나리오와 원격 ruleset은 기관에서 별도로 결속한다.\n\n'
+    + '생산자 전용 `base:*`·`migration:export`, 기관 실행 환경이 필요한 `verify:e2e`·`verify:ops`는 제공하지 않는다. 독립 이관 제품 export는 원본 저장소에서 실행한다. 기관 브라우저 시나리오와 원격 ruleset은 기관에서 별도로 결속한다.\n\n'
     + '현재 CI의 required context 제안은 `artifact-verification` 하나이다. `.github/required-checks.json`의 remoteApplied=false는 기관 branch protection을 실제 적용하지 않았다는 뜻이다. 원본 6개 required context와 동등한 보증이 아니다.\n\n'
     + '원본 workflow·required manifest·package·hook은 `config/governance/upstream-verification/`의 비활성 이력이다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞게 재결속해야 한다. 이력을 복사한 것은 외부 발행이나 기관 운영 승인이 아니다.\n');
 }
@@ -1242,7 +1269,7 @@ function writeProjectedManifest(output, manifest, profileName, profile, dbLock) 
 }
 
 function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parseSourceArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   const profile = manifest.profiles?.[args.profile];
   if (!profile) fail(`지원하지 않는 profile: ${args.profile}`);
@@ -1259,7 +1286,7 @@ function main() {
   if (dbLock.profile !== args.profile) fail(`DB bundle profile ${dbLock.profile} != source profile ${args.profile}`);
   if (dbLock.sourceCommit !== sourceCommit) fail(`DB bundle commit ${dbLock.sourceCommit} != source commit ${sourceCommit}`);
 
-  const output = safeOutputPath(args.output, args.profile, sourceCommit.slice(0, 12));
+  const output = safeOutputPath(args.output, args.profile, sourceCommit.slice(0, 12), args.layout);
   mkdirSync(output, { recursive: true });
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
   copySourceTree(output);
@@ -1275,7 +1302,10 @@ function main() {
   installDatabaseBundle(output, dbBundle);
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
   writeProjectedManifest(output, manifest, args.profile, profile, dbLock);
-  installReusableVerification(output);
+  installReusableVerification(output, args.layout);
+  const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output) : null;
+  if (args.layout === 'single-module') installSingleModuleRuntime(output);
+  else installMultiModuleMigrationRuntime(output);
   const governance = projectReusableGovernance({
     sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit,
     projectSource: (file, source) => projectFrontendPackMarkers(source, {
@@ -1290,6 +1320,8 @@ function main() {
   const lock = {
     schemaVersion: 1,
     profile: args.profile,
+    layout: args.layout,
+    layoutProjection,
     packs: profile.packs,
     sourceCommit,
     sourceReleaseTag: releaseTag ?? null,
@@ -1319,6 +1351,14 @@ function main() {
       `릴리스 \`${releaseTag ?? sourceCommit.slice(0, 12)}\`에서 생성된 일회성 산출물이다. ` +
       `\`template/reusable-base\` 장기 브랜치가 아니다.\n\n` +
       `- packs: ${profile.packs.join(', ')}\n` +
+      `- backend layout: ${args.layout}\n` +
+      '- 독립 Git 저장소로 초기화되어 있다. 파일 추가·커밋·원격 연결은 도입자가 수행한다.\n' +
+      (args.layout === 'single-module'
+        ? '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n' +
+          '- 실행: `./gradlew bootRun`; 온라인 JAR: `./gradlew bootJar` → `build/libs/app.jar`. Windows는 `./gradlew` 대신 `gradlew.bat`을 사용한다.\n' +
+          '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`; 오프라인 이관: `npm run verify:migration`.\n' +
+          '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n'
+        : '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n') +
       `- 제외 backend domains: ${java.excludedDomains.join(', ') || '(없음)'}\n` +
       `- 제거 Java files: ${java.removedFiles}\n` +
       `- 제거 frontend files: ${frontend.removedFiles}` +
@@ -1336,6 +1376,7 @@ function main() {
       `DB migration은 신규 빈 PostgreSQL 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
     'utf8',
   );
+  initializeGeneratedRepository(output);
   console.log(`[base-source] PASS: ${normalize(relative(ROOT, output))}`);
   console.log(`[base-source] removed java=${java.removedFiles}, frontend=${frontend.removedFiles}`);
 }

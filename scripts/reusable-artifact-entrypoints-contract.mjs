@@ -2,6 +2,9 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { normalizeBackendLayout } from './reusable-layout.mjs';
+import { groovyCode, inspectSingleModuleLayout } from './reusable-single-module.mjs';
+import { validateGeneratedMigrationRuntime, validateSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 
 export const VERIFICATION_HISTORY = 'config/governance/upstream-verification';
 export const ARTIFACT_COMMAND = 'node scripts/verify-reusable-artifact.mjs';
@@ -17,6 +20,26 @@ export const artifactAliases = Object.freeze({
   'test:operational-contracts': `${ARTIFACT_COMMAND} --scope contracts`,
 });
 export const verificationTextHash = text => createHash('sha256').update(text.replace(/\r\n/g, '\n')).digest('hex');
+
+export function projectReusableMakefile(source, layout = 'multi-module') {
+  normalizeBackendLayout(layout);
+  const replacements = [
+    ['node scripts/verify.mjs full', ARTIFACT_COMMAND],
+    ['node scripts/verify.mjs be', `${ARTIFACT_COMMAND} --scope backend`],
+    ['node scripts/verify.mjs fe', `${ARTIFACT_COMMAND} --scope frontend`],
+  ];
+  if (layout === 'single-module') for (const suffix of [
+    '$(TEST_OPTS) $(GRADLE_CLI_ARGS)', '--continue $(TEST_OPTS) $(GRADLE_CLI_ARGS)',
+    'jacocoRootReport --continue $(TEST_OPTS) $(GRADLE_CLI_ARGS)',
+  ]) replacements.push([`$(GRADLEW) test ${suffix}`, `$(GRADLEW) allTests ${suffix}`]);
+  const lines = source.replace(/\r\n/g, '\n').split('\n');
+  for (const [before, after] of replacements) {
+    const indices = lines.flatMap((line, index) => line === `\t${before}` ? [index] : []);
+    if (indices.length !== 1) throw new Error(`Makefile convention changed: ${before}`);
+    lines[indices[0]] = `\t${after}`;
+  }
+  return lines.join('\n');
+}
 
 export function reusableArtifactEntrypoints(profile, secretScanRun) {
   if (!['core', 'collaboration', 'demo'].includes(profile)) throw new Error('unknown generated profile');
@@ -95,6 +118,14 @@ export function validateReusableArtifactEntrypoints(root) {
   const check = (value, message) => { if (!value) errors.push(message); };
   try {
     const lock = JSON.parse(read('reusable-base-lock.json'));
+    const layout = normalizeBackendLayout(lock.layout);
+    if (layout === 'single-module') {
+      errors.push(...inspectSingleModuleLayout(root).errors, ...validateSingleModuleRuntime(root));
+    } else {
+      check(/\binclude\b/.test(groovyCode(read('settings.gradle'))), 'multi-module layout must retain Gradle project includes');
+      check(lock.layoutProjection?.id !== 'single-module', 'layout and projection identity differ');
+      errors.push(...validateGeneratedMigrationRuntime(root));
+    }
     const history = JSON.parse(read(`${VERIFICATION_HISTORY}/index.json`));
     check(history.schemaVersion === 1 && history.authority === 'upstream-verification-history'
       && history.activeProfile === lock.profile && history.inheritedExecutionApproval === false, 'invalid verification history scope');
@@ -103,7 +134,7 @@ export function validateReusableArtifactEntrypoints(root) {
     const sources = new Set();
     for (const entry of files ?? []) {
       const safeSource = typeof entry.source === 'string' && !entry.source.includes('..') && !entry.source.includes('\\')
-        && (entry.source === 'package.json' || entry.source === '.githooks/pre-push'
+        && (entry.source === 'package.json' || entry.source === 'Makefile' || entry.source === '.githooks/pre-push'
           || entry.source === '.github/required-checks.json' || /^\.github\/workflows\/[^/]+\.ya?ml$/.test(entry.source));
       if (!safeSource || entry.path !== `${VERIFICATION_HISTORY}/${entry.source}`) throw new Error('unexpected verification snapshot path');
       check(!sources.has(entry.source), 'duplicate verification snapshot');
@@ -111,7 +142,7 @@ export function validateReusableArtifactEntrypoints(root) {
       check(/^[a-f0-9]{64}$/.test(entry.sha256 ?? '') && verificationTextHash(read(entry.path)) === entry.sha256,
         `verification snapshot hash mismatch: ${entry.source}`);
     }
-    for (const source of ['package.json', '.githooks/pre-push', '.github/required-checks.json', '.github/workflows/ci.yml']) {
+    for (const source of ['package.json', 'Makefile', '.githooks/pre-push', '.github/required-checks.json', '.github/workflows/ci.yml']) {
       check(sources.has(source), `missing verification history: ${source}`);
     }
     const archivedWorkflows = readdirSync(join(root, VERIFICATION_HISTORY, '.github/workflows')).filter(name => /\.ya?ml$/.test(name));
@@ -126,8 +157,10 @@ export function validateReusableArtifactEntrypoints(root) {
     check(JSON.stringify(readdirSync(join(root, '.github/workflows')).filter(name => /\.ya?ml$/.test(name)).sort()) === '["ci.yml"]',
       'upstream workflow must remain inactive history until institution-specific integration');
     const pkg = JSON.parse(read('package.json'));
+    check(read('Makefile') === projectReusableMakefile(read(`${VERIFICATION_HISTORY}/Makefile`), layout),
+      'generated Makefile must execute the selected product verification and test suites');
     for (const [alias, command] of Object.entries(artifactAliases)) check(pkg.scripts?.[alias] === command, `incorrect generated alias: ${alias}`);
-    check(!Object.keys(pkg.scripts ?? {}).some(alias => alias.startsWith('base:') || ['verify:e2e', 'verify:ops'].includes(alias)),
+    check(!Object.keys(pkg.scripts ?? {}).some(alias => alias.startsWith('base:') || ['migration:export', 'verify:e2e', 'verify:ops'].includes(alias)),
       'producer or institution runtime aliases cannot imply inherited applicability');
     check(read('.githooks/pre-push') === `#!/bin/sh\nset -e\n${ARTIFACT_COMMAND}\n`, 'generated pre-push must execute product verification');
     check(existsSync(join(root, 'REUSABLE_VERIFICATION.md')), 'generated verification boundary documentation is required');

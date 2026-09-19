@@ -14,7 +14,7 @@
     {
       "jobId": "reusable-base",
       "name": "Generate and verify reusable profile",
-      "run": "node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }}"
+      "run": "node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }} --layout ${{ matrix.layout }}"
     },
     {
       "jobId": "backend-build",

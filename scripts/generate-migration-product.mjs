@@ -12,7 +12,7 @@ export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
   'config/governance/migration-execution.example.json',
   'scripts/verify.mjs', 'scripts/migration-verification-contract.test.mjs', 'scripts/required-checks-contract.mjs',
   'scripts/adoption-review.mjs', 'scripts/adoption-execute.mjs', 'scripts/adoption-execute.test.mjs',
-  'scripts/verify-reusable-artifact.mjs', 'scripts/governance-review.mjs', 'scripts/e2e-shard-plan.mjs',
+  'scripts/verify-reusable-artifact.mjs', 'scripts/reusable-layout.mjs', 'scripts/governance-review.mjs', 'scripts/e2e-shard-plan.mjs',
   '.github/workflows/migration-tool.yml',
 ]);
 
@@ -54,7 +54,7 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
   // Reuse the same module CI and contract. The exported product adds its execution-boundary tests.
   const workflowPath = '.github/workflows/migration-tool.yml';
   write(workflowPath, readFileSync(join(outputRoot, workflowPath), 'utf8').replaceAll(
-    "      - 'scripts/verify.mjs'", "      - 'scripts/verify.mjs'\n      - 'scripts/adoption-*.mjs'\n      - 'scripts/governance-review.mjs'\n      - 'scripts/verify-reusable-artifact.mjs'\n      - 'scripts/e2e-shard-plan.mjs'\n      - 'config/governance/**'\n      - '.githooks/**'").replace(
+    "      - 'scripts/verify.mjs'", "      - 'scripts/verify.mjs'\n      - 'scripts/adoption-*.mjs'\n      - 'scripts/governance-review.mjs'\n      - 'scripts/verify-reusable-artifact.mjs'\n      - 'scripts/reusable-layout.mjs'\n      - 'scripts/e2e-shard-plan.mjs'\n      - 'config/governance/**'\n      - '.githooks/**'").replace(
     '      - name: Verify the independent migration module',
     '      - name: Verify institution execution boundary\n        run: node --test scripts/adoption-execute.test.mjs\n\n      - name: Verify the independent migration module'));
   const scope = adoptionScope(outputRoot, { product: 'migration-tool', profile: null });

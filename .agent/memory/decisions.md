@@ -5,9 +5,10 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-14
-verified_against: c45d34b8f07118d9345cea9b59e156c734609f01
+verified_at: 2026-09-19
+verified_against: 38cf899bed85e2b8b95012025e271500d79eef73
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md
   - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
   - ../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md
   - ../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md
@@ -59,6 +60,7 @@ refresh_triggers:
 | ADR-0017 | accepted | 현재 제품을 과업 중심 4개 메뉴 영역으로 재편하고 중복 진입점을 통합하며 기존 기능 권한을 보존한다. | 사용자가 OCI·소스 실측에 따른 메뉴 이동·추가·병합안을 승인했다. | [ADR-0017](../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 2026-09-11 | - |
 | ADR-0018 | accepted | 일반 검토 최신성·기술 계약·기관 승인을 분리한다. 세 프로필 실제 산출물 검증, 명시 소유권 기반 원장·메모리 투영과 무결성, 기관별 실행 artifact 결속을 적용한다. 원본 운영 사실은 upstream 이력이며 기관 승인은 pending에서 시작한다. | 사용자가 D + E와 후속 F 확대 및 정합 감사의 권장 수정 순서를 승인했다. 실제 위반·미검토·한시 예외 만료·이관 쓰기 경계는 유지한다. | [ADR-0018](../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 2026-09-14 | DEC-OPS-027 ③·DEC-OPS-087 ②·UI quality 및 E2E duration의 일반 최신성 차단, DEC-OPS-077 ⑤의 축소 프로필 red 허용 기대치 |
 | ADR-0019 | accepted | 운영 오버레이에 X-Forwarded-For를 접속 주소로 덮어쓰는 비루트 nginx edge를 두고 Next 공개 포트를 비운다. Next는 `TRUSTED_EDGE_PROXY=true`일 때만 인증 BFF와 서버 측 API 호출에 사용자 IP를 싣고, 요청 제한 한도는 설정 속성으로 받는다(기본값은 종전 동작). | 사용자 IP가 로그인 IP 제한·로그인 기록·요청 제한에서 Next 주소 하나로 모이거나 rewrite 경로에서 위조될 수 있었다(GAP-SEC-004). 사용자가 개선 계획의 권고 형상을 승인했다. | [ADR-0019](../../docs/02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md) | 2026-09-14 | - |
+| ADR-0020 | accepted | 원본 모듈 구조를 유지하며 생성 백엔드의 멀티모듈·단일모듈 출력을 선택한다. 단일 출력도 논리 소스 그룹·검증 경계와 오프라인 이관 책임을 보존한다. | 사용자가 두 내보내기 형태를 명시 요청했다. 현재 누적 프로필·PostgreSQL 범위는 유지한다. | [ADR-0020](../../docs/02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md) | 2026-09-19 | - (ADR-0001 출력 형태 보완) |
 
 ## 운영 결정 index
 
