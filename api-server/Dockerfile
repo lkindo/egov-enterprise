@@ -45,7 +45,7 @@ RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
 RUN ./gradlew :api-server:bootJar -x test --no-daemon
 
 # Stage 2: Run
-FROM eclipse-temurin:21-jre-alpine@sha256:3f08b13888f595cc49edabea7250ba69499ba25602b267da591720769400e08c
+FROM eclipse-temurin:23-jre-alpine@sha256:88593498863c64b43be16e8357a3c70ea475fc20a93bf1e07f4609213a357c87
 ARG BASELINE_BUILD_SHA
 ARG BASELINE_BUILD_INPUT_TREE_SHA256
 LABEL org.opencontainers.image.revision="${BASELINE_BUILD_SHA}" \
