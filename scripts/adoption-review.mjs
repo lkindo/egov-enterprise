@@ -56,7 +56,14 @@ export function adoptionScope(repoRoot, { product, profile }) {
   validateProductProfile(product, profile);
   const common = ['build.gradle', 'settings.gradle', 'gradle.properties', 'gradle', 'buildSrc', 'gradlew', 'gradlew.bat', '.gitattributes',
     'scripts/adoption-review.mjs', 'scripts/governance-review.mjs', 'scripts/adoption-execute.mjs',
-    'scripts/verify.mjs', 'scripts/verify-reusable-artifact.mjs'];
+    'scripts/verify.mjs', 'scripts/verify-reusable-artifact.mjs',
+    'reusable-base-lock.json', 'scripts/reusable-layout.mjs',
+    'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs'];
+  const lockPath = resolve(repoRoot, 'reusable-base-lock.json');
+  const generatedProduct = existsSync(lockPath);
+  // The generated-product verifier reads these aliases before launching Gradle. Bind
+  // its actual entrypoint and imports, not only the now-inactive upstream runner.
+  if (generatedProduct) common.push('package.json');
   const roots = product === 'migration-tool'
     ? [...common, 'migration-tool/src', 'migration-tool/build.gradle', 'migration-tool/Dockerfile', 'migration-tool/.dockerignore']
     : [...common, ...['foundation', 'business-core', 'business-app', 'api-server'].flatMap((module) =>
@@ -86,6 +93,8 @@ export function adoptionScope(repoRoot, { product, profile }) {
   for (const file of roots) walk(file);
   const required = product === 'migration-tool'
     ? ['migration-tool/build.gradle'] : ['frontend/package.json', 'config/ui-url-state-census.json'];
+  if (generatedProduct) required.push('package.json', 'scripts/reusable-layout.mjs',
+    'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs');
   for (const file of required) if (!files.has(file)) throw new Error(`missing product scope input: ${file}`);
   const inputs = [...files].sort(([a], [b]) => a.localeCompare(b, 'en'));
   return { product, profile, fileCount: inputs.length,

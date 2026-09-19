@@ -158,6 +158,9 @@ class HarnessBaselineIntegrityTest {
      * 파일이 사라진 것도 위반이다: registry 부재는 그것을 읽는 게이트를 통째로 무력화한다.
      */
     private static final List<String> GATE_REGISTRIES = List.of(
+            "scripts/reusable-layout.mjs",
+            "scripts/reusable-layout-runtime.mjs",
+            "scripts/reusable-single-module.mjs",
             // 실행 가능한 생성물 정책도 JSON 원장과 같은 전체 내용 hash 경계에 묶는다.
             "scripts/reusable-artifact-entrypoints-contract.mjs",
             "scripts/reusable-artifact-entrypoints-contract.test.mjs",

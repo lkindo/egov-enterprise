@@ -5,14 +5,33 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'n
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runCommand, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
+import { normalizeBackendLayout } from './reusable-layout.mjs';
 
-export async function verifyReusableBase({ root, profile, run = runCommand, verify = verifyReusableArtifact } = {}) {
+export function parseBaseVerificationArgs(argv) {
+  const options = { layout: 'multi-module' };
+  const seen = new Set();
+  for (let index = 0; index < argv.length; index += 2) {
+    const option = argv[index];
+    if (!['--profile', '--layout'].includes(option) || !argv[index + 1] || seen.has(option)) {
+      throw new Error('usage: --profile core|collaboration|demo [--layout multi-module|single-module]');
+    }
+    seen.add(option);
+    options[option.slice(2)] = argv[index + 1];
+  }
+  if (!['core', 'collaboration', 'demo'].includes(options.profile)) throw new Error('profile must be core, collaboration or demo');
+  normalizeBackendLayout(options.layout);
+  return options;
+}
+
+export async function verifyReusableBase({ root, profile, layout = 'multi-module', run = runCommand, verify = verifyReusableArtifact } = {}) {
   if (!['core', 'collaboration', 'demo'].includes(profile)) throw new Error('profile must be core, collaboration or demo');
+  normalizeBackendLayout(layout);
   root = resolve(root);
   const token = randomBytes(8).toString('hex');
   const name = `egov-profile-verify-${token}`;
   const label = 'egov.reusable-verification';
-  const output = resolve(root, `build/reusable-base/source/verified-${profile}-${token}`);
+  const reportName = layout === 'multi-module' ? profile : `${profile}-${layout}`;
+  const output = resolve(root, `build/reusable-base/source/verified-${reportName}-${token}`);
   const database = resolve(root, `build/reusable-base/verified-${profile}-${token}-db`);
   const docker = (args, options = {}) => run('docker', args, { root, capture: true, ...options });
   let container;
@@ -33,16 +52,17 @@ export async function verifyReusableBase({ root, profile, run = runCommand, veri
     const generate = (script, args) => run('node', [`scripts/${script}`, '--profile', profile, ...args,
       '--allow-dirty', '--allow-non-release-ref'], { root });
     generate('generate-reusable-base-db.mjs', ['--container', name, '--output', database]);
-    generate('generate-reusable-base-source.mjs', ['--db-bundle', database, '--output', output]);
+    generate('generate-reusable-base-source.mjs', ['--db-bundle', database, '--output', output, '--layout', layout]);
     const lock = JSON.parse(readFileSync(resolve(output, 'reusable-base-lock.json'), 'utf8'));
     if (lock.profile !== profile) throw new Error('producer returned a different profile');
+    if (normalizeBackendLayout(lock.layout) !== layout) throw new Error('producer returned a different layout');
     if (process.platform !== 'win32') chmodSync(resolve(output, 'gradlew'), 0o755);
     run('npm', ['ci', '--ignore-scripts'], { root: output });
     run('pnpm', ['-C', 'frontend', 'install', '--frozen-lockfile'], { root: output });
     const report = verify({ root: output });
     const reports = resolve(root, 'build/reports/reusable-base');
     mkdirSync(reports, { recursive: true });
-    writeFileSync(resolve(reports, `${profile}.json`), `${JSON.stringify({ ...report, artifact: output }, null, 2)}\n`);
+    writeFileSync(resolve(reports, `${reportName}.json`), `${JSON.stringify({ ...report, layout, artifact: output }, null, 2)}\n`);
     return report;
   } finally {
     if (container && /^[a-f0-9]{64}$/.test(container)) {
@@ -55,7 +75,6 @@ export async function verifyReusableBase({ root, profile, run = runCommand, veri
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    if (process.argv.length !== 4 || process.argv[2] !== '--profile') throw new Error('usage: --profile core|collaboration|demo');
-    await verifyReusableBase({ root: resolve(dirname(fileURLToPath(import.meta.url)), '..'), profile: process.argv[3] });
+    await verifyReusableBase({ root: resolve(dirname(fileURLToPath(import.meta.url)), '..'), ...parseBaseVerificationArgs(process.argv.slice(2)) });
   } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1; }
 }

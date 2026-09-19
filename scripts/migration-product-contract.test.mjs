@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -26,6 +26,11 @@ test('standalone migration export retains independent verification and clears in
   assert.equal(approval.status, 'pending');
   assert.equal(approval.owner, null);
   assert.deepEqual(approval.evidence, []);
+  const helper = resolve(outputRoot, 'scripts/reusable-layout.mjs');
+  assert.equal(readFileSync(helper, 'utf8'), readFileSync(resolve(root, 'scripts/reusable-layout.mjs'), 'utf8'));
+  const workflow = readFileSync(resolve(outputRoot, '.github/workflows/migration-tool.yml'), 'utf8');
+  assert.equal([...workflow.matchAll(/^      - 'scripts\/reusable-layout\.mjs'\s*$/gm)].length, 2,
+    'both push and pull_request must verify changes to the exported runtime dependency');
   for (const args of [
     ['--test', 'scripts/migration-verification-contract.test.mjs', 'scripts/adoption-execute.test.mjs'],
     ['scripts/governance-review.mjs', '--product', 'migration-tool', '--mode', 'report'],
@@ -36,6 +41,18 @@ test('standalone migration export retains independent verification and clears in
   const pending = spawnSync(process.execPath, ['scripts/governance-review.mjs', '--product', 'migration-tool',
     '--mode', 'adoption', '--environment', 'fixture'], { cwd: outputRoot, encoding: 'utf8' });
   assert.equal(pending.status, 1);
+  // A missing transitive helper must break the actual isolated entrypoint, not be
+  // silently resolved from the producer checkout or an installed package.
+  const helperContent = readFileSync(helper);
+  try {
+    rmSync(helper);
+    const missingDependency = spawnSync(process.execPath,
+      ['--input-type=module', '--eval', "await import('./scripts/adoption-execute.mjs')"],
+      { cwd: outputRoot, encoding: 'utf8' });
+    assert.notEqual(missingDependency.status, 0);
+    assert.match(missingDependency.stderr, /ERR_MODULE_NOT_FOUND/);
+    assert.match(missingDependency.stderr, /reusable-layout\.mjs/);
+  } finally { writeFileSync(helper, helperContent); }
   assert.throws(() => generateMigrationProduct({ sourceRoot: root, outputRoot }), /new child directory/);
 });
 
