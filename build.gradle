@@ -14,7 +14,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.16' apply false
+    id 'org.springframework.boot' version '4.1.1' apply false
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '8.12.2' apply false
     id 'jacoco'
@@ -226,7 +226,7 @@ subprojects { subproject ->
 
     dependencyManagement {
         imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.16"
+            mavenBom "org.springframework.boot:spring-boot-dependencies:4.1.1"
             mavenBom "org.junit:junit-bom:5.12.2"
         }
     }
