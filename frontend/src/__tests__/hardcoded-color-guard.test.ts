@@ -51,7 +51,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-09-20] 53 -> 50. 그룹별 메뉴 현황의 미선택 안내가 text-slate-200·text-slate-300 으로
 //   조판돼 있었다 — 라이트에서 대비 미달이고 다크에서는 배경과 거의 같은 색이다. 히어로 문구를
 //   한 줄 안내로 바꾸며 muted 토큰으로 회수했다(사전 red 실측: 50 != 53).
-const BASELINE = 50;
+// [하향 래칫 2026-09-20(2)] 50 -> 43. 같은 템플릿의 갤러리 플레이스홀더 그라데이션(indigo·purple),
+//   아바타 상자 slate 그라데이션, FAQ 펼침 indigo 강조, 위키 hover 테두리 7건을 걷었다.
+//   ⚠ 이 가드는 주석도 센다 — 이행 설명에 클래스 이름을 적으면 그만큼 수치가 남는다(실측).
+const BASELINE = 43;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

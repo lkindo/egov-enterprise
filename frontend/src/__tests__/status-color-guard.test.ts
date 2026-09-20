@@ -155,7 +155,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   · MenuByAuthorityClient 4건 — 폴더 노드 amber 쌍과 빈 상태 rose 아이콘. 트리 노드는 색이
 //     아니라 폴더/파일 아이콘과 들여쓰기로 계층을 말한다(색 단독 전달 금지, WCAG 1.4.1).
 //   사전 red 실측: 로그인 정책만 반영한 시점 439 != 443, 두 화면 반영 후 435.
-const BASELINE = 435;
+// [하향 래칫 2026-09-20(3)] 435 -> 417. 게시판 표시 템플릿 7종(BoardTemplates)의 장식 제거로 18건.
+//   Q&A 상태(해결됨·답변 대기)는 emerald/amber 채움 상자에서 success/warning 틴트 + 아이콘 +
+//   한국어 라벨로 바꿨다 — 색 단독 전달을 없애고(WCAG 1.4.1) 대비도 전경 토큰으로 맞춘다.
+//   나머지는 캘린더 일요일 rose, Q&A 카테고리 배지·밑줄·아이콘의 amber 계열이다. 신규 0건.
+const BASELINE = 417;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
