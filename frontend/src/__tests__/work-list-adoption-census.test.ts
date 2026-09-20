@@ -35,8 +35,22 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 //   생성 경로도 없고 **그 값을 읽는 화면조차 없어**(대시보드 위젯 SPI 구현 2개가 쓰지 않는다) 켜고
 //   꺼도 어디에도 나타나지 않았다. 되돌리기가 아니라 표면 제거이며 사용자 결정(PD-MYPG-001)에 따른다.
 // The unified authority hub adopts WorkListPage and retires one direct table.
-const ADOPTERS = 39;
-const DIRECT_ONLY = 3;
+// [상향 2026-09-20] 39 -> 40: 관리센터 > 사용자조직 허브(UserOrgHubClient — manage·departments·
+//   absences·indvdl-info-policy 네 라우트가 공유)가 A1 셸을 경유한다. 종전에는 PageHeader +
+//   HubSectionCard(96px 아이콘 박스·400px 블러) + 수제 grid 로 골격을 직접 조립해 결과 툴바도
+//   조회조건 영역도 없었다(카탈로그 §6 이 "USERS 의 직접 표" 로 인지하던 화면이다).
+//   ⚠ DIRECT_ONLY 는 불변이다 — 이 파일은 A2 셸도 import 하므로 종전에도 직접조립으로 세지 않았다.
+// [상향 2026-09-20(2)] 40 -> 42: 권한보안의 그룹별 메뉴 현황(/admin/system/menus/by-authority)과
+//   로그인 정책 관리(/admin/security/login-policy)가 A1 셸을 경유한다. 둘 다 종전에는 PageHeader/
+//   HubHeader + HubMetricGrid + HubSectionCard 로 골격을 직접 조립해 결과 툴바도 조회조건 영역도 없었다.
+// [상향 2026-09-20(3)] 42 -> 43: 지식 허브(/admin/help·faq·qna 와 /admin/community 별칭)가
+//   A1 셸을 경유한다. 종전에는 카드 한 장이 한 문서인 목록이라 행이 약 100px 였고 조회수를
+//   한 행에 두 번 찍었다(64px 타일 + 눈 아이콘). 카테고리 탭은 navigation 슬롯, 검색·정렬은
+//   조회조건, 총계는 결과 툴바가 소유한다.
+//   ⚠ DIRECT_ONLY 는 불변이다 — 이 화면은 종전에 표를 쓰지 않아 직접 조립으로 세지 않았다.
+const ADOPTERS = 43;
+// [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
+const DIRECT_ONLY = 2;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';

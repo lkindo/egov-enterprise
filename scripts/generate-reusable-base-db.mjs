@@ -18,10 +18,14 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   writeFileSync,
 } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertSchemaPreserved, buildCompositionAdminSeed, projectCompositionMenus, schemaSnapshotHash,
+  schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition } from './project-composer-db.mjs';
+import { assertProjectComposerMenusMatch, writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -34,24 +38,33 @@ function fail(message) {
   throw new Error(message);
 }
 
-function parseArgs(argv) {
+export function parseDbGenerationArgs(argv) {
   const args = {
     profile: undefined,
+    composition: undefined,
     container: 'egov-e2e-postgres',
     output: undefined,
     allowDirty: false,
     allowNonReleaseRef: false,
+    writeMenuSnapshot: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--profile') args.profile = argv[++index];
+    else if (arg === '--composition') {
+      if (args.composition !== undefined) fail('--composition may only be supplied once.');
+      args.composition = argv[++index];
+      if (!args.composition || args.composition.startsWith('--')) fail('--composition requires a resolved JSON path.');
+    }
     else if (arg === '--container') args.container = argv[++index];
     else if (arg === '--output') args.output = argv[++index];
     else if (arg === '--allow-dirty') args.allowDirty = true;
     else if (arg === '--allow-non-release-ref') args.allowNonReleaseRef = true;
+    else if (arg === '--write-menu-snapshot') args.writeMenuSnapshot = true;
     else fail(`알 수 없는 인자: ${arg}`);
   }
-  if (!args.profile) fail('--profile core|collaboration|demo가 필요하다.');
+  if (args.profile && args.composition) fail('--profile and --composition are mutually exclusive.');
+  if (!args.profile && !args.composition) fail('--profile core|collaboration|demo 또는 --composition PATH가 필요하다.');
   return args;
 }
 
@@ -152,17 +165,27 @@ function quoteSqlIdentifier(value) {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
-function sanitizePgDump(buffer, title) {
+export function sanitizePgDump(buffer, title) {
   const body = buffer
     .toString('utf8')
     .split(/\r?\n/)
-    .filter((line) => !/^\\(?:restrict|unrestrict)\b/.test(line))
+    .filter((line) => !/^\\(?:restrict|unrestrict)\b/.test(line)
+      // Flyway reuses its connection for later unqualified repeatable seeds.
+      // pg_dump's own objects are qualified; keep the caller's configured schema.
+      && line !== "SELECT pg_catalog.set_config('search_path', '', false);")
     .join('\n')
     .trimEnd();
   return `-- ${title}\n-- config/reusable-base-profiles.json에서 생성됨. 수동 편집 금지.\n\n${body}\n`;
 }
 
-function safeOutputPath(requested, profile, shortSha) {
+export function generatedMigrationSessionSql({ baseline, metaSeed, frameworkSeed, adminSeed }) {
+  return [baseline, metaSeed, frameworkSeed, adminSeed].map(sql => {
+    if ((!Buffer.isBuffer(sql) && typeof sql !== 'string') || !sql.length) fail('Generated migration session requires every baseline and seed.');
+    return sql.toString();
+  }).join('\n');
+}
+
+export function safeDbOutputPath(requested, profile, shortSha) {
   const defaultName = `${profile}-${shortSha}-${new Date().toISOString().replaceAll(/[:.]/g, '-')}`;
   const output = resolve(requested ?? join(OUTPUT_ROOT, defaultName));
   const rel = relative(resolve(OUTPUT_ROOT), output);
@@ -170,6 +193,12 @@ function safeOutputPath(requested, profile, shortSha) {
     fail(`산출물 경로는 ${OUTPUT_ROOT} 아래여야 한다: ${output}`);
   }
   if (existsSync(output)) fail(`기존 산출물을 덮어쓰지 않는다: ${output}`);
+  let ancestor = dirname(output);
+  while (!existsSync(ancestor)) ancestor = dirname(ancestor);
+  const physical = relative(realpathSync(ROOT), realpathSync(ancestor));
+  if (physical === '..' || physical.startsWith(`..${sep}`) || isAbsolute(physical)) {
+    fail('산출물 물리 경로가 workspace 밖이다.');
+  }
   return output;
 }
 
@@ -355,11 +384,11 @@ DROP TABLE flyway_schema_history;
 COMMIT;`;
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
+async function main() {
+  const args = parseDbGenerationArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
-  const profile = manifest.profiles?.[args.profile];
-  if (!profile) fail(`지원하지 않는 profile: ${args.profile}`);
+  let profile = manifest.profiles?.[args.profile];
+  if (!args.composition && !profile) fail(`지원하지 않는 profile: ${args.profile}`);
   assertContainerName(args.container);
 
   const dirty = git(['status', '--porcelain']);
@@ -367,8 +396,19 @@ function main() {
   const releaseTag = git(['tag', '--points-at', 'HEAD']).split(/\r?\n/).find((tag) => /^v\d/.test(tag));
   if (!releaseTag && !args.allowNonReleaseRef) fail('공식 산출물은 v* 릴리스 태그에서만 생성한다.');
   const sourceCommit = git(['rev-parse', 'HEAD']);
+  let composition;
+  if (args.composition) {
+    const { loadProjectComposerCatalog } = await import('./project-composer-catalog.mjs');
+    const { verifyProjectComposition } = await import('./project-composer-recipe.mjs');
+    const input = JSON.parse(readFileSync(resolve(ROOT, args.composition), 'utf8'));
+    const resolved = verifyProjectComposition(input, loadProjectComposerCatalog(ROOT));
+    composition = verifyResolvedDbComposition(input, resolved, sourceCommit,
+      reference => git(['rev-parse', '--verify', `${reference}^{commit}`]));
+    args.profile = composition.profile;
+    profile = { packs: composition.packs };
+  }
   const shortSha = sourceCommit.slice(0, 12);
-  const output = safeOutputPath(args.output, args.profile, shortSha);
+  const output = safeDbOutputPath(args.output, args.profile, shortSha);
 
   const containerInfo = inspectContainer(args.container);
   const user = containerInfo.user;
@@ -376,8 +416,10 @@ function main() {
   const workingDb = assertIdentifier(`${TEMP_DB_PREFIX}${suffix}`, 'working DB');
   const verifyDb = assertIdentifier(`${workingDb}_verify`, 'verify DB');
 
-  const desiredTables = profile.packs.flatMap((packName) => manifest.packs[packName].database.tables).sort();
-  const explicitDesiredSequences = profile.packs.flatMap((packName) => manifest.packs[packName].database.sequences).sort();
+  const desiredTables = composition ? [...composition.tables].sort()
+    : profile.packs.flatMap((packName) => manifest.packs[packName].database.tables).sort();
+  const explicitDesiredSequences = composition ? [...composition.explicitSequences].sort()
+    : profile.packs.flatMap((packName) => manifest.packs[packName].database.sequences).sort();
   const sourceExpectedTables = Object.values(manifest.packs).flatMap((pack) => pack.database.tables).sort();
   const sourceExplicitSequences = Object.values(manifest.packs).flatMap((pack) => pack.database.sequences).sort();
 
@@ -424,6 +466,33 @@ function main() {
       .map((sequence) => sequence.name)
       .sort();
 
+    let migratedMenus, migratedPrograms;
+    if (composition || args.writeMenuSnapshot) {
+      migratedMenus = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(row_to_json(m) ORDER BY m.menu_sn),'[]'::json)::text
+        FROM (SELECT menu_sn,up_menu_sn,menu_ordr,menu_nm,prgrm_file_nm,menu_expln,modern_route,use_yn,del_yn FROM public.tb_menu_info) m`));
+      migratedPrograms = JSON.parse(psql(args.container, user, workingDb, `SELECT COALESCE(json_agg(row_to_json(p) ORDER BY p.prgrm_file_nm),'[]'::json)::text
+        FROM (SELECT prgrm_file_nm,prgrm_korn_nm,url,prgrm_strg_path,prgrm_expln FROM public.tb_prgrm_lst) p`));
+      if (composition && !args.writeMenuSnapshot) assertProjectComposerMenusMatch(ROOT, { menus: migratedMenus, programs: migratedPrograms });
+    }
+    let selectedSchema, menuProjection, compositionAdminSeed;
+    if (composition) {
+      // Read live metadata from this owned, just-migrated DB before projecting its schema.
+      // No producer/shared DB data is a seed source.
+      const sourceSnapshot = JSON.parse(psql(args.container, user, workingDb, schemaSnapshotSql()));
+      selectedSchema = selectSchemaSnapshot(sourceSnapshot, desiredTables, desiredSequences, composition.optionalForeignKeys);
+      for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
+        if (Number(psql(args.container, user, workingDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`)) !== expected) {
+          fail(`Composition source metadata differs from the checked-in snapshot: ${table}`);
+        }
+      }
+      menuProjection = projectCompositionMenus({ menus: migratedMenus, programs: migratedPrograms, menuRoutes: composition.menuRoutes });
+      compositionAdminSeed = buildCompositionAdminSeed({
+        bootstrapSql: readFileSync(join(ROOT, 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'), 'utf8'),
+        projection: menuProjection, permissionCodes: composition.permissionCodes,
+        permissionCatalog: JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')),
+      });
+    }
+
     const tablesToDrop = sourceTables.filter((table) => !desiredTables.includes(table));
     if (tablesToDrop.length) {
       const sql = tablesToDrop.map((table) => `DROP TABLE IF EXISTS public.${quoteSqlIdentifier(table)} CASCADE;`).join('\n');
@@ -437,6 +506,8 @@ function main() {
     }
     assertSameSet(listObjects(args.container, user, workingDb, 'table'), desiredTables, '축소 DB table');
     assertSameSet(listObjects(args.container, user, workingDb, 'sequence'), desiredSequences, '축소 DB sequence');
+    if (composition) assertSchemaPreserved(selectedSchema.snapshot,
+      JSON.parse(psql(args.container, user, workingDb, schemaSnapshotSql())), '축소 DB physical schema');
 
     const baseline = sanitizePgDump(
       dump(args.container, user, workingDb, ['--schema-only']),
@@ -455,12 +526,15 @@ function main() {
     mkdirSync(join(output, 'db', 'migration'), { recursive: true });
     writeFileSync(join(output, 'db', 'migration', 'V1_0__baseline.sql'), baseline, 'utf8');
     writeFileSync(join(output, 'db', 'migration', 'V1_1__seed_meta_standard.sql'), metaSeed, 'utf8');
+    if (composition) writeFileSync(join(output, 'schema-contract.json'), `${JSON.stringify(selectedSchema, null, 2)}\n`, 'utf8');
     // 프로필-안전 repeatable 만 번들에 태운다. R__seed_demo.sql 은 collaboration 테이블을
     // 참조하므로 core 프로필에서 깨진다 — 데모 프로필의 정의로 남겨두고 복사하지 않는다.
     // R__zz_seed_base_admin.sql 이 빠지면 verify 단계의 admin bootstrap 단언이 red 다.
     const REPEATABLE_SEEDS = ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql'];
     for (const seed of REPEATABLE_SEEDS) {
-      copyFileSync(
+      if (composition && seed === 'R__zz_seed_base_admin.sql') {
+        writeFileSync(join(output, 'db', 'migration', seed), compositionAdminSeed, 'utf8');
+      } else copyFileSync(
         join(ROOT, 'api-server', 'src', 'main', 'resources', 'db', 'migration', seed),
         join(output, 'db', 'migration', seed),
       );
@@ -479,30 +553,39 @@ function main() {
       tables: desiredTables,
       sequences: desiredSequences,
       metaRows: manifest.databaseSnapshot.metaRows,
+      ...(composition ? { composition, compositionHash: composition.compositionHash, recipeHash: composition.recipeHash,
+        catalogHash: composition.catalogHash, layout: composition.backendLayout, resolvedDomains: composition.resolvedDomains,
+        schemaSnapshotHash: schemaSnapshotHash(selectedSchema.snapshot), omittedForeignKeys: selectedSchema.omittedForeignKeys,
+        menus: menuProjection.menus.map(menu => ({ id: menu.menu_sn, parent: menu.up_menu_sn, route: menu.modern_route })),
+        permissionCodes: composition.permissionCodes } : {}),
     };
-    writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
+    // Legacy profiles keep their existing contract. A new composition cannot be
+    // consumed as a successful DB bundle until every empty-DB assertion passes.
+    if (!composition) writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
 
     console.log(`[base-db] ${args.profile}: 생성 SQL을 두 번째 빈 임시 DB에서 재적용한다.`);
     createDatabase(args.container, user, verifyDb);
     verifyCreated = true;
-    restore(args.container, user, verifyDb, baseline);
-    restore(args.container, user, verifyDb, metaSeed);
-    // Flyway repeatable 과 동일한 순서(description 알파벳순)로 재적용한다:
-    // seed_framework → zz_seed_base_admin.
-    restore(
-      args.container,
-      user,
-      verifyDb,
-      readFileSync(join(output, 'db', 'migration', 'R__seed_framework.sql')),
-    );
-    restore(
-      args.container,
-      user,
-      verifyDb,
-      readFileSync(join(output, 'db', 'migration', 'R__zz_seed_base_admin.sql')),
-    );
+    // Reuse one connection like Flyway: a baseline session setting must not
+    // silently disappear between files. Repeatables keep description order.
+    restore(args.container, user, verifyDb, generatedMigrationSessionSql({
+      baseline, metaSeed,
+      frameworkSeed: readFileSync(join(output, 'db', 'migration', 'R__seed_framework.sql')),
+      adminSeed: readFileSync(join(output, 'db', 'migration', 'R__zz_seed_base_admin.sql')),
+    }));
     assertSameSet(listObjects(args.container, user, verifyDb, 'table'), desiredTables, '재적용 DB table');
     assertSameSet(listObjects(args.container, user, verifyDb, 'sequence'), desiredSequences, '재적용 DB sequence');
+    if (composition) {
+      const reappliedSchema = JSON.parse(psql(args.container, user, verifyDb, schemaSnapshotSql()));
+      writeFileSync(join(output, 'schema-reapplied.json'), `${JSON.stringify(reappliedSchema, null, 2)}\n`, 'utf8');
+      assertSchemaPreserved(selectedSchema.snapshot, reappliedSchema, '재적용 DB physical schema');
+      assertSameSet(psql(args.container, user, verifyDb, 'SELECT menu_sn FROM public.tb_menu_info ORDER BY menu_sn').split(/\r?\n/),
+        menuProjection.menus.map(menu => String(menu.menu_sn)), '재적용 DB selected menus');
+      assertSameSet(psql(args.container, user, verifyDb, "SELECT DISTINCT authrt_grnt_cd FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION' ORDER BY authrt_grnt_cd").split(/\r?\n/),
+        composition.permissionCodes, '재적용 DB selected OPERATION codes');
+      assertSameSet(psql(args.container, user, verifyDb, "SELECT authrt_grnt_cd FROM public.tb_authrt_grnt_map WHERE authrt_cd='ROLE_ADMIN' AND authrt_type_cd='NAVIGATION' ORDER BY authrt_grnt_cd").split(/\r?\n/),
+        menuProjection.menus.map(menu => String(menu.menu_sn)), '재적용 DB selected NAVIGATION codes');
+    }
     const metaMismatches = [];
     for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
       const actual = Number(psql(args.container, user, verifyDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`));
@@ -539,6 +622,14 @@ function main() {
         `운영 DB 축소용 마이그레이션이 아니다. 신규 프로젝트의 빈 DB에서만 사용한다.\n`,
       'utf8',
     );
+    if (composition) {
+      lock.validated = true;
+      lock.migrationFiles = Object.fromEntries(readdirSync(join(output, 'db', 'migration')).sort().map(name => [
+        `db/migration/${name}`, createHash('sha256').update(readFileSync(join(output, 'db', 'migration', name))).digest('hex'),
+      ]));
+      writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
+    }
+    if (args.writeMenuSnapshot) writeProjectComposerMenuSnapshot(ROOT, { menus: migratedMenus, programs: migratedPrograms });
     console.log(`[base-db] PASS: ${relative(ROOT, output).split(sep).join('/')}`);
   } finally {
     if (verifyCreated) dropTemporaryDatabase(args.container, user, verifyDb);
@@ -547,10 +638,8 @@ function main() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(SCRIPT_PATH)) {
-  try {
-    main();
-  } catch (error) {
+  main().catch(error => {
     console.error(`[base-db] FAIL: ${error.message}`);
     process.exitCode = 1;
-  }
+  });
 }

@@ -13,6 +13,18 @@
   "criticalSteps": [
     {
       "jobId": "reusable-base",
+      "name": "Generate and verify custom composition",
+      "if": "matrix.profile == 'core'",
+      "run": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}"
+    },
+    {
+      "jobId": "e2e-tests",
+      "name": "Verify local composer browser flow",
+      "if": "strategy.job-index == 0",
+      "run": "node --test tools/project-composer/ui.test.mjs"
+    },
+    {
+      "jobId": "reusable-base",
       "name": "Generate and verify reusable profile",
       "run": "node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }} --layout ${{ matrix.layout }}"
     },

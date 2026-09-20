@@ -42,7 +42,7 @@ export function projectReusableMakefile(source, layout = 'multi-module') {
 }
 
 export function reusableArtifactEntrypoints(profile, secretScanRun) {
-  if (!['core', 'collaboration', 'demo'].includes(profile)) throw new Error('unknown generated profile');
+  if (!['core', 'collaboration', 'demo', 'custom'].includes(profile)) throw new Error('unknown generated profile');
   if (typeof secretScanRun !== 'string' || !secretScanRun.includes('VERSION=8.28.0')
     || !secretScanRun.includes('--no-git') || !secretScanRun.includes('--log-opts=')) {
     throw new Error('the upstream pinned working-tree and incremental secret scan is required');

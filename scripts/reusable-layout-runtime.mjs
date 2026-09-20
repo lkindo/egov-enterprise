@@ -74,7 +74,7 @@ function read(root, file) { return readFileSync(safeFile(root, file), 'utf8'); }
 function generatedLayout(root) {
   const lock = JSON.parse(read(root, 'reusable-base-lock.json'));
   const layout = lock.layout ?? 'multi-module';
-  if (!['core', 'collaboration', 'demo'].includes(lock.profile)
+  if (!['core', 'collaboration', 'demo', 'custom'].includes(lock.profile)
       || !['single-module', 'multi-module'].includes(layout)) fail('a valid generated product layout lock is required');
   return layout;
 }
@@ -125,7 +125,7 @@ export function validateSingleModuleRuntime(outputRoot) {
   try {
     const root = realpathSync(resolve(outputRoot));
     const lock = JSON.parse(read(root, 'reusable-base-lock.json'));
-    if (lock.layout !== 'single-module' || !['core', 'collaboration', 'demo'].includes(lock.profile)) {
+    if (lock.layout !== 'single-module' || !['core', 'collaboration', 'demo', 'custom'].includes(lock.profile)) {
       fail('a generated single-module product lock is required');
     }
     const pkg = JSON.parse(read(root, 'package.json'));

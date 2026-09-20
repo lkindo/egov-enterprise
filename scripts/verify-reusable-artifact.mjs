@@ -44,7 +44,7 @@ export function runCommand(command, args, { root, env = process.env, capture = f
 export function verifyReusableArtifact({ root, scope = 'full', run = runCommand } = {}) {
   root = resolve(root);
   const lock = JSON.parse(readFileSync(resolve(root, 'reusable-base-lock.json'), 'utf8'));
-  if (!['core', 'collaboration', 'demo'].includes(lock.profile)) throw new Error('generated product lock is required');
+  if (!['core', 'collaboration', 'demo', 'custom'].includes(lock.profile)) throw new Error('generated product lock is required');
   const layout = normalizeBackendLayout(lock.layout);
   const commands = verificationCommands(scope, layout);
   const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };

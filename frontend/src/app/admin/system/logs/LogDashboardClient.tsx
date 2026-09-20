@@ -8,7 +8,7 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { Terminal, Clock, Zap, Lock, Globe, UserCheck, RefreshCcw } from 'lucide-react';
+import { Terminal, Lock, Globe, UserCheck, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type {
@@ -130,14 +130,9 @@ export default function LogDashboardClient({
         */
         header: activeCategory === 'LGN' ? '발생 일시' : '발생일자',
         accessor: (item: IntegratedLogRow) => (
-          <div className="flex items-center gap-3 py-2">
-            <div className="w-8 h-8 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-muted shadow-sm">
-              <Clock size={14} />
-            </div>
-            <span className="text-xs font-black text-muted-foreground tracking-tight">{getOccurredAt(item, activeCategory)}</span>
-          </div>
+          <span className="text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">{getOccurredAt(item, activeCategory)}</span>
         ),
-        className: 'w-48 py-4'
+        className: 'w-48'
       }
     ];
 
@@ -147,30 +142,25 @@ export default function LogDashboardClient({
         {
           header: '요청자',
           accessor: (item: IntegratedLogRow) => (
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl border border-border flex items-center justify-center bg-card shadow-sm font-black text-xs text-muted-foreground">
-                {String(item.loginId ?? '').substring(0, 1)}
-              </div>
-              <span className="text-xs font-black text-foreground tracking-tight">{item.loginId || '-'}</span>
-            </div>
+            <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{item.loginId || '-'}</span>
           ),
-          className: 'py-4'
+          className: ''
         },
         {
           header: '접속 IP',
           accessor: (item: IntegratedLogRow) => (
-            <div className="font-mono text-[10px] font-black text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50 w-fit">{item.loginIp || '-'}</div>
+            <span className="font-mono text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">{item.loginIp || '-'}</span>
           ),
-          className: 'py-4'
+          className: ''
         },
         {
           header: '구분',
           accessor: (item: IntegratedLogRow) => (
-            <span className="px-2 py-0.5 rounded-md text-xs font-bold border uppercase tracking-tighter bg-muted text-muted-foreground border-border">
+            <span className="inline-flex w-fit items-center rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
               {item.loginMthd || '-'}
             </span>
           ),
-          className: 'py-4'
+          className: ''
         }
       ];
     }
@@ -179,9 +169,9 @@ export default function LogDashboardClient({
       ...commonCols,
       {
         header: '요청자',
-        className: 'w-32 py-4',
+        className: 'w-32',
         accessor: (item: IntegratedLogRow) => (
-          <span className="text-xs font-black text-foreground tracking-tight">
+          <span className="text-[length:var(--font-size-body)] font-medium text-foreground">
             {activeCategory === 'USR' ? item.userNm || item.dmndUserId || '-' : item.dmndUserId || '-'}
           </span>
         )
@@ -189,26 +179,25 @@ export default function LogDashboardClient({
       {
         header: '수행 내역',
         accessor: (item: IntegratedLogRow) => (
-          <div className="flex flex-col gap-0.5 max-w-md">
-            <span className="text-sm font-black text-foreground tracking-tighter">
+          <div className="min-w-0 max-w-md">
+            <p className="truncate text-[length:var(--font-size-body)] font-medium leading-tight text-foreground">
               {activeCategory === 'WEB' ? item.url || '-' : item.srvcNm || '-'}
-            </span>
-            <span className="text-[10px] font-bold text-muted-foreground truncate tracking-tight">
+            </p>
+            <p className="truncate font-mono text-xs leading-tight text-muted-foreground">
               {activeCategory === 'SYS' ? item.methodNm || '-' : activeCategory === 'USR' ? item.mthdNm || '-' : '-'}
-            </span>
+            </p>
           </div>
         ),
-        className: 'py-4'
+        className: ''
       },
       {
         header: '접속 정보',
         accessor: (item: IntegratedLogRow) => (
-          <div className="flex items-center gap-2 font-mono text-[10px] font-black text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50 w-fit">
-            <Globe size={11} className="opacity-40" />
+          <span className="font-mono text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">
             {activeCategory === 'WEB' ? item.dmndUserIpAddr || '-' : activeCategory === 'SYS' ? item.rqesterIp || '-' : '-'}
-          </div>
+          </span>
         ),
-        className: 'py-4'
+        className: ''
       }
     ];
 
@@ -216,12 +205,12 @@ export default function LogDashboardClient({
       activityColumns.splice(3, 0, {
         header: '처리 시간',
         accessor: (item: IntegratedLogRow) => (
-          <div className="flex items-center gap-1 text-xs font-bold text-muted-foreground tabular-nums">
+          <div className="flex items-center justify-end gap-1 text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">
             <span>{item.prcsTm ?? '-'}</span>
             {item.prcsTm != null ? <span>ms</span> : null}
           </div>
         ),
-        className: 'w-24 py-4',
+        className: 'w-24 text-right',
       });
     }
 
@@ -234,7 +223,7 @@ export default function LogDashboardClient({
       description="보안·접속·행동·웹 요청 로그를 한 화면에서 조회합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }]}
       filterStateKey="system-logs-dashboard"
-      totalCount={error ? undefined : totalCount}
+      totalCount={error || isLoading ? undefined : totalCount}
       actions={
         <>
           <div
@@ -316,40 +305,25 @@ export default function LogDashboardClient({
         onClose={() => setSelectedLog(null)}
         title="로그 상세 정보"
         maxWidth="2xl"
+        footer={
+          <Button type="button" variant="outline" onClick={() => setSelectedLog(null)}>
+            닫기
+          </Button>
+        }
       >
-        <div className="p-8 space-y-8 font-sans text-left">
-          <div className="flex items-center justify-between p-6 bg-muted/50 rounded-xl border border-border shadow-inner">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl">
-                <Terminal size={22} />
-              </div>
-              <div className="text-left">
-                <p className="text-[10px] font-black text-muted-foreground tracking-widest leading-none mb-1.5">식별자</p>
-                <p className="text-sm font-black text-foreground tracking-tight leading-none">
-                  {selectedLog ? getLogIdentifier(selectedLog.row, selectedLog.category) : '-'}
-                </p>
-              </div>
-            </div>
+        <div className="space-y-4 text-left">
+          <div className="rounded-md border border-border bg-muted/50 px-3 py-2">
+            <p className="text-xs text-muted-foreground">식별자</p>
+            <p className="mt-0.5 font-mono text-[length:var(--font-size-body)] text-foreground">
+              {selectedLog ? getLogIdentifier(selectedLog.row, selectedLog.category) : '-'}
+            </p>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="text-[10px] font-black text-muted-foreground tracking-widest px-1">원본 데이터</h4>
-            <div className="p-10 rounded-2xl bg-surface-inverse text-emerald-400 font-mono text-[10px] overflow-auto shadow-2xl relative group max-h-[400px]">
-              <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
-                <Zap size={20} className="animate-pulse" aria-hidden="true" />
-              </div>
-              <pre className="whitespace-pre-wrap leading-relaxed">{JSON.stringify(selectedLog?.row, null, 2)}</pre>
+          <div className="space-y-2">
+            <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">원본 데이터</h4>
+            <div className="max-h-[360px] overflow-auto rounded-md border border-border bg-muted p-3">
+              <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground">{JSON.stringify(selectedLog?.row, null, 2)}</pre>
             </div>
-          </div>
-
-          <div className="flex gap-4">
-            <button
-                type="button"
-                onClick={() => setSelectedLog(null)}
-                className="flex-1 h-11 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-widest hover:bg-primary transition-all active:scale-95 shadow-xl"
-            >
-              닫기
-            </button>
           </div>
         </div>
       </StandardModal>

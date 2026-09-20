@@ -69,10 +69,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
 
   const getIcon = (type?: string) => {
     switch (type) {
-      case 'SECURITY': return <ShieldAlert size={18} className="text-rose-500" />;
-      case 'SYSTEM': return <Database size={18} className="text-amber-500" />;
-      case 'ACTIVITY': return <Activity size={18} className="text-emerald-500" />;
-      default: return <Bell size={18} className="text-primary" />;
+      case 'SECURITY': return <ShieldAlert size={16} className="text-destructive-emphasis" aria-hidden="true" />;
+      case 'SYSTEM': return <Database size={16} className="text-warning" aria-hidden="true" />;
+      case 'ACTIVITY': return <Activity size={16} className="text-success-emphasis" aria-hidden="true" />;
+      default: return <Bell size={16} className="text-primary" aria-hidden="true" />;
     }
   };
 
@@ -93,15 +93,13 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
           <DialogPrimitive.Description className="sr-only">받은 알림 목록입니다.</DialogPrimitive.Description>
 
           {/* Header Fabric */}
-          <div className="flex h-24 items-center justify-between border-b border-border px-8 bg-card sticky top-0 z-20">
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-border bg-card px-4 py-3">
             <div className="space-y-1">
-              <h2 className="text-xl font-bold flex items-center gap-3 tracking-tighter uppercase text-card-foreground">
-                <div className="w-10 h-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground flex items-center justify-center shadow-lg">
-                   <Bell size={20} className="animate-pulse" />
-                </div>
+              <h2 className="flex items-center gap-2 text-base font-semibold tracking-tight text-card-foreground">
+                <Bell size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
                 알림 센터
               </h2>
-              <p className="text-xs font-bold text-muted-foreground tracking-tight">받은 알림</p>
+              <p className="text-xs text-muted-foreground">받은 알림</p>
             </div>
             <div className="flex items-center gap-2">
               {hasUnreadNotifications && (
@@ -109,7 +107,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                   variant="ghost" 
                   size="sm" 
                   onClick={onMarkAllRead}
-                  className="text-xs font-bold tracking-widest uppercase hover:text-primary h-8 px-2"
+                  className="h-8 px-2 text-xs hover:text-primary"
                 >
                   {/*
                     [2026-08-29] '모두 읽음' → '불러온 알림 읽음'.
@@ -123,24 +121,24 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                 onClick={onClose} 
                 data-testid="e2e-drawer-close"
                 aria-label="알림 센터 닫기"
-                className="p-3 hover:bg-accent rounded-lg transition-all hover:rotate-90 group"
+                className="rounded-md p-2 transition-colors hover:bg-accent"
               >
-                <X size={24} className="group-hover:text-primary transition-colors text-muted-foreground" />
+                <X size={16} className="text-muted-foreground" aria-hidden="true" />
               </button>
             </div>
           </div>
 
           {/* Advanced Filter Matrix */}
-          <div className="p-6 border-b border-border bg-muted/30 flex gap-2">
+          <div className="flex gap-1.5 border-b border-border bg-muted/30 p-3">
              {(['ALL', 'SECURITY', 'SYSTEM', 'ACTIVITY'] as FilterType[]).map((f) => (
                 <button
                    key={f}
                    onClick={() => setActiveFilter(f)}
                    className={cn(
-                      "px-4 py-2 rounded-lg text-xs font-bold tracking-widest uppercase transition-all cursor-pointer",
-                      activeFilter === f 
-                         ? "bg-primary text-primary-foreground shadow-lg scale-105" 
-                         : "bg-background text-muted-foreground hover:bg-accent border border-border"
+                      "cursor-pointer rounded-md border px-3 py-1.5 text-[length:var(--font-size-body)] transition-colors",
+                      activeFilter === f
+                         ? "border-primary bg-primary text-primary-foreground"
+                         : "border-border bg-background text-muted-foreground hover:bg-accent"
                    )}
                 >
                    {f === 'ALL' ? '전체' : f === 'SECURITY' ? '보안' : f === 'SYSTEM' ? '시스템' : '활동'}
@@ -156,13 +154,13 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
           </div>
 
           {/* Notification Stream */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative z-10">
+          <div className="custom-scrollbar relative z-10 flex-1 space-y-2 overflow-y-auto p-3">
              {/* [2026-08-04] 조회 실패를 '알림 없음' 으로 렌더하지 않는다.
                  오류 상태를 빈 상태보다 **먼저** 판정한다 — 실패 시 목록이 비어 있는 경우가
                  대부분이라, 순서를 뒤집으면 오류 화면이 영원히 도달하지 못한다. */}
              {error ? (
                 <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
-                  <AlertTriangle size={64} className="text-destructive-emphasis opacity-80" />
+                  <AlertTriangle size={28} className="text-destructive-emphasis" aria-hidden="true" />
                   <div className="space-y-1">
                     <p className="text-sm font-bold text-foreground">{error}</p>
                     <p className="text-sm text-muted-foreground">
@@ -186,10 +184,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                 </div>
              ) : filteredNotifications.length === 0 ? (
                 <div
-                   className="flex flex-col items-center justify-center h-full text-muted-foreground/30"
+                   className="flex h-full flex-col items-center justify-center text-muted-foreground"
                 >
-                  <Zap size={100} className="mb-8 opacity-20" />
-                  <span className="text-sm font-bold tracking-widest uppercase text-muted-foreground">활성화된 알림이 없습니다</span>
+                  <Zap size={28} className="mb-3" aria-hidden="true" />
+                  <span className="text-[length:var(--font-size-body)] text-muted-foreground">활성화된 알림이 없습니다</span>
                 </div>
              ) : (
                 filteredNotifications.map((notif) => {
@@ -197,37 +195,37 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                   /* 목적지 링크가 있으면 카드와 링크를 중첩 인터랙션으로 만들지 않는다.
                      링크가 없는 미읽음 알림만 카드 자체가 "읽음 처리" 버튼 역할을 한다. */
                   const cardClassName = cn(
-                    "group relative w-full p-6 rounded-lg border text-left transition-all duration-300 overflow-hidden backdrop-blur-sm",
+                    "group relative w-full overflow-hidden rounded-md border px-3 py-2 text-left transition-colors",
                     canMarkRead && "cursor-pointer",
                     notif.isRead
-                      ? "bg-muted/10 border-border/40 opacity-60"
-                      : "bg-card border-border shadow-xl hover:shadow-primary/5 hover:border-primary/20",
-                    !notif.isRead && notif.type === 'SECURITY' && "border-rose-100 dark:border-rose-950 bg-rose-50/20 dark:bg-rose-950/10"
+                      ? "border-border/40 bg-muted/10 text-muted-foreground"
+                      : "border-border bg-card hover:border-primary",
+                    !notif.isRead && notif.type === 'SECURITY' && "border-destructive/40 bg-destructive/5"
                   );
                   const cardContent = (
                     <>
-                    <div className="flex justify-between items-start gap-4 relative z-10">
+                    <div className="relative z-10 flex items-start justify-between gap-2">
                       <div className={cn(
-                         "w-10 h-10 rounded-lg flex items-center justify-center shadow-md shrink-0",
-                         notif.isRead ? "bg-muted text-muted-foreground" : "bg-background border border-border"
+                         "flex size-7 shrink-0 items-center justify-center rounded-md",
+                         notif.isRead ? "bg-muted text-muted-foreground" : "border border-border bg-background"
                       )}>
                          {getIcon(notif.type)}
                       </div>
                       <div className="flex-1 space-y-1 min-w-0">
                          <div className="flex items-center justify-between">
-                            <h3 className={cn("text-sm font-bold tracking-tight transition-colors truncate pr-4 text-card-foreground", !notif.isRead && "text-foreground")}>
+                            <h3 className={cn("truncate pr-2 text-[length:var(--font-size-body)] font-medium text-card-foreground", !notif.isRead && "text-foreground")}>
                                {notif.title}
                             </h3>
-                            {!notif.isRead && <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] animate-pulse" />}
+                            {!notif.isRead && <div className="size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />}
                          </div>
-                         <p className="text-xs leading-relaxed text-muted-foreground line-clamp-2 font-medium">
+                         <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                             {notif.message}
                          </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-6 relative z-10 px-1">
-                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{notif.time}</span>
+                    <div className="relative z-10 mt-1.5 flex items-center justify-between">
+                      <span className="text-xs tabular-nums text-muted-foreground">{notif.time}</span>
                       {/*
                          [2026-08-29] '상세 보기 →' 버튼을 걷었다. onClick·href·router.push 가
                          전혀 없었고, 갈 곳도 없었다.
@@ -250,7 +248,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                             if (!notif.isRead) onMarkRead(notif.id);
                             onClose();
                           }}
-                          className="text-xs font-bold text-primary hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 rounded-sm"
+                          className="rounded-sm text-xs text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
                         >
                           바로가기 →
                         </Link>
@@ -258,11 +256,6 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                     </div>
 
                     {/* Background Decoration */}
-                    {!notif.isRead && notif.type === 'SECURITY' && (
-                       <div className="absolute right-0 top-0 p-4 opacity-5">
-                          <ShieldAlert size={80} />
-                       </div>
-                    )}
                     </>
                   );
 
@@ -302,12 +295,12 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
           </div>
 
           {/* Bottom Sticky Control */}
-          <div className="p-8 border-t border-border bg-card">
+          <div className="border-t border-border bg-card p-3">
              <Button
                data-testid="read-all-broadcasts-btn"
                onClick={onMarkAllRead}
                disabled={!hasUnreadNotifications}
-               className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-bold tracking-[0.3em] uppercase text-xs shadow-2xl hover:bg-primary/90 transition-all"
+               className="w-full"
              >
                 불러온 알림 읽음 처리
              </Button>

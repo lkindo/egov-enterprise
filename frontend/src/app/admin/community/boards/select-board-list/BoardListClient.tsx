@@ -6,13 +6,11 @@ import { likeBoardArticle } from '@/app/actions/boardActions';
 import Link from 'next/link';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useBoardList } from '@/hooks/api/use-board-list';
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Plus, Settings2, BookOpen, X, AlertTriangle } from "lucide-react";
+import { MessageSquare, Plus, Settings2, X, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
-import { cn } from "@/lib/utils";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { BoardPost } from '@/types/business/board';
 import { useToast } from '@/app/components/ui/toast';
@@ -34,7 +32,8 @@ import {
 // 감사 P1-5: `BoardStats` 는 7일 트래픽·작성자 분포를 하드코딩 배열로 그리면서 '실시간' 배지까지 달고 있었다
 // (백엔드에 대응 API 없음). 근거 없는 지표라 컴포넌트와 호출부를 함께 제거했다.
 
-import { motion, AnimatePresence } from 'framer-motion';
+// [2026-09-20] framer-motion 을 걷었다 — 페이지 래퍼·헤더·목록 컨테이너의 진입 애니메이션이 첫 게시글
+// 도달을 0.2초 늦추고, 템플릿이 바뀔 때마다 목록을 좌우로 밀었다(카탈로그 §3 금지 항목).
 
 /**
  * 서버가 읽는 형식(yyyy-MM-dd)으로 **로컬 날짜**를 만든다.
@@ -318,7 +317,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const renderTemplate = () => {
    if (loading) {
      return (
-       <div className="rounded-2xl border border-white/20 overflow-hidden shadow-2xl bg-white/40 backdrop-blur-xl mb-10">
+       <div>
          <BoardSkeleton tmpltId={tmpltId} />
        </div>
      );
@@ -328,18 +327,18 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
      return (
        <div
          role="alert"
-         className="rounded-2xl border-2 border-destructive/30 overflow-hidden shadow-2xl bg-card mb-10"
+         className="overflow-hidden rounded-md border border-destructive/40 bg-card"
        >
-         <div className="flex flex-col items-center justify-center h-80 gap-5 text-center px-6">
-           <AlertTriangle className="w-12 h-12 text-destructive-emphasis" aria-hidden="true" />
-           <div className="space-y-2">
-             <p className="text-xl font-bold text-foreground">게시글을 불러오지 못했습니다.</p>
-             <p className="text-sm font-medium text-muted-foreground max-w-md">{listError}</p>
+         <div className="flex flex-col items-center justify-center gap-3 px-[var(--filter-pad)] py-10 text-center">
+           <AlertTriangle size={24} className="text-destructive-emphasis" aria-hidden="true" />
+           <div className="space-y-1">
+             <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">게시글을 불러오지 못했습니다.</p>
+             <p className="max-w-md text-xs text-muted-foreground">{listError}</p>
            </div>
            <Button
              type="button"
+             size="sm"
              onClick={() => { void refetch(); router.refresh(); }}
-             className="font-bold"
            >
              다시 시도
            </Button>
@@ -350,33 +349,27 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
 
    if (list.length === 0) {
      return (
-       <div className="rounded-2xl border border-white/20 overflow-hidden shadow-2xl bg-white/40 backdrop-blur-xl mb-10">
-         <div className="flex flex-col items-center justify-center h-80 gap-4 text-slate-300">
-           <motion.div 
-             initial={{ scale: 0.8, opacity: 0 }}
-             animate={{ scale: 1, opacity: 1 }}
-             className="p-10 bg-muted/50 rounded-2xl"
-           >
-             <MessageSquare className="w-16 h-11 opacity-10" />
-           </motion.div>
+       <div className="overflow-hidden rounded-md border border-border bg-card">
+         <div className="flex flex-col items-center justify-center gap-3 px-[var(--filter-pad)] py-10 text-muted-foreground">
+           <MessageSquare size={24} aria-hidden="true" />
            {querySearchWrd ? (
-             <div className="text-center space-y-2">
-               <p className="text-xl font-bold text-muted-foreground">
+             <div className="space-y-1 text-center">
+               <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">
                  &ldquo;<span className="text-primary">{querySearchWrd}</span>&rdquo;에 대한 검색 결과가 없습니다.
                </p>
-               <p className="text-sm font-medium text-muted-foreground">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
+               <p className="text-xs text-muted-foreground">다른 검색어를 시도하거나, 필터 조건을 변경해 보세요.</p>
                <button
                  onClick={() => {
                   router.replace(`${pathname}?bbsId=${bbsId}`);
                  }}
-                 className="mt-4 px-6 py-2.5 bg-surface-inverse text-surface-inverse-foreground font-bold text-sm rounded-xl hover:bg-surface-inverse/90 transition-all active:scale-95 flex items-center gap-2 mx-auto"
+                 className="mx-auto mt-2 inline-flex h-[var(--control-h-sm)] items-center gap-1.5 rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)] font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                  aria-label="필터 초기화"
                >
-                 <X size={14} /> 필터 초기화
+                 <X size={14} aria-hidden="true" /> 필터 초기화
                </button>
              </div>
            ) : (
-             <p className="text-xl font-bold">게시글이 아직 없습니다.</p>
+             <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">게시글이 아직 없습니다.</p>
            )}
          </div>
        </div>
@@ -384,53 +377,31 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    }
 
    return (
-     <motion.div 
-       initial={{ y: 20, opacity: 0 }}
-       animate={{ y: 0, opacity: 1 }}
-       transition={{ delay: 0.2 }}
-       className="rounded-2xl border border-white/20 overflow-hidden shadow-2xl bg-white/40 backdrop-blur-xl mb-10"
-     >
-       <AnimatePresence mode="wait">
-         <motion.div
-           key={tmpltId}
-           initial={{ opacity: 0, x: -10 }}
-           animate={{ opacity: 1, x: 0 }}
-           exit={{ opacity: 0, x: 10 }}
-           transition={{ duration: 0.3 }}
-         >
-           {tmpltId === 'TMPLT_HUB' ? (
-             <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} page={queryPage} totalCount={totalCount} />
-           ) : tmpltId === 'TMPLT_GALLERY' ? (
-             <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
-           ) : tmpltId === 'TMPLT_QNA' ? (
-             <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
-           ) : tmpltId === 'TMPLT_CALENDAR' ? (
-             <CalendarTemplate 
-               list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn}
-               currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth} 
-             />
-           ) : tmpltId === 'TMPLT_FAQ' ? (
-             <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
-           ) : tmpltId === 'TMPLT_WIKI' ? (
-             <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
-           ) : (
-             <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} page={queryPage} totalCount={totalCount} />
-           )}
-         </motion.div>
-       </AnimatePresence>
-     </motion.div>
+     <div>
+       {tmpltId === 'TMPLT_HUB' ? (
+         <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} page={queryPage} totalCount={totalCount} />
+       ) : tmpltId === 'TMPLT_GALLERY' ? (
+         <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+       ) : tmpltId === 'TMPLT_QNA' ? (
+         <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+       ) : tmpltId === 'TMPLT_CALENDAR' ? (
+         <CalendarTemplate
+           list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn}
+           currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth}
+         />
+       ) : tmpltId === 'TMPLT_FAQ' ? (
+         <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+       ) : tmpltId === 'TMPLT_WIKI' ? (
+         <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+       ) : (
+         <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} page={queryPage} totalCount={totalCount} />
+       )}
+     </div>
    );
  };
 
  return (
- <motion.div 
-   initial={{ opacity: 0 }}
-   animate={{ opacity: 1 }}
-   className="flex flex-col gap-6 p-6 pb-20 relative min-h-screen bg-muted/50"
- >
-   {/* Decorative Background Elements */}
-   <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
-   <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-hub-indigo/5 blur-[100px] rounded-full pointer-events-none -z-10" />
+ <div className="mx-auto max-w-[var(--page-max-w)] space-y-4 pb-6">
 
  {/* Breadcrumb - 동적 메뉴 시스템 연동 */}
  <DynamicBreadcrumb 
@@ -440,105 +411,61 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  ]}
  />
 
- {/* 템플릿에 따른 차별화된 상단 헤더 */}
- <div className="flex flex-col gap-4 mb-4">
- <motion.div 
-   initial={{ x: -20, opacity: 0 }}
-   animate={{ x: 0, opacity: 1 }}
-   className="flex items-center gap-3"
- >
- <div className={cn("w-2 h-10 rounded-full shadow-lg", tmpltId === 'TMPLT_HUB' ? "bg-gradient-to-b from-hub-indigo to-hub-purple" : "bg-gradient-to-b from-primary to-primary/60")} />
- <h1 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
- {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
- </h1>
- {tmpltId === 'TMPLT_HUB' && <Badge className="bg-hub-indigo/10 text-hub-indigo border-hub-indigo/20 font-bold ml-2 px-3 py-1 rounded-lg">지식 허브</Badge>}
- </motion.div>
- <motion.p 
-   initial={{ x: -20, opacity: 0 }}
-   animate={{ x: 0, opacity: 1 }}
-   transition={{ delay: 0.1 }}
-   className="text-muted-foreground font-bold ml-5 text-lg"
- >
- {masterInfo?.bbsExpln || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
- </motion.p>
- </div>
-
- <Card className="border border-white/40 shadow-2xl overflow-hidden rounded-3xl bg-white/70 backdrop-blur-2xl ring-1 ring-black/5">
- <CardHeader className="py-12 px-12 md:px-20 flex flex-col md:flex-row items-center justify-between gap-10 border-b border-border/50 relative overflow-hidden">
-   {/* Header Gradient Decoration */}
-   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-   
- <div className="flex-1 space-y-4 relative z-10">
- <CardTitle className="text-4xl font-black tracking-tighter flex items-center gap-4">
- {tmpltId === 'TMPLT_HUB' ? (
-   <div className="p-3 bg-hub-indigo/10 rounded-2xl text-hub-indigo shadow-inner">
-     <BookOpen className="w-10 h-10" />
+ {/* 골격 G1 — 제목·설명·총계·주요 액션을 헤더 한 겹이 소유한다(카탈로그 §3).
+     종전에는 같은 게시판 이름을 페이지 제목과 카드 제목이 각각 크게 두 번 찍었다. */}
+ <div className="flex flex-col gap-3 border-b border-border pb-4 md:flex-row md:items-start md:justify-between">
+   <div className="min-w-0 space-y-1">
+     <div className="flex flex-wrap items-center gap-2">
+       <h1 className="text-xl font-bold tracking-tight text-foreground">
+         {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
+       </h1>
+       {tmpltId === 'TMPLT_HUB' && <Badge variant="secondary">지식 허브</Badge>}
+     </div>
+     <p className="text-[length:var(--font-size-body)] text-muted-foreground">
+       {masterInfo?.bbsExpln || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
+     </p>
+     {/* 감사 P1-5: 조회가 실패한 상태에서 "총 0개"라고 단정하지 않는다. */}
+     <p className="text-xs text-muted-foreground">
+       {listError ? '게시글 수를 확인할 수 없습니다.' : <>총 <span className="font-semibold tabular-nums text-foreground">{(totalCount || 0).toLocaleString()}개</span>의 게시글이 등록되어 있습니다.</>}
+     </p>
    </div>
- ) : (
-   <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-inner">
-     <MessageSquare className="w-10 h-10" />
+   <div className="flex shrink-0 flex-wrap items-center gap-2">
+     {canReadBoardMasters && (
+       <Link href="/admin/community/boards/master">
+         <Button variant="outline" size="sm" className="gap-1.5" aria-label="게시판 관리">
+           <Settings2 size={16} aria-hidden="true" /> 게시판 관리
+         </Button>
+       </Link>
+     )}
+     <Link href={`/admin/community/boards/insert-board-article?bbsId=${bbsId}`}>
+       <Button size="sm" className="gap-1.5" aria-label="글쓰기">
+         <Plus size={16} aria-hidden="true" /> 글쓰기
+       </Button>
+     </Link>
    </div>
- )}
- <span className="bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600">
-   {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
- </span>
- </CardTitle>
- {/* 감사 P1-5: 조회가 실패한 상태에서 "총 0개"라고 단정하지 않는다. */}
- <p className="text-muted-foreground font-bold text-lg ml-1">
- {listError ? '게시글 수를 확인할 수 없습니다.' : <>총 <span className="text-primary font-black">{(totalCount || 0).toLocaleString()}개</span>의 게시글이 등록되어 있습니다.</>}
- </p>
  </div>
- <CardAction className="flex items-center gap-4 relative z-10">
- <>
- {canReadBoardMasters && (
- <Link href="/admin/community/boards/master">
- <Button variant="outline" size="lg" className="h-14 px-8 gap-3 border-2 border-border bg-white/50 backdrop-blur-md text-foreground hover:bg-surface-inverse hover:text-white font-black shadow-xl transition-all rounded-2xl hover:-translate-y-1 active:scale-95" aria-label="게시판 관리">
- <Settings2 className="w-6 h-6" /> 게시판 관리
- </Button>
- </Link>
- )}
- <Link href={`/admin/community/boards/insert-board-article?bbsId=${bbsId}`}>
- <Button size="lg" className="h-14 px-10 gap-3 bg-primary text-white hover:scale-105 font-black shadow-[0_20px_40px_-10px_rgba(var(--primary-rgb),0.3)] transition-all rounded-2xl active:scale-95 group" aria-label="글쓰기">
- <div className="flex items-center gap-3">
- <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" /> 글쓰기
- </div>
- </Button>
- </Link>
- </>
- </CardAction>
- </CardHeader>
- <CardContent className="pt-10 px-10 md:px-14">
- 
  {/* 분리된 필터 영역 */}
- <div className="mb-10">
-  <BoardListFilters 
-    searchWrd={searchWrd}
-    setSearchWrd={setSearchWrd}
-    searchCnd={searchCnd}
-    setSearchCnd={setSearchCnd}
-    orderBy={orderBy}
-    setOrderBy={setOrderBy}
-    startDate={startDate}
-    setStartDate={setStartDate}
-    endDate={endDate}
-    setEndDate={setEndDate}
-    onSearch={handleSearch}
-    onReset={handleReset}
-  />
- </div>
+ <BoardListFilters
+   searchWrd={searchWrd}
+   setSearchWrd={setSearchWrd}
+   searchCnd={searchCnd}
+   setSearchCnd={setSearchCnd}
+   orderBy={orderBy}
+   setOrderBy={setOrderBy}
+   startDate={startDate}
+   setStartDate={setStartDate}
+   endDate={endDate}
+   setEndDate={setEndDate}
+   onSearch={handleSearch}
+   onReset={handleReset}
+ />
 
 
  {/* 템플릿 렌더링 영역 */}
  {renderTemplate()}
 
  {/* 분리된 페이지네이션 영역 */}
- <div className="mt-6">
-  <BoardPagination totalPages={totalPages} currentPage={queryPage} onPageChange={handlePageChange} />
+ <BoardPagination totalPages={totalPages} currentPage={queryPage} onPageChange={handlePageChange} />
  </div>
-
-
- </CardContent>
- </Card>
- </motion.div>
  );
 };

@@ -5,9 +5,10 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-14
-verified_against: 554973785a11c27d5dd8580d6b36678f42b10660
+verified_at: 2026-09-20
+verified_against: ce60ec140b3cfb0b07dcf190dbf0dda7251c3ce2
 canonical_sources:
+  - ../../docs/03-guides/project-composer-guide.md
   - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
   - ../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md
   - ../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md
@@ -75,7 +76,8 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-015 | 인가는 복수 그룹과 명시 OPERATION/NAVIGATION을 사용하며 핵심 3개+변경 이력 1개다. OCI에서 구 6개 테이블 부재와 Contract 감사 1건을 재확인했다. DB 적용과 운영 앱 배포의 증거는 구분한다. | [ADR-0016](../../docs/02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md), [인가 원본](../../config/governance/permission-catalog.json), [런북](../../docs/04-operations/authorization-cutover-runbook.md) | 2026-09-11 |
 | CTX-016 | 전체 제품 메뉴는 나의 업무·소통·지식·참여·관리 센터의 4개 영역이며, OCI V2_100 적용 후 전체 77개·활성 71개·최대 3단계다. OPERATION과 사용자 배정은 보존하고 메뉴 선택·상위 회수를 계층 단위로 처리한다. 신규 격리 초기화는 V2_99 → Contract → latest 순서다. | [ADR-0017](../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md), [적용 결과](../../docs/04-operations/authorization-cutover-runbook.md#2026-09-11-oci-메뉴-재편-적용-결과) | 2026-09-11 |
 | CTX-017 | URL·route·UI quality·KRDS·화면 용어와 E2E duration의 일반 최신성은 기술 판정과 분리하고 실제 시계 보고에서 추적한다. 기관 온라인/독립 이관 승인은 제품·환경·소스·실행 artifact·근거·UTC 유효기간에 결속한다. 기본 pending과 기술 검증 통과는 기관 운영 승인이 아니며 실제 실행 진입점이 기술 검사 전후 원장을 확인한다. | [ADR-0018](../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md), [검토 수명 가이드](../../docs/03-guides/governance-review-lifecycle.md), [기관 실행 검증](../../scripts/adoption-execute.mjs) | 2026-09-14 |
-| CTX-018 | 재사용 생성물은 명시 pack 소유권에서 하네스·UI 원장 모집단을 도출하고 snapshot·소스·승계 selector·lock 무결성을 검사한다. 공용 메모리의 원본 운영 사실은 upstream 이력으로 보존하며 현재 기관 사실로 승격하지 않는다. 온라인·이관 승인은 각각 새 pending으로 시작한다. | [생성 가이드](../../docs/03-guides/reusable-base-guide.md), [원장 투영](../../scripts/reusable-governance-projection.mjs), [산출물 무결성](../../scripts/reusable-governance-integrity.mjs), [적용범위 계약](../../config/governance/reusable-review-scopes.json) | 2026-09-14 |
+| CTX-018 | 재사용 생성물은 preset pack 또는 custom 도메인 소유권에서 하네스·UI 원장 모집단을 도출하고 snapshot·소스·승계 selector·lock 무결성을 검사한다. 공용 메모리의 원본 운영 사실은 upstream 이력으로 보존하며 현재 기관 사실로 승격하지 않는다. 온라인·이관 승인은 각각 새 pending으로 시작한다. | [생성 가이드](../../docs/03-guides/reusable-base-guide.md), [원장 투영](../../scripts/reusable-governance-projection.mjs), [산출물 무결성](../../scripts/reusable-governance-integrity.mjs), [적용범위 계약](../../config/governance/reusable-review-scopes.json) | 2026-09-20 |
+| CTX-019 | `npm run project:ui`는 별도 loopback 3100 생성기를 실행한다. Foundation/Core에 20개 업무 도메인을 선택하고 PostgreSQL·멀티모듈/단일모듈 독립 소스를 구성한다. UI/CLI는 같은 엔진을 쓰며 각 산출물은 전체 기술 검증 후 완료된다. | [생성기 가이드](../../docs/03-guides/project-composer-guide.md), [공통 엔진](../../scripts/project-composer.mjs) | 2026-09-20 |
 
 ## 개발·검증·배포 흐름
 

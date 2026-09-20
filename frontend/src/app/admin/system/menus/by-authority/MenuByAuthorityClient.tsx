@@ -3,31 +3,13 @@
 import { useState, useMemo, use } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { 
- ChevronRight, 
- Folder, 
- File, 
- Loader2, 
- ShieldCheck, 
- Network, 
- Lock, 
- Compass, 
- Database,
- ShieldAlert,
- Fingerprint,
- RefreshCcw,
- Milestone,
- LayoutGrid,
- Activity
-} from "lucide-react";
+import { ChevronRight, File, Folder, Loader2, Network, RefreshCcw, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
 import type { AuthorMenuAssignment } from '@/services/foundation/system/AuthorAdminService';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,9 +19,21 @@ import {
  SelectTrigger,
  SelectValue,
 } from "@/components/ui/select";
-import { motion, AnimatePresence } from 'framer-motion';
 
-function buildMenuTree(menuList: MenuByAuthority[]): MenuByAuthority[] {
+/**
+ * 배정된 메뉴를 계층으로 묶는다.
+ *
+ * ⚠ 최상위 판정은 `== null` 과 `0` 을 **둘 다** 받아야 한다. V2_100 이 최상위 4개를
+ *   `up_menu_sn = NULL` 로 고정했고(그 마이그레이션이 `count(*) WHERE up_menu_sn IS NULL <> 4` 를
+ *   예외로 검사한다) 백엔드는 그 값을 그대로 싣는다(MenuService.getAllMenus → MenuDto.upMenuSn).
+ *   종전 판정이 `=== 0` 하나였던 탓에 최상위가 한 건도 잡히지 않아 **모든 권한 그룹에서 트리가
+ *   비었고**, 화면은 툴바가 배정 건수를 세는 바로 옆에서 "할당된 메뉴 없음" 을 보여 줬다.
+ *
+ * ⚠ 부모가 배정 집합에 없으면 그 자식을 버리지 않고 최상위로 올린다. 이 화면이 답하는 질문은
+ *   "이 그룹이 무엇을 보는가" 인데, 상위 메뉴가 배정되지 않았다는 이유로 배정된 하위 메뉴를
+ *   숨기면 화면이 사실보다 적게 말한다.
+ */
+export function buildMenuTree(menuList: MenuByAuthority[]): MenuByAuthority[] {
  const menuMap = new Map<number, MenuByAuthority>();
  const rootMenus: MenuByAuthority[] = [];
 
@@ -49,14 +43,13 @@ function buildMenuTree(menuList: MenuByAuthority[]): MenuByAuthority[] {
 
  menuList.forEach(menu => {
  const currentMenu = menuMap.get(menu.menuNo)!;
- if (menu.upperMenuId === 0) {
- rootMenus.push(currentMenu);
- } else {
- const parent = menuMap.get(menu.upperMenuId);
+ const parentId = menu.upperMenuId;
+ const parent = parentId == null || parentId === 0 ? undefined : menuMap.get(parentId);
  if (parent) {
  parent.children = parent.children || [];
  parent.children.push(currentMenu);
- }
+ } else {
+ rootMenus.push(currentMenu);
  }
  });
 
@@ -203,30 +196,24 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  const currentAuth = authorities.find((a) => a.authrtCd === selectedAuthority);
 
  const renderMenuTree = (menus: MenuByAuthority[], depth: number = 0) => {
- return menus.map((menu, idx) => {
+ return menus.map((menu) => {
  const hasChildren = menu.children && menu.children.length > 0;
  const isExpanded = expandedMenus.has(menu.menuNo);
 
  return (
- <motion.div 
- key={menu.menuNo}
- initial={{ opacity: 0, x: -10 }}
- animate={{ opacity: 1, x: 0 }}
- transition={{ delay: idx * 0.05 }}
- >
+ <div key={menu.menuNo}>
  <div
  role="button"
  tabIndex={hasChildren ? 0 : -1}
  aria-expanded={hasChildren ? isExpanded : undefined}
  aria-label={hasChildren ? `${menu.menuNm} 하위 메뉴 ${isExpanded ? '접기' : '펼치기'}` : menu.menuNm}
  className={cn(
- "flex items-center gap-4 py-4 px-6 rounded-lg transition-all group relative overflow-hidden",
+ 'flex items-center gap-2 rounded px-2 py-1.5 transition-colors',
  hasChildren
- ? "hover:bg-muted cursor-pointer active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
- : "cursor-default",
- isExpanded && hasChildren ? "bg-muted/50" : ""
+ ? 'cursor-pointer hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring'
+ : 'cursor-default',
  )}
- style={{ paddingLeft: `${depth * 32 + 24}px` }}
+ style={{ paddingLeft: `${depth * 20 + 8}px` }}
  onClick={hasChildren ? () => toggleExpand(menu.menuNo) : undefined}
  onKeyDown={(e) => {
  if (!hasChildren) return;
@@ -236,218 +223,127 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  }
  }}
  >
- <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-card shadow-sm border border-border group-hover:border-primary/30 transition-colors">
- {hasChildren ? (
- <ChevronRight className={cn("h-4 w-4 transition-transform text-muted-foreground group-hover:text-primary", isExpanded ? 'rotate-90' : '')} />
- ) : (
- <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-primary/40 transition-colors" />
- )}
+ {/* 펼침 표시는 자리를 고정한다 — 있을 때만 그리면 잎과 가지의 들여쓰기가 어긋난다. */}
+ <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+ {hasChildren
+ ? <ChevronRight size={14} aria-hidden="true" className={cn('transition-transform', isExpanded && 'rotate-90')} />
+ : null}
+ </span>
+ {/* ⚠ 이 화면의 금지 어휘를 주석에도 쓰지 않는다 — DEC-OPS-100 이 이 파일에서 걷어낸 기술 용어를
+     frontend-visible-terms 계약이 **주석을 포함한 원문**에서 막기 때문에, 그 규칙을 설명하려고
+     그 단어를 적는 것만으로 red 가 된다(금지 목록은 계약 파일에 있다).
+     e2e(06-ops-governance)는 lucide-folder·lucide-file 클래스로 메뉴 항목이 그려졌는지 확인한다. */}
+ {hasChildren
+ ? <Folder size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+ : <File size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" />}
+ <span className="min-w-0 truncate text-[length:var(--font-size-body)] text-foreground">{menu.menuNm}</span>
+ {/* 종전에는 프로그램 경로와 메뉴 번호가 hover 에서만 보였다 — 조회 화면에서 숨길 값이 아니다. */}
+ <span className="ml-auto flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+ <span className="hidden font-mono sm:inline">{menu.prgrmFileNm || '프로그램 미연결'}</span>
+ <span className="tabular-nums">{menu.menuNo}</span>
+ </span>
  </div>
-
- <div className={cn(
- "w-10 h-10 rounded-lg flex items-center justify-center shadow-sm border border-border transition-all",
- hasChildren ? "bg-amber-50 text-amber-500 group-hover:bg-amber-500 group-hover:text-white" : "bg-muted text-muted-foreground group-hover:bg-surface-inverse group-hover:text-surface-inverse-foreground"
- )}>
- {hasChildren ? <Folder size={18} /> : <File size={16} />}
+ {hasChildren && isExpanded && renderMenuTree(menu.children!, depth + 1)}
  </div>
-
- <div className="flex flex-col gap-0.5 flex-1 min-w-0">
- <span className={cn(
- "font-bold text-sm tracking-tight truncate",
- hasChildren ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
- )}>{menu.menuNm}</span>
- <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.prgrmFileNm || '프로그램 미연결'}</span>
- </div>
- 
- <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-card border border-border shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
- <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">ID_{menu.menuNo}</span>
- </div>
- </div>
- {hasChildren && isExpanded && (
- <div className="relative">
- <div className="absolute left-[38px] top-0 bottom-0 w-px bg-border" style={{ marginLeft: `${depth * 32}px` }} />
- {renderMenuTree(menu.children!, depth + 1)}
- </div>
- )}
- </motion.div>
  );
  });
  };
 
  return (
- <div className="space-y-12 pb-24">
- <PageHeader
+ <WorkListPage
  title="그룹별 메뉴 현황"
- breadcrumbs={[{ label: '관리 센터' }, { label: '그룹별 메뉴 현황' }]}
-        actions={
- <div className="flex gap-4 p-2 items-center">
- <Button
- variant="ghost"
- onClick={handleRefresh}
- disabled={isRefreshing}
- title="권한 목록과 메뉴 트리를 다시 조회합니다"
- className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
- >
- <RefreshCcw size={22} className={cn("transition-transform duration-700", isRefreshing ? "animate-spin" : "group-hover:rotate-180")} />
+ description="권한 그룹을 고르면 그 그룹에 배정된 메뉴 계층을 보여 줍니다. 배정 편집은 권한 그룹 관리 화면이 소유합니다."
+ breadcrumbItems={[{ label: '권한 보안' }, { label: '그룹별 메뉴 현황' }]}
+ totalCount={selectedAuthority ? assignedMenuSns.size : undefined}
+ actions={(
+ <Button type="button" variant="outline" size="sm" onClick={() => router.push('/admin/security/authority')} className="gap-1.5">
+ <ShieldCheck size={14} aria-hidden="true" /> 권한 그룹 관리
  </Button>
- <Button
- onClick={() => router.push('/admin/security/authority')}
- title="권한 그룹 관리에서 기능권한과 메뉴 표시를 편집합니다"
- className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
- >
- <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 권한 그룹 관리
- </Button>
- </div>
- }
-      />
-
- {/* [2026-08-26] 페이지 헤더가 두 겹이었다 — PageHeader 아래 HubHeader(영문 혼용 히어로 +
-          마케팅 문구)가 한 번 더 있었고 주요 액션이 그쪽에 붙어 있었다.
-          한 화면의 페이지 헤더는 하나이며, 액션은 그 하나가 소유한다. */}
-
- {/* 권한 목록 조회 실패는 "역할 0건"으로 위장하지 않고 사유와 재시도 수단을 노출한다. */}
- {authorityErrorMessage && (
- <div role="alert" className="flex flex-col gap-3 rounded-lg border-2 border-destructive/30 bg-destructive/5 p-6 sm:flex-row sm:items-center sm:justify-between">
- <div className="flex items-start gap-3">
- <ShieldAlert size={20} className="mt-0.5 shrink-0 text-destructive-emphasis" aria-hidden="true" />
- <div className="space-y-1">
- <p className="text-sm font-bold text-destructive-emphasis">권한 목록을 불러오지 못했습니다</p>
- <p className="text-xs font-semibold text-muted-foreground">{authorityErrorMessage}</p>
- </div>
- </div>
- <Button variant="outline" onClick={() => refetchAuthorities()} className="h-10 shrink-0 gap-2 rounded-lg font-bold">
- <RefreshCcw size={16} /> 다시 시도
- </Button>
- </div>
  )}
-
- {/* 근거 없는 고정 지표('보안_상태 최적' · '계층_깊이 팩터_준비')는 삭제하고, 실제 트리에서 계산되는 값만 남긴다. */}
- <HubMetricGrid className="lg:grid-cols-3">
- <HubMetricCard title="조회된 권한 그룹" value={authorities.length} icon={Database} color="primary" />
- {/* [2026-08-29] rawMenus.length 는 '메뉴 전체' 수라 권한과 무관하게 늘 같은 값이었다.
-     서버가 전체 메뉴에 할당 플래그를 붙여 내려주기 때문이다(from(menu) leftJoin). */}
- <HubMetricCard title="할당 메뉴" value={assignedMenuSns.size} icon={LayoutGrid} color="amber" />
- <HubMetricCard title="계층 깊이" value={treeDepth} icon={Compass} color="indigo" />
- </HubMetricGrid>
-
- <div className="grid grid-cols-12 gap-12">
- <div className="col-span-12 lg:col-span-4 h-full space-y-8">
- <HubSectionCard title="권한 그룹 선택" description="메뉴 배정과 계층을 확인할 권한 그룹을 선택하세요" icon={Lock}>
- <div className="space-y-8">
- <div className="space-y-4 pt-4">
- <label htmlFor="authority-select" className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] ml-2">권한 그룹</label>
+ filter={(
+ <div className="flex flex-wrap items-end gap-2">
+ <div className="min-w-0 flex-1 sm:max-w-sm">
+ {/* 이 접근 이름은 e2e(06-ops-governance)가 combobox 셀렉터로 쓴다 — 정확히 권한 그룹. */}
+ <label htmlFor="authority-select" className="mb-1 block text-xs font-medium text-muted-foreground">
+ 권한 그룹
+ </label>
  <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
- <SelectTrigger id="authority-select" className="h-11 px-8 rounded-lg bg-muted/50 border-none shadow-inner text-sm font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
- <div className="flex items-center gap-4">
- <Fingerprint size={20} className="text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
+ <SelectTrigger id="authority-select" className="h-[var(--filter-control-h)] text-[length:var(--font-size-body)]">
  <SelectValue placeholder="권한 그룹을 선택하세요" />
- </div>
  </SelectTrigger>
- <SelectContent className="rounded-lg border-none shadow-2xl p-2 bg-surface-inverse text-surface-inverse-foreground">
+ <SelectContent>
  {authorities.map((auth) => (
- <SelectItem 
- key={auth.authrtCd} 
- value={auth.authrtCd}
- className="rounded-lg h-12 font-bold text-xs tracking-widest uppercase focus:bg-primary focus:text-white mb-1"
- >
+ <SelectItem key={auth.authrtCd} value={auth.authrtCd} className="text-[length:var(--font-size-body)]">
  {auth.authrtNm} ({auth.authrtCd})
  </SelectItem>
  ))}
  </SelectContent>
  </Select>
  </div>
-
- <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground relative overflow-hidden group border-none shadow-2xl min-h-[300px] flex flex-col justify-end">
- <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
- <ShieldAlert size={180} className="text-primary" />
+ <p className="basis-full text-xs text-muted-foreground">
+ 조회된 권한 그룹 {authorities.length}개
+ {selectedAuthority && treeDepth > 0 ? ` · 선택한 그룹의 메뉴 계층 ${treeDepth}단계` : ''}
+ </p>
  </div>
- <div className="relative z-10 space-y-6">
- <div className="w-14 h-11 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 shadow-inner">
- <Activity size={28} className="text-primary" />
- </div>
- <div className="space-y-3">
- <h4 className="text-2xl font-bold tracking-tighter leading-tight uppercase">메뉴 표시 현황</h4>
- <p className="text-xs text-surface-inverse-muted font-bold tracking-[0.3em] uppercase font-mono">선택한 권한 그룹의 메뉴 계층</p>
- </div>
- </div>
- </div>
- </div>
- </HubSectionCard>
- </div>
-
- <div className="col-span-12 lg:col-span-8 h-full">
- <HubSectionCard 
- title={currentAuth ? `[${currentAuth.authrtNm}] 메뉴 계층` : "메뉴 계층"}
- description="선택된 권한에 할당된 전체 메뉴의 위계적 구조입니다." 
- icon={Network}
- >
- <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-8">
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] font-mono">메뉴 트리</span>
- {/* 핸들러가 없어 눌러도 아무 일도 일어나지 않던 '검색' 버튼을 제거했다(구현 계획 없음). */}
- <div className="flex items-center gap-4">
- {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
- </div>
- </div>
-
- <div className="min-h-[600px] relative">
- <AnimatePresence mode="wait">
- {!selectedAuthority ? (
- <motion.div 
- initial={{ opacity: 0 }} 
- animate={{ opacity: 1 }} 
- className="absolute inset-0 flex flex-col items-center justify-center p-24 text-center select-none group"
- >
- <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center text-slate-200 shadow-inner mb-8 group-hover:scale-110 transition-transform duration-1000">
- <Milestone size={48} className="opacity-20" />
- </div>
- <h3 className="text-2xl font-bold text-slate-300 tracking-tighter uppercase mb-2">권한 미선택</h3>
- <p className="text-xs font-bold text-slate-200 tracking-[0.5em] uppercase">메뉴를 확인할 권한 그룹을 먼저 선택하세요.</p>
- </motion.div>
- ) : isMenuLoading ? (
- <motion.div 
- initial={{ opacity: 0 }} 
- animate={{ opacity: 1 }} 
- className="absolute inset-0 flex flex-col items-center justify-center gap-6"
- >
- <Loader2 size={48} className="text-primary animate-spin opacity-40" />
- <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase">데이터 매핑 중...</span>
- </motion.div>
- ) : isMenuError ? (
- // 조회 실패를 '할당된 메뉴 없음'으로 위장하지 않는다.
- <motion.div
- initial={{ opacity: 0 }}
- animate={{ opacity: 1 }}
- className="absolute inset-0 flex items-center justify-center"
- >
- <ErrorStateDisplay error={menuError} onRetry={() => refetchMenus()} />
- </motion.div>
- ) : menuTree.length === 0 ? (
- <motion.div 
- initial={{ opacity: 0 }} 
- animate={{ opacity: 1 }} 
- className="absolute inset-0 flex flex-col items-center justify-center gap-8 py-24"
- >
- <ShieldAlert size={64} className="text-rose-500/20" />
- <h4 className="text-lg font-bold tracking-tighter text-muted-foreground uppercase">할당된 메뉴 없음</h4>
- </motion.div>
- ) : (
- <motion.div 
- initial={{ opacity: 0, y: 10 }}
- animate={{ opacity: 1, y: 0 }}
- className="space-y-4"
- >
- <div className="p-4 rounded-lg bg-muted/30 border-2 border-border">
- {renderMenuTree(menuTree)}
- </div>
- </motion.div>
  )}
- </AnimatePresence>
+ toolbarActions={(
+ <Button
+ type="button"
+ variant="outline"
+ size="sm"
+ onClick={handleRefresh}
+ disabled={isRefreshing}
+ aria-label="권한 목록과 메뉴 트리 새로고침"
+ className="gap-1.5"
+ >
+ <RefreshCcw size={14} aria-hidden="true" className={cn(isRefreshing && 'animate-spin')} />
+ 새로고침
+ </Button>
+ )}
+ >
+ {/* 권한 목록 조회 실패는 역할 0건으로 위장하지 않고 사유와 재시도 수단을 노출한다. */}
+ {authorityErrorMessage && (
+ <div role="alert" className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+ <ShieldAlert size={14} className="shrink-0 text-destructive-emphasis" aria-hidden="true" />
+ <p className="min-w-0 flex-1 text-[length:var(--font-size-body)] text-destructive-emphasis">
+ 권한 목록을 불러오지 못했습니다. {authorityErrorMessage}
+ </p>
+ <Button variant="outline" size="sm" onClick={() => refetchAuthorities()} className="shrink-0 gap-1.5">
+ <RefreshCcw size={14} aria-hidden="true" /> 다시 시도
+ </Button>
  </div>
+ )}
+
+ <section aria-labelledby="menu-hierarchy-title" className="rounded-md border border-border bg-card">
+ <header className="flex items-center gap-2 border-b border-border px-[var(--filter-pad)] py-2">
+ <Network size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+ {/* e2e 가 이 제목을 메뉴 계층 접미로 찾는다 — 접미를 유지한다. */}
+ <h2 id="menu-hierarchy-title" className="truncate text-[length:var(--font-size-body)] font-semibold text-foreground">
+ {currentAuth ? `[${currentAuth.authrtNm}] 메뉴 계층` : '메뉴 계층'}
+ </h2>
+ {isMenuLoading && <Loader2 size={14} aria-hidden="true" className="ml-auto shrink-0 animate-spin text-muted-foreground" />}
+ </header>
+ <div className="p-[var(--filter-pad)]">
+ {!selectedAuthority ? (
+ <p role="status" className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
+ 메뉴를 확인할 권한 그룹을 먼저 선택하세요.
+ </p>
+ ) : isMenuLoading ? (
+ <p role="status" className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
+ 선택한 권한 그룹의 메뉴를 불러오는 중입니다.
+ </p>
+ ) : isMenuError ? (
+ // 조회 실패를 할당된 메뉴 없음으로 위장하지 않는다.
+ <ErrorStateDisplay error={menuError} onRetry={() => refetchMenus()} />
+ ) : menuTree.length === 0 ? (
+ <p role="status" className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
+ 할당된 메뉴 없음
+ </p>
+ ) : (
+ <div className="max-h-[70vh] overflow-y-auto">{renderMenuTree(menuTree)}</div>
+ )}
  </div>
- </HubSectionCard>
- </div>
- </div>
- </div>
+ </section>
+ </WorkListPage>
  );
 }

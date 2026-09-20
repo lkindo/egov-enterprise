@@ -25,7 +25,7 @@ export default async function PrivacyPolicyPage() {
     });
 
   return (
-    <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse"><h1 className="sr-only">개인정보 정책을 불러오는 중</h1>사용자·조직 데이터를 불러오는 중입니다...</div>}>
+    <Suspense fallback={<div className="p-6 text-center text-[length:var(--font-size-body)] text-muted-foreground"><h1 className="sr-only">개인정보 정책을 불러오는 중</h1>사용자·조직 데이터를 불러오는 중입니다...</div>}>
       <UserOrgHubClient 
         defaultTab="POLICIES" 
         usersPromise={usersPromise} 

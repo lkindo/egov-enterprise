@@ -31,8 +31,12 @@ const ALLOWED: Record<string, string> = {
     '탭 내부 패널 전환 — 페이지 진입이 아니라 선택 결과 교체 신호',
   // 아래 둘은 next.config 리다이렉트로 도달 불가한 화면이라 사용자에게 보이는 변화가 없다.
   // 손대지 않는다는 판단을 기록으로 남긴다(DEC-OPS-023).
-  'src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx':
-    '도달 불가(리다이렉트) 화면 — 이행 대상이 아니다',
+  //
+  // ⚠ [2026-09-20] 여기 있던 LoginPolicyAdminClient 를 걷었다. 사유가 '도달 불가(리다이렉트)' 였는데
+  //   DEC-OPS-024(2026-08-27)가 그 config redirect 를 제거해 정본 경로로 복원한 뒤였다 —
+  //   e2e(26-security-admin-coverage)가 "리다이렉트되지 않는다" 를 단언하고 있으니 사유가 사실과
+  //   반대였다. 도달 가능한 업무 화면이므로 예외가 아니라 이행 대상이고, 실제로 이행하며
+  //   진입 애니메이션을 걷었다. 아래 두 항목의 리다이렉트는 next.config 에 그대로 살아 있다(실측).
   'src/app/admin/system/audit/AuditTimelineClient.tsx':
     '도달 불가(리다이렉트) 화면 — 이행 대상이 아니다',
   'src/app/cop/sms/selectSmsList/SmsHubClient.tsx':

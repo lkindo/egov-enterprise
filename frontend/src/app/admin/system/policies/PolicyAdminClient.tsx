@@ -133,22 +133,20 @@ export default function PolicyAdminClient() {
  {
  header: '정책 유형(ID)',
  accessor: (item) => (
- <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
- <Settings size={14} />
- </div>
- <span className="font-bold tracking-tighter uppercase">{item.plcyTypeCd}</span>
+ <div className="flex items-center gap-2">
+ <Settings size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+ <span className="font-mono text-[length:var(--font-size-body)] text-foreground">{item.plcyTypeCd}</span>
  </div>
  )
  },
  {
  header: '정책 제목',
- accessor: (item) => <span className="font-bold text-foreground text-left block">{item.plcyTtl}</span>
+ accessor: (item) => <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{item.plcyTtl}</span>
  },
  {
  header: '내용 요약',
  accessor: (item) => (
- <div className="max-w-xs truncate text-muted-foreground opacity-60 text-left">
+ <div className="max-w-xs truncate text-[length:var(--font-size-body)] text-muted-foreground">
  {(() => {
  const plain = htmlToSemanticPlainText(item.plcyCn || '');
  if (!plain) return '내용 없음';
@@ -167,9 +165,8 @@ export default function PolicyAdminClient() {
  size="sm"
  aria-label={`${item.plcyTtl || item.plcyTypeCd} 정책 수정`}
  onClick={() => handleEdit(item)}
- className="hover:bg-primary/10 hover:text-primary rounded-lg"
  >
- <Edit2 size={14} className="mr-2" /> 수정
+ <Edit2 size={14} aria-hidden="true" /> 수정
  </Button>
  </div>
  )
@@ -206,38 +203,37 @@ export default function PolicyAdminClient() {
  if (!form.formState.isSubmitting) setIsEditModalOpen(open);
  }}
  >
- <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto rounded-lg border-none shadow-2xl p-0">
- <div className="bg-surface-inverse p-8 text-surface-inverse-foreground flex items-center justify-between">
+ <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto rounded-lg border-none p-0 shadow-lg">
+ <div className="flex items-center justify-between gap-4 border-b border-border bg-card pb-3 pl-5 pr-12 pt-4">
  <DialogHeader>
- <DialogTitle className="text-2xl font-bold flex items-center gap-3">
- <Edit2 className="text-primary" /> 정책 수정 : <span className="opacity-50 tracking-widest uppercase">{selectedPolicy?.plcyTypeCd}</span>
+ <DialogTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+ 정책 수정 : <span className="font-mono text-muted-foreground">{selectedPolicy?.plcyTypeCd}</span>
  </DialogTitle>
  </DialogHeader>
- <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg text-xs font-bold tracking-widest uppercase">
- <CheckCircle2 size={14} className="text-primary" /> 실시간 편집 모드
+ <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+ <CheckCircle2 size={14} aria-hidden="true" /> 실시간 편집 모드
  </div>
  </div>
 
  <Form {...form}>
  <form onSubmit={form.handleSubmit(onFormSubmit)} noValidate>
- <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar text-left">
+ <div className="space-y-[var(--form-gap)] bg-card px-5 py-4 custom-scrollbar text-left">
  <FormErrorSummary labels={POLICY_FORM_LABELS} onNavigate={form.focusError} />
  <ShadcnFormField
  control={form.control}
  name="plcyTtl"
  required
  render={({ field }) => (
- <FormItem className="space-y-3">
- <FormLabel className="text-sm font-bold tracking-widest uppercase opacity-40 ml-2">정책 제목</FormLabel>
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">정책 제목</FormLabel>
  <FormControl>
  <Input 
  {...field}
  maxLength={100}
  placeholder="정책 제목을 입력하세요"
- className="h-11 rounded-lg border-2 border-border/50 focus:border-primary/50 bg-muted/50 font-bold text-lg"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -247,8 +243,8 @@ export default function PolicyAdminClient() {
  name="plcyCn"
  required
  render={({ field }) => (
- <FormItem className="space-y-3">
- <FormLabel className="text-sm font-bold tracking-widest uppercase opacity-40 ml-2">정책 내용</FormLabel>
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">정책 내용</FormLabel>
  <FormControl>
  <RichTextEditor 
  value={field.value} 
@@ -256,22 +252,22 @@ export default function PolicyAdminClient() {
  className="min-h-[400px]"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
  </FormItem>
  )}
  />
  </div>
 
- <DialogFooter className="p-8 bg-muted border-t border-border/50 flex items-center justify-between">
- <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
+ <DialogFooter className="flex items-center border-t border-border bg-muted px-5 py-3">
+ <div className="text-left text-xs text-muted-foreground">
  * 저장하면 정책 본문이 갱신됩니다. 이 본문을 보여 주는 화면은 관리자 전용 정책 열람(/help/policies)뿐입니다.
  </div>
- <div className="flex gap-3">
- <Button variant="ghost" type="button" disabled={form.formState.isSubmitting} onClick={() => setIsEditModalOpen(false)} className="rounded-lg h-12 px-8 font-bold text-xs tracking-widest uppercase">취소</Button>
+ <div className="flex shrink-0 gap-2">
+ <Button variant="ghost" type="button" disabled={form.formState.isSubmitting} onClick={() => setIsEditModalOpen(false)}>취소</Button>
  <Button 
  type="submit"
  disabled={form.formState.isSubmitting}
- className="rounded-lg h-12 px-8 bg-surface-inverse hover:bg-primary text-surface-inverse-foreground transition-all shadow-lg font-bold text-xs tracking-widest uppercase"
+ className="px-6"
  >
  {form.formState.isSubmitting ? '저장 중...' : '변경 사항 반영하기'}
  </Button>

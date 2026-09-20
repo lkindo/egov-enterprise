@@ -9,8 +9,11 @@ import { assertSeparateProjectionRoot, isExcludedRedirectTarget, projectReusable
 import { planJavaRemoval, projectFrontendPackMarkers, pruneFrontend, pruneJava, resolveDomainRemovalDirectory, stripExcludedFrontendPackBlocks } from './generate-reusable-base-source.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { analyzeRouteCapabilities, parseConfigRedirectsSource } from './ui-route-capabilities-contract.mjs';
-import { canonicalJsonSha256, inspectReusableGovernance, MEMORY_PATHS, projectedCodeScope } from './reusable-governance-integrity.mjs';
+import { canonicalJsonSha256, inspectReusableGovernance, MEMORY_PATHS, projectedCodeScope, snapshotPathFor } from './reusable-governance-integrity.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH, validateReviewScopeContract } from './reusable-review-scopes.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
+import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (root, path) => JSON.parse(readFileSync(join(root, path), 'utf8'));
@@ -118,6 +121,11 @@ test('review ownership covers every upstream item and cannot invent missing-sour
     const unknown = structuredClone(reviewContract);
     unknown[kind][0].requiredPacks = ['nonexistent'];
     assert.throws(() => validateReviewScopeContract(unknown, upstreamReviews, profiles), /invalid required packs/);
+    const invalidDomains = structuredClone(reviewContract);
+    invalidDomains[kind][0].requiredDomains = ['unowned'];
+    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, profiles), /invalid required domains/);
+    delete invalidDomains[kind][0].requiredDomains;
+    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, profiles), /invalid required domains/);
   }
   const fakeException = structuredClone(reviewContract);
   fakeException.optionalPilotSources.push({ pilotId: 'content-login', source: 'frontend/src/app/login/LoginClient.tsx', requiredPacks: ['collaboration'] });
@@ -126,6 +134,32 @@ test('review ownership covers every upstream item and cannot invent missing-sour
   const removedLogin = { ...routes, routes: routes.routes.filter(row => row.route !== '/login') };
   assert.throws(() => deriveProjectedReviewManifests({ outputRoot: ROOT, upstream: upstreamReviews, contract: reviewContract,
     profiles, profile: 'demo', routes: removedLogin }), /included route is missing/);
+});
+
+test('custom review population follows domains and fails when selected evidence disappears', () => {
+  const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
+  try {
+    const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'review-probe' }, sourceRef: 'v1.0.0', selection: { domains: ['survey'] } }, loadProjectComposerCatalog(ROOT));
+    const excluded = new Set(reviewContract.optionalPilotSources.map(row => row.source));
+    const sources = new Set([
+      ...upstreamReviews.uiQuality.scenarios.flatMap(row => [...row.sourceEvidence, ...row.journeySteps.map(step => step.source)]),
+      ...upstreamReviews.visibleTerms.pilotCensus.flatMap(row => row.sources),
+      ...upstreamReviews.krds.mapping.flatMap(row => row.localEvidence ?? []),
+    ]);
+    for (const file of sources) if (!excluded.has(file)) {
+      mkdirSync(dirname(join(output, file)), { recursive: true }); cpSync(join(ROOT, file), join(output, file));
+    }
+    const options = { outputRoot: output, upstream: upstreamReviews, contract: reviewContract, profiles, profile: 'custom',
+      routes: readJson(ROOT, 'config/ui-route-capabilities.json'), composition };
+    const projected = deriveProjectedReviewManifests(options);
+    assert.ok(projected.reviewScopes.visibleTerms.pilotIds.includes('content-survey-create'));
+    assert.ok(!projected.reviewScopes.visibleTerms.pilotIds.includes('content-schedule'), 'the stats/demo provenance pack does not select schedule');
+    assert.ok(!projected.reviewScopes.uiQuality.scenarioIds.includes('board-article-composer'));
+    assert.ok(projected.reviewScopes.uiQuality.excludedScenarios.every(row => row.reason === 'required-domain-not-in-composition'));
+    assert.throws(() => deriveProjectedReviewManifests({ ...options, composition: undefined }), /requires a resolved composition/);
+    rmSync(join(output, 'frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx'));
+    assert.throws(() => deriveProjectedReviewManifests(options), /included source is missing/);
+  } finally { cleanupOwnedFixture(output); }
 });
 
 test('release evidence binds active CI, required checks and upstream verification history', () => {
@@ -181,12 +215,14 @@ function cleanupOwnedFixture(directory) {
   rmSync(resolved, { recursive: true });
 }
 
-for (const profileName of ['core', 'collaboration', 'demo']) {
+for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
   test(`${profileName} source projection rebuilds actual census, retains provenance, and leaves adoption pending`, () => {
     const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
     try {
       copyInputs(output);
-      const profile = profiles.profiles[profileName];
+      const composition = profileName === 'custom' ? resolveProjectRecipe({ schemaVersion: 1, project: { name: 'governance-probe' },
+        sourceRef: 'v1.0.0', selection: { domains: [] } }, loadProjectComposerCatalog(ROOT)) : undefined;
+      const profile = composition ? { ...profiles.profiles.core, resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths } : profiles.profiles[profileName];
       pruneJava(output, profiles, profile);
       stripExcludedFrontendPackBlocks(output, profiles, profile);
       pruneFrontend(output, profiles, profile);
@@ -196,7 +232,7 @@ for (const profileName of ['core', 'collaboration', 'demo']) {
       writeFileSync(join(output, 'config/reusable-base-profiles.json'), `${JSON.stringify(manifest, null, 2)}\n`);
       writeFileSync(join(output, 'config/governance/migration-adoption-review.json'), JSON.stringify({ status: 'approved', owner: 'synthetic-upstream-operator' }));
       const result = projectReusableGovernance({
-        sourceRoot: ROOT, outputRoot: output, profile: profileName, sourceCommit,
+        sourceRoot: ROOT, outputRoot: output, profile: profileName, sourceCommit, composition,
         projectSource: (file, text) => projectFrontendPackMarkers(text, {
           knownPacks: new Set(Object.keys(profiles.packs)),
           excludedPacks: new Set(Object.keys(profiles.packs).filter(name => !profile.packs.includes(name))),
@@ -204,6 +240,7 @@ for (const profileName of ['core', 'collaboration', 'demo']) {
         }).source,
       });
       const lock = { schemaVersion: 1, profile: profileName, packs: profile.packs, sourceCommit,
+        ...(composition ? { composition: { ...composition, sourceCommit } } : {}),
         governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
       writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
       assert.deepEqual(inspectReusableGovernance(output).errors, []);
@@ -211,6 +248,7 @@ for (const profileName of ['core', 'collaboration', 'demo']) {
       assert.deepEqual(readJson(output, 'config/ui-url-state-census.json'), buildUrlStateCensus({ repoRoot: output }));
       assert.equal(result.sourceCommit, sourceCommit);
       assert.equal(result.profile, profileName);
+      assert.equal(result.activeArtifacts.filter(row => row.path === 'config/governance/permission-catalog.json').length, 1);
       const adoption = readJson(output, 'config/governance/adoption-review.json');
       assert.equal(adoption.status, 'pending');
       assert.equal(adoption.profile, profileName);
@@ -221,14 +259,14 @@ for (const profileName of ['core', 'collaboration', 'demo']) {
       assert.equal(migrationAdoption.owner, null);
       assert.equal(migrationAdoption.product, 'migration-tool');
       assert.equal(migrationAdoption.profile, null);
-      const expectedCounts = { core: [5, 5], collaboration: [7, 6], demo: [8, 8] }[profileName];
+      const expectedCounts = { core: [5, 5], collaboration: [7, 6], demo: [8, 8], custom: [5, 5] }[profileName];
       assert.equal(result.projectedReviewScopes.uiQuality.scenarioIds.length, expectedCounts[0]);
       assert.equal(result.projectedReviewScopes.visibleTerms.pilotIds.length, expectedCounts[1]);
       assert.deepEqual(readJson(output, REVIEW_MANIFEST_PATHS.krds).profiles, upstreamReviews.krds.profiles);
       const home = readJson(output, REVIEW_MANIFEST_PATHS.visibleTerms).pilotCensus.find(row => row.id === 'content-user-home');
       assert.ok(home, 'the retained home pilot must continue to check remaining source');
       assert.deepEqual(home.findings, upstreamReviews.visibleTerms.pilotCensus.find(row => row.id === home.id).findings);
-      assert.equal(home.sources.length, profileName === 'core' ? 3 : 5);
+      assert.equal(home.sources.length, ['core', 'custom'].includes(profileName) ? 3 : 5);
       // Upstream owner decisions reopen as awaiting input in every generated profile (ADR-0018).
       const isDecision = finding => finding.status === 'accepted-by-owner';
       assert.ok(upstreamReviews.visibleTerms.pilotCensus.flatMap(row => row.findings ?? []).some(isDecision),
@@ -299,6 +337,37 @@ for (const profileName of ['core', 'collaboration', 'demo']) {
           writeFileSync(join(output, metadataPath), oldMetadata);
           writeFileSync(join(output, 'reusable-base-lock.json'), oldLock);
         }
+      }
+      if (composition) {
+        for (const permissionPath of [snapshotPathFor('config/governance/permission-catalog.json'), 'config/governance/permission-catalog.json']) {
+          const originalPermissions = readFileSync(join(output, permissionPath), 'utf8');
+          try {
+            const changedPermissions = JSON.parse(originalPermissions);
+            const permission = changedPermissions.permissions.find(row => row.defaultGroups.length > 0);
+            assert.ok(permission, 'the permission catalog must contain a default group for this mutation proof');
+            permission.defaultGroups.pop();
+            writeFileSync(join(output, permissionPath), JSON.stringify(changedPermissions));
+            const errors = inspectReusableGovernance(output).errors.join('\n');
+            if (permissionPath.includes('/upstream-review/')) {
+              assert.match(errors, /Upstream snapshot hash mismatch/);
+              assert.match(errors, /Composition catalog differs from upstream permission snapshot/);
+            } else assert.match(errors, /Active review artifact changed: config\/governance\/permission-catalog\.json/);
+          } finally { writeFileSync(join(output, permissionPath), originalPermissions); }
+          assert.deepEqual(inspectReusableGovernance(output).errors, []);
+        }
+        const originalMenuSnapshot = readFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8');
+        try {
+          const changedMenuSnapshot = JSON.parse(originalMenuSnapshot);
+          changedMenuSnapshot.menus[0].menu_nm = 'Unreviewed replacement';
+          writeFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), JSON.stringify(changedMenuSnapshot));
+          assert.match(inspectReusableGovernance(output).errors.join('\n'), /Composer menu snapshot checksum mismatch/);
+        } finally { writeFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), originalMenuSnapshot); }
+        assert.deepEqual(inspectReusableGovernance(output).errors, []);
+        const selection = readJson(output, COMPOSER_SELECTION_PATH);
+        assert.equal(selection.composition.compositionHash, composition.compositionHash);
+        selection.composition.permissionCodes.push('MAIL_SEND');
+        writeFileSync(join(output, COMPOSER_SELECTION_PATH), JSON.stringify(selection));
+        assert.match(inspectReusableGovernance(output).errors.join('\n'), /snapshot checksum mismatch|does not match/);
       }
       console.log(`${profileName}: routes=${result.routes.length}, URL records=${result.urlRecordIds.length}, inherited=${result.inheritedUrlRecordIds.length}, adoption=pending`);
     } finally {

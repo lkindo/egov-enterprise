@@ -4,7 +4,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Plus, Settings, Trash2, Zap } from 'lucide-react';
+import { Loader2, Plus, Settings, Trash2 } from 'lucide-react';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -329,7 +329,7 @@ export default function EventManagementClient() {
     {
       header: '번호',
       accessor: (_, index) => (
-        <span className="font-mono text-xs font-bold text-muted-foreground">
+        <span className="font-mono text-xs text-muted-foreground">
           {index !== undefined ? (index + 1 + (page - 1) * pageSize).toString().padStart(2, '0') : '-'}
         </span>
       ),
@@ -338,11 +338,11 @@ export default function EventManagementClient() {
     {
       header: '행사 명칭',
       accessor: (event) => (
-        <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[length:var(--font-size-body)] font-medium text-foreground">
             {event.evntNm}
           </span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+          <span className="text-xs tabular-nums text-muted-foreground">
             {ymdToDisplay(event.evntBgngYmd)} ~ {ymdToDisplay(event.evntEndYmd)}
           </span>
         </div>
@@ -351,9 +351,9 @@ export default function EventManagementClient() {
     {
       header: '참여 정원',
       accessor: (event) => (
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-muted-foreground tabular-nums">{event.evntUseCnt}</span>
-          <span className="text-[10px] font-bold text-muted-foreground tracking-tighter">명</span>
+        <div className="flex items-baseline gap-1">
+          <span className="text-[length:var(--font-size-body)] tabular-nums text-foreground">{event.evntUseCnt}</span>
+          <span className="text-xs text-muted-foreground">명</span>
         </div>
       ),
       className: 'w-32'
@@ -372,7 +372,7 @@ export default function EventManagementClient() {
             disabled={deletingEventSn !== null || submitPendingRef.current}
             aria-label={`${event.evntNm} 수정`}
             onClick={() => { void handleOpenEdit(event); }}
-            className="w-10 h-10 rounded-lg hover:bg-muted transition-colors"
+            className="rounded-md text-muted-foreground"
           >
             <Settings size={16} aria-hidden="true" />
           </Button>
@@ -384,7 +384,7 @@ export default function EventManagementClient() {
             aria-busy={isDeleting}
             aria-label={isDeleting ? `${event.evntNm} 삭제 중` : `${event.evntNm} 삭제`}
             onClick={() => { void handleDelete(event); }}
-            className="w-10 h-10 rounded-lg hover:bg-rose-50 hover:text-rose-500 transition-colors"
+            className="rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive-emphasis"
           >
             {isDeleting
               ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -462,13 +462,13 @@ export default function EventManagementClient() {
 
           잘라내는 것과 스크롤을 주는 것의 차이가 곧 "저장할 수 있는가" 다.
         */}
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card rounded-lg border-none shadow-2xl p-0">
-          <div className="bg-surface-inverse p-8 text-surface-inverse-foreground">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border-none p-0 shadow-lg">
+          <div className="border-b border-border bg-card pb-3 pl-5 pr-10 pt-4">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold tracking-tighter">
+              <DialogTitle className="text-base font-semibold text-foreground">
                 {editingEvent ? '행사 정보 수정' : '신규 행사 등록'}
               </DialogTitle>
-              <DialogDescription className="text-white/40 text-xs font-bold tracking-[0.2em]">
+              <DialogDescription className="text-[length:var(--font-size-body)] text-muted-foreground">
                 {isLoadingEvent
                   ? '행사 정보를 불러오는 중입니다…'
                   : editingEvent
@@ -477,15 +477,15 @@ export default function EventManagementClient() {
               </DialogDescription>
             </DialogHeader>
           </div>
-          <form onSubmit={handleSubmit} noValidate className="p-8 space-y-8">
+          <form onSubmit={handleSubmit} noValidate className="space-y-[var(--form-gap)] bg-card px-5 py-4">
             <FormErrorSummary
               errors={validation.errors}
               labels={eventValidationLabels}
               onNavigate={validation.focusError}
             />
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-2 gap-[var(--form-gap)]">
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="evntNm" className="text-xs font-bold text-muted-foreground tracking-widest">
+                <Label htmlFor="evntNm" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                   행사 명칭 <span aria-hidden="true" className="text-destructive-emphasis">*</span>
                 </Label>
                 <Input
@@ -498,7 +498,7 @@ export default function EventManagementClient() {
                     setForm({ ...form, evntNm: e.target.value });
                   }}
                   placeholder="행사 명칭을 입력하십시오"
-                  className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
+                  className="h-[var(--control-h)]"
                   required
                   maxLength={200}
                 />
@@ -507,7 +507,7 @@ export default function EventManagementClient() {
                 ) : null}
               </div>
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="evntCn" className="text-xs font-bold text-muted-foreground tracking-widest">
+                <Label htmlFor="evntCn" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                   상세 내용 <span aria-hidden="true" className="text-destructive-emphasis">*</span>
                 </Label>
                 <Input
@@ -520,7 +520,7 @@ export default function EventManagementClient() {
                     setForm({ ...form, evntCn: e.target.value });
                   }}
                   placeholder="상세 내용을 입력하십시오"
-                  className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
+                  className="h-[var(--control-h)]"
                   required
                   maxLength={4000}
                 />
@@ -529,7 +529,7 @@ export default function EventManagementClient() {
                 ) : null}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="evntBgngYmd" className="text-xs font-bold text-muted-foreground tracking-widest">
+                <Label htmlFor="evntBgngYmd" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                   행사 시작일 <span aria-hidden="true" className="text-destructive-emphasis">*</span>
                 </Label>
                 <Input
@@ -542,7 +542,7 @@ export default function EventManagementClient() {
                     validation.clearError('evntBgngYmd');
                     setForm({ ...form, evntBgngYmd: e.target.value });
                   }}
-                  className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
+                  className="h-[var(--control-h)]"
                   required
                 />
                 {validation.errors.evntBgngYmd ? (
@@ -550,7 +550,7 @@ export default function EventManagementClient() {
                 ) : null}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="evntEndYmd" className="text-xs font-bold text-muted-foreground tracking-widest">
+                <Label htmlFor="evntEndYmd" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                   행사 종료일 <span aria-hidden="true" className="text-destructive-emphasis">*</span>
                 </Label>
                 <Input
@@ -563,7 +563,7 @@ export default function EventManagementClient() {
                     validation.clearError('evntEndYmd');
                     setForm({ ...form, evntEndYmd: e.target.value });
                   }}
-                  className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
+                  className="h-[var(--control-h)]"
                   required
                 />
                 {validation.errors.evntEndYmd ? (
@@ -571,7 +571,7 @@ export default function EventManagementClient() {
                 ) : null}
               </div>
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="evntUseCnt" className="text-xs font-bold text-muted-foreground tracking-widest">
+                <Label htmlFor="evntUseCnt" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                   참여 정원 (명) <span aria-hidden="true" className="text-destructive-emphasis">*</span>
                 </Label>
                 <Input
@@ -584,7 +584,7 @@ export default function EventManagementClient() {
                     validation.clearError('evntUseCnt');
                     setForm({ ...form, evntUseCnt: e.target.value });
                   }}
-                  className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
+                  className="h-[var(--control-h)]"
                   required
                   min={0}
                   step={1}
@@ -600,7 +600,7 @@ export default function EventManagementClient() {
                 기존 행에 값이 없을 수 있고 서버도 요구하지 않는다.
               */}
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="picNm" className="text-xs font-bold text-muted-foreground tracking-widest">
+                <Label htmlFor="picNm" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                   담당자
                 </Label>
                 <Input
@@ -613,7 +613,7 @@ export default function EventManagementClient() {
                     setForm({ ...form, picNm: e.target.value });
                   }}
                   maxLength={100}
-                  className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
+                  className="h-[var(--control-h)]"
                   placeholder="예: 총무팀 김담당"
                 />
                 {validation.errors.picNm ? (
@@ -621,7 +621,7 @@ export default function EventManagementClient() {
                 ) : null}
               </div>
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="prepMttr" className="text-xs font-bold text-muted-foreground tracking-widest">
+                <Label htmlFor="prepMttr" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                   준비사항
                 </Label>
                 <textarea
@@ -635,27 +635,26 @@ export default function EventManagementClient() {
                   }}
                   maxLength={2500}
                   placeholder="예: 버스 2대 예약, 현수막 제작"
-                  className="w-full min-h-[120px] bg-muted border-none rounded-lg p-4 font-bold text-sm outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                  className="w-full min-h-[96px] resize-y rounded-md border border-input bg-transparent px-3 py-2 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 />
                 {validation.errors.prepMttr ? (
                   <p {...validation.messageProps('prepMttr')} className="text-xs font-bold text-destructive-emphasis" />
                 ) : null}
               </div>
             </div>
-            <DialogFooter className="pt-8 border-t border-border">
+            <DialogFooter className="border-t border-border pt-3">
               <Button
                 type="button"
                 variant="ghost"
                 disabled={isSubmitting || createMutation.isPending}
                 onClick={() => handleCreateModalOpenChange(false)}
-                className="h-11 px-8 font-bold text-xs tracking-widest"
-              >
+>
                 취소
               </Button>
-              <Button type="submit" disabled={isSubmitting || createMutation.isPending} aria-busy={(isSubmitting || createMutation.isPending) || undefined} className="h-11 px-10 bg-primary text-white rounded-lg font-bold text-xs tracking-widest shadow-xl shadow-primary/20 gap-3">
+              <Button type="submit" disabled={isSubmitting || createMutation.isPending} aria-busy={(isSubmitting || createMutation.isPending) || undefined} className="px-6">
                 {isSubmitting || createMutation.isPending || updateMutation.isPending
                   ? (editingEvent ? '저장 중...' : '등록 중...')
-                  : <><Zap size={16} aria-hidden="true" /> {editingEvent ? '변경 사항 저장' : '행사 등록'}</>}
+                  : (editingEvent ? '변경 사항 저장' : '행사 등록')}
               </Button>
             </DialogFooter>
           </form>

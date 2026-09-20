@@ -1,17 +1,43 @@
 'use client';
 
+/**
+ * 게시판 표시 템플릿 7종.
+ *
+ * 게시판마다 `tmpltId` 로 고르는 표현이며, **각 템플릿의 구조적 정체성(대표글 강조·2열 카드·
+ * 질문 상태·월 달력·아코디언·문서 행·표)은 제품 설계라 유지한다.** [2026-09-20] 업무 화면
+ * 문법(docs/02-architecture/work-screen-grammar-catalog.md §3·§4)에 어긋나는 **장식만** 걷었다.
+ *
+ * 걷은 것과 이유
+ *   - 진입 애니메이션(framer-motion `staggerChildren` + spring): 첫 글 도달을 지연시킨다(§3).
+ *     목록이 20건이면 마지막 카드까지 2초가 걸렸다.
+ *   - 한국어 라벨의 `uppercase tracking-[0.3~0.4em]`: §3 금지. 한국어에 대문자 변환은 효과가
+ *     없고 넓은 자간만 남아 가로 공간을 먹는다.
+ *   - 반투명 흰색 표면과 팔레트 리터럴(그라데이션·상태색) 하드코딩: 다크 모드에서 깨진다.
+ *     ⚠ 색 가드는 **주석을 포함한 원문**을 세므로 여기에 그 클래스 이름을 적지 않는다.
+ *   - 워터마크 아이콘(opacity-0.02~0.03), 블러 오브(`blur-[120px] animate-pulse`), 회전·확대 hover.
+ *
+ * 고친 사실 두 가지
+ *   - 갤러리의 288px 이미지 영역은 **채울 데이터가 없었다** — `BoardPost` 에 썸네일 필드가 없어
+ *     모든 글이 같은 아이콘과 그라데이션을 보여 주는 영구 플레이스홀더였다. 갤러리인 척하는 대신
+ *     실제로 아는 사실(첨부 수)을 말한다.
+ *   - 날짜가 `2026.09.20` 처럼 점 구분이었다. 시스템 표준은 `yyyy-MM-dd` 다(DEC-OPS-100).
+ *
+ * ⚠ e2e(03-board-community)가 각 글을 `a[href*="pstSn="]` + 제목 텍스트로 찾는다 — 제목을 감싸는
+ *   `Link` 와 그 href 형태를 바꾸지 않는다.
+ */
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { BoardPost } from '@/types/business/board';
 import { HighlightText } from './HighlightText';
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
-import { BookOpen,  Clock,  Eye,  MessageSquare,  ChevronRight,  ThumbsUp,
-  HelpCircle,  CheckCircle2,  ChevronDown } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import {
+  BookOpen, Clock, Eye, MessageSquare, ChevronRight, ThumbsUp,
+  HelpCircle, CheckCircle2, ChevronDown, Paperclip,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -19,9 +45,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from 'framer-motion';
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 interface TemplateProps {
   list: BoardPost[];
@@ -33,239 +58,184 @@ interface TemplateProps {
   totalCount?: number;
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+/** 저장 값은 `yyyy-MM-dd…` 이므로 앞 10자리가 곧 표시 형식이다. 점 구분으로 바꾸지 않는다. */
+const toDisplayDate = (value: string | undefined) =>
+  (value ? String(value).substring(0, 10) : '-');
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: "spring" as const,
-      stiffness: 100
-    }
-  }
-};
+const detailHref = (bbsId: string, pstSn: number) =>
+  `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`;
+
+/** 목록 카드·행이 공유하는 메타 한 줄. 라벨은 아이콘이 아니라 글로도 읽힌다. */
+function PostMeta({ item }: { item: BoardPost }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+      <span className="inline-flex items-center gap-1">
+        <Clock size={12} aria-hidden="true" />
+        <span className="tabular-nums">{toDisplayDate(item.crtDt)}</span>
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <Eye size={12} aria-hidden="true" />
+        조회 <span className="tabular-nums">{(item.inqCnt || 0).toLocaleString()}</span>
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <MessageSquare size={12} aria-hidden="true" />
+        댓글 <span className="tabular-nums">{item.commentCnt ?? 0}</span>
+      </span>
+    </div>
+  );
+}
+
+/** 추천 버튼. 동기 잠금과 진행 표시는 호출부(BoardListClient)가 소유한다. */
+function LikeButton({
+  item,
+  handleLike,
+  pendingLikePstSn,
+}: Pick<TemplateProps, 'handleLike' | 'pendingLikePstSn'> & { item: BoardPost }) {
+  const pending = pendingLikePstSn === item.pstSn;
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={(e) => handleLike(e, item.pstSn)}
+      disabled={pendingLikePstSn !== null}
+      aria-busy={pending || undefined}
+      aria-label={`${item.pstTtl} ${pending ? '추천 처리 중' : '추천'}`}
+      className="gap-1.5"
+    >
+      <ThumbsUp size={14} aria-hidden="true" />
+      <span className="tabular-nums">{pending ? '처리 중…' : item.likeCnt || 0}</span>
+    </Button>
+  );
+}
 
 export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
   if (list.length === 0) return null;
+  const [lead, ...rest] = list;
+  const cards = page === 1 ? rest : list;
+
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-10 p-10"
-    >
+    <div className="space-y-3 p-[var(--filter-pad)]">
       {page === 1 && (
-        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <Card className="lg:col-span-12 p-12 bg-surface-inverse rounded-3xl text-surface-inverse-foreground relative overflow-hidden group border-none shadow-2xl">
-            <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-primary/20 blur-[120px] rounded-full animate-pulse" />
-            <div className="absolute bottom-[-10%] left-[-5%] w-64 h-64 bg-hub-indigo/10 blur-[100px] rounded-full" />
-            
-            <div className="relative z-10 space-y-8">
-              <Badge className="bg-white/10 backdrop-blur-md text-white border-white/20 font-black tracking-[0.4em] uppercase py-2 px-6 text-xs rounded-full">대표 게시글</Badge>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${list[0].pstSn}`}>
-                <h3 className="text-5xl font-black tracking-tighter leading-none group-hover:text-primary transition-all cursor-pointer decoration-primary/30 group-hover:underline underline-offset-8 decoration-4">{list[0].pstTtl}</h3>
-              </Link>
-              <div className="flex flex-wrap items-center gap-10 mt-10">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-primary font-black text-sm border border-white/10 shadow-xl">OP</div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-1">작성자</span>
-                    <span className="text-lg font-black">{list[0].userNm}</span>
-                  </div>
-                </div>
-                <div className="h-10 w-px bg-white/10 hidden md:block" />
-                <div className="flex items-center gap-3 text-white/60">
-                  <Clock size={20} className="text-primary" />
-                  <span className="text-sm font-bold tracking-tight">{list[0].crtDt ? String(list[0].crtDt).substring(0, 10) : '-'}</span>
-                </div>
-                <div className="h-10 w-px bg-white/10 hidden md:block" />
-                <div className="flex items-center gap-3 text-white/60">
-                  <Eye size={20} className="text-primary" />
-                  <span className="text-sm font-bold tracking-tight">{(list[0].inqCnt || 0).toLocaleString()}회 조회</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
+        /* 대표 글 강조는 이 템플릿의 정체성이라 남긴다 — 다만 히어로가 아니라 강조된 한 행이다. */
+        <article className="rounded-md border border-primary/30 bg-primary/5 p-[var(--filter-pad)]">
+          <Badge variant="secondary" className="mb-2">대표 게시글</Badge>
+          <h3 className="text-base font-semibold text-foreground">
+            <Link href={detailHref(bbsId, lead.pstSn)} className="hover:text-primary hover:underline">
+              {lead.pstTtl}
+            </Link>
+          </h3>
+          <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
+            {lead.userNm}
+          </p>
+          <div className="mt-2">
+            <PostMeta item={lead} />
+          </div>
+        </article>
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {(page === 1 ? list.slice(1) : list).map((item: BoardPost) => (
-          <motion.div key={item.pstSn} variants={itemVariants}>
-            <Card className="group p-8 bg-white/40 backdrop-blur-md rounded-3xl border border-white/60 space-y-6 hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden ring-1 ring-black/5">
-              <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 group-hover:scale-125 transition-all text-primary">
-                <BookOpen size={80} />
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="secondary" className="bg-muted/80 text-muted-foreground font-bold px-3 py-1 rounded-lg">게시글</Badge>
-                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">No.{String(item.pstSn).slice(-6)}</span>
-              </div>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`}>
-                <h4 className="font-black text-foreground text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors tracking-tighter">{item.pstTtl}</h4>
+
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+        {cards.map((item) => (
+          <article key={item.pstSn} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3">
+            <h4 className="line-clamp-2 text-[length:var(--font-size-body)] font-semibold text-foreground">
+              <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
+                {item.pstTtl}
               </Link>
-              <div className="flex justify-between items-center pt-6 border-t border-border/50">
-                <div className="flex gap-4">
-                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><Eye size={16} className="text-muted-foreground/50" /> {item.inqCnt}</div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><MessageSquare size={16} className="text-muted-foreground/50" aria-hidden="true" /> {item.commentCnt ?? 0}</div>
-                </div>
-                <motion.div 
-                  whileHover={{ x: 5 }}
-                  className="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground/50 group-hover:bg-primary group-hover:text-white group-hover:border-primary shadow-sm transition-all"
-                >
-                  <ChevronRight size={20} />
-                </motion.div>
-              </div>
-            </Card>
-          </motion.div>
+            </h4>
+            <p className="text-xs text-muted-foreground">{item.userNm}</p>
+            <div className="mt-auto">
+              <PostMeta item={item} />
+            </div>
+          </article>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
 export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-12 p-10"
-    >
-      {list.map((item: BoardPost) => (
-        <motion.div key={item.pstSn} variants={itemVariants}>
-          <Card className="group overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md border border-white shadow-xl transition-all hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] hover:-translate-y-3 ring-1 ring-black/5">
-            <div className="h-72 overflow-hidden relative bg-muted">
-              <div className="w-full h-full flex items-center justify-center bg-muted overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-white to-purple-100 group-hover:scale-110 transition-transform duration-1000" />
-                <BookOpen size={140} className="text-muted-foreground/40 opacity-40 relative z-10 group-hover:rotate-12 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500" />
-              </div>
-              <div className="absolute top-8 right-8 px-5 py-2 bg-surface-inverse/80 backdrop-blur-xl rounded-2xl text-surface-inverse-foreground text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">갤러리</div>
+    <div className="grid grid-cols-1 gap-2 p-[var(--filter-pad)] md:grid-cols-2 xl:grid-cols-3">
+      {list.map((item) => {
+        const attachments = item.fileCnt ?? 0;
+        return (
+          <article key={item.pstSn} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3">
+            <div className="flex items-start justify-between gap-2">
+              <Badge variant="secondary" className="shrink-0">갤러리</Badge>
+              {/*
+                ⚠ 종전에는 여기가 288px 높이의 이미지 자리였는데 목록 응답에 썸네일이 없어
+                  모든 글이 같은 아이콘을 보여 줬다. 아는 사실(첨부 수)만 말한다.
+              */}
+              <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                <Paperclip size={12} aria-hidden="true" />
+                {attachments > 0 ? <>첨부 <span className="tabular-nums">{attachments}</span></> : '첨부 없음'}
+              </span>
             </div>
-            <CardContent className="p-10 space-y-8">
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`}>
-                <h3 className="text-3xl font-black text-foreground tracking-tighter leading-[1.1] group-hover:text-primary transition-all cursor-pointer line-clamp-2">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
-                </h3>
+            <h3 className="line-clamp-2 text-[length:var(--font-size-body)] font-semibold text-foreground">
+              <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
+                <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
               </Link>
-              <div className="flex items-center justify-between pt-8 border-t border-border/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-muted-foreground font-black text-xs border border-white shadow-inner">OP</div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-black text-foreground leading-none mb-1.5">
-                      <HighlightText text={item.userNm} highlight={querySearchWrd} />
-                    </span>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  {/* 감사 P1-6: 옆에 있던 공유(Share2) 버튼은 onClick 이 없는 死버튼이라 삭제했다. */}
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => handleLike(e, item.pstSn)}
-                    disabled={pendingLikePstSn !== null}
-                    aria-busy={pendingLikePstSn === item.pstSn || undefined}
-                    className="flex items-center gap-2 px-4 py-2 bg-card rounded-xl border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
-                    aria-label={`${item.pstTtl} ${pendingLikePstSn === item.pstSn ? '추천 처리 중' : '추천'}`}
-                  >
-                    <ThumbsUp size={18} className={cn(pendingLikePstSn === item.pstSn && "animate-bounce")} aria-hidden="true" />
-                    <span className="text-sm font-black text-foreground">{pendingLikePstSn === item.pstSn ? '처리 중…' : item.likeCnt || 0}</span>
-                  </motion.button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
-    </motion.div>
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              <HighlightText text={item.userNm} highlight={querySearchWrd} />
+            </p>
+            <div className="mt-auto flex items-end justify-between gap-2">
+              <PostMeta item={item} />
+              <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+            </div>
+          </article>
+        );
+      })}
+    </div>
   );
 };
 
 export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-8 p-10"
-    >
-      {list.map((item: BoardPost) => (
-        <motion.div key={item.pstSn} variants={itemVariants}>
-          <Card className="group p-8 bg-white/60 backdrop-blur-md border border-white rounded-[2rem] flex flex-col md:flex-row gap-10 hover:shadow-2xl hover:border-amber-400/50 transition-all cursor-pointer relative overflow-hidden ring-1 ring-black/5">
-            <div className="flex flex-col items-center gap-3 min-w-[100px] justify-center">
-              <motion.div 
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                className={cn(
-                  "w-20 h-16 rounded-2xl flex items-center justify-center font-black text-3xl shadow-xl transition-all",
-                  item.qnaSttsCd === 'SOLVED' ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-amber-500 text-white shadow-amber-500/20"
-                )}
-              >
-                {item.qnaSttsCd === 'SOLVED' ? <CheckCircle2 size={40} /> : <HelpCircle size={40} /> }
-              </motion.div>
-              <span className={cn(
-                "text-[10px] font-black uppercase tracking-[0.3em]",
-                item.qnaSttsCd === 'SOLVED' ? "text-emerald-500" : "text-amber-500"
-              )}>{item.qnaSttsCd === 'SOLVED' ? '해결됨' : '답변 대기'}</span>
-            </div>
-            <div className="flex-1 space-y-5">
-              <div className="flex items-center gap-5">
-                <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest uppercase">
-                  {item.qnaCatCd || '일반 문의'}
-                </Badge>
-                <div className="w-1.5 h-1.5 rounded-full bg-muted" />
-                <span className="text-[10px] font-black text-muted-foreground flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
-              </div>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`}>
-                <h4 className="text-3xl font-black text-foreground leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase decoration-amber-500/20 group-hover:underline underline-offset-8 decoration-4">
+    <ul className="divide-y divide-border rounded-md border border-border bg-card">
+      {list.map((item) => {
+        const solved = item.qnaSttsCd === 'SOLVED';
+        return (
+          <li key={item.pstSn} className="flex flex-wrap items-start gap-3 p-3">
+            {/* 상태는 색만으로 전달하지 않는다 — 아이콘과 글자가 함께 말한다(WCAG 1.4.1). */}
+            <span
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1.5 rounded border px-2 py-0.5 text-xs font-medium text-foreground',
+                solved ? 'border-success/40 bg-success/15' : 'border-warning/40 bg-warning/15',
+              )}
+            >
+              {solved
+                ? <CheckCircle2 size={14} aria-hidden="true" />
+                : <HelpCircle size={14} aria-hidden="true" />}
+              {solved ? '해결됨' : '답변 대기'}
+            </span>
+
+            <div className="min-w-0 flex-1 space-y-1">
+              <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">
+                <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
                   <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
-                </h4>
-              </Link>
-              <div className="flex flex-wrap items-center gap-8 pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground text-[10px] font-black border border-white shadow-sm">AD</div>
-                  <span className="text-xs font-black text-muted-foreground uppercase tracking-tight">
-                    <HighlightText text={item.userNm} highlight={querySearchWrd} />
-                  </span>
-                </div>
-                <div className="h-4 w-px bg-muted" />
-                <div className="flex items-center gap-2.5 text-muted-foreground font-black text-[10px] tracking-widest uppercase">
-                  <MessageSquare size={16} className="text-amber-400" />
-                  <span>답변 {item.commentCnt || 0}</span>
-                </div>
-                <div className="h-4 w-px bg-muted" />
-                <motion.button 
-                  whileTap={{ scale: 0.9 }}
-                  onClick={(e) => handleLike(e, item.pstSn)}
-                  disabled={pendingLikePstSn !== null}
-                  aria-busy={pendingLikePstSn === item.pstSn || undefined}
-                  className="flex items-center gap-2.5 text-muted-foreground hover:text-amber-500 font-black text-[10px] tracking-widest uppercase transition-all"
-                  aria-label={`${item.pstTtl} ${pendingLikePstSn === item.pstSn ? '추천 처리 중' : '추천'}`}
-                >
-                  <ThumbsUp size={16} className={cn(pendingLikePstSn === item.pstSn && "animate-bounce")} />
-                  <span>{pendingLikePstSn === item.pstSn ? '추천 처리 중…' : `추천 ${item.likeCnt || 0}`}</span>
-                </motion.button>
+                </Link>
+              </h4>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span>{item.qnaCatCd || '일반 문의'}</span>
+                <span>
+                  <HighlightText text={item.userNm} highlight={querySearchWrd} />
+                </span>
+                <span className="tabular-nums">{toDisplayDate(item.crtDt)}</span>
+                <span className="inline-flex items-center gap-1">
+                  <MessageSquare size={12} aria-hidden="true" />
+                  답변 <span className="tabular-nums">{item.commentCnt || 0}</span>
+                </span>
               </div>
             </div>
-            <div className="absolute right-[-40px] top-[-40px] opacity-[0.02] group-hover:opacity-[0.05] transition-all group-hover:scale-110 duration-1000">
-              <HelpCircle size={250} />
-            </div>
-          </Card>
-        </motion.div>
-      ))}
-    </motion.div>
+
+            <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+          </li>
+        );
+      })}
+    </ul>
   );
 };
 
@@ -278,7 +248,7 @@ interface CalendarTemplateProps extends TemplateProps {
 export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, onNextMonth }: CalendarTemplateProps) => {
   const year = currentViewDate.getFullYear();
   const month = currentViewDate.getMonth();
-  
+
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
 
@@ -295,311 +265,214 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
     return acc;
   }, {});
 
-  return (
-    <div className="p-10 space-y-10">
-      <motion.div 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="flex justify-between items-center bg-surface-inverse p-10 rounded-[2.5rem] text-surface-inverse-foreground relative overflow-hidden shadow-2xl"
-      >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full" />
-        <div className="space-y-2 relative z-10">
-          <p className="text-primary font-black tracking-[0.4em] text-[10px] uppercase">일정 보기</p>
-          <h3 className="text-5xl font-black tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
-            {format(currentViewDate, "MMMM yyyy", { locale: ko })}
-          </h3>
-        </div>
-        <div className="flex gap-4 relative z-10">
-          <Button 
-            variant="outline" 
-            onClick={onPrevMonth}
-            className="h-16 w-16 border-white/10 bg-white/5 hover:bg-card hover:text-foreground rounded-2xl transition-all"
-            aria-label="이전 달"
-          >
-            <ChevronRight className="rotate-180" size={24} />
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={onNextMonth}
-            className="h-16 w-16 border-white/10 bg-white/5 hover:bg-card hover:text-foreground rounded-2xl transition-all"
-            aria-label="다음 달"
-          >
-            <ChevronRight size={24} />
-          </Button>
-        </div>
-      </motion.div>
+  const today = new Date();
 
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-7 gap-1 md:gap-4 lg:gap-5"
-      >
-        {['일', '월', '화', '수', '목', '금', '토'].map(d => (
-          <div key={d} className="text-center font-black text-muted-foreground/50 text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.4em] pb-2 md:pb-6 border-b-2 border-border uppercase">{d}</div>
+  return (
+    <div className="space-y-3 p-[var(--filter-pad)]">
+      <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-[var(--filter-pad)] py-2">
+        <h3 className="text-[length:var(--font-size-body)] font-semibold text-foreground">
+          {format(currentViewDate, 'yyyy년 M월', { locale: ko })}
+        </h3>
+        <div className="flex gap-1.5">
+          <Button type="button" variant="outline" size="icon-sm" onClick={onPrevMonth} aria-label="이전 달">
+            <ChevronRight className="rotate-180" size={16} aria-hidden="true" />
+          </Button>
+          <Button type="button" variant="outline" size="icon-sm" onClick={onNextMonth} aria-label="다음 달">
+            <ChevronRight size={16} aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-px rounded-md border border-border bg-border">
+        {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
+          <div key={d} className="bg-muted py-1 text-center text-xs font-medium text-muted-foreground">{d}</div>
         ))}
         {Array.from({ length: 42 }, (_, i) => i - firstDayOfMonth + 1).map((day, i) => {
           const isCurrentMonth = day > 0 && day <= daysInMonth;
           const dayPosts = isCurrentMonth ? postsByDay[day] || [] : [];
-          const isToday = day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
+          const isToday = isCurrentMonth
+            && day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
           return (
-            <motion.div 
-              key={i} 
-              variants={itemVariants}
+            <div
+              key={i}
               className={cn(
-                "min-h-[60px] md:min-h-[140px] lg:min-h-[180px] p-1 md:p-3 lg:p-6 border-2 transition-all relative group rounded-xl md:rounded-3xl",
-                isToday ? "bg-primary/5 border-primary/30 shadow-inner" : "bg-white/40 backdrop-blur-sm border-border hover:border-border hover:shadow-xl",
-                !isCurrentMonth ? "opacity-10 pointer-events-none bg-muted/50" : ""
+                'min-h-[5.5rem] bg-card p-1.5',
+                isToday && 'bg-primary/5',
+                !isCurrentMonth && 'bg-muted/40',
               )}
             >
-              <div className="flex justify-between items-start mb-2 md:mb-6">
-                <span className={cn(
-                  "text-xs md:text-xl lg:text-2xl font-black tracking-tighter", 
-                  isToday ? "text-primary" : "text-muted-foreground/40 group-hover:text-foreground",
-                  (i % 7 === 0) && isCurrentMonth ? "text-rose-400" : "", // Sunday
-                  (i % 7 === 6) && isCurrentMonth ? "text-hub-indigo" : "" // Saturday
-                )}>
-                  {isCurrentMonth ? day : ''}
-                </span>
-                {dayPosts.length > 0 && (
-                  <Badge className="bg-surface-inverse text-surface-inverse-foreground hover:bg-primary text-[8px] md:text-[10px] font-black h-4 w-4 md:h-6 md:w-6 rounded-xl p-0 flex items-center justify-center border-none shadow-lg group-hover:scale-110 transition-transform">
-                    {dayPosts.length}
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="space-y-1 md:space-y-2.5 max-h-[40px] md:max-h-[80px] lg:max-h-[110px] overflow-y-auto custom-scrollbar pr-1">
+              {isCurrentMonth && (
+                <div className="mb-1 flex items-center justify-between">
+                  <span className={cn(
+                    'text-xs tabular-nums',
+                    isToday ? 'font-semibold text-primary' : 'text-muted-foreground',
+                  )}>
+                    {day}
+                  </span>
+                  {dayPosts.length > 0 && (
+                    <span className="rounded bg-muted px-1 text-xs tabular-nums text-muted-foreground">
+                      {dayPosts.length}
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="space-y-0.5">
                 {dayPosts.map((post) => (
-                  <Link 
+                  <Link
                     key={post.pstSn}
-                    href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${post.pstSn}`}
-                    className={cn(
-                      // 감사 死코드: `(post as any).noticeYn` 은 BoardDto 에 없는 필드라 항상 false 였다(공지 강조가 실제로 동작한 적 없음).
-                      "block p-2.5 text-[10px] font-black leading-none rounded-lg shadow-sm transition-all hover:scale-105 cursor-pointer truncate tracking-tight",
-                      "bg-card border border-border text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground"
-                    )}
+                    href={detailHref(bbsId, post.pstSn)}
+                    className="block truncate rounded bg-muted px-1.5 py-0.5 text-xs text-foreground hover:bg-primary hover:text-primary-foreground"
                     title={post.pstTtl}
                   >
                     {post.pstTtl}
                   </Link>
                 ))}
               </div>
-
-              {isCurrentMonth && (
-                <div className="absolute bottom-1 right-2 lg:bottom-5 lg:right-6 text-[8px] lg:text-[10px] font-black text-muted-foreground/30 group-hover:text-muted-foreground/40 transition-all uppercase tracking-widest opacity-0 group-hover:opacity-100 invisible md:visible">
-                  {`${year}.${month + 1}.${day}`}
-                </div>
-              )}
-            </motion.div>
+            </div>
           );
         })}
-      </motion.div>
+      </div>
     </div>
   );
 };
 
+/**
+ * FAQ 한 항목.
+ *
+ * 펼침은 조건부 렌더로 충분하다 — 종전의 height 애니메이션(0.4초)은 답을 읽기까지 그만큼
+ * 늦추기만 했다.
+ */
 const FAQItem = ({ item }: { item: BoardPost }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <motion.div variants={itemVariants}>
-      <Card 
-        className={cn(
-          "overflow-hidden transition-all duration-500 rounded-3xl border border-white shadow-xl ring-1 ring-black/5",
-          isOpen ? "bg-white/80 backdrop-blur-xl shadow-2xl border-indigo-200" : "bg-white/40 hover:bg-card hover:border-border"
-        )}
+    <li className="bg-card">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
       >
-        {/* 감사 P1-10: onClick 만 있던 비인터랙티브 div → button 으로 교체(키보드 조작·상태 노출 가능). */}
-        <button
-          type="button"
-          className="w-full text-left p-8 cursor-pointer flex items-center justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-expanded={isOpen}
-        >
-          <div className="flex items-center gap-8">
-            <div className={cn(
-              "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl transition-all shadow-xl",
-              isOpen ? "bg-hub-indigo text-white shadow-hub-indigo/20 rotate-12" : "bg-card text-muted-foreground/50 group-hover:bg-indigo-50 group-hover:text-hub-indigo group-hover:shadow-hub-indigo/10"
-            )}>
-              Q
-            </div>
-            <h4 className={cn(
-              "text-2xl font-black tracking-tighter transition-colors uppercase leading-tight",
-              isOpen ? "text-hub-indigo" : "text-foreground"
-            )}>
-              {item.pstTtl}
-            </h4>
-          </div>
-          <motion.div 
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            className={cn(
-              "transition-colors",
-              isOpen ? "text-hub-indigo" : "text-muted-foreground/50"
-            )}
-          >
-            <ChevronDown size={32} aria-hidden="true" />
-          </motion.div>
-        </button>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">Q</span>
+          <span className="min-w-0 text-[length:var(--font-size-body)] font-medium text-foreground">{item.pstTtl}</span>
+        </span>
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          className={cn('shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-180')}
+        />
+      </button>
 
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <div className="px-8 pb-10 ml-[88px] border-t border-border/50 pt-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-[0.03] grayscale pointer-events-none">
-                  <BookOpen size={120} className="text-hub-indigo" />
-                </div>
-                <div className="flex items-start gap-6 relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white font-black text-lg shrink-0 shadow-xl shadow-emerald-500/20">A</div>
-                  <div className="space-y-6 flex-1">
-                    <p className="text-muted-foreground font-bold leading-relaxed text-xl whitespace-pre-wrap tracking-tight">
-                      {item.pstCn}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.3em] pt-6 border-t border-border">
-                      <span className="flex items-center gap-2"><Clock size={12} aria-hidden="true" /> 등록: {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-muted" />
-                      <span className="flex items-center gap-2"><Eye size={12} aria-hidden="true" /> 조회 {item.inqCnt ?? 0}회</span>
-                    </div>
-                  </div>
-                </div>
+      {isOpen && (
+        <div className="border-t border-border px-3 py-2.5">
+          <div className="flex gap-2">
+            <span className="h-fit shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">A</span>
+            <div className="min-w-0 space-y-2">
+              <p className="whitespace-pre-wrap text-[length:var(--font-size-body)] leading-relaxed text-foreground">
+                {item.pstCn}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <Clock size={12} aria-hidden="true" />
+                  등록 <span className="tabular-nums">{toDisplayDate(item.crtDt)}</span>
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Eye size={12} aria-hidden="true" />
+                  조회 <span className="tabular-nums">{item.inqCnt ?? 0}</span>
+                </span>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Card>
-    </motion.div>
+            </div>
+          </div>
+        </div>
+      )}
+    </li>
   );
 };
 
 export const FaqTemplate = ({ list }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="p-10 space-y-6"
-    >
-      {list.map((item: BoardPost) => (
+    <ul className="divide-y divide-border rounded-md border border-border">
+      {list.map((item) => (
         <FAQItem key={item.pstSn} item={item} />
       ))}
-    </motion.div>
+    </ul>
   );
 };
 
 export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="p-10 space-y-10"
-    >
-      {list.map((item: BoardPost) => (
-        <motion.div key={item.pstSn} variants={itemVariants}>
-          <Card className="group overflow-hidden bg-white/40 backdrop-blur-md border border-white hover:border-slate-900 transition-all rounded-[2.5rem] shadow-xl hover:shadow-2xl ring-1 ring-black/5">
-            <div className="flex flex-col md:flex-row">
-              <div className="w-full md:w-24 bg-surface-inverse flex md:flex-col items-center justify-center p-6 gap-3 shrink-0 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full bg-primary/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <BookOpen className="text-surface-inverse-foreground opacity-40 group-hover:opacity-100 group-hover:scale-125 transition-all relative z-10" size={32} />
-              </div>
-              <div className="flex-1 p-10 space-y-6">
-                <div className="flex items-center gap-5">
-                  <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground rounded-lg border-border px-4 py-1.5">문서</Badge>
-                  <span className="text-[10px] font-black text-muted-foreground/50 tracking-widest uppercase">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
-                </div>
-                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`}>
-                  <h4 className="text-2xl font-black text-foreground leading-tight group-hover:text-primary transition-all tracking-tighter uppercase truncate">
-                    <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
-                  </h4>
+    <ul className="divide-y divide-border rounded-md border border-border bg-card">
+      {list.map((item) => (
+        <li key={item.pstSn} className="flex items-start gap-3 p-3">
+          <BookOpen size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="shrink-0">문서</Badge>
+              <h4 className="min-w-0 text-[length:var(--font-size-body)] font-semibold text-foreground">
+                <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </Link>
-                <p className="text-muted-foreground font-bold text-lg line-clamp-2 leading-relaxed tracking-tight">{item.pstCn}</p>
-                <div className="flex items-center gap-10 pt-8 border-t border-border">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">작성자</span>
-                    <span className="text-xs font-black text-foreground uppercase tracking-tight">
-                       <HighlightText text={item.userNm} highlight={querySearchWrd} />
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">조회수</span>
-                    <span className="text-xs font-black text-foreground uppercase tracking-tight">{(item.inqCnt || 0).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
+              </h4>
             </div>
-          </Card>
-        </motion.div>
+            <p className="line-clamp-2 text-[length:var(--font-size-body)] text-muted-foreground">{item.pstCn}</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>
+                작성자 <HighlightText text={item.userNm} highlight={querySearchWrd} />
+              </span>
+              <span className="tabular-nums">{toDisplayDate(item.crtDt)}</span>
+              <span>
+                조회 <span className="tabular-nums">{(item.inqCnt || 0).toLocaleString()}</span>
+              </span>
+            </div>
+          </div>
+        </li>
       ))}
-    </motion.div>
+    </ul>
   );
 };
 
 export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn, page = 1, totalCount = 0 }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-x-auto rounded-md border border-border">
       <Table>
         <TableHeader className="bg-muted/50">
-          <TableRow className="hover:bg-transparent border-b-2 border-border">
-            <TableHead className="w-[80px] text-center font-black text-muted-foreground tracking-wider text-[11px] py-6">번호</TableHead>
-            <TableHead className="font-black text-foreground tracking-wider text-[11px] py-6 px-8">제목</TableHead>
-            <TableHead className="w-[120px] font-black text-muted-foreground tracking-wider text-[11px] py-6 text-center">작성자</TableHead>
-            <TableHead className="w-[120px] font-black text-muted-foreground tracking-wider text-[11px] py-6 text-center">등록일</TableHead>
-            <TableHead className="w-[160px] font-black text-muted-foreground tracking-wider text-[11px] py-6 text-center">조회/추천</TableHead>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-[4.5rem] text-center">번호</TableHead>
+            <TableHead>제목</TableHead>
+            <TableHead className="w-[7rem] text-center">작성자</TableHead>
+            <TableHead className="w-[7rem] text-center">등록일</TableHead>
+            <TableHead className="w-[6rem] text-center">조회</TableHead>
+            <TableHead className="w-[7rem] text-center">추천</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {list.map((item: BoardPost, idx: number) => (
-            <TableRow key={item.pstSn} className="hover:bg-primary/[0.03] transition-all group border-b border-border last:border-0 relative">
-              <TableCell className="text-center font-bold text-xs text-muted-foreground py-5">
-                {(totalCount - ((page - 1) * 10) - idx).toString().padStart(3, '0')}
+          {list.map((item, idx) => (
+            <TableRow key={item.pstSn}>
+              <TableCell className="text-center tabular-nums text-muted-foreground">
+                {totalCount - ((page - 1) * 10) - idx}
               </TableCell>
-              <TableCell className="px-8 py-5">
-                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`} className="group/link flex flex-col gap-1 max-w-full overflow-hidden">
-                  <div className="text-sm font-black text-foreground group-hover/link:text-primary transition-all tracking-tight leading-snug truncate">
-                    <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
-                  </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="h-[1px] w-5 bg-primary/30" />
-                    <span className="text-[9px] font-black text-primary uppercase tracking-wider">자세히 보기</span>
-                  </div>
+              <TableCell>
+                <Link href={detailHref(bbsId, item.pstSn)} className="block truncate font-medium text-foreground hover:text-primary hover:underline">
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </Link>
               </TableCell>
-              <TableCell className="text-center py-5">
-                <div className="font-bold text-xs text-muted-foreground tracking-tight">
-                  <HighlightText text={item.userNm} highlight={querySearchWrd} />
-                </div>
+              <TableCell className="text-center text-muted-foreground">
+                <HighlightText text={item.userNm} highlight={querySearchWrd} />
               </TableCell>
-              <TableCell className="text-center py-5">
-                <div className="font-bold text-xs text-muted-foreground tracking-tight">
-                  {item.crtDt ? String(item.crtDt).substring(0, 10).replace(/-/g, '.') : '-'}
-                </div>
+              {/* 점 구분(2026.09.20)을 쓰지 않는다 — 시스템 표준은 yyyy-MM-dd 다(DEC-OPS-100). */}
+              <TableCell className="text-center tabular-nums text-muted-foreground">
+                {toDisplayDate(item.crtDt)}
               </TableCell>
-              <TableCell className="text-center py-5">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="font-bold text-[10px] text-primary bg-primary/5 px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-primary/10">
-                    <Eye size={12} className="opacity-50" />
-                    {item.inqCnt}
-                  </div>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={(e) => handleLike(e, item.pstSn)}
-                    disabled={pendingLikePstSn !== null}
-                    aria-busy={pendingLikePstSn === item.pstSn || undefined}
-                    className="font-bold text-[10px] text-muted-foreground bg-card px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-border shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
-                    aria-label={`${item.pstTtl} ${pendingLikePstSn === item.pstSn ? '추천 처리 중' : '추천'}`}
-                  >
-                    <ThumbsUp size={12} className={cn("opacity-50", pendingLikePstSn === item.pstSn && "animate-bounce")} />
-                    <span>{pendingLikePstSn === item.pstSn ? '처리 중…' : item.likeCnt || 0}</span>
-                  </motion.button>
-                </div>
+              <TableCell className="text-center tabular-nums text-muted-foreground">
+                {(item.inqCnt || 0).toLocaleString()}
+              </TableCell>
+              <TableCell className="text-center">
+                <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
               </TableCell>
             </TableRow>
           ))}
@@ -612,15 +485,12 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
 export const BoardSkeleton = ({ tmpltId }: { tmpltId: string }) => {
   if (tmpltId === 'TMPLT_HUB') {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 p-10">
+      <div className="grid grid-cols-1 gap-2 p-[var(--filter-pad)] md:grid-cols-2 xl:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="space-y-6">
-            <Skeleton className="aspect-video w-full rounded-3xl" />
-            <div className="space-y-3">
-              <Skeleton className="h-8 w-3/4 rounded-xl" />
-              <Skeleton className="h-4 w-full rounded-lg" />
-              <Skeleton className="h-4 w-1/2 rounded-lg" />
-            </div>
+          <div key={i} className="space-y-2 rounded-md border border-border p-3">
+            <Skeleton className="h-4 w-3/4 rounded" />
+            <Skeleton className="h-3 w-1/3 rounded" />
+            <Skeleton className="h-3 w-full rounded" />
           </div>
         ))}
       </div>
@@ -628,27 +498,23 @@ export const BoardSkeleton = ({ tmpltId }: { tmpltId: string }) => {
   }
   if (tmpltId === 'TMPLT_QNA') {
     return (
-      <div className="p-10 space-y-8">
+      <ul className="divide-y divide-border rounded-md border border-border">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex gap-8 p-10 border-2 border-border rounded-[2.5rem]">
-            <Skeleton className="w-20 h-16 rounded-2xl shrink-0" />
-            <div className="space-y-4 flex-1">
-              <Skeleton className="h-10 w-1/2 rounded-xl" />
-              <Skeleton className="h-4 w-full rounded-lg" />
-              <div className="flex gap-6">
-                <Skeleton className="h-4 w-24 rounded-lg" />
-                <Skeleton className="h-4 w-24 rounded-lg" />
-              </div>
+          <li key={i} className="flex items-start gap-3 p-3">
+            <Skeleton className="h-6 w-20 shrink-0 rounded" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-1/2 rounded" />
+              <Skeleton className="h-3 w-2/3 rounded" />
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     );
   }
   return (
-    <div className="p-10 space-y-6">
+    <div className="space-y-1.5 p-[var(--filter-pad)]">
       {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-        <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+        <Skeleton key={i} className="h-9 w-full rounded" />
       ))}
     </div>
   );

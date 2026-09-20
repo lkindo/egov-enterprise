@@ -355,24 +355,22 @@ export function BoardMasterListClient() {
     {
       header: '마스터 아이템',
       accessor: (board: BoardMasterSummary) => (
-        <div className="flex items-center group">
-          <div className="space-y-1 text-left min-w-0 flex-1 overflow-hidden">
-            <p className="text-base font-bold text-foreground tracking-tight leading-none truncate">{board.bbsTtl}</p>
-            <p className="text-[10px] font-bold text-muted-foreground/40 uppercase leading-none tracking-widest truncate">{board.bbsId}</p>
+        <div className="flex items-center">
+          <div className="min-w-0 flex-1 space-y-0.5 overflow-hidden text-left">
+            <p className="truncate text-[length:var(--font-size-body)] font-medium leading-tight text-foreground">{board.bbsTtl}</p>
+            <p className="truncate font-mono text-xs leading-tight text-muted-foreground">{board.bbsId}</p>
           </div>
         </div>
       ),
-      className: 'px-6 max-w-[350px]'
+      className: 'max-w-[350px]'
     },
     {
       header: '메타 정보',
       accessor: (board: BoardMasterSummary) => (
-        <div className="space-y-1.5 text-left min-w-0 max-w-[400px]">
-          <div className="flex gap-2">
-            <Badge variant="secondary" className="bg-muted text-muted-foreground border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-tighter">
-              {board.bbsTypeCdNm ?? board.bbsTypeCd}
-            </Badge>
-          </div>
+        <div className="min-w-0 max-w-[400px] text-left">
+          <Badge variant="secondary" className="border border-border bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+            {board.bbsTypeCdNm ?? board.bbsTypeCd}
+          </Badge>
         </div>
       )
     },
@@ -380,10 +378,15 @@ export function BoardMasterListClient() {
       header: '상태',
       accessor: (board: BoardMasterSummary) => (
         <div className="flex justify-center">
+          {/* 같은 행의 유형 배지와 계산된 모양이 같아지지 않게 상태 점을 함께 둔다 —
+              색만으로 구분하지 않는다는 규칙(WCAG 1.4.1)과도 같은 방향이다. */}
           <Badge className={cn(
-            "px-4 py-1.5 rounded-lg font-bold text-xs uppercase border-none tracking-widest shadow-sm",
-            board.useYn === 'Y' ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
+            "inline-flex items-center gap-1.5 rounded-md border px-1.5 py-0.5 text-xs font-normal",
+            board.useYn === 'Y'
+              ? "border-success/40 bg-success/15 text-foreground"
+              : "border-border bg-muted text-muted-foreground"
           )}>
+            <span className={cn("size-1.5 rounded-full", board.useYn === 'Y' ? "bg-success" : "bg-muted-foreground")} aria-hidden="true" />
             {board.useYn === 'Y' ? '활성' : '대기'}
           </Badge>
         </div>
@@ -419,7 +422,7 @@ export function BoardMasterListClient() {
           : `${board.bbsTtl} 사용 중지된 게시판이라 게시글 목록을 열 수 없습니다`;
 
         return (
-        <div className="flex items-center justify-end gap-3 pr-6">
+        <div className="flex items-center justify-end gap-1">
           {canUpdate && <Button
             onClick={() => void handleEdit(board)}
             disabled={isDetailLoading || isSaving || deletingBoardId !== null || bulkPendingAction !== null}
@@ -427,7 +430,7 @@ export function BoardMasterListClient() {
             variant="ghost"
             title={`${board.bbsTtl} 설정 편집`}
             aria-label={`${board.bbsTtl} 설정 편집`}
-            className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm"
+            className="rounded-md text-muted-foreground"
           >
             <Settings2 size={20} />
           </Button>}
@@ -438,10 +441,10 @@ export function BoardMasterListClient() {
             size="icon" 
             variant="ghost" 
             className={cn(
-              "w-12 h-12 rounded-lg text-muted-foreground transition-all shadow-sm",
-              board.useYn === 'Y' 
-                ? "hover:bg-amber-500 hover:text-white" 
-                : "hover:bg-rose-600 hover:text-white"
+              "rounded-md text-muted-foreground",
+              board.useYn === 'Y'
+                ? "hover:bg-warning/25 hover:text-foreground"
+                : "hover:bg-destructive/10 hover:text-destructive-emphasis"
             )}
             title={isDeleting ? pendingLabel : idleLabel}
             aria-label={isDeleting ? pendingLabel : idleLabel}
@@ -457,14 +460,14 @@ export function BoardMasterListClient() {
             variant="ghost"
             title={openLabel}
             aria-label={openLabel}
-            className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm"
+            className="rounded-md text-muted-foreground"
           >
             <ArrowRight size={20} />
           </Button>
         </div>
         );
       },
-      className: 'pr-10 text-right'
+      className: 'text-right'
     }
   ];
 
@@ -509,7 +512,8 @@ export function BoardMasterListClient() {
            값은 모두 서버 응답에서 파생된다. */
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
           활성 <span className="font-bold text-foreground">{isLoading ? '—' : activeCount.toLocaleString()}</span>건 ·
-          대기 <span className="font-bold text-foreground">{isLoading ? '—' : standbyCount.toLocaleString()}</span>건
+          대기 <span className="font-bold text-foreground">{isLoading ? '—' : standbyCount.toLocaleString()}</span>건 ·
+          조회된 <span className="font-bold text-foreground">{isLoading ? '—' : boardList.length.toLocaleString()}</span>건 기준
         </span>
       }
     >
@@ -519,7 +523,7 @@ export function BoardMasterListClient() {
           loading={isLoading}
           error={isError ? error : null}
           onRetry={() => refetch()}
-          isPremium={true}
+          isPremium={false}
           enableSelection={canUpdate || canDelete}
           keyField="bbsId"
           bulkActions={[
@@ -568,27 +572,24 @@ export function BoardMasterListClient() {
       */}
       {/* Settings Modal */}
       <Dialog open={isModalOpen && canUpdate} onOpenChange={handleModalOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-2xl">
-          <div className="bg-surface-inverse p-10 text-surface-inverse-foreground relative">
-            <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
-              <Settings2 size={120} />
-            </div>
-            <DialogHeader className="relative z-10">
-              <DialogTitle className="text-3xl font-bold tracking-tighter uppercase">게시판 설정</DialogTitle>
-              <DialogDescription className="text-muted-foreground font-bold uppercase tracking-widest text-xs">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-lg">
+          <div className="border-b border-border bg-card pb-3 pl-5 pr-10 pt-4">
+            <DialogHeader>
+              <DialogTitle className="text-base font-semibold text-foreground">게시판 설정</DialogTitle>
+              <DialogDescription className="text-[length:var(--font-size-body)] text-muted-foreground">
                 게시판 이름·설명·사용 여부를 수정합니다.
               </DialogDescription>
             </DialogHeader>
           </div>
           
-          <div className="p-10 space-y-8 bg-card transition-colors">
+          <div className="space-y-[var(--form-gap)] bg-card px-5 py-4 transition-colors">
             <FormErrorSummary
               errors={validation.errors}
               labels={boardMasterValidationLabels}
               onNavigate={validation.focusError}
             />
-            <div className="space-y-3">
-              <Label htmlFor="modal-bbs-name" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 명칭</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="modal-bbs-name" className="text-[length:var(--font-size-body)] font-medium text-foreground">게시판 명칭</Label>
               <Input 
                 id="modal-bbs-name"
                 {...validation.fieldProps('bbsTtl')}
@@ -599,13 +600,12 @@ export function BoardMasterListClient() {
                 }}
                 required
                 maxLength={100}
-                className="h-11 rounded-lg border-2 font-bold text-lg focus:ring-4 focus:ring-primary/10 transition-all"
               />
               {validation.errors.bbsTtl ? <p {...validation.messageProps('bbsTtl')} className="text-xs font-bold text-destructive-emphasis" /> : null}
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="modal-bbs-description" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 소개</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="modal-bbs-description" className="text-[length:var(--font-size-body)] font-medium text-foreground">게시판 소개</Label>
               <Input 
                 id="modal-bbs-description"
                 {...validation.fieldProps('bbsExpln')}
@@ -615,15 +615,14 @@ export function BoardMasterListClient() {
                   setEditData({...editData, bbsExpln: e.target.value});
                 }}
                 maxLength={4000}
-                className="h-11 rounded-lg border-2 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
               />
               {validation.errors.bbsExpln ? <p {...validation.messageProps('bbsExpln')} className="text-xs font-bold text-destructive-emphasis" /> : null}
             </div>
 
-            <div className="flex items-center justify-between p-6 bg-muted rounded-lg border border-border transition-colors">
-              <div className="space-y-1">
-                <label htmlFor="modal-bbs-use-at" className="font-bold text-foreground transition-colors block cursor-pointer">서비스 활성화 상태</label>
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-tighter transition-colors text-left">활성화 시 모든 연결된 메뉴에서 서비스가 재개됩니다.</p>
+            <div className="flex items-center justify-between rounded-md border border-border bg-muted p-3 transition-colors">
+              <div className="space-y-0.5">
+                <label htmlFor="modal-bbs-use-at" className="block cursor-pointer text-[length:var(--font-size-body)] font-medium text-foreground transition-colors">서비스 활성화 상태</label>
+                <p className="text-left text-xs text-muted-foreground transition-colors">활성화 시 모든 연결된 메뉴에서 서비스가 재개됩니다.</p>
               </div>
               <Switch 
                 id="modal-bbs-use-at"
@@ -634,16 +633,15 @@ export function BoardMasterListClient() {
                   validation.clearError('useYn');
                   setEditData({...editData, useYn: checked ? 'Y' : 'N'});
                 }}
-                className="scale-125"
               />
             </div>
             {validation.errors.useYn ? <p {...validation.messageProps('useYn')} className="text-xs font-bold text-destructive-emphasis" /> : null}
 
-            <div className="p-6 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-100 dark:border-rose-900/50 flex items-start gap-4 transition-colors">
-              <AlertTriangle className="text-rose-500 shrink-0 mt-1" size={20} />
-              <div className="space-y-1">
-                <p className="font-bold text-rose-900 dark:text-rose-100 text-sm transition-colors text-left">주의사항</p>
-                <p className="text-xs text-rose-600/70 dark:text-rose-400 font-medium leading-relaxed transition-colors text-left">
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 transition-colors">
+              <AlertTriangle className="mt-0.5 shrink-0 text-foreground" size={16} aria-hidden="true" />
+              <div className="space-y-0.5">
+                <p className="text-left text-[length:var(--font-size-body)] font-medium text-foreground transition-colors">주의사항</p>
+                <p className="text-left text-xs leading-relaxed text-muted-foreground transition-colors">
                   게시판을 비활성화(대기)하면 기존 링크를 통한 접근이 차단됩니다. 
                   영구 삭제를 원하시면 목록의 삭제(휴지통) 아이콘을 사용하십시오.
                 </p>
@@ -651,13 +649,12 @@ export function BoardMasterListClient() {
             </div>
           </div>
 
-          <DialogFooter className="p-8 bg-muted border-t border-border transition-colors">
+          <DialogFooter className="border-t border-border bg-muted px-5 py-3 transition-colors">
             <Button
               type="button"
               variant="ghost"
               disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
               onClick={() => handleModalOpenChange(false)}
-              className="h-11 px-8 rounded-lg font-bold"
             >
               취소
             </Button>
@@ -665,7 +662,7 @@ export function BoardMasterListClient() {
               disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
               aria-busy={isSaving || undefined}
               onClick={handleSave}
-              className="h-11 px-10 rounded-lg bg-primary text-white font-bold tracking-tighter hover:scale-105 transition-all shadow-xl shadow-primary/20"
+              className="px-6"
             >
               {isSaving ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
               {isSaving ? '저장 중...' : '설정 적용하기'}

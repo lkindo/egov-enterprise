@@ -5,12 +5,10 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Plus,
  Library, BookOpen, MessageCircleQuestion,
- TrendingUp, Users, ArrowRight, Layers, Zap, History, Hash, ChevronRight,
- User, Eye, Settings2, AlertTriangle, RefreshCcw } from 'lucide-react';
+ TrendingUp, Users, History,
+ User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { knowledgeService, type KnowledgeDto } from '@/services/business/knowledge/knowledgeService';
 import {
  COMMUNITY_BOARD_ID,
@@ -27,6 +25,8 @@ import { Button } from '@/components/ui/button';
 import { PagePagination } from '@/components/common/PagePagination';
 import { CommunityManageDialog } from '@/components/business/community/CommunityManageDialog';
 import { userFacingErrorMessage } from '@/lib/safe-error-log';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { StandardDataTable, type Column } from '@/app/components/ui/standard-data-table';
 
 // --- Types ---
 type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
@@ -37,6 +37,8 @@ const CATEGORY_LABEL: Record<KnowledgeCategory, string> = {
  QNA: '질의응답(Q&A)',
  COMMUNITY: '커뮤니티',
 };
+
+const PAGE_SIZE = 20;
 
 export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: KnowledgeCategory }) {
  const router = useRouter();
@@ -105,7 +107,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
    그 차단은 **집행자가 없는 인가 주장**이었다. 서버는 게시판 읽기에 역할 게이트가 한 겹도
    없고(BoardApiController 는 클래스 레벨 @Authenticated 뿐, secure-paths 에 /api/v1/boards
-   없음), 같은 사용자가 같은 데이터를 세 경로로 이미 받는다 — ① 이 화면 사이드바의 인기 문서·
+   없음), 같은 사용자가 같은 데이터를 세 경로로 이미 받는다 — ① 이 화면의 인기 문서·
    최근 활동 ② /admin/community/board 의 게시판 선택기(비관리자 폴백 목록이 WIKI 게시판을
    '일정 게시판' 으로 **의도적으로 포함**한다: use-board-options.ts) ③ GET /boards/{bbsId} 직접 호출.
 
@@ -134,7 +136,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  bbsId: currentBbsId,
  category: activeCategory,
  page: page - 1,
- size: 20,
+ size: PAGE_SIZE,
  orderBy: sortBy === 'views' ? 'views' : 'date',
  searchCnd: debouncedQuery ? '0' : undefined,
  searchWrd: debouncedQuery || undefined
@@ -161,189 +163,196 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  const hotItems: KnowledgeDto[] = hotData?.list || [];
  const isSearching = searchQuery !== debouncedQuery || isFetching;
 
- return (
- <motion.div
- initial="hidden"
- animate="visible"
- variants={hubContainerVariants}
- className="space-y-6 pb-8"
+ const openArticle = React.useCallback((item: KnowledgeDto) => {
+ router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&pstSn=${item.pstSn}`);
+ }, [router, currentBbsId]);
+
+ /*
+  * 열 구성. Q&A 에만 상태 열이 붙는다 — 다른 카테고리에는 저장할 상태 컬럼 자체가 없어
+  * 열을 만들면 빈 칸이 '상태 없음' 이 아니라 '상태 모름' 으로 읽힌다(StatusBadge 주석 참조).
+  */
+ const columns: Column<KnowledgeDto>[] = [
+ {
+ header: '제목',
+ className: 'w-full max-w-0',
+ accessor: (item: KnowledgeDto) => (
+ <button
+ type="button"
+ onClick={() => openArticle(item)}
+ aria-label={`${item.pstTtl} 상세 보기`}
+ className="block w-full truncate text-left font-medium text-foreground hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
  >
- <div className="flex flex-wrap items-center justify-between gap-4">
+ {item.pstTtl}
+ </button>
+ ),
+ },
+ ...(activeCategory === 'QNA'
+ ? ([{
+ header: '상태',
+ className: 'whitespace-nowrap',
+ accessor: (item: KnowledgeDto) => <StatusBadge status={item.qnaSttsCd} type={activeCategory} />,
+ }] satisfies Column<KnowledgeDto>[])
+ : ([] satisfies Column<KnowledgeDto>[])),
+ {
+ header: '작성자',
+ className: 'whitespace-nowrap',
+ accessor: (item: KnowledgeDto) => (
+ <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+ <User size={12} aria-hidden="true" />
+ <span className="max-w-[10rem] truncate">{item.frstRegisterNm || item.frstRgtrId || '-'}</span>
+ </span>
+ ),
+ },
+ {
+ header: '등록일',
+ className: 'whitespace-nowrap tabular-nums text-muted-foreground',
+ accessor: (item: KnowledgeDto) => item.frstRegisterPnttmStr || '-',
+ },
+ {
+ header: '조회수',
+ className: 'whitespace-nowrap text-right tabular-nums',
+ accessor: (item: KnowledgeDto) => (item.inqCnt || 0).toLocaleString(),
+ },
+ ];
+
+ return (
+ <>
+ <WorkListPage
+ title={CATEGORY_LABEL[activeCategory]}
+ description="문서를 검색하고 필요한 내용을 확인하세요."
+ filterStateKey="knowledge-hub"
+ // 조회 실패 시에는 총계를 말하지 않는다 — '총 0건' 은 "없다" 라는 사실 주장이 된다.
+ totalCount={isArticlesError ? undefined : articlesData?.total}
+ actions={
+ <>
+ {canReadBoardMasters && <Button variant="outline" size="sm" onClick={() => router.push('/admin/community/boards/master')}><Settings2 size={16} aria-hidden="true" /> 게시판 관리</Button>}
+ {canManageCommunities && activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => setCommunityManageOpen(true)}><Users size={16} aria-hidden="true" /> 커뮤니티 관리</Button>}
+ <Button size="sm" onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}><Plus size={16} aria-hidden="true" /> 신규 등록</Button>
+ </>
+ }
+ navigation={
+ <div role="tablist" aria-label="지식 카테고리" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+ {/* 건수는 집계 API 가 없어 표기하지 않는다(종전 142/28/567/12 는 하드코딩이었다). */}
+ <CategoryTab title="위키" desc="기술 사양" icon={Library} active={activeCategory === 'WIKI'} onClick={() => selectCategory('WIKI')} />
+ <CategoryTab title="자주 묻는 질문" desc="빠른 답변" icon={BookOpen} active={activeCategory === 'FAQ'} onClick={() => selectCategory('FAQ')} />
+ <CategoryTab title="질의응답(Q&A)" desc="질문과 답변" icon={MessageCircleQuestion} active={activeCategory === 'QNA'} onClick={() => selectCategory('QNA')} />
+ <CategoryTab title="커뮤니티" desc="활성 게시판" icon={Users} active={activeCategory === 'COMMUNITY'} onClick={() => selectCategory('COMMUNITY')} />
+ </div>
+ }
+ filter={
+ <div className="space-y-3">
  <div>
- <h1 className="text-2xl font-bold text-foreground">{CATEGORY_LABEL[activeCategory]}</h1>
- <p className="mt-1 text-sm text-muted-foreground">문서를 검색하고 필요한 내용을 확인하세요.</p>
- </div>
- <div className="flex flex-wrap gap-2">
- {canReadBoardMasters && <Button variant="outline" onClick={() => router.push('/admin/community/boards/master')}><Settings2 size={16} aria-hidden="true" /> 게시판 관리</Button>}
- {canManageCommunities && activeCategory === 'COMMUNITY' && <Button variant="outline" onClick={() => setCommunityManageOpen(true)}><Users size={16} aria-hidden="true" /> 커뮤니티 관리</Button>}
- <Button onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}><Plus size={16} aria-hidden="true" /> 신규 등록</Button>
+ <label htmlFor="knowledge-search" className="text-[length:var(--font-size-body)] font-medium">지식 검색어</label>
+ <div className="relative mt-1.5">
+ <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+ <Input id="knowledge-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="h-[var(--filter-control-h)] pl-9 placeholder:text-muted-foreground" placeholder="제목·내용 검색..." />
  </div>
  </div>
- <section aria-label="지식 조회 조건" className="space-y-3 rounded-lg border border-border bg-card p-4">
- <label htmlFor="knowledge-search" className="text-sm font-medium">지식 검색어</label>
- <div className="relative">
- <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
- <Input id="knowledge-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="pl-10 placeholder:text-muted-foreground" placeholder="제목·내용 검색..." />
- </div>
- <div className="flex flex-wrap items-center justify-between gap-3">
- <div className="flex gap-2" aria-label="문서 정렬">
+ <div className="flex flex-wrap items-center gap-2" aria-label="문서 정렬">
+ <span className="text-[length:var(--font-size-body)] text-muted-foreground">정렬</span>
  <FilterButton active={sortBy === 'latest'} onClick={() => setSortBy('latest')} label="최신순" />
  <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="조회순" />
  </div>
- <p role="status" className="text-sm text-muted-foreground">{isArticlesError ? '조회 실패' : isSearching ? '검색 중…' : `총 ${(articlesData?.total ?? 0).toLocaleString()}건`}</p>
  </div>
- </section>
-
- {/* 4. Category Matrix — 건수는 집계 API 가 없어 표기하지 않는다(종전 142/28/567/12 는 하드코딩이었다). */}
- <motion.div variants={hubItemVariants} className="px-2 overflow-hidden">
- <div
- role="tablist"
- aria-label="지식 카테고리"
- className="grid grid-cols-2 gap-2 md:grid-cols-4"
+ }
+ toolbarActions={
+ <div className="flex items-center gap-2">
+ <span role="status" className="text-[length:var(--font-size-body)] text-muted-foreground">
+ {isArticlesError ? '조회 실패' : isSearching ? '검색 중…' : ''}
+ </span>
+ <Button variant="outline" size="sm" aria-label="지식 문서 목록 새로고침" onClick={() => void refetchArticles()}>
+ <RefreshCcw size={14} aria-hidden="true" /> 새로고침
+ </Button>
+ </div>
+ }
  >
- <CategoryCard title="위키" desc="기술 사양" icon={<Library size={28} />} color="primary" active={activeCategory === 'WIKI'} onClick={() => selectCategory('WIKI')} />
- <CategoryCard title="자주 묻는 질문" desc="빠른 답변" icon={<BookOpen size={28} />} color="amber" active={activeCategory === 'FAQ'} onClick={() => selectCategory('FAQ')} />
- <CategoryCard title="질의응답(Q&A)" desc="질문과 답변" icon={<MessageCircleQuestion size={28} />} color="rose" active={activeCategory === 'QNA'} onClick={() => selectCategory('QNA')} />
- <CategoryCard title="커뮤니티" desc="활성 게시판" icon={<Users size={28} />} color="emerald" active={activeCategory === 'COMMUNITY'} onClick={() => selectCategory('COMMUNITY')} />
- </div>
- </motion.div>
-
- {/* 5. Main Content Matrix */}
- <motion.div variants={hubItemVariants} className="grid grid-cols-12 gap-6 relative z-0">
- <div className="col-span-12 lg:col-span-8 space-y-10">
- <HubSectionCard title="문서 목록" description={sortBy === 'views' ? '전체 검색 결과의 조회수 순입니다.' : '전체 검색 결과의 최신 등록 순입니다.'} icon={Layers} id="knowledge-stream-panel">
- <div className="space-y-6">
- <AnimatePresence mode="popLayout">
+ <div id="knowledge-stream-panel" className="space-y-3">
  {isArticlesError ? (
  // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
- <div role="alert" className="flex flex-col items-center justify-center gap-4 p-16 border-2 border-dashed rounded-lg border-rose-300 bg-rose-50/50 dark:border-rose-900/40 dark:bg-rose-950/20">
- <AlertTriangle size={32} className="text-rose-500" />
- <p className="text-sm font-bold text-foreground">지식 목록을 불러오지 못했습니다.</p>
+ <div role="alert" className="flex flex-col items-center justify-center gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-8">
+ <AlertTriangle size={24} className="text-destructive-emphasis" aria-hidden="true" />
+ <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">지식 목록을 불러오지 못했습니다.</p>
  {/* [2026-09-15 DEC-OPS-100] axios 전송 오류 원문은 보이지 않는다 — 서버가 준 문장이나, axios 오류가 아닌 오류의 문장만 덧붙인다. */}
  {userFacingErrorMessage(articlesError) ? (
- <p className="text-xs font-medium text-muted-foreground">{userFacingErrorMessage(articlesError)}</p>
+ <p className="text-xs text-muted-foreground">{userFacingErrorMessage(articlesError)}</p>
  ) : null}
  <Button variant="outline" size="sm" className="gap-2" onClick={() => void refetchArticles()}>
- <RefreshCcw size={14} /> 다시 시도
+ <RefreshCcw size={14} aria-hidden="true" /> 다시 시도
  </Button>
  </div>
  ) : (
  <>
- {isLoading ? (
- <div role="status" className="p-12 text-center text-muted-foreground animate-pulse">게시글을 불러오는 중…</div>
- ) : displayItems.length === 0 ? (
- <div className="flex flex-col items-center justify-center p-20 space-y-4 border-2 border-dashed rounded-lg border-border/50">
- <Hash size={40} className="text-muted-foreground/20" />
- <p className="text-muted-foreground font-bold text-sm tracking-tight text-center">
- {debouncedQuery ? `'${debouncedQuery}' 에 대한 검색 결과가 없습니다.` : '등록된 지식 문서가 없습니다.'}
- </p>
- </div>
- ) : displayItems.map((item) => (
- <motion.button
- layout
- type="button"
- key={item.pstSn}
- initial={{ opacity: 0, y: 10 }}
- animate={{ opacity: 1, y: 0 }}
- onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&pstSn=${item.pstSn}`)}
- aria-label={`${item.pstTtl} 상세 보기`}
- className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card border border-border rounded-lg hover:border-primary transition-colors cursor-pointer group text-left"
- >
- <div className="flex gap-4 md:gap-6 items-start">
- {/* 종전 '영향력 85~99' 배지는 조회수에서 임의 산출한 가짜 지표라 실제 조회수로 대체했다. */}
- <div className="w-16 h-16 rounded-lg bg-muted flex flex-col items-center justify-center border border-border/50 group-hover:bg-primary/5 transition-colors shrink-0">
- <span className="text-[10px] font-bold text-muted-foreground leading-none">조회</span>
- <span className="text-base font-bold text-foreground leading-none mt-1 tabular-nums">{(item.inqCnt || 0).toLocaleString()}</span>
- </div>
- <div className="space-y-1 md:space-y-2 min-w-0">
- <div className="flex items-center gap-2 md:gap-3">
- <span className="text-xs font-bold text-primary tracking-tight bg-primary/5 px-2 py-0.5 rounded leading-none whitespace-nowrap">{CATEGORY_LABEL[activeCategory]}</span>
- <span className="text-xs font-bold text-muted-foreground">{item.frstRegisterPnttmStr}</span>
- </div>
- <h3 className="text-base font-semibold text-foreground leading-tight group-hover:text-primary transition-colors line-clamp-1">{item.pstTtl}</h3>
- <div className="flex items-center gap-3 md:gap-4 text-muted-foreground">
- <div className="flex items-center gap-1.5"><User size={12} className="text-primary" /><span className="text-xs font-bold truncate max-w-[120px]">{item.frstRegisterNm || item.frstRgtrId || '-'}</span></div>
- <div className="flex items-center gap-1.5"><Eye size={12} /><span className="text-xs font-bold">{(item.inqCnt || 0).toLocaleString()}</span></div>
- </div>
- </div>
- </div>
- <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-end gap-4">
- {activeCategory === 'QNA' ? (
- <div className="hidden sm:flex flex-col items-end">
- <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">상태</span>
- <StatusBadge status={item.qnaSttsCd} type={activeCategory} />
- </div>
- ) : null}
- <ArrowRight className="text-muted-foreground group-hover:text-primary group-hover:translate-x-2 transition-all w-5 h-5 md:w-6 md:h-6" />
- </div>
- </motion.button>
- ))}
+ <StandardDataTable<KnowledgeDto>
+ columns={columns}
+ data={displayItems}
+ keyField="pstSn"
+ loading={isLoading}
+ accessibleLabel={`${CATEGORY_LABEL[activeCategory]} 문서 목록`}
+ emptyMessage={debouncedQuery
+ ? `'${debouncedQuery}' 에 대한 검색 결과가 없습니다.`
+ : '등록된 지식 문서가 없습니다.'}
+ />
+ <PagePagination total={articlesData?.total ?? 0} page={page} size={PAGE_SIZE} onPageChange={(next) => setPagination({ context: pageContext, page: next })} />
  </>
  )}
- </AnimatePresence>
- {!isArticlesError && <PagePagination total={articlesData?.total ?? 0} page={page} size={20} onPageChange={(next) => setPagination({ context: pageContext, page: next })} />}
- </div>
- </HubSectionCard>
  </div>
 
- <div className="col-span-12 lg:col-span-4 space-y-10">
- <HubSectionCard title="인기 문서" description="조회수가 높은 문서" icon={TrendingUp}>
- <div className="space-y-4">
+ <div className="grid gap-3 lg:grid-cols-2">
+ <AsideSection title="인기 문서" description="조회수가 높은 문서" icon={TrendingUp}>
  {isHotError ? (
- <p role="alert" className="py-8 text-center text-xs font-bold text-rose-500">인기 문서를 불러오지 못했습니다.</p>
+ <p role="alert" className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">인기 문서를 불러오지 못했습니다.</p>
  ) : hotItems.length === 0 ? (
- <p className="py-8 text-center text-xs font-bold text-muted-foreground">표시할 문서가 없습니다.</p>
- ) : hotItems.map((item, idx) => (
+ <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 문서가 없습니다.</p>
+ ) : (
+ <ul className="divide-y divide-border">
+ {hotItems.map((item, idx) => (
+ <li key={item.pstSn}>
  <button
  type="button"
- key={item.pstSn}
- onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&pstSn=${item.pstSn}`)}
+ onClick={() => openArticle(item)}
  aria-label={`${item.pstTtl} 상세 보기`}
- className="w-full flex items-center gap-5 p-4 rounded-lg hover:bg-muted transition-all cursor-pointer group text-left"
+ className="group flex w-full items-center gap-3 px-1 py-1.5 text-left hover:bg-muted"
  >
- <span className="text-3xl font-bold text-muted-foreground group-hover:text-primary transition-colors w-8 tabular-nums">{idx + 1}</span>
- <div className="flex-1 min-w-0">
- <p className="text-sm font-bold text-foreground tracking-tight truncate leading-none">{item.pstTtl}</p>
- <div className="flex items-center gap-2 mt-2">
- <Eye size={10} className="text-muted-foreground" />
- <span className="text-xs font-bold text-muted-foreground tabular-nums">{(item.inqCnt || 0).toLocaleString()} 조회</span>
- </div>
- </div>
- <ChevronRight size={16} className="text-muted-foreground" />
+ <span data-testid="hot-article-rank" className="w-5 shrink-0 text-right text-[length:var(--font-size-body)] font-semibold tabular-nums text-muted-foreground">{idx + 1}</span>
+ <span className="min-w-0 flex-1 truncate text-[length:var(--font-size-body)] text-foreground group-hover:text-primary">{item.pstTtl}</span>
+ <span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
+ <Eye size={12} aria-hidden="true" />{(item.inqCnt || 0).toLocaleString()}
+ </span>
+ <ChevronRight size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
  </button>
+ </li>
  ))}
- </div>
- </HubSectionCard>
+ </ul>
+ )}
+ </AsideSection>
 
- <HubSectionCard title="최근 활동" description="최근 등록된 문서 흐름" icon={History}>
- <div className="space-y-6 relative z-10 font-sans">
+ <AsideSection title="최근 활동" description="최근 등록된 문서 흐름" icon={History}>
  {isActivityError ? (
- <p role="alert" className="py-8 text-center text-xs font-bold text-destructive-emphasis">최근 활동을 불러오지 못했습니다.</p>
+ <p role="alert" className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">최근 활동을 불러오지 못했습니다.</p>
  ) : (activityData || []).length === 0 ? (
- <p className="py-8 text-center text-xs font-bold text-muted-foreground">표시할 활동이 없습니다.</p>
- ) : (activityData || []).slice(0, 5).map((activity: { id: string; title: string; user: string; time: string }) => (
- <div key={activity.id} className="flex items-center gap-5 p-5 bg-muted border border-border rounded-lg group/activity">
- <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover/activity:rotate-12 transition-all">
- <Zap size={18} />
+ <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 활동이 없습니다.</p>
+ ) : (
+ <ul className="divide-y divide-border">
+ {(activityData || []).slice(0, 5).map((activity: { id: string; title: string; user: string; time: string }) => (
+ <li key={activity.id} className="px-1 py-1.5">
+ <p className="truncate text-[length:var(--font-size-body)] text-foreground">{activity.title}</p>
+ <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+ <span className="truncate">{activity.user}</span>
+ <span aria-hidden="true">·</span>
+ <span className="tabular-nums">{activity.time}</span>
  </div>
- <div className="flex-1 min-w-0">
- <p className="text-xs font-bold text-foreground tracking-tight truncate leading-none mb-1.5">{activity.title}</p>
- <div className="flex items-center gap-3 text-muted-foreground">
- <span className="text-xs font-bold tracking-tight">{activity.user}</span>
- <div className="w-1 h-1 rounded-full bg-muted-foreground" />
- <span className="text-xs font-bold tracking-tight tabular-nums">{activity.time}</span>
- </div>
- </div>
- </div>
+ </li>
  ))}
+ </ul>
+ )}
+ </AsideSection>
  </div>
- </HubSectionCard>
- </div>
- </motion.div>
- <details className="rounded-lg border border-border bg-card p-4"><summary className="cursor-pointer text-sm font-semibold">게시판 이용 현황</summary>
- {/* 3. Stats & Insights Matrix — 백엔드 /boards/{bbsId}/stats 실측값만 표기한다.
- 종전의 '+12% Critical' 류 증감 배지는 산출 근거가 없어 제거했다. */}
- <motion.div variants={hubItemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 px-2">
+
+ <details className="rounded-md border border-border bg-card">
+ <summary className="cursor-pointer px-[var(--filter-pad)] py-2 text-[length:var(--font-size-body)] font-semibold">게시판 이용 현황</summary>
+ {/* 백엔드 /boards/{bbsId}/stats 실측값만 표기한다.
+   종전의 '+12% Critical' 류 증감 배지는 산출 근거가 없어 제거했다. */}
+ <div className="grid grid-cols-1 gap-2 border-t border-border p-[var(--filter-pad)] sm:grid-cols-3">
  {/*
    [2026-08-29] '지식 지수 NN/100 · 게시판 활성도 지표' 를 걷고 실제로 센 값을 보여 준다.
    그 점수는 측정값이 아니라 게시글 수에 상수를 더한 것이다 —
@@ -353,7 +362,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
    70/100 이고 15건이면 100 에 붙어 더 이상 움직이지 않는다. 100 점 만점처럼 보이는
    숫자는 관리자가 게시판 건강도로 읽는다.
    ⚠ 서버의 intelligenceScore 필드는 이 커밋에서 건드리지 않았다(응답 계약 변경은 별건).
-   이 카드가 유일한 소비처였으므로 지금은 아무도 읽지 않는다.
+   이 칸이 유일한 소비처였으므로 지금은 아무도 읽지 않는다.
  */}
  <StatsCard
  label="게시글 수"
@@ -370,14 +379,15 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  value={isStatsError ? '조회 실패' : isStatsLoading ? '불러오는 중…' : (statsData?.topContributor || '-')}
  desc="게시글 등록이 가장 많은 사용자"
  />
- </motion.div>
-
+ </div>
  </details>
+ </WorkListPage>
+
  {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
  {canManageCommunities && communityManageOpen && (
  <CommunityManageDialog isOpen onClose={() => setCommunityManageOpen(false)} />
  )}
- </motion.div>
+ </>
  );
 }
 
@@ -388,10 +398,10 @@ function FilterButton({ active, onClick, label }: { active: boolean; onClick: ()
  onClick={onClick}
  aria-pressed={active}
  className={cn(
- "px-6 py-2 rounded-lg text-xs font-bold tracking-tight transition-all",
+ "h-[var(--filter-control-h)] rounded-md border px-3 text-[length:var(--font-size-body)] transition-colors",
  active
- ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
- : "text-muted-foreground hover:text-foreground hover:bg-muted"
+ ? "border-primary bg-primary text-primary-foreground"
+ : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
  )}
  >
  {label}
@@ -411,16 +421,11 @@ function statsCardValue(value: number | null | undefined, isError: boolean, isLo
 
 function StatsCard({ label, value, desc }: { label: string, value: string, desc: string }) {
  return (
- <div className="hub-card-premium p-8 flex flex-col gap-4 group hover:ring-[20px] hover:ring-primary/5 transition-all">
- <div className="flex items-center justify-between">
- <span className="text-xs font-bold text-muted-foreground tracking-tight">{label}</span>
- <TrendingUp size={14} className="text-primary opacity-30 group-hover:opacity-100 transition-opacity" />
- </div>
- <div className="space-y-1">
+ <div data-testid="board-stat-card" className="rounded-md border border-border bg-muted/40 px-3 py-2">
+ <p className="text-xs text-muted-foreground">{label}</p>
  {/* 통계 수치는 제목이 아니다. */}
- <p className="text-4xl font-bold tracking-tighter text-foreground tabular-nums group-hover:text-primary transition-colors">{value}</p>
- <p className="text-xs font-bold text-muted-foreground tracking-tight">{desc}</p>
- </div>
+ <p className="text-lg font-semibold tabular-nums text-foreground">{value}</p>
+ <p className="text-xs text-muted-foreground">{desc}</p>
  </div>
  );
 }
@@ -448,29 +453,21 @@ function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategor
  const isSolved = isQnaSolved(status);
  return (
  <span className={cn(
- "text-xs font-bold mt-1",
- isSolved ? "text-emerald-500" : "text-rose-500"
+ "inline-flex items-center rounded border px-1.5 py-0.5 text-xs",
+ isSolved ? "border-success/40 bg-success/15 text-foreground" : "border-warning/40 bg-warning/15 text-foreground"
  )}>
  {isSolved ? '해결됨' : '답변 대기'}
  </span>
  );
 }
 
-function CategoryCard({ title, desc, icon, color, active, onClick }: {
+function CategoryTab({ title, desc, icon: Icon, active, onClick }: {
  title: string;
  desc: string;
- icon: React.ReactNode;
- color: 'primary' | 'amber' | 'rose' | 'emerald';
+ icon: React.ElementType;
  active: boolean;
  onClick: () => void;
 }) {
- const colorMap: Record<string, string> = {
- primary: "text-primary border-primary/20 bg-primary/5",
- amber: "text-amber-500 border-amber-500/20 bg-amber-500/5",
- rose: "text-rose-500 border-rose-500/20 bg-rose-500/5",
- emerald: "text-emerald-500 border-emerald-500/20 bg-emerald-500/5"
- };
-
  return (
  <button
  type="button"
@@ -479,48 +476,39 @@ function CategoryCard({ title, desc, icon, color, active, onClick }: {
  aria-controls="knowledge-stream-panel"
  onClick={onClick}
  className={cn(
- "relative p-3 rounded-lg border transition-colors cursor-pointer group flex items-center gap-3 text-left w-full",
+ "flex min-w-0 items-center gap-2 rounded-md border px-3 py-2 text-left transition-colors",
  active
  ? "border-primary bg-primary/5"
  : "border-border bg-card hover:border-primary"
  )}
  >
- <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", colorMap[color])}>
- {icon}
- </div>
- <div className="space-y-1">
+ <Icon size={16} aria-hidden="true" className={cn("shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+ <span className="min-w-0">
  {/* 탭 이름이지 절 제목이 아니다. 탭 안의 h3 는 h1 뒤 단계를 건너뛰어 heading-order 위반이었다(axe). */}
- <span className="block font-semibold text-sm text-foreground">{title}</span>
- <p className="text-xs font-bold text-muted-foreground tracking-tight">{desc}</p>
- </div>
-
+ <span className="block truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{title}</span>
+ <span className="block truncate text-xs text-muted-foreground">{desc}</span>
+ </span>
  </button>
  );
 }
 
-function HubSectionCard({ title, description, icon: Icon, children, className, id }: {
+function AsideSection({ title, description, icon: Icon, children }: {
  title: string;
  description: string;
  icon: React.ElementType;
  children: React.ReactNode;
- className?: string;
- id?: string;
 }) {
  return (
- <div id={id} className={cn("rounded-lg border border-border bg-card p-4 space-y-4", className)}>
- <div className="flex items-center justify-between border-b border-border/40 pb-6">
- <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-primary shadow-inner border border-border/50">
- <Icon size={20} />
- </div>
- <div className="space-y-0.5">
+ <section className="rounded-md border border-border bg-card p-3">
+ <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
+ <Icon size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+ <div className="min-w-0">
  {/* 화면 h1 바로 아래 절이다 — 제목 계층은 h1 → 절(h2) → 문서 제목(h3). */}
- <h2 className="text-xl font-bold text-foreground tracking-tighter leading-none">{title}</h2>
- <p className="text-xs font-bold text-muted-foreground tracking-tight">{description}</p>
- </div>
+ <h2 className="truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{title}</h2>
+ <p className="truncate text-xs text-muted-foreground">{description}</p>
  </div>
  </div>
  {children}
- </div>
+ </section>
  );
 }

@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -138,7 +139,13 @@ class InputContractMirrorLinterTest {
             Registry registry = Registry.parse(readRepoFile(root, CENSUS_REGISTRY));
             Set<String> presentPacks = presentPacks(registry, readRepoFile(root, PACK_MANIFEST));
             ClassLoader loader = InputContractMirrorLinterTest.class.getClassLoader();
-            census = resolve(registry, presentPacks, name -> Class.forName(name, false, loader));
+            ReusableHarnessProfile profile = ReusableHarnessProfile.current();
+            census = resolve(registry, presentPacks, name -> Class.forName(name, false, loader),
+                    profile.customDomains() ? spec -> {
+                        boolean retained = true;
+                        for (String type : spec.types()) retained &= profile.retainsType(type);
+                        return retained;
+                    } : spec -> presentPacks.contains(spec.pack()));
         }
         return census;
     }
@@ -517,6 +524,36 @@ class InputContractMirrorLinterTest {
     }
 
     @Test
+    @DisplayName("custom 입력 계약은 같은 pack의 선택 타입을 유지하고 누락·링크 오류·예상 밖 생존을 거부한다")
+    void customSourcePlanPreservesSelectedInputContracts() {
+        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['shared'],"
+                + "'lengthBindings':["
+                + "{'entity':'example.kept.Entity','dto':'example.kept.Dto','fields':['name'],'pack':'shared'},"
+                + "{'entity':'example.kept.Entity','dto':'example.gone.Dto','fields':['name'],'pack':'shared'}],"
+                + "'requiredBindings':[{'dto':'example.kept.Dto','fields':[],'pack':'shared'},"
+                + "{'dto':'example.gone.Dto','fields':[],'pack':'shared'}],"
+                + "'enumBindings':[],'nestedValidationBindings':[],'requiredResponseFields':[],"
+                + "'readOnlyBindings':[],'calendarDateBindings':[]}"));
+        Predicate<Spec> selected = spec -> spec.types().stream().noneMatch(type -> type.startsWith("example.gone."));
+        TypeResolver selectedClasses = name -> {
+            if (name.startsWith("example.gone.")) throw new ClassNotFoundException(name);
+            return Object.class;
+        };
+        Census projection = resolve(registry, Set.of("shared"), selectedClasses, selected);
+        assertThat(projection.lengthBindings()).hasSize(1);
+        assertThat(projection.requiredBindings()).hasSize(1);
+        assertThatThrownBy(() -> resolve(registry, Set.of("shared"), name -> {
+            throw new ClassNotFoundException(name);
+        }, selected)).isInstanceOf(AssertionError.class).hasMessageContaining("example.kept.Dto");
+        assertThatThrownBy(() -> resolve(registry, Set.of("shared"), name -> Object.class, selected))
+                .isInstanceOf(AssertionError.class).hasMessageContaining("example.gone.Dto");
+        assertThatThrownBy(() -> resolve(registry, Set.of("shared"), name -> {
+            if (name.startsWith("example.gone.")) throw new NoClassDefFoundError(name);
+            return Object.class;
+        }, selected)).isInstanceOf(AssertionError.class).hasMessageContaining("링크 오류");
+    }
+
+    @Test
     @DisplayName("부정 증명: 원장 형식·교차 일관성·하한 위반은 fail-closed 로 거부한다")
     void registryIsFailClosed() {
         String tail = "'enumBindings':[],'nestedValidationBindings':[],'requiredResponseFields':[],"
@@ -594,10 +631,15 @@ class InputContractMirrorLinterTest {
      * <p>빠진 pack 항목은 참조 타입 중 하나가 {@link ClassNotFoundException} 을 던질 때만 제외한다.
      */
     static Census resolve(Registry registry, Set<String> presentPacks, TypeResolver resolver) {
+        return resolve(registry, presentPacks, resolver, spec -> presentPacks.contains(spec.pack()));
+    }
+
+    /** The declared source plan selects custom targets; all missing/linkage checks remain active. */
+    static Census resolve(Registry registry, Set<String> presentPacks, TypeResolver resolver, Predicate<Spec> included) {
         Map<String, Class<?>> loaded = new LinkedHashMap<>();
         List<String> violations = new ArrayList<>();
         for (Spec spec : registry.allSpecs()) {
-            boolean present = presentPacks.contains(spec.pack());
+            boolean present = included.test(spec);
             boolean anyMissing = false;
             boolean linkageBroken = false;
             for (String type : spec.types()) {
@@ -626,25 +668,25 @@ class InputContractMirrorLinterTest {
 
         List<LengthBinding> lengths = new ArrayList<>();
         for (LengthSpec spec : registry.lengthBindings()) {
-            if (presentPacks.contains(spec.pack())) {
+            if (included.test(spec)) {
                 lengths.add(new LengthBinding(loaded.get(spec.entity()), loaded.get(spec.dto()), spec.fields(), spec.entityFields()));
             }
         }
         List<EnumBinding> enums = new ArrayList<>();
         for (EnumSpec spec : registry.enumBindings()) {
-            if (presentPacks.contains(spec.pack())) {
+            if (included.test(spec)) {
                 enums.add(new EnumBinding(loaded.get(spec.dto()), spec.field(), spec.allowedValues()));
             }
         }
         List<NestedValidationBinding> nested = new ArrayList<>();
         for (NestedSpec spec : registry.nestedValidationBindings()) {
-            if (presentPacks.contains(spec.pack())) {
+            if (included.test(spec)) {
                 nested.add(new NestedValidationBinding(loaded.get(spec.parent()), spec.field(), loaded.get(spec.item())));
             }
         }
         List<RequiredBinding> required = new ArrayList<>();
         for (RequiredSpec spec : registry.requiredBindings()) {
-            if (presentPacks.contains(spec.pack())) {
+            if (included.test(spec)) {
                 List<RequiredField> fields = new ArrayList<>();
                 for (RequiredFieldSpec field : spec.fields()) {
                     fields.add(new RequiredField(field.field(), REQUIRED_CONSTRAINTS.get(field.constraint()), Set.copyOf(field.groups())));
@@ -654,20 +696,20 @@ class InputContractMirrorLinterTest {
         }
         Map<Class<?>, Set<String>> responseFields = new LinkedHashMap<>();
         for (FieldsSpec spec : registry.requiredResponseFields()) {
-            if (presentPacks.contains(spec.pack())) {
+            if (included.test(spec)) {
                 responseFields.put(loaded.get(spec.dto()), Set.copyOf(spec.fields()));
             }
         }
         return new Census(registry, Set.copyOf(presentPacks), List.copyOf(lengths), List.copyOf(enums), List.copyOf(nested),
                 List.copyOf(required), Map.copyOf(responseFields),
-                fieldsBindings(registry.readOnlyBindings(), presentPacks, loaded),
-                fieldsBindings(registry.calendarDateBindings(), presentPacks, loaded));
+                fieldsBindings(registry.readOnlyBindings(), included, loaded),
+                fieldsBindings(registry.calendarDateBindings(), included, loaded));
     }
 
-    private static List<FieldsBinding> fieldsBindings(List<FieldsSpec> specs, Set<String> presentPacks, Map<String, Class<?>> loaded) {
+    private static List<FieldsBinding> fieldsBindings(List<FieldsSpec> specs, Predicate<Spec> included, Map<String, Class<?>> loaded) {
         List<FieldsBinding> bindings = new ArrayList<>();
         for (FieldsSpec spec : specs) {
-            if (presentPacks.contains(spec.pack())) {
+            if (included.test(spec)) {
                 bindings.add(new FieldsBinding(loaded.get(spec.dto()), spec.fields()));
             }
         }

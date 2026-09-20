@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Plus, RefreshCcw, ShieldCheck, Trash2 } from 'lucide-react';
+import { Loader2, Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -182,7 +182,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     {
       header: '번호',
       accessor: (_, index) => (
-        <span className="font-mono text-xs font-bold text-muted-foreground">
+        <span className="font-mono text-xs text-muted-foreground">
           {index !== undefined ? (index + 1 + (page - 1) * size).toString().padStart(2, '0') : '-'}
         </span>
       ),
@@ -191,25 +191,23 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     {
       header: '포상 명칭',
       accessor: (item) => (
-        <div className="flex flex-col gap-1 py-1">
-          <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[length:var(--font-size-body)] font-medium text-foreground">
             {item.rwardNm}
           </span>
-          <div className="flex items-center gap-2 opacity-60">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.rwardCode}</span>
-          </div>
+          <span className="font-mono text-xs text-muted-foreground">{item.rwardCode}</span>
         </div>
       )
     },
     {
       header: '수상자 ID',
       accessor: 'rwardwnrId',
-      className: 'w-32 font-mono text-xs font-bold text-muted-foreground tracking-tighter'
+      className: 'w-32 font-mono text-xs text-muted-foreground'
     },
     {
       header: '포상일자',
       accessor: (item) => (
-        <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
+        <span className="text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">
           {item.rwardDe}
         </span>
       ),
@@ -234,7 +232,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               disabled={deletingSn !== null || registerLoading}
               aria-label={`${item.rwardNm} 수정`}
               onClick={() => openEdit(item)}
-              className="w-10 h-10 rounded-lg hover:bg-muted transition-colors"
+              className="rounded-md text-muted-foreground"
             >
               <Pencil size={16} aria-hidden="true" />
             </Button>
@@ -245,7 +243,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               aria-busy={isDeleting}
               aria-label={isDeleting ? `${item.rwardNm} 삭제 중` : `${item.rwardNm} 삭제`}
               onClick={() => { void handleDelete(item); }}
-              className="w-10 h-10 rounded-lg hover:bg-destructive/10 hover:text-destructive-emphasis transition-colors"
+              className="rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive-emphasis"
             >
               {isDeleting
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -316,13 +314,13 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
         title={editing ? '포상 기록 수정' : '포상 기록 등록'}
         maxWidth="xl"
         footer={
-          <div className="flex w-full gap-4">
+          <div className="flex w-full gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={closeRegisterModal}
               disabled={registerLoading || form.formState.isSubmitting}
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2"
+              className="flex-1"
             >
               취소
             </Button>
@@ -330,10 +328,9 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               type="submit"
               form="reward-register-form"
               disabled={registerLoading || form.formState.isSubmitting}
-              className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+              className="flex-[2]"
             >
-              <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" aria-hidden="true" />
-              {registerLoading ? (editing ? '저장 중…' : '등록 중…') : (editing ? '수정 저장' : '최종 등록')}
+{registerLoading ? (editing ? '저장 중…' : '등록 중…') : (editing ? '수정 저장' : '최종 등록')}
             </Button>
           </div>
         }
@@ -343,7 +340,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             id="reward-register-form"
             noValidate
             onSubmit={form.handleSubmit(onRegisterSubmit)}
-            className="space-y-6 pt-4 text-left"
+            className="space-y-[var(--form-gap)] pt-2 text-left"
           >
             <FormErrorSummary
               labels={{
@@ -361,9 +358,9 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               required
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 명칭</FormLabel>
+                  <FormLabel className="text-[length:var(--font-size-body)] font-medium">포상 명칭</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={300} placeholder="모범 사원상" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={300} placeholder="모범 사원상" className="h-[var(--control-h)]" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -375,9 +372,9 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               required
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">수상자 ID</FormLabel>
+                  <FormLabel className="text-[length:var(--font-size-body)] font-medium">수상자 ID</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={20} placeholder="USR_000000000001" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={20} placeholder="USR_000000000001" className="h-[var(--control-h)]" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -389,9 +386,9 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               required
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 코드</FormLabel>
+                  <FormLabel className="text-[length:var(--font-size-body)] font-medium">포상 코드</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={12} placeholder="R01" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={12} placeholder="R01" className="h-[var(--control-h)]" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -403,9 +400,9 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               required
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 일자 (8자리)</FormLabel>
+                  <FormLabel className="text-[length:var(--font-size-body)] font-medium">포상 일자 (8자리)</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={8} inputMode="numeric" placeholder="20260606" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={8} inputMode="numeric" placeholder="20260606" className="h-[var(--control-h)]" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -417,13 +414,13 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               required
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">공적 내용</FormLabel>
+                  <FormLabel className="text-[length:var(--font-size-body)] font-medium">공적 내용</FormLabel>
                   <FormControl>
                     <textarea 
                       {...field} 
                       maxLength={4000}
                       placeholder="사내 인프라 아키텍처 개선 및 현대화 프로젝트 공헌" 
-                      className="w-full min-h-[120px] p-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
+                      className="w-full min-h-[96px] resize-none rounded-md border border-input bg-transparent px-3 py-2 text-[length:var(--font-size-body)] leading-relaxed text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     />
                   </FormControl>
                   <FormMessage />

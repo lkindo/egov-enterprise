@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>프로젝트 만들기 · eGov Enterprise</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body class="bg-canvas text-ink font-sans antialiased">
+  <a class="sr-only focus:not-sr-only focus:block focus:p-4" href="#configuration">구성 선택으로 이동</a>
+  <header class="border-b border-line bg-panel">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-8">
+      <p class="text-sm font-semibold tracking-wide">eGov Enterprise <span class="ml-2 font-normal text-muted">/ 프로젝트 생성기</span></p>
+      <span class="rounded-full border border-line px-3 py-1 text-xs text-muted">이 컴퓨터에서 실행</span>
+    </div>
+  </header>
+  <main class="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
+    <div class="mb-8 max-w-3xl">
+      <p class="mb-3 text-sm font-semibold text-accent">필요한 기능부터 시작하세요</p>
+      <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">새 프로젝트 만들기</h1>
+      <p class="mt-4 leading-7 text-muted">공통 기반에 업무 기능을 더하고, 프로젝트 구조를 선택하세요.<br class="hidden sm:block">선택한 소스와 PostgreSQL 스키마를 함께 준비합니다.</p>
+    </div>
+    <div id="connection-error" class="mb-6 rounded-xl border border-danger bg-danger-soft p-5" role="alert" hidden>
+      <p id="connection-message"></p>
+      <button id="reconnect" class="mt-3 rounded-lg border border-danger px-4 py-2 font-semibold" type="button">다시 연결</button>
+    </div>
+    <p id="loading" class="py-8 text-muted" role="status">사용 가능한 기능을 불러오고 있습니다…</p>
+    <div id="workspace" class="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_22rem]" hidden>
+      <form id="composer-form" novalidate>
+        <fieldset id="configuration" class="min-w-0 space-y-6">
+          <legend class="sr-only">프로젝트 구성</legend>
+          <section class="rounded-2xl border border-line bg-panel p-6 sm:p-7" aria-labelledby="project-heading">
+            <h2 id="project-heading" class="mb-5 text-lg font-semibold"><span class="mr-3 text-muted">01</span>프로젝트 정보</h2>
+            <label class="mb-2 block text-sm font-semibold" for="project-name">프로젝트 이름</label>
+            <input id="project-name" name="projectName" class="w-full rounded-lg border border-line bg-panel px-3 py-3" value="my-service" required minlength="1" maxlength="63" pattern="[a-z][a-z0-9]*(?:-[a-z0-9]+)*" autocomplete="off" spellcheck="false" aria-describedby="name-hint name-error">
+            <p id="name-hint" class="mt-2 text-sm text-muted">영문 소문자로 시작하는 1~63자. 영문·숫자 사이에 하이픈 사용 가능</p>
+            <p id="name-error" class="mt-2 text-sm text-danger" role="alert" hidden></p>
+            <p class="mt-5 text-xs leading-6 text-muted">원본 버전 <code id="source-ref" class="break-all font-mono"></code></p>
+          </section>
+          <section class="rounded-2xl border border-line bg-panel p-6 sm:p-7" aria-labelledby="features-heading">
+            <h2 id="features-heading" class="mb-2 text-lg font-semibold"><span class="mr-3 text-muted">02</span>업무 기능 선택</h2>
+            <p class="mb-5 text-sm leading-6 text-muted">기본 구성을 고른 뒤 필요한 기능을 추가하거나 뺄 수 있습니다.</p>
+            <label for="preset" class="mb-2 block text-sm font-semibold">시작할 구성</label>
+            <select id="preset" class="mb-5 w-full rounded-lg border border-line bg-panel px-3 py-3"></select>
+            <div class="mb-5 rounded-xl border border-line bg-canvas p-4">
+              <p class="text-sm font-semibold">Foundation + Core <span class="ml-2 text-xs font-normal text-muted">기본 포함</span></p>
+              <p class="mt-2 text-sm leading-6 text-muted">인증·사용자·조직·권한·메뉴·공통코드·파일·로그</p>
+            </div>
+            <div id="capabilities" class="grid gap-3 sm:grid-cols-2" aria-label="선택 가능한 업무 기능"></div>
+            <p class="mt-4 text-xs leading-6 text-muted">연결된 기능은 함께 포함됩니다. 자동 포함 항목 아래에서 이유를 확인하세요.</p>
+          </section>
+          <section class="rounded-2xl border border-line bg-panel p-6 sm:p-7" aria-labelledby="layout-heading">
+            <h2 id="layout-heading" class="mb-5 text-lg font-semibold"><span class="mr-3 text-muted">03</span>프로젝트 구조와 DB</h2>
+            <fieldset class="grid gap-3 sm:grid-cols-2">
+              <legend class="sr-only">백엔드 프로젝트 구조</legend>
+              <label class="flex cursor-pointer gap-3 rounded-xl border border-line p-4 has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input type="radio" name="layout" value="multi-module" checked class="mt-1 accent-accent">
+                <span><span class="block text-sm font-semibold">멀티모듈</span><span class="mt-2 block text-sm leading-6 text-muted">현재 모듈 구조와 의존 경계를 유지합니다.</span></span>
+              </label>
+              <label class="flex cursor-pointer gap-3 rounded-xl border border-line p-4 has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input type="radio" name="layout" value="single-module" class="mt-1 accent-accent">
+                <span><span class="block text-sm font-semibold">단일모듈</span><span class="mt-2 block text-sm leading-6 text-muted">백엔드를 하나의 Gradle 프로젝트로 구성합니다.</span></span>
+              </label>
+            </fieldset>
+            <p class="mt-3 text-xs leading-6 text-muted">단일모듈도 기능별 소스 폴더와 검증 경계를 보존합니다. 프런트엔드는 별도 앱으로 포함됩니다.</p>
+            <label class="mb-2 mt-5 block text-sm font-semibold" for="database">데이터베이스</label>
+            <select id="database" class="w-full rounded-lg border border-line bg-panel px-3 py-3"><option value="postgresql">PostgreSQL</option></select>
+          </section>
+        </fieldset>
+        <button id="preview" type="submit" class="mt-5 rounded-lg border border-line bg-panel px-5 py-3 text-sm font-semibold">구성 다시 확인</button>
+      </form>
+      <aside class="space-y-5 lg:sticky lg:top-6" aria-labelledby="summary-heading">
+        <section class="rounded-2xl border border-line bg-panel p-6">
+          <p class="mb-2 text-xs font-semibold tracking-wide text-accent">생성할 프로젝트</p>
+          <h2 id="summary-heading" class="break-all text-xl font-semibold">구성을 확인하세요</h2>
+          <p id="plan-status" class="mt-3 text-sm leading-6 text-muted" role="status" aria-live="polite">기능 선택 후 포함 범위를 확인할 수 있습니다.</p>
+          <dl class="mt-6 grid grid-cols-3 gap-3 border-y border-line py-5 text-center">
+            <div><dt class="text-xs text-muted">업무 기능</dt><dd id="domain-count" class="mt-2 text-2xl font-semibold">—</dd></div>
+            <div><dt class="text-xs text-muted">테이블</dt><dd id="table-count" class="mt-2 text-2xl font-semibold">—</dd></div>
+            <div><dt class="text-xs text-muted">메뉴</dt><dd id="menu-count" class="mt-2 text-2xl font-semibold">—</dd></div>
+          </dl>
+          <div id="auto-included" class="mt-5 space-y-2 text-sm leading-6"></div>
+          <div id="plan-warnings" class="mt-4 space-y-2 text-sm leading-6 text-muted"></div>
+          <details class="mt-5 border-t border-line pt-4"><summary class="cursor-pointer text-sm font-semibold">포함되는 메뉴</summary><ul id="menu-preview" class="mt-3 max-h-72 space-y-3 overflow-y-auto text-sm"></ul></details>
+          <p id="output-hint" class="mt-5 break-all text-xs leading-6 text-muted"></p>
+          <p class="mt-4 text-xs leading-6 text-muted">새 폴더에 소스·SQL·선택 정보와 검증 결과를 저장합니다. 생성과 검증에는 시간이 걸릴 수 있습니다.</p>
+          <button id="generate" type="button" disabled class="mt-5 w-full rounded-lg bg-accent px-5 py-3 font-semibold text-on-accent disabled:cursor-not-allowed disabled:opacity-50">프로젝트 생성</button>
+          <button id="download-recipe" type="button" disabled class="mt-3 w-full rounded-lg border border-line px-5 py-3 text-sm font-semibold disabled:opacity-50">선택 정보 저장</button>
+        </section>
+        <section id="job-panel" class="rounded-2xl border border-line bg-panel p-6" aria-labelledby="job-heading" hidden>
+          <h2 id="job-heading" class="text-base font-semibold">프로젝트 준비 중</h2>
+          <p id="job-message" class="mt-3 text-sm leading-6" role="status" aria-live="polite"></p>
+          <progress id="job-progress" class="mt-4 h-2 w-full accent-accent" max="100" value="0" aria-label="프로젝트 생성 진행률"></progress>
+          <div id="job-error" class="mt-4 text-sm leading-6 text-danger" role="alert" hidden></div>
+          <button id="retry-status" type="button" class="mt-4 rounded-lg border border-line px-4 py-2 text-sm font-semibold" hidden>상태 다시 확인</button>
+          <div id="job-result" class="mt-4 space-y-3 text-sm leading-6" hidden></div>
+        </section>
+      </aside>
+    </div>
+    <noscript><p class="rounded-xl border border-line bg-panel p-6">기능을 선택하려면 브라우저의 JavaScript를 활성화해 주세요. CLI에서도 같은 구성으로 프로젝트를 생성할 수 있습니다.</p></noscript>
+  </main>
+</body>
+</html>

@@ -27,12 +27,12 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "6d6e9020a17324a8db39b72f518ba6a98d1f5b4df8caa1ecc03e2cfb9311d631"
+    "inventoryHash": "ac1e370f85ba930bbb3abadfb356840973ad444b41a9209e959e0936dfa2d4ee"
   },
   "summary": {
     "sourceFileCount": 550,
     "records": 390,
-    "syntaxOccurrences": 460,
+    "syntaxOccurrences": 459,
     "ambiguousRecords": 359,
     "unverifiedRecords": 390,
     "exactPopulations": {
@@ -4563,7 +4563,7 @@
       }
     },
     {
-      "id": "URL-D6EBDC02766C75",
+      "id": "URL-E84DE0FBCA934C",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "jsx-href",
@@ -4571,29 +4571,8 @@
       "producerFile": "frontend/src/app/admin/community/boards/select-board-list/components/BoardTemplates.tsx",
       "consumerFile": null,
       "routePattern": "/admin/community/boards/select-board-list",
-      "targetCandidate": "/admin/community/boards/detail?bbsId=[computed]&pstSn=[computed]",
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        },
-        {
-          "name": "pstSn",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        }
-      ],
+      "targetCandidate": null,
+      "stateItems": [],
       "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
       "riskSignals": [],
       "ambiguityReasons": [
@@ -4602,7 +4581,7 @@
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/community/boards/detail",
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -5347,7 +5326,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
       }
     },
     {

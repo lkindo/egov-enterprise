@@ -42,24 +42,24 @@ const MOCK_POSTS = [
 
 export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  return (
- <div className="w-full h-full bg-muted border-4 border-foreground rounded-lg overflow-hidden shadow-2xl relative flex flex-col scale-[0.95] origin-top ">
+ <div className="relative flex h-full w-full flex-col overflow-hidden rounded-md border border-border bg-muted">
  {/* Browser Bar */}
- <div className="h-12 bg-surface-inverse flex items-center px-6 gap-2">
- <div className="w-3 h-3 rounded-full bg-rose-500" />
- <div className="w-3 h-3 rounded-full bg-amber-500" />
- <div className="w-3 h-3 rounded-full bg-emerald-500" />
- <div className="flex-1 ml-4 bg-white/10 h-7 rounded-lg flex items-center px-4">
- <span className="text-xs font-bold text-surface-inverse-muted tracking-widest uppercase truncate">HTTP://EGOV.PRIME/BOARD/{bbsTtl || 'UNNAMED'}</span>
+ <div className="flex h-9 items-center gap-2 bg-surface-inverse px-3">
+ <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
+ <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
+ <div className="size-2 rounded-full bg-surface-inverse-foreground/40" aria-hidden="true" />
+ <div className="ml-2 flex h-6 flex-1 items-center rounded bg-surface-inverse-foreground/10 px-3">
+ <span className="truncate text-xs text-surface-inverse-muted">HTTP://EGOV.PRIME/BOARD/{bbsTtl || 'UNNAMED'}</span>
  </div>
  </div>
 
- <div className="flex-1 overflow-auto p-8 space-y-8 bg-card not-">
+ <div className="flex-1 space-y-4 overflow-auto bg-card p-4">
  {/* Board Header */}
- <div className="space-y-4 border-b-4 border-foreground pb-10">
+ <div className="space-y-2 border-b border-border pb-4">
  <div className="flex justify-between items-end">
  <div className="space-y-2">
- <h2 className="text-4xl font-bold tracking-tighter text-foreground uppercase leading-none">{bbsTtl || 'PREVIEW_BOARD'}</h2>
- <p className="text-sm font-bold text-muted-foreground tracking-tight">{bbsExpln || 'Board description placeholder...'}</p>
+ <h2 className="text-xl font-bold tracking-tight text-foreground">{bbsTtl || 'PREVIEW_BOARD'}</h2>
+ <p className="text-[length:var(--font-size-body)] text-muted-foreground">{bbsExpln || 'Board description placeholder...'}</p>
  </div>
  <div className="flex gap-2">
  <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground"><Search size={18} strokeWidth={3} /></div>
@@ -92,7 +92,7 @@ function HubLayout({ posts }: { posts: PreviewPost[] }) {
  <div className="col-span-2 p-8 bg-surface-inverse rounded-lg text-surface-inverse-foreground relative overflow-hidden group">
  <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-primary/20 blur-3xl rounded-lg" />
  <div className="relative z-10 space-y-4">
- <span className="text-xs font-bold tracking-[0.4em] text-surface-inverse-muted uppercase">FEATURED_KNOWLEDGE</span>
+ <span className="text-xs text-surface-inverse-muted">FEATURED_KNOWLEDGE</span>
  <h3 className="text-2xl font-bold tracking-tight leading-tight">{posts[0].title}</h3>
  <div className="flex items-center gap-6 mt-6">
  <div className="flex items-center gap-2">
@@ -159,14 +159,14 @@ function GalleryLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="grid grid-cols-1 gap-8">
  {posts.map(post => (
- <div key={post.id} className="group overflow-hidden rounded-lg bg-card border-2 border-border shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+ <div key={post.id} className="group overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary">
  <div className="h-48 overflow-hidden relative">
  {/*
    [2026-08-29] 예시 이미지(unsplash) 제거. 미리보기의 목적은 레이아웃 확인이지 사진이
    아니고, 관리자 화면이 외부 호스트로 나갈 이유가 없다.
  */}
  <div aria-hidden="true" className="absolute inset-0 bg-muted" />
- <div className="absolute top-4 right-4 px-4 py-1.5 bg-surface-inverse/90 backdrop-blur-md rounded-lg text-surface-inverse-foreground text-xs font-bold tracking-widest uppercase">INSIGHT</div>
+ <div className="absolute right-2 top-2 rounded bg-surface-inverse/90 px-2 py-0.5 text-xs text-surface-inverse-foreground">INSIGHT</div>
  </div>
  <div className="p-8 space-y-6">
  <h4 className="text-xl font-bold text-foreground tracking-tighter leading-snug">{post.title}</h4>
@@ -191,22 +191,22 @@ function QnaLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="space-y-4">
  {posts.map((post, idx) => (
- <div key={post.id} className="p-6 bg-card border-2 border-border rounded-lg flex gap-6 hover:border-amber-500 transition-all group">
+ <div key={post.id} className="group flex gap-3 rounded-md border border-border bg-card p-3 transition-colors hover:border-primary">
  <div className="flex flex-col items-center gap-1 min-w-[60px]">
  <div className={cn(
- "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-inner",
- idx === 0 ? "bg-amber-100 text-amber-600 border-2 border-amber-200" : "bg-muted text-muted-foreground border border-border"
+ "flex size-9 items-center justify-center rounded-md border text-base font-semibold",
+ idx === 0 ? "border-success/40 bg-success/15 text-foreground" : "border-border bg-muted text-muted-foreground"
  )}>
- {idx === 0 ? <CheckCircle2 size={24} /> : '?' }
+ {idx === 0 ? <CheckCircle2 size={18} aria-hidden="true" /> : '?' }
  </div>
- <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{idx === 0 ? 'Solved' : 'Open'}</span>
+ <span className="text-xs text-muted-foreground">{idx === 0 ? 'Solved' : 'Open'}</span>
  </div>
  <div className="flex-1 space-y-2">
  <div className="flex items-center gap-3">
  <Badge className="bg-muted text-muted-foreground hover:bg-muted border-none text-xs font-bold">TECH_SUPPORT</Badge>
  <span className="text-xs font-bold text-muted-foreground">{post.date}</span>
  </div>
- <h4 className="text-lg font-bold text-foreground leading-tight group-hover:text-amber-600 transition-colors uppercase tracking-tighter">{post.title}</h4>
+ <h4 className="text-[length:var(--font-size-body)] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">{post.title}</h4>
  <div className="flex items-center gap-4 text-muted-foreground font-bold text-xs">
  <span className="flex items-center gap-1"><User size={12} /> {post.author}</span>
  <span className="flex items-center gap-1"><MessageSquare size={12} /> {post.comments} Answers</span>
@@ -227,11 +227,11 @@ function FaqLayout({ posts }: { posts: PreviewPost[] }) {
  <div className="flex items-center gap-6">
  <div className={cn(
  "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl transition-all",
- idx === 0 ? "bg-hub-purple text-white shadow-lg" : "bg-muted text-muted-foreground"
+ idx === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
  )}>
  Q
  </div>
- <h4 className="font-bold text-foreground text-lg uppercase tracking-tight ">{post.title}</h4>
+ <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">{post.title}</h4>
  </div>
  <ChevronDown className="w-6 h-6 text-muted-foreground" />
  </div>
@@ -252,14 +252,14 @@ function WikiLayout({ posts }: { posts: PreviewPost[] }) {
  return (
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {posts.map((post, idx) => (
- <Card key={idx} className="group overflow-hidden border-2 border-border hover:border-slate-900 transition-all rounded-lg">
+ <Card key={idx} className="group overflow-hidden rounded-md border border-border transition-colors hover:border-primary">
  <div className="flex">
  <div className="w-16 bg-muted flex items-center justify-center shrink-0 border-r border-border group-hover:bg-surface-inverse group-hover:text-surface-inverse-foreground transition-colors">
  <Book size={24} className="opacity-40" />
  </div>
  <div className="p-8 space-y-4">
- <h4 className="text-xl font-bold text-foreground uppercase tracking-tighter group-hover:text-primary transition-colors">{post.title}</h4>
- <p className="text-sm text-muted-foreground font-bold tracking-widest uppercase">Last modified by {post.author}</p>
+ <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground transition-colors group-hover:text-primary">{post.title}</h4>
+ <p className="text-xs text-muted-foreground">Last modified by {post.author}</p>
  </div>
  </div>
  </Card>
@@ -273,7 +273,7 @@ function CalendarLayout() {
  return (
  <div className="space-y-6">
  <div className="flex justify-between items-center bg-muted p-6 rounded-lg border-2 border-border">
- <h4 className="text-xl font-bold tracking-tighter text-foreground uppercase">May 2024</h4>
+ <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">May 2024</h4>
  <div className="flex gap-2">
  <div className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground"><ChevronRight className="rotate-180" size={16} /></div>
  <div className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground"><ChevronRight size={16} /></div>
@@ -281,7 +281,7 @@ function CalendarLayout() {
  </div>
  <div className="grid grid-cols-7 gap-2">
  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
- <div key={d} className="text-xs font-bold text-muted-foreground text-center pb-2 tracking-widest">{d}</div>
+ <div key={d} className="pb-1 text-center text-xs text-muted-foreground">{d}</div>
  ))}
  {days.map((day, i) => (
  <div key={i} className={cn(

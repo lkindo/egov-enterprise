@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,7 +104,10 @@ class PrivacyAccessCensusLinterTest {
         Registry registry = Registry.parse(readRepoFile(root, CENSUS_REGISTRY));
         Set<String> presentPacks = presentPacks(registry, readRepoFile(root, PACK_MANIFEST));
         ClassLoader loader = PrivacyAccessCensusLinterTest.class.getClassLoader();
-        Expectations expected = expectationsFor(registry, presentPacks, name -> Class.forName(name, false, loader));
+        ReusableHarnessProfile profile = ReusableHarnessProfile.current();
+        Expectations expected = expectationsFor(registry, name -> Class.forName(name, false, loader),
+                profile.customDomains() ? entry -> profile.retainsType(entry.typeName())
+                        : entry -> presentPacks.contains(entry.pack()));
 
         Set<String> actual = new TreeSet<>();
         Set<String> sensitiveGetHandlers = new TreeSet<>();
@@ -249,6 +253,30 @@ class PrivacyAccessCensusLinterTest {
     }
 
     @Test
+    @DisplayName("custom 개인정보 census는 같은 pack의 선택 핸들러를 유지하고 클래스 소실·예상 밖 생존을 거부한다")
+    void customSourcePlanPreservesSelectedPrivacyHandlers() {
+        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['shared'],"
+                + "'declaredHandlers':[{'controller':'example.kept.Controller','method':'list','pack':'shared'},"
+                + "{'controller':'example.gone.Controller','method':'list','pack':'shared'}],"
+                + "'sensitiveGetExemptions':[],'knownSensitiveResponseTypes':[]}"));
+        Predicate<Entry> selected = entry -> entry.typeName().startsWith("example.kept.");
+        Expectations projection = expectationsFor(registry, name -> {
+            if (name.startsWith("example.gone.")) throw new ClassNotFoundException(name);
+            return Object.class;
+        }, selected);
+        assertThat(projection.handlers()).containsExactly("example.kept.Controller#list");
+        assertThatThrownBy(() -> expectationsFor(registry, name -> {
+            throw new ClassNotFoundException(name);
+        }, selected)).isInstanceOf(AssertionError.class).hasMessageContaining("example.kept.Controller");
+        assertThatThrownBy(() -> expectationsFor(registry, name -> Object.class, selected))
+                .isInstanceOf(AssertionError.class).hasMessageContaining("example.gone.Controller");
+        assertThatThrownBy(() -> expectationsFor(registry, name -> {
+            if (name.startsWith("example.gone.")) throw new NoClassDefFoundError(name);
+            return Object.class;
+        }, selected)).isInstanceOf(AssertionError.class).hasMessageContaining("링크 오류");
+    }
+
+    @Test
     @DisplayName("부정 증명: 원장·pack 어휘의 형식 오류는 fail-closed 로 거부한다")
     void registryAndVocabularyAreFailClosed() {
         String entry = "{'controller':'example.kept.KeptController','method':'list','pack':'base'}";
@@ -307,6 +335,11 @@ class PrivacyAccessCensusLinterTest {
      * <p>빠진 pack 의 항목은 resolver 가 {@link ClassNotFoundException} 을 던질 때만 제외한다.
      */
     static Expectations expectationsFor(Registry registry, Set<String> presentPacks, TypeResolver resolver) {
+        return expectationsFor(registry, resolver, entry -> presentPacks.contains(entry.pack()));
+    }
+
+    /** Custom targets come from the recorded source plan, independently of class loading. */
+    static Expectations expectationsFor(Registry registry, TypeResolver resolver, Predicate<Entry> included) {
         List<String> violations = new ArrayList<>();
         Map<String, Class<?>> resolved = new LinkedHashMap<>();
         Set<String> judged = new HashSet<>();
@@ -315,7 +348,7 @@ class PrivacyAccessCensusLinterTest {
             if (!judged.add(type + "@" + entry.pack())) {
                 continue;
             }
-            boolean present = presentPacks.contains(entry.pack());
+            boolean present = included.test(entry);
             try {
                 Class<?> loaded = resolved.containsKey(type) ? resolved.get(type) : resolver.resolve(type);
                 resolved.put(type, loaded);
@@ -340,21 +373,21 @@ class PrivacyAccessCensusLinterTest {
         Set<String> handlers = new TreeSet<>();
         Set<String> controllers = new TreeSet<>();
         for (Entry entry : registry.declaredHandlers()) {
-            if (presentPacks.contains(entry.pack())) {
+            if (included.test(entry)) {
                 handlers.add(entry.key());
                 controllers.add(entry.typeName());
             }
         }
         Map<String, String> exemptions = new TreeMap<>();
         for (Entry entry : registry.sensitiveGetExemptions()) {
-            if (presentPacks.contains(entry.pack())) {
+            if (included.test(entry)) {
                 exemptions.put(entry.key(), entry.reason());
                 controllers.add(entry.typeName());
             }
         }
         Set<Class<?>> sensitiveTypes = new LinkedHashSet<>();
         for (Entry entry : registry.knownSensitiveResponseTypes()) {
-            if (presentPacks.contains(entry.pack())) {
+            if (included.test(entry)) {
                 sensitiveTypes.add(resolved.get(entry.typeName()));
             }
         }

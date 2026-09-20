@@ -11,30 +11,37 @@
       "id": "auth-login",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "admin-shell-hub",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "dense-user-logs",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "user-management-hub",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "board-article-composer",
       "requiredPacks": [
         "collaboration"
+      ],
+      "requiredDomains": [
+        "board"
       ]
     },
     {
@@ -42,19 +49,27 @@
       "requiredPacks": [
         "collaboration",
         "demo"
+      ],
+      "requiredDomains": [
+        "board",
+        "help"
       ]
     },
     {
       "id": "board-maker-wizard",
       "requiredPacks": [
         "collaboration"
+      ],
+      "requiredDomains": [
+        "board"
       ]
     },
     {
       "id": "first-use-onboarding",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     }
   ],
   "pilots": [
@@ -62,41 +77,52 @@
       "id": "content-login",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "content-user-home",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "content-admin-home",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "content-user-log",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "content-user-manage",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "content-board-composer",
       "requiredPacks": [
         "collaboration"
+      ],
+      "requiredDomains": [
+        "board"
       ]
     },
     {
       "id": "content-survey-create",
       "requiredPacks": [
+        "survey"
+      ],
+      "requiredDomains": [
         "survey"
       ]
     },
@@ -104,6 +130,10 @@
       "id": "content-schedule",
       "requiredPacks": [
         "demo"
+      ],
+      "requiredDomains": [
+        "schedule",
+        "report"
       ]
     }
   ],
@@ -112,175 +142,204 @@
       "id": "PRINCIPLE-USER-CENTRED",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "PRINCIPLE-INCLUSIVE",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "PRINCIPLE-CONSISTENT-FLEXIBLE",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "STYLE-COLOR",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "STYLE-TYPOGRAPHY",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "STYLE-SHAPE",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "STYLE-LAYOUT-REFLOW",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "STYLE-ICON",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "STYLE-ELEVATION",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "STYLE-HIGH-CONTRAST",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "STYLE-TOKENS",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "IDENTITY-MASTHEAD-STANDARD",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "IDENTITY-MASTHEAD-NONSTANDARD",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "IDENTITY-HEADER-FOOTER",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "COMPONENT-SKIP-LINK",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "COMPONENT-BUTTON-LINK",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "COMPONENT-FORM-CONTROLS",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "COMPONENT-STRUCTURED-LIST-TABLE",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "COMPONENT-FEEDBACK-ERROR",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "PATTERN-LIST-NAVIGATION",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "PATTERN-FILTER-SORT",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "PATTERN-ERROR",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "PATTERN-INPUT-FORM",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "PATTERN-PERSONAL-DATA",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "SERVICE-LOGIN",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "SERVICE-SEARCH",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "SERVICE-APPLICATION",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "SERVICE-POLICY-INFORMATION",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     },
     {
       "id": "VERIFICATION-SELF-CHECKLIST",
       "requiredPacks": [
         "core"
-      ]
+      ],
+      "requiredDomains": []
     }
   ],
   "optionalPilotSources": [
@@ -289,6 +348,9 @@
       "source": "frontend/src/app/dashboard-data.ts",
       "requiredPacks": [
         "collaboration"
+      ],
+      "requiredDomains": [
+        "dashboard"
       ]
     },
     {
@@ -296,6 +358,9 @@
       "source": "frontend/src/components/features/dashboard/RealTimeDashboard.tsx",
       "requiredPacks": [
         "collaboration"
+      ],
+      "requiredDomains": [
+        "dashboard"
       ]
     }
   ],

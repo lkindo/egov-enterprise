@@ -55,8 +55,9 @@ clean v* release tag
 클래스패스를 분리하여 core/app 경계와 동일 이름의 테스트·설정 자원을 지킨다. 프론트엔드는 두 형태
 모두 별도 `frontend` 애플리케이션이다.
 
-현재 선택 범위는 위 세 누적 프로필과 PostgreSQL이다. 레이아웃을 바꿔도 같은 프로필의 DB 번들을
-사용한다. 임의 업무 기능 조합·기능별 메뉴 seed·선택 UI·다른 DB는
+이 가이드의 명령은 위 세 누적 프로필과 PostgreSQL을 대상으로 한다. 레이아웃을 바꿔도 같은
+프로필의 DB 번들을 사용한다. 개별 도메인·메뉴 seed와 별도 로컬 UI는
+[도메인 선택형 생성기 가이드](project-composer-guide.md)를 따른다. 추가 DB는
 [프로젝트 생성기 상세 설계](../02-architecture/project-composer-design.md)의 후속 범위다.
 
 ## 3. 공식 생성

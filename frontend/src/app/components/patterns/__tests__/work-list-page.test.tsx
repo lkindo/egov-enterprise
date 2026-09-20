@@ -121,4 +121,33 @@ describe('WorkListPage — A1 archetype 문법', () => {
     expect(screen.queryByTestId('work-list-filter')).toBeNull();
     expect(screen.getByTestId('work-list-toolbar')).toBeInTheDocument();
   });
+
+  /*
+    탭 전환 슬롯(A2 셸의 `navigation` 과 같은 계약). 두 가지를 고정한다 —
+      (a) 탭은 조회조건보다 **앞**이다. 무엇을 조회할지가 조건보다 먼저 정해지기 때문이고,
+          뒤에 두면 조건을 채운 뒤 탭을 바꿔 그 조건이 버려지는 순서가 된다.
+      (b) 탭은 주요 액션과 **다른 줄**이다. 화면 전환과 쓰기 동작이 같은 줄에 붙으면 오조작이 된다.
+  */
+  it('탭 전환 슬롯은 헤더 아래·조회 조건 위에 오고 주요 액션과 같은 줄에 있지 않다', () => {
+    renderPage({
+      navigation: <nav aria-label="화면 전환"><button type="button">부서</button></nav>,
+      actions: <button type="button">신규 등록</button>,
+    });
+
+    const heading = screen.getByRole('heading', { level: 1, name: '업무 요청 목록' });
+    const actions = screen.getByRole('button', { name: '신규 등록' });
+    const navigation = screen.getByTestId('work-list-navigation');
+    const filter = screen.getByTestId('work-list-filter');
+
+    expect(precedes(heading, navigation)).toBe(true);
+    expect(precedes(navigation, filter)).toBe(true);
+    expect(navigation.contains(actions)).toBe(false);
+    expect(screen.getByRole('navigation', { name: '화면 전환' })).toBeVisible();
+  });
+
+  it('탭 전환 슬롯이 없으면 그 자리 자체를 렌더하지 않는다', () => {
+    renderPage();
+
+    expect(screen.queryByTestId('work-list-navigation')).toBeNull();
+  });
 });
