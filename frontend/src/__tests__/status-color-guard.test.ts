@@ -139,7 +139,17 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // 2026-09-11: 지식·설문 허브 장식 헤더 제거와 최근 활동 오류의 semantic 토큰 이행으로 7건 감소.
 // 제외 목록은 변경하지 않는다.
 // [하향 래칫 2026-09-16] 실제 다단계 결재선의 semantic 상태색 이행(6건)과 기안 화면 양식 목업 제거(2건)로 8건 감소.
-const BASELINE = 477;
+// [하향 래칫 2026-09-20] 477 -> 443. 관리센터 > 사용자조직 4화면(단일 UserOrgHubClient)의 업무형 이행에서
+//   status 리터럴 34건이 사라졌다. 전부 같은 의미의 토큰 치환이고 새 리터럴은 0건이다.
+//   · UserOrgHubParts 6건 — 계정 상태 배지(정상·승인 대기)의 emerald/amber 쌍을 success/warning 으로.
+//     ⚠ --warning-emphasis 는 이 저장소에 정의돼 있지 않아 text-warning-emphasis 는 클래스가
+//     생성되지 않는다(NetworkAdminClient 가 기록한 함정). 경고는 배경 틴트가 말하고 글자는 전경 토큰이다.
+//   · UserOrgHubClient 4건 — 손수 만든 삭제 버튼(text-rose-500·hover:bg-rose-500)을 Button
+//     variant="destructive" 로, 일괄 상태 모달의 상태 점 2건을 success/warning 토큰으로.
+//   · UserManageForm 18 + DepartmentForm 6 — 전부 동일한 필드 오류 상태이므로 destructive pair 로.
+//     같은 화면의 상세 패널과 그 모달이 서로 다른 오류색을 쓰지 않게 하는 변경이다.
+//   사전 red 실측: Client 까지 반영한 시점 467 != 477, 폼 2종 포함 후 443.
+const BASELINE = 443;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

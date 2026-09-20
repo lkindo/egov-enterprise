@@ -4,39 +4,23 @@ import React, { useState, useMemo, use, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/app/components/layout/page-header';
 import {
   Users,
   Network,
   UserMinus,
   ShieldCheck,
-  Search,
   Pencil,
   UserPlus,
-  Building2,
-  Activity,
-  ChevronRight,
-  Mail,
-  Phone,
   RefreshCcw,
   LayoutGrid,
-  Zap,
-  Fingerprint,
-  SearchCode,
-  ShieldAlert,
-  Database,
-  Contact2,
-  SearchSlash,
   Save,
   KeyRound,
   Loader2,
-  UserCheck } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+  UserCheck,
+  Trash2,
+  Activity,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage } from '@/types/foundation/user';
@@ -48,18 +32,19 @@ import {
 } from '@/services/foundation/system/UserAbsenceAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
-import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { MasterDetailLayout } from '@/app/components/patterns/master-detail-page';
 import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { toDisplayYmd } from '@/lib/format-date';
 import { PageResponse } from '@/types/foundation/system';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
-import { 
-  bulkUpdateUserStatusAction, 
-  bulkMoveUserDeptAction, 
+import {
+  bulkUpdateUserStatusAction,
+  bulkMoveUserDeptAction,
   bulkDeleteUsersAction
 } from '@/app/actions/userActions';
 
@@ -84,13 +69,14 @@ import {
   AbsenceStatusNotice,
   AccessControlLink,
   BulkSelectionSummary,
+  DetailField,
+  DetailFieldList,
   dropAnimation,
-  InfoBlock,
   NavButton,
   OrgPolicyPanel,
   SortableDeptNode,
-  USER_STATUS_LABELS,
   UserOrgMasterSection,
+  UserStatusBadge,
 } from './UserOrgHubParts';
 import { useDeptTree } from './useDeptTree';
 
@@ -123,6 +109,33 @@ const TAB_ROUTE_MAP: Record<UserOrgTab, string> = {
 };
 
 /**
+ * 탭별 화면 제목·설명.
+ *
+ * ⚠ 제목 문자열은 e2e 가 셀렉터로 쓴다 — 19-hierarchy 는 `부서 및 조직 관리` 를 **exact** 로,
+ *   02-admin-system 은 `사용자 관리` 를 **부분일치**로 찾는다. 바꾸려면 두 스펙을 함께 고친다.
+ */
+const TAB_META: Record<UserOrgTab, { title: string; description: string }> = {
+  USERS: {
+    title: '계정 및 사용자 관리',
+    description: '등록된 계정을 조회하고 계정 정보·소속 부서·비밀번호를 관리합니다.',
+  },
+  DEPTS: {
+    title: '부서 및 조직 관리',
+    description: '부서를 등록하고 끌어서 상위 부서와 순서를 바꾼 뒤 조직 계층을 저장합니다.',
+  },
+  ABSENCES: {
+    title: '부재 상태 관리',
+    description: '전체 사용자 목록에서 각 사용자의 부재 여부를 확인하고 부재·복귀를 처리합니다.',
+  },
+  POLICIES: {
+    title: '조직 정책',
+    description: '로그인 정책·개인정보처리방침·권한 그룹을 편집하는 전용 화면으로 이동합니다.',
+  },
+};
+
+const USER_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+/**
  * 서버 프리페치 결과. 실패 시 page.tsx 는 빈 목록이 아니라 `null` 을 넘긴다 —
  * 빈 목록을 시드로 쓰면 화면이 "데이터 0건"이라고 거짓말하기 때문이다(감사 P1-1).
  * null 이면 시드를 포기하고 클라이언트 쿼리가 즉시 재조회하여 실패를 그대로 노출한다.
@@ -153,7 +166,13 @@ export default function UserOrgHubClient({
   const actionRequestRef = useRef<UserOrgWriteOperation | null>(null);
   const isSaving = activeWriteOperation !== null;
   const [searchKeyword, setSearchKeyword] = useState('');
-  /** 타이핑 한 글자마다 서버를 때리지 않도록 300ms 디바운스한다(감사 P1-8). */
+  /**
+   * 타이핑 한 글자마다 서버를 때리지 않도록 300ms 디바운스한다(감사 P1-8).
+   *
+   * ⚠ 별도 `조회` 버튼을 두지 않는다 — 디바운스가 이미 조건을 적용하므로 그 버튼은 대부분
+   *   아무 일도 하지 않는 컨트롤이 된다(카탈로그 G10: 죽은 버튼 금지). 대신 조건을 되돌리는
+   *   `초기화` 와 다시 읽는 `새로고침` 을 각각 실제 동작이 있는 자리에 둔다.
+   */
   const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
 
@@ -162,6 +181,11 @@ export default function UserOrgHubClient({
     const raw = Number(searchParams.get('page'));
     return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
   });
+  /**
+   * 페이지당 건수(A1 필수). URL 에는 싣지 않는다 — PD-UX-002 의 census 승인 경계 밖에서
+   * 새 URL producer 를 만들지 않는다는 기존 결정(DEC-OPS-033)을 그대로 따른다.
+   */
+  const [userPageSize, setUserPageSize] = useState(10);
 
   /** 라우트(=탭) 이동 시 서버가 내려준 defaultTab 으로 동기화한다. */
   useEffect(() => {
@@ -197,7 +221,6 @@ export default function UserOrgHubClient({
   const [selectedBulkItems, setSelectedBulkItems] = useState<UserManage[]>([]);
   const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
   const [isBulkMoveModalOpen, setIsBulkMoveModalOpen] = useState(false);
-
   const [targetStatus, setTargetStatus] = useState('P');
   const [targetDeptId, setTargetDeptId] = useState('');
 
@@ -291,20 +314,26 @@ export default function UserOrgHubClient({
 
 
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
-    queryKey: ['admin-users', debouncedKeyword, userPage],
+    queryKey: ['admin-users', debouncedKeyword, userPage, userPageSize],
     // 서버(GET /admin/system/users)는 searchKeyword + Spring Pageable(page/size, 0-based)만 읽는다.
     // 종전의 {pageNo}는 ApiService 매핑 대상도 Pageable 파라미터도 아니라 그대로 무시됐고,
     // 몇 페이지를 눌러도 항상 첫 페이지가 왔다(死 페이저 — 감사 m-2).
-    queryFn: () => userAdminService.getUserList({ page: userPage - 1, size: 10, searchKeyword: debouncedKeyword }),
+    queryFn: () => userAdminService.getUserList({ page: userPage - 1, size: userPageSize, searchKeyword: debouncedKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES',
     // 서버 프리페치가 실패했다면(null) 시드를 쓰지 않는다 — 빈 목록을 시드로 넣으면
     // staleTime 동안 재조회가 막혀 조회 실패가 '0건'으로 위장된다(감사 P1-1).
-    initialData: (userPage === 1 && !debouncedKeyword) ? (initialUsers ?? undefined) : undefined
+    initialData: (userPage === 1 && userPageSize === 10 && !debouncedKeyword) ? (initialUsers ?? undefined) : undefined
   });
   const users = useMemo(() => {
     const list = usersData?.list;
     return (Array.isArray(list) ? list.filter(Boolean) : []) as UserManage[];
   }, [usersData]);
+
+  /** 페이지당 건수를 바꾸면 현재 페이지 번호가 의미를 잃으므로 1페이지로 되돌린다. */
+  const handlePageSizeChange = React.useCallback((size: number) => {
+    setUserPageSize(size);
+    goToPage(1);
+  }, [goToPage]);
 
   /*
     [2026-09-07] 부재(자리비움) 배선. 종전에는 이 탭이 전체 사용자를 그린 뒤 "부재 정보는 아직
@@ -662,44 +691,45 @@ export default function UserOrgHubClient({
     }
   };
 
+  /**
+   * 목록 열.
+   *
+   * ⚠ 종전에는 아바타 이니셜 + 이름 + ID 한 덩어리가 유일한 열이었다. 목록 API 는 직함·이메일·
+   *   연락처·등록일까지 내려주는데(UserRepositoryImpl 의 10필드 projection) 화면이 그중 둘만 그려,
+   *   사용자는 누구인지 확인하려면 행마다 상세를 열어야 했다. 서버가 이미 보낸 값을 열로 편다.
+   */
   const userColumns: Column<UserManage>[] = [
-    {
-      header: '사용자 정보',
-      accessor: (user) => (
-        <div className="flex items-center gap-4 py-1">
-          <div className={cn(
-            "w-12 h-10 rounded-xl flex items-center justify-center font-black text-lg shadow-md transition-transform group-hover:rotate-6",
-            // [2026-09-07] selectedItemId 는 onRowClick·keyField·상세조회가 모두 쓰는 userId(로그인 ID)인데
-            //   이 두 줄만 esntlId 와 비교해 **선택 강조가 한 번도 켜지지 않았다**. 부재 배선이 같은 파일에
-            //   esntlId 축을 새로 들여오므로, 어느 키가 선택 키인지 모호한 채로 두지 않는다.
-            selectedItemId === user?.userId ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-          )}>
-            {user?.userNm?.[0]}
-          </div>
-          <div className="space-y-0.5">
-            {/* 표 셀 안의 이름 라벨이지 절 제목이 아니다 — h4 는 h1 뒤에 단계를 건너뛰어 heading-order 위반이었다(axe). */}
-            <span className={cn("block text-sm font-black tracking-tighter leading-none ", selectedItemId === user.userId ? "text-white" : "text-foreground")}>
-              {user.userNm}
-            </span>
-            <p className="text-[10px] font-bold tracking-tight text-muted-foreground">{user.userId}</p>
-          </div>
-        </div>
-      )
-    },
-    // 부재 탭에서만 상태·조치 열을 붙인다. 사용자 탭의 열 구성은 건드리지 않는다.
-    ...(activeTab === 'ABSENCES' ? [
+    { header: '이름', sortKey: 'userNm', className: 'w-36', accessor: (user) => (
+      <span className="font-semibold text-foreground">{user.userNm}</span>
+    ) },
+    { header: '사용자 ID', sortKey: 'userId', className: 'w-36', accessor: (user) => (
+      <span className="tabular-nums text-muted-foreground">{user.userId}</span>
+    ) },
+    // 부재 탭은 부재 여부·조치가 주 관심사이므로 연락 정보 대신 그 두 열을 붙인다(G9 — 열 과밀 금지).
+    ...(activeTab === 'ABSENCES' ? ([
+      {
+        header: '직함',
+        className: 'w-32',
+        accessor: (user: UserManage) => user.ofcpsNm || <span className="text-muted-foreground">-</span>,
+      },
       {
         header: '부재 여부',
-        className: 'w-32',
+        className: 'w-28',
         accessor: (user: UserManage) => {
           const state = absenceOf(user);
           // 조회 실패나 esntlId 부재는 '정상' 이 아니라 '알 수 없음' 이다.
           if (state === null) {
-            return <span className="text-xs font-bold text-muted-foreground">알 수 없음</span>;
+            return <span className="text-xs text-muted-foreground">알 수 없음</span>;
           }
           return state === ABSENT
-            ? <span className="text-xs font-bold text-warning-emphasis">부재</span>
-            : <span className="text-xs font-bold text-muted-foreground">정상</span>;
+            ? (
+              // ⚠ `text-warning-emphasis` 를 쓰지 않는다 — 그 토큰은 정의돼 있지 않아 Tailwind 가
+              //   클래스를 만들지 않고 색이 조용히 사라진다. 배경 틴트로 상태를 말한다.
+              <span className="inline-flex items-center rounded border border-warning/40 bg-warning/15 px-1.5 py-0.5 text-xs font-medium text-foreground">
+                부재
+              </span>
+            )
+            : <span className="text-xs text-muted-foreground">정상</span>;
         },
       },
       {
@@ -713,7 +743,7 @@ export default function UserOrgHubClient({
             ? `${user.userNm ?? user.userId} 복귀 처리`
             : `${user.userNm ?? user.userId} 부재 처리`;
           return (
-            <div className="flex justify-end pr-2">
+            <div className="flex justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -721,7 +751,7 @@ export default function UserOrgHubClient({
                 aria-busy={isPending}
                 aria-label={isPending ? `${label} 중` : label}
                 onClick={(event) => { event.stopPropagation(); void handleToggleAbsence(user); }}
-                className="gap-2 h-9"
+                className="gap-1.5"
               >
                 {isPending
                   ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
@@ -735,409 +765,432 @@ export default function UserOrgHubClient({
           );
         },
       },
-    ] : []),
+    ] satisfies Column<UserManage>[]) : ([
+      {
+        header: '직함',
+        className: 'w-32',
+        accessor: (user: UserManage) => user.ofcpsNm || <span className="text-muted-foreground">-</span>,
+      },
+      {
+        header: '이메일',
+        accessor: (user: UserManage) => (
+          user.emlAddr
+            ? <span className="break-all text-muted-foreground">{user.emlAddr}</span>
+            : <span className="text-muted-foreground">-</span>
+        ),
+      },
+      {
+        header: '연락처',
+        className: 'w-32',
+        accessor: (user: UserManage) => (
+          <span className="tabular-nums text-muted-foreground">{user.mblTelno || '-'}</span>
+        ),
+      },
+      {
+        header: '등록일',
+        sortKey: 'crtDt',
+        className: 'w-28',
+        // crtDt 는 Jackson 이 직렬화한 LocalDateTime(타임존 없음)이다. `new Date()` 로 해석하면
+        // 로컬 타임존만큼 날짜가 밀 수 있으므로 문자열 앞 10자리를 그대로 표기한다.
+        accessor: (user: UserManage) => (
+          <span className="tabular-nums text-muted-foreground">{toDisplayYmd(user.crtDt?.slice(0, 10))}</span>
+        ),
+      },
+    ] satisfies Column<UserManage>[])),
   ];
 
+  const meta = TAB_META[activeTab];
+  const isPolicies = activeTab === 'POLICIES';
+  const isDeptTab = activeTab === 'DEPTS';
+  /** 조회가 실패했으면 총 건수를 0 으로 말하지 않는다 — 모르는 것과 0건은 다르다. */
+  const toolbarTotalCount = isPolicies
+    ? undefined
+    : isDeptTab
+      ? (isDeptsError ? undefined : flattenedDepts.length)
+      : (isUsersError ? undefined : usersData?.total);
+
+  const detailActions = isDeptTab ? (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        aria-label="정보 수정"
+        disabled={isSaving}
+        onClick={handleOpenDeptEdit}
+        className="gap-1.5"
+      >
+        <Pencil size={14} aria-hidden="true" /> 정보 수정
+      </Button>
+      <Button
+        type="button"
+        variant="destructive"
+        size="sm"
+        onClick={handleDeleteDept}
+        disabled={isSaving}
+        aria-busy={activeWriteOperation === 'delete-dept' || undefined}
+        className="gap-1.5"
+      >
+        <Trash2 size={14} aria-hidden="true" />
+        {activeWriteOperation === 'delete-dept' ? '부서 삭제 중…' : '부서 삭제'}
+      </Button>
+    </>
+  ) : (
+    <>
+      {/* 종전에는 같은 `handleOpenUserEdit` 를 부르는 버튼이 패널 우상단(아이콘)과 하단(CTA)에
+          두 벌 있었다 — 같은 명령을 두 곳에 두면 어느 쪽이 무엇을 하는지 판정 비용만 는다(G10). */}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        aria-label="정보 수정"
+        disabled={isSaving}
+        onClick={handleOpenUserEdit}
+        className="gap-1.5"
+      >
+        <Pencil size={14} aria-hidden="true" /> 정보 수정
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handleOpenPasswordReset}
+        disabled={isSaving}
+        className="gap-1.5"
+      >
+        <KeyRound size={14} aria-hidden="true" /> 비밀번호 초기화
+      </Button>
+      <Button
+        type="button"
+        variant="destructive"
+        size="sm"
+        onClick={handleDeleteUser}
+        disabled={isSaving}
+        aria-busy={activeWriteOperation === 'delete-user' || undefined}
+        className="gap-1.5"
+      >
+        <Trash2 size={14} aria-hidden="true" />
+        {/* 실제 동작은 계정 삭제다. '접근 차단'은 무엇을 하는지 오인시킨다. */}
+        {activeWriteOperation === 'delete-user' ? '사용자 삭제 중…' : '사용자 삭제'}
+      </Button>
+    </>
+  );
+
   return (
-    <TooltipProvider delayDuration={0}>
-      <div className="space-y-6 pb-8">
-      <PageHeader
-        title={activeTab === 'DEPTS' ? '부서 및 조직 관리' : activeTab === 'ABSENCES' ? '부재 상태 관리' : activeTab === 'POLICIES' ? '조직 정책' : '계정 및 사용자 관리'}
-        breadcrumbs={activeTab === 'DEPTS'
-          ? [{ label: '사용자 관리' }, { label: '부서 관리' }]
-          : [{ label: '사용자 관리' }, { label: activeTab === 'ABSENCES' ? '부재 상태 관리' : activeTab === 'POLICIES' ? '조직 정책' : '계정 및 사용자 관리' }]}
-        className={activeTab === 'DEPTS' ? 'mb-4 [animation:none]' : undefined}
-        animateEntrance={activeTab !== 'DEPTS'}
-        actions={activeTab === 'DEPTS' ? (
-          <Button
-            type="button"
-            onClick={handleOpenDeptCreate}
-            disabled={isSaving}
-            className="h-10 gap-2 font-semibold"
-          >
-            <LayoutGrid size={18} aria-hidden="true" /> 부서 등록
-          </Button>
-        ) : activeTab !== 'POLICIES' && activeTab !== 'ABSENCES' ? (
-          <Button
-            type="button"
-            onClick={handleOpenUserCreate}
-            disabled={isSaving}
-            className="h-10 gap-2 font-semibold"
-          >
-            {/* 부재 등록 API 가 화면에 배선되기 전까지 이 버튼은 '사용자 등록'이다.
-                '부재 등록'으로 표기하면 사용자 등록 폼이 열려 라벨이 거짓이 된다. */}
-            <UserPlus size={18} aria-hidden="true" /> 사용자 등록
-          </Button>
-        ) : undefined}
-      />
-
-      {/* 사용자 등록은 화면의 주요 액션이라 페이지 헤더가 소유한다.
-          종전에는 PageHeader(제목) 아래 HubHeader(영문 혼용 히어로 + "컨트롤 센터" 문구)가
-          한 번 더 있었고, 등록 버튼이 그 두 번째 헤더에 붙어 있었다. */}
-
-      {/* --- Horizontal Premium Tab Controls (탭 = 라우트, 감사 P1-7) --- */}
-      <nav
-        aria-label="사용자 및 조직 관리 화면 전환"
-        className="flex w-fit rounded-md border border-border p-0.5"
-      >
-        <NavButton icon={<Users size={16} />} label="사용자" active={activeTab === 'USERS'} onClick={() => handleTabChange('USERS')} />
-        <NavButton icon={<Network size={16} />} label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => handleTabChange('DEPTS')} />
-        <NavButton icon={<UserMinus size={16} />} label="부재 상태 관리" active={activeTab === 'ABSENCES'} onClick={() => handleTabChange('ABSENCES')} />
-        <NavButton icon={<ShieldCheck size={16} />} label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => handleTabChange('POLICIES')} />
-      </nav>
-
-      <MasterDetailLayout
-        active={activeTab === 'DEPTS'}
-        onSaveShortcut={handleSaveDeptHierarchy}
-        saveShortcutDisabled={!hasDeptChanges || isSaving || isDeptModalOpen}
-        className={cn(
-          activeTab !== 'DEPTS' && "grid grid-cols-12 gap-8 min-h-[800px] transition-opacity duration-500",
-          isPending && "opacity-60 pointer-events-none",
-        )}
-      >
-        <div className={cn(
-          activeTab === 'DEPTS'
-            ? "min-w-0 h-full flex flex-col gap-4"
-            : "col-span-12 lg:col-span-7 h-full flex flex-col gap-6 transition-opacity duration-300",
-          isPending && "opacity-50",
-        )}>
-          <UserOrgMasterSection
-            compact={activeTab === 'DEPTS'}
-            title={activeTab === 'DEPTS' ? '조직 구조' : activeTab === 'POLICIES' ? '조직 정책' : '사용자 목록'}
-            description="선택한 조직 및 사용자 정보를 확인하고 관리합니다."
-            icon={activeTab === 'DEPTS' ? Network : activeTab === 'POLICIES' ? ShieldCheck : Users}
-          >
-            <div className="space-y-6">
-              <div className="flex items-center justify-between px-1 pt-1 border-b border-border/50 pb-6">
-                <div>
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    {activeTab === 'DEPTS' ? '부서 데이터' : '조직·사용자 데이터'}
-                  </span>
-                </div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button 
-                      type="button"
-                      aria-label="조직·사용자 데이터 새로고침"
-                      // 무인자 invalidateQueries() 는 메뉴·알림 등 이 화면과 무관한 캐시까지
-                      // 전부 재요청시킨다 — 이 화면이 쓰는 두 키로 좁힌다(감사 P2).
-                      onClick={() => {
-                        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-                        queryClient.invalidateQueries({ queryKey: ['admin-depts'] });
-                      }}
-                      className="h-10 rounded-xl px-5 text-xs font-semibold gap-2 bg-muted hover:bg-surface-inverse text-foreground hover:text-surface-inverse-foreground border border-border/60 transition-all group shadow-sm flex items-center justify-center outline-none cursor-pointer"
-                    >
-                      <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> 새로고침
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
-                    최신 데이터 다시 불러오기
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-
-              {activeTab !== 'POLICIES' && (
-                <div className="relative group/search">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} aria-hidden="true" />
-                  <Input
-                    className="pl-14 h-10 bg-muted border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
-                    // ⚠ e2e 가 이 placeholder 를 정확 문자열로 셀렉터에 쓴다
-                    //    (19-hierarchy-modernization: input[placeholder="검색어를 입력하세요..."],
-                    //     21/23: placeholder*="검색"). 문구 변경 시 e2e 동시 수정 필요.
-                    placeholder="검색어를 입력하세요..."
-                    aria-label={activeTab === 'DEPTS' ? '부서 검색' : '사용자 검색'}
-                    value={searchKeyword}
-                    // 검색어가 바뀌면 페이지를 1로 되돌린다. 종전에는 3페이지에서 검색하면
-                    // 결과가 1페이지뿐이어도 3페이지를 요청해 빈 화면이 됐다(감사 P1-8).
-                    onChange={(e) => {
-                      setSearchKeyword(e.target.value);
-                      if (activeTab === 'DEPTS') setSelectedItemId(null);
-                      if (userPage !== 1) goToPage(1);
-                    }}
-                    suppressHydrationWarning
-                  />
-                </div>
-              )}
-
-              <div
-                role="region"
-                aria-label={activeTab === 'DEPTS' ? '부서 조직 구조' : '조직·사용자 결과 스크롤 영역'}
-                tabIndex={0}
-                className="overflow-y-auto pr-2 custom-scrollbar max-h-[600px] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-              >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={activeTab === 'DEPTS' ? false : { opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.5 }}
-                    className="h-full"
-                  >
-                    {activeTab === 'DEPTS' ? (
-                      /* 조직도는 테이블이 아니라 D&D 트리다. 실패를 토스트로만 알리면 화면은
-                         '부서 0건'으로 남아 조회 실패와 구분되지 않는다(감사 P1-1). */
-                      isDeptsError ? (
-                        <ErrorStateDisplay error={deptsError} onRetry={() => refetchDepts()} />
-                      ) : (
-                        <div className="space-y-1">
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-                                {...deptDragHandlers}
-                            >
-                                <SortableContext items={previewDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
-                                    <div className="space-y-1">
-                                        {previewDepts.map((node, index) => (
-                                            <SortableDeptNode
-                                                key={node.ognzId}
-                                                node={node}
-                                                isSelected={selectedItemId === node.ognzId}
-                                                isTabStop={selectedItemId === node.ognzId || (selectedItemId === null && index === 0)}
-                                                onClick={() => setSelectedItemId(node.ognzId || null)}
-                                            />
-                                        ))}
-                                    </div>
-                                </SortableContext>
-
-                                {typeof document !== 'undefined' && createPortal(
-                                    <DragOverlay dropAnimation={dropAnimation}>
-                                        {activeDeptId ? (
-                                            <SortableDeptNode
-                                                node={flattenedDepts.find(n => n.ognzId === activeDeptId)!}
-                                                isSelected={false}
-                                                isTabStop={false}
-                                                onClick={() => {}}
-                                                isOverlay
-                                            />
-                                        ) : null}
-                                    </DragOverlay>,
-                                    document.body
-                                )}
-                            </DndContext>
-                            <div className="py-4">
-                              <Button
-                                onClick={handleSaveDeptHierarchy}
-                                disabled={!hasDeptChanges || !selectedDept || isSaving || isDeptModalOpen}
-                                aria-busy={activeWriteOperation === 'dept-hierarchy' || undefined}
-                                className="w-full h-11 rounded-xl font-semibold text-xs gap-2"
-                              >
-                                {activeWriteOperation === 'dept-hierarchy' ? <RefreshCcw size={14} className="animate-spin" aria-hidden="true" /> : <Save size={14} aria-hidden="true" />}
-                                {activeWriteOperation === 'dept-hierarchy' ? '조직 계층 저장 중…' : '조직 계층 저장'}
-                              </Button>
-                            </div>
-                            {flattenedDepts.length === 0 && !isDeptsLoading && (
-                                <div className="py-20 text-center space-y-4">
-                                    <div className="w-16 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto text-muted-foreground border border-border shadow-inner">
-                                        <SearchSlash size={32} />
-                                    </div>
-                                    <p className="text-xs font-semibold text-muted-foreground">
-                                      {deptKeyword ? `'${deptKeyword}' 에 해당하는 부서가 없습니다.` : '등록된 부서가 없습니다.'}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                      )
-                    ) : activeTab === 'POLICIES' ? (
-                        <OrgPolicyPanel onNavigate={(href) => router.push(href)} />
-                    ) : (
-                        <div className="space-y-4">
-                          {activeTab === 'ABSENCES' && (
-                            <AbsenceStatusNotice
-                              isError={isAbsencesError}
-                              error={absencesError}
-                              isLoading={isAbsencesLoading}
-                              absentCount={users.filter((user) => absenceOf(user) === ABSENT).length}
-                              onRetry={() => { void refetchAbsences(); }}
-                            />
-                          )}
-                          <StandardDataTable<UserManage>
-                              columns={userColumns as Column<UserManage>[]}
-                              data={users}
-                              loading={isUsersLoading}
-                              error={isUsersError ? (usersError as Error) : null}
-                              onRetry={() => refetchUsers()}
-                              onRowClick={(item) => {
-                                  if (item.userId) setSelectedItemId(item.userId);
-                              }}
-                              rowActionLabel={(item) => `${item.userNm || item.userId || '사용자'} 상세 열기`}
-                              keyField="userId"
-                              // ⚠ e2e(23-security-auth-supplement E12)가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
-                              emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 검색 결과가 없습니다.` : '데이터가 존재하지 않습니다.'}
-                              isPremium={true}
-                              enableSelection={true}
-                              bulkActions={userBulkActions}
-                              className="border-none shadow-none bg-transparent"
-                              pagination={{
-                                  currentPage: userPage,
-                                  totalPages: usersData?.totalPage || 1,
-                                  totalCount: usersData?.total,
-                                  onPageChange: goToPage
-                              }}
-                          />
-                        </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-          </UserOrgMasterSection>
-        </div>
-
-        <div
-          data-a2-detail={activeTab === 'DEPTS' ? '' : undefined}
-          tabIndex={activeTab === 'DEPTS' ? -1 : undefined}
-          className={activeTab === 'DEPTS' ? "min-w-0 h-full" : "col-span-12 lg:col-span-5 h-full"}
+    <WorkListPage
+      title={meta.title}
+      description={meta.description}
+      breadcrumbItems={isDeptTab
+        ? [{ label: '사용자 관리' }, { label: '부서 관리' }]
+        : [{ label: '사용자 관리' }, { label: meta.title }]}
+      filterStateKey="user-org-hub"
+      totalCount={toolbarTotalCount}
+      actions={isDeptTab ? (
+        <Button type="button" onClick={handleOpenDeptCreate} disabled={isSaving} className="gap-2">
+          <LayoutGrid size={16} aria-hidden="true" /> 부서 등록
+        </Button>
+      ) : activeTab === 'USERS' ? (
+        <Button type="button" onClick={handleOpenUserCreate} disabled={isSaving} className="gap-2">
+          <UserPlus size={16} aria-hidden="true" /> 사용자 등록
+        </Button>
+      ) : undefined}
+      navigation={(
+        <nav
+          aria-label="사용자 및 조직 관리 화면 전환"
+          className="flex w-fit max-w-full flex-wrap rounded-md border border-border bg-muted/50 p-0.5"
         >
-          <AnimatePresence mode="wait">
-            {selectedItem ? (
-              <motion.div
-                key={selectedItemId}
-                initial={activeTab === 'DEPTS' ? false : { opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="h-full flex flex-col gap-6"
-              >
-                <div className="rounded-2xl bg-white/70 backdrop-blur-xl border border-white shadow-2xl h-full p-10 space-y-10 flex flex-col relative overflow-hidden ring-1 ring-black/5">
-                  <div className="absolute top-0 right-0 p-12 opacity-[0.03] scale-150 rotate-12 transition-transform duration-1000">
-                    <SearchCode size={250} className="text-primary" />
-                  </div>
-
-                  <div className="flex items-start justify-between border-b border-border/50 pb-10 relative z-10">
-                    <div className="flex items-center gap-8">
-                      <div className="w-24 h-20 bg-surface-inverse rounded-2xl flex items-center justify-center font-black text-4xl text-surface-inverse-foreground shadow-2xl rotate-2 group hover:rotate-6 transition-transform">
-                        <span className="text-primary">
-                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm?.[0] : displayedUser?.userNm?.[0]}
-                        </span>
-                      </div>
-                      <div className="space-y-4 pt-1">
-                        <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none truncate max-w-[350px]">
-                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm : displayedUser?.userNm}
-                        </h2>
-                        {/* 종전에는 상태와 무관하게 '인증됨' 이 항상, ABSENCES 탭에서는 전원 '자리비움' 이
-                            표시됐다. 실제 계정 상태 코드(userSttsCd)에서만 배지를 만든다(감사 P1-5). */}
-                        {activeTab !== 'DEPTS' && (
-                          <div className="flex gap-3">
-                            {(() => {
-                              // 목록 projection 에는 userSttsCd 가 없다 — 상세 API 데이터로만 배지를 만든다.
-                              const status = USER_STATUS_LABELS[displayedUser?.userSttsCd ?? ''];
-                              if (!status) return null;
-                              return (
-                                <span className={cn(
-                                  "text-xs font-semibold px-4 py-1.5 rounded-lg border shadow-sm flex items-center gap-2",
-                                  status.className
-                                )}>
-                                  <ShieldCheck size={14} aria-hidden="true" /> {status.label}
-                                </span>
-                              );
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="정보 수정"
-                        className="h-10 w-14 rounded-xl bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground shadow-sm border border-border transition-all group"
-                        disabled={isSaving}
-                        onClick={activeTab === 'DEPTS' ? handleOpenDeptEdit : handleOpenUserEdit}
-                      >
-                        <Pencil size={20} className="group-hover:scale-110 transition-transform" />
-                      </Button>
-                      {activeTab === 'DEPTS' && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={handleDeleteDept}
-                          disabled={isSaving}
-                          aria-busy={activeWriteOperation === 'delete-dept' || undefined}
-                        >
-                          {activeWriteOperation === 'delete-dept' ? '부서 삭제 중…' : '부서 삭제'}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 space-y-10 relative z-10">
-                    {/* '근무지: 본사' 는 어떤 데이터로도 뒷받침되지 않는 고정 문구여서 제거했다(감사 P1-5). */}
-                    <div className="grid grid-cols-2 gap-6">
-                      {activeTab === 'DEPTS' ? (
-                        <>
-                          <InfoBlock icon={<Building2 size={16} />} label="부서 코드" value={(selectedItem as Department)?.ognzId || '-'} />
-                          <InfoBlock icon={<Network size={16} />} label="상위 부서" value={(selectedItem as Department)?.upOgnzId || '최상위'} />
-                        </>
-                      ) : (
-                        <>
-                          <InfoBlock icon={<Mail size={16} />} label="이메일 주소" value={displayedUser?.emlAddr || '미지정'} />
-                          <InfoBlock icon={<Phone size={16} />} label="연락처" value={displayedUser?.mblTelno || '미등록'} />
-                          {/* 소속·상태는 목록 projection 에 없다 — 상세 API(displayedUser)에서만 나온다. */}
-                          <InfoBlock icon={<Building2 size={16} />} label="소속 부서" value={displayedUser?.ognzId || '미지정'} />
-                          <InfoBlock icon={<Fingerprint size={16} />} label="사번" value={displayedUser?.emplNo || '미지정'} />
-                        </>
-                      )}
-                    </div>
-
-                    {activeTab !== 'DEPTS' && <AccessControlLink onOpen={() => router.push('/admin/security/authority')} />}
-                  </div>
-
-                  {activeTab !== 'DEPTS' && <div className="flex gap-4 pt-10 mt-auto border-t border-border/50 relative z-10">
-                    {/* 탭에 따라 삭제 대상이 다르다. 종전에는 분기가 없어 부서 탭에서도 사용자 삭제 API 를 호출했다. */}
-                    <button
-                      type="button"
-                      onClick={handleDeleteUser}
-                      disabled={isSaving}
-                      aria-busy={activeWriteOperation === 'delete-user' || undefined}
-                      className="flex-1 h-10 bg-muted text-rose-500 rounded-xl font-semibold text-xs hover:bg-rose-500 hover:text-white transition-all shadow-sm outline-none cursor-pointer flex items-center justify-center"
-                    >
-                      {/* 실제 동작은 계정 삭제다. '접근 차단'은 무엇을 하는지 오인시킨다. */}
-                      {activeWriteOperation === 'delete-user' ? '사용자 삭제 중…' : '사용자 삭제'}
-                    </button>
-                    {/* 비밀번호 초기화 — 종전에는 API 만 있고 이 화면 어디에도 진입점이 없었다. */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleOpenPasswordReset}
-                      disabled={isSaving}
-                      className="flex-1 h-10 rounded-xl font-semibold text-xs"
-                    >
-                      <KeyRound size={16} aria-hidden="true" /> 비밀번호 초기화
-                    </Button>
-                    {/* 수정은 편집 다이얼로그에서 저장한다. 종전에는 onClick 이 없는 死버튼이라 눌러도 아무 일도 없었다. */}
-                    <Button
-                      onClick={handleOpenUserEdit}
-                      disabled={isSaving}
-                      className="flex-[2] h-10 bg-surface-inverse text-surface-inverse-foreground rounded-xl font-semibold text-xs shadow-2xl hover:bg-primary transition-all group"
-                    >
-                      <Zap size={16} className="text-primary group-hover:animate-pulse" /> 정보 수정
-                    </Button>
-                  </div>}
-                </div>
-              </motion.div>
-            ) : (
-              <div
-                role={activeTab === 'DEPTS' ? 'status' : undefined}
-                className="h-full rounded-2xl border-4 border-dashed border-border bg-muted/50 flex flex-col items-center justify-center p-20 text-center select-none group"
-              >
-                <div className="w-28 h-24 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground/40 shadow-xl mb-10 group-hover:rotate-6 transition-transform duration-700">
-                  <Contact2 size={50} className="opacity-20 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <h3 className="text-3xl font-black text-muted-foreground tracking-tighter">선택 대기 중</h3>
-                <p className="text-xs font-semibold text-muted-foreground mt-4 leading-relaxed max-w-[280px]">
-                  {activeTab === 'DEPTS' ? '왼쪽 조직 구조에서 확인하거나 편집할 부서를 선택하세요.' : '목록에서 부서 또는 사용자를 선택하세요.'}
-                </p>
-                <div className="mt-10 flex gap-4 opacity-10 grayscale">
-                  <Fingerprint size={24} />
-                  <Database size={24} />
-                  <ShieldAlert size={24} />
-                </div>
-              </div>
-            )}
-          </AnimatePresence>
+          <NavButton icon={<Users size={14} />} label="사용자" active={activeTab === 'USERS'} onClick={() => handleTabChange('USERS')} />
+          <NavButton icon={<Network size={14} />} label="부서 관리" active={isDeptTab} onClick={() => handleTabChange('DEPTS')} />
+          <NavButton icon={<UserMinus size={14} />} label="부재 상태 관리" active={activeTab === 'ABSENCES'} onClick={() => handleTabChange('ABSENCES')} />
+          <NavButton icon={<ShieldCheck size={14} />} label="조직 정책" active={isPolicies} onClick={() => handleTabChange('POLICIES')} />
+        </nav>
+      )}
+      filter={isPolicies ? undefined : (
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-[14rem] flex-1">
+            {/* 보이는 라벨과 접근 이름을 같게 둔다(WCAG 2.5.3). e2e 19 는 이 접근 이름('부서 검색')으로
+                입력을 찾으므로 라벨 문구를 바꾸면 그 스펙도 함께 고쳐야 한다. */}
+            <label
+              htmlFor="user-org-search"
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+            >
+              {isDeptTab ? '부서 검색' : '사용자 검색'}
+            </label>
+            <Input
+              id="user-org-search"
+              className="h-[var(--filter-control-h)] text-[length:var(--font-size-body)]"
+              // ⚠ e2e 가 이 placeholder 를 셀렉터에 쓴다
+              //    (23-security-auth-supplement: getByPlaceholder('검색어를 입력하세요...'),
+              //     02-admin-system: input[placeholder*="검색"]). 문구 변경 시 e2e 동시 수정 필요.
+              placeholder="검색어를 입력하세요..."
+              value={searchKeyword}
+              // 검색어가 바뀌면 페이지를 1로 되돌린다. 종전에는 3페이지에서 검색하면
+              // 결과가 1페이지뿐이어도 3페이지를 요청해 빈 화면이 됐다(감사 P1-8).
+              onChange={(e) => {
+                setSearchKeyword(e.target.value);
+                if (isDeptTab) setSelectedItemId(null);
+                if (userPage !== 1) goToPage(1);
+              }}
+              suppressHydrationWarning
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!searchKeyword}
+            onClick={() => {
+              setSearchKeyword('');
+              if (isDeptTab) setSelectedItemId(null);
+              if (userPage !== 1) goToPage(1);
+            }}
+            className="gap-1.5"
+          >
+            <X size={14} aria-hidden="true" /> 초기화
+          </Button>
+          <p className="basis-full text-xs text-muted-foreground">
+            {isDeptTab
+              ? '부서명으로 조직도를 좁힙니다. 검색 중에는 계층을 바꿀 수 없습니다.'
+              : '사용자명 또는 사용자 ID 로 검색합니다.'}
+          </p>
         </div>
-      </MasterDetailLayout>
+      )}
+      toolbarActions={isPolicies ? undefined : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          // 무인자 invalidateQueries() 는 메뉴·알림 등 이 화면과 무관한 캐시까지
+          // 전부 재요청시킨다 — 이 화면이 쓰는 두 키로 좁힌다(감사 P2).
+          onClick={() => {
+            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-depts'] });
+          }}
+          className="gap-1.5"
+        >
+          <RefreshCcw size={14} aria-hidden="true" className={cn((isUsersLoading || isDeptsLoading) && 'animate-spin')} />
+          새로고침
+        </Button>
+      )}
+    >
+      {isPolicies ? (
+        <OrgPolicyPanel onNavigate={(href) => router.push(href)} />
+      ) : (
+        <MasterDetailLayout
+          active={activeTab === 'DEPTS'}
+          onSaveShortcut={handleSaveDeptHierarchy}
+          saveShortcutDisabled={!hasDeptChanges || isSaving || isDeptModalOpen}
+          className={cn(
+            !isDeptTab && 'grid min-w-0 gap-4',
+            // 상세 패널은 선택했을 때만 자리를 차지한다 — 미선택 상태에서 화면의 3분의 1을
+            // 빈 안내 상자에 내주면 목록 열이 그만큼 좁아진다(선택 상태는 뷰포트가 아니라
+            // 앱 상태이므로 ADR-0006 의 뷰포트 분기 금지와 무관하다).
+            !isDeptTab && selectedItem && 'xl:grid-cols-[minmax(0,1fr)_22rem]',
+            isPending && 'opacity-60 pointer-events-none',
+          )}
+        >
+          <div className={cn('flex min-w-0 flex-col gap-3', isDeptTab && 'h-full')}>
+            {activeTab === 'ABSENCES' && (
+              <AbsenceStatusNotice
+                isError={isAbsencesError}
+                error={absencesError}
+                isLoading={isAbsencesLoading}
+                absentCount={users.filter((user) => absenceOf(user) === ABSENT).length}
+                onRetry={() => { void refetchAbsences(); }}
+              />
+            )}
+
+            {isDeptTab ? (
+              <UserOrgMasterSection
+                title="조직 구조"
+                description="끌어서 순서를 바꾸고 오른쪽으로 밀어 하위 부서로 만듭니다."
+                icon={Network}
+                tools={(
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleSaveDeptHierarchy}
+                    disabled={!hasDeptChanges || !selectedDept || isSaving || isDeptModalOpen}
+                    aria-busy={activeWriteOperation === 'dept-hierarchy' || undefined}
+                    className="gap-1.5"
+                  >
+                    {activeWriteOperation === 'dept-hierarchy'
+                      ? <RefreshCcw size={14} className="animate-spin" aria-hidden="true" />
+                      : <Save size={14} aria-hidden="true" />}
+                    {activeWriteOperation === 'dept-hierarchy' ? '조직 계층 저장 중…' : '조직 계층 저장'}
+                  </Button>
+                )}
+              >
+                {/* ⚠ 이 스크롤 영역은 DEPTS 전용이다 — USERS·ABSENCES 는 표가 자기 스크롤을 소유하므로
+                    여기에 탭 분기를 두면 도달할 수 없는 가지가 된다. A2 census 는 이 라벨을
+                    부서 마스터 스크롤 영역의 이름으로 고정한다. */}
+                <div
+                  role="region"
+                  aria-label="부서 조직 구조"
+                  tabIndex={0}
+                  className="max-h-[60vh] min-h-0 flex-1 overflow-y-auto pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                >
+                  {/* 조직도는 테이블이 아니라 D&D 트리다. 실패를 토스트로만 알리면 화면은
+                      '부서 0건'으로 남아 조회 실패와 구분되지 않는다(감사 P1-1). */}
+                  {isDeptsError ? (
+                    <ErrorStateDisplay error={deptsError} onRetry={() => refetchDepts()} />
+                  ) : (
+                    <>
+                      <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+                          {...deptDragHandlers}
+                      >
+                          <SortableContext items={previewDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
+                              <div className="space-y-0.5">
+                                  {previewDepts.map((node, index) => (
+                                      <SortableDeptNode
+                                          key={node.ognzId}
+                                          node={node}
+                                          isSelected={selectedItemId === node.ognzId}
+                                          isTabStop={selectedItemId === node.ognzId || (selectedItemId === null && index === 0)}
+                                          onClick={() => setSelectedItemId(node.ognzId || null)}
+                                      />
+                                  ))}
+                              </div>
+                          </SortableContext>
+
+                          {typeof document !== 'undefined' && createPortal(
+                              <DragOverlay dropAnimation={dropAnimation}>
+                                  {activeDeptId ? (
+                                      <SortableDeptNode
+                                          node={flattenedDepts.find(n => n.ognzId === activeDeptId)!}
+                                          isSelected={false}
+                                          isTabStop={false}
+                                          onClick={() => {}}
+                                          isOverlay
+                                      />
+                                  ) : null}
+                              </DragOverlay>,
+                              document.body
+                          )}
+                      </DndContext>
+                      {flattenedDepts.length === 0 && !isDeptsLoading && (
+                          <p className="py-10 text-center text-[length:var(--font-size-body)] text-muted-foreground">
+                            {deptKeyword
+                              ? `'${deptKeyword}' 에 해당하는 부서가 없습니다.`
+                              : '등록된 부서가 없습니다. 오른쪽 위 부서 등록으로 첫 부서를 만듭니다.'}
+                          </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              </UserOrgMasterSection>
+            ) : (
+              <StandardDataTable<UserManage>
+                  columns={userColumns as Column<UserManage>[]}
+                  data={users}
+                  loading={isUsersLoading}
+                  error={isUsersError ? (usersError as Error) : null}
+                  onRetry={() => refetchUsers()}
+                  onRowClick={(item) => {
+                      if (item.userId) setSelectedItemId(item.userId);
+                  }}
+                  rowActionLabel={(item) => `${item.userNm || item.userId || '사용자'} 상세 열기`}
+                  keyField="userId"
+                  // ⚠ e2e(23-security-auth-supplement E12)가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
+                  emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 검색 결과가 없습니다.` : '데이터가 존재하지 않습니다.'}
+                  // 업무형 화면은 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
+                  isPremium={false}
+                  enableSelection={true}
+                  bulkActions={userBulkActions}
+                  className="border-none shadow-none bg-transparent"
+                  // ⚠ 총 건수는 셸의 결과 툴바가 단독으로 소유한다 — 여기에 totalCount 를 다시 넘기면
+                  //   같은 수치가 표 위아래로 두 번 나온다(work-list-adoption-census 가 red 로 막는다).
+                  pagination={{
+                      currentPage: userPage,
+                      totalPages: usersData?.totalPage || 1,
+                      pageSize: userPageSize,
+                      onPageSizeChange: handlePageSizeChange,
+                      pageSizeOptions: USER_PAGE_SIZE_OPTIONS,
+                      onPageChange: goToPage
+                  }}
+              />
+            )}
+          </div>
+
+          <div
+            data-a2-detail={activeTab === 'DEPTS' ? '' : undefined}
+            tabIndex={isDeptTab ? -1 : undefined}
+            className={cn('min-w-0', isDeptTab ? 'h-full' : !selectedItem && 'hidden')}
+          >
+            {selectedItem ? (
+              <section className="flex h-full min-h-0 flex-col rounded-md border border-border bg-card">
+                <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-[var(--filter-pad)] py-2">
+                  <div className="min-w-0">
+                    {/* ⚠ 제목에는 이름만 둔다 — 단위 테스트가 `heading level 2` 의 접근 이름을
+                        이름 문자열과 정확히 대조한다. 식별자·배지는 아래 줄이 갖는다. */}
+                    <h2 className="break-words text-[length:var(--font-size-body)] font-semibold text-foreground">
+                      {isDeptTab ? (selectedItem as Department)?.ognzNm : displayedUser?.userNm}
+                    </h2>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="tabular-nums">
+                        {isDeptTab ? (selectedItem as Department)?.ognzId : displayedUser?.userId}
+                      </span>
+                      {/* 종전에는 상태와 무관하게 '인증됨' 이 항상, ABSENCES 탭에서는 전원 '자리비움' 이
+                          표시됐다. 실제 계정 상태 코드(userSttsCd)에서만 배지를 만든다(감사 P1-5).
+                          목록 projection 에는 userSttsCd 가 없다 — 상세 API 데이터로만 그린다. */}
+                      {!isDeptTab && displayedUser?.userSttsCd && (
+                        <UserStatusBadge code={displayedUser.userSttsCd} />
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                    {detailActions}
+                  </div>
+                </header>
+
+                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-[var(--filter-pad)]">
+                  {/* '근무지: 본사' 는 어떤 데이터로도 뒷받침되지 않는 고정 문구여서 제거했다(감사 P1-5). */}
+                  {isDeptTab ? (
+                    <DetailFieldList>
+                      <DetailField label="부서 코드" value={(selectedItem as Department)?.ognzId || '-'} />
+                      <DetailField label="상위 부서" value={(selectedItem as Department)?.upOgnzId || '최상위'} />
+                      <DetailField
+                        label="부서 설명"
+                        span
+                        value={(selectedItem as Department)?.ognzExpln || '미등록'}
+                      />
+                    </DetailFieldList>
+                  ) : (
+                    <DetailFieldList>
+                      <DetailField label="사용자 ID" value={displayedUser?.userId || '-'} />
+                      <DetailField label="사번" value={displayedUser?.emplNo || '미지정'} />
+                      <DetailField label="직함" value={displayedUser?.ofcpsNm || '미지정'} />
+                      {/* 소속은 목록 projection 에 없다 — 상세 API(displayedUser)에서만 나온다. */}
+                      <DetailField label="소속 부서" value={displayedUser?.ognzId || '미지정'} />
+                      <DetailField label="이메일 주소" value={displayedUser?.emlAddr || '미지정'} />
+                      <DetailField label="휴대전화" value={displayedUser?.mblTelno || '미등록'} />
+                      <DetailField label="사무실 전화" value={displayedUser?.officeTelno || '미등록'} />
+                      <DetailField label="등록일" value={toDisplayYmd(displayedUser?.crtDt?.slice(0, 10))} />
+                    </DetailFieldList>
+                  )}
+
+                  {!isDeptTab && <AccessControlLink onOpen={() => router.push('/admin/security/authority')} />}
+                </div>
+              </section>
+            ) : isDeptTab ? (
+              /* 미선택 안내. 종전에는 `p-20` + 점선 4px 테두리 + 96px 아이콘 상자 + 장식 아이콘
+                 3개로 세로 400px 이상을 썼다 — 아무 정보도 없는 영역이다. 한 줄로 줄인다.
+                 ⚠ role="status" 와 이 문구는 단위 테스트에 고정돼 있다.
+                 USERS·ABSENCES 는 이 자리를 아예 비운다 — 안 고른 상태에서 화면 3분의 1을
+                 빈 상자에 내주는 대신 목록이 전폭을 쓴다. */
+              <p
+                role="status"
+                className="rounded-md border border-dashed border-border bg-muted/30 px-[var(--filter-pad)] py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground"
+              >
+                왼쪽 조직 구조에서 확인하거나 편집할 부서를 선택하세요.
+              </p>
+            ) : null}
+          </div>
+        </MasterDetailLayout>
+      )}
 
       <StandardModal
         isOpen={isUserModalOpen}
@@ -1200,17 +1253,17 @@ export default function UserOrgHubClient({
         title="사용자 상태 일괄 변경"
         maxWidth="sm"
       >
-        <div className="space-y-8 p-4">
+        <div className="space-y-4">
           <BulkSelectionSummary users={selectedBulkItems} />
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             {/* 폼 컨트롤이 아니라 버튼 그룹이므로 <label> 이 아니라 radiogroup 으로 이름을 붙인다(감사 P2). */}
-            <p id="bulk-status-label" className="text-xs font-bold text-foreground tracking-tight">변경할 상태 선택</p>
-            <div role="radiogroup" aria-labelledby="bulk-status-label" className="grid grid-cols-1 gap-3">
+            <p id="bulk-status-label" className="text-[length:var(--font-size-body)] font-semibold text-foreground">변경할 상태 선택</p>
+            <div role="radiogroup" aria-labelledby="bulk-status-label" className="grid grid-cols-1 gap-1.5">
               {[
-                { code: 'P', label: '정상', color: 'bg-emerald-500' },
-                { code: 'A', label: '승인 대기', color: 'bg-amber-500' },
-                { code: 'D', label: '비활성', color: 'bg-muted-foreground' }
+                { code: 'P', label: '정상', dot: 'bg-success' },
+                { code: 'A', label: '승인 대기', dot: 'bg-warning' },
+                { code: 'D', label: '비활성', dot: 'bg-muted-foreground' }
               ].map(s => (
                 <button
                   key={s.code}
@@ -1220,37 +1273,34 @@ export default function UserOrgHubClient({
                   disabled={isSaving}
                   onClick={() => setTargetStatus(s.code)}
                   className={cn(
-                    "w-full flex items-center justify-between p-4 rounded-lg border-2 transition-all",
-                    targetStatus === s.code ? "border-primary bg-primary/5 shadow-lg" : "border-border hover:border-border bg-card"
+                    "flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left transition-colors",
+                    targetStatus === s.code ? "border-primary bg-primary/5" : "border-border bg-card hover:bg-muted"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={cn("w-2 h-2 rounded-full", s.color)} />
-                    <span className="text-sm font-bold tracking-tight text-foreground">{s.label}</span>
-                  </div>
-                  {targetStatus === s.code && <div className="w-4 h-4 rounded-lg bg-primary flex items-center justify-center text-white"><ChevronRight size={10} /></div>}
+                  <span className={cn("size-2 shrink-0 rounded-full", s.dot)} aria-hidden="true" />
+                  <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{s.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex gap-4 pt-4">
-            <button 
+          <div className="flex justify-end gap-2 border-t border-border pt-3">
+            <Button
               type="button"
+              variant="outline"
               disabled={isSaving}
               onClick={handleCloseBulkStatusModal}
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
-            </button>
-            <Button 
+            </Button>
+            <Button
               onClick={() => void handleBulkStatusUpdate()}
               disabled={isSaving}
               aria-busy={activeWriteOperation === 'bulk-status' || undefined}
-              className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
+              className="gap-1.5"
             >
               {activeWriteOperation === 'bulk-status' ? (
-                <><RefreshCcw size={16} className="animate-spin" aria-hidden="true" /> 상태 일괄 적용 중…</>
+                <><RefreshCcw size={14} className="animate-spin" aria-hidden="true" /> 상태 일괄 적용 중…</>
               ) : '상태 일괄 적용'}
             </Button>
           </div>
@@ -1264,22 +1314,21 @@ export default function UserOrgHubClient({
         title="부서 일괄 이동"
         maxWidth="md"
       >
-        <div className="space-y-8 p-4">
+        <div className="space-y-4">
           <BulkSelectionSummary users={selectedBulkItems} />
 
-          <div className="space-y-4">
-            <p id="bulk-dept-label" className="text-xs font-bold text-foreground tracking-tight">이동할 대상 부서 선택</p>
-            <div role="radiogroup" aria-labelledby="bulk-dept-label" className="max-h-[400px] overflow-y-auto border-2 border-border rounded-lg p-4 custom-scrollbar bg-muted/30">
+          <div className="space-y-2">
+            <p id="bulk-dept-label" className="text-[length:var(--font-size-body)] font-semibold text-foreground">이동할 대상 부서 선택</p>
+            <div role="radiogroup" aria-labelledby="bulk-dept-label" className="max-h-[320px] overflow-y-auto rounded-md border border-border bg-muted/20 p-2">
               {flattenedDepts.length === 0 && (
-                <p className="py-10 text-center text-xs font-bold tracking-tight text-muted-foreground">
+                <p className="py-8 text-center text-[length:var(--font-size-body)] text-muted-foreground">
                   {isDeptsLoading ? '부서 목록을 불러오는 중입니다...' : '이동할 수 있는 부서가 없습니다.'}
                 </p>
               )}
               {flattenedDepts.map((node) => (
                 <div
                   key={node.ognzId}
-                  style={{ paddingLeft: `${node.depth * 20}px` }}
-                  className="mb-1"
+                  style={{ paddingLeft: `${node.depth * 16}px` }}
                 >
                   <button
                     type="button"
@@ -1288,47 +1337,40 @@ export default function UserOrgHubClient({
                     disabled={isSaving}
                     onClick={() => setTargetDeptId(node.ognzId || '')}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left",
-                      targetDeptId === node.ognzId ? "bg-primary text-white shadow-lg" : "hover:bg-card hover:shadow-sm text-foreground"
+                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left transition-colors",
+                      targetDeptId === node.ognzId ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
                     )}
                   >
-                    <Building2 size={14} className={targetDeptId === node.ognzId ? "text-white" : "text-muted-foreground"} />
-                    <span className="text-xs font-bold tracking-tight">{node.ognzNm}</span>
-                    <span className="text-xs opacity-50 ml-auto">ID_{node.ognzId}</span>
+                    <span className="min-w-0 truncate text-[length:var(--font-size-body)]">{node.ognzNm}</span>
+                    <span className="ml-auto shrink-0 text-xs tabular-nums opacity-70">{node.ognzId}</span>
                   </button>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex gap-4 pt-4">
-            <button 
+          <div className="flex justify-end gap-2 border-t border-border pt-3">
+            <Button
               type="button"
+              variant="outline"
               disabled={isSaving}
               onClick={handleCloseBulkMoveModal}
-              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
-            </button>
-            <Button 
+            </Button>
+            <Button
               onClick={() => void handleBulkDeptMove()}
               disabled={isSaving}
               aria-busy={activeWriteOperation === 'bulk-move' || undefined}
-              className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
+              className="gap-1.5"
             >
               {activeWriteOperation === 'bulk-move' ? (
-                <><RefreshCcw size={16} className="animate-spin" aria-hidden="true" /> 부서 이동 실행 중…</>
+                <><RefreshCcw size={14} className="animate-spin" aria-hidden="true" /> 부서 이동 실행 중…</>
               ) : '부서 이동 실행'}
             </Button>
           </div>
         </div>
       </StandardModal>
-
-
-
-
-    </div>
-    </TooltipProvider>
+    </WorkListPage>
   );
 }
-

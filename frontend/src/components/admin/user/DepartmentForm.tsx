@@ -108,12 +108,12 @@ export function DepartmentForm({
                     maxLength={200}
                     className={cn(
                         "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
                     )}
                     placeholder="DEPT_NAME"
                   />
                 </FormControl>
-                <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
               </motion.div>
             </FormItem>
           )}
@@ -137,12 +137,12 @@ export function DepartmentForm({
                     maxLength={4000}
                     className={cn(
                         "w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
                     )}
                     placeholder="부서의 역할 및 책임 정의..."
                   />
                 </FormControl>
-                <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
               </motion.div>
             </FormItem>
           )}

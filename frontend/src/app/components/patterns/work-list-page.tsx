@@ -36,6 +36,14 @@ export interface WorkListPageProps {
   description?: string;
   /** 제목 우측 주요 액션(신규 등). 상태·권한으로 걸러진 것만 넘긴다(G10). */
   actions?: React.ReactNode;
+  /**
+   * 같은 관리 영역 안의 route/tab 전환(A2 셸의 `navigation` 과 같은 계약).
+   *
+   * 헤더 바로 아래·조회조건 위에 둔다 — 탭은 "무엇을 조회할지"를 먼저 정하므로 조회조건보다
+   * 앞이어야 하고, 주요 액션과 같은 줄에 두면 화면 전환과 쓰기 동작이 붙어 오조작이 된다.
+   * 미지정이면 슬롯 자체를 렌더하지 않아 기존 소비자의 DOM 은 그대로다.
+   */
+  navigation?: React.ReactNode;
   /** 조회조건 영역. 없으면 조회조건 섹션 자체를 렌더하지 않는다. */
   filter?: React.ReactNode;
   /** 조회조건 섹션 제목. 기본값은 화면 간 문구 드리프트를 막는 고정 라벨이다. */
@@ -85,6 +93,7 @@ export function WorkListPage({
   headingLevel = 1,
   description,
   actions,
+  navigation,
   filter,
   filterLabel = '조회 조건',
   defaultFilterOpen = true,
@@ -145,6 +154,8 @@ export function WorkListPage({
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </header>
+
+      {navigation && <div data-testid="work-list-navigation">{navigation}</div>}
 
       {filter && (
         <details

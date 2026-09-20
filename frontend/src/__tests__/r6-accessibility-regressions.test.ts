@@ -10,19 +10,44 @@ function source(relativePath: string): string {
 }
 
 describe('r6 accessibility regressions', () => {
-  it('makes the bounded user-result scroller keyboard reachable and named', () => {
+  it('makes the bounded scrollers of the user/org hub keyboard reachable and named', () => {
     const userHub = source('app/admin/user/UserOrgHubClient.tsx');
+    const dataTable = source('app/components/ui/standard-data-table.tsx');
 
-    expect(userHub).toContain("aria-label={activeTab === 'DEPTS' ? '부서 조직 구조' : '조직·사용자 결과 스크롤 영역'}");
+    /*
+      [2026-09-20 업무형 이행] 종전 anchor 는 이 화면이 **직접** 만든 스크롤 영역의 탭 분기
+      aria-label 이었다(`activeTab === 'DEPTS' ? '부서 조직 구조' : '조직·사용자 결과 스크롤 영역'`).
+      사용자 결과가 StandardDataTable 로 넘어가면서 그 else 가지는 도달할 수 없는 코드가 됐고,
+      표의 유계 스크롤은 셸이 `useOverflowRegion` 으로 소유한다 — 그쪽은 **실제로 넘칠 때만**
+      role=region·tabIndex=0·이름을 붙이므로 손으로 만든 상시 tab stop 보다 정확하다.
+
+      불변식은 그대로다: 이 화면의 유계 스크롤 영역은 키보드로 도달 가능하고 이름이 있다.
+      anchor 만 (a) 화면에 남은 손수 스크롤 영역(부서 조직도)과 (b) 표에 대한 위임 사실로 옮긴다.
+    */
+    expect(userHub).toContain('aria-label="부서 조직 구조"');
     expect(userHub).toMatch(/role="region"[\s\S]*tabIndex=\{0\}[\s\S]*overflow-y-auto[^\"]*focus-visible:ring-2/);
+
+    // 위임이 조용히 끊기는 경로를 막는다 — stickyHeader 를 끄면 유계 스크롤 자체가 사라지고,
+    // 셸에서 overflow region 배선이 빠지면 표가 이름 없는 스크롤 상자가 된다.
+    expect(userHub).not.toContain('stickyHeader={false}');
+    expect(dataTable).toContain('useOverflowRegion<HTMLDivElement>');
+    expect(dataTable).toContain('스크롤 영역');
   });
 
-  it('does not dim repeated user identifiers or the empty-selection heading below the muted token', () => {
+  it('does not dim repeated user identifiers or the empty-selection notice below the muted token', () => {
     const userHub = source('app/admin/user/UserOrgHubClient.tsx');
 
     expect(userHub).not.toContain('text-[10px] font-bold tracking-tight opacity-60');
-    expect(userHub).not.toContain('text-3xl font-black text-muted-foreground/50 tracking-tighter');
-    expect(userHub).toContain('text-3xl font-black text-muted-foreground tracking-tighter');
+
+    /*
+      종전 anchor 였던 `text-3xl font-black text-muted-foreground tracking-tighter` 는 '선택 대기 중'
+      히어로 heading 의 클래스였고, 업무형 이행에서 그 heading 자체가 한 줄 안내로 대체됐다.
+      장식 클래스 문자열 대신 **성질**을 직접 검사한다 — 미선택 안내와 반복 식별자를 muted
+      토큰보다 더 흐리게 만들지 않는다(투명도를 깎은 전경색은 대비를 조용히 떨어뜨린다).
+    */
+    expect(userHub).not.toMatch(/text-muted-foreground\/[0-9]/);
+    expect(userHub).not.toMatch(/text-foreground\/[0-9]/);
+    expect(userHub).toMatch(/role="status"[\s\S]{0,400}text-muted-foreground(?![/\w-])/);
   });
 
   it('keeps FAQ labels on full-strength semantic foreground tokens', () => {

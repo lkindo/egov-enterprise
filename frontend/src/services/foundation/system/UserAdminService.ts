@@ -78,6 +78,12 @@ function toUserManage(item: UserResponse): UserManage {
     'emplNo',
     'gndrCd',
     'brthYmd',
+    // [2026-09-20] 목록 projection(UserRepositoryImpl 10필드)이 실제로 내려주는데 여기 whitelist 에
+    //   없어 버려지던 세 필드. 서버가 보낸 값을 화면이 못 쓰는 상태였고, 그래서 사용자 목록이
+    //   이름·ID 두 열만 그릴 수 있었다. 값을 합성하는 것이 아니라 오던 것을 보존하는 것이다.
+    'ofcpsNm',
+    'officeTelno',
+    'crtDt',
   ] as const;
   for (const field of optionalFields) {
     const value = item[field];

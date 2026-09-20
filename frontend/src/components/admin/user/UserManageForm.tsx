@@ -130,12 +130,12 @@ export function UserManageForm({
                       className={cn(
                         "h-11 rounded-lg text-xs font-mono font-bold tracking-widest uppercase shadow-inner transition-all",
                         mode === 'edit' ? "bg-muted/50 border-none" : "focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="ID (4-20, 영문/숫자/_)"
                     />
                   </FormControl>
-                  <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                  <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
                 </motion.div>
               </FormItem>
             )}
@@ -159,12 +159,12 @@ export function UserManageForm({
                       maxLength={50}
                       className={cn(
                         "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="NAME"
                     />
                   </FormControl>
-                  <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                  <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
                 </motion.div>
               </FormItem>
             )}
@@ -190,12 +190,12 @@ export function UserManageForm({
                       maxLength={50}
                       className={cn(
                         "h-11 rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="example@nuri.com"
                     />
                   </FormControl>
-                  <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                  <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
                 </motion.div>
               </FormItem>
             )}
@@ -219,12 +219,12 @@ export function UserManageForm({
                       inputMode="tel"
                       className={cn(
                         "h-11 rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="010-0000-0000"
                     />
                   </FormControl>
-                  <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                  <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
                 </motion.div>
               </FormItem>
             )}
@@ -252,12 +252,12 @@ export function UserManageForm({
                       maxLength={100}
                       className={cn(
                         "h-11 rounded-lg text-xs border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
+                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="PASSWORD (MIN_8)"
                     />
                   </FormControl>
-                  <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                  <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
                 </motion.div>
               </FormItem>
             )}
@@ -281,7 +281,7 @@ export function UserManageForm({
                     {...field}
                     className={cn(
                         "w-full h-11 px-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none shadow-inner transition-all",
-                        fieldState.error ? "border-rose-500 ring-rose-500/10 ring-4" : "focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
+                        fieldState.error ? "border-destructive ring-destructive/10 ring-4" : "focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
                     )}
                   >
                     <option value="">소속 없음 / GLOBAL</option>
@@ -290,7 +290,7 @@ export function UserManageForm({
                     ))}
                   </select>
                 </FormControl>
-                <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
+                <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
               </motion.div>
             </FormItem>
           )}
