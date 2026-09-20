@@ -3,8 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Save, Zap,
-  Layers, Package, Loader2,
+  ArrowLeft, Save, Loader2,
   Paperclip, Trash2, Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,6 @@ import {
   FormMessage,
   useFormField,
 } from '@/components/ui/form';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { fileService } from '@/services/foundation/file/FileService';
@@ -297,47 +295,28 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="max-w-5xl mx-auto space-y-16 pb-24 pt-8 relative"
-    >
-      {/* Decorative Background */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
-
+    <div className="mx-auto max-w-[var(--page-max-w)] space-y-4 pb-6">
       {/* Header section */}
-      <div className="flex items-center gap-10 px-4">
-        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-          <Button
-            variant="outline"
-            onClick={() => router.back()}
-            className="w-16 h-16 rounded-2xl border-2 border-border group hover:bg-surface-inverse transition-all duration-500 shadow-xl"
-            aria-label="뒤로 가기"
-          >
-            <ArrowLeft className="group-hover:text-white transition-all w-8 h-8" />
-          </Button>
-        </motion.div>
-        <div className="space-y-3">
-          <motion.div 
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="flex items-center gap-4"
-          >
-            <span className="text-[10px] font-black tracking-[0.2em] text-primary leading-none px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 shadow-sm">커뮤니티 게시판</span>
-          </motion.div>
-          <motion.h1 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="text-5xl font-black text-foreground tracking-tighter leading-none"
-          >
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => router.back()}
+          className="size-8 shrink-0"
+          aria-label="뒤로 가기"
+        >
+          <ArrowLeft className="size-4" aria-hidden="true" />
+        </Button>
+        <div className="min-w-0">
+          <span className="rounded border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs text-primary">커뮤니티 게시판</span>
+          <h1 className="mt-1 text-xl font-bold tracking-tight text-foreground">
             {pstSn ? '게시글 수정' : '새 게시글 작성'}
-          </motion.h1>
+          </h1>
         </div>
       </div>
 
       <Form {...form}>
-        <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-12 px-4">
+        <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <p className="text-sm text-muted-foreground">
             초안 임시 보관은 현재 탭에서만 유효합니다. 새로고침하거나 탭을 닫으면 사라지므로 게시글을 등록해 주세요.
           </p>
@@ -356,106 +335,73 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
             className="scroll-mt-6"
           />
           {/* Title Input Area */}
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="p-12 bg-card/95 backdrop-blur-3xl rounded-[2.5rem] border border-border shadow-2xl relative overflow-hidden group ring-1 ring-border/50"
-          >
-            <div className="absolute top-0 right-0 p-16 opacity-[0.02] pointer-events-none group-focus-within:opacity-10 transition-opacity">
-              <Layers size={180} className="rotate-12 text-foreground" />
-            </div>
-            <div className="relative z-10 space-y-8">
+          <div className="rounded-md border border-border bg-card p-4">
+            <div className="space-y-2">
               <FormField
                 control={form.control}
                 name="pstTtl"
                 required
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
-                        <Zap size={24} />
-                      </div>
-                      <FormLabel className="text-[10px] font-black tracking-[0.1em] text-muted-foreground">제목</FormLabel>
-                    </div>
+                    <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">제목</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         data-testid="article-title-input"
-                        className="h-16 bg-transparent border-none text-foreground text-4xl font-black placeholder:text-muted-foreground focus-visible:ring-0 p-0 tracking-tighter"
+                        className="h-[var(--control-h)] text-[length:var(--font-size-body)] text-foreground placeholder:text-muted-foreground"
                         placeholder="제목을 입력하세요."
                         autoFocus
                         aria-label="게시글 제목"
                         maxLength={256}
                       />
                     </FormControl>
-                    <FormMessage className="font-black text-destructive-emphasis uppercase text-[10px] tracking-widest pt-2" />
+                    <FormMessage className="pt-1 text-xs text-destructive-emphasis" />
                   </FormItem>
                 )}
               />
-              <div className="h-[2px] w-full bg-gradient-to-r from-primary to-transparent opacity-30" />
             </div>
-          </motion.div>
+          </div>
 
           {/* Content Editor Area */}
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="space-y-8"
-          >
+          <div className="space-y-2">
             <FormField
               control={form.control}
               name="pstCn"
               required
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center justify-between px-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
-                        <Package size={20} />
-                      </div>
-                      <FormLabel className="text-[10px] font-black text-foreground tracking-[0.1em]">본문 내용</FormLabel>
-                    </div>
-                  </div>
+                  <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">본문 내용</FormLabel>
                   <RichTextFieldControl value={field.value} onChange={field.onChange} />
-                  <FormMessage className="font-black text-destructive-emphasis uppercase text-[10px] tracking-widest pt-4 pl-4" />
+                  <FormMessage className="pt-1 text-xs text-destructive-emphasis" />
                 </FormItem>
               )}
             />
-          </motion.div>
+          </div>
 
           {/* 첨부파일 */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.35 }}
-            className="space-y-6"
-          >
-            <div className="flex items-center gap-4 px-4">
-              <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
-                <Paperclip size={20} aria-hidden="true" />
-              </div>
-              <h2 className="text-[10px] font-black text-foreground tracking-[0.1em]">첨부파일</h2>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Paperclip size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+              <h2 className="text-[length:var(--font-size-body)] font-semibold text-foreground">첨부파일</h2>
             </div>
 
             {existingAtchFileSn && (
               isAttachmentError ? (
-                <div role="alert" className="mx-4 flex flex-wrap items-center gap-4 p-6 rounded-2xl border border-destructive/40 bg-card">
-                  <span className="text-sm font-bold">기존 첨부파일 목록을 불러오지 못했습니다.</span>
-                  <Button type="button" variant="outline" onClick={() => void refetchAttachments()} className="h-10 px-6 rounded-xl">
+                <div role="alert" className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2">
+                  <span className="text-[length:var(--font-size-body)]">기존 첨부파일 목록을 불러오지 못했습니다.</span>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void refetchAttachments()}>
                     다시 시도
                   </Button>
                 </div>
               ) : attachments.length === 0 ? (
-                <p className="px-4 text-sm font-bold text-muted-foreground">등록된 첨부파일이 없습니다.</p>
+                <p className="text-[length:var(--font-size-body)] text-muted-foreground">등록된 첨부파일이 없습니다.</p>
               ) : (
-                <ul className="mx-4 space-y-3" aria-label="기존 첨부파일">
+                <ul className="divide-y divide-border rounded-md border border-border" aria-label="기존 첨부파일">
                   {attachments.map((file) => {
                     const key = attachmentKey(file);
                     return (
-                      <li key={key} className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card">
-                        <span className="text-sm font-bold truncate">{file.orignlFileNm}</span>
+                      <li key={key} className="flex items-center justify-between gap-3 px-3 py-2">
+                        <span className="truncate text-[length:var(--font-size-body)]">{file.orignlFileNm}</span>
                         <Button
                           type="button"
                           variant="outline"
@@ -476,21 +422,16 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
               )
             )}
 
-            <div className="px-4 space-y-3">
+            <div className="space-y-2">
               <StandardFileUploader name="files" onFilesChange={setNewFiles} />
-              <p className="text-xs text-muted-foreground font-medium">
+              <p className="text-xs text-muted-foreground">
                 새로 붙인 파일은 게시글을 저장할 때 함께 올라갑니다.{existingAtchFileSn ? ' 기존 첨부에 추가됩니다.' : ''}
               </p>
             </div>
-          </motion.div>
+          </div>
 
           {/* 게시 기간(기록용) */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.38 }}
-            className="space-y-6 px-4"
-          >
+          <div className="space-y-2">
             {/*
               [2026-08-29 → 2026-09-05 이전] '게시 기간' 은 **기록만 되고 집행되지 않는다.**
               두 값은 BoardService 가 normalizeYmd 로 컬럼에 넣지만, 목록·상세 가시성을 결정하는 유일한
@@ -501,18 +442,16 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
               사라지므로, 대상 범위와 마이그레이션을 정하는 제품 결정이 선행된다. 그때까지 화면은
               자기가 하는 일만 말한다(honest-affordance-contract 가 문구와 술어 부재를 함께 고정한다).
             */}
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
-                <Calendar size={20} aria-hidden="true" />
-              </div>
-              <h2 className="text-[10px] font-black text-foreground tracking-[0.1em]">게시 기간(기록용)</h2>
+            <div className="flex items-center gap-2">
+              <Calendar size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+              <h2 className="text-[length:var(--font-size-body)] font-semibold text-foreground">게시 기간(기록용)</h2>
             </div>
-            <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               입력한 기간은 게시글에 함께 저장되지만, 노출 여부를 자동으로 바꾸지는 않습니다.
               종료일이 지나도 글은 계속 보이며, 내리려면 직접 삭제해야 합니다.
               {pstSn ? ' 비워 두면 기존 값은 그대로 둡니다.' : ''}
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {DATE_FIELDS.map((dateField) => (
                 <FormField
                   key={dateField.name}
@@ -520,31 +459,26 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
                   name={dateField.name}
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel className="text-[10px] font-black tracking-[0.1em] text-muted-foreground">{dateField.label}</FormLabel>
+                      <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">{dateField.label}</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} value={field.value ?? ''} className="h-11 rounded-lg border-border font-bold" />
+                        <Input type="date" {...field} value={field.value ?? ''} className="h-[var(--control-h)] rounded-md border-border" />
                       </FormControl>
-                      <FormMessage className="font-black text-destructive-emphasis uppercase text-[10px] tracking-widest" />
+                      <FormMessage className="text-xs text-destructive-emphasis" />
                     </FormItem>
                   )}
                 />
               ))}
             </div>
-          </motion.div>
+          </div>
 
           {/* Bottom Actions Matrix */}
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-end gap-10 pt-12 border-t-2 border-border"
-          >
-            <div className="flex items-center gap-5 w-full sm:w-auto">
+          <div className="flex flex-col items-center justify-end gap-3 border-t border-border pt-4 sm:flex-row">
+            <div className="flex w-full items-center gap-2 sm:w-auto">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
-                className="h-16 flex-1 sm:flex-none px-12 rounded-[1.5rem] border-2 border-border font-black tracking-widest text-[10px] uppercase hover:bg-muted transition-all active:scale-95"
+                className="flex-1 sm:flex-none"
                 aria-label="취소"
               >
                 취소
@@ -552,26 +486,26 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-16 flex-1 sm:flex-none px-16 rounded-[1.5rem] bg-surface-inverse text-surface-inverse-foreground font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] gap-4 group"
+                className="flex-1 gap-2 sm:flex-none"
                 aria-label={pstSn ? '게시글 수정' : '게시글 등록'}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="animate-spin w-5 h-5" />
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                     <span>게시글 저장 중…</span>
                   </>
                 ) : (
                   <>
-                    <Save size={20} className="group-hover:rotate-12 transition-transform" />
+                    <Save size={16} aria-hidden="true" />
                     {pstSn ? '게시글 수정' : '게시글 등록'}
                   </>
                 )}
               </Button>
             </div>
-          </motion.div>
+          </div>
         </form>
       </Form>
 
-    </motion.div>
+    </div>
   );
 }
