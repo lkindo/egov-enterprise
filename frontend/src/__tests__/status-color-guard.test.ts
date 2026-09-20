@@ -184,7 +184,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   배지 전부가 팔레트 리터럴이었다. success/warning/destructive 틴트 + 전경 토큰으로
 //   옮겼고, 깜빡이던 상태 점과 끊임없이 도는 시계 아이콘을 걷었다 — 아무것도 가리키지 않는 움직임은
 //   시선만 끈다.
-const BASELINE = 292;
+// [하향 래칫 2026-09-20(11)] 292 -> 277. 알림 드로어 7건 + 게시판 미리보기 8건.
+//   드로어는 유형 아이콘 3색과 보안 알림 카드의 테두리·배경 4건이 리터럴이었다 — 유형은
+//   옆의 필터·제목이 이미 말하므로 success/warning/destructive 틴트로 옮겼다.
+//   미리보기는 브라우저 크롬 모형의 신호등 3색과 Q&A 해결 배지를 걷었다.
+const BASELINE = 277;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

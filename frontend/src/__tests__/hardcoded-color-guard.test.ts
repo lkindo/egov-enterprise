@@ -60,7 +60,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-09-20(4)] 39 -> 34. 배너·팝업 관리의 5건. 다크 표면 위 흰색 리터럴과
 //   선택 컨트롤 테두리의 중립 팔레트 리터럴을 대응 토큰으로 회수했다.
 // [하향 래칫 2026-09-20(5)] 34 -> 33. 기관코드 목록의 상태 점 1건을 중립 토큰으로 회수했다.
-const BASELINE = 33;
+// [하향 래칫 2026-09-20(6)] 33 -> 32. 게시판 미리보기 위키 카드의 중립 팔레트 hover 테두리 1건.
+const BASELINE = 32;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
