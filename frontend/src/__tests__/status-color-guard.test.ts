@@ -166,7 +166,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   가장 큰 덩어리는 카테고리 탭 4개의 colorMap 12건 — 탭은 색이 아니라 aria-selected 와
 //   테두리로 선택을 말하므로 팔레트 자체가 필요 없었다. 나머지는 목록 조회 실패 패널 4건
 //   (destructive 토큰)과 Q&A 상태 글자색 2건(success/warning 틴트 + 전경 토큰)이다. 신규 0건.
-const BASELINE = 399;
+// [하향 래칫 2026-09-20(6)] 399 -> 386. 결재 양식 허브(정적 데모 스캐폴드)의 13건.
+//   양식 상태 배지 6건은 success/warning 틴트 + 전경 토큰으로, 승인 단계의 완료 노드와
+//   모니터 카드 아이콘 3건은 success·muted 로 옮겼다. 모니터 카드의 상태 색 분기 4건은
+//   호출부 3곳이 전부 '정적 예시' 라 한 번도 참이 된 적 없는 죽은 분기여서 함께 걷었다.
+const BASELINE = 386;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

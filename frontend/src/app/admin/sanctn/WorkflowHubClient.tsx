@@ -4,25 +4,26 @@
 // 실제 전자결재 기능은 /approvals·/admin/system/ism(InformalSanction 백엔드)에 별도 구현되어 동작 중.
 // 결재양식 CRUD·엔진·배포를 실동작시키려면 대응 백엔드를 신설해 배선할 것.
 // (진입점 /admin/sanctn/workflow는 메뉴 SSOT 정합상 /admin/workflow로 리다이렉트됨 — 이 컴포넌트는 /admin/sanctn/forms에서 렌더)
+//
+// [2026-09-20] 셸 이행은 하지 않았다 — 표시할 업무 데이터가 없는 데모 스캐폴드라 A1 셸을 씌우면
+//   조회조건·총 건수 같은 셸의 약속이 전부 빈칸이 된다. 대신 장식·거짓 토큰·죽은 분기만 걷었다.
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckSquare,  
- GitBranch,  
- FileText,  
- Activity,  
- Plus,  
- Search,  
- Zap,  
- History,  
- ArrowRight, 
- MoreHorizontal, 
- Workflow, 
- Layers, 
+import { GitBranch,
+ FileText,
+ Activity,
+ Plus,
+ Search,
+ Zap,
+ History,
+ ArrowRight,
+ MoreHorizontal,
+ Workflow,
+ Layers,
  UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Types ---
 type ApprovalTab = 'FORMS' | 'WORKFLOW' | 'MONITOR';
@@ -34,6 +35,16 @@ interface ApprovalFormItem {
  status: '활성' | '초안' | '사용중단';
  usage: number;
 }
+
+/**
+ * 양식 상태 배지. 색만으로 상태를 전달하지 않는다 — 한국어 라벨이 함께 있고 글자는 전경
+ * 토큰으로 읽는다(WCAG 1.4.1). 팔레트 리터럴 대신 success/warning/destructive 틴트를 쓴다.
+ */
+const FORM_STATUS_CLASS: Record<ApprovalFormItem['status'], string> = {
+ 활성: 'border-success/40 bg-success/15 text-foreground',
+ 초안: 'border-warning/40 bg-warning/15 text-foreground',
+ 사용중단: 'border-border bg-muted text-muted-foreground',
+};
 
 export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab?: ApprovalTab }) {
  const [activeTab, setActiveTab] = useState<ApprovalTab>(defaultTab);
@@ -47,228 +58,185 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  { id: 'F04', title: '프로젝트 법인카드 신청', version: 'v1.1', status: '사용중단', usage: 890 },
  ];
 
+ const selectedForm = forms.find((form) => form.id === selectedFormId);
+
  return (
- <div className="space-y-10 pb-20">
+ <div className="space-y-4 pb-6">
   {/* --- Header --- */}
-  <div className="flex items-center justify-between px-4">
-  <div className="flex items-center gap-4">
-  <div className="w-14 h-11 bg-surface-inverse rounded-lg flex items-center justify-center shadow-2xl rotate-3">
-  <CheckSquare size={28} className="text-surface-inverse-foreground" />
-  </div>
+  <div className="flex flex-wrap items-start justify-between gap-3">
   <div>
-  <h1 className="text-3xl font-bold text-foreground tracking-tighter leading-none">
+  <h1 className="text-xl font-bold tracking-tight text-foreground">
   전자결재 워크플로우 허브
   </h1>
-  <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
+  <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
   결재 양식·워크플로우 UI 정적 예시
   </p>
   </div>
-  </div>
-  <Button disabled title="정적 데모에서는 배포할 수 없습니다." className="h-11 px-8 rounded-lg bg-primary text-white font-bold tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3">
-  <Zap size={20} /> 워크플로우 배포
+  <Button disabled size="sm" title="정적 데모에서는 배포할 수 없습니다." className="gap-2">
+  <Zap size={16} aria-hidden="true" /> 워크플로우 배포
   </Button>
   </div>
 
-  <div role="status" className="mx-4 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4 text-sm leading-relaxed">
-    <strong className="font-bold">정적 데모 화면입니다.</strong>{' '}
+  <div role="status" className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-[length:var(--font-size-body)] leading-relaxed">
+    <strong className="font-semibold">정적 데모 화면입니다.</strong>{' '}
     아래 양식·사용량·승인 단계·엔진 수치는 실제 결재 양식·엔진 상태·배포 결과가 아닙니다.
     탭 전환과 샘플 선택만 동작하며 생성·수정·실행·배포는 지원하지 않습니다.
   </div>
 
-  <div className="grid grid-cols-12 gap-8 px-2">
-  
-  {/* --- Left Column: Navigation (20%) --- */}
-  <div className="col-span-12 lg:col-span-3 space-y-6">
-  <Card className="rounded-lg border-0 bg-card shadow-2xl overflow-hidden ring-1 ring-border">
-  <CardHeader className="bg-muted/50 p-8 border-b">
-  <CardTitle className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-2">
-  <Workflow size={14} className="text-primary" /> 코어 엔진 모듈 관리 </CardTitle>
+  <div className="grid grid-cols-12 gap-3">
+
+  {/* --- Left Column: Navigation --- */}
+  <div className="col-span-12 space-y-3 lg:col-span-3">
+  <Card className="overflow-hidden rounded-md border border-border bg-card">
+  <CardHeader className="border-b border-border bg-muted/50 p-3">
+  <CardTitle className="flex items-center gap-2 text-[length:var(--font-size-body)] font-semibold text-muted-foreground">
+  <Workflow size={14} className="text-primary" aria-hidden="true" /> 코어 엔진 모듈 관리 </CardTitle>
   </CardHeader>
-  <CardContent className="p-4 space-y-2">
-  <NavButton icon={<FileText size={20} />} label="Sanction Forms" active={activeTab === 'FORMS'} onClick={() => setActiveTab('FORMS')} />
-  <NavButton icon={<GitBranch size={20} />} label="워크플로우" active={activeTab === 'WORKFLOW'} onClick={() => setActiveTab('WORKFLOW')} />
-  <NavButton icon={<Activity size={20} />} label="시스템" active={activeTab === 'MONITOR'} onClick={() => setActiveTab('MONITOR')} />
+  <CardContent className="space-y-1 p-2">
+  {/* 종전 'Sanction Forms' 는 내부 영문 명칭이라 화면 라벨로 쓰지 않는다. */}
+  <NavButton icon={<FileText size={16} />} label="결재 양식" active={activeTab === 'FORMS'} onClick={() => setActiveTab('FORMS')} />
+  <NavButton icon={<GitBranch size={16} />} label="워크플로우" active={activeTab === 'WORKFLOW'} onClick={() => setActiveTab('WORKFLOW')} />
+  <NavButton icon={<Activity size={16} />} label="시스템" active={activeTab === 'MONITOR'} onClick={() => setActiveTab('MONITOR')} />
   </CardContent>
   </Card>
 
   {/* Engine Status */}
-  <Card className="rounded-lg border-0 bg-surface-inverse text-surface-inverse-foreground shadow-2xl p-8 relative overflow-hidden">
-  <div className="absolute top-0 right-0 p-4 opacity-10">
-  <Workflow size={100} />
-  </div>
-  <div className="relative z-10 space-y-4">
+  <Card className="rounded-md border border-surface-inverse-border bg-surface-inverse p-3 text-surface-inverse-foreground">
+  <div className="space-y-2">
   {/* [2026-08-22] text-warning-foreground 는 bg-warning **위에서만** 대비가 성립하는 배지 전경
       토큰(38 95% 12%, 거의 검은 앰버)이다. surface-inverse(고정 다크 서피스) 위에 단독으로 쓰면
       1.40:1 로 라벨이 사실상 보이지 않는다(실측). 다크 서피스 위 텍스트는 --warning 자체가
       8.35:1 로 통과한다 — status-token-contrast 계약이 이 대비들을 수학으로 고정한다. */}
-  <div className="flex items-center gap-2 text-xs font-bold text-warning tracking-tight">
-  <div className="w-2 h-2 rounded-full bg-warning" /> 정적 엔진 샘플
+  <div className="flex items-center gap-2 text-[length:var(--font-size-body)] font-semibold text-warning">
+  <div className="size-2 rounded-full bg-warning" aria-hidden="true" /> 정적 엔진 샘플
   </div>
-  <div className="space-y-1">
-  <h4 className="text-2xl font-bold tracking-tighter">99.9% 예시</h4>
-  <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">실제 cluster 미연결</p>
+  <div>
+  <h2 className="text-lg font-semibold tabular-nums">99.9% 예시</h2>
+  <p className="text-xs text-surface-inverse-foreground/70">실제 cluster 미연결</p>
   </div>
   </div>
   </Card>
   </div>
 
-  {/* --- Content Area (Center + Right) --- */}
+  {/* --- Content Area --- */}
   <div className="col-span-12 lg:col-span-9">
-    <AnimatePresence mode="wait">
       {activeTab === 'FORMS' && (
-        <motion.div 
-          key="forms-tab"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="grid grid-cols-1 lg:grid-cols-9 gap-8 h-full"
-        >
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-9">
           {/* Center Column: Resource List */}
-          <div className="lg:col-span-4 h-full min-h-[700px]">
-            <Card className="h-full rounded-lg border-0 bg-card shadow-2xl overflow-hidden flex flex-col ring-1 ring-border">
-              <CardHeader className="bg-muted/50 border-b p-8 space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-2">
-                      <Layers size={14} className="text-primary" /> 결재 양식 인벤토리
-                    </CardTitle>
-                    <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">Enterprise Resource List</p>
-                  </div>
-                  <Button disabled title="정적 데모에서는 양식을 추가할 수 없습니다." size="icon" aria-label="양식 추가 (미지원)" className="w-10 h-10 bg-surface-inverse rounded-lg shadow-lg hover:-translate-y-1 transition-all"><Plus size={20} /></Button>
+          <div className="lg:col-span-4">
+            <Card className="flex h-full flex-col overflow-hidden rounded-md border border-border bg-card">
+              <CardHeader className="space-y-2 border-b border-border bg-muted/50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="flex items-center gap-2 text-[length:var(--font-size-body)] font-semibold text-muted-foreground">
+                    <Layers size={14} className="text-primary" aria-hidden="true" /> 결재 양식 인벤토리
+                  </CardTitle>
+                  <Button disabled title="정적 데모에서는 양식을 추가할 수 없습니다." size="icon" variant="outline" aria-label="양식 추가 (미지원)"><Plus size={16} aria-hidden="true" /></Button>
                 </div>
-                <div className="relative group">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={14} />
-                  <Input disabled className="pl-9 h-11 bg-card border-border rounded-lg text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/5 transition-all" placeholder="정적 데모에서는 검색을 지원하지 않습니다" />
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} aria-hidden="true" />
+                  <Input disabled className="h-[var(--filter-control-h)] pl-9 text-[length:var(--font-size-body)]" placeholder="정적 데모에서는 검색을 지원하지 않습니다" />
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              <CardContent className="flex-1 space-y-1 overflow-y-auto p-2">
                 {forms.map((form) => (
-                  <div 
+                  // 종전에는 role="button" + tabIndex + 수동 Enter/Space 처리였다. 실제 button 은
+                  // 그 계약을 브라우저가 이미 구현해 두었고, 선택 상태도 aria-pressed 로 전달된다.
+                  <button
                     key={form.id}
-                    role="button"
-                    tabIndex={0}
+                    type="button"
+                    aria-pressed={selectedFormId === form.id}
+                    aria-label={`${form.title} 선택`}
                     onClick={() => setSelectedFormId(form.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedFormId(form.id);
-                      }
-                    }}
                     className={cn(
-                      "group p-5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
-                      selectedFormId === form.id 
-                      ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
-                      : "bg-card border-border hover:border-border hover:shadow-xl text-muted-foreground"
+                      "flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left transition-colors",
+                      selectedFormId === form.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-card hover:border-primary"
                     )}
                   >
-                    {selectedFormId === form.id && (
-                      <motion.div 
-                        layoutId="active-glow"
-                        className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent pointer-events-none"
-                      />
-                    )}
-                    <div className="space-y-1.5 max-w-[70%] relative z-10">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className={cn(
-                          "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter",
-                          form.status === '활성' ? "bg-emerald-500/10 text-emerald-500" : 
-                          form.status === '초안' ? "bg-amber-500/10 text-amber-500" : "bg-rose-500/10 text-rose-500"
-                        )}>
+                    {/* button 의 콘텐츠 모델은 phrasing 이라 내부는 전부 span 으로 둔다. */}
+                    <span className="min-w-0 space-y-1">
+                      <span className="flex items-center gap-2">
+                        <span className={cn("inline-flex items-center rounded border px-1.5 py-0.5 text-xs", FORM_STATUS_CLASS[form.status])}>
                           {form.status}
-                        </div>
-                        <span className="text-[10px] font-bold tracking-tight opacity-30 font-mono">{form.version}</span>
-                      </div>
-                      <h4 className={cn("text-sm font-bold truncate tracking-tight", selectedFormId === form.id ? "text-surface-inverse-foreground" : "text-foreground")}>
-                        {form.title}
-                      </h4>
-                      <p className={cn("text-[10px] font-bold opacity-40 font-mono tracking-tighter uppercase")}>UID: {form.id}</p>
-                    </div>
-                    <div className="text-right flex flex-col items-end gap-1 relative z-10">
-                      <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">샘플 사용량</span>
-                      <span className={cn("text-base font-black tracking-tighter tabular-nums", selectedFormId === form.id ? "text-primary" : "text-foreground")}>
-                        {form.usage > 1000 ? (form.usage / 1000).toFixed(1) + 'K' : form.usage}
+                        </span>
+                        <span className="text-xs tabular-nums text-muted-foreground">{form.version}</span>
                       </span>
-                    </div>
-                  </div>
+                      <span className="block truncate text-[length:var(--font-size-body)] font-semibold text-foreground">
+                        {form.title}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">식별자 {form.id}</span>
+                    </span>
+                    <span className="flex shrink-0 flex-col items-end">
+                      <span className="text-xs text-muted-foreground">샘플 사용량</span>
+                      <span className="text-[length:var(--font-size-body)] font-semibold tabular-nums text-foreground">
+                        {form.usage.toLocaleString()}
+                      </span>
+                    </span>
+                  </button>
                 ))}
               </CardContent>
             </Card>
           </div>
 
           {/* Right Column: Designer/Preview */}
-          <div className="lg:col-span-5 h-full min-h-[700px]">
-            {selectedFormId ? (
-              <Card className="h-full rounded-lg border-0 bg-card shadow-2xl flex flex-col ring-1 ring-border overflow-hidden relative">
-                <CardHeader className="bg-muted/50 p-10 border-b flex flex-row items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-2">
-                      <Layers size={14} className="text-primary" /> 시각화 로직 설계기
-                    </h3>
-                    <h2 className="text-2xl font-bold text-foreground tracking-tighter">{forms.find(f => f.id === selectedFormId)?.title}</h2>
+          <div className="lg:col-span-5">
+            {selectedForm ? (
+              <Card className="flex h-full flex-col overflow-hidden rounded-md border border-border bg-card">
+                <CardHeader className="flex flex-row items-center justify-between gap-2 border-b border-border bg-muted/50 p-3">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-[length:var(--font-size-body)] font-semibold text-muted-foreground">
+                      <Layers size={14} className="text-primary" aria-hidden="true" /> 승인 단계 예시
+                    </p>
+                    <h2 className="truncate text-lg font-semibold text-foreground">{selectedForm.title}</h2>
                   </div>
-                  <Button disabled title="정적 데모에서는 추가 작업을 지원하지 않습니다." variant="ghost" size="icon" className="rounded-lg border border-border"><MoreHorizontal size={20} /></Button>
+                  <Button disabled title="정적 데모에서는 추가 작업을 지원하지 않습니다." variant="ghost" size="icon" aria-label="추가 작업 (미지원)"><MoreHorizontal size={16} aria-hidden="true" /></Button>
                 </CardHeader>
-                
-                <CardContent className="flex-1 p-10 relative overflow-hidden bg-muted/50 flex items-center justify-center">
-                  <div className="w-full space-y-6 relative z-10">
+
+                <CardContent className="flex-1 bg-muted/40 p-4">
+                  <div className="space-y-2">
                     <WorkflowNode type="START" label="기안자" date="문서 제출" />
-                    <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
-                    <WorkflowNode type="APPROVE" label="Dept. 관리자" date="L1 승인" active />
-                    <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
-                    <WorkflowNode type="APPROVE" label="재무 담당자" date="L2 검증" />
-                    <div className="flex justify-center -my-2"><ArrowRight size={24} className="text-slate-200 rotate-90" /></div>
+                    <StepArrow />
+                    <WorkflowNode type="APPROVE" label="부서 관리자" date="1차 승인" active />
+                    <StepArrow />
+                    <WorkflowNode type="APPROVE" label="재무 담당자" date="2차 검증" />
+                    <StepArrow />
                     <WorkflowNode type="END" label="시스템" date="완료" />
                   </div>
-                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
                 </CardContent>
 
-                <div className="p-10 border-t bg-card flex gap-4">
-                  <Button disabled title="정적 데모에서는 로직을 수정할 수 없습니다." variant="outline" className="h-11 flex-1 rounded-lg font-bold tracking-tight text-xs border-2 opacity-50">로직 수정</Button>
-                  <Button disabled title="정적 데모에서는 인스턴스를 실행할 수 없습니다." className="h-11 flex-[2] bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold tracking-tight text-xs shadow-2xl">인스턴스 실행</Button>
+                <div className="flex gap-2 border-t border-border bg-card p-3">
+                  <Button disabled size="sm" title="정적 데모에서는 로직을 수정할 수 없습니다." variant="outline" className="flex-1">로직 수정</Button>
+                  <Button disabled size="sm" title="정적 데모에서는 인스턴스를 실행할 수 없습니다." className="flex-[2]">인스턴스 실행</Button>
                 </div>
               </Card>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-30 select-none grayscale bg-card rounded-lg border-2 border-dashed border-border">
-                <GitBranch size={64} className="mb-8 rotate-45" />
-                <h3 className="text-2xl font-bold text-foreground tracking-tighter">활성화된 워크플로우 없음</h3>
-                <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">로직 확인을 위해 양식을 선택하세요</p>
+              <div className="flex h-full flex-col items-center justify-center rounded-md border border-dashed border-border bg-card p-8 text-center">
+                <GitBranch size={28} className="mb-3 text-muted-foreground" aria-hidden="true" />
+                <h2 className="text-[length:var(--font-size-body)] font-semibold text-foreground">선택한 양식 없음</h2>
+                <p className="mt-1 text-xs text-muted-foreground">승인 단계 예시를 보려면 왼쪽에서 양식을 선택하세요.</p>
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {activeTab === 'WORKFLOW' && (
-        <motion.div 
-          key="workflow-tab"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="h-full bg-card rounded-lg border-0 shadow-2xl p-10 ring-1 ring-border flex flex-col items-center justify-center text-center space-y-6"
-        >
-          <div className="w-20 h-11 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-4">
-            <GitBranch size={40} />
-          </div>
-          <h3 className="text-3xl font-bold text-foreground tracking-tighter">워크플로우 배포 관리</h3>
-          <p className="text-muted-foreground font-bold max-w-md mx-auto">워크플로우 관리 UI의 정적 예시입니다. 실제 인스턴스와 배포 정책은 연결되지 않았습니다.</p>
-          <Button disabled title="정적 데모에서는 워크플로우를 생성할 수 없습니다." className="h-11 px-10 rounded-lg font-bold tracking-tight shadow-xl shadow-primary/20">새 워크플로우 생성</Button>
-        </motion.div>
+        <div className="flex flex-col items-center justify-center space-y-3 rounded-md border border-border bg-card p-8 text-center">
+          <GitBranch size={28} className="text-muted-foreground" aria-hidden="true" />
+          <h2 className="text-lg font-semibold text-foreground">워크플로우 배포 관리</h2>
+          <p className="mx-auto max-w-md text-[length:var(--font-size-body)] text-muted-foreground">워크플로우 관리 UI의 정적 예시입니다. 실제 인스턴스와 배포 정책은 연결되지 않았습니다.</p>
+          <Button disabled size="sm" title="정적 데모에서는 워크플로우를 생성할 수 없습니다.">새 워크플로우 생성</Button>
+        </div>
       )}
 
       {activeTab === 'MONITOR' && (
-        <motion.div 
-          key="monitor-tab"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-        >
-          <MonitorCard title="샘플 시스템 상태" value="Optimal" icon={<ShieldCheck size={24} className="text-emerald-500" />} status="정적 예시" description="실제 시스템 상태가 아닌 화면 구성 예시입니다." />
-          <MonitorCard title="샘플 엔진 가동률" value="42%" icon={<Zap size={24} className="text-amber-500" />} status="정적 예시" description="실제 처리 부하가 아닌 화면 구성 예시입니다." />
-          <MonitorCard title="샘플 동시 세션" value="1,240" icon={<History size={24} className="text-hub-indigo" />} status="정적 예시" description="실제 사용자 세션이 아닌 화면 구성 예시입니다." />
-        </motion.div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <MonitorCard title="샘플 시스템 상태" value="Optimal" icon={<ShieldCheck size={16} aria-hidden="true" />} status="정적 예시" description="실제 시스템 상태가 아닌 화면 구성 예시입니다." />
+          <MonitorCard title="샘플 엔진 가동률" value="42%" icon={<Zap size={16} aria-hidden="true" />} status="정적 예시" description="실제 처리 부하가 아닌 화면 구성 예시입니다." />
+          <MonitorCard title="샘플 동시 세션" value="1,240" icon={<History size={16} aria-hidden="true" />} status="정적 예시" description="실제 사용자 세션이 아닌 화면 구성 예시입니다." />
+        </div>
       )}
-    </AnimatePresence>
   </div>
   </div>
  </div>
@@ -279,45 +247,51 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
 
 function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
  return (
- <button 
+ <button
+ type="button"
  onClick={onClick}
+ aria-pressed={active}
  className={cn(
- "w-full group p-5 rounded-lg border-2 transition-all flex items-center gap-4",
- active 
- ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-xl"
- : "bg-card border-transparent hover:border-border text-muted-foreground hover:text-foreground"
+ "flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left transition-colors",
+ active
+ ? "border-surface-inverse-border bg-surface-inverse text-surface-inverse-foreground"
+ : "border-transparent bg-card text-muted-foreground hover:border-border hover:text-foreground"
  )}
  >
- <div className={cn(
- "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
- active ? "bg-white/10 text-surface-inverse-foreground" : "bg-muted text-muted-foreground group-hover:bg-muted"
- )}>
- {icon}
- </div>
- <span className="text-sm font-bold tracking-tight">{label}</span>
+ <span className="shrink-0" aria-hidden="true">{icon}</span>
+ <span className="text-[length:var(--font-size-body)] font-semibold">{label}</span>
  </button>
+ );
+}
+
+function StepArrow() {
+ return (
+ <div className="flex justify-center" aria-hidden="true">
+ <ArrowRight size={16} className="rotate-90 text-muted-foreground" />
+ </div>
  );
 }
 
 function MonitorCard({ title, value, icon, status, description }: { title: string, value: string, icon: React.ReactNode, status: string, description: string }) {
   return (
-    <Card className="rounded-lg border-0 bg-card shadow-xl hover:shadow-2xl transition-all p-8 space-y-6 ring-1 ring-border group">
-      <div className="flex items-center justify-between">
-        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center group-hover:scale-110 transition-all">
+    <Card className="space-y-2 rounded-md border border-border bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
           {icon}
-        </div>
-        <div className={cn(
-          "px-3 py-1 rounded-lg text-xs font-bold tracking-tight",
-          status === 'Healthy' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-        )}>
+        </span>
+        {/*
+          종전에는 status === 'Healthy' 분기로 색을 갈랐는데 호출부 3곳이 전부 '정적 예시' 라
+          그 분기는 한 번도 참이 된 적이 없다. 없는 상태축을 색으로 흉내내지 않는다.
+        */}
+        <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
           {status}
-        </div>
+        </span>
       </div>
-      <div className="space-y-1">
-        <h4 className="text-xs font-bold text-muted-foreground tracking-tight">{title}</h4>
-        <div className="text-4xl font-bold text-foreground tracking-tighter">{value}</div>
+      <div>
+        <p className="text-xs text-muted-foreground">{title}</p>
+        <p className="text-lg font-semibold tabular-nums text-foreground">{value}</p>
       </div>
-      <p className="text-xs font-bold text-muted-foreground leading-relaxed">{description}</p>
+      <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
     </Card>
   );
 }
@@ -335,20 +309,25 @@ function WorkflowNode({
 }) {
  return (
  <div className={cn(
- "p-5 rounded-lg border-2 flex items-center gap-5 mx-10 transition-all",
- active ? "bg-card border-primary shadow-xl scale-105" : "bg-card border-transparent shadow-sm opacity-60"
+ "flex items-center gap-3 rounded-md border px-3 py-2 transition-colors",
+ active ? "border-primary bg-card" : "border-border bg-card"
  )}>
- <div className={cn(
- "w-10 h-10 rounded-lg flex items-center justify-center text-white",
- type === 'START' ? "bg-surface-inverse" : type === 'END' ? "bg-emerald-500" : "bg-primary"
- )}>
- {type === 'START' ? <UserCheck size={18} /> : type === 'END' ? <ShieldCheck size={18} /> : <Zap size={18} />}
+ <span className={cn(
+ "flex size-8 shrink-0 items-center justify-center rounded-md",
+ type === 'START'
+ ? "bg-surface-inverse text-surface-inverse-foreground"
+ : type === 'END'
+ ? "bg-success text-success-foreground"
+ : "bg-primary text-primary-foreground"
+ )} aria-hidden="true">
+ {type === 'START' ? <UserCheck size={16} /> : type === 'END' ? <ShieldCheck size={16} /> : <Zap size={16} />}
+ </span>
+ <div className="min-w-0 flex-1">
+ <p className="text-xs text-muted-foreground">{date}</p>
+ <p className="truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{label}</p>
  </div>
- <div className="flex-1">
- <p className="text-xs font-bold text-muted-foreground tracking-tight">{date}</p>
- <h5 className="text-sm font-bold tracking-tight text-foreground">{label}</h5>
- </div>
- {active && <div className="w-2 h-2 rounded-full bg-primary animate-ping" />}
+ {/* 진행 중 단계는 애니메이션이 아니라 글자로 말한다 — 깜빡임은 상태를 읽어 주지 않는다. */}
+ {active && <span className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-xs text-foreground">현재 단계</span>}
  </div>
  );
 }
