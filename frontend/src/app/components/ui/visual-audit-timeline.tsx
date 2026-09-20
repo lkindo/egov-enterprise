@@ -51,32 +51,32 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
 
  const getSeverityColor = (severity: string) => {
  switch (severity) {
- case 'high': return 'text-rose-700 bg-rose-50 border-rose-200';
- case 'medium': return 'text-amber-800 bg-amber-50 border-amber-200';
- default: return 'text-emerald-700 bg-emerald-50 border-emerald-200';
+ case 'high': return 'border-destructive bg-destructive text-destructive-foreground';
+ case 'medium': return 'border-warning bg-warning text-warning-foreground';
+ default: return 'border-success bg-success text-success-foreground';
  }
  };
 
  const getActionIcon = (action?: string) => {
  switch (action) {
- case 'CREATE': return <ShieldCheck size={16} className="text-emerald-500" />;
- case 'DELETE': return <AlertCircle size={16} className="text-rose-500" />;
- case 'RESTORE': return <RotateCcw size={16} className="text-hub-blue" />;
- case 'UPDATE': return <FileEdit size={16} className="text-amber-500" />;
- default: return <Clock size={16} className="text-muted-foreground" />;
+ case 'CREATE': return <ShieldCheck size={16} />;
+ case 'DELETE': return <AlertCircle size={16} />;
+ case 'RESTORE': return <RotateCcw size={16} />;
+ case 'UPDATE': return <FileEdit size={16} />;
+ default: return <Clock size={16} />;
  }
  };
 
  return (
- <div className={cn("flex flex-col gap-8 bg-card border-2 border-primary/5 rounded-lg p-10 shadow-2xl", className)}>
+ <div className={cn("flex flex-col gap-4 bg-card rounded-lg p-4", className)}>
  {/* Header */}
- <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-primary/5">
- <div className="flex items-center gap-5">
- <div className="p-4 bg-primary/10 rounded-lg text-primary shadow-inner">
- <HistoryIcon size={28} className="animate-spin-slow" />
+ <div className="flex flex-col md:flex-row items-center justify-between gap-3 pb-3 border-b border-border">
+ <div className="flex items-center gap-3">
+ <div className="p-2 bg-muted rounded-md text-muted-foreground">
+ <HistoryIcon size={16} />
  </div>
  <div>
- <h2 className="text-2xl font-bold tracking-tighter text-foreground ">{title}</h2>
+ <h2 className="text-sm font-bold text-foreground">{title}</h2>
  {/*
    [2026-08-29] 헤더의 상태 배지 두 줄을 걷었다. 배지가 말한 보안 엔진이라는 구성요소도,
    '실시간 데이터 무결성 모니터링' 이라는 동작도 저장소에 없다. 방패 아이콘과 초록색까지
@@ -88,9 +88,9 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
 
  <div className="flex items-center gap-3 w-full md:w-auto">
  <div className="relative flex-1 md:w-64">
- <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={16} />
+ <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
  <input
- className="w-full bg-muted/40 border-none rounded-lg py-3 pl-12 pr-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all"
+ className="w-full h-[var(--control-h-sm)] bg-background border border-border rounded-md pl-9 pr-3 text-[length:var(--font-size-body)] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
  placeholder="검색.."
  aria-label="감사 로그 검색"
  value={filter}
@@ -106,20 +106,16 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  </div>
 
  {/* Timeline Stream */}
- <div className="relative space-y-8 pl-10 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-1 before:bg-gradient-to-b before:from-primary/20 before:via-primary/5 before:to-transparent before:rounded-lg">
- {filteredLogs.map((log, idx) => (
+ <div className="relative space-y-2 pl-10 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-1 before:bg-border before:rounded-lg">
+ {filteredLogs.map((log) => (
  <div
  key={log.id}
- className={cn(
- "relative transition-all duration-700 animate-in fade-in slide-in-from-left-4",
- expandedLog === log.id ? "scale-100" : "hover:scale-[1.02]"
- )}
- style={{ animationDelay: `${idx * 100}ms` }}
+ className="relative"
  >
  {/* Timeline Node Icon */}
  <div className={cn(
- "absolute -left-10 top-0 w-8 h-8 rounded-lg border-4 border-card flex items-center justify-center shadow-lg transition-transform duration-500",
- expandedLog === log.id ? "bg-primary text-white scale-125 ring-4 ring-primary/20" : "bg-muted text-muted-foreground"
+ "absolute -left-10 top-0 w-8 h-8 rounded-lg border-4 border-card flex items-center justify-center transition-colors",
+ expandedLog === log.id ? "bg-primary text-primary-foreground ring-2 ring-primary/30" : "bg-muted text-muted-foreground"
  )}>
  {getActionIcon(log.action)}
  </div>
@@ -136,16 +132,16 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  tabIndex={0}
  aria-expanded={expandedLog === log.id}
  className={cn(
- "group cursor-pointer rounded-lg border-2 transition-all overflow-hidden outline-none focus:ring-2 focus:ring-primary",
+ "group cursor-pointer rounded-md border transition-colors overflow-hidden outline-none focus:ring-2 focus:ring-primary",
  expandedLog === log.id
- ? "bg-card border-primary/20 shadow-xl"
+ ? "bg-card border-primary"
  : "bg-card border-transparent hover:bg-muted/40"
  )}
  >
- <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
- <div className="flex items-center gap-5">
- <div className="w-12 h-12 rounded-lg bg-background flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
- <User size={20} className="text-muted-foreground" />
+ <div className="px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+ <div className="flex items-center gap-3">
+ <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+ <User size={16} className="text-muted-foreground" />
  </div>
  <div className="space-y-1">
  <div className="flex items-center gap-3">
@@ -162,33 +158,33 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  </div>
  </div>
 
- <div className="flex items-center gap-6">
- <div className="text-right hidden md:block">
+ <div className="flex items-center gap-4">
+ <div className="md:text-right">
  <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
  <Clock size={12} /> {log.timestamp}
  </div>
  <p className="text-xs font-bold text-foreground font-mono mt-1 opacity-100">{log.ipAddress}</p>
  </div>
- {expandedLog === log.id ? <ChevronUp size={20} className="text-primary" /> : <ChevronDown size={20} className="text-muted-foreground/40" />}
+ {expandedLog === log.id ? <ChevronUp size={16} className="text-primary" /> : <ChevronDown size={16} className="text-muted-foreground" />}
  </div>
  </div>
 
  {/* Expanded Detail: Side-by-Side Diff */}
  {expandedLog === log.id && log.changes && (
- <div className="px-8 pb-8 pt-4 border-t border-primary/5 bg-muted space-y-6 animate-in slide-in-from-top-4 duration-500">
- <h4 className="text-xs font-bold text-primary tracking-[0.3em] mb-4 flex items-center gap-2">
+ <div className="px-4 pb-3 pt-3 border-t border-border bg-muted space-y-3">
+ <h4 className="text-xs font-bold text-primary mb-2 flex items-center gap-2">
    <FileEdit size={12} /> 변경 내용
  </h4>
- <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
  {log.changes?.map((change, cIdx) => (
- <div key={cIdx} className="space-y-3 p-5 rounded-lg bg-card border border-primary/5 shadow-sm group/change">
- <label className="text-xs font-bold text-foreground tracking-tight">{change.field}</label>
- <div className="flex items-center gap-4">
- <div className="flex-1 p-3 rounded-lg bg-rose-50/80 border border-rose-100/50 text-sm font-medium text-rose-900 line-through decoration-rose-400 opacity-100">
+ <div key={cIdx} className="space-y-2 p-3 rounded-md bg-card border border-border">
+ <label className="text-[length:var(--font-size-body)] font-bold text-foreground">{change.field}</label>
+ <div className="flex items-center gap-3">
+ <div className="flex-1 p-2 rounded-md bg-destructive/10 border border-destructive/20 text-[length:var(--font-size-body)] font-medium text-destructive-emphasis line-through">
  {change.before}
  </div>
- <ArrowRight size={14} className="text-muted-foreground/30 animate-pulse" />
- <div className="flex-1 p-3 rounded-lg bg-emerald-50 border border-emerald-100/50 text-sm font-bold text-emerald-800 transition-all group-hover/change:bg-emerald-100">
+ <ArrowRight size={14} className="text-muted-foreground" />
+ <div className="flex-1 p-2 rounded-md bg-success/10 border border-success/20 text-[length:var(--font-size-body)] font-bold text-success-emphasis">
  {change.after}
  </div>
  </div>
@@ -213,7 +209,7 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  </div>
 
  {/* Footer System Stats */}
- <div className="flex flex-col md:flex-row items-center justify-between pt-6 border-t border-primary/5">
+ <div className="flex flex-col md:flex-row items-center justify-between pt-3 border-t border-border">
  {/*
    [2026-08-29] 하단의 '시스템 상태' 두 줄을 걷었다.
    - '마스터 저장소 동기화됨': 그런 저장소도 동기화 상태를 계측하는 곳도 저장소에 없다.
@@ -224,7 +220,7 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
      알고리즘을 화면에 적으려면 설정에서 파생해야 하고, 고정 문자열로 둘 값이 아니다.
  */}
  <div />
- <p className="text-xs font-bold text-foreground tracking-tight opacity-100 mt-4 md:mt-0">
+ <p className="text-xs font-bold text-muted-foreground mt-2 md:mt-0">
  {/*
    'Total Audit Records' 도 총계가 아니었다 — 이 컴포넌트가 받는 logs 는 대시보드가
    slice(0, 5) 한 최근 5건이다. '데이터 무결성 검증 완료' 역시 그런 검증을 수행하는 코드가

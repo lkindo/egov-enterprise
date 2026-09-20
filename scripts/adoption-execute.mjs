@@ -68,7 +68,7 @@ export function executeAdoption({ root, path, environmentId, execute = false, ru
   root = resolve(root);
   const before = executionPlan(root, path, environmentId);
   const technical = before.product === 'migration-tool'
-    ? ['scripts/verify.mjs', 'migration'] : ['scripts/verify-reusable-artifact.mjs'];
+    ? migrationVerification(root) : ['scripts/verify-reusable-artifact.mjs'];
   run('node', technical, { root });
   // Compilation, tests or time passage cannot leave an earlier approval silently valid.
   const after = executionPlan(root, path, environmentId);
@@ -77,6 +77,16 @@ export function executeAdoption({ root, path, environmentId, execute = false, ru
   return { product: after.product, profile: after.profile, environmentId,
     technicalValidation: 'passed', executionEnvelopeValid: true, executed: execute,
     liveEnvironmentCertified: false };
+}
+
+function migrationVerification(root) {
+  if (!existsSync(resolve(root, 'reusable-base-lock.json'))) return ['scripts/verify.mjs', 'migration'];
+  const lock = read(root, 'reusable-base-lock.json');
+  const layout = lock.layout ?? 'multi-module';
+  if (!['core', 'collaboration', 'demo'].includes(lock.profile)
+      || !['multi-module', 'single-module'].includes(layout)) throw new Error('invalid generated migration verification layout');
+  containedFile(root, 'scripts/reusable-layout-runtime.mjs');
+  return ['scripts/reusable-layout-runtime.mjs', '--verify-migration'];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

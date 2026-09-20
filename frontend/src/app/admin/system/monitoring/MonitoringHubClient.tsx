@@ -70,7 +70,7 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
   loading: () => (
     <div className="w-full h-[700px] flex flex-col items-center justify-center bg-surface-inverse rounded-lg space-y-6">
       <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-      <p className="text-xs font-bold tracking-tight text-white/30 animate-pulse">구성도를 불러오는 중입니다…</p>
+      <p className="text-[length:var(--font-size-body)] text-surface-inverse-foreground/70">구성도를 불러오는 중입니다…</p>
     </div>
   )
 });
@@ -410,19 +410,19 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     {
       header: '보안 감사 로그',
       accessor: (log) => (
-        <div className="flex items-center gap-5 py-2">
+        <div className="flex items-center gap-3 py-1">
           <div className={cn(
-            "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.sysLogSn ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
+            "flex size-9 shrink-0 items-center justify-center rounded-md transition-colors",
+            selectedItemId === log.sysLogSn ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
           )}>
-            <ShieldAlert size={20} />
+            <ShieldAlert size={16} aria-hidden="true" />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.sysLogSn ? "text-white" : "text-primary")}>{log.srvcNm}</span>
-                <span className="text-xs font-bold opacity-20">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
+                <span className="text-xs text-muted-foreground">{log.srvcNm}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
             </div>
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.sysLogSn ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
+            <h4 className="max-w-[280px] truncate text-[length:var(--font-size-body)] font-medium text-foreground">{log.methodNm}</h4>
           </div>
         </div>
       )
@@ -433,19 +433,19 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     {
       header: '시스템 로그',
       accessor: (log) => (
-        <div className="flex items-center gap-5 py-2">
+        <div className="flex items-center gap-3 py-1">
           <div className={cn(
-            "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.sysLogSn ? "bg-white/10 text-white" : "bg-emerald-50 text-emerald-600"
+            "flex size-9 shrink-0 items-center justify-center rounded-md transition-colors",
+            selectedItemId === log.sysLogSn ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
           )}>
-            <Terminal size={20} />
+            <Terminal size={16} aria-hidden="true" />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.sysLogSn ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
-                <span className="text-xs font-bold opacity-20">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
+                <span className="text-xs text-muted-foreground">{log.srvcNm}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
             </div>
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.sysLogSn ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
+            <h4 className="max-w-[280px] truncate text-[length:var(--font-size-body)] font-medium text-foreground">{log.methodNm}</h4>
           </div>
         </div>
       )
@@ -456,19 +456,19 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     {
       header: '접속 이력',
       accessor: (log) => (
-        <div className="flex items-center gap-5 py-2">
+        <div className="flex items-center gap-3 py-1">
           <div className={cn(
-            "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.lgnSn ? "bg-white/10 text-white" : "bg-amber-50 text-amber-600"
+            "flex size-9 shrink-0 items-center justify-center rounded-md transition-colors",
+            selectedItemId === log.lgnSn ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
           )}>
-            <LogIn size={20} />
+            <LogIn size={16} aria-hidden="true" />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.lgnSn ? "text-white" : "text-amber-700")}>{log.loginId}</span>
-                <span className="text-xs font-bold opacity-20">{log.creatDt}</span>
+                <span className="text-xs text-muted-foreground">{log.loginId}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">{log.creatDt}</span>
             </div>
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.lgnSn ? "text-white" : "text-foreground")}>{log.loginMthd}</h4>
+            <h4 className="max-w-[280px] truncate text-[length:var(--font-size-body)] font-medium text-foreground">{log.loginMthd}</h4>
           </div>
         </div>
       )
@@ -480,16 +480,16 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     {
       header: '댓글 및 피드백',
       accessor: (c) => (
-        <div className="flex items-center gap-5 py-2 w-full pr-4">
+        <div className="flex w-full items-center gap-3 py-1 pr-4">
           <div className={cn(
-            "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === c.ansSn ? "bg-white/10 text-white" : "bg-hub-indigo/10 text-hub-indigo"
+            "flex size-9 shrink-0 items-center justify-center rounded-md transition-colors",
+            selectedItemId === c.ansSn ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
           )}>
-            <MessageSquare size={20} />
+            <MessageSquare size={16} aria-hidden="true" />
           </div>
           <div className="flex-1 space-y-0.5 min-w-0">
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate", selectedItemId === c.ansSn ? "text-white" : "text-foreground")}>{c.ansCn}</h4>
-            <p className={cn("text-xs font-bold opacity-40 tracking-tight")}>USER_ID: {c.wrterId}</p>
+            <h4 className="truncate text-[length:var(--font-size-body)] font-medium text-foreground">{c.ansCn}</h4>
+            <p className="text-xs text-muted-foreground">USER_ID: {c.wrterId}</p>
           </div>
           {selectedItemId === c.ansSn && (
             <Button 
@@ -499,7 +499,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 aria-busy={deletingCommentId === c.ansSn || undefined}
                 disabled={deletingCommentId !== null}
                 onClick={(e) => { e.stopPropagation(); void handleDeleteComment(c); }}
-                className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-lg transition-all relative z-10 shrink-0 h-10 w-10"
+                className="relative z-10 size-8 shrink-0 rounded-md text-destructive-emphasis hover:bg-destructive/10"
             >
               <Trash2 size={16} />
             </Button>
@@ -511,13 +511,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 /* reusable-base:collaboration:end */
 
   const renderObservability = () => (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-4">
       {isActuatorUnavailable && (
-        <div role="alert" className="flex items-start gap-4 p-6 rounded-lg border-2 border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-900/40">
-          <AlertCircle size={20} aria-hidden="true" className="text-rose-500 shrink-0 mt-0.5" />
+        <div role="alert" className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
+          <AlertCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-destructive-emphasis" />
           <div className="space-y-2">
-            <p className="text-sm font-bold text-rose-900 dark:text-rose-300 leading-none">액추에이터 지표를 가져오지 못했습니다</p>
-            <p className="text-xs font-medium text-rose-800/80 dark:text-rose-300/80 leading-relaxed">
+            <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">액추에이터 지표를 가져오지 못했습니다</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
               아래 CPU·메모리 수치는 <strong>실측값이 아닐 수 있습니다</strong>. 백엔드 `/actuator` 가용 여부를 확인해 주세요.
             </p>
             <Button
@@ -539,10 +539,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         (저장소 경로 변경·다른 환경 DB 연결·백업 복원 시점 불일치). 문제는 어긋났을 때
         알 방법이 없어 사용자가 깨진 이미지로 먼저 발견했다는 점이다. 여기서 먼저 본다.
       */}
-      <div className="space-y-4 rounded-lg border border-border p-6">
+      <div className="space-y-3 rounded-md border border-border p-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="space-y-1">
-            <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">
+            <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">
               첨부 정합성 (DB ↔ 저장소)
             </h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -586,7 +586,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               */}
               {integrityReport.samples.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+                  <p className="text-xs text-muted-foreground">
                     조치 대상 예시 (최대 {integrityReport.samples.length}건)
                   </p>
                   <ul className="max-h-48 overflow-y-auto rounded border border-border bg-muted/40 p-3 space-y-1">
@@ -610,7 +610,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         */}
         {integrityReport && !integrityError && (
           <div className="space-y-2 border-t border-border pt-3">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+            <p className="text-xs text-muted-foreground">
               저장소 → DB 역방향
             </p>
             <p className="text-xs font-medium text-muted-foreground break-all">
@@ -648,7 +648,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       </div>
 
       {/* 실측(액추에이터) 기반 지표 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <GaugeChart value={cpuUsage === null ? null : Number(cpuUsage.toFixed(1))} title="CPU_LOAD" unit="%" color="#10B981" />
         <GaugeChart value={memUsage === null ? null : Number(memUsage.toFixed(1))} title="MEMORY_ALLOC" unit="%" color="#3B82F6" />
       </div>
@@ -658,13 +658,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         삭제 대신 '샘플 데이터' 배지를 명시해 운영 판단 근거로 오인되지 않게 한다(원칙 (c)).
         실제 배선 시 actuator 의 http.server.requests / hikaricp.connections 등으로 교체할 것.
       */}
-      <div className="space-y-4 rounded-lg border-2 border-dashed border-amber-200 dark:border-amber-900/40 p-6">
+      <div className="space-y-3 rounded-md border border-dashed border-warning/50 p-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">추세 · 다차원 상태(미연동)</h4>
+          <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">추세 · 다차원 상태(미연동)</h4>
           <SampleDataBadge />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
            <RealtimeSparkline
               label="NETWORK_TRAFFIC (PPS)"
               data={[ {value: 30}, {value: 45}, {value: 32}, {value: 67}, {value: 55}, {value: 89}, {value: 24} ]}
@@ -690,17 +690,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         />
       </div>
 
-      <div className="rounded-lg p-12 bg-surface-inverse text-surface-inverse-foreground shadow-2xl relative overflow-hidden group border-none">
-        <div className="absolute top-0 right-0 p-16 opacity-10 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-          <Zap size={200} className="text-primary" />
-        </div>
-        <div className="relative z-10 space-y-12">
-          <div className="flex items-center gap-6">
+      <div className="rounded-md border border-surface-inverse-border bg-surface-inverse p-4 text-surface-inverse-foreground">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
             <div className={cn(
-              "w-5 h-5 rounded-lg animate-pulse shadow-[0_0_20px_rgba(16,185,129,0.8)]",
-              !isHealthKnown ? "bg-warning" : healthStatus === 'UP' ? "bg-emerald-500" : "bg-rose-500"
+              "size-2.5 shrink-0 rounded-full",
+              !isHealthKnown ? "bg-warning" : healthStatus === 'UP' ? "bg-success" : "bg-destructive"
             )} />
-            <h3 className="text-3xl font-bold tracking-tighter leading-none">
+            <h3 className="text-lg font-semibold tracking-tight">
               {!isHealthKnown
                 ? '시스템 상태 미확인'
                 : healthStatus === 'UP'
@@ -708,7 +705,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   : `시스템 상태: 점검 필요 (health 응답: ${healthStatus})`}
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {/* [P1-5] Redis 는 고정 '안정' 표기였으나 실제 health 컴포넌트를 조회하도록 정정.
                 액추에이터에 해당 컴포넌트가 없으면 'UNKNOWN'(주황)으로 정직하게 표기된다. */}
             <StatusIndicator label="API Microservices" status={healthData?.status || 'UNKNOWN'} icon={Network} />
@@ -722,15 +719,15 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const renderHarness = () => {
     return (
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 font-sans text-foreground">
+      <div className="space-y-4 font-sans text-foreground">
         {/* --- Section 1: 8대 독점 네이티브 엔진 리스트 (2열 배치) --- */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">8대 네이티브 오케스트레이션 엔진</h4>
+            <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">8대 네이티브 오케스트레이션 엔진</h4>
             <SampleDataBadge />
             <div className="h-px bg-muted flex-1" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {HARNESS_SKILLS.map((skill, index) => (
               <button
                 key={skill.id}
@@ -739,22 +736,22 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 aria-pressed={selectedItemId === skill.id}
                 onClick={() => setSelectedItemId(skill.id)}
                 className={cn(
-                  "p-5 rounded-lg bg-muted border-2 transition-all flex flex-col justify-between group text-left outline-none cursor-pointer",
-                  selectedItemId === skill.id 
-                    ? "border-primary bg-primary/5 shadow-md scale-[1.01]" 
-                    : "border-border hover:border-primary/20 hover:bg-muted/50"
+                  "flex flex-col justify-between rounded-md border bg-muted px-3 py-2 text-left outline-none transition-colors",
+                  selectedItemId === skill.id
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary"
                 )}
               >
                 <div className="space-y-2 w-full">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px] font-black uppercase tracking-wider font-mono text-muted-foreground">ENG_0{index + 1}</span>
-                    <div className="flex items-center gap-1 text-[9px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="font-mono text-[10px] text-muted-foreground">ENG_0{index + 1}</span>
+                    <div className="flex items-center gap-1 rounded border border-success/40 bg-success/15 px-1.5 py-0.5 text-xs text-foreground">
+                      <div className="size-1.5 rounded-full bg-success" aria-hidden="true" />
                       {skill.status}
                     </div>
                   </div>
-                  <h5 className={cn("text-xs font-black tracking-tight leading-none", selectedItemId === skill.id ? "text-primary" : "text-foreground group-hover:text-primary")}>{skill.name}</h5>
-                  <p className="text-[10px] font-bold text-muted-foreground leading-tight">{skill.desc}</p>
+                  <h5 className={cn("text-[length:var(--font-size-body)] font-semibold", selectedItemId === skill.id ? "text-primary" : "text-foreground")}>{skill.name}</h5>
+                  <p className="text-xs leading-tight text-muted-foreground">{skill.desc}</p>
                 </div>
               </button>
             ))}
@@ -762,7 +759,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         </div>
 
         {/* --- Section 2: JPA 성능 가드레일 계측 패널 (가로 전체 활용) --- */}
-        <div className="rounded-xl border-2 border-border bg-card p-6 shadow-xl space-y-6">
+        <div className="space-y-3 rounded-md border border-border bg-card p-4">
           <div className="flex items-center justify-between gap-4 flex-wrap border-b border-border pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -771,14 +768,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               <div>
                 <h4 className="text-sm font-bold text-foreground leading-none">JPA Performance Guardrail Telemetry</h4>
                 {/* '실시간 계측'이라는 표현은 사실이 아니므로 제거 — 아래 목록은 예시 로그다. */}
-                <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-tight">테스트-타임 SQL 쿼리 가드레일 예시 보드</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">테스트-타임 SQL 쿼리 가드레일 예시 보드</p>
               </div>
             </div>
             <SampleDataBadge />
           </div>
 
           {/* Test list */}
-          <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="max-h-[320px] space-y-1 overflow-y-auto pr-1">
             {HARNESS_SAMPLE_TESTS.map(log => (
               <button
                 key={log.id}
@@ -787,27 +784,28 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 aria-pressed={selectedItemId === log.id}
                 onClick={() => setSelectedItemId(log.id)}
                 className={cn(
-                  "w-full p-4 rounded-lg border text-left flex items-center justify-between transition-all group outline-none cursor-pointer",
-                  selectedItemId === log.id 
-                    ? "border-primary bg-primary/5 shadow-md scale-[1.01]" 
-                    : "bg-muted border-border hover:bg-muted hover:border-border"
+                  "flex w-full items-center justify-between rounded-md border px-3 py-2 text-left outline-none transition-colors",
+                  selectedItemId === log.id
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-muted hover:border-primary"
                 )}
               >
                 <div className="space-y-1 min-w-0 pr-4">
-                  <h5 className={cn("text-xs font-bold truncate leading-snug", selectedItemId === log.id ? "text-primary" : "text-foreground")}>{log.testName}</h5>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">측정 시간: {log.time}</p>
+                  <h5 className={cn("truncate text-[length:var(--font-size-body)] font-medium leading-snug", selectedItemId === log.id ? "text-primary" : "text-foreground")}>{log.testName}</h5>
+                  <p className="text-xs text-muted-foreground">측정 시간: {log.time}</p>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <div className="text-right">
-                    <div className="text-xs font-bold text-foreground">{log.queries} / {log.max} SQL</div>
+                    <div className="text-xs tabular-nums text-foreground">{log.queries} / {log.max} SQL</div>
                     <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden mt-1 relative">
-                      <div 
-                        className="h-full bg-emerald-500" 
+                      <div
+                        className="h-full bg-success"
                         style={{ width: `${(log.queries / log.max) * 100}%` }}
+                        aria-hidden="true"
                       />
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 text-[10px] font-black tracking-widest uppercase">
+                  <span className="rounded border border-success/40 bg-success/15 px-2 py-0.5 text-xs text-foreground">
                     {log.status}
                   </span>
                 </div>
@@ -815,13 +813,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             ))}
           </div>
 
-          <div className="p-4 bg-hub-indigo/5 border border-hub-indigo/10 rounded-lg flex items-center gap-4">
-            <div className="p-3 bg-card rounded-lg shadow-sm border border-hub-indigo/20 text-primary shrink-0">
-              <CheckCircle2 size={20} />
+          <div className="flex items-center gap-3 rounded-md border border-border bg-muted p-3">
+            <div className="shrink-0 rounded-md border border-border bg-card p-2 text-primary">
+              <CheckCircle2 size={16} aria-hidden="true" />
             </div>
             <div className="space-y-0.5">
-              <h6 className="text-xs font-bold text-hub-indigo uppercase tracking-tight leading-none">Shift-Left Quality Assurance</h6>
-              <p className="text-[10px] font-bold text-hub-indigo leading-tight">
+              <h6 className="text-[length:var(--font-size-body)] font-semibold text-foreground">Shift-Left Quality Assurance</h6>
+              <p className="text-xs leading-tight text-muted-foreground">
                 테스트 가동 시 스레드 로컬 카운터가 데이터베이스 질의를 자동 카운팅하며, 임계값 초과 시 즉각 테스트를 강제 실패시켜 N+1 발생을 실시간 경보합니다.
               </p>
             </div>

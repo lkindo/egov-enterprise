@@ -5,16 +5,19 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { normalizeBackendLayout } from './reusable-layout.mjs';
 
-export function verificationCommands(scope = 'full') {
+export function verificationCommands(scope = 'full', layout = 'multi-module') {
   if (!['contracts', 'backend', 'frontend', 'full'].includes(scope)) throw new Error('scope must be contracts, backend, frontend or full');
+  normalizeBackendLayout(layout);
+  const taskPrefix = layout === 'single-module' ? '' : ':api-server:';
   const commands = [
     ['node', ['scripts/verify-reusable-governance.mjs']],
     ['node', ['--test', 'scripts/reusable-ui-governance-contract.test.mjs']],
     ['node', ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs']],
   ];
   if (['backend', 'full'].includes(scope)) commands.push(
-    ['gradle', ['compileJava', 'compileTestJava', ':api-server:harnessTest', ':api-server:schemaValidationTest',
+    ['gradle', ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, `${taskPrefix}schemaValidationTest`,
       '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8']],
   );
   if (['frontend', 'full'].includes(scope)) commands.push(
@@ -39,13 +42,14 @@ export function runCommand(command, args, { root, env = process.env, capture = f
 }
 
 export function verifyReusableArtifact({ root, scope = 'full', run = runCommand } = {}) {
-  const commands = verificationCommands(scope);
   root = resolve(root);
   const lock = JSON.parse(readFileSync(resolve(root, 'reusable-base-lock.json'), 'utf8'));
-  if (!['core', 'collaboration', 'demo'].includes(lock.profile)) throw new Error('generated product lock is required');
+  if (!['core', 'collaboration', 'demo', 'custom'].includes(lock.profile)) throw new Error('generated product lock is required');
+  const layout = normalizeBackendLayout(lock.layout);
+  const commands = verificationCommands(scope, layout);
   const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
   const report = { schemaVersion: 1, authority: 'local-product-technical-verification', profile: lock.profile,
-    scope, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
+    scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
     result: 'started', environmentApproved: false, runtimeScenariosExecuted: false };
   const reports = resolve(root, 'build/reports/reusable-base');
   mkdirSync(reports, { recursive: true });
@@ -53,7 +57,7 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
   save();
   try {
     for (const [command, args] of commands) {
-      process.stdout.write(`[reusable-verify] ${lock.profile}: ${command} ${args.join(' ')}\n`);
+      process.stdout.write(`[reusable-verify] ${lock.profile}/${layout}: ${command} ${args.join(' ')}\n`);
       run(command, args, { root, env });
     }
     report.result = 'passed';

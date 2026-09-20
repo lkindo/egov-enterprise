@@ -34,6 +34,7 @@ public final class ReusableHarnessProfile {
 
     public static ReusableHarnessProfile current() { return CURRENT; }
     public boolean projected() { return projection != null; }
+    boolean customDomains() { return projected() && "custom".equals(projection.path("profile").asText()); }
 
     public int count(String key, int canonical) {
         if (!projected()) return canonical;
@@ -59,7 +60,8 @@ public final class ReusableHarnessProfile {
 
     boolean retainsType(String target) {
         if (!projected() || target.startsWith("EXTERNAL#")) return true;
-        String name = target.split("#", 2)[0];
+        // Census entries use binary names for nested DTOs; ownership belongs to their source file.
+        String name = target.split("#", 2)[0].split("\\$", 2)[0];
         List<JsonNode> matches = new ArrayList<>();
         for (String collection : List.of("retained", "removed")) {
             for (JsonNode row : projection.path(collection)) {

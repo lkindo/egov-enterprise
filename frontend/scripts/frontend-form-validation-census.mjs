@@ -491,18 +491,63 @@ function importedComponentDefinition(element, repoRoot, project) {
   return null;
 }
 
-function forwardedChildControlContract(element, contract, repoRoot, project) {
-  const definition = importedComponentDefinition(element, repoRoot, project);
-  if (!definition) return null;
-  const controls = [
-    ...definition.node.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
-    ...definition.node.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
+/** 주어진 노드 안에서 전달받은 트리거 핸들러를 직접 소비하는 컨트롤을 모은다. */
+function directTriggerControls(node, triggerAttribute) {
+  const pattern = new RegExp(`\\b${triggerAttribute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+  return [
+    ...node.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
+    ...node.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
   ].filter((candidate) => ['onClick', 'onSave'].some((attributeName) => {
     const attribute = candidate.getAttribute(attributeName);
     return attribute && Node.isJsxAttribute(attribute)
-      && new RegExp(`\\b${contract.triggerAttribute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`)
-        .test(attribute.getInitializer()?.getText() ?? '');
+      && pattern.test(attribute.getInitializer()?.getText() ?? '');
   }));
+}
+
+/**
+ * 같은 파일 안에 정의된 자식 컴포넌트를 찾는다.
+ *
+ * 전달 경로가 한 겹 더 깊은 형태를 보기 위해서다 — 부모가 핸들러를 화면 컴포넌트에 넘기고,
+ * 그 컴포넌트가 다시 같은 파일의 작은 컨트롤 컴포넌트에 넘기는 경우다.
+ */
+function localComponentDefinition(element, sourceFile) {
+  const component = jsxTag(element);
+  if (!/^[A-Z][A-Za-z0-9_$]*$/.test(component)) return null;
+  const fn = sourceFile.getFunctions().find((candidate) => candidate.getName() === component);
+  if (fn) return fn;
+  const variable = sourceFile.getVariableDeclarations().find((candidate) => candidate.getName() === component);
+  const initializer = variable?.getInitializer();
+  if (initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) return initializer;
+  return null;
+}
+
+function forwardedChildControlContract(element, contract, repoRoot, project) {
+  const definition = importedComponentDefinition(element, repoRoot, project);
+  if (!definition) return null;
+  let controls = directTriggerControls(definition.node, contract.triggerAttribute);
+  if (controls.length === 0) {
+    /*
+      [2026-09-20] 한 겹 더 내려간다.
+      게시판 표시 템플릿 7종이 같은 좋아요 버튼을 각자 복제하고 있어 공통 LikeButton 으로
+      묶었는데, 한 단계만 보던 종전 판정은 그 순간 살아 있는 경계를 못 보고 census 에서
+      떨어뜨렸다(secondary-action 67 -> 66). 중복을 없앤 리팩터가 게이트의 신호를 지우게
+      두지 않는다 — 같은 파일 안에서 핸들러를 다시 넘겨받는 컨트롤 컴포넌트까지 따라간다.
+      import 경계를 넘지는 않는다: 그 축은 위의 importedComponentDefinition 이 이미 본다.
+    */
+    const pattern = new RegExp(`\\b${contract.triggerAttribute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+    const forwarders = [
+      ...definition.node.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
+      ...definition.node.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement),
+    ].filter((candidate) => candidate.getAttributes().some((attribute) => Node.isJsxAttribute(attribute)
+      && pattern.test(attribute.getInitializer()?.getText() ?? '')));
+    const seen = new Set();
+    for (const forwarder of forwarders) {
+      const child = localComponentDefinition(forwarder, definition.source);
+      if (!child || seen.has(child)) continue;
+      seen.add(child);
+      controls = [...controls, ...directTriggerControls(child, contract.triggerAttribute)];
+    }
+  }
   if (controls.length === 0) return null;
   const identities = new Set();
   const tokens = new Set();

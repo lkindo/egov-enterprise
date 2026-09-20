@@ -7,6 +7,9 @@ import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved
 import { createPendingAdoptionReview } from './adoption-review.mjs';
 import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor } from './reusable-governance-integrity.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
+import { COMPOSER_MENU_SNAPSHOT_PATH, loadProjectComposerMenus } from './project-composer-menu-preview.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 const URL_PATH = 'config/ui-url-state-census.json';
@@ -183,10 +186,31 @@ export function projectRemovedRouteAliases(outputRoot, upstreamRoutes) {
   return { removedRedirects, removedRedirectPages };
 }
 
-export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sourceCommit, projectSource = (_file, text) => text }) {
+export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sourceCommit, composition, projectSource = (_file, text) => text }) {
   assertSeparateProjectionRoot(sourceRoot, outputRoot);
-  if (!['core', 'collaboration', 'demo'].includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
+  if (!['core', 'collaboration', 'demo', 'custom'].includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
     throw new Error('Governance projection requires a known profile and exact upstream commit');
+  }
+  if (profile === 'custom' && !composition) throw new Error('Custom governance projection requires a resolved composition');
+  let compositionProvenance;
+  if (composition) {
+    const catalog = loadProjectComposerCatalog(sourceRoot);
+    const verified = verifyProjectComposition(composition, catalog);
+    if (verified.profile !== profile || (composition.sourceCommit && composition.sourceCommit !== sourceCommit)) {
+      throw new Error('Governance composition profile or source commit mismatch');
+    }
+    composition = verified;
+    // The generated artifact no longer contains all upstream migrations, so bind the
+    // validated producer inventory before projecting its selected bootstrap rows.
+    loadProjectComposerMenus(sourceRoot);
+    const menuSnapshotSha256 = artifactTextSha256(sourceRoot, COMPOSER_MENU_SNAPSHOT_PATH);
+    if (artifactTextSha256(outputRoot, COMPOSER_MENU_SNAPSHOT_PATH) !== menuSnapshotSha256) {
+      throw new Error('Composer menu snapshot differs from the validated upstream inventory');
+    }
+    writeJson(outputRoot, COMPOSER_SELECTION_PATH, { catalog, composition });
+    compositionProvenance = { path: COMPOSER_SELECTION_PATH, sha256: artifactTextSha256(outputRoot, COMPOSER_SELECTION_PATH),
+      catalogHash: composition.catalogHash, recipeHash: composition.recipeHash, compositionHash: composition.compositionHash,
+      menuSnapshotSha256 };
   }
   const snapshots = UPSTREAM_SOURCES.map(path => {
     const content = normalizedText(sourceRoot, path);
@@ -265,7 +289,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   writeJson(outputRoot, APPROVAL_PATH, approval);
   const originalProfiles = readJson(sourceRoot, 'config/reusable-base-profiles.json');
   const reviewProjection = deriveProjectedReviewManifests({
-    outputRoot, profile, routes, profiles: originalProfiles,
+    outputRoot, profile, routes, profiles: originalProfiles, composition,
     contract: readJson(sourceRoot, REVIEW_SCOPE_PATH),
     upstream: Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, readJson(sourceRoot, path)])),
   });
@@ -282,7 +306,8 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   const metadata = {
     schemaVersion: 1,
     authority: 'generated-reusable-governance-projection-not-environment-approval',
-    profile, packs: originalProfiles.profiles[profile].packs, sourceCommit, upstreamSnapshots: snapshots,
+    profile, packs: composition?.packs ?? originalProfiles.profiles[profile].packs, sourceCommit, upstreamSnapshots: snapshots,
+    ...(compositionProvenance ? { composition: compositionProvenance } : {}),
     routes: routes.routes.map(({ route, source }) => ({ route, source })),
     urlRecordIds: census.records.map(record => record.id).sort(),
     inheritedUrlRecordIds: inheritedRecordIds,

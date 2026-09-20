@@ -37,6 +37,7 @@
 | 문서 | 내용 |
 |---|---|
 | [backend-architecture.md](02-architecture/backend-architecture.md) | Backend Architecture Blueprint — 멀티모듈 구조·레이어 |
+| [project-composer-design.md](02-architecture/project-composer-design.md) | 선택형 프로젝트 생성 설계 — 공통 구성·PostgreSQL·멀티/단일모듈 출력과 업무 선택·로컬 UI의 단계별 완료조건 |
 | [frontend-architecture.md](02-architecture/frontend-architecture.md) | Frontend Architecture (Next.js App Router 기준) |
 | [frontend-design-system.md](02-architecture/frontend-design-system.md) | Design System |
 | [approval-workflow-ux.md](02-architecture/approval-workflow-ux.md) | 다단계·병렬 전원 결재의 UX 근거, 차수·회수·재상신·열람 규칙 |
@@ -91,6 +92,7 @@
 | [ADR-0017](02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 과업 중심 메뉴 재편·중복 통합·권한 보존 |
 | [ADR-0018](02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관 승인 분리와 프로필별 근거 투영·산출물 검증 |
 | [ADR-0019](02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립과 요청 제한 한도 설정화 |
+| [ADR-0020](02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 |
 
 ## 03-guides — 개발 지침
 
@@ -115,6 +117,7 @@
 | [frontend-form-validation-loop.md](03-guides/frontend-form-validation-loop.md) | 입력·수정 화면의 제약 보존, 오류 위치 이동, 서버 field error, 중복 제출 잠금과 exact census 운영 루프 |
 | [ui-ux-modernization-execution-loop-prompt.md](03-guides/ui-ux-modernization-execution-loop-prompt.md) | UI/UX 현대화 계획을 승인 경계·검증·재개 루프로 끝까지 실행하는 복사형 프롬프트 |
 | [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 릴리스 생성과 세 프로필 DB·소스 기술 검증, 근거 투영·기관 도입 경계 |
+| [project-composer-guide.md](03-guides/project-composer-guide.md) | 로컬 UI·recipe로 도메인과 출력 구조를 선택하여 독립 PostgreSQL 프로젝트 생성 |
 
 ## 04-operations — 운영
 

@@ -41,16 +41,17 @@ export default function WorkflowClient() {
     const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(MOCK_WORKFLOW_NODES[2]);
 
     return (
-        <div className="space-y-12 pb-24">
+        <div className="space-y-4 pb-6">
             <PageHeader
                 title="프로세스 설계 및 관제"
+                animateEntrance={false}
                 breadcrumbs={[{ label: '워크플로우' }, { label: '스튜디오' }]}
         actions={
                     <div className="flex gap-4">
                         <Button disabled title="정적 데모에서는 히스토리를 제공하지 않습니다." variant="outline" className="h-11 px-8 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                             <History size={18} /> 히스토리
                         </Button>
-                        <Button disabled title="정적 데모에서는 설계를 저장할 수 없습니다." className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+                        <Button disabled title="정적 데모에서는 설계를 저장할 수 없습니다." className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-semibold text-xs hover:bg-primary transition-all shadow-2xl">
                             <Plus size={20} /> 설계 등록
                         </Button>
                     </div>
@@ -91,18 +92,18 @@ export default function WorkflowClient() {
                 <HubMetricCard title="샘플 시스템 부하" value="LOW" icon={Activity} color="amber" status="정적 예시" />
             </HubMetricGrid>
 
-            <div className="grid grid-cols-12 gap-10">
+            <div className="grid grid-cols-12 gap-4">
                 <div className="col-span-12 lg:col-span-8">
                     <HubSectionCard
                         title="프로세스 캔버스"
                         description="샘플 휴가 결재 흐름의 단계와 연결선을 탐색하는 정적 캔버스입니다."
                         icon={Layers}
-                        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
+                        className="border border-border bg-card"
                     >
                         <div className="space-y-6 pt-4">
                             <div className="flex items-center justify-between px-2">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">Active_Process:</span>
+                                    <span className="text-xs text-muted-foreground">현재 프로세스</span>
                                     <span className="text-sm font-bold text-foreground">연차/휴가 결재 v1.2</span>
                                 </div>
                                 <Button disabled title="정적 데모에는 새로 불러올 데이터가 없습니다." variant="ghost" size="icon" aria-label="프로세스 캔버스 새로고침 (미지원)" className="h-8 w-8 rounded-lg">
@@ -123,10 +124,10 @@ export default function WorkflowClient() {
                         title="단계 상세"
                         description="선택한 단계의 담당자와 처리 기록 예시입니다."
                         icon={Zap}
-                        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5 h-full"
+                        className="h-full border border-border bg-card"
                     >
                         {selectedNode ? (
-                            <div className="space-y-8 py-4 animate-in fade-in slide-in-from-right-4 duration-500">
+                            <div className="space-y-4 py-2">
                                 <div className="space-y-4">
                                     <div className={cn(
                                         "w-14 h-11 rounded-xl flex items-center justify-center shadow-lg",
@@ -135,14 +136,14 @@ export default function WorkflowClient() {
                                         {selectedNode.status === 'completed' ? <CheckCircle2 size={24} /> : <Clock size={24} />}
                                     </div>
                                     <div>
-                                        <h4 className="text-xl font-bold tracking-tighter text-foreground">{selectedNode.label}</h4>
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">식별자 {selectedNode.id} · 유형 {selectedNode.type}</p>
+                                        <h4 className="text-base font-semibold text-foreground">{selectedNode.label}</h4>
+                                        <p className="mt-1 text-xs text-muted-foreground">식별자 {selectedNode.id} · 유형 {selectedNode.type}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">담당자</span>
+                                        <span className="text-xs text-muted-foreground">담당자</span>
                                         <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-xl border border-border">
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
                                                 {selectedNode.assignee?.charAt(0) || '-'}
@@ -152,30 +153,30 @@ export default function WorkflowClient() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">처리 기록</span>
+                                        <span className="text-xs text-muted-foreground">처리 기록</span>
                                         <div className="space-y-4 border-l-2 border-border ml-2 pl-6 pt-2">
                                             <div className="relative">
-                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-emerald-500 border-4 border-white shadow-sm" />
+                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-success border-4 border-card shadow-sm" />
                                                 <p className="text-xs font-bold text-foreground">요청 접수</p>
                                                 <p className="text-[10px] text-muted-foreground font-bold tabular-nums">2026-05-10 14:20:01</p>
                                             </div>
                                             <div className="relative opacity-50">
-                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-muted border-4 border-white shadow-sm" />
+                                                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-lg bg-muted border-4 border-card shadow-sm" />
                                                 <p className="text-xs font-bold text-muted-foreground">다음 처리 대기</p>
-                                                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">대기 중</p>
+                                                <p className="text-xs text-muted-foreground">대기 중</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <Button disabled title="정적 데모에서는 작업을 실행할 수 없습니다." className="w-full h-12 bg-surface-inverse hover:bg-primary text-surface-inverse-foreground rounded-xl font-bold text-xs tracking-widest uppercase shadow-2xl transition-all">
+                                <Button disabled title="정적 데모에서는 작업을 실행할 수 없습니다." className="w-full h-12 bg-surface-inverse hover:bg-primary text-surface-inverse-foreground rounded-md font-semibold text-xs transition-colors">
                                     작업 실행 (미지원)
                                 </Button>
                             </div>
                         ) : (
-                            <div className="py-20 text-center opacity-20">
+                            <div className="py-10 text-center text-muted-foreground">
                                 <GitBranch size={48} className="mx-auto mb-4" />
-                                <p className="text-xs font-bold uppercase tracking-widest">단계를 선택하면 상세가 표시됩니다.</p>
+                                <p className="text-[length:var(--font-size-body)]">단계를 선택하면 상세가 표시됩니다.</p>
                             </div>
                         )}
                     </HubSectionCard>

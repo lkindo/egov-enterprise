@@ -11,15 +11,13 @@ import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { Clock,
  RefreshCw,
- Database,
  Plus,
  ShieldCheck,
  Building2,
  History,
  Server,
  MonitorCheck,
- CheckCircle2,
- Network } from 'lucide-react';
+ CheckCircle2 } from 'lucide-react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { cn } from '@/lib/utils';
@@ -143,58 +141,48 @@ export default function InstitutionCodeClient({
  {
  header: '식별 코드',
  accessor: (item: InstitutionCode) => (
- <div className="flex items-center gap-4 py-2">
- <div className="w-10 h-9 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg group-hover:rotate-6 transition-transform">
- <Building2 size={18} aria-hidden="true" />
- </div>
- <div>
- <span className="font-black tracking-tighter text-foreground block text-xs uppercase leading-none">{item.instCd}</span>
- <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-60">기관 코드</span>
- </div>
+ <div className="flex items-center gap-2">
+ <Building2 size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+ <span className="font-mono text-[length:var(--font-size-body)] text-foreground">{item.instCd}</span>
  </div>
  ),
- className: 'w-48 py-4'
+ className: 'w-40'
  },
  {
  header: '기관 명칭',
  accessor: (item: InstitutionCode) => (
- <span className="font-black text-foreground text-sm tracking-tight">{item.allInstNm}</span>
+ <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{item.allInstNm}</span>
  ),
- className: 'py-4'
+ className: ''
  },
  {
  header: '최하위 기관',
  accessor: (item: InstitutionCode) => (
- <div className="px-3 py-1 bg-muted/50 border border-border/50 rounded-lg w-fit shadow-sm">
- <span className="text-[10px] font-black text-primary tracking-widest uppercase">{item.lwtrkInstNm}</span>
- </div>
+ <span className="text-[length:var(--font-size-body)] text-muted-foreground">{item.lwtrkInstNm}</span>
  ),
- className: 'w-40 py-4'
+ className: 'w-40'
  },
  {
  header: '연락처',
  accessor: (item: InstitutionCode) => (
- <div className="flex items-center gap-1.5 font-black text-[10px] text-muted-foreground tracking-widest tabular-nums uppercase">
- <Network size={12} className="opacity-30" aria-hidden="true" />
- {item.telno || '없음'}
- </div>
+ <span className="text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">{item.telno || '없음'}</span>
  ),
- className: 'w-32 py-4'
+ className: 'w-32'
  },
  {
  header: '상태',
  accessor: (item: InstitutionCode) => (
- <div className={cn(
- "flex items-center gap-2 px-3 py-1 rounded-lg border w-fit shadow-sm",
+ <span className={cn(
+ "inline-flex w-fit items-center gap-1.5 rounded border px-1.5 py-0.5 text-xs",
  item.ablYn === '0'
- ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
- : "bg-muted text-muted-foreground border-border/50"
+ ? "border-success/40 bg-success/15 text-foreground"
+ : "border-border bg-muted text-muted-foreground"
  )}>
- <div className={cn("w-1.5 h-1.5 rounded-full", item.ablYn === '0' ? "bg-emerald-500 animate-pulse" : "bg-slate-400")} />
- <span className="text-[10px] font-black tracking-widest uppercase">{item.ablYn === '0' ? '사용 중' : '폐지'}</span>
- </div>
+ <span className={cn("size-1.5 rounded-full", item.ablYn === '0' ? "bg-success" : "bg-muted-foreground")} aria-hidden="true" />
+ {item.ablYn === '0' ? '사용 중' : '폐지'}
+ </span>
  ),
- className: 'w-24 py-4'
+ className: 'w-24'
  },
  ];
 
@@ -202,33 +190,25 @@ export default function InstitutionCodeClient({
  {
  header: '발생 일자',
  accessor: (item: InstitutionCodeRecptn) => (
- <div className="flex items-center gap-2 font-black text-[10px] text-muted-foreground tracking-widest uppercase">
- <History size={14} className="text-primary opacity-40" aria-hidden="true" />
- {item.ocrnYmd}
- </div>
+ <span className="text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">{item.ocrnYmd}</span>
  ),
- className: 'w-40 py-4'
+ className: 'w-40'
  },
  {
  header: '식별 코드',
  accessor: (item: InstitutionCodeRecptn) => (
- <div className="flex items-center gap-4">
- <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shadow-inner">
- <Database size={16} aria-hidden="true" />
- </div>
- <span className="font-black tracking-tighter text-foreground uppercase text-xs">{item.instCd}</span>
- </div>
+ <span className="font-mono text-[length:var(--font-size-body)] text-foreground">{item.instCd}</span>
  ),
- className: 'w-40 py-4'
+ className: 'w-40'
  },
- { header: '기관 명칭', accessor: (item) => <span className="font-black text-sm text-foreground">{item.allInstNm}</span>, className: 'py-4' },
+ { header: '기관 명칭', accessor: (item) => <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{item.allInstNm}</span> },
  {
  header: '변경 구분',
  accessor: (item: InstitutionCodeRecptn) => {
  const typeMap: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
  '1': { label: '신규', color: 'bg-primary/10 text-primary border-primary/20', icon: <Plus size={12} aria-hidden="true" /> },
- '2': { label: '수정', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', icon: <RefreshCw size={12} aria-hidden="true" /> },
- '3': { label: '정제', color: 'bg-rose-500/10 text-rose-600 border-rose-500/20', icon: <ShieldCheck size={12} aria-hidden="true" /> }
+ '2': { label: '수정', color: 'border-warning/40 bg-warning/15 text-foreground', icon: <RefreshCw size={12} aria-hidden="true" /> },
+ '3': { label: '정제', color: 'border-destructive/40 bg-destructive/10 text-foreground', icon: <ShieldCheck size={12} aria-hidden="true" /> }
  };
  /*
    종전에는 알 수 없는 값을 전부 `typeMap['1']`(신규)로 떨어뜨렸다. `chgSeCd` 의 값
@@ -238,34 +218,34 @@ export default function InstitutionCodeClient({
  const config = typeMap[item.chgSeCd];
  if (!config) {
  return (
- <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-border w-fit font-black text-[10px] tracking-widest shadow-sm text-muted-foreground">
+ <span className="inline-flex w-fit items-center gap-1.5 rounded border border-border px-1.5 py-0.5 text-xs text-muted-foreground">
  {item.chgSeCd || '구분 없음'}
- </div>
+ </span>
  );
  }
  return (
- <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-lg border w-fit font-black text-[10px] tracking-widest uppercase shadow-sm", config.color)}>
+ <span className={cn("inline-flex w-fit items-center gap-1.5 rounded border px-1.5 py-0.5 text-xs", config.color)}>
  {config.icon}
  {config.label}
- </div>
+ </span>
  );
  },
- className: 'w-32 py-4'
+ className: 'w-32'
  },
  {
  header: '상태',
  accessor: (item: InstitutionCodeRecptn) => (
- <div className={cn(
- "flex items-center gap-2 px-3 py-1 rounded-lg border w-fit shadow-sm",
+ <span className={cn(
+ "inline-flex w-fit items-center gap-1.5 rounded border px-1.5 py-0.5 text-xs text-foreground",
  item.procSe === '1'
- ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
- : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+ ? "border-success/40 bg-success/15"
+ : "border-warning/40 bg-warning/15"
  )}>
- {item.procSe === '1' ? <CheckCircle2 size={12} aria-hidden="true" /> : <Clock size={12} className="animate-spin duration-[3s]" aria-hidden="true" />}
- <span className="text-[10px] font-black tracking-widest uppercase">{item.procSe === '1' ? '완료' : '대기'}</span>
- </div>
+ {item.procSe === '1' ? <CheckCircle2 size={12} aria-hidden="true" /> : <Clock size={12} aria-hidden="true" />}
+ {item.procSe === '1' ? '완료' : '대기'}
+ </span>
  ),
- className: 'w-24 py-4'
+ className: 'w-24'
  },
  {
  header: '관리',
@@ -274,13 +254,14 @@ export default function InstitutionCodeClient({
  <Button
  onClick={() => handleProcess(item)}
  aria-label={`${item.allInstNm} 수신 건 처리 완료로 표시`}
- className="h-9 px-5 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 active:scale-95"
+ size="sm"
+ className="gap-1.5"
  >
  <MonitorCheck size={14} aria-hidden="true" /> 처리 완료
  </Button>
  ) : null
  ),
- className: 'w-24 py-4 text-right'
+ className: 'w-24 text-right'
  }
  ];
 

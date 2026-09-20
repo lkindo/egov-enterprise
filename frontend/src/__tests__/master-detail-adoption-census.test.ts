@@ -64,7 +64,12 @@ describe('A2 master-detail adoption census', () => {
     expect(client).toMatch(/<SortableDeptNode\b/);
     expect(parts).toContain("data-a2-master-item={isOverlay ? undefined : ''}");
     expect(parts).toContain("aria-current={isSelected ? 'true' : undefined}");
-    expect(client).toContain("aria-label={activeTab === 'DEPTS' ? '부서 조직 구조'");
+    // [2026-09-20] 종전 단언은 탭 분기 삼항(`activeTab === 'DEPTS' ? '부서 조직 구조' : …`)을 문자열로
+    //   고정했다. 업무 화면 이행에서 USERS·ABSENCES 가 표 자체 스크롤을 쓰게 되어 이 스크롤 영역이
+    //   DEPTS 전용이 됐고, 삼항의 else 가지는 도달할 수 없는 코드가 됐다. 불변식(부서 마스터
+    //   스크롤 영역이 이 접근 이름을 갖는다)은 그대로이고 표현만 좁힌다 — 라벨을 지우거나 바꾸면
+    //   여전히 red 다.
+    expect(client).toContain('aria-label="부서 조직 구조"');
     expect(client).toContain("data-a2-detail={activeTab === 'DEPTS' ? '' : undefined}");
   });
 

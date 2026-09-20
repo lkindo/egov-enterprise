@@ -1,0 +1,974 @@
+{
+  "schemaVersion": 1,
+  "sourceMigrationHash": "670f346ef787769061d8aa3c1c49779c448937a3cd6a124759e7dc7648987e52",
+  "menus": [
+    {
+      "menu_sn": 1000000,
+      "up_menu_sn": null,
+      "menu_ordr": 1,
+      "menu_nm": "나의 업무",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/work-hub",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1000001,
+      "up_menu_sn": 1000000,
+      "menu_ordr": 7,
+      "menu_nm": "🔍 통합 검색",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/search",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1020000,
+      "up_menu_sn": 2000000,
+      "menu_ordr": 1,
+      "menu_nm": "메시지·연락처",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1020100,
+      "up_menu_sn": 1020000,
+      "menu_ordr": 1,
+      "menu_nm": "문자메시지",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/uss/ion/sms",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1020200,
+      "up_menu_sn": 1020000,
+      "menu_ordr": 2,
+      "menu_nm": "메일발송",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/collaboration/mail-send",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1020300,
+      "up_menu_sn": 1020000,
+      "menu_ordr": 3,
+      "menu_nm": "메일 발송 이력",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/collaboration/mail-history",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1020400,
+      "up_menu_sn": 1020000,
+      "menu_ordr": 4,
+      "menu_nm": "💌 업무 쪽지함",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/note",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1030100,
+      "up_menu_sn": 1020000,
+      "menu_ordr": 5,
+      "menu_nm": "주소록",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/collaboration/address-book",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1050100,
+      "up_menu_sn": 1000000,
+      "menu_ordr": 4,
+      "menu_nm": "내 결재함",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/approvals",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1060100,
+      "up_menu_sn": 1000000,
+      "menu_ordr": 1,
+      "menu_nm": "업무 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/smart-toolkit/dept-job",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1060200,
+      "up_menu_sn": 1000000,
+      "menu_ordr": 2,
+      "menu_nm": "일정",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/smart-toolkit/schedule",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 1060300,
+      "up_menu_sn": 1000000,
+      "menu_ordr": 3,
+      "menu_nm": "업무 보고",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/smart-toolkit/work-report",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2000000,
+      "up_menu_sn": null,
+      "menu_ordr": 2,
+      "menu_nm": "소통·지식",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010000,
+      "up_menu_sn": 9000000,
+      "menu_ordr": 5,
+      "menu_nm": "설문·투표 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/survey/hub?tab=manage",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010210,
+      "up_menu_sn": 2010000,
+      "menu_ordr": 1,
+      "menu_nm": "설문 통계 및 결과 분석",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/survey/hub?tab=stats",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010300,
+      "up_menu_sn": 2010000,
+      "menu_ordr": 2,
+      "menu_nm": "설문템플릿관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/survey/hub?tab=templates",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010400,
+      "up_menu_sn": 2010000,
+      "menu_ordr": 5,
+      "menu_nm": "응답자관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/survey/hub?tab=respondents",
+      "use_yn": "N",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010500,
+      "up_menu_sn": 2010000,
+      "menu_ordr": 3,
+      "menu_nm": "질문관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/survey/hub?tab=questions",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010600,
+      "up_menu_sn": 2010000,
+      "menu_ordr": 6,
+      "menu_nm": "항목관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/survey/hub?tab=items",
+      "use_yn": "N",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010700,
+      "up_menu_sn": 2010000,
+      "menu_ordr": 4,
+      "menu_nm": "투표 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/survey/polls",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010800,
+      "up_menu_sn": 9040401,
+      "menu_ordr": 2,
+      "menu_nm": "투표 참여",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/survey/polls/participate",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2010900,
+      "up_menu_sn": 9040401,
+      "menu_ordr": 1,
+      "menu_nm": "설문 참여",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/survey",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2020100,
+      "up_menu_sn": 1000000,
+      "menu_ordr": 5,
+      "menu_nm": "내 스크랩",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/collaboration/scraps",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2030000,
+      "up_menu_sn": 9000000,
+      "menu_ordr": 4,
+      "menu_nm": "업무 지원",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2030100,
+      "up_menu_sn": 2030000,
+      "menu_ordr": 5,
+      "menu_nm": "마이페이지관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/workspace/my-page",
+      "use_yn": "N",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2030200,
+      "up_menu_sn": 2030000,
+      "menu_ordr": 1,
+      "menu_nm": "행사 외부인사 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/operation/external-hr",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2030300,
+      "up_menu_sn": 2030000,
+      "menu_ordr": 2,
+      "menu_nm": "포상 기록 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/operation/rewards",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2030400,
+      "up_menu_sn": 1000000,
+      "menu_ordr": 6,
+      "menu_nm": "알림 센터",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/notifications",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2030500,
+      "up_menu_sn": 9020000,
+      "menu_ordr": 4,
+      "menu_nm": "부재 상태 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/user/absences",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2040000,
+      "up_menu_sn": 2000000,
+      "menu_ordr": 3,
+      "menu_nm": "엔터프라이즈 위키",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/help/faq?tab=WIKI",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2050000,
+      "up_menu_sn": 2000000,
+      "menu_ordr": 4,
+      "menu_nm": "온라인 매뉴얼 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/uss/olh/online-manual",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2060000,
+      "up_menu_sn": 2000000,
+      "menu_ordr": 5,
+      "menu_nm": "자주 묻는 질문(FAQ)",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/help/faq?tab=FAQ",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 2070000,
+      "up_menu_sn": 2000000,
+      "menu_ordr": 6,
+      "menu_nm": "질의응답(Q&A)",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/help/faq?tab=QNA",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9000000,
+      "up_menu_sn": null,
+      "menu_ordr": 4,
+      "menu_nm": "관리 센터",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9010000,
+      "up_menu_sn": 9000000,
+      "menu_ordr": 6,
+      "menu_nm": "시스템 설정",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9010100,
+      "up_menu_sn": 9010000,
+      "menu_ordr": 1,
+      "menu_nm": "통합 코드 관리 허브",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/common-code",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9010210,
+      "up_menu_sn": 9010000,
+      "menu_ordr": 2,
+      "menu_nm": "메뉴 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/menus",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9010220,
+      "up_menu_sn": 9020100,
+      "menu_ordr": 3,
+      "menu_nm": "그룹별 메뉴 현황",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/menus/by-authority",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9010230,
+      "up_menu_sn": 9010000,
+      "menu_ordr": 3,
+      "menu_nm": "프로그램 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/programs",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9010300,
+      "up_menu_sn": 9010000,
+      "menu_ordr": 6,
+      "menu_nm": "화면 구성 예제",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/layout",
+      "use_yn": "N",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9010400,
+      "up_menu_sn": 9010000,
+      "menu_ordr": 4,
+      "menu_nm": "배너 및 팝업 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/banner",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9010500,
+      "up_menu_sn": 9010000,
+      "menu_ordr": 5,
+      "menu_nm": "워크플로우 프로세스 설정",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/workflow",
+      "use_yn": "N",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020000,
+      "up_menu_sn": 9000000,
+      "menu_ordr": 1,
+      "menu_nm": "사용자·조직",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020100,
+      "up_menu_sn": 9000000,
+      "menu_ordr": 2,
+      "menu_nm": "권한·보안",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020120,
+      "up_menu_sn": 9020100,
+      "menu_ordr": 4,
+      "menu_nm": "로그인정책관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/security/login-policy",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020130,
+      "up_menu_sn": 9020100,
+      "menu_ordr": 5,
+      "menu_nm": "개인정보처리방침·이용약관",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/policies",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020210,
+      "up_menu_sn": 9020000,
+      "menu_ordr": 3,
+      "menu_nm": "사용자 분류 그룹",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/security/group",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020230,
+      "up_menu_sn": 9020100,
+      "menu_ordr": 2,
+      "menu_nm": "부서별 그룹 배정",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/security/dept-authority",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020310,
+      "up_menu_sn": 9020000,
+      "menu_ordr": 1,
+      "menu_nm": "계정 및 사용자 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/user/manage",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020311,
+      "up_menu_sn": 9020100,
+      "menu_ordr": 1,
+      "menu_nm": "권한 그룹 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/security/authority",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9020312,
+      "up_menu_sn": 9020000,
+      "menu_ordr": 2,
+      "menu_nm": "부서 및 조직 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/user/departments",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030000,
+      "up_menu_sn": 9000000,
+      "menu_ordr": 3,
+      "menu_nm": "콘텐츠 운영",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030110,
+      "up_menu_sn": 2000000,
+      "menu_ordr": 2,
+      "menu_nm": "커뮤니티",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/help?tab=COMMUNITY",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030120,
+      "up_menu_sn": 9030000,
+      "menu_ordr": 2,
+      "menu_nm": "템플릿관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/community/templates",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030130,
+      "up_menu_sn": 9030000,
+      "menu_ordr": 3,
+      "menu_nm": "댓글 및 평가 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/comments",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030140,
+      "up_menu_sn": 9030000,
+      "menu_ordr": 1,
+      "menu_nm": "통합 게시판 마스터 콘솔",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/community/boards/master",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030200,
+      "up_menu_sn": 9030000,
+      "menu_ordr": 5,
+      "menu_nm": "결재 양식 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/sanctn/forms",
+      "use_yn": "N",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030400,
+      "up_menu_sn": 2030000,
+      "menu_ordr": 3,
+      "menu_nm": "행사 정보 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/operation/events",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030600,
+      "up_menu_sn": 2030000,
+      "menu_ordr": 4,
+      "menu_nm": "메모보고 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/operation/memo-reports",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9030700,
+      "up_menu_sn": 9030000,
+      "menu_ordr": 4,
+      "menu_nm": "도움말 콘텐츠 관리",
+      "prgrm_file_nm": null,
+      "menu_expln": "도움말 및 온라인 매뉴얼 통합 관리",
+      "modern_route": "/admin/system/hpcm",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040000,
+      "up_menu_sn": 9000000,
+      "menu_ordr": 7,
+      "menu_nm": "로그·모니터링",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040101,
+      "up_menu_sn": 9040402,
+      "menu_ordr": 1,
+      "menu_nm": "게시물통계",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/stats/board",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040102,
+      "up_menu_sn": 9040402,
+      "menu_ordr": 2,
+      "menu_nm": "사용자통계",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/stats/user",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040104,
+      "up_menu_sn": 9040402,
+      "menu_ordr": 3,
+      "menu_nm": "화면통계",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/stats/screen",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040105,
+      "up_menu_sn": 9040402,
+      "menu_ordr": 4,
+      "menu_nm": "보고서통계",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/stats/report",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040106,
+      "up_menu_sn": 9040402,
+      "menu_ordr": 5,
+      "menu_nm": "콘텐츠 사용량 통계",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/stats/data-usage",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040310,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 1,
+      "menu_nm": "보안 감사 로그",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/monitoring/hub?tab=security",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040320,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 2,
+      "menu_nm": "시스템 감사 로그",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/monitoring/hub?tab=system",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040330,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 3,
+      "menu_nm": "시스템 상태 모니터링",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/monitoring/hub?tab=observability",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040340,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 4,
+      "menu_nm": "상세 접속 로그 (Login)",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/logs/login",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040350,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 5,
+      "menu_nm": "상세 시스템 로그 (System)",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/logs/system",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040360,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 6,
+      "menu_nm": "로그 통합 대시보드",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/logs",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040370,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 7,
+      "menu_nm": "상세 웹 로그 (Web)",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/logs/web",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040380,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 8,
+      "menu_nm": "상세 사용자 로그 (User)",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/logs/user",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040390,
+      "up_menu_sn": 9040000,
+      "menu_ordr": 9,
+      "menu_nm": "개인정보 조회 로그",
+      "prgrm_file_nm": null,
+      "menu_expln": "",
+      "modern_route": "/admin/system/logs/privacy",
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040401,
+      "up_menu_sn": null,
+      "menu_ordr": 3,
+      "menu_nm": "참여",
+      "prgrm_file_nm": null,
+      "menu_expln": "ADR-0017 참여 분류",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040402,
+      "up_menu_sn": 9000000,
+      "menu_ordr": 8,
+      "menu_nm": "통계",
+      "prgrm_file_nm": null,
+      "menu_expln": "ADR-0017 통계 분류",
+      "modern_route": null,
+      "use_yn": "Y",
+      "del_yn": "N"
+    }
+  ],
+  "programs": [
+    {
+      "prgrm_file_nm": "ACTUATOR_ALL",
+      "prgrm_korn_nm": "Actuator 전체",
+      "url": "/actuator/**",
+      "prgrm_strg_path": "/actuator",
+      "prgrm_expln": "URL 인가: 시스템 모니터링 전체"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_ALL",
+      "prgrm_korn_nm": "관리자 전체",
+      "url": "/api/v1/admin/**",
+      "prgrm_strg_path": "/api/v1/admin",
+      "prgrm_expln": "URL 인가: 관리자 전용 API 전체"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_DEPT_ALL",
+      "prgrm_korn_nm": "부서 관리 전체",
+      "url": "/api/v1/admin/system/departments/**",
+      "prgrm_strg_path": "/api/v1/admin/system/departments",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_DEPT_AUTH_ALL",
+      "prgrm_korn_nm": "부서별 권한 관리 전체",
+      "url": "/api/v1/admin/system/dept-authorities/**",
+      "prgrm_strg_path": "/api/v1/admin/system/dept-authorities",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_HELP_ALIAS",
+      "prgrm_korn_nm": "도움말 관리 별칭",
+      "url": "/api/v1/help/**",
+      "prgrm_strg_path": "/api/v1/help",
+      "prgrm_expln": "별칭 경로: 도움말 관리 전체"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_HELP_ALL",
+      "prgrm_korn_nm": "도움말 관리 전체",
+      "url": "/api/v1/admin/help/**",
+      "prgrm_strg_path": "/api/v1/admin/help",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_SURVEY_ALL",
+      "prgrm_korn_nm": "설문 관리 전체",
+      "url": "/api/v1/admin/system/surveys/**",
+      "prgrm_strg_path": "/api/v1/admin/system/surveys",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_BULK_DEL",
+      "prgrm_korn_nm": "사용자 다중 삭제",
+      "url": "/api/v1/admin/system/users",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_CREATE",
+      "prgrm_korn_nm": "사용자 등록",
+      "url": "/api/v1/admin/system/users",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_DELETE",
+      "prgrm_korn_nm": "사용자 삭제",
+      "url": "/api/v1/admin/system/users/{userId}",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_DEPT",
+      "prgrm_korn_nm": "사용자 부서 일괄 이동",
+      "url": "/api/v1/admin/system/users/dept",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_DETAIL",
+      "prgrm_korn_nm": "사용자 상세 조회",
+      "url": "/api/v1/admin/system/users/{userId}",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_LIST",
+      "prgrm_korn_nm": "사용자 목록 조회",
+      "url": "/api/v1/admin/system/users",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_PWD",
+      "prgrm_korn_nm": "비밀번호 강제 변경",
+      "url": "/api/v1/admin/system/users/{userId}/password",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_ROLE",
+      "prgrm_korn_nm": "사용자 권한 일괄 변경",
+      "url": "/api/v1/admin/system/users/role",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_STATUS",
+      "prgrm_korn_nm": "사용자 상태 일괄 변경",
+      "url": "/api/v1/admin/system/users/status",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    },
+    {
+      "prgrm_file_nm": "ADMIN_USER_UPDATE",
+      "prgrm_korn_nm": "사용자 수정",
+      "url": "/api/v1/admin/system/users/{userId}",
+      "prgrm_strg_path": "/api/v1/admin/system/users",
+      "prgrm_expln": "DB URL 인가 전용 (secure-paths /api/v1/admin/**). 컨트롤러 인가 애노테이션 없음 — 2026-08-02 실측, 방어 1겹"
+    }
+  ]
+}

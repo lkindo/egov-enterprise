@@ -14,10 +14,8 @@ import {
  Plus,
  Zap,
  RefreshCcw,
- Calendar,
  XCircle,
  Trash2,
- UserCheck,
  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -42,7 +40,6 @@ import {
 } from '@/lib/format-date';
 import { getPollStatus, POLL_STATUS_LABEL, type PollStatus } from '@/lib/poll-status';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { motion } from 'framer-motion';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
@@ -175,13 +172,11 @@ export default function OnlinePollAdminClient() {
  {
  header: '설문 명',
  accessor: (item) => (
- <div className="flex items-center gap-4">
- <div className="w-12 h-12 rounded-lg bg-surface-inverse border border-surface-inverse-border flex items-center justify-center text-surface-inverse-foreground shadow-xl transition-transform group-hover:scale-110">
- <Vote size={22} />
- </div>
- <div>
- <span className="font-bold tracking-tighter text-foreground block text-lg leading-none">{item.pollNm}</span>
- <span className="text-xs font-bold text-muted-foreground tracking-widest mt-2 opacity-40">설문 SN: {item.pollSn}</span>
+ <div className="flex items-center gap-2">
+ <Vote size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+ <div className="min-w-0">
+ <span className="block text-[length:var(--font-size-body)] font-medium text-foreground">{item.pollNm}</span>
+ <span className="text-xs tabular-nums text-muted-foreground">설문 SN: {item.pollSn}</span>
  </div>
  </div>
  )
@@ -189,10 +184,9 @@ export default function OnlinePollAdminClient() {
  {
  header: '기간',
  accessor: (item) => (
- <div className="flex items-center gap-3 font-mono text-xs font-bold text-muted-foreground/60 tracking-tighter ">
- <Calendar size={14} className="text-primary opacity-40" />
- {toDisplayYmd(item.pollBgngYmd)} <span className="text-xs opacity-20 mx-1">~</span> {toDisplayYmd(item.pollEndYmd)}
- </div>
+ <span className="text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">
+ {toDisplayYmd(item.pollBgngYmd)} <span className="mx-1">~</span> {toDisplayYmd(item.pollEndYmd)}
+ </span>
  )
  },
  {
@@ -201,18 +195,12 @@ export default function OnlinePollAdminClient() {
  const totalVotes = totalVotesOf(item);
  const ratio = maxVotesOnPage > 0 ? (totalVotes / maxVotesOnPage) * 100 : 0;
  return (
- <div className="flex items-center gap-6 min-w-[200px]">
+ <div className="flex min-w-40 items-center gap-2">
  {/* 막대는 '현재 페이지 최다 득표 대비' 상대치다(절대 목표치가 없으므로 백분율로 표기하지 않는다). */}
- <div className="flex-1 h-3 bg-muted dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
- <div
- className="h-full bg-gradient-to-r from-primary to-hub-indigo rounded-lg transition-all duration-1000"
- style={{ width: `${ratio}%` }}
- />
+ <div className="h-1.5 flex-1 overflow-hidden rounded bg-muted">
+ <div className="h-full rounded bg-primary" style={{ width: `${ratio}%` }} />
  </div>
- <div className="flex items-center gap-1.5 shrink-0">
- <UserCheck size={14} className="text-primary" />
- <span className="text-[12px] font-bold text-foreground tracking-tighter tabular-nums">{totalVotes.toLocaleString()}</span>
- </div>
+ <span className="shrink-0 text-[length:var(--font-size-body)] tabular-nums text-foreground">{totalVotes.toLocaleString()}</span>
  </div>
  );
  }
@@ -225,18 +213,18 @@ export default function OnlinePollAdminClient() {
  const status: PollStatus = getPollStatus(item, todayYmd);
 
  return (
- <div className={cn(
- "flex items-center gap-2 px-4 py-1.5 rounded-lg border w-fit shadow-sm transition-all",
- status === 'active' && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
- status === 'scheduled' && "bg-amber-500/10 text-amber-500 border-amber-500/20",
- status === 'unknown' && "bg-rose-500/10 text-rose-500 border-rose-500/20",
- (status === 'closed' || status === 'suspended') && "bg-muted text-muted-foreground border-border/50"
+ <span className={cn(
+ "inline-flex w-fit items-center gap-1.5 rounded border px-1.5 py-0.5 text-xs",
+ status === 'active' && "border-success/40 bg-success/15 text-foreground",
+ status === 'scheduled' && "border-warning/40 bg-warning/15 text-foreground",
+ status === 'unknown' && "border-destructive/40 bg-destructive/10 text-foreground",
+ (status === 'closed' || status === 'suspended') && "border-border bg-muted text-muted-foreground"
  )}>
- {status === 'active' && <Zap size={14} className="animate-pulse" />}
- {status === 'scheduled' && <Clock size={14} />}
- {(status === 'closed' || status === 'suspended' || status === 'unknown') && <XCircle size={14} />}
- <span className="text-xs font-bold tracking-[0.2em]">{POLL_STATUS_LABEL[status]}</span>
- </div>
+ {status === 'active' && <Zap size={12} aria-hidden="true" />}
+ {status === 'scheduled' && <Clock size={12} aria-hidden="true" />}
+ {(status === 'closed' || status === 'suspended' || status === 'unknown') && <XCircle size={12} aria-hidden="true" />}
+ {POLL_STATUS_LABEL[status]}
+ </span>
  );
  }
  }
@@ -324,30 +312,23 @@ export default function OnlinePollAdminClient() {
  setIsAddOpen(open);
  }}
  >
- <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto rounded-lg p-12 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl overflow-x-hidden">
- <div className="absolute top-[-15%] left-[-15%] w-64 h-64 bg-primary/5 blur-[80px] rounded-lg pointer-events-none" />
+ <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto overflow-x-hidden rounded-lg bg-card p-6">
 
- <DialogHeader className="space-y-6 relative z-10 text-center">
- <div className="w-20 h-11 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-2xl mx-auto transition-transform hover:rotate-12 duration-500 border-4 border-white/20">
- <Vote size={32} />
- </div>
- <div className="space-y-2">
- <DialogTitle className="text-4xl font-bold text-foreground tracking-tighter leading-none">신규 설문 등록</DialogTitle>
- <DialogDescription className="text-xs font-bold tracking-widest opacity-40">
+ <DialogHeader className="space-y-1">
+ <DialogTitle className="text-base font-bold tracking-tight text-foreground">신규 설문 등록</DialogTitle>
+ <DialogDescription className="text-[length:var(--font-size-body)] text-muted-foreground">
  설문명·기간·선택 항목을 입력하세요
  </DialogDescription>
- </div>
  </DialogHeader>
 
- <div className="space-y-10 py-10 relative z-10">
+ <div className="space-y-4 py-4">
  <FormErrorSummary
  errors={validation.errors}
  labels={validationLabels}
  onNavigate={(name) => { validation.focusError(name); }}
  />
- <section className="space-y-5">
- <label htmlFor="new-poll-name" className="text-xs font-bold text-muted-foreground tracking-widest ml-2 flex items-center gap-3">
- <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+ <section className="space-y-1.5">
+ <label htmlFor="new-poll-name" className="block text-[length:var(--font-size-body)] font-medium text-foreground">
  설문명
  </label>
  <Input
@@ -361,18 +342,17 @@ export default function OnlinePollAdminClient() {
  }}
  required
  maxLength={100}
- className="h-11 px-8 rounded-lg border-none bg-muted text-xl font-bold focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-tight"
+ className="text-[length:var(--font-size-body)]"
  />
  {validation.errors.pollNm ? (
  <p {...validation.messageProps('pollNm')} className="text-sm text-destructive-emphasis" />
  ) : null}
  </section>
 
- <section className="grid grid-cols-2 gap-8">
- <div className="space-y-4">
- <label htmlFor="new-poll-begin" className="text-xs font-bold text-muted-foreground tracking-widest ml-2 block">시작일 (필수)</label>
- <div className="relative group">
- <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+ <section className="grid grid-cols-2 gap-[var(--form-gap)]">
+ <div className="space-y-1.5">
+ <label htmlFor="new-poll-begin" className="block text-[length:var(--font-size-body)] font-medium text-foreground">시작일 (필수)</label>
+ <div className="relative">
  {/* input[type=date] 는 'yyyy-MM-dd' 를 요구하고 저장은 'yyyyMMdd' 다 — 경계에서 변환한다. */}
  <Input
  id="new-poll-begin"
@@ -384,17 +364,16 @@ export default function OnlinePollAdminClient() {
  setNewPoll(prev => ({ ...prev, pollBgngYmd: fromDateInputValue(e.target.value) }));
  }}
  required
- className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card transition-all shadow-inner"
+ className="text-[length:var(--font-size-body)]"
  />
  </div>
  {validation.errors.pollBgngYmd ? (
  <p {...validation.messageProps('pollBgngYmd')} className="text-sm text-destructive-emphasis" />
  ) : null}
  </div>
- <div className="space-y-4">
- <label htmlFor="new-poll-end" className="text-xs font-bold text-muted-foreground tracking-widest ml-2 block">종료일 (필수)</label>
- <div className="relative group">
- <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+ <div className="space-y-1.5">
+ <label htmlFor="new-poll-end" className="block text-[length:var(--font-size-body)] font-medium text-foreground">종료일 (필수)</label>
+ <div className="relative">
  <Input
  id="new-poll-end"
  {...validation.fieldProps('pollEndYmd')}
@@ -405,7 +384,7 @@ export default function OnlinePollAdminClient() {
  setNewPoll(prev => ({ ...prev, pollEndYmd: fromDateInputValue(e.target.value) }));
  }}
  required
- className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card transition-all shadow-inner"
+ className="text-[length:var(--font-size-body)]"
  />
  </div>
  {validation.errors.pollEndYmd ? (
@@ -414,31 +393,28 @@ export default function OnlinePollAdminClient() {
  </div>
  </section>
 
- <section className="space-y-6">
- <div className="flex items-center justify-between px-2">
- <span className="text-xs font-bold text-muted-foreground tracking-widest flex items-center gap-3">
- <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+ <section className="space-y-2">
+ <div className="flex items-center justify-between">
+ <span className="text-[length:var(--font-size-body)] font-medium text-foreground">
  선택 항목
  </span>
  <button
  type="button"
  onClick={handleAddItem}
- className="h-10 px-6 rounded-lg text-xs font-bold tracking-widest border border-primary/20 text-primary hover:bg-primary/5 flex items-center gap-2 transition-all active:scale-95"
+ className="inline-flex h-[var(--control-h-sm)] items-center gap-1.5 rounded-md border border-border px-3 text-[length:var(--font-size-body)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
  >
- <Plus size={14} /> 항목 추가
+ <Plus size={14} aria-hidden="true" /> 항목 추가
  </button>
  </div>
- <div className="space-y-4">
+ <div className="space-y-2">
  {newPoll.pollArticles?.map((item, index) => (
- <motion.div
- initial={{ opacity: 0, x: -20 }}
- animate={{ opacity: 1, x: 0 }}
+ <div
  key={index}
- className="flex items-center gap-4 group/item"
+ className="flex items-center gap-2"
  >
- <div className="w-14 h-11 rounded-lg bg-muted flex flex-col items-center justify-center font-bold text-muted-foreground text-xs shadow-inner border border-border/10 shrink-0">
- <span className="opacity-40 mb-0.5">항목</span>
- <span className="text-foreground leading-none">{String(index + 1).padStart(2, '0')}</span>
+ <div className="flex w-14 shrink-0 items-center gap-1 text-[length:var(--font-size-body)] text-muted-foreground">
+ <span>항목</span>
+ <span className="tabular-nums text-foreground">{String(index + 1).padStart(2, '0')}</span>
  </div>
  <div className="flex-1 relative">
  <label htmlFor={`new-poll-article-${index}`} className="sr-only">{`선택 항목 ${index + 1} 내용`}</label>
@@ -459,7 +435,7 @@ export default function OnlinePollAdminClient() {
  }}
  required
  maxLength={100}
- className="h-11 px-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-tight"
+ className="text-[length:var(--font-size-body)]"
  />
  {validation.errors[`pollArticles.${index}.pollArtclNm`] ? (
  <p
@@ -472,35 +448,33 @@ export default function OnlinePollAdminClient() {
  <Button
  type="button"
  variant="ghost"
- size="sm"
+ size="icon-sm"
  onClick={() => handleRemoveItem(index)}
  aria-label={`선택 항목 ${index + 1} 삭제`}
- className="h-11 w-16 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
+ className="shrink-0 text-destructive-emphasis hover:bg-destructive/10 hover:text-destructive-emphasis"
  >
- <Trash2 size={20} />
+ <Trash2 size={14} aria-hidden="true" />
  </Button>
  )}
- </motion.div>
+ </div>
  ))}
  </div>
  </section>
  </div>
 
- <DialogFooter className="relative z-10 gap-4 mt-6">
+ <DialogFooter className="mt-4 gap-2">
  <Button
  variant="outline"
  onClick={() => setIsAddOpen(false)}
  disabled={isSaving}
- className="h-11 px-12 rounded-lg border-2 border-border font-bold text-xs tracking-widest hover:bg-muted"
  >
  취소
  </Button>
  <Button
  onClick={handleAdd}
  disabled={isSaving}
- className="h-11 flex-1 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
  >
- {isSaving ? <RefreshCcw size={18} className="animate-spin" /> : <Plus size={18} />}
+ {isSaving ? <RefreshCcw size={16} className="animate-spin" aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
  {isSaving ? '등록 중…' : '설문 등록'}
  </Button>
  </DialogFooter>

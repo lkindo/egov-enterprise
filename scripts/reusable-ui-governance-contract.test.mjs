@@ -59,7 +59,7 @@ test('active contracts validate exact applicable populations with no environment
     assert.deepEqual(report.errors, []);
     assert.equal(report.verifiedContracts.length, 8);
     assert.equal(report.environmentApproved, false);
-    assert.ok(['core', 'collaboration', 'demo'].includes(report.profile));
+    assert.ok(['core', 'collaboration', 'demo', 'custom'].includes(report.profile));
   } else {
     assert.equal(documents.quality.scenarios.length, 8, 'upstream scenarios may not be reduced');
     assert.equal(documents.terms.pilotCensus.length, 8, 'upstream pilots may not be reduced');

@@ -7,6 +7,9 @@ import { containedFile } from './adoption-review.mjs';
 import { buildUrlStateCensus, approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
+import { compositionDigest } from './project-composer-catalog.mjs';
+import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
+import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 export const UPSTREAM_DIRECTORY = 'config/governance/upstream-review';
@@ -14,9 +17,9 @@ export const MEMORY_PATHS = ['.agent/memory/project-context.md', '.agent/memory/
 export const UPSTREAM_SOURCES = Object.freeze([
   'config/ui-url-state-census.json', 'config/ui-url-state-approval.json', 'config/ui-url-state-approval.schema.json',
   'config/ui-route-capabilities.json', ...Object.values(REVIEW_MANIFEST_PATHS),
-  'config/reusable-base-profiles.json', REVIEW_SCOPE_PATH, ...MEMORY_PATHS,
+  'config/reusable-base-profiles.json', 'config/governance/permission-catalog.json', REVIEW_SCOPE_PATH, ...MEMORY_PATHS,
 ]);
-export const ACTIVE_ARTIFACTS = Object.freeze([...UPSTREAM_SOURCES, 'config/governance/permission-catalog.json']);
+export const ACTIVE_ARTIFACTS = Object.freeze([...UPSTREAM_SOURCES]);
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const HEX = /^[a-f0-9]{64}$/u;
 const sha256 = value => createHash('sha256').update(value).digest('hex');
@@ -90,7 +93,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
   try {
     metadata = readJson(root, PROJECTION_PATH);
     check(metadata.schemaVersion === 1 && metadata.authority === 'generated-reusable-governance-projection-not-environment-approval', 'Invalid projection metadata authority');
-    check(['core', 'collaboration', 'demo'].includes(metadata.profile), 'Invalid projection profile');
+    check(['core', 'collaboration', 'demo', 'custom'].includes(metadata.profile), 'Invalid projection profile');
     check(/^[a-f0-9]{40}$/u.test(metadata.sourceCommit ?? ''), 'Invalid upstream source commit');
     const snapshots = metadata.upstreamSnapshots ?? [];
     check(exact(snapshots.map(row => row.sourcePath).sort(), [...UPSTREAM_SOURCES].sort()), 'Upstream snapshot population must be exact');
@@ -102,17 +105,51 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       upstream.set(snapshot.sourcePath, snapshot.sourcePath.endsWith('.json') ? JSON.parse(text) : text);
     }
     const originalProfiles = upstream.get('config/reusable-base-profiles.json');
-    const expectedPacks = originalProfiles?.profiles?.[metadata.profile]?.packs;
+    let composition;
+    let catalog;
+    if (metadata.composition) {
+      check(metadata.composition.path === COMPOSER_SELECTION_PATH, 'Unexpected composition snapshot location');
+      check(HEX.test(metadata.composition.sha256 ?? '') && artifactTextSha256(root, COMPOSER_SELECTION_PATH) === metadata.composition.sha256,
+        'Composition snapshot checksum mismatch');
+      check(HEX.test(metadata.composition.menuSnapshotSha256 ?? '')
+        && artifactTextSha256(root, COMPOSER_MENU_SNAPSHOT_PATH) === metadata.composition.menuSnapshotSha256,
+      'Composer menu snapshot checksum mismatch');
+      const selection = readJson(root, COMPOSER_SELECTION_PATH);
+      catalog = selection.catalog;
+      composition = verifyProjectComposition(selection.composition, catalog);
+      check(composition.profile === metadata.profile, 'Composition profile differs from projection');
+      check(catalog.provenance.manifestHash === compositionDigest(originalProfiles), 'Composition catalog differs from upstream manifest snapshot');
+      check(catalog.provenance.permissionsHash === compositionDigest(upstream.get('config/governance/permission-catalog.json')),
+        'Composition catalog differs from upstream permission snapshot');
+      for (const key of ['catalogHash', 'recipeHash', 'compositionHash']) check(metadata.composition[key] === composition[key], `Composition ${key} mismatch`);
+    } else {
+      check(metadata.profile !== 'custom', 'Custom projection requires a composition snapshot');
+      check(!existsSync(join(root, COMPOSER_SELECTION_PATH)), 'Unbound composition snapshot must not influence generated artifacts');
+    }
+    const expectedPacks = composition?.packs ?? originalProfiles?.profiles?.[metadata.profile]?.packs;
     const profileManifest = readJson(root, 'config/reusable-base-profiles.json');
     check(exact(metadata.packs, expectedPacks), 'Projection packs differ from upstream profile ownership');
     check(profileManifest.sourcePolicy.generatedProfile === metadata.profile
       && exact(Object.keys(profileManifest.profiles), [metadata.profile])
       && exact(profileManifest.profiles[metadata.profile]?.packs, expectedPacks)
       && exact(Object.keys(profileManifest.packs).sort(), [...(expectedPacks ?? [])].sort()), 'Active profile declaration differs from source artifact');
+    if (composition?.profile === 'custom') {
+      const active = profileManifest.profiles.custom;
+      check(exact(active.resolvedDomains, composition.resolvedDomains)
+        && exact(active.frontendRemovePaths, composition.frontend.removePaths), 'Active custom profile differs from resolved composition');
+      const inventory = field => [...new Set(Object.values(profileManifest.packs).flatMap(field))].sort();
+      check(exact(inventory(pack => pack.backend?.appDomains ?? []), composition.resolvedDomains), 'Active custom domain inventory differs from composition');
+      check(exact(inventory(pack => pack.database?.tables ?? []), composition.tables), 'Active custom table inventory differs from composition');
+      check(exact(inventory(pack => pack.database?.sequences ?? []), composition.explicitSequences), 'Active custom sequence inventory differs from composition');
+    }
     if (requireLock) {
       const lock = readJson(root, 'reusable-base-lock.json');
       check(lock.profile === metadata.profile && lock.sourceCommit === metadata.sourceCommit && exact(lock.packs, metadata.packs), 'Source lock profile/packs/commit mismatch');
       check(lock.governance?.path === PROJECTION_PATH && lock.governance?.projectionSha256 === canonicalJsonSha256(metadata), 'Source lock projection checksum mismatch');
+      if (composition) {
+        check(exact(verifyProjectComposition(lock.composition, catalog), composition), 'Source lock composition mismatch');
+        check(lock.composition.sourceCommit === metadata.sourceCommit, 'Source lock composition commit mismatch');
+      } else check(!lock.composition, 'Source lock contains an unbound composition');
     }
     check(exact(metadata.codeScope, projectedCodeScope(root)), 'Source evidence scope changed; inherited approval requires review before artifact certification');
     const activeArtifacts = metadata.activeArtifacts ?? [];
@@ -164,7 +201,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
     const originals = Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, upstream.get(path)]));
     const scopeContract = upstream.get(REVIEW_SCOPE_PATH);
     check(exact(readJson(root, REVIEW_SCOPE_PATH), scopeContract), 'Review scope ownership changed from upstream contract');
-    const derived = deriveProjectedReviewManifests({ outputRoot: root, upstream: originals, contract: scopeContract, profiles: originalProfiles, profile: metadata.profile, routes });
+    const derived = deriveProjectedReviewManifests({ outputRoot: root, upstream: originals, contract: scopeContract, profiles: originalProfiles, profile: metadata.profile, routes, composition });
     reviewScopes = derived.reviewScopes;
     check(exact(metadata.projectedReviewScopes, reviewScopes), 'Projected review scope metadata drifted from feature ownership');
     for (const [key, path] of Object.entries(REVIEW_MANIFEST_PATHS)) {

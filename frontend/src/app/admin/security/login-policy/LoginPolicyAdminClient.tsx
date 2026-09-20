@@ -2,10 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
@@ -15,18 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 ;
 import { Switch } from '@/components/ui/switch';
-import { 
-  ShieldAlert,
-  Clock,
-  Globe,
-  Search, 
-  RefreshCcw, 
-  Settings2, 
-  User,
-  Fingerprint,
-  Timer,
-  Trash2
-} from 'lucide-react';
+import { Clock, Globe, RefreshCcw, Settings2, Timer, Trash2, User, X } from 'lucide-react';
 import { useAppForm } from '@/hooks/useAppForm';
 import { z } from 'zod';
 import { useToast } from '@/app/components/ui/toast';
@@ -88,6 +74,29 @@ type LoginPolicyFormValues = z.infer<typeof loginPolicySchema>;
 /** 서버(BaseSearchDto.pageUnit) 기본 페이지 크기와 동일하게 맞춘다. */
 const PAGE_SIZE = 10;
 
+/** A1 필수 — 페이지당 건수 선택지(카탈로그 §5 A1 '필수'). */
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+/**
+ * 정책 설정 여부 배지.
+ *
+ * 이 목록은 **전체 사용자**를 좌측 조인으로 돌려주고 `regYn` 이 정책 존재 여부다. 그런데 종전
+ * 표에는 그 열이 없어, 어느 행이 실제로 설정된 계정인지 알 방법이 해제 버튼의 유무뿐이었다 —
+ * 이 목록에서 가장 먼저 알아야 할 사실이 보이지 않았다.
+ *
+ * ⚠ 색은 배경 틴트로만 말한다. `--warning-emphasis` 는 이 저장소에 정의돼 있지 않고,
+ *   `--success-emphasis` 는 premium 라이트에서 자기 색 틴트 위 대비가 AA 미만이다.
+ */
+function PolicyRegisteredBadge({ registered }: { registered: boolean }) {
+  return registered ? (
+    <span className="inline-flex items-center rounded border border-success/40 bg-success/15 px-1.5 py-0.5 text-xs font-medium text-foreground">
+      설정됨
+    </span>
+  ) : (
+    <span className="text-xs text-muted-foreground">미설정</span>
+  );
+}
+
 /** 이 화면이 소유한 쿼리 키. 무효화는 반드시 이 범위로만 좁힌다. */
 const LOGIN_POLICIES_QUERY_KEY = ['admin-login-policies'] as const;
 
@@ -105,6 +114,8 @@ export default function LoginPolicyAdminClient() {
   const [searchTerm, setSearchTerm] = useState('');
   const searchKeyword = useDebouncedValue(searchTerm, 300);
   const [page, setPage] = useState(1);
+  /** 페이지당 건수(A1 필수). 크기는 반드시 queryKey 에 실어야 컨트롤이 조용히 죽지 않는다. */
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
   const form = useAppForm<typeof loginPolicySchema>(loginPolicySchema, {
     defaultValues: {
@@ -121,10 +132,10 @@ export default function LoginPolicyAdminClient() {
    * pageIndex 는 직접 계산하지 않고 LoginPolicyAdminService·ApiService 의 page(0-based) 자동 매핑에 위임한다.
    */
   const { data: pageData, isLoading, error, refetch } = useQuery({
-    queryKey: [...LOGIN_POLICIES_QUERY_KEY, page, searchKeyword],
+    queryKey: [...LOGIN_POLICIES_QUERY_KEY, page, searchKeyword, pageSize],
     queryFn: () => loginPolicyAdminService.getLoginPolicyList({
       page: page - 1,
-      pageUnit: PAGE_SIZE,
+      pageUnit: pageSize,
       searchKeyword,
     }),
   });
@@ -211,73 +222,82 @@ export default function LoginPolicyAdminClient() {
     }
   };
 
+  /**
+   * 목록 열.
+   *
+   * 종전 첫 열은 아바타 상자 + 이름 + ID 한 덩어리였고 정렬 가능한 열이 하나도 없었다.
+   * 이름·ID 를 열로 가르고 정책 설정 여부를 노출한다.
+   */
   const columns: Column<LoginPolicy>[] = [
     {
-      header: '사용자 정보',
-      accessor: (item) => (
-        <div className="flex items-center gap-4 py-2">
-          <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
-            <User size={18} />
-          </div>
-          <div className="text-left">
-            <span className="font-bold tracking-tight text-foreground block text-sm">{item.userNm}</span>
-            <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-40">{item.userId}</span>
-          </div>
-        </div>
-      )
+      header: '사용자명',
+      sortKey: 'userNm',
+      className: 'w-32',
+      accessor: (item) => <span className="font-semibold text-foreground">{item.userNm || '-'}</span>,
+    },
+    {
+      header: '사용자 ID',
+      sortKey: 'userId',
+      className: 'w-40',
+      accessor: (item) => <span className="tabular-nums text-muted-foreground">{item.userId}</span>,
+    },
+    {
+      header: '정책',
+      sortKey: 'regYn',
+      className: 'w-24',
+      accessor: (item) => <PolicyRegisteredBadge registered={item.regYn === 'Y'} />,
     },
     {
       header: '제한 IP',
+      className: 'w-40',
       accessor: (item) => (
-        <div className="flex items-center gap-2">
-          <Globe size={12} className="text-primary/40" />
-          <span className="text-xs font-mono font-bold">{item.ipAddr || '제한 없음'}</span>
-        </div>
-      )
+        <span className="font-mono text-xs text-muted-foreground">{item.ipAddr || '제한 없음'}</span>
+      ),
     },
     {
       header: '허용 시간',
+      className: 'w-32',
       accessor: (item) => (
-        <div className="flex items-center gap-2">
-          <Clock size={12} className="text-amber-500/40" />
-          <span className="text-xs font-bold">
-            {item.bgngTm && item.endTm ? `${item.bgngTm} ~ ${item.endTm}` : '24시간'}
-          </span>
-        </div>
-      )
+        <span className="tabular-nums text-muted-foreground">
+          {item.bgngTm && item.endTm ? `${item.bgngTm} ~ ${item.endTm}` : '24시간'}
+        </span>
+      ),
     },
     {
       header: '계정 제한',
+      sortKey: 'lmtYn',
+      className: 'w-24',
       accessor: (item) => (
-        <HubStatusBadge 
-          label={item.lmtYn === 'Y' ? '제한됨' : '정상'} 
-          variant={item.lmtYn === 'Y' ? 'error' : 'success'} 
-        />
-      )
+        item.lmtYn === 'Y'
+          ? (
+            <span className="inline-flex items-center rounded border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-xs font-medium text-foreground">
+              제한됨
+            </span>
+          )
+          : <span className="text-xs text-muted-foreground">정상</span>
+      ),
     },
     {
-      header: '2FA(OTP)',
+      header: '2단계 인증',
+      sortKey: 'otpUseYn',
+      className: 'w-28',
+      // [2026-08-29] ADR-0002 한국어 우선. 종전 ACTIVE/DISABLED 는 영문 원시값이었다.
       accessor: (item) => (
-        <div className="flex items-center gap-2">
-          <Fingerprint size={12} className={item.otpUseYn === 'Y' ? 'text-emerald-500' : 'text-muted-foreground'} />
-          <span className={`text-xs font-bold tracking-widest ${item.otpUseYn === 'Y' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-            {/* [2026-08-29] ADR-0002 한국어 우선. 종전 ACTIVE/DISABLED 는 영문 원시값이었다. */}
-            {item.otpUseYn === 'Y' ? '적용' : '미적용'}
-          </span>
-        </div>
-      )
+        item.otpUseYn === 'Y'
+          ? <span className="text-foreground">적용</span>
+          : <span className="text-muted-foreground">미적용</span>
+      ),
     },
     {
       header: '설정',
-      className: 'text-right',
+      className: 'text-right w-28',
       accessor: (item) => (
         <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             onClick={() => handleEdit(item)}
             aria-label={`${item.userNm || item.userId} 로그인 정책 수정`}
-            className="hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg transition-all"
           >
             <Settings2 size={16} aria-hidden="true" />
           </Button>
@@ -285,80 +305,103 @@ export default function LoginPolicyAdminClient() {
           {item.regYn === 'Y' ? (
             <Button
               variant="ghost"
-              size="icon"
+              size="icon-sm"
               onClick={() => { void handleRelease(item); }}
               disabled={releasePendingUserId !== null}
               aria-busy={releasePendingUserId === item.userId || undefined}
               aria-label={`${item.userNm || item.userId} 로그인 정책 해제`}
-              className="text-destructive-emphasis hover:bg-destructive/10 rounded-lg transition-all"
+              className="text-destructive-emphasis hover:bg-destructive/10"
             >
               <Trash2 size={16} aria-hidden="true" />
             </Button>
           ) : null}
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   const otpEnabledCount = data.filter(p => p.otpUseYn === 'Y').length;
   const restrictedCount = data.filter(p => p.lmtYn === 'Y').length;
 
   return (
-    /* 루트 레이아웃이 이미 max-w-7xl + p-6/md:p-12/lg:p-16 을 주므로 화면별 p-10 은 이중 여백이라 제거했다. */
-    <div className="space-y-12 animate-in fade-in duration-1000 text-left">
-      <HubHeader 
-        headingLevel={1}
-        title="로그인 보안 정책" 
-        highlight="관리" 
-        subtitle="개별 사용자의 접속 IP, 시간대 제한 및 2단계 인증(OTP) 활성화 여부를 정밀 제어합니다." 
-        icon={ShieldAlert} 
-      />
-
-      {/*
-        전체 건수만 서버 집계이고, OTP/제한 계정 수는 현재 페이지에서만 셀 수 있다 —
-        배지로 집계 범위를 명시한다. 종전의 '평균 보안 레벨=HIGH' 는 산출 근거가 없어 삭제했다.
-      */}
-      <HubMetricGrid>
-        <HubMetricCard title="전체 정책 수" value={total} icon={ShieldAlert} color="primary" status="서버 집계" />
-        <HubMetricCard title="OTP 활성 계정" value={otpEnabledCount} icon={Fingerprint} color="emerald" status="현재 페이지" />
-        <HubMetricCard title="접속 제한 계정" value={restrictedCount} icon={ShieldAlert} color="rose" status="현재 페이지" />
-      </HubMetricGrid>
-
-      <HubSectionCard title="보안 정책 인벤토리" description="전사 사용자별 로그인 거버넌스 설정 현황을 조회하고 수정합니다." icon={Settings2}>
-        <div className="flex items-center justify-between mb-10 gap-6">
-          <div className="relative group/search flex-1">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={20} />
+    <WorkListPage
+      title="로그인 보안 정책 관리"
+      description="사용자별 접속 IP·허용 시간대·2단계 인증(OTP)을 설정합니다. 목록은 전체 사용자이며 정책이 설정된 계정만 해제할 수 있습니다."
+      breadcrumbItems={[{ label: '권한 보안' }, { label: '로그인 정책 관리' }]}
+      totalCount={error ? undefined : total}
+      filter={(
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-0 flex-1 sm:min-w-[16rem]">
+            {/* ⚠ 이 접근 이름은 e2e(26-security-admin-coverage)가 셀렉터로 쓴다 —
+                보이는 라벨과 같게 두어 WCAG 2.5.3 도 함께 만족시킨다. */}
+            <label htmlFor="login-policy-search" className="mb-1 block text-xs font-medium text-muted-foreground">
+              사용자 ID 또는 성명 검색
+            </label>
             <Input
-              aria-label="사용자 ID 또는 성명 검색"
+              id="login-policy-search"
               placeholder="사용자 ID 또는 성명 검색..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-              className="h-11 pl-16 pr-8 rounded-lg bg-muted border-2 border-border font-bold text-md tracking-tight shadow-inner"
+              className="h-[var(--filter-control-h)] text-[length:var(--font-size-body)]"
             />
           </div>
-          <Button onClick={() => refetch()} variant="outline" aria-label="로그인 정책 목록 새로고침" className="h-11 w-16 rounded-lg border-2 border-border bg-card hover:bg-muted transition-all shadow-xl active:scale-95 group">
-            <RefreshCcw size={24} aria-hidden="true" className="text-muted-foreground group-hover:rotate-180 transition-transform duration-700" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!searchTerm}
+            onClick={() => { setSearchTerm(''); setPage(1); }}
+            className="gap-1.5"
+          >
+            <X size={14} aria-hidden="true" /> 초기화
           </Button>
         </div>
-
-        <StandardDataTable
-          columns={columns}
-          data={data}
-          loading={isLoading}
-          error={error as Error | null}
-          onRetry={() => refetch()}
-          keyField="userId"
-          emptyMessage="등록된 로그인 정책이 없습니다."
-          className="border-none bg-transparent"
-          pagination={{
-            currentPage: page,
-            totalPages: totalPage,
-            totalCount: total,
-            pageSize: PAGE_SIZE,
-            onPageChange: (p) => setPage(p)
-          }}
-        />
-      </HubSectionCard>
+      )}
+      toolbarActions={(
+        <>
+          {/*
+            종전에는 이 수치들이 96px 아이콘 박스를 가진 지표 카드 3장이었다. 전체 건수는 셸의
+            총 건수가 이미 말하므로 중복이고, 나머지 둘은 **현재 페이지에서만** 셀 수 있는 값이라
+            그 범위를 문구로 함께 말한다(종전에는 배지로 말했다 — 사실은 그대로 보존한다).
+          */}
+          <span className="text-[length:var(--font-size-body)] text-muted-foreground tabular-nums">
+            현재 페이지 · 2단계 인증 {otpEnabledCount}건 · 접속 제한 {restrictedCount}건
+          </span>
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            aria-label="로그인 정책 목록 새로고침"
+            className="gap-1.5"
+          >
+            <RefreshCcw size={14} aria-hidden="true" className={isLoading ? 'animate-spin' : undefined} />
+            새로고침
+          </Button>
+        </>
+      )}
+    >
+      <StandardDataTable
+        columns={columns}
+        data={data}
+        loading={isLoading}
+        error={error as Error | null}
+        onRetry={() => refetch()}
+        keyField="userId"
+        emptyMessage={searchKeyword ? `'${searchKeyword}' 검색 결과가 없습니다.` : '조회된 사용자가 없습니다.'}
+        // 업무형 화면은 표 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
+        isPremium={false}
+        // ⚠ 총 건수는 셸의 결과 툴바가 단독으로 소유한다 — 여기 totalCount 를 다시 넘기면
+        //   같은 수치가 표 위아래로 두 번 나온다(work-list-adoption-census 가 red 로 막는다).
+        pagination={{
+          currentPage: page,
+          totalPages: totalPage,
+          pageSize,
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+          onPageChange: (p) => setPage(p),
+        }}
+      />
 
       {/* Edit Modal */}
       <Dialog
@@ -483,7 +526,7 @@ export default function LoginPolicyAdminClient() {
                           <Switch 
                             checked={field.value === 'Y'} 
                             onCheckedChange={(checked) => field.onChange(checked ? 'Y' : 'N')} 
-                            className="data-[state=checked]:bg-emerald-500"
+                            className="data-[state=checked]:bg-success"
                           />
                         </FormControl>
                       </FormItem>
@@ -502,6 +545,6 @@ export default function LoginPolicyAdminClient() {
           </Form>
         </DialogContent>
       </Dialog>
-    </div>
+    </WorkListPage>
   );
 }

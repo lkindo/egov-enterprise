@@ -24,6 +24,15 @@ export interface UserManage {
   gndrCd?: string;
   brthYmd?: string; // Aligned with backend brthYmd
   otpSecret?: string;
+  /**
+   * 직함. 목록 projection(UserRepositoryImpl 10필드)과 상세 응답 양쪽에 실려 온다.
+   * 종전에는 서비스 매핑 whitelist 에 없어 서버가 보낸 값을 프런트가 버리고 있었다.
+   */
+  ofcpsNm?: string;
+  /** 사무실 전화번호. 목록 projection 에 포함된다. */
+  officeTelno?: string;
+  /** 등록 일시(ISO). 목록 projection 에 포함되며 표기는 `toDisplayDateTime`/`toDisplayYmd` 가 소유한다. */
+  crtDt?: string;
 }
 
 export interface UserSearchParams {

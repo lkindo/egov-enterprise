@@ -26,7 +26,7 @@ export default async function UserManagePage() {
     });
 
   return (
-    <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse"><h1 className="sr-only">사용자 관리를 불러오는 중</h1>사용자·조직 데이터를 불러오는 중입니다...</div>}>
+    <Suspense fallback={<div className="p-6 text-center text-[length:var(--font-size-body)] text-muted-foreground"><h1 className="sr-only">사용자 관리를 불러오는 중</h1>사용자·조직 데이터를 불러오는 중입니다...</div>}>
       <UserOrgHubClient 
         defaultTab="USERS" 
         usersPromise={usersPromise} 

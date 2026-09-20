@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Upload, X, FileIcon, CheckCircle2, AlertCircle, Loader2, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+// [2026-09-20] framer-motion 을 걷었다 — 드롭존 확대·아이콘 바운스·첨부 행 진입 모션은 첨부 결과 도달만 늦춘다(카탈로그 §3).
 import { toast } from 'sonner';
 
 /** FileService와 tb_file_detail.orgnl_file_nm의 원본 파일명 상한. */
@@ -206,130 +206,97 @@ export function StandardFileUploader({
   };
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-2", className)}>
       {/* Drop Zone */}
-      <motion.label
+      <label
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={onDrop}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
         className={cn(
-          "relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-500 overflow-hidden group focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
-          isDragging 
-            ? "border-primary bg-primary/5 shadow-[0_0_40px_-10px_rgba(var(--primary),0.3)]" 
-            : "border-border bg-muted/50 hover:bg-muted/50"
+          "relative flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed px-3 py-4 transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
+          isDragging
+            ? "border-primary bg-primary/10"
+            : "border-border bg-background hover:bg-muted"
         )}
       >
-        <div className="flex flex-col items-center justify-center pt-5 pb-6 relative z-10">
-          <motion.div
-            animate={isDragging ? { y: [0, -10, 0] } : {}}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className={cn(
-              "w-16 h-11 rounded-lg flex items-center justify-center mb-4 transition-colors",
-              isDragging ? "bg-primary text-white" : "bg-card text-muted-foreground shadow-sm"
-            )}
-          >
-            <Upload size={32} />
-          </motion.div>
-          <p className="mb-2 text-sm text-foreground font-bold tracking-tight">
+        <div className="flex flex-col items-center gap-1">
+          <Upload size={20} aria-hidden="true" className={cn("shrink-0", isDragging ? "text-primary" : "text-muted-foreground")} />
+          <p className="text-[length:var(--font-size-body)] font-medium text-foreground">
             {isDragging ? "여기에 파일을 놓으세요" : "클릭하거나 파일을 이곳에 드래그하세요"}
           </p>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          <p className="text-xs text-muted-foreground">
             최대 {maxFiles}개 파일 / {maxSizeMB}MB 제한
           </p>
         </div>
         <input name={name} type="file" aria-label="파일 첨부 선택" className="sr-only" multiple accept={accept} onChange={handleFileChange} />
-        
-        {/* Animated Background Pulse */}
-        <AnimatePresence>
-          {isDragging && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-primary/5 pointer-events-none"
-            />
-          )}
-        </AnimatePresence>
-      </motion.label>
+      </label>
 
       {/* File List */}
-      <div className="space-y-3">
-        <AnimatePresence initial={false}>
-          {fileStates.map((fs) => (
-            <motion.div
-              key={fs.id}
-              initial={{ opacity: 0, x: -20, height: 0 }}
-              animate={{ opacity: 1, x: 0, height: 'auto' }}
-              exit={{ opacity: 0, x: 20, height: 0 }}
-              className="group relative overflow-hidden"
-            >
-              <div className="flex items-center justify-between p-4 bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                    fs.status === 'completed' ? "bg-emerald-50 text-emerald-500" :
-                    fs.status === 'pending' ? "bg-muted text-muted-foreground" : "bg-muted text-muted-foreground"
-                  )}>
-                    {fs.status === 'uploading' ? <Loader2 size={20} className="animate-spin" /> : 
-                     fs.status === 'pending' ? <Hourglass size={20} className="animate-pulse" /> : <FileIcon size={20} />}
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-foreground truncate tracking-tight">
-                        {fs.file.name}
-                      </p>
-                      <span className="text-xs font-bold text-muted-foreground uppercase">
-                        {(fs.file.size / 1024 / 1024).toFixed(2)} MB
-                      </span>
-                    </div>
-                    {/* Progress Bar or Pending Text */}
-                    {fs.status === 'pending' ? (
-                      <p className="text-xs font-bold text-muted-foreground tracking-tight leading-none pt-1">
-                        첨부 대기 중 (폼 제출 시 최종 업로드됨)
-                      </p>
-                    ) : (
-                      <div
-                        role="progressbar"
-                        aria-label={`${fs.file.name} 업로드 진행률`}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={Math.round(fs.progress)}
-                        className="relative w-full h-1.5 bg-muted rounded-lg overflow-hidden"
-                      >
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${fs.progress}%` }}
-                          className={cn(
-                            "absolute inset-y-0 left-0 rounded-lg transition-colors",
-                            fs.status === 'completed' ? "bg-emerald-500" : "bg-primary"
-                          )}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center ml-4 gap-2">
-                  {fs.status === 'completed' ? (
-                    <CheckCircle2 size={18} className="text-emerald-500" />
-                  ) : fs.status === 'error' ? (
-                    <AlertCircle size={18} className="text-rose-500" />
-                  ) : null}
-                  <button
-                    type="button"
-                    aria-label={`${fs.file.name} 첨부 파일 삭제`}
-                    onClick={() => removeFile(fs.id)}
-                    className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
+      <div className="space-y-1">
+        {fileStates.map((fs) => (
+          <div
+            key={fs.id}
+            className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2"
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <div className={cn(
+                "flex size-7 shrink-0 items-center justify-center rounded",
+                fs.status === 'completed' ? "bg-success/10 text-success-emphasis" : "bg-muted text-muted-foreground"
+              )}>
+                {fs.status === 'uploading' ? <Loader2 size={16} aria-hidden="true" className="animate-spin" /> :
+                 fs.status === 'pending' ? <Hourglass size={16} aria-hidden="true" /> : <FileIcon size={16} aria-hidden="true" />}
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-[length:var(--font-size-body)] font-medium text-foreground">
+                    {fs.file.name}
+                  </p>
+                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {(fs.file.size / 1024 / 1024).toFixed(2)} MB
+                  </span>
+                </div>
+                {fs.status === 'pending' ? (
+                  <p className="text-xs leading-tight text-muted-foreground">
+                    첨부 대기 중 (폼 제출 시 최종 업로드됨)
+                  </p>
+                ) : (
+                  <div
+                    role="progressbar"
+                    aria-label={`${fs.file.name} 업로드 진행률`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(fs.progress)}
+                    className="relative h-1 w-full overflow-hidden rounded bg-muted"
+                  >
+                    <div
+                      style={{ width: `${fs.progress}%` }}
+                      className={cn(
+                        "absolute inset-y-0 left-0 rounded",
+                        fs.status === 'completed' ? "bg-success"
+                          : fs.status === 'error' ? "bg-destructive" : "bg-primary"
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              {fs.status === 'completed' ? (
+                <CheckCircle2 size={16} aria-hidden="true" className="text-success-emphasis" />
+              ) : fs.status === 'error' ? (
+                <AlertCircle size={16} aria-hidden="true" className="text-destructive-emphasis" />
+              ) : null}
+              <button
+                type="button"
+                aria-label={`${fs.file.name} 첨부 파일 삭제`}
+                onClick={() => removeFile(fs.id)}
+                className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-emphasis focus-visible:opacity-100"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

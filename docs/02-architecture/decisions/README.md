@@ -24,3 +24,4 @@
 | [ADR-0017](ADR-0017-task-oriented-menu-navigation.md) | 현재 제품의 과업 중심 4개 메뉴 영역, 중복 진입점 통합과 NAV 보존 이행 | Accepted |
 | [ADR-0018](ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관별 온라인/이관 도입 승인 분리 | Accepted |
 | [ADR-0019](ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립, 요청 제한 한도 설정화 | Accepted |
+| [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 | Accepted |

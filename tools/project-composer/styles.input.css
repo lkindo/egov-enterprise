@@ -1,0 +1,29 @@
+/* Static local tool: semantic tokens and compiled Tailwind utilities, no CDN. */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/preflight.css";
+@tailwind utilities;
+
+@theme {
+  --font-sans: "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+  --color-canvas: #f5f7fa;
+  --color-panel: #ffffff;
+  --color-ink: #192b3d;
+  --color-muted: #526174;
+  --color-line: #c8d0da;
+  --color-accent: #075c64;
+  --color-accent-soft: #edf8f6;
+  --color-on-accent: #ffffff;
+  --color-danger: #a72626;
+  --color-danger-soft: #fff4f2;
+}
+
+@layer base {
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+  button:not(:disabled), select { cursor: pointer; }
+  progress { color: var(--color-accent); }
+  @media (forced-colors: active) {
+    :focus-visible { outline-color: Highlight; }
+    button, input, select, progress { border: 1px solid ButtonText; }
+  }
+}

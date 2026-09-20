@@ -110,6 +110,11 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'system', 'logs', 'user', 'SystemLogsUserClient.tsx'],
       // 시스템 정책은 2026-08-24 A1 이행으로 standalone HubHeader 를 떠나 셸에 위임한다.
       ['admin', 'system', 'policies', 'PolicyAdminClient.tsx'],
+      // [2026-09-20] 권한보안 두 화면도 같은 경로로 이행했다 — 로그인 정책 관리는 standalone
+      //   HubHeader 를, 그룹별 메뉴 현황은 PageHeader 를 떠나 WorkListPage 에 제목을 위임한다.
+      //   로그인 정책 관리는 아래 standaloneHubSources 에서 함께 제거했다(같은 불변식의 소유자 이동).
+      ['admin', 'security', 'login-policy', 'LoginPolicyAdminClient.tsx'],
+      ['admin', 'system', 'menus', 'by-authority', 'MenuByAuthorityClient.tsx'],
     ];
 
     // A7(현황) 셸로 이행한 화면은 제목을 ReportPage 에 위임한다 — 자체 h1 을 다시 만들지 않는다.
@@ -197,7 +202,6 @@ describe('app shell accessibility source contract', () => {
     const standaloneHubSources = [
       ['admin', 'AdminDashboardClient.tsx'],
       // 행사 운영 센터는 2026-08-24 A1 이행으로 WorkListPage 가 h1 을 소유한다(위 위임 계약이 검사).
-      ['admin', 'security', 'login-policy', 'LoginPolicyAdminClient.tsx'],
       ['help', 'policies', '[type]', 'page.tsx'],
     ];
 

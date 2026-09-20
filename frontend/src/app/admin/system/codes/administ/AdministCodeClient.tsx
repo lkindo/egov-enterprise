@@ -8,7 +8,7 @@ import { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
-import { Plus, MapPin, ShieldCheck, RefreshCcw, Compass, Pencil, Trash2 } from 'lucide-react';
+import { Plus, MapPin, RefreshCcw, Pencil, Trash2 } from 'lucide-react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
@@ -206,60 +206,49 @@ export default function AdministCodeClient({
 
  const columns: Column<AdministCode>[] = [
  { 
- header: '식별 코드', 
+ header: '식별 코드',
  accessor: (item: AdministCode) => (
- <div className="flex items-center gap-4 py-2">
- <div className="w-10 h-9 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg group-hover:rotate-6 transition-transform">
- <MapPin size={18} />
- </div>
- <div className="flex flex-col gap-0.5">
- <span className="font-black text-foreground tracking-tighter text-xs uppercase">{item.admdstCd}</span>
- <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">행정 코드</span>
- </div>
+ <div className="flex items-center gap-2">
+ <MapPin size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+ <span className="font-mono text-[length:var(--font-size-body)] text-foreground">{item.admdstCd}</span>
  </div>
  ),
- className: 'w-48 py-4' 
+ className: 'w-40' 
  },
  { 
- header: '구분', 
+ header: '구분',
  accessor: (item: AdministCode) => (
- <div className={cn(
- "px-3 py-1 rounded-lg border w-fit text-[10px] font-black tracking-widest uppercase shadow-sm",
- item.admdstSeCd === '1' ? 'bg-surface-inverse text-surface-inverse-foreground border-surface-inverse-border' : 'bg-muted text-muted-foreground border-border'
+ <span className={cn(
+ "inline-flex w-fit items-center rounded border px-1.5 py-0.5 text-xs",
+ item.admdstSeCd === '1' ? 'border-border bg-muted text-foreground' : 'border-border bg-card text-muted-foreground'
  )}>
  {item.admdstSeCd === '1' ? '법정동' : '행정동'}
- </div>
+ </span>
  ),
- className: 'w-24 py-4'
+ className: 'w-24'
  },
  { 
- header: '행정구역명', 
+ header: '행정구역명',
  accessor: (item: AdministCode) => (
- <div className="flex flex-col gap-0.5 py-4">
- <span className="font-black text-foreground tracking-tighter text-sm leading-tight uppercase">{item.admdstZoneNm}</span>
- <div className="flex items-center gap-1.5 mt-1">
- <Compass size={10} className="text-primary opacity-40" />
- <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase leading-none">표준 명칭</span>
- </div>
- </div>
+ <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{item.admdstZoneNm}</span>
  ),
- className: 'py-4'
+ className: ''
  },
  { 
- header: '상위 코드', 
+ header: '상위 코드',
  accessor: (item: AdministCode) => (
- <div className="font-black text-muted-foreground tabular-nums tracking-widest text-[10px] uppercase">
+ <span className="text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">
  {item.upAdmdstCd || '최상위'}
- </div>
- ), 
- className: 'w-32 py-4' 
+ </span>
+ ),
+ className: 'w-32' 
  },
  { 
  header: '상태', 
  accessor: (item: AdministCode) => (
  <HubStatusBadge status={item.useYn === 'Y' ? '활성' : '중단'} />
  ),
- className: 'w-24 py-4'
+ className: 'w-24'
  },
  {
  header: '관리',
@@ -269,7 +258,7 @@ export default function AdministCodeClient({
  variant="ghost"
  size="sm"
  aria-label={`${item.admdstZoneNm} 수정`}
- className="h-8 gap-1.5 px-2 text-xs font-bold"
+ className="gap-1.5"
  onClick={() => openEditModal(item)}
  disabled={deletingCode === item.admdstCd}
  >
@@ -279,7 +268,7 @@ export default function AdministCodeClient({
  variant="ghost"
  size="sm"
  aria-label={`${item.admdstZoneNm} 삭제`}
- className="h-8 gap-1.5 px-2 text-xs font-bold text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10"
+ className="gap-1.5 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10"
  onClick={() => handleDelete(item)}
  disabled={deletingCode === item.admdstCd}
  aria-busy={deletingCode === item.admdstCd || undefined}
@@ -288,7 +277,7 @@ export default function AdministCodeClient({
  </Button>
  </div>
  ),
- className: 'w-40 py-4'
+ className: 'w-40'
  },
  ];
 
@@ -351,23 +340,22 @@ export default function AdministCodeClient({
    title={editingCode ? '행정 구역 코드 수정' : '행정 구역 코드 등록'}
    maxWidth="xl"
    footer={
-     <div className="flex w-full gap-4">
+     <div className="flex w-full gap-2">
        <Button
          type="button"
          variant="outline"
          onClick={closeRegisterModal}
          disabled={registerLoading || form.formState.isSubmitting}
-         className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2"
+         className="flex-1"
        >
          취소
        </Button>
-       <Button 
+       <Button
          type="submit"
          form="administ-code-register-form"
          disabled={registerLoading || form.formState.isSubmitting}
-         className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
+         className="flex-[2]"
        >
-         <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" />
          {registerLoading ? (editingCode ? '저장 중…' : '등록 중…') : (editingCode ? '저장' : '최종 등록')}
        </Button>
      </div>
@@ -378,7 +366,7 @@ export default function AdministCodeClient({
         id="administ-code-register-form"
         noValidate
         onSubmit={form.handleSubmit(onRegisterSubmit)}
-        className="space-y-6 pt-4 text-left"
+        className="space-y-[var(--form-gap)] pt-2 text-left"
       >
        <FormErrorSummary
          labels={{
@@ -396,7 +384,7 @@ export default function AdministCodeClient({
          required
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">행정 구역 식별 코드</FormLabel>
+             <FormLabel className="text-[length:var(--font-size-body)] font-medium">행정 구역 식별 코드</FormLabel>
              <FormControl>
                <Input
                  {...field}
@@ -405,7 +393,7 @@ export default function AdministCodeClient({
                  placeholder="예: 1111051500"
                  readOnly={Boolean(editingCode)}
                  aria-readonly={editingCode ? true : undefined}
-                 className="h-11 rounded-lg bg-muted border-border read-only:opacity-70"
+                 className="h-[var(--control-h)] read-only:bg-muted"
                />
              </FormControl>
              <FormMessage />
@@ -418,9 +406,9 @@ export default function AdministCodeClient({
          required
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">구분</FormLabel>
+             <FormLabel className="text-[length:var(--font-size-body)] font-medium">구분</FormLabel>
              <FormControl>
-               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-card text-sm outline-none">
+               <select {...field} className="h-[var(--control-h)] w-full rounded-md border border-input bg-transparent px-3 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50">
                  <option value="1">법정동</option>
                  <option value="2">행정동</option>
                </select>
@@ -435,9 +423,9 @@ export default function AdministCodeClient({
          required
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">행정 구역 명칭</FormLabel>
+             <FormLabel className="text-[length:var(--font-size-body)] font-medium">행정 구역 명칭</FormLabel>
              <FormControl>
-               <Input {...field} maxLength={100} placeholder="예: 서울특별시 종로구 청운효자동" className="h-11 rounded-lg bg-muted border-border" />
+               <Input {...field} maxLength={100} placeholder="예: 서울특별시 종로구 청운효자동" className="h-[var(--control-h)]" />
              </FormControl>
              <FormMessage />
            </FormItem>
@@ -448,9 +436,9 @@ export default function AdministCodeClient({
          name="upAdmdstCd"
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">상위 행정 구역 코드</FormLabel>
+             <FormLabel className="text-[length:var(--font-size-body)] font-medium">상위 행정 구역 코드</FormLabel>
              <FormControl>
-               <Input {...field} maxLength={12} inputMode="numeric" placeholder="예: 1111000000 (최상위면 비워 두세요)" className="h-11 rounded-lg bg-muted border-border" />
+               <Input {...field} maxLength={12} inputMode="numeric" placeholder="예: 1111000000 (최상위면 비워 두세요)" className="h-[var(--control-h)]" />
              </FormControl>
              <p className="text-xs text-muted-foreground">시·도처럼 상위가 없는 최상위 구역은 비워 둡니다.</p>
              <FormMessage />
@@ -463,9 +451,9 @@ export default function AdministCodeClient({
          required
          render={({ field }) => (
            <FormItem>
-             <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">사용 여부</FormLabel>
+             <FormLabel className="text-[length:var(--font-size-body)] font-medium">사용 여부</FormLabel>
              <FormControl>
-               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-card text-sm outline-none">
+               <select {...field} className="h-[var(--control-h)] w-full rounded-md border border-input bg-transparent px-3 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50">
                  <option value="Y">활성 (사용함)</option>
                  <option value="N">중단 (사용안함)</option>
                </select>

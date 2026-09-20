@@ -5,6 +5,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { BASE_SEED, buildPermissionArtifacts, generatePermissions } from './generate-permissions.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const catalogPath = 'config/governance/permission-catalog.json';
@@ -141,6 +143,39 @@ test('fresh-base grant projection preserves surrounding SQL and rejects missing 
   assert.deepEqual(actual, pairs);
   fs.writeFileSync(path.join(dir, BASE_SEED), source.replace(begin, '-- removed marker'));
   assert.throws(() => buildPermissionArtifacts(dir), /markers/);
+});
+
+test('composition bootstrap regeneration retains exactly selected grants for custom and preset recipes', t => {
+  const catalog = loadProjectComposerCatalog(root);
+  for (const selection of [{ domains: ['survey'] }, { preset: 'core' }]) {
+    const dir = fixture(t);
+    const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'permission-probe' }, sourceRef: 'v1.0.0', selection }, catalog);
+    const write = (file, value) => {
+      fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+      fs.writeFileSync(path.join(dir, file), JSON.stringify(value));
+    };
+    write('config/reusable-base-profiles.json', { sourcePolicy: { generatedProfile: composition.profile } });
+    write(COMPOSER_SELECTION_PATH, { catalog, composition });
+    const baseline = buildPermissionArtifacts(dir);
+    const block = baseline[BASE_SEED].split('-- BEGIN GENERATED BASE OPERATION GRANTS')[1].split('-- END GENERATED BASE OPERATION GRANTS')[0];
+    const permissions = JSON.parse(fs.readFileSync(path.join(root, catalogPath), 'utf8')).permissions;
+    const expected = permissions.filter(row => composition.permissionCodes.includes(row.code))
+      .flatMap(row => row.defaultGroups.map(group => `${group}|${row.code}`));
+    const actual = [...block.matchAll(/\('([^']+)', '([^']+)'\)/g)].map(([, group, code]) => `${group}|${code}`);
+    assert.deepEqual(actual, expected);
+    assert.ok(!actual.some(row => row.endsWith('|MAIL_SEND')));
+    assert.match(baseline['business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java'], /MAIL_SEND/);
+    generatePermissions(dir);
+    assert.doesNotThrow(() => generatePermissions(dir, true));
+    const tampered = structuredClone(composition);
+    tampered.permissionCodes.push('MAIL_SEND');
+    write(COMPOSER_SELECTION_PATH, { catalog, composition: tampered });
+    assert.throws(() => buildPermissionArtifacts(dir), /does not match/);
+    if (composition.profile === 'custom') {
+      fs.unlinkSync(path.join(dir, COMPOSER_SELECTION_PATH));
+      assert.throws(() => buildPermissionArtifacts(dir), /ENOENT/);
+    }
+  }
 });
 
 test('permission freshness and red contracts run through local verify, pre-push and required CI operational tests', () => {

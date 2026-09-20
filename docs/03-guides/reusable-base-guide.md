@@ -3,7 +3,8 @@
 > **현행 정책**: 재사용 base는 `main`의 정확한 `v*` 릴리스 태그에서 생성하는
 > 산출물이며, 생성 후 해당 프로필의 기술 검증을 통과해야 한다. `template/reusable-base`는 역사 브랜치이며 신규
 > 프로젝트의 시작점으로 사용하지 않는다. 결정 배경은
-> [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)을 따른다.
+> [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)과 출력 형태를 보완하는
+> [ADR-0020](../02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md)을 따른다.
 
 ## 1. 생성 모델
 
@@ -14,7 +15,8 @@ clean v* release tag
         │                                                   └─ second empty DB reapply
         │
         └─ tracked source tree + profile manifest + verified DB bundle
-                                      └─ projected source ─> compile / tsc / harness / schema gate
+                                      └─ projected source ─> selected backend layout
+                                                                   └─ compile / tsc / harness / schema gate
 ```
 
 - 단일 정본: 현재 릴리스 소스
@@ -37,6 +39,26 @@ clean v* release tag
 소유한다. `board`·`comment`·`scrap`처럼 함께 선택해야 하는 클러스터와 `tb_tmplt_info`처럼 공유되는
 테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트 `scripts/delete-domain.ps1`도 이
 매니페스트의 `appDomains`·`clusters`를 같은 SSOT 로 소비한다([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
+
+### 2.1 백엔드 출력 형태
+
+프로필과 별개로 `--layout multi-module|single-module`을 선택한다. 생략하면 기존
+`multi-module` 출력이다. 원본 저장소의 모듈 구조는 유지하며 생성한 소스에만 배치를 적용한다.
+
+| 레이아웃 | 생성된 백엔드 | 소스와 실행 경계 |
+|---|---|---|
+| `multi-module` | 기존 Gradle 서브프로젝트 | `:api-server:bootRun` 등 기존 모듈 task 사용 |
+| `single-module` | `include` 없는 루트 Gradle project 하나 | 기존 논리 소스 디렉터리를 source set으로 연결하고 루트 task 사용 |
+
+단일모듈도 `foundation`, `business-core`, `business-app`, `api-server`의 소스 위치와 Java 패키지를
+보존한다. 루트 `src`로 파일을 합치는 기능은 아니다. 검증용 source set은 원본 계층별 컴파일·테스트
+클래스패스를 분리하여 core/app 경계와 동일 이름의 테스트·설정 자원을 지킨다. 프론트엔드는 두 형태
+모두 별도 `frontend` 애플리케이션이다.
+
+이 가이드의 명령은 위 세 누적 프로필과 PostgreSQL을 대상으로 한다. 레이아웃을 바꿔도 같은
+프로필의 DB 번들을 사용한다. 개별 도메인·메뉴 seed와 별도 로컬 UI는
+[도메인 선택형 생성기 가이드](project-composer-guide.md)를 따른다. 추가 DB는
+[프로젝트 생성기 상세 설계](../02-architecture/project-composer-design.md)의 후속 범위다.
 
 ## 3. 공식 생성
 
@@ -107,12 +129,27 @@ DB 생성기가 출력한 실제 디렉터리를 `--db-bundle`에 전달한다.
 ```bash
 npm run base:generate-source -- \
   --profile collaboration \
-  --db-bundle build/reusable-base/collaboration-<sha>-<timestamp>
+  --db-bundle build/reusable-base/collaboration-<sha>-<timestamp> \
+  --layout multi-module
+
+npm run base:generate-source -- \
+  --profile collaboration \
+  --db-bundle build/reusable-base/collaboration-<sha>-<timestamp> \
+  --layout single-module
 ```
 
 소스 생성기는 DB lock의 프로필·커밋을 현재 릴리스와 대조한 뒤 선택하지 않은 Java 도메인,
 그 도메인에 의존하는 소비자, 프런트 라우트와 전이 importer를 제거한다. 원본 마이그레이션 체인은
 검증된 V1 번들로 교체하고 `REUSABLE_BASE.md`와 `reusable-base-lock.json`을 기록한다.
+
+`--layout`은 소스 생성기의 인자이며 DB 생성기에 전달하지 않는다. 기본 소스 출력 경로는
+`build/reusable-base/source/<profile>-<sha>`이고 단일모듈에는 `-single-module` 접미사가 붙는다.
+명시 `--output`도 기존 디렉터리를 덮어쓸 수 없다. 소스 lock의 `layout`이 선택 결과를 기록하며,
+검증기는 필드가 없는 이전 lock만 `multi-module`로 해석한다. 미지원 값과 요청·생성물 불일치는 실패한다.
+
+생성 완료 시 출력 폴더에 독립 Git 저장소를 초기화한다. 부모 저장소의 `build/` 제외 규칙이
+프런트엔드 파일 탐색에 전파되지 않도록 하는 경계이며, 파일 추가·커밋·원격 연결은 수행하지 않는다.
+인수 시 숨김 `.git` 디렉터리도 유지하거나, 옮긴 프로젝트의 루트에서 `git init` 후 빌드한다.
 
 ### 3.6 제거되는 거버넌스 게이트와 승인
 
@@ -142,7 +179,7 @@ npm run base:generate-source -- \
 - 승인은 삭제를 **허용**하는 장치가 아니라 **조용할 수 없게** 만드는 장치다. 게이트가 사라지는 변경에서는
   매니페스트와 커밋 메시지가 함께 움직여 diff 에 의도가 드러난다.
 
-생산 저장소 CI의 `reusable-base` 3프로필 matrix가 실제 DB 번들과 소스 생성·산출물 검증을 실행하고 결과를 required
+생산 저장소 CI의 `reusable-base` 3프로필 × 2레이아웃 matrix가 실제 DB 번들과 소스 생성·산출물 검증을 실행하고 결과를 required
 `backend-build`에 집계한다. 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
 `npm run test:base-profile`(CI의 `test:operational-contracts`에 포함)이 별도로 지킨다.
 
@@ -199,7 +236,7 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
 7. **대상이 cascade 로 잘못 사라진 링크는 가리지 않는다.** 그 링크를 마커로 숨기면 신호를 은폐하게 된다(H2).
    원인(잘못된 import)을 고친다.
 8. **판정은 실제 투영본의 타입·lint·build와 적용범위 계약이다.** 마커 편집은 전체 제품 빌드만으로 확인할 수 없다.
-   마커를 추가·수정하면 `base:verify`로 영향 프로필을 생성·검증한다. CI도 세 프로필의 같은 경로를 실행한다.
+   마커를 추가·수정하면 `base:verify`로 영향 프로필을 생성·검증한다. CI도 세 프로필과 두 레이아웃의 같은 경로를 실행한다.
    컴파일 성공만으로 모든 링크와 API의 런타임 동작이 증명되는 것은 아니다.
 
 ### 3.8 검토 원장 투영과 기관 승인
@@ -239,12 +276,22 @@ upstream snapshot에 보존하고 기관의 사실로 복제하지 않는다. �
 npm run base:verify -- --profile core
 npm run base:verify -- --profile collaboration
 npm run base:verify -- --profile demo
+npm run base:verify -- --profile core --layout single-module
+npm run base:verify -- --profile collaboration --layout single-module
+npm run base:verify -- --profile demo --layout single-module
 ```
+
+앞의 세 명령은 기본 `multi-module` 검증이며 `--layout multi-module`을 명시해도 같다.
+DB 생성은 레이아웃과 독립이고, 검증 driver는 소스 생성기에 선택한 레이아웃을 전달한 뒤 lock과 대조한다.
 
 실행 정본은 [생성·검증 driver](../../scripts/verify-reusable-base.mjs)와
 [산출물 runner](../../scripts/verify-reusable-artifact.mjs)다. 범위는 거버넌스 무결성·활성 원장·부정 계약,
 Java 컴파일·하네스·실 PostgreSQL 스키마 검증, 프런트 `tsc`·lint·build다. 브라우저 시나리오 실행과 실제
-기관 환경 승인은 별도다. `build/reports/reusable-base/<profile>.json`은 실행한 기술 검증 범위만 기록한다.
+기관 환경 승인은 별도다. 생산 저장소 보고서는 멀티모듈의
+`build/reports/reusable-base/<profile>.json`, 단일모듈의
+`build/reports/reusable-base/<profile>-single-module.json`에 기록하며 `layout` 필드를 포함한다.
+각 생성 디렉터리 내부의 runner 보고서는 기존 `build/reports/reusable-base/<scope>.json` 경로를 유지한다.
+이 보고서는 실행한 기술 검증 범위만 기록한다.
 
 이미 생성한 디렉터리에서 의존성을 설치한 뒤에는 `npm run verify`로 같은 산출물 검사를 실행한다.
 `npm run test:operational-contracts`는 공통 활성 계약을, pre-push는 전체 산출물 검사를 실행한다.
@@ -259,12 +306,29 @@ Java 컴파일·하네스·실 PostgreSQL 스키마 검증, 프런트 `tsc`·lin
 | `npm run verify:fe` | `frontend` | 프런트 타입·lint·build |
 | `npm run verify`, `verify:artifact`, `verify:full`, `verify:push`, `verify:fast` | `full` | backend와 frontend 모두 |
 
+단일모듈 산출물에서 직접 사용하는 Gradle 명령은 다음과 같다. 명령은 생성 디렉터리에서 실행하며,
+Windows PowerShell에서는 `./gradlew` 대신 `.\gradlew.bat`를 사용할 수 있다.
+
+| 명령 | 범위 |
+|---|---|
+| `./gradlew bootRun` | 온라인 API 실행 |
+| `./gradlew bootJar` | 온라인 실행 jar `build/libs/app.jar` 생성 |
+| `./gradlew harnessTest schemaValidationTest` | governance 하네스와 실제 PostgreSQL 스키마 검증 |
+| `./gradlew allTests` | API·foundation·core·app 및 독립 이관 도구의 일반 테스트 suite 실행 |
+| `./gradlew migrationBootJar` | 별도 migration source set으로 오프라인 이관 실행 jar 생성 |
+
+`compileTestJava`는 단일모듈의 출처별 테스트 source set도 함께 컴파일한다. 산출물 runner의
+backend 범위는 컴파일·하네스·스키마 검사이며 모든 일반 테스트 실행과 같지 않다. `allTests`는 일반
+테스트를 묶는 별도 task이고 API의 하네스·스키마 태그는 위 이름 있는 task에서 실행한다.
+`migrationBootJar`는 온라인 jar·클래스패스에 이관 코드를 합치지 않는다. jar 빌드나 테스트 통과는
+기관 데이터 이관 실행 승인을 부여하지 않으며 기존 오프라인 승인 절차를 따른다.
+
 `fast`·`push`는 기존 호출부와의 보수적인 호환을 위해 `full`에 연결된다. 생산 저장소처럼 비용 순으로
 중첩된 단계가 아니다. 생산자 전용 `base:*`와 기관 환경이 필요한 `verify:e2e`·`verify:ops` 별칭은 생성물에서
 제거한다. 기관 브라우저 검증과 원격 ruleset 검증은 기관에서 별도로 설계하고 연결한다.
 
-생산 저장소는 기존 6개 required context와 3프로필 생성 matrix를 유지한다. 생성물은
-`artifact-verification` 한 job에서 자기 프로필의 산출물 runner를 직접 실행하고, 기존 버전의 gitleaks
+생산 저장소는 기존 6개 required context를 유지하며 3프로필 × 2레이아웃의 6개 생성 조합을 검사한다. 생성물은
+`artifact-verification` 한 job에서 자기 프로필·레이아웃의 산출물 runner를 직접 실행하고, 기존 버전의 gitleaks
 working-tree·incremental 검사를 함께 수행한다. 실제 실행 설정은
 [생성물 실행 경로 계약](../../scripts/reusable-artifact-entrypoints-contract.mjs)이 정한다.
 
@@ -285,7 +349,7 @@ Windows에서는 `./gradlew` 대신 `.\gradlew.bat`을 사용한다. 배포 아�
 
 ### 4.1 하네스 게이트의 프로필별 기대치
 
-현재 승인된 계약은 **세 프로필 모두 기술 게이트를 통과하는 것**이다. 생성기는 원본 제거 계획의
+현재 승인된 계약은 **세 프로필 모두 각 출력 레이아웃의 기술 게이트를 통과하는 것**이다. 생성기는 원본 제거 계획의
 retained/removed Java 소스·FQCN 집합을 실제 산출물과 정확히 대조해
 `config/governance/reusable-harness-profile.json`에 결속한다. 하네스는 이 명시 모집단으로 축소 제품을
 검사하며 파일 부재만으로 임의의 검사를 생략하지 않는다. 기관 고유 코드 변경은
@@ -302,7 +366,8 @@ retained/removed Java 소스·FQCN 집합을 실제 산출물과 정확히 대�
 
 소스 모집단·필수 실행 단계의 누락, 잘못된 프로필과 보안 부정 테스트 변조가 red가 되는 것도
 확인했다. 이 로컬 기술 검증과 현재 커밋의 required CI는 별개이며, 병합에는
-세 프로필 matrix를 포함한 required CI 통과가 필요하다. 기관의 운영·업무 승인은 별도다.
+현재 3프로필 × 2레이아웃 matrix를 포함한 required CI 통과가 필요하다. 위 날짜의 실측은 단일모듈
+출력의 검증 결과를 포함하지 않는다. 기관의 운영·업무 승인은 별도다.
 
 아래 수치는 **2026-09-12의 역사적 진단**이며 현재 허용되는 실패 수가 아니다.
 
@@ -341,6 +406,7 @@ npm run base:generate-db -- \
 npm run base:generate-source -- \
   --profile collaboration \
   --db-bundle build/reusable-base/collaboration-<sha>-<timestamp> \
+  --layout single-module \
   --allow-dirty --allow-non-release-ref
 ```
 
@@ -356,7 +422,7 @@ npm run base:generate-source -- \
 2. `config/reusable-base-profiles.json`의 pack 소유권과 클러스터를 갱신한다.
 3. `npm run test:base-profile`에서 누락·중복·상향 의존이 없는지 확인한다.
 4. core, collaboration, demo DB 번들을 각각 생성해 빈 DB 재적용을 통과시킨다.
-5. 영향을 받는 소스 projection을 생성해 §4 게이트를 통과시킨다.
+5. 영향을 받는 소스 projection을 두 레이아웃으로 생성해 §4 게이트를 통과시킨다.
 6. 제거되는 거버넌스 게이트가 달라졌으면 `profiles.<name>.acknowledgedRemovedGates`를 사유와 함께
    갱신한다(§3.6). 승인 없이 게이트가 빠지면 생성이 FAIL한다.
 
@@ -368,3 +434,5 @@ npm run base:generate-source -- \
 `template/reusable-base` 등 장기 template 브랜치는 현재 릴리스와 보안·DB·품질 게이트의 동기화를 보장하지 않는다. 신규 base 생성 입력으로 사용하지 않고, 필요한 역사 비교가 있을 때만 읽기 전용 참고 자료로 취급한다.
 
 *생성·검증·부트스트랩·기관 도입 경계 검토: 2026-09-14. 실제 결과는 해당 산출물의 검증 보고서가 정본이다.*
+
+*출력 레이아웃·명령 계약 반영: 2026-09-19. 위 과거 날짜의 테스트 수치는 당시 이력이며 새로운 레이아웃의 실행 결과로 승계하지 않는다.*

@@ -5,6 +5,8 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { installReusableVerification } from './generate-reusable-base-source.mjs';
+import { applySingleModuleLayout } from './reusable-single-module.mjs';
+import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, validateReusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 
@@ -13,7 +15,7 @@ const isArtifact = existsSync(join(ROOT, 'reusable-base-lock.json'));
 const read = (root, path) => readFileSync(join(root, path), 'utf8').replace(/\r\n/g, '\n');
 const json = (root, path) => JSON.parse(read(root, path));
 const write = (root, path, value) => { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), value); };
-function fixture(t, profile = 'core') {
+function fixture(t, profile = 'core', layout = 'multi-module') {
   const base = resolve(tmpdir());
   const root = mkdtempSync(join(base, 'egov-entrypoints-'));
   t.after(() => {
@@ -28,12 +30,19 @@ function fixture(t, profile = 'core') {
     } else { mkdirSync(dirname(join(root, path)), { recursive: true }); copyFileSync(source, join(root, path)); }
   };
   function readdirSafe(path) { try { readdirSync(path); return true; } catch { return false; } }
-  for (const path of ['package.json', '.githooks/pre-push', '.github/required-checks.json', '.github/workflows']) copy(path);
+  for (const path of ['package.json', 'Makefile', '.githooks/pre-push', '.github/required-checks.json', '.github/workflows']) copy(path);
+  for (const path of ['build.gradle', 'settings.gradle', 'scripts/dev.mjs', 'scripts/verify.mjs',
+    'scripts/migration-verification-contract.test.mjs', 'api-server/Dockerfile',
+    ...['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool'].map(module => `${module}/build.gradle`)]) copy(path);
   if (isArtifact) {
     for (const path of ['reusable-base-lock.json', VERIFICATION_HISTORY, 'REUSABLE_VERIFICATION.md']) copy(path);
   } else {
-    write(root, 'reusable-base-lock.json', JSON.stringify({ profile, sourceCommit: '1'.repeat(40) }));
-    installReusableVerification(root);
+    write(root, 'reusable-base-lock.json', JSON.stringify({ profile, layout, sourceCommit: '1'.repeat(40) }));
+    installReusableVerification(root, layout);
+    if (layout === 'single-module') {
+      applySingleModuleLayout(root);
+      installSingleModuleRuntime(root);
+    } else installMultiModuleMigrationRuntime(root);
   }
   return root;
 }
@@ -56,6 +65,44 @@ test('producer fixtures and the actual generated product preserve a distinct non
     assert.equal(json(root, '.github/required-checks.json').profile, profile);
     assert.equal(json(root, '.github/required-checks.json').remoteApplied, false);
     assert.ok(json(root, `${VERIFICATION_HISTORY}/index.json`).files.some(entry => entry.source === '.github/workflows/release.yml'));
+  }
+});
+
+test('layout identity, single project shape and executable runtime aliases are enforced by the active contract', t => {
+  const root = fixture(t, 'core', 'single-module');
+  assert.deepEqual(validateReusableArtifactEntrypoints(root), []);
+  const lock = json(root, 'reusable-base-lock.json');
+  write(root, 'reusable-base-lock.json', JSON.stringify({ ...lock, layout: 'unknown-layout' }));
+  assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('Unsupported backend layout')));
+  write(root, 'reusable-base-lock.json', JSON.stringify(lock));
+  if (lock.layout === 'single-module') {
+    const settings = read(root, 'settings.gradle');
+    write(root, 'settings.gradle', `${settings}\ninclude 'business-core'\n`);
+    assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('includes')));
+    write(root, 'settings.gradle', settings);
+    write(root, 'reusable-base-lock.json', JSON.stringify({ ...lock, layout: 'multi-module' }));
+    assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('project includes')));
+    write(root, 'reusable-base-lock.json', JSON.stringify(lock));
+    const pkg = json(root, 'package.json');
+    pkg.scripts.backend = 'gradlew.bat :api-server:bootRun';
+    write(root, 'package.json', JSON.stringify(pkg));
+    assert.ok(validateReusableArtifactEntrypoints(root).length > 0);
+  }
+});
+
+test('Makefile cannot reactivate the producer runner or omit logical single-module test suites', t => {
+  const root = fixture(t, 'core', 'single-module');
+  const original = read(root, 'Makefile');
+  for (const [from, to] of [
+    [`\t${ARTIFACT_COMMAND}\n`, '\tnode scripts/verify.mjs full\n'],
+    [`\t${ARTIFACT_COMMAND} --scope backend`, '\tnode scripts/verify.mjs be'],
+    [`\t${ARTIFACT_COMMAND} --scope frontend`, '\tnode scripts/verify.mjs fe'],
+    ...(json(root, 'reusable-base-lock.json').layout === 'single-module' ? [['$(GRADLEW) allTests', '$(GRADLEW) test']] : []),
+  ]) {
+    const changed = original.replace(from, to);
+    assert.notEqual(changed, original);
+    write(root, 'Makefile', changed);
+    assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('Makefile')));
   }
 });
 
@@ -103,7 +150,7 @@ test('every supported alias follows the product scope and unsupported aliases ca
     write(root, path, JSON.stringify(changed));
     assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes(`incorrect generated alias: ${alias}`)));
   }
-  for (const alias of ['verify:e2e', 'verify:ops', 'base:verify']) {
+  for (const alias of ['verify:e2e', 'verify:ops', 'base:verify', 'migration:export']) {
     write(root, path, JSON.stringify({ ...pkg, scripts: { ...pkg.scripts, [alias]: 'echo inherited' } }));
     assert.ok(validateReusableArtifactEntrypoints(root).some(error => error.includes('inherited applicability')));
   }
@@ -111,7 +158,7 @@ test('every supported alias follows the product scope and unsupported aliases ca
 
 test('upstream snapshots, profile identity and unapplied institution policy cannot be silently rewritten', t => {
   const root = fixture(t);
-  for (const path of [`${VERIFICATION_HISTORY}/.github/workflows/ci.yml`, `${VERIFICATION_HISTORY}/.githooks/pre-push`,
+  for (const path of [`${VERIFICATION_HISTORY}/Makefile`, `${VERIFICATION_HISTORY}/.github/workflows/ci.yml`, `${VERIFICATION_HISTORY}/.githooks/pre-push`,
     `${VERIFICATION_HISTORY}/package.json`]) {
     const original = read(root, path);
     write(root, path, `${original}\n# rewritten historical evidence`);

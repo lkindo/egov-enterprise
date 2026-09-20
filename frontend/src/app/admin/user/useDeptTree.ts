@@ -153,6 +153,15 @@ export function useDeptTree({
     deptsError,
     refetchDepts,
     departments,
+    /**
+     * 서버가 말한 조회 결과 수.
+     *
+     * ⚠ 결과 툴바의 총 건수를 `flattenedDepts.length` 로 세면 안 된다 — 그 값은 effect 파생이라
+     *   SSR 과 첫 클라이언트 렌더에서 항상 0 이고, 검색어가 바뀌어 재조회가 도는 동안에도 0 으로
+     *   떨어진다. 화면은 데이터가 있는데 "총 0건" 이라고 말하게 된다. 조회 중에는 `undefined` 를
+     *   내어 아무 수치도 주장하지 않는 편이 옳다(사용자 목록의 `usersData?.total` 과 같은 규칙).
+     */
+    deptTotal: deptsData?.total,
     flattenedDepts,
     activeDeptId,
     hasDeptChanges,

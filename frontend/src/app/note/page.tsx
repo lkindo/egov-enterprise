@@ -312,8 +312,8 @@ export default function NotePage() {
       accessor: (item: Note) => (
         <span className="inline-flex items-center">
           {item.openYn === 'Y'
-            ? <MailOpen size={18} className="text-slate-300" aria-hidden="true" />
-            : <Mail size={18} className="text-primary animate-pulse shadow-glow shadow-primary" aria-hidden="true" />}
+            ? <MailOpen size={16} className="text-muted-foreground" aria-hidden="true" />
+            : <Mail size={16} className="text-primary" aria-hidden="true" />}
           <span className="sr-only">{item.openYn === 'Y' ? '읽음' : '읽지 않음'}</span>
         </span>
       ),
@@ -321,15 +321,12 @@ export default function NotePage() {
     }] : []),
     {
       header: '제목',
-      accessor: (item: Note) => <span className="font-bold text-foreground tracking-tight">{item.noteSj}</span>,
+      accessor: (item: Note) => <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{item.noteSj}</span>,
     },
     {
       header: tab === 'received' ? '발신자' : '수신자',
       accessor: (item: Note) => (
         <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                <User size={14} />
-            </div>
             {/*
               [2026-08-29] 보낸 쪽지함의 '수신자' 열이 비어 있던 것을 채운다.
               발신 DTO 변환이 rcverId 를 설정하지 않아 모든 행이 빈 칸이었다 — 발신자가
@@ -337,7 +334,7 @@ export default function NotePage() {
               (NoteRecptn 다건) 이름 하나가 아니라 인원수로 말한다. 서버는 페이지 단위 배치
               조회로 recipients 를 채운다(행마다 조회하면 N+1).
             */}
-            <span className="text-sm font-bold text-muted-foreground">
+            <span className="text-[length:var(--font-size-body)] text-muted-foreground">
               {tab === 'received'
                 ? (item.trnsmiterNm || item.dsptchUserId)
                 : (item.recipients?.length ? `${item.recipients.length}명` : '-')}
@@ -347,7 +344,7 @@ export default function NotePage() {
     },
     {
       header: '일시',
-      accessor: (item: Note) => <span className="text-xs font-bold text-muted-foreground font-mono tracking-tighter">{item.crtDt}</span>,
+      accessor: (item: Note) => <span className="text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">{item.crtDt}</span>,
     },
     {
       header: '관리',
@@ -361,11 +358,11 @@ export default function NotePage() {
           disabled={deletingRelationSn !== null}
           aria-busy={isDeleting}
           aria-label={isDeleting ? `${item.noteSj || '쪽지'} 삭제 중` : `${item.noteSj || '쪽지'} 삭제`}
-          className="p-2 hover:bg-rose-50 text-rose-400 rounded-lg transition-colors group"
+          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-emphasis disabled:opacity-50"
         >
           {isDeleting
-            ? <Loader2 size={18} className="animate-spin" aria-hidden="true" />
-            : <Trash2 size={18} className="group-hover:scale-110 transition-transform" aria-hidden="true" />}
+            ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            : <Trash2 size={16} aria-hidden="true" />}
         </button>
         );
       }
@@ -444,15 +441,15 @@ export default function NotePage() {
         onClose={closeWriteModal}
         title="새 쪽지 기안"
         footer={
-          <div className="flex gap-4 w-full">
-            <Button variant="ghost" disabled={isSending} onClick={closeWriteModal} className="h-11 flex-1 rounded-lg font-bold text-muted-foreground">취소</Button>
-            <Button disabled={isSending} aria-busy={isSending} onClick={handleSend} className="h-11 flex-[2] bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">
+          <>
+            <Button variant="ghost" disabled={isSending} onClick={closeWriteModal}>취소</Button>
+            <Button disabled={isSending} aria-busy={isSending} onClick={handleSend}>
               {isSending ? '메시지 전송 중…' : '메시지 전송'}
             </Button>
-          </div>
+          </>
         }
       >
-        <div className="space-y-8 p-4">
+        <div className="space-y-[var(--form-gap)]">
           <FormErrorSummary
             data-testid="note-form-error-summary"
             errors={validation.errors}
@@ -462,8 +459,8 @@ export default function NotePage() {
           <FormField htmlFor="rcverId" label="대상자 식별 (수신자)" required error={validation.errors.rcverId}>
             <div className="space-y-3">
               <div className="flex gap-3">
-                <div className="relative flex-1 group">
-                  <UserPlus size={18} className="absolute left-6 top-3 text-slate-300 group-hover:text-primary transition-colors" />
+                <div className="relative flex-1">
+                  <UserPlus size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                   <input
                     type="text"
                     id="rcverId"
@@ -475,7 +472,7 @@ export default function NotePage() {
                       : ''}
                     placeholder="대상자를 식별하십시오 (다중 선택 가능)..."
                     readOnly
-                    className="w-full h-11 pl-16 pr-6 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none cursor-not-allowed group-hover:bg-muted transition-all font-mono"
+                    className="h-[var(--control-h)] w-full cursor-default rounded-md border border-border bg-muted pl-8 pr-3 text-[length:var(--font-size-body)] text-foreground outline-none"
                   />
                 </div>
                 <Button
@@ -484,19 +481,19 @@ export default function NotePage() {
                   onClick={() => setPickerOpen(true)}
                   aria-invalid={validation.errors.rcverId ? 'true' : undefined}
                   aria-describedby={validation.errors.rcverId ? 'rcverId-error' : undefined}
-                  className="h-11 px-8 bg-card border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-xl active:scale-95"
+                  variant="outline"
                 >
-                  <Search size={16} className="mr-2" /> 타겟 검색
+                  <Search size={14} aria-hidden="true" /> 타겟 검색
                 </Button>
               </div>
 
               {recipients.length > 0 && (
-                <div className="flex flex-wrap gap-2 p-3 bg-muted/40 rounded-lg border border-border min-h-[44px] items-center">
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 p-2">
                   {recipients.map((rec) => (
                     <Badge
                       key={rec.esntlId}
                       variant="secondary"
-                      className="px-3 py-1 text-xs font-semibold flex items-center gap-1.5 bg-card border border-border text-foreground shadow-sm"
+                      className="flex items-center gap-1.5 border border-border bg-card px-2 py-0.5 text-xs font-normal text-foreground"
                     >
                       <User size={12} className="text-muted-foreground" />
                       <span>{rec.name}</span>
@@ -531,7 +528,7 @@ export default function NotePage() {
                 validation.clearError('noteSj');
               }}
               placeholder="쪽지 제목을 입력하세요."
-              className="w-full h-11 px-8 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+              className="h-[var(--control-h)] w-full rounded-md border border-border bg-background px-3 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </FormField>
           <FormField htmlFor="noteCn" label="데이터 바디 (내용)" error={validation.errors.noteCn}>
@@ -545,7 +542,7 @@ export default function NotePage() {
                 setFormData((current) => ({ ...current, noteCn: e.target.value }));
                 validation.clearError('noteCn');
               }}
-              className="w-full min-h-[200px] p-8 rounded-lg bg-muted border-none text-base font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none leading-relaxed"
+              className="min-h-[140px] w-full resize-y rounded-md border border-border bg-background p-3 text-[length:var(--font-size-body)] leading-relaxed text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="전달할 메시지 데이터를 상세히 기입하세요..."
             />
           </FormField>
@@ -569,14 +566,14 @@ export default function NotePage() {
         maxWidth="md"
       >
         {detailLoading ? (
-          <div role="status" className="flex min-h-[240px] items-center justify-center gap-3 text-sm font-bold text-muted-foreground">
-            <Loader2 size={20} className="animate-spin" aria-hidden="true" />
+          <div role="status" className="flex min-h-[120px] items-center justify-center gap-2 text-[length:var(--font-size-body)] text-muted-foreground">
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
             쪽지 상세 정보를 불러오는 중입니다.
           </div>
         ) : detailError ? (
-          <div role="alert" className="flex min-h-[240px] flex-col items-center justify-center gap-6 px-6 text-center">
-            <p className="font-bold text-destructive">쪽지 상세 정보를 불러오지 못했습니다.</p>
-            <p className="text-sm text-muted-foreground">네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
+          <div role="alert" className="flex min-h-[120px] flex-col items-center justify-center gap-2 text-center">
+            <p className="text-[length:var(--font-size-body)] font-medium text-destructive-emphasis">쪽지 상세 정보를 불러오지 못했습니다.</p>
+            <p className="text-[length:var(--font-size-body)] text-muted-foreground">네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
             <Button
               type="button"
               variant="outline"
@@ -587,21 +584,18 @@ export default function NotePage() {
             </Button>
           </div>
         ) : selectedNote ? (
-          <div className="space-y-10 py-6 px-4">
-            <div className="flex justify-between items-start border-b border-border pb-10">
-              <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                         <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
-                         <span className="text-xs font-bold tracking-[0.4em] text-slate-300 uppercase font-mono">쪽지 상세 데이터</span>
-                    </div>
-                    <h3 className="text-3xl font-bold text-foreground tracking-tight leading-tight">{selectedNote.noteSj}</h3>
-                    <div className="flex items-center gap-4 pt-2">
-                         <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-lg border border-border text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+              <div className="space-y-1.5">
+                    <span className="block text-xs text-muted-foreground">쪽지 상세 데이터</span>
+                    <h3 className="text-base font-semibold leading-snug text-foreground">{selectedNote.noteSj}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                         <div className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                              {tab === 'received'
                                ? `발신: ${selectedNote.trnsmiterNm || selectedNote.dsptchUserId || '-'}`
                                : `수신: ${selectedNote.rcverNm || selectedNote.rcverId || '-'}`}
                          </div>
-                         <div className="text-xs font-bold text-slate-300 font-mono tracking-tighter uppercase">{selectedNote.crtDt}</div>
+                         <div className="text-xs tabular-nums text-muted-foreground">{selectedNote.crtDt}</div>
                     </div>
               </div>
               {tab === 'received' && (
@@ -611,11 +605,11 @@ export default function NotePage() {
                 />
               )}
             </div>
-            <div className="text-xl font-bold leading-[1.8] text-foreground bg-muted/50 p-12 rounded-lg border-2 border-border min-h-[300px] whitespace-pre-wrap shadow-inner ring-1 ring-white">
+            <div className="min-h-[160px] whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 text-[length:var(--font-size-body)] leading-relaxed text-foreground">
               {selectedNote.noteCn}
             </div>
-            <div className="flex gap-4 justify-end pt-4">
-              <Button variant="ghost" onClick={closeDetailModal} className="h-11 px-10 rounded-lg font-bold text-muted-foreground">데이터 닫기</Button>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="ghost" onClick={closeDetailModal}>데이터 닫기</Button>
               {tab === 'received' && (
                 <Button
                   aria-label="실시간 답장 전송"
@@ -632,9 +626,8 @@ export default function NotePage() {
                     validation.setFormErrors({}, false);
                     setWriteOpen(true);
                   }}
-                  className="h-11 px-10 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"
                 >
-                  <SendHorizonal size={18} /> 실시간 답장 전송
+                  <SendHorizonal size={14} aria-hidden="true" /> 실시간 답장 전송
                 </Button>
               )}
             </div>
@@ -661,8 +654,8 @@ function TabButton({ active, onClick, icon, label, count }: any) {
       {label}
       {count !== undefined && (
         <span className={cn(
-          "ml-3 text-xs px-2.5 py-1 rounded-lg font-bold shadow-inner",
-          active ? "bg-surface-inverse text-surface-inverse-foreground" : "bg-muted text-muted-foreground text-xs"
+          "ml-1 rounded px-1.5 py-0.5 text-xs tabular-nums",
+          active ? "bg-surface-inverse text-surface-inverse-foreground" : "bg-muted text-muted-foreground"
         )}>
           {count}
         </span>

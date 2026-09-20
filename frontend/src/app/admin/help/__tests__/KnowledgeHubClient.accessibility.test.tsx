@@ -84,7 +84,16 @@ describe('KnowledgeHubClient accessibility semantics', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: '자주 묻는 질문' })).toBeVisible();
     expect(screen.getByText('문서를 검색하고 필요한 내용을 확인하세요.')).toHaveClass('text-muted-foreground');
-    expect(screen.getByText('총 1건')).toHaveClass('text-muted-foreground');
+    /*
+     * [2026-09-20] A1 셸 이행으로 총계의 소유자가 화면에서 WorkListPage 결과 툴바로 옮겼다.
+     * 셸은 수치만 강조하려고 `총 <span>N</span>건` 으로 쪼개 렌더하므로 getByText('총 1건')
+     * 은 **원리적으로** 맞지 않는다(RTL 의 getNodeText 는 직계 텍스트 노드만 잇는다).
+     * 그래서 선택자만 옮기고 단언의 내용은 둘 다 그대로 둔다 — 값(총 1건)과 대비(muted).
+     * live region 이라는 사실까지 함께 고정해 종전보다 좁아지지 않게 한다.
+     */
+    const toolbar = screen.getByTestId('work-list-toolbar');
+    expect(toolbar).toHaveTextContent('총 1건');
+    expect(toolbar.querySelector('p[aria-live="polite"]')).toHaveClass('text-muted-foreground');
     expect(screen.getByRole('button', { name: '최신순' }))
       .toHaveClass('text-primary-foreground');
     /*
@@ -105,9 +114,14 @@ describe('KnowledgeHubClient accessibility semantics', () => {
     const search = screen.getByRole('textbox', { name: '지식 검색어' });
     expect(search).toHaveClass('placeholder:text-muted-foreground');
 
+    /*
+     * [2026-09-20] 인기 문서 순위 숫자의 선택자를 크기 클래스(span.text-3xl — 30px 장식)에서
+     * 의미 훅으로 옮겼다. 검사하는 것은 크기가 아니라 **대비**였고, 그 단언은 그대로다.
+     */
     const hotItem = screen.getAllByRole('button', { name: '합성 FAQ 문서 상세 보기' })
-      .find((button) => button.querySelector('span.text-3xl'));
-    expect(hotItem?.querySelector('span.text-3xl')).toHaveClass('text-muted-foreground');
+      .find((button) => button.querySelector('[data-testid="hot-article-rank"]'));
+    expect(hotItem, '인기 문서 항목을 찾지 못했다 — 단언이 vacuous 하다').toBeDefined();
+    expect(hotItem?.querySelector('[data-testid="hot-article-rank"]')).toHaveClass('text-muted-foreground');
   });
 
   /**
@@ -135,7 +149,9 @@ describe('KnowledgeHubClient accessibility semantics', () => {
     render(<KnowledgeHubClient defaultTab="FAQ" />);
 
     for (const label of ['게시글 수', '누적 조회수', '최다 기여자']) {
-      const card = screen.getByText(label).closest('.hub-card-premium') as HTMLElement;
+      // [2026-09-20] 선택자만 장식 클래스(.hub-card-premium)에서 의미 훅으로 옮겼다.
+      const card = screen.getByText(label).closest('[data-testid="board-stat-card"]') as HTMLElement;
+      expect(card, `${label} 칸을 찾지 못했다 — 단언이 vacuous 하다`).not.toBeNull();
       expect(within(card).getByText('불러오는 중…')).toBeInTheDocument();
       expect(within(card).queryByText('0')).toBeNull();
     }
