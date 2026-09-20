@@ -26,7 +26,6 @@ import { Plus,
  Zap, 
  Settings, 
  SearchCode, 
- Maximize2, 
  UploadCloud, 
  Link as LinkIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -442,34 +441,31 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {
  header: '비주얼 자산 스냅샷',
  accessor: (item: Banner) => (
- <div className="w-56 h-24 bg-surface-inverse rounded-lg overflow-hidden border-2 border-border shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
- <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
+ <div className="relative h-14 w-28 overflow-hidden rounded-md border border-border bg-surface-inverse">
+ <ImageIcon size={16} className="absolute inset-0 m-auto text-surface-inverse-foreground/40" aria-hidden="true" />
  {item.atchFileSn && (
  // blob 렌더 — `<img src="/api/v1/files/…">` 는 Authorization 헤더를 실을 수 없어 401 이다.
  <div className="absolute inset-0 z-10">
  <AttachmentImage
  atchFileSn={item.atchFileSn}
  alt={`${item.bnrNm} 배너 이미지`}
- className="h-full w-full object-cover group-hover/img:scale-110 transition-transform duration-1000"
+ className="h-full w-full object-cover"
  />
  </div>
  )}
- <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity z-20 flex items-center justify-center">
- <Maximize2 size={24} className="text-white scale-50 group-hover/img:scale-100 transition-transform duration-500" />
- </div>
  </div>
  ),
- className: 'py-6 px-4'
+ className: 'py-2 px-2'
  },
  {
  header: '배너 자산 명칭',
  accessor: (item: Banner) => (
- <div className="flex flex-col gap-1.5 py-4">
- <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight">{item.bnrNm}</span>
+ <div className="flex flex-col gap-0.5 py-1">
+ <span className="text-[length:var(--font-size-body)] font-medium leading-tight text-foreground">{item.bnrNm}</span>
  <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-muted-foreground/50 tracking-[0.3em] font-mono uppercase">SN: {item.bnrSn}</span>
+ <span className="font-mono text-xs text-muted-foreground">SN: {item.bnrSn}</span>
  {item.linkUrl && (
- <span className="text-xs font-bold text-primary/60 flex items-center gap-1.5 lowercase">
+ <span className="flex items-center gap-1.5 text-xs text-primary">
  <ExternalLink size={10} /> {item.linkUrl}
  </span>
  )}
@@ -499,7 +495,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right',
  accessor: (item: Banner) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 수정`} disabled={isAssetWritePending || isModalOpen} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 수정`} disabled={isAssetWritePending || isModalOpen} className="size-8 rounded-md border border-border bg-muted hover:bg-accent" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
  <Button
@@ -508,7 +504,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  aria-label={`${item.bnrNm} 배너 ${deletingAssetKey === `banner:${item.bnrSn}` ? '삭제 중…' : '삭제'}`}
  aria-busy={deletingAssetKey === `banner:${item.bnrSn}` || undefined}
  disabled={isAssetWritePending || isModalOpen}
- className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all"
+ className="size-8 rounded-md border border-destructive/30 text-destructive-emphasis hover:bg-destructive/10"
  onClick={() => handleDelete('banner', item.bnrSn, item.bnrNm)}
  >
  {deletingAssetKey === `banner:${item.bnrSn}`
@@ -524,12 +520,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {
  header: '팝업 명세',
  accessor: (item: Popup) => (
- <div className="flex flex-col gap-2 py-4">
- <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight">{item.popupTtlNm}</span>
+ <div className="flex flex-col gap-0.5 py-1">
+ <span className="text-[length:var(--font-size-body)] font-medium leading-tight text-foreground">{item.popupTtlNm}</span>
  <div className="flex items-center gap-4">
- <div className="flex items-center gap-2 px-3 py-1 bg-muted border border-border rounded-lg">
- <Calendar size={12} className="text-primary opacity-40" />
- <span className="text-xs font-bold text-muted-foreground/60 font-mono tracking-tighter tabular-nums uppercase ">
+ <div className="flex items-center gap-1.5 rounded border border-border bg-muted px-2 py-0.5">
+ <Calendar size={12} className="text-muted-foreground" aria-hidden="true" />
+ <span className="font-mono text-xs tabular-nums text-muted-foreground">
  {item.ntceBgnde} ~ {item.ntceEndde}
  </span>
  </div>
@@ -540,16 +536,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {
  header: '화면 크기',
  accessor: (item: Popup) => (
- <div className="flex flex-col gap-1.5">
- <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shadow-inner border border-border text-muted-foreground">
- <Monitor size={14} />
+ <div className="flex flex-col gap-0.5">
+ <div className="flex items-center gap-2">
+ <Monitor size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+ <span className="font-mono text-xs tabular-nums text-foreground">{item.popupWdthSz}px x {item.popupVrtcSz}px</span>
  </div>
- <span className="text-xs font-bold font-mono tracking-widest text-foreground uppercase">{item.popupWdthSz}px x {item.popupVrtcSz}px</span>
- </div>
- <div className="flex items-center gap-2 pl-11">
- <div className="w-1 h-1 rounded-full bg-slate-300" />
- <span className="text-xs font-bold text-muted-foreground/40 ">표시 좌표 (X:{item.popupWdthPstn}, Y:{item.popupVrtcPstn})</span>
+ <div className="flex items-center gap-2 pl-5">
+ <span className="text-xs tabular-nums text-muted-foreground">표시 좌표 (X:{item.popupWdthPstn}, Y:{item.popupVrtcPstn})</span>
  </div>
  </div>
  ),
@@ -565,7 +558,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right w-32',
  accessor: (item: Popup) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 수정`} disabled={isAssetWritePending || isModalOpen} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 수정`} disabled={isAssetWritePending || isModalOpen} className="size-8 rounded-md border border-border bg-muted hover:bg-accent" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
  <Button
@@ -574,7 +567,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  aria-label={`${item.popupTtlNm} 팝업 ${deletingAssetKey === `popup:${item.popupSn}` ? '삭제 중…' : '삭제'}`}
  aria-busy={deletingAssetKey === `popup:${item.popupSn}` || undefined}
  disabled={isAssetWritePending || isModalOpen}
- className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all"
+ className="size-8 rounded-md border border-destructive/30 text-destructive-emphasis hover:bg-destructive/10"
  onClick={() => handleDelete('popup', item.popupSn, item.popupTtlNm)}
  >
  {deletingAssetKey === `popup:${item.popupSn}`
@@ -694,15 +687,15 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  title={activeTab === 'banner' ? (editingItem ? '배너 명세 수정' : '신규 비주얼 자산 등록') : (editingItem ? '팝업 아키텍처 수정' : '신규 레이어 팝업 설계')}
  maxWidth="3xl"
  footer={
- <div className="flex w-full gap-4">
- <Button variant="outline" onClick={closeAssetModal} disabled={isAssetWritePending} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">취소</Button>
+ <div className="flex w-full gap-2">
+ <Button variant="outline" onClick={closeAssetModal} disabled={isAssetWritePending} className="flex-1">취소</Button>
  <Button
  onClick={activeTab === 'banner' ? () => submitBannerForm() : () => submitPopupForm()}
  disabled={isAssetWritePending}
  aria-busy={isAssetSubmitting || undefined}
- className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group"
+ className="flex-[2]"
  >
- <Zap size={18} className="group-hover:animate-pulse mr-2" /> {isAssetSubmitting ? '배포 중…' : editingItem ? '자산 수정' : '운영 배포'}
+ <Zap size={16} className="mr-2" aria-hidden="true" /> {isAssetSubmitting ? '배포 중…' : editingItem ? '자산 수정' : '운영 배포'}
  </Button>
  </div>
  }
@@ -729,12 +722,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">배너 명칭 (Internal Label)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">배너 명칭 (Internal Label)</FormLabel>
  <FormControl>
  <Input {...field} maxLength={100} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="배너 이름 입력" />
  </FormControl>
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">관리용 명칭입니다</p>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -743,15 +736,15 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="linkUrl"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">랜딩 페이지 (Target URL)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">랜딩 페이지 (Target URL)</FormLabel>
  <div className="relative group/link">
- <LinkIcon size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/link:opacity-100 transition-opacity" />
+ <LinkIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
  <FormControl>
  <Input {...field} maxLength={512} className="h-11 pl-16 rounded-lg font-mono text-xs font-bold shadow-inner" placeholder="/pages/..." />
  </FormControl>
  </div>
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">클릭 시 이동할 프론트엔드 라우트 또는 외부 경로</p>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -762,7 +755,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">노출 순서 Priority</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">노출 순서 Priority</FormLabel>
  <FormControl>
  <Input
  {...field}
@@ -773,7 +766,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className="h-11 rounded-lg font-bold shadow-inner"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -783,19 +776,19 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 로드 상태</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">자산 로드 상태</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-2 border-border bg-muted font-bold text-xs tracking-widest uppercase shadow-inner">
+ <SelectTrigger className="h-[var(--control-h)] rounded-md border border-border bg-muted text-[length:var(--font-size-body)]">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
  <SelectContent className="rounded-lg shadow-2xl">
- <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold tracking-widest uppercase">--- 활성 (Live) ---</SelectItem>
- <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold tracking-widest uppercase text-rose-500">--- 대기 (Staging) ---</SelectItem>
+ <SelectItem value="Y" className="text-[length:var(--font-size-body)]">--- 활성 (Live) ---</SelectItem>
+ <SelectItem value="N" className="text-[length:var(--font-size-body)]">--- 대기 (Staging) ---</SelectItem>
  </SelectContent>
  </Select>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -805,35 +798,35 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  name="bnrExpln"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 명세 및 설명 (Metadata)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">자산 명세 및 설명 (Metadata)</FormLabel>
  <FormControl>
  <textarea {...field} maxLength={4000} className="w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
  </div>
- <div className="space-y-12">
+ <div className="space-y-4">
  <FormItem className="space-y-1.5 p-0.5">
- <Label className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload)</Label>
- <div className="p-4 border-4 border-dashed border-border rounded-lg bg-muted/50 hover:bg-muted transition-colors shadow-inner relative group/upload">
+ <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드 (Visual Payload)</Label>
+ <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 transition-colors hover:bg-muted">
  <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
- <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
- <UploadCloud size={24} />
- <span className="text-xs font-bold tracking-widest text-center">여기로 파일을 드래그하여 업로드</span>
+ <div className="mt-2 flex items-center justify-center gap-2 text-muted-foreground">
+ <UploadCloud size={16} aria-hidden="true" />
+ <span className="text-center text-xs">여기로 파일을 드래그하여 업로드</span>
  </div>
  </div>
- <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
+ <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
  {(editingItem as Banner)?.atchFileSn && (
- <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-3 shadow-2xl relative overflow-hidden group">
- <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
- <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
- <SearchCode size={20} className="text-primary" />
+ <div className="space-y-2 rounded-md border border-surface-inverse-border bg-surface-inverse p-3 text-surface-inverse-foreground">
+ <span className="text-xs text-surface-inverse-foreground/70">기존 파일 식별자</span>
+ <div className="flex items-center gap-2">
+ <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-surface-inverse-foreground/10">
+ <SearchCode size={16} className="text-primary" aria-hidden="true" />
  </div>
- <span className="font-mono text-xs font-bold tracking-tighter text-white/80 truncate">{(editingItem as Banner).bnrImgNm}</span>
+ <span className="truncate font-mono text-xs text-surface-inverse-foreground">{(editingItem as Banner).bnrImgNm}</span>
  </div>
  </div>
  )}
@@ -866,11 +859,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">팝업 타이틀 (Header)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">팝업 타이틀 (Header)</FormLabel>
  <FormControl>
  <Input {...field} maxLength={100} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="팝업 제목 입력" />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -881,7 +874,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 시작 시점 (T-0)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">게시 시작 시점 (T-0)</FormLabel>
  <FormControl>
  <Input 
  {...field} 
@@ -904,7 +897,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className="h-11 rounded-lg text-xs font-bold shadow-sm" 
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -914,7 +907,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 종료 시점 (T-End)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">게시 종료 시점 (T-End)</FormLabel>
  <FormControl>
  <Input 
  {...field} 
@@ -937,7 +930,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className="h-11 rounded-lg text-xs font-bold shadow-sm" 
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -949,7 +942,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 좌표 (X_Pivot)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 좌표 (X_Pivot)</FormLabel>
  <FormControl>
  <Input
  {...field}
@@ -961,7 +954,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className="h-11 rounded-lg font-bold shadow-inner"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -971,7 +964,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 좌표 (Y_Pivot)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 좌표 (Y_Pivot)</FormLabel>
  <FormControl>
  <Input
  {...field}
@@ -983,7 +976,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className="h-11 rounded-lg font-bold shadow-inner"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -995,7 +988,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 폭 (W_Res)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 폭 (W_Res)</FormLabel>
  <FormControl>
  <Input
  {...field}
@@ -1007,7 +1000,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className="h-11 rounded-lg font-bold shadow-inner"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -1017,7 +1010,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 높이 (H_Res)</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 높이 (H_Res)</FormLabel>
  <FormControl>
  <Input
  {...field}
@@ -1029,57 +1022,57 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className="h-11 rounded-lg font-bold shadow-inner"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
  </div>
  </div>
- <div className="space-y-12">
+ <div className="space-y-4">
  <FormItem className="space-y-1.5 p-0.5">
- <Label className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload)</Label>
- <div className="p-4 border-4 border-dashed border-border rounded-lg bg-muted/50 hover:bg-muted transition-colors shadow-inner relative group/upload">
+ <Label className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">미디어 자산 업로드 (Visual Payload)</Label>
+ <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 transition-colors hover:bg-muted">
  <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
- <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
- <UploadCloud size={24} />
- <span className="text-xs font-bold tracking-widest text-center">여기로 파일을 드래그하여 업로드</span>
+ <div className="mt-2 flex items-center justify-center gap-2 text-muted-foreground">
+ <UploadCloud size={16} aria-hidden="true" />
+ <span className="text-center text-xs">여기로 파일을 드래그하여 업로드</span>
  </div>
  </div>
- <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
+ <p className="mt-1 px-1 text-xs leading-relaxed text-muted-foreground">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
  {(editingItem as Popup)?.fileUrl && (
- <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-3 shadow-2xl relative overflow-hidden group">
- <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
- <div className="flex items-center gap-4">
- <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shadow-inner group-hover:rotate-12 transition-transform">
- <SearchCode size={20} className="text-primary" />
+ <div className="space-y-2 rounded-md border border-surface-inverse-border bg-surface-inverse p-3 text-surface-inverse-foreground">
+ <span className="text-xs text-surface-inverse-foreground/70">기존 파일 식별자</span>
+ <div className="flex items-center gap-2">
+ <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-surface-inverse-foreground/10">
+ <SearchCode size={16} className="text-primary" aria-hidden="true" />
  </div>
- <span className="font-mono text-xs font-bold tracking-tighter text-white/80 truncate">{(editingItem as Popup).fileUrl}</span>
+ <span className="truncate font-mono text-xs text-surface-inverse-foreground">{(editingItem as Popup).fileUrl}</span>
  </div>
  </div>
  )}
- <div className="grid grid-cols-1 gap-8 p-10 bg-indigo-50/30 border-2 border-indigo-100/50 rounded-lg shadow-sm">
- <p className="text-xs font-bold text-hub-indigo/50 tracking-[0.4em] uppercase mb-1">상태 프로토콜</p>
- <div className="grid grid-cols-2 gap-6">
+ <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-muted/40 p-4">
+ <p className="text-xs text-muted-foreground">상태 프로토콜</p>
+ <div className="grid grid-cols-2 gap-3">
  <ShadcnFormField
  control={popupForm.control}
  name="ntceYn"
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">게시 설정</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">게시 설정</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-2 border-indigo-100 bg-card font-bold text-xs tracking-widest uppercase shadow-sm">
+ <SelectTrigger className="h-[var(--control-h)] rounded-md border border-border bg-card text-[length:var(--font-size-body)]">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
  <SelectContent className="rounded-lg">
- <SelectItem value="Y" className="font-bold text-xs tracking-widest uppercase">게시 (LIVE)</SelectItem>
- <SelectItem value="N" className="font-bold text-xs tracking-widest uppercase text-rose-500">대기 (STAGING)</SelectItem>
+ <SelectItem value="Y" className="text-[length:var(--font-size-body)]">게시 (LIVE)</SelectItem>
+ <SelectItem value="N" className="text-[length:var(--font-size-body)]">대기 (STAGING)</SelectItem>
  </SelectContent>
  </Select>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -1089,19 +1082,19 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">다시보지않기 처리</FormLabel>
+ <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">다시보지않기 처리</FormLabel>
  <Select onValueChange={field.onChange} value={field.value}>
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-2 border-indigo-100 bg-card font-bold text-xs tracking-widest uppercase shadow-sm">
+ <SelectTrigger className="h-[var(--control-h)] rounded-md border border-border bg-card text-[length:var(--font-size-body)]">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
  <SelectContent className="rounded-lg">
- <SelectItem value="Y" className="font-bold text-xs tracking-widest uppercase">활성 (ENABLE)</SelectItem>
- <SelectItem value="N" className="font-bold text-xs tracking-widest uppercase">비활성 (DISABLE)</SelectItem>
+ <SelectItem value="Y" className="text-[length:var(--font-size-body)]">활성 (ENABLE)</SelectItem>
+ <SelectItem value="N" className="text-[length:var(--font-size-body)]">비활성 (DISABLE)</SelectItem>
  </SelectContent>
  </Select>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
  </FormItem>
  )}
  />

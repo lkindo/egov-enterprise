@@ -177,7 +177,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   status 팔레트의 최대 잔량이었다 — 하네스 데모 패널의 헌법 3종 색 구분, 단계 표시 점,
 //   샘플 판정 배지·게이지가 전부 리터럴이었다. success/warning/destructive 틴트와 muted 로
 //   옮겼고, 색만으로 전달하던 축은 이미 옆에 한국어 라벨이 있어 의미 손실이 없다.
-const BASELINE = 324;
+// [하향 래칫 2026-09-20(9)] 324 -> 308. 배너·팝업 관리의 16건. 폼 오류 문구 14건이
+//   팔레트 리터럴이어서 destructive 토큰으로 옮기고, 선택지 중 '대기' 항목만 빨간색이던
+//   것을 걷었다 — 드롭다운을 열어야 보이는 색은 상태를 말해 주지 못하고 글자가 이미 말한다.
+const BASELINE = 308;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

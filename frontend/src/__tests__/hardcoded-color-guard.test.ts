@@ -57,7 +57,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-09-20(3)] 43 -> 39. 결재 양식 허브(정적 데모)의 4건. 검색 아이콘과 단계 화살표가
 //   중립 팔레트 리터럴로 조판돼 다크에서 배경과 겹쳤고, 배포 버튼과 승인 단계 아이콘은 흰색
 //   리터럴이라 버튼 색을 바꾸면 글자가 사라진다. 넷 다 대응 전경 토큰으로 회수했다.
-const BASELINE = 39;
+// [하향 래칫 2026-09-20(4)] 39 -> 34. 배너·팝업 관리의 5건. 다크 표면 위 흰색 리터럴과
+//   선택 컨트롤 테두리의 중립 팔레트 리터럴을 대응 토큰으로 회수했다.
+const BASELINE = 34;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
