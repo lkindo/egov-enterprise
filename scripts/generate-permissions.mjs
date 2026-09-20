@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
+import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const BASE_SEED = 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql';
@@ -23,12 +24,27 @@ if (codes.length !== new Set(codes).size || codes.some(code => !/^[A-Z][A-Z0-9_]
   throw new Error('Permission codes must be unique and fit the registered VARCHAR(20) domain');
 }
 const initialGrants = [];
+const manifestPath = path.join(root, 'config/reusable-base-profiles.json');
+let selectedPermissions;
+const generatedProfile = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')).sourcePolicy?.generatedProfile : undefined;
+if (generatedProfile && (generatedProfile === 'custom' || fs.existsSync(path.join(root, COMPOSER_SELECTION_PATH)))) {
+  // This immutable selection is bound by governance metadata and the source lock. Regeneration
+  // rederives its scope rather than trusting an arbitrary list of requested permission codes.
+  const selection = JSON.parse(fs.readFileSync(path.join(root, COMPOSER_SELECTION_PATH), 'utf8'));
+  const composition = verifyProjectComposition(selection.composition, selection.catalog);
+  if (composition.profile !== generatedProfile || composition.permissionCodes.some(code => !codes.includes(code))) {
+    throw new Error('Permission seed must bind a valid composition and generated profile');
+  }
+  selectedPermissions = new Set(composition.permissionCodes);
+}
 for (const row of catalog.permissions) {
   if (!Array.isArray(row.defaultGroups) || new Set(row.defaultGroups).size !== row.defaultGroups.length
       || row.defaultGroups.some(group => !['ROLE_ADMIN', 'ROLE_SYSTEM', 'ROLE_USER'].includes(group))) {
     throw new Error(`Invalid initial group grant: ${row.code}`);
   }
-  for (const group of row.defaultGroups) initialGrants.push(`        ('${group}', '${row.code}')`);
+  if (!selectedPermissions || selectedPermissions.has(row.code)) {
+    for (const group of row.defaultGroups) initialGrants.push(`        ('${group}', '${row.code}')`);
+  }
 }
 const baseText = fs.readFileSync(path.join(root, BASE_SEED), 'utf8').replace(/\r\n/g, '\n');
 if (baseText.split(BASE_BEGIN).length !== 2 || baseText.split(BASE_END).length !== 2

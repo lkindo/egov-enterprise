@@ -28,6 +28,10 @@ import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, artifactAliases, projectReusabl
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { verifyProjectComposition } from './project-composer-recipe.mjs';
+import { verifyResolvedDbComposition } from './project-composer-db.mjs';
+import { composerProfile, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -64,7 +68,7 @@ export function parseSourceArgs(argv) {
     const arg = argv[index];
     if (seen.has(arg)) fail(`중복 인자: ${arg}`);
     seen.add(arg);
-    const field = { '--profile': 'profile', '--db-bundle': 'dbBundle', '--output': 'output', '--layout': 'layout' }[arg];
+    const field = { '--profile': 'profile', '--composition': 'composition', '--db-bundle': 'dbBundle', '--output': 'output', '--layout': 'layout' }[arg];
     if (field) {
       const value = argv[++index];
       if (!value || value.startsWith('--')) fail(`${arg} 값이 필요하다.`);
@@ -74,7 +78,7 @@ export function parseSourceArgs(argv) {
     else if (arg === '--allow-non-release-ref') args.allowNonReleaseRef = true;
     else fail(`알 수 없는 인자: ${arg}`);
   }
-  if (!args.profile || !args.dbBundle) fail('--profile과 --db-bundle이 필요하다.');
+  if ((!args.profile && !args.composition) || (args.profile && args.composition) || !args.dbBundle) fail('--profile 또는 --composition 중 하나와 --db-bundle이 필요하다.');
   return args;
 }
 
@@ -90,6 +94,10 @@ function safeOutputPath(requested, profile, shortSha, layout) {
     fail(`산출물 경로는 ${OUTPUT_ROOT} 아래여야 한다: ${output}`);
   }
   if (existsSync(output)) fail(`기존 산출물을 덮어쓰지 않는다: ${output}`);
+  let ancestor = dirname(output);
+  while (!existsSync(ancestor)) ancestor = dirname(ancestor);
+  const physical = relative(realpathSync(ROOT), realpathSync(ancestor));
+  if (physical === '..' || physical.startsWith(`..${sep}`) || isAbsolute(physical)) fail('산출물 물리 경로가 workspace 밖이다.');
   return output;
 }
 
@@ -207,16 +215,15 @@ function javaType(path) {
   return packageName ? `${packageName}.${basename(path, '.java')}` : undefined;
 }
 
-function importedJavaTypes(path) {
+function importedJavaTypes(path, source = readFileSync(path, 'utf8')) {
   // import 선언도 **코드에서만** 읽는다 — 테스트 픽스처 텍스트 블록·주석 속 `import …;` 는 의존이 아니다.
   //   (원문에 적용하던 종전 판정은 red-proof 텍스트 블록 한 줄 때문에 결합 census 게이트를 통째로 지웠다.)
-  const code = stripJavaCommentsAndStringLiterals(readFileSync(path, 'utf8'));
+  const code = stripJavaCommentsAndStringLiterals(source);
   return [...code.matchAll(/\bimport\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;/g)].map((match) => match[1]);
 }
 
-function referencedRemovedJavaType(path, removedTypes) {
-  const source = readFileSync(path, 'utf8');
-  const imported = importedJavaTypes(path).find((type) => removedTypes.has(type));
+function referencedRemovedJavaType(path, removedTypes, source = readFileSync(path, 'utf8')) {
+  const imported = importedJavaTypes(path, source).find((type) => removedTypes.has(type));
   if (imported) return imported;
   // 의존은 **코드에서만** 판정한다 — 주석·문자열 리터럴 속 클래스 이름은 참조가 아니다.
   //   (census·정규식이 게이트 이름을 문자열로 열거하는 관용 때문에 오탐이 연쇄한다.)
@@ -261,7 +268,9 @@ export function resolveDomainRemovalDirectory(root, sourceSet, layer, domain) {
 
 export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, (path) => path.endsWith('.java'))) {
   const allowedPacks = new Set(profile.packs);
-  const excludedDomains = Object.entries(manifest.packs)
+  const excludedDomains = profile.resolvedDomains
+    ? Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []).filter(domain => !profile.resolvedDomains.includes(domain))
+    : Object.entries(manifest.packs)
     .filter(([packName]) => !allowedPacks.has(packName))
     .flatMap(([, pack]) => pack.backend?.appDomains ?? []);
   const allBefore = javaFiles;
@@ -295,7 +304,8 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
     changed = false;
     for (const path of allBefore) {
       if (removed.has(path)) continue;
-      const dangling = referencedRemovedJavaType(path, removedTypes);
+      const dangling = referencedRemovedJavaType(path, removedTypes,
+        projectComposerJava(normalize(relative(root, path)), readFileSync(path, 'utf8'), profile));
       if (!dangling) continue;
       const rel = normalize(relative(root, path));
       if (rel.startsWith('foundation/') || rel.startsWith('business-core/')) {
@@ -318,9 +328,18 @@ export function pruneJava(output, manifest, profile) {
   const { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories } =
     planJavaRemoval(output, manifest, profile);
 
+  const adaptedGates = [];
   for (const path of removed) if (existsSync(path)) rmSync(path);
   for (const directory of directDirectories) if (existsSync(directory)) rmSync(directory, { recursive: true });
   for (const path of walk(output, (candidate) => candidate.endsWith('.java'))) {
+    const source = readFileSync(path, 'utf8');
+    const projected = projectComposerJava(normalize(relative(output, path)), source, profile);
+    if (source !== projected) {
+      writeFileSync(path, projected);
+      adaptedGates.push({ file: normalize(relative(output, path)), domains: profile.resolvedDomains,
+        reason: '선택한 RBAC 표면의 단언을 유지하고 미선택 표면의 단언만 제외한다.',
+        upstreamSha256: createHash('sha256').update(source).digest('hex'), projectedSha256: createHash('sha256').update(projected).digest('hex') });
+    }
     const dangling = referencedRemovedJavaType(path, removedTypes);
     if (dangling) fail(`Java projection dangling import: ${normalize(relative(output, path))} -> ${dangling}`);
   }
@@ -331,7 +350,7 @@ export function pruneJava(output, manifest, profile) {
       reason: removalReason.get(path) ?? '(사유 미상)',
     }))
     .sort((left, right) => left.file.localeCompare(right.file));
-  return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates };
+  return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates, ...(adaptedGates.length ? { adaptedGates } : {}) };
 }
 
 export function installReusableVerification(output, layout = 'multi-module') {
@@ -374,7 +393,7 @@ export function installReusableVerification(output, layout = 'multi-module') {
   }, null, 2)}\n`);
   Object.assign(pkg.scripts, artifactAliases);
   for (const alias of Object.keys(pkg.scripts)) {
-    if (alias.startsWith('base:') || ['migration:export', 'verify:e2e', 'verify:ops', '//verify:ops'].includes(alias)) delete pkg.scripts[alias];
+    if (alias.startsWith('base:') || alias.startsWith('project:') || ['migration:export', 'verify:e2e', 'verify:ops', '//verify:ops'].includes(alias)) delete pkg.scripts[alias];
   }
   writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
   writeFileSync(join(output, 'Makefile'), makefile);
@@ -498,7 +517,7 @@ export function stripExcludedFrontendPackBlocks(output, manifest, profile) {
 export function pruneFrontend(output, manifest, profile) {
   const frontendRoot = join(output, 'frontend');
   const allowedPacks = new Set(profile.packs);
-  const directPaths = Object.entries(manifest.packs)
+  const directPaths = profile.frontendRemovePaths ?? Object.entries(manifest.packs)
     .filter(([packName]) => !allowedPacks.has(packName))
     .flatMap(([, pack]) => pack.frontend?.removePaths ?? []);
   const sourceFiles = walk(frontendRoot, (path) => SOURCE_EXTENSIONS.includes(extname(path)));
@@ -1133,10 +1152,10 @@ export function projectedWriteHandlerCounts(source) {
   return { handlers, successful };
 }
 
-export function writeReusableHarnessProfile(output) {
+export function writeReusableHarnessProfile(output, sourceManifest) {
   const projected = JSON.parse(readFileSync(join(output, 'config/reusable-base-profiles.json'), 'utf8'));
   const profileName = projected.sourcePolicy.generatedProfile;
-  const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+  const manifest = sourceManifest ?? JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   const profile = manifest.profiles[profileName];
   const javaFiles = trackedAndUntrackedFiles().filter(path => path.endsWith('.java')).map(path => join(ROOT, path));
   const plan = planJavaRemoval(ROOT, manifest, profile, javaFiles);
@@ -1209,8 +1228,8 @@ export function writeReusableHarnessProfile(output) {
   return snapshot;
 }
 
-function writeHarnessBaseline(output) {
-  writeReusableHarnessProfile(output);
+function writeHarnessBaseline(output, sourceManifest) {
+  writeReusableHarnessProfile(output, sourceManifest);
   const entries = computeHarnessBaselineEntries(output);
   const lines = [
     '# 자동 산출 — reusable-base source projection 기준.',
@@ -1225,10 +1244,18 @@ function writeHarnessBaseline(output) {
   );
 }
 
-function writeProjectedManifest(output, manifest, profileName, profile, dbLock) {
+function writeProjectedManifest(output, manifest, profileName, profile, dbLock, composition) {
   const allowedPacks = new Set(profile.packs);
   const packs = Object.fromEntries(
-    Object.entries(manifest.packs).filter(([packName]) => allowedPacks.has(packName)),
+    Object.entries(manifest.packs).filter(([packName]) => allowedPacks.has(packName)).map(([name, pack]) => [name,
+      composition?.profile === 'custom' ? {
+        ...pack,
+        backend: { ...pack.backend, appDomains: (pack.backend?.appDomains ?? []).filter(domain => composition.resolvedDomains.includes(domain)) },
+        database: { ...pack.database, tables: pack.database.tables.filter(table => composition.tables.includes(table)),
+          sequences: (pack.database.sequences ?? []).filter(sequence => composition.explicitSequences.includes(sequence)) },
+        ...(pack.frontend ? { frontend: { ...pack.frontend, removePaths: composition.frontend.includedPaths.filter(path =>
+          pack.frontend.removePaths.some(parent => path === parent || path.startsWith(`${parent}/`))) } } : {}),
+      } : pack]),
   );
   const ownedDomains = new Set(Object.values(packs).flatMap((pack) => pack.backend?.appDomains ?? []));
   const projected = {
@@ -1271,6 +1298,16 @@ function writeProjectedManifest(output, manifest, profileName, profile, dbLock) 
 function main() {
   const args = parseSourceArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+  let composition;
+  if (args.composition) {
+    const supplied = JSON.parse(readFileSync(resolve(args.composition), 'utf8'));
+    composition = verifyResolvedDbComposition(supplied, verifyProjectComposition(supplied, loadProjectComposerCatalog(ROOT)),
+      git(['rev-parse', 'HEAD']), ref => git(['rev-parse', '--verify', `${ref}^{commit}`]));
+    args.profile = composition.profile;
+    if (process.argv.includes('--layout') && args.layout !== composition.backendLayout) fail('composition과 --layout이 다르다.');
+    args.layout = composition.backendLayout;
+    manifest.profiles[args.profile] = composerProfile(manifest, composition);
+  }
   const profile = manifest.profiles?.[args.profile];
   if (!profile) fail(`지원하지 않는 profile: ${args.profile}`);
 
@@ -1285,14 +1322,22 @@ function main() {
   const dbLock = JSON.parse(readFileSync(dbLockPath, 'utf8'));
   if (dbLock.profile !== args.profile) fail(`DB bundle profile ${dbLock.profile} != source profile ${args.profile}`);
   if (dbLock.sourceCommit !== sourceCommit) fail(`DB bundle commit ${dbLock.sourceCommit} != source commit ${sourceCommit}`);
+  if (composition && dbLock.compositionHash !== composition.compositionHash) fail('DB/source composition hash mismatch');
+  if (composition) verifyCompositionDatabaseFiles(join(dbBundle, 'db/migration'), dbLock);
 
   const output = safeOutputPath(args.output, args.profile, sourceCommit.slice(0, 12), args.layout);
   mkdirSync(output, { recursive: true });
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
   copySourceTree(output);
   const java = pruneJava(output, manifest, profile);
+  if (composition?.profile === 'custom') for (const file of walk(join(output, 'frontend'), path => SOURCE_EXTENSIONS.includes(extname(path)))) {
+    const source = readFileSync(file, 'utf8');
+    const projected = projectComposerFrontend(normalize(relative(output, file)), source, composition);
+    if (source !== projected) writeFileSync(file, projected);
+  }
   const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
+  if (composition) assertComposerSourceSurvives(ROOT, output, composition);
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
@@ -1301,21 +1346,22 @@ function main() {
   });
   installDatabaseBundle(output, dbBundle);
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
-  writeProjectedManifest(output, manifest, args.profile, profile, dbLock);
+  writeProjectedManifest(output, manifest, args.profile, profile, dbLock, composition);
   installReusableVerification(output, args.layout);
   const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output) : null;
   if (args.layout === 'single-module') installSingleModuleRuntime(output);
   else installMultiModuleMigrationRuntime(output);
   const governance = projectReusableGovernance({
-    sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit,
-    projectSource: (file, source) => projectFrontendPackMarkers(source, {
+    sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit, composition,
+    projectSource: (file, source) => projectFrontendPackMarkers(composition ? projectComposerFrontend(file, source, composition) : source, {
       knownPacks: new Set(Object.keys(manifest.packs)),
       excludedPacks: new Set(Object.keys(manifest.packs).filter(pack => !profile.packs.includes(pack))),
       label: file,
     }).source,
   });
+  if (composition) verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
-  writeHarnessBaseline(output);
+  writeHarnessBaseline(output, manifest);
 
   const lock = {
     schemaVersion: 1,
@@ -1323,6 +1369,7 @@ function main() {
     layout: args.layout,
     layoutProjection,
     packs: profile.packs,
+    ...(composition ? { composition } : {}),
     sourceCommit,
     sourceReleaseTag: releaseTag ?? null,
     localDevelopmentBuild: !releaseTag || Boolean(dirty),

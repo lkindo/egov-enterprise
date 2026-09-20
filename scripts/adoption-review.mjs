@@ -7,7 +7,7 @@ export const ADOPTION_CONTROLS = Object.freeze({
   online: ['data-classification', 'authorization', 'request-logging', 'accessibility', 'execution-artifacts'],
   'migration-tool': ['source-target-identity', 'mapping-schema-driver', 'recovery-cutover', 'execution-artifacts'],
 });
-const PROFILES = new Set(['core', 'collaboration', 'demo']);
+const PROFILES = new Set(['core', 'collaboration', 'demo', 'custom']);
 const SHA256 = /^[a-f0-9]{64}$/;
 const nonempty = (value) => typeof value === 'string' && value.trim().length > 0;
 export const sha256 = (value) => createHash('sha256').update(value).digest('hex');

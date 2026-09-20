@@ -9,7 +9,7 @@ const ROOT = path.resolve(path.dirname(SCRIPT_PATH), '..');
 const MANIFEST_PATH = path.join(ROOT, 'config', 'ui-route-capabilities.json');
 
 const KNOWN_ROLES = new Set(['ANONYMOUS', 'AUTHENTICATED', 'USER', 'ADMIN', 'SYSTEM', 'UNVERIFIED']);
-const KNOWN_PROFILES = new Set(['core', 'collaboration', 'demo', 'UNVERIFIED']);
+const KNOWN_PROFILES = new Set(['core', 'collaboration', 'demo', 'custom', 'UNVERIFIED']);
 const KNOWN_STATUSES = new Set(['live', 'partial', 'demo', 'unavailable', 'unverified']);
 const KNOWN_SURFACES = new Set(['authentication', 'authenticated-workspace', 'admin-console']);
 const KNOWN_SHELL_ACCESS = new Set(['public', 'authenticated', 'admin-system']);

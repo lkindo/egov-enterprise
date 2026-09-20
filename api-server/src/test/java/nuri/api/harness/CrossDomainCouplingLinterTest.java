@@ -162,7 +162,13 @@ class CrossDomainCouplingLinterTest {
             violations.add("원장 edge 하한 미달: " + registry.edges().size() + " < " + CROSS_DOMAIN_REFERENCE_FLOOR
                     + " — 원장을 비워 결합 census 를 무력화하지 마십시오.");
         }
-        Set<String> expected = expectedEdgeKeys(registry, presentPacks,
+        ReusableHarnessProfile profile = ReusableHarnessProfile.current();
+        Set<String> expected = expectedEdgeKeys(registry,
+                profile.customDomains() ? edge -> {
+                    boolean retained = true;
+                    for (String path : edge.sourcePaths()) retained &= profile.retainsSource(path);
+                    return retained;
+                } : edge -> presentPacks.contains(edge.pack()),
                 path -> Files.isRegularFile(repoRoot.resolve(path)), violations);
         violations.addAll(compare(expected, actual));
 
@@ -234,6 +240,24 @@ class CrossDomainCouplingLinterTest {
     }
 
     @Test
+    @DisplayName("custom 도메인 투영은 같은 pack 안의 제외만 허용하고 선택 edge 소실·예상 밖 생존은 red다")
+    void customSourcePlanKeepsSelectedEdgesExact() {
+        Edge kept = new Edge("kept/KeptService.java", "kept", "account", "business-core",
+                Set.of("nuri.business.service.account.AccountService"), "shared");
+        Edge gone = new Edge("gone/GoneService.java", "gone", "account", "business-core",
+                Set.of("nuri.business.service.account.AccountService"), "shared");
+        Registry registry = new Registry(Set.of("shared"), List.of(kept, gone));
+        List<String> violations = new ArrayList<>();
+        Set<String> expected = expectedEdgeKeys(registry, edge -> edge.owner().equals("kept"),
+                path -> !path.contains("/gone/"), violations);
+        assertThat(expected).containsExactly(kept.key());
+        assertThat(violations).isEmpty();
+        assertThat(compare(expected, List.of())).singleElement().asString().contains("사라진 edge");
+        expectedEdgeKeys(registry, edge -> edge.owner().equals("kept"), path -> true, violations);
+        assertThat(violations).singleElement().asString().contains("gone/GoneService.java");
+    }
+
+    @Test
     @DisplayName("부정 증명: 원장·pack 어휘의 형식 오류는 fail-closed 로 거부한다")
     void registryAndVocabularyAreFailClosed() {
         String edge = "{'file':'kept/KeptService.java','owner':'kept','target':'account','module':'business-core',"
@@ -267,9 +291,15 @@ class CrossDomainCouplingLinterTest {
     /** 남은 pack 기준 기대 edge 키. 빠진 pack 의 edge 는 소스 중 하나가 실제로 없을 때만 뺀다. */
     static Set<String> expectedEdgeKeys(Registry registry, Set<String> presentPacks, Predicate<String> fileExists,
                                         List<String> violations) {
+        return expectedEdgeKeys(registry, edge -> presentPacks.contains(edge.pack()), fileExists, violations);
+    }
+
+    /** Custom selection uses the lock-bound source plan; absent files never define ownership. */
+    static Set<String> expectedEdgeKeys(Registry registry, Predicate<Edge> included, Predicate<String> fileExists,
+                                        List<String> violations) {
         Set<String> expected = new TreeSet<>();
         for (Edge edge : registry.edges()) {
-            if (presentPacks.contains(edge.pack())) {
+            if (included.test(edge)) {
                 expected.add(edge.key());
                 continue;
             }

@@ -604,11 +604,19 @@ jobs:
       - uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70  # v3
       - name: Generate and verify reusable profile
         run: node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }} --layout ${{ matrix.layout }}
+      - name: Generate and verify custom composition
+        if: matrix.profile == 'core'
+        run: node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}
       - name: Retain reusable profile verification
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: reusable-base-verification-${{ matrix.profile }}-${{ matrix.layout }}
-          path: build/reports/reusable-base/*.json
+          path: |
+            build/reports/reusable-base/*.json
+            build/reports/project-composer/*.json
+            build/project-composer/jobs/*/report.json
+            build/reusable-base/source/*/build/reports/reusable-base/*.json
           if-no-files-found: error
           retention-days: 7
 
@@ -769,6 +777,10 @@ jobs:
         timeout-minutes: 5
         run: npx playwright install-deps chromium
         working-directory: frontend
+
+      - name: Verify local composer browser flow
+        if: strategy.job-index == 0
+        run: node --test tools/project-composer/ui.test.mjs
 
       # 프론트 빌드·기동·테스트를 분리해 각 실패와 소요시간을 독립적으로 관측한다.
       # E2E는 개발 서버 전용 transport 변동을 피하도록 프로덕션 빌드로 실행한다.

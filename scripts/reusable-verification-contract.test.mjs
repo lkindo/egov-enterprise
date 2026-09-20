@@ -208,6 +208,9 @@ function validatePipeline(workflow, manifest) {
     /^        profile: \[core, collaboration, demo\]$/m,
     /^        layout: \[multi-module, single-module\]$/m,
     /^        run: node scripts\/verify-reusable-base.mjs --profile \$\{\{ matrix.profile \}\} --layout \$\{\{ matrix.layout \}\}$/m,
+    /^        run: node scripts\/verify-project-composer.mjs --layout \$\{\{ matrix.layout \}\}$/m,
+    /^      - name: Retain reusable profile verification\n        if: always\(\)$/m,
+    /^            build\/project-composer\/jobs\/\*\/report\.json$/m,
     /^          if-no-files-found: error$/m,
   ]) if (!expected.test(job)) errors.push(`missing reusable pipeline contract: ${expected}`);
   if (/^\s*(?:include|exclude|continue-on-error|defaults):/m.test(job)) errors.push('matrix or execution override is not allowed');
@@ -225,6 +228,10 @@ test('required CI binds every generated profile and layout and rejects weakening
     value => value.replace(' --layout ${{ matrix.layout }}', ''),
     value => value.replace("outputs['docs-only'] != 'true'", 'outputs.backend == true'),
     value => value.replace('node scripts/verify-reusable-base.mjs', 'echo bypass'),
+    value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass'),
+    value => value.replace("if: matrix.profile == 'core'", 'if: false'),
+    value => value.replace('        if: always()\n', ''),
+    value => value.replace('build/project-composer/jobs/*/report.json', 'build/omitted-report.json'),
     value => value.replace('if-no-files-found: error', 'if-no-files-found: warn'),
     value => value.replace('    steps:', '    continue-on-error: true\n    steps:'),
     value => value.replace('        run: node scripts/verify-reusable-base', '        if: false\n        run: node scripts/verify-reusable-base'),

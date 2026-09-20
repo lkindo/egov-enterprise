@@ -22,11 +22,19 @@ export function validateReviewScopeContract(contract, upstream, profiles) {
   assert(contract?.schemaVersion === 1 && contract.authority === 'reusable-review-scope-contract', 'Invalid review scope authority');
   assert(JSON.stringify(contract.sources) === JSON.stringify(REVIEW_MANIFEST_PATHS), 'Review scope source paths drifted');
   const populations = { scenarios: upstream.uiQuality.scenarios, pilots: upstream.visibleTerms.pilotCensus, mappings: upstream.krds.mapping };
+  const domains = new Set(Object.values(profiles.packs).flatMap(pack => pack.backend?.appDomains ?? []));
+  const validateDomains = (row, label) => assert(Array.isArray(row.requiredDomains)
+    && new Set(row.requiredDomains).size === row.requiredDomains.length
+    && row.requiredDomains.every(domain => domains.has(domain)), `${label} has invalid required domains`);
   for (const [kind, population] of Object.entries(populations)) {
     assert(exactMembers(contract[kind]?.map(row => row.id), population.map(row => row.id)), `${kind} ownership must exactly cover upstream review population`);
     for (const row of contract[kind]) {
       assert(Array.isArray(row.requiredPacks) && row.requiredPacks.length > 0 && new Set(row.requiredPacks).size === row.requiredPacks.length
         && row.requiredPacks.every(pack => Object.hasOwn(profiles.packs, pack)), `${kind}/${row.id} has invalid required packs`);
+      validateDomains(row, `${kind}/${row.id}`);
+      assert((row.requiredPacks.every(pack => pack === 'core') || row.requiredDomains.length > 0)
+        && row.requiredDomains.every(domain => row.requiredPacks.some(pack => profiles.packs[pack].backend?.appDomains?.includes(domain))),
+      `${kind}/${row.id} domain ownership differs from required packs`);
     }
   }
   const overrides = new Set();
@@ -43,18 +51,27 @@ export function validateReviewScopeContract(contract, upstream, profiles) {
       const source = override.source.replace(/^frontend\//u, '');
       return source === path || source.startsWith(`${path}/`);
     })), `Optional source lacks declared pack removal ownership: ${key}`);
+    validateDomains(override, `Optional source ${key}`);
+    assert(override.requiredDomains.length > 0 && override.requiredDomains.every(domain => override.requiredPacks.some(pack =>
+      profiles.packs[pack].backend?.appDomains?.includes(domain))), `Optional source domains differ from pack ownership: ${key}`);
   }
 }
 
 /** Produce active manifests without increasing any measured/approved claim. */
-export function deriveProjectedReviewManifests({ outputRoot, upstream, contract, profiles, profile, routes }) {
+export function deriveProjectedReviewManifests({ outputRoot, upstream, contract, profiles, profile, routes, composition }) {
   validateReviewScopeContract(contract, upstream, profiles);
-  const packs = new Set(profiles.profiles[profile]?.packs ?? []);
+  const custom = profile === 'custom';
+  assert(!custom || (composition?.profile === profile && Array.isArray(composition.resolvedDomains)), 'Custom review scope requires a resolved composition');
+  const packs = new Set(custom ? composition.packs : profiles.profiles[profile]?.packs ?? []);
+  const domains = new Set(composition?.resolvedDomains ?? []);
   assert(packs.size > 0, `Unknown review profile: ${profile}`);
   const routeIndex = new Map(routes.routes.map(row => [row.route, row]));
-  const included = row => row.requiredPacks.every(pack => packs.has(pack));
-  const excluded = row => ({ id: row.id, reason: 'required-pack-not-in-profile', requiredPacks: [...row.requiredPacks],
-    excludedPacks: row.requiredPacks.filter(pack => !packs.has(pack)) });
+  const included = row => custom ? row.requiredDomains.every(domain => domains.has(domain)) : row.requiredPacks.every(pack => packs.has(pack));
+  const excluded = row => custom
+    ? { id: row.id, reason: 'required-domain-not-in-composition', requiredDomains: [...row.requiredDomains],
+      excludedDomains: row.requiredDomains.filter(domain => !domains.has(domain)) }
+    : { id: row.id, reason: 'required-pack-not-in-profile', requiredPacks: [...row.requiredPacks],
+      excludedPacks: row.requiredPacks.filter(pack => !packs.has(pack)) };
   const requireSource = (file, label) => assert(existsSync(join(outputRoot, file)), `${label}: included source is missing: ${file}`);
   const requireRoute = (route, label) => assert(routeIndex.has(route), `${label}: included route is missing: ${route}`);
   const result = structuredClone(upstream);
@@ -127,7 +144,8 @@ export function deriveProjectedReviewManifests({ outputRoot, upstream, contract,
     if (!included(owner)) {
       reviewScopes.krds.excludedMappings.push(excluded(owner));
       return { ...structuredClone(original), disposition: 'notApplicable', localEvidence: [],
-        reason: `The ${profile} source profile excludes required packs: ${owner.requiredPacks.filter(pack => !packs.has(pack)).join(', ')}.` };
+        reason: custom ? `The composition excludes required domains: ${owner.requiredDomains.filter(domain => !domains.has(domain)).join(', ')}.`
+          : `The ${profile} source profile excludes required packs: ${owner.requiredPacks.filter(pack => !packs.has(pack)).join(', ')}.` };
     }
     for (const source of original.localEvidence ?? []) requireSource(source, original.id);
     return structuredClone(original);

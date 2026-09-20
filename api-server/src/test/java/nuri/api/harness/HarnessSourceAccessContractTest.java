@@ -27,6 +27,8 @@ class HarnessSourceAccessContractTest {
         Path valid = projectedFixture(temporary.resolve("valid"), false, false);
         ReusableHarnessProfile profile = ReusableHarnessProfile.load(valid);
         assertTrue(profile.retainsType("sample.Core"));
+        assertTrue(profile.retainsType("sample.Core$NestedDto"));
+        org.junit.jupiter.api.Assertions.assertFalse(profile.customDomains());
         org.junit.jupiter.api.Assertions.assertFalse(profile.retainsType("sample.Optional"));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
                 () -> profile.retainsSource("business-core/src/main/java/sample/Unknown.java"));
@@ -34,9 +36,18 @@ class HarnessSourceAccessContractTest {
                 () -> ReusableHarnessProfile.load(projectedFixture(temporary.resolve("missing"), true, false)));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
                 () -> ReusableHarnessProfile.load(projectedFixture(temporary.resolve("wrong-profile"), false, true)));
+        ReusableHarnessProfile custom = ReusableHarnessProfile.load(projectedFixture(temporary.resolve("custom"), false, false, "custom"));
+        assertTrue(custom.customDomains());
+        assertTrue(custom.retainsType("sample.Core$NestedDto"));
+        org.junit.jupiter.api.Assertions.assertFalse(custom.retainsType("sample.Optional"));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> custom.retainsType("sample.Unregistered"));
     }
 
     private static Path projectedFixture(Path root, boolean missing, boolean wrongProfile) throws Exception {
+        return projectedFixture(root, missing, wrongProfile, "core");
+    }
+
+    private static Path projectedFixture(Path root, boolean missing, boolean wrongProfile, String profile) throws Exception {
         var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         java.nio.file.Files.createDirectories(root.resolve("config/governance"));
         for (String module : List.of("foundation", "business-core", "business-app", "api-server")) {
@@ -45,15 +56,15 @@ class HarnessSourceAccessContractTest {
         String source = "business-core/src/main/java/sample/Core.java";
         java.nio.file.Files.createDirectories(root.resolve(source).getParent());
         if (!missing) java.nio.file.Files.writeString(root.resolve(source), "package sample; class Core {}");
-        String profiles = "{\"sourcePolicy\":{\"generatedProfile\":\"core\"},\"profiles\":{\"core\":{\"packs\":[\"core\"]}}}";
+        String profiles = "{\"sourcePolicy\":{\"generatedProfile\":\"" + profile + "\"},\"profiles\":{\"" + profile + "\":{\"packs\":[\"core\"]}}}";
         java.nio.file.Files.writeString(root.resolve("config/reusable-base-profiles.json"), profiles);
         String hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
                 .digest(profiles.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         mapper.writeValue(root.resolve("reusable-base-lock.json").toFile(), Map.of(
-                "profile", wrongProfile ? "collaboration" : "core", "packs", List.of("core"),
+                "profile", wrongProfile ? "collaboration" : profile, "packs", List.of("core"),
                 "sourceCommit", "fixture", "java", Map.of("excludedDomains", List.of("optional"))));
         mapper.writeValue(root.resolve("config/governance/reusable-harness-profile.json").toFile(), Map.of(
-                "schemaVersion", 1, "profile", "core", "packs", List.of("core"), "sourceCommit", "fixture",
+                "schemaVersion", 1, "profile", profile, "packs", List.of("core"), "sourceCommit", "fixture",
                 "excludedDomains", List.of("optional"), "profileManifestSha256", hash,
                 "retained", List.of(Map.of("path", source, "type", "sample.Core")),
                 "removed", List.of(Map.of("path", "business-app/src/main/java/sample/Optional.java", "type", "sample.Optional"))));

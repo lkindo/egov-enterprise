@@ -1,8 +1,10 @@
 # 선택형 프로젝트 생성기 설계
 
-이 설계는 Foundation과 Core를 기본으로 포함하고, 필요한 업무 기능과 DB, 백엔드 소스 배치를 선택하여 독립 프로젝트를 인수하는 흐름을 정의한다. 원본 저장소의 멀티모듈 구조를 유지하면서 **생성 산출물에서 멀티모듈 또는 단일모듈을 선택**하는 것이 목표다.
+이 문서는 Foundation과 Core를 기본으로 포함하고, 필요한 업무 기능과 백엔드 소스 배치를 선택하여 독립 프로젝트를 인수하는 설계와 현재 구현 경계를 설명한다. 원본 저장소의 멀티모듈 구조를 유지하면서 **생성 산출물에서 멀티모듈 또는 단일모듈을 선택**한다.
 
-상태는 **설계**다. 현재 지원하는 재사용 프로필과 앞으로 구현할 기능을 구분하며, 아래 단계의 완료조건은 구현·검증 결과 없이 충족된 것으로 해석하지 않는다. 사용자 요구에 따라 DB는 PostgreSQL부터 지원하고, 생성 소스는 도입자가 독립적으로 수정한다. 추가 DB, 임의 업무 조합, 로컬 웹 UI는 단계적으로 제공한다.
+현재 구현은 공통 recipe·의존성 해석기·비대화형 CLI, 20개 업무 도메인의 선택과 자동 포함, PostgreSQL 투영, 두 백엔드 배치, 별도 로컬 웹 UI까지 포함한다. 생성 소스는 도입자가 독립적으로 수정한다. 추가 DB와 생성 후 원본 업데이트 자동 병합은 후속 범위다.
+
+전체 기술 검증은 생성 작업마다 실행한다. DB 재적용이나 개별 계약 검사 통과를 Java·프런트엔드·기동 검증 전체의 완료로 해석하지 않는다. 실행별 완료 여부는 아래 검증 경로의 실제 보고서로 판정한다.
 
 ## 1. 적용 경계와 근거
 
@@ -13,7 +15,7 @@
 | 현재 확인한 원본 | 설계에 주는 제약 |
 |---|---|
 | [재사용 manifest](../../config/reusable-base-profiles.json) | 현재 프로필은 `core`, `collaboration`, `demo`이며 pack은 `core`, `collaboration`, `survey`, `demo`다. 프로필을 기존 사용자용 preset으로 보존한다. |
-| [프로필 계약](../../scripts/reusable-base-census.mjs) | 현재 rank는 누적 포함을 요구한다. 임의 기능 선택에는 rank 순서를 대신할 명시적 의존성 해석이 필요하다. |
+| [프로필 계약](../../scripts/reusable-base-census.mjs)과 [구성 해석기](../../scripts/project-composer-recipe.mjs) | 기존 preset의 rank·누적 포함을 보존하며, 개별 도메인 선택은 명시적 의존성과 소유권으로 해석한다. |
 | [소스 생성기](../../scripts/generate-reusable-base-source.mjs) | 제외 소스와 전이 importer를 제거한다. 사용자가 선택한 기능이 연쇄로 사라지지 않는지도 확인해야 한다. |
 | [DB 생성기](../../scripts/generate-reusable-base-db.mjs) | 일회용 PostgreSQL에 현재 migration을 적용한 뒤 프로필 baseline을 만들고 다른 빈 DB에 재적용한다. 검증된 경로를 재사용한다. |
 | [재사용 가이드](../03-guides/reusable-base-guide.md) | 릴리스 참조·DB/source lock·제거 게이트·기관 승인 경계를 보존한다. |
@@ -48,24 +50,24 @@ flowchart TD
 
 ## 3. recipe와 산출물 식별
 
-다음 JSON은 **목표 입력 계약의 예시**다. 현재 CLI가 이 필드를 모두 받는다는 뜻은 아니다. 구현 시 스키마 버전을 고정하고 기존 preset 인자를 호환 어댑터로 해석한다.
+다음 JSON은 현재 CLI와 UI가 사용하는 `schemaVersion: 1` recipe다. `sourceRef`는 현재 체크아웃의 commit으로 해석되어야 하며, 생성기가 다른 버전을 자동 checkout하지 않는다. UI는 현재 정확한 commit을 저장한다.
 
 ```json
 {
   "schemaVersion": 1,
   "project": { "name": "agency-service" },
-  "sourceRef": "<검증할 릴리스 태그>",
-  "selection": { "preset": "collaboration" },
+  "sourceRef": "HEAD",
+  "selection": { "domains": ["mail", "schedule"] },
   "database": { "vendor": "postgresql" },
   "backendLayout": "single-module"
 }
 ```
 
-임의 업무 선택 단계에서는 `selection`에 preset 또는 명시 기능 집합 중 하나를 사용한다. preset을 선택한 뒤 일부를 바꾸는 UI는 최종 명시 집합으로 정규화하되, 원래 선택한 preset은 설명용 이력으로 보존할 수 있다. DB 자격증명·관리자 비밀번호·실제 기관 데이터는 recipe에 넣지 않는다.
+`selection`은 `{"preset":"collaboration"}`처럼 `core`·`collaboration`·`demo` 중 한 preset을 지정하거나 `{"domains":["mail","schedule"]}`처럼 명시 도메인을 지정한다. 두 필드를 함께 넣거나 알 수 없는 필드를 추가하면 거부한다. `domains: []`는 Foundation/Core만 포함한다. 프로젝트명은 영문 소문자로 시작하는 1~63자이며 소문자·숫자·단어 사이 하이픈만 허용하고 Windows 예약 이름은 거부한다. `database.vendor`는 `postgresql`, `backendLayout`은 `multi-module` 또는 `single-module`이다. preset에서 개별 선택을 바꾸면 UI는 명시 도메인 집합으로 요청한다. DB 자격증명·관리자 비밀번호·실제 기관 데이터는 recipe에 넣지 않는다.
 
-lock에는 원본 커밋·릴리스 태그, manifest/recipe/해석 결과/DB 번들의 해시, 엔진 및 레이아웃 변환 버전, 최종 포함 기능, 소스 경로 대응, 검증 결과 위치를 기록한다. 동일 입력의 비교는 의미 있는 파일 내용과 정규화한 구성 해시로 하고 생성 시각이나 임시 디렉터리명을 구성 차이로 취급하지 않는다.
+해석 결과는 직접 선택·자동 포함과 사유, 포함 도메인·테이블·시퀀스·메뉴 경로·권한·화면 경로, catalog/recipe/composition 해시를 담는다. DB와 소스 생성기는 원본 카탈로그에서 recipe를 다시 해석하고 `sourceRef`·현재 commit을 확인한다. DB lock은 빈 DB 재적용 검증 후에만 `validated: true`와 SQL 네 파일의 SHA-256을 기록하며 소스 생성기는 이를 대조한다. 소스 lock·생성 보고서는 원본 식별, 배치, 구성 및 DB 식별, 검증 범위·결과를 기록한다. 배치도 구성 해시에 결속되므로 다른 배치의 lock으로 바꿔 끼우지 않는다.
 
-출력 폴더는 새 경로만 허용하고 기존 프로젝트를 덮어쓰지 않는다. 준비 디렉터리에서 생성·검증한 뒤 성공 산출물로 승격하며 실패 결과는 실패 상태와 원인으로 구분한다. 압축 파일은 검증된 폴더의 선택적 전달 형식이다. 초기 버전부터 ZIP 다운로드 서버나 원격 생성 큐를 필수 구성으로 만들 필요는 없다.
+출력 폴더는 작업공간 내 새 경로만 허용하고 기존 프로젝트를 덮어쓰지 않는다. `.pending-` 디렉터리에 소스를 구성한 후 **의존성 설치 전에 최종 경로를 확정**한다. Windows pnpm이 절대 경로 junction을 만들기 때문에 설치·검증 후 폴더를 rename하여 승격하지 않는다. 최종 위치의 보고서는 `verifying`에서 시작하고 전체 검증 후 `passed`, 실패 시 `failed`가 된다. 폴더가 존재한다는 사실은 완료 증거가 아니다. 실패 결과와 단계는 작업 보고서에 남긴다. ZIP 다운로드와 원격 생성 큐는 현재 제공하지 않는다.
 
 ## 4. 멀티모듈과 단일모듈 출력 계약
 
@@ -81,7 +83,7 @@ lock에는 원본 커밋·릴리스 태그, manifest/recipe/해석 결과/DB 번
 
 여러 Gradle 모듈을 그대로 둔 채 실행 jar 하나를 만드는 것은 단일모듈 출력의 완료조건이 아니다. Gradle 프로젝트 목록과 의존 그래프에서 온라인 백엔드가 실제로 하나인지 확인한다. Java 패키지명을 한꺼번에 바꾸는 기능은 이 배치 변환과 별도로 다룬다.
 
-단일모듈 어댑터는 다음을 처리해야 한다.
+[단일모듈 어댑터](../../scripts/reusable-single-module.mjs)는 다음 계약을 적용한다.
 
 1. 선택된 온라인 모듈의 main 소스·자원과 test·testFixtures를 루트 project의 source set에 연결한다. `foundation`, `business-core`, `business-app`, `api-server`의 기존 소스 디렉터리는 논리적 소스 그룹으로 보존한다. 각 폴더를 별도 Gradle project로 등록하지 않으며, 루트 `src`로 물리 통합하는 기능은 이번 범위에 포함하지 않는다.
 2. 모듈 간 `project(...)` 의존성을 실제 외부 의존성·configuration·annotation processor의 합성으로 바꾼다. compileOnly, runtimeOnly, test 의존성을 임의로 모두 implementation에 합치지 않는다.
@@ -103,13 +105,13 @@ lock에는 원본 커밋·릴리스 태그, manifest/recipe/해석 결과/DB 번
 | 이관 도구 | 별도 source set·test·`migrationBootJar` | 온라인 jar/classpath 부재와 독립 CLI 실행 산출물 |
 | 경로 기반 하네스 | 기존 소스 위치와 검사 적용범위 유지 | 루트 실행 시 working directory·source root 탐색·task adapter의 정합성 |
 
-CLI 설계는 `--layout multi-module|single-module`이며 기본값은 `multi-module`이다. 기존 `--profile core|collaboration|demo`와 독립된 옵션으로 생성기와 검증 runner에 전달한다. 기존 모듈별 build 파일이 출처 자료로 남더라도 루트 settings가 이를 하위 project로 포함하지 않으면 활성 Gradle 모듈로 계산하지 않는다. 사용법은 생성된 안내문에서 실제 활성 진입점으로 연결한다.
+기존 프로필용 소스 생성기와 검증 runner는 `--layout multi-module|single-module`을 받으며 기본값은 `multi-module`이다. Composer는 recipe의 `backendLayout`을 사용한다. 기존 모듈별 build 파일이 출처 자료로 남더라도 루트 settings가 이를 하위 project로 포함하지 않으면 활성 Gradle 모듈로 계산하지 않는다. 단일모듈의 온라인 진입점은 루트 `bootRun`·`bootJar`이며 `harnessTest`·`schemaValidationTest`와 출처별 suite를 묶는 `allTests`를 제공한다. 사용법은 생성된 안내문에서 실제 활성 진입점으로 연결한다.
 
 ## 5. 업무 카탈로그와 의존성
 
 사용자의 기본 선택 단위는 **업무 기능(capability)**이다. Java 폴더, 메뉴 한 줄, 화면 하나를 그대로 선택 단위로 삼지 않는다. 기능은 관련 소스·API·화면·테이블·권한·메뉴·테스트와 외부 설정 요구를 함께 소유한다.
 
-카탈로그는 기존 재사용 manifest를 확장하거나 그 원본에서 생성하여 소유권 정본을 중복시키지 않는다. 새로운 선언은 현재 코드와 실제 projection으로 대조한다. 필요한 정보는 다음과 같다.
+[카탈로그](../../scripts/project-composer-catalog.mjs)는 기존 재사용 manifest·Java import·권한 카탈로그와 명시된 프런트엔드 소유권을 읽어 20개 도메인을 구성한다. 기존 소유권 정본을 복제하는 대신 해당 근거를 사용하고, 공유 화면과 필수 UI 참조는 명시적 의존성으로 추가한다. 구성 판단에 사용하는 정보는 다음과 같다.
 
 | 관계·정보 | 의미 |
 |---|---|
@@ -122,15 +124,17 @@ CLI 설계는 `--layout multi-module|single-module`이며 기본값은 `multi-mo
 
 현재 게시판·댓글·스크랩은 manifest가 함께 선택하도록 선언한 클러스터다. 대시보드는 게시판·알림을 요구한다. `tb_tmplt_info`는 게시판과 템플릿이 공유한다. 반면 [수신자 피커](../../frontend/src/app/components/ui/recipient-picker.tsx)의 주소록은 주입형 선택 연동이다. 이 차이를 무시하고 모든 연결을 강제 의존성으로 만들면 불필요한 기능까지 포함된다.
 
-기존 rank를 단순 삭제하지 않고 기존 세 preset을 새로운 의존성 해석으로 같은 결과가 나오도록 먼저 옮긴다. 상위 pack이 하위 pack의 import를 사용할 수 있었던 프런트 마커, rank를 사용하는 census·review scope·게이트 소유권도 함께 전환한다. 모든 임의 조합의 지원을 한 번에 선언하지 않고, 검증한 기능부터 카탈로그에 선택 가능 상태로 공개한다.
+기존 rank와 세 preset의 포함 범위는 유지한다. 개별 도메인 선택에는 UI 생존에 필요한 추가 의존성이 적용될 수 있다. 예를 들어 `schedule`은 `report`, `system`은 `template`, `survey`와 `stats`는 서로를 포함한다. 같은 도메인 목록을 수동 선택한 결과와 기존 preset의 결과가 항상 같지는 않다. custom 구성은 검토 범위와 게이트 소유권도 선택한 실제 소스에 맞춰 투영한다. 20개 도메인을 선택할 수 있다는 것은 모든 부분집합을 사전 인증했다는 뜻이 아니며 각 생성 작업의 전체 검증을 통과해야 한다.
 
 ## 6. 메뉴·권한·DB 초기화
 
-업무 포함 여부와 메뉴 노출 여부는 별도다. 최초 UI는 기능을 선택하면 포함될 사용자·관리자 메뉴를 미리 보여준다. 세부 메뉴 조정은 초기 내비게이션 노출을 바꾸는 것으로 설명하고, 코드 제거 또는 API 차단으로 표현하지 않는다.
+업무 포함 여부와 메뉴 노출 여부는 별도다. 현재 UI는 기능을 선택하면 포함될 메뉴 이름·부모 계층·목적지를 미리 보여준다. 개별 메뉴 체크박스 편집은 제공하지 않는다. 향후 세부 메뉴 조정을 추가하더라도 내비게이션 노출과 코드 제거·API 인가는 구분해야 한다.
 
 선택 기능의 메뉴, 프로그램 연결, 부모 계층, NAVIGATION, OPERATION을 같은 해석 결과에서 생성한다. 필요한 부모 메뉴는 포함하고 빈 분류는 정리한다. query를 사용하는 목적지와 redirect도 확인한다. 기능 선택이 owner-only 또는 수신자·결재자 제한을 완화해서는 안 된다.
 
-현재 [관리자 초기화 시드](../../api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql)는 core 잔존 화면의 최소 관리자 트리를 준비한다. 선택 기능별 메뉴를 제공하려면 별도의 소유권 연결과 초기화 검증이 필요하다. 운영 DB의 현재 메뉴와 사용자별 권한·업무 데이터를 새 프로젝트의 기본값으로 덤프하지 않는다.
+기존 profile 경로는 [관리자 초기화 시드](../../api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql)의 동작을 보존한다. composition 경로는 체크인된 migration을 새 전용 DB에 적용한 최종 메뉴·프로그램을 선택하며, 원래 시드의 최초 초기화·권한 회수 보호 조건을 유지한다. 부모만 필요한 메뉴는 목적지를 제거해 구조로 남긴다. OPERATION은 선택 기능의 코드와 원본 default group만 포함한다. 운영 DB의 현재 메뉴와 사용자별 권한·업무 데이터를 새 프로젝트의 기본값으로 덤프하지 않는다.
+
+[메뉴 snapshot](../../config/project-composer-menus.json)은 DB 없이 계획을 보여주기 위한 **파생 자료**다. 정본은 원본 migration·seed·Contract SQL이다. [메뉴 preview](../../scripts/project-composer-menu-preview.mjs)는 SQL 입력 해시가 달라지면 거부하고, 실제 DB 생성은 migration으로 만든 전체 메뉴·프로그램과 snapshot을 다시 대조한다. 화면 route 수를 메뉴 수로 표시하지 않는다. snapshot 갱신은 [사용 가이드](../03-guides/project-composer-guide.md#메뉴-미리보기-자료-갱신)의 전용 일회용 컨테이너 절차를 따른다.
 
 PostgreSQL은 기존 migration을 적용한 일회용 DB에서 스키마를 투영하고 빈 DB에 재적용하는 경로를 유지한다. FK·인덱스·제약·sequence·기본값·표준 메타·관리자 부트스트랩을 검증한다. ORM Entity로 DDL을 다시 만드는 방식은 현재 물리 계약을 대체하지 않는다. DB나 Entity 변경에 들어갈 때는 DB 헌법과 H1에 따라 live schema·표준 메타를 먼저 조회한다.
 
@@ -138,11 +142,11 @@ Oracle·MySQL/MariaDB·SQL Server는 후속 DB adapter 범위다. DDL 문법 출
 
 ## 7. 로컬 웹 UI와 CLI
 
-로컬 UI는 제품의 관리자 화면과 별도 실행한다. 프로젝트 생성에 전체 업무 앱의 로그인·DB·운영 서버를 선행 조건으로 두지 않기 위해서다. UI가 받는 입력과 CLI recipe가 같은 엔진으로 정규화되므로 어느 경로를 사용해도 같은 결과를 얻는다.
+로컬 UI는 `npm run project:ui`로 실행해 `http://127.0.0.1:3100`에서 사용한다. 제품의 관리자 화면과 별도이며, 계획 조회에 업무 앱 로그인·업무 DB·운영 서버가 필요하지 않다. [UI 서버](../../scripts/project-composer-server.mjs)와 CLI는 같은 [엔진](../../scripts/project-composer.mjs)과 recipe를 사용한다. 생성·전체 검증에는 Docker·Java 21·Node.js 22 이상·pnpm과 의존성 다운로드 환경이 필요하다.
 
 권장 사용자 흐름은 다음과 같다.
 
-1. 프로젝트명과 원본 버전, 새 생성 위치를 정한다.
+1. 프로젝트명을 입력하고 현재 체크아웃의 원본 commit과 자동 결정되는 새 생성 위치를 확인한다.
 2. Foundation/Core가 포함된 상태에서 preset 또는 검증된 업무 기능을 선택한다.
 3. 자동 포함 사유와 선택적 연동, 결과 메뉴를 확인한다.
 4. PostgreSQL과 백엔드 배치를 선택한다. 미지원 DB는 생성 가능한 옵션으로 표시하지 않는다.
@@ -153,23 +157,25 @@ Oracle·MySQL/MariaDB·SQL Server는 후속 DB adapter 범위다. DDL 문법 출
 
 로컬 서버는 loopback에서만 바인딩하고 요청 출처를 확인한다. 입력 ID는 allowlist와 recipe 스키마로 검증하며 shell 문자열을 조립하지 않는다. 출력 절대 경로를 허용된 새 디렉터리로 제한하고 기존 파일을 덮어쓰지 않는다. DB·관리자 비밀은 UI URL·recipe·로그에 기록하지 않는다. 원격 서비스나 운영 관리자 API의 빌드 실행 권한은 이 단계의 범위가 아니다.
 
-CLI는 먼저 비대화형 recipe 입력과 계획 조회·생성·검증 경로를 제공한다. 방향키 기반 마법사는 필요할 때 같은 엔진 위에 추가할 수 있지만 웹 UI 제공의 선행조건은 아니다. [Atlas](../03-guides/governance-atlas-guide.md)는 설명·검색·원본 링크에 활용하고 생성기 정본이나 실행 서버로 바꾸지 않는다.
+CLI는 `project:catalog`, `project:plan -- --recipe FILE`, `project:create -- --recipe FILE`을 제공한다. UI의 **선택 정보 저장**으로 같은 recipe를 내려받는다. 방향키 기반 마법사는 현재 제공하지 않는다. [Atlas](../03-guides/governance-atlas-guide.md)는 설명·검색·원본 링크에 활용하며 생성기 정본이나 실행 서버는 아니다.
 
-## 8. 단계별 완료조건
+## 8. 구현 범위와 완료조건
 
-| 단계 | 구현 범위 | 완료조건 |
+| 단계 | 현재 범위 | 완료 판정에 필요한 증거 |
 |---|---|---|
-| A. 출력 레이아웃 | 현재 세 preset과 PostgreSQL 생성 경로에 배치 선택 추가 | 기본 멀티모듈 결과 보존, 단일 Gradle project 확인, 적용 테스트·자원·하네스 보존, 충돌 red, 생성 산출물 컴파일·검증 |
-| B. 공통 composition | recipe·해석기·계획 조회·공통 lock·비대화형 CLI | 기존 preset 결과의 동등성, 원본·DB·소스 식별 불일치 거부, 잘못된 요청의 무출력 실패, 반복 생성의 결정성 |
-| C. 업무 선택 | rank 누적 모델을 명시 의존성과 기능별 소유권으로 확장 | core+각 선택 기능, 필수 의존 묶음, 선택적 연동, 전체 구성의 생존·제외 계약과 실제 산출물 검증 |
-| D. 로컬 UI | 업무 선택·메뉴 미리보기·DB/배치 선택·생성 상태·결과 인수 | 같은 recipe의 CLI/UI 동등 결과, 키보드 완주, 입력 보존·중복 제출·오류 복구, 실제 생성 프로젝트 기동 |
-| E. DB 확대 | 실제 필요 DB부터 adapter와 지원 상태 추가 | 해당 vendor의 빈 DB 적용·스키마 검증·인가·대표 CRUD와 데이터 의미 검증 |
+| A. 출력 레이아웃 | 두 배치의 소스·실행·검증 어댑터 구현 | 기본 멀티모듈 결과 보존, 단일 Gradle project 확인, 적용 테스트·자원·하네스 보존, 충돌 red, 생성 산출물 컴파일·검증 |
+| B. 공통 composition | recipe·해석기·계획 조회·결속된 lock·비대화형 CLI 구현 | 기존 preset 결과의 동등성, 원본·DB·소스 식별 불일치 거부, 잘못된 요청의 무출력 실패, 결정적인 구성 해석 |
+| C. 업무 선택 | 20개 도메인·필수 의존성·소스/DB/메뉴/검토 범위 투영 구현 | core+각 선택 기능, 필수 의존 묶음, 선택적 연동, 전체 구성의 생존·제외 계약과 실제 산출물 검증 |
+| D. 로컬 UI | 별도 3100 UI·메뉴 미리보기·PG/배치 선택·작업 상태·recipe 저장 구현 | 같은 recipe의 CLI/UI 동등 결과, 키보드 조작, 입력 보존·중복 제출·오류 복구, 실제 전체 생성과 도입 환경 기동 검증 |
+| E. DB 확대 | 미구현; PostgreSQL만 제공 | 해당 vendor의 빈 DB 적용·스키마 검증·인가·대표 CRUD와 데이터 의미 검증 |
 
-단계 A는 사용자에게 당장 필요한 소스 배치 선택을 분리해 제공한다. B~D의 완성 없이 임의 업무 선택 UI가 이미 구현됐다고 표현하지 않는다. 미완성 조합이나 배치를 테스트 제외로 통과시키지 않고 지원 범위를 명시하거나 생성 자체를 거부한다.
+A~D의 실행 경로가 있다는 사실과 개별 산출물의 검증 완료는 구분한다. 대표 custom 조합의 CI와 각 생성 작업의 full 검증을 완료 기준으로 삼는다. 미완성 조합이나 배치를 테스트 제외로 통과시키지 않고 실패 원인과 실행 증거를 남긴다.
 
 ## 9. 검증과 실패 처리
 
 기존 [gate registry](../../config/governance/gates.json), 재사용 계약, [산출물 검증기](../../scripts/verify-reusable-artifact.mjs)를 우선 확장한다. 동일 불변식을 검사하는 별도 게이트를 중복해서 늘리지 않는다.
+
+[대표 조합 검증 진입점](../../scripts/verify-project-composer.mjs)은 `--layout multi-module`에서 mail+schedule, `--layout single-module`에서 board+survey를 공통 엔진으로 생성하고 full 검증한다. [CI](../../.github/workflows/ci.yml)도 이 경로를 사용한다. 생성 프로젝트의 `build/reports/reusable-base/full.json`과 `project-generation-report.json`, 원본의 `build/project-composer/jobs/<작업 ID>/report.json`에서 실행 결과와 원본·profile·layout 일치를 확인한다.
 
 | 검증 층 | 확인할 내용 |
 |---|---|

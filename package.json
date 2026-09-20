@@ -7,6 +7,11 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "project:ui": "node scripts/project-composer-server.mjs",
+    "project:catalog": "node scripts/project-composer.mjs catalog",
+    "project:plan": "node scripts/project-composer.mjs plan",
+    "project:create": "node scripts/project-composer.mjs generate",
+    "project:ui:css": "node tools/project-composer/build-styles.mjs",
     "dev": "node --env-file-if-exists=.env scripts/dev.mjs",
     "//dev": "루트 .env 를 로드한 뒤 백엔드·프론트를 같은 환경에서 낳는다. 한쪽만 JWT_SECRET 을 받으면 서명검증이 전량 실패해 '로그인 후 로그인창' 무한루프가 되므로(2026-07-19 발생) 대칭 주입을 스크립트로 강제한다. 상세는 scripts/dev.mjs 주석.",
     "backend": "gradlew.bat :api-server:bootRun",
