@@ -64,7 +64,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-09-20(7)] 32 -> 25. 같은 배치 7건. 게시판 글 목록 제목이 중립 그라데이션 위에
 //   투명 글자로 조판돼 다크에서 사라졌고, 빈 목록 안내는 중립 리터럴을 상속해 라이트에서 약 1.5:1
 //   이었다. 댓글 카드의 반투명 흰색 표면도 함께 회수했다.
-const BASELINE = 25;
+// [하향 래칫 2026-09-20(8)] 25 -> 21. 쪽지함 4건. 상세 모달의 작성 시각이 중립 리터럴로
+//   라이트에서 약 1.5:1 이었고, 본문 패널의 흰색 링이 다크에서 밝은 테두리로 남았다.
+const BASELINE = 21;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

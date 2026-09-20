@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Shield, Clock, X } from 'lucide-react';
+import { Shield, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 /**
@@ -178,84 +179,87 @@ export function SessionExpiryWarning() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // 닫기 경로를 열어 두면 Esc·배경 클릭이 X 버튼과 같은 깜빡임을 만든다(닫힌 뒤 즉시 재개방).
+  // 이 경고는 연장하거나 로그아웃할 때까지 유지되는 것이 설계다.
   return (
-    <Dialog open={showWarning} onOpenChange={(open) => { if (!open) setShowWarning(false); }}>
+    <Dialog open={showWarning}>
       <DialogContent showCloseButton={false} className="max-w-md p-0 overflow-hidden border-border bg-card">
         {/* 접근성을 위한 sr-only 제목 및 설명 */}
         <DialogTitle className="sr-only">세션 만료 경고</DialogTitle>
         <DialogDescription className="sr-only">보안을 위해 장시간 활동이 없으면 자동으로 로그아웃됩니다.</DialogDescription>
 
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div>
           {/* 헤더 */}
-          <div className="bg-amber-50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/20 px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-              </div>
-              <span className="font-bold text-amber-800 dark:text-amber-400 text-sm">세션 만료 예정</span>
+          <div className="flex items-center justify-between border-b border-warning/40 bg-warning/10 px-5 py-3">
+            <div className="flex items-center gap-2">
+              <Shield className="size-4 shrink-0 text-foreground" aria-hidden="true" />
+              <span className="text-[length:var(--font-size-body)] font-medium text-foreground">세션 만료 예정</span>
             </div>
-            <button
-              onClick={() => setShowWarning(false)}
-              aria-label="세션 경고 닫기"
-              className="p-1 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors cursor-pointer"
-            >
-              <X size={18} />
-            </button>
+            {/* [2026-09-20] 닫기(X) 버튼을 걷었다 — 죽은 어포던스였다.
+                누르면 setShowWarning(false) 로 닫히지만, showWarning 이 만료 감시 effect 의
+                의존성이라 effect 가 즉시 다시 돌고 checkExpiry 의 `!showWarning` 분기가
+                그 자리에서 true 로 되돌린다(깜빡임 1회 뒤 그대로 열린 상태).
+                이 화면의 의도는 위 handleExtendSession 주석이 적은 대로 "닫히지 않는 경고" 다.
+                사용자가 실제로 할 수 있는 일은 아래의 세션 연장과 로그아웃 두 가지다. */}
           </div>
 
           {/* 본문 */}
-          <div className="p-8 text-center">
+          <div className="px-5 py-4">
             <div
-              className="inline-flex items-center gap-2 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 px-4 py-2 rounded-lg mb-6"
+              className="mb-3 inline-flex items-center gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1"
             >
-              <Clock size={16} />
+              <Clock size={14} className="shrink-0 text-foreground" aria-hidden="true" />
               {/* 매초 낭독(verbose) 방지: 시각 카운트다운은 aria-hidden, 경고 자체는 dialog role로 1회 고지 */}
-              <span aria-hidden="true" className="font-bold text-lg tabular-nums">{formatTime(remainingSeconds)}</span>
+              <span aria-hidden="true" className="text-[length:var(--font-size-body)] font-medium tabular-nums text-foreground">{formatTime(remainingSeconds)}</span>
             </div>
-            <h3 className="text-xl font-bold text-card-foreground mb-2">
+            <h3 className="mb-1 text-base font-semibold text-card-foreground">
               세션이 곧 만료됩니다
             </h3>
-            <p className="text-muted-foreground font-medium text-sm leading-relaxed">
+            <p className="text-[length:var(--font-size-body)] leading-relaxed text-muted-foreground">
               보안을 위해 장시간 활동이 없으면 자동으로 로그아웃됩니다.<br />
               작업을 계속하시려면 세션을 연장해 주세요.
             </p>
             {extendFailure === 'retryable' && (
-              <p role="alert" className="mt-4 text-sm font-bold text-destructive-emphasis">
+              <p role="alert" className="mt-3 text-[length:var(--font-size-body)] font-medium text-destructive-emphasis">
                 세션 연장에 실패했습니다. 다시 시도하거나, 작업을 저장한 뒤 다시 로그인해 주세요.
               </p>
             )}
             {extendFailure === 'expired' && (
-              <p role="alert" className="mt-4 text-sm font-bold text-destructive-emphasis">
+              <p role="alert" className="mt-3 text-[length:var(--font-size-body)] font-medium text-destructive-emphasis">
                 세션이 만료되었습니다. 연장할 수 없으니 작업을 저장한 뒤 다시 로그인해 주세요.
               </p>
             )}
           </div>
 
           {/* 액션 — 세션이 끝난 뒤에는 '다시 시도'를 남겨 두지 않는다. 눌러도 성공할 수 없다. */}
-          <div className="px-6 pb-6 flex gap-3">
+          <div className="flex gap-2 border-t border-border bg-muted px-5 py-3">
             {extendFailure === 'expired' ? (
-              <button
+              <Button
+                type="button"
                 ref={extendButtonRef}
                 onClick={handleLogout}
-                className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-bold text-sm rounded-lg hover:bg-primary/90 shadow-xl transition-all active:scale-95 cursor-pointer"
+                className="flex-1"
               >
                 다시 로그인
-              </button>
+              </Button>
             ) : (
               <>
-                <button
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={handleLogout}
-                  className="flex-1 px-4 py-3 border-2 border-border text-muted-foreground font-bold text-sm rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                  className="flex-1"
                 >
                   로그아웃
-                </button>
-                <button
+                </Button>
+                <Button
+                  type="button"
                   ref={extendButtonRef}
                   onClick={handleExtendSession}
-                  className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-bold text-sm rounded-lg hover:bg-primary/90 shadow-xl transition-all active:scale-95 cursor-pointer"
+                  className="flex-1"
                 >
                   {extendFailure === 'retryable' ? '다시 시도' : '세션 연장'}
-                </button>
+                </Button>
               </>
             )}
           </div>
