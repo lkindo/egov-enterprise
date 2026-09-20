@@ -59,7 +59,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   리터럴이라 버튼 색을 바꾸면 글자가 사라진다. 넷 다 대응 전경 토큰으로 회수했다.
 // [하향 래칫 2026-09-20(4)] 39 -> 34. 배너·팝업 관리의 5건. 다크 표면 위 흰색 리터럴과
 //   선택 컨트롤 테두리의 중립 팔레트 리터럴을 대응 토큰으로 회수했다.
-const BASELINE = 34;
+// [하향 래칫 2026-09-20(5)] 34 -> 33. 기관코드 목록의 상태 점 1건을 중립 토큰으로 회수했다.
+const BASELINE = 33;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
