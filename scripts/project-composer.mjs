@@ -2,7 +2,7 @@
 /** Shared local composition engine: CLI and web transport execute the same recipe. */
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -23,8 +23,19 @@ export function composerSourceFingerprint(root) {
     if (file.replaceAll('\\', '/').split('/').includes('build')) continue;
     const path = join(root, file);
     hash.update(`${file}\0`);
-    if (existsSync(path) && statSync(path).isFile()) hash.update(readFileSync(path));
-    else hash.update('[missing]');
+    /*
+      존재를 먼저 묻고 그 다음에 읽으면 두 호출 사이에 파일이 바뀔 수 있다(TOCTOU).
+      지문은 "읽은 내용"을 근거로 삼아야 하므로 바로 읽고, 읽지 못한 경우만 [missing] 으로
+      적는다 — 디렉터리·심볼릭 링크 깨짐·권한 부족은 모두 readFileSync 가 던지며
+      종전 분기와 같은 결과로 수렴한다.
+    */
+    let contents = null;
+    try {
+      contents = readFileSync(path);
+    } catch {
+      contents = null;
+    }
+    hash.update(contents ?? '[missing]');
     hash.update('\0');
   }
   return hash.digest('hex');
