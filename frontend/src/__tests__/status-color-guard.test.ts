@@ -159,7 +159,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   Q&A 상태(해결됨·답변 대기)는 emerald/amber 채움 상자에서 success/warning 틴트 + 아이콘 +
 //   한국어 라벨로 바꿨다 — 색 단독 전달을 없애고(WCAG 1.4.1) 대비도 전경 토큰으로 맞춘다.
 //   나머지는 캘린더 일요일 rose, Q&A 카테고리 배지·밑줄·아이콘의 amber 계열이다. 신규 0건.
-const BASELINE = 417;
+// [하향 래칫 2026-09-20(4)] 417 -> 416. 프로세스 스튜디오(정적 데모)의 처리 기록 타임라인 점이
+//   emerald 채움이었다. 이 화면은 e2e 가 구조를 촘촘히 고정한 데모 스캐폴드라 셸 이행은 하지 않고,
+//   다크 모드에서 깨지던 반투명 흰색 표면·한국어 대문자 자간·내부 용어만 좁게 고쳤다.
+const BASELINE = 416;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
