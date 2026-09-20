@@ -48,7 +48,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-09-05] DEC-OPS-034 작성 화면 수렴으로 삭제된 CommunityBoardsWriteClient 의 bg-slate-900 1건 제거 → 61→60.
 // Superseded role/authority forms removed five legacy color occurrences.
 // [하향 래칫 2026-09-16] 결재선의 단계 상태를 semantic 토큰으로 표현하며 ApprovalStepper의 브랜드색 2건 제거.
-const BASELINE = 53;
+// [하향 래칫 2026-09-20] 53 -> 50. 그룹별 메뉴 현황의 미선택 안내가 text-slate-200·text-slate-300 으로
+//   조판돼 있었다 — 라이트에서 대비 미달이고 다크에서는 배경과 거의 같은 색이다. 히어로 문구를
+//   한 줄 안내로 바꾸며 muted 토큰으로 회수했다(사전 red 실측: 50 != 53).
+const BASELINE = 50;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

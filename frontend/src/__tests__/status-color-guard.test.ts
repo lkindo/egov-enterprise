@@ -149,7 +149,13 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   · UserManageForm 18 + DepartmentForm 6 — 전부 동일한 필드 오류 상태이므로 destructive pair 로.
 //     같은 화면의 상세 패널과 그 모달이 서로 다른 오류색을 쓰지 않게 하는 변경이다.
 //   사전 red 실측: Client 까지 반영한 시점 467 != 477, 폼 2종 포함 후 443.
-const BASELINE = 443;
+// [하향 래칫 2026-09-20(2)] 443 -> 435. 권한보안 두 화면의 업무형 이행에서 8건 제거(신규 0).
+//   · LoginPolicyAdminClient 4건 — 허용시간 아이콘 amber, 2단계 인증 emerald 2건, OTP 스위치
+//     emerald 1건. 상태는 배경 틴트와 한국어 라벨이 말하고 글자는 전경 토큰으로 읽는다.
+//   · MenuByAuthorityClient 4건 — 폴더 노드 amber 쌍과 빈 상태 rose 아이콘. 트리 노드는 색이
+//     아니라 폴더/파일 아이콘과 들여쓰기로 계층을 말한다(색 단독 전달 금지, WCAG 1.4.1).
+//   사전 red 실측: 로그인 정책만 반영한 시점 439 != 443, 두 화면 반영 후 435.
+const BASELINE = 435;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

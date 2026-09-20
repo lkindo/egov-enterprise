@@ -40,8 +40,12 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 //   HubSectionCard(96px 아이콘 박스·400px 블러) + 수제 grid 로 골격을 직접 조립해 결과 툴바도
 //   조회조건 영역도 없었다(카탈로그 §6 이 "USERS 의 직접 표" 로 인지하던 화면이다).
 //   ⚠ DIRECT_ONLY 는 불변이다 — 이 파일은 A2 셸도 import 하므로 종전에도 직접조립으로 세지 않았다.
-const ADOPTERS = 40;
-const DIRECT_ONLY = 3;
+// [상향 2026-09-20(2)] 40 -> 42: 권한보안의 그룹별 메뉴 현황(/admin/system/menus/by-authority)과
+//   로그인 정책 관리(/admin/security/login-policy)가 A1 셸을 경유한다. 둘 다 종전에는 PageHeader/
+//   HubHeader + HubMetricGrid + HubSectionCard 로 골격을 직접 조립해 결과 툴바도 조회조건 영역도 없었다.
+const ADOPTERS = 42;
+// [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
+const DIRECT_ONLY = 2;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';
