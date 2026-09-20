@@ -24,12 +24,36 @@ describe('r6 accessibility regressions', () => {
       불변식은 그대로다: 이 화면의 유계 스크롤 영역은 키보드로 도달 가능하고 이름이 있다.
       anchor 만 (a) 화면에 남은 손수 스크롤 영역(부서 조직도)과 (b) 표에 대한 위임 사실로 옮긴다.
     */
+    // (a) 부서 조직도 — 이 화면이 직접 만드는 유계 스크롤러.
     expect(userHub).toContain('aria-label="부서 조직 구조"');
     expect(userHub).toMatch(/role="region"[\s\S]*tabIndex=\{0\}[\s\S]*overflow-y-auto[^\"]*focus-visible:ring-2/);
 
-    // 위임이 조용히 끊기는 경로를 막는다 — stickyHeader 를 끄면 유계 스크롤 자체가 사라지고,
-    // 셸에서 overflow region 배선이 빠지면 표가 이름 없는 스크롤 상자가 된다.
-    expect(userHub).not.toContain('stickyHeader={false}');
+    /*
+      (b) 상세 본문 — 부서 탭에서는 포커스 가능한 자손이 하나도 없다(액션은 헤더가 갖고,
+      권한 안내는 사용자 탭 전용이다). 부서 설명은 4,000자까지 들어가고 정의 목록은 의도적으로
+      truncate 하지 않으므로 고정 높이 안에서 실제로 넘친다 → 키보드만 쓰는 사용자가 볼 방법이
+      없어진다. 표와 같은 훅으로 **넘칠 때만** role·tabIndex·이름을 붙인다.
+    */
+    //     ⚠ 훅은 스크롤 노드와 같은 컴포넌트에서 불러야 한다 — 허브에서 부르고 props 만 내려보내면
+    //       상세 패널이 선택 뒤에 마운트되므로 effect 가 다시 돌지 않아 **한 번도 붙지 않는다**.
+    //       그래서 소스 문자열이 아니라 렌더 결과를 고정하는 계약이 따로 있다
+    //       (app/admin/user/__tests__/detail-scroll-area.test.tsx). 여기서는 배선 형태만 본다.
+    const parts = source('app/admin/user/UserOrgHubParts.tsx');
+    expect(userHub).toContain('<DetailScrollArea>');
+    expect(parts).toContain("useOverflowRegion<HTMLDivElement>('상세 정보 스크롤 영역')");
+
+    /*
+      (c) 사용자·부재 결과 — 유계 스크롤은 StandardDataTable 이 소유한다.
+
+      ⚠ 이 축을 `not.toContain('stickyHeader={false}')` 같은 **부재 검사**로만 두면 안 된다.
+        표가 통째로 사라지고 수제 `<div className="max-h-[600px] overflow-y-auto">` 로 되돌아가는
+        회귀에서 그 단언은 공허하게 참이 되고(검사 대상이 없으니 금지 문자열도 없다), 속성 사이
+        공백(`stickyHeader={ false }`)으로도 우회된다. 표의 존재를 **긍정으로** 고정한 뒤 그
+        블록 안에서만 금지한다.
+    */
+    const tableBlock = userHub.match(/<StandardDataTable<UserManage>[\s\S]*?\/>/);
+    expect(tableBlock, '사용자 목록은 StandardDataTable 을 경유해야 한다').not.toBeNull();
+    expect(tableBlock?.[0]).not.toMatch(/stickyHeader\s*=\s*\{\s*false\s*\}/);
     expect(dataTable).toContain('useOverflowRegion<HTMLDivElement>');
     expect(dataTable).toContain('스크롤 영역');
   });

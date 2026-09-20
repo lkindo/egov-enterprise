@@ -119,7 +119,7 @@ export function UserManageForm({
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
                     사용자 아이디 (Identity_ID)
                   </FormLabel>
                   <FormControl>
@@ -128,7 +128,7 @@ export function UserManageForm({
                       readOnly={mode === 'edit'}
                       maxLength={20}
                       className={cn(
-                        "h-11 rounded-lg text-xs font-mono font-bold tracking-widest uppercase shadow-inner transition-all",
+                        "h-11 rounded-lg text-xs font-mono font-bold shadow-inner transition-all",
                         mode === 'edit' ? "bg-muted/50 border-none" : "focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
@@ -150,7 +150,7 @@ export function UserManageForm({
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
                     사용자 성함
                   </FormLabel>
                   <FormControl>
@@ -161,7 +161,7 @@ export function UserManageForm({
                         "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
-                      placeholder="NAME"
+                      placeholder="예: 홍길동"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
@@ -181,7 +181,7 @@ export function UserManageForm({
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
                     이메일 주소
                   </FormLabel>
                   <FormControl>
@@ -209,7 +209,7 @@ export function UserManageForm({
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
                     연락처
                   </FormLabel>
                   <FormControl>
@@ -242,7 +242,7 @@ export function UserManageForm({
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
                 >
-                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
                     초기 비밀번호
                   </FormLabel>
                   <FormControl>
@@ -254,7 +254,7 @@ export function UserManageForm({
                         "h-11 rounded-lg text-xs border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
-                      placeholder="PASSWORD (MIN_8)"
+                      placeholder="영문·숫자·특수문자 포함 8자 이상"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
@@ -273,7 +273,7 @@ export function UserManageForm({
                   animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                   transition={{ duration: 0.4 }}
               >
-                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
                   소속 부서
                 </FormLabel>
                 <FormControl>
@@ -284,7 +284,9 @@ export function UserManageForm({
                         fieldState.error ? "border-destructive ring-destructive/10 ring-4" : "focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
                     )}
                   >
-                    <option value="">소속 없음 / GLOBAL</option>
+                    {/* 'GLOBAL' 은 내부 구현 용어라 화면에 두지 않는다(헌법 제16조 4항).
+                        e2e(02-admin-system)는 이 항목을 텍스트가 아니라 index 0 으로 고른다. */}
+                    <option value="">소속 없음</option>
                     {(departments || []).filter(Boolean).map((d) => (
                       <option key={d.ognzId} value={d.ognzId}>{d.ognzNm}</option>
                     ))}
@@ -303,7 +305,7 @@ export function UserManageForm({
             onClick={() => {
               if (!areActionsDisabled) onCancel();
             }}
-            className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-11 rounded-lg font-bold text-xs border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>

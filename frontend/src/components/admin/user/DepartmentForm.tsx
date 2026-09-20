@@ -99,7 +99,7 @@ export function DepartmentForm({
                 animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                 transition={{ duration: 0.4 }}
               >
-                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
                   부서 명칭
                 </FormLabel>
                 <FormControl>
@@ -110,7 +110,7 @@ export function DepartmentForm({
                         "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                     )}
-                    placeholder="DEPT_NAME"
+                    placeholder="예: 기획부"
                   />
                 </FormControl>
                 <FormMessage className="text-xs font-bold text-destructive-emphasis mt-2 ml-2" />
@@ -128,7 +128,7 @@ export function DepartmentForm({
                 animate={fieldState.error ? { x: [0, -2, 2, -2, 2, 0] } : {}}
                 transition={{ duration: 0.4 }}
               >
-                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+                <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1">
                   부서 설명명세
                 </FormLabel>
                 <FormControl>

@@ -71,6 +71,7 @@ import {
   BulkSelectionSummary,
   DetailField,
   DetailFieldList,
+  DetailScrollArea,
   dropAnimation,
   NavButton,
   OrgPolicyPanel,
@@ -186,6 +187,7 @@ export default function UserOrgHubClient({
    * 새 URL producer 를 만들지 않는다는 기존 결정(DEC-OPS-033)을 그대로 따른다.
    */
   const [userPageSize, setUserPageSize] = useState(10);
+
 
   /** 라우트(=탭) 이동 시 서버가 내려준 defaultTab 으로 동기화한다. */
   useEffect(() => {
@@ -413,6 +415,7 @@ export default function UserOrgHubClient({
     deptsError,
     refetchDepts,
     departments,
+    deptTotal,
     flattenedDepts,
     activeDeptId,
     hasDeptChanges,
@@ -806,8 +809,18 @@ export default function UserOrgHubClient({
   const toolbarTotalCount = isPolicies
     ? undefined
     : isDeptTab
-      ? (isDeptsError ? undefined : flattenedDepts.length)
+      // ⚠ flattenedDepts.length 를 쓰면 안 된다 — effect 파생이라 SSR·첫 렌더와 재조회 중에
+      //   0 이 되어 데이터가 있는데도 '총 0건' 이라고 말한다(useDeptTree.deptTotal 주석 참조).
+      ? (isDeptsError ? undefined : deptTotal)
       : (isUsersError ? undefined : usersData?.total);
+
+  /** 현재 페이지가 보여주는 구간. 총 건수가 0 이거나 모르면 말하지 않는다. */
+  const userRowRange = (!isPolicies && !isDeptTab && !isUsersError && usersData?.total)
+    ? {
+        from: (userPage - 1) * userPageSize + 1,
+        to: Math.min(userPage * userPageSize, usersData.total),
+      }
+    : null;
 
   const detailActions = isDeptTab ? (
     <>
@@ -907,7 +920,10 @@ export default function UserOrgHubClient({
       )}
       filter={isPolicies ? undefined : (
         <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-[14rem] flex-1">
+          {/* ⚠ min-width 는 sm 이상에서만 건다 — 320px 뷰포트에서 14rem(224px) 하한이 flex-shrink 를
+              무력화해 조회조건 영역이 가로로 넘친다(ui-ux-task-flow-optimization 가이드의 320px 무넘침
+              의무). 종전 검색 입력에는 하한이 없었다. */}
+          <div className="min-w-0 flex-1 sm:min-w-[14rem]">
             {/* 보이는 라벨과 접근 이름을 같게 둔다(WCAG 2.5.3). e2e 19 는 이 접근 이름('부서 검색')으로
                 입력을 찾으므로 라벨 문구를 바꾸면 그 스펙도 함께 고쳐야 한다. */}
             <label
@@ -948,14 +964,34 @@ export default function UserOrgHubClient({
           >
             <X size={14} aria-hidden="true" /> 초기화
           </Button>
-          <p className="basis-full text-xs text-muted-foreground">
-            {isDeptTab
-              ? '부서명으로 조직도를 좁힙니다. 검색 중에는 계층을 바꿀 수 없습니다.'
-              : '사용자명 또는 사용자 ID 로 검색합니다.'}
-          </p>
+          {/* 안내는 라벨·placeholder 로 알 수 없는 사실이 있을 때만 둔다 — 사용자 탭의
+              '사용자명 또는 ID 로 검색합니다' 는 라벨의 반복이라 한 줄을 더 쓸 값이 없었다. */}
+          {isDeptTab && (
+            /*
+              ⚠ 종전 초안은 '검색 중에는 계층을 바꿀 수 없습니다' 라고 적었는데 그런 가드는
+                저장소 어디에도 없다 — useDeptTree 의 dragHandlers 는 deptKeyword 를 보지 않고
+                저장 버튼도 키워드 조건이 없다. 화면이 없는 보호를 약속하면 사용자는 안전하다고
+                믿고 그 상태에서 끌게 된다(G10·헌법 제16조 4항). 실제로 일어나는 일을 말한다:
+                좁힌 결과에 상위 부서가 빠지면 listToDeptTree 가 그 노드를 루트로 올리고,
+                그대로 저장하면 up_ognz_id 가 비워진다(GAP 로 보고).
+            */
+            <p className="basis-full text-xs text-muted-foreground">
+              부서명으로 조직도를 좁힙니다. 좁힌 결과에는 상위 부서가 함께 나오지 않을 수 있고,
+              그 상태에서 옮겨 저장하면 상위 부서가 바뀝니다.
+            </p>
+          )}
         </div>
       )}
       toolbarActions={isPolicies ? undefined : (
+        <>
+        {/* 표 하단의 'N–M번째' 는 StandardDataTable 이 pagination.totalCount 를 받을 때만 그리는데,
+            총 건수는 셸 툴바가 단독 소유해야 해서(이중 표기 금지) 표에 넘기지 않는다. 그 결과 사라지는
+            "지금 몇 번째를 보고 있는가" 를 여기서 직접 말한다. */}
+        {userRowRange && (
+          <span className="text-[length:var(--font-size-body)] text-muted-foreground tabular-nums">
+            {userRowRange.from.toLocaleString()}–{userRowRange.to.toLocaleString()}번째
+          </span>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -971,6 +1007,7 @@ export default function UserOrgHubClient({
           <RefreshCcw size={14} aria-hidden="true" className={cn((isUsersLoading || isDeptsLoading) && 'animate-spin')} />
           새로고침
         </Button>
+        </>
       )}
     >
       {isPolicies ? (
@@ -985,7 +1022,12 @@ export default function UserOrgHubClient({
             // 상세 패널은 선택했을 때만 자리를 차지한다 — 미선택 상태에서 화면의 3분의 1을
             // 빈 안내 상자에 내주면 목록 열이 그만큼 좁아진다(선택 상태는 뷰포트가 아니라
             // 앱 상태이므로 ADR-0006 의 뷰포트 분기 금지와 무관하다).
-            !isDeptTab && selectedItem && 'xl:grid-cols-[minmax(0,1fr)_22rem]',
+            //
+            // ⚠ 분할 시작점은 `lg`(1024)여야 한다. 종전 레이아웃이 `lg:col-span-7`/`lg:col-span-5`
+            //   였는데 `xl`(1280)로 올리면 1024~1279 구간에서 행을 클릭했을 때 상세가 표 **아래**
+            //   수백 px 뒤에 렌더된다 — 스크롤도 포커스 이동도 없어 "눌렀는데 아무 일도 없는" 화면이
+            //   된다. 1024×768 은 e2e 가 상시 돌리는 해상도다.
+            !isDeptTab && selectedItem && 'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]',
             isPending && 'opacity-60 pointer-events-none',
           )}
         >
@@ -1146,11 +1188,12 @@ export default function UserOrgHubClient({
                   </div>
                 </header>
 
-                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-[var(--filter-pad)]">
+                <DetailScrollArea>
                   {/* '근무지: 본사' 는 어떤 데이터로도 뒷받침되지 않는 고정 문구여서 제거했다(감사 P1-5). */}
                   {isDeptTab ? (
+                    /* 부서 코드·사용자 ID 는 패널 제목 아래 부제가 이미 말한다 — 같은 값을
+                       항목으로 한 번 더 두면 여덟 칸 중 한 칸이 중복에 쓰인다. */
                     <DetailFieldList>
-                      <DetailField label="부서 코드" value={(selectedItem as Department)?.ognzId || '-'} />
                       <DetailField label="상위 부서" value={(selectedItem as Department)?.upOgnzId || '최상위'} />
                       <DetailField
                         label="부서 설명"
@@ -1160,7 +1203,6 @@ export default function UserOrgHubClient({
                     </DetailFieldList>
                   ) : (
                     <DetailFieldList>
-                      <DetailField label="사용자 ID" value={displayedUser?.userId || '-'} />
                       <DetailField label="사번" value={displayedUser?.emplNo || '미지정'} />
                       <DetailField label="직함" value={displayedUser?.ofcpsNm || '미지정'} />
                       {/* 소속은 목록 projection 에 없다 — 상세 API(displayedUser)에서만 나온다. */}
@@ -1173,7 +1215,7 @@ export default function UserOrgHubClient({
                   )}
 
                   {!isDeptTab && <AccessControlLink onOpen={() => router.push('/admin/security/authority')} />}
-                </div>
+                </DetailScrollArea>
               </section>
             ) : isDeptTab ? (
               /* 미선택 안내. 종전에는 `p-20` + 점선 4px 테두리 + 96px 아이콘 상자 + 장식 아이콘

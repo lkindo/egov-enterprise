@@ -21,6 +21,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { type LucideIcon, Building2, ChevronRight, GripVertical, Info, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useOverflowRegion } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import type { UserManage } from '@/types/foundation/user';
 import type { FlattenedDept } from './departments/treeUtils';
@@ -170,11 +171,18 @@ export function UserOrgMasterSection({
 /**
  * 계정 상태 코드(userSttsCd) → 표시 라벨. 일괄 상태 변경 모달의 코드 체계와 동일하다.
  *
- * ⚠ 승인 대기에 `text-warning-emphasis` 를 쓰지 않는다 — 그 토큰은 정의돼 있지 않아 색이
- *   조용히 사라진다. 배경 틴트가 상태를 말하고 글자는 전경 토큰으로 읽는다.
+ * ⚠ 세 상태 모두 **배경 틴트가 상태를 말하고 글자는 전경 토큰으로 읽는다.** 이유가 둘이다.
+ *   - `--warning-emphasis` 는 이 저장소에 정의돼 있지 않아 `text-warning-emphasis` 는 Tailwind 가
+ *     클래스를 만들지 않고 색이 조용히 사라진다(NetworkAdminClient 가 기록한 함정).
+ *   - `text-success-emphasis` 는 정의돼 있지만 premium 라이트에서 `--success` 와 **같은 값**이라
+ *     (premium.css:54,57) 자기 색 10% 틴트 위에서 대비가 4.04:1 로 AA(4.5:1) 미만이 된다.
+ *     불투명 카드 위 4.62:1 만 보는 `status-token-contrast` 계약이 그 축을 보지 못한다.
+ *     실측: premium light 4.04 / premium dark 9.12 / krds light 6.83 / krds dark 8.22.
+ *   `text-foreground` 로 두면 네 축 전부 10:1 이상이고, 상태는 색 하나로만 전달되지 않는다
+ *   (라벨 문구가 함께 있다 — WCAG 1.4.1).
  */
 export const USER_STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  P: { label: '정상', className: 'border-success/30 bg-success/10 text-success-emphasis' },
+  P: { label: '정상', className: 'border-success/40 bg-success/15 text-foreground' },
   A: { label: '승인 대기', className: 'border-warning/40 bg-warning/15 text-foreground' },
   D: { label: '비활성', className: 'border-border bg-muted text-muted-foreground' },
 };
@@ -355,6 +363,33 @@ export function OrgPolicyPanel({ onNavigate }: { onNavigate: (href: string) => v
  * `hover:scale-105 hover:shadow-2xl` 을 썼다 — 값 하나가 세로 약 120px 을 차지해 네 항목을
  * 보는 데 스크롤이 필요했다. 정의 목록(`dl`)으로 바꿔 항목당 세로 약 42px 로 줄인다.
  */
+/**
+ * 상세 패널 본문의 스크롤 영역.
+ *
+ * 부서 탭에서는 이 안에 포커스 가능한 자손이 하나도 없다 — 액션은 패널 헤더가 갖고, 권한 안내는
+ * 사용자 탭 전용이다. 그런데 부서 설명은 4,000자까지 들어가고 정의 목록은 의도적으로 truncate 하지
+ * 않으므로 고정 높이 안에서 실제로 넘친다. 그러면 키보드만 쓰는 사용자는 잘린 내용을 볼 방법이
+ * 없다(axe `scrollable-region-focusable`, WCAG 2.1.1).
+ *
+ * ⚠ 이 훅은 **스크롤 노드와 같은 컴포넌트에서** 불러야 한다. 허브에서 부르고 props 만 내려보내면
+ *   동작하지 않는다 — 상세 패널은 항목을 선택해야 마운트되는데, 훅의 `useLayoutEffect` 는 deps 가
+ *   고정(`enabled` 상수)이라 허브가 마운트될 때 `ref.current === null` 로 한 번 돌고 다시 돌지
+ *   않는다. 그래서 role·tabIndex·이름이 한 번도 붙지 않는다. 소스 문자열만 보는 계약은 그 배선을
+ *   통과시키므로 이 컴포넌트의 계약 테스트가 **렌더 결과**로 고정한다.
+ */
+export function DetailScrollArea({ children }: { children: React.ReactNode }) {
+  const scrollRegionProps = useOverflowRegion<HTMLDivElement>('상세 정보 스크롤 영역');
+
+  return (
+    <div
+      {...scrollRegionProps}
+      className="min-h-0 flex-1 space-y-3 overflow-y-auto p-[var(--filter-pad)] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+    >
+      {children}
+    </div>
+  );
+}
+
 export function DetailFieldList({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <dl className={cn('grid grid-cols-1 gap-x-4 sm:grid-cols-2', className)}>
