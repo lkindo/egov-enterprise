@@ -162,7 +162,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [하향 래칫 2026-09-20(4)] 417 -> 416. 프로세스 스튜디오(정적 데모)의 처리 기록 타임라인 점이
 //   emerald 채움이었다. 이 화면은 e2e 가 구조를 촘촘히 고정한 데모 스캐폴드라 셸 이행은 하지 않고,
 //   다크 모드에서 깨지던 반투명 흰색 표면·한국어 대문자 자간·내부 용어만 좁게 고쳤다.
-const BASELINE = 416;
+// [하향 래칫 2026-09-20(5)] 416 -> 399. 지식 허브(KnowledgeHubClient)를 A1 셸로 이행하며 17건.
+//   가장 큰 덩어리는 카테고리 탭 4개의 colorMap 12건 — 탭은 색이 아니라 aria-selected 와
+//   테두리로 선택을 말하므로 팔레트 자체가 필요 없었다. 나머지는 목록 조회 실패 패널 4건
+//   (destructive 토큰)과 Q&A 상태 글자색 2건(success/warning 틴트 + 전경 토큰)이다. 신규 0건.
+const BASELINE = 399;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
