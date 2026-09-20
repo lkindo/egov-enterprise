@@ -20,7 +20,20 @@ import {
  SelectValue,
 } from "@/components/ui/select";
 
-function buildMenuTree(menuList: MenuByAuthority[]): MenuByAuthority[] {
+/**
+ * 배정된 메뉴를 계층으로 묶는다.
+ *
+ * ⚠ 최상위 판정은 `== null` 과 `0` 을 **둘 다** 받아야 한다. V2_100 이 최상위 4개를
+ *   `up_menu_sn = NULL` 로 고정했고(그 마이그레이션이 `count(*) WHERE up_menu_sn IS NULL <> 4` 를
+ *   예외로 검사한다) 백엔드는 그 값을 그대로 싣는다(MenuService.getAllMenus → MenuDto.upMenuSn).
+ *   종전 판정이 `=== 0` 하나였던 탓에 최상위가 한 건도 잡히지 않아 **모든 권한 그룹에서 트리가
+ *   비었고**, 화면은 툴바가 배정 건수를 세는 바로 옆에서 "할당된 메뉴 없음" 을 보여 줬다.
+ *
+ * ⚠ 부모가 배정 집합에 없으면 그 자식을 버리지 않고 최상위로 올린다. 이 화면이 답하는 질문은
+ *   "이 그룹이 무엇을 보는가" 인데, 상위 메뉴가 배정되지 않았다는 이유로 배정된 하위 메뉴를
+ *   숨기면 화면이 사실보다 적게 말한다.
+ */
+export function buildMenuTree(menuList: MenuByAuthority[]): MenuByAuthority[] {
  const menuMap = new Map<number, MenuByAuthority>();
  const rootMenus: MenuByAuthority[] = [];
 
@@ -30,14 +43,13 @@ function buildMenuTree(menuList: MenuByAuthority[]): MenuByAuthority[] {
 
  menuList.forEach(menu => {
  const currentMenu = menuMap.get(menu.menuNo)!;
- if (menu.upperMenuId === 0) {
- rootMenus.push(currentMenu);
- } else {
- const parent = menuMap.get(menu.upperMenuId);
+ const parentId = menu.upperMenuId;
+ const parent = parentId == null || parentId === 0 ? undefined : menuMap.get(parentId);
  if (parent) {
  parent.children = parent.children || [];
  parent.children.push(currentMenu);
- }
+ } else {
+ rootMenus.push(currentMenu);
  }
  });
 
@@ -217,7 +229,10 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  ? <ChevronRight size={14} aria-hidden="true" className={cn('transition-transform', isExpanded && 'rotate-90')} />
  : null}
  </span>
- {/* e2e(06-ops-governance)가 lucide-folder·lucide-file 클래스로 노드 존재를 확인한다. */}
+ {/* ⚠ 이 화면의 금지 어휘를 주석에도 쓰지 않는다 — DEC-OPS-100 이 이 파일에서 걷어낸 기술 용어를
+     frontend-visible-terms 계약이 **주석을 포함한 원문**에서 막기 때문에, 그 규칙을 설명하려고
+     그 단어를 적는 것만으로 red 가 된다(금지 목록은 계약 파일에 있다).
+     e2e(06-ops-governance)는 lucide-folder·lucide-file 클래스로 메뉴 항목이 그려졌는지 확인한다. */}
  {hasChildren
  ? <Folder size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" />
  : <File size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" />}
