@@ -9,8 +9,6 @@ import { Vote,
  ChevronRight,  
  CheckCircle2, 
  UserCheck, 
- Zap, 
- Trophy, 
  Target } from 'lucide-react';
 ;
 import { Button } from '@/components/ui/button';
@@ -105,28 +103,28 @@ export default function OnlinePollParticipateClient() {
 
  if (loading && viewMode === 'list') {
  return (
- <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+ <div className="flex flex-col items-center justify-center min-h-[200px] gap-3">
  <h1 className="sr-only">여론조사 목록을 불러오는 중</h1>
- <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
- <p className="text-muted-foreground font-bold tracking-tight text-xs">설문을 불러오는 중입니다…</p>
+ <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+ <p className="text-muted-foreground text-[length:var(--font-size-body)]">설문을 불러오는 중입니다…</p>
  </div>
  );
  }
 
  return (
- <div className="space-y-12 pb-24">
+ <div className="space-y-4 pb-8">
  <PageHeader
  title="투표 참여"
  breadcrumbs={[{ label: '커뮤니티' }, { label: '여론조사 참여' }]}
  />
 
- <div className="space-y-8">
+ <div className="space-y-4">
  {viewMode === 'list' && (
- <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+ <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
  {/* 오류를 빈 상태보다 **먼저** 판정한다 — 실패 시 목록이 비는 것이 보통이라 순서를
      뒤집으면 오류 화면에 영영 도달하지 못한다. */}
  {loadError ? (
- <div className="col-span-full p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
+ <div className="col-span-full p-8 text-center bg-card rounded-lg border border-dashed border-border flex flex-col items-center gap-3">
  <div className="space-y-2">
  <h3 className="text-xl font-bold tracking-tight text-foreground">{loadError}</h3>
  <p className="text-muted-foreground font-medium">
@@ -136,15 +134,15 @@ export default function OnlinePollParticipateClient() {
  <button
  type="button"
  onClick={() => { void fetchPolls(); }}
- className="px-5 py-2 rounded-lg border border-border bg-card text-sm font-bold hover:bg-muted transition-colors"
+ className="h-[var(--control-h)] px-3 rounded-lg border border-border bg-card text-[length:var(--font-size-body)] font-medium hover:bg-muted transition-colors"
  >
  다시 시도
  </button>
  </div>
  ) : (polls || []).length === 0 ? (
- <div className="col-span-full p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
- <div className="w-20 h-11 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
- <Target size={40} />
+ <div className="col-span-full p-8 text-center bg-card rounded-lg border border-dashed border-border flex flex-col items-center gap-3">
+ <div className="h-8 w-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+ <Target size={18} />
  </div>
  <div className="space-y-2">
  <h3 className="text-xl font-bold tracking-tight text-foreground">활성 설문이 없습니다</h3>
@@ -161,38 +159,38 @@ export default function OnlinePollParticipateClient() {
 
  {(viewMode === 'vote' || viewMode === 'result') && selectedPoll && (
  <div className="max-w-3xl mx-auto">
- <div className="bg-card rounded-lg overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-border">
- <div className="bg-surface-inverse p-12 text-surface-inverse-foreground relative overflow-hidden">
- <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
- <Vote size={160} />
+ <div className="bg-card rounded-lg overflow-hidden border border-border">
+ <div className="bg-surface-inverse p-4 text-surface-inverse-foreground">
+ <div className="space-y-2">
+ <div className="flex items-center gap-2">
+ <div className="px-2 py-0.5 rounded-lg border border-surface-inverse-border flex items-center">
+ <span className="text-xs font-semibold">{POLL_STATUS_LABEL[getPollStatus(selectedPoll, todayStr)]}</span>
  </div>
- <div className="relative z-10 space-y-4">
- <div className="flex items-center gap-3">
- <div className="px-4 py-1 bg-white/10 rounded-lg border border-white/10 flex items-center gap-2">
- <Zap size={14} className="text-primary" />
- <span className="text-xs font-bold tracking-[0.2em]">{POLL_STATUS_LABEL[getPollStatus(selectedPoll, todayStr)]}</span>
- </div>
- <div className="px-4 py-1 bg-primary/20 rounded-lg border border-primary/20 flex items-center gap-2">
- <Calendar size={14} className="text-primary" />
- <span className="text-xs font-bold tracking-tighter uppercase font-mono ">{toDisplayYmd(selectedPoll.pollBgngYmd)} - {toDisplayYmd(selectedPoll.pollEndYmd)}</span>
+ <div className="px-2 py-0.5 rounded-lg border border-surface-inverse-border flex items-center gap-1.5">
+ <Calendar size={14} className="text-surface-inverse-muted" />
+ <span className="text-xs font-semibold tabular-nums">{toDisplayYmd(selectedPoll.pollBgngYmd)} - {toDisplayYmd(selectedPoll.pollEndYmd)}</span>
  </div>
  </div>
- <h2 className="text-4xl font-bold tracking-tighter leading-none">{selectedPoll.pollNm}</h2>
- <p className="text-muted-foreground font-medium text-lg leading-relaxed">전사 의견 수렴을 위한 실시간 투표 세션입니다.</p>
+ <h2 className="text-lg font-bold leading-tight">{selectedPoll.pollNm}</h2>
+ <p className="text-surface-inverse-muted text-[length:var(--font-size-body)] leading-relaxed">전사 의견 수렴을 위한 실시간 투표 세션입니다.</p>
  </div>
  </div>
 
- <div className="p-12 space-y-10">
- <div className="space-y-4">
- <label className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase ml-1 block mb-6">
+ <div className="p-4 space-y-4">
+ <div className="space-y-2">
+ <label className="text-[length:var(--font-size-body)] font-semibold text-muted-foreground ml-1 block mb-2">
  {viewMode === 'vote' ? '항목을 선택하세요' : '집계 결과'}
  </label>
  
- <div className="space-y-4">
+ <div className="space-y-2">
  {pollItems.map((item, idx) => (
  <PollItem 
  key={item.pollArtclSn || `poll-item-${idx}`}
  item={item} 
+ /* [DEC-OPS-046] 진행 중 투표의 득표는 비관리자·미참여자에게 null 로 내려온다.
+    null 을 0 으로 접으면 "말하지 않았다" 가 "아무도 고르지 않았다" 라는 사실 주장이 된다 —
+    하나라도 null 이면 집계 자체를 말하지 않는다(DEC-OPS-080 의 표기와 같은 어휘). */
+ countsHidden={pollItems.some((i) => i.pollIemCo == null)}
  totalVotes={pollItems.reduce((sum, i) => sum + (i.pollIemCo || 0), 0)}
  isSelected={selectedItemSn === item.pollArtclSn}
  onSelect={() => viewMode === 'vote' && setSelectedItemSn(item.pollArtclSn!)}
@@ -204,11 +202,11 @@ export default function OnlinePollParticipateClient() {
  </div>
  </div>
 
- <div className="flex gap-4 pt-6">
+ <div className="flex gap-2 pt-2">
  <Button 
  variant="ghost" 
  onClick={() => setViewMode('list')}
- className="h-11 px-10 rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-muted border-2 border-border"
+ className="h-[var(--control-h)] px-4 rounded-lg text-[length:var(--font-size-body)] font-medium border border-border"
  >
  뒤로가기
  </Button>
@@ -216,9 +214,9 @@ export default function OnlinePollParticipateClient() {
  <Button 
  disabled={!selectedItemSn || isVoting}
  onClick={handleVote}
- className="h-11 flex-1 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 gap-3"
+ className="h-[var(--control-h)] flex-1 rounded-lg text-[length:var(--font-size-body)] font-semibold gap-2"
  >
- {isVoting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <UserCheck size={20} />}
+ {isVoting ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <UserCheck size={16} />}
  투표 제출하기
  </Button>
  )}
@@ -252,29 +250,29 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
           onSelect();
         }
       }}
-      className="group cursor-pointer bg-card rounded-lg p-10 border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden"
+      className="group cursor-pointer bg-card rounded-lg p-4 border border-border hover:border-primary/40 hover:bg-accent/40 transition-colors"
     >
-      <div className="flex justify-between items-start mb-10">
-        <div className="w-16 h-11 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl transition-transform group-hover:rotate-6">
-          <Vote size={28} />
+      <div className="flex justify-between items-start gap-2 mb-2">
+        <div className="h-8 w-8 shrink-0 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground">
+          <Vote size={16} />
         </div>
         <div className={cn(
-          "px-4 py-1.5 rounded-lg border text-xs font-bold tracking-widest uppercase shadow-sm",
+          "px-2 py-0.5 rounded-lg border text-xs font-semibold",
           isLive
-            ? "bg-emerald-50 text-emerald-500 border-emerald-100"
+            ? "bg-success text-success-foreground border-transparent"
             : status === 'scheduled'
-            ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+            ? "bg-warning text-warning-foreground border-transparent"
             : "bg-muted text-muted-foreground border-border"
         )}>
           {label}
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-2xl font-bold tracking-tighter leading-none group-hover:text-primary transition-colors uppercase">{poll.pollNm}</h3>
-        <div className="flex items-center gap-3 font-mono text-xs font-bold text-muted-foreground tracking-tighter ">
-          <Calendar size={14} className="opacity-40" />
-          {toDisplayYmd(poll.pollBgngYmd)} <span className="opacity-20">/</span> {toDisplayYmd(poll.pollEndYmd)}
+      <div className="space-y-1">
+        <h3 className="text-[length:var(--font-size-body)] font-semibold leading-snug group-hover:text-primary transition-colors">{poll.pollNm}</h3>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+          <Calendar size={14} className="shrink-0" />
+          {toDisplayYmd(poll.pollBgngYmd)} <span>/</span> {toDisplayYmd(poll.pollEndYmd)}
         </div>
       </div>
 
@@ -285,19 +283,15 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
         그대로 떴다. 실제로 종료된 설문을 누르면 참여가 아니라 결과 보기로 넘어간다.
         상태는 상단 배지 하나가 말한다.
       */}
-      <div className="mt-10 pt-8 border-t border-border flex items-center justify-end">
-        <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-      </div>
-
-      <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] group-hover:scale-110 transition-all duration-700 grayscale">
-        <Vote size={200} />
+      <div className="mt-2 pt-2 border-t border-border flex items-center justify-end">
+        <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
       </div>
     </div>
   );
 }
 
-function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId }: any) {
-  const percentage = totalVotes > 0 ? Math.round(((item.pollIemCo || 0) / totalVotes) * 100) : 0;
+function PollItem({ item, totalVotes, countsHidden, isSelected, onSelect, mode, index, testId }: any) {
+  const percentage = !countsHidden && totalVotes > 0 ? Math.round(((item.pollIemCo || 0) / totalVotes) * 100) : 0;
   return (
     <div
       role="button"
@@ -313,46 +307,47 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId 
         }
       }}
       className={cn(
-        "relative p-8 rounded-lg border-2 transition-all group overflow-hidden cursor-pointer",
-        isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-muted/50 hover:border-border",
-        mode === 'result' && "cursor-default border-border bg-card"
+        "relative p-3 rounded-lg border transition-colors group cursor-pointer",
+        isSelected ? "border-primary bg-primary/5" : "border-border bg-muted/50 hover:border-primary/50 hover:bg-accent/40",
+        mode === 'result' && "cursor-default border-border bg-card hover:border-border hover:bg-card"
       )}
     >
- <div className="flex items-center justify-between relative z-10">
- <div className="flex items-center gap-6">
+ <div className="flex items-center justify-between gap-3">
+ <div className="flex items-center gap-3">
  <div className={cn(
- "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm transition-all",
- isSelected ? "bg-primary text-white" : "bg-card text-muted-foreground group-hover:text-primary"
+ "h-8 w-8 shrink-0 rounded-lg flex items-center justify-center font-semibold text-xs tabular-nums border transition-colors",
+ isSelected ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border group-hover:text-primary"
  )}>
- {isSelected ? <CheckCircle2 size={20} /> : String(index + 1).padStart(2, '0')}
+ {isSelected ? <CheckCircle2 size={16} /> : String(index + 1).padStart(2, '0')}
  </div>
  <span className={cn(
- "text-lg font-bold tracking-tight uppercase",
+ "text-[length:var(--font-size-body)] font-semibold",
  isSelected ? "text-primary" : "text-foreground"
  )}>{item.pollArtclNm}</span>
  </div>
  {mode === 'result' && (
- <div className="text-right">
- <span className="text-2xl font-bold tracking-tighter text-foreground tabular-nums leading-none block">{percentage}%</span>
- <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.pollIemCo || 0}표</span>
+ <div className="shrink-0 text-right">
+ {countsHidden ? (
+ <span className="text-[length:var(--font-size-body)] text-muted-foreground">집계 비공개</span>
+ ) : (
+ <>
+ <span className="block text-[length:var(--font-size-body)] font-semibold tabular-nums leading-none text-foreground">{percentage}%</span>
+ <span className="text-xs tabular-nums text-muted-foreground">{item.pollIemCo}표</span>
+ </>
+ )}
  </div>
  )}
  </div>
 
- {mode === 'result' && (
- <div className="mt-6 h-2 bg-muted rounded-lg overflow-hidden">
+ {mode === 'result' && !countsHidden && (
+ <div className="mt-2 h-1.5 overflow-hidden rounded bg-muted">
  <div 
  style={{ width: `${percentage}%` }}
- className="h-full bg-gradient-to-r from-primary to-hub-indigo rounded-lg transition-all duration-1000"
+ className="h-full bg-primary rounded-lg transition-[width] duration-300"
  />
  </div>
  )}
  
- {isSelected && (
- <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
- <Trophy size={48} className="text-primary" />
- </div>
- )}
  </div>
  );
 }

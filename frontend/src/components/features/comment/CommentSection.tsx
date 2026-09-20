@@ -33,7 +33,7 @@ type OptimisticCommentAction =
   | { type: 'delete'; payload: number }
   | { type: 'update'; payload: Pick<CommentVO, 'ansSn' | 'ansCn'> };
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 
@@ -233,59 +233,41 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
   };
 
   return (
-    <div className="space-y-12 pt-24 relative">
-      <div className="flex items-center justify-between border-b-2 border-border pb-8 relative overflow-hidden">
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-transparent opacity-20" />
-        <div className="flex items-center gap-6 relative z-10">
-          <motion.div 
-            whileHover={{ rotate: 10, scale: 1.1 }}
-            className="w-16 h-16 rounded-2xl bg-surface-inverse flex items-center justify-center shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)]"
-          >
-            <MessageSquare className="w-8 h-8 text-surface-inverse-foreground" />
-          </motion.div>
-          <div>
-            <h3 className="text-3xl font-black text-foreground tracking-tighter leading-none mb-2">댓글</h3>
-            <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em]">댓글 {optimisticComments.length}개</p>
+    <div className="space-y-3 pt-6">
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-2">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-base font-semibold text-foreground">댓글</h3>
+            <p className="text-xs text-muted-foreground">댓글 {optimisticComments.length}개</p>
           </div>
         </div>
       </div>
 
       {/* Comment List */}
-      <div className="space-y-8">
-        <AnimatePresence mode="popLayout">
-          {optimisticComments.length === 0 ? (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="py-24 text-center border-2 border-dashed border-border rounded-[2rem] bg-muted/50"
-            >
-              <p className="text-muted-foreground font-black tracking-tight text-xs">아직 등록된 댓글이 없습니다. 아래에서 첫 댓글을 남겨 주세요.</p>
-            </motion.div>
-          ) : (
+      <div className="divide-y divide-border rounded-[var(--radius)] border border-border">
+        {optimisticComments.length === 0 ? (
+          <div className="px-[var(--cell-px)] py-6 text-center">
+            <p className="text-[length:var(--font-size-body)] text-muted-foreground">아직 등록된 댓글이 없습니다. 아래에서 첫 댓글을 남겨 주세요.</p>
+          </div>
+        ) : (
             optimisticComments.map((comment) => (
-              <motion.div
-                key={comment.ansSn}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ type: "spring" as const, stiffness: 100 }}
-              >
+              <div key={comment.ansSn}>
                 <Card className={cn(
-                  "border border-white shadow-2xl rounded-3xl overflow-hidden bg-white/70 backdrop-blur-md ring-1 ring-black/5 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all group",
-                  comment.isOptimistic && "opacity-60 grayscale-[0.5]"
+                  "gap-0 rounded-none border-0 py-0 shadow-none",
+                  comment.isOptimistic && "opacity-60"
                 )}>
-                  <CardContent className="p-10">
-                    <div className="flex flex-col gap-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 rounded-2xl bg-muted border-2 border-white shadow-inner flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                            <User className="w-7 h-7 text-muted-foreground group-hover:text-white" />
+                  <CardContent className="px-[var(--cell-px)] py-[var(--cell-py)]">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted">
+                            <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                           </div>
-                          <div className="space-y-1">
-                            <h4 className="font-black text-foreground tracking-tight text-lg leading-none uppercase">{comment.wrterNm}</h4>
-                            <div className="flex items-center gap-3 text-[10px] font-black text-muted-foreground tracking-widest uppercase mt-2">
-                              <Clock className="w-3.5 h-3.5" />
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                            <h4 className="truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{comment.wrterNm}</h4>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
                               {comment.crtDt ? format(new Date(comment.crtDt), 'yyyy-MM-dd HH:mm') : '-'}
                             </div>
                           </div>
@@ -298,7 +280,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                           (카드가 이미 opacity/grayscale 로 미확정임을 알리고 있었는데, 동작만 막지 않고 있었다.)
                         */}
                         {!comment.isOptimistic && (canManageComment(comment, 'UPDATE') || canManageComment(comment, 'DELETE')) && (
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <div className="flex shrink-0 items-center gap-1">
                           {editingId === comment.ansSn && canManageComment(comment, 'UPDATE') ? (
                             <>
                               <Button
@@ -308,12 +290,12 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                                 aria-busy={editPendingId === comment.ansSn}
                                 onClick={() => { void handleEdit(comment.ansSn); }}
                                 aria-label={editPendingId === comment.ansSn ? '댓글 수정 저장 중' : '댓글 수정 저장'}
-                                className="h-10 w-10 p-0 rounded-xl text-success-emphasis hover:bg-success/10"
+                                className="size-8 rounded-md p-0 text-success-emphasis hover:bg-success/10"
                                 data-testid="edit-save-button"
                               >
                                 {editPendingId === comment.ansSn
-                                  ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-                                  : <Check className="w-5 h-5" aria-hidden="true" />}
+                                  ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                                  : <Check className="h-4 w-4" aria-hidden="true" />}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -324,9 +306,9 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                                   setEditingId(null);
                                 }}
                                 aria-label="댓글 수정 취소"
-                                className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted"
+                                className="h-[var(--control-h-sm)] w-[var(--control-h-sm)] p-0 text-muted-foreground hover:bg-muted"
                                 data-testid="edit-cancel-button"
-                              ><X className="w-5 h-5" /></Button>
+                              ><X className="h-4 w-4" /></Button>
                             </>
                           ) : (
                             <>
@@ -340,9 +322,9 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                                   setEditCn(comment.ansCn);
                                 }}
                                 aria-label="댓글 수정"
-                                className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted"
+                                className="h-[var(--control-h-sm)] w-[var(--control-h-sm)] p-0 text-muted-foreground hover:bg-muted"
                                 data-testid="comment-edit-button"
-                              ><Edit2 className="w-5 h-5" /></Button>}
+                              ><Edit2 className="h-4 w-4" /></Button>}
                               {canManageComment(comment, 'DELETE') && <Button
                                 variant="ghost"
                                 size="sm"
@@ -350,12 +332,12 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                                 aria-busy={deletePendingId === comment.ansSn}
                                 onClick={() => { void handleDelete(comment.ansSn); }}
                                 aria-label={deletePendingId === comment.ansSn ? '댓글 삭제 중' : '댓글 삭제'}
-                                className="h-10 w-10 p-0 rounded-xl text-destructive-emphasis hover:bg-destructive/10"
+                                className="h-[var(--control-h-sm)] w-[var(--control-h-sm)] p-0 text-destructive-emphasis hover:bg-destructive/10"
                                 data-testid="comment-delete-button"
                               >
                                 {deletePendingId === comment.ansSn
-                                  ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-                                  : <Trash2 className="w-5 h-5" aria-hidden="true" />}
+                                  ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                                  : <Trash2 className="h-4 w-4" aria-hidden="true" />}
                               </Button>}
                             </>
                           )}
@@ -381,48 +363,43 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                             }}
                             maxLength={4000}
                             required
-                            className="min-h-[120px] rounded-2xl border-border focus:ring-slate-900 border-2 text-foreground font-bold text-lg p-6 bg-muted/50"
+                            className="min-h-20 rounded-[var(--radius)] border-border bg-background p-2 text-[length:var(--font-size-body)] text-foreground"
                           />
                           {editValidation.errors.editCn ? (
                             <p {...editValidation.messageProps('editCn')} className="text-xs font-bold text-destructive-emphasis" />
                           ) : null}
                         </div>
                       ) : (
-                        <p className="text-foreground font-bold text-lg leading-relaxed whitespace-pre-wrap pl-1">
+                        <p className="whitespace-pre-wrap text-[length:var(--font-size-body)] leading-relaxed text-foreground">
                           {comment.ansCn}
                         </p>
                       )}
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </div>
             ))
           )}
-        </AnimatePresence>
       </div>
 
       {/* Comment Form */}
-      <motion.form 
+      <motion.form
         onSubmit={handleCreateSubmit}
         noValidate
-        className="relative group pt-16"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        className="pt-2"
       >
         <input type="hidden" name="bbsId" value={bbsId} />
         <input type="hidden" name="pstSn" value={pstSn} />
-        <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-slate-200/20 to-hub-indigo/20 rounded-[2.5rem] blur-xl opacity-25 group-hover:opacity-100 transition duration-1000"></div>
-        <Card className="relative border border-white shadow-2xl rounded-[2.5rem] bg-white/80 backdrop-blur-3xl ring-1 ring-black/5 overflow-hidden">
-          <CardContent className="p-12 space-y-8">
+        <Card className="gap-0 rounded-[var(--radius)] border-border py-0 shadow-none">
+          <CardContent className="space-y-[var(--form-gap)] p-[var(--filter-pad)]">
             <FormErrorSummary
               errors={createValidation.errors}
               labels={commentCreateValidationLabels}
               onNavigate={createValidation.focusError}
             />
-            <div className="flex items-center gap-4 mb-2">
-              <Badge className="px-5 py-2 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-black tracking-tight text-[10px] hover:bg-surface-inverse shadow-xl">새 댓글</Badge>
-              <div className="h-[2px] flex-1 bg-muted" />
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-xs font-medium">새 댓글</Badge>
+              <div className="h-px flex-1 bg-border" />
             </div>
             <Textarea
               ref={createInputRef}
@@ -436,22 +413,23 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
               }}
               maxLength={4000}
               required
-              className="min-h-[180px] border-none focus-visible:ring-0 text-2xl font-black text-foreground tracking-tighter resize-none p-0 bg-transparent placeholder:text-muted-foreground placeholder:uppercase"
+              className="min-h-24 resize-y rounded-[var(--radius)] border-border bg-background p-2 text-[length:var(--font-size-body)] text-foreground placeholder:text-muted-foreground"
             />
             {createValidation.errors.ansCn ? (
               <p {...createValidation.messageProps('ansCn')} className="text-xs font-bold text-destructive-emphasis" />
             ) : null}
-            <div className="flex justify-end border-t border-border pt-8">
+            <div className="flex justify-end border-t border-border pt-3">
               <Button
                 type="submit"
+                size="sm"
                 disabled={hasWritePending}
                 aria-busy={createPending}
-                className="h-16 px-12 rounded-[1.5rem] bg-surface-inverse hover:bg-black text-surface-inverse-foreground font-black tracking-tight text-xs shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
+                className="gap-1.5"
               >
                 {createPending ? (
-                  <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> 댓글 등록 중…</>
+                  <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> 댓글 등록 중…</>
                 ) : (
-                  <><Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 댓글 등록</>
+                  <><Send className="h-4 w-4" aria-hidden="true" /> 댓글 등록</>
                 )}
               </Button>
             </div>
