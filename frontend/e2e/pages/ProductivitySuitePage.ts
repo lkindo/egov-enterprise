@@ -13,47 +13,10 @@ export class ProductivitySuitePage {
         await this.page.goto('/admin/sanctn/forms');
     }
 
-    async verifyApprovalStateTransition() {
-        console.log(`>>> Verifying Workflow State Transition`);
-        // Note: The UI might not be fully functional for approval workflow in the dummy app yet.
-        // We will look for standard identifiers for approval systems.
-        // We'll assert that the page loaded correctly, checking for text indicating Electronic Approval.
+    async verifyApprovalFormHeading() {
+        console.log(`>>> Verifying Approval Form Demo Heading`);
+        // 이 화면의 계약은 결재 양식 데모 제목이다. 실제 결재는 approvals 여정이 검증한다.
         await expect(this.page.getByRole('heading', { name: /결재|결재 양식|Sanction/i }).first()).toBeVisible({ timeout: 15000 });
-    }
-
-    // 주소록(Address Book)
-    async gotoAddressBook() {
-        console.log(`>>> Navigating to Address Book`);
-        await this.page.goto('/admin/collaboration/address-book/select-address-book-list');
-        await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/select-address-book-list/);
-    }
-
-    async verifyAddressBookNavigation() {
-        console.log(`>>> Verifying Address Book Navigation`);
-        await expect(this.page.getByRole('heading', { name: '통합 주소록 관리' })).toBeVisible({ timeout: 15000 });
-        await expect(this.page.getByRole('textbox', { name: '주소록 검색' })).toBeVisible();
-        /*
-          [2026-08-24 A1 이행] 링크 안 버튼 중첩을 없애 role 이 link 가 됐었다(페이지 이동).
-          [2026-09-12 §A3-1 이행] 등록이 전용 페이지에서 목록 위 모달로 바뀌며 **다시 button 이 됐다**
-          — `insert-address-book` 은 이제 목록으로 보내는 page-redirect 다.
-          존재만 단언하면 "버튼은 있는데 눌러도 아무 일이 없는" 회귀를 못 잡으므로(이번에 실제로
-          그 계열 회귀가 났다) 모달이 실제로 열리는 것까지 본다.
-        */
-        const openCreate = this.page.getByRole('button', { name: '주소록 등록', exact: true });
-        await expect(openCreate).toBeVisible();
-        await openCreate.click();
-        await expect(this.page.getByRole('dialog', { name: '주소록 등록' })).toBeVisible();
-    }
-
-    // 일정 관리(Calendar)
-    async gotoCalendar() {
-        console.log(`>>> Navigating to Work Hub (Calendar Tab)`);
-        await this.page.goto('/admin/work-hub?tab=calendar');
-    }
-
-    async verifyCalendarSynchronization() {
-        console.log(`>>> Verifying Calendar Module`);
-        await expect(this.page.getByRole('heading', { level: 1, name: '일정', exact: true })).toBeVisible({ timeout: 15000 });
     }
 
     // 부서 업무 (Dept Job)

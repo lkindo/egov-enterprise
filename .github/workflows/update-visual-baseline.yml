@@ -36,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COMPOSE_FILE: docker-compose.yml:docker-compose.authz-e2e.yml
+      COMPOSE_PROJECT_NAME: egov-e2e-${{ github.run_id }}-${{ github.run_attempt }}-0
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -52,7 +53,9 @@ jobs:
         run: docker compose build api
 
       - name: Start Docker Infrastructure (DB & API)
-        run: docker compose up -d db api
+        run: |
+          node scripts/e2e-compose-preflight.mjs
+          docker compose up -d db api
 
       - name: Wait for API healthy
         run: |
@@ -91,24 +94,21 @@ jobs:
         run: pnpm run build
         working-directory: frontend
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8080/api/v1
+          BACKEND_API_URL: http://127.0.0.1:8080/api/v1/
+          NEXT_PUBLIC_WEB_URL: http://127.0.0.1:3001
 
-      - name: Start frontend and wait for readiness
-        run: |
-          nohup pnpm run start:3001 > /tmp/next-start.log 2>&1 &
-          disown || true
-          npx wait-on http://127.0.0.1:3001/login --timeout 120000
-        working-directory: frontend
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
-
-      # -g 로 VRT 만 돌린다. 스냅샷은 project 별로 파일이 갈리므로(full-suite / tier-4-quality)
-      # project 를 고정하지 않는다 — 양쪽 모두 생성되어야 CI 가 그린이 된다.
+      # The runner owns the frontend process and verifies the disposable Compose stack.
       - name: Regenerate baselines (--update-snapshots)
-        run: npx playwright test -g "Visual Regression Baseline" --update-snapshots
+        run: |
+          set -euo pipefail
+          node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=full-suite e2e/quality/visual-baselines.spec.ts -g "Visual Regression Baseline" --update-snapshots
+          node ../scripts/playwright-result-contract.mjs --report /tmp/e2e-results.json --inventory /tmp/e2e-inventory.json e2e/quality/visual-baselines.spec.ts
         working-directory: frontend
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8080/api/v1
+          BACKEND_API_URL: http://127.0.0.1:8080/api/v1/
+          NEXT_PUBLIC_WEB_URL: http://127.0.0.1:3001
           PLAYWRIGHT_BROWSERS_PATH: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
       - name: Show generated baselines
@@ -135,7 +135,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # ⚠ [2026-07-29 수정] 종전 패턴 `frontend/e2e/**/*-snapshots/` 는 **아무것도 add 하지 못했다.**
           #   bash 는 `globstar` 없이 `**` 를 재귀 glob 으로 처리하지 않아 `frontend/e2e/*/*-snapshots/`
-          #   가 되는데, 실제 경로는 `frontend/e2e/04-quality-resilience.spec.ts-snapshots/` 라
+          #   가 되는데, 당시 경로는 `frontend/e2e/04-quality-resilience.spec.ts-snapshots/` 라
           #   중간 디렉터리가 없어 매치되지 않는다. `|| true` 가 그 실패까지 삼켜, 파일이 정상
           #   생성됐는데도 "변경 없음" 으로 성공 종료했다(run 30418022585 실측 — 거짓 green).
           #   디렉터리를 통째로 넘겨 glob 자체를 없앤다.

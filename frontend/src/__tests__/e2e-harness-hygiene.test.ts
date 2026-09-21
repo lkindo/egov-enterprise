@@ -42,7 +42,9 @@ function withoutComments(source: string): string {
 //   `div.group` 로케이터를 역할·이름 계약으로 교체했다. 정상 actionability 클릭이 실제 E2E 에서
 //   통과하므로 force 우회가 필요하지 않다.
 // Retired technical-role creation removed one force click.
-const FORCE_CLICK_BASELINE = 8;
+// [2026-09-21 하향: 8 → 7] FAQ 여정 통합 후 호출이 사라진 KnowledgePage.createFAQ를 제거했다.
+// 실제 제출·상세 heading 검증은 정상 클릭을 쓰는 SupportPage.createKnowledgeEntry가 유지한다.
+const FORCE_CLICK_BASELINE = 7;
 
 describe('E2E force-click 하향 래칫', () => {
   it('force 클릭 사용처가 baseline 을 넘지 않는다', () => {
@@ -99,25 +101,41 @@ describe('E2E harness dead-asset contract', () => {
     });
 
     expect(usages).toEqual([{
-      file: 'e2e/04-quality-resilience.spec.ts',
+      file: 'e2e/quality/visual-baselines.spec.ts',
       call: ['test', 'skip('].join('.'),
     }]);
-    const visualSpec = readFileSync(join(FRONTEND_DIR, 'e2e/04-quality-resilience.spec.ts'), 'utf8');
+    const visualSpec = readFileSync(join(FRONTEND_DIR, 'e2e/quality/visual-baselines.spec.ts'), 'utf8');
     expect(visualSpec).toContain("process.platform !== 'linux'");
     expect(visualSpec).toContain('비주얼 회귀는 CI(리눅스) 전용이다');
   });
 
-  it('로그인 VRT는 admin fixture를 상속하지 않는 익명 context와 고정 URL을 사용한다', () => {
-    const visualSpec = readFileSync(join(FRONTEND_DIR, 'e2e/04-quality-resilience.spec.ts'), 'utf8');
+  function assertAnonymousLoginCapture(visualSpec: string): void {
     const anonymousCapture = visualSpec.match(
-      /const anonContext = await browser\.newContext\(\{[\s\S]*?await anonGuard\.verify\(\);/,
+      /const \{ page: anonPage, guard: anonGuard \} = await actorPage\(\{[\s\S]*?await expect\(anonPage\)\.toHaveScreenshot\('login-page-baseline\.png'[\s\S]*?\}\);/,
     )?.[0];
 
     expect(anonymousCapture, '로그인 VRT 익명 캡처 블록을 찾지 못했습니다').toBeDefined();
     expect(anonymousCapture).toMatch(/storageState:\s*\{\s*cookies:\s*\[\],\s*origins:\s*\[\]\s*\}/);
     expect(anonymousCapture).toMatch(
-      /goto\('\/login\?e2e=true'\)[\s\S]*?toHaveURL\(\/\\\/login\\\?e2e=true\$\/\)[\s\S]*?toHaveScreenshot\('login-page-baseline\.png'/,
+      /goto\('\/login\?e2e=true'\)[\s\S]*?toHaveURL\(\/\\\/login\\\?e2e=true\$\/\)[\s\S]*?toHaveURL\(\/\\\/login\\\?e2e=true\$\/\)[\s\S]*?toHaveScreenshot\('login-page-baseline\.png'/,
     );
     expect(anonymousCapture?.match(/toHaveURL\(\/\\\/login\\\?e2e=true\$\/\)/g)).toHaveLength(2);
+  }
+
+  it('로그인 VRT는 admin fixture를 상속하지 않는 익명 actor와 고정 URL을 사용한다', () => {
+    assertAnonymousLoginCapture(readFileSync(join(FRONTEND_DIR, 'e2e/quality/visual-baselines.spec.ts'), 'utf8'));
+  });
+
+  it.each([
+    ['익명 storageState 제거', 'storageState: { cookies: [], origins: [] },', ''],
+    ['URL 재검증 제거', 'await expect(anonPage).toHaveURL(/\\/login\\?e2e=true$/);', ''],
+    ['관찰되지 않는 context 생성', '= await actorPage({', '= await browser.newContext({'],
+  ])('%s 위반을 탐지한다', (_name, before, after) => {
+    const visualSpec = readFileSync(join(FRONTEND_DIR, 'e2e/quality/visual-baselines.spec.ts'), 'utf8');
+    // 첫 storageState는 관리자 fixture에 속한다. 익명 actor 블록 안에만 위반을 주입한다.
+    const boundary = visualSpec.indexOf('const { page: anonPage, guard: anonGuard }');
+    const mutated = visualSpec.slice(0, boundary) + visualSpec.slice(boundary).replace(before, after);
+    expect(mutated).not.toBe(visualSpec);
+    expect(() => assertAnonymousLoginCapture(mutated)).toThrow();
   });
 });

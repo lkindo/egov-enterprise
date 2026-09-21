@@ -49,14 +49,14 @@ reference baseline의 목적은 긴급 수리 이후의 현재 기반과 이후 
 게시글 composer의 현재 production-evidenced 진입점은 `/admin/community/boards/insert-board-article`다.
 
 - 실제 page는 `BoardRegistClient`를 렌더한다: [insert-board-article/page.tsx](../../frontend/src/app/admin/community/boards/insert-board-article/page.tsx).
-- 게시글 생명주기와 autosave E2E source도 이 route를 사용한다: [03-board-community.spec.ts](../../frontend/e2e/03-board-community.spec.ts), [04-quality-resilience.spec.ts](../../frontend/e2e/04-quality-resilience.spec.ts).
+- 게시글 생명주기와 autosave E2E source도 이 route를 사용한다: [board-articles.spec.ts](../../frontend/e2e/journeys/board-articles.spec.ts), [board-draft-recovery.spec.ts](../../frontend/e2e/quality/board-draft-recovery.spec.ts).
 - `/admin/community/boards/write`는 redirect alias가 아니라 별도 parallel page이고 위 생명주기 증거가 없다. baseline composer를 이 route로 바꾸면 contract test가 red다.
 
 현재 `BoardRegistClient`에서는 rich editor와 autosave 근거는 확인했지만 가시적인 upload control은 확인하지 못했다. 따라서 upload 성공을 baseline task 결과로 선결하지 않는다. 실행 시 첨부 action이 보이면 capability truth와 서버 readback을 먼저 확인하고, 보이지 않거나 지원되지 않으면 `unavailable/unverified`로 기록한다. 첨부 기능을 흉내 낸 mock 성공은 금지한다.
 
 ### 2.3 Cross-role 후보 선택과 한계
 
-FAQ를 선택한 이유는 기존 E2E source가 관리자 작성→관리자 목록 확인→사용자 `/help` 검색까지 UI를 통과하도록 정의하기 때문이다: [05-public-experience.spec.ts](../../frontend/e2e/05-public-experience.spec.ts), [KnowledgePage.ts](../../frontend/e2e/pages/KnowledgePage.ts).
+FAQ를 선택한 이유는 기존 E2E source가 관리자 작성→관리자 목록 확인→사용자 `/help` 검색까지 UI를 통과하도록 정의하기 때문이다: [help-content.spec.ts](../../frontend/e2e/journeys/help-content.spec.ts), [KnowledgePage.ts](../../frontend/e2e/pages/KnowledgePage.ts).
 
 기존 test는 사용자 목록에서 질문이 보이고 검색되는 것까지 주장하지만 답변 panel을 열어 내용까지 읽는 완료 상태는 고정하지 않는다. 이번 baseline은 답변 열람을 authoritative end state로 추가 측정하되, 실행 전 결과를 성공으로 기록하지 않는다.
 
@@ -64,7 +64,7 @@ FAQ를 선택한 이유는 기존 E2E source가 관리자 작성→관리자 목
 
 ### 2.4 Complex interaction 후보
 
-`/admin/community/boards/maker`는 4단계 wizard와 validation·배포 readback source가 있어 complex interaction 후보로 선택했다. drag-and-drop을 자동화하지 않는 조직도 test보다 현재 실행 정의가 구체적이다. route source는 [maker/page.tsx](../../frontend/src/app/admin/community/boards/maker/page.tsx), 기존 E2E 정의는 [03-board-master-management.spec.ts](../../frontend/e2e/03-board-master-management.spec.ts)다. E2E source 존재는 현재 pass 증거가 아니다.
+`/admin/community/boards/maker`는 4단계 wizard와 validation·배포 readback source가 있어 complex interaction 후보로 선택했다. drag-and-drop을 자동화하지 않는 조직도 test보다 현재 실행 정의가 구체적이다. route source는 [maker/page.tsx](../../frontend/src/app/admin/community/boards/maker/page.tsx), 기존 E2E 정의는 [board-masters.spec.ts](../../frontend/e2e/journeys/board-masters.spec.ts)다. E2E source 존재는 현재 pass 증거가 아니다.
 
 ## 3. Case identity와 render matrix
 
@@ -188,10 +188,10 @@ npm run ui-quality:baseline:launch -- --recover-project egov-uiux-baseline-r13-<
 | `UI_BASELINE_DOCKER_NETWORK` | 두 container가 함께 연결된 exact run-scoped network name | 원문 기록 금지 |
 | `UI_BASELINE_SYNTHETIC_SEED_LABEL` | 실제 식별자가 아닌 고정 fixture label | label만 기록 |
 | `UI_BASELINE_ADMIN_ID`, `UI_BASELINE_ADMIN_SECRET` | 로그인 성공 state와 로그인 performance 반복에만 메모리에서 사용 | 기록 금지 |
-| `frontend/playwright/.auth/admin.json`, `user.json` | 같은 stack에서 setup으로 생성된 private ignored storage state. 내용을 사람이 읽거나 복사하지 않음 | 경로·내용 모두 결과에 기록하지 않음 |
+| `frontend/playwright/.auth/admin.json`, `user.json` | 같은 stack에서 전용 API 인증으로 생성된 private ignored storage state. 내용을 사람이 읽거나 복사하지 않음 | 경로·내용 모두 결과에 기록하지 않음 |
 | `UI_BASELINE_SYNTHETIC_BOARD_ID`, `UI_BASELINE_SYNTHETIC_FAQ_BOARD_ID` | 필요 시 격리 seed의 synthetic board를 지정. 미지정 시 현재 고정 synthetic seed ID 사용 | manifest placeholder만 기록 |
 
-auth state는 같은 origin/API에 대해 기존 setup으로 먼저 생성한다. setup과 runner 사이에 stack/image/port를 바꾸면 다시 생성한다.
+auth state는 격리 launcher가 전용 `frontend/scripts/ui-quality-baseline-auth.mjs`로 생성한다. 이 진입점은 build attestation·컨테이너·이미지·네트워크를 다시 검증하고 일반 E2E의 cleanup을 실행하지 않는다. 인증과 runner 사이에 stack/image/port를 바꾸면 다시 생성한다.
 
 모든 provenance를 기록하는 full·mutation diagnostic·일반 diagnostic execute는 browser launch 전에 같은 build envelope와 stack을 검증하고 final seal 직전 둘 다 다시 검증한다. 먼저 runner는 저장소 밖 attestation regular file을 symlink·비정규 파일 없이 최대 4,096 bytes로 읽어 exact raw-file SHA-256, canonical `{payload,payloadSha256}` envelope, 실행 `buildSha`·`buildInputTreeHash`·`commitTreeId`, 환경의 두 image ID를 교차 검증한다. 시작과 종료는 같은 path·raw digest·payload identity에 결속된다.
 
@@ -206,11 +206,9 @@ runner는 full container JSON을 읽지 않고 `docker inspect --type container 
 attestation path·raw SHA·canonical envelope·payload digest·commit tree·image ID 결속이 다르면 `baseline-build-unverified`, container/image inspect CLI missing·timeout·malformed JSON·multiple mapping, stopped/unhealthy/restarting container, restart count 증가, 다른 image·project·service·network·image label 중 하나라도 발견되면 `baseline-stack-unverified`로 red가 된다. 시작 검증 실패는 workspace·browser·attempt artifact 생성 전에 끝나고, 종료 재검증 실패는 이미 만든 staging 증거를 publish하지 않으며 final seal을 쓰지 않는다. raw attestation과 container/image의 raw inspect output, attestation path, full container ID/name은 성공·실패 artifact, stdout/stderr, 로그에 기록하지 않는다.
 
 ```powershell
-# NEXT_PUBLIC_WEB_URL과 NEXT_PUBLIC_API_URL은 현재 격리 stack으로 미리 주입한다.
-pnpm -C frontend exec playwright test --project=setup
-
-# 위 표의 UI_BASELINE_* 값도 현재 process에 안전하게 주입된 상태에서 실행한다.
-pnpm -C frontend run ui-quality:baseline
+# 앞 절의 attested build와 안전한 환경 주입을 마친 뒤 실행한다.
+# launcher가 전용 API 인증과 baseline runner를 순서대로 실행한다.
+npm run ui-quality:baseline:launch
 ```
 
 표준 package script는 scenario/runner contract를 exact 파일 경로로 먼저 실행한 뒤 `--execute --include-performance`를 함께 고정한다. runner는 시작 시 manifest raw bytes와 canonical protocol pointer를 다시 캡처하고, 선행 계약·protocol·runner/core·두 contract의 worktree bytes가 실행 commit blob과 exact 일치하는지 확인한다. 따라서 계약 프로세스가 green이 된 뒤 runner hash 시작 전에 파일을 바꾸거나 주석/dead code만으로 실행 binding을 흉내 내도 browser launch 전에 red다. 계약 파일을 삭제하거나 선행 명령에서 빼면 baseline 실행 전에 실패한다. 성능을 빼거나 state 일부만 실행한 결과를 full baseline으로 저장할 수 없다. 개발 중 adapter 진단에만 `UI_BASELINE_DIAGNOSTIC_LIMIT=<N>`을 명시할 수 있으며, 이 모드는 서로 다른 journey step의 대표 case만 실행하고 `diagnostic-summary.json`에 `diagnostic-not-baseline-evidence`로 기록한 뒤 `baseline-result.json`을 만들지 않는다.
@@ -321,7 +319,7 @@ performance 실패 artifact에는 raw exception, message, URL, response payload�
 7. loading, loaded, validation error, filtered-zero, server error, open dialog처럼 실제 task에 필요한 state마다 scan한다.
 8. violation artifact에는 rule, impact, WCAG mapping, redacted locator, 사용자 영향과 재현 state를 남긴다.
 
-현재 [01-core-base.spec.ts](../../frontend/e2e/01-core-base.spec.ts)의 axe 정의는 `color-contrast`를 포함한다. 다만 해당 smoke 실행의 통과 여부만으로 상태·theme·viewport 전 조합과 수동 평가를 포함하는 Task 0.5 baseline으로 승격하지 않는다.
+현재 [로그인 접근성](../../frontend/e2e/quality/login-accessibility.spec.ts)·[관리자 접근성](../../frontend/e2e/quality/admin-accessibility.spec.ts)의 axe 정의는 `color-contrast`를 포함한다. 다만 해당 smoke 실행의 통과 여부만으로 상태·theme·viewport 전 조합과 수동 평가를 포함하는 Task 0.5 baseline으로 승격하지 않는다.
 
 ### 6.2 자동 범위의 한계
 

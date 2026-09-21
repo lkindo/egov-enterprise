@@ -258,7 +258,7 @@ describe('ExpectedErrorLedger', () => {
 
   it('spec ledger ID는 저장소에서 유일하고 legacy ignore API를 사용하지 않는다', () => {
     const e2eDirectory = path.resolve(process.cwd(), 'e2e');
-    const specSources = fs.readdirSync(e2eDirectory)
+    const specSources = fs.readdirSync(e2eDirectory, { recursive: true, encoding: 'utf8' })
       .filter((fileName) => fileName.endsWith('.spec.ts'))
       .map((fileName) => ({
         fileName,

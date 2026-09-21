@@ -751,13 +751,56 @@ function validateLaunchedStack({
   });
 }
 
-function createAuthEnvironment(sourceEnvironment, webOrigin, apiOrigin) {
-  return Object.freeze({
-    ...safeSystemEnvironment(sourceEnvironment),
-    TZ: 'Asia/Seoul',
-    NEXT_PUBLIC_WEB_URL: webOrigin,
-    NEXT_PUBLIC_API_URL: `${apiOrigin}/api/v1`,
+/** Reverify proof in the authentication child; environment flags alone never authorize a target. */
+export function verifyBaselineAuthenticationTarget(environment = process.env, {
+  repositoryRoot = defaultRepositoryRoot,
+  executeCommand = defaultExecuteCommand,
+} = {}) {
+  if (environment.UI_BASELINE_STACK_CLASSIFICATION !== 'isolated-synthetic') {
+    throw new Error('baseline authentication requires a verified isolated stack');
+  }
+  const origin = (value) => {
+    let parsed;
+    try { parsed = new URL(value); } catch { throw new Error('baseline authentication origin is invalid'); }
+    if (parsed.protocol !== 'http:' || parsed.hostname !== '127.0.0.1'
+      || parsed.origin !== value || !validatePort(Number(parsed.port))) {
+      throw new Error('baseline authentication origin is invalid');
+    }
+    return value;
+  };
+  const webOrigin = origin(environment.UI_BASELINE_WEB_URL);
+  const apiOrigin = origin(environment.UI_BASELINE_API_URL);
+  if (webOrigin === apiOrigin || environment.NEXT_PUBLIC_WEB_URL !== webOrigin
+    || environment.NEXT_PUBLIC_API_URL !== `${apiOrigin}/api/v1`) {
+    throw new Error('baseline authentication origin binding is invalid');
+  }
+  const identity = {
+    projectName: environment.UI_BASELINE_DOCKER_PROJECT,
+    networkName: environment.UI_BASELINE_DOCKER_NETWORK,
+    databaseContainerName: `${environment.UI_BASELINE_DOCKER_PROJECT}-db`,
+    apiContainerName: environment.UI_BASELINE_BACKEND_CONTAINER_NAME,
+    frontendContainerName: environment.UI_BASELINE_FRONTEND_CONTAINER_NAME,
+  };
+  assertLaunchIdentity(identity);
+  const attestation = readBuildAttestation({
+    repositoryRoot,
+    attestationPath: environment.UI_BASELINE_BUILD_ATTESTATION_PATH,
+    attestationSha256: environment.UI_BASELINE_BUILD_ATTESTATION_SHA256,
   });
+  const repositoryIdentity = captureRepositoryIdentity(repositoryRoot, executeCommand, environment);
+  if (repositoryIdentity.buildSha !== attestation.buildSha
+    || repositoryIdentity.commitTreeId !== attestation.commitTreeId
+    || environment.UI_BASELINE_FRONTEND_BUILD_ID !== attestation.images.frontend.id
+    || environment.UI_BASELINE_BACKEND_BUILD_ID !== attestation.images.api.id) {
+    throw new Error('baseline authentication requires the exact clean attested commit and images');
+  }
+  validateLaunchedStack({
+    executeCommand, repositoryRoot, attestation, identity, webOrigin, apiOrigin,
+    frontendContainerId: environment.UI_BASELINE_FRONTEND_CONTAINER_ID,
+    backendContainerId: environment.UI_BASELINE_BACKEND_CONTAINER_ID,
+    sourceEnvironment: environment,
+  });
+  return Object.freeze({ webUrl: webOrigin, apiUrl: `${apiOrigin}/api/v1` });
 }
 
 function executeContracts(executeCommand, repositoryRoot, sourceEnvironment) {
@@ -776,9 +819,7 @@ function executeAuthSetup(executeCommand, repositoryRoot, environment) {
   executeClosed(executeCommand, {
     command: process.execPath,
     args: [
-      'frontend/node_modules/@playwright/test/cli.js',
-      'test',
-      '--project=setup',
+      'frontend/scripts/ui-quality-baseline-auth.mjs',
     ],
     cwd: repositoryRoot,
     env: environment,
@@ -925,11 +966,6 @@ export function launchAttestedBaseline(input = {}, {
       apiOrigin,
       sourceEnvironment,
     });
-    executeAuthSetup(
-      executeCommand,
-      repositoryRoot,
-      createAuthEnvironment(sourceEnvironment, webOrigin, apiOrigin),
-    );
     const runnerEnvironment = createClosedBaselineRunnerEnvironment({
       sourceEnvironment,
       attestationPath,
@@ -946,6 +982,7 @@ export function launchAttestedBaseline(input = {}, {
       apiOrigin,
       syntheticSeedLabel: identity.syntheticSeedLabel,
     });
+    executeAuthSetup(executeCommand, repositoryRoot, runnerEnvironment);
     executeRunner(executeCommand, repositoryRoot, runnerEnvironment);
   } catch (error) {
     primaryError = error instanceof Error ? error : new Error('baseline launch failed');

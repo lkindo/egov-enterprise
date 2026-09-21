@@ -65,7 +65,7 @@ const KNOWN_ROUTE_CAPABILITIES = {
     {
       id: 'notifications.stream', status: 'partial', candidateStatus: 'live', dataSource: 'notifications-api+websocket', actions: ['local-search', 'tab-filter'],
       unsupportedVisibleActions: ['refresh', 'row-options'], actorScope: 'ADMIN|SYSTEM', visibleLabel: '알림 스트림', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationsClient.tsx', 'frontend/src/app/components/ui/smart-notification-hub.tsx', 'frontend/src/lib/hooks/use-notifications.ts', 'frontend/e2e/12-notification.spec.ts'],
+      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationsClient.tsx', 'frontend/src/app/components/ui/smart-notification-hub.tsx', 'frontend/src/lib/hooks/use-notifications.ts', 'frontend/e2e/journeys/notifications.spec.ts'],
     },
     {
       // [2026-09-06 DEC-OPS-042] 관리자 발송이 실기능이 됐다 — POST /api/v1/admin/notifications/dispatch(ADMIN/SYSTEM).
@@ -98,7 +98,7 @@ const KNOWN_ROUTE_CAPABILITIES = {
       // 실제 API 로 배선됐다. 종전 unsupported 였던 archive-filter 는 '내가 처리한 결재' 탭이 대신한다.
       id: 'approvals.pending-history', status: 'partial', candidateStatus: 'live', dataSource: 'approvals-api', actions: ['list', 'select-detail', 'confirm', 'reject', 'create', 'refresh'],
       unsupportedVisibleActions: ['server-search'], actorScope: 'AUTHENTICATED', visibleLabel: '결재 기안·목록·승인·반려', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/approvals/ApprovalHubClient.tsx', 'frontend/src/app/approvals/ApprovalDraftDialog.tsx', 'frontend/src/services/business/user/approval/ApprovalUserService.ts', 'frontend/e2e/11-enterprise-workflow.spec.ts'],
+      evidenceLevel: 'E3', evidence: ['frontend/src/app/approvals/ApprovalHubClient.tsx', 'frontend/src/app/approvals/ApprovalDraftDialog.tsx', 'frontend/src/services/business/user/approval/ApprovalUserService.ts', 'frontend/e2e/journeys/approvals.spec.ts'],
     },
     {
       id: 'approvals.visualization-metrics', status: 'demo', dataSource: 'hardcoded-metrics', actions: [],
@@ -143,7 +143,7 @@ const KNOWN_ROUTE_CAPABILITIES = {
     {
       id: 'workspace.contents', status: 'partial', candidateStatus: 'live', dataSource: 'mypage-contents-api', actions: ['list', 'local-search', 'toggle-status', 'reload'],
       unsupportedVisibleActions: ['sync', 'item-options'], actorScope: 'ADMIN|SYSTEM', visibleLabel: '마이페이지 콘텐츠 관리', primaryTask: true,
-      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx', 'frontend/e2e/09-admin-observability-workspace.spec.ts'],
+      evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx', 'frontend/e2e/journeys/global-search.spec.ts'],
     },
     {
       id: 'workspace.usage-security', status: 'demo', dataSource: 'hardcoded-metrics', actions: [],

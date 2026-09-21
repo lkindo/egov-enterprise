@@ -74,11 +74,39 @@ test('backend tests rerun mutation evidence but do not spend browser E2E time', 
 test('backend test fixtures rerun mutation evidence', () => {
   for (const file of [
     'business-core/src/test/resources/application-test.yml',
+    'foundation/src/testFixtures/java/nuri/foundation/fixture/TestFixtures.java',
+    'foundation/src/testFixtures/resources/application-test.yml',
     'migration-tool/src/test/resources/mapping-sample.yml',
+    'migration-tool/src/testFixtures/resources/mapping-sample.yml',
   ]) {
     const result = classifyChangedFiles([file]);
     assert.equal(result.mutation, true);
     assert.equal(result.e2e, false);
+  }
+});
+
+test('runtime resources retain PIT evidence without selecting unrelated migration mutation', () => {
+  for (const module of ['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool']) {
+    const file = `${module}/src/main/resources/application.yml`;
+    const result = classifyChangedFiles([file]);
+    assert.equal(result.mutation, true, file);
+    assert.equal(result.mutationMigrationTool, module === 'migration-tool', file);
+    assert.equal(result.e2e, module !== 'migration-tool', file);
+  }
+});
+
+test('shared Gradle inputs retain every PIT scope', () => {
+  for (const file of [
+    'build.gradle',
+    'settings.gradle',
+    'gradle.properties',
+    'gradle/libs.versions.toml',
+    'gradle/wrapper/gradle-wrapper.properties',
+    'gradle/wrapper/gradle-wrapper.jar',
+  ]) {
+    const result = classifyChangedFiles([file]);
+    assert.equal(result.mutation, true, file);
+    assert.equal(result.mutationMigrationTool, true, file);
   }
 });
 
@@ -127,6 +155,8 @@ test('migration-tool mutation is a narrowing of the mutation scope, never an ext
     'migration-tool/src/main/java/nuri/migration/validate/MappingValidator.java',
     'migration-tool/src/test/java/nuri/migration/adapter/CubridSourceAdapterTest.java',
     'migration-tool/src/test/resources/discovery/fixture.json',
+    'migration-tool/src/testFixtures/java/nuri/migration/fixture/MappingFixture.java',
+    'migration-tool/src/main/resources/application.yml',
   ]) {
     assert.equal(classifyChangedFiles([file]).mutationMigrationTool, true,
       `${file}: 이관 뮤테이션 범위에서 빠졌다`);
@@ -223,7 +253,7 @@ test('cross-stack schema and contract changes select all affected runtime gates'
     assert.equal(result.backend, true);
     assert.equal(result.e2e, true);
   }
-  assert.equal(migration.mutation, false);
+  assert.equal(migration.mutation, true);
   assert.equal(migration.schema, true);
   assert.equal(openApi.frontend, true);
   assert.equal(openApi.schema, false);
@@ -245,6 +275,25 @@ test('unknown and empty change sets fail closed to the full pipeline', () => {
     assert.equal(result.e2e, true);
     assert.equal(result.mutation, true);
   }
+});
+
+test('explicit full regression includes every heavy gate even for documentation-only inputs', () => {
+  const files = ['README.md'];
+  assert.equal(classifyChangedFiles(files).docsOnly, true, 'PR classification remains selective');
+  const result = classifyChangedFiles(files, { forceFull: true });
+  assert.equal(result.docsOnly, false);
+  assert.deepEqual(result.files, files);
+  assert.deepEqual(result.unknownFiles, [], 'full regression does not invent unknown paths');
+  for (const field of ['backend', 'frontend', 'schema', 'e2e', 'mutation', 'mutationMigrationTool', 'sast']) {
+    assert.equal(result[field], true, field);
+  }
+  const cli = spawnSync(process.execPath,
+    ['scripts/ci-change-scope.mjs', '--file', 'README.md', '--full'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+  assert.equal(cli.status, 0, cli.stderr);
+  assert.deepEqual(JSON.parse(cli.stdout).outputs, githubOutputs(result));
 });
 
 test('workflow and gate implementation changes cannot use the docs fast path', () => {

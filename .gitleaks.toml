@@ -44,7 +44,7 @@ regexes = [
   '''dummy-api-key-for-e2e''',
 
   # ── §3 위조 토큰 (거부되는 것을 증명하는 테스트 자산) ──────────────────────────────
-  #   frontend/e2e/23-security-auth-supplement.spec.ts 가 미들웨어의 서명 검증·alg 화이트리스트를
+  #   frontend/e2e/journeys/authentication.spec.ts 가 미들웨어의 서명 검증·alg 화이트리스트를
   #   증명하려고 **일부러 만든 잘못된 토큰**이다. 서명이 'invalidsig' 이거나 alg=none 이라
   #   어떤 시스템에서도 유효하지 않다. 이 토큰이 통과하면 그게 결함이고, 그것을 잡는 것이 이 테스트다.
   '''eyJhbGciOiJIUzUxMiJ9\.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ\.invalidsig''',

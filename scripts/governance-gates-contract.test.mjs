@@ -218,7 +218,7 @@ test('registry keeps the ten authoritative gate sets and seven runner catalogs',
   assert.equal(playwright.selector.forbidSkips, undefined);
   assert.deepEqual(playwright.selector.skipWaivers, [{
     id: 'PW-SKIP-LINUX-VISUAL-REGRESSION',
-    source: 'frontend/e2e/04-quality-resilience.spec.ts',
+    source: 'frontend/e2e/quality/visual-baselines.spec.ts',
     stableToken: "process.platform !== 'linux'",
     owner: 'quality-engineering',
     reason: 'Pixel baselines are generated and enforced on the Linux CI rendering platform only.',
@@ -380,7 +380,7 @@ test('a runner package selector that matches no script is rejected as a ghost', 
   assert.match(validate(registry).join('\n'), /ghost runner selector package script/i);
 });
 
-test('Playwright config contract pins CI-only forbidOnly and the exact setup/full-suite topology', () => {
+test('Playwright config contract pins CI-only forbidOnly and the disjoint setup/API/browser topology', () => {
   const registry = loadGovernanceRegistry(registryPath);
   const playwright = registry.gateSets.find(({ id }) => id === 'GATESET-PLAYWRIGHT-E2E');
   const contract = playwright.selector.projectContract;
@@ -389,7 +389,8 @@ test('Playwright config contract pins CI-only forbidOnly and the exact setup/ful
     forbidOnly: '!!process.env.CI',
     projects: [
       { name: 'setup', testMatch: '/.*\\.setup\\.ts/' },
-      { name: 'full-suite', testMatch: '/.*\\.spec\\.ts/', dependencies: ['setup'] },
+      { name: 'api-contract', testMatch: '/contracts\\/.*\\.spec\\.ts/', dependencies: ['setup'] },
+      { name: 'full-suite', testMatch: '/(?:journeys|quality)\\/.*\\.spec\\.ts/', dependencies: ['setup'] },
     ],
   });
 
@@ -398,7 +399,8 @@ test('Playwright config contract pins CI-only forbidOnly and the exact setup/ful
 
   for (const weakened of [
     source.replace('testMatch: /.*\\.setup\\.ts/', 'testMatch: /global\\.setup\\.ts/'),
-    source.replace('testMatch: /.*\\.spec\\.ts/', 'testMatch: /01-.*\\.spec\\.ts/'),
+    source.replace('testMatch: /(?:journeys|quality)\\/.*\\.spec\\.ts/', 'testMatch: /journeys\\/.*\\.spec\\.ts/'),
+    source.replace('testMatch: /contracts\\/.*\\.spec\\.ts/', 'testMatch: /.*\\.spec\\.ts/'),
     source.replace("dependencies: ['setup']", 'dependencies: []'),
     source.replace('forbidOnly: !!process.env.CI', 'forbidOnly: false'),
     source.replace("name: 'full-suite'", "name: 'smoke-only'"),

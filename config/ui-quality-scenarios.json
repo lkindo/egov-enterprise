@@ -335,8 +335,8 @@
       "sourceEvidence": [
         "frontend/src/app/login/LoginClient.tsx",
         "frontend/src/app/login/page.tsx",
-        "frontend/e2e/01-core-base.spec.ts",
-        "frontend/e2e/23-security-auth-supplement.spec.ts"
+        "frontend/e2e/quality/login-accessibility.spec.ts",
+        "frontend/e2e/journeys/authentication.spec.ts"
       ]
     },
     {
@@ -380,8 +380,10 @@
       "sourceEvidence": [
         "frontend/src/app/admin/AdminDashboardClient.tsx",
         "frontend/src/app/admin/page.tsx",
-        "frontend/e2e/01-core-base.spec.ts",
-        "frontend/e2e/04-quality-resilience.spec.ts"
+        "frontend/e2e/journeys/application-shell.spec.ts",
+        "frontend/e2e/quality/admin-accessibility.spec.ts",
+        "frontend/e2e/quality/responsive-shell.spec.ts",
+        "frontend/e2e/quality/visual-baselines.spec.ts"
       ]
     },
     {
@@ -520,7 +522,7 @@
         "frontend/src/app/admin/user/UserOrgHubClient.tsx",
         "frontend/src/app/admin/user/UserOrgHubParts.tsx",
         "frontend/src/app/admin/user/useDeptTree.ts",
-        "frontend/e2e/02-admin-system.spec.ts"
+        "frontend/e2e/journeys/user-administration.spec.ts"
       ]
     },
     {
@@ -582,8 +584,8 @@
       "sourceEvidence": [
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
         "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
-        "frontend/e2e/03-board-community.spec.ts",
-        "frontend/e2e/04-quality-resilience.spec.ts"
+        "frontend/e2e/journeys/board-articles.spec.ts",
+        "frontend/e2e/quality/board-draft-recovery.spec.ts"
       ]
     },
     {
@@ -664,8 +666,9 @@
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
         "frontend/src/app/admin/help/faq/page.tsx",
         "frontend/src/app/help/page.tsx",
-        "frontend/e2e/05-public-experience.spec.ts",
-        "frontend/e2e/pages/KnowledgePage.ts"
+        "frontend/e2e/journeys/help-content.spec.ts",
+        "frontend/e2e/pages/KnowledgePage.ts",
+        "frontend/e2e/pages/SupportPage.ts"
       ]
     },
     {
@@ -726,7 +729,7 @@
       "sourceEvidence": [
         "frontend/src/app/admin/community/boards/maker/page.tsx",
         "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
-        "frontend/e2e/03-board-master-management.spec.ts",
+        "frontend/e2e/journeys/board-masters.spec.ts",
         "frontend/e2e/pages/BoardMasterPage.ts"
       ]
     },

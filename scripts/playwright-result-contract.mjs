@@ -75,6 +75,27 @@ function collectSpecs(suites, visit, errors, trail = 'suites') {
   });
 }
 
+/** The discovery report and execution report must describe the same tests, including setup. */
+function testCoordinates(report, errors, label) {
+  const coordinates = new Set();
+  collectSpecs(report?.suites, (spec, trail) => {
+    if (typeof spec?.id !== 'string' || !Array.isArray(spec.tests)) {
+      errors.push(`${label}: invalid test inventory at ${trail}`);
+      return;
+    }
+    for (const current of spec.tests) {
+      if (typeof current?.projectName !== 'string') {
+        errors.push(`${label}: missing project at ${trail}`);
+        continue;
+      }
+      const coordinate = JSON.stringify([current.projectName, spec.id]);
+      if (coordinates.has(coordinate)) errors.push(`${label}: duplicate test coordinate ${coordinate}`);
+      coordinates.add(coordinate);
+    }
+  }, errors, label);
+  return coordinates;
+}
+
 export function validatePlaywrightResult(report, plannedSpecs, options = {}) {
   const cwd = path.resolve(options.cwd ?? process.cwd());
   const expectedRoot = canonicalAbsolute(path.join(cwd, 'e2e'));
@@ -106,12 +127,35 @@ export function validatePlaywrightResult(report, plannedSpecs, options = {}) {
   }
   if (!Array.isArray(report.config?.projects)) {
     errors.push('config.projects must be an array');
-  } else if (!report.config.projects.some((project) => isObject(project) && project.name === 'full-suite')) {
-    errors.push('full-suite project is missing from the report config');
+  } else {
+    const requiredProjects = new Set([...planned.values()].map(file => file.startsWith('e2e/contracts/') ? 'api-contract' : 'full-suite'));
+    requiredProjects.add('setup');
+    for (const name of requiredProjects) {
+      if (!report.config.projects.some(project => isObject(project) && project.name === name)) {
+        errors.push(`${name} project is missing from the report config`);
+      }
+    }
   }
   if (!Array.isArray(report.errors)) errors.push('errors must be an array');
+  else if (report.errors.length) errors.push('report contains global execution errors');
+
+  const actualCoordinates = testCoordinates(report, errors, 'execution');
+  if (options.inventory) {
+    if (canonicalAbsolute(options.inventory.config?.rootDir ?? '') !== expectedRoot) {
+      errors.push('inventory config.rootDir must equal execution rootDir');
+    }
+    const expectedCoordinates = testCoordinates(options.inventory, errors, 'inventory');
+    if (expectedCoordinates.size === 0) errors.push('inventory must contain registered tests');
+    for (const coordinate of expectedCoordinates) {
+      if (!actualCoordinates.has(coordinate)) errors.push(`missing planned test coordinate: ${coordinate}`);
+    }
+    for (const coordinate of actualCoordinates) {
+      if (!expectedCoordinates.has(coordinate)) errors.push(`unplanned test coordinate: ${coordinate}`);
+    }
+  }
 
   const derived = { expected: 0, skipped: 0, unexpected: 0, flaky: 0 };
+  let platformVisualSkips = 0;
   const reportedPlanned = new Map([...planned.keys()].map((absolute) => [absolute, 0]));
   const reportedSpecFiles = new Set();
 
@@ -147,10 +191,19 @@ export function validatePlaywrightResult(report, plannedSpecs, options = {}) {
         continue;
       }
       derived[current.status] += 1;
-      if (isJourney && current.projectName !== 'full-suite') {
-        errors.push(`${testTrail} for ${display} must belong to full-suite`);
+      // Existing PW-SKIP-LINUX-VISUAL-REGRESSION waiver applies only to local
+      // rendering on another OS. CI callers use the default strict Linux policy.
+      if (['win32', 'darwin'].includes(options.platform)
+        && display === 'e2e/quality/visual-baselines.spec.ts'
+        && spec.title === 'Visual Regression Baseline'
+        && current.projectName === 'full-suite'
+        && current.status === 'skipped' && current.expectedStatus === 'skipped') platformVisualSkips += 1;
+      const expectedProject = display.startsWith('e2e/contracts/') ? 'api-contract' : 'full-suite';
+      if (isJourney && current.projectName !== expectedProject) {
+        errors.push(`${testTrail} for ${display} must belong to ${expectedProject}`);
       }
-      if (isJourney && current.projectName === 'full-suite' && current.status !== 'skipped') nonSkipped += 1;
+      if (isSetup && current.projectName !== 'setup') errors.push(`${testTrail} setup must belong to setup`);
+      if (isJourney && current.projectName === expectedProject && current.status !== 'skipped') nonSkipped += 1;
     }
     if (isJourney && planned.has(absolute)) {
       reportedPlanned.set(absolute, (reportedPlanned.get(absolute) ?? 0) + nonSkipped);
@@ -177,7 +230,7 @@ export function validatePlaywrightResult(report, plannedSpecs, options = {}) {
       }
     }
     if (report.stats.expected === 0) errors.push('stats.expected must be greater than zero');
-    if (report.stats.skipped !== 0) errors.push(`stats.skipped must be zero, received ${report.stats.skipped}`);
+    if (platformVisualSkips > 1 || report.stats.skipped !== platformVisualSkips) errors.push(`stats.skipped must be zero outside the exact local Linux-VRT waiver, received ${report.stats.skipped}`);
     // [2026-09-01 신설] flaky 를 게이트한다.
     //
     // ⚠ 종전에는 `flaky` 를 집계·출력만 하고 어디서도 판정하지 않았다. 그래서 실패한 뒤
@@ -208,18 +261,20 @@ export function validatePlaywrightResult(report, plannedSpecs, options = {}) {
 
 function cli() {
   const reportIndex = process.argv.indexOf('--report');
-  if (reportIndex < 0 || !process.argv[reportIndex + 1]) {
-    throw new Error('usage: node scripts/playwright-result-contract.mjs --report <json> <e2e/**/*.spec.ts...>');
+  const inventoryIndex = process.argv.indexOf('--inventory');
+  if (reportIndex < 0 || !process.argv[reportIndex + 1] || inventoryIndex < 0 || !process.argv[inventoryIndex + 1]) {
+    throw new Error('usage: node scripts/playwright-result-contract.mjs --report <json> --inventory <list-json> <e2e/**/*.spec.ts...>');
   }
   const reportPathValue = path.resolve(process.argv[reportIndex + 1]);
   const planned = process.argv.slice(2)
-    .filter((_, index) => index !== reportIndex - 2 && index !== reportIndex - 1);
+    .filter((_, index) => ![reportIndex - 2, reportIndex - 1, inventoryIndex - 2, inventoryIndex - 1].includes(index));
   const size = fs.statSync(reportPathValue).size;
   if (size === 0 || size > MAX_REPORT_BYTES) {
     throw new Error(`Playwright JSON report size is invalid: ${size} bytes`);
   }
   const report = JSON.parse(readRegularFile(reportPathValue, { maximumBytes: MAX_REPORT_BYTES, encoding: 'utf8' }));
-  const result = validatePlaywrightResult(report, planned);
+  const inventory = JSON.parse(readRegularFile(path.resolve(process.argv[inventoryIndex + 1]), { maximumBytes: MAX_REPORT_BYTES, encoding: 'utf8' }));
+  const result = validatePlaywrightResult(report, planned, { inventory });
   if (result.errors.length > 0) throw new Error(result.errors.join('\n'));
   process.stdout.write(
     `Playwright result contract passed: ${result.summary.reportedSpecs}/${result.summary.plannedSpecs} specs, `

@@ -6,12 +6,52 @@ import path from 'node:path';
 import test from 'node:test';
 import {
   buildDurationBalancedPlan,
+  buildImpactShadowPlan,
+  compareImpactShadow,
   discoverSpecs,
   durationProfileFreshness,
   loadDurationProfile,
   parseShard,
   validateDurationProfile,
 } from './e2e-shard-plan.mjs';
+
+test('shadow maps online polls to their owner and leaves full execution authoritative', () => {
+  const plan = buildImpactShadowPlan([{ status: 'M', path: 'frontend/src/app/polls/page.tsx' }]);
+  assert.equal(plan.executes, 'full');
+  assert.equal(plan.mode, 'shadow');
+  assert.equal(plan.fullFallback, false);
+  assert.ok(plan.selectedSpecs.includes('journeys/online-polls.spec.ts'));
+  assert.ok(!plan.selectedSpecs.includes('journeys/operations-navigation.spec.ts'));
+  for (const change of [
+    { status: 'M', path: 'frontend/src/app/survey/page.tsx' },
+    { status: 'M', path: 'frontend/src/app/components/ui/button.tsx' },
+    { status: 'M', path: 'business-core/src/main/java/nuri/business/service/user/UserService.java' },
+    { status: 'M', path: 'frontend/e2e/fixtures/api-test.ts' },
+    { status: 'M', path: 'api-server/src/main/resources/db/migration/V999__fixture.sql' },
+    { status: 'A', path: 'frontend/src/app/polls/new.tsx' },
+    { status: 'D', path: 'frontend/src/app/polls/page.tsx' },
+    { status: 'R100', path: 'frontend/src/app/polls/page.tsx' },
+  ]) {
+    assert.deepEqual(buildImpactShadowPlan([change]).selectedSpecs, discoverSpecs());
+  }
+  assert.deepEqual(buildImpactShadowPlan([]).selectedSpecs, discoverSpecs());
+});
+
+test('shadow ownership drift and duplicate populations fail closed', () => {
+  assert.throws(() => buildImpactShadowPlan([], ['one.spec.ts'], [{ prefixes: ['src/'], specs: ['missing.spec.ts'] }]), /existing nonempty/);
+  assert.throws(() => buildImpactShadowPlan([], ['one.spec.ts', 'one.spec.ts'], []), /invalid E2E population/);
+});
+
+test('shadow comparison exposes deliberately omitted failures without enabling selection', () => {
+  const plan = buildImpactShadowPlan([{ status: 'M', path: 'frontend/src/app/polls/page.tsx' }]);
+  const report = { suites: [{ specs: [{ file: 'journeys/approvals.spec.ts', tests: [{ status: 'unexpected' }] }] }] };
+  const comparison = compareImpactShadow(plan, report);
+  assert.deepEqual(comparison.missedFailures, ['journeys/approvals.spec.ts']);
+  assert.equal(comparison.detectionMissObserved, true);
+  assert.equal(comparison.selectionReady, false);
+  assert.equal(comparison.executes, 'full');
+  assert.equal(compareImpactShadow(plan, { suites: [] }).selectionReady, false);
+});
 
 function loadAuthoritativeE2eShardCoordinates() {
   const manifest = JSON.parse(fs.readFileSync('.github/required-checks.json', 'utf8'));
@@ -34,7 +74,7 @@ function assertWorkerTopology({ configSource, profileWorkers, guideSource, shard
   const workers = parsePlaywrightWorkerTopology(configSource);
   assert.equal(workers.ci, profileWorkers, 'CI Playwright workers must match duration-profile evidence');
   assert.ok(guideSource.includes(`| **Workers** | ${workers.local} | ${workers.ci} |`));
-  assert.ok(guideSource.includes(`로컬은 공유 DB 안정성을 위해 ${workers.local} 유지`));
+  assert.ok(guideSource.includes(`로컬은 격리 스택의 자원 사용을 제한하기 위해 ${workers.local} 유지`));
   assert.ok(guideSource.includes(`CI는 2026-09-01 실측으로 ${workers.ci}`));
   assert.ok(guideSource.includes(`추가 병렬성은 실행시간 기반 ${shardCount}-shard로 확보`));
   return workers;
@@ -139,9 +179,9 @@ test('worker topology contract rejects synthetic Playwright config drift', () =>
 
 test('missing, stale, or weakened duration evidence fails closed', () => {
   const profile = structuredClone(loadDurationProfile());
-  delete profile.durationsMs['01-core-base.spec.ts'];
+  delete profile.durationsMs[discoverSpecs()[0]];
   profile.durationsMs['removed.spec.ts'] = 1000;
-  profile.durationsMs['02-admin-system.spec.ts'] = 0;
+  profile.durationsMs[discoverSpecs()[1]] = 0;
   const errors = validateDurationProfile(profile);
   assert.ok(errors.some(error => error.includes('missing duration profile')));
   assert.ok(errors.some(error => error.includes('stale duration profile')));
@@ -253,7 +293,7 @@ test('CI consumes the duration-balanced plan instead of count-based Playwright s
   //   정확히 동결하므로, 수를 바꾸려면 required-checks 의 sourceMatrix·workers 와 함께 바꿔야 한다.
   assert.match(workflow, /^        shard: \[1\/2, 2\/2\]$/m);
   assert.match(workflow, /node \.\.\/scripts\/e2e-shard-plan\.mjs --shard "\$\{\{ matrix\.shard \}\}"/);
-  assert.match(workflow, /npx playwright test --project=full-suite "\$\{E2E_SPECS\[@\]\}" --reporter=blob,line,json/);
-  assert.match(workflow, /node \.\.\/scripts\/playwright-result-contract\.mjs --report "\$PLAYWRIGHT_JSON_OUTPUT_FILE" "\$\{E2E_SPECS\[@\]\}"/);
+  assert.match(workflow, /node \.\.\/scripts\/run-isolated-e2e\.mjs --ci-compose -- --project=api-contract --project=full-suite "\$\{E2E_SPECS\[@\]\}" --reporter=blob,line,json/);
+  assert.match(workflow, /node \.\.\/scripts\/playwright-result-contract\.mjs --report "\$PLAYWRIGHT_JSON_OUTPUT_FILE" --inventory \/tmp\/e2e-inventory\.json "\$\{E2E_SPECS\[@\]\}"/);
   assert.doesNotMatch(workflow, /playwright test[^\r\n]*--shard=\$\{\{ matrix\.shard \}\}/);
 });

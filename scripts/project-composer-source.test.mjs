@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { extname, join, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -14,7 +14,8 @@ const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profil
 const catalog = loadProjectComposerCatalog(root);
 const recipe = domains => ({ schemaVersion: 1, project: { name: 'composition-test' }, sourceRef: 'main',
   selection: { domains }, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
-const files = trackedAndUntrackedFiles();
+// Match copySourceTree: tracked deletions are absent from the current source projection.
+const files = trackedAndUntrackedFiles().filter(file => existsSync(join(root, file)));
 const java = files.filter(file => file.endsWith('.java')).map(file => join(root, file));
 const frontendFiles = files.filter(file => file.startsWith('frontend/'));
 const frontendSources = new Map(frontendFiles.filter(file => ['.ts', '.tsx', '.js', '.jsx'].includes(extname(file)))
