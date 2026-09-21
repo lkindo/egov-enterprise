@@ -1,56 +1,42 @@
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const fs = require('node:fs');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
-const nextDir = path.join(__dirname, '../.next');
-console.log("🧹 Purging old Next.js build cache...");
-if (fs.existsSync(nextDir)) {
-  fs.rmSync(nextDir, { recursive: true, force: true });
+const frontendDirectory = path.resolve(__dirname, '..');
+function removeGeneratedDirectory(directory, name) {
+  const root = fs.realpathSync(directory);
+  const target = path.resolve(root, name);
+  if (!['.next', '.nyc_output', 'coverage'].includes(name) || path.dirname(target) !== root) {
+    throw new Error('Refusing to remove a path outside the generated frontend directories.');
+  }
+  const entry = fs.lstatSync(target, { throwIfNoEntry: false });
+  if (entry?.isSymbolicLink()) throw new Error('Refusing to remove a linked generated directory.');
+  fs.rmSync(target, { recursive: true, force: true });
 }
 
-const babelrcPath = path.join(__dirname, '../.babelrc');
-const babelrcContent = JSON.stringify({
-  presets: ["next/babel"],
-  plugins: [
-    ["istanbul", {
-      exclude: [
-        "**/*.spec.ts",
-        "**/__tests__/**",
-        "**/*.test.ts",
-        "**/*.test.tsx",
-        "node_modules/**",
-        ".next/**",
-        "e2e/**",
-        "src/app/layout.tsx",
-        "src/proxy.ts",
-        "src/services/**",
-        "src/lib/api/**"
-      ]
-    }]
-  ]
-}, null, 2);
+function runInstrumentedBuild(dependencies = {}) {
+  const directory = fs.realpathSync(dependencies.directory || frontendDirectory);
+  const execute = dependencies.execute || execFileSync;
+  const logger = dependencies.logger || console;
+  const packagePath = path.join(directory, 'package.json');
+  if (fs.readdirSync(directory).some(name => /^(?:\.babelrc(?:\.|$)|babel\.config\.)/.test(name))
+      || (fs.existsSync(packagePath) && Object.hasOwn(JSON.parse(fs.readFileSync(packagePath, 'utf8')), 'babel'))) {
+    throw new Error('An existing Babel configuration must be preserved; instrumented build refused.');
+  }
 
-console.log("🚀 Creating temporary .babelrc for instrumented build...");
-fs.writeFileSync(babelrcPath, babelrcContent, 'utf8');
-
-try {
-  console.log("⚙️ Running next build with Babel Instrumentation...");
-  execSync("npx next build", {
-    cwd: path.join(__dirname, '..'),
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      NEXT_PUBLIC_COVERAGE: 'true',
-      NODE_OPTIONS: '--max-old-space-size=8192'
-    }
+  logger.log('Building Next.js with SWC and post-transform Istanbul instrumentation.');
+  removeGeneratedDirectory(directory, '.next');
+  execute(process.execPath, [require.resolve('next/dist/bin/next'), 'build', '--webpack'], {
+    cwd: directory, stdio: 'inherit', windowsHide: true,
+    env: { ...process.env, NEXT_PUBLIC_COVERAGE: 'true', NODE_OPTIONS: '--max-old-space-size=8192' },
   });
-  console.log("✅ Instrumented build completed successfully.");
-} catch (error) {
-  console.error("❌ Instrumented build failed:", error.message);
-  process.exit(1);
-} finally {
-  console.log("🧹 Cleaning up temporary .babelrc...");
-  if (fs.existsSync(babelrcPath)) {
-    fs.unlinkSync(babelrcPath);
+}
+
+if (require.main === module) {
+  try { runInstrumentedBuild(); } catch {
+    console.error('Instrumented build failed; no Babel configuration was created or modified.');
+    process.exitCode = 1;
   }
 }
+
+module.exports = { runInstrumentedBuild, removeGeneratedDirectory };

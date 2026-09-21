@@ -149,7 +149,7 @@ PD-UX-002 의 기본 검토안("페이지·탭 등 비민감 상태만 URL 에 �
 | `expired` | 5 | enumerated | none | `needs-owner-decision` | **완전한 dead write** — 생산자 7곳, 소비자 0곳. 세션 만료로 튕긴 사용자에게 로그인 화면이 그 사실을 한 번도 말하지 않는다(Q4) |
 | `auth_error` | 1 | enumerated | none | `keep-in-url` | 하드코딩 리터럴 단일값이고 **거부된 경로를 싣지 않는다**(목적지가 `/`). 보안 회귀 스위트 8곳이 이 값을 미들웨어 거부의 관측 신호로 단언한다 |
 
-주요 인용: [LoginClient.tsx:47,55](../../frontend/src/app/login/LoginClient.tsx) `const canonicalPath = parsed.pathname;` 로 query·fragment 폐기 · [login/__tests__/page.test.tsx:283-299](../../frontend/src/app/login/__tests__/page.test.tsx) 부정 케이스 13건 동결 · [proxy.ts:442-446](../../frontend/src/proxy.ts) "인증은 됐고 권한이 부족한 경우다. /login 리다이렉트와 구분돼야 진단이 성립한다" · [23-security-auth-supplement.spec.ts](../../frontend/e2e/23-security-auth-supplement.spec.ts) 8곳 단언.
+주요 인용: [LoginClient.tsx:47,55](../../frontend/src/app/login/LoginClient.tsx) `const canonicalPath = parsed.pathname;` 로 query·fragment 폐기 · [login/__tests__/page.test.tsx:283-299](../../frontend/src/app/login/__tests__/page.test.tsx) 부정 케이스 13건 동결 · [proxy.ts:442-446](../../frontend/src/proxy.ts) "인증은 됐고 권한이 부족한 경우다. /login 리다이렉트와 구분돼야 진단이 성립한다" · [HTTP 인가 계약](../../frontend/e2e/contracts/authorization.spec.ts)·[브라우저 인가 여정](../../frontend/e2e/journeys/authorization.spec.ts) 8곳 단언.
 
 > `auth_error` 는 URL 유지가 판정됐지만 **화면 소비처가 없다** — 목적지 `/` 가 `searchParams` 를 받지도 않는다. 비관리자는 아무 설명 없이 대시보드로 이동해 '클릭이 씹힌' 것과 구분하지 못한다. URL 결정과 무관한 별도 UX 과제다.
 

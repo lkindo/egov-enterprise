@@ -1,7 +1,8 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import type { NextConfig } from 'next';
 import { fileURLToPath } from 'node:url';
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   // [csp Phase 4 · 2026-08-20] PPR/정적 셸 비활성 — nonce CSP 의 전제 조건.
   //   nonce 는 요청마다 다른데 cacheComponents(PPR)는 페이지 셸을 빌드타임에 정적 프리렌더한다.
   //   그 셸에 구워진 Next 부트스트랩 inline <script> 에는 nonce 가 없어, 런타임 CSP 의
@@ -36,6 +37,20 @@ const nextConfig = {
       'date-fns',
     ],
   },
+  // Instrument transformed JavaScript after SWC, keeping next/font and RSC transforms intact.
+  ...(process.env.NEXT_PUBLIC_COVERAGE === 'true' ? {
+    webpack(config) {
+      config.module.rules.push({
+        test: /\.[cm]?[jt]sx?$/,
+        include: fileURLToPath(new URL('.', import.meta.url)),
+        exclude: /[\\/]node_modules[\\/]/,
+        enforce: 'post',
+        use: [{ loader: fileURLToPath(new URL('./scripts/coverage-instrumentation-loader.js', import.meta.url)),
+          options: { cwd: fileURLToPath(new URL('.', import.meta.url)) } }],
+      });
+      return config;
+    },
+  } satisfies Pick<NextConfig, 'webpack'> : {}),
   turbopack: {
     root: fileURLToPath(new URL('..', import.meta.url)),
   },

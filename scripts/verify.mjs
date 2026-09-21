@@ -109,7 +109,7 @@ try {
   } else if (scope === 'e2e') {
     runOperationalContracts();
     run('pnpm -C frontend run type-check:e2e');
-    run('pnpm -C frontend run test:e2e');
+    run('node scripts/run-isolated-e2e.mjs');
   } else if (scope === 'ops') {
     run('node scripts/verify-branch-protection.mjs');
   } else if (scope === 'migration') {

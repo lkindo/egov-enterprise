@@ -162,11 +162,9 @@
       "aggregate": {
         "sourceJobId": "e2e-tests",
         "sourceNeeds": [
-          "change-scope",
-          "backend-scope",
-          "frontend-scope"
+          "change-scope"
         ],
-        "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.e2e == 'true' && (needs.backend-scope.result == 'success' || needs.backend-scope.result == 'skipped') && (needs.frontend-scope.result == 'success' || needs.frontend-scope.result == 'skipped')",
+        "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.e2e == 'true'",
         "sourceMatrix": {
           "key": "shard",
           "values": [
@@ -176,13 +174,16 @@
           "completeCoordinates": true
         },
         "sourceStepName": "Run E2E Tests (Sharded)",
-        "sourceRun": "set -o pipefail\nmapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\")\nif [ \"${#E2E_SPECS[@]}\" -eq 0 ]; then\n  echo \"::error::Duration-balanced E2E plan returned no specs for shard ${{ matrix.shard }}\"\n  exit 1\nfi\nprintf 'E2E shard %s specs:\\n' \"${{ matrix.shard }}\"\nprintf '  %s\\n' \"${E2E_SPECS[@]}\"\nnpx playwright test --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log\nnode ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" \"${E2E_SPECS[@]}\"",
+        "sourceRun": "set -o pipefail\nmapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\")\nif [ \"${#E2E_SPECS[@]}\" -eq 0 ]; then\n  echo \"::error::Duration-balanced E2E plan returned no specs for shard ${{ matrix.shard }}\"\n  exit 1\nfi\nprintf 'E2E shard %s specs:\\n' \"${{ matrix.shard }}\"\nprintf '  %s\\n' \"${E2E_SPECS[@]}\"\nnode ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log\nnode ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\"",
         "sourceWorkingDirectory": "frontend",
         "sourceEnv": {
           "CI": "true",
-          "NEXT_PUBLIC_API_URL": "http://localhost:8080/api/v1",
+          "NEXT_PUBLIC_API_URL": "http://127.0.0.1:8080/api/v1",
           "PLAYWRIGHT_BROWSERS_PATH": "${{ env.PLAYWRIGHT_BROWSERS_PATH }}",
-          "PLAYWRIGHT_JSON_OUTPUT_FILE": "/tmp/e2e-results.json"
+          "PLAYWRIGHT_JSON_OUTPUT_FILE": "/tmp/e2e-results.json",
+          "BACKEND_API_URL": "http://127.0.0.1:8080/api/v1/",
+          "NEXT_PUBLIC_WEB_URL": "http://127.0.0.1:3001",
+          "E2E_INVENTORY_OUTPUT_FILE": "/tmp/e2e-inventory.json"
         },
         "aggregateStepName": "E2E 샤드 결과 집계",
         "aggregateRun": "node scripts/aggregate-required-check.mjs",
@@ -206,10 +207,9 @@
         {
           "sourceJobId": "mutation-scope",
           "sourceNeeds": [
-            "change-scope",
-            "backend-scope"
+            "change-scope"
           ],
-          "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.mutation == 'true' && needs.backend-scope.result == 'success'",
+          "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs.mutation == 'true'",
           "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
           "sourceRun": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
           "sourceWorkingDirectory": null,
@@ -229,10 +229,9 @@
         {
           "sourceJobId": "mutation-scope-migration",
           "sourceNeeds": [
-            "change-scope",
-            "backend-scope"
+            "change-scope"
           ],
-          "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs['mutation-migration-tool'] == 'true' && needs.backend-scope.result == 'success'",
+          "sourceJobIf": "always() && needs.change-scope.result == 'success' && needs.change-scope.outputs['mutation-migration-tool'] == 'true'",
           "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
           "sourceRun": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
           "sourceWorkingDirectory": null,

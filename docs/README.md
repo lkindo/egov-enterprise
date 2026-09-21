@@ -51,6 +51,7 @@
 | [authorization-source-inventory.json](02-architecture/authorization-source-inventory.json) | 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개; 현재 변경 파일 수가 아님 |
 | [authorization-db-evidence.json](02-architecture/authorization-db-evidence.json) | 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
 | [domain-resilience.md](02-architecture/domain-resilience.md) | 도메인 보안 및 회복탄력성 |
+| [testing-process-redesign.md](02-architecture/testing-process-redesign.md) | 테스트 설계·작성·격리 실행·진단·유지 프로세스와 E2E 27→50개 파일의 계약별 재편·중복 POM 정리 근거 |
 | [jpa-performance-guardrail.md](02-architecture/jpa-performance-guardrail.md) | JPA N+1 쿼리 가드레일 |
 | [zero-downtime-migration.md](02-architecture/zero-downtime-migration.md) | 무중단 배포 4단계 이행 및 DDL 린터 |
 | [user-reference-key-policy.md](02-architecture/user-reference-key-policy.md) | 사용자 참조 키 규약 |
@@ -93,6 +94,7 @@
 | [ADR-0018](02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관 승인 분리와 프로필별 근거 투영·산출물 검증 |
 | [ADR-0019](02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립과 요청 제한 한도 설정화 |
 | [ADR-0020](02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 |
+| [ADR-0021](02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow |
 
 ## 03-guides — 개발 지침
 

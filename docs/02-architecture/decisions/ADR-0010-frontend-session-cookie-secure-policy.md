@@ -69,6 +69,6 @@
 - [`auth-routes.test.ts`](../../../frontend/src/app/api/auth/__tests__/auth-routes.test.ts)는 로그인·재발급의 실제 `Set-Cookie`를 파싱해 배포 환경의 `Secure` 존재와 허용된 loopback 예외를 모두 검증한다.
 - [`fe-auth-hardening.test.ts`](../../../frontend/src/__tests__/fe-auth-hardening.test.ts)는 두 Route Handler가 공용 보안 판정에 결속돼 있고 `HttpOnly`, `SameSite=Strict`, 토큰 비노출 계약을 유지하는지 빠른 경로에서 검사한다.
 - [`playwright-auth-artifact-contract.test.mjs`](../../../scripts/playwright-auth-artifact-contract.test.mjs)는 제품 발급 증거가 아닌 E2E storage-state fixture에 local 예외를 복제하지 않고 항상 `Secure`, `HttpOnly`, `SameSite=Strict`를 쓰도록 차단한다.
-- [`23-security-auth-supplement.spec.ts`](../../../frontend/e2e/23-security-auth-supplement.spec.ts)는 production build/start를 사용하는 required CI에서 로그인·재발급의 실제 브라우저/응답 쿠키에 `Secure`와 `SameSite=Strict`가 있는지 검증한다.
+- [로그인 여정](../../../frontend/e2e/journeys/authentication.spec.ts)과 [재발급 계약](../../../frontend/e2e/contracts/authentication.spec.ts)은 production build/start를 사용하는 required CI에서 로그인·재발급의 실제 브라우저/응답 쿠키에 `Secure`와 `SameSite=Strict`가 있는지 검증한다.
 - `secure: false`, non-loopback 예외 확대 또는 재발급 경로의 정책 이탈을 의도적으로 주입했을 때 관련 계약이 red가 되는지 확인한다.
 - 문서 링크와 ADR registry·공용 결정 인덱스의 exact-set 정합을 저장소 운영 계약으로 검증한다.

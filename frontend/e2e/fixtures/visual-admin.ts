@@ -1,9 +1,14 @@
 import { randomBytes } from 'node:crypto';
 import { expect, type APIRequestContext } from '@playwright/test';
 import { getAdminBearerToken } from '../utils/admin-token';
+import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
 
 /** VRT가 다른 테스트의 결재·댓글 알림을 받지 않도록 실제 사용자와 세션을 분리한다. */
 export async function createVisualAdmin(request: APIRequestContext, baseURL: string) {
+    const target = await assertIsolatedTarget();
+    if (new URL(baseURL).origin !== new URL(target.webUrl).origin) {
+        throw new Error('Visual admin fixture target does not match the owned E2E stack.');
+    }
     const origin = new URL(baseURL);
     if (!['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)) {
         throw new Error('Visual admin fixtures require an isolated loopback E2E stack.');
@@ -50,13 +55,19 @@ export async function createVisualAdmin(request: APIRequestContext, baseURL: str
             data: { userId, password },
         });
         expect(login.status(), '시각 검증 전용 관리자 로그인').toBe(200);
-        const token: unknown = (await login.json())?.data?.accessToken;
+        const body = await login.json();
+        const token: unknown = body?.data?.accessToken;
         if (typeof token !== 'string' || token.length === 0) {
             throw new Error('Visual admin authentication did not return an access token.');
         }
+        // Refresh 계약도 공유 계정의 로그인·로그아웃에 영향을 받지 않는 주체를 사용한다.
+        const refreshCookie = (login.headers()['set-cookie'] ?? '').split('\n')
+            .map(line => /^refreshToken=([^;]+)/.exec(line.trim())?.[1]).find(Boolean);
+        const refreshToken: string = body?.data?.refreshToken || refreshCookie || '';
         return {
             // 결재 완주 테스트가 이 계정을 결재자로 고른다(자기 결재 금지 — DEC-OPS-095).
             esntlId,
+            refreshToken,
             authorization: { Authorization: `Bearer ${token}` },
             storageState: {
                 cookies: [{

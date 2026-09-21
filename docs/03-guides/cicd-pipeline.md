@@ -27,7 +27,7 @@
 ```
 push/PR / workflow_dispatch
     │
-    └─ change-scope (삭제·rename old path를 포함한 fail-closed 분류)
+    └─ change-scope (PR: 삭제·rename old path 포함 분류 / main·master push: --full)
         ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended)
         │   └─ secure-coding (High/Critical 차단, 언어별 결과 집계)
         ├─ secret-scan (운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
@@ -39,11 +39,11 @@ push/PR / workflow_dispatch
         ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
         │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
         ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
-        ├─ mutation-scope (mutation=true, 제품 PIT 스코프 8개 병렬)
-        ├─ mutation-scope-migration (mutation-migration-tool=true, 이관 PIT 스코프 2개)
+        ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 8개 병렬)
+        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 2개)
         │   └─ mutation-test (두 소스를 각각 fail-closed로 집계하는 안정 required aggregate)
-        └─ e2e-tests (e2e=true, backend/frontend 결과 확인 후 내부 2 shard)
-            ├─ 실행시간 profile 기반 명시적 spec 분배
+        └─ e2e-tests (e2e=true, 상류 빌드 대기 없이 내부 2 shard)
+            ├─ 전체 API·브라우저 모집단 분배 + 실행 목록/결과 대조
             ├─ e2e-merge-reports (비필수 리포트 병합)
             └─ e2e-test (항상 완료되는 안정 required aggregate)
 ```
@@ -65,7 +65,7 @@ dependency-submission.yml (pull_request, contents:read)
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: classifier가 schema 영향으로 판정하면 `Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)`이 Flyway 전량 적용 + Hibernate `ddl-auto:validate`로 물리 정합성을 검증한다. `:foundation:test --no-build-cache`를 재실행하는 `Cache-bypass regression gate (foundation, main only)`는 같은 schema 조건에 더해 `refs/heads/main`에서만 실행한다.
 > - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
-> - **증분 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 10개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 스코프는 두 잡에 나뉘어 산다 — 제품 8개는 `mutation-scope`, `migration-tool` 2개는 `mutation-scope-migration`이며 후자는 그 모듈이 변경 범위일 때만 실행한다(DEC-OPS-104). `mutation-test`는 **소스 잡마다** 같은 판정기를 돌려 각각 fail-closed로 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
+> - **증분 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 10개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 스코프는 두 잡에 나뉘어 산다 — 제품 8개는 `mutation-scope`, `migration-tool` 2개는 `mutation-scope-migration`이며 후자는 이관 모듈·공용 Gradle 입력, 미지 범위 또는 main/master 전수 실행에서 선택된다(DEC-OPS-104의 독립 모듈 경계 보존). `mutation-test`는 **소스 잡마다** 같은 판정기를 돌려 각각 fail-closed로 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
 `migration-validate-verify`의 CI 실행 상한은 60분이고 다른 PIT 스코프는 30분이다. 60분 표현식은 `mutation-scope-migration`에만 있고 제품 스코프 잡은 30분 고정이며, 두 값을 required-check 계약이 함께 고정한다.
@@ -85,6 +85,14 @@ DB 초기화 비용이 짧은 시험의 시간 예산을 넘을 수 있다. 이 
 기존 required-checks 계약이 다른 범위 확대·상한 변경·삭제·주석 대체·중복 키를 실패로 확인한다.
 
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
+
+E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `backend-build`는 migration-tool을 포함한 기존 전체 빌드·테스트·JaCoCo를 계속 요구하므로 E2E/PIT가 먼저 성공해도 다른 required check의 실패를 상쇄하지 못한다. CodeQL 양언어와 재사용 profile×layout 검증도 유지한다.
+
+PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. `build.gradle`, `settings.gradle`, `gradle/**`, `gradle.properties`와 미지 입력은 이관 scope도 선택한다. 제품 8개·이관 2개의 대상과 75% strict 하한은 유지하며, 더 세밀한 모듈별 선택은 별도 의존 관계 증명 후 도입한다.
+
+PR은 변경 범위에 따른 분류를 유지하고 **main/master push는 문서-only 병합도 `--full`로 전체 검증**한다. 따라서 문서-only fast path는 PR에 적용되며 기본 브랜치 전체 회귀를 대체하지 않는다. 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
+
+병렬화와 캐시는 실행 순서를 개선하지만 새 구조의 wall-clock·runner-minute 절감은 아직 측정하지 않았다. 과거 CI 수치는 변경 전 기준이며, cold/warm cache·대표 PR·main 실행에서 queue·준비·본 테스트·PIT·전체 완료 시간을 다시 비교한다.
 
 ### 정기 검토와 기관 도입의 분리
 
@@ -120,8 +128,8 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 
 ### 실행 트리거
 
-- **Push**: `main`, `master` 브랜치
-- **Pull Request**: base 브랜치 제한 없이 모든 PR
+- **Push**: `main`, `master` 브랜치, `--full`로 전체 회귀 실행
+- **Pull Request**: base 브랜치 제한 없이 모든 PR, 변경 범위 분류와 fail-closed fallback 적용
 - **Workflow Dispatch**: GitHub UI / CLI 에서 수동 실행 지원 (`workflow_dispatch`)
 - **Concurrency**: 동일 ref 연속 푸시 시 이전 실행 자동 중단 (`concurrency: group: ci-${{ github.ref }}, cancel-in-progress: true`)
 
@@ -136,7 +144,7 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 ### 실행 명령어
 
 ```bash
-# 1. main에서 classifier가 schema 영향으로 판정했을 때만 cache-bypass 재실행
+# 1. main의 전수 검증에서 foundation cache-bypass 재실행
 ./gradlew :foundation:test --no-build-cache
 
 # 2. 메인 빌드 및 테스트 (OpenAPI Spec 정적 추출 포함)
@@ -203,7 +211,7 @@ pnpm run test:coverage
 
 ### Playwright Sharding
 
-`1/2`·`2/2`은 내부 실행 job label이다. 브랜치 보호에는 shard 개수와 무관한 안정 context `e2e-test` 하나만 노출한다. 실제 spec 배정은 Playwright의 개수 기반 `--shard`가 아니라 [실행시간 profile](../../frontend/e2e/shard-duration-profile.json)을 [planner](../../scripts/e2e-shard-plan.mjs)가 LPT 방식으로 균형 분배한다. 새·삭제 spec, 잘못된 source 증거, 누락·중복 또는 15% 초과 예상 편차는 운영 계약이 실패 처리한다.
+`1/2`·`2/2`은 내부 실행 job label이다. 브랜치 보호에는 shard 개수와 무관한 안정 context `e2e-test` 하나만 노출한다. 실제 spec 배정은 Playwright의 개수 기반 `--shard`가 아니라 [duration profile](../../frontend/e2e/shard-duration-profile.json)을 [planner](../../scripts/e2e-shard-plan.mjs)가 LPT 방식으로 균형 분배한다. 재편 직후 profile은 과거 spec 실측치를 테스트 선언 수로 배분한 추정값이며 새 파일의 실측 시간이 아니다. 새·삭제 spec, 잘못된 source 증거, 누락·중복 또는 15% 초과 예상 편차는 운영 계약이 실패 처리한다.
 
 ```yaml
 strategy:
@@ -212,37 +220,23 @@ strategy:
     shard: [1/2, 2/2]
 ```
 
+첫 shard의 계획만 보려면 `node scripts/e2e-shard-plan.mjs --shard 1/2`를 실행한다. 이 명령은 서버·DB를 기동하지 않는다.
+
 ### 실행 흐름
 
-1. **API 이미지 빌드와 Docker Compose 시작**
-   ```bash
-   docker compose build api
-   docker compose up -d db api
-   ```
+1. Buildx가 해당 checkout의 `api-server/Dockerfile`을 빌드해 `API_IMAGE_REF` 태그로 로컬 Docker에 적재한다. GitHub Actions layer cache를 사용하고 registry에 push하지 않는다. Compose는 `up --no-build -d db api`로 그 이미지를 사용한다.
+2. run ID·attempt·shard별 Compose namespace로 DB/API를 기동하고 API health와 보호된 metrics 응답을 확인한다. 프론트엔드는 같은 회차의 임시 JWT 설정으로 production build한다.
+3. 격리 runner의 `--ci-compose` 경로가 DB 연결·Compose 자원 소유권·Next 연결을 검증하고 자체 Next 프로세스를 관리한다. 기존 개발 DB나 이미 실행 중인 서버를 재사용하지 않는다.
+4. planner가 배정한 spec을 `api-contract`와 `full-suite` 프로젝트에서 실행한다. 실행 전 목록 JSON과 결과 JSON을 `playwright-result-contract.mjs --inventory ... --report ...`로 대조한다. 실제 테스트 ID·project 누락, 예상 밖 skip, flaky를 성공으로 처리하지 않는다.
+5. 영향 shadow 계획은 전수 결과와 비교할 후보 보고서만 만든다. 공통·미지·신규·삭제 입력은 전수 fallback으로 보고하며 실행 모집단을 줄이지 않는다. 실패 시 trace·screenshot·브라우저 로그·API/JVM 로그를 대조하고 생성 자원은 해당 실행의 소유권 범위에서 회수한다.
 
-2. **백엔드 헬스 체크**
-   ```bash
-   # CI 호스트 레벨에서 백엔드 포트(8080)가 열릴 때까지 우아하게 차단 대기
-   pnpm exec wait-on tcp:8080
-   ```
-
-3. **Playwright 테스트 실행**
-   ```bash
-   cd frontend
-   pnpm run build
-   pnpm run start:3001 &
-   pnpm exec wait-on http://127.0.0.1:3001/login
-   mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard 1/2)
-   export PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/e2e-results.json
-   pnpm exec playwright test --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line,json
-   node ../scripts/playwright-result-contract.mjs --report "$PLAYWRIGHT_JSON_OUTPUT_FILE" "${E2E_SPECS[@]}"
-   ```
+정확한 shell 명령과 artifact 경로는 [ci.yml](../../.github/workflows/ci.yml)의 E2E job이 정본이다. 로컬 검증은 `npm run verify:e2e`로 같은 격리 경계를 통과한다. 목록 확인과 타입 검사는 서비스 없이 실행할 수 있다.
 
 ### 리포트 병합
 
 - **스펙 구성**: planner의 재귀 spec discovery와 duration profile exact census가 현재 실행 모집단의 정본이다. 계층 정의는 [testing-guide.md](./testing-guide.md) §E2E를 따른다.
-- **Playwright projects 는 2개다**: `setup`(`*.setup.ts`)과 `full-suite`(`*.spec.ts`, `dependencies: [setup]`). 스펙 파일 수와 Playwright project 수를 혼동하지 않고, 현재 값은 `frontend/playwright.config.ts`에서 확인한다.
-- **Sharding (병렬 실행)**: 내부 2개 job은 비용 병렬화를 위한 구현 세부사항이고 required context는 `e2e-test` 하나다. spec별 최근 성공 실행시간이 바뀌면 profile의 source 증거와 `durationsMs`를 함께 갱신한다. 단순 파일 수 균등이나 수동 목록은 사용하지 않는다.
+- **Playwright projects는 3개다**: `setup`(`*.setup.ts`), `api-contract`(`contracts/**/*.spec.ts`), `full-suite`(`journeys/`와 `quality/`의 spec). 두 본 테스트 프로젝트는 서로 겹치지 않으며 `setup`에 의존한다. 브라우저 프로젝트 이름은 기존 snapshot 소비를 위해 유지한다.
+- **Sharding (병렬 실행)**: 내부 2개 job은 비용 병렬화를 위한 구현 세부사항이고 required context는 `e2e-test` 하나다. 새 구조의 성공 실행시간을 확보하면 profile의 추정 표기를 실측 provenance와 함께 갱신한다. 단순 파일 수 균등이나 수동 목록은 사용하지 않는다.
 
 #### 병합 리포트 생성 (`ci.yml`)
 
@@ -255,7 +249,7 @@ strategy:
 | 평탄화·병합 | shard 접두사를 붙여 파일명 충돌을 피한 뒤 `playwright merge-reports --reporter html ./playwright-reports` 실행 |
 | 최종 업로드 | `frontend/playwright-report` → `playwright-report-merged`, 30일 보존 |
 
-E2E JSON 결과는 [playwright-result-contract.mjs](../../scripts/playwright-result-contract.mjs)가 배정된 spec의 실제 실행을 확인한다. HTML 병합은 비필수 보조 job이며, E2E 성공 권위는 `e2e-tests`와 required `e2e-test`에 남는다.
+E2E JSON 결과는 [playwright-result-contract.mjs](../../scripts/playwright-result-contract.mjs)가 배정 spec과 사전 목록의 테스트 ID·project별 실제 실행을 확인한다. HTML 병합은 비필수 보조 job이며, E2E 성공 권위는 `e2e-tests`와 required `e2e-test`에 남는다.
 
 ---
 
@@ -345,6 +339,10 @@ dependencyCheck {
 - **키·입력**: `setup-gradle` action의 캐시 구성과 Gradle task 입력 계약을 따른다. wrapper·build 파일 두 개만으로 전체 캐시 키를 설명하지 않는다.
 - **효과 확인**: 캐시 hit 여부와 실행 시간은 대상 workflow run에서 확인한다. 과거 측정치를 현재 성능 보장으로 사용하지 않는다.
 
+### E2E API Docker layer 캐시
+
+Buildx의 `type=gha,scope=e2e-api`로 두 shard가 layer를 복원하고 첫 shard만 `mode=max`로 내보낸다. cache export 오류만 비치명으로 처리하며 이미지 빌드·로컬 적재·테스트 오류는 계속 실패한다. API 태그를 Compose의 `API_IMAGE_REF`와 결속하고 `--no-build`로 같은 이미지를 사용한다. upstream artifact 전달이나 완료 대기는 추가하지 않는다. 실제 cache hit와 cold/warm 시간은 새 CI에서 확인해야 한다.
+
 ### Next.js 캐싱 — E2E에서는 사용하지 않는다
 
 E2E job은 회차별 JWT 환경과 일치하는 프론트엔드를 클린 빌드한다. 빌드 시점 환경값이 번들에 포함될 수 있으므로 다른 실행에서 만든 Next build cache를 E2E에 복원하지 않는다.
@@ -367,21 +365,13 @@ E2E job은 회차별 JWT 환경과 일치하는 프론트엔드를 클린 빌드
 # Docker를 포함한 병합 전 로컬 게이트
 ./gradlew localGate
 
-# 브라우저 E2E가 필요한 변경은 격리 환경에서 별도 실행
-docker compose up -d db api
-pnpm -C frontend test:e2e:full
+# API·브라우저 E2E가 필요한 변경은 새 격리 스택에서 별도 실행
+npm run verify:e2e
 ```
 
 주간 Dependency-Check나 release workflow를 위 명령이 대신하지 않는다. 필요한 검증은 변경 범위와 대상 workflow를 기준으로 추가한다.
 
-> [!TIP]
-> **외부 격리 DB 직접 연동 시**
-> Docker 대신 외부 개발 DB를 사용한다면 운영·공유 데이터가 아닌 E2E 전용 환경인지, 테스트 계정과 cleanup 접두사가 격리됐는지 먼저 확인한다. 운영 자격증명으로 E2E를 실행하지 않는다.
-> 
-> ```bash
-> # 백엔드·프론트가 명시한 격리 환경을 가리키는지 확인한 뒤
-> pnpm -C frontend test:e2e:full
-> ```
+E2E runner는 외부 DB·공유 개발 서버를 대상으로 받지 않는다. 별도 운영·도입 환경 검증이 필요하면 해당 런북과 승인 경계를 따른다. cleanup 접두사나 loopback URL만으로 실행 환경의 격리를 증명했다고 보지 않는다.
 
 ### JaCoCo 커버리지 확인
 
@@ -476,14 +466,14 @@ export NVD_API_KEY=your-key
 - [E2E 테스트 운영 런북](./e2e-test-guide.md)
 - [API 문서화 가이드](./api-documentation-guide.md)
 
-*Last reviewed against current sources: 2026-09-10.*
+*CI 구조·실행 경로 검토: 2026-09-21. 새 구조의 런타임·성능 검증은 별도 CI 증거가 필요하다.*
 
 
 ## 시큐어코딩 정적 분석 (SAST)
 
 [`sast-policy.json`](../../config/security/sast-policy.json)이 CodeQL 버전·보안 점수 임계값·언어를 정의한다. Java는 5개 모듈의 production `compileJava`를 캐시 없이 추적하여 Lombok 생성 코드까지 분석한다. JavaScript/TypeScript는 [`codeql.yml`](../../config/security/codeql.yml)의 프론트엔드와 운영 스크립트 경로를 분석한다. `security-extended`는 기본 보안 쿼리와 추가 보안 쿼리를 포함한다([GitHub 공식 설명](https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options)).
 
-- 코드·설정 변경에서는 전체 대상 소스를 분석하며, 명시적인 문서 전용 변경만 생략한다. 분류 실패·언어 누락·분석 실패는 통과로 처리하지 않는다.
+- PR의 코드·설정 변경에서는 전체 대상 소스를 분석하며, 명시적인 문서 전용 PR만 생략한다. main/master push는 문서-only여도 두 언어를 전수 분석한다. 분류 실패·언어 누락·분석 실패는 통과로 처리하지 않는다.
 - 보안 점수 7.0 이상(High/Critical)은 기존·신규 여부와 관계없이 실패시킨다. [승인된 오탐 7건](../04-operations/sast-findings-review.md)만 정확한 위치·fingerprint·소스/방어 해시·만료일에 묶어 예외로 처리한다. 그 미만의 탐지도 리포트에 남긴다. 리포트 누락·잘못된 버전·빈 쿼리 집합·실행 오류·예외 건수 불일치는 별도 오류로 실패한다.
 - 두 언어의 실제 취약/안전 fixture를 CodeQL로 분석하고, 취약 fixture가 동일 정책 CLI에서 종료 코드 1을 내는지 매 CI에서 확인한다. fixture의 취약 동작은 실행하지 않는다.
 - `secure-coding`은 여섯 번째 required context다. 기존 release workflow가 같은 manifest를 읽으므로 대상 SHA에 이 체크가 성공하지 않으면 이미지·릴리스 발행을 차단한다. 원격 ruleset 적용 여부는 `npm run verify:ops`로 별도 확인한다.
@@ -502,3 +492,5 @@ npm run verify:sast:probe -- javascript
 ```
 
 로컬 분석 로그·원본 리포트는 Git에서 제외된 `build/sast-*`에 보관한다. 실패한 탐지는 rule ID·파일·행·데이터 흐름을 확인해 수정하고 재분석한다. 규칙 비활성화, 파일 전체 제외, `continue-on-error`, 임계값 상향으로 red를 감추지 않는다.
+
+CI는 DB/API 기동 전에 `node scripts/e2e-compose-preflight.mjs`로 Compose 설정을 검증하고, 격리 runner에서 실제 컨테이너·datasource 소유권을 다시 확인한다. 환경 플래그만으로 실행을 허용하지 않는다.

@@ -171,10 +171,12 @@ test('rejects wrong rootDir, malformed JSON shape, and reports without full-suit
 test('CLI passes a complete report and exits nonzero for an all-skipped report', () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'playwright-result-contract-'));
   const reportPath = path.join(temporary, 'results.json');
+  const inventoryPath = path.join(temporary, 'inventory.json');
   const scriptPath = path.resolve('scripts/playwright-result-contract.mjs');
   try {
     fs.writeFileSync(reportPath, JSON.stringify(report()), 'utf8');
-    const green = spawnSync(process.execPath, [scriptPath, '--report', reportPath, ...planned], {
+    fs.writeFileSync(inventoryPath, JSON.stringify(report()), 'utf8');
+    const green = spawnSync(process.execPath, [scriptPath, '--report', reportPath, '--inventory', inventoryPath, ...planned], {
       cwd,
       encoding: 'utf8',
     });
@@ -189,7 +191,7 @@ test('CLI passes a complete report and exits nonzero for an all-skipped report',
     skipped.stats.expected = 0;
     skipped.stats.skipped = 3;
     fs.writeFileSync(reportPath, JSON.stringify(skipped), 'utf8');
-    const red = spawnSync(process.execPath, [scriptPath, '--report', reportPath, ...planned], {
+    const red = spawnSync(process.execPath, [scriptPath, '--report', reportPath, '--inventory', inventoryPath, ...planned], {
       cwd,
       encoding: 'utf8',
     });
@@ -199,4 +201,54 @@ test('CLI passes a complete report and exits nonzero for an all-skipped report',
   } finally {
     fs.rmSync(temporary, { recursive: true, force: true });
   }
+});
+
+test('API and browser projects have disjoint ownership, and duplicate project execution is red', () => {
+  const specs = [jsonSpec('contracts/authorization.spec.ts', 'expected', 'api-contract'), jsonSpec('journeys/session.spec.ts')];
+  const combined = report(specs);
+  combined.config.projects.push({ name: 'api-contract' });
+  const plan = specs.map(spec => `e2e/${spec.file}`);
+  assert.deepEqual(validatePlaywrightResult(combined, plan, { cwd, inventory: structuredClone(combined) }).errors, []);
+  const duplicate = structuredClone(combined);
+  duplicate.suites[1].specs[0].tests.push(jsonTest('expected'));
+  duplicate.stats.expected += 1;
+  assert.match(validatePlaywrightResult(duplicate, plan, { cwd, inventory: combined }).errors.join('\n'), /must belong to api-contract|unplanned test coordinate/);
+});
+
+test('inventory detects one missing test within a present file, missing setup, and repeated results', () => {
+  const inventory = report();
+  const secondTest = jsonSpec('01-core.spec.ts');
+  secondTest.id += '-second';
+  secondTest.title += ' second';
+  inventory.suites[1].specs.push(secondTest);
+  inventory.stats.expected += 1;
+  assert.match(validatePlaywrightResult(report(), planned, { cwd, inventory }).errors.join('\n'), /missing planned test coordinate/);
+  const noSetup = report();
+  noSetup.suites.shift();
+  noSetup.stats.expected -= 1;
+  assert.match(validatePlaywrightResult(noSetup, planned, { cwd, inventory: report() }).errors.join('\n'), /missing planned test coordinate/);
+  const duplicate = report();
+  duplicate.suites[1].specs.push(structuredClone(duplicate.suites[1].specs[0]));
+  duplicate.stats.expected += 1;
+  assert.match(validatePlaywrightResult(duplicate, planned, { cwd, inventory: report() }).errors.join('\n'), /duplicate test coordinate/);
+});
+
+test('global setup and teardown errors cannot pass the result contract', () => {
+  const failed = report();
+  failed.errors.push({ message: 'cleanup failed' });
+  assert.match(validatePlaywrightResult(failed, planned, { cwd }).errors.join('\n'), /global execution errors/);
+});
+
+test('only the existing exact Linux visual waiver is accepted on a non-Linux local runtime', () => {
+  const visual = jsonSpec('quality/visual-baselines.spec.ts', 'skipped');
+  visual.title = 'Visual Regression Baseline';
+  visual.tests[0].expectedStatus = 'skipped';
+  const isolation = jsonSpec('quality/visual-baselines.spec.ts');
+  isolation.id += '-isolation';
+  const local = report([isolation, visual]);
+  const plan = ['e2e/quality/visual-baselines.spec.ts'];
+  assert.deepEqual(validatePlaywrightResult(local, plan, { cwd, platform: 'win32' }).errors, []);
+  assert.match(validatePlaywrightResult(local, plan, { cwd, platform: 'linux' }).errors.join('\n'), /stats.skipped must be zero/);
+  visual.title = 'another visual assertion';
+  assert.match(validatePlaywrightResult(report([isolation, visual]), plan, { cwd, platform: 'win32' }).errors.join('\n'), /stats.skipped must be zero/);
 });

@@ -2,6 +2,8 @@
 
 본 프로젝트는 단위 테스트, 통합 테스트, E2E 테스트를 포함한 다양한 테스트 계층을 사용합니다.
 
+테스트 설계 → 소유 계층 선택 → 구현·부정 검증 → PR/main 실행 → 실패 진단·중복 정리의 전체 절차는 [테스트 프로세스 재설계안](../02-architecture/testing-process-redesign.md)을 참조한다. 아래 가이드는 그 절차의 실행 경로와 증거 경계를 설명한다.
+
 ---
 
 ## 📋 목차
@@ -34,8 +36,10 @@ business-app/
 
 frontend/
 ├── e2e/
-│   ├── *.spec.ts              # Playwright E2E 테스트
-│   └── fixtures/              # 테스트 데이터
+│   ├── contracts/             # 브라우저 없이 실제 HTTP/API 계약
+│   ├── journeys/              # 실제 사용자 동선·화면 연결
+│   ├── quality/               # 접근성·회복·시각·XSS 계약
+│   └── fixtures/              # 격리 환경·API·브라우저 fixture
 ├── src/
 │   └── **/*.test.tsx          # 단위 테스트
 └── playwright.config.ts       # Playwright 설정
@@ -64,7 +68,7 @@ frontend/
 
 프론트 단위 테스트에서 API service를 mock하면 UI의 로딩·실패·재시도 반응을 검증할 수 있다. `useQuery` 자체를 mock해 `queryFn`을 실행하지 않거나 부모 화면에서 관리창을 mock했다면 그 아래 실제 요청과 관리창 동작은 검증 범위 밖이다. 필요한 연결은 실제 API를 사용하는 기존 도메인 E2E에 둔다.
 
-업무함의 예는 [부서 Repository 입력 테스트](../../business-core/src/test/java/nuri/business/domain/user/repository/DeptManageRepositoryPagingTest.java), [service mock을 쓰는 Controller 테스트](../../api-server/src/test/java/nuri/api/controller/system/DeptApiControllerTest.java), [업무·업무보고 E2E](../../frontend/e2e/25-deptjob-workreport-journey.spec.ts)를 함께 본다. [전체 조회 누락 사례와 red/green 판정](../04-operations/verification-blindspots.md#커버리지-100와-전체-조회-입력의-누락)은 커버리지 수치를 사용자 동선의 완전성으로 해석할 수 없는 이유를 설명한다.
+업무함의 예는 [부서 Repository 입력 테스트](../../business-core/src/test/java/nuri/business/domain/user/repository/DeptManageRepositoryPagingTest.java), [service mock을 쓰는 Controller 테스트](../../api-server/src/test/java/nuri/api/controller/system/DeptApiControllerTest.java), [업무함·부서 업무 UI](../../frontend/e2e/journeys/department-work.spec.ts)와 [업무보고 API 계약](../../frontend/e2e/contracts/work-reports.spec.ts)를 함께 본다. [전체 조회 누락 사례와 red/green 판정](../04-operations/verification-blindspots.md#커버리지-100와-전체-조회-입력의-누락)은 커버리지 수치를 사용자 동선의 완전성으로 해석할 수 없는 이유를 설명한다.
 
 ---
 
@@ -131,71 +135,43 @@ public @interface IntegrationTest {
 
 ## E2E 테스트 (Playwright)
 
-### 계층형 아키텍처 (26-Tier Architecture)
+### 계약별 소유권과 실행 계층
 
-본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **26개 계층(Tier)** / 27개 스펙 파일(별도 `03-board-master-management` 포함)로 테스트를 관리합니다. 현재 파일 모집단은 `frontend/e2e`와 [실행시간 profile](../../frontend/e2e/shard-duration-profile.json)의 exact census가 정본입니다.
+파일 번호 대신 검증하는 계약과 도메인으로 나눈다. 같은 페이지 방문만으로 중복을 판정하지 않는다. 역할·준비 상태·행위·단언·공용 fixture의 오류 감시가 모두 같은지 비교하고, 제거 후 남은 소유 테스트가 같은 위반을 잡는지 확인한다. 제목 표시만 확인하는 smoke를 저장·재조회 여정으로 설명하지 않는다.
 
-> Playwright project는 `setup`과 `full-suite` 두 개다. 아래 Tier는 파일 식별자이며 project가 아니다. 계층별 실행은 파일 또는 제목으로 지정하고, 현재 구성은 `frontend/playwright.config.ts`를 확인한다.
+| 디렉터리 / Playwright project | 책임 | 대표 소유 파일 |
+|---|---|---|
+| `contracts/` / `api-contract` | 실제 HTTP의 인증·인가·소유권·검색·페이징·데이터 상태 전이 | [인가](../../frontend/e2e/contracts/authorization.spec.ts), [인증·Origin](../../frontend/e2e/contracts/authentication.spec.ts), [업무보고](../../frontend/e2e/contracts/work-reports.spec.ts) |
+| `journeys/` / `full-suite` | 브라우저 로그인·메뉴·입력·저장·재조회, 화면과 API 연결 | [인증](../../frontend/e2e/journeys/authentication.spec.ts), [게시판 마스터](../../frontend/e2e/journeys/board-masters.spec.ts), [부서 업무](../../frontend/e2e/journeys/department-work.spec.ts) |
+| `quality/` / `full-suite` | 접근성·오류 복구·반응형·시각 기준선·저장 XSS | [오류 복구](../../frontend/e2e/quality/error-recovery.spec.ts), [저장 XSS](../../frontend/e2e/quality/stored-xss.spec.ts), [로그인 접근성](../../frontend/e2e/quality/login-accessibility.spec.ts) |
+| `*.setup.ts` / `setup` | 격리 환경에서 인증 상태 준비 | [인증 setup](../../frontend/e2e/auth.setup.ts) |
 
-| 그룹 | Tier | 파일 | 검증 범위 |
-|------|------|------|-----------|
-| **Core** | 1 | `01-core-base.spec.ts` | 인증, 대시보드, 전역 레이아웃 |
-| | 2 | `02-admin-system.spec.ts` | 사용자 CRUD, 메뉴, 공통코드 |
-| **Business** | 3 | `03-board-community.spec.ts` | 게시판 생명주기 |
-| | 3 (별도) | `03-board-master-management.spec.ts` | 게시판 마스터 생성·수정·삭제 |
-| | 4 | `04-quality-resilience.spec.ts` | RBAC/CSRF, A11y, 시각적 회귀 |
-| | 5 | `05-public-experience.spec.ts` | 대국민 포털 연동 |
-| **Ops** | 6 | `06-ops-governance.spec.ts` | 감사 로그, 모니터링 |
-| | 7 | `07-productivity-suite.spec.ts` | 개인 일정, 스크랩 |
-| | 8 | `08-advanced-collaboration.spec.ts` | 협업 고도화 |
-| | 9 | `09-admin-observability-workspace.spec.ts` | 관리자 관측성 |
-| | 10 | `10-operational-extension.spec.ts` | 운영 확장 |
-| **Enterprise** | 11 | `11-enterprise-workflow.spec.ts` | 결재 프로세스 |
-| | 12 | `12-notification.spec.ts` | 알림 센터 |
-| | 13 | `13-mail.spec.ts` | 메일 연동 |
-| | 14 | `14-admin-workflow.spec.ts` | 관리자 업무 자동화 |
-| | 15 | `15-collaboration-extension.spec.ts` | 협업 확장 |
-| | 16 | `16-system-observability.spec.ts` | 시스템 가시성 |
-| | 17 | `17-support-governance.spec.ts` | 온라인 매뉴얼, FAQ 생명주기 |
-| | 18 | `18-business-extension.spec.ts` | ISM(비정형결재), LSM(간부일정), HPCM |
-| | 19 | `19-hierarchy-modernization.spec.ts` | 부서 및 메뉴 계층 구조 최적화 검증 |
-| | 20 | `20-common-security-validation.spec.ts` | 공통 보안 취약점 및 보안 필터 검증 |
-| | 21 | `21-advanced-resilience.spec.ts` | API 및 DB 장애 극복 회복탄력성 검증 |
-| | 22 | `22-deep-security-guard.spec.ts` | XSS 새니타이제이션(저장·반사), malformed URL 내성 — **경로/API RBAC 은 23 소유** |
-| | 23 | `23-security-auth-supplement.spec.ts` | **인증·세션·접근통제 계약의 단일 소유자** — UI 로그인(E0)·위조토큰(E1)·로그인실패(E2)·API RBAC(E3)·미들웨어 경로정책 매트릭스(E4)·Origin 가드(E5)·a11y(E11)·empty-state(E12) |
-| **Integration** | 24 | `24-org-schedule-journey.spec.ts` | 조직 ↔ 일정 통합 사슬 회귀 방어 |
-| | 25 | `25-deptjob-workreport-journey.spec.ts` | 부서업무 ↔ 업무보고 통합 여정 |
-| **Security Admin** | 26 | `26-security-admin-coverage.spec.ts` | 전용 부서 권한 일괄 적용·로그인 정책 저장 및 재조회 |
+`api-contract`와 `full-suite`의 spec 집합은 겹치지 않으며 둘 다 `setup`에 의존한다. `full-suite`는 브라우저 프로젝트의 기존 이름을 유지해 시각 snapshot 파일의 소비 경로를 보존한다. 현재 모집단은 [Playwright 설정](../../frontend/playwright.config.ts), 재귀 spec discovery와 [duration profile](../../frontend/e2e/shard-duration-profile.json)이 함께 검증한다.
 
-### 실행 명령어
+`api-test.ts`는 API 요청 fixture를, `browser-test.ts`는 브라우저와 ConsoleErrorGuard를 제공한다. API로 준비한 데이터는 UI 저장 버튼을 검증한 것으로 세지 않는다. 로딩·빈 결과·오류 메시지·입력 분기처럼 컴포넌트에서 판정 가능한 조합은 Vitest/RTL에서 빠르게 검증하고, 실제 HTTP·보안 경계는 API/통합 테스트에, 핵심 연결 동선은 브라우저에 남긴다.
+
+### 실행 명령어와 격리 경계
+
+일반 개발 DB나 이미 열린 개발 서버에 E2E를 붙이지 않는다. 격리 runner가 새 DB와 자신이 소유한 API·Next 프로세스를 준비하고, 테스트 전에 실제 연결·실행 소유권을 확인한다. `.env`의 외부 DB 주소를 실행 대상으로 삼거나 boolean 승인 환경변수만으로 이 검증을 우회하지 않는다.
 
 ```bash
-# 전체 E2E 실행
-pnpm -C frontend test:e2e
+# 타입 검사와 새 격리 스택의 전체 API·브라우저 검증
+npm run verify:e2e
 
-# 클린업 포함 전체 실행 (권장)
-pnpm -C frontend test:e2e:full
+# 특정 계약을 새 격리 스택에서 진단
+node scripts/run-isolated-e2e.mjs -- --project=api-contract e2e/contracts/authorization.spec.ts
+node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/journeys/department-work.spec.ts
 
-# 특정 Tier만 실행 — 파일로 지정한다
-pnpm -C frontend exec playwright test e2e/01-core-base.spec.ts
-pnpm -C frontend exec playwright test e2e/18-business-extension.spec.ts
-pnpm -C frontend exec playwright test e2e/22-deep-security-guard.spec.ts
-
-# 제목 필터 (파일을 가로지르는 관심사)
-pnpm -C frontend exec playwright test -g "Middleware"
-
-# 실행 없이 목록만 확인 (서버 불필요)
+# 실행 없이 모집단 확인(서버·DB 불필요)
 pnpm -C frontend exec playwright test --list
 
-# E2E 타입 검사 (루트 tsc 는 e2e 를 exclude 하므로 이 게이트가 유일 관문)
+# E2E 타입 검사(루트 tsc는 e2e를 제외)
 pnpm -C frontend type-check:e2e
-
-# UI 모드 (대화형 디버깅)
-pnpm -C frontend test:e2e:ui
-
-# 수동 DB 클린업
-pnpm -C frontend test:cleanup
 ```
+
+PR에서는 E2E가 선택되면 API·브라우저 전체 모집단을 2개 shard에서 실행한다. 로컬 worker는 격리 스택의 자원 사용을 제한하기 위해 1, CI는 기존 측정 설정인 2를 유지한다. main/master push는 `--full` 분류로 전체 회귀와 구성 조합을 실행한다. 영향 매핑은 실행을 줄이지 않는 shadow 후보 분석이며, 누락 방지 부정 검증과 실측 이득을 확보하기 전에는 선택 실행을 켜지 않는다.
+
+CI는 실행 전 `--list --reporter=json`으로 만든 목록을 결과 계약의 `--inventory`로 전달한다. 배정한 파일뿐 아니라 테스트 ID·project·실제 실행 결과를 대조해 누락·예상 밖 skip·flaky를 차단한다. 새 구조의 실행시간 profile은 과거 측정치를 테스트 선언 수로 배분한 추정치이며 새 파일의 실측 시간이 아니다. 성공 CI에서 다시 측정한 뒤 분배를 조정한다.
 
 ### UI/UX 변경 전 기준선 계약
 
@@ -220,7 +196,7 @@ pnpm -C frontend run ui-quality:plan
 pnpm -C frontend run ui-quality:baseline
 
 # 기존 smoke/resilience source의 회귀 확인(격리 서비스 필요)
-pnpm -C frontend exec playwright test e2e/01-core-base.spec.ts e2e/04-quality-resilience.spec.ts
+node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/journeys/application-shell.spec.ts e2e/quality/error-recovery.spec.ts
 ```
 
 manifest의 현재 baseline 상태는 `unmeasured`이며 Playwright 성능값이나 사용자 연구 결과를 뜻하지 않는다. 기본 산출물 경로는 git ignored이므로 runner 결과만으로 `measured`로 승격할 수 없고, 프로토콜의 내구성 조건을 먼저 충족해야 한다. `UI_BASELINE_DIAGNOSTIC_LIMIT`으로 만든 제한 실행은 runner 진단일 뿐 baseline 증거가 아니다. 자동 axe는 고정된 Chromium·locale·timezone에서 실행하고 `color-contrast` rule을 비활성화할 수 없다. 자동 검사는 키보드 작업 완수, NVDA 발화 의미, zoom/reflow, forced-colors, reduced-motion을 증명하지 않으므로 프로토콜의 수동 검사를 별도 artifact로 남긴다. 기존 E2E source는 기능 preflight 증거일 뿐 이 baseline의 task metric·cold/warm 성능·전체 state×render matrix를 대신하지 않는다.
@@ -294,13 +270,13 @@ E2E fixture는 방문한 화면에서 기능 단언과 함께 브라우저 오�
 
 ### 1. 전역 브라우저 에러 감시 (Zero-Tolerance Console Guard)
 E2E 테스트 실행 중 브라우저 콘솔에 에러가 발생하거나 런타임 예외가 던져지면 테스트 코드가 'Pass' 하더라도 강제로 실패 처리합니다.
-- **설정**: `e2e/fixtures/error-detector.ts` 및 `base-test.ts`
+- **설정**: `e2e/fixtures/error-detector.ts` 및 `browser-test.ts`
 - **감지 항목**:
     - `console.error()`: 스크립트 실행 중 발생하는 비치명적 오류
     - `pageerror`: 런타임 예외 및 Uncaught Error
     - **Hydration Mismatch**: React/Next.js 하이드레이션 불일치 로그를 `🌊 [HYDRATION MISMATCH]` 오류로 수집한다.
 
-가드는 이벤트를 수집하고 `base-test.ts`의 fixture teardown에서 `verify()`로 테스트를 실패시킨다. 별도 `unhandledrejection` 리스너는 없으며 Playwright의 `pageerror`로 전달된 미처리 오류가 관측 대상이다.
+가드는 이벤트를 수집하고 `browser-test.ts`의 fixture teardown에서 `verify()`로 테스트를 실패시킨다. 별도 `unhandledrejection` 리스너는 없으며 Playwright의 `pageerror`로 전달된 미처리 오류가 관측 대상이다.
 
 ### 2. 네트워크 리소스 무결성 검사 (Network Auditor & Silent API 가드)
 이미지 404, 깨진 폰트, CSS 로딩 실패 및 백그라운드 API 호출 오류(Silent API Failure)를 자동으로 감지합니다.
@@ -311,7 +287,7 @@ E2E 테스트 실행 중 브라우저 콘솔에 에러가 발생하거나 런타
 ### 3. 정밀 시각 회귀 테스트 (VRT)
 UI 프레임워크나 테마 변경 시 발생하는 미세한 레이아웃 시프트를 감지합니다.
 - **임계값**: 전역 기본값은 `playwright.config.ts`, 화면별 허용치는 해당 `toHaveScreenshot` 호출이 정본이다. 기준선을 재생성해 차이를 숨기지 않는다.
-- **실행**: `pnpm -C frontend exec playwright test e2e/04-quality-resilience.spec.ts`
+- **실행**: `node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/quality/visual-baselines.spec.ts`
 
 ### 4. 하이드레이션 오류 조기 경보 및 E2E 연동
 Next.js의 서버/클라이언트 불일치 문제를 신속히 잡기 위해, 클라이언트 컴포넌트의 `StandardErrorBoundary`가 수집한 불일치 정보를 콘솔에 `🌊 [HYDRATION MISMATCH DETECTED]` 플래그로 출력하며, `ConsoleErrorGuard`가 이를 수집해 해당 Playwright 테스트를 실패시킵니다. 이 가드는 실제로 방문한 경로의 브라우저 로그만 관측하므로 미실행 화면까지 증명하지 않습니다.
@@ -358,7 +334,7 @@ void setUp() {
 
 ### 5. E2E 테스트 데이터 정리
 
-`frontend/e2e/scripts/cleanup-db.ts`가 Playwright `globalTeardown` 및 `test:e2e:full`의 전후 단계에서 실행된다. 일반 운영 DB가 아니라 격리된 E2E 환경을 대상으로 하며, 관리자 API로 명시된 테스트 접두사의 리소스만 정리한다. 새 시나리오가 영속 데이터를 만들면 다음을 같은 변경에 포함한다.
+`frontend/e2e/scripts/cleanup-db.ts`는 Playwright `globalTeardown`에서 해당 실행의 격리 환경에만 접근한다. 시나리오는 생성한 ID를 보존해 표적 정리하고, runner는 자신이 만든 프로세스·컨테이너·DB 자원을 종료 시 회수한다. 정리 실패는 진단 결과에 남기며 성공으로 숨기지 않는다. 새 시나리오가 영속 데이터를 만들면 다음을 같은 변경에 포함한다.
 
 1. 충돌하지 않는 E2E 전용 이름/ID 접두사
 2. 대응 cleanup 조회·삭제 경로
@@ -432,5 +408,4 @@ CI의 `backend-scope`는 classifier가 schema 영향으로 판정한 경우 같�
 - [성능 최적화 가이드](../04-operations/performance-optimization-guide.md)
 
 ---
-*Last reviewed against current sources: 2026-09-10.*
-
+*E2E 구조·CI 실행 경로 검토: 2026-09-21. 새 구조의 런타임·성능 검증은 별도 CI 증거가 필요하다.*

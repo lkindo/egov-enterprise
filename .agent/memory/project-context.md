@@ -5,9 +5,10 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-20
-verified_against: ce60ec140b3cfb0b07dcf190dbf0dda7251c3ce2
+verified_at: 2026-09-21
+verified_against: 9300ec9d1481eaef111a1210c4d302e47bad8128
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md
   - ../../docs/03-guides/project-composer-guide.md
   - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
   - ../../docs/02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md
@@ -67,7 +68,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-006 | DB 표준의 규범 SSOT는 DB 헌법이고, 물리 변경 판단은 live metadata/schema 실측을 함께 요구한다. | [DB 헌법](../knowledge/db-standard-constitution/artifacts/constitution.md), [AGENTS Evidence guardrails](../../AGENTS.md#evidence-guardrails) | 2026-08-18 |
 | CTX-007 | `migration-tool`은 온라인 앱과 분리된 승인형 offline bootJar다. discover → plan → validate → load가 source·driver·mapping·execution contract와 target 위치·identity·schema allowlist를 결속한다. INSERT-only 엔진은 run/keymap/checkpoint와 영속 실행 artifact를 사용한다. PostgreSQL 부분 커밋과 별도 JVM 종료 후 재개·무중복·text/bytea 변조 탐지는 검증했으며, vendor별 운영 자격과 cutover 한계는 GAP-MIG-001에 둔다. | [ADR-0008](../../docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md), [TargetEndpointBinding](../../migration-tool/src/main/java/nuri/migration/artifact/TargetEndpointBinding.java), [검증 범위](../../docs/04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드), [활성 Gap](known-gaps.md) | 2026-09-10 |
 | CTX-008 | 중앙 gate registry가 governance JUnit·ArchUnit·schema-validation 및 runner catalog, execution profile, quality population과 ratchet을 source·task·실행 tier·CI 소비자에 exact-match하고, 선언 root 밖의 tagged gate 도 오류로 잡는다. **CI tier binding 은 라인 존재만으로 tier 를 주장할 수 없다** — 워크플로 binding 17건이 실행 job 을 선언하고, 조건부 step 2건(schema-validation·cross-stack)은 `conditional` 을 명시하며 선언과 실제가 어긋나면 양방향 red 다. binding 매칭의 주석 제거는 소비자 파일 종류를 따른다(YAML·셸은 hash 만). 정확한 현재 수는 registry 계약 실행 출력이 정본이다. | [gate registry](../../config/governance/gates.json), [registry contract](../../scripts/governance-gates-contract.mjs) | 2026-09-10 |
-| CTX-009 | 내부 E2E 실행은 최근 성공 run의 spec 실행시간 profile로 2개 shard(`1/2`, `2/2`)의 명시적 spec 집합을 균형 분배하고, required-check manifest가 같은 완전 좌표를 CI matrix와 exact-match한다. 브랜치 보호에는 shard 수와 무관한 안정 context `e2e-test` 하나만 노출한다. | [duration profile](../../frontend/e2e/shard-duration-profile.json), [shard planner](../../scripts/e2e-shard-plan.mjs), [required-check manifest](../../.github/required-checks.json), [CI workflow](../../.github/workflows/ci.yml) | 2026-09-05 |
+| CTX-009 | E2E는 API 계약·사용자 과업·횡단 품질을 겹치지 않는 project로 실행하고 2개 shard(`1/2`, `2/2`)에 분배한다. inventory로 실행 누락을 검사하며 영향 선별은 shadow뿐이다. 초기 분할 가중치는 과거 시간을 선언 수로 배분한 추정치다. required context는 `e2e-test`다. | [프로세스](../../docs/02-architecture/testing-process-redesign.md), [profile](../../frontend/e2e/shard-duration-profile.json), [CI](../../.github/workflows/ci.yml) | 2026-09-21 |
 | CTX-010 | PR 의존성 검사는 read-only Gradle graph producer → checkout/run 없는 trusted `workflow_run` 제출 → 최대 600초 snapshot readiness → runtime High 이상 review 순서로 fail-closed하도록 정의돼 있다. 기본 브랜치에 producer/publisher가 존재하며 public fork 고위험 probe와 양쪽 snapshot 부재 경계는 GAP-DEP-001에서 별도로 추적한다. | [producer workflow](../../.github/workflows/dependency-submission.yml), [publisher workflow](../../.github/workflows/dependency-submission-publish.yml), [readiness verifier](../../scripts/dependency-snapshot-readiness.mjs), [dependency contract](../../scripts/dependency-submission-contract.mjs) | 2026-09-10 |
 | CTX-011 | 프론트 의존성 감사는 `pnpm audit --json`을 한 번 조회해 Critical 전체와 운영 의존성 High를 차단하고 개발 전용 High는 warning으로 남긴다. JSON 형식·집계 불일치와 실행/네트워크 오류는 fail-closed다. | [audit policy](../../scripts/frontend-audit-policy.mjs), [policy contract](../../scripts/frontend-audit-policy.test.mjs), [CI workflow](../../.github/workflows/ci.yml) | 2026-08-19 |
 | CTX-012 | 로컬 k6 wrapper는 `K6_SCENARIO=users-<load>` 환경 계약으로 100/500/1000 시나리오를 선택하고 알 수 없는 값은 실패한다. 잘못된 `--scenario` 재도입은 저비용 운영 계약이 pre-push·CI에서 차단하지만 실제 부하 결과는 대상 환경이 필요한 별도 증거다. | [load wrapper](../../scripts/run-load-test.ps1), [scenario selector](../../test/load-tests/scenarios/load-levels.js), [command contract](../../scripts/load-test-command-contract.test.mjs) | 2026-08-19 |
@@ -78,6 +79,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-017 | URL·route·UI quality·KRDS·화면 용어와 E2E duration의 일반 최신성은 기술 판정과 분리하고 실제 시계 보고에서 추적한다. 기관 온라인/독립 이관 승인은 제품·환경·소스·실행 artifact·근거·UTC 유효기간에 결속한다. 기본 pending과 기술 검증 통과는 기관 운영 승인이 아니며 실제 실행 진입점이 기술 검사 전후 원장을 확인한다. | [ADR-0018](../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md), [검토 수명 가이드](../../docs/03-guides/governance-review-lifecycle.md), [기관 실행 검증](../../scripts/adoption-execute.mjs) | 2026-09-14 |
 | CTX-018 | 재사용 생성물은 preset pack 또는 custom 도메인 소유권에서 하네스·UI 원장 모집단을 도출하고 snapshot·소스·승계 selector·lock 무결성을 검사한다. 공용 메모리의 원본 운영 사실은 upstream 이력으로 보존하며 현재 기관 사실로 승격하지 않는다. 온라인·이관 승인은 각각 새 pending으로 시작한다. | [생성 가이드](../../docs/03-guides/reusable-base-guide.md), [원장 투영](../../scripts/reusable-governance-projection.mjs), [산출물 무결성](../../scripts/reusable-governance-integrity.mjs), [적용범위 계약](../../config/governance/reusable-review-scopes.json) | 2026-09-20 |
 | CTX-019 | `npm run project:ui`는 별도 loopback 3100 생성기를 실행한다. Foundation/Core에 20개 업무 도메인을 선택하고 PostgreSQL·멀티모듈/단일모듈 독립 소스를 구성한다. UI/CLI는 같은 엔진을 쓰며 각 산출물은 전체 기술 검증 후 완료된다. | [생성기 가이드](../../docs/03-guides/project-composer-guide.md), [공통 엔진](../../scripts/project-composer.mjs) | 2026-09-20 |
+| CTX-020 | 로컬 E2E의 공식 진입점은 `npm run test:e2e:isolated`다. 새 일회용 DB와 소유한 앱 프로세스를 만들고 인증·fixture·cleanup 전에 owner attestation을 검사한다. 개발 `.env`나 공유 DB를 재사용하지 않는다. | [runner](../../scripts/run-isolated-e2e.mjs), [격리 검사](../../scripts/e2e-isolation.mjs), [실행 가이드](../../docs/03-guides/e2e-test-guide.md) | 2026-09-21 |
 
 ## 개발·검증·배포 흐름
 

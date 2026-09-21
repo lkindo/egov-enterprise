@@ -33,6 +33,88 @@ function workflowStep(jobBlock, name) {
   return jobBlock.slice(start, next < 0 ? jobBlock.length : next);
 }
 
+function assertMainFullRegression(content) {
+  const job = parseWorkflowJobs(content).get('change-scope') ?? '';
+  const step = workflowStep(job, 'Classify changed paths (unknown means full pipeline)');
+  assert.match(step,
+    /if \[ "\$GITHUB_EVENT_NAME" = "push" \] && \[\[ "\$GITHUB_REF" = "refs\/heads\/main" \|\| "\$GITHUB_REF" = "refs\/heads\/master" \]\]; then\n\s+node scripts\/ci-change-scope\.mjs --full --github-output "\$GITHUB_OUTPUT"/,
+    'main/master pushes must explicitly select full regression before PR diff classification');
+  assert.doesNotMatch(step, /^ {8}(?:if|continue-on-error):/m);
+}
+
+function assertE2eImageBuild(content) {
+  const job = parseWorkflowJobs(content).get('e2e-tests') ?? '';
+  const build = workflowStep(job, 'Build API image');
+  const start = workflowStep(job, 'Start Docker Infrastructure (DB & API)');
+  assert.match(job, /^ {6}API_IMAGE_REF: egov-enterprise-api:e2e$/m);
+  assert.match(job, /uses: docker\/setup-buildx-action@[0-9a-f]{40}/);
+  assert.match(build, /uses: docker\/build-push-action@[0-9a-f]{40}/);
+  for (const [key, value] of [
+    ['context', '.'],
+    ['file', 'api-server/Dockerfile'],
+    ['load', 'true'],
+    ['push', 'false'],
+    ['tags', '${{ env.API_IMAGE_REF }}'],
+    ['cache-from', 'type=gha,scope=e2e-api'],
+    ['cache-to', "${{ strategy.job-index == 0 && 'type=gha,scope=e2e-api,mode=max,ignore-error=true' || '' }}"],
+  ]) {
+    assert.ok(build.split('\n').includes(`          ${key}: ${value}`), `E2E API build must bind ${key}: ${value}`);
+  }
+  assert.doesNotMatch(build, /^ {8}(?:if|continue-on-error):/m,
+    'cache export is optional; the actual image build must fail the job');
+  assert.match(start, /docker compose up --no-build -d db api/,
+    'Compose must consume the image that Buildx loaded rather than rebuild it');
+}
+
+const baselineRunner = 'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=full-suite e2e/quality/visual-baselines.spec.ts -g "Visual Regression Baseline" --update-snapshots';
+const baselineResultGate = 'node ../scripts/playwright-result-contract.mjs --report /tmp/e2e-results.json --inventory /tmp/e2e-inventory.json e2e/quality/visual-baselines.spec.ts';
+
+function assertBaselineResultGate(content) {
+  const normalized = content.replace(/\r\n/g, '\n');
+  const job = parseWorkflowJobs(normalized).get('update-baseline') ?? '';
+  const regenerate = workflowStep(job, 'Regenerate baselines (--update-snapshots)');
+  const commit = workflowStep(job, 'Commit baselines to current branch');
+  const run = /^ {8}run: \|\n((?: {10}[^\n]*(?:\n|$))+)/m.exec(regenerate)?.[1];
+  assert.deepEqual(run?.trim().split('\n').map(line => line.trim()),
+    ['set -euo pipefail', baselineRunner, baselineResultGate],
+    'baseline regeneration must validate its exact discovery/results before continuing');
+  assert.match(regenerate, /^ {8}working-directory: frontend$/m);
+  assert.doesNotMatch(regenerate, /^ {8}(?:if|continue-on-error|shell):/m);
+  assert.doesNotMatch(job, /^ {4}(?:if|continue-on-error|defaults):/m);
+  assert.doesNotMatch(normalized, /^defaults:/m);
+  assert.ok(commit && job.indexOf(regenerate) < job.indexOf(commit), 'result verification must precede baseline commit');
+  assert.match(commit, /^ {8}if: \$\{\{ inputs\.commit \}\}$/m,
+    'baseline publication must retain the implicit success condition');
+}
+
+test('visual baseline publication requires successful inventory/result verification after regeneration', () => {
+  const content = fs.readFileSync(path.join(repoRoot, '.github/workflows/update-visual-baseline.yml'), 'utf8');
+  assertBaselineResultGate(content);
+});
+
+test('visual baseline result verification cannot be skipped, echoed, reordered or made advisory', () => {
+  const content = fs.readFileSync(path.join(repoRoot, '.github/workflows/update-visual-baseline.yml'), 'utf8').replace(/\r\n/g, '\n');
+  const regenerateMarker = '      - name: Regenerate baselines (--update-snapshots)\n';
+  for (const [label, from, to] of [
+    ['deleted', `          ${baselineResultGate}\n`, ''],
+    ['echoed', baselineResultGate, `echo ${baselineResultGate}`],
+    ['commented', baselineResultGate, `# ${baselineResultGate}`],
+    ['swallowed', baselineResultGate, `${baselineResultGate} || true`],
+    ['reordered', `${baselineRunner}\n          ${baselineResultGate}`, `${baselineResultGate}\n          ${baselineRunner}`],
+    ['early success', baselineRunner, `exit 0\n          ${baselineRunner}`],
+    ['step advisory', regenerateMarker, `${regenerateMarker}        continue-on-error: true\n`],
+    ['step skipped', regenerateMarker, `${regenerateMarker}        if: false\n`],
+    ['step shell', regenerateMarker, `${regenerateMarker}        shell: echo {0}\n`],
+    ['job advisory', '  update-baseline:\n', '  update-baseline:\n    continue-on-error: true\n'],
+    ['default shell', 'jobs:\n', 'defaults:\n  run:\n    shell: echo {0}\njobs:\n'],
+    ['commit after failure', 'if: ${{ inputs.commit }}', 'if: ${{ always() && inputs.commit }}'],
+  ]) {
+    const changed = content.replace(from, to);
+    assert.notEqual(changed, content, `${label} must mutate the actual workflow`);
+    assert.throws(() => assertBaselineResultGate(changed), undefined, label);
+  }
+});
+
 test('manifest intentionally names six stable enforced merge checks', () => {
   assert.deepEqual(expectedContexts, [
     'backend-build',
@@ -116,7 +198,7 @@ test('E2E aggregate remains bound to the fail-closed source condition and real r
   );
 
   const detachedRunner = ciContent.replace(
-    'npx playwright test --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log',
+    'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log',
     'echo skipped-e2e',
   );
   assert.match(
@@ -125,7 +207,7 @@ test('E2E aggregate remains bound to the fail-closed source condition and real r
   );
 
   const detachedResultContract = ciContent.replace(
-    'node ../scripts/playwright-result-contract.mjs --report "$PLAYWRIGHT_JSON_OUTPUT_FILE" "${E2E_SPECS[@]}"',
+    'node ../scripts/playwright-result-contract.mjs --report "$PLAYWRIGHT_JSON_OUTPUT_FILE" --inventory /tmp/e2e-inventory.json "${E2E_SPECS[@]}"',
     'echo skipped-result-contract',
   );
   assert.match(
@@ -368,25 +450,48 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
   assert.match(validateStaticContract({ manifest, ciContent: weakenedAggregate }).join('\n'), /job-level if.*frontend-build/i);
 });
 
-test('heavy source needs point to source jobs rather than stable aggregate contexts', () => {
-  assert.deepEqual(manifest.requiredChecks[3].aggregate.sourceNeeds,
-    ['change-scope', 'backend-scope', 'frontend-scope']);
-  assert.deepEqual(manifest.requiredChecks[4].aggregate[0].sourceNeeds,
-    ['change-scope', 'backend-scope']);
-  // 이관 전용 소스도 같은 선행 잡을 요구한다 — 한쪽만 느슨해지면 그 잡이 검증 없이 발행된다.
-  assert.deepEqual(manifest.requiredChecks[4].aggregate[1].sourceNeeds,
-    ['change-scope', 'backend-scope']);
+test('E2E and PIT sources start after classification without waiting for independent builds', () => {
+  const aggregates = [manifest.requiredChecks[3].aggregate, ...manifest.requiredChecks[4].aggregate];
+  for (const aggregate of aggregates) {
+    assert.deepEqual(aggregate.sourceNeeds, ['change-scope']);
+    for (const staleDependency of ['backend-scope', 'frontend-scope', 'backend-build', 'frontend-build']) {
+      const serialized = mutateWorkflowJob(ciContent, aggregate.sourceJobId, block => block.replace(
+        '    needs: [change-scope]',
+        `    needs: [change-scope, ${staleDependency}]`,
+      ));
+      assert.notEqual(serialized, ciContent.replace(/\r\n/g, '\n'));
+      assert.match(validateStaticContract({ manifest, ciContent: serialized }).join('\n'),
+        new RegExp(`${aggregate.sourceJobId}.*needs must exactly match`, 'i'));
+    }
+  }
+});
 
-  const staleE2eNeeds = mutateWorkflowJob(ciContent, 'e2e-tests', block => block.replace(
-    '    needs: [change-scope, backend-scope, frontend-scope]',
-    '    needs: [change-scope, backend-build, frontend-build]',
-  ));
-  const staleMutationNeeds = mutateWorkflowJob(ciContent, 'mutation-scope', block => block.replace(
-    '    needs: [change-scope, backend-scope]',
-    '    needs: [change-scope, backend-build]',
-  ));
-  assert.match(validateStaticContract({ manifest, ciContent: staleE2eNeeds }).join('\n'), /e2e-tests.*needs must exactly match/i);
-  assert.match(validateStaticContract({ manifest, ciContent: staleMutationNeeds }).join('\n'), /mutation-scope.*needs must exactly match/i);
+test('main and master push execute full regression while PRs retain scoped classification', () => {
+  assertMainFullRegression(ciContent);
+  for (const [before, after] of [
+    [' --full --github-output', ' --github-output'],
+    ['"$GITHUB_EVENT_NAME" = "push"', '"$GITHUB_EVENT_NAME" = "pull_request"'],
+    ['"refs/heads/main"', '"refs/heads/unused"'],
+    ['"refs/heads/master"', '"refs/heads/unused"'],
+  ]) {
+    const weakened = mutateWorkflowJob(ciContent, 'change-scope', block => block.replace(before, after));
+    assert.throws(() => assertMainFullRegression(weakened), /must explicitly select full regression/);
+  }
+});
+
+test('E2E builds and loads the cached local API image with no registry or upstream artifact dependency', () => {
+  assertE2eImageBuild(ciContent);
+  for (const [before, after] of [
+    ['          load: true', '          load: false'],
+    ['          push: false', '          push: true'],
+    ['          tags: ${{ env.API_IMAGE_REF }}', '          tags: unrelated-api:latest'],
+    ['docker compose up --no-build -d db api', 'docker compose up -d db api'],
+    ['        id: e2e-build', '        id: e2e-build\n        continue-on-error: true'],
+    ['          cache-from: type=gha,scope=e2e-api', '          cache-from: type=gha,scope=release'],
+  ]) {
+    const weakened = mutateWorkflowJob(ciContent, 'e2e-tests', block => block.replace(before, after));
+    assert.throws(() => assertE2eImageBuild(weakened));
+  }
 });
 
 test('backend and frontend hard build steps cannot be skipped or made advisory', () => {
@@ -539,16 +644,16 @@ test('static manifest freezes the decided review policy in both directions', () 
   );
 });
 
-test('mutation source keeps the classifier and backend fail-closed condition', () => {
-  const weakened = ciContent.replace(
-    /  mutation-scope:\r?\n    needs: \[change-scope, backend-scope\]\r?\n    if: .*\r?\n/,
-    '  mutation-scope:\n    needs: [change-scope, backend-scope]\n    if: always()\n',
-  );
-
-  assert.match(
-    validateStaticContract({ manifest, ciContent: weakened }).join('\n'),
-    /source job.*fail-closed scope condition/i,
-  );
+test('both PIT source jobs keep the classifier success and fail-closed scope condition', () => {
+  for (const jobId of ['mutation-scope', 'mutation-scope-migration']) {
+    for (const condition of ['always()', "needs.change-scope.result == 'success'"]) {
+      const weakened = mutateWorkflowJob(ciContent, jobId, block => block.replace(
+        /^    if: .*$/m, `    if: ${condition}`,
+      ));
+      assert.match(validateStaticContract({ manifest, ciContent: weakened }).join('\n'),
+        /source job.*fail-closed scope condition/i);
+    }
+  }
 });
 
 test('PIT source step cannot disable strict mutation or detach its target matrix', () => {

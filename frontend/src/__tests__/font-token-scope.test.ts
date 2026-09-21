@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
  * 시스템 글꼴로 떨어진다. 타입 검사·린트·스냅샷 어디에도 걸리지 않는 조용한 회귀라 여기서 고정한다.
  *
  * 이 가드는 **선언 위치**만 본다. 실제로 그 글꼴로 그려지는지는 계산된 스타일의 몫이며,
- * e2e(`01-core-base.spec.ts`)가 로그인 화면에서 확인한다.
+ * e2e(`quality/login-accessibility.spec.ts`)가 로그인 화면에서 확인한다.
  */
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const layout = readFileSync(join(root, 'src/app/layout.tsx'), 'utf8');

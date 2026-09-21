@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -24,7 +25,9 @@ import {
   launchAttestedBaseline,
   parseBaselineLaunchArguments,
   recoverAttestedBaseline,
+  verifyBaselineAuthenticationTarget,
 } from './ui-quality-baseline-launch.mjs';
+import { authenticateBaseline } from '../frontend/scripts/ui-quality-baseline-auth.mjs';
 
 const BUILD_SHA = 'a'.repeat(40);
 const BUILD_INPUT_TREE_HASH = 'b'.repeat(64);
@@ -355,6 +358,17 @@ test('launch runs contracts before Compose, validates exact stack, passes a clos
   assert.equal(runnerCall.env.UI_BASELINE_JWT_SECRET, undefined);
   assert.equal(runnerCall.env.UNRELATED_PRIVATE_VALUE, undefined);
 
+  const authCall = findCall(executor.calls, ({ command, args }) => (
+    command === process.execPath && args.includes('frontend/scripts/ui-quality-baseline-auth.mjs')
+  ));
+  assert.deepEqual(authCall.args, ['frontend/scripts/ui-quality-baseline-auth.mjs']);
+  assert.equal(authCall.cwd, fixture.repositoryRoot);
+  assert.deepEqual(authCall.env, runnerCall.env);
+  assert.ok(executor.calls.indexOf(authCall) < executor.calls.indexOf(runnerCall));
+  assert.equal(authCall.env.UI_BASELINE_DB_PASSWORD, undefined);
+  assert.equal(authCall.env.E2E_ISOLATION_MANIFEST, undefined);
+  assert.equal(executor.calls.some(({ args }) => args.includes('--project=setup')), false);
+
   const downCall = findCall(executor.calls, ({ command, args }) => (
     command === 'docker' && args.includes('down')
   ));
@@ -532,4 +546,124 @@ test('CLI parser requires exact launch/recovery arguments and rejects injection-
     '--recover-project', `${PROJECT};docker rm -f victim`,
     '--execute', 'confirmed',
   ], { repositoryRoot }), /arguments are invalid/);
+});
+
+function authenticationEnvironment(fixture) {
+  return createClosedBaselineRunnerEnvironment({
+    sourceEnvironment: executionEnvironment(),
+    attestationPath: fixture.attestationPath,
+    attestationSha256: fixture.attestationSha256,
+    frontendContainerId: FRONTEND_CONTAINER_ID, backendContainerId: API_CONTAINER_ID,
+    frontendBuildId: FRONTEND_IMAGE_ID, backendBuildId: API_IMAGE_ID,
+    frontendContainerName: FRONTEND_CONTAINER, backendContainerName: API_CONTAINER,
+    dockerProject: PROJECT, dockerNetwork: NETWORK,
+    webOrigin: `http://127.0.0.1:${WEB_PORT}`, apiOrigin: `http://127.0.0.1:${API_PORT}`,
+    syntheticSeedLabel: 'isolated-fixture-v1',
+  });
+}
+
+test('authentication child rechecks immutable attestation and running container/image proof', () => {
+  const fixture = createFixture();
+  const executor = fakeExecutor();
+  assert.deepEqual(verifyBaselineAuthenticationTarget(authenticationEnvironment(fixture), {
+    repositoryRoot: fixture.repositoryRoot, executeCommand: executor.execute,
+  }), { webUrl: `http://127.0.0.1:${WEB_PORT}`, apiUrl: `http://127.0.0.1:${API_PORT}/api/v1` });
+  assert.equal(executor.calls.filter(call => call.command === 'docker' && call.args[0] === 'inspect').length, 2);
+  assert.equal(executor.calls.filter(call => call.command === 'docker' && call.args[0] === 'image').length, 2);
+});
+
+test('authentication child writes both private states at the frontend path independently of launcher cwd', async () => {
+  const fixture = createFixture();
+  const executor = fakeExecutor();
+  const posts = [];
+  let disposed = false;
+  await authenticateBaseline({ environment: authenticationEnvironment(fixture), root: fixture.repositoryRoot }, {
+    executeCommand: executor.execute,
+    createRequestContext: async () => ({
+      post: async (url, options) => {
+        posts.push({ url, options, verificationCount: executor.calls.filter(call => call.command === 'docker' && call.args[0] === 'inspect').length });
+        return { ok: () => true, json: async () => ({ data: { accessToken: 'synthetic-access' } }),
+          headers: () => ({ 'set-cookie': 'refreshToken=synthetic-refresh; HttpOnly; SameSite=Strict' }) };
+      },
+      dispose: async () => { disposed = true; },
+    }),
+  });
+  assert.equal(posts.length, 2);
+  assert.deepEqual(posts.map(post => post.url), Array(2).fill(`http://127.0.0.1:${API_PORT}/api/v1/auth/login`));
+  assert.ok(posts.every(post => post.options.maxRedirects === 0));
+  assert.deepEqual(posts.map(post => post.verificationCount), [4, 6]);
+  assert.equal(posts[0].options.data.userId, executionEnvironment().UI_BASELINE_ADMIN_ID);
+  assert.equal(disposed, true);
+  for (const actor of ['admin', 'user']) {
+    const state = JSON.parse(readFileSync(path.join(fixture.repositoryRoot, 'frontend/playwright/.auth', `${actor}.json`), 'utf8'));
+    assert.equal(state.origins[0].origin, `http://127.0.0.1:${WEB_PORT}`);
+    assert.deepEqual(state.cookies.map(cookie => [cookie.name, cookie.httpOnly, cookie.secure, cookie.sameSite]),
+      [['accessToken', true, true, 'Strict'], ['refreshToken', true, true, 'Strict']]);
+    assert.equal(state.cookies[1].value, 'synthetic-refresh');
+  }
+  assert.equal(existsSync(path.join(fixture.repositoryRoot, 'playwright')), false);
+});
+
+test('authentication rejects flag-only authorization, remote origins, stale attestation and foreign runtimes before creating a client', async () => {
+  const cases = [
+    { change: value => { value.UI_BASELINE_BUILD_ATTESTATION_PATH = ''; } },
+    { change: value => { value.UI_BASELINE_API_URL = 'https://remote.invalid'; } },
+    { change: value => { value.NEXT_PUBLIC_API_URL = 'http://127.0.0.1:8080/api/v1'; } },
+    { change: value => { value.UI_BASELINE_BUILD_ATTESTATION_SHA256 = '0'.repeat(64); } },
+    { change: value => { value.UI_BASELINE_FRONTEND_BUILD_ID = `sha256:${'0'.repeat(64)}`; } },
+    { containerMutation: { frontend: { path: ['NetworkPresent'], value: false } } },
+    { containerMutation: { backend: { path: ['State', 'Running'], value: false } } },
+    { imageMutation: { backend: { path: ['Labels', 'BuildSha'], value: '0'.repeat(40) } } },
+  ];
+  for (const scenario of cases) {
+    const fixture = createFixture();
+    const environment = { ...authenticationEnvironment(fixture) };
+    scenario.change?.(environment);
+    const executor = fakeExecutor(scenario);
+    let clients = 0;
+    await assert.rejects(authenticateBaseline({ environment, root: fixture.repositoryRoot }, {
+      executeCommand: executor.execute,
+      createRequestContext: async () => { clients += 1; throw new Error('must not create request client'); },
+    }));
+    assert.equal(clients, 0);
+    assert.equal(existsSync(path.join(fixture.repositoryRoot, 'frontend/playwright/.auth')), false);
+  }
+});
+
+test('authentication rechecks ownership after client creation and disposes the client when proof changes', async () => {
+  const fixture = createFixture();
+  const executor = fakeExecutor();
+  let revoke = false;
+  let requests = 0;
+  let disposed = false;
+  await assert.rejects(authenticateBaseline({ environment: authenticationEnvironment(fixture), root: fixture.repositoryRoot }, {
+    executeCommand: invocation => {
+      if (revoke && invocation.command === 'docker') throw new Error('synthetic runtime removed');
+      return executor.execute(invocation);
+    },
+    createRequestContext: async () => {
+      revoke = true;
+      return { post: async () => { requests += 1; }, dispose: async () => { disposed = true; } };
+    },
+  }), /inspection failed/);
+  assert.equal(requests, 0);
+  assert.equal(disposed, true);
+});
+
+test('authentication entrypoint failure prevents baseline scenarios and still disposes the owned stack', () => {
+  const fixture = createFixture();
+  const executor = fakeExecutor({ failAt: 'frontend/scripts/ui-quality-baseline-auth.mjs' });
+  assert.throws(() => launchAttestedBaseline(launchInput(fixture), launchDependencies(executor)), /baseline authentication setup failed/);
+  assert.equal(executor.calls.some(call => call.args.includes('frontend/scripts/ui-quality-baseline-runner.mjs')), false);
+  assert.ok(executor.calls.some(call => call.command === 'docker' && call.args.includes('down')));
+});
+
+test('the real auth-only CLI resolves from repository cwd and rejects missing proof before I/O', () => {
+  const result = spawnSync(process.execPath, ['frontend/scripts/ui-quality-baseline-auth.mjs'], {
+    cwd: repositoryRoot, env: {}, encoding: 'utf8', windowsHide: true, timeout: 15000,
+  });
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr.trim(), 'Baseline authentication failed; storage state was not authorized for baseline execution.');
+  assert.doesNotMatch(result.stderr, /Project\(s\)|SyntaxError|ERR_MODULE_NOT_FOUND/);
 });
