@@ -58,6 +58,12 @@ class MigrationVerifierTypedIdentityTest {
         fixture.jdbc().update("INSERT INTO tb_order VALUES ('B', 2, 'two')");
         addCheckpoint(fixture, "legacy-a", composite("A", 1), row("A", 1, "one"));
         addCheckpoint(fixture, "legacy-b", composite("B", 2), row("B", 2, "two"));
+        RunContext currentRun = fixture.spec().run();
+        RunContext otherNamespace = new RunContext(currentRun.runId(), "other-source");
+        RunContext otherRun = new RunContext(currentRun.runId() + "-other", currentRun.sourceNamespace());
+        new MigrationStateStore(otherNamespace).initialize(fixture.jdbc());
+        new MigrationStateStore(otherRun).initialize(fixture.jdbc());
+        assertThat(runStatus(fixture.jdbc(), currentRun)).isEqualTo("RUNNING");
 
         MigrationReport report = verifier.verify(
                 fixture.spec(),
@@ -66,6 +72,9 @@ class MigrationVerifierTypedIdentityTest {
 
         assertThat(report.overall()).isEqualTo(MigrationReport.Status.PASS);
         assertThat(report.tables().getFirst().targetRows()).isEqualTo(2L);
+        assertThat(runStatus(fixture.jdbc(), currentRun)).isEqualTo("COMPLETED");
+        assertThat(runStatus(fixture.jdbc(), otherNamespace)).isEqualTo("RUNNING");
+        assertThat(runStatus(fixture.jdbc(), otherRun)).isEqualTo("RUNNING");
     }
 
     @Test
@@ -92,20 +101,67 @@ class MigrationVerifierTypedIdentityTest {
         addCheckpoint(missing, "legacy-missing", composite("A", 1), row("A", 1, "one"));
         assertThat(verifyOne(missing).tables().getFirst().note())
                 .contains("행수=0")
-                .doesNotContain("tk1:");
+                .containsPattern("targetDigest=[0-9a-f]{64}(?:\\s|$)")
+                .doesNotContain("tk1:", "<null>");
+        assertThat(runStatus(missing.jdbc(), missing.spec().run())).isEqualTo("FAILED");
 
         Fixture duplicate = compositeFixture(false);
         duplicate.jdbc().update("INSERT INTO tb_order VALUES ('A', 1, 'one')");
         duplicate.jdbc().update("INSERT INTO tb_order VALUES ('A', 1, 'one')");
         addCheckpoint(duplicate, "legacy-duplicate", composite("A", 1), row("A", 1, "one"));
         assertThat(verifyOne(duplicate).tables().getFirst().note()).contains("행수=2");
+        assertThat(runStatus(duplicate.jdbc(), duplicate.spec().run())).isEqualTo("FAILED");
 
         Fixture checksum = compositeFixture(true);
         checksum.jdbc().update("INSERT INTO tb_order VALUES ('A', 1, 'changed')");
         addCheckpoint(checksum, "legacy-checksum", composite("A", 1), row("A", 1, "original"));
         assertThat(verifyOne(checksum).tables().getFirst().note())
                 .contains("checksum")
-                .doesNotContain("tk1:");
+                .containsPattern("sourceDigest=[0-9a-f]{64}$")
+                .doesNotContain("tk1:", "<null>", "legacy-checksum");
+        assertThat(runStatus(checksum.jdbc(), checksum.spec().run())).isEqualTo("FAILED");
+    }
+
+    @Test
+    void legacyVerificationUsesMatchingMappingAndRunScopedRows() throws Exception {
+        JdbcTemplate jdbc = h2();
+        jdbc.execute("CREATE TABLE tb_first (id varchar(30) PRIMARY KEY, payload varchar(50))");
+        jdbc.execute("CREATE TABLE tb_second (id varchar(30) PRIMARY KEY, payload varchar(50))");
+        List<ColumnMapping> columns = List.of(
+                new ColumnMapping("ID", "id", null, null, null, null, null),
+                new ColumnMapping("PAYLOAD", "payload", null, null, null, null, null));
+        TableMapping first = new TableMapping("legacy_first", "tb_first", null, null,
+                "id", columns, null);
+        TableMapping second = new TableMapping("legacy_second", "tb_second", null, null,
+                "id", columns, null);
+        Fixture fixture = fixture(jdbc, first);
+        MappingSpec spec = new MappingSpec(null, null, List.of(first, second), Map.of(), fixture.spec().run());
+        jdbc.update("INSERT INTO tb_first VALUES ('A1', 'one'), ('outside-first', 'unrelated')");
+        jdbc.update("INSERT INTO tb_second VALUES ('B1', 'two'), ('B2', 'three'), ('outside-second', 'unrelated')");
+        writeCheckpoints(fixture, List.of(
+                new CheckpointEntry("legacy_first", "source-a", "tb_first", "A1",
+                        RowChecksum.calculate(List.of("id", "payload"), Map.of("id", "A1", "payload", "one"))),
+                new CheckpointEntry("legacy_second", "source-b", "tb_second", "B1",
+                        RowChecksum.calculate(List.of("id", "payload"), Map.of("id", "B1", "payload", "two"))),
+                new CheckpointEntry("legacy_second", "source-c", "tb_second", "B2",
+                        RowChecksum.calculate(List.of("id", "payload"), Map.of("id", "B2", "payload", "three")))));
+
+        // Results may arrive in a different order; existing rows outside this run are not its evidence.
+        MigrationReport report = verifier.verify(spec, List.of(
+                new EtlExecutor.TableResult("legacy_second", "tb_second", 2, 2, 2, List.of()),
+                new EtlExecutor.TableResult("legacy_first", "tb_first", 1, 1, 1, List.of())), jdbc);
+
+        assertThat(report.overall()).isEqualTo(MigrationReport.Status.PASS);
+        assertThat(report.tables()).extracting(MigrationReport.TableReport::target)
+                .containsExactly("tb_second", "tb_first");
+        assertThat(report.tables()).extracting(MigrationReport.TableReport::targetRows).containsExactly(2L, 1L);
+        assertThat(report.tables()).allSatisfy(table -> {
+            assertThat(table.status()).isEqualTo(MigrationReport.Status.PASS);
+            assertThat(table.note()).isEmpty();
+        });
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_first", Long.class)).isEqualTo(2L);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_second", Long.class)).isEqualTo(3L);
+        assertThat(runStatus(jdbc, spec.run())).isEqualTo("COMPLETED");
     }
 
     @Test
@@ -309,12 +365,22 @@ class MigrationVerifierTypedIdentityTest {
                 table.source(), TypedKeyTuple.of(TypedValue.text(source)),
                 table.target(), target,
                 RowChecksum.calculate(EtlExecutor.canonicalTargetColumns(table), row));
+        writeCheckpoints(fixture, List.of(entry));
+    }
+
+    private static void writeCheckpoints(Fixture fixture, List<CheckpointEntry> entries) throws Exception {
         MigrationStateStore state = new MigrationStateStore(fixture.spec().run());
         try (Connection connection = fixture.jdbc().getDataSource().getConnection()) {
             connection.setAutoCommit(false);
-            state.write(connection, List.of(entry));
+            state.write(connection, entries);
             connection.commit();
         }
+    }
+
+    private static String runStatus(JdbcTemplate jdbc, RunContext run) {
+        return jdbc.queryForObject("SELECT run_stts_cd FROM migration_control.tb_migration_run"
+                        + " WHERE run_id=? AND source_namespace=?", String.class,
+                run.runId(), run.sourceNamespace());
     }
 
     private static TypedKeyTuple composite(String tenant, long order) {

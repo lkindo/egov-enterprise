@@ -66,7 +66,7 @@ pnpm -C frontend run test:e2e:coverage
 | 항목 | 로컬 | CI 환경 | 근거 |
 |------|------|---------|------|
 | **Retries** | 0 | **1** | 재시도는 진단용이며 결과 계약은 flaky=0을 요구 |
-| **Workers** | 1 | 2 | 로컬은 격리 스택의 자원 사용을 제한하기 위해 1 유지. CI는 2026-09-01 실측으로 2 workers를 채택했고 추가 병렬성은 실행시간 기반 2-shard로 확보한다. 재편본도 2026-09-21 Linux run 35575211930에서 workers=2로 파일별 시간을 재측정 |
+| **Workers** | 1 | 2 | 로컬은 격리 스택의 자원 사용을 제한하기 위해 1 유지. CI는 2026-09-01 실측으로 2 workers를 채택했고 추가 병렬성은 실행시간 기반 2-shard로 확보한다. 재편본도 2026-09-21 Linux run 35579358480에서 workers=2로 파일별 시간을 재측정 |
 | **Timeout** | **180,000ms (3분)** | 동일 | 특정 느린 경로는 전역 완화 대신 표적 timeout 사용 |
 | **Expect Timeout** | **20,000ms** | 동일 | 요소 부재 실패의 피드백 비용 제한 |
 
@@ -85,7 +85,7 @@ pnpm -C frontend run test:e2e:coverage
 
 두 본 테스트 프로젝트의 spec 집합은 겹치지 않으며 각각 `setup`에 의존한다. `full-suite` 이름은 기존 snapshot 소비 경로를 보존하기 위해 유지한다. 프로젝트를 더 늘리기 전에 기존 소유 계약의 인접 케이스로 추가할 수 있는지 확인한다.
 
-CI의 `1/2`·`2/2`은 내부 실행 job label이고 브랜치 보호 required context는 `e2e-test`다. [planner](../../scripts/e2e-shard-plan.mjs)가 [duration profile](../../frontend/e2e/shard-duration-profile.json)을 사용해 전 spec을 중복 없이 배정한다. 현재 가중치는 [Linux run 35575211930](https://github.com/lkindo/egov-enterprise/actions/runs/35575211930), SHA `1ddbabd60`, workers=2에서 관측한 파일별 본 테스트 duration 합이다. 50개 파일·135개 본 테스트(API 36 + browser 99), setup 각 2개·총 4회, skip/retry/flaky/오류 0을 확인했다. setup은 파일 가중치에서 제외하고 원래 선언 수 배분 추정의 출처는 `source.previousSource`로 보존한다. Playwright wall time은 157.6/140.9초이며 단일 표본이다. 해당 초기 run은 `secret-scan`의 합성 fixture 리터럴 탐지 후 전체 실행이 취소됐으며 전체 required 성공이 아니므로 E2E 통과를 전체 CI 완료·절감으로 보고하지 않는다.
+CI의 `1/2`·`2/2`은 내부 실행 job label이고 브랜치 보호 required context는 `e2e-test`다. [planner](../../scripts/e2e-shard-plan.mjs)가 [duration profile](../../frontend/e2e/shard-duration-profile.json)을 사용해 전 spec을 중복 없이 배정한다. 현재 가중치는 [Linux run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480), SHA `56aa75d7`, workers=2에서 관측한 파일별 본 테스트 duration 합 **548,848ms**다. 50개 파일·135개 본 테스트(API 36 + browser 99), setup 각 2개·총 4회, skip/retry/flaky/오류 0을 확인했다. setup은 파일 가중치에서 제외하고 이전 측정 출처는 `source.previousSource`에 보존한다. Playwright wall time은 135.458/155.931초다. 현재 가중치는 이 한 실행의 관측값이다. 최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본이다. E2E required 완료시간의 과거 PR 비교와 전체 CI의 한계는 [프로세스 측정 근거](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)를 따른다.
 
 실행 전에 만든 Playwright 목록 JSON을 결과 계약에 `--inventory`로 넘겨 spec뿐 아니라 테스트 ID와 project별 실행을 대조한다. 예상 밖 skip·누락·flaky는 실패다. 영향 shadow 보고서는 후보 매핑의 진단 자료이며 실제 API·브라우저 모집단은 계속 전수 실행한다.
 

@@ -6,7 +6,7 @@ authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-09-21
-verified_against: 6ac17d46fabbe8ff77ff6d9b5763e92db3927322
+verified_against: 56aa75d7cafb30b242244a3867b776f3fc806151
 canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md
   - ../../docs/02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md

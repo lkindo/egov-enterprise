@@ -94,7 +94,7 @@ PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main
 
 PR은 변경 범위에 따른 분류를 유지하고 **main/master push는 문서-only 병합도 `--full`로 전체 검증**한다. 따라서 문서-only fast path는 PR에 적용되며 기본 브랜치 전체 회귀를 대체하지 않는다. 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 
-초기 Linux 검증 run `35575211930`에서 E2E 본 테스트 135개와 VRT는 통과했다. 두 shard의 Playwright wall time은 157.6/140.9초, GitHub E2E step은 173/157초, job은 593/464초다. 다만 secret-scan이 합성 fixture literal 1건으로 실패했고 이후 전체 실행이 취소됐으므로 전체 required CI 성공이나 wall-clock·runner-minute 절감은 입증하지 않았다. [측정 근거와 한계](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)를 기준으로 후속 cold/warm cache·대표 PR·main의 queue·준비·본 테스트·PIT·전체 완료 시간을 비교한다.
+[PR #699](https://github.com/lkindo/egov-enterprise/pull/699)의 [Linux run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480)에서 E2E 본 테스트 135개와 VRT가 통과했다. 두 shard의 Playwright wall time은 135.458/155.931초, GitHub E2E step은 150/171초, job은 623/454초다. workflow 생성부터 `e2e-test` required 완료까지는 695초(11분 35초)로, [이전 전체 PR 35558688331](https://github.com/lkindo/egov-enterprise/actions/runs/35558688331)의 1,984초(33분 4초)보다 짧았다. 상류 잡 대기·runner 배정·준비를 포함한 두 실행의 관측 비교이며 본 테스트 자체나 전체 CI가 같은 비율로 단축됐다는 뜻은 아니다. 최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본이다. [측정 근거와 한계](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)에 표적 PIT 검사와 전체 범위의 차이도 기록한다.
 
 실행 job `e2e-tests`·`mutation-scope`·`mutation-scope-migration`의 상태 조건은 `!cancelled()`로 두어 기존 선택 범위를 보존하면서 취소에 반응하게 하고, 결과 집계와 cleanup의 `always()`는 유지한다. GitHub는 취소할 때 job 조건을 재평가하므로 실행 job의 `always()`는 취소 후에도 참이 될 수 있다([공식 취소 동작](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-cancellation)).
 
@@ -215,7 +215,7 @@ pnpm run test:coverage
 
 ### Playwright Sharding
 
-`1/2`·`2/2`은 내부 실행 job label이다. 브랜치 보호에는 shard 개수와 무관한 안정 context `e2e-test` 하나만 노출한다. 실제 spec 배정은 Playwright의 개수 기반 `--shard`가 아니라 [duration profile](../../frontend/e2e/shard-duration-profile.json)을 [planner](../../scripts/e2e-shard-plan.mjs)가 LPT 방식으로 균형 분배한다. 현재 profile은 Linux run `35575211930`·commit `1ddbabd607ab2dad2f477433d30678a3e8f47be8`의 성공한 E2E 두 shard에서 본 테스트 duration을 파일별로 합산한 실측값이다. 50개 spec·135개 본 테스트(API 36·browser 99)가 각각 한 번 실행됐으며 setup 4회는 제외했다. 재편 직후 사용한 선언 수 배분 추정치는 `source.previousSource`에 이력으로 남긴다. 현재 값은 workers 2 조건의 단일 실행 표본이며 전체 CI 성공이나 향후 실제 shard 균형을 보장하지 않는다. 새·삭제 spec, 잘못된 source 증거, 누락·중복 또는 15% 초과 예상 편차는 운영 계약이 실패 처리한다.
+`1/2`·`2/2`은 내부 실행 job label이다. 브랜치 보호에는 shard 개수와 무관한 안정 context `e2e-test` 하나만 노출한다. 실제 spec 배정은 Playwright의 개수 기반 `--shard`가 아니라 [duration profile](../../frontend/e2e/shard-duration-profile.json)을 [planner](../../scripts/e2e-shard-plan.mjs)가 LPT 방식으로 균형 분배한다. 현재 profile은 Linux run `35579358480`·commit `56aa75d7cafb30b242244a3867b776f3fc806151`의 성공한 E2E 두 shard에서 본 테스트 duration을 파일별로 합산한 실측값이며 총 548,848ms다. 50개 spec·135개 본 테스트(API 36·browser 99)가 각각 한 번 실행됐으며 setup 4회는 제외했다. 이전 실측과 그 전 선언 수 배분 추정의 출처는 `source.previousSource` 이력에 남긴다. 현재 값은 workers 2 조건의 단일 실행 표본이며 전체 CI 성공이나 향후 실제 shard 균형을 보장하지 않는다. 새·삭제 spec, 잘못된 source 증거, 누락·중복 또는 15% 초과 예상 편차는 운영 계약이 실패 처리한다.
 
 ```yaml
 strategy:
@@ -345,7 +345,7 @@ dependencyCheck {
 
 ### E2E API Docker layer 캐시
 
-Buildx의 `type=gha,scope=e2e-api`로 두 shard가 layer를 복원하고 첫 shard만 `mode=max`로 내보낸다. cache export 오류만 비치명으로 처리하며 이미지 빌드·로컬 적재·테스트 오류는 계속 실패한다. API 태그를 Compose의 `API_IMAGE_REF`와 결속하고 `--no-build`로 같은 이미지를 사용한다. upstream artifact 전달이나 완료 대기는 추가하지 않는다. 초기 Linux 실행의 API image build step은 첫 shard 242초, 두 번째 114초였다. 두 shard 모두 Buildx `CACHED` 표시는 0건이었다. 첫 shard만 cache export를 수행하며 242초는 전체 build step, 그중 GHA cache export 단계는 116.8초로 구분한다. warm cache 후속 표본이 없어 캐시 절감 효과는 판정하지 않는다.
+Buildx의 `type=gha,scope=e2e-api`로 두 shard가 layer 복원을 시도하고 첫 shard만 `mode=max`로 내보낸다. cache export 오류만 비치명으로 처리하며 이미지 빌드·로컬 적재·테스트 오류는 계속 실패한다. API 태그를 Compose의 `API_IMAGE_REF`와 결속하고 `--no-build`로 같은 이미지를 사용한다. upstream artifact 전달이나 완료 대기는 추가하지 않는다. 현재 Linux run `35579358480`의 API image build step은 첫 shard 299초, 두 번째 111초이며 둘 다 Buildx `CACHED` 표시는 0건이었다. 첫 shard의 GHA cache export 단계는 184.1초로 전체 build step과 구분한다. 같은 실행의 FE build는 62/65초였다. 이 실행은 cache hit에 따른 절감의 증거가 아니다.
 
 ### Next.js 캐싱 — E2E에서는 사용하지 않는다
 

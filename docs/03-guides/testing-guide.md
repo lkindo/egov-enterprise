@@ -171,7 +171,7 @@ pnpm -C frontend type-check:e2e
 
 PR에서는 E2E가 선택되면 API·브라우저 전체 모집단을 2개 shard에서 실행한다. 로컬 worker는 격리 스택의 자원 사용을 제한하기 위해 1, CI는 기존 측정 설정인 2를 유지한다. main/master push는 `--full` 분류로 전체 회귀와 구성 조합을 실행한다. 영향 매핑은 실행을 줄이지 않는 shadow 후보 분석이며, 누락 방지 부정 검증과 실측 이득을 확보하기 전에는 선택 실행을 켜지 않는다.
 
-CI는 실행 전 `--list --reporter=json`으로 만든 목록을 결과 계약의 `--inventory`로 전달한다. 배정한 파일뿐 아니라 테스트 ID·project·실제 실행 결과를 대조해 누락·예상 밖 skip·flaky를 차단한다. 현재 profile은 [Linux run 35575211930](https://github.com/lkindo/egov-enterprise/actions/runs/35575211930)의 workers=2 실측으로 승격했다. 50개 파일·135개 본 테스트(API 36 + browser 99)를 각 한 번씩 확인했고 setup 총 4회는 가중치에서 제외했으며 skip/retry/flaky/오류는 모두 0이었다. 초기 선언 수 배분 추정의 출처는 `source.previousSource`로 남겼다. 단일 성공 E2E 표본이며, 해당 run의 합성 fixture 리터럴 탐지로 `secret-scan`이 실패하고 전체 실행은 취소됐으므로 전체 required 성공·속도 개선의 증거는 아니다. 후속 실행의 비교 방법은 [측정·유지 기준](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)을 따른다.
+CI는 실행 전 `--list --reporter=json`으로 만든 목록을 결과 계약의 `--inventory`로 전달한다. 배정한 파일뿐 아니라 테스트 ID·project·실제 실행 결과를 대조해 누락·예상 밖 skip·flaky를 차단한다. 현재 profile은 [Linux run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480), SHA `56aa75d7`의 workers=2 실측이다. 50개 파일·135개 본 테스트(API 36 + browser 99)가 각 한 번씩 통과했고 setup 총 4회는 제외한 파일 가중치 합이 548,848ms다. skip/retry/flaky/오류는 모두 0이며 이전 측정 출처는 `source.previousSource`에 남겼다. 현재 가중치는 한 실행의 관측값이다. E2E required 완료시간과 로컬 표적 PIT 결과의 범위는 [측정·유지 기준](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)에서 구분한다. 최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본이다.
 
 ### UI/UX 변경 전 기준선 계약
 

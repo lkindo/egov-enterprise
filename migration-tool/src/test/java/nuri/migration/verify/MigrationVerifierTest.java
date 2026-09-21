@@ -73,6 +73,19 @@ class MigrationVerifierTest {
         }
 
         @Test
+        @DisplayName("빈 테이블의 조회·변환·기록·실측이 모두 0이면 정상 완료다")
+        void emptyCommittedTableIsPass() {
+            MigrationReport report = verifier.verify(List.of(result(0, 0, 0)), targetWithRows(0));
+
+            assertThat(report.overall()).isEqualTo(Status.PASS);
+            assertThat(report.tables()).singleElement().satisfies(table -> {
+                assertThat(table.targetRows()).isZero();
+                assertThat(table.status()).isEqualTo(Status.PASS);
+                assertThat(table.note()).isEmpty();
+            });
+        }
+
+        @Test
         @DisplayName("오류가 있으면 다른 수치가 완벽해도 FAIL")
         void anyErrorIsFail() {
             MigrationReport report = verifier.verify(

@@ -1,6 +1,6 @@
 # 테스트 프로세스 재설계와 이행 근거
 
-상태: **구현·최신 main 통합 완료 / 격리 Windows 일반·계측 및 통합본 Linux 전수 E2E 통과 / 전체 required CI 성공 미확정**. 검증일은 2026-09-21이다. 현재 모집단은 계약별 **50개 spec·135개 본 테스트와 인증 setup 2개**다. Linux 두 샤드에서는 setup이 각각 실행되어 총 4회이며 본 테스트와 시간 가중치에서 제외한다. 이 수는 이행 대조 결과이며 개수 목표가 아니다. 파일별 실측 프로파일은 확보했지만 전체 CI 절감은 아직 입증하지 않았다.
+구현·측정 기준일은 2026-09-21이다. 격리 Windows 일반·계측 실행과 main 변경 통합본의 Linux 전수 E2E를 검증했다. 모집단은 계약별 **50개 spec·135개 본 테스트와 인증 setup 2개**다. Linux 두 샤드에서는 setup이 각각 실행되어 총 4회이며 본 테스트와 시간 가중치에서 제외한다. 이 수는 이행 대조 결과이며 개수 목표가 아니다. **최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본**이다.
 
 이 문서는 테스트의 설계·작성·실행·진단·정리 원칙과 이번 구조 변경의 근거를 함께 기록한다. 현행 규범은 [AGENTS.md](../../AGENTS.md), 범위별 검증은 [테스트 가이드](../03-guides/testing-guide.md), 실행 방법은 [E2E 런북](../03-guides/e2e-test-guide.md), 병합 조건은 [required-check manifest](../../.github/required-checks.json)가 소유한다. 기존 Tier 번호·파일명·파일 수는 새 소유권의 제약으로 삼지 않았다.
 
@@ -257,7 +257,7 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 
 이행 시 원본의 정적 test 선언 **117개**를 대조했다. 반복 생성되는 인가 행렬·viewport·route 사례 때문에 원본 실행 사례는 **140개**였다. **112개 선언을 유지하고 중복 선언 5개를 통합**한 결과 현재 실행 사례는 **135개**다. 새 파일이 50개로 늘어난 이유는 HTTP·브라우저·품질 소유권 분리이며, 파일 수나 테스트 수를 성과 목표로 사용하지 않는다.
 
-최신 main `6ac17d46f`의 UI·시각 기준선 변경은 [통합 커밋 `1ddbabd60`](https://github.com/lkindo/egov-enterprise/commit/1ddbabd607ab2dad2f477433d30678a3e8f47be8)에 반영했다. [초기 검증 PR #698](https://github.com/lkindo/egov-enterprise/pull/698)의 [CI run 35575211930](https://github.com/lkindo/egov-enterprise/actions/runs/35575211930)에서 Linux E2E·VRT는 통과했다. 이 run의 `secret-scan`은 실제 비밀이 아닌 합성 fixture 리터럴 1건을 탐지해 실패했다. E2E 증거 수집 후 전체 실행은 `completed/cancelled`로 종료했으므로 전체 required 성공이나 전체 완료 시간 개선은 입증하지 못했다. 이전 커밋에도 남은 리터럴을 포함한 이력을 강제 푸시로 바꾸지 않고 `refactor/testing-process` 새 브랜치에서 후속 PR 검증을 이어갈 예정이다. PR #698은 초기 실행의 근거이며 후속 PR 번호는 아직 확정하지 않았다.
+main `6ac17d46f`의 UI·시각 기준선을 통합한 변경의 PR은 [#699](https://github.com/lkindo/egov-enterprise/pull/699)다. [CI run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480), SHA `56aa75d7`에서 Linux E2E·VRT와 `e2e-test` required context가 성공했다. 최종 커밋의 전체 required 결과는 PR 검증 기록에서 확인한다. [이전 PR #698](https://github.com/lkindo/egov-enterprise/pull/698)은 대체되어 닫혔다. 초기 run `35575211930`의 E2E 성공과 합성 fixture 리터럴 탐지 후 전체 실행 취소는 별도 이력이다.
 
 | 확인 항목 | 2026-09-21에 확보한 근거 | 의미와 한계 |
 |---|---|---|
@@ -268,7 +268,7 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 | 준비/정리 부정 검사 | 합성 응답에 외부 보고서를 섞어도 조회 계약은 실패를 숨기지 않고 정리는 외부 ID를 삭제하지 않음을 확인 | 실제 HTTP 대신 request 대역으로 확인한 준비 함수의 경계 |
 | 등록 모집단 | setup 2개 + API 36개 + browser 99개 등록 확인. 분리 project의 모집단과 실행 좌표를 inventory로 대조하는 경로 연결 | 실제 실행 report가 있어야 성공·누락·skip·flaky 판정 완료 |
 | 실제 Windows E2E | main 통합 전 새 일회용 DB에서 **136 passed(본 테스트 134 + setup 2), 플랫폼 skip 1, unexpected/flaky/global error 0**. 목록·결과 완전성 및 cleanup 통과. Playwright 구간 540.8초 | 로컬 worker 1과 정적 검사 병행 결과로, Linux CI 성능과 직접 비교하지 않음 |
-| 실제 Linux E2E·VRT | run `35575211930`, SHA `1ddbabd60`, workers=2. **50개 파일·135개 본 테스트(API 36 + browser 99)**가 두 샤드에 정확히 한 번씩 실행됨. setup은 각 2개·총 4회. skip/retry/flaky/unexpected/global error 모두 0 | Linux VRT 4장 포함. inventory·결과·ID·project 대조 후 프로파일 승격. 전체 required CI 성공은 별개 |
+| 실제 Linux E2E·VRT | run `35579358480`, SHA `56aa75d7`, workers=2. **50개 파일·135개 본 테스트(API 36 + browser 99)**가 두 샤드에 정확히 한 번씩 실행됨. setup은 각 2개·총 4회. skip/retry/flaky/unexpected/global error 모두 0 | Linux VRT 4장 포함. inventory·결과·ID·project 대조 후 현재 프로파일 갱신. 전체 required CI 성공은 별개 |
 | 실제 계측 E2E | main 통합 전 별도의 새 일회용 DB와 계측 production build에서 **136 passed, 플랫폼 skip 1, unexpected/flaky/global error 0**. Playwright 구간 595.0초. 수집 JSON 104개의 형식 검증과 HTML 보고서 생성 성공 | 일반 실행과 분리된 선택적 계측 결과다. 두 실행 모두 소유한 프로세스·DB를 회수했으며 공유 DB를 사용하지 않음 |
 | 변경 계약·산출물 | 격리·선별 후보·결과 완전성·required CI 계약, 인증·정리·오류 관찰·coverage·VRT 하네스 검사와 부정 사례 통과. Java 하네스 결속, 문서 링크·공용 메모리·Atlas 정합 검사 통과 | 의도적 위반의 red를 확인. 새 원격 CI, PIT 전체 및 CodeQL 실행 성공을 뜻하지 않음 |
 
@@ -284,24 +284,27 @@ CI·게이트의 실행/부정 검증 정본은 [shard 계약](../../scripts/e2e
 
 ## 9. 측정·유지와 다음 판단
 
-[duration profile](../../frontend/e2e/shard-duration-profile.json)은 현재 [Linux run `35575211930`](https://github.com/lkindo/egov-enterprise/actions/runs/35575211930)의 SHA `1ddbabd60`에서 관측한 **50개 파일별 본 테스트 duration 합**이다. `weightMethod=observed-passed-attempt-duration-sum`, workers=2, Playwright 1.63.0, 두 diagnostics artifact ID·입력 SHA256을 함께 기록했다. 본 테스트 합은 **551,713ms**이며 setup 4회는 제외했다. 이는 성공한 E2E 한 번의 분배 가중치이고 전체 CI wall-clock·p50/p95·보장 절감률이 아니다. 재편 직후 과거 실행 `33525822467`을 선언 수로 재배분했던 추정 단계는 종료했으며 그 출처는 `source.previousSource`에 보존했다. 오래된 측정값은 재측정 신호로 보고하되 잘못된 provenance·누락 spec·0 이하 duration은 계속 차단한다.
+[duration profile](../../frontend/e2e/shard-duration-profile.json)은 현재 [Linux run `35579358480`](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480)의 SHA `56aa75d7cafb30b242244a3867b776f3fc806151`에서 관측한 **50개 파일별 본 테스트 duration 합**이다. `weightMethod=observed-passed-attempt-duration-sum`, workers=2, Playwright 1.63.0, 두 diagnostics artifact ID·입력 SHA256을 함께 기록했다. 본 테스트 합은 **548,848ms**이며 setup 4회는 제외했다. 현재 가중치는 이 한 실행의 관측값이며 전체 CI wall-clock·p50/p95·보장 절감률이 아니다. 이전 실측 `35575211930`과 그 전 선언 수 배분 추정의 출처는 `source.previousSource` 이력에 보존했다. 오래된 측정값은 재측정 신호로 보고하되 잘못된 provenance·누락 spec·0 이하 duration은 계속 차단한다.
 
-측정 커밋은 저장소에 존재하고 현재 HEAD의 조상이거나, 이력을 재구성한 경우 보호한 제품 소스·E2E 하네스·설정 입력의 Git tree가 동일해야 한다. 파생 산출물인 profile 자체만 E2E 트리 비교에서 제외한다. 원래 실행 SHA를 새 커밋으로 바꾸지 않으며, 출처 부재·빈 spec 모집단·spec/fixture/PNG/설정 변경·추가·삭제는 부정 검사로 차단한다. 이 검증은 과거 분배 가중치의 재사용 근거이며 새 HEAD의 실행 성공이나 시간 동일성을 보증하지 않는다. 원본 측정 커밋을 가진 기존 원격 브랜치는 보존한다.
+현재 측정 커밋은 저장소에 존재하고 HEAD의 조상이어야 한다. 실제 측정 SHA를 다른 SHA로 바꾸지 않는다. 현재 출처 `56aa75d7`은 작업 브랜치의 조상이며 merge commit으로 main에 통합해 도달 가능성을 유지한다. 과거 `1ddbabd60`은 `previousSource`의 역사적 출처로 남으므로 현재 검증을 위해 대체된 원격 브랜치를 영구 보존할 필요는 없다. 출처 확인은 새 HEAD의 실행 성공이나 시간 동일성을 보증하지 않는다.
 
-| 초기 Linux 측정 | shard 1 | shard 2 |
+| 현재 Linux 측정: run 35579358480 | shard 1 | shard 2 |
 |---|---|---|
-| Playwright report wall time | **157.6초** | **140.9초** |
-| GitHub E2E 실행 스텝 | **173초** | **157초** |
-| 준비·업로드 포함 전체 job | **593초** | **464초** |
-| API 이미지 빌드 스텝 | **242초** | **114초** |
+| Playwright report wall time | **135.458초** | **155.931초** |
+| GitHub E2E 실행 스텝 | **150초** | **171초** |
+| 준비·업로드 포함 전체 job | **623초** | **454초** |
+| API 이미지 빌드 스텝 | **299초** | **111초** |
+| 프런트엔드 빌드 스텝 | **62초** | **65초** |
 
-원본은 [shard 1 job](https://github.com/lkindo/egov-enterprise/actions/runs/35575211930/job/106255480266)과 [shard 2 job](https://github.com/lkindo/egov-enterprise/actions/runs/35575211930/job/106255480323)이다. 두 shard 모두 Buildx `CACHED` 표시는 0건이었고 첫 shard만 cache export를 수행했다. 첫 shard의 242초는 이미지 빌드 스텝 전체 시간이며, 그중 GHA cache export 단계(`#33`)는 116.8초였다. warm-cache 후속 표본은 아직 없다. 이 측정만으로 E2E나 전체 CI의 속도 향상을 주장하지 않는다.
+원본은 [shard 1 job](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480/job/106268490780)과 [shard 2 job](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480/job/106268490824)이다. 두 shard 모두 Buildx `CACHED` 표시는 0건이었고 첫 shard만 cache export를 수행했다. 첫 shard의 299초는 이미지 빌드 스텝 전체 시간이며, 그중 GHA cache export 단계(`#33`)는 184.1초였다. 이 실행은 cache hit에 따른 절감의 증거가 아니다.
 
-| 다음 확인 | 완료 판단 |
+**workflow 생성부터 `e2e-test` required context 완료까지**의 관측 시간은 [변경 전 전체 PR 35558688331](https://github.com/lkindo/egov-enterprise/actions/runs/35558688331)의 **1,984초(33분 4초)**에서 현재 실행의 **695초(11분 35초)**로 짧아졌다. 이 값에는 상류 잡 대기·runner 배정·빌드·검사·업로드·집계가 포함된다. 본 테스트 구간이 크게 단축됐다는 뜻은 아니며, 상류 backend/frontend 완료 대기를 없앤 실행 구조와 함께 해석한다. 서로 다른 실행 두 건의 관측 비교이므로 보장 절감률이나 전체 required CI 완료시간 개선으로 확대하지 않는다.
+
+| 유지 항목 | 검증 기준 |
 |---|---|
-| 후속 커밋의 전수 런타임 | 초기 Linux 실행은 완료. 후속 변경도 inventory·결과 일치와 skip/flaky/오류 0, VRT 실행을 다시 확인 |
+| 변경 커밋의 전수 런타임 | inventory·결과 일치와 skip/flaky/오류 0, VRT 실행을 해당 SHA의 결과로 확인 |
 | CI 병렬화·캐시 | 기존 필수 실패 차단을 유지하고 cold/warm·대표 PR의 준비/완료 시간을 비교 |
-| shard 가중치 | 초기 실측으로 승격 완료. 다음 실행에서 새 분배의 실제 균형을 확인하고 복수 표본으로 갱신 |
+| shard 가중치 | 실제 분배 결과와 표본 변동을 확인하고 측정 SHA·artifact 출처와 함께 갱신 |
 | 영향 후보 평가 | 전수 실패 중 shadow 후보가 놓친 계약과 이유를 수집. 실행 축소는 별도 판단 |
 | 테스트 유지 | 새 기능의 계약 owner를 확인하고 고유 역할·조건·관찰 결과를 보존하며 중복 준비부터 정리 |
 
@@ -318,4 +321,10 @@ CI·게이트의 실행/부정 검증 정본은 [shard 계약](../../scripts/e2e
 
 두 실행 모두 해당 migration PIT의 incremental history 복원을 확인했다. **history 복원은 테스트 실행 생략이나 짧은 실행 시간을 뜻하지 않는다.** 전체 CI의 지배 경로는 이 표본에서 migration PIT였으므로, E2E 준비·샤드 시간 개선만으로 전체 완료 시간이 같은 비율로 줄었다고 계산하지 않는다. PR/main의 선택 범위·캐시 정책·러너 대기 차이도 함께 기록한다.
 
-초기 검증 run의 E2E 실적과 파일 가중치는 확보했지만 `secret-scan` 실패 후 전체 실행을 취소해 **전체 required CI 성공·완료 시간 개선은 미확정**이다. 후속 PR에서는 fixture 정리와 제품 PIT 동시 실행 상한 3의 효과까지 같은 범위·캐시 조건으로 검증한다. 임계값·대상 테스트·보안 스캔을 완화하지 않으며, 전체 완료·절감 실적은 필수 체크 6개가 모두 성공한 뒤 판정한다.
+### 9.1 migration PIT: 느린 실패 탐지를 빠른 단언으로 대체한다
+
+위 두 과거 migration validate-verify 잡은 전체 **49분 4초 / 47분 22초** 중 coverage 단계가 **7분 28초 / 7분 16초**, mutation 단계가 **40분 14초 / 38분 38초**였다. 두 실행에서 동일한 mutation identity의 timeout 9건을 확인했다. [MigrationVerifierTest](../../migration-tool/src/test/java/nuri/migration/verify/MigrationVerifierTest.java)와 [MigrationVerifierTypedIdentityTest](../../migration-tool/src/test/java/nuri/migration/verify/MigrationVerifierTypedIdentityTest.java)에 빠른 경계·mapping·상태 단언을 보강해, 해당 9건을 timeout 대신 **KILLED**로 검출했다.
+
+로컬 표적 검증은 `MigrationVerifier`와 기존 두 빠른 테스트 클래스에 한정했다. JUnit **32개 통과**, strict 75 조건의 PIT는 **153 mutants 중 130 KILLED(85%)**, coverage **3초**, mutation **21초**, PIT 총 **25초**였다. history에 의한 제외는 0건이다. 제품 코드·CI PIT 대상 및 테스트 선택·임계값·timeout 설정은 변경하지 않았다. 이 표적 실행의 25초는 전체 migration scope나 Linux CI의 실행시간이 아니다.
+
+**최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본**이다. 위 E2E 실측과 로컬 표적 PIT 결과는 각각의 실행 범위에 한정한다. 임계값·대상 테스트·보안 스캔을 완화하지 않으며, 전체 완료·절감 실적은 해당 커밋의 필수 체크 6개와 같은 검증 범위의 실행시간을 함께 확인해 판정한다.
