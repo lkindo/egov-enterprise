@@ -5,8 +5,11 @@ import { runInNewContext } from 'node:vm';
 
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 
-const runner = readFileSync(new URL('./verify.mjs', import.meta.url), 'utf8');
-const workflow = readFileSync(new URL('../.github/workflows/migration-tool.yml', import.meta.url), 'utf8');
+const runner = readFileSync(new URL('./verify.mjs', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+// [2026-09-22] workflow 도 같은 정규화를 받는다. `.gitattributes` 의 `* text=auto` 와 Windows
+//   core.autocrlf=true 가 체크아웃에서 CRLF 로 바꾸는데 아래 단언들이 \n 앵커라, 이 계약이
+//   Windows 에서만 붉었다(기준선 305dcecc5 에서 변경 0건으로 재현). 검사 대상은 내용이지 줄바꿈이 아니다.
+const workflow = readFileSync(new URL('../.github/workflows/migration-tool.yml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 // Exact negative-fixture replacements must behave the same after LF or CRLF checkout.
 const moduleBuild = readFileSync(new URL('../migration-tool/build.gradle', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const contractCommand = 'node --test scripts/migration-verification-contract.test.mjs';

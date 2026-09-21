@@ -28,7 +28,8 @@ test('standalone migration export retains independent verification and clears in
   assert.deepEqual(approval.evidence, []);
   const helper = resolve(outputRoot, 'scripts/reusable-layout.mjs');
   assert.equal(readFileSync(helper, 'utf8'), readFileSync(resolve(root, 'scripts/reusable-layout.mjs'), 'utf8'));
-  const workflow = readFileSync(resolve(outputRoot, '.github/workflows/migration-tool.yml'), 'utf8');
+  // 줄바꿈은 검사 대상이 아니다 — 자매 계약(migration-verification-contract)과 같은 사유로 정규화한다.
+  const workflow = readFileSync(resolve(outputRoot, '.github/workflows/migration-tool.yml'), 'utf8').replace(/\r\n/g, '\n');
   assert.match(workflow, /^  push:\n    branches: \[main, master\]$/m);
   assert.match(workflow, /^  pull_request:$/m);
   assert.match(workflow, /^          cache-read-only: false$/m,

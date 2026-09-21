@@ -816,7 +816,7 @@ export default function CommonCodeClient({
  },
  {
  header: '상태',
- accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useYn === 'Y' ? '사용 중' : '미사용'} />,
+ accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useYn === 'Y' ? '사용 중' : '미사용'} variant={item.useYn === 'Y' ? 'success' : 'secondary'} />,
  className: 'w-32'
  },
  {

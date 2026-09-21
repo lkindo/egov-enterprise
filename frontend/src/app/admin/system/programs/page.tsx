@@ -67,7 +67,7 @@ export default async function ProgramAdminPage({
 
   return (
     // 루트 레이아웃이 이미 max-w-7xl · p-6/md:p-12/lg:p-16 을 제공하므로 화면 단위 p-8 이중 여백을 제거한다.
-    <div className="pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+    <div className="pb-32">
       <Suspense fallback={
         <div className="animate-pulse space-y-12">
           <h1 className="sr-only">프로그램 관리를 불러오는 중</h1>

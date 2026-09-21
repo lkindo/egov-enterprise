@@ -246,7 +246,7 @@ export default function AdministCodeClient({
  { 
  header: '상태', 
  accessor: (item: AdministCode) => (
- <HubStatusBadge status={item.useYn === 'Y' ? '활성' : '중단'} />
+ <HubStatusBadge status={item.useYn === 'Y' ? '활성' : '중단'} variant={item.useYn === 'Y' ? 'success' : 'secondary'} />
  ),
  className: 'w-24'
  },

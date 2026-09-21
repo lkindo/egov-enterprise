@@ -135,7 +135,6 @@ export default function CommonCodeHubClient({
       <PageHeader
         title="코드 관리"
         breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '통합 코드 허브' }]}
-        animateEntrance={false}
       />
       {tabNavigation}
       <div
@@ -181,7 +180,7 @@ function HubTabButton({ id, panelId, icon: Icon, label, active, onClick }: { id:
       className={cn(
         "relative flex items-center gap-3 rounded-md px-5 py-3 text-xs font-semibold transition-colors",
         active
-          ? "bg-card text-foreground shadow-2xl ring-1 ring-border"
+          ? "bg-card text-foreground ring-1 ring-border"
           : "text-muted-foreground hover:text-foreground hover:bg-card/70"
       )}
     >

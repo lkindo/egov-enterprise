@@ -486,7 +486,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  header: '게시 상태',
  accessor: (item: Banner | Popup) => {
  const isLive = 'rfltYn' in item ? item.rfltYn === 'Y' : item.ntceYn === 'Y';
- return <HubStatusBadge status={isLive ? '게시 중' : '대기 중'} />;
+ return <HubStatusBadge status={isLive ? '게시 중' : '대기 중'} variant={isLive ? 'success' : 'secondary'} />;
  },
  className: 'w-32'
  },
@@ -550,7 +550,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  },
  {
  header: '게시 여부',
- accessor: (item: Popup) => <HubStatusBadge status={item.ntceYn === 'Y' ? '게시 중' : '대기 중'} />,
+ accessor: (item: Popup) => <HubStatusBadge status={item.ntceYn === 'Y' ? '게시 중' : '대기 중'} variant={item.ntceYn === 'Y' ? 'success' : 'secondary'} />,
  className: 'w-32'
  },
  {

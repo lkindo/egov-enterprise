@@ -54,14 +54,22 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
   write('config/governance/migration-adoption-review.json', `${JSON.stringify(createPendingAdoptionReview({ product: 'migration-tool', profile: null }), null, 2)}\n`);
   // Reuse the same module CI and contract. The exported product adds its execution-boundary tests.
   const workflowPath = '.github/workflows/migration-tool.yml';
-  const sourceWorkflow = readFileSync(join(outputRoot, workflowPath), 'utf8');
+  // [2026-09-22] 줄바꿈을 정규화한 뒤 변형한다. `.gitattributes` 의 `* text=auto` 와 Windows
+  //   core.autocrlf=true 가 체크아웃에서 CRLF 로 바꾸므로, 아래 `'on:\n'` 치환이 **조용히 no-op** 이
+  //   되어 산출물의 CI 워크플로에 push·pull_request 트리거가 통째로 빠진 채 생성됐다(실측).
+  const sourceWorkflow = readFileSync(join(outputRoot, workflowPath), 'utf8').replace(/\r\n/g, '\n');
   const producerCachePolicy = '          cache-read-only: true';
   if (sourceWorkflow.split(producerCachePolicy).length !== 2) {
     throw new Error('producer migration workflow must declare its sole Gradle cache reader');
   }
+  // 위 사고가 재발하면 산출물이 아니라 생성이 멈추게 한다 — 캐시 정책 가드와 같은 모양이다.
+  const triggerAnchor = 'on:\n';
+  if (sourceWorkflow.split(triggerAnchor).length !== 2) {
+    throw new Error('producer migration workflow must declare exactly one `on:` trigger block');
+  }
   // This exported repository has one verification job and no producer CI writer.
   write(workflowPath, sourceWorkflow.replace(producerCachePolicy, '          cache-read-only: false').replace(
-    'on:\n', 'on:\n  push:\n    branches: [main, master]\n  pull_request:\n').replace(
+    triggerAnchor, 'on:\n  push:\n    branches: [main, master]\n  pull_request:\n').replace(
     '      - name: Verify the independent migration module',
     '      - name: Verify institution execution boundary\n        run: node --test scripts/adoption-execute.test.mjs\n\n      - name: Verify the independent migration module'));
   const scope = adoptionScope(outputRoot, { product: 'migration-tool', profile: null });

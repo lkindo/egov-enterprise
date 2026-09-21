@@ -230,11 +230,15 @@ function DashboardStatCard({
   link: string;
   description: string;
 }) {
+  // [2026-09-22] blue 만 `hub-*` 토큰을 쓰고 나머지는 raw 리터럴이던 내부 불일치를 통일했다.
+  //   ⚠ status 토큰(success·warning·destructive)으로는 바꾸지 않는다 — 이 색은 상태가 아니라
+  //   분류 표식이다(등록 사용자·권한 그룹·보안 감사 이력). 매핑하면 "권한 그룹 = 성공",
+  //   "보안 감사 = 오류" 라는 없는 의미를 화면이 주장하게 된다.
   const colorMap: Record<string, string> = {
-    blue: "text-hub-blue bg-hub-blue/10 border-hub-blue/20",
-    emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-    amber: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-    rose: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+    blue: "text-hub-blue bg-hub-blue/10",
+    emerald: "text-hub-emerald bg-hub-emerald/10",
+    amber: "text-hub-amber bg-hub-amber/10",
+    rose: "text-hub-rose bg-hub-rose/10",
   };
 
   return (
@@ -245,28 +249,27 @@ function DashboardStatCard({
             whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            className="p-6 md:p-8 h-full rounded-lg bg-card border-2 border-border shadow-xl hover:border-primary/30 transition-colors cursor-pointer group relative overflow-hidden"
+            className="p-4 md:p-5 h-full rounded-md bg-card border border-border hover:border-primary/30 transition-colors cursor-pointer group"
           >
-            <div className="flex items-center justify-between mb-8">
-              <div className={cn("p-3.5 rounded-lg border-2 transition-transform group-hover:rotate-6 shadow-inner", colorMap[color])}>
+            {/* [2026-09-22] 카드 안의 카드(아이콘 상자 border-2·shadow-inner)와 5% 불투명 워터마크
+                아이콘을 걷고 여백을 밀도 계약에 맞췄다 — 실측 약 250px 였다(카탈로그 §A1·§4). */}
+            <div className="flex items-center justify-between mb-4">
+              <div className={cn("p-2 rounded-md", colorMap[color])}>
                 {icon}
               </div>
-              <ArrowUpRight size={18} className="text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
+              <ArrowUpRight size={16} className="text-muted-foreground transition-colors group-hover:text-primary" />
             </div>
 
-            <div className="space-y-4">
-              <p className="text-xs font-bold text-foreground tracking-[0.3em] uppercase font-mono flex items-center gap-2">
+            <div className="space-y-2">
+              {/* 한국어 라벨이라 uppercase 는 무효고 0.3em 자간만 남아 읽기를 방해했다(표 머리글과 같은 정정). */}
+              <p className="text-xs font-semibold text-foreground">
                 {title}
               </p>
               {/* a11y(heading-order): stat 값은 문서 섹션 제목이 아니므로 heading(h3) 대신 p로 — h1→h3 레벨 스킵 위반 제거 */}
-              <p className="text-4xl font-bold text-foreground tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</p>
-              <p className="text-xs font-bold text-muted-foreground leading-tight">
+              <p className="text-3xl font-bold text-foreground tabular-nums group-hover:text-primary transition-colors leading-none">{value}</p>
+              <p className="text-xs text-muted-foreground leading-tight">
                 {description}
               </p>
-            </div>
-
-            <div className="absolute right-[-20px] bottom-[-20px] opacity-[0.05] rotate-12 group-hover:rotate-6 transition-transform duration-1000 pointer-events-none scale-150">
-              {icon}
             </div>
           </motion.div>
         </Link>
