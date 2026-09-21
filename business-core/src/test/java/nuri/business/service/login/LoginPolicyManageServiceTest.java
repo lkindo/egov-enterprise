@@ -196,6 +196,54 @@ class LoginPolicyManageServiceTest {
         verify(entity).update(eq("2001:db8::1"), any(), any(), any(), any(), any());
     }
 
+    /*
+      GAP-POLICY-001 — 화면 폼은 다섯 필드만 보내는데(loginPolicySchema 의 .pick) 엔티티 update 는
+      전체 치환이라, 중복 로그인 허용 여부가 저장할 때마다 null 로 덮어써졌다. CHECK 제약은
+      PostgreSQL 규칙상 NULL 을 통과시켜 아무것도 실패하지 않았다.
+
+      두 방향을 함께 고정한다 — 유지 분기가 과해서 "명시해도 안 바뀐다" 가 되면 그것도 결함이다.
+    */
+    @Test
+    @DisplayName("수정: 중복 허용 여부가 요청에 없으면 기존 값을 유지한다")
+    void updateKeepsDuplicateFlagWhenRequestOmitsIt() {
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("USER1");
+        dto.setIpAddr("192.168.0.1");
+        dto.setLmtYn("N");
+        // dpcnPrmYn 은 설정하지 않는다 — 화면이 보내지 않는 그대로다.
+
+        LoginPolicy entity = LoginPolicy.builder()
+                .userId("USER1").ipAddr("10.0.0.1").dpcnPrmYn("Y").lmtYn("Y")
+                .bgngTm("0900").endTm("1800").otpUseYn("N").build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+
+        loginPolicyManageService.updateLoginPolicy(dto);
+
+        // ⚠ 이 단언이 red 가 되면 관리자가 IP 하나를 고칠 때마다 중복 로그인 설정이 사라진다.
+        assertEquals("Y", entity.getDpcnPrmYn());
+        // 보낸 필드는 정상 반영된다 — 유지 분기가 다른 필드까지 얼리지 않는다.
+        assertEquals("192.168.0.1", entity.getIpAddr());
+        assertEquals("N", entity.getLmtYn());
+    }
+
+    @Test
+    @DisplayName("수정: 중복 허용 여부를 명시하면 그 값으로 바뀐다")
+    void updateAppliesDuplicateFlagWhenRequestSpecifiesIt() {
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("USER1");
+        dto.setIpAddr("192.168.0.1");
+        dto.setDpcnPrmYn("N");
+
+        LoginPolicy entity = LoginPolicy.builder()
+                .userId("USER1").ipAddr("10.0.0.1").dpcnPrmYn("Y").build();
+        given(loginPolicyRepository.findById("USER1")).willReturn(Optional.of(entity));
+
+        loginPolicyManageService.updateLoginPolicy(dto);
+
+        // 과잉 교정("항상 기존 값을 쓴다")을 막는 대조군이다.
+        assertEquals("N", entity.getDpcnPrmYn());
+    }
+
     @Test
     @DisplayName("로그인 정책 등록 테스트")
     void insertLoginPolicyTest() {

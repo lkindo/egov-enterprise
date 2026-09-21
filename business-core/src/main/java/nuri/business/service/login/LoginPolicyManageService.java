@@ -136,7 +136,22 @@ public class LoginPolicyManageService {
         String canonicalIpAddr = canonicalizeConfiguredIp(dto.getIpAddr());
         LoginPolicy entity = loginPolicyRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        entity.update(canonicalIpAddr, dto.getDpcnPrmYn(), dto.getLmtYn(), dto.getBgngTm(), dto.getEndTm(), dto.getOtpUseYn());
+        /*
+          중복 로그인 허용 여부는 요청에 없으면 기존 값을 유지한다(GAP-POLICY-001).
+
+          엔티티 update 는 전체 치환이고 화면 폼은 다섯 필드(ipAddr·lmtYn·bgngTm·endTm·otpUseYn)만
+          보낸다(loginPolicySchema 의 .pick). 그래서 저장할 때마다 dpcn_prm_yn 이 null 로 덮어써졌고,
+          CHECK (dpcn_prm_yn IN ('Y','N'))(V2_24)는 PostgreSQL 규칙상 NULL 을 통과시켜 아무것도
+          실패하지 않았다.
+
+          ⚠ insert 처럼 null→'N' 보정을 하면 안 된다 — 화면이 이 값을 보내지 않으므로 저장마다
+            'Y'(중복 허용)를 'N' 으로 뒤집게 된다. 소실을 더 나쁜 결함으로 바꾸는 셈이다.
+            DEC-OPS-082(온라인 투표 pollAtmcDsuseYn)가 같은 형태에서 같은 해법을 택했다.
+
+          비대칭은 의도다 — 다섯 필드는 컨트롤이 있고 이 하나는 없다. 컨트롤이 생기면 이 분기를 걷는다.
+        */
+        String dpcnPrmYn = dto.getDpcnPrmYn() != null ? dto.getDpcnPrmYn() : entity.getDpcnPrmYn();
+        entity.update(canonicalIpAddr, dpcnPrmYn, dto.getLmtYn(), dto.getBgngTm(), dto.getEndTm(), dto.getOtpUseYn());
     }
 
     @Transactional
