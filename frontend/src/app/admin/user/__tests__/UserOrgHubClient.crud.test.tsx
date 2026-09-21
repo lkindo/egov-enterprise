@@ -61,11 +61,22 @@ vi.mock('framer-motion', () => {
   };
 });
 
+/*
+  ⚠ 이 하네스는 **실제로 계층이 바뀌는** 드래그를 내야 한다.
+
+  useDeptTree 는 잡았다 놓기만 한 경우(가로 이동 0)를 변경으로 보지 않는다 — 바꿀 것이 없는데
+  저장 버튼을 켜면 안 되기 때문이다(GAP-DEPT-001). 따라서 start→end 만 누르면 저장이 열리지 않는다.
+
+  끄는 대상이 D-100 이 아니라 **D-200** 인 이유: getDeptProjection 의 maxDepth 는 '바로 위 형제의
+  depth+1' 이라 첫 노드는 언제나 0 으로 클램프된다. 두 번째 노드를 끌어야 상위가 생긴다
+  (e2e 19 가 같은 이유로 두 번째 노드를 끈다). delta.x=24 는 INDENTATION_WIDTH 한 칸이다.
+*/
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children, onDragStart, onDragEnd }: any) => (
+  DndContext: ({ children, onDragStart, onDragMove, onDragEnd }: any) => (
     <>
-      <button type="button" onClick={() => onDragStart?.({ active: { id: 'D-100' } })}>test-drag-start</button>
-      <button type="button" onClick={() => onDragEnd?.({ active: { id: 'D-100' }, over: { id: 'D-100' } })}>test-drag-end</button>
+      <button type="button" onClick={() => onDragStart?.({ active: { id: 'D-200' } })}>test-drag-start</button>
+      <button type="button" onClick={() => onDragMove?.({ delta: { x: 24 } })}>test-drag-move</button>
+      <button type="button" onClick={() => onDragEnd?.({ active: { id: 'D-200' }, over: { id: 'D-200' } })}>test-drag-end</button>
       {children}
     </>
   ),
@@ -371,6 +382,8 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await screen.findByTestId('master-detail-incremental-layout');
     await screen.findByText('기획부');
     fireEvent.click(screen.getByRole('button', { name: 'test-drag-start' }));
+    // 가로 이동이 있어야 깊이가 실제로 바뀌고 저장이 열린다(제자리 드롭은 변경이 아니다).
+    fireEvent.click(screen.getByRole('button', { name: 'test-drag-move' }));
     fireEvent.click(screen.getByRole('button', { name: 'test-drag-end' }));
 
     const saveButton = screen.getByRole('button', { name: '조직 계층 저장' });
@@ -392,7 +405,9 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await act(async () => pending.reject(new Error('계층 저장 API 장애')));
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('구조 저장 중 오류 발생', 'error'));
     expect(screen.getByRole('button', { name: '조직 계층 저장' })).toBeEnabled();
-    expect(screen.getByRole('heading', { level: 2, name: '기획부' })).toBeVisible();
+    // 저장이 실패해도 선택한 상세가 남아 있어야 한다. 드래그를 시작한 부서가 선택되므로
+    // 대상은 하네스가 끄는 D-200(개발부)이다 — 이름이 아니라 '선택 유지'가 이 단언의 뜻이다.
+    expect(screen.getByRole('heading', { level: 2, name: '개발부' })).toBeVisible();
   });
 
   it('목록 조회를 서버가 실제로 읽는 Spring Pageable 계약(page/size, 0-based)으로 호출한다', async () => {

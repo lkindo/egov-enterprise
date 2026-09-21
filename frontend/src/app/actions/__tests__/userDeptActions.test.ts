@@ -73,8 +73,8 @@ describe('사용자·조직 관리자 서버 액션', () => {
 
   it('조직 계층은 화면 순서를 1부터 부여하고 루트의 상위 ID는 비운다', async () => {
     const result = await saveDeptHierarchyAction([
-      { ognzId: 'ROOT', ognzNm: '본부', parentId: null, depth: 0, index: 0 },
-      { ognzId: 'CHILD', ognzNm: '개발팀', parentId: 'ROOT', depth: 1, index: 0 },
+      { ognzId: 'ROOT', ognzNm: '본부', parentId: null, depth: 0, index: 0, unloadedParentId: null },
+      { ognzId: 'CHILD', ognzNm: '개발팀', parentId: 'ROOT', depth: 1, index: 0, unloadedParentId: null },
     ]);
 
     expect(deptAdminService.updateDeptHierarchy).toHaveBeenCalledWith([
@@ -83,6 +83,41 @@ describe('사용자·조직 관리자 서버 액션', () => {
     ], AUTH);
     expect(revalidatePath).toHaveBeenCalledWith('/admin/user/departments');
     expect(result.success).toBe(true);
+  });
+
+  /*
+    GAP-DEPT-001 — 부서 검색은 `ognzNm` 만 보므로 좁힌 결과에서 상위가 빠질 수 있다. 그 노드는
+    화면에 루트로 그려지고 parentId 가 null 이 되는데, 그대로 보내면 서버가 `up_ognz_id` 를 지운다.
+
+    대조군을 함께 둔다 — 제외가 너무 넓어지면(예: 진짜 최상위까지 빼면) 계층 저장 자체가 죽는다.
+  */
+  it('상위를 모르는 부서는 전송에서 빼 서버의 소속을 보존한다', async () => {
+    const result = await saveDeptHierarchyAction([
+      { ognzId: 'ROOT', ognzNm: '본부', parentId: null, depth: 0, index: 0, unloadedParentId: null },
+      // 검색 결과에 상위(HQ)가 없어 루트로 올라온 부서 — 건드리면 안 된다.
+      { ognzId: 'ORPHAN', ognzNm: '외부팀', parentId: null, depth: 0, index: 1, unloadedParentId: 'HQ' },
+      { ognzId: 'CHILD', ognzNm: '개발팀', parentId: 'ROOT', depth: 1, index: 0, unloadedParentId: null },
+    ]);
+
+    expect(deptAdminService.updateDeptHierarchy).toHaveBeenCalledWith([
+      { ognzId: 'ROOT', upOgnzId: undefined, sortOrdr: 1 },
+      // ⚠ sortOrdr 는 제외 전 화면 순서다. 3 이 2 로 당겨지면 보내는 값이 화면과 다른 뜻을 갖는다.
+      { ognzId: 'CHILD', upOgnzId: 'ROOT', sortOrdr: 3 },
+    ], AUTH);
+    expect(result.success).toBe(true);
+  });
+
+  it('사용자가 직접 옮긴 부서는 표시가 해제되어 그대로 전송된다', async () => {
+    // useDeptTree 의 onDragEnd 가 unloadedParentId 를 null 로 해제한 뒤의 상태다.
+    await saveDeptHierarchyAction([
+      { ognzId: 'ROOT', ognzNm: '본부', parentId: null, depth: 0, index: 0, unloadedParentId: null },
+      { ognzId: 'MOVED', ognzNm: '외부팀', parentId: 'ROOT', depth: 1, index: 0, unloadedParentId: null },
+    ]);
+
+    expect(deptAdminService.updateDeptHierarchy).toHaveBeenCalledWith([
+      { ognzId: 'ROOT', upOgnzId: undefined, sortOrdr: 1 },
+      { ognzId: 'MOVED', upOgnzId: 'ROOT', sortOrdr: 2 },
+    ], AUTH);
   });
 
   it('조직 계층 저장 실패는 원인 메시지를 반환하고 재검증하지 않는다', async () => {
