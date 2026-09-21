@@ -1,10 +1,20 @@
 const WORKFLOW_PATH = '.github/workflows/ci.yml';
+/*
+  이 목록 하나가 두 가지를 구동한다 — 명세가 정확히 이 필드들만 선언해야 하고(누락·잉여 모두 오류),
+  원격 ruleset 과의 비교 대상도 이 목록이다. 즉 여기 없는 필드는 **원격에 있어도 비교되지 않는다.**
+
+  `requireExtraApprovalForUnattributedChanges` 는 GitHub 가 DEC-OPS-009 이후 추가한 승인 축인데
+  목록에 없어 검증기가 보지 못했다 — 원격이 true 로 켜져 있어도 `verify:ops` 는 green 이었다.
+  단독 운영에서 승인 요구는 병합을 막을 수 있는 축이므로 선언·비교 대상에 넣는다(DEC-OPS-108).
+  ⚠ 현재 값을 명세에 적는 것은 그 값을 옳다고 판정하는 것이 아니라 **드리프트를 보이게** 하는 것이다.
+*/
 const PULL_REQUEST_POLICY_FIELDS = [
   'requiredApprovingReviewCount',
   'requireCodeOwnerReview',
   'requireLastPushApproval',
   'dismissStaleReviewsOnPush',
   'requiredReviewThreadResolution',
+  'requireExtraApprovalForUnattributedChanges',
 ];
 
 /**
@@ -22,6 +32,14 @@ const DECIDED_PULL_REQUEST_POLICY = {
   requireLastPushApproval: false,
   dismissStaleReviewsOnPush: false,
   requiredReviewThreadResolution: false,
+  /*
+    [DEC-OPS-108 · 2026-09-21] GitHub 가 DEC-OPS-009 이후 추가한 여섯 번째 승인 축이다.
+    값 `true` 는 **원격 실측치를 기록한 것이지 "그래야 한다" 는 판정이 아니다** — 비교 목록에만
+    넣고 여기서 빼면 이 필드만 양방향 동결을 못 받아 반쪽으로 결속되므로 함께 적는다.
+    ⚠ 끄는 것이 DEC-OPS-009 의 취지(단독 운영에서 승인 요구는 병합을 막는다)에 맞을 수 있으나
+      원격 ruleset 변경은 승인 경계라 별도 결정이다. 그때 이 값과 명세를 함께 고친다.
+  */
+  requireExtraApprovalForUnattributedChanges: true,
 };
 
 function escapeRegExp(value) {

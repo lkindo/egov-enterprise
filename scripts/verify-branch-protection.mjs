@@ -134,7 +134,26 @@ try {
         requireLastPushApproval: parameters.require_last_push_approval,
         dismissStaleReviewsOnPush: parameters.dismiss_stale_reviews_on_push,
         requiredReviewThreadResolution: parameters.required_review_thread_resolution,
+        requireExtraApprovalForUnattributedChanges: parameters.require_extra_approval_for_unattributed_changes,
       });
+      /*
+        투영에 없는 파라미터는 비교되지 않는다 — GitHub 가 승인 축을 새로 추가해도 조용히 통과한다.
+        `require_extra_approval_for_unattributed_changes` 가 정확히 그렇게 들어와 있었다(DEC-OPS-108).
+        그래서 모르는 키를 만나면 보고한다. 아래 두 키는 보호 축이 아니라 의도적으로 비교하지 않는다:
+        `required_reviewers`(승인자 지명 — 단독 운영에서 비어 있고 approval 0 이 이미 결속),
+        `allowed_merge_methods`(병합 방식 선호이지 보호가 아니다).
+      */
+      const comparedKeys = new Set([
+        'required_approving_review_count', 'require_code_owner_review', 'require_last_push_approval',
+        'dismiss_stale_reviews_on_push', 'required_review_thread_resolution',
+        'require_extra_approval_for_unattributed_changes',
+      ]);
+      const deliberatelyUncompared = new Set(['required_reviewers', 'allowed_merge_methods']);
+      for (const key of Object.keys(parameters)) {
+        if (!comparedKeys.has(key) && !deliberatelyUncompared.has(key)) {
+          failures.push(`pull request 규칙에 명세가 모르는 파라미터가 있습니다: ${key} — 비교 대상에 넣거나 제외 사유를 남기십시오.`);
+        }
+      }
     }
   }
 
