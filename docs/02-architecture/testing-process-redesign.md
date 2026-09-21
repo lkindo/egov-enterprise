@@ -327,4 +327,8 @@ CI·게이트의 실행/부정 검증 정본은 [shard 계약](../../scripts/e2e
 
 로컬 표적 검증은 `MigrationVerifier`와 기존 두 빠른 테스트 클래스에 한정했다. JUnit **32개 통과**, strict 75 조건의 PIT는 **153 mutants 중 130 KILLED(85%)**, coverage **3초**, mutation **21초**, PIT 총 **25초**였다. history에 의한 제외는 0건이다. 제품 코드·CI PIT 대상 및 테스트 선택·임계값·timeout 설정은 변경하지 않았다. 이 표적 실행의 25초는 전체 migration scope나 Linux CI의 실행시간이 아니다.
 
-**최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본**이다. 위 E2E 실측과 로컬 표적 PIT 결과는 각각의 실행 범위에 한정한다. 임계값·대상 테스트·보안 스캔을 완화하지 않으며, 전체 완료·절감 실적은 해당 커밋의 필수 체크 6개와 같은 검증 범위의 실행시간을 함께 확인해 판정한다.
+**재편 PR의 required 결과와 전체 소요시간 비교, 병합 후 후속 검증 링크는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본**이다. 위 E2E 실측과 로컬 표적 PIT 결과는 각각의 실행 범위에 한정한다. 임계값·대상 테스트·보안 스캔을 완화하지 않으며, 전체 완료·절감 실적은 해당 커밋의 필수 체크 6개와 같은 검증 범위의 실행시간을 함께 확인해 판정한다.
+
+### 9.2 병합 후 검증: 재시도 통과도 실패로 다룬다
+
+[main 실행 35586917559](https://github.com/lkindo/egov-enterprise/actions/runs/35586917559)에서는 조직도 드래그의 첫 시도가 저장 요청 없이 실패하고 재시도만 통과해 `flaky=0` 계약이 차단했다. trace에서 계층 미리보기는 정상이나 드롭 직후 클릭 억제 구간에 저장 클릭이 들어간 것을 확인했다. [해당 여정](../../frontend/e2e/journeys/department-hierarchy.spec.ts)은 overlay 생성·소멸로 드롭 완료를 확인한 뒤 저장 응답과 서버에 영속된 상위 부서를 검증한다. 고정 대기·클릭 재시도·flaky 허용을 추가하지 않는다. 이 실패 실행은 성공한 전체 CI 절감 표본에 포함하지 않는다.

@@ -139,7 +139,12 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             const saveBtn = page.getByRole('button', { name: '조직 계층 저장' });
             await expect(saveBtn).toBeVisible();
             await expect(saveBtn).toBeDisabled();
-            const dragHandle = page.getByRole('button', { name: `${childName} (${childId}) 순서 이동 핸들` });
+            const dragHandleName = `${childName} (${childId}) 순서 이동 핸들`;
+            const dragHandle = page.getByRole('button', { name: dragHandleName, exact: true });
+            // DragOverlay의 복제 핸들은 aria-hidden 안에 있고 disabled다.
+            const dragOverlay = page.getByRole('button', {
+                name: dragHandleName, exact: true, includeHidden: true, disabled: true,
+            });
             await expect(dragHandle).toHaveCount(1);
             const handleBox = await dragHandle.boundingBox();
             expect(handleBox, '드래그 핸들의 위치를 얻을 수 있어야 한다').toBeTruthy();
@@ -152,10 +157,20 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             await page.mouse.move(startX + 5, startY + 2, { steps: 3 });
             await page.mouse.move(startX + 15, startY + 4, { steps: 5 });
             await page.mouse.move(startX + 50, startY + 5, { steps: 8 }); // 50px 이동 (depth +2 시도, 클램프로 +1 적용)
+            await expect(dragOverlay, '포인터 드래그가 활성화되어야 한다').toHaveCount(1);
             await page.mouse.up();
+            // dnd-kit은 드롭 직후 document의 click 전파를 잠시 차단한다. 버튼 enabled만 보고
+            // 바로 클릭하면 저장 요청이 삼켜진다. 이동한 overlay의 드롭 애니메이션 완료를 기다린다.
+            await expect(dragOverlay, '드롭 애니메이션이 끝나야 다음 동작을 시작한다').toHaveCount(0);
             // 계층이 바뀌었고 drag start가 해당 행을 선택했으므로 같은 저장 버튼이 활성화된다.
             await expect(saveBtn, '가로 드래그로 깊이가 바뀌면 저장 버튼이 활성화되어야 한다').toBeEnabled({ timeout: 15000 });
-            await saveBtn.click();
+            const [saveResponse] = await Promise.all([
+                page.waitForResponse(response => response.request().method() === 'POST'
+                    && new URL(response.url()).pathname === '/admin/user/departments'
+                    && response.request().headers()['next-action'] !== undefined),
+                saveBtn.click(),
+            ]);
+            expect(saveResponse.ok(), '조직 계층 저장 요청이 성공해야 한다').toBeTruthy();
             // 저장이 실제로 영속되는지는 화면이 아니라 서버에 묻는다.
             // 🚨 216fb9c98 의 증상이 정확히 "sort_ordr 는 저장되는데 up_ognz_id 만 null" 이었으므로
             //    상위 부서 값을 직접 단언해야 한다.
