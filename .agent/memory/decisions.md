@@ -5,9 +5,10 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-21
-verified_against: 56aa75d7cafb30b242244a3867b776f3fc806151
+verified_at: 2026-09-22
+verified_against: ca584f6d9684023ef611418a5dcb361bd890bc43
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md
   - ../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md
   - ../../docs/02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md
   - ../../docs/02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md

@@ -396,4 +396,10 @@ Windows의 새 격리 스택에서 설문 선택 10개 spec을 직접 실행했�
 
 제품 UI의 대표 결함도 별도 격리 worktree에서 검증했다. 커밋 `6d6dd4a78`의 설문 관리 h1 문구만 임시로 변경한 run `ab3fd4a10e04652c81e72bc8`에서 선택된 10개 spec 중 `online-polls.spec.ts`의 두 테스트가 해당 제목 검증에서 실패했다. 결과는 성공 26·실패 2·기존 Windows VRT 제외 1, 재시도·flaky·global error 0이었다. DOM·trace에서 바뀐 h1과 설문 생성 HTTP 200을 확인했고, 소스 복원·소유 DB와 앱 종료·runtime manifest 제거를 확인했다. 이 증거는 대표 설문 회귀 탐지에 한정하며, 같은 결함의 전수 50개 spec 비교는 실행하지 않았다.
 
+최종 소스 `3f8f7fcbd`의 [PR CI 35617360478](https://github.com/lkindo/egov-enterprise/actions/runs/35617360478)에서 E2E 50개 spec의 본 테스트 135개와 setup 4회가 모두 성공했다. 각 shard의 독립 전체 inventory는 137좌표로 같았고, 누락·중복·재시도·flaky·skip·오류는 0이었다. plan의 base/head/checkout SHA는 실제 checkout과 정확한 두 부모 커밋에 일치했다. 원격 비교의 33개 변경 파일로 전수 사유를 다시 계산해 일치했으며, 메타데이터 실패로 전수 실행한 결과가 아니다. shard job은 449/388초, E2E 실행 단계는 143/150초였다. 이 PR은 공용 CI 변경을 포함해 전수 실행했으므로, 선별 PR의 절감률이나 전체 CI 완료시간으로 사용하지 않는다.
+
 캐시의 기존 키 복원과 중복 저장 방지는 구분한다. basic provider의 reader는 저장 API에 진입하지 않도록 설정하고, CI의 writer 후보 두 개는 backend 선택 여부로 배타적으로 결정한다. FE 전용 변경·writer 실패에 새 writer를 승격하지 않는다. 기존 불변 캐시가 이미 있으면 workflow 변경만으로 새로운 cold 저장을 실증할 수 없다. 다른 실행의 취소·종료 경합까지 전역 잠금으로 직렬화하지 않는다.
+
+같은 PR run의 첫 시도에서 Gradle 작업 18개와 setup/post 단계가 모두 성공했다. 실제 action 입력은 [backend](https://github.com/lkindo/egov-enterprise/actions/runs/35617360478/job/106391513130) 한 곳만 `cache-read-only: false`였고, [migration](https://github.com/lkindo/egov-enterprise/actions/runs/35617360478/job/106391513210)을 포함한 나머지 17곳은 `true`였다. 고정 action SHA와 basic provider가 모두 일치했고, 복원 18회·backend의 동일 키 저장 생략 1회·예약 충돌과 저장/복원 오류 0건을 확인했다. 이미 있는 캐시를 사용했으므로 이 결과만으로 최초 저장 성능이나 새 정책만의 경고 감소량을 산정하지 않는다.
+
+이 변경의 필수 CI 및 병합 후 main 실행 기록은 [PR #703 검증 기록](https://github.com/lkindo/egov-enterprise/pull/703)이 정본이다. PR에서는 Gradle 배포 HTTP 504와 Gitleaks 다운로드 압축 오류가 발생해 해당 보안 작업을 별도 재검증했다. 재시도와 대기 시간을 포함한 PR 전체 소요시간을 초기 실행 성능 표본으로 사용하지 않는다.
