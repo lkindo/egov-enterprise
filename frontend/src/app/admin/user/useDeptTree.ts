@@ -131,15 +131,33 @@ export function useDeptTree({
       // 제자리에 놓아도(active===over) 가로로 밀어 깊이만 바꾸는 경우가 있으므로
       // 위치 변경 여부가 아니라 투영 결과를 기준으로 반영한다.
       if (over && deptProjected) {
+        /*
+          ⚠ 잡았다 놓기만 해도 '변경됨' 이 되면 안 된다 — 저장 버튼이 켜지지만 바꿀 것이 없다(G10).
+            종전에는 투영이 있다는 사실만 봐서, 가로로 밀지 않고 제자리에 놓아도 켜졌다.
+            자리(순서)나 상위·깊이 중 하나라도 실제로 달라졌을 때만 켠다.
+        */
+        const before = flattenedDepts.find((n) => n.ognzId === active.id);
+        const changed =
+          active.id !== over.id ||
+          !before ||
+          before.parentId !== deptProjected.parentId ||
+          before.depth !== deptProjected.depth;
         setFlattenedDepts((items) => {
           const oldIndex = items.findIndex(n => n.ognzId === active.id);
           const newIndex = items.findIndex(n => n.ognzId === over.id);
           const newItems = oldIndex === newIndex ? items.slice() : arrayMove(items, oldIndex, newIndex);
           const idx = newItems.findIndex(n => n.ognzId === active.id);
-          newItems[idx] = { ...newItems[idx], parentId: deptProjected.parentId, depth: deptProjected.depth };
+          // 끌었다는 것은 이 부서의 자리를 사용자가 직접 정했다는 뜻이다 — 상위를 모른다는 표시를
+          // 해제해야 저장이 새 자리를 반영한다(해제하지 않으면 드래그가 조용히 무시된다).
+          newItems[idx] = {
+            ...newItems[idx],
+            parentId: deptProjected.parentId,
+            depth: deptProjected.depth,
+            unloadedParentId: null,
+          };
           return newItems;
         });
-        setHasDeptChanges(true);
+        if (changed) setHasDeptChanges(true);
       }
       setActiveDeptId(null);
       setOverDeptId(null);
