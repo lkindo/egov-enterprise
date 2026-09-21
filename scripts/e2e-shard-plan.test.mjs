@@ -86,10 +86,77 @@ test('duration profile covers every Playwright spec exactly once', () => {
   assert.deepEqual(Object.keys(profile.durationsMs).sort(), discoverSpecs());
 });
 
-test('duration profile source commit exists in this repository and is an ancestor of HEAD', () => {
-  const profile = loadDurationProfile();
-  execFileSync('git', ['cat-file', '-e', `${profile.source.commit}^{commit}`], { stdio: 'ignore' });
-  execFileSync('git', ['merge-base', '--is-ancestor', profile.source.commit, 'HEAD'], { stdio: 'ignore' });
+function assertDurationSourceHistory(sourceCommit, cwd = process.cwd()) {
+  const git = args => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  git(['cat-file', '-e', `${sourceCommit}^{commit}`]);
+  for (const revision of [sourceCommit, 'HEAD']) {
+    assert.match(git(['ls-tree', '-r', '--name-only', revision, '--', 'frontend/e2e']),
+      /\.spec\.ts(?:\r?\n|$)/, 'duration source and current tree must contain E2E specs');
+  }
+  const ancestry = spawnSync('git', ['merge-base', '--is-ancestor', sourceCommit, 'HEAD'], { cwd });
+  if (ancestry.status === 0) return;
+  assert.equal(ancestry.status, 1, 'duration source ancestry must be inspectable');
+  // Rebasing/squashing can preserve the measured workload without preserving its
+  // commit ancestry. Keep the real run SHA and require identical E2E inputs in
+  // that case. The profile is derived output, not an input to an individual case.
+  const inputs = [
+    'frontend/e2e', 'frontend/playwright.config.ts', 'frontend/next.config.ts',
+    'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/scripts', 'frontend/src',
+    'frontend/tsconfig.json', 'frontend/tsconfig.e2e.json', 'frontend/public/fonts',
+    'api-server', 'business-app', 'business-core', 'foundation', 'gradle',
+    'build.gradle', 'settings.gradle', 'gradle.properties', 'gradlew', 'gradlew.bat',
+    'package.json', 'package-lock.json',
+    'scripts/run-isolated-e2e.mjs', 'scripts/e2e-isolation.mjs', 'scripts/e2e-compose-preflight.mjs',
+    'scripts/playwright-result-contract.mjs', 'docker-compose.yml', 'docker-compose.authz-e2e.yml',
+    ':(exclude)frontend/e2e/shard-duration-profile.json',
+  ];
+  assert.equal(git(['diff', '--name-only', sourceCommit, 'HEAD', '--', ...inputs]).trim(), '',
+    'non-ancestor duration evidence requires identical measured E2E inputs');
+}
+
+test('duration profile source exists and is ancestral or has identical measured E2E inputs', () => {
+  assertDurationSourceHistory(loadDurationProfile().source.commit);
+});
+
+test('rebased duration evidence rejects missing commits and changed specs, fixtures, or runtime configuration', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-profile-history-'));
+  t.after(() => {
+    assert.equal(path.dirname(root), os.tmpdir());
+    assert.ok(path.basename(root).startsWith('e2e-profile-history-'));
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+  const git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const write = (file, text) => { fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); fs.writeFileSync(path.join(root, file), text); };
+  const commit = () => { git(['add', '.']); git(['commit', '-qm', 'synthetic evidence']); return git(['rev-parse', 'HEAD']); };
+  git(['init', '-q']);
+  git(['config', 'user.name', 'Profile contract fixture']);
+  git(['config', 'user.email', 'fixture@example.invalid']);
+  write('README.md', 'base');
+  const base = commit();
+  const inputFiles = ['frontend/e2e/example.spec.ts', 'frontend/e2e/fixtures/example.ts',
+    'frontend/e2e/example.spec.ts-snapshots/baseline.png', 'frontend/src/lib/draft.ts',
+    'frontend/playwright.config.ts', 'frontend/pnpm-lock.yaml', 'frontend/scripts/build.js',
+    'scripts/run-isolated-e2e.mjs', 'docker-compose.authz-e2e.yml'];
+  for (const file of inputFiles) write(file, 'measured input');
+  const source = commit();
+  assertDurationSourceHistory(source, root);
+  git(['checkout', '-qb', 'recomposed', base]);
+  for (const file of inputFiles) write(file, 'measured input');
+  write('frontend/e2e/shard-duration-profile.json', '{}');
+  commit();
+  assertDurationSourceHistory(source, root);
+  assert.throws(() => assertDurationSourceHistory('0'.repeat(40), root));
+  assert.throws(() => assertDurationSourceHistory(base, root), /must contain E2E specs/);
+  for (const file of inputFiles) {
+    write(file, 'changed input'); commit();
+    assert.throws(() => assertDurationSourceHistory(source, root), /identical measured E2E inputs/, file);
+    write(file, 'measured input'); commit();
+  }
+  write('frontend/e2e/added.spec.ts', 'added input'); commit();
+  assert.throws(() => assertDurationSourceHistory(source, root), /identical measured E2E inputs/);
+  fs.unlinkSync(path.join(root, 'frontend/e2e/added.spec.ts')); commit();
+  fs.unlinkSync(path.join(root, inputFiles[0])); commit();
+  assert.throws(() => assertDurationSourceHistory(source, root), /must contain E2E specs/);
 });
 
 test('the authoritative shard duration plan is deterministic and stays within 15 percent', () => {

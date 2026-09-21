@@ -44,7 +44,8 @@ function validate(review, root, extra = {}) {
 }
 
 test('original date values stay visible: technical review reporting does not reapprove unknown work', async () => {
-  const report = await buildGovernanceReview({ repoRoot, nowMs });
+  const repositoryNowMs = Date.now();
+  const report = await buildGovernanceReview({ repoRoot, nowMs: repositoryNowMs });
   assert.equal(report.errors.length, 0);
   assert.equal(report.adoption.recordedStatus, 'pending');
   assert.equal(report.adoption.approvalEnvelopeValid, false);
@@ -52,7 +53,7 @@ test('original date values stay visible: technical review reporting does not rea
   assert.ok(report.urlState.opaqueRecords > 0);
   assert.equal(report.urlState.environmentApprovalInherited, false);
   assert.deepEqual(new Set(report.maintenance.entries.map(({ source }) => source)), new Set(REVIEW_SOURCES.map(({ path }) => path)));
-  const future = await buildGovernanceReview({ repoRoot, nowMs: Date.parse('2036-09-14T00:00:00Z') });
+  const future = await buildGovernanceReview({ repoRoot, nowMs: repositoryNowMs + 10 * 365 * 86_400_000 });
   assert.deepEqual(future.errors, []);
   assert.deepEqual(future.sourceScope, report.sourceScope);
   assert.deepEqual(future.urlState, report.urlState);

@@ -29,7 +29,7 @@
 - **Cleanup**: 자신이 생성한 ID를 보존해 `finally`/teardown에서 삭제한다. 공용 cleanup은 명시된 접두사와 API만 처리하므로 신규 자원이 자동 정리된다고 가정하지 않고 대응 경로와 실패 검증을 함께 추가한다.
 
 ### 3. 구조적 설계 (POM & Fixtures)
-- **Page Object Model (POM)**: 복수 spec이 공유하거나 복잡한 화면 의미를 재사용할 때만 `e2e/pages`에 둔다. 단일 소비·미사용 POM은 유지비만 늘리므로 hygiene 계약이 차단한다.
+- **Page Object Model (POM)**: 복수 spec이 공유하거나 복잡한 화면 의미를 재사용할 때만 `e2e/pages`에 둔다. hygiene 계약은 이미 제거한 미사용 POM·fixture의 재유입을 차단하며, 모든 POM의 소비자 수를 검사하지는 않는다.
 - **Fixtures**: `e2e/fixtures/api-test.ts`는 브라우저 없이 요청 계약을 검사하고, `browser-test.ts`는 화면 객체와 ConsoleErrorGuard를 제공한다. 사용하지 않는 브라우저를 API 테스트 준비에 추가하지 않는다. provider 변경 시 소비 spec과 타입 검증을 같은 변경에 포함한다.
 
 ### 4. Locator 계약

@@ -286,6 +286,8 @@ CI·게이트의 실행/부정 검증 정본은 [shard 계약](../../scripts/e2e
 
 [duration profile](../../frontend/e2e/shard-duration-profile.json)은 현재 [Linux run `35575211930`](https://github.com/lkindo/egov-enterprise/actions/runs/35575211930)의 SHA `1ddbabd60`에서 관측한 **50개 파일별 본 테스트 duration 합**이다. `weightMethod=observed-passed-attempt-duration-sum`, workers=2, Playwright 1.63.0, 두 diagnostics artifact ID·입력 SHA256을 함께 기록했다. 본 테스트 합은 **551,713ms**이며 setup 4회는 제외했다. 이는 성공한 E2E 한 번의 분배 가중치이고 전체 CI wall-clock·p50/p95·보장 절감률이 아니다. 재편 직후 과거 실행 `33525822467`을 선언 수로 재배분했던 추정 단계는 종료했으며 그 출처는 `source.previousSource`에 보존했다. 오래된 측정값은 재측정 신호로 보고하되 잘못된 provenance·누락 spec·0 이하 duration은 계속 차단한다.
 
+측정 커밋은 저장소에 존재하고 현재 HEAD의 조상이거나, 이력을 재구성한 경우 보호한 제품 소스·E2E 하네스·설정 입력의 Git tree가 동일해야 한다. 파생 산출물인 profile 자체만 E2E 트리 비교에서 제외한다. 원래 실행 SHA를 새 커밋으로 바꾸지 않으며, 출처 부재·빈 spec 모집단·spec/fixture/PNG/설정 변경·추가·삭제는 부정 검사로 차단한다. 이 검증은 과거 분배 가중치의 재사용 근거이며 새 HEAD의 실행 성공이나 시간 동일성을 보증하지 않는다. 원본 측정 커밋을 가진 기존 원격 브랜치는 보존한다.
+
 | 초기 Linux 측정 | shard 1 | shard 2 |
 |---|---|---|
 | Playwright report wall time | **157.6초** | **140.9초** |
