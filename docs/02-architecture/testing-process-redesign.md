@@ -1,6 +1,6 @@
 # 테스트 프로세스 재설계와 이행 근거
 
-구현·측정 기준일은 2026-09-21이다. 격리 Windows 일반·계측 실행과 main 변경 통합본의 Linux 전수 E2E를 검증했다. 모집단은 계약별 **50개 spec·135개 본 테스트와 인증 setup 2개**다. Linux 두 샤드에서는 setup이 각각 실행되어 총 4회이며 본 테스트와 시간 가중치에서 제외한다. 이 수는 이행 대조 결과이며 개수 목표가 아니다. **최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본**이다.
+구현·측정 기준일은 2026-09-21이다. 격리 Windows 일반·계측 실행과 main 변경 통합본의 Linux 전수 E2E를 검증했다. 모집단은 계약별 **50개 spec·135개 본 테스트와 인증 setup 2개**다. Linux 두 샤드에서는 setup이 각각 실행되어 총 4회이며 본 테스트와 시간 가중치에서 제외한다. 이 수는 이행 대조 결과이며 개수 목표가 아니다. **E2E 재편 결과는 [PR #699](https://github.com/lkindo/egov-enterprise/pull/699), 후속 모듈 분리·캐시의 required 결과와 전체 소요시간은 [9.4절](#94-독립-모듈-실행과-캐시-저장복원-검증)에 원본 실행을 연결한다.**
 
 이 문서는 테스트의 설계·작성·실행·진단·정리 원칙과 이번 구조 변경의 근거를 함께 기록한다. 현행 규범은 [AGENTS.md](../../AGENTS.md), 범위별 검증은 [테스트 가이드](../03-guides/testing-guide.md), 실행 방법은 [E2E 런북](../03-guides/e2e-test-guide.md), 병합 조건은 [required-check manifest](../../.github/required-checks.json)가 소유한다. 기존 Tier 번호·파일명·파일 수는 새 소유권의 제약으로 삼지 않았다.
 
@@ -339,4 +339,31 @@ CI·게이트의 실행/부정 검증 정본은 [shard 계약](../../scripts/e2e
 
 [main 실행 35591415184](https://github.com/lkindo/egov-enterprise/actions/runs/35591415184), SHA `ac46dc4f`에서 필수 체크 완료까지 **33분 40초**, E2E required 완료까지 **8분 17초**가 걸렸다. 같은 실행의 이관 테스트 task 구간은 **26분 44초**였다. 마지막 값은 Gradle task 관측 구간이며 전체 job이나 독립 실행의 예상 소요시간이 아니다.
 
-이 실행은 [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)의 모듈 분리·Gradle 캐시 변경 전 기준선이다. 온라인 4모듈과 독립 이관을 각 source로 실행하면 불필요한 이관 비용과 직렬 대기를 줄일 수 있지만, 새 원격 실측 없이 절감률이나 성공 시간을 제시하지 않는다. 비교에는 선택된 모듈·required 체크·캐시 cold/warm·task cache hit·runner 대기를 함께 남긴다. E2E 후보 선별과 개별 Java 시험 선별은 이번 변경에 포함하지 않는다.
+이 실행은 [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)의 모듈 분리·Gradle 캐시 변경 전 기준선이다. 변경 후 실측은 아래에 기록한다. 비교에는 선택된 모듈·required 체크·캐시 cold/warm·task cache hit·runner 대기를 함께 남긴다. E2E 후보 선별과 개별 Java 시험 선별은 이번 변경에 포함하지 않는다.
+
+### 9.4 독립 모듈 실행과 캐시 저장·복원 검증
+
+[PR #701](https://github.com/lkindo/egov-enterprise/pull/701), SHA `6a97dc4c`의 [CI 최초 실행](https://github.com/lkindo/egov-enterprise/actions/runs/35601727345/attempts/1)은 required 6개가 모두 통과했으며 생성부터 마지막 필수 체크까지 **17분 59초**였다. 공통 CI·Gradle 변경이므로 온라인·이관·frontend·schema·PIT 10개·E2E를 모두 선택한 표본이다. 온라인 job은 **12분 27초**, 이관 job은 **16분 22초**에 각각 성공했다. 이 시간은 준비·검증·업로드를 포함한 job 경과시간이며, 두 시간을 더해 workflow 시간으로 계산하지 않는다.
+
+| 분리 영역 | LINE | BRANCH | 반대 영역의 태스크·커버리지 패키지 |
+|---|---|---|---|
+| 온라인 4모듈 | 10,253 / 10,932 (93.79%) | 3,071 / 3,774 (81.37%) | 각각 0 |
+| 독립 이관 | 6,885 / 7,612 (90.45%) | 3,579 / 4,557 (78.54%) | 각각 0 |
+
+분리된 XML의 분자·분모는 변경 전 전체 CI를 같은 영역으로 나눈 값과 정확히 일치한다. 각 영역의 test·coverage 입력 검사·보고서·85/70 검증 태스크가 실제 실행됐고, 온라인 하네스·PostgreSQL 스키마 검증과 이관 bootJar도 통과했다. E2E는 50개 파일·본 시험 135개·setup 4개이며 누락·중복·재시도·flaky·skip·오류가 0, 재사용 구성 6종도 성공했다.
+
+[온라인 원본 job](https://github.com/lkindo/egov-enterprise/actions/runs/35601727345/job/106339290087)은 basic 캐시 miss 뒤 13:01:44 UTC에 저장했다. 같은 PR ref의 [PIT 단일 재실행](https://github.com/lkindo/egov-enterprise/actions/runs/35601727345/job/106345147788)은 13:07:34 UTC에 동일 key를 복원했고 required 재집계까지 성공했다. 두 key의 SHA256은 `ec8e55c5fddb1c2751e4f4710f6386d677656fed583da91f51e6334dc62cd32e`로 같으며 저장·복원 실패 이벤트는 0건이다. 이는 캐시 전송 경로의 정상화 증거다. backend 전체의 warm 실행시간·테스트 task 재사용률을 측정한 결과는 아니다.
+
+최초 PR 실행의 job 경과시간 합은 **10,863초(181.05분)**이며 청구 러너 시간과 같다고 가정하지 않는다. 캐시 확인용 재실행은 이 합과 17분 59초에 포함하지 않는다. PR에는 main의 foundation 캐시 우회 검사가 없으므로 PR 시간만으로 이전 main의 절감률을 산정하지 않는다. 일반 온라인 변경에서 이관을 제외한 실행의 실제 완료시간은 별도 표본이 필요하다.
+
+병합 SHA `c2c20bf1`의 [main CI 35603874832](https://github.com/lkindo/egov-enterprise/actions/runs/35603874832)도 최초 시도에서 required 6개와 31개 job이 모두 성공했다. 공통 입력 변경에 따른 전체 범위와 main 전용 foundation 캐시 우회(98초)를 실행했다. 온라인 job은 **13분 5초**, 이관 job은 **32분 41초**였으며 두 영역의 태스크 분리·커버리지 분자/분모, E2E 135+4 및 오류·재시도 0, 재사용 구성 6종의 성공을 재확인했다.
+
+| 전체 main 실행 | 변경 전 35591415184 | 변경 후 35603874832 |
+|---|---|---|
+| 생성부터 required 6개 완료 | 33분 40초 | 33분 29초 |
+| E2E required 완료 | 8분 17초 | 9분 47초 |
+| job 경과시간 합(청구 시간 아님) | 182.65분 | 189.22분 |
+
+이 두 main 표본에서 전수 CI의 유의미한 시간·러너 비용 단축은 확인하지 못했다. 이관 job은 같은 구현의 PR과 main에서도 16분 22초와 32분 41초로 차이가 났으며, 그 편차의 세부 원인은 이 결과만으로 확정하지 않는다. 이번 변경의 검증된 효과는 온라인과 이관 실행·커버리지 경계를 분리하고, 일반 온라인 변경에서는 이관 build/PIT를 선택하지 않도록 PR·main 분류와 실행 소비자를 연결한 것이다. 일반 온라인 변경의 최종 완료시간은 해당 변경 범위의 실측으로 평가한다.
+
+main에서도 [최초 저장 job](https://github.com/lkindo/egov-enterprise/actions/runs/35603874832/job/106346344103) 이후 [후속 PIT job](https://github.com/lkindo/egov-enterprise/actions/runs/35603874832/job/106346344029)이 동일 basic key를 정상 복원했다. 온라인·이관 job의 시작 시점에는 miss였고, 먼저 저장된 동일 key에 대한 다른 job의 저장 시도에는 reserve 충돌 경고가 발생했다. 이는 [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)의 job 무관·불변 key 한계로, 전체 캐시 경고가 0이거나 backend 테스트가 캐시에서 복원됐다는 뜻은 아니다.
