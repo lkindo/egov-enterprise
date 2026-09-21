@@ -32,6 +32,14 @@ const DECIDED_PULL_REQUEST_POLICY = {
   requireLastPushApproval: false,
   dismissStaleReviewsOnPush: false,
   requiredReviewThreadResolution: false,
+  /*
+    [DEC-OPS-108 · 2026-09-21] GitHub 가 DEC-OPS-009 이후 추가한 여섯 번째 승인 축이다.
+    값 `true` 는 **원격 실측치를 기록한 것이지 "그래야 한다" 는 판정이 아니다** — 비교 목록에만
+    넣고 여기서 빼면 이 필드만 양방향 동결을 못 받아 반쪽으로 결속되므로 함께 적는다.
+    ⚠ 끄는 것이 DEC-OPS-009 의 취지(단독 운영에서 승인 요구는 병합을 막는다)에 맞을 수 있으나
+      원격 ruleset 변경은 승인 경계라 별도 결정이다. 그때 이 값과 명세를 함께 고친다.
+  */
+  requireExtraApprovalForUnattributedChanges: true,
 };
 
 function escapeRegExp(value) {
