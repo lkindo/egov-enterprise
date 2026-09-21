@@ -193,11 +193,14 @@ export function resolveCiImpactPlan({ eventName = process.env.GITHUB_EVENT_NAME,
   try {
     const event = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
     const pr = event.pull_request;
-    const base = pr?.base?.sha, head = pr?.head?.sha, merge = pr?.merge_commit_sha;
+    // For pull_request, Actions binds GITHUB_SHA to the tested merge commit.
+    // The API payload's merge_commit_sha may be null or stale while GitHub
+    // computes mergeability; it is not this workflow run's checkout identity.
+    const base = pr?.base?.sha, head = pr?.head?.sha, merge = githubSha;
     if (![base, head, merge].every(sha => /^[0-9a-f]{40}$/.test(sha ?? ''))) return full('invalid immutable pull request commits');
     evidence.baseSha = base; evidence.headSha = head;
     evidence.checkoutSha = gitRead(repoRoot, ['rev-parse', 'HEAD']);
-    if (evidence.checkoutSha !== merge || (githubSha && githubSha !== merge)) return full('checkout is not the event merge commit');
+    if (evidence.checkoutSha !== merge) return full('checkout is not the event merge commit');
     for (const sha of [base, head, merge]) gitRead(repoRoot, ['cat-file', '-e', `${sha}^{commit}`]);
     const parents = gitRead(repoRoot, ['rev-list', '--parents', '-n', '1', merge]).split(/\s+/).slice(1);
     if (JSON.stringify(parents) !== JSON.stringify([base, head])) return full('merge parents do not match the event base and head');

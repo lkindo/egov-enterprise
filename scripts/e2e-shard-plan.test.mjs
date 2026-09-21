@@ -118,14 +118,28 @@ test('push/manual/missing or forged event evidence cannot reduce execution', t =
   }
   assert.equal(resolveCiImpactPlan({ ...input, eventPath: 'missing-event.json' }).mode, 'full');
   assert.equal(resolveCiImpactPlan({ ...input, githubSha: 'f'.repeat(40) }).mode, 'full');
+  assert.equal(resolveCiImpactPlan({ ...input, githubSha: '' }).mode, 'full');
+  assert.equal(resolveCiImpactPlan({ ...input, githubSha: input.event.pull_request.head.sha }).mode, 'full');
   for (const mutate of [
     event => { event.pull_request.base.sha = 'f'.repeat(40); },
     event => { event.pull_request.head.sha = event.pull_request.base.sha; },
-    event => { event.pull_request.merge_commit_sha = event.pull_request.head.sha; },
     event => { event.pull_request.base.sha = 'HEAD'; },
   ]) {
     const event = structuredClone(input.event); mutate(event); fs.writeFileSync(input.eventPath, JSON.stringify(event));
     assert.equal(resolveCiImpactPlan(input).mode, 'full');
+  }
+});
+
+test('Actions merge SHA selects when the API mergeability field is null, absent or stale', t => {
+  const input = isolatedPullRequest(t);
+  for (const mergeCommitSha of [null, undefined, input.event.pull_request.head.sha]) {
+    const event = structuredClone(input.event);
+    event.pull_request.merge_commit_sha = mergeCommitSha;
+    fs.writeFileSync(input.eventPath, JSON.stringify(event));
+    const selected = resolveCiImpactPlan(input);
+    assert.equal(selected.mode, 'selected', selected.reasons.join('; '));
+    assert.equal(selected.checkoutSha, input.githubSha);
+    assert.equal(selected.selectedSpecs.length, 10);
   }
 });
 

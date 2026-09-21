@@ -14,7 +14,7 @@
 
 1. PR의 기존 파일 수정 중 검토한 화면 경로만 spec 전체 단위로 선별한다. 경로별 소유자와 교차 소비자는 [planner](../../../scripts/e2e-shard-plan.mjs)에 둔다. 공통 shell과 모든 품질 spec을 항상 포함한다. 공유 입력, 외부에서 소비하는 화면 내부 코드, 미등록 경로, 추가·삭제·이동, 비교 불가·빈 비교는 전수로 돌아간다. 보수적 과선택을 허용하며 일반 의존 그래프의 완전성을 주장하지 않는다.
 2. main/master push에서 E2E가 필요한 변경은 전수를 실행한다. 수동 실행 등 PR 이외의 실행도 전수다. [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md)의 온라인·이관 모듈 분류와 문서 fast path는 유지한다.
-3. CI 이벤트와 Git 비교에서 선택을 계산하고 결과 검증 단계에서 독립적으로 다시 계산한다. 보고용 plan JSON을 실행 권위로 읽지 않는다. 기존 2개 shard에 선택된 spec의 실측 가중치를 재배분하며 두 shard 모두 비어 있지 않아야 한다.
+3. CI 이벤트의 base/head SHA와 해당 실행의 `GITHUB_SHA`를 실제 checkout·정확한 두 부모 커밋과 대조한 뒤 선택을 계산하고 결과 검증 단계에서 독립적으로 다시 계산한다. [GitHub의 PR 실행 정의](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)에 따라 merge SHA는 `GITHUB_SHA`를 사용한다. 병합 가능 여부를 계산하는 API 필드 `merge_commit_sha`는 비어 있거나 과거 값일 수 있어 실행 권위로 사용하지 않는다. 보고용 plan JSON도 실행 권위로 읽지 않는다. 기존 2개 shard에 선택된 spec의 실측 가중치를 재배분하며 두 shard 모두 비어 있지 않아야 한다.
 4. 실행 전 두 프로젝트 전체를 `--list`로 수집한다. 결과 검증은 전체 파일 모집단을 확인하고 선택된 파일의 테스트 ID·project와 setup을 투영해 실제 결과와 대조한다. 파일·테스트 누락, 빈 실행, 잘못된 project, skip·flaky·오류를 허용하지 않는다. required context 6개와 격리 스택 소유권 검증은 유지한다.
 5. upstream CI의 캐시 writer는 온라인 `backend-scope` 하나다. 온라인 scope가 명시적으로 false인 이관 전용 실행에서만 `migration-scope`가 writer가 된다. 재사용·PIT 매트릭스, 별도 이관 점검·의존성 감사·릴리스 workflow는 읽기 전용이다. FE 전용 실행에는 writer가 없어도 된다. miss에서는 정상 다운로드와 검증을 수행한다.
 6. 생성된 독립 이관·재사용 제품 저장소는 자체 단일 검증 작업이 writer다. upstream의 읽기 전용 정책을 제품에 잘못 복제하지 않는다. dependency submission의 캐시 비활성·권한 경계, action SHA·MIT basic provider를 유지한다.

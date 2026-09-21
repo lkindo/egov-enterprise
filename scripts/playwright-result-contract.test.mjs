@@ -328,7 +328,7 @@ test('CI CLI independently binds event selection, full discovery, and both compl
   for (const script of ['playwright-result-contract.mjs', 'e2e-shard-plan.mjs', 'ci-change-scope.mjs', 'read-regular-file.mjs']) {
     write(`scripts/${script}`, fs.readFileSync(path.resolve('scripts', script), 'utf8'));
   }
-  write('event.json', JSON.stringify({ pull_request: { base: { sha: base }, head: { sha: head }, merge_commit_sha: merge } }));
+  write('event.json', JSON.stringify({ pull_request: { base: { sha: base }, head: { sha: head }, merge_commit_sha: null } }));
   const environment = { ...process.env, GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: path.join(temporary, 'event.json'),
     GITHUB_SHA: merge, NODE_PATH: path.resolve('frontend/node_modules') };
   const planner = path.join(temporary, 'scripts/e2e-shard-plan.mjs');
