@@ -293,7 +293,7 @@ function CalendarLayout() {
  {day > 0 && day <= 31 ? day : ''}
  </span>
  {day === 20 && (
- <div className="mt-2 p-1.5 bg-primary text-primary-foreground text-xs font-bold leading-tight rounded-sm shadow-lg shadow-primary/20 animate-in fade-in slide-in-from-bottom-2">
+ <div className="mt-2 p-1.5 bg-primary text-primary-foreground text-xs font-bold leading-tight rounded-sm shadow-lg shadow-primary/20">
  EGOV_TECH_SEMINAR_4.0
  </div>
  )}

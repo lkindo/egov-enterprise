@@ -13,7 +13,7 @@ import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useToast } from '@/app/components/ui/toast';
 import { requestFullExport } from '@/app/components/patterns/full-result-export';
 import { exportLoginLogsOperation } from '@/types/generated-operations';
-import { Terminal, Calendar, Globe, FileDown } from 'lucide-react';
+import { FileDown } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -76,7 +76,6 @@ const SystemLogsLoginClient = () => {
             header: '로그인 일련번호',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums">
-                    <Terminal size={12} className="opacity-30" />
                     {item.lgnSn}
                 </div>
             ),
@@ -88,7 +87,6 @@ const SystemLogsLoginClient = () => {
             sortKey: 'creatDt',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
-                    <Calendar size={14} className="opacity-30 text-primary" />
                     {item.creatDt ? item.creatDt.substring(0, 19).replace('T', ' ') : '-'}
                 </div>
             ),
@@ -98,9 +96,7 @@ const SystemLogsLoginClient = () => {
             header: '사용자ID',
             sortKey: 'loginId',
             accessor: (item: LoginLog) => (
-                <div className="flex items-center gap-2 px-3 py-1 bg-card border rounded-lg w-fit shadow-sm">
-                    <span className="text-xs font-bold text-foreground">{item.loginId || '-'}</span>
-                </div>
+                <span className="text-xs font-medium text-foreground">{item.loginId || '-'}</span>
             ),
             className: 'w-48'
         },
@@ -108,7 +104,6 @@ const SystemLogsLoginClient = () => {
             header: '접속IP',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
-                    <Globe size={12} className="opacity-30" />
                     {item.loginIp || '-'}
                 </div>
             ),
@@ -134,7 +129,7 @@ const SystemLogsLoginClient = () => {
             accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
                     {item.errOccrrAt === 'Y' ? (
-                        <span className="px-2 py-0.5 rounded-md text-xs font-bold border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20">
+                        <span className="px-2 py-0.5 rounded-md text-xs font-bold border bg-destructive/10 text-destructive-emphasis border-destructive/40">
                             {item.errorCode || '오류'}
                         </span>
                     ) : (

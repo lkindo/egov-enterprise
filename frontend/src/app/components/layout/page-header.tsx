@@ -20,18 +20,20 @@ interface PageHeaderProps {
   breadcrumbs?: BreadcrumbItem[];
   actions?: React.ReactNode;
   className?: string; // Standardize with Hub style
-  /** 업무형 archetype처럼 진입 모션을 금지하는 화면은 false로 둔다. */
-  animateEntrance?: boolean;
 }
 
-export function PageHeader({ title, breadcrumbs, actions, className, animateEntrance = true }: PageHeaderProps) {
+export function PageHeader({ title, breadcrumbs, actions, className }: PageHeaderProps) {
   // PageHeader 의 { label, href } 계약 → DynamicBreadcrumb 의 { name, href } 계약으로 변환
   const customItems = breadcrumbs?.map(({ label, href }) => ({ name: label, href }));
 
   return (
+    // [2026-09-22] 진입 모션과 그것을 끄던 `animateEntrance` 프롭을 함께 걷었다.
+    //   기본값이 true 라 **명시적으로 끄지 않은 화면 9개**가 700ms 페이드를 받았고,
+    //   actions 는 `delay-300 duration-1000` 이라 등록·저장 버튼이 1.3초 뒤에야 드러났다.
+    //   카탈로그 §3 이 금지하는 "첫 데이터 행 도달 지연" 의 헤더 판본이다.
+    //   끄는 프롭을 남기면 다음 사람이 화면마다 다시 false 를 적게 되므로 기본 동작을 고쳤다.
     <div className={cn(
       "flex flex-col gap-3 mb-6",
-      animateEntrance && "animate-in fade-in slide-in-from-left-4 duration-700",
       className,
     )}>
       {/*
@@ -61,10 +63,7 @@ export function PageHeader({ title, breadcrumbs, actions, className, animateEntr
         </div>
 
         {actions && (
-          <div className={cn(
-            "flex items-center gap-3 flex-wrap",
-            animateEntrance && "animate-in fade-in zoom-in-95 duration-1000 delay-300",
-          )}>
+          <div className="flex items-center gap-3 flex-wrap">
             {actions}
           </div>
         )}

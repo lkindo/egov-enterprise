@@ -29,8 +29,8 @@ vi.mock('../../codes/institution/InstitutionCodeClient', () => ({ default: ({ em
   <section>{!embedded && <nav aria-label="현재 위치" />}{embedded ? <h2>공공기관 코드 관리</h2> : <h1>공공기관 코드 관리</h1>}<div>기관 코드 목록</div></section>
 ) }));
 vi.mock('@/app/components/layout/page-header', () => ({
-  PageHeader: ({ title, animateEntrance }: { title: string; animateEntrance?: boolean }) => (
-    <header data-testid="common-code-page-header" data-entry-motion={animateEntrance ? 'enabled' : 'disabled'}>
+  PageHeader: ({ title }: { title: string }) => (
+    <header data-testid="common-code-page-header">
       <nav aria-label="현재 위치" /><h1>{title}</h1>
     </header>
   ),
@@ -73,7 +73,6 @@ describe('CommonCodeHubClient tabs', () => {
     const tabList = screen.getByRole('tablist', { name: '코드 유형 전환' });
     const standardPanel = screen.getByRole('tabpanel');
     const pageHeading = screen.getByRole('heading', { level: 1, name: '코드 관리' });
-    expect(screen.getByTestId('common-code-page-header')).toHaveAttribute('data-entry-motion', 'disabled');
     expect(pageHeading.compareDocumentPosition(tabList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(tabList.compareDocumentPosition(standardPanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(standardPanel).toHaveAttribute('aria-labelledby', 'code-hub-tab-standard');

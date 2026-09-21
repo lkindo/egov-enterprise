@@ -44,7 +44,6 @@ export default function WorkflowClient() {
         <div className="space-y-4 pb-6">
             <PageHeader
                 title="프로세스 설계 및 관제"
-                animateEntrance={false}
                 breadcrumbs={[{ label: '워크플로우' }, { label: '스튜디오' }]}
         actions={
                     <div className="flex gap-4">

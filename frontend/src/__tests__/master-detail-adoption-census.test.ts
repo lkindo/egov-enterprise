@@ -142,7 +142,9 @@ describe('A2 master-detail adoption census', () => {
     expect(route).toMatch(/<CommonCodeHubClient\b/);
     expect(hub).toMatch(/activeTab\s*===\s*['"]STANDARD['"]\s*\?\s*\(\s*<CommonCodeClient\b/);
     expect(hub.match(/<PageHeader\b/g)).toHaveLength(1);
-    expect(hub).toMatch(/<PageHeader\b[\s\S]*?animateEntrance=\{false\}/);
+    // [2026-09-22] 종전에는 `animateEntrance={false}` 를 여기서 단언했다. 그 프롭과 진입 모션을
+    //   공용 PageHeader 에서 함께 걷었으므로, 같은 불변식(A2 화면에 진입 모션 없음)은 이제
+    //   `entry-animation-guard` 가 src/app 전체에 대해 본다 — 적용 범위가 줄지 않는 중복 제거다.
     expect(hub).toMatch(/<CommonCodeClient\b[^>]*\bembedded\b\s*\/>/);
     expect(client).toMatch(/<MasterDetailPage\b/);
     expect(client).toMatch(/import \{[^}]*\bSortableCodeNode\b[^}]*\} from '\.\/CodeTreeNode'/);

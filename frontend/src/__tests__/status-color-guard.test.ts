@@ -198,7 +198,12 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [하향 래칫 2026-09-20(14)] 193 -> 188. 게시판 생성 마법사 4건 + 로그 대시보드 1건.
 //   마법사는 3단계 안내가 고정 라이트 배경 위에 테마 전경을 올려 다크에서 약 1.9:1 이었다.
 //   함께 정의되지 않은 유틸리티 2종(animate-bounce-short 등)과 진입 애니메이션도 걷었다.
-const BASELINE = 188;
+// [하향 래칫 2026-09-22(9)] 관리자 대시보드 지표 카드의 colorMap 을 `hub-*` 토큰으로 통일했다 —
+//   emerald/amber/rose 리터럴 9건(각 text·bg·border 3종). 이 색은 상태가 아니라 분류 표식이므로
+//   success/warning/destructive 로는 바꾸지 않았다(없는 의미를 주장하게 된다).
+// [하향 래칫 2026-09-22(4)] 로그인 로그 오류 배지의 rose 리터럴 4건 — 여기는 실제 오류 의미라
+//   destructive 토큰 매핑이 정확하다(저장소 선례: border-destructive/40 bg-destructive/10).
+const BASELINE = 175;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

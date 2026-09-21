@@ -41,9 +41,27 @@ const ALLOWED: Record<string, string> = {
     '도달 불가(리다이렉트) 화면 — 이행 대상이 아니다',
   'src/app/cop/sms/selectSmsList/SmsHubClient.tsx':
     '도달 불가(리다이렉트) alias — 이행 대상이 아니다',
+  // ── [2026-09-22] 정규식 확장으로 처음 보이게 된 3건 ────────────────────────
+  //   신규 위반이 아니라 종전 정규식이 구조적으로 못 보던 것들이다. 셋 다 위 docblock 이
+  //   이미 열어 둔 범주(오버레이 등장·상태 전환·지연시킬 데이터 없음)에 정확히 해당한다.
+  'src/app/components/ui/standard-search-filter.tsx':
+    '사용자가 눌러 펼친 필터 패널 — 조회 결과가 아니라 입력 영역의 열림 신호',
+  'src/app/components/ui/smart-onboarding-hub.tsx':
+    '온보딩 다이얼로그의 단계 교체 — 오버레이 안의 전환 신호',
+  'src/app/not-found.tsx':
+    '404 안내 카드 — loading.tsx 와 같은 사유로 지연시킬 데이터가 없다',
 };
 
-const ENTRY_ANIMATION = /animate-in fade-in duration-\d+/;
+/**
+ * ⚠ [2026-09-22 확장] 종전 정규식은 `/animate-in fade-in duration-\d+/` 로 **세 토큰이 인접할 때만**
+ *   매치했다. 실제 코드는 `animate-in fade-in slide-in-from-left-4 duration-700` 처럼 사이에 클래스가
+ *   끼는 형태가 많아 **6건만 보이고 6건이 통째로 안 보였다** — 규칙은 있는데 집행이 없는 자리였다.
+ *   그중 공용 `page-header.tsx` 는 기본값이 켜짐이라 9개 화면에 진입 페이드를 걸고 있었다.
+ *
+ *   `duration-*` 을 요구하지 않는 이유: 그 클래스가 없어도 Tailwind 기본 duration 이 적용되므로
+ *   **클래스 하나만 빼면 게이트를 우회**할 수 있다. 차단해야 하는 신호는 `animate-in fade-in` 자체다.
+ */
+const ENTRY_ANIMATION = /animate-in fade-in/;
 
 function sourceFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

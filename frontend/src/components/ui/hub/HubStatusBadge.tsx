@@ -30,7 +30,11 @@ export function HubStatusBadge({
     error: 'bg-destructive/15 text-destructive-emphasis'
   };
 
-  // Auto-variant based on status if not provided
+  // Auto-variant based on status if not provided.
+  // ⚠ [2026-09-22] 이 목록은 **편의이지 보장이 아니다.** 목록 밖 문구를 status 로만 넘기면
+  //   조용히 default(bg-muted)로 떨어져 서로 다른 두 상태가 **같은 색으로 렌더된다** —
+  //   공통코드('사용 중'/'미사용')와 배너('게시 중'/'대기 중')가 실제로 그랬고 배지 열이
+  //   아무것도 구분하지 못했다. 새 화면은 variant 를 명시해 의미를 자기 자리에서 선언할 것.
   let activeVariant = variant;
   if (variant === 'default' && status) {
     if (['활성', 'PUBLISHED', 'CONFIRMED'].includes(status)) activeVariant = 'success';
