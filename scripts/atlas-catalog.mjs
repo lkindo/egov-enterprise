@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
+import { BACKEND_LAYOUTS } from './reusable-layout.mjs';
 
 const compare = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 const normalize = text => text.replace(/\r\n?/g, '\n');
@@ -325,6 +326,34 @@ export function buildAtlasCatalog(repoRoot) {
   const packRecords = Object.entries(profiles.packs).map(([id, value]) => record(id, id, '재사용 manifest의 pack 선언. profile과 다른 분류 축입니다.', 'declared-pack', profileSource,
     { details: [detail('소스 구성', value.backend ?? {}), detail('DB 소유 선언', value.database ?? {}), detail('프론트 구성', value.frontend ?? {})] }));
 
+  // 소스 생성 진입점. 검증 runner(gates.json 파생)와 다른 축이라 별도 카탈로그로 둔다 —
+  // 게이트는 "red 로 증명되는 검사"이고 이 명령들은 "제품 소스를 만들어 내는 도구"다.
+  // 명령 문자열은 package.json 선언에서 파생하며, 레이아웃 값은 BACKEND_LAYOUTS 가 정본이다.
+  const generatorSource = 'package.json';
+  const layouts = BACKEND_LAYOUTS.join(' | ');
+  const GENERATOR_AXES = {
+    'base:generate-source': ['재사용 base 소스', `--profile · --layout(${layouts})`,
+      '프로필이 pack 단위로 파일을 제거하고(연쇄 포함) 레이아웃은 Gradle 구성만 바꾼다. 파일을 루트로 합치지 않는다.'],
+    'base:generate-db': ['재사용 base DB 번들', '--profile', '프로필별 스키마·시드 번들. 레이아웃과 무관하게 같은 번들을 쓴다.'],
+    'base:verify': ['생성 + 기술 검증', `--profile · --layout(${layouts})`, 'CI가 세 프로필 × 두 레이아웃으로 실행하는 진입점이다.'],
+    'project:catalog': ['선택 가능 도메인 조회', '(인자 없음)', '읽기 전용 조회다. 산출물을 만들지 않는다.'],
+    'project:plan': ['생성 계획 산출', '선택 명세', '읽기 전용 계획이다. 산출물을 만들지 않는다.'],
+    'project:create': ['도메인 선택형 프로젝트', '선택 명세', 'Foundation/Core에 선택한 업무 도메인을 더한 독립 소스를 만든다.'],
+    'project:ui': ['선택 생성기 로컬 UI', 'loopback', '별도 loopback 서버를 띄운다. CLI와 같은 엔진을 쓴다.'],
+    'migration:export': ['독립 이관 도구 산출물', '(인자 없음)', '온라인 앱과 분리된 offline CLI 산출물이다.'],
+  };
+  const generatorRecords = Object.entries(GENERATOR_AXES).map(([id, [produces, axes, note]]) => {
+    const command = requireValue(rootPackage.scripts?.[id], `generator script missing: ${id}`);
+    const script = requireValue(command.match(/\bscripts\/[\w.-]+\.mjs\b/)?.[0], `generator script path missing: ${id}`);
+    io.read(script);
+    return record(id, id, `${produces} · ${note} 생성 성공은 기술 검증도 기관 운영 승인도 아닙니다.`,
+      'declared-generator', generatorSource,
+      { details: [detail('실행 명령', command), detail('선택 축', axes), detail('산출물', produces),
+        detail('기술 검증·기관 승인', 'UNVERIFIED — 각각 별도 절차')],
+        links: [{ label: '구현', path: script }, { label: '재사용 생성 가이드', path: 'docs/03-guides/reusable-base-guide.md' },
+          { label: '선택 생성기 가이드', path: 'docs/03-guides/project-composer-guide.md' }] });
+  });
+
   const routeRecords = routeInventory.routes.map(route => {
     io.read(route.source);
     const capabilities = (route.capabilities ?? []).map(capability => Object.fromEntries(
@@ -457,7 +486,7 @@ export function buildAtlasCatalog(repoRoot) {
     gradleVersion: requireValue(io.read('gradle/wrapper/gradle-wrapper.properties').match(/gradle-([^/]+)-bin\.zip/)?.[1], 'Gradle version not found'),
   };
   requireValue(rootPackage.engines?.node, 'root Node engine missing');
-  const catalogs = { modules: moduleRecords, domains: domainRecords, profiles: profileRecords, packs: packRecords, routes: routeRecords,
+  const catalogs = { modules: moduleRecords, domains: domainRecords, profiles: profileRecords, packs: packRecords, generators: generatorRecords, routes: routeRecords,
     operations: operationRecords, constitutions: constitutionRecords, gates: gateRecords, runners: runnerRecords,
     executionProfiles: executionRecords, requiredChecks: requiredRecords, workflows: workflowRecords, documents: documentRecords,
     decisions: decisionRecords, gaps: gapRecords, memory: memoryRecords };
