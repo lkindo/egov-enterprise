@@ -48,15 +48,21 @@ npm run review:migration
 | `scopeDigest` | `review:status`의 `sourceScope.digest`; 현재 제품·프로필의 소스·정책 범위 |
 | `evidence` | 통제마다 `{control, path, sha256}` 하나씩; 경로는 저장소 내부의 실제 근거 파일 |
 
-온라인 통제는 다음 다섯 가지다.
+온라인 통제는 다음 일곱 가지다.
 
 | control | 검토 내용 |
 |---|---|
 | `data-classification` | 실제 업무 데이터, 허용 URL 상태·검색 안내·입력 목적, 기관의 노출 허용 범위 |
-| `authorization` | 실제 그룹·기능·메뉴·객체 접근과 허용/거부 결과 |
+| `authorization` | 실제 그룹·기능·메뉴·객체 접근과 허용/거부 결과. 배포 시점의 앱 버전과 구 권한 writer의 종료, 그 뒤의 로그인·복수 그룹·권한 회수·메뉴 동작을 함께 확인한다 — DB 적용만으로는 증명되지 않는다 |
 | `request-logging` | 프록시·WAF·앱·분석 도구의 수집 필드, 검색어 복제·보존·접근 정책 |
 | `accessibility` | 기관 화면·사용자·지원 환경의 접근성 및 필요한 수동 평가 |
+| `backup-recovery` | 실제 백업 세트의 존재와 접속 토폴로지, 목표 RTO/RPO, 운영 규모 restore drill과 복원 후 앱 smoke 결과 |
+| `crypto-lifecycle` | 이 환경의 암호 자재 상태 — 노출 가능했던 자격의 회전·폐기 완료, 그리고 레거시 password hash·이전 키 암호문의 read-only census와 호환 adapter 처분 판단 |
 | `execution-artifacts` | 실제 실행 descriptor의 경로와 SHA-256; 배포할 API·프런트 이미지 digest를 명시 |
+
+⚠ `backup-recovery`·`crypto-lifecycle` 두 통제는 2026-09-21 에 공용 gap 인덱스에서 이전했다(DEC-OPS-107). 원본 저장소에는 운영 환경이 없어 그 증거를 만들 대상 자체가 없다 — 의무의 수신자가 원본이 아니라 채택 기관이기 때문이다. 원본에서 닫히지 않았다는 사실이 채택 환경에서 면제된다는 뜻은 아니다.
+
+⚠ 자격·키의 **값**은 근거 파일에 적지 않는다. 회전 수행 사실·대상 범위·관측 시점만 남기고, 값은 기관의 비밀 관리 경로에 둔다.
 
 근거 파일에는 대상·검토 범위·결과·관측 시점과 필요한 후속 작업을 남긴다. 비밀·개인정보·원시 운영 로그는 넣지 않는다. 파일의 SHA-256은 내용 결속을 확인할 뿐, 검토 내용의 적절성이나 작성자의 신원을 자동 증명하지 않는다.
 

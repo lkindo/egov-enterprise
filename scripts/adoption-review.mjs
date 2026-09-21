@@ -3,8 +3,16 @@ import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 
+/*
+  온라인 통제 두 가지(`backup-recovery`·`crypto-lifecycle`)는 2026-09-21 에 공용 gap 인덱스에서
+  이전한 것이다(DEC-OPS-107). 원본 저장소에는 운영 환경이 없어 백업 세트·자격 회전·레거시 암호문
+  census 를 증명할 대상 자체가 없다 — 그 의무의 수신자는 원본이 아니라 **채택 기관**이다.
+  활성 gap 으로 두면 영원히 닫히지 않고, 지우면 채택자가 확인된 것으로 오인한다. 그래서 여기로 옮겨
+  기관 승인이 근거를 요구하게 한다(DEC-OPS-020 이 연구·live census 4축에 쓴 것과 같은 패턴).
+*/
 export const ADOPTION_CONTROLS = Object.freeze({
-  online: ['data-classification', 'authorization', 'request-logging', 'accessibility', 'execution-artifacts'],
+  online: ['data-classification', 'authorization', 'request-logging', 'accessibility',
+    'backup-recovery', 'crypto-lifecycle', 'execution-artifacts'],
   'migration-tool': ['source-target-identity', 'mapping-schema-driver', 'recovery-cutover', 'execution-artifacts'],
 });
 const PROFILES = new Set(['core', 'collaboration', 'demo', 'custom']);

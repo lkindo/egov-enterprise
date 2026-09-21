@@ -537,8 +537,22 @@ test('memory registries use unique IDs and allowed gap states', () => {
   const allText = Object.keys(documents)
     .map((file) => fs.readFileSync(path.join(memoryDir, file), 'utf8'))
     .join('\n');
-  const ids = [...allText.matchAll(/^\| ((?:CTX|ADR|DEC|GAP)-[A-Z0-9-]+) \|/gm)].map((match) => match[1]);
+  /*
+    `| GAP-ID |` 는 표 머리글이지 memory ID 가 아니다 — 바로 아래 행 검사가 이미 `(?!ID\b)` 로
+    그렇게 본다. 종전 수집기만 그 예외를 몰라, 표가 둘이 되면(활성 registry + 외부 증거 대기)
+    머리글끼리 중복으로 잡혔다. 같은 의도로 맞춘다.
+    ⚠ 완화가 아님을 아래 합성 probe 가 증명한다 — 진짜 중복은 그대로 잡힌다.
+  */
+  const collectIds = (text) =>
+    [...text.matchAll(/^\| ((?:CTX|ADR|DEC|GAP)-(?!ID\b)[A-Z0-9-]+) \|/gm)].map((match) => match[1]);
+  const ids = collectIds(allText);
   assert.equal(ids.length, new Set(ids).size, `중복 memory ID가 있습니다: ${ids.join(', ')}`);
+
+  // 머리글은 몇 개가 있어도 ID 가 아니고, 실제 ID 중복은 반드시 잡힌다.
+  assert.deepEqual(collectIds('| GAP-ID | 우선순위 |\n| GAP-ID | 우선순위 |'), []);
+  const duplicated = collectIds('| GAP-X-001 | P1 |\n| GAP-X-001 | P2 |');
+  assert.equal(duplicated.length, 2);
+  assert.equal(new Set(duplicated).size, 1, '합성 중복이 잡히지 않으면 이 검사는 무력하다');
 
   const gaps = fs.readFileSync(path.join(memoryDir, 'known-gaps.md'), 'utf8');
   const rows = gaps.split(/\r?\n/).filter((line) => /^\| GAP-(?!ID\b)/.test(line));
