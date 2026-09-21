@@ -76,6 +76,7 @@ test('audited cross-route consumers are retained in the candidate population', (
 });
 
 function isolatedPullRequest(t, { changedPath = 'frontend/src/app/admin/operation/rewards/page.tsx', consumer = '',
+  consumerPath = 'frontend/src/components/consumer.ts',
   tsconfig = { compilerOptions: { paths: { '@/*': ['./src/*'] } } } } = {}) {
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-impact-git-'));
   const git = (...args) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -87,7 +88,7 @@ function isolatedPullRequest(t, { changedPath = 'frontend/src/app/admin/operatio
   git('init', '-b', 'main'); git('config', 'user.name', 'E2E Contract Fixture'); git('config', 'user.email', 'fixture@example.invalid');
   write('frontend/tsconfig.json', JSON.stringify(tsconfig));
   write(changedPath, 'export const value = 1;\n');
-  write('frontend/src/components/consumer.ts', consumer || 'export const independent = true;\n');
+  write(consumerPath, consumer || 'export const independent = true;\n');
   git('add', '.'); git('commit', '-m', 'base fixture'); const base = git('rev-parse', 'HEAD');
   git('checkout', '-b', 'feature'); write(changedPath, 'export const value = 2;\n');
   git('add', '.'); git('commit', '-m', 'route fixture'); const head = git('rev-parse', 'HEAD');
@@ -141,6 +142,22 @@ test('an existing external consumer, including re-export/type/dynamic forms, for
     const plan = resolveCiImpactPlan(input);
     assert.equal(plan.mode, 'full', consumer);
     assert.match(plan.reasons[0], /external source consumer|computed source import/);
+  }
+});
+
+test('only complete test-directory segments and test filename suffixes exclude source consumers', t => {
+  const consumer = "export { value } from '@/app/admin/operation/rewards/page';";
+  for (const [relative, mode] of [
+    ['__tests__/consumer.ts', 'selected'],
+    ['consumer.spec.ts', 'selected'],
+    ['consumer.test.tsx', 'selected'],
+    ['__tests__suffix/consumer.ts', 'full'],
+    ['consumer.test.helper.ts', 'full'],
+  ]) {
+    const input = isolatedPullRequest(t, { consumer, consumerPath: `frontend/src/components/${relative}` });
+    const plan = resolveCiImpactPlan(input);
+    assert.equal(plan.mode, mode, relative);
+    if (mode === 'full') assert.match(plan.reasons[0], /external source consumer/);
   }
 });
 

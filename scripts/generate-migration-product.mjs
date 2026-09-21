@@ -13,7 +13,7 @@ export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
   'scripts/verify.mjs', 'scripts/migration-verification-contract.test.mjs', 'scripts/required-checks-contract.mjs',
   'scripts/adoption-review.mjs', 'scripts/adoption-execute.mjs', 'scripts/adoption-execute.test.mjs',
   'scripts/verify-reusable-artifact.mjs', 'scripts/reusable-layout.mjs', 'scripts/governance-review.mjs', 'scripts/e2e-shard-plan.mjs',
-  'scripts/ci-change-scope.mjs',
+  'scripts/ci-change-scope.mjs', 'scripts/read-regular-file.mjs',
   '.github/workflows/migration-tool.yml',
 ]);
 

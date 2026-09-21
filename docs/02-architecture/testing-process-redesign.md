@@ -394,4 +394,6 @@ Windows의 새 격리 스택에서 설문 선택 10개 spec을 직접 실행했�
 
 계획기·결과 검증은 실제 임시 Git PR merge와 CLI 실행으로 PR 선택/main 전수, 잘못된 SHA·부모, 외부 import, 선택 파일 누락·중복·다른 shard·필터된 discovery·setup 제거를 검증한다. 소유 매핑 누락 변이와 캐시 writer 역할 변경·제거도 실패해야 한다. 이 계약 red와 실제 제품 UI 결함 주입은 별개의 증거다.
 
+제품 UI의 대표 결함도 별도 격리 worktree에서 검증했다. 커밋 `6d6dd4a78`의 설문 관리 h1 문구만 임시로 변경한 run `ab3fd4a10e04652c81e72bc8`에서 선택된 10개 spec 중 `online-polls.spec.ts`의 두 테스트가 해당 제목 검증에서 실패했다. 결과는 성공 26·실패 2·기존 Windows VRT 제외 1, 재시도·flaky·global error 0이었다. DOM·trace에서 바뀐 h1과 설문 생성 HTTP 200을 확인했고, 소스 복원·소유 DB와 앱 종료·runtime manifest 제거를 확인했다. 이 증거는 대표 설문 회귀 탐지에 한정하며, 같은 결함의 전수 50개 spec 비교는 실행하지 않았다.
+
 캐시의 기존 키 복원과 중복 저장 방지는 구분한다. basic provider의 reader는 저장 API에 진입하지 않도록 설정하고, CI의 writer 후보 두 개는 backend 선택 여부로 배타적으로 결정한다. FE 전용 변경·writer 실패에 새 writer를 승격하지 않는다. 기존 불변 캐시가 이미 있으면 workflow 변경만으로 새로운 cold 저장을 실증할 수 없다. 다른 실행의 취소·종료 경합까지 전역 잠금으로 직렬화하지 않는다.

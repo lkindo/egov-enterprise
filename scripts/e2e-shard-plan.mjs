@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { classifyChangedFiles } from './ci-change-scope.mjs';
+import { readRegularFile } from './read-regular-file.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROFILE_PATH = path.join(REPO_ROOT, 'frontend', 'e2e', 'shard-duration-profile.json');
@@ -145,11 +146,11 @@ export function routeBoundaryRisk(changes, { repoRoot = REPO_ROOT, rules = IMPAC
     if (gitRead(repoRoot, ['ls-files', '--others', '--exclude-standard', '--', 'frontend/src'])) return 'untracked source input';
     const activeRules = rules.filter(rule => changes.some(change => rule.prefixes.some(prefix => change.path.startsWith(prefix))));
     const files = gitRead(repoRoot, ['ls-files', '-z', '--', 'frontend/src']).split('\0').filter(file => /\.[cm]?[jt]sx?$/.test(file)
-      && !/(?:^|\/)__tests__\/|\.(?:test|spec)\.[^/]+$/.test(file));
+      && !file.split('/').includes('__tests__')
+      && !/^.*\.(?:test|spec)\.[^.]+$/.test(path.posix.basename(file)));
     for (const file of files) {
       const absolute = path.join(repoRoot, file);
-      if (fs.lstatSync(absolute).isSymbolicLink()) return 'symbolic source dependency';
-      const source = ts.createSourceFile(file, fs.readFileSync(absolute, 'utf8'), ts.ScriptTarget.Latest, true);
+      const source = ts.createSourceFile(file, readRegularFile(absolute, { encoding: 'utf8' }), ts.ScriptTarget.Latest, true);
       if (source.parseDiagnostics.length) return 'source import analysis failed';
       let risk = null;
       const inspect = module => {

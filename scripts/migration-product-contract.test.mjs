@@ -50,6 +50,7 @@ test('standalone migration export retains independent verification and clears in
   for (const [dependency, entrypoint] of [
     ['reusable-layout.mjs', 'adoption-execute.mjs'],
     ['ci-change-scope.mjs', 'governance-review.mjs'],
+    ['read-regular-file.mjs', 'governance-review.mjs'],
   ]) {
     const missingHelper = resolve(outputRoot, 'scripts', dependency);
     const helperContent = readFileSync(missingHelper);
