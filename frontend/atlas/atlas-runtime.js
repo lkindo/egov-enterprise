@@ -9,6 +9,7 @@
   };
   const labels = {
     modules: '구성 모듈', domains: '도메인 소스', profiles: '재사용 프로필', packs: '기능 pack',
+    generators: '소스 생성 진입점',
     routes: '화면 역량', operations: 'API operation', constitutions: '헌법 조항',
     gates: '검증 게이트', runners: '실행 runner', executionProfiles: '검증 실행 프로필',
     requiredChecks: '필수 CI 검사', workflows: '워크플로', documents: '문서',
