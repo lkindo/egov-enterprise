@@ -216,7 +216,6 @@ export function SmartNotificationHub() {
               emptyMessage="표시할 알림이 없습니다."
               error={error}
               onRetry={refresh}
-              isPremium={true}
               className="border-none bg-transparent shadow-none"
             />
           </div>

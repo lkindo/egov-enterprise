@@ -98,7 +98,6 @@ interface StandardDataTableBaseProps<T> {
   bulkActions?: BulkAction<T>[];
   keyField?: keyof T;
   className?: string;
-  isPremium?: boolean;
   /** ErrorStateDisplay와 동일하게 문자열·axios 오류·Error를 모두 전달할 수 있다. */
   error?: unknown;
   onRetry?: () => void;
@@ -201,7 +200,7 @@ function DataRowComponent<T extends object>({
       )}
     >
       {enableSelection && (
-        <td className="px-[var(--cell-px)] py-4 text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <td className="px-[var(--cell-px)] py-[var(--cell-py)] text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
@@ -260,7 +259,6 @@ export function StandardDataTable<T extends object>({
   bulkActions = [],
   keyField: keyFieldProp,
   className,
-  isPremium = true,
   error = null,
   onRetry,
   pagination,
@@ -417,7 +415,7 @@ export function StandardDataTable<T extends object>({
   const tableRows = table.getRowModel().rows;
 
   return (
-    <div className={cn("space-y-6", isPremium ? "animate-in fade-in slide-in-from-bottom-4 duration-700" : "", className)}>
+    <div className={cn("space-y-6", className)}>
       {/* Search Bar integration if provided */}
       {search && (
         <form onSubmit={handleSearchSubmit} role="search" className="relative group max-w-md">
@@ -509,8 +507,7 @@ export function StandardDataTable<T extends object>({
           accessor 가 행×열마다 2회 실행되고 accessor 가 만든 testid·aria-label 이 2벌씩 생겼다.
           md 미만 카드 표현은 globals.css 의 `.standard-data-table-responsive` 규칙이 담당한다. */}
       <div className={cn(
-        "block w-full border-2 border-border/60 bg-card shadow-sm transition-all relative outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-        isPremium ? "rounded-2xl" : "rounded-lg",
+        "block w-full rounded-md border border-border bg-card relative outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
         stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-x-auto overflow-y-hidden"
       )}
         data-slot="standard-data-table-scroll-region"
@@ -547,7 +544,7 @@ export function StandardDataTable<T extends object>({
                     <th
                       key={`header-${idx}`}
                       className={cn(
-                        "px-[var(--cell-px)] py-[var(--cell-py)] font-bold text-foreground text-xs uppercase tracking-[0.25em] whitespace-nowrap",
+                        "px-[var(--cell-px)] py-[var(--cell-py)] font-semibold text-foreground text-xs whitespace-nowrap",
                         column.className
                       )}
                       scope="col"
@@ -563,7 +560,7 @@ export function StandardDataTable<T extends object>({
                           onClick={tanColumn.getToggleSortingHandler()}
                           // 서버 페이지네이션은 그대로다 — 정렬 범위를 정직하게 문서화한다.
                           title="현재 페이지의 행만 정렬합니다"
-                          className="flex items-center gap-2 font-bold uppercase tracking-[0.25em] text-foreground transition-colors hover:text-primary outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
+                          className="flex items-center gap-2 font-semibold text-foreground transition-colors hover:text-primary outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           {column.header}
                           {sortDirection === 'asc' ? (
@@ -573,12 +570,10 @@ export function StandardDataTable<T extends object>({
                           ) : (
                             <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/70" aria-hidden="true" />
                           )}
-                          <span className="w-1 h-1 bg-primary/30 rounded-full" aria-hidden="true" />
                         </button>
                       ) : (
                         <div className="flex items-center gap-2">
                           {column.header}
-                          <div className="w-1 h-1 bg-primary/30 rounded-full" />
                         </div>
                       )}
                     </th>
@@ -613,13 +608,13 @@ export function StandardDataTable<T extends object>({
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-[var(--cell-px)] py-20 text-center">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-[var(--cell-px)] py-10 text-center">
                     <ErrorStateDisplay error={error} onRetry={onRetry} />
                   </td>
                 </tr>
               ) : (data || []).length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-[var(--cell-px)] py-20 text-center" data-testid="empty-table-msg">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-[var(--cell-px)] py-10 text-center" data-testid="empty-table-msg">
                     <EmptyStateDisplay message={resolvedEmptyMessage} description={emptyDescription} />
                   </td>
                 </tr>

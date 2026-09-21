@@ -523,7 +523,6 @@ export function BoardMasterListClient() {
           loading={isLoading}
           error={isError ? error : null}
           onRetry={() => refetch()}
-          isPremium={false}
           enableSelection={canUpdate || canDelete}
           keyField="bbsId"
           bulkActions={[

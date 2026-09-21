@@ -66,7 +66,7 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   이었다. 댓글 카드의 반투명 흰색 표면도 함께 회수했다.
 // [하향 래칫 2026-09-20(8)] 25 -> 21. 쪽지함 4건. 상세 모달의 작성 시각이 중립 리터럴로
 //   라이트에서 약 1.5:1 이었고, 본문 패널의 흰색 링이 다크에서 밝은 테두리로 남았다.
-const BASELINE = 21;
+const BASELINE = 18;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
