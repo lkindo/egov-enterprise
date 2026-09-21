@@ -414,7 +414,6 @@ export default function SmsHubClient({
                         onRetry={() => refetch()}
                         keyField="smsTrsmSn"
                         emptyMessage="검색된 메시지 발송 내역이 존재하지 않습니다."
-                        isPremium={true}
                         className="border-none shadow-none bg-transparent"
                         pagination={{
                           currentPage: page,

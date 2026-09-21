@@ -1143,7 +1143,6 @@ export default function UserOrgHubClient({
                   // ⚠ e2e(23-security-auth-supplement E12)가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
                   emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 검색 결과가 없습니다.` : '데이터가 존재하지 않습니다.'}
                   // 업무형 화면은 진입 애니메이션을 두지 않는다(카탈로그 §3 금지 목록).
-                  isPremium={false}
                   enableSelection={true}
                   bulkActions={userBulkActions}
                   className="border-none shadow-none bg-transparent"

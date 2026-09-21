@@ -1,7 +1,6 @@
-import { AlertCircle, RefreshCw, Search, List } from 'lucide-react';
+import { AlertCircle, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import { userFacingErrorMessage } from '@/lib/safe-error-log';
 
 /**
@@ -27,13 +26,11 @@ export function ErrorStateDisplay({
   const detailMessage = extractErrorMessage(error);
 
   return (
-    <motion.div
+    <div
       data-testid="error-state-display"
       role="alert"
       aria-live="assertive"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={cn("flex flex-col items-center justify-center gap-6 py-12 text-center", className)}
+      className={cn("flex flex-col items-center justify-center gap-3 py-8 text-center", className)}
     >
       <div className="w-16 h-16 bg-rose-50 dark:bg-rose-900/10 rounded-full flex items-center justify-center mb-2 relative border-4 border-rose-100 dark:border-rose-900/20 shadow-xl">
         <AlertCircle size={36} className="text-rose-500" aria-hidden="true" />
@@ -55,10 +52,10 @@ export function ErrorStateDisplay({
         <Button
           type="button"
           variant="outline"
-          size="lg"
+          size="sm"
           aria-label="데이터 다시 불러오기"
           data-testid="error-state-retry"
-          className="rounded-lg font-bold text-xs tracking-[0.1em] border-2 px-10 hover:bg-surface-inverse hover:text-white dark:hover:bg-primary transition-all group shadow-lg"
+          className="rounded-md text-xs px-4 hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-colors group"
           onClick={() => {
             if (onRetry) {
               onRetry();
@@ -73,7 +70,7 @@ export function ErrorStateDisplay({
           다시 시도
         </Button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -100,22 +97,15 @@ export function EmptyStateDisplay({
   className?: string;
 }) {
   return (
-    <motion.div
+    <div
       data-testid="empty-state-display"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={cn("flex flex-col items-center justify-center gap-6 py-12 text-center", className)}
+      className={cn("flex flex-col items-center justify-center gap-3 py-8 text-center", className)}
     >
-      <div className="w-20 h-11 bg-muted/30 rounded-lg flex items-center justify-center mb-2 relative">
-        <Search size={40} className="text-muted-foreground/20" aria-hidden="true" />
-        <div className="absolute -right-1 -bottom-1 w-8 h-8 bg-background border-2 border-border rounded-lg flex items-center justify-center">
-          <List size={14} className="text-muted-foreground" aria-hidden="true" />
-        </div>
-      </div>
+      <Search size={20} className="text-muted-foreground" aria-hidden="true" />
       <div className="space-y-2">
-        <p className="text-xl font-bold text-foreground tracking-tighter">{message}</p>
+        <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">{message}</p>
         {description ? (
-          <p className="text-xs text-foreground dark:text-muted-foreground font-bold tracking-tight max-w-[320px] mx-auto leading-relaxed">
+          <p className="text-xs text-muted-foreground max-w-[320px] mx-auto leading-relaxed">
             {description}
           </p>
         ) : null}
@@ -124,16 +114,16 @@ export function EmptyStateDisplay({
         <Button
           type="button"
           variant="outline"
-          size="lg"
+          size="sm"
           aria-label="목록 다시 불러오기"
           data-testid="empty-state-retry"
-          className="mt-6 rounded-lg font-bold text-xs tracking-[0.2em] border-2 px-10 hover:bg-surface-inverse hover:text-white dark:hover:bg-primary transition-all group"
+          className="rounded-md text-xs px-4 hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-colors group"
           onClick={onRetry}
         >
           <RefreshCw size={14} className="mr-2 group-hover:rotate-180 transition-transform duration-700" aria-hidden="true" />
           다시 불러오기
         </Button>
       ) : null}
-    </motion.div>
+    </div>
   );
 }
