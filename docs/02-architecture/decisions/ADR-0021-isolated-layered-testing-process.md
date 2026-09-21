@@ -4,6 +4,7 @@
 - 결정일: 2026-09-21
 - 승인 범위: 사용자 요청에 따른 테스트 재배치·분할·합병, CI 최적화 및 격리 E2E 실행
 - 관련: [프로세스·이전표](../testing-process-redesign.md), [실행 가이드](../../03-guides/e2e-test-guide.md), [CI 가이드](../../03-guides/cicd-pipeline.md)
+- 부분 대체: 결정 4의 main/master 전수 강제와 CI 모듈 실행 경계는 [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md)가 대체한다. E2E 전수·shadow·격리 및 실패 신호 보존 결정은 유지한다.
 
 ## 맥락
 

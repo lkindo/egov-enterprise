@@ -1,35 +1,9 @@
 name: Independent migration tool verification
 
 on:
-  push:
-    branches: [main, master]
-    paths:
-      - 'migration-tool/**'
-      - '**/*.gradle'
-      - 'gradle/**'
-      - 'gradle.properties'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - '.nvmrc'
-      - 'package.json'
-      - 'scripts/verify.mjs'
-      - 'scripts/migration-verification-contract.test.mjs'
-      - 'scripts/required-checks-contract.mjs'
-      - '.github/workflows/migration-tool.yml'
-  pull_request:
-    paths:
-      - 'migration-tool/**'
-      - '**/*.gradle'
-      - 'gradle/**'
-      - 'gradle.properties'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - '.nvmrc'
-      - 'package.json'
-      - 'scripts/verify.mjs'
-      - 'scripts/migration-verification-contract.test.mjs'
-      - 'scripts/required-checks-contract.mjs'
-      - '.github/workflows/migration-tool.yml'
+  # Full independent-module regression; ordinary PR/push execution belongs to ci.yml.
+  schedule:
+    - cron: '23 18 * * 0'
   workflow_dispatch:
 
 permissions:
@@ -42,7 +16,7 @@ concurrency:
 jobs:
   migration-tool:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -57,7 +31,9 @@ jobs:
           java-version: '21'
           distribution: temurin
 
-      - uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70  # v3
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
+        with:
+          cache-provider: basic
 
       - name: Allow the checked-in Gradle wrapper to run
         run: chmod +x gradlew
@@ -70,5 +46,15 @@ jobs:
         with:
           name: migration-tool-${{ github.sha }}
           path: migration-tool/build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Retain independent migration coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: migration-coverage-${{ github.sha }}
+          path: |
+            build/reports/jacoco/migration
+            build/reports/jacoco/jacocoMigrationReport/jacocoMigrationReport.xml
           if-no-files-found: error
           retention-days: 7

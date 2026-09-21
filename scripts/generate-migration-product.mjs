@@ -53,8 +53,8 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
   write('config/governance/migration-adoption-review.json', `${JSON.stringify(createPendingAdoptionReview({ product: 'migration-tool', profile: null }), null, 2)}\n`);
   // Reuse the same module CI and contract. The exported product adds its execution-boundary tests.
   const workflowPath = '.github/workflows/migration-tool.yml';
-  write(workflowPath, readFileSync(join(outputRoot, workflowPath), 'utf8').replaceAll(
-    "      - 'scripts/verify.mjs'", "      - 'scripts/verify.mjs'\n      - 'scripts/adoption-*.mjs'\n      - 'scripts/governance-review.mjs'\n      - 'scripts/verify-reusable-artifact.mjs'\n      - 'scripts/reusable-layout.mjs'\n      - 'scripts/e2e-shard-plan.mjs'\n      - 'config/governance/**'\n      - '.githooks/**'").replace(
+  write(workflowPath, readFileSync(join(outputRoot, workflowPath), 'utf8').replace(
+    'on:\n', 'on:\n  push:\n    branches: [main, master]\n  pull_request:\n').replace(
     '      - name: Verify the independent migration module',
     '      - name: Verify institution execution boundary\n        run: node --test scripts/adoption-execute.test.mjs\n\n      - name: Verify the independent migration module'));
   const scope = adoptionScope(outputRoot, { product: 'migration-tool', profile: null });

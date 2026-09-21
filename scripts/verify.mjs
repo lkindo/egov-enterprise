@@ -116,7 +116,7 @@ try {
     // ADR-0018: module tests use disposable fixtures; this never invokes the
     // migration CLI against adopter data or grants an operational load approval.
     run('node --test scripts/migration-verification-contract.test.mjs');
-    run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
+    run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar jacocoMigrationCoverageVerification --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
   }
 
   console.log(`\n✅ [verify:${scope}] 요청 범위 검증 통과`);

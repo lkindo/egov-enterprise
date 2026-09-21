@@ -48,7 +48,7 @@
       "jobId": "secret-scan",
       "name": "Require complete dependency snapshots",
       "run": "node scripts/dependency-snapshot-readiness.mjs",
-      "if": "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.frontend == 'true')",
+      "if": "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.migration == 'true' || needs.change-scope.outputs.frontend == 'true')",
       "env": {
         "GITHUB_TOKEN": "${{ github.token }}",
         "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
@@ -60,7 +60,7 @@
       "jobId": "secret-scan",
       "name": "Block newly introduced high-risk runtime dependencies",
       "uses": "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294",
-      "if": "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.frontend == 'true')"
+      "if": "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.migration == 'true' || needs.change-scope.outputs.frontend == 'true')"
     },
     {
       "jobId": "frontend-scope",
@@ -94,27 +94,48 @@
       "needs": [
         "change-scope",
         "backend-scope",
+        "migration-scope",
         "reusable-base"
       ],
       "jobIf": "always()",
-      "aggregate": {
-        "sourceJobId": "backend-scope",
-        "sourceNeeds": [
-          "change-scope"
-        ],
-        "sourceJobIf": "needs.change-scope.outputs.backend == 'true'",
-        "sourceStepName": "Build and Test with Gradle",
-        "sourceRun": "set -o pipefail\n./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
-        "sourceWorkingDirectory": null,
-        "sourceEnv": {},
-        "aggregateStepName": "백엔드 범위 결과 집계",
-        "aggregateRun": "node scripts/aggregate-required-check.mjs",
-        "resultExpression": "needs.backend-scope.result",
-        "successResult": "success",
-        "scopeExpression": "needs.change-scope.outputs.backend",
-        "classifierResultExpression": "needs.change-scope.result",
-        "skippedResult": "skipped"
-      }
+      "aggregate": [
+        {
+          "sourceJobId": "backend-scope",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.backend == 'true'",
+          "sourceStepName": "Build and Test with Gradle",
+          "sourceRun": "set -o pipefail\n./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {},
+          "aggregateStepName": "백엔드 범위 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.backend-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.backend",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "migration-scope",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "needs.change-scope.outputs.migration == 'true'",
+          "sourceStepName": "Verify the independent migration module",
+          "sourceRun": "node scripts/verify.mjs migration",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {},
+          "aggregateStepName": "이관 도구 범위 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.migration-scope.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs.migration",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        }
+      ]
     },
     {
       "context": "frontend-build",

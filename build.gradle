@@ -461,6 +461,114 @@ tasks.register('jacocoRootCoverageVerification', JacocoCoverageVerification) {
     }
 }
 
+// CI executes the online product and the independent migration CLI separately.
+// The root report above remains the full local aggregate. These scopes keep the
+// same exclusions and thresholds, without borrowing another scope's old .exec.
+def onlineCoverageProjects = subprojects.findAll { it.name != 'migration-tool' }
+def migrationCoverageProjects = subprojects.findAll { it.name == 'migration-tool' }
+def coverageScopeTests = { projects ->
+    projects.collectMany { p -> p.tasks.withType(Test).matching { it.name != 'schemaValidationTest' }.toList() }
+}
+def coverageScopeClasses = { projects ->
+    projects.collect { p ->
+        fileTree(dir: "${p.projectDir}/build/classes/java/main", exclude: jacocoAggregateExcludes)
+    }
+}
+def coverageScopeData = { projects ->
+    files(providers.provider {
+        coverageScopeTests(projects).collect { testTask ->
+            testTask.extensions.getByType(org.gradle.testing.jacoco.plugins.JacocoTaskExtension).destinationFile
+        }
+    })
+}
+def jacocoOnlineClassDirectories = coverageScopeClasses(onlineCoverageProjects)
+def jacocoOnlineExecutionData = coverageScopeData(onlineCoverageProjects)
+def jacocoMigrationClassDirectories = coverageScopeClasses(migrationCoverageProjects)
+def jacocoMigrationExecutionData = coverageScopeData(migrationCoverageProjects)
+
+// Missing execution data must fail before JacocoReport's empty-input skip can
+// turn an omitted module/test task into a green coverage check.
+def registerCoverageScopeReport = { String taskName, projects, classFiles, executionFiles, String outputName ->
+    def inputsGate = tasks.register("${taskName}Inputs") {
+        group = 'Verification'
+        dependsOn { coverageScopeTests(projects) }
+        doLast {
+            if (projects.isEmpty()) throw new GradleException("${taskName}: no projects selected")
+            projects.each { p ->
+                if (coverageScopeClasses([p]).every { it.isEmpty() }) {
+                    throw new GradleException("${taskName}: no production classes for ${p.path}")
+                }
+                def testTasks = coverageScopeTests([p])
+                if (testTasks.isEmpty()) throw new GradleException("${taskName}: no coverage tests for ${p.path}")
+                testTasks.each { testTask ->
+                    def validCachedResult = testTask.state.upToDate || testTask.state.skipMessage == 'FROM-CACHE'
+                    if (!testTask.state.executed || testTask.state.noSource
+                            || (testTask.state.skipped && !validCachedResult)) {
+                        throw new GradleException("${taskName}: tests did not execute or restore valid outputs for ${testTask.path}")
+                    }
+                    def data = testTask.extensions.getByType(org.gradle.testing.jacoco.plugins.JacocoTaskExtension).destinationFile
+                    if (data == null || !data.isFile() || data.length() == 0) {
+                        throw new GradleException("${taskName}: missing execution data for ${testTask.path}")
+                    }
+                }
+            }
+        }
+    }
+    tasks.register(taskName, JacocoReport) {
+        group = 'Verification'
+        description = "Generates ${outputName} coverage from that scope's current test tasks"
+        dependsOn inputsGate
+        sourceDirectories.setFrom(projects.collect { p -> file("${p.projectDir}/src/main/java") })
+        classDirectories.setFrom(classFiles)
+        executionData.setFrom(executionFiles)
+        reports {
+            xml.required = true
+            html.required = true
+            html.outputLocation = layout.buildDirectory.dir("reports/jacoco/${outputName}")
+        }
+    }
+}
+registerCoverageScopeReport('jacocoOnlineReport', onlineCoverageProjects,
+        jacocoOnlineClassDirectories, jacocoOnlineExecutionData, 'online')
+registerCoverageScopeReport('jacocoMigrationReport', migrationCoverageProjects,
+        jacocoMigrationClassDirectories, jacocoMigrationExecutionData, 'migration')
+
+tasks.register('onlineBuild') {
+    group = 'Build'
+    description = 'Builds and checks online modules without invoking the independent migration CLI tests'
+    dependsOn tasks.named('build')
+    dependsOn onlineCoverageProjects.collect { p -> p.tasks.named('build') }
+    doLast {
+        if (onlineCoverageProjects.isEmpty()) throw new GradleException('onlineBuild: no online projects selected')
+    }
+}
+
+tasks.register('jacocoOnlineCoverageVerification', JacocoCoverageVerification) {
+    group = 'Verification'
+    dependsOn tasks.named('jacocoOnlineReport')
+    classDirectories.setFrom(jacocoOnlineClassDirectories)
+    executionData.setFrom(jacocoOnlineExecutionData)
+    violationRules {
+        rule {
+            limit { counter = 'LINE'; value = 'COVEREDRATIO'; minimum = 0.85 }
+            limit { counter = 'BRANCH'; value = 'COVEREDRATIO'; minimum = 0.70 }
+        }
+    }
+}
+
+tasks.register('jacocoMigrationCoverageVerification', JacocoCoverageVerification) {
+    group = 'Verification'
+    dependsOn tasks.named('jacocoMigrationReport')
+    classDirectories.setFrom(jacocoMigrationClassDirectories)
+    executionData.setFrom(jacocoMigrationExecutionData)
+    violationRules {
+        rule {
+            limit { counter = 'LINE'; value = 'COVEREDRATIO'; minimum = 0.85 }
+            limit { counter = 'BRANCH'; value = 'COVEREDRATIO'; minimum = 0.70 }
+        }
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 게이트 실행 경로 (AGENTS.md Evidence guardrails H5 — "게이트는 실행 경로가 있어야 게이트다")
 // ─────────────────────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ sensitivity: public-repo-safe
 verified_at: 2026-09-21
 verified_against: 56aa75d7cafb30b242244a3867b776f3fc806151
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md
   - ../../docs/02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md
   - ../../docs/03-guides/project-composer-guide.md
   - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
@@ -80,6 +81,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-018 | 재사용 생성물은 preset pack 또는 custom 도메인 소유권에서 하네스·UI 원장 모집단을 도출하고 snapshot·소스·승계 selector·lock 무결성을 검사한다. 공용 메모리의 원본 운영 사실은 upstream 이력으로 보존하며 현재 기관 사실로 승격하지 않는다. 온라인·이관 승인은 각각 새 pending으로 시작한다. | [생성 가이드](../../docs/03-guides/reusable-base-guide.md), [원장 투영](../../scripts/reusable-governance-projection.mjs), [산출물 무결성](../../scripts/reusable-governance-integrity.mjs), [적용범위 계약](../../config/governance/reusable-review-scopes.json) | 2026-09-20 |
 | CTX-019 | `npm run project:ui`는 별도 loopback 3100 생성기를 실행한다. Foundation/Core에 20개 업무 도메인을 선택하고 PostgreSQL·멀티모듈/단일모듈 독립 소스를 구성한다. UI/CLI는 같은 엔진을 쓰며 각 산출물은 전체 기술 검증 후 완료된다. | [생성기 가이드](../../docs/03-guides/project-composer-guide.md), [공통 엔진](../../scripts/project-composer.mjs) | 2026-09-20 |
 | CTX-020 | 로컬 E2E의 공식 진입점은 `npm run test:e2e:isolated`다. 새 일회용 DB와 소유한 앱 프로세스를 만들고 인증·fixture·cleanup 전에 owner attestation을 검사한다. 개발 `.env`나 공유 DB를 재사용하지 않는다. | [runner](../../scripts/run-isolated-e2e.mjs), [격리 검사](../../scripts/e2e-isolation.mjs), [실행 가이드](../../docs/03-guides/e2e-test-guide.md) | 2026-09-21 |
+| CTX-021 | PR·main push는 같은 영향 분류로 온라인 4모듈과 독립 이관의 build/PIT를 선택한다. 공용 Gradle·ID 계약은 양쪽, 미지·빈 비교는 전수다. 각 커버리지 85/70·required 6개·CodeQL 양언어·E2E shadow를 유지한다. Gradle action은 v6.3.0 SHA와 basic provider를 명시하며 성능 효과는 실행별 증거로 판단한다. | [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md), [분류기](../../scripts/ci-change-scope.mjs) | 2026-09-21 |
 
 ## 개발·검증·배포 흐름
 

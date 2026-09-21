@@ -725,3 +725,27 @@ test('every gate must map to a required CI context that exists in the current ma
 
   assert.match(validate(registry).join('\n'), /unknown required CI context.*ghost-required-check/i);
 });
+
+
+test('independent coverage scopes retain the root ratchet and reject weaker or missing controls', (t) => {
+  const fixture = mkdtempSync(path.join(repoRoot, 'build', 'scoped-coverage-contract-'));
+  t.after(() => {
+    assert.ok(fixture.startsWith(path.join(repoRoot, 'build') + path.sep));
+    rmSync(fixture, { recursive: true, force: true });
+  });
+  const source = readFileSync(path.join(repoRoot, 'build.gradle'), 'utf8');
+  const sourcePath = path.join(fixture, 'build.gradle');
+  for (const task of ['jacocoOnlineCoverageVerification', 'jacocoMigrationCoverageVerification']) {
+    const start = source.indexOf(`tasks.register('${task}'`);
+    assert.ok(start > 0);
+    const registry = clone(loadGovernanceRegistry(registryPath));
+    const ratchet = registry.qualityRatchets.find(({ id }) => id === 'QUALITY-BACKEND-LINE-COVERAGE');
+    assert.deepEqual(ratchet.selector.equivalentTasks,
+      ['jacocoOnlineCoverageVerification', 'jacocoMigrationCoverageVerification']);
+    ratchet.source = path.relative(repoRoot, sourcePath).replaceAll('\\', '/');
+    writeFileSync(sourcePath, source.slice(0, start) + source.slice(start).replace('minimum = 0.85', 'minimum = 0.50'));
+    assert.match(validate(registry).join('\n'), /coverage scopes must share the same threshold/);
+    writeFileSync(sourcePath, source.replace(`tasks.register('${task}'`, `tasks.register('missing${task}'`));
+    assert.match(validate(registry).join('\n'), /ghost quality selector.*Gradle task/);
+  }
+});

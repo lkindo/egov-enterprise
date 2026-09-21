@@ -10,7 +10,7 @@ import { installMultiModuleMigrationRuntime, installSingleModuleRuntime, validat
   validateSingleModuleRuntime, verifyGeneratedMigration, verifySingleModuleMigration } from './reusable-layout-runtime.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const sourceMigrationCommand = 'run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);';
+const sourceMigrationCommand = 'run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar jacocoMigrationCoverageVerification --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);';
 const devCommand = '`"' + '\\'.repeat(2) + '"${gradlew}' + '\\'.repeat(2) + '" :api-server:bootRun -Dfile.encoding=UTF-8" ` +';
 const read = (root, file) => readFileSync(join(root, file), 'utf8');
 const write = (root, file, value) => { mkdirSync(dirname(join(root, file)), { recursive: true }); writeFileSync(join(root, file), value); };

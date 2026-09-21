@@ -27,6 +27,12 @@ description: 멀티모듈 JaCoCo 통합 리포트와 커버리지 게이트 실�
 
 임계값의 정본은 루트 `build.gradle`의 `jacocoRootCoverageVerification`이다. 문서에 수치를 별도 고정하지 않고 실행 시 현재 설정을 따른다. 태스크가 `SKIPPED`되거나 입력 클래스·execution data가 0이면 성공 증거로 취급하지 않는다.
 
+## 독립 제품 범위 검증
+
+CI는 온라인 4모듈에 `onlineBuild jacocoOnlineCoverageVerification`, 독립 이관 CLI에 `node scripts/verify.mjs migration`을 사용한다. 이관 명령은 `jacocoMigrationCoverageVerification`까지 실행한다. 두 범위는 root와 같은 제외 목록·LINE/BRANCH 기준을 쓰며 다른 범위의 이전 실행 데이터는 합치지 않는다. 클래스 또는 테스트 실행 데이터가 없으면 실패한다.
+
+변경 선별·정기 이관 회귀·required 집계는 [CI 가이드](../../docs/03-guides/cicd-pipeline.md)가 설명한다. 전체 로컬 집계는 위 root 태스크로 계속 실행할 수 있다.
+
 ## 병합 전 전체 로컬 게이트
 
 ```powershell

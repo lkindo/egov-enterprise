@@ -80,7 +80,9 @@ jobs:
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
         with:
           version: '9.15.0'
-      - uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb
+        with:
+          cache-provider: basic
       - name: Scan working tree and incremental secrets
         run: |
 ${secretScanRun.split('\n').map(line => `          ${line}`).join('\n')}

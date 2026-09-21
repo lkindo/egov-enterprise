@@ -86,6 +86,13 @@ test('contract turns red for write-token PR execution, publisher execution, scop
         '        run: echo node scripts/dependency-snapshot-readiness.mjs',
       ),
     },
+    {
+      ...current,
+      ciContent: current.ciContent.replace(
+        " || needs.change-scope.outputs.migration == 'true'",
+        '',
+      ),
+    },
     // [2026-08-29] ref 가드를 되돌리면 workflow_dispatch 로 임의 브랜치의 빌드가
     // contents:write 로 돌 수 있다 — 워크플로 주석이 약속한 경계가 다시 비집행이 된다.
     {
@@ -98,6 +105,7 @@ test('contract turns red for write-token PR execution, publisher execution, scop
   ];
 
   for (const mutation of mutations) {
+    assert.notDeepEqual(mutation, current, 'the dependency boundary violation must change executable input');
     assert.notDeepEqual(validateDependencySubmissionContract(mutation), []);
   }
 });

@@ -258,11 +258,14 @@ class WorkflowManifestLinterTest {
         }
         String ci = HarnessSourceIndex.read(root.resolve(WORKFLOW_DIR).resolve("ci.yml"));
         String gradle = HarnessSourceIndex.read(root.resolve("build.gradle"));
+        String verify = HarnessSourceIndex.read(root.resolve("scripts/verify.mjs"));
         String vitest = HarnessSourceIndex.read(root.resolve("frontend/vitest.config.mts"));
 
         List<String> violations = new ArrayList<>();
-        if (!ci.contains("jacocoRootCoverageVerification")) {
-            violations.add("ci.yml backend-build가 JaCoCo 하한을 강제하지 않음");
+        if (!ci.contains("onlineBuild jacocoOnlineCoverageVerification")
+                || !ci.contains("node scripts/verify.mjs migration")
+                || !verify.contains(":migration-tool:bootJar jacocoMigrationCoverageVerification")) {
+            violations.add("CI 온라인/독립 이관 검증이 각각 JaCoCo 하한을 강제하지 않음");
         }
         if (!gradle.matches("(?s).*tasks\\.register\\('localGate'\\).*?jacocoRootCoverageVerification.*")) {
             violations.add("localGate가 JaCoCo 하한 태스크에 결속되지 않음");
@@ -284,6 +287,7 @@ class WorkflowManifestLinterTest {
                 || !gradle.contains("key != 'user.dir'")) {
             violations.add("JaCoCo 실행 데이터가 프로젝트·Test 태스크별로 격리되지 않아 덮어쓰기 가능");
         }
+        violations.addAll(scopedCoverageViolations(gradle));
         if (!vitest.contains("src/app/**") || !vitest.contains("src/services/**")
                 || !vitest.contains("src/components/**")) {
             violations.add("프런트 coverage include가 핵심 소스 축을 재지 않음");
@@ -294,6 +298,75 @@ class WorkflowManifestLinterTest {
                     + String.join("\n❌ ", violations));
         }
         log.info("✅ Backend/Frontend coverage 실행 경로와 중앙 품질 래칫 계약이 CI/localGate에 결속됨.");
+    }
+
+    @Test
+    @DisplayName("📈 분리 커버리지는 반대 모듈·과거 실행 데이터·누락된 태스크를 허용하지 않는다")
+    void scopedCoverageRejectsMissingInputsAndCrossScopeData() throws IOException {
+        if (ReusableHarnessProfile.current().projected()) {
+            requireArtifactContract(resolveRepoRoot());
+            return;
+        }
+        String gradle = HarnessSourceIndex.read(resolveRepoRoot().resolve("build.gradle"));
+        assertThat(scopedCoverageViolations(gradle)).isEmpty();
+        for (String[] mutation : List.of(
+                new String[]{"it.name != 'migration-tool'", "true"},
+                new String[]{"it.name == 'migration-tool'", "true"},
+                new String[]{"dependsOn { coverageScopeTests(projects) }", "// omitted test dependency"},
+                new String[]{"data == null || !data.isFile() || data.length() == 0", "false"},
+                new String[]{"!testTask.state.executed || testTask.state.noSource", "false"},
+                new String[]{"if (projects.isEmpty()) throw new GradleException", "if (false) throw new GradleException"},
+                new String[]{"coverageScopeClasses([p]).every { it.isEmpty() }", "false"},
+                new String[]{"def jacocoOnlineExecutionData = coverageScopeData(onlineCoverageProjects)",
+                        "def jacocoOnlineExecutionData = jacocoAggregateExecutionData"},
+                new String[]{"def jacocoMigrationExecutionData = coverageScopeData(migrationCoverageProjects)",
+                        "def jacocoMigrationExecutionData = jacocoAggregateExecutionData"},
+                new String[]{"executionData.setFrom(jacocoOnlineExecutionData)", "// omitted online execution data"},
+                new String[]{"classDirectories.setFrom(jacocoMigrationClassDirectories)", "// omitted migration classes"},
+                new String[]{"dependsOn tasks.named('jacocoMigrationReport')", "// omitted migration report"})) {
+            String changed = gradle.replace(mutation[0], mutation[1]);
+            assertThat(changed).as(mutation[0]).isNotEqualTo(gradle);
+            assertThat(scopedCoverageViolations(changed)).as(mutation[0]).isNotEmpty();
+        }
+    }
+
+    private static List<String> scopedCoverageViolations(String source) {
+        String gradle = HarnessSourceIndex.stripCommentsPreservingStrings(source).replace("\r\n", "\n");
+        List<String> violations = new ArrayList<>();
+        for (String fragment : List.of(
+                "def onlineCoverageProjects = subprojects.findAll { it.name != 'migration-tool' }",
+                "def migrationCoverageProjects = subprojects.findAll { it.name == 'migration-tool' }",
+                "projects.collectMany { p -> p.tasks.withType(Test).matching { it.name != 'schemaValidationTest' }.toList() }",
+                "exclude: jacocoAggregateExcludes",
+                "coverageScopeTests(projects).collect { testTask ->",
+                "testTask.extensions.getByType(org.gradle.testing.jacoco.plugins.JacocoTaskExtension).destinationFile",
+                "dependsOn { coverageScopeTests(projects) }",
+                "if (projects.isEmpty()) throw new GradleException",
+                "coverageScopeClasses([p]).every { it.isEmpty() }",
+                "if (testTasks.isEmpty()) throw new GradleException",
+                "testTask.state.upToDate || testTask.state.skipMessage == 'FROM-CACHE'",
+                "!testTask.state.executed || testTask.state.noSource",
+                "testTask.state.skipped && !validCachedResult",
+                "data == null || !data.isFile() || data.length() == 0",
+                "dependsOn inputsGate",
+                "classDirectories.setFrom(classFiles)",
+                "executionData.setFrom(executionFiles)",
+                "dependsOn onlineCoverageProjects.collect { p -> p.tasks.named('build') }")) {
+            if (!gradle.contains(fragment)) violations.add("분리 coverage 입력/실행 계약 누락: " + fragment);
+        }
+        for (String scope : List.of("Online", "Migration")) {
+            String projects = scope.toLowerCase(java.util.Locale.ROOT) + "CoverageProjects";
+            for (String fragment : List.of(
+                    "def jacoco" + scope + "ClassDirectories = coverageScopeClasses(" + projects + ")",
+                    "def jacoco" + scope + "ExecutionData = coverageScopeData(" + projects + ")",
+                    "registerCoverageScopeReport('jacoco" + scope + "Report', " + projects + ",",
+                    "dependsOn tasks.named('jacoco" + scope + "Report')",
+                    "classDirectories.setFrom(jacoco" + scope + "ClassDirectories)",
+                    "executionData.setFrom(jacoco" + scope + "ExecutionData)")) {
+                if (!gradle.contains(fragment)) violations.add(scope + " coverage 바인딩 누락: " + fragment);
+            }
+        }
+        return violations;
     }
 
     @Test

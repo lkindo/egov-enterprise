@@ -24,7 +24,7 @@ const POLICY_CRITICAL = [
 ];
 
 const BACKEND = [
-  /^(?:foundation|business-core|business-app|api-server|migration-tool)\//,
+  /^(?:foundation|business-core|business-app|api-server)\//,
   /^(?:build|settings)\.gradle$/,
   /^gradle\//,
   /^gradle\.properties$/,
@@ -52,35 +52,47 @@ const HARNESS_INPUTS_UNDER_FRONTEND = [
 ];
 
 const BACKEND_PRODUCTION = [
-  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/main\/java\//,
+  /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\//,
 ];
 
-const MUTATION_SHARED_INPUTS = [
+const SHARED_GRADLE_INPUTS = [
   /^(?:build|settings)\.gradle$/,
   /^gradle\//,
   /^gradle\.properties$/,
 ];
 
-const MUTATION_RELEVANT = [
-  ...BACKEND_PRODUCTION,
-  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/test\/java\//,
-  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/(?:main|test)\/resources\//,
-  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/testFixtures\//,
-  ...MUTATION_SHARED_INPUTS,
-  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/build\.gradle$/,
+// StandardIdGenerator intentionally mirrors the online ID format without a
+// Gradle dependency on foundation. Preserve both verification paths when either
+// side's generator, prefix/length constants, or direct contract test changes.
+const SHARED_ID_CONTRACT = [
+  /^foundation\/src\/(?:main|test)\/java\/nuri\/foundation\/core\/util\/IdGenerationUtil(?:Test)?\.java$/,
+  /^foundation\/src\/(?:main|test)\/java\/nuri\/foundation\/constants\/Constants(?:Test)?\.java$/,
+  /^migration-tool\/src\/(?:main|test)\/java\/nuri\/migration\/keymap\/StandardIdGenerator(?:Test)?\.java$/,
 ];
 
-// migration-tool 은 온라인 런타임과 분리된 독립 CLI 다(DEC-OPS-005) — foundation 에도 의존하지 않는다.
-// 그래서 그 뮤테이션 대상은 이 모듈과 공용 Gradle 설정이 바뀔 때만 달라진다.
-//
-// ⚠ 이것은 mutation 을 **좁히는 축**이지 넓히는 축이 아니다. 두 가지를 동시에 지킨다.
-//   ① mutation 불리언은 건드리지 않는다 — 좁히면 migration-tool 만 바뀐 변경에서 mutation-scope 잡
-//      자체가 건너뛰어져 이관 도구 뮤테이션이 통째로 사라진다.
-//   ② 이 플래그는 반드시 mutation 의 부분집합이어야 한다 — 잡이 안 도는데 "범위 안" 이라고 말하면
-//      플래그와 실행이 어긋난다. 그래서 MUTATION_RELEVANT 에 걸린 파일만 대상으로 본다.
+const MUTATION_RELEVANT = [
+  ...BACKEND_PRODUCTION,
+  /^(?:foundation|business-core|business-app|api-server)\/src\/test\/java\//,
+  /^(?:foundation|business-core|business-app|api-server)\/src\/(?:main|test)\/resources\//,
+  /^(?:foundation|business-core|business-app|api-server)\/src\/testFixtures\//,
+  ...SHARED_GRADLE_INPUTS,
+  ...SHARED_ID_CONTRACT,
+  /^(?:foundation|business-core|business-app|api-server)\/build\.gradle$/,
+];
+
+// These are independent job scopes, not a subset of online mutation. A migration
+// source/resource/build change must execute migration evidence even when every
+// online leaf is legitimately skipped.
+const MIGRATION_MUTATION_RELEVANT = [
+  /^migration-tool\/src\/(?:main|test)\/(?:java|resources)\//,
+  /^migration-tool\/src\/testFixtures\//,
+  /^migration-tool\/build\.gradle$/,
+  ...SHARED_GRADLE_INPUTS,
+  ...SHARED_ID_CONTRACT,
+];
+
 function isMigrationToolMutation(file) {
-  return matchesAny(file, MUTATION_RELEVANT)
-    && (file.startsWith('migration-tool/') || matchesAny(file, MUTATION_SHARED_INPUTS));
+  return matchesAny(file, MIGRATION_MUTATION_RELEVANT);
 }
 
 const SCHEMA_RELEVANT = [
@@ -93,7 +105,7 @@ const SCHEMA_RELEVANT = [
   // 엔티티 파일이 그대로여도 물리 스키마 정합이 달라지므로 스키마 축에 포함한다.
   /^api-server\/src\/main\/resources\/application(?:-[a-z0-9-]+)?\.ya?ml$/,
   /^(?:build|settings)\.gradle$/,
-  /^(?:foundation|business-core|business-app|api-server|migration-tool)\/build\.gradle$/,
+  /^(?:foundation|business-core|business-app|api-server)\/build\.gradle$/,
   /^gradle\//,
 ];
 
@@ -143,7 +155,13 @@ function isDocumentationOnly(file) {
 }
 
 function isBackend(file) {
-  return matchesAny(file, BACKEND) || matchesAny(file, HARNESS_INPUTS_UNDER_FRONTEND);
+  return matchesAny(file, BACKEND) || matchesAny(file, HARNESS_INPUTS_UNDER_FRONTEND)
+    || matchesAny(file, SHARED_ID_CONTRACT);
+}
+
+function isMigration(file) {
+  return file.startsWith('migration-tool/') || matchesAny(file, SHARED_GRADLE_INPUTS)
+    || matchesAny(file, SHARED_ID_CONTRACT);
 }
 
 function isFrontend(file) {
@@ -151,7 +169,7 @@ function isFrontend(file) {
 }
 
 function isKnown(file) {
-  return isDocumentationOnly(file) || isBackend(file) || isFrontend(file);
+  return isDocumentationOnly(file) || isBackend(file) || isMigration(file) || isFrontend(file);
 }
 
 /**
@@ -181,6 +199,7 @@ export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
     || file === 'scripts/build-atlas.mjs'
     || /^scripts\/atlas-[^/]+\.mjs$/.test(file));
   const backend = full || files.some(isBackend);
+  const migration = full || files.some(isMigration);
   const frontend = full || files.some(isFrontend) || files.includes('api-docs.json');
   const crossStack = full || files.some(file => matchesAny(file, CROSS_STACK_CONTRACT));
   const schema = full || files.some(file => matchesAny(file, SCHEMA_RELEVANT));
@@ -197,6 +216,7 @@ export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
     secretScan: true,
     sast: !docsOnly,
     backend,
+    migration,
     frontend,
     schema,
     e2e,
@@ -227,6 +247,7 @@ export function githubOutputs(result) {
     secret_scan: bool(result.secretScan),
     sast: bool(result.sast),
     backend: bool(result.backend),
+    migration: bool(result.migration),
     frontend: bool(result.frontend),
     schema: bool(result.schema),
     e2e: bool(result.e2e),

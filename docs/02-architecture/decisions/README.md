@@ -26,3 +26,4 @@
 | [ADR-0019](ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립, 요청 제한 한도 설정화 | Accepted |
 | [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 | Accepted |
 | [ADR-0021](ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow | Accepted |
+| [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md) | 온라인·이관 독립 영향 분류, 커버리지·required 보존과 Gradle 캐시 | Accepted |

@@ -33,12 +33,19 @@ function workflowStep(jobBlock, name) {
   return jobBlock.slice(start, next < 0 ? jobBlock.length : next);
 }
 
-function assertMainFullRegression(content) {
+function assertImpactClassification(content) {
   const job = parseWorkflowJobs(content).get('change-scope') ?? '';
   const step = workflowStep(job, 'Classify changed paths (unknown means full pipeline)');
-  assert.match(step,
-    /if \[ "\$GITHUB_EVENT_NAME" = "push" \] && \[\[ "\$GITHUB_REF" = "refs\/heads\/main" \|\| "\$GITHUB_REF" = "refs\/heads\/master" \]\]; then\n\s+node scripts\/ci-change-scope\.mjs --full --github-output "\$GITHUB_OUTPUT"/,
-    'main/master pushes must explicitly select full regression before PR diff classification');
+  assert.match(step, /BASE="\$PUSH_BASE_SHA"/);
+  assert.match(step, /HEAD="\$GITHUB_SHA"/);
+  assert.match(step, /if \[ -z "\$BASE" \]/);
+  assert.match(step, /git cat-file -e "\$\{BASE\}\^\{commit\}"/);
+  assert.match(step, /node scripts\/ci-change-scope\.mjs --github-output "\$GITHUB_OUTPUT"/);
+  assert.ok(step.includes('elif [ "$GITHUB_EVENT_NAME" = "push" ] && ! git merge-base --is-ancestor "$BASE" "${HEAD:-$GITHUB_SHA}"; then'));
+  assert.match(step, /--base "\$BASE"/);
+  assert.match(step, /--head "\$\{HEAD:-\$GITHUB_SHA\}"/);
+  assert.doesNotMatch(step, /--full|refs\/heads\/main|refs\/heads\/master/,
+    'integration pushes must use the same impact mapping as PRs');
   assert.doesNotMatch(step, /^ {8}(?:if|continue-on-error):/m);
 }
 
@@ -444,10 +451,11 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
     const requiredJob = parseWorkflowJobs(ciContent).get(check.jobId);
     assert.ok(requiredJob);
     assert.match(requiredJob, /^    if: always\(\)$/m);
-    assert.deepEqual(check.needs, ['change-scope', sourceJobId, ...(scope === 'backend' ? ['reusable-base'] : [])]);
-    assert.equal(check.aggregate.sourceJobId, sourceJobId);
-    assert.equal(check.aggregate.scopeExpression, `needs.change-scope.outputs.${scope}`);
-    assert.equal(check.aggregate.resultExpression, `needs.${sourceJobId}.result`);
+    assert.deepEqual(check.needs, ['change-scope', sourceJobId, ...(scope === 'backend' ? ['migration-scope', 'reusable-base'] : [])]);
+    const aggregate = Array.isArray(check.aggregate) ? check.aggregate[0] : check.aggregate;
+    assert.equal(aggregate.sourceJobId, sourceJobId);
+    assert.equal(aggregate.scopeExpression, `needs.change-scope.outputs.${scope}`);
+    assert.equal(aggregate.resultExpression, `needs.${sourceJobId}.result`);
   }
 
   const detachedSource = mutateWorkflowJob(ciContent, 'backend-scope', block => block.replace(
@@ -491,16 +499,33 @@ test('E2E and PIT sources start after classification without waiting for indepen
   }
 });
 
-test('main and master push execute full regression while PRs retain scoped classification', () => {
-  assertMainFullRegression(ciContent);
+test('integration pushes and PRs share impact mapping with full fallback for unknown ranges', () => {
+  assertImpactClassification(ciContent);
   for (const [before, after] of [
-    [' --full --github-output', ' --github-output'],
-    ['"$GITHUB_EVENT_NAME" = "push"', '"$GITHUB_EVENT_NAME" = "pull_request"'],
-    ['"refs/heads/main"', '"refs/heads/unused"'],
-    ['"refs/heads/master"', '"refs/heads/unused"'],
+    ['BASE="$PUSH_BASE_SHA"', 'BASE=""'],
+    ['git merge-base --is-ancestor', 'git rev-parse'],
+    ['--base "$BASE"', '--base HEAD~1'],
+    ['--head "${HEAD:-$GITHUB_SHA}"', '--head main'],
+    [' --github-output "$GITHUB_OUTPUT"', ' --full --github-output "$GITHUB_OUTPUT"'],
   ]) {
     const weakened = mutateWorkflowJob(ciContent, 'change-scope', block => block.replace(before, after));
-    assert.throws(() => assertMainFullRegression(weakened), /must explicitly select full regression/);
+    assert.throws(() => assertImpactClassification(weakened));
+  }
+});
+
+test('backend required context binds independent migration verification fail closed', () => {
+  const check = manifest.requiredChecks.find(check => check.context === 'backend-build');
+  assert.equal(check.aggregate.length, 2);
+  assert.equal(check.aggregate[1].sourceJobId, 'migration-scope');
+  assert.equal(check.aggregate[1].scopeExpression, 'needs.change-scope.outputs.migration');
+  for (const mutate of [
+    block => block.replace("    if: needs.change-scope.outputs.migration == 'true'", '    if: false'),
+    block => block.replace('node scripts/verify.mjs migration', 'echo skipped'),
+    block => block.replace('    steps:', '    defaults:\n      run:\n        shell: echo {0}\n    steps:'),
+    block => block.replace('        run: node scripts/verify.mjs migration', '        if: false\n        run: node scripts/verify.mjs migration'),
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'migration-scope', mutate);
+    assert.ok(validateStaticContract({ manifest, ciContent: changed }).length);
   }
 });
 
@@ -741,7 +766,7 @@ test('frontend heavy source starts independently from the backend heavy source',
 test('Gradle verification commands fail on deprecation warnings', () => {
   const guardedCommands = [
     './gradlew :foundation:test --no-build-cache --warning-mode fail --console=plain',
-    './gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain',
+    './gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain',
     './gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain',
     './gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain',
   ];
@@ -898,6 +923,31 @@ test('every third-party workflow action is pinned to a full commit SHA', () => {
   }]), []);
 });
 
+test('every Gradle setup rejects a legacy cache client and implicit or enhanced provider', () => {
+  const directory = path.join(repoRoot, '.github/workflows');
+  const workflows = fs.readdirSync(directory).filter(name => /\.ya?ml$/.test(name))
+    .map(name => ({ path: `.github/workflows/${name}`, content: fs.readFileSync(path.join(directory, name), 'utf8') }));
+  assert.deepEqual(validatePinnedWorkflowUses(workflows), []);
+  let checked = 0;
+  for (const workflow of workflows) {
+    for (const match of workflow.content.matchAll(/gradle\/actions\/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb/g)) {
+      const prefix = workflow.content.slice(0, match.index);
+      const suffix = workflow.content.slice(match.index);
+      for (const [changed, expected] of [
+        [suffix.replace('9c971963bec38e04b3d30dcc455b5382be2fdbfb', 'd9c87d481d55275bb5441eef3fe0e46805f9ef70'), 'cache-compatible action pin'],
+        [suffix.replace('cache-provider: basic', 'cache-provider: enhanced'), 'cache-provider: basic'],
+        [suffix.replace(/ *cache-provider: basic\r?\n/, ''), 'cache-provider: basic'],
+      ]) {
+        assert.notEqual(changed, suffix);
+        const errors = validatePinnedWorkflowUses([{ path: workflow.path, content: prefix + changed }]);
+        assert.ok(errors.some(error => error.includes(expected)), `${workflow.path}: ${expected}`);
+      }
+      checked += 1;
+    }
+  }
+  assert.ok(checked > 0, 'production Gradle cache paths must be covered');
+});
+
 test('frontend heavy source type-checks the e2e sources excluded from the root tsconfig', () => {
   const frontendJob = ciContent.match(
     /^  frontend-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
@@ -994,7 +1044,7 @@ test('PR dependency review blocks only newly introduced high-risk runtime depend
   )?.[0] ?? '';
   const step = workflowStep(secretScanJob, 'Block newly introduced high-risk runtime dependencies');
 
-  const expectedIf = "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.frontend == 'true')";
+  const expectedIf = "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.migration == 'true' || needs.change-scope.outputs.frontend == 'true')";
   assert.match(step, new RegExp(`^        if: ${expectedIf.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
   assert.match(step, /actions\/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294/);
   assert.match(step, /fail-on-severity: high/);
@@ -1031,7 +1081,7 @@ test('security critical steps reject advisory, command, or conditional bypasses'
     '      - name: Block newly introduced high-risk runtime dependencies\n        continue-on-error: true',
   );
   const dependencyDetached = mutateWorkflowJob(ciContent, 'secret-scan', jobBlock => jobBlock.replace(
-    /(      - name: Block newly introduced high-risk runtime dependencies\n)        if: github\.event_name == 'pull_request' && \(needs\.change-scope\.outputs\.backend == 'true' \|\| needs\.change-scope\.outputs\.frontend == 'true'\)/,
+    /(      - name: Block newly introduced high-risk runtime dependencies\n)        if: github\.event_name == 'pull_request' && \(needs\.change-scope\.outputs\.backend == 'true' \|\| needs\.change-scope\.outputs\.migration == 'true' \|\| needs\.change-scope\.outputs\.frontend == 'true'\)/,
     '$1        if: false',
   ));
   const dependencyShell = ciContent.replace(
