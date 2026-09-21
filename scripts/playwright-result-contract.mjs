@@ -75,11 +75,12 @@ function collectSpecs(suites, visit, errors, trail = 'suites') {
   });
 }
 
-/** The discovery report and execution report must describe the same tests, including setup. */
-function testCoordinates(report, errors, label) {
+/** Compare execution with the selected discovery coordinates, including setup. */
+function testCoordinates(report, errors, label, includeSpec = () => true) {
   const coordinates = new Set();
+  const seen = new Set();
   collectSpecs(report?.suites, (spec, trail) => {
-    if (typeof spec?.id !== 'string' || !Array.isArray(spec.tests)) {
+    if (typeof spec?.id !== 'string' || !Array.isArray(spec.tests) || spec.tests.length === 0) {
       errors.push(`${label}: invalid test inventory at ${trail}`);
       return;
     }
@@ -89,8 +90,9 @@ function testCoordinates(report, errors, label) {
         continue;
       }
       const coordinate = JSON.stringify([current.projectName, spec.id]);
-      if (coordinates.has(coordinate)) errors.push(`${label}: duplicate test coordinate ${coordinate}`);
-      coordinates.add(coordinate);
+      if (seen.has(coordinate)) errors.push(`${label}: duplicate test coordinate ${coordinate}`);
+      seen.add(coordinate);
+      if (includeSpec(spec)) coordinates.add(coordinate);
     }
   }, errors, label);
   return coordinates;
@@ -140,12 +142,51 @@ export function validatePlaywrightResult(report, plannedSpecs, options = {}) {
   else if (report.errors.length) errors.push('report contains global execution errors');
 
   const actualCoordinates = testCoordinates(report, errors, 'execution');
-  if (options.inventory) {
+  if ((Object.hasOwn(options, 'inventory') || options.fullInventorySpecs !== undefined) && !isObject(options.inventory)) {
+    errors.push('inventory must be an object');
+  }
+  if (isObject(options.inventory)) {
     if (canonicalAbsolute(options.inventory.config?.rootDir ?? '') !== expectedRoot) {
       errors.push('inventory config.rootDir must equal execution rootDir');
     }
-    const expectedCoordinates = testCoordinates(options.inventory, errors, 'inventory');
+    let includeInventorySpec;
+    if (options.fullInventorySpecs !== undefined) {
+      const fullSeen = new Set();
+      const expectedFiles = new Set();
+      if (!Array.isArray(options.fullInventorySpecs) || options.fullInventorySpecs.length === 0) {
+        errors.push('full inventory requires a nonempty authoritative spec population');
+      }
+      for (const file of Array.isArray(options.fullInventorySpecs) ? options.fullInventorySpecs : []) {
+        const absolute = plannedPath(file, cwd, errors, fullSeen);
+        if (absolute) expectedFiles.add(absolute);
+      }
+      const discoveredFiles = new Set();
+      const includedSpecs = new Set();
+      collectSpecs(options.inventory.suites, (spec, trail) => {
+        const absolute = reportPath(spec?.file, expectedRoot, expectedRoot, errors);
+        if (!absolute) return;
+        const isSetup = absolute.endsWith('.setup.ts');
+        if (!isSetup) {
+          if (!expectedFiles.has(absolute)) errors.push(`unplanned full inventory spec: ${displayRelative(absolute, cwd)}`);
+          discoveredFiles.add(absolute);
+        }
+        const expectedProject = isSetup ? 'setup'
+          : displayRelative(absolute, cwd).startsWith('e2e/contracts/') ? 'api-contract' : 'full-suite';
+        for (const current of Array.isArray(spec.tests) ? spec.tests : []) {
+          if (current?.projectName !== expectedProject) errors.push(`inventory: ${trail} must belong to ${expectedProject}`);
+        }
+        if (isSetup || planned.has(absolute)) includedSpecs.add(spec);
+      }, errors, 'inventory');
+      for (const absolute of expectedFiles) {
+        if (!discoveredFiles.has(absolute)) errors.push(`missing full inventory spec: ${displayRelative(absolute, cwd)}`);
+      }
+      includeInventorySpec = spec => includedSpecs.has(spec);
+    }
+    const expectedCoordinates = testCoordinates(options.inventory, errors, 'inventory', includeInventorySpec);
     if (expectedCoordinates.size === 0) errors.push('inventory must contain registered tests');
+    if (![...expectedCoordinates].some(coordinate => JSON.parse(coordinate)[0] === 'setup')) {
+      errors.push('inventory must contain registered setup tests');
+    }
     for (const coordinate of expectedCoordinates) {
       if (!actualCoordinates.has(coordinate)) errors.push(`missing planned test coordinate: ${coordinate}`);
     }
@@ -259,22 +300,41 @@ export function validatePlaywrightResult(report, plannedSpecs, options = {}) {
   };
 }
 
-function cli() {
+async function cli() {
   const reportIndex = process.argv.indexOf('--report');
   const inventoryIndex = process.argv.indexOf('--inventory');
+  const ciShardIndex = process.argv.indexOf('--ci-shard');
   if (reportIndex < 0 || !process.argv[reportIndex + 1] || inventoryIndex < 0 || !process.argv[inventoryIndex + 1]) {
-    throw new Error('usage: node scripts/playwright-result-contract.mjs --report <json> --inventory <list-json> <e2e/**/*.spec.ts...>');
+    throw new Error('usage: node scripts/playwright-result-contract.mjs --report <json> --inventory <list-json> [--ci-shard current/total] <e2e/**/*.spec.ts...>');
   }
+  for (const option of ['--report', '--inventory', '--ci-shard']) {
+    if (process.argv.filter(value => value === option).length > 1) throw new Error(`duplicate option: ${option}`);
+  }
+  const optionIndices = [reportIndex, reportIndex + 1, inventoryIndex, inventoryIndex + 1];
+  if (ciShardIndex >= 0) optionIndices.push(ciShardIndex, ciShardIndex + 1);
   const reportPathValue = path.resolve(process.argv[reportIndex + 1]);
   const planned = process.argv.slice(2)
-    .filter((_, index) => ![reportIndex - 2, reportIndex - 1, inventoryIndex - 2, inventoryIndex - 1].includes(index));
+    .filter((_, index) => !optionIndices.includes(index + 2));
+  let fullInventorySpecs;
+  if (ciShardIndex >= 0) {
+    // Local/VRT consumers and exported products do not need CI impact planning.
+    const { buildDurationBalancedPlan, discoverSpecs, loadDurationProfile, parseShard, resolveCiImpactPlan } = await import('./e2e-shard-plan.mjs');
+    const { current, total } = parseShard(process.argv[ciShardIndex + 1]);
+    const impact = resolveCiImpactPlan();
+    const expected = buildDurationBalancedPlan(loadDurationProfile(), total, impact.selectedSpecs)[current - 1]
+      .specs.map(spec => `e2e/${spec}`);
+    if (planned.length !== expected.length || planned.some((spec, index) => spec !== expected[index])) {
+      throw new Error('planned specs must exactly match the independently recomputed CI shard');
+    }
+    fullInventorySpecs = discoverSpecs().map(spec => `e2e/${spec}`);
+  }
   const size = fs.statSync(reportPathValue).size;
   if (size === 0 || size > MAX_REPORT_BYTES) {
     throw new Error(`Playwright JSON report size is invalid: ${size} bytes`);
   }
   const report = JSON.parse(readRegularFile(reportPathValue, { maximumBytes: MAX_REPORT_BYTES, encoding: 'utf8' }));
   const inventory = JSON.parse(readRegularFile(path.resolve(process.argv[inventoryIndex + 1]), { maximumBytes: MAX_REPORT_BYTES, encoding: 'utf8' }));
-  const result = validatePlaywrightResult(report, planned, { inventory });
+  const result = validatePlaywrightResult(report, planned, { inventory, fullInventorySpecs });
   if (result.errors.length > 0) throw new Error(result.errors.join('\n'));
   process.stdout.write(
     `Playwright result contract passed: ${result.summary.reportedSpecs}/${result.summary.plannedSpecs} specs, `
@@ -283,10 +343,8 @@ function cli() {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  try {
-    cli();
-  } catch (error) {
+  cli().catch(error => {
     process.stderr.write(`Playwright result contract failed closed: ${error instanceof Error ? error.message : String(error)}\n`);
     process.exitCode = 1;
-  }
+  });
 }

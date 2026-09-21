@@ -1,6 +1,7 @@
 # ADR-0021 — 격리 실행과 책임별 테스트 프로세스
 
 - 상태: Accepted
+- 후속 결정: E2E shadow 정책은 [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md)의 PR 선별·main 전수 정책으로 대체한다.
 - 결정일: 2026-09-21
 - 승인 범위: 사용자 요청에 따른 테스트 재배치·분할·합병, CI 최적화 및 격리 E2E 실행
 - 관련: [프로세스·이전표](../testing-process-redesign.md), [실행 가이드](../../03-guides/e2e-test-guide.md), [CI 가이드](../../03-guides/cicd-pipeline.md)

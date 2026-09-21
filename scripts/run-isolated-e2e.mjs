@@ -51,11 +51,18 @@ async function freePort(preferred = 0) {
   });
 }
 
+export function discoveryArguments(selection, fullInventory = false) {
+  // CI selection is verified against discovery of both complete projects. In
+  // particular, a mistakenly narrowed execution filter must not narrow its oracle.
+  return [...(fullInventory ? ['--project=api-contract', '--project=full-suite'] : selection), '--list', '--reporter=json'];
+}
+
 export async function main(arguments_ = process.argv.slice(2)) {
   const ciCompose = arguments_[0] === '--ci-compose';
   const coverage = arguments_[0] === '--coverage';
-  const options = ciCompose || coverage ? arguments_.slice(1) : arguments_;
-  if (options.length && options[0] !== '--') throw fail('use [--ci-compose | --coverage] -- <Playwright test arguments>.');
+  const fullInventory = ciCompose && arguments_[1] === '--full-inventory';
+  const options = ciCompose || coverage ? arguments_.slice(fullInventory ? 2 : 1) : arguments_;
+  if (options.length && options[0] !== '--') throw fail('use [--ci-compose [--full-inventory] | --coverage] -- <Playwright test arguments>.');
   const testArguments = options.slice(1);
   assertNoDotEnv(root); assertNoDotEnv(frontend);
   const clean = closedEnvironment();
@@ -218,7 +225,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
     const inventoryPath = ciCompose ? '/tmp/e2e-inventory.json' : path.join(output, 'inventory.json');
     const reportPath = ciCompose ? '/tmp/e2e-results.json' : path.join(output, 'results.json');
     const selection = testArguments.filter((arg, index, args) => !arg.startsWith('--reporter=') && arg !== '--reporter' && args[index - 1] !== '--reporter');
-    await run('discovery', process.execPath, [require.resolve('@playwright/test/cli'), 'test', ...selection, '--list', '--reporter=json'], frontend,
+    await run('discovery', process.execPath, [require.resolve('@playwright/test/cli'), 'test', ...discoveryArguments(selection, fullInventory)], frontend,
       { ...environment, PLAYWRIGHT_JSON_OUTPUT_FILE: inventoryPath });
     let executionFailure;
     try {

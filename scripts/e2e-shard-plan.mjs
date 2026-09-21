@@ -2,6 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { classifyChangedFiles } from './ci-change-scope.mjs';
+import { readRegularFile } from './read-regular-file.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROFILE_PATH = path.join(REPO_ROOT, 'frontend', 'e2e', 'shard-duration-profile.json');
@@ -42,21 +45,20 @@ export function discoverSpecs(specRoot = SPEC_ROOT) {
   return discovered.sort();
 }
 
-// Shadow analysis only: these explicit ownership rules never reduce CI execution.
-// Shared inputs and any unrecognized dependency deliberately select the full population.
+// Audited route owners. Shared inputs and unrecognized dependencies remain full.
+// admin/user is deliberately excluded: identity/organization changes retain full execution.
 export const IMPACT_RULES = [
-  { prefixes: ['frontend/src/app/polls/', 'frontend/src/app/admin/polls/'], specs: ['journeys/online-polls.spec.ts'] },
-  { prefixes: ['frontend/src/app/approvals/'], specs: ['journeys/approvals.spec.ts', 'journeys/workflow-demo.spec.ts'] },
-  { prefixes: ['frontend/src/app/admin/workflow/'], specs: ['journeys/workflow-demo.spec.ts'] },
+  { prefixes: ['frontend/src/app/admin/survey/'], specs: ['journeys/online-polls.spec.ts'] },
+  { prefixes: ['frontend/src/app/approvals/'], specs: ['journeys/approvals.spec.ts', 'journeys/public-navigation.spec.ts', 'journeys/workflow-demo.spec.ts'] },
+  { prefixes: ['frontend/src/app/admin/workflow/'], specs: ['journeys/workflow-demo.spec.ts', 'journeys/community-navigation.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/collaboration/address-book/'], specs: ['journeys/address-book.spec.ts', 'contracts/address-book-ownership.spec.ts'] },
-  { prefixes: ['frontend/src/app/admin/community/boards/', 'frontend/src/app/boards/'], specs: ['journeys/board-masters.spec.ts', 'journeys/board-articles.spec.ts', 'journeys/community-navigation.spec.ts', 'quality/board-draft-recovery.spec.ts', 'quality/stored-xss.spec.ts', 'quality/error-recovery.spec.ts'] },
-  { prefixes: ['frontend/src/app/admin/help/', 'frontend/src/app/help/', 'frontend/src/app/admin/uss/olh/online-manual/'], specs: ['journeys/help-content.spec.ts', 'journeys/public-navigation.spec.ts'] },
+  { prefixes: ['frontend/src/app/admin/community/boards/'], specs: ['journeys/board-masters.spec.ts', 'journeys/board-articles.spec.ts', 'journeys/community-navigation.spec.ts', 'journeys/help-content.spec.ts', 'journeys/authentication.spec.ts', 'journeys/authorization.spec.ts', 'quality/board-draft-recovery.spec.ts', 'quality/stored-xss.spec.ts', 'quality/error-recovery.spec.ts'] },
+  { prefixes: ['frontend/src/app/admin/help/', 'frontend/src/app/help/', 'frontend/src/app/admin/uss/olh/online-manual/'], specs: ['journeys/help-content.spec.ts', 'journeys/public-navigation.spec.ts', 'journeys/community-navigation.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/operation/rewards/'], specs: ['journeys/rewards.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/operation/events/'], specs: ['journeys/event-administration.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/notifications/'], specs: ['journeys/notifications.spec.ts'] },
   { prefixes: ['frontend/src/app/smart-toolkit/schedule/'], specs: ['contracts/schedules.spec.ts', 'journeys/schedules.spec.ts', 'journeys/approvals.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/system/common-code/'], specs: ['journeys/common-codes.spec.ts', 'quality/visual-baselines.spec.ts'] },
-  { prefixes: ['frontend/src/app/admin/user/'], specs: ['journeys/user-administration.spec.ts', 'journeys/organization-policy.spec.ts', 'journeys/department-hierarchy.spec.ts', 'journeys/authorization.spec.ts', 'journeys/security-administration.spec.ts'] },
 ];
 
 export function buildImpactShadowPlan(changes, specs = discoverSpecs(), rules = IMPACT_RULES) {
@@ -73,18 +75,20 @@ export function buildImpactShadowPlan(changes, specs = discoverSpecs(), rules = 
   const reasons = [];
   for (const change of changes) {
     const file = change?.path;
-    if (change?.status !== 'M') return full('added, removed, renamed or unknown file status');
     if (typeof file !== 'string' || file.includes('\\') || file.split('/').some(part => !part || part === '..' || part === '.')) return full('invalid changed path');
-    if (file.startsWith('frontend/e2e/') && specs.includes(file.slice('frontend/e2e/'.length))) {
-      selected.add(file.slice('frontend/e2e/'.length));
-      reasons.push(`changed spec: ${file}`);
-      continue;
-    }
+    // Reuse the existing policy-aware documentation boundary; do not maintain a
+    // second exemption list. Documentation alone never selects just the shell.
+    if (classifyChangedFiles([file]).docsOnly) continue;
+    if (change?.status !== 'M') return full('added, removed, renamed or unknown file status');
+    // Tests, CSS and Next boundary files can affect more than one owner. New or
+    // changed contracts themselves also keep the complete regression population.
+    if (!/\.(?:ts|tsx)$/.test(file) || /(?:^|\/)(?:layout|template|loading|error|not-found|global-error|route)\.[^/]+$/.test(file)) return full('shared route boundary or non-source input');
     const matching = rules.filter(rule => rule.prefixes.some(prefix => file.startsWith(prefix)));
     if (!matching.length) return full(`shared or unmapped input: ${file}`);
     for (const rule of matching) for (const spec of rule.specs) selected.add(spec);
     reasons.push(`owned route: ${file}`);
   }
+  if (!selected.size) return full('empty candidate selection');
   // The shell and quality consumers can observe changes across route boundaries.
   for (const spec of specs.filter(spec => spec.startsWith('quality/') || spec === 'journeys/application-shell.spec.ts')) selected.add(spec);
   if (!selected.size) return full('empty candidate selection');
@@ -120,6 +124,97 @@ function shadowChanges(base, head) {
     while (fields.length > 1) changes.push({ status: fields.shift(), path: fields.shift() });
     return changes;
   } catch { return []; }
+}
+
+function gitRead(repoRoot, args) {
+  return execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+}
+
+// Use the already-installed compiler to inspect imports, rather than guessing
+// with a regex that can miss multiline exports or mistake comments for code.
+// The E2E job installs frontend dependencies. Other callers without them use full.
+export function routeBoundaryRisk(changes, { repoRoot = REPO_ROOT, rules = IMPACT_RULES } = {}) {
+  try {
+    const ts = createRequire(path.join(REPO_ROOT, 'frontend/package.json'))('typescript');
+    const config = ts.readConfigFile(path.join(repoRoot, 'frontend/tsconfig.json'), ts.sys.readFile);
+    // Even baseUrl:"" enables bare local imports; inherited options can also
+    // introduce aliases that this deliberately narrow boundary cannot resolve.
+    if (config.error || Object.hasOwn(config.config ?? {}, 'extends')
+      || Object.hasOwn(config.config?.compilerOptions ?? {}, 'baseUrl')
+      || JSON.stringify(config.config?.compilerOptions?.paths) !== JSON.stringify({ '@/*': ['./src/*'] })) return 'unrecognized source import configuration';
+    if (gitRead(repoRoot, ['diff', '--name-only', 'HEAD', '--', 'frontend/src', 'frontend/tsconfig.json'])) return 'source inputs differ from the checked-out commit';
+    if (gitRead(repoRoot, ['ls-files', '--others', '--exclude-standard', '--', 'frontend/src'])) return 'untracked source input';
+    const activeRules = rules.filter(rule => changes.some(change => rule.prefixes.some(prefix => change.path.startsWith(prefix))));
+    const files = gitRead(repoRoot, ['ls-files', '-z', '--', 'frontend/src']).split('\0').filter(file => /\.[cm]?[jt]sx?$/.test(file)
+      && !file.split('/').includes('__tests__')
+      && !/^.*\.(?:test|spec)\.[^.]+$/.test(path.posix.basename(file)));
+    for (const file of files) {
+      const absolute = path.join(repoRoot, file);
+      const source = ts.createSourceFile(file, readRegularFile(absolute, { encoding: 'utf8' }), ts.ScriptTarget.Latest, true);
+      if (source.parseDiagnostics.length) return 'source import analysis failed';
+      let risk = null;
+      const inspect = module => {
+        if (!module || !ts.isStringLiteralLike(module)) { risk = 'computed source import'; return; }
+        const name = module.text;
+        const target = name.startsWith('@/') ? path.posix.normalize(`frontend/src/${name.slice(2)}`)
+          : name.startsWith('.') ? path.posix.normalize(path.posix.join(path.posix.dirname(file), name)) : null;
+        if (!target) return;
+        for (const rule of activeRules) {
+          const owns = value => rule.prefixes.some(prefix => value.startsWith(prefix) || value === prefix.slice(0, -1));
+          if (owns(target) && !owns(file)) risk = `route has an external source consumer: ${file}`;
+        }
+      };
+      const visit = node => {
+        if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+          if (node.moduleSpecifier) inspect(node.moduleSpecifier);
+        } else if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
+          inspect(node.moduleReference.expression);
+        } else if (ts.isImportTypeNode(node)) {
+          inspect(ts.isLiteralTypeNode(node.argument) ? node.argument.literal : null);
+        } else if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword
+          || (ts.isIdentifier(node.expression) && node.expression.text === 'require'))) inspect(node.arguments[0]);
+        ts.forEachChild(node, visit);
+      };
+      visit(source);
+      if (risk) return risk;
+    }
+    return null;
+  } catch { return 'source import evidence unavailable'; }
+}
+
+/** Recompute from GitHub's event and the checkout; a saved plan is never authority. */
+export function resolveCiImpactPlan({ eventName = process.env.GITHUB_EVENT_NAME, eventPath = process.env.GITHUB_EVENT_PATH,
+  githubSha = process.env.GITHUB_SHA, repoRoot = REPO_ROOT, specs = discoverSpecs(), rules = IMPACT_RULES } = {}) {
+  if (!Array.isArray(specs) || !specs.length || new Set(specs).size !== specs.length) throw new Error('invalid E2E population');
+  const all = [...specs].sort();
+  const evidence = { schemaVersion: 1, eventName: eventName ?? '', baseSha: null, headSha: null, checkoutSha: null };
+  const full = reason => ({ ...evidence, mode: 'full', executes: 'full', fullFallback: true, reasons: [reason], selectedSpecs: all });
+  if (eventName !== 'pull_request') return full('only pull requests may select route owners');
+  try {
+    const event = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
+    const pr = event.pull_request;
+    // For pull_request, Actions binds GITHUB_SHA to the tested merge commit.
+    // The API payload's merge_commit_sha may be null or stale while GitHub
+    // computes mergeability; it is not this workflow run's checkout identity.
+    const base = pr?.base?.sha, head = pr?.head?.sha, merge = githubSha;
+    if (![base, head, merge].every(sha => /^[0-9a-f]{40}$/.test(sha ?? ''))) return full('invalid immutable pull request commits');
+    evidence.baseSha = base; evidence.headSha = head;
+    evidence.checkoutSha = gitRead(repoRoot, ['rev-parse', 'HEAD']);
+    if (evidence.checkoutSha !== merge) return full('checkout is not the event merge commit');
+    for (const sha of [base, head, merge]) gitRead(repoRoot, ['cat-file', '-e', `${sha}^{commit}`]);
+    const parents = gitRead(repoRoot, ['rev-list', '--parents', '-n', '1', merge]).split(/\s+/).slice(1);
+    if (JSON.stringify(parents) !== JSON.stringify([base, head])) return full('merge parents do not match the event base and head');
+    for (const sha of [base, head]) gitRead(repoRoot, ['merge-base', '--is-ancestor', sha, merge]);
+    const fields = gitRead(repoRoot, ['diff', '--no-renames', '--name-status', '-z', base, merge, '--']).split('\0');
+    const changes = [];
+    while (fields.length > 1) changes.push({ status: fields.shift(), path: fields.shift() });
+    const candidate = buildImpactShadowPlan(changes, specs, rules);
+    if (candidate.fullFallback) return full(candidate.reasons[0]);
+    const risk = routeBoundaryRisk(changes, { repoRoot, rules });
+    if (risk) return full(risk);
+    return { ...evidence, mode: 'selected', executes: 'selected', fullFallback: false,
+      reasons: candidate.reasons, selectedSpecs: candidate.selectedSpecs };
+  } catch { return full('immutable pull request or Git evidence unavailable'); }
 }
 
 export function loadDurationProfile(profilePath = PROFILE_PATH) {
@@ -196,19 +291,21 @@ export function validateDurationProfile(profile, specs = discoverSpecs(), nowMs 
   return errors;
 }
 
-export function buildDurationBalancedPlan(profile, shardCount) {
+export function buildDurationBalancedPlan(profile, shardCount, selectedSpecs = discoverSpecs()) {
   if (!Number.isInteger(shardCount) || shardCount < 1) {
     throw new Error(`shardCount must be a positive integer: ${shardCount}`);
   }
   const errors = validateDurationProfile(profile);
   if (errors.length > 0) throw new Error(errors.join('\n'));
+  if (!Array.isArray(selectedSpecs) || !selectedSpecs.length || new Set(selectedSpecs).size !== selectedSpecs.length
+    || selectedSpecs.some(spec => !Object.hasOwn(profile.durationsMs, spec))) throw new Error('invalid selected E2E population');
 
   const shards = Array.from({ length: shardCount }, (_, index) => ({
     index: index + 1,
     estimatedMs: 0,
     specs: [],
   }));
-  const weightedSpecs = Object.entries(profile.durationsMs)
+  const weightedSpecs = Object.entries(profile.durationsMs).filter(([spec]) => selectedSpecs.includes(spec))
     .sort(([leftName, leftMs], [rightName, rightMs]) => rightMs - leftMs || leftName.localeCompare(rightName));
 
   for (const [spec, durationMs] of weightedSpecs) {
@@ -255,7 +352,12 @@ function cli() {
   }
   const { current, total } = parseShard(process.argv[argumentIndex + 1]);
   const profile = loadDurationProfile();
-  const plan = buildDurationBalancedPlan(profile, total);
+  const impact = process.argv.includes('--ci') ? resolveCiImpactPlan() : null;
+  const plan = buildDurationBalancedPlan(profile, total, impact?.selectedSpecs);
+  if (argument('--plan-output')) {
+    if (!impact) throw new Error('--plan-output requires --ci');
+    fs.writeFileSync(argument('--plan-output'), JSON.stringify({ ...impact, shards: plan }, null, 2) + '\n');
+  }
   if (durationProfileFreshness(profile).freshness === 'overdue') {
     process.stderr.write('E2E duration evidence requires remeasurement; the plan remains an estimate.\n');
   }

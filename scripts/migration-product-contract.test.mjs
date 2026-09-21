@@ -31,6 +31,8 @@ test('standalone migration export retains independent verification and clears in
   const workflow = readFileSync(resolve(outputRoot, '.github/workflows/migration-tool.yml'), 'utf8');
   assert.match(workflow, /^  push:\n    branches: \[main, master\]$/m);
   assert.match(workflow, /^  pull_request:$/m);
+  assert.match(workflow, /^          cache-read-only: false$/m,
+    'the exported repository has one independent cache writer');
   assert.doesNotMatch(workflow, /^    paths(?:-ignore)?:/m,
     'standalone product must validate every changed runtime helper without producer CI');
   for (const args of [
@@ -45,16 +47,23 @@ test('standalone migration export retains independent verification and clears in
   assert.equal(pending.status, 1);
   // A missing transitive helper must break the actual isolated entrypoint, not be
   // silently resolved from the producer checkout or an installed package.
-  const helperContent = readFileSync(helper);
-  try {
-    rmSync(helper);
-    const missingDependency = spawnSync(process.execPath,
-      ['--input-type=module', '--eval', "await import('./scripts/adoption-execute.mjs')"],
-      { cwd: outputRoot, encoding: 'utf8' });
-    assert.notEqual(missingDependency.status, 0);
-    assert.match(missingDependency.stderr, /ERR_MODULE_NOT_FOUND/);
-    assert.match(missingDependency.stderr, /reusable-layout\.mjs/);
-  } finally { writeFileSync(helper, helperContent); }
+  for (const [dependency, entrypoint] of [
+    ['reusable-layout.mjs', 'adoption-execute.mjs'],
+    ['ci-change-scope.mjs', 'governance-review.mjs'],
+    ['read-regular-file.mjs', 'governance-review.mjs'],
+  ]) {
+    const missingHelper = resolve(outputRoot, 'scripts', dependency);
+    const helperContent = readFileSync(missingHelper);
+    try {
+      rmSync(missingHelper);
+      const missingDependency = spawnSync(process.execPath,
+        ['--input-type=module', '--eval', `await import('./scripts/${entrypoint}')`],
+        { cwd: outputRoot, encoding: 'utf8' });
+      assert.notEqual(missingDependency.status, 0);
+      assert.match(missingDependency.stderr, /ERR_MODULE_NOT_FOUND/);
+      assert.ok(missingDependency.stderr.includes(dependency));
+    } finally { writeFileSync(missingHelper, helperContent); }
+  }
   assert.throws(() => generateMigrationProduct({ sourceRoot: root, outputRoot }), /new child directory/);
 });
 

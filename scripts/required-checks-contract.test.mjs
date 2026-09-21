@@ -217,18 +217,20 @@ test('E2E aggregate remains bound to the fail-closed source condition and real r
   );
 
   const detachedRunner = ciContent.replace(
-    'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log',
+    'node ../scripts/run-isolated-e2e.mjs --ci-compose --full-inventory -- --project=api-contract --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log',
     'echo skipped-e2e',
   );
+  assert.notEqual(detachedRunner, ciContent);
   assert.match(
     validateStaticContract({ manifest, ciContent: detachedRunner }).join('\n'),
     /source step.*must run/i,
   );
 
   const detachedResultContract = ciContent.replace(
-    'node ../scripts/playwright-result-contract.mjs --report "$PLAYWRIGHT_JSON_OUTPUT_FILE" --inventory /tmp/e2e-inventory.json "${E2E_SPECS[@]}"',
+    'node ../scripts/playwright-result-contract.mjs --report "$PLAYWRIGHT_JSON_OUTPUT_FILE" --inventory /tmp/e2e-inventory.json "${E2E_SPECS[@]}" --ci-shard "${{ matrix.shard }}"',
     'echo skipped-result-contract',
   );
+  assert.notEqual(detachedResultContract, ciContent);
   assert.match(
     validateStaticContract({ manifest, ciContent: detachedResultContract }).join('\n'),
     /source step.*must run/i,
@@ -923,7 +925,7 @@ test('every third-party workflow action is pinned to a full commit SHA', () => {
   }]), []);
 });
 
-test('every Gradle setup rejects a legacy cache client and implicit or enhanced provider', () => {
+test('every Gradle setup rejects unreviewed cache clients, providers and writer roles', () => {
   const directory = path.join(repoRoot, '.github/workflows');
   const workflows = fs.readdirSync(directory).filter(name => /\.ya?ml$/.test(name))
     .map(name => ({ path: `.github/workflows/${name}`, content: fs.readFileSync(path.join(directory, name), 'utf8') }));
@@ -937,6 +939,11 @@ test('every Gradle setup rejects a legacy cache client and implicit or enhanced 
         [suffix.replace('9c971963bec38e04b3d30dcc455b5382be2fdbfb', 'd9c87d481d55275bb5441eef3fe0e46805f9ef70'), 'cache-compatible action pin'],
         [suffix.replace('cache-provider: basic', 'cache-provider: enhanced'), 'cache-provider: basic'],
         [suffix.replace(/ *cache-provider: basic\r?\n/, ''), 'cache-provider: basic'],
+        [suffix.replace(/ *cache-read-only:[^\r\n]*\r?\n/, ''), 'cache-read-only'],
+        [suffix.replace(/cache-read-only:[^\r\n]*/, 'cache-read-only: invalid'), 'cache-read-only'],
+        [suffix.replace('cache-provider: basic', 'cache-provider: basic\n          cache-read-only: false'), 'cache-read-only'],
+        [suffix.replace('cache-provider: basic', 'cache-provider: basic\n          cache-disabled: true'), 'cache-disabled'],
+        [suffix.replace('cache-provider: basic', 'cache-provider: basic\n          cache-write-only: true'), 'cache-write-only'],
       ]) {
         assert.notEqual(changed, suffix);
         const errors = validatePinnedWorkflowUses([{ path: workflow.path, content: prefix + changed }]);
@@ -945,7 +952,45 @@ test('every Gradle setup rejects a legacy cache client and implicit or enhanced 
       checked += 1;
     }
   }
-  assert.ok(checked > 0, 'production Gradle cache paths must be covered');
+  assert.equal(checked, 8, 'all producer Gradle cache callers must be covered');
+});
+
+test('cache writer election remains tied to selected backend and migration jobs', () => {
+  const normalizedCi = ciContent.replace(/\r\n/g, '\n');
+  const workflow = { path: '.github/workflows/ci.yml', content: normalizedCi };
+  assert.deepEqual(validatePinnedWorkflowUses([workflow]), []);
+  for (const [jobId, readOnly] of [['backend-scope', 'true'], ['migration-scope', 'false'],
+    ['reusable-base', 'false'], ['mutation-scope', 'false'], ['mutation-scope-migration', 'false']]) {
+    const changed = mutateWorkflowJob(normalizedCi, jobId, block => block.replace(/cache-read-only:[^\n]*/, `cache-read-only: ${readOnly}`));
+    assert.notEqual(changed, normalizedCi);
+    assert.match(validatePinnedWorkflowUses([{ ...workflow, content: changed }]).join('\n'), /cache-read-only/);
+  }
+  for (const jobId of ['backend-scope', 'migration-scope']) {
+    // Existing aggregate-source validation owns the selection/needs invariant.
+    for (const mutate of [
+      block => block.replace(/^    if:.*$/m, '    if: always()'),
+      block => block.replace(/^    needs:.*$/m, '    needs: frontend-scope'),
+    ]) {
+      const changed = mutateWorkflowJob(normalizedCi, jobId, mutate);
+      assert.notEqual(changed, normalizedCi);
+      assert.notDeepEqual(validateStaticContract({ manifest, ciContent: changed }), []);
+    }
+  }
+  const openOnMissingOutput = normalizedCi.replace("cache-read-only: ${{ needs.change-scope.outputs.backend != 'false' }}",
+    "cache-read-only: ${{ needs.change-scope.outputs.backend == 'true' }}");
+  assert.notEqual(openOnMissingOutput, normalizedCi);
+  assert.match(validatePinnedWorkflowUses([{ ...workflow, content: openOnMissingOutput }]).join('\n'), /cache-read-only/);
+  for (const mutate of [
+    block => block.replace(/      - name: Setup Gradle[\s\S]*?(?=      - name:)/, ''),
+    block => block.replace('      - name: Setup Gradle', '      - name: Setup Gradle\n        if: false'),
+    block => block.replace('      - name: Setup Gradle', '      - name: Setup Gradle\n        continue-on-error: true'),
+  ]) {
+    const changed = mutateWorkflowJob(normalizedCi, 'backend-scope', mutate);
+    assert.notEqual(changed, normalizedCi);
+    assert.ok(validatePinnedWorkflowUses([{ ...workflow, content: changed }]).length > 0);
+  }
+  const duplicated = `${normalizedCi}\n  unexpected-cache-writer:\n    steps:\n      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`;
+  assert.match(validatePinnedWorkflowUses([{ ...workflow, content: duplicated }]).join('\n'), /no reviewed writer policy/);
 });
 
 test('frontend heavy source type-checks the e2e sources excluded from the root tsconfig', () => {

@@ -281,6 +281,21 @@ function validateCriticalSteps(criticalSteps, jobs) {
   return errors;
 }
 
+// These are setup-gradle callers in the producer repository. Exported products
+// bind their independent single writer in their existing product contracts.
+const GRADLE_CACHE_READ_ONLY = {
+  '.github/workflows/ci.yml': {
+    'backend-scope': 'false',
+    'migration-scope': "${{ needs.change-scope.outputs.backend != 'false' }}",
+    'reusable-base': 'true',
+    'mutation-scope': 'true',
+    'mutation-scope-migration': 'true',
+  },
+  '.github/workflows/dependency-check.yml': { 'dependency-check': 'true' },
+  '.github/workflows/migration-tool.yml': { 'migration-tool': 'true' },
+  '.github/workflows/release.yml': { verify: 'true' },
+};
+
 export function validatePinnedWorkflowUses(workflowFiles) {
   if (!Array.isArray(workflowFiles)) {
     return ['workflow action pin contract requires an array of workflow files'];
@@ -293,8 +308,13 @@ export function validatePinnedWorkflowUses(workflowFiles) {
       : '(unknown workflow)';
     const content = typeof workflowFile?.content === 'string' ? workflowFile.content : '';
     const lines = content.replace(/\r\n/g, '\n').split('\n');
+    const cachePolicy = GRADLE_CACHE_READ_ONLY[filePath];
+    const cacheCallCounts = new Map();
+    let jobId = null;
 
     for (let index = 0; index < lines.length; index += 1) {
+      const jobHeader = /^ {2}([A-Za-z0-9_-]+):\s*(?:#.*)?$/.exec(lines[index]);
+      if (jobHeader) jobId = jobHeader[1];
       const match = /^\s*(?:-\s*)?uses:\s*(.*?)\s*$/.exec(lines[index]);
       if (!match) continue;
       const action = unquote(match[1].replace(/\s+#.*$/, ''));
@@ -312,6 +332,8 @@ export function validatePinnedWorkflowUses(workflowFiles) {
         }
         const usesIndent = lines[index].match(/^\s*/)[0].length;
         const stepIndent = /^\s*-/.test(lines[index]) ? usesIndent : usesIndent - 2;
+        let start = index;
+        while (start > 0 && !new RegExp(`^ {${stepIndent}}- `).test(lines[start])) start -= 1;
         let end = index + 1;
         while (end < lines.length) {
           const line = lines[end];
@@ -319,11 +341,35 @@ export function validatePinnedWorkflowUses(workflowFiles) {
             && line.length - line.trimStart().length <= stepIndent) break;
           end += 1;
         }
-        const inputs = nestedBlock(lines.slice(index, end).join('\n'), 'with', stepIndent + 2) ?? '';
+        const step = lines.slice(start, end).join('\n');
+        const inputs = nestedBlock(step, 'with', stepIndent + 2) ?? '';
         const provider = scalarAtIndent(inputs, 'cache-provider', stepIndent + 4);
-        if (provider !== 'basic') {
+        const countInput = key => [...inputs.matchAll(new RegExp(`^ {${stepIndent + 4}}${key}:`, 'gm'))].length;
+        if (provider !== 'basic' || countInput('cache-provider') !== 1) {
           errors.push(`${filePath}:${index + 1} Gradle setup must explicitly select cache-provider: basic`);
         }
+        const expectedReadOnly = cachePolicy?.[jobId];
+        cacheCallCounts.set(jobId, (cacheCallCounts.get(jobId) ?? 0) + 1);
+        if (expectedReadOnly === undefined) {
+          errors.push(`${filePath}:${index + 1} Gradle cache caller has no reviewed writer policy`);
+        } else if (scalarAtIndent(inputs, 'cache-read-only', stepIndent + 4) !== expectedReadOnly
+            || countInput('cache-read-only') !== 1) {
+          errors.push(`${filePath}:${index + 1} ${jobId} Gradle cache-read-only must be ${expectedReadOnly}`);
+        }
+        for (const key of ['cache-disabled', 'cache-write-only']) {
+          const value = scalarAtIndent(inputs, key, stepIndent + 4);
+          if ((value !== null && value !== 'false') || countInput(key) > 1) {
+            errors.push(`${filePath}:${index + 1} Gradle cache ${key} may not bypass reader/writer policy`);
+          }
+        }
+        if (/^\s*(?:-\s*)?(?:if|continue-on-error):/m.test(step)) {
+          errors.push(`${filePath}:${index + 1} Gradle cache setup must run without a step override`);
+        }
+      }
+    }
+    for (const expectedJob of Object.keys(cachePolicy ?? {})) {
+      if (cacheCallCounts.get(expectedJob) !== 1) {
+        errors.push(`${filePath}: ${expectedJob} must have exactly one reviewed Gradle cache setup`);
       }
     }
   }

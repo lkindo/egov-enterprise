@@ -347,7 +347,7 @@ jobs:
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
         with:
           cache-provider: basic
-          # Gradle 캐싱 활성화
+          # Sole writer when online verification is selected; all matrix jobs only restore.
           cache-disabled: false
           cache-read-only: false
           cache-overwrite-existing: false
@@ -501,6 +501,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
         with:
           cache-provider: basic
+          # Only the migration-only pipeline writes when the online writer is absent.
+          cache-read-only: ${{ needs.change-scope.outputs.backend != 'false' }}
 
       - name: Allow the checked-in Gradle wrapper to run
         run: chmod +x gradlew
@@ -657,6 +659,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
         with:
           cache-provider: basic
+          cache-read-only: true
       - name: Generate and verify reusable profile
         run: node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }} --layout ${{ matrix.layout }}
       - name: Generate and verify custom composition
@@ -874,27 +877,23 @@ jobs:
           BACKEND_API_URL: http://127.0.0.1:8080/api/v1/
           NEXT_PUBLIC_WEB_URL: http://127.0.0.1:3001
 
-      - name: Calculate impact candidates (shadow only; full execution remains required)
-        run: node scripts/e2e-shard-plan.mjs --shadow-base "$PR_BASE_SHA" --shadow-head "$PR_HEAD_SHA" --shadow-output /tmp/e2e-impact-shadow.json
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-
-      # API/browser populations are disjoint; both execute in the same owned shard stack.
+      # Reviewed PR routes select whole specs; integration pushes retain full E2E.
+      # API/browser populations are disjoint; selected specs share the owned shard stack.
       # blob reporter는 샤드 병합, line reporter는 콘솔 진단, JSON reporter는 실행 완전성 계약의 입력이다.
       - name: Run E2E Tests (Sharded)
         id: e2e-run
         run: |
-          set -o pipefail
-          mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard "${{ matrix.shard }}")
+          set -euo pipefail
+          node ../scripts/e2e-shard-plan.mjs --shard "${{ matrix.shard }}" --ci --plan-output /tmp/e2e-impact-plan.json > /tmp/e2e-specs.txt
+          mapfile -t E2E_SPECS < /tmp/e2e-specs.txt
           if [ "${#E2E_SPECS[@]}" -eq 0 ]; then
             echo "::error::Duration-balanced E2E plan returned no specs for shard ${{ matrix.shard }}"
             exit 1
           fi
           printf 'E2E shard %s specs:\n' "${{ matrix.shard }}"
           printf '  %s\n' "${E2E_SPECS[@]}"
-          node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log
-          node ../scripts/playwright-result-contract.mjs --report "$PLAYWRIGHT_JSON_OUTPUT_FILE" --inventory /tmp/e2e-inventory.json "${E2E_SPECS[@]}"
+          node ../scripts/run-isolated-e2e.mjs --ci-compose --full-inventory -- --project=api-contract --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log
+          node ../scripts/playwright-result-contract.mjs --report "$PLAYWRIGHT_JSON_OUTPUT_FILE" --inventory /tmp/e2e-inventory.json "${E2E_SPECS[@]}" --ci-shard "${{ matrix.shard }}"
         working-directory: frontend
         env:
           CI: "true"
@@ -904,13 +903,6 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
           PLAYWRIGHT_JSON_OUTPUT_FILE: /tmp/e2e-results.json
           E2E_INVENTORY_OUTPUT_FILE: /tmp/e2e-inventory.json
-
-      - name: Compare shadow candidates with full shard results
-        if: always()
-        run: |
-          if [ -f /tmp/e2e-results.json ] && [ -f /tmp/e2e-impact-shadow.json ]; then
-            node scripts/e2e-shard-plan.mjs --shadow-plan /tmp/e2e-impact-shadow.json --shadow-report /tmp/e2e-results.json
-          fi
 
       # 잘리지 않은 원본 로그를 남긴다 — 애노테이션의 2000자 제한이 이번 진단을 세 번 막았다.
       - name: Upload diagnostic logs
@@ -926,7 +918,7 @@ jobs:
             /tmp/e2e-run.log
             /tmp/e2e-results.json
             /tmp/e2e-inventory.json
-            /tmp/e2e-impact-shadow.json
+            /tmp/e2e-impact-plan.json
             /tmp/compose-up.log
           retention-days: 7
           if-no-files-found: warn
@@ -1115,6 +1107,7 @@ jobs:
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
         with:
           cache-provider: basic
+          cache-read-only: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -1203,6 +1196,7 @@ jobs:
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
         with:
           cache-provider: basic
+          cache-read-only: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew

@@ -1377,7 +1377,7 @@
           },
           {
             "source": ".github/workflows/ci.yml",
-            "fragment": "mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\")",
+            "fragment": "node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\" --ci --plan-output /tmp/e2e-impact-plan.json > /tmp/e2e-specs.txt",
             "tiers": [
               "ci"
             ],
@@ -1385,7 +1385,7 @@
           },
           {
             "source": ".github/workflows/ci.yml",
-            "fragment": "node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log",
+            "fragment": "node ../scripts/run-isolated-e2e.mjs --ci-compose --full-inventory -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log",
             "tiers": [
               "ci"
             ],
@@ -1393,7 +1393,7 @@
           },
           {
             "source": ".github/workflows/ci.yml",
-            "fragment": "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\"",
+            "fragment": "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\" --ci-shard \"${{ matrix.shard }}\"",
             "tiers": [
               "ci"
             ],
@@ -1407,9 +1407,9 @@
       ],
       "task": [
         "node scripts/run-isolated-e2e.mjs",
-        "node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\"",
-        "node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json",
-        "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\""
+        "node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\" --ci",
+        "node ../scripts/run-isolated-e2e.mjs --ci-compose --full-inventory -- --project=api-contract --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json",
+        "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" --inventory /tmp/e2e-inventory.json \"${E2E_SPECS[@]}\" --ci-shard \"${{ matrix.shard }}\""
       ],
       "category": "end-to-end",
       "owner": "quality-engineering",
@@ -1423,14 +1423,18 @@
         "scripts/playwright-result-contract.test.mjs",
         "scripts/e2e-isolation.mjs",
         "scripts/run-isolated-e2e.mjs",
-        "scripts/e2e-compose-preflight.mjs"
+        "scripts/e2e-compose-preflight.mjs",
+        "scripts/ci-change-scope.mjs",
+        "scripts/e2e-shard-plan.test.mjs"
       ],
       "evidence": [
         "frontend/blob-report",
         "frontend/test-results",
-        "/tmp/e2e-results.json"
+        "/tmp/e2e-results.json",
+        "/tmp/e2e-inventory.json",
+        "/tmp/e2e-impact-plan.json"
       ],
-      "redProof": "Break a journey assertion, add an unwaived or expired skip, omit a planned spec from the JSON report, report zero expected or any skipped tests, detach the duration-balanced/result runners, or make the stable e2e-test aggregate ignore a shard failure; a required E2E check or registry contract must fail."
+      "redProof": "Break a journey assertion, omit a mapped consumer or selected test, narrow discovery, remove setup, tamper with CI shard arguments, add an unwaived skip or flaky outcome, detach planner/result execution, or make the stable aggregate ignore a shard failure; the existing contract or required E2E check must fail."
     },
     {
       "id": "GATESET-PIT-MUTATION-AGGREGATE",

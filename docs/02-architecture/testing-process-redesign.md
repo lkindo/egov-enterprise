@@ -155,14 +155,14 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 - [CI](../../.github/workflows/ci.yml)의 변경 분류가 성공하면 온라인 backend, 독립 migration, frontend, 선택된 PIT, E2E, 보안·재사용 검증을 각 조건에 따라 시작한다. E2E와 PIT는 backend 전체 성공 대기 대신 classifier 결과에 의존한다.
 - 기존 6개 required context와 실패 집계를 유지한다. E2E/PIT가 먼저 끝나도 backend 테스트·스키마·JaCoCo 실패를 허용하지 않는다.
 - 온라인 PIT가 선택되면 제품 8개 배치를 모두 실행하되 `max-parallel: 3`으로 동시 실행을 제한한다. 세 workflow 합계 동시 20개가 관측된 초기 실행에서 E2E shard 2가 111초, 긴 migration PIT가 116초 대기한 점을 반영해 E2E·migration·재사용 검증의 runner 경합을 줄이는 조치다. 관측한 20개를 관리 API로 확인한 계정 한도로 단정하지 않으며, 다른 PR의 부하나 GitHub 배정 순서까지 통제하거나 전체 완료 시간 단축을 보장하지 않는다.
-- E2E가 필요한 PR은 **API·브라우저 전수**를 두 shard에 배분한다. 일부 경로만 계산하는 shadow 후보가 실제 실행 범위를 줄이지 않는다.
+- E2E가 필요한 PR은 아래의 검토된 화면 수정만 spec 단위로 선별한다. main과 공유·미지 입력은 API·브라우저 전수를 두 shard에 배분한다.
 - API 이미지에 Buildx GHA cache를 연결했다. 두 shard가 캐시를 읽고 첫 shard만 export한다. 캐시가 비어 있거나 export에 실패해도 이미지 빌드·부팅·필수 검증을 생략하지 않는다.
 - FE artifact를 공유해 backend/frontend 완료를 다시 기다리는 의존성은 만들지 않았다. 각 E2E 스택은 자기 API rewrite·인증 설정에 맞춘 FE를 사용한다.
 - CodeQL 양언어 전수 분석, 기존 재사용 프로필/레이아웃, 의존성 snapshot readiness, PIT strict 기준을 유지한다.
 
 [변경 분류기](../../scripts/ci-change-scope.mjs)는 Gradle/toolchain, `src/testFixtures`, main/test 리소스 등 PIT 입력을 포함한다. [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)에 따라 온라인 4모듈은 결합된 범위를 유지하고 독립 `migration-tool`의 build/PIT만 분리한다. 공통 Gradle·ID 생성 의미 계약은 양쪽 실행, 미지·빈 비교는 전수 fallback이며 10개 PIT scope의 75% strict 기준은 같다. 온라인·이관 커버리지는 각 LINE 85%·BRANCH 70%를 강제하고 기존 로컬 전수 커버리지도 유지한다. 개별 Java 파일별 시험 선택은 도입하지 않았다.
 
-Gradle action은 v6.3.0의 검증 대상 commit에 고정하고 `cache-provider: basic`을 명시했다. 캐시 복원 성공이나 구성 변경만으로 필수 검사를 통과시키지 않으며, 실제 hit·전송 비용·전체 경과시간은 같은 검증 범위의 원격 실행으로 평가한다.
+Gradle action은 v6.3.0의 검증 대상 commit에 고정하고 `cache-provider: basic`을 명시했다. upstream writer는 backend 하나이며 backend가 명시적으로 false인 이관 전용 실행에서는 migration이 맡는다. 나머지 작업은 읽기 전용이고 독립 export 제품은 자체 writer를 유지한다. 캐시 복원 성공이나 구성 변경만으로 필수 검사를 통과시키지 않으며, 실제 hit·전송 비용·전체 경과시간은 같은 검증 범위의 원격 실행으로 평가한다.
 
 실행 job `e2e-tests`·`mutation-scope`·`mutation-scope-migration`의 상태 조건은 `!cancelled()`로 두어 기존 선택 범위를 보존하면서 취소에 반응하게 하고, 결과 집계와 cleanup의 `always()`는 유지한다. GitHub는 취소할 때 job 조건을 재평가하므로 실행 job의 `always()`는 취소 후에도 참이 될 수 있다([공식 취소 동작](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-cancellation)).
 
@@ -170,21 +170,38 @@ Gradle action은 v6.3.0의 검증 대상 commit에 고정하고 `cache-provider:
 
 | 시점 | 현재 실행 또는 운영 원칙 |
 |---|---|
-| PR | 변경 분류에 필요한 기존 필수 검사. E2E 대상이면 API·브라우저 전수 |
+| PR | 변경 분류에 필요한 기존 필수 검사. 검토된 화면 수정은 E2E spec 선별, 불명확한 입력은 전수 |
 | main/master push | PR과 같은 모듈 영향 분류. 비교 기준 부재·미지·빈 변경은 전수 fallback |
 | 릴리스 | 대상 SHA의 필수 성공 증거와 배포 산출물·설정·스키마 계약 확인. 다른 SHA의 green 재사용 금지 |
 | 주간/명시적 점검 | 독립 이관은 월요일 03:23 KST와 수동 실행에서 전수. 기존 의존성 전수 감사·비용·flaky 추세 검토와 지정 환경의 부하·DR 검증 유지 |
 
-### 5.4 영향 선별은 shadow로 평가하고 실행은 전수로 유지한다
+### 5.4 PR의 검증된 화면 변경만 spec 단위로 선별한다
 
-[shard planner](../../scripts/e2e-shard-plan.mjs)의 `IMPACT_RULES`와 `buildImpactShadowPlan`은 일부 FE 경로와 계약 소유 spec의 후보를 연결한다. 일반 프론트 의존 그래프를 완성한 것이 아니다. 현재 설문 규칙의 `app/polls/`·`app/admin/polls/`는 실제 `app/admin/survey/`와 다르므로 실제 설문 변경은 전수 fallback이다. 도움말 허브의 커뮤니티 소비자와 게시판 입력 화면의 FAQ 소비자도 현 후보에서 빠진다([CommunityPage](../../frontend/e2e/pages/CommunityPage.ts), [KnowledgePage](../../frontend/e2e/pages/KnowledgePage.ts)). 이 불완전한 후보를 실행 축소에 사용하지 않는다.
+[ADR-0023](decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md)에 따라 [planner](../../scripts/e2e-shard-plan.mjs)의 소유 매핑을 실제 PR 실행에 연결한다. 기존 잘못된 설문 prefix와 도움말→커뮤니티, 게시판→FAQ·인증·인가, 결재→공개 탐색, 워크플로→커뮤니티 별칭 소비를 보완했다. 표는 검토용 요약이며 정확한 경로·spec 집합은 `IMPACT_RULES`가 소유한다. 아래 경로는 `frontend/src/app/` 기준이다.
 
-- 수정된 등록 spec은 자신을 후보에 넣고, 명시된 route는 해당 소유 spec을 후보에 넣는다. 좁은 후보에도 모든 품질 spec과 공통 application shell을 포함한다.
-- backend·공유 코드·fixture·설정 등 규칙에 없는 경로, 추가/삭제/이동, 알 수 없는 상태, 비교 기준 부재는 **전수 후보로 fallback**한다.
-- 계획은 항상 `mode: shadow`, `executes: full`이다. CI는 별도로 계산한 두 shard의 전수 목록을 실행한다.
-- 실행 후 unexpected/flaky 파일 중 후보 밖에 있던 항목을 대조해 누락을 기록한다. 현재 `selectionReady`는 false이며, 후보와 전수가 모두 green인 표본만으로 의존성 완전성을 주장하지 않는다.
+| 수정 화면 범위 | 추가로 선택하는 spec (`journeys/` 기본) |
+|---|---|
+| `admin/survey/` | `online-polls` |
+| `approvals/` | `approvals`, `public-navigation`, `workflow-demo` |
+| `admin/workflow/` | `workflow-demo`, `community-navigation` |
+| `admin/collaboration/address-book/` | `address-book`, `contracts/address-book-ownership` |
+| `admin/community/boards/` | `board-masters`, `board-articles`, `community-navigation`, `help-content`, `authentication`, `authorization` |
+| `admin/help/`, `help/`, `admin/uss/olh/online-manual/` | `help-content`, `public-navigation`, `community-navigation` |
+| `admin/operation/rewards/` | `rewards` |
+| `admin/operation/events/` | `event-administration` |
+| `admin/notifications/` | `notifications` |
+| `smart-toolkit/schedule/` | `schedules`, `approvals`, `contracts/schedules` |
+| `admin/system/common-code/` | `common-codes`; 외부 import 소비자가 있으면 전수 |
 
-선별 단위는 spec 전체다. 테스트 제목 grep으로 현재 실행 완전성 검사를 우회하지 않는다. 영향 선택의 실제 활성화는 대표 PR 비교에서 탐지 누락 방지와 준비 비용을 포함한 시간 이득을 확인한 뒤 별도로 판단한다. 빈 선택·누락·중복·잘못된 project·skip·flaky는 기존 [planner 계약](../../scripts/e2e-shard-plan.test.mjs)과 [결과 계약](../../scripts/playwright-result-contract.test.mjs)의 부정 검증으로 지킨다.
+모든 좁은 선택에도 `journeys/application-shell.spec.ts`와 `quality/` 8개를 포함한다. 이 표는 공통 품질 spec을 반복해서 적지 않는다. `admin/user/`는 인증·조직·인가 경계이므로 초기 선별 대상에서 제외하고 전수로 유지한다.
+
+- PR 이벤트의 base/head와 실제 merge checkout을 대조하고, Git 비교에서 기존 TS/TSX 파일 수정만 평가한다. 함께 바뀐 일반 문서는 기존 CI 분류기의 docs-only 판정을 재사용해 제외하지만 AGENTS·헌법 등 정책 파일은 제외하지 않는다. 공유 Next 경계, CSS·설정·테스트 하네스, 새 파일·삭제·이동, 미등록 경로와 비교 불가는 전수다.
+- 기존 TypeScript parser로 production import를 확인한다. 매핑 안의 코드가 바깥에서 소비되거나 해석할 수 없는 import·설정·작업 트리 불일치가 있으면 전수로 돌아간다. type-only 소비도 첫 구현에서는 보수적으로 취급한다. 일반적인 모든 런타임 의존성을 완전히 추론한다는 뜻은 아니다.
+- 선택된 spec을 기존 실측 가중치로 두 shard에 다시 배분한다. 제목 grep으로 파일 안의 테스트를 줄이지 않는다. 빈 shard·중복·미등록 spec은 거부한다.
+- CI는 전체 프로젝트의 Playwright discovery를 먼저 수집한다. 결과 검증은 이벤트에서 계획을 독립적으로 다시 계산하고 실행 argv를 정확히 대조한 뒤, 전체 discovery에서 해당 spec의 테스트 ID·project와 setup을 투영해 실행 결과와 비교한다. plan JSON은 진단 자료다.
+- main/master에서 E2E가 필요한 변경과 PR 이외의 실행은 전수다. 기존 실패 전파, skip/flaky 0, Linux VRT, required 집계와 격리 스택 소유권을 유지한다.
+
+성공 표본만으로 매핑 완전성을 주장하지 않는다. 매핑·실행 인자·inventory 누락과 writer 중복을 의도적으로 주입한 계약 red, 해당 SHA의 원격 실행 결과, 실제 준비 비용을 구분해 기록한다. 선별 spec 수나 과거 duration 합을 CI 완료시간 단축률로 바꾸지 않는다.
 
 ## 6. 실패 진단과 중복 정리 절차
 
@@ -307,7 +324,7 @@ CI·게이트의 실행/부정 검증 정본은 [shard 계약](../../scripts/e2e
 | 변경 커밋의 전수 런타임 | inventory·결과 일치와 skip/flaky/오류 0, VRT 실행을 해당 SHA의 결과로 확인 |
 | CI 병렬화·캐시 | 기존 필수 실패 차단을 유지하고 cold/warm·대표 PR의 준비/완료 시간을 비교 |
 | shard 가중치 | 실제 분배 결과와 표본 변동을 확인하고 측정 SHA·artifact 출처와 함께 갱신 |
-| 영향 후보 평가 | 전수 실패 중 shadow 후보가 놓친 계약과 이유를 수집. 실행 축소는 별도 판단 |
+| 영향 선별 유지 | PR 선택 이유·모집단과 main 전수 실패를 대조. 새 소비자는 매핑·부정 검증을 함께 갱신 |
 | 테스트 유지 | 새 기능의 계약 owner를 확인하고 고유 역할·조건·관찰 결과를 보존하며 중복 준비부터 정리 |
 
 시간은 **최초 잡 시작 전 대기 / 필수 체크 완료 경과시간 / 총 러너 시간 / 환경 준비 / fixture 준비·정리 / 본 검사 / 재시도**로 나눠 측정한다. 비교에는 runner·worker·모집단·캐시 조건을 명시하고 case duration 합을 wall-clock으로 제시하지 않는다. 단일 표본에서 p95나 보장 절감률을 만들지 않는다.
@@ -367,3 +384,16 @@ CI·게이트의 실행/부정 검증 정본은 [shard 계약](../../scripts/e2e
 이 두 main 표본에서 전수 CI의 유의미한 시간·러너 비용 단축은 확인하지 못했다. 이관 job은 같은 구현의 PR과 main에서도 16분 22초와 32분 41초로 차이가 났으며, 그 편차의 세부 원인은 이 결과만으로 확정하지 않는다. 이번 변경의 검증된 효과는 온라인과 이관 실행·커버리지 경계를 분리하고, 일반 온라인 변경에서는 이관 build/PIT를 선택하지 않도록 PR·main 분류와 실행 소비자를 연결한 것이다. 일반 온라인 변경의 최종 완료시간은 해당 변경 범위의 실측으로 평가한다.
 
 main에서도 [최초 저장 job](https://github.com/lkindo/egov-enterprise/actions/runs/35603874832/job/106346344103) 이후 [후속 PIT job](https://github.com/lkindo/egov-enterprise/actions/runs/35603874832/job/106346344029)이 동일 basic key를 정상 복원했다. 온라인·이관 job의 시작 시점에는 miss였고, 먼저 저장된 동일 key에 대한 다른 job의 저장 시도에는 reserve 충돌 경고가 발생했다. 이는 [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)의 job 무관·불변 key 한계로, 전체 캐시 경고가 0이거나 backend 테스트가 캐시에서 복원됐다는 뜻은 아니다.
+
+
+### 9.5 PR spec 선별과 단일 cache writer 검증
+
+[ADR-0023](decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md)은 기존 경로 후보를 보완해 PR에서만 실행 선별을 허용한다. 2026-09-21 현재 설문·보상·행사·알림 수정의 후보는 10/50 spec, 결재·도움말·일정은 12/50, 게시판은 15/50이다. 공통 코드 화면의 외부 type import는 전수 fallback을 일으킨다. 이 개수는 현재 매핑 결과이며 시간 절감률이 아니다.
+
+Windows의 새 격리 스택에서 설문 선택 10개 spec을 직접 실행했다. 본 테스트 27개와 setup 2개 중 28개 성공, Linux VRT 기존 플랫폼 제외 1개, unexpected/flaky/global error 0이었다. 시작부터 소유 자원 정리까지 약 6분 8초, Playwright 보고 시간 약 3분 20초였다. 이 실행은 로컬 worker 1과 병행 계약 검사 환경이므로 Linux CI의 속도 비교값으로 사용하지 않는다. 종료 후 해당 run의 DB 컨테이너와 runtime manifest가 제거된 것을 확인했다.
+
+계획기·결과 검증은 실제 임시 Git PR merge와 CLI 실행으로 PR 선택/main 전수, 잘못된 SHA·부모, 외부 import, 선택 파일 누락·중복·다른 shard·필터된 discovery·setup 제거를 검증한다. 소유 매핑 누락 변이와 캐시 writer 역할 변경·제거도 실패해야 한다. 이 계약 red와 실제 제품 UI 결함 주입은 별개의 증거다.
+
+제품 UI의 대표 결함도 별도 격리 worktree에서 검증했다. 커밋 `6d6dd4a78`의 설문 관리 h1 문구만 임시로 변경한 run `ab3fd4a10e04652c81e72bc8`에서 선택된 10개 spec 중 `online-polls.spec.ts`의 두 테스트가 해당 제목 검증에서 실패했다. 결과는 성공 26·실패 2·기존 Windows VRT 제외 1, 재시도·flaky·global error 0이었다. DOM·trace에서 바뀐 h1과 설문 생성 HTTP 200을 확인했고, 소스 복원·소유 DB와 앱 종료·runtime manifest 제거를 확인했다. 이 증거는 대표 설문 회귀 탐지에 한정하며, 같은 결함의 전수 50개 spec 비교는 실행하지 않았다.
+
+캐시의 기존 키 복원과 중복 저장 방지는 구분한다. basic provider의 reader는 저장 API에 진입하지 않도록 설정하고, CI의 writer 후보 두 개는 backend 선택 여부로 배타적으로 결정한다. FE 전용 변경·writer 실패에 새 writer를 승격하지 않는다. 기존 불변 캐시가 이미 있으면 workflow 변경만으로 새로운 cold 저장을 실증할 수 없다. 다른 실행의 취소·종료 경합까지 전역 잠금으로 직렬화하지 않는다.

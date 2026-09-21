@@ -6,7 +6,17 @@ import path from 'node:path';
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan } from './e2e-isolation.mjs';
-import { closedEnvironment, assertNoDotEnv, assertBuildTarget } from './run-isolated-e2e.mjs';
+import { closedEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments } from './run-isolated-e2e.mjs';
+
+test('CI discovery stays complete even if execution arguments accidentally narrow tests', () => {
+  const selection = ['--project=full-suite', 'e2e/journeys/online-polls.spec.ts', '--grep=one-test', '--no-deps'];
+  assert.deepEqual(discoveryArguments(selection, true), ['--project=api-contract', '--project=full-suite', '--list', '--reporter=json']);
+  assert.deepEqual(discoveryArguments(selection), [...selection, '--list', '--reporter=json']);
+  const runner = readFileSync(new URL('./run-isolated-e2e.mjs', import.meta.url), 'utf8');
+  const binding = /await run\('discovery',[\s\S]*?\.\.\.discoveryArguments\(selection, fullInventory\)/;
+  assert.match(runner, binding);
+  assert.doesNotMatch(runner.replace('...discoveryArguments(selection, fullInventory)', '...selection'), binding);
+});
 
 const now = Date.now();
 const fixture = () => ({ version: 1, runId: 'a'.repeat(24), token: 'b'.repeat(64), databaseId: 'c'.repeat(64),
