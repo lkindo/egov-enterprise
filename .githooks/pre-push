@@ -74,9 +74,10 @@ npm run test:operational-contracts \
 # 이전 경로가 CI와 로컬에서 서로 다르게 분류될 수 있다.
 SCOPE_DOCS_ONLY=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field docsOnly)
 SCOPE_BACKEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field backend)
+SCOPE_MIGRATION=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field migration)
 SCOPE_FRONTEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field frontend)
 SCOPE_ATLAS=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field atlas)
-echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / frontend=$SCOPE_FRONTEND"
+echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / migration=$SCOPE_MIGRATION / frontend=$SCOPE_FRONTEND"
 
 if [ -n "$CHANGED_FILES" ]; then
   # Atlas는 전용 docs-as-code 계약을 통과한 경우에만 문서 fast-pass를 허용한다.
@@ -102,6 +103,12 @@ if [ "$SCOPE_BACKEND" = "true" ]; then
     || { echo "❌ Java 컴파일 실패 — 빌드 에러 0건 이후에만 push 허용 (AGENTS.md Verification)"; exit 1; }
 else
   echo "  → backend: 변경 영향 없음 — Java compile/harness 생략"
+fi
+
+if [ "$SCOPE_MIGRATION" = "true" ] && [ "$SCOPE_BACKEND" != "true" ]; then
+  echo "  → migration: ./gradlew :migration-tool:compileJava :migration-tool:compileTestJava"
+  ./gradlew :migration-tool:compileJava :migration-tool:compileTestJava -q \
+    || { echo "❌ Migration CLI 컴파일 실패"; exit 1; }
 fi
 
 if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then

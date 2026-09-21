@@ -22,6 +22,7 @@ test('documentation and Atlas-only changes run governance without heavy leaves',
   assert.equal(result.governance, true);
   assert.equal(result.secretScan, true);
   assert.equal(result.backend, false);
+  assert.equal(result.migration, false);
   assert.equal(result.frontend, false);
   assert.equal(result.schema, false);
   assert.equal(result.e2e, false);
@@ -35,6 +36,7 @@ test('backend production changes select backend, e2e, and mutation', () => {
 
   assert.equal(result.docsOnly, false);
   assert.equal(result.backend, true);
+  assert.equal(result.migration, false);
   assert.equal(result.frontend, false);
   assert.equal(result.e2e, true);
   assert.equal(result.mutation, true);
@@ -51,7 +53,7 @@ test('Atlas source and generator inputs select Atlas contracts without weakening
     const result = classifyChangedFiles([file]);
     assert.equal(result.atlas, true, file);
     assert.deepEqual(result.unknownFiles, [file]);
-    for (const field of ['backend', 'frontend', 'schema', 'e2e', 'mutation', 'sast']) {
+    for (const field of ['backend', 'migration', 'frontend', 'schema', 'e2e', 'mutation', 'mutationMigrationTool', 'sast']) {
       assert.equal(result[field], true, `${file}: ${field} must remain fail closed`);
     }
   }
@@ -76,8 +78,6 @@ test('backend test fixtures rerun mutation evidence', () => {
     'business-core/src/test/resources/application-test.yml',
     'foundation/src/testFixtures/java/nuri/foundation/fixture/TestFixtures.java',
     'foundation/src/testFixtures/resources/application-test.yml',
-    'migration-tool/src/test/resources/mapping-sample.yml',
-    'migration-tool/src/testFixtures/resources/mapping-sample.yml',
   ]) {
     const result = classifyChangedFiles([file]);
     assert.equal(result.mutation, true);
@@ -86,12 +86,13 @@ test('backend test fixtures rerun mutation evidence', () => {
 });
 
 test('runtime resources retain PIT evidence without selecting unrelated migration mutation', () => {
-  for (const module of ['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool']) {
+  for (const module of ['foundation', 'business-core', 'business-app', 'api-server']) {
     const file = `${module}/src/main/resources/application.yml`;
     const result = classifyChangedFiles([file]);
     assert.equal(result.mutation, true, file);
-    assert.equal(result.mutationMigrationTool, module === 'migration-tool', file);
-    assert.equal(result.e2e, module !== 'migration-tool', file);
+    assert.equal(result.migration, false, file);
+    assert.equal(result.mutationMigrationTool, false, file);
+    assert.equal(result.e2e, true, file);
   }
 });
 
@@ -106,6 +107,8 @@ test('shared Gradle inputs retain every PIT scope', () => {
   ]) {
     const result = classifyChangedFiles([file]);
     assert.equal(result.mutation, true, file);
+    assert.equal(result.backend, true, file);
+    assert.equal(result.migration, true, file);
     assert.equal(result.mutationMigrationTool, true, file);
   }
 });
@@ -129,19 +132,19 @@ test('frontend unit tests and the offline migration tool skip unrelated browser 
   const migrationTool = classifyChangedFiles([
     'migration-tool/src/main/java/nuri/migration/MigrationRunner.java',
   ]);
-  assert.equal(migrationTool.backend, true);
+  assert.equal(migrationTool.backend, false);
+  assert.equal(migrationTool.migration, true);
   assert.equal(migrationTool.e2e, false);
-  assert.equal(migrationTool.mutation, true);
+  assert.equal(migrationTool.mutation, false);
   assert.equal(migrationTool.mutationMigrationTool, true);
 });
 
-test('migration-tool mutation is a narrowing of the mutation scope, never an extension', () => {
-  // 이 모듈의 뮤테이션 두 스코프가 CI 임계 경로를 지배했다(DEC-OPS-104). 온라인 런타임과 분리된
-  // 독립 CLI 라 다른 모듈의 뮤턴트에 영향을 주지 않으므로, 변경 범위 밖이면 실행하지 않는다.
+test('migration-only changes select independent build and PIT scopes without online leaves', () => {
   const backendOnly = classifyChangedFiles([
     'business-core/src/main/java/nuri/business/service/auth/AuthServiceImpl.java',
   ]);
   assert.equal(backendOnly.mutation, true);
+  assert.equal(backendOnly.migration, false);
   assert.equal(backendOnly.mutationMigrationTool, false);
 
   assert.equal(classifyChangedFiles(['build.gradle']).mutationMigrationTool, true);
@@ -149,35 +152,71 @@ test('migration-tool mutation is a narrowing of the mutation scope, never an ext
   assert.equal(classifyChangedFiles(['migration-tool/build.gradle']).mutationMigrationTool, true);
   assert.equal(classifyChangedFiles(['unheard-of/path.bin']).mutationMigrationTool, true);
 
-  // 하한 — 이 경로들이 빠지면 이관 뮤테이션이 필요한 변경에서 잡이 돌지 않는다.
-  //   상한(⊆ mutation)만 검사하면 "항상 false" 인 구현도 통과하므로 양쪽을 함께 고정한다.
+  // Both directions matter: always-false drops migration evidence, while the
+  // former subset rule unnecessarily starts the entire online pipeline.
   for (const file of [
     'migration-tool/src/main/java/nuri/migration/validate/MappingValidator.java',
     'migration-tool/src/test/java/nuri/migration/adapter/CubridSourceAdapterTest.java',
     'migration-tool/src/test/resources/discovery/fixture.json',
+    'migration-tool/src/test/resources/mapping-sample.yml',
+    'migration-tool/src/test/resources/mapping-invalid.yml',
+    'migration-tool/src/test/resources/db-columns-fixture.json',
     'migration-tool/src/testFixtures/java/nuri/migration/fixture/MappingFixture.java',
+    'migration-tool/src/testFixtures/resources/mapping-sample.yml',
     'migration-tool/src/main/resources/application.yml',
-  ]) {
-    assert.equal(classifyChangedFiles([file]).mutationMigrationTool, true,
-      `${file}: 이관 뮤테이션 범위에서 빠졌다`);
-  }
-
-  // 부분집합 불변식 — 잡 자체가 mutation 으로 열리므로, 이 플래그가 더 넓으면 "범위 안" 이라고
-  //   말해 놓고 아무것도 실행되지 않는 상태가 된다.
-  for (const file of [
-    'gradle/libs.versions.toml',
-    'migration-tool/src/main/resources/application.yml',
-    'migration-tool/src/test/java/nuri/migration/adapter/CubridSourceAdapterTest.java',
-    'docs/README.md',
-    'frontend/src/app/page.tsx',
-    'build.gradle',
+    'migration-tool/build.gradle',
   ]) {
     const result = classifyChangedFiles([file]);
-    if (result.mutationMigrationTool) {
-      assert.equal(result.mutation, true,
-        `${file}: mutationMigrationTool 이 mutation 보다 넓어 잡이 열리지 않는 범위를 범위 안이라고 말한다`);
+    assert.deepEqual(result.unknownFiles, [], file);
+    for (const field of ['migration', 'mutationMigrationTool', 'sast', 'governance', 'secretScan']) {
+      assert.equal(result[field], true, `${file}: ${field}`);
+    }
+    for (const field of ['backend', 'frontend', 'schema', 'e2e', 'mutation', 'docsOnly']) {
+      assert.equal(result[field], false, `${file}: unrelated ${field}`);
     }
   }
+});
+
+test('shared ID contract changes select both modules and both PIT scopes', () => {
+  // StandardIdGenerator documents its independent mirror of IdGenerationUtil;
+  // Constants owns the online prefix and length consumed by that utility.
+  for (const file of [
+    'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java',
+    'foundation/src/test/java/nuri/foundation/core/util/IdGenerationUtilTest.java',
+    'foundation/src/main/java/nuri/foundation/constants/Constants.java',
+    'migration-tool/src/main/java/nuri/migration/keymap/StandardIdGenerator.java',
+  ]) {
+    assert.ok(fs.existsSync(path.join(repoRoot, file)), `${file}: semantic input must exist`);
+    const result = classifyChangedFiles([file]);
+    for (const field of ['backend', 'migration', 'mutation', 'mutationMigrationTool']) {
+      assert.equal(result[field], true, `${file}: shared ID contract lost ${field}`);
+    }
+  }
+});
+
+test('target standard catalog and unknown toolchain inputs retain full fallback', () => {
+  // MappingValidator's default catalog is the tracked root db_columns.json.
+  // Do not classify it as an isolated migration fixture: it represents the
+  // online target schema. External mapping paths remain unknown and full too.
+  for (const file of ['db_columns.json', 'gradlew', 'gradlew.bat', '.java-version', 'mapping.yml']) {
+    const result = classifyChangedFiles([file]);
+    assert.deepEqual(result.unknownFiles, [file]);
+    for (const field of ['backend', 'migration', 'frontend', 'schema', 'e2e', 'mutation', 'mutationMigrationTool']) {
+      assert.equal(result[field], true, `${file}: ${field}`);
+    }
+  }
+});
+
+test('mixed module changes select the union without inventing frontend or schema work', () => {
+  const result = classifyChangedFiles([
+    'business-core/src/test/java/nuri/business/service/auth/AuthServiceImplTest.java',
+    'migration-tool/src/test/resources/mapping-sample.yml',
+    'docs/README.md',
+  ]);
+  for (const field of ['backend', 'migration', 'mutation', 'mutationMigrationTool']) {
+    assert.equal(result[field], true, field);
+  }
+  for (const field of ['frontend', 'schema', 'e2e', 'docsOnly']) assert.equal(result[field], false, field);
 });
 
 test('frontend runtime configuration and lockfile changes retain browser E2E evidence', () => {
@@ -251,6 +290,7 @@ test('cross-stack schema and contract changes select all affected runtime gates'
 
   for (const result of [migration, openApi]) {
     assert.equal(result.backend, true);
+    assert.equal(result.migration, false);
     assert.equal(result.e2e, true);
   }
   assert.equal(migration.mutation, true);
@@ -270,10 +310,12 @@ test('unknown and empty change sets fail closed to the full pipeline', () => {
     const result = classifyChangedFiles(files);
     assert.equal(result.docsOnly, false);
     assert.equal(result.backend, true);
+    assert.equal(result.migration, true);
     assert.equal(result.frontend, true);
     assert.equal(result.schema, true);
     assert.equal(result.e2e, true);
     assert.equal(result.mutation, true);
+    assert.equal(result.mutationMigrationTool, true);
   }
 });
 
@@ -284,7 +326,7 @@ test('explicit full regression includes every heavy gate even for documentation-
   assert.equal(result.docsOnly, false);
   assert.deepEqual(result.files, files);
   assert.deepEqual(result.unknownFiles, [], 'full regression does not invent unknown paths');
-  for (const field of ['backend', 'frontend', 'schema', 'e2e', 'mutation', 'mutationMigrationTool', 'sast']) {
+  for (const field of ['backend', 'migration', 'frontend', 'schema', 'e2e', 'mutation', 'mutationMigrationTool', 'sast']) {
     assert.equal(result[field], true, field);
   }
   const cli = spawnSync(process.execPath,
@@ -343,6 +385,7 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     secret_scan: 'true',
     sast: 'false',
     backend: 'false',
+    migration: 'false',
     frontend: 'false',
     schema: 'false',
     e2e: 'false',
@@ -383,6 +426,15 @@ test('stdin boolean field mode is safe for local hook scope selection', () => {
     });
   assert.equal(backend.status, 0, backend.stderr);
   assert.equal(backend.stdout, 'false\n');
+
+  const migration = spawnSync(process.execPath,
+    ['scripts/ci-change-scope.mjs', '--stdin', '--field', 'migration'], {
+      cwd: repoRoot,
+      input: 'migration-tool/src/test/resources/mapping-sample.yml\n',
+      encoding: 'utf8',
+    });
+  assert.equal(migration.status, 0, migration.stderr);
+  assert.equal(migration.stdout, 'true\n');
 });
 
 test('pre-push consumes the shared fail-closed classifier before its documentation fast path', () => {

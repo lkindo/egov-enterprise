@@ -236,5 +236,5 @@ test('required CI binds every generated profile and layout and rejects weakening
     value => value.replace('    steps:', '    continue-on-error: true\n    steps:'),
     value => value.replace('        run: node scripts/verify-reusable-base', '        if: false\n        run: node scripts/verify-reusable-base'),
   ]) assert.ok(validatePipeline(workflow.replace(job, mutate(job)), manifest).length);
-  assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, reusable-base]', 'needs: [change-scope, backend-scope]'), manifest).length);
+  assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, migration-scope, reusable-base]', 'needs: [change-scope, backend-scope, migration-scope]'), manifest).length);
 });

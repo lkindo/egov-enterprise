@@ -8,6 +8,7 @@ sensitivity: public-repo-safe
 verified_at: 2026-09-21
 verified_against: 56aa75d7cafb30b242244a3867b776f3fc806151
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md
   - ../../docs/02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md
   - ../../docs/02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md
   - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
@@ -63,6 +64,7 @@ refresh_triggers:
 | ADR-0019 | accepted | 운영 오버레이에 X-Forwarded-For를 접속 주소로 덮어쓰는 비루트 nginx edge를 두고 Next 공개 포트를 비운다. Next는 `TRUSTED_EDGE_PROXY=true`일 때만 인증 BFF와 서버 측 API 호출에 사용자 IP를 싣고, 요청 제한 한도는 설정 속성으로 받는다(기본값은 종전 동작). | 사용자 IP가 로그인 IP 제한·로그인 기록·요청 제한에서 Next 주소 하나로 모이거나 rewrite 경로에서 위조될 수 있었다(GAP-SEC-004). 사용자가 개선 계획의 권고 형상을 승인했다. | [ADR-0019](../../docs/02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md) | 2026-09-14 | - |
 | ADR-0020 | accepted | 원본 모듈 구조를 유지하며 생성 백엔드의 멀티모듈·단일모듈 출력을 선택한다. 단일 출력도 논리 소스 그룹·검증 경계와 오프라인 이관 책임을 보존한다. | 사용자가 두 내보내기 형태를 명시 요청했다. 현재 누적 프로필·PostgreSQL 범위는 유지한다. | [ADR-0020](../../docs/02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md) | 2026-09-19 | - (ADR-0001 출력 형태 보완) |
 | ADR-0021 | accepted | 테스트를 API 계약·사용자 과업·횡단 품질로 재편하고 로컬·CI의 격리 소유권을 검증한다. 전체 E2E와 영향 shadow를 병행한다. | 중복 비용과 실행 누락을 줄이며 공유 DB를 보호한다. | [ADR-0021](../../docs/02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md) | 2026-09-21 | - |
+| ADR-0022 | accepted | PR·통합 push의 영향 분류를 통일하고 온라인·이관 build/PIT와 커버리지를 분리한다. Gradle 캐시 provider를 명시한다. | 독립 모듈의 불필요한 실행·중복과 직렬 대기를 줄인다. | [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md) | 2026-09-21 | ADR-0021 결정 4의 main 전수 강제·DEC-OPS-104의 PIT 부분집합 조건 |
 
 ## 운영 결정 index
 
@@ -187,6 +189,8 @@ refresh_triggers:
 | DEC-OPS-106 | accepted | **참조 4축에 물리 FK를 두고 "부모 없음" 의 저장 표현을 NULL 하나로 모은다.** ① V2_102 가 사용자 소속·부서 계층·행정구역 계층·게시판 커뮤니티 귀속에 `NOT VALID` FK 를 추가하고 고아가 없는 환경에서만 `VALIDATE` 한다(V2_85 패턴·`NO ACTION`). ② 전제로 세 서비스가 빈 문자열 부모를 NULL 로 정규화하고 마이그레이션이 기존 행을 백필한다. 행정코드 응답만 종전 wire 계약대로 빈 문자열을 유지한다. ③ `tb_bbs_master.tmplt_id` 는 제외한다. | 앱 가드(DEC-OPS-105)를 우회하는 직접 DML·이관 경로가 열려 있었다. ⚠ 정규화가 전제다 — 화면은 "소속 없음"·"최상위" 를 빈 문자열로 보내는데(E2E 캡처 본문 `"ognzId":""`) 빈 문자열은 NULL 이 아니라 FK 가 거부한다. 정규화 없이 FK 만 걸면 소속 없는 사용자와 최상위 행정구역 등록이 그 순간부터 실패한다. V2_26 이 "NULL 이면 최상위" 를 컬럼 주석에 이미 못박아, 새 계약이 아니라 쓰기 경로를 그 문서에 맞춘 것이다. tmplt_id 는 원장에 행을 넣는 생산 코드가 0건이라 FK 를 걸면 게시판 생성이 중단된다. red 증명 6종(서비스 정규화 4·FK 제거·백필 제거). | [V2_102](../../api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql), [현재 스키마 계약](../../api-server/src/test/java/nuri/api/schema/ReferenceIntegrityFkIntegrationTest.java), [백필 계약](../../api-server/src/test/java/nuri/api/schema/ReferenceIntegrityFkMigrationIntegrationTest.java) | 2026-09-17 | V2_26 의 "up_ognz_id 에 FK 를 걸지 않는다" 방침 |
 | DEC-OPS-107 | accepted | **원본에서 만들 수 없는 증거 의무를 기관 채택 수명으로 이전한다.** 온라인 승인 통제에 `backup-recovery`(백업 세트·RTO/RPO·운영 규모 restore drill)와 `crypto-lifecycle`(자격 회전·폐기, 레거시 hash·이전 키 암호문 census 와 호환 adapter 처분)을 신설한다. 인가 배포 검증은 새 통제를 만들지 않고 기존 `authorization` 통제에 편입한다(앱 버전·구 writer 종료·로그인·권한 회수·메뉴). gap 인덱스에서 네 행을 걷고 이전 기록을 남긴다. 이전 대상이 아닌 GAP-DEP-001·GAP-MIG-001·GAP-SEC-004 는 "재검증 대기" 절의 별도 표로 분리한다. 자격·키의 값은 근거 파일에 적지 않는다. | 원본 저장소에는 운영 환경이 없어 그 증거를 만들 대상 자체가 없다 — 의무의 수신자가 원본이 아니라 채택 기관이다. 활성 gap 으로 두면 영원히 닫히지 않아 신호가 죽고, 지우면 파생 제품 채택자가 확인된 축으로 오인한다(H2 와 같은 방향). DEC-OPS-020 이 연구·live census 4축에 쓴 패턴과 같다. 이전은 집행되지 않으면 삭제와 같으므로 계약이 두 통제의 근거 부재를 거부하고 **이전 전 5통제 집합이 더 이상 승인되지 않는 것**을 대조군으로 고정한다. 부수로 공용 메모리 ID 수집기가 표 머리글을 ID 로 세던 것을 행 검사와 같은 의도로 맞췄다(합성 중복 probe 동반). | [승인 통제](../../scripts/adoption-review.mjs), [검토 수명 가이드](../../docs/03-guides/governance-review-lifecycle.md), [이전 집행 계약](../../scripts/governance-review.test.mjs), [활성 Gap 인덱스](known-gaps.md) | 2026-09-21 | GAP-OPS-002·GAP-SEC-001·GAP-DATA-001·GAP-AUTH-003 의 활성 gap 지위 |
 | DEC-OPS-108 | accepted | **브랜치 보호 명세에 `requireExtraApprovalForUnattributedChanges` 를 넣고, 명세가 모르는 pull request 파라미터를 red 로 잡는다.** 값은 원격 실측치(`true`)로 동결해 양방향 드리프트를 보이게 한다. `required_reviewers`·`allowed_merge_methods` 는 보호 축이 아니라 의도적 비교 제외로 사유와 함께 코드에 남긴다. | GitHub 가 DEC-OPS-009 이후 추가한 승인 축인데 `PULL_REQUEST_POLICY_FIELDS` 에 없어 검증기가 비교조차 하지 않았다 — 원격이 `true` 로 켜져 있어도 `verify:ops` 는 green 이었다. 단독 운영에서 승인 요구는 병합을 막을 수 있는 축이라 사각이 크다. ⚠ 현재 값을 명세에 적는 것은 그 값을 옳다고 판정하는 것이 아니라 드리프트를 보이게 하는 것이다 — 이 설정을 끌지는 별도 제품 결정이며 원격 변경은 승인 경계다. 필드 하나만 더하면 같은 구멍이 다음 필드에서 재발하므로, 투영이 모르는 파라미터 자체를 보고하게 했다. | [명세](../../.github/required-checks.json), [필드 목록·비교](../../scripts/required-checks-contract.mjs), [실측 검증기](../../scripts/verify-branch-protection.mjs) | 2026-09-21 | - |
+
+DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 
 ## 기록 템플릿
 

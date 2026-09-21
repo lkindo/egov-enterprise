@@ -1008,6 +1008,22 @@ function readConsumerValue(repoRoot, ratchet) {
   const selector = ratchet.selector ?? {};
 
   if (selector.type === 'gradle-jacoco-limit') {
+    if (selector.equivalentTasks !== undefined) {
+      if (!Array.isArray(selector.equivalentTasks) || selector.equivalentTasks.length === 0
+          || new Set(selector.equivalentTasks).size !== selector.equivalentTasks.length
+          || selector.equivalentTasks.some(task => typeof task !== 'string' || !task || task === selector.task)) {
+        return { error: `invalid equivalent coverage tasks for ${ratchet.id}` };
+      }
+      const { equivalentTasks, ...singleSelector } = selector;
+      const values = [selector.task, ...equivalentTasks].map(task => readConsumerValue(repoRoot,
+        { ...ratchet, selector: { ...singleSelector, task } }));
+      const invalid = values.find(result => result.error);
+      if (invalid) return invalid;
+      if (values.some(result => result.value !== values[0].value)) {
+        return { error: `coverage scopes must share the same threshold for ${ratchet.id}` };
+      }
+      return values[0];
+    }
     const marker = executable.indexOf(`tasks.register('${selector.task}'`);
     const block = marker < 0 ? null : braceBlock(executable, marker);
     if (!block) return { error: `ghost quality selector for ${ratchet.id}: Gradle task ${selector.task}` };

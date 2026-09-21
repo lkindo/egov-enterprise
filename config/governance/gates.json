@@ -20,11 +20,19 @@
         },
         {
           "source": ".github/workflows/ci.yml",
-          "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+          "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
           "tiers": [
             "ci"
           ],
           "job": "backend-scope"
+        },
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "run: node scripts/verify.mjs migration",
+          "tiers": [
+            "ci"
+          ],
+          "job": "migration-scope"
         }
       ]
     },
@@ -62,7 +70,7 @@
         },
         {
           "source": ".github/workflows/ci.yml",
-          "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+          "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
           "tiers": [
             "ci"
           ],
@@ -565,7 +573,7 @@
           },
           {
             "source": ".github/workflows/ci.yml",
-            "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+            "fragment": "./gradlew onlineBuild jacocoOnlineCoverageVerification -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
             "tiers": [
               "ci"
             ],
@@ -1536,7 +1544,11 @@
         "type": "gradle-jacoco-limit",
         "task": "jacocoRootCoverageVerification",
         "counter": "LINE",
-        "value": "COVEREDRATIO"
+        "value": "COVEREDRATIO",
+        "equivalentTasks": [
+          "jacocoOnlineCoverageVerification",
+          "jacocoMigrationCoverageVerification"
+        ]
       },
       "executionProfile": "EXEC-BACKEND-COVERAGE",
       "current": 0.85,
@@ -1555,7 +1567,9 @@
         "*/build/jacoco/*.exec"
       ],
       "evidence": [
-        "build/reports/jacoco/jacocoRootReport"
+        "build/reports/jacoco/jacocoRootReport",
+        "build/reports/jacoco/jacocoOnlineReport",
+        "build/reports/jacoco/jacocoMigrationReport"
       ],
       "redProof": "Set current below baseline or change the Gradle LINE minimum without updating the registry; the contract must fail."
     },
@@ -1566,7 +1580,11 @@
         "type": "gradle-jacoco-limit",
         "task": "jacocoRootCoverageVerification",
         "counter": "BRANCH",
-        "value": "COVEREDRATIO"
+        "value": "COVEREDRATIO",
+        "equivalentTasks": [
+          "jacocoOnlineCoverageVerification",
+          "jacocoMigrationCoverageVerification"
+        ]
       },
       "executionProfile": "EXEC-BACKEND-COVERAGE",
       "current": 0.7,
@@ -1585,7 +1603,9 @@
         "*/build/jacoco/*.exec"
       ],
       "evidence": [
-        "build/reports/jacoco/jacocoRootReport"
+        "build/reports/jacoco/jacocoRootReport",
+        "build/reports/jacoco/jacocoOnlineReport",
+        "build/reports/jacoco/jacocoMigrationReport"
       ],
       "redProof": "Set current below baseline or change the Gradle BRANCH minimum without updating the registry; the contract must fail."
     },

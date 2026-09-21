@@ -29,8 +29,10 @@ test('standalone migration export retains independent verification and clears in
   const helper = resolve(outputRoot, 'scripts/reusable-layout.mjs');
   assert.equal(readFileSync(helper, 'utf8'), readFileSync(resolve(root, 'scripts/reusable-layout.mjs'), 'utf8'));
   const workflow = readFileSync(resolve(outputRoot, '.github/workflows/migration-tool.yml'), 'utf8');
-  assert.equal([...workflow.matchAll(/^      - 'scripts\/reusable-layout\.mjs'\s*$/gm)].length, 2,
-    'both push and pull_request must verify changes to the exported runtime dependency');
+  assert.match(workflow, /^  push:\n    branches: \[main, master\]$/m);
+  assert.match(workflow, /^  pull_request:$/m);
+  assert.doesNotMatch(workflow, /^    paths(?:-ignore)?:/m,
+    'standalone product must validate every changed runtime helper without producer CI');
   for (const args of [
     ['--test', 'scripts/migration-verification-contract.test.mjs', 'scripts/adoption-execute.test.mjs'],
     ['scripts/governance-review.mjs', '--product', 'migration-tool', '--mode', 'report'],

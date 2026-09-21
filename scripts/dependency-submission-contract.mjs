@@ -3,7 +3,7 @@ import { parseWorkflowJobs } from './required-checks-contract.mjs';
 export const GRADLE_DEPENDENCY_ACTION =
   'gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb';
 export const DEPENDENCY_SCOPE_CONDITION =
-  "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.frontend == 'true')";
+  "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.migration == 'true' || needs.change-scope.outputs.frontend == 'true')";
 
 function normalize(content) {
   return content.replace(/\r\n/g, '\n');

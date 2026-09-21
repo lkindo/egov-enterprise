@@ -10,16 +10,10 @@ const workflow = readFileSync(new URL('../.github/workflows/migration-tool.yml',
 // Exact negative-fixture replacements must behave the same after LF or CRLF checkout.
 const moduleBuild = readFileSync(new URL('../migration-tool/build.gradle', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const contractCommand = 'node --test scripts/migration-verification-contract.test.mjs';
-const moduleTasks = ':migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar';
+const moduleTasks = ':migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar jacocoMigrationCoverageVerification';
 const gradleOptions = '--no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8';
 const standaloneProduct = existsSync(new URL('../migration-product-lock.json', import.meta.url));
-const requiredPaths = [
-  'migration-tool/**', '**/*.gradle', 'gradle/**', 'gradle.properties', 'gradlew', 'gradlew.bat',
-  '.nvmrc', 'package.json', 'scripts/verify.mjs', 'scripts/migration-verification-contract.test.mjs',
-  'scripts/required-checks-contract.mjs', '.github/workflows/migration-tool.yml',
-  ...(standaloneProduct ? ['scripts/adoption-*.mjs', 'scripts/governance-review.mjs',
-    'scripts/verify-reusable-artifact.mjs', 'scripts/e2e-shard-plan.mjs', 'config/governance/**', '.githooks/**'] : []),
-];
+
 
 const childOnlyTests = [
   'nuri.migration.EtlMySqlCrashRecoveryIntegrationTest',
@@ -206,7 +200,7 @@ function validateWorkflow(source) {
     errors.push('migration verification may not be skipped or forgive failures');
   }
   if (!/^    runs-on: ubuntu-latest\s*$/m.test(job)
-      || !/^    timeout-minutes: 30\s*$/m.test(job)) errors.push('migration verification needs its bounded Docker-capable runner');
+      || !/^    timeout-minutes: 60\s*$/m.test(job)) errors.push('migration verification needs its bounded Docker-capable runner');
   const steps = job.split(/(?=^      - )/m).slice(1);
   const runSteps = steps.filter((step) => /^        run:/m.test(step));
   const commands = runSteps.map((step) => step.match(/^        run: (.*)$/m)?.[1]?.trim());
@@ -219,7 +213,8 @@ function validateWorkflow(source) {
   }
   const actions = [...job.matchAll(/^\s+(?:-\s+)?uses:\s*([^\s#]+)/gm)].map((match) => match[1]);
   const expectedActionNames = [
-    'actions/checkout', 'actions/setup-node', 'actions/setup-java', 'gradle/actions/setup-gradle', 'actions/upload-artifact',
+    'actions/checkout', 'actions/setup-node', 'actions/setup-java', 'gradle/actions/setup-gradle',
+    'actions/upload-artifact', 'actions/upload-artifact',
   ];
   if (JSON.stringify(actions.map((action) => action.split('@')[0])) !== JSON.stringify(expectedActionNames)
       || actions.some((action) => !/@[a-f0-9]{40}$/.test(action))) errors.push('workflow actions must be the pinned verification-only action set');
@@ -233,12 +228,17 @@ function validateWorkflow(source) {
     errors.push('verified bootJar artifact must be retained and missing output must fail');
   }
 
-  for (const event of ['push', 'pull_request']) {
-    const eventBlock = executable.match(new RegExp(`^  ${event}:\\n([\\s\\S]*?)(?=^  [a-z_]+:|^\\S|(?![\\s\\S]))`, 'm'))?.[1] ?? '';
-    const paths = [...eventBlock.matchAll(/^      - '([^']+)'\s*$/gm)].map((match) => match[1]);
-    if (!requiredPaths.every((path) => paths.includes(path)) || paths.some((path) => path.startsWith('!'))) {
-      errors.push(`${event} must cover the module, shared Gradle inputs, runner, and workflow without exclusions`);
+  if (standaloneProduct) {
+    if (!/^  push:\n    branches: \[main, master\]\s*$/m.test(executable)
+        || !/^  pull_request:\s*$/m.test(executable)
+        || /^    paths(?:-ignore)?:/m.test(executable)) {
+      errors.push('standalone product must verify every push and PR without producer CI');
     }
+  } else if (/^  (?:push|pull_request):/m.test(executable)) {
+    errors.push('automatic change verification belongs to ci.yml; no duplicate migration workflow');
+  }
+  if (!/^  schedule:\n    - cron: '23 18 \* \* 0'\s*$/m.test(executable)) {
+    errors.push('weekly full migration regression must remain scheduled');
   }
   if (!/^  workflow_dispatch:\s*$/m.test(executable)) errors.push('independent verification must allow workflow_dispatch');
   return errors;
@@ -307,6 +307,8 @@ test('online coupling, removed commands, unqualified Gradle tasks, and load invo
     (source) => source.replace(`run('${contractCommand}');`, `runRepositoryContracts();\n    run('${contractCommand}');`),
     (source) => source.replace(':migration-tool:test :migration-tool:bootJar', 'test :migration-tool:bootJar'),
     (source) => source.replace(':migration-tool:bootJar', ':migration-tool:bootRun'),
+    (source) => source.replace(' jacocoMigrationCoverageVerification', ''),
+    (source) => source.replace('jacocoMigrationCoverageVerification', 'jacocoRootCoverageVerification'),
     (source) => source.replace(`run('${contractCommand}');`, `run('java -jar migration-tool.jar load');\n    run('${contractCommand}');`),
   ]) assert.notDeepEqual(validateRunner(mutate(runner)), []);
 });
@@ -324,9 +326,6 @@ test('migration CI binds the real runner without online dependencies or operatio
 });
 
 test('missing or conditional execution, broad dependencies, write permissions, and missing artifacts turn red', () => {
-  for (const path of requiredPaths) {
-    assert.ok(validateWorkflow(workflow.replaceAll(`      - '${path}'`, "      - 'unrelated/**'")).length, path);
-  }
   for (const mutate of [
     (source) => source.replace('run: node scripts/verify.mjs migration', '# run: node scripts/verify.mjs migration'),
     (source) => source.replace('run: node scripts/verify.mjs migration', "if: false\n        run: node scripts/verify.mjs migration"),
@@ -335,7 +334,8 @@ test('missing or conditional execution, broad dependencies, write permissions, a
     (source) => source.replace('contents: read', 'contents: write'),
     (source) => source.replace('contents: read', 'contents: read\n  actions: write'),
     (source) => source.replace('run: node scripts/verify.mjs migration', 'shell: echo {0}\n        run: node scripts/verify.mjs migration'),
-    (source) => source.replace("      - 'migration-tool/**'", "      - 'unrelated/**'"),
+    (source) => source.replace("cron: '23 18 * * 0'", "cron: '23 18 * * 1'"),
+    (source) => source.replace('  workflow_dispatch:', '  push:\n  workflow_dispatch:'),
     (source) => source.replace('if-no-files-found: error', 'if-no-files-found: ignore'),
     (source) => source.replace(/actions\/checkout@[a-f0-9]{40}/, 'actions/checkout@main'),
   ]) assert.notDeepEqual(validateWorkflow(mutate(workflow)), []);

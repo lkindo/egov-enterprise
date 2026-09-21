@@ -27,15 +27,16 @@
 ```
 push/PR / workflow_dispatch
     │
-    └─ change-scope (PR: 삭제·rename old path 포함 분류 / main·master push: --full)
+    └─ change-scope (PR·main/master push: 같은 영향 분류 / 비교 불가·수동: 전수)
         ├─ sast-scope (Java·JavaScript/TypeScript CodeQL security-extended)
         │   └─ secure-coding (High/Critical 차단, 언어별 결과 집계)
         ├─ secret-scan (운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
         ├─ backend-scope (backend=true인 경우의 실제 무거운 실행)
-        │   ├─ Gradle 빌드·테스트·커버리지·OpenAPI 신선도
+        │   ├─ 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도
         │   └─ schema=true일 때만 PostgreSQL schema-validation
+        ├─ migration-scope (migration=true: 독립 이관 테스트·bootJar·커버리지)
         ├─ reusable-base (문서 전용이 아니면 core·collaboration·demo 실제 생성·기술 검증)
-        ├─ backend-build (backend-scope와 reusable-base를 집계하는 안정 required context)
+        ├─ backend-build (온라인·이관 source와 reusable-base 결과를 집계)
         ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
         │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
         ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
@@ -65,7 +66,7 @@ dependency-submission.yml (pull_request, contents:read)
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: classifier가 schema 영향으로 판정하면 `Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)`이 Flyway 전량 적용 + Hibernate `ddl-auto:validate`로 물리 정합성을 검증한다. `:foundation:test --no-build-cache`를 재실행하는 `Cache-bypass regression gate (foundation, main only)`는 같은 schema 조건에 더해 `refs/heads/main`에서만 실행한다.
 > - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
-> - **증분 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 10개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 스코프는 두 잡에 나뉘어 산다 — 제품 8개는 `mutation-scope`, `migration-tool` 2개는 `mutation-scope-migration`이며 후자는 이관 모듈·공용 Gradle 입력, 미지 범위 또는 main/master 전수 실행에서 선택된다(DEC-OPS-104의 독립 모듈 경계 보존). `mutation-test`는 **소스 잡마다** 같은 판정기를 돌려 각각 fail-closed로 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
+> - **증분 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 10개 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 제품 8개는 `mutation-scope`, 이관 2개는 `mutation-scope-migration`이 소유하며 독립된 영향 출력으로 선택한다. 이관 출력은 더 이상 온라인 `mutation`의 부분집합이 아니다([ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)). `mutation-test`는 소스마다 기대 실행·명시적 skip을 fail-closed로 집계한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
 `migration-validate-verify`의 CI 실행 상한은 60분이고 다른 PIT 스코프는 30분이다. 60분 표현식은 `mutation-scope-migration`에만 있고 제품 스코프 잡은 30분 고정이며, 두 값을 required-check 계약이 함께 고정한다.
@@ -86,13 +87,13 @@ DB 초기화 비용이 짧은 시험의 시간 예산을 넘을 수 있다. 이 
 
 > **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 6개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
-E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `backend-build`는 migration-tool을 포함한 기존 전체 빌드·테스트·JaCoCo를 계속 요구하므로 E2E/PIT가 먼저 성공해도 다른 required check의 실패를 상쇄하지 못한다. CodeQL 양언어와 재사용 profile×layout 검증도 유지한다.
+E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. `backend-build`는 온라인 `backend-scope`와 독립 `migration-scope`의 선택 결과를 각각 집계하고 기존 재사용 profile×layout 검증도 요구한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
 
-PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. `build.gradle`, `settings.gradle`, `gradle/**`, `gradle.properties`와 미지 입력은 이관 scope도 선택한다. 제품 8개·이관 2개의 대상과 75% strict 하한은 유지하며, 더 세밀한 모듈별 선택은 별도 의존 관계 증명 후 도입한다.
+PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 
 제품 PIT 8개 배치는 모두 유지하고 `mutation-scope`의 `max-parallel: 3`으로 동시 실행만 제한한다. 초기 실행에서 저장소의 세 워크플로우를 합쳐 최대 20개 job 동시 실행과 E2E 111초·긴 migration PIT 116초 대기를 관측했다. 이 제한은 E2E·migration·reusable backend 검증에 runner 여유를 남기려는 조치다. 20은 관측치이며 관리 설정의 상한을 확인한 값이 아니고, 다른 PR 부하와 GitHub 스케줄링에 따른 대기 해소나 전체 시간 단축을 보장하지 않는다.
 
-PR은 변경 범위에 따른 분류를 유지하고 **main/master push는 문서-only 병합도 `--full`로 전체 검증**한다. 따라서 문서-only fast path는 PR에 적용되며 기본 브랜치 전체 회귀를 대체하지 않는다. 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
+PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 
 [PR #699](https://github.com/lkindo/egov-enterprise/pull/699)의 [Linux run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480)에서 E2E 본 테스트 135개와 VRT가 통과했다. 두 shard의 Playwright wall time은 135.458/155.931초, GitHub E2E step은 150/171초, job은 623/454초다. workflow 생성부터 `e2e-test` required 완료까지는 695초(11분 35초)로, [이전 전체 PR 35558688331](https://github.com/lkindo/egov-enterprise/actions/runs/35558688331)의 1,984초(33분 4초)보다 짧았다. 상류 잡 대기·runner 배정·준비를 포함한 두 실행의 관측 비교이며 본 테스트 자체나 전체 CI가 같은 비율로 단축됐다는 뜻은 아니다. 최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본이다. [측정 근거와 한계](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)에 표적 PIT 검사와 전체 범위의 차이도 기록한다.
 
@@ -125,14 +126,13 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 개발·CI driver의 lock에는 `localDevelopmentBuild`를 남기므로 기술 검증 성공만으로 공식 릴리스 자산이 되지 않는다.
 생성물의 runtime 시나리오·기관 운영 승인은 별도다.
 
-[migration-tool workflow](../../.github/workflows/migration-tool.yml)는 독립 이관 모듈의 테스트·bootJar를
-검증한다. `migration:export`로 만든 별도 제품은 자체 workflow와 hook을 제공하며, 새 저장소의 required
+[migration-tool workflow](../../.github/workflows/migration-tool.yml)는 매주 월요일 03:23 KST(일요일 18:23 UTC)와 수동 실행에서 독립 이관 테스트·bootJar·커버리지를 검증한다. 일반 PR/push의 이관 검증 소유자는 `ci.yml`의 `migration-scope` 하나다. `migration:export`로 만든 별도 제품의 자체 workflow는 push/PR 전수 검증을 유지하며, 새 저장소의 required
 체크 설정은 기관이 연결한다. 실제 기관 배포·이관은 `adoption:check`가 기술 검사 전후에 승인과 실행 대상을
 확인하며, 명시적 `--execute`에서만 기존 deploy/load를 호출한다. 참조 CI에서 실제 기관 작업을 실행하지 않는다.
 
 ### 실행 트리거
 
-- **Push**: `main`, `master` 브랜치, `--full`로 전체 회귀 실행
+- **Push**: `main`, `master` 브랜치, PR과 같은 영향 분류·fail-closed fallback 적용
 - **Pull Request**: base 브랜치 제한 없이 모든 PR, 변경 범위 분류와 fail-closed fallback 적용
 - **Workflow Dispatch**: GitHub UI / CLI 에서 수동 실행 지원 (`workflow_dispatch`)
 - **Concurrency**: 동일 ref 연속 푸시 시 이전 실행 자동 중단 (`concurrency: group: ci-${{ github.ref }}, cancel-in-progress: true`)
@@ -148,11 +148,11 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 ### 실행 명령어
 
 ```bash
-# 1. main의 전수 검증에서 foundation cache-bypass 재실행
+# 1. main에서 schema 영향이 있을 때 foundation cache-bypass 재실행
 ./gradlew :foundation:test --no-build-cache
 
-# 2. 메인 빌드 및 테스트 (OpenAPI Spec 정적 추출 포함)
-./gradlew build jacocoRootCoverageVerification check \
+# 2. 선택된 온라인 4모듈 빌드·테스트 (OpenAPI 정적 추출 포함)
+./gradlew onlineBuild jacocoOnlineCoverageVerification \
   -Dopenapi.export.path=api-docs.json --warning-mode fail
 
 # 3. 물리 PostgreSQL 17 스키마 실측 검증 (Testcontainers + Flyway + Hibernate validate)
@@ -160,14 +160,20 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 
 # 4. 계약 드리프트 검증 (백엔드 스펙 신선도 확인)
 git diff --exit-code api-docs.json
+
+# 5. migration=true인 별도 job: 이관 테스트·bootJar·85/70 커버리지
+node scripts/verify.mjs migration
 ```
+
+온라인·이관 커버리지는 각각 LINE 85%·BRANCH 70%이며 같은 제외 목록을 쓴다. 선택된 모듈의 클래스·현재 Test task의 실행 데이터가 없으면 실패한다. 전체 제품 로컬 검증은 기존 `jacocoRootCoverageVerification`을 계속 사용하므로, 모듈 분리가 전수 진입점을 축소하지 않는다.
 
 ### 생성 아티팩트
 
 | 이름 | 경로 |
 |------|------|
 | `openapi-spec` | `api-docs.json` |
-| `jacoco-report` | `build/reports/jacoco/aggregated` |
+| 온라인 JaCoCo 보고서 | `build/reports/jacoco/online` |
+| 이관 JaCoCo 보고서 | `build/reports/jacoco/migration` |
 | `openapi-spec-changed` | `api-docs.json` (변경 감지 시) |
 
 업로드 조건과 보존 기간은 현재 workflow가 정본이다.
@@ -264,7 +270,7 @@ E2E JSON 결과는 [playwright-result-contract.mjs](../../scripts/playwright-res
 | 통제 | 트리거·경로 | 집행 의미 |
 |---|---|---|
 | Gradle dependency graph | PR read-only producer → trusted `workflow_run` publisher | write token을 가진 job은 PR 코드를 checkout하거나 실행하지 않는다. |
-| Snapshot readiness | `secret-scan`, backend/frontend 영향 PR | GitHub compare API의 base/head snapshot warning이 사라질 때까지 최대 600초 기다리고, 미완전·비재시도 API 오류·시간 초과를 실패 처리한다. 실패 시 **어느 쪽 SHA가 비었는지 분류하고 해소 명령을 함께 출력**한다. |
+| Snapshot readiness | `secret-scan`, backend/migration/frontend 영향 PR | GitHub compare API의 base/head snapshot warning이 사라질 때까지 최대 600초 기다리고, 미완전·비재시도 API 오류·시간 초과를 실패 처리한다. 실패 시 **어느 쪽 SHA가 비었는지 분류하고 해소 명령을 함께 출력**한다. |
 | Dependency review | readiness 성공 뒤 `actions/dependency-review-action` | 새 runtime 의존성의 High 이상을 required `secret-scan`에서 차단한다. |
 | Frontend audit policy | `frontend-scope` | lockfile을 한 번 조회해 Critical 전체·운영 High를 차단하고 개발 High만 warning으로 남긴다. |
 
@@ -340,6 +346,7 @@ dependencyCheck {
 ### Gradle 캐싱
 
 - **위치**: GitHub Actions 캐시 + 로컬 `.gradle`
+- **구성**: `setup-gradle` v6.3.0의 commit `9c971963bec38e04b3d30dcc455b5382be2fdbfb`와 `cache-provider: basic`을 명시한다. 캐시 제공 방식 변경은 테스트 생략 승인이 아니며 Gradle task 입력과 필수 실패 판정은 유지한다.
 - **키·입력**: `setup-gradle` action의 캐시 구성과 Gradle task 입력 계약을 따른다. wrapper·build 파일 두 개만으로 전체 캐시 키를 설명하지 않는다.
 - **효과 확인**: 캐시 hit 여부와 실행 시간은 대상 workflow run에서 확인한다. 과거 측정치를 현재 성능 보장으로 사용하지 않는다.
 
@@ -477,7 +484,7 @@ export NVD_API_KEY=your-key
 
 [`sast-policy.json`](../../config/security/sast-policy.json)이 CodeQL 버전·보안 점수 임계값·언어를 정의한다. Java는 5개 모듈의 production `compileJava`를 캐시 없이 추적하여 Lombok 생성 코드까지 분석한다. JavaScript/TypeScript는 [`codeql.yml`](../../config/security/codeql.yml)의 프론트엔드와 운영 스크립트 경로를 분석한다. `security-extended`는 기본 보안 쿼리와 추가 보안 쿼리를 포함한다([GitHub 공식 설명](https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options)).
 
-- PR의 코드·설정 변경에서는 전체 대상 소스를 분석하며, 명시적인 문서 전용 PR만 생략한다. main/master push는 문서-only여도 두 언어를 전수 분석한다. 분류 실패·언어 누락·분석 실패는 통과로 처리하지 않는다.
+- PR과 main/master push의 코드·설정 변경에서는 두 언어의 전체 대상 소스를 분석하며, 명시적인 문서 전용 변경만 생략한다. 이관만 바뀌어도 양언어 분석을 유지한다. 분류 실패·언어 누락·분석 실패는 통과로 처리하지 않는다.
 - 보안 점수 7.0 이상(High/Critical)은 기존·신규 여부와 관계없이 실패시킨다. [승인된 오탐 7건](../04-operations/sast-findings-review.md)만 정확한 위치·fingerprint·소스/방어 해시·만료일에 묶어 예외로 처리한다. 그 미만의 탐지도 리포트에 남긴다. 리포트 누락·잘못된 버전·빈 쿼리 집합·실행 오류·예외 건수 불일치는 별도 오류로 실패한다.
 - 두 언어의 실제 취약/안전 fixture를 CodeQL로 분석하고, 취약 fixture가 동일 정책 CLI에서 종료 코드 1을 내는지 매 CI에서 확인한다. fixture의 취약 동작은 실행하지 않는다.
 - `secure-coding`은 여섯 번째 required context다. 기존 release workflow가 같은 manifest를 읽으므로 대상 SHA에 이 체크가 성공하지 않으면 이미지·릴리스 발행을 차단한다. 원격 ruleset 적용 여부는 `npm run verify:ops`로 별도 확인한다.

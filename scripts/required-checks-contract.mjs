@@ -304,6 +304,27 @@ export function validatePinnedWorkflowUses(workflowFiles) {
       if (!pinnedAction.test(action)) {
         errors.push(`${filePath}:${index + 1} third-party action '${action}' must use a 40-character commit SHA`);
       }
+      if (action.startsWith('gradle/actions/setup-gradle@')) {
+        // v6.3.0 uses the current cache client. Select the MIT basic provider explicitly;
+        // the v6 default is the separately licensed enhanced provider.
+        if (action !== 'gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb') {
+          errors.push(`${filePath}:${index + 1} Gradle setup must use the reviewed cache-compatible action pin`);
+        }
+        const usesIndent = lines[index].match(/^\s*/)[0].length;
+        const stepIndent = /^\s*-/.test(lines[index]) ? usesIndent : usesIndent - 2;
+        let end = index + 1;
+        while (end < lines.length) {
+          const line = lines[end];
+          if (line.trim() && !line.trimStart().startsWith('#')
+            && line.length - line.trimStart().length <= stepIndent) break;
+          end += 1;
+        }
+        const inputs = nestedBlock(lines.slice(index, end).join('\n'), 'with', stepIndent + 2) ?? '';
+        const provider = scalarAtIndent(inputs, 'cache-provider', stepIndent + 4);
+        if (provider !== 'basic') {
+          errors.push(`${filePath}:${index + 1} Gradle setup must explicitly select cache-provider: basic`);
+        }
+      }
     }
   }
   return errors;
@@ -805,8 +826,8 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
   const shellProtectedJobs = new Set(['change-scope', 'secret-scan']);
   for (const check of manifest.requiredChecks) {
     if (typeof check?.jobId === 'string') shellProtectedJobs.add(check.jobId);
-    if (typeof check?.aggregate?.sourceJobId === 'string') {
-      shellProtectedJobs.add(check.aggregate.sourceJobId);
+    for (const source of aggregateSourceList(check).sources) {
+      if (typeof source?.sourceJobId === 'string') shellProtectedJobs.add(source.sourceJobId);
     }
   }
   for (const jobId of shellProtectedJobs) {

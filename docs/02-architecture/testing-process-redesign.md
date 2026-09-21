@@ -150,17 +150,19 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 
 명령·범위별 최소 검증의 정본은 [테스트 가이드](../03-guides/testing-guide.md)와 [E2E 런북](../03-guides/e2e-test-guide.md)다.
 
-### 5.2 PR: 검증 범위를 보존하고 독립 검증을 병렬 실행한다
+### 5.2 PR·통합 push: 독립 모듈을 분리하고 선택된 검증을 병렬 실행한다
 
-- [CI](../../.github/workflows/ci.yml)의 변경 분류가 성공하면 backend/frontend, 선택된 PIT, E2E, 보안·재사용 검증을 각 조건에 따라 시작한다. E2E와 PIT는 backend 전체 성공 대기 대신 classifier 결과에 의존한다.
+- [CI](../../.github/workflows/ci.yml)의 변경 분류가 성공하면 온라인 backend, 독립 migration, frontend, 선택된 PIT, E2E, 보안·재사용 검증을 각 조건에 따라 시작한다. E2E와 PIT는 backend 전체 성공 대기 대신 classifier 결과에 의존한다.
 - 기존 6개 required context와 실패 집계를 유지한다. E2E/PIT가 먼저 끝나도 backend 테스트·스키마·JaCoCo 실패를 허용하지 않는다.
-- 제품 PIT 8개 배치는 모두 실행하되 `max-parallel: 3`으로 동시 실행을 제한했다. 세 workflow 합계 동시 20개가 관측된 초기 실행에서 E2E shard 2가 111초, 긴 migration PIT가 116초 대기한 점을 반영해 E2E·migration·재사용 검증의 runner 경합을 줄이는 조치다. 관측한 20개를 관리 API로 확인한 계정 한도로 단정하지 않으며, 다른 PR의 부하나 GitHub 배정 순서까지 통제하거나 전체 완료 시간 단축을 보장하지 않는다.
+- 온라인 PIT가 선택되면 제품 8개 배치를 모두 실행하되 `max-parallel: 3`으로 동시 실행을 제한한다. 세 workflow 합계 동시 20개가 관측된 초기 실행에서 E2E shard 2가 111초, 긴 migration PIT가 116초 대기한 점을 반영해 E2E·migration·재사용 검증의 runner 경합을 줄이는 조치다. 관측한 20개를 관리 API로 확인한 계정 한도로 단정하지 않으며, 다른 PR의 부하나 GitHub 배정 순서까지 통제하거나 전체 완료 시간 단축을 보장하지 않는다.
 - E2E가 필요한 PR은 **API·브라우저 전수**를 두 shard에 배분한다. 일부 경로만 계산하는 shadow 후보가 실제 실행 범위를 줄이지 않는다.
 - API 이미지에 Buildx GHA cache를 연결했다. 두 shard가 캐시를 읽고 첫 shard만 export한다. 캐시가 비어 있거나 export에 실패해도 이미지 빌드·부팅·필수 검증을 생략하지 않는다.
 - FE artifact를 공유해 backend/frontend 완료를 다시 기다리는 의존성은 만들지 않았다. 각 E2E 스택은 자기 API rewrite·인증 설정에 맞춘 FE를 사용한다.
 - CodeQL 양언어 전수 분석, 기존 재사용 프로필/레이아웃, 의존성 snapshot readiness, PIT strict 기준을 유지한다.
 
-[변경 분류기](../../scripts/ci-change-scope.mjs)는 Gradle/toolchain, `src/testFixtures`, main/test 리소스 등 PIT 입력을 포함한다. 공통·미지 입력의 전수 fallback과 기존 10개 PIT scope의 75% strict 기준·required 집계를 유지한다. 이것을 새 도메인별 PIT 선택기가 검증되었다는 뜻으로 해석하지 않는다.
+[변경 분류기](../../scripts/ci-change-scope.mjs)는 Gradle/toolchain, `src/testFixtures`, main/test 리소스 등 PIT 입력을 포함한다. [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)에 따라 온라인 4모듈은 결합된 범위를 유지하고 독립 `migration-tool`의 build/PIT만 분리한다. 공통 Gradle·ID 생성 의미 계약은 양쪽 실행, 미지·빈 비교는 전수 fallback이며 10개 PIT scope의 75% strict 기준은 같다. 온라인·이관 커버리지는 각 LINE 85%·BRANCH 70%를 강제하고 기존 로컬 전수 커버리지도 유지한다. 개별 Java 파일별 시험 선택은 도입하지 않았다.
+
+Gradle action은 v6.3.0의 검증 대상 commit에 고정하고 `cache-provider: basic`을 명시했다. 캐시 복원 성공이나 구성 변경만으로 필수 검사를 통과시키지 않으며, 실제 hit·전송 비용·전체 경과시간은 같은 검증 범위의 원격 실행으로 평가한다.
 
 실행 job `e2e-tests`·`mutation-scope`·`mutation-scope-migration`의 상태 조건은 `!cancelled()`로 두어 기존 선택 범위를 보존하면서 취소에 반응하게 하고, 결과 집계와 cleanup의 `always()`는 유지한다. GitHub는 취소할 때 job 조건을 재평가하므로 실행 job의 `always()`는 취소 후에도 참이 될 수 있다([공식 취소 동작](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-cancellation)).
 
@@ -169,13 +171,13 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 | 시점 | 현재 실행 또는 운영 원칙 |
 |---|---|
 | PR | 변경 분류에 필요한 기존 필수 검사. E2E 대상이면 API·브라우저 전수 |
-| main/master push | workflow에서 full 분류를 강제하여 통합 브랜치 전체 회귀 확인 |
+| main/master push | PR과 같은 모듈 영향 분류. 비교 기준 부재·미지·빈 변경은 전수 fallback |
 | 릴리스 | 대상 SHA의 필수 성공 증거와 배포 산출물·설정·스키마 계약 확인. 다른 SHA의 green 재사용 금지 |
-| 주간/명시적 점검 | 기존 의존성 전수 감사, 비용·flaky 추세 검토. 부하·DR·기관 운영 검증은 지정 환경과 기존 승인 경계 적용 |
+| 주간/명시적 점검 | 독립 이관은 월요일 03:23 KST와 수동 실행에서 전수. 기존 의존성 전수 감사·비용·flaky 추세 검토와 지정 환경의 부하·DR 검증 유지 |
 
 ### 5.4 영향 선별은 shadow로 평가하고 실행은 전수로 유지한다
 
-[shard planner](../../scripts/e2e-shard-plan.mjs)의 `IMPACT_RULES`와 `buildImpactShadowPlan`은 실제 존재하는 일부 FE route와 계약 소유 spec을 연결한다. 일반 프론트 의존 그래프를 완성한 것이 아니다.
+[shard planner](../../scripts/e2e-shard-plan.mjs)의 `IMPACT_RULES`와 `buildImpactShadowPlan`은 일부 FE 경로와 계약 소유 spec의 후보를 연결한다. 일반 프론트 의존 그래프를 완성한 것이 아니다. 현재 설문 규칙의 `app/polls/`·`app/admin/polls/`는 실제 `app/admin/survey/`와 다르므로 실제 설문 변경은 전수 fallback이다. 도움말 허브의 커뮤니티 소비자와 게시판 입력 화면의 FAQ 소비자도 현 후보에서 빠진다([CommunityPage](../../frontend/e2e/pages/CommunityPage.ts), [KnowledgePage](../../frontend/e2e/pages/KnowledgePage.ts)). 이 불완전한 후보를 실행 축소에 사용하지 않는다.
 
 - 수정된 등록 spec은 자신을 후보에 넣고, 명시된 route는 해당 소유 spec을 후보에 넣는다. 좁은 후보에도 모든 품질 spec과 공통 application shell을 포함한다.
 - backend·공유 코드·fixture·설정 등 규칙에 없는 경로, 추가/삭제/이동, 알 수 없는 상태, 비교 기준 부재는 **전수 후보로 fallback**한다.
@@ -332,3 +334,9 @@ CI·게이트의 실행/부정 검증 정본은 [shard 계약](../../scripts/e2e
 ### 9.2 병합 후 검증: 재시도 통과도 실패로 다룬다
 
 [main 실행 35586917559](https://github.com/lkindo/egov-enterprise/actions/runs/35586917559)에서는 조직도 드래그의 첫 시도가 저장 요청 없이 실패하고 재시도만 통과해 `flaky=0` 계약이 차단했다. trace에서 계층 미리보기는 정상이나 드롭 직후 클릭 억제 구간에 저장 클릭이 들어간 것을 확인했다. [해당 여정](../../frontend/e2e/journeys/department-hierarchy.spec.ts)은 overlay 생성·소멸로 드롭 완료를 확인한 뒤 저장 응답과 서버에 영속된 상위 부서를 검증한다. 고정 대기·클릭 재시도·flaky 허용을 추가하지 않는다. 이 실패 실행은 성공한 전체 CI 절감 표본에 포함하지 않는다.
+
+### 9.3 독립 모듈 분리와 캐시 변경의 비교 기준
+
+[main 실행 35591415184](https://github.com/lkindo/egov-enterprise/actions/runs/35591415184), SHA `ac46dc4f`에서 필수 체크 완료까지 **33분 40초**, E2E required 완료까지 **8분 17초**가 걸렸다. 같은 실행의 이관 테스트 task 구간은 **26분 44초**였다. 마지막 값은 Gradle task 관측 구간이며 전체 job이나 독립 실행의 예상 소요시간이 아니다.
+
+이 실행은 [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)의 모듈 분리·Gradle 캐시 변경 전 기준선이다. 온라인 4모듈과 독립 이관을 각 source로 실행하면 불필요한 이관 비용과 직렬 대기를 줄일 수 있지만, 새 원격 실측 없이 절감률이나 성공 시간을 제시하지 않는다. 비교에는 선택된 모듈·required 체크·캐시 cold/warm·task cache hit·runner 대기를 함께 남긴다. E2E 후보 선별과 개별 Java 시험 선별은 이번 변경에 포함하지 않는다.

@@ -1,5 +1,18 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-09-21 CI 독립 모듈 검증 분리에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 `build.gradle`에 온라인 모듈과 migration CLI의 빌드·커버리지 검증 task를
+추가했다. 기존 의존성·테스트 설정은 그대로이며 H2를 운영 classpath에 추가하지 않는다. 탐지 원문인
+`api-server/src/main/resources/application-test.yml`의 H2 메모리 DB 설정과 다른 보완 소스 5개의 해시는
+기존 승인값과 일치한다. 따라서 테스트 프로필·테스트 의존성에 한정된 기존 예외 근거를 유지한다.
+
+변경된 root build 보완 소스 하나와 승인 목록의 registry 해시만 재결속한다. 예외 6건의 범위·규칙·행·
+fingerprint·승인일·만료일과 보안 임계값은 유지한다. 변경된 보완 소스의 해시 불일치가 기존 SAST 계약을
+실패시키는 것을 확인했으며, 재결속 뒤 소스·방어 변조와 미등록 탐지의 거부를 포함한 같은 계약으로
+재검증해 17개가 통과했다. 이번 근거는 소스·의존성 선언의 재검토이며 새 runtime classpath나 CodeQL 실행의 증거가 아니다.
+현재 CodeQL·required CI 결과는 병합할 커밋에서 별도로 확인한다.
+
 ## 2026-09-16 SQL Server 통합 시험 추가에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 SQL Server Testcontainers의 `testImplementation`과

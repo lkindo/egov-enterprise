@@ -16,7 +16,7 @@ const MULTI_MIGRATION_TASKS = Object.freeze([
   ':migration-tool:compileJava', ':migration-tool:compileTestJava', ':migration-tool:test', ':migration-tool:bootJar',
   '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8',
 ]);
-const MIGRATION_SOURCE_COMMAND = 'run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);';
+const MIGRATION_SOURCE_COMMAND = 'run(`${gradlew} :migration-tool:compileJava :migration-tool:compileTestJava :migration-tool:test :migration-tool:bootJar jacocoMigrationCoverageVerification --no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);';
 const TEST_ALIASES = Object.freeze([
   ['test', 'npx cross-env TZ=Asia/Seoul gradlew.bat test -Dfile.encoding=UTF-8',
     'npx cross-env TZ=Asia/Seoul gradlew.bat allTests -Dfile.encoding=UTF-8'],
